@@ -2,6 +2,7 @@ use cortex_core::{CellId, CommitSeq, KnowledgeCell, KnowledgeCellMetadata, Knowl
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
+use crate::ingestion::extract_pdf_text;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IngestedCell {
@@ -133,6 +134,16 @@ impl Database {
             cell_id,
             commit_seq,
         })
+    }
+
+    pub fn ingest_pdf_bytes(
+        &mut self,
+        cell_id: CellId,
+        pdf: &[u8],
+        options: PdfIngestOptions,
+    ) -> EngineResult<IngestedCell> {
+        let extracted = extract_pdf_text(pdf)?;
+        self.ingest_pdf_text(cell_id, &extracted.text, options)
     }
 }
 

@@ -43,10 +43,16 @@ Minimal adapters now exist on `Database`:
 - `ingest_csv`: header row plus one document block per data row.
 - `ingest_pdf_text`: external PDF extraction hook that stores extracted text
   with `source_format=pdf` and optional page metadata.
+- `ingest_pdf_bytes`: native no-dependency extractor for simple uncompressed
+  PDF text objects before storing the same `source_format=pdf` cell.
+
+The native PDF extractor handles literal strings and hex strings inside
+`BT ... ET` text objects. It intentionally rejects unsupported/empty PDFs
+instead of silently storing an empty document.
 
 ## Not Yet
 
-- Native PDF parsing.
+- Compressed PDF streams and layout reconstruction.
 - Enrichment jobs.
 - Progress API.
 - TTL expiry/decay scanning.

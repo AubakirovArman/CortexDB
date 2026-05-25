@@ -11,7 +11,7 @@ use crate::query::{scope_id, CellMetadata};
 
 use super::persisted::{search_persisted_lexical, search_persisted_vectors};
 use super::vector::vector_from_payload;
-use super::{SearchIndexes, SearchMode, SearchQuery};
+use super::{HnswIndex, SearchIndexes, SearchMode, SearchQuery};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SearchLimit(pub usize);
@@ -92,7 +92,16 @@ impl Database {
                     return Ok(Some(Vec::new()));
                 };
                 let index = self.persisted_vector_index()?;
-                search_persisted_vectors(&index.vectors, vector, &allowed, query.limit)
+                let graph = self.persisted_hnsw_graph()?;
+                if graph.links.is_empty() {
+                    search_persisted_vectors(&index.vectors, vector, &allowed, query.limit)
+                } else {
+                    HnswIndex::from_graph(index.vectors, graph, 8, 64).search_allowed(
+                        vector,
+                        &allowed,
+                        query.limit,
+                    )
+                }
             }
             SearchMode::Hybrid => return Ok(None),
         };

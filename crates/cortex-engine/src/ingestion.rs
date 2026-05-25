@@ -5,10 +5,12 @@ use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 
 mod adapters;
+mod pdf;
 
 pub use adapters::{
     CsvIngestOptions, IngestedCell, JsonIngestOptions, PdfIngestOptions, TextIngestOptions,
 };
+pub use pdf::{extract_pdf_text, PdfExtractionStats};
 
 const MEMORY_CELL_NAMESPACE: u64 = 0x8000_0000_0000_0000;
 

@@ -8,7 +8,8 @@
 - `.aci` lexical files persist term postings, per-candidate document lengths,
   and weighted term-frequency statistics.
 - `.acv` vector files persist per-candidate integer vectors for exact dot scan.
-- `.ach` HNSW graph files persist the current experimental graph links.
+- `.ach` HNSW graph files persist the current graph links for persisted
+  vector search.
 
 The database path filters cells through `AgentView.readable_scopes`, assigns
 compact candidate ids internally, and returns full `CellId` values in
@@ -16,19 +17,19 @@ compact candidate ids internally, and returns full `CellId` values in
 
 When live segments exist and there are no uncheckpointed changes after the
 manifest checkpoint sequence, keyword search reads the persisted `.aci` postings
-directly and vector search reads persisted `.acv` vectors directly. If a WAL
-tail has newer put/patch/tombstone records, the engine falls back to the visible
-MemTable snapshot so fresh writes are not missed.
+directly and vector search reads persisted `.acv` vectors plus `.ach` graph
+links. If a WAL tail has newer put/patch/tombstone records, the engine falls
+back to the visible MemTable snapshot so fresh writes are not missed.
 
 Keyword scoring uses deterministic integer statistics. Body text has weight 1;
 an optional `title=` payload header has weight 6. Persisted `.aci` files store
 the same weighted term frequencies so checkpointed search keeps the same ranking
 signals as snapshot search.
 
-`TextAnalyzer` is the first analyzer layer for quality fixtures. It supports
-field weights, stopwords, weighted terms, and deterministic MRR checks without
-floating-point scoring. This is still intentionally simple, but it gives search
-changes a repeatable quality gate.
+`TextAnalyzer` supports field weights, stopwords, weighted terms, deterministic
+MRR checks, and built-in English/Russian/Kazakh analyzer packs. The English pack
+includes a light suffix stemmer; Russian and Kazakh packs currently provide
+tokenization plus stopword filtering without morphological stemming.
 
 Current smoke surfaces:
 
@@ -45,5 +46,5 @@ comma or space separated signed 16-bit integers.
 
 ## Not Yet
 
-- Language-specific stemming and production tokenizer packs.
-- Production ANN search over persisted HNSW pages.
+- Full morphological stemming/lemmatization packs.
+- Multi-layer HNSW with deletion and background rebuild policy.

@@ -1,0 +1,13 @@
+{
+  "name": "@cortexdb/client",
+  "version": "0.1.0",
+  "description": "Minimal CortexDB HTTP client",
+  "type": "module",
+  "exports": {
+    ".": "./cortexdb-client.ts"
+  },
+  "files": [
+    "cortexdb-client.ts"
+  ],
+  "license": "MIT"
+}

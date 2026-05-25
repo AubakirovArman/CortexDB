@@ -6,5 +6,6 @@ extra runtime dependencies.
 
 - `python/cortexdb_client.py`: stdlib Python client.
 - `typescript/cortexdb-client.ts`: fetch-based TypeScript client.
+- `python/pyproject.toml` and `typescript/package.json`: early package metadata.
 
 The stable public SDK APIs are not frozen yet.

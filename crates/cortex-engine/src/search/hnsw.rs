@@ -33,6 +33,24 @@ impl HnswIndex {
     }
 
     pub fn search(&self, query: &[i16], limit: usize) -> Vec<ScoredCandidate> {
+        self.search_filtered(query, None, limit)
+    }
+
+    pub fn search_allowed(
+        &self,
+        query: &[i16],
+        allowed: &BTreeSet<u32>,
+        limit: usize,
+    ) -> Vec<ScoredCandidate> {
+        self.search_filtered(query, Some(allowed), limit)
+    }
+
+    fn search_filtered(
+        &self,
+        query: &[i16],
+        allowed: Option<&BTreeSet<u32>>,
+        limit: usize,
+    ) -> Vec<ScoredCandidate> {
         let Some(entry) = self.vectors.keys().next().copied() else {
             return Vec::new();
         };
@@ -44,7 +62,9 @@ impl HnswIndex {
             if !visited.insert(candidate) || visited.len() > self.ef_search {
                 continue;
             }
-            scores.insert(candidate, dot_nonnegative(query, &self.vectors[&candidate]));
+            if allowed.is_none_or(|values| values.contains(&candidate)) {
+                scores.insert(candidate, dot_nonnegative(query, &self.vectors[&candidate]));
+            }
             if let Some(neighbors) = self.links.get(&candidate) {
                 for neighbor in neighbors {
                     if !visited.contains(neighbor) {

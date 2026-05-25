@@ -63,7 +63,7 @@
 - `.acv` vector pages persist integer vectors and support exact scoped vector
   scan without snapshot rebuild when there is no uncheckpointed WAL tail.
 - `.ach` HNSW graph pages persist experimental graph links next to segment
-  vector pages and are covered by validation.
+  vector pages, are covered by validation, and back persisted vector search.
 - Public scoped vector search input is exposed through CLI and HTTP over the
   current exact `.acv`/snapshot vector path.
 - ACLOG-backed replication log entries persist consensus-model `Term`,
@@ -75,18 +75,20 @@
   append-entry acknowledgements, majority election, and stale-term rejection.
 - Minimal text, flat JSON, CSV, and externally extracted PDF text ingestion
   adapters are exposed on `Database`.
+- Native simple-PDF text extraction handles uncompressed PDF text objects.
 - Minimal SDK sketches, Docker packaging, observability probes, and demo data
   are checked into the repo for integration smoke tests.
+- TCP replication transport frame handling covers vote requests and append
+  entries over loopback tests.
 
 ## Next
 
-1. Add native PDF/document parsers and ingestion job progress tracking.
-2. Add production ANN search over persisted HNSW graph pages.
-3. Add networked consensus transport and distributed recovery.
+1. Add ingestion job progress tracking.
+2. Add multi-layer HNSW deletion/rebuild policy.
+3. Add production distributed recovery orchestration.
 
 ## Not Yet
 
-- Large-scale language-specific BM25 analyzers and stemming packs.
-- Production ANN vector search over persisted graph pages.
+- Full language-specific BM25 stemming/lemmatization packs.
 - Multi-layer HNSW with deletion and rebuild policy.
-- Production consensus transport and distributed recovery.
+- Production distributed recovery orchestration.

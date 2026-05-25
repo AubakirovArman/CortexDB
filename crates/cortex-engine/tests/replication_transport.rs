@@ -2,8 +2,13 @@ use std::collections::BTreeSet;
 
 use cortex_engine::{
     AppendEntriesRequest, ConsensusState, ElectionRole, ElectionState,
-    InMemoryReplicationTransport, LogIndex, NodeId, ReplicationTransport, Term,
+    InMemoryReplicationTransport, LogIndex, NodeId, ReplicationTransport, TcpReplicationTransport,
+    Term,
 };
+use std::collections::BTreeMap;
+use std::io::{Read, Write};
+use std::net::TcpListener;
+use std::thread;
 
 #[test]
 fn election_state_wins_majority_vote() {
@@ -95,6 +100,44 @@ fn replicated_entry_acks_can_commit_consensus_state() {
 
     assert!(decision.committed);
     assert_eq!(leader.committed_entries(), vec![entry]);
+}
+
+#[test]
+fn tcp_replication_transport_sends_append_entries() {
+    let follower_voters = voters();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap().to_string();
+    let handle = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut request = String::new();
+        stream.read_to_string(&mut request).unwrap();
+        let mut state = ElectionState::new(NodeId(2), follower_voters);
+        state.current_term = Term(1);
+        let mut log = Vec::new();
+        let response =
+            cortex_engine::handle_replication_frame(&mut state, &mut log, &request).unwrap();
+        stream.write_all(response.as_bytes()).unwrap();
+        log
+    });
+
+    let mut leader = ConsensusState::new(NodeId(1), voters());
+    let entry = leader.append_local(b"put cell".to_vec());
+    let mut transport = TcpReplicationTransport::new(BTreeMap::from([(NodeId(2), addr)]));
+    let response = transport
+        .append_entries(
+            NodeId(2),
+            AppendEntriesRequest {
+                term: Term(1),
+                leader_id: NodeId(1),
+                entries: vec![entry.clone()],
+                leader_commit: LogIndex(0),
+            },
+        )
+        .unwrap();
+
+    assert!(response.success);
+    assert_eq!(response.match_index, LogIndex(1));
+    assert_eq!(handle.join().unwrap(), vec![entry]);
 }
 
 fn voters() -> BTreeSet<NodeId> {

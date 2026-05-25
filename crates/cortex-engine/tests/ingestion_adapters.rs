@@ -1,7 +1,7 @@
 use cortex_core::CellId;
-use cortex_engine::{
-    scope_id, CsvIngestOptions, Database, JsonIngestOptions, PdfIngestOptions, TextIngestOptions,
-};
+use cortex_engine::TextIngestOptions;
+use cortex_engine::{extract_pdf_text, scope_id};
+use cortex_engine::{CsvIngestOptions, Database, JsonIngestOptions, PdfIngestOptions};
 
 #[test]
 fn text_ingestion_writes_document_cell() {
@@ -92,6 +92,39 @@ fn pdf_text_ingestion_marks_external_pdf_source() {
     assert!(text.contains("source=report.pdf"));
     assert!(text.contains("source_format=pdf"));
     assert!(text.contains("page=7"));
+}
+
+#[test]
+fn native_pdf_ingestion_extracts_simple_text_objects() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let pdf = br#"%PDF-1.4
+1 0 obj
+<< /Length 64 >>
+stream
+BT /F1 12 Tf 72 720 Td (ABC budget) Tj <203132303030> Tj ET
+endstream
+endobj
+%%EOF"#;
+
+    let extracted = extract_pdf_text(pdf).unwrap();
+    assert_eq!(extracted.literal_strings, 1);
+    assert_eq!(extracted.hex_strings, 1);
+    assert!(extracted.text.contains("ABC budget"));
+    assert!(extracted.text.contains("12000"));
+
+    db.ingest_pdf_bytes(
+        CellId(40),
+        pdf,
+        PdfIngestOptions {
+            scope: "project:investments".to_owned(),
+            source: "native.pdf".to_owned(),
+            page: None,
+        },
+    )
+    .unwrap();
+    let payload = db.get_latest_cell(CellId(40)).unwrap();
+    assert!(String::from_utf8_lossy(&payload).contains("ABC budget"));
 }
 
 fn crate_view() -> cortex_aql::AgentView {

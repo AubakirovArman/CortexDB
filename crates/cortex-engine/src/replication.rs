@@ -9,9 +9,11 @@ use cortex_storage::wal::{
 };
 
 mod election;
+mod tcp;
 mod transport;
 
 pub use election::{ElectionOutcome, ElectionRole, ElectionState, VoteRequest, VoteResponse};
+pub use tcp::{handle_replication_frame, TcpReplicationTransport};
 pub use transport::{
     AppendEntriesRequest, AppendEntriesResponse, InMemoryReplicationTransport, ReplicationTransport,
 };

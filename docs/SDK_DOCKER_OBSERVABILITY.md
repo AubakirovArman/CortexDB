@@ -19,7 +19,9 @@ Minimal HTTP clients live in `sdk/`:
 - `sdk/python/cortexdb_client.py`
 - `sdk/typescript/cortexdb-client.ts`
 
-They cover put, get, search, stats, and validate. Their APIs are not frozen.
+They cover put, get, search, stats, and validate. Packaging metadata is present
+in `sdk/python/pyproject.toml` and `sdk/typescript/package.json`. Their APIs are
+not frozen.
 
 ## Observability
 

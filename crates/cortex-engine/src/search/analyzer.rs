@@ -6,6 +6,22 @@ use super::{tokenize, Bm25Index};
 pub struct TextAnalyzer {
     field_weights: BTreeMap<String, u32>,
     stopwords: BTreeSet<String>,
+    stemmer: Stemmer,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Language {
+    #[default]
+    English,
+    Russian,
+    Kazakh,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum Stemmer {
+    #[default]
+    None,
+    EnglishLight,
 }
 
 impl Default for TextAnalyzer {
@@ -17,11 +33,26 @@ impl Default for TextAnalyzer {
                 ("source".to_owned(), 1),
             ]),
             stopwords: BTreeSet::new(),
+            stemmer: Stemmer::None,
         }
     }
 }
 
 impl TextAnalyzer {
+    pub fn for_language(language: Language) -> Self {
+        Self {
+            stopwords: language_stopwords(language)
+                .iter()
+                .map(|word| (*word).to_owned())
+                .collect(),
+            stemmer: match language {
+                Language::English => Stemmer::EnglishLight,
+                Language::Russian | Language::Kazakh => Stemmer::None,
+            },
+            ..Self::default()
+        }
+    }
+
     pub fn with_stopwords(mut self, stopwords: impl IntoIterator<Item = String>) -> Self {
         self.stopwords = stopwords.into_iter().collect();
         self
@@ -35,6 +66,7 @@ impl TextAnalyzer {
         for (field, text) in fields {
             let weight = self.field_weights.get(field).copied().unwrap_or(1);
             for term in tokenize(text) {
+                let term = self.normalize_term(term);
                 if !self.stopwords.contains(&term) {
                     *terms.entry(term).or_default() += weight;
                 }
@@ -50,6 +82,13 @@ impl TextAnalyzer {
         fields: impl IntoIterator<Item = (&'a str, &'a str)>,
     ) {
         index.add_weighted_terms(cell_id, self.weighted_terms(fields));
+    }
+
+    fn normalize_term(&self, term: String) -> String {
+        match self.stemmer {
+            Stemmer::None => term,
+            Stemmer::EnglishLight => light_english_stem(term),
+        }
     }
 }
 
@@ -72,4 +111,22 @@ fn reciprocal_rank_q16(index: &Bm25Index, query: &str, relevant: u32, limit: usi
         .position(|candidate| candidate.cell_id == relevant)
         .map(|position| 65_535 / (position as u16 + 1))
         .unwrap_or(0)
+}
+
+fn language_stopwords(language: Language) -> &'static [&'static str] {
+    match language {
+        Language::English => &["a", "an", "and", "for", "of", "the", "to"],
+        Language::Russian => &["в", "и", "на", "по", "с", "за"],
+        Language::Kazakh => &["және", "мен", "үшін", "бұл"],
+    }
+}
+
+fn light_english_stem(mut term: String) -> String {
+    for suffix in ["ing", "ed", "es", "s"] {
+        if term.len() > suffix.len() + 3 && term.ends_with(suffix) {
+            term.truncate(term.len() - suffix.len());
+            break;
+        }
+    }
+    term
 }

@@ -30,12 +30,12 @@ AQL retrieve -> ContextPack -> token budget -> citation anomalies
 - `crates/cortex-aql`: AQL parser, AST, policy validation, binder, bitmap bytecode, and mock bitmap VM.
 - `crates/cortex-storage`: ACLOG WAL v0, manifest, segment, bitmap-index, lexical-index, vector-index, and HNSW graph files.
 - `crates/cortex-core`: in-memory MVCC MemTable, read transactions, cell versions, KnowledgeCell schema, and manifest primitives.
-- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, AQL `REMEMBER`, memory TTL/decay, durable feedback, source trust, `VERIFY FACT` reports with citation/numeric guards, structured and conservative natural-language contradiction hints, ContextPack v0, scoped search, analyzer quality fixtures, hybrid fusion, ingestion adapters, ACLOG-backed replication log entries, deterministic in-memory replication transport, and consensus model primitives.
+- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, AQL `REMEMBER`, memory TTL/decay, durable feedback, source trust, `VERIFY FACT` reports with citation/numeric guards, structured and conservative natural-language contradiction hints, ContextPack v0, scoped search, analyzer packs, persisted HNSW-backed vector search, ingestion adapters with simple native PDF extraction, ACLOG-backed replication log entries, TCP/in-memory replication transports, and consensus model primitives.
 - `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone/flush/compact/stats/validate/search/context/remember/verify checks.
 - `crates/cortex-server`: minimal JSON HTTP API for put/get/tombstone/flush/compact/search/context/remember/verify/health checks.
 
-BM25, vector search, HNSW, distributed placement, and server APIs exist as MVP foundations.
-They are not production-grade ranking, ANN, network consensus, or service layers yet.
+BM25, vector search, HNSW, distributed placement, and server APIs exist as MVP
+foundations. They are not production-grade distributed service layers yet.
 
 SDK sketches, Docker smoke packaging, observability endpoints, and a tiny demo
 dataset live in [`sdk/`](sdk), [`Dockerfile`](Dockerfile),
@@ -121,6 +121,7 @@ Core Alpha release notes are in
 Core benchmark instructions are in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).
 SDK, Docker, observability, and demo surfaces are documented in
 [`docs/SDK_DOCKER_OBSERVABILITY.md`](docs/SDK_DOCKER_OBSERVABILITY.md).
+Replication surfaces are documented in [`docs/REPLICATION.md`](docs/REPLICATION.md).
 
 ## Roadmap
 
