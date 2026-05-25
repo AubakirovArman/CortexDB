@@ -252,6 +252,7 @@ Epic 014 -> core benchmark baseline (closed)
 Epic 015 -> storage format versioning (closed)
 Epic 035 -> segment sort order (closed)
 Epic 036 -> segment lookup index (closed)
+Epic 108 -> persisted lexical search over `.aci` postings (closed for current keyword scorer)
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed

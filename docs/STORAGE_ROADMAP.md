@@ -56,12 +56,14 @@
 - Core benchmark baseline for put/get/checkpoint/reopen/context pack.
 - Durable AgentView persistence under `agent_views/`.
 - Public storage format inventory for current magic/version compatibility.
+- Scoped keyword search reads persisted `.aci` postings directly when there is
+  no uncheckpointed WAL tail, with MemTable snapshot fallback for fresh writes.
 
 ## Next
 
 1. Persist consensus log entries through ACLOG or a dedicated replication log.
 2. Add natural-language contradiction extraction after structured markers.
-3. Run search directly over persisted `.aci` without snapshot rebuild.
+3. Add persisted vector pages for exact vector scan without snapshot rebuild.
 
 ## Not Yet
 

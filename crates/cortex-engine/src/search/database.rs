@@ -1,12 +1,15 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_aql::AgentView;
 use cortex_core::CellId;
+use cortex_storage::indexes::BitmapIndex;
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
+use crate::query::metadata::scope_handle;
 use crate::query::{scope_id, CellMetadata};
 
+use super::persisted::search_persisted_lexical;
 use super::{SearchIndexes, SearchMode, SearchQuery};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -28,6 +31,9 @@ impl Database {
         view: &AgentView,
         limit: SearchLimit,
     ) -> EngineResult<Vec<DatabaseSearchResult>> {
+        if let Some(results) = self.search_persisted_keyword(text, view, limit)? {
+            return Ok(results);
+        }
         self.search_cells(
             SearchQuery {
                 text,
@@ -37,6 +43,50 @@ impl Database {
             },
             view,
         )
+    }
+
+    fn search_persisted_keyword(
+        &self,
+        text: &str,
+        view: &AgentView,
+        limit: SearchLimit,
+    ) -> EngineResult<Option<Vec<DatabaseSearchResult>>> {
+        if self.manifest().live_segments.is_empty() {
+            return Ok(None);
+        }
+        let checkpoint_seq = cortex_core::CommitSeq(self.manifest().checkpoint_seq);
+        if !self
+            .memtable
+            .changed_cell_ids_after(checkpoint_seq)
+            .is_empty()
+        {
+            return Ok(None);
+        }
+        let state = self.persisted_index_state()?;
+        let allowed = allowed_candidates(&state.bitmap, view);
+        let txn = self.read_txn();
+        Ok(Some(
+            search_persisted_lexical(
+                &state.lexical.terms,
+                &state.lexical.doc_lengths,
+                text,
+                &allowed,
+                limit.0,
+            )
+            .into_iter()
+            .filter_map(|candidate| {
+                let cell_id = state.candidate_to_cell.get(&candidate.cell_id)?;
+                self.get_cell(txn, *cell_id)
+                    .map(|payload| DatabaseSearchResult {
+                        cell_id: *cell_id,
+                        score: candidate.score,
+                        lexical_score: candidate.score,
+                        vector_score: 0,
+                        payload,
+                    })
+            })
+            .collect(),
+        ))
     }
 
     pub fn search_cells(
@@ -79,6 +129,16 @@ impl Database {
             })
             .collect())
     }
+}
+
+fn allowed_candidates(bitmap: &BitmapIndex, view: &AgentView) -> BTreeSet<u32> {
+    let mut allowed = BTreeSet::new();
+    for scope in &view.readable_scopes {
+        if let Some(candidates) = bitmap.bitmaps.get(&scope_handle(*scope).0) {
+            allowed.extend(candidates.iter().copied());
+        }
+    }
+    allowed
 }
 
 fn vector_line(payload: &[u8]) -> Option<Vec<i16>> {

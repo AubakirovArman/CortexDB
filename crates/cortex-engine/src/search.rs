@@ -3,6 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 mod database;
 mod hnsw;
+mod persisted;
 mod tokenizer;
 
 pub use database::{DatabaseSearchResult, SearchLimit};

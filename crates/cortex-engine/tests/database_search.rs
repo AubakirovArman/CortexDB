@@ -49,6 +49,55 @@ fn database_keyword_search_survives_checkpoint_restart() {
 }
 
 #[test]
+fn database_keyword_search_reads_persisted_aci_without_wal_tail_changes() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\n\nalpha budget approved".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=tenant:private\nstatus=ready\n\nalpha budget hidden".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+
+    let results = db
+        .search_keyword("budget", &view("project:investments"), SearchLimit(10))
+        .unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].cell_id, CellId(1));
+}
+
+#[test]
+fn database_keyword_search_falls_back_to_snapshot_for_uncheckpointed_changes() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\n\nold term".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+    db.patch_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\n\nfresh budget".to_vec(),
+    )
+    .unwrap();
+
+    let results = db
+        .search_keyword("budget", &view("project:investments"), SearchLimit(10))
+        .unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].cell_id, CellId(1));
+    assert!(String::from_utf8_lossy(&results[0].payload).contains("fresh budget"));
+}
+
+#[test]
 fn database_keyword_search_uses_body_terms_not_header_terms() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
