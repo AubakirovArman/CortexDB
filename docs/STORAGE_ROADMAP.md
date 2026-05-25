@@ -49,6 +49,7 @@
 - WAL writer bounded queue option for caller-side backpressure.
 - Balanced WAL writer group commit batches queued appends before acknowledgment.
 - WAL writer metrics for records, bytes, fsyncs, and committed batches.
+- WAL replay metrics for seen, applied, skipped, payload bytes, and safe offset.
 
 ## Next
 
@@ -56,7 +57,7 @@
 2. Persist consensus log entries through ACLOG or a dedicated replication log.
 3. Add natural-language contradiction extraction after structured markers.
 4. Run search directly over persisted `.aci` without snapshot rebuild.
-5. Add public writer metrics through engine stats.
+5. Add public WAL metrics through engine stats.
 
 ## Not Yet
 

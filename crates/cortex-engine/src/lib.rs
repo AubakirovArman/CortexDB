@@ -32,7 +32,8 @@ pub use operation::*;
 pub use query::{scope_id, CandidateId, CellMetadata, EngineAqlIndex};
 pub use repair::RepairReport;
 pub use replay::{
-    replay_wal, replay_wal_best_effort, replay_wal_best_effort_into, replay_wal_into, ReplayResult,
+    replay_wal, replay_wal_best_effort, replay_wal_best_effort_into, replay_wal_into,
+    ReplayMetrics, ReplayResult,
 };
 pub use replication::*;
 pub use search::*;

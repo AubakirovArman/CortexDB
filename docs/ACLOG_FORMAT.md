@@ -93,6 +93,10 @@ record independently.
 `WalWriterHandle::metrics()` reports records written, bytes written, fsync
 count, and committed batch count for the current writer actor.
 
+Replay returns `ReplayMetrics` with records seen, records applied, records
+skipped by checkpoint base sequence, payload bytes scanned, and safe truncate
+offset.
+
 ## Diagnostics
 
 `WalDiagnostics::summarize` reports record count, safe truncate offset, payload

@@ -22,6 +22,31 @@ fn replay_wal_reports_records_and_safe_truncate_offset() {
 }
 
 #[test]
+fn replay_wal_reports_metrics_for_seen_applied_and_skipped_records() {
+    let dir = tempfile::tempdir().unwrap();
+    let wal_path = dir.path().join("db.aclog");
+    write_header_and_records(
+        &wal_path,
+        &[
+            (CommitSeq(1), put_op(CellId(1), b"one")),
+            (CommitSeq(2), put_op(CellId(2), b"two")),
+        ],
+        false,
+    );
+
+    let replay =
+        cortex_engine::replay_wal_into(&wal_path, Default::default(), CommitSeq(1)).unwrap();
+    assert_eq!(replay.metrics.records_seen, 2);
+    assert_eq!(replay.metrics.records_applied, 1);
+    assert_eq!(replay.metrics.records_skipped, 1);
+    assert!(replay.metrics.payload_bytes > 0);
+    assert_eq!(
+        replay.metrics.safe_truncate_offset,
+        replay.safe_truncate_offset
+    );
+}
+
+#[test]
 fn open_truncates_partial_tail_before_next_append() {
     let dir = tempfile::tempdir().unwrap();
     let wal_path = dir.path().join("db.aclog");
@@ -114,6 +139,8 @@ fn write_header_and_records(
 fn assert_replayed_one(replay: ReplayResult, seq: CommitSeq) {
     assert_eq!(replay.last_seq, seq);
     assert_eq!(replay.records_replayed, 1);
+    assert_eq!(replay.metrics.records_applied, 1);
+    assert_eq!(replay.metrics.records_seen, 1);
     assert!(replay.safe_truncate_offset > WalCodec::file_header_len() as u64);
     assert_eq!(
         replay
