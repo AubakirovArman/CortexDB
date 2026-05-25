@@ -23,6 +23,16 @@ Default binder values:
 - budget: `AgentView.default_context_budget_tokens`
 - candidate limit: `AgentView.default_candidate_limit`
 
+## EXPLAIN
+
+Parser support exists for future explain APIs:
+
+```sql
+EXPLAIN RETRIEVE CONTEXT FOR TASK "x" IN BRAIN investment_projects;
+```
+
+The explain executor output is not implemented yet.
+
 Supported retrieval modes:
 
 - `fast`
@@ -37,6 +47,19 @@ Supported predicates currently use `=` with string or identifier literals:
 ```sql
 WHERE space = project:investments AND status = "ready"
 ```
+
+`IN` is supported for list literals:
+
+```sql
+WHERE status IN ["ready", "verified"]
+```
+
+Supported filter fields:
+
+- `space` / `scope`
+- `status`
+- `type` / `cell_type`
+- `memory_type`
 
 Operator precedence:
 

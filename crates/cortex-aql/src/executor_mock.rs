@@ -41,6 +41,7 @@ pub fn eval_bitmap_program<P: BitmapProvider>(
                     .bitmap(handle)
                     .ok_or(BitmapVmError::MissingBitmap(handle))?,
             ),
+            BitmapOp::PushUniverse => stack.push(provider.universe()),
             BitmapOp::PushAgentAllowed => stack.push(provider.agent_allowed()),
             BitmapOp::PushLive => stack.push(provider.live()),
             BitmapOp::And => {

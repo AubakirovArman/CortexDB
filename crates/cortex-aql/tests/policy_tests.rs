@@ -8,6 +8,7 @@ use cortex_aql::{
 fn view() -> AgentView {
     AgentView {
         agent_id: AgentId(1),
+        label: None,
         readable_brains: BTreeSet::from([BrainId(10)]),
         readable_scopes: BTreeSet::from([ScopeId(20)]),
         writable_scopes: BTreeSet::new(),
@@ -18,12 +19,12 @@ fn view() -> AgentView {
         max_candidate_limit: 50,
         default_candidate_limit: 10,
         min_required_confidence_q16: Q16_ZERO,
-        max_ttl_seconds: 3_600,
+        max_ttl_seconds: Some(3_600),
         allow_remember: true,
         allow_verify_fact: false,
         allow_audit_mode: false,
         require_citations_by_default: false,
-        private_scope: ScopeId(99),
+        private_scope: Some(ScopeId(99)),
     }
 }
 
@@ -54,6 +55,32 @@ fn candidate_limit_clamp() {
         report.diagnostics[0].code,
         PolicyError::CandidateLimitTooHigh.code()
     );
+}
+
+#[test]
+fn report_allowed_and_clamps_are_exposed() {
+    let view = view();
+    let (report, _) =
+        PolicyValidator::new(&view).diagnose_retrieve(BrainId(10), RetrievalMode::Fast, 500, 500);
+    assert!(report.allowed());
+    assert!(report.has_clamps());
+    assert!(report.safe_export()[0].agent_id.is_none());
+    assert_eq!(
+        report.internal_export(AgentId(1))[0].agent_id,
+        Some(AgentId(1))
+    );
+}
+
+#[test]
+fn agent_view_helpers_respect_capabilities() {
+    let mut view = view();
+    assert!(!view.can_use_audit_mode());
+    assert!(!view.can_verify_fact());
+    assert!(view.can_remember_type(MemoryType::Decision));
+    view.allow_remember = false;
+    assert!(!view.can_remember_type(MemoryType::Decision));
+    assert_eq!(view.effective_budget(10_000), 1_000);
+    assert_eq!(view.effective_candidate_limit(500), 50);
 }
 
 #[test]

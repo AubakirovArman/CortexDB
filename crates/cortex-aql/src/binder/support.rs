@@ -3,7 +3,9 @@ use crate::ast::{DecimalLiteral, Requirement, TtlValue};
 use crate::policy::EffectiveRetrievePolicy;
 use crate::types::{RetrievalMode, Q16, Q16_ONE};
 
-use super::{BindError, BitmapOp, ContextPolicy, QualityThresholds, RetrievalWeights};
+use super::{
+    BindError, BitmapOp, BitmapProgram, ContextPolicy, QualityThresholds, RetrievalWeights,
+};
 
 pub fn decimal_to_q16(literal: &DecimalLiteral<'_>) -> Result<Q16, BindError> {
     let Some((whole, fraction)) = literal.raw.split_once('.') else {
@@ -36,7 +38,10 @@ pub fn compute_bitmap_stack_depth(ops: &[BitmapOp]) -> Result<usize, BindError> 
     let mut max_depth = 0usize;
     for op in ops {
         match op {
-            BitmapOp::Push(_) | BitmapOp::PushAgentAllowed | BitmapOp::PushLive => depth += 1,
+            BitmapOp::Push(_)
+            | BitmapOp::PushUniverse
+            | BitmapOp::PushAgentAllowed
+            | BitmapOp::PushLive => depth += 1,
             BitmapOp::And | BitmapOp::Or => {
                 if depth < 2 {
                     return Err(BindError::InvalidBitmapProgram);
@@ -54,6 +59,35 @@ pub fn compute_bitmap_stack_depth(ops: &[BitmapOp]) -> Result<usize, BindError> 
     (depth == 1)
         .then_some(max_depth)
         .ok_or(BindError::InvalidBitmapProgram)
+}
+
+pub fn optimize_bitmap_ops(ops: Vec<BitmapOp>) -> Vec<BitmapOp> {
+    let mut optimized = Vec::with_capacity(ops.len());
+    for op in ops {
+        optimized.push(op);
+        loop {
+            let len = optimized.len();
+            if len >= 2
+                && optimized[len - 1] == BitmapOp::Not
+                && optimized[len - 2] == BitmapOp::Not
+            {
+                optimized.truncate(len - 2);
+                continue;
+            }
+            if len >= 3
+                && optimized[len - 1] == BitmapOp::And
+                && optimized[len - 2] == optimized[len - 3]
+                && is_push(&optimized[len - 2])
+            {
+                let push = optimized[len - 2].clone();
+                optimized.truncate(len - 3);
+                optimized.push(push);
+                continue;
+            }
+            break;
+        }
+    }
+    optimized
 }
 
 pub fn normalize_weights(weights: RetrievalWeights) -> RetrievalWeights {
@@ -129,4 +163,41 @@ impl RetrievalWeights {
             + u32::from(self.recency_q16)
             + u32::from(self.trust_q16)
     }
+}
+
+impl BitmapProgram {
+    pub fn validate(&self) -> Result<(), BindError> {
+        compute_bitmap_stack_depth(&self.ops).map(|_| ())
+    }
+
+    pub fn estimated_cost(&self) -> u64 {
+        self.ops
+            .iter()
+            .map(|op| match op {
+                BitmapOp::Push(_) => 3,
+                BitmapOp::PushUniverse | BitmapOp::PushAgentAllowed | BitmapOp::PushLive => 1,
+                BitmapOp::And | BitmapOp::Or => 2,
+                BitmapOp::Not => 1,
+            })
+            .sum()
+    }
+
+    pub fn debug_bytecode(&self) -> String {
+        self.ops
+            .iter()
+            .enumerate()
+            .map(|(index, op)| format!("{index:04}: {op:?}"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+}
+
+fn is_push(op: &BitmapOp) -> bool {
+    matches!(
+        op,
+        BitmapOp::Push(_)
+            | BitmapOp::PushUniverse
+            | BitmapOp::PushAgentAllowed
+            | BitmapOp::PushLive
+    )
 }

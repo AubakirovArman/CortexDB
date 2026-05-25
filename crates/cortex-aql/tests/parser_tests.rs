@@ -116,6 +116,27 @@ WHERE NOT status = "ready" AND space = "s" OR memory_type = "decision";"#,
 }
 
 #[test]
+fn parse_in_list_literal() {
+    let raw = retrieve(
+        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN b
+WHERE status IN ["ready", verified];"#,
+    );
+    let Condition::Predicate {
+        comparator,
+        literal,
+        ..
+    } = raw.where_clause.unwrap().node
+    else {
+        panic!("expected predicate");
+    };
+    assert!(matches!(comparator.node, cortex_aql::Comparator::In));
+    let Literal::List(values) = literal.node else {
+        panic!("expected list");
+    };
+    assert_eq!(values.len(), 2);
+}
+
+#[test]
 fn parse_verify_fact() {
     let statement = parse_aql(r#"VERIFY FACT "revenue increased" IN BRAIN finance;"#).unwrap();
     let AqlStatement::VerifyFact(raw) = statement else {
@@ -123,6 +144,15 @@ fn parse_verify_fact() {
     };
     assert_eq!(raw.fact.node.value, "revenue increased");
     assert_eq!(raw.brain.node.value, "finance");
+}
+
+#[test]
+fn parse_explain_retrieve_context() {
+    let statement = parse_aql(r#"EXPLAIN RETRIEVE CONTEXT FOR TASK "x" IN BRAIN b;"#).unwrap();
+    let AqlStatement::Explain(inner) = statement else {
+        panic!("expected explain");
+    };
+    assert!(matches!(*inner, AqlStatement::RetrieveContext(_)));
 }
 
 #[test]
