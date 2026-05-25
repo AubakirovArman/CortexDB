@@ -20,6 +20,15 @@ class CortexDBClient:
         body = json.dumps({"scope": scope, "query": query, "limit": limit}).encode()
         return self._request("POST", "/v1/search", body)
 
+    def context(self, scope: str, aql: str) -> dict:
+        return self._request("POST", f"/v1/context?scope={scope}", aql.encode())
+
+    def verify(self, scope: str, aql: str) -> dict:
+        return self._request("POST", f"/v1/verify?scope={scope}", aql.encode())
+
+    def remember(self, scope: str, aql: str) -> dict:
+        return self._request("POST", f"/v1/remember?scope={scope}", aql.encode())
+
     def validate(self) -> dict:
         return self._request("GET", "/v1/validate", b"")
 

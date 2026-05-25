@@ -16,6 +16,18 @@ export class CortexDBClient {
     return this.request("POST", "/v1/search", { scope, query, limit });
   }
 
+  retrieveContext(scope: string, aql: string): Promise<unknown> {
+    return this.request("POST", `/v1/context?scope=${scope}`, aql);
+  }
+
+  verifyFact(scope: string, aql: string): Promise<unknown> {
+    return this.request("POST", `/v1/verify?scope=${scope}`, aql);
+  }
+
+  remember(scope: string, aql: string): Promise<unknown> {
+    return this.request("POST", `/v1/remember?scope=${scope}`, aql);
+  }
+
   validate(): Promise<unknown> {
     return this.request("GET", "/v1/validate");
   }

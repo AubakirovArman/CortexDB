@@ -60,6 +60,23 @@ impl Database {
         )
     }
 
+    pub fn search_vector_exact(
+        &self,
+        vector: &[i16],
+        view: &AgentView,
+        limit: SearchLimit,
+    ) -> EngineResult<Vec<DatabaseSearchResult>> {
+        self.search_cells(
+            SearchQuery {
+                text: "",
+                vector: Some(vector),
+                limit: limit.0,
+                mode: SearchMode::VectorExact,
+            },
+            view,
+        )
+    }
+
     fn search_persisted_query(
         &self,
         query: SearchQuery<'_>,
@@ -103,6 +120,13 @@ impl Database {
                     )
                 }
             }
+            SearchMode::VectorExact => {
+                let Some(vector) = query.vector else {
+                    return Ok(Some(Vec::new()));
+                };
+                let index = self.persisted_vector_index()?;
+                search_persisted_vectors(&index.vectors, vector, &allowed, query.limit)
+            }
             SearchMode::Hybrid => return Ok(None),
         };
         let txn = self.read_txn();
@@ -114,7 +138,7 @@ impl Database {
                     self.get_cell(txn, *cell_id).map(|payload| {
                         let (lexical_score, vector_score) = match query.mode {
                             SearchMode::Keyword => (candidate.score, 0),
-                            SearchMode::Vector => (0, candidate.score),
+                            SearchMode::Vector | SearchMode::VectorExact => (0, candidate.score),
                             SearchMode::Hybrid => (0, 0),
                         };
                         DatabaseSearchResult {

@@ -310,6 +310,17 @@ fn run(args: Vec<String>) -> Result<String, String> {
                 .map_err(|error| error.to_string())?;
             Ok(format_search_results(&results))
         }
+        "search-vector-exact" => {
+            let [scope, vector] = rest else {
+                return Err(usage());
+            };
+            let vector = parse_vector_literal(vector)?;
+            let db = Database::open(path).map_err(|error| error.to_string())?;
+            let results = db
+                .search_vector_exact(&vector, &view_for_scope(scope), SearchLimit(20))
+                .map_err(|error| error.to_string())?;
+            Ok(format_search_results(&results))
+        }
         "unlock" => {
             let [flag] = rest else {
                 return Err(usage());

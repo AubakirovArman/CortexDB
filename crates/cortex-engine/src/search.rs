@@ -24,6 +24,7 @@ pub struct ScoredCandidate {
 pub enum SearchMode {
     Keyword,
     Vector,
+    VectorExact,
     Hybrid,
 }
 
@@ -164,7 +165,7 @@ impl SearchIndexes {
                 .into_iter()
                 .map(SearchResult::from_lexical)
                 .collect(),
-            SearchMode::Vector => query
+            SearchMode::Vector | SearchMode::VectorExact => query
                 .vector
                 .map(|vector| self.vector.search_dot(vector, query.limit))
                 .unwrap_or_default()
