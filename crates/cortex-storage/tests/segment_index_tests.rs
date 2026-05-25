@@ -32,6 +32,28 @@ fn acs_segment_roundtrips_cells() {
 }
 
 #[test]
+fn acs_segment_persists_cells_in_candidate_order() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("ordered.acs");
+    SegmentWriter::write(
+        &path,
+        &[
+            segment_cell(3, 30),
+            segment_cell(1, 10),
+            segment_cell(2, 20),
+        ],
+    )
+    .unwrap();
+
+    let candidates = SegmentReader::read(&path)
+        .unwrap()
+        .into_iter()
+        .map(|cell| cell.candidate_id)
+        .collect::<Vec<_>>();
+    assert_eq!(candidates, vec![1, 2, 3]);
+}
+
+#[test]
 fn acb_bitmap_index_roundtrips_sorted_sets() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("0001.acb");
@@ -207,6 +229,16 @@ fn corrupt_last_byte(path: &std::path::Path) {
     let last = bytes.last_mut().unwrap();
     *last ^= 0xff;
     std::fs::write(path, bytes).unwrap();
+}
+
+fn segment_cell(candidate_id: u32, cell_id: u64) -> SegmentCell {
+    SegmentCell {
+        candidate_id,
+        cell_id,
+        created_seq: candidate_id as u64,
+        deleted_seq: None,
+        payload: cell_id.to_le_bytes().to_vec(),
+    }
 }
 
 fn put_u16(out: &mut Vec<u8>, value: u16) {

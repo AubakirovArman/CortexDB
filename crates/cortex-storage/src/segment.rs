@@ -24,7 +24,9 @@ impl SegmentWriter {
         let mut out = Vec::new();
         out.extend_from_slice(&SEGMENT_MAGIC);
         put_u32(&mut out, cells.len() as u32);
-        for cell in cells {
+        let mut ordered = cells.iter().collect::<Vec<_>>();
+        ordered.sort_by_key(|cell| cell.candidate_id);
+        for cell in ordered {
             put_u64(&mut out, cell.cell_id);
             put_u32(&mut out, cell.candidate_id);
             put_u64(&mut out, cell.created_seq);

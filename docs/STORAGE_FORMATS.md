@@ -30,6 +30,8 @@ repeat cell_count:
 crc32c u32 over all previous bytes
 ```
 
+Writers persist cells in ascending `candidate_id` order.
+
 ## Bitmap Index `.acb`
 
 ```text
