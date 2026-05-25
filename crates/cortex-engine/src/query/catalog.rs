@@ -21,6 +21,10 @@ impl AqlCatalog for EngineAqlIndex {
         Some(scope_id(name))
     }
 
+    fn resolve_write_scope(&self, name: &str) -> Option<ScopeId> {
+        Some(scope_id(name))
+    }
+
     fn resolve_status(&self, _brain: BrainId, status: &str) -> Option<StatusId> {
         Some(status_id(status))
     }

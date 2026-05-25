@@ -13,6 +13,7 @@ fn put_knowledge_cell_encodes_metadata_for_aql_retrieve() {
             status: "verified".to_owned(),
             cell_type: KnowledgeCellType::Fact,
             memory_type: None,
+            ttl_seconds: None,
             source: Some("annual-report".to_owned()),
         },
         "Бюджет проекта ABC подтвержден",
@@ -44,6 +45,68 @@ fn knowledge_cell_metadata_sanitizes_header_lines() {
     assert!(payload.contains("scope=tenant alpha"));
 }
 
+#[test]
+fn remember_aql_writes_policy_checked_memory_cell() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let result = db
+        .remember_aql(
+            r#"REMEMBER "use conservative budget" IN SCOPE project:investments AS TYPE decision TTL 60 SECONDS;"#,
+            &memory_view(true),
+        )
+        .unwrap();
+    assert_eq!(result.ttl_seconds, Some(60));
+
+    let payload = db.get_latest_cell(result.cell_id).unwrap();
+    let text = String::from_utf8_lossy(&payload);
+    assert!(text.contains("scope=project:investments"));
+    assert!(text.contains("type=memory"));
+    assert!(text.contains("memory_type=decision"));
+    assert!(text.contains("ttl_seconds=60"));
+    assert!(text.contains("use conservative budget"));
+
+    let cells = db
+        .retrieve_aql(
+            r#"RETRIEVE CONTEXT FOR TASK "memory" IN BRAIN investment_projects
+WHERE scope = project:investments AND type = "memory" AND memory_type = "decision" LIMIT 10 CANDIDATES;"#,
+            &memory_view(true),
+        )
+        .unwrap();
+    assert_eq!(cells[0].cell_id, result.cell_id);
+}
+
+#[test]
+fn remember_aql_denied_without_write_scope() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let error = db
+        .remember_aql(
+            r#"REMEMBER "blocked" IN SCOPE project:investments AS TYPE decision;"#,
+            &memory_view(false),
+        )
+        .unwrap_err();
+    assert!(error.to_string().contains("ScopeNotWritable"));
+}
+
+#[test]
+fn remember_aql_survives_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    let cell_id = {
+        let mut db = Database::open(dir.path()).unwrap();
+        let result = db
+            .remember_aql(
+                r#"REMEMBER "persist this memory" IN SCOPE project:investments AS TYPE decision;"#,
+                &memory_view(true),
+            )
+            .unwrap();
+        result.cell_id
+    };
+
+    let db = Database::open(dir.path()).unwrap();
+    let payload = db.get_latest_cell(cell_id).unwrap();
+    assert!(String::from_utf8_lossy(&payload).contains("persist this memory"));
+}
+
 fn view() -> AgentView {
     AgentView {
         agent_id: AgentId(1),
@@ -65,4 +128,13 @@ fn view() -> AgentView {
         require_citations_by_default: false,
         private_scope: None,
     }
+}
+
+fn memory_view(can_write: bool) -> AgentView {
+    let mut view = view();
+    view.allow_remember = true;
+    if can_write {
+        view.writable_scopes = BTreeSet::from([scope_id("project:investments")]);
+    }
+    view
 }

@@ -32,14 +32,15 @@
 - Search API v1 with Unicode tokenization, field weights, and hybrid fusion.
 - ContextPack sparse redundancy reduction with anomaly diagnostics.
 - Structured `KnowledgeCell` ingestion API over the current payload encoding.
+- Policy-checked AQL `REMEMBER` execution into memory cells.
 
 ## Next
 
-1. Add search CLI/HTTP surfaces and persisted lexical metadata v2.
-2. Formalize core cell metadata instead of payload-line metadata parsing.
-3. Add WAL writer backpressure and real group commit batching.
-4. Persist consensus log entries through ACLOG or a dedicated replication log.
-5. Add real network replication and leader election.
+1. Add TTL expiry/decay for memory cells.
+2. Add search CLI/HTTP surfaces and persisted lexical metadata v2.
+3. Formalize core cell metadata instead of payload-line metadata parsing.
+4. Add WAL writer backpressure and real group commit batching.
+5. Persist consensus log entries through ACLOG or a dedicated replication log.
 
 ## Not Yet
 

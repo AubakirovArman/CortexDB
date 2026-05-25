@@ -254,6 +254,7 @@ impl<'a, C: AqlCatalog> Binder<'a, C> {
             .map_err(BindError::PolicyDenied)?;
         Ok(BoundRememberPlan {
             scope_id: scope,
+            scope_name: raw.scope.node.value.to_string(),
             memory_type,
             content: raw.content.node.value.to_string(),
             ttl_seconds,

@@ -36,6 +36,7 @@ pub struct BoundVerifyFactPlan {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BoundRememberPlan {
     pub scope_id: ScopeId,
+    pub scope_name: String,
     pub memory_type: MemoryType,
     pub content: String,
     pub ttl_seconds: Option<u64>,

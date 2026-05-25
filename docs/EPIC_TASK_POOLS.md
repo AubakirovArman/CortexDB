@@ -241,11 +241,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 The active slice is:
 
 ```text
-Epic 141 -> KnowledgeCell schema v1
-Epic 142 -> metadata encoding bridge
-Epic 143 -> put cell metadata API
-Epic 144 -> document block cell type
-Epic 145 -> fact cell type
+Epic 161 -> agent memory foundation
+Epic 165 -> memory TTL metadata
+Epic 167 -> REMEMBER execution
+Epic 169 -> memory retrieval through AQL filters
+Epic 179 -> agent API memory primitive
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed
