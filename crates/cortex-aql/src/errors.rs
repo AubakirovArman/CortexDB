@@ -3,6 +3,7 @@ use crate::ast::SourceSpan;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AqlParseErrorKind {
     Unexpected,
+    ExpectedKeyword,
     Incomplete,
     InvalidInteger,
     InvalidMode,
@@ -19,18 +20,30 @@ pub struct AqlParseError {
 
 impl AqlParseError {
     pub fn new(kind: AqlParseErrorKind, span: SourceSpan) -> Self {
-        let message = match kind {
-            AqlParseErrorKind::Unexpected => "unexpected AQL syntax",
-            AqlParseErrorKind::Incomplete => "incomplete AQL input",
-            AqlParseErrorKind::InvalidInteger => "invalid integer literal",
-            AqlParseErrorKind::InvalidMode => "invalid retrieval mode",
-            AqlParseErrorKind::InvalidStringEscape => "invalid string escape",
-            AqlParseErrorKind::WhereDepthExceeded => "WHERE expression depth exceeded",
-        };
+        let message = format!(
+            "{} at line {}, column {}",
+            kind.safe_message(),
+            span.line,
+            span.column
+        );
         Self {
             kind,
             span,
-            message: message.to_owned(),
+            message,
+        }
+    }
+}
+
+impl AqlParseErrorKind {
+    pub fn safe_message(&self) -> &'static str {
+        match self {
+            Self::Unexpected => "unexpected AQL syntax",
+            Self::ExpectedKeyword => "expected AQL keyword",
+            Self::Incomplete => "incomplete AQL input",
+            Self::InvalidInteger => "invalid integer literal",
+            Self::InvalidMode => "invalid retrieval mode",
+            Self::InvalidStringEscape => "invalid string escape",
+            Self::WhereDepthExceeded => "WHERE expression depth exceeded",
         }
     }
 }
