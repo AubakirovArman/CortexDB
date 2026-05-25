@@ -12,6 +12,6 @@ pub use ast::*;
 pub use binder::*;
 pub use errors::*;
 pub use executor_mock::*;
-pub use parser::parse_aql;
+pub use parser::{parse_aql, parse_aql_diagnostic};
 pub use policy::*;
 pub use types::*;

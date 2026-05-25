@@ -122,6 +122,30 @@ REQUIRE confidence >= 0.80;"#,
 }
 
 #[test]
+fn require_source_trust_affects_quality_thresholds() {
+    let raw = retrieve(
+        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain
+REQUIRE source_trust >= 0.90;"#,
+    );
+    let plan = Binder::new(&catalog(), &view())
+        .bind_retrieve(&raw)
+        .unwrap();
+    assert_eq!(plan.quality_thresholds.min_source_trust_q16, 58_982);
+}
+
+#[test]
+fn require_freshness_affects_quality_thresholds() {
+    let raw = retrieve(
+        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain
+REQUIRE freshness <= 86400 SECONDS;"#,
+    );
+    let plan = Binder::new(&catalog(), &view())
+        .bind_retrieve(&raw)
+        .unwrap();
+    assert_eq!(plan.quality_thresholds.max_freshness_seconds, Some(86_400));
+}
+
+#[test]
 fn require_citations_enables_citation_requirement() {
     let raw = retrieve(r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain REQUIRE citations;"#);
     let plan = Binder::new(&catalog(), &view())
@@ -132,6 +156,14 @@ fn require_citations_enables_citation_requirement() {
 
 #[test]
 fn decimal_to_q16_rejects_values_above_one() {
+    assert_eq!(
+        decimal_to_q16(&DecimalLiteral::borrowed("0.0")).unwrap(),
+        Q16_ZERO
+    );
+    assert_eq!(
+        decimal_to_q16(&DecimalLiteral::borrowed("0.5")).unwrap(),
+        32_768
+    );
     assert_eq!(
         decimal_to_q16(&DecimalLiteral::borrowed("1.0")).unwrap(),
         Q16_ONE

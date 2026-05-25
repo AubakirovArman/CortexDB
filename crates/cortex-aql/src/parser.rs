@@ -31,6 +31,10 @@ pub(super) struct ParseFailure<'a> {
 }
 
 pub fn parse_aql(input: &str) -> Result<AqlStatement<'_>, AqlParseError> {
+    parse_aql_diagnostic(input)
+}
+
+pub fn parse_aql_diagnostic(input: &str) -> Result<AqlStatement<'_>, AqlParseError> {
     match all_consuming(delimited(multispace0, parse_statement, multispace0))(Span::new(input)) {
         Ok((_, statement)) => Ok(statement),
         Err(Err::Error(error)) | Err(Err::Failure(error)) => {
@@ -155,7 +159,15 @@ where
 }
 
 pub(super) fn kw<'a>(keyword: &'static str) -> impl FnMut(Span<'a>) -> PResult<'a, Span<'a>> {
-    tag_no_case(keyword)
+    move |input| match tag_no_case::<_, _, ParseFailure<'a>>(keyword)(input) {
+        Ok(parsed) => Ok(parsed),
+        Err(Err::Error(_)) => Err(Err::Error(ParseFailure::new(
+            input,
+            AqlParseErrorKind::ExpectedKeyword,
+        ))),
+        Err(Err::Failure(failure)) => Err(Err::Failure(failure)),
+        Err(Err::Incomplete(needed)) => Err(Err::Incomplete(needed)),
+    }
 }
 
 pub(super) fn ws1(input: Span<'_>) -> PResult<'_, Span<'_>> {

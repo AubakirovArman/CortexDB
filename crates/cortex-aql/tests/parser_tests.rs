@@ -1,7 +1,8 @@
 use std::borrow::Cow;
 
 use cortex_aql::{
-    parse_aql, AqlParseErrorKind, AqlStatement, Condition, Literal, Requirement, RetrievalMode,
+    parse_aql, parse_aql_diagnostic, AqlParseErrorKind, AqlStatement, Condition, Literal,
+    Requirement, RetrievalMode,
 };
 
 fn retrieve(query: &str) -> Box<cortex_aql::RawRetrieveContext<'_>> {
@@ -155,6 +156,39 @@ fn invalid_mode_fails() {
         parse_aql(r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN b USING MODE turbo BUDGET 1 TOKENS;"#)
             .unwrap_err();
     assert_eq!(error.kind, AqlParseErrorKind::InvalidMode);
+}
+
+#[test]
+fn multiline_error_reports_line_and_column() {
+    let error = parse_aql_diagnostic(
+        r#"RETRIEVE CONTEXT
+FOR TASK "x"
+IN BRAIN b
+USING MODE turbo
+BUDGET 1 TOKENS;"#,
+    )
+    .unwrap_err();
+    assert_eq!(error.kind, AqlParseErrorKind::InvalidMode);
+    assert_eq!(error.span.line, 4);
+    assert_eq!(error.span.column, 12);
+    assert!(error.message.contains("line 4, column 12"));
+}
+
+#[test]
+fn expected_keyword_is_reported() {
+    let error = parse_aql(r#"VERIFY FACT "x" ON BRAIN b;"#).unwrap_err();
+    assert_eq!(error.kind, AqlParseErrorKind::ExpectedKeyword);
+}
+
+#[test]
+fn very_deep_where_fails_with_depth_error() {
+    let mut query = String::from(r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN b WHERE "#);
+    for _ in 0..34 {
+        query.push_str("NOT ");
+    }
+    query.push_str(r#"status = "ready";"#);
+    let error = parse_aql(&query).unwrap_err();
+    assert_eq!(error.kind, AqlParseErrorKind::WhereDepthExceeded);
 }
 
 #[test]

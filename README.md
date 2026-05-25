@@ -1,5 +1,7 @@
 # CortexDB
 
+[![Rust](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml/badge.svg)](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml)
+
 Agent-native context database prototype for AI agents.
 
 This repository currently implements the first compiler milestone:
