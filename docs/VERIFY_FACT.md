@@ -27,6 +27,10 @@ For now the engine returns `Supported` when readable evidence overlaps the fact
 terms, otherwise `Insufficient`. The enum reserves `Contradicted` and `Mixed`,
 but contradiction detection is not implemented yet.
 
+Evidence includes `source_trust_q16`. If a payload has `source_trust_q16=<u16>`,
+that value is used as an integer trust signal. Evidence with the same term match
+count is ordered by higher trust first. Missing trust defaults to `32768`.
+
 Smoke surfaces:
 
 ```text

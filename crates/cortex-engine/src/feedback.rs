@@ -36,6 +36,7 @@ impl Database {
                 memory_type: None,
                 ttl_seconds: None,
                 created_unix_seconds: Some(unix_now()),
+                source_trust_q16: None,
                 source: Some(format!("cell:{}", feedback.source_cell_id.0)),
             },
             feedback_payload(&feedback),

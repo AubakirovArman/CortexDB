@@ -45,6 +45,7 @@ impl Database {
                 memory_type: Some(memory_type_name(memory_type).to_owned()),
                 ttl_seconds,
                 created_unix_seconds: Some(unix_now()),
+                source_trust_q16: None,
                 source: Some(format!("agent:{}", view.agent_id.0)),
             },
             content.into_bytes(),

@@ -68,8 +68,8 @@ pub(crate) fn format_verification_report(report: &VerificationReport) -> String 
     )];
     lines.extend(report.evidence.iter().map(|evidence| {
         format!(
-            "cell_id={} matched_terms={}",
-            evidence.cell_id.0, evidence.matched_terms
+            "cell_id={} matched_terms={} source_trust_q16={}",
+            evidence.cell_id.0, evidence.matched_terms, evidence.source_trust_q16
         )
     }));
     lines.join("\n")

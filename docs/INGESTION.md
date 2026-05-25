@@ -16,6 +16,7 @@ scope=project:investments
 status=verified
 type=fact
 source=annual-report
+source_trust_q16=60000
 
 body bytes...
 ```

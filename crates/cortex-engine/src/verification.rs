@@ -1,4 +1,4 @@
-use cortex_aql::{parse_aql, AgentView, Binder, BoundPlan};
+use cortex_aql::{parse_aql, AgentView, Binder, BoundPlan, Q16};
 use cortex_core::CellId;
 
 use crate::database::Database;
@@ -18,6 +18,7 @@ pub enum VerificationStatus {
 pub struct VerificationEvidence {
     pub cell_id: CellId,
     pub matched_terms: u32,
+    pub source_trust_q16: Q16,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -43,7 +44,13 @@ impl Database {
                 evidence_for_version(version.cell_id, &version.payload, view, &fact_terms)
             })
             .collect::<Vec<_>>();
-        evidence.sort_by_key(|item| (std::cmp::Reverse(item.matched_terms), item.cell_id));
+        evidence.sort_by_key(|item| {
+            (
+                std::cmp::Reverse(item.matched_terms),
+                std::cmp::Reverse(item.source_trust_q16),
+                item.cell_id,
+            )
+        });
         evidence.truncate(8);
         let status = if evidence.is_empty() {
             VerificationStatus::Insufficient
@@ -76,5 +83,14 @@ fn evidence_for_version(
     (matched_terms > 0).then_some(VerificationEvidence {
         cell_id,
         matched_terms: matched_terms as u32,
+        source_trust_q16: source_trust_q16(payload),
     })
+}
+
+fn source_trust_q16(payload: &[u8]) -> Q16 {
+    let text = String::from_utf8_lossy(payload);
+    text.lines()
+        .find_map(|line| line.strip_prefix("source_trust_q16="))
+        .and_then(|value| value.trim().parse::<u16>().ok())
+        .unwrap_or(32_768)
 }

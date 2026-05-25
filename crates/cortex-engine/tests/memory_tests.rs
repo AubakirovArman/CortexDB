@@ -76,6 +76,7 @@ fn memory_cell(created: u64, ttl: Option<u64>) -> KnowledgeCell {
             memory_type: Some("decision".to_owned()),
             ttl_seconds: ttl,
             created_unix_seconds: Some(created),
+            source_trust_q16: None,
             source: Some("test".to_owned()),
         },
         "memory payload",

@@ -244,7 +244,7 @@ The active slice is:
 Epic 161 -> agent memory foundation
 Epic 165 -> memory TTL expiry
 Epic 170 -> feedback aggregation
-Epic 175 -> source trust model
+Epic 175 -> contradiction detection
 Epic 174 -> VERIFY FACT report v0
 ```
 

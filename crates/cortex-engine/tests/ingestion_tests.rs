@@ -15,6 +15,7 @@ fn put_knowledge_cell_encodes_metadata_for_aql_retrieve() {
             memory_type: None,
             ttl_seconds: None,
             created_unix_seconds: None,
+            source_trust_q16: Some(60_000),
             source: Some("annual-report".to_owned()),
         },
         "Бюджет проекта ABC подтвержден",
@@ -31,6 +32,7 @@ WHERE space = project:investments AND status = "verified" AND type = "fact" LIMI
     assert_eq!(cells.len(), 1);
     assert_eq!(cells[0].cell_id, CellId(77));
     assert!(String::from_utf8_lossy(&cells[0].payload).contains("source=annual-report"));
+    assert!(String::from_utf8_lossy(&cells[0].payload).contains("source_trust_q16=60000"));
 }
 
 #[test]

@@ -19,6 +19,7 @@ pub struct KnowledgeCellMetadata {
     pub memory_type: Option<String>,
     pub ttl_seconds: Option<u64>,
     pub created_unix_seconds: Option<u64>,
+    pub source_trust_q16: Option<u16>,
     pub source: Option<String>,
 }
 
@@ -51,6 +52,9 @@ impl KnowledgeCell {
         if let Some(created_unix_seconds) = self.metadata.created_unix_seconds {
             lines.push(format!("created_unix_seconds={created_unix_seconds}"));
         }
+        if let Some(source_trust_q16) = self.metadata.source_trust_q16 {
+            lines.push(format!("source_trust_q16={source_trust_q16}"));
+        }
         if let Some(source) = &self.metadata.source {
             lines.push(format!("source={}", sanitize_line_value(source)));
         }
@@ -70,6 +74,7 @@ impl Default for KnowledgeCellMetadata {
             memory_type: None,
             ttl_seconds: None,
             created_unix_seconds: None,
+            source_trust_q16: None,
             source: None,
         }
     }

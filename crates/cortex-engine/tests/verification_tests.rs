@@ -45,6 +45,31 @@ fn verify_fact_aql_respects_agent_scope() {
 }
 
 #[test]
+fn verify_fact_aql_orders_equal_matches_by_source_trust() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        fact_cell_with_trust("project:investments", "ABC budget approved", Some(20_000)),
+    )
+    .unwrap();
+    db.put_knowledge_cell(
+        CellId(2),
+        fact_cell_with_trust("project:investments", "ABC budget approved", Some(60_000)),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;"#,
+            &view("project:investments", true),
+        )
+        .unwrap();
+    assert_eq!(report.evidence[0].cell_id, CellId(2));
+    assert_eq!(report.evidence[0].source_trust_q16, 60_000);
+}
+
+#[test]
 fn verify_fact_aql_denied_by_agent_view_policy() {
     let dir = tempfile::tempdir().unwrap();
     let db = Database::open(dir.path()).unwrap();
@@ -58,6 +83,10 @@ fn verify_fact_aql_denied_by_agent_view_policy() {
 }
 
 fn fact_cell(scope: &str, body: &str) -> KnowledgeCell {
+    fact_cell_with_trust(scope, body, None)
+}
+
+fn fact_cell_with_trust(scope: &str, body: &str, trust: Option<u16>) -> KnowledgeCell {
     KnowledgeCell::new(
         KnowledgeCellMetadata {
             scope: scope.to_owned(),
@@ -66,6 +95,7 @@ fn fact_cell(scope: &str, body: &str) -> KnowledgeCell {
             memory_type: None,
             ttl_seconds: None,
             created_unix_seconds: None,
+            source_trust_q16: trust,
             source: Some("fixture".to_owned()),
         },
         body,

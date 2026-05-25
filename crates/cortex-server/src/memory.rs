@@ -43,8 +43,8 @@ fn report_json(report: &VerificationReport) -> String {
         .iter()
         .map(|evidence| {
             format!(
-                r#"{{"cell_id":{},"matched_terms":{}}}"#,
-                evidence.cell_id.0, evidence.matched_terms
+                r#"{{"cell_id":{},"matched_terms":{},"source_trust_q16":{}}}"#,
+                evidence.cell_id.0, evidence.matched_terms, evidence.source_trust_q16
             )
         })
         .collect::<Vec<_>>()
