@@ -1,5 +1,6 @@
 pub mod error;
 pub mod indexes;
+pub mod manifest;
 pub mod segment;
 pub mod wal;
 

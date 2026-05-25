@@ -64,6 +64,17 @@ impl MemTable {
             .find(|version| version.visible_at(txn.read_seq))
     }
 
+    pub fn visible_cells(&self, txn: ReadTxn) -> Vec<CellVersion> {
+        self.versions
+            .keys()
+            .filter_map(|cell_id| self.read(txn, *cell_id).cloned())
+            .collect()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.versions.is_empty()
+    }
+
     pub fn compaction_priority(&self, cell_id: CellId) -> Option<u32> {
         self.versions
             .get(&cell_id)?

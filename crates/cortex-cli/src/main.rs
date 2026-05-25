@@ -20,13 +20,16 @@ fn main() -> ExitCode {
 }
 
 fn run(args: Vec<String>) -> Result<String, String> {
-    let [_, command, path, cell_id, rest @ ..] = args.as_slice() else {
+    let [_, command, path, rest @ ..] = args.as_slice() else {
         return Err(usage());
     };
-    let cell_id = parse_cell_id(cell_id)?;
     match command.as_str() {
         "put" => {
-            let payload = rest.first().ok_or_else(usage)?.as_bytes().to_vec();
+            let [cell_id, payload] = rest else {
+                return Err(usage());
+            };
+            let cell_id = parse_cell_id(cell_id)?;
+            let payload = payload.as_bytes().to_vec();
             let mut db = Database::open(path).map_err(|error| error.to_string())?;
             let seq = db
                 .put_cell(cell_id, payload)
@@ -34,9 +37,8 @@ fn run(args: Vec<String>) -> Result<String, String> {
             Ok(format!("seq={}", seq.0))
         }
         "get" => {
-            if !rest.is_empty() {
-                return Err(usage());
-            }
+            let [cell_id] = rest else { return Err(usage()) };
+            let cell_id = parse_cell_id(cell_id)?;
             let db = Database::open(path).map_err(|error| error.to_string())?;
             Ok(db
                 .get_latest_cell(cell_id)
@@ -44,14 +46,24 @@ fn run(args: Vec<String>) -> Result<String, String> {
                 .unwrap_or_else(|| "null".to_owned()))
         }
         "tombstone" => {
-            if !rest.is_empty() {
-                return Err(usage());
-            }
+            let [cell_id] = rest else { return Err(usage()) };
+            let cell_id = parse_cell_id(cell_id)?;
             let mut db = Database::open(path).map_err(|error| error.to_string())?;
             let seq = db
                 .tombstone_cell(cell_id)
                 .map_err(|error| error.to_string())?;
             Ok(format!("seq={}", seq.0))
+        }
+        "flush" => {
+            if !rest.is_empty() {
+                return Err(usage());
+            }
+            let mut db = Database::open(path).map_err(|error| error.to_string())?;
+            let stats = db.checkpoint().map_err(|error| error.to_string())?;
+            Ok(format!(
+                "checkpoint_seq={} cells_flushed={}",
+                stats.checkpoint_seq.0, stats.cells_flushed
+            ))
         }
         _ => Err(usage()),
     }
@@ -65,7 +77,7 @@ fn parse_cell_id(value: &str) -> Result<CellId, String> {
 }
 
 fn usage() -> String {
-    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id>"
+    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path>"
         .to_owned()
 }
 

@@ -30,9 +30,14 @@ pub struct CommitAck {
 pub struct WalWriter;
 
 #[derive(Debug)]
-struct WalWriterCommand {
-    record: WalRecord,
-    reply: Sender<StorageResult<CommitAck>>,
+enum WalWriterCommand {
+    Append {
+        record: WalRecord,
+        reply: Sender<StorageResult<CommitAck>>,
+    },
+    Shutdown {
+        reply: Sender<StorageResult<()>>,
+    },
 }
 
 impl WalWriter {
@@ -53,7 +58,15 @@ impl WalWriterHandle {
     pub fn append(&self, record: WalRecord) -> StorageResult<CommitAck> {
         let (reply, rx) = bounded(1);
         self.tx
-            .send(WalWriterCommand { record, reply })
+            .send(WalWriterCommand::Append { record, reply })
+            .map_err(|_| StorageError::WalWriterClosed)?;
+        rx.recv().map_err(|_| StorageError::WalWriterClosed)?
+    }
+
+    pub fn shutdown(&self) -> StorageResult<()> {
+        let (reply, rx) = bounded(1);
+        self.tx
+            .send(WalWriterCommand::Shutdown { reply })
             .map_err(|_| StorageError::WalWriterClosed)?;
         rx.recv().map_err(|_| StorageError::WalWriterClosed)?
     }
@@ -78,8 +91,17 @@ fn run_writer(path: PathBuf, mode: DurabilityMode, rx: Receiver<WalWriterCommand
     };
     let mut next_lsn = file.seek(SeekFrom::End(0)).unwrap_or(0);
     while let Ok(command) = rx.recv() {
-        let result = append_record(&mut file, mode, command.record, &mut next_lsn);
-        let _ = command.reply.send(result);
+        match command {
+            WalWriterCommand::Append { record, reply } => {
+                let result = append_record(&mut file, mode, record, &mut next_lsn);
+                let _ = reply.send(result);
+            }
+            WalWriterCommand::Shutdown { reply } => {
+                let result = file.sync_data().map_err(StorageError::from);
+                let _ = reply.send(result);
+                break;
+            }
+        }
     }
 }
 

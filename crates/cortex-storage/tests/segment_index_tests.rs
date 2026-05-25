@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
+use cortex_storage::manifest::{ManifestSegment, StorageManifest};
 use cortex_storage::segment::{SegmentCell, SegmentReader, SegmentWriter};
 use cortex_storage::StorageError;
 
@@ -11,10 +12,12 @@ fn acs_segment_roundtrips_cells() {
     let cells = vec![
         SegmentCell {
             cell_id: 1,
+            created_seq: 7,
             payload: b"one".to_vec(),
         },
         SegmentCell {
             cell_id: 2,
+            created_seq: 8,
             payload: b"two".to_vec(),
         },
     ];
@@ -51,14 +54,31 @@ fn aci_lexical_index_roundtrips_terms() {
 }
 
 #[test]
+fn manifest_roundtrips_checkpoint_segments() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("manifest.acm");
+    let mut manifest = StorageManifest::default();
+    manifest.checkpoint_segment(ManifestSegment {
+        id: 1,
+        generation: 1,
+        checkpoint_seq: 9,
+        cell_count: 2,
+    });
+    manifest.store(&path).unwrap();
+    assert_eq!(StorageManifest::load(&path).unwrap(), manifest);
+}
+
+#[test]
 fn invalid_storage_files_are_rejected() {
     let dir = tempfile::tempdir().unwrap();
     let segment = dir.path().join("bad.acs");
     let bitmap = dir.path().join("bad.acb");
     let lexical = dir.path().join("bad.aci");
+    let manifest = dir.path().join("bad.acm");
     std::fs::write(&segment, b"bad").unwrap();
     std::fs::write(&bitmap, b"bad").unwrap();
     std::fs::write(&lexical, b"bad").unwrap();
+    std::fs::write(&manifest, b"bad").unwrap();
     assert!(matches!(
         SegmentReader::read(&segment).unwrap_err(),
         StorageError::InvalidSegmentFile
@@ -70,5 +90,9 @@ fn invalid_storage_files_are_rejected() {
     assert!(matches!(
         LexicalIndex::read(&lexical).unwrap_err(),
         StorageError::InvalidLexicalIndexFile
+    ));
+    assert!(matches!(
+        StorageManifest::load(&manifest).unwrap_err(),
+        StorageError::InvalidManifestFile
     ));
 }
