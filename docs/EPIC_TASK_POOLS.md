@@ -249,6 +249,7 @@ Epic 042 -> WAL CommitSeq hard requirement (closed)
 Epic 060 -> WAL debug tooling (closed)
 Epic 193 -> CLI manifest tools (closed)
 Epic 014 -> core benchmark baseline (closed)
+Epic 015 -> storage format versioning (closed)
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed

@@ -55,6 +55,7 @@
 - WAL truncate and manifest dump/validate CLI tools.
 - Core benchmark baseline for put/get/checkpoint/reopen/context pack.
 - Durable AgentView persistence under `agent_views/`.
+- Public storage format inventory for current magic/version compatibility.
 
 ## Next
 

@@ -10,7 +10,7 @@ little-endian integer fields, and CRC32C validation.
 | ACLOG WAL | `.aclog` | `ACLOGv0\0` | `version = 0` in file header | Breaking changes require a new WAL version. |
 | Segment | `.acs` | `ACS1` | magic carries v1 | Breaking changes require a new magic. |
 | Bitmap index | `.acb` | `ACB0` | magic carries v0 | Breaking changes require a new magic. |
-| Lexical index | `.aci` | `ACI0` | magic carries v0 | Breaking changes require a new magic. |
+| Lexical index | `.aci` | `ACI1` | magic carries v1 | `ACI0` remains read-only compatible. |
 | Manifest | `.acm` | `ACM0` | magic carries v0 | Breaking changes require a new magic. |
 
 All multi-byte integer fields are little-endian.
@@ -46,7 +46,7 @@ crc32c u32 over all previous bytes
 ## Lexical Index `.aci`
 
 ```text
-magic[4] = "ACI0"
+magic[4] = "ACI1"
 term_count u32
 repeat term_count:
   term_len u16
@@ -54,8 +54,14 @@ repeat term_count:
   value_count u32
   repeat value_count:
     candidate_id u32
+doc_length_count u32
+repeat doc_length_count:
+  candidate_id u32
+  document_length u32
 crc32c u32 over all previous bytes
 ```
+
+Legacy `ACI0` files omit the doc length table and remain readable.
 
 ## Manifest `.acm`
 

@@ -2,8 +2,7 @@ use std::path::Path;
 
 use crate::atomic::{append_crc32c, verify_crc32c, write_atomic};
 use crate::error::{StorageError, StorageResult};
-
-const MAGIC: &[u8; 4] = b"ACS1";
+use crate::format::SEGMENT_MAGIC;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SegmentCell {
@@ -23,7 +22,7 @@ pub struct SegmentReader;
 impl SegmentWriter {
     pub fn write(path: impl AsRef<Path>, cells: &[SegmentCell]) -> StorageResult<()> {
         let mut out = Vec::new();
-        out.extend_from_slice(MAGIC);
+        out.extend_from_slice(&SEGMENT_MAGIC);
         put_u32(&mut out, cells.len() as u32);
         for cell in cells {
             put_u64(&mut out, cell.cell_id);
@@ -48,7 +47,7 @@ impl SegmentReader {
 
 fn decode_segment(bytes: &[u8]) -> StorageResult<Vec<SegmentCell>> {
     let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidSegmentFile)?;
-    if bytes.len() < 8 || &bytes[..4] != MAGIC {
+    if bytes.len() < 8 || bytes[..4] != SEGMENT_MAGIC {
         return Err(StorageError::InvalidSegmentFile);
     }
     let mut cursor = 4;

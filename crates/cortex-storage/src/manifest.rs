@@ -4,8 +4,7 @@ use std::path::Path;
 
 use crate::atomic::{append_crc32c, verify_crc32c, write_atomic};
 use crate::error::{StorageError, StorageResult};
-
-const MAGIC: &[u8; 4] = b"ACM0";
+use crate::format::MANIFEST_MAGIC;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ManifestSegment {
@@ -53,7 +52,7 @@ impl StorageManifest {
 
 fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
     let mut out = Vec::new();
-    out.extend_from_slice(MAGIC);
+    out.extend_from_slice(&MANIFEST_MAGIC);
     put_u64(&mut out, manifest.generation);
     put_u64(&mut out, manifest.checkpoint_seq);
     put_segments(&mut out, &manifest.live_segments);
@@ -64,7 +63,7 @@ fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
 
 fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
     let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidManifestFile)?;
-    if bytes.len() < 24 || &bytes[..4] != MAGIC {
+    if bytes.len() < 24 || bytes[..4] != MANIFEST_MAGIC {
         return Err(StorageError::InvalidManifestFile);
     }
     let mut cursor = 4;

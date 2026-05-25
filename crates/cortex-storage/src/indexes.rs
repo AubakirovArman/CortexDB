@@ -3,6 +3,7 @@ use std::path::Path;
 
 use crate::atomic::{append_crc32c, verify_crc32c, write_atomic};
 use crate::error::{StorageError, StorageResult};
+use crate::format::{BITMAP_INDEX_MAGIC, LEGACY_LEXICAL_INDEX_MAGIC, LEXICAL_INDEX_MAGIC};
 
 #[derive(Clone, Copy, Debug)]
 enum IndexKind {
@@ -23,7 +24,7 @@ pub struct LexicalIndex {
 
 impl BitmapIndex {
     pub fn write(&self, path: impl AsRef<Path>) -> StorageResult<()> {
-        let mut out = Vec::from(&b"ACB0"[..]);
+        let mut out = Vec::from(&BITMAP_INDEX_MAGIC[..]);
         put_u32(&mut out, self.bitmaps.len() as u32);
         for (handle, values) in &self.bitmaps {
             put_u64(&mut out, *handle);
@@ -45,7 +46,7 @@ impl BitmapIndex {
 
 impl LexicalIndex {
     pub fn write(&self, path: impl AsRef<Path>) -> StorageResult<()> {
-        let mut out = Vec::from(&b"ACI1"[..]);
+        let mut out = Vec::from(&LEXICAL_INDEX_MAGIC[..]);
         put_u32(&mut out, self.terms.len() as u32);
         for (term, values) in &self.terms {
             put_u16(&mut out, term.len() as u16);
@@ -73,7 +74,7 @@ impl LexicalIndex {
 
 fn decode_bitmap(bytes: &[u8]) -> StorageResult<BitmapIndex> {
     let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidBitmapIndexFile)?;
-    if bytes.len() < 8 || &bytes[..4] != b"ACB0" {
+    if bytes.len() < 8 || bytes[..4] != BITMAP_INDEX_MAGIC {
         return Err(StorageError::InvalidBitmapIndexFile);
     }
     let mut cursor = 4;
@@ -91,7 +92,9 @@ fn decode_bitmap(bytes: &[u8]) -> StorageResult<BitmapIndex> {
 
 fn decode_lexical(bytes: &[u8]) -> StorageResult<LexicalIndex> {
     let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidLexicalIndexFile)?;
-    if bytes.len() < 8 || (&bytes[..4] != b"ACI0" && &bytes[..4] != b"ACI1") {
+    if bytes.len() < 8
+        || (bytes[..4] != LEGACY_LEXICAL_INDEX_MAGIC && bytes[..4] != LEXICAL_INDEX_MAGIC)
+    {
         return Err(StorageError::InvalidLexicalIndexFile);
     }
     let version = &bytes[..4];
@@ -106,7 +109,7 @@ fn decode_lexical(bytes: &[u8]) -> StorageResult<LexicalIndex> {
         terms.insert(term, read_set(bytes, &mut cursor, IndexKind::Lexical)?);
     }
     let mut doc_lengths = BTreeMap::new();
-    if version == b"ACI1" {
+    if version == LEXICAL_INDEX_MAGIC {
         let count = read_u32(bytes, &mut cursor, IndexKind::Lexical)? as usize;
         for _ in 0..count {
             let candidate = read_u32(bytes, &mut cursor, IndexKind::Lexical)?;
