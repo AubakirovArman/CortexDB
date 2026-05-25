@@ -76,6 +76,37 @@ fn run(args: Vec<String>) -> Result<String, String> {
                 stats.checkpoint_seq.0, stats.cells_flushed
             ))
         }
+        "stats" => {
+            if !rest.is_empty() {
+                return Err(usage());
+            }
+            let db = Database::open(path).map_err(|error| error.to_string())?;
+            let stats = db.storage_stats().map_err(|error| error.to_string())?;
+            Ok(format!(
+                "current_seq={} checkpoint_seq={} live_segments={} retired_segments={} memtable_cells={} memtable_versions={} wal_size_bytes={}",
+                stats.current_seq.0,
+                stats.checkpoint_seq.0,
+                stats.live_segments,
+                stats.retired_segments,
+                stats.memtable.cell_count,
+                stats.memtable.version_count,
+                stats.wal_size_bytes
+            ))
+        }
+        "validate" => {
+            if !rest.is_empty() {
+                return Err(usage());
+            }
+            let db = Database::open(path).map_err(|error| error.to_string())?;
+            let validation = db.validate_storage().map_err(|error| error.to_string())?;
+            Ok(format!(
+                "ok live_segments_checked={} cells_checked={} wal_records_checked={} wal_safe_truncate_offset={}",
+                validation.live_segments_checked,
+                validation.cells_checked,
+                validation.wal_records_checked,
+                validation.wal_safe_truncate_offset
+            ))
+        }
         _ => Err(usage()),
     }
 }
@@ -88,7 +119,7 @@ fn parse_cell_id(value: &str) -> Result<CellId, String> {
 }
 
 fn usage() -> String {
-    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path>"
+    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path>"
         .to_owned()
 }
 
@@ -101,5 +132,42 @@ mod tests {
         assert!(run(vec!["cortexdb".to_owned()])
             .unwrap_err()
             .contains("usage:"));
+    }
+
+    #[test]
+    fn stats_and_validate_commands_work() {
+        let path = unique_path("cortexdb-cli-stats");
+        let path_arg = path.to_string_lossy().into_owned();
+        run(vec![
+            "cortexdb".to_owned(),
+            "put".to_owned(),
+            path_arg.clone(),
+            "1".to_owned(),
+            "hello".to_owned(),
+        ])
+        .unwrap();
+
+        let stats = run(vec![
+            "cortexdb".to_owned(),
+            "stats".to_owned(),
+            path_arg.clone(),
+        ])
+        .unwrap();
+        assert!(stats.contains("current_seq=1"));
+
+        let validation = run(vec!["cortexdb".to_owned(), "validate".to_owned(), path_arg]).unwrap();
+        assert!(validation.starts_with("ok "));
+
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    fn unique_path(prefix: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!(
+            "{prefix}-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ))
     }
 }

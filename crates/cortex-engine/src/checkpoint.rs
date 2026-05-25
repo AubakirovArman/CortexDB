@@ -266,7 +266,7 @@ pub(crate) fn load_checkpoint(root: &Path) -> EngineResult<CheckpointLoad> {
         let cells = SegmentReader::read(segment_path(&segments_path(root), segment.id))?;
         for cell in cells {
             if let Some(deleted) = cell.deleted_seq {
-                let _ = memtable.tombstone_cell(CellId(cell.cell_id), CommitSeq(deleted));
+                memtable.record_tombstone(CellId(cell.cell_id), CommitSeq(deleted));
             } else {
                 memtable.put_cell(
                     CellId(cell.cell_id),
@@ -287,14 +287,14 @@ pub(crate) fn segments_path(root: &Path) -> PathBuf {
     root.join("segments")
 }
 
-fn segment_path(root: &Path, id: u64) -> PathBuf {
+pub(crate) fn segment_path(root: &Path, id: u64) -> PathBuf {
     root.join(format!("segment-{id}.acs"))
 }
 
-fn bitmap_path(root: &Path, id: u64) -> PathBuf {
+pub(crate) fn bitmap_path(root: &Path, id: u64) -> PathBuf {
     root.join(format!("segment-{id}.acb"))
 }
 
-fn lexical_path(root: &Path, id: u64) -> PathBuf {
+pub(crate) fn lexical_path(root: &Path, id: u64) -> PathBuf {
     root.join(format!("segment-{id}.aci"))
 }

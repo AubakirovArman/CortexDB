@@ -68,6 +68,55 @@ fn tombstone_hides_cell_after_delete_seq() {
 }
 
 #[test]
+fn tombstone_marker_without_base_is_never_visible() {
+    let mut table = MemTable::default();
+    table.record_tombstone(CellId(9), CommitSeq(20));
+    assert!(table
+        .read(
+            ReadTxn {
+                read_seq: CommitSeq(19)
+            },
+            CellId(9)
+        )
+        .is_none());
+    assert!(table
+        .read(
+            ReadTxn {
+                read_seq: CommitSeq(20)
+            },
+            CellId(9)
+        )
+        .is_none());
+    assert_eq!(
+        table.tombstones_after(CommitSeq(10)),
+        vec![(CellId(9), CommitSeq(20))]
+    );
+}
+
+#[test]
+fn memtable_stats_track_versions_and_tombstones() {
+    let mut table = MemTable::default();
+    table.put_cell(CellId(1), CommitSeq(10), b"v1".to_vec());
+    table
+        .patch_cell(CellId(1), CommitSeq(20), b"v2".to_vec())
+        .unwrap();
+    table.record_tombstone(CellId(2), CommitSeq(30));
+
+    let stats = table.stats();
+    assert_eq!(stats.cell_count, 2);
+    assert_eq!(stats.version_count, 3);
+    assert_eq!(stats.tombstone_count, 1);
+    assert_eq!(stats.max_delta_depth, 1);
+    assert_eq!(table.latest_seq(), CommitSeq(30));
+    assert!(table.contains_visible(
+        ReadTxn {
+            read_seq: CommitSeq(20)
+        },
+        CellId(1)
+    ));
+}
+
+#[test]
 fn multiple_versions_resolve_latest_visible() {
     let mut table = MemTable::default();
     table.put_cell(CellId(1), CommitSeq(10), b"v1".to_vec());

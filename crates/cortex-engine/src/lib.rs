@@ -7,6 +7,7 @@ pub mod query;
 pub mod replay;
 pub mod replication;
 pub mod search;
+pub mod validation;
 
 pub use database::{
     CandidateResolver, CheckpointStats, Database, DatabaseOptions, RecoveryMode, RetrievedCell,
@@ -20,3 +21,4 @@ pub use replay::{
 };
 pub use replication::*;
 pub use search::*;
+pub use validation::{StorageStats, StorageValidation};

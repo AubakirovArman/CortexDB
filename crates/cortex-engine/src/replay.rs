@@ -79,7 +79,7 @@ fn replay_scan(
                 memtable.patch_cell(cell_id, seq, payload)?;
             }
             DbOperation::TombstoneCell { cell_id } => {
-                memtable.tombstone_cell(cell_id, seq)?;
+                memtable.record_tombstone(cell_id, seq);
             }
         }
     }

@@ -19,6 +19,15 @@ pub struct MemTable {
     versions: BTreeMap<CellId, Vec<CellVersion>>,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct MemTableStats {
+    pub cell_count: usize,
+    pub version_count: usize,
+    pub tombstone_count: usize,
+    pub max_delta_depth: u32,
+    pub index_debt_total: u32,
+}
+
 impl MemTable {
     pub fn put_cell(&mut self, cell_id: CellId, seq: CommitSeq, payload: Vec<u8>) {
         self.versions
@@ -54,6 +63,18 @@ impl MemTable {
             version.deleted_seq = Some(seq);
         }
         Ok(())
+    }
+
+    pub fn record_tombstone(&mut self, cell_id: CellId, seq: CommitSeq) {
+        let versions = self.versions.entry(cell_id).or_default();
+        if let Some(version) = versions.last_mut() {
+            version.deleted_seq = Some(seq);
+            return;
+        }
+
+        let mut marker = CellVersion::new(cell_id, seq, Vec::new(), 0);
+        marker.deleted_seq = Some(seq);
+        versions.push(marker);
     }
 
     pub fn read(&self, txn: ReadTxn, cell_id: CellId) -> Option<&CellVersion> {
@@ -106,6 +127,42 @@ impl MemTable {
 
     pub fn is_empty(&self) -> bool {
         self.versions.is_empty()
+    }
+
+    pub fn contains_visible(&self, txn: ReadTxn, cell_id: CellId) -> bool {
+        self.read(txn, cell_id).is_some()
+    }
+
+    pub fn latest_seq(&self) -> CommitSeq {
+        self.versions
+            .values()
+            .flat_map(|versions| versions.iter())
+            .fold(CommitSeq(0), |latest, version| {
+                latest
+                    .max(version.created_seq)
+                    .max(version.deleted_seq.unwrap_or(CommitSeq(0)))
+            })
+    }
+
+    pub fn stats(&self) -> MemTableStats {
+        let mut stats = MemTableStats {
+            cell_count: self.versions.len(),
+            ..MemTableStats::default()
+        };
+        for versions in self.versions.values() {
+            stats.version_count += versions.len();
+            if versions
+                .last()
+                .is_some_and(|version| version.deleted_seq.is_some())
+            {
+                stats.tombstone_count += 1;
+            }
+            for version in versions {
+                stats.max_delta_depth = stats.max_delta_depth.max(version.delta_depth);
+                stats.index_debt_total += version.index_debt.total();
+            }
+        }
+        stats
     }
 
     pub fn compaction_priority(&self, cell_id: CellId) -> Option<u32> {

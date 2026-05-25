@@ -30,7 +30,7 @@ Incremental checkpoint -> .acs segment + .acb bitmap index + .aci lexical index 
 - `crates/cortex-storage`: ACLOG WAL v0, manifest, segment, bitmap-index, and lexical-index files.
 - `crates/cortex-core`: in-memory MVCC MemTable, read transactions, cell versions, and manifest primitives.
 - `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, search helpers, and consensus model primitives.
-- `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone/flush/compact checks.
+- `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone/flush/compact/stats/validate checks.
 - `crates/cortex-server`: minimal JSON HTTP API for put/get/tombstone/flush/compact/health checks.
 
 BM25, vector search, HNSW, distributed placement, and server APIs exist as MVP foundations.
@@ -56,6 +56,8 @@ cargo run -p cortex-cli -- put ./data 1 hello
 cargo run -p cortex-cli -- get ./data 1
 cargo run -p cortex-cli -- flush ./data
 cargo run -p cortex-cli -- compact ./data
+cargo run -p cortex-cli -- stats ./data
+cargo run -p cortex-cli -- validate ./data
 ```
 
 ## Minimal HTTP Check
@@ -74,7 +76,8 @@ Set `CORTEXDB_AUTH_TOKEN` before starting `cortex-server` to require
 The single-node durable core is the current completion target. The checklist is
 tracked in [`docs/CORE_COMPLETION_CHECKLIST.md`](docs/CORE_COMPLETION_CHECKLIST.md):
 WAL durability, MVCC reads, restart recovery, checkpoint, compact, AQL retrieve,
-candidate mapping, atomic storage writes, and corruption detection.
+candidate mapping, atomic storage writes, corruption detection, and local
+storage validation.
 
 ## Roadmap
 

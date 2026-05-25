@@ -16,6 +16,11 @@ covered by tests.
 - Bitmap candidates are compact `u32` ids and map back to full `CellId`.
 - Storage files are written through temp-file, fsync, rename, and parent fsync.
 - Segment, bitmap index, lexical index, and manifest files reject CRC corruption.
+- Tombstone-only checkpoint records are preserved and never resurrect cells.
+- `Database::validate_storage()` checks manifest segment counts, core storage
+  files, indexes, and recoverable WAL state.
+- `Database::storage_stats()` reports current sequence, checkpoint sequence,
+  segment counts, MemTable stats, and WAL size.
 
 ## Validation Commands
 

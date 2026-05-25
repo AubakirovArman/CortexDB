@@ -1,5 +1,6 @@
 use cortex_core::{CellId, CoreError};
 use cortex_storage::StorageError;
+use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
 pub enum EngineError {
@@ -21,6 +22,10 @@ pub enum EngineError {
     MissingWalSection(&'static str),
     #[error("cell not found after WAL append: {0:?}")]
     FatalCellMissingAfterWal(CellId),
+    #[error("missing storage file: {0}")]
+    MissingStorageFile(PathBuf),
+    #[error("storage invariant violation: {0}")]
+    StorageInvariant(String),
 }
 
 pub type EngineResult<T> = Result<T, EngineError>;

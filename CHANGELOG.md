@@ -18,3 +18,5 @@
 - Added core-completion invariants: compact bitmap candidates with full `CellId` mapping, atomic
   segment/index writes, CRC corruption checks for core storage files, WAL restart-after-checkpoint
   tests, and the core completion checklist.
+- Added tombstone-only checkpoint handling, MemTable stats, database storage validation/stats,
+  CLI `stats`/`validate`, and tests for validation failures.

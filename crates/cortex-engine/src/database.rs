@@ -194,10 +194,10 @@ impl Database {
                 .memtable
                 .patch_cell(cell_id, seq, payload)
                 .map_err(EngineError::from),
-            DbOperation::TombstoneCell { cell_id } => self
-                .memtable
-                .tombstone_cell(cell_id, seq)
-                .map_err(EngineError::from),
+            DbOperation::TombstoneCell { cell_id } => {
+                self.memtable.record_tombstone(cell_id, seq);
+                Ok(())
+            }
         }
     }
 
