@@ -2,7 +2,7 @@ use std::env;
 use std::process::ExitCode;
 
 use cortex_core::CellId;
-use cortex_engine::{ContextPackOptions, Database};
+use cortex_engine::{ContextPackOptions, Database, SearchLimit};
 
 mod context;
 #[cfg(test)]
@@ -10,7 +10,7 @@ mod tests;
 mod wal;
 
 use context::{
-    format_context_pack, format_retrieved_cells, format_verification_report,
+    format_context_pack, format_retrieved_cells, format_search_results, format_verification_report,
     remember_view_for_scope, verify_view_for_scope, view_for_scope,
 };
 
@@ -205,6 +205,16 @@ fn run(args: Vec<String>) -> Result<String, String> {
                 .map_err(|error| error.to_string())?;
             Ok(format_retrieved_cells(&cells))
         }
+        "search" => {
+            let [scope, query] = rest else {
+                return Err(usage());
+            };
+            let db = Database::open(path).map_err(|error| error.to_string())?;
+            let results = db
+                .search_keyword(query, &view_for_scope(scope), SearchLimit(20))
+                .map_err(|error| error.to_string())?;
+            Ok(format_search_results(&results))
+        }
         "unlock" => {
             let [flag] = rest else {
                 return Err(usage());
@@ -227,6 +237,6 @@ fn parse_cell_id(value: &str) -> Result<CellId, String> {
 }
 
 fn usage() -> String {
-    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | repair <path> | gc-retired <path> | wal-validate <path> | wal-dump <path> | context <path> <scope> <aql> | remember <path> <scope> <aql> | verify <path> <scope> <aql> | aql <path> <scope> <aql> | unlock <path> --force"
+    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | repair <path> | gc-retired <path> | wal-validate <path> | wal-dump <path> | context <path> <scope> <aql> | remember <path> <scope> <aql> | verify <path> <scope> <aql> | aql <path> <scope> <aql> | search <path> <scope> <query> | unlock <path> --force"
         .to_owned()
 }

@@ -1,6 +1,6 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_engine::verification::{VerificationReport, VerificationStatus};
-use cortex_engine::{scope_id, ContextPack, RetrievedCell};
+use cortex_engine::{scope_id, ContextPack, DatabaseSearchResult, RetrievedCell};
 
 pub(crate) fn view_for_scope(scope: &str) -> AgentView {
     AgentView {
@@ -92,6 +92,24 @@ pub(crate) fn format_retrieved_cells(cells: &[RetrievedCell]) -> String {
             "cell_id={} payload={}",
             cell.cell_id.0,
             String::from_utf8_lossy(&cell.payload)
+        )
+    }));
+    lines.join("\n")
+}
+
+pub(crate) fn format_search_results(results: &[DatabaseSearchResult]) -> String {
+    if results.is_empty() {
+        return "results=0".to_owned();
+    }
+    let mut lines = vec![format!("results={}", results.len())];
+    lines.extend(results.iter().map(|result| {
+        format!(
+            "cell_id={} score={} lexical_score={} vector_score={} payload={}",
+            result.cell_id.0,
+            result.score,
+            result.lexical_score,
+            result.vector_score,
+            String::from_utf8_lossy(&result.payload)
         )
     }));
     lines.join("\n")

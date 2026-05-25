@@ -90,6 +90,42 @@ fn aql_command_returns_retrieved_cells() {
 }
 
 #[test]
+fn search_command_returns_scope_filtered_results() {
+    let path = unique_path("cortexdb-cli-search");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nalpha budget".to_owned(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "2".to_owned(),
+        "scope=tenant:private\nstatus=ready\nhidden budget".to_owned(),
+    ])
+    .unwrap();
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "search".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        "budget".to_owned(),
+    ])
+    .unwrap();
+    assert!(output.contains("results=1"));
+    assert!(output.contains("cell_id=1"));
+    assert!(!output.contains("cell_id=2"));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
 fn remember_and_verify_commands_work() {
     let path = unique_path("cortexdb-cli-memory");
     let path_arg = path.to_string_lossy().into_owned();

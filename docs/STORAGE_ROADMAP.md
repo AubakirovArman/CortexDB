@@ -42,10 +42,11 @@
 - Q16 source trust metadata and VERIFY FACT evidence ordering.
 - Aggregated context feedback statistics.
 - Explicit contradiction markers for VERIFY FACT reports.
+- Scoped database keyword search exposed through CLI and HTTP.
 
 ## Next
 
-1. Add search CLI/HTTP surfaces and persisted lexical metadata v2.
+1. Add persisted lexical metadata v2.
 2. Formalize core cell metadata instead of payload-line metadata parsing.
 3. Add WAL writer backpressure and real group commit batching.
 4. Persist consensus log entries through ACLOG or a dedicated replication log.

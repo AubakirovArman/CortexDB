@@ -1,21 +1,27 @@
 # Search v1
 
-Core Alpha search helpers are deterministic integer-only building blocks.
+`cortex-engine` exposes two search layers:
 
-## Implemented
+- `SearchIndexes` for standalone keyword/vector/hybrid scoring tests.
+- `Database::search_keyword` / `Database::search_cells` for scoped database
+  search over the current visible snapshot.
 
-- `Bm25Index` lexical ranking with integer scoring.
-- Unicode-aware tokenizer for Russian, Kazakh, and English text.
-- Basic stopword filtering.
-- Field-weighted lexical documents through `add_document_fields`.
-- `VectorIndex` exact integer dot-product search.
-- `SearchIndexes` public API for keyword, vector, and hybrid modes.
-- Hybrid fusion uses reciprocal-rank fusion over lexical and vector results.
+The database path filters cells through `AgentView.readable_scopes`, assigns
+compact candidate ids internally, and returns full `CellId` values in
+`DatabaseSearchResult`.
+
+Current smoke surfaces:
+
+```text
+cortexdb search <path> <scope> <query>
+POST /v1/search?scope=<scope>&q=<query>
+```
+
+The HTTP body is used as the query text when `q` is omitted.
 
 ## Not Yet
 
-- Persistent vector pages.
-- Production BM25 analyzers, stemming, and doc-length tuning.
-- HNSW persistence and rebuild policy.
-- Reranker integration.
-- Search HTTP endpoint.
+- Persisted lexical metadata v2.
+- Dedicated search over `.aci` without snapshot rebuild.
+- Production BM25 analyzers.
+- Public vector input over CLI/HTTP.

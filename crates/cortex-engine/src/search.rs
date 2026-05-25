@@ -1,9 +1,11 @@
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 
+mod database;
 mod hnsw;
 mod tokenizer;
 
+pub use database::{DatabaseSearchResult, SearchLimit};
 pub use hnsw::HnswIndex;
 pub use tokenizer::tokenize;
 

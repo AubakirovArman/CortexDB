@@ -30,9 +30,9 @@ AQL retrieve -> ContextPack -> token budget -> citation anomalies
 - `crates/cortex-aql`: AQL parser, AST, policy validation, binder, bitmap bytecode, and mock bitmap VM.
 - `crates/cortex-storage`: ACLOG WAL v0, manifest, segment, bitmap-index, and lexical-index files.
 - `crates/cortex-core`: in-memory MVCC MemTable, read transactions, cell versions, KnowledgeCell schema, and manifest primitives.
-- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, AQL `REMEMBER`, memory TTL/decay, durable feedback, source trust, `VERIFY FACT` reports, ContextPack v0, search helpers with hybrid fusion, and consensus model primitives.
-- `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone/flush/compact/stats/validate/context/remember/verify checks.
-- `crates/cortex-server`: minimal JSON HTTP API for put/get/tombstone/flush/compact/context/remember/verify/health checks.
+- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, AQL `REMEMBER`, memory TTL/decay, durable feedback, source trust, `VERIFY FACT` reports, ContextPack v0, scoped search, search helpers with hybrid fusion, and consensus model primitives.
+- `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone/flush/compact/stats/validate/search/context/remember/verify checks.
+- `crates/cortex-server`: minimal JSON HTTP API for put/get/tombstone/flush/compact/search/context/remember/verify/health checks.
 
 BM25, vector search, HNSW, distributed placement, and server APIs exist as MVP foundations.
 They are not production-grade ranking, ANN, consensus, or service layers yet.
@@ -65,6 +65,7 @@ cargo run -p cortex-cli -- wal-validate ./data
 cargo run -p cortex-cli -- wal-dump ./data
 cargo run -p cortex-cli -- context ./data project:investments '<AQL RETRIEVE CONTEXT>'
 cargo run -p cortex-cli -- aql ./data project:investments '<AQL RETRIEVE CONTEXT>'
+cargo run -p cortex-cli -- search ./data project:investments budget
 cargo run -p cortex-cli -- unlock ./data --force
 ```
 
@@ -77,6 +78,7 @@ curl 'http://127.0.0.1:8080/v1/cell?cell_id=1'
 curl 'http://127.0.0.1:8080/v1/stats'
 curl 'http://127.0.0.1:8080/v1/validate'
 curl -X POST 'http://127.0.0.1:8080/v1/context?scope=project:investments' --data-binary '<AQL RETRIEVE CONTEXT>'
+curl -X POST 'http://127.0.0.1:8080/v1/search?scope=project:investments&q=budget'
 curl -X POST 'http://127.0.0.1:8080/v1/remember?scope=project:investments' --data-binary '<AQL REMEMBER>'
 curl -X POST 'http://127.0.0.1:8080/v1/verify?scope=project:investments' --data-binary '<AQL VERIFY FACT>'
 ```
