@@ -12,3 +12,4 @@ path = "src/main.rs"
 cortex-aql = { path = "../cortex-aql" }
 cortex-core = { path = "../cortex-core" }
 cortex-engine = { path = "../cortex-engine" }
+cortex-storage = { path = "../cortex-storage" }

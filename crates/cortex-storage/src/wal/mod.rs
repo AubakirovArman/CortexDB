@@ -1,10 +1,12 @@
 pub mod checksum;
 pub mod codec;
+pub mod diagnostics;
 pub mod reader;
 pub mod record;
 pub mod writer;
 
 pub use codec::WalCodec;
+pub use diagnostics::{WalDiagnostics, WalScanSummary};
 pub use reader::{WalReader, WalScan};
 pub use record::{
     AclogMagic, DecodedSection, DecodedWalRecord, SectionEntry, SectionTag, WalCodecVersion,

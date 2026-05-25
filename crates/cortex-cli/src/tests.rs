@@ -117,6 +117,40 @@ fn gc_retired_command_reports_removed_segments() {
 }
 
 #[test]
+fn wal_validate_and_dump_report_records() {
+    let path = unique_path("cortexdb-cli-wal");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "hello".to_owned(),
+    ])
+    .unwrap();
+
+    let validation = run(vec![
+        "cortexdb".to_owned(),
+        "wal-validate".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    assert!(validation.contains("records=1"));
+    assert!(validation.contains("known_sections=2"));
+
+    let dump = run(vec![
+        "cortexdb".to_owned(),
+        "wal-dump".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    assert!(dump.contains("type=PutCellBatch"));
+    assert!(dump.contains("sections=2"));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
 fn unlock_force_removes_stale_lock() {
     let path = unique_path("cortexdb-cli-unlock");
     std::fs::create_dir_all(&path).unwrap();

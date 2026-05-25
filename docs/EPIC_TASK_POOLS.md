@@ -241,11 +241,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 The active slice is:
 
 ```text
-Epic 021 -> candidate mapping consistency
-Epic 026 -> SegmentBundle API
-Epic 029 -> retired segment lifecycle
-Epic 030 -> explicit retired segment GC
-Epic 040 -> storage bundle validator path
+Epic 041 -> ACLOG v0 format freeze docs
+Epic 043 -> BestEffort recovery policy docs
+Epic 044 -> Strict recovery policy docs
+Epic 049 -> WAL scan diagnostics
+Epic 060 -> WAL debug CLI surface
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed

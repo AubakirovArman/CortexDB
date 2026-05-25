@@ -26,13 +26,14 @@
 - Best-effort repair for orphan temp cleanup and safe WAL tail truncation.
 - Atomic write audit and storage format documentation.
 - SegmentBundle API and explicit retired segment garbage collection.
+- ACLOG format freeze notes and read-only WAL diagnostics CLI.
 
 ## Next
 
-1. Persist consensus log entries through ACLOG or a dedicated replication log.
-2. Add real network replication and leader election.
-3. Add structured JSON request bodies and richer API version negotiation.
-4. Add richer benchmark history and trend reporting.
+1. Add WAL writer backpressure and real group commit batching.
+2. Persist consensus log entries through ACLOG or a dedicated replication log.
+3. Add real network replication and leader election.
+4. Add structured JSON request bodies and richer API version negotiation.
 5. Add background GC policy around active readers.
 
 ## Not Yet

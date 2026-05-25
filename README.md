@@ -61,6 +61,8 @@ cargo run -p cortex-cli -- stats ./data
 cargo run -p cortex-cli -- validate ./data
 cargo run -p cortex-cli -- repair ./data
 cargo run -p cortex-cli -- gc-retired ./data
+cargo run -p cortex-cli -- wal-validate ./data
+cargo run -p cortex-cli -- wal-dump ./data
 cargo run -p cortex-cli -- context ./data project:investments '<AQL RETRIEVE CONTEXT>'
 cargo run -p cortex-cli -- unlock ./data --force
 ```

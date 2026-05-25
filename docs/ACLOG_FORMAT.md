@@ -1,6 +1,8 @@
 # ACLOG WAL v0
 
 ACLOG is CortexDB's append-only write-ahead log format.
+The current format is frozen as v0 for Core Alpha. Breaking layout changes
+require a `WAL_FORMAT_VERSION` bump and compatibility notes.
 
 ## File Header
 
@@ -66,3 +68,17 @@ the known `WalRecord.sections` view.
 
 Readers validate file headers, header CRC32C, and payload CRC32C. Partial tails
 return a safe truncate offset at the end of the last valid record.
+
+Strict recovery fails on checksum or header corruption. Best-effort recovery
+stops at the last valid record and lets the engine truncate the unsafe tail
+before appending new records.
+
+## Diagnostics
+
+`WalDiagnostics::summarize` reports record count, safe truncate offset, payload
+bytes, known sections, unknown sections, and last LSN. The CLI exposes this as:
+
+```bash
+cortexdb wal-validate ./data
+cortexdb wal-dump ./data
+```

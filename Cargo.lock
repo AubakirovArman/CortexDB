@@ -42,6 +42,7 @@ dependencies = [
  "cortex-aql",
  "cortex-core",
  "cortex-engine",
+ "cortex-storage",
 ]
 
 [[package]]

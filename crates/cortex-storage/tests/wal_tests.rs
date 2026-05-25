@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::Write;
 
 use cortex_storage::wal::{
-    DurabilityMode, SectionTag, WalCodec, WalReader, WalRecord, WalRecordType, WalSection,
-    WalWriter, WAL_RECORD_HEADER_LEN, WAL_SECTION_ENTRY_LEN,
+    DurabilityMode, SectionTag, WalCodec, WalDiagnostics, WalReader, WalRecord, WalRecordType,
+    WalSection, WalWriter, WAL_RECORD_HEADER_LEN, WAL_SECTION_ENTRY_LEN,
 };
 use cortex_storage::StorageError;
 
@@ -133,6 +133,31 @@ fn reader_scans_multiple_records() {
         scan.safe_truncate_offset,
         (16 + first.len() + second.len()) as u64
     );
+}
+
+#[test]
+fn diagnostics_summarize_scan_content() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("diag.aclog");
+    let first = WalCodec::encode_record_at(&record(), 16).unwrap();
+    let second =
+        WalCodec::encode_record_at(&record_with_payload(vec![9]), 16 + first.len() as u64).unwrap();
+    let mut file = File::create(&path).unwrap();
+    file.write_all(&WalCodec::file_header()).unwrap();
+    file.write_all(&first).unwrap();
+    file.write_all(&second).unwrap();
+    drop(file);
+
+    let scan = WalReader::scan_path(&path).unwrap();
+    let summary = WalDiagnostics::summarize(&scan);
+    assert_eq!(summary.records, 2);
+    assert_eq!(summary.known_sections, 3);
+    assert_eq!(summary.unknown_sections, 0);
+    assert_eq!(
+        summary.safe_truncate_offset,
+        (16 + first.len() + second.len()) as u64
+    );
+    assert_eq!(summary.last_lsn, Some(16 + first.len() as u64));
 }
 
 #[test]

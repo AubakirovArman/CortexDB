@@ -17,3 +17,13 @@ remain replayable.
 `RecoveryMode::Strict` treats corrupt payload CRC as a recovery error.
 `RecoveryMode::BestEffort` stops at the last valid record and truncates the
 tail before new appends.
+
+WAL diagnostics are read-only and do not acquire a database lock:
+
+```bash
+cortexdb wal-validate ./data
+cortexdb wal-dump ./data
+```
+
+Use them for inspection before choosing strict recovery, best-effort repair, or
+manual archival.
