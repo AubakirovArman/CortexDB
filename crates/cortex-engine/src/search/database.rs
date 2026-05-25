@@ -46,15 +46,19 @@ impl Database {
     ) -> EngineResult<Vec<DatabaseSearchResult>> {
         let mut indexes = SearchIndexes::default();
         let mut cells = BTreeMap::<u32, (CellId, Vec<u8>)>::new();
-        for (index, version) in self
+        for (index, (version, metadata)) in self
             .snapshot_versions()
             .into_iter()
-            .filter(|version| view_can_read_payload(view, &version.payload))
+            .filter_map(|version| {
+                let metadata = CellMetadata::from_payload(&version.payload);
+                view.can_read_scope(scope_id(&metadata.scope))
+                    .then_some((version, metadata))
+            })
             .enumerate()
         {
             let candidate =
                 u32::try_from(index + 1).map_err(|_| EngineError::CandidateIdOverflow)?;
-            indexes.add_document(candidate, &String::from_utf8_lossy(&version.payload));
+            indexes.add_document(candidate, &metadata.body_text);
             if let Some(vector) = vector_line(&version.payload) {
                 indexes.add_vector(candidate, vector);
             }
@@ -75,11 +79,6 @@ impl Database {
             })
             .collect())
     }
-}
-
-fn view_can_read_payload(view: &AgentView, payload: &[u8]) -> bool {
-    let metadata = CellMetadata::from_payload(payload);
-    view.can_read_scope(scope_id(&metadata.scope))
 }
 
 fn vector_line(payload: &[u8]) -> Option<Vec<i16>> {

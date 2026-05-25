@@ -1,6 +1,6 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
-use cortex_engine::{scope_id, Database};
+use cortex_engine::{scope_id, CellMetadata, Database};
 use std::collections::BTreeSet;
 
 #[test]
@@ -46,6 +46,29 @@ fn knowledge_cell_metadata_sanitizes_header_lines() {
     );
     let payload = String::from_utf8(cell.encode_payload()).unwrap();
     assert!(payload.contains("scope=tenant alpha"));
+}
+
+#[test]
+fn cell_metadata_parses_header_and_body_separately() {
+    let payload = concat!(
+        "scope=project:investments\n",
+        "status=verified\n",
+        "type=fact\n",
+        "source=annual-report\n",
+        "citation=page-7\n",
+        "source_trust_q16=60000\n",
+        "\n",
+        "body line\n",
+        "scope=not-header"
+    );
+    let metadata = CellMetadata::from_payload(payload.as_bytes());
+    assert_eq!(metadata.scope, "project:investments");
+    assert_eq!(metadata.status, "verified");
+    assert_eq!(metadata.cell_type, "fact");
+    assert_eq!(metadata.source_trust_q16, Some(60_000));
+    assert_eq!(metadata.citation(), Some("page-7"));
+    assert!(metadata.body_text.contains("scope=not-header"));
+    assert!(metadata.terms.contains(&"body".to_owned()));
 }
 
 #[test]

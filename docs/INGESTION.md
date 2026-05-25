@@ -25,6 +25,10 @@ This lets AQL filters and ContextPack citations work through the current WAL,
 MemTable, segment, bitmap, and lexical paths while reserving a future migration
 to structured metadata sections.
 
+`CellMetadata::from_payload` is the single engine parser for this convention.
+It reads metadata only from the leading header and keeps the post-header body
+separate for lexical terms, search, and redundancy checks.
+
 `REMEMBER` execution is intentionally a thin bridge. The AQL parser and binder
 enforce `AgentView.allow_remember`, write-scope access, allowed `MemoryType`, and
 TTL policy. The engine then stores the memory as a `KnowledgeCellType::Memory`

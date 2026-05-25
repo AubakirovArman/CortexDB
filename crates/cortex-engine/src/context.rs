@@ -6,6 +6,7 @@ use cortex_core::CellId;
 
 use crate::database::{Database, RetrievedCell};
 use crate::error::EngineResult;
+use crate::query::CellMetadata;
 use crate::search::tokenize;
 
 const DEFAULT_REDUNDANCY_THRESHOLD_Q16: u16 = 32_768;
@@ -188,14 +189,9 @@ fn effective_budget(view: &AgentView, requested: u32) -> u32 {
 }
 
 fn extract_citation(payload: &[u8]) -> Option<String> {
-    let text = String::from_utf8_lossy(payload);
-    text.lines().find_map(|line| {
-        line.strip_prefix("source=")
-            .or_else(|| line.strip_prefix("citation="))
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(str::to_owned)
-    })
+    CellMetadata::from_payload(payload)
+        .citation()
+        .map(str::to_owned)
 }
 
 fn effective_redundancy_threshold(value: u16) -> u16 {
@@ -217,9 +213,8 @@ fn is_redundant(payload: &[u8], packed: &[ContextPackCell], threshold_q16: u16) 
 }
 
 fn term_set(payload: &[u8]) -> BTreeSet<String> {
-    tokenize(&String::from_utf8_lossy(payload))
-        .into_iter()
-        .collect()
+    let metadata = CellMetadata::from_payload(payload);
+    tokenize(&metadata.body_text).into_iter().collect()
 }
 
 fn weighted_jaccard_q16(left: &BTreeSet<String>, right: &BTreeSet<String>) -> u16 {

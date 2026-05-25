@@ -44,11 +44,12 @@
 - Explicit contradiction markers for VERIFY FACT reports.
 - Scoped database keyword search exposed through CLI and HTTP.
 - Queryable structured conflict index from contradiction markers.
+- Centralized payload-header metadata parser with body-only lexical terms.
 
 ## Next
 
 1. Add persisted lexical metadata v2.
-2. Formalize core cell metadata instead of payload-line metadata parsing.
+2. Add metadata WAL sections beyond the payload-line bridge.
 3. Add WAL writer backpressure and real group commit batching.
 4. Persist consensus log entries through ACLOG or a dedicated replication log.
 5. Add natural-language contradiction extraction after structured markers.

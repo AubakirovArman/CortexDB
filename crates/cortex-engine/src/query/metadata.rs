@@ -13,6 +13,12 @@ pub struct CellMetadata {
     pub status: String,
     pub cell_type: String,
     pub memory_type: Option<MemoryType>,
+    pub ttl_seconds: Option<u64>,
+    pub created_unix_seconds: Option<u64>,
+    pub source_trust_q16: Option<u16>,
+    pub source: Option<String>,
+    pub citation: Option<String>,
+    pub body_text: String,
     pub terms: Vec<String>,
 }
 
@@ -23,25 +29,76 @@ impl CellMetadata {
         let mut status = "ready".to_owned();
         let mut cell_type = "cell".to_owned();
         let mut memory_type = None;
+        let mut ttl_seconds = None;
+        let mut created_unix_seconds = None;
+        let mut source_trust_q16 = None;
+        let mut source = None;
+        let mut citation = None;
+        let mut body_lines = Vec::new();
+        let mut in_header = true;
         for line in text.lines() {
-            if let Some(value) = line.strip_prefix("scope=") {
-                scope = value.trim().to_owned();
-            } else if let Some(value) = line.strip_prefix("status=") {
-                status = value.trim().to_owned();
-            } else if let Some(value) = line.strip_prefix("type=") {
-                cell_type = value.trim().to_owned();
-            } else if let Some(value) = line.strip_prefix("memory_type=") {
-                memory_type = value.trim().parse().ok();
+            if in_header {
+                if line.trim().is_empty() {
+                    in_header = false;
+                    continue;
+                }
+                if let Some(value) = line.strip_prefix("scope=") {
+                    scope = value.trim().to_owned();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("status=") {
+                    status = value.trim().to_owned();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("type=") {
+                    cell_type = value.trim().to_owned();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("memory_type=") {
+                    memory_type = value.trim().parse().ok();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("ttl_seconds=") {
+                    ttl_seconds = value.trim().parse().ok();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("created_unix_seconds=") {
+                    created_unix_seconds = value.trim().parse().ok();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("source_trust_q16=") {
+                    source_trust_q16 = value.trim().parse().ok();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("source=") {
+                    source = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("citation=") {
+                    citation = non_empty(value);
+                    continue;
+                }
+                in_header = false;
             }
+            body_lines.push(line);
         }
+        let body_text = body_lines.join("\n");
+        let terms = tokenize(&body_text);
         Self {
             scope,
             status,
             cell_type,
             memory_type,
-            terms: tokenize(&text),
+            ttl_seconds,
+            created_unix_seconds,
+            source_trust_q16,
+            source,
+            citation,
+            body_text,
+            terms,
         }
     }
+
+    pub fn citation(&self) -> Option<&str> {
+        self.citation.as_deref().or(self.source.as_deref())
+    }
+}
+
+fn non_empty(value: &str) -> Option<String> {
+    let value = value.trim();
+    (!value.is_empty()).then(|| value.to_owned())
 }
 
 pub fn scope_id(name: &str) -> ScopeId {

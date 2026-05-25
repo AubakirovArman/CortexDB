@@ -47,6 +47,28 @@ fn database_keyword_search_survives_checkpoint_restart() {
     assert_eq!(results[0].cell_id, CellId(u64::MAX));
 }
 
+#[test]
+fn database_keyword_search_uses_body_terms_not_header_terms() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\n\nbody budget".to_vec(),
+    )
+    .unwrap();
+
+    assert!(db
+        .search_keyword("project", &view("project:investments"), SearchLimit(10))
+        .unwrap()
+        .is_empty());
+    assert_eq!(
+        db.search_keyword("budget", &view("project:investments"), SearchLimit(10))
+            .unwrap()[0]
+            .cell_id,
+        CellId(1)
+    );
+}
+
 fn view(scope: &str) -> AgentView {
     AgentView {
         agent_id: AgentId(1),

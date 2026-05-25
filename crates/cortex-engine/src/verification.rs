@@ -213,9 +213,7 @@ fn tokenize_support_text(payload: &[u8]) -> Vec<String> {
 }
 
 fn source_trust_q16(payload: &[u8]) -> Q16 {
-    let text = String::from_utf8_lossy(payload);
-    text.lines()
-        .find_map(|line| line.strip_prefix("source_trust_q16="))
-        .and_then(|value| value.trim().parse::<u16>().ok())
+    CellMetadata::from_payload(payload)
+        .source_trust_q16
         .unwrap_or(32_768)
 }
