@@ -62,16 +62,18 @@
   scan without snapshot rebuild when there is no uncheckpointed WAL tail.
 - Public scoped vector search input is exposed through CLI and HTTP over the
   current exact `.acv`/snapshot vector path.
+- ACLOG-backed replication log entries persist consensus-model `Term`,
+  `LogIndex`, and payload records for local recovery.
 
 ## Next
 
-1. Persist consensus log entries through ACLOG or a dedicated replication log.
-2. Add natural-language contradiction extraction after structured markers.
-3. Add field-aware persisted lexical scoring statistics.
+1. Add natural-language contradiction extraction after structured markers.
+2. Add field-aware persisted lexical scoring statistics.
+3. Add replication transport and leader-election semantics.
 
 ## Not Yet
 
 - Large-scale BM25 ranking pipeline with analyzers and field weighting.
 - Persistent ANN vector index pages.
 - Multi-layer HNSW with deletion and rebuild policy.
-- Consensus, replication transport, and distributed recovery.
+- Consensus transport, leader election, and distributed recovery.

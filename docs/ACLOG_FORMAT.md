@@ -50,6 +50,7 @@ Sections are 8-byte aligned in the payload. Padding bytes are zero-filled.
 - `PutEdgeBatch`
 - `Checkpoint`
 - `ManifestSwitch`
+- `ReplicatedLogEntry`
 
 ## Section Tags
 
@@ -61,6 +62,7 @@ Sections are 8-byte aligned in the payload. Padding bytes are zero-filled.
 - `VectorRef`
 - `EdgeHints`
 - `CellMetadata`
+- `ReplicationCore`
 
 Unknown section tags are retained in decoded section metadata and skipped from
 the known `WalRecord.sections` view.
@@ -106,6 +108,12 @@ Operation records written by the engine must include both little-endian
 writes. The current v1 payload is deterministic UTF-8 key/value lines starting
 with `cortexdb.cell_metadata.v1`; existing payload headers remain present for
 the current MemTable, segment, AQL, and search paths.
+
+`ReplicatedLogEntry` stores local consensus-model entries in ACLOG records.
+`ReplicationCore` is 16 bytes: little-endian `Term(u64)` followed by
+little-endian `LogIndex(u64)`. `PayloadInline` stores the replicated command
+payload. This is a durable log foundation only; it is not a network transport
+or leader-election implementation.
 
 ## Diagnostics
 

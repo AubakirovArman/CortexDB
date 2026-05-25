@@ -1,6 +1,12 @@
 use std::collections::BTreeSet;
+use std::path::{Path, PathBuf};
 
 use crate::distributed::NodeId;
+use crate::error::{EngineError, EngineResult};
+use cortex_storage::wal::{
+    CommitAck, DecodedWalRecord, DurabilityMode, SectionTag, WalReader, WalRecord, WalRecordType,
+    WalSection, WalWriter, WalWriterHandle,
+};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Term(pub u64);
@@ -29,6 +35,12 @@ pub struct ConsensusState {
     pub current_term: Term,
     pub commit_index: LogIndex,
     log: Vec<ReplicatedEntry>,
+}
+
+#[derive(Debug)]
+pub struct ReplicationLog {
+    path: PathBuf,
+    writer: WalWriterHandle,
 }
 
 impl ConsensusState {
@@ -99,4 +111,120 @@ impl ConsensusState {
     fn majority(&self) -> usize {
         (self.voters.len() / 2) + 1
     }
+}
+
+impl ReplicationLog {
+    pub fn open(path: impl AsRef<Path>) -> EngineResult<Self> {
+        Self::open_with_durability(path, DurabilityMode::Strict)
+    }
+
+    pub fn open_with_durability(
+        path: impl AsRef<Path>,
+        durability: DurabilityMode,
+    ) -> EngineResult<Self> {
+        let path = path.as_ref().to_owned();
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let writer = WalWriter::start(&path, durability)?;
+        Ok(Self { path, writer })
+    }
+
+    pub fn append(&self, entry: &ReplicatedEntry) -> EngineResult<CommitAck> {
+        Ok(self.writer.append(wal_record_from_entry(entry))?)
+    }
+
+    pub fn close(self) -> EngineResult<()> {
+        Ok(self.writer.shutdown()?)
+    }
+
+    pub fn recover_entries(path: impl AsRef<Path>) -> EngineResult<Vec<ReplicatedEntry>> {
+        let path = path.as_ref();
+        if !path.exists() {
+            return Ok(Vec::new());
+        }
+        let scan = WalReader::scan_path(path)?;
+        scan.records
+            .iter()
+            .filter(|record| record.record.record_type == WalRecordType::ReplicatedLogEntry)
+            .map(entry_from_record)
+            .collect()
+    }
+
+    pub fn recover_consensus(
+        path: impl AsRef<Path>,
+        local_node: NodeId,
+        voters: BTreeSet<NodeId>,
+        commit_index: LogIndex,
+    ) -> EngineResult<ConsensusState> {
+        let entries = Self::recover_entries(path)?;
+        Ok(ConsensusState::recover(
+            local_node,
+            voters,
+            entries,
+            commit_index,
+        ))
+    }
+
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+}
+
+fn wal_record_from_entry(entry: &ReplicatedEntry) -> WalRecord {
+    WalRecord::new(
+        WalRecordType::ReplicatedLogEntry,
+        vec![
+            WalSection::new(SectionTag::ReplicationCore, encode_replication_core(entry)),
+            WalSection::new(SectionTag::PayloadInline, entry.payload.clone()),
+        ],
+    )
+}
+
+fn entry_from_record(record: &DecodedWalRecord) -> EngineResult<ReplicatedEntry> {
+    if record.record.record_type != WalRecordType::ReplicatedLogEntry {
+        return Err(EngineError::InvalidOperation);
+    }
+    let core = section(record, SectionTag::ReplicationCore)
+        .ok_or(EngineError::MissingWalSection("ReplicationCore"))?;
+    let payload = section(record, SectionTag::PayloadInline)
+        .ok_or(EngineError::MissingWalSection("PayloadInline"))?;
+    let (term, index) = decode_replication_core(core)?;
+    Ok(ReplicatedEntry {
+        term,
+        index,
+        payload: payload.to_vec(),
+    })
+}
+
+fn encode_replication_core(entry: &ReplicatedEntry) -> Vec<u8> {
+    let mut out = Vec::with_capacity(16);
+    out.extend_from_slice(&entry.term.0.to_le_bytes());
+    out.extend_from_slice(&entry.index.0.to_le_bytes());
+    out
+}
+
+fn decode_replication_core(bytes: &[u8]) -> EngineResult<(Term, LogIndex)> {
+    if bytes.len() != 16 {
+        return Err(EngineError::InvalidOperation);
+    }
+    let term = u64::from_le_bytes(
+        bytes[0..8]
+            .try_into()
+            .map_err(|_| EngineError::InvalidOperation)?,
+    );
+    let index = u64::from_le_bytes(
+        bytes[8..16]
+            .try_into()
+            .map_err(|_| EngineError::InvalidOperation)?,
+    );
+    Ok((Term(term), LogIndex(index)))
+}
+
+fn section(record: &DecodedWalRecord, tag: SectionTag) -> Option<&[u8]> {
+    record
+        .sections
+        .iter()
+        .find(|section| section.tag == Some(tag))
+        .map(|section| section.data.as_slice())
 }

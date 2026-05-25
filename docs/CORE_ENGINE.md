@@ -15,6 +15,7 @@ It owns:
 - persisted `.aci` keyword search and `.acv` exact vector scan
 - ContextPack v0 construction over retrieved cells
 - storage stats, validation, and best-effort repair surfaces
+- ACLOG-backed replication log entry persistence for local consensus-model recovery
 
-It still does not provide production BM25, HNSW storage, distributed
-consensus, document ingestion, or LLM integration.
+It still does not provide production BM25, HNSW storage, replication transport,
+leader election, document ingestion, or LLM integration.

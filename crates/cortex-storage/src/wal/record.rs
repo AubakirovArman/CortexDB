@@ -43,6 +43,7 @@ pub enum WalRecordType {
     PutEdgeBatch,
     Checkpoint,
     ManifestSwitch,
+    ReplicatedLogEntry,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -55,6 +56,7 @@ pub enum SectionTag {
     VectorRef,
     EdgeHints,
     CellMetadata,
+    ReplicationCore,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -119,6 +121,7 @@ impl WalRecordType {
             Self::PutEdgeBatch => 4,
             Self::Checkpoint => 5,
             Self::ManifestSwitch => 6,
+            Self::ReplicatedLogEntry => 7,
         }
     }
 
@@ -130,6 +133,7 @@ impl WalRecordType {
             4 => Some(Self::PutEdgeBatch),
             5 => Some(Self::Checkpoint),
             6 => Some(Self::ManifestSwitch),
+            7 => Some(Self::ReplicatedLogEntry),
             _ => None,
         }
     }
@@ -146,6 +150,7 @@ impl SectionTag {
             Self::VectorRef => 6,
             Self::EdgeHints => 7,
             Self::CellMetadata => 8,
+            Self::ReplicationCore => 9,
         }
     }
 
@@ -159,6 +164,7 @@ impl SectionTag {
             6 => Some(Self::VectorRef),
             7 => Some(Self::EdgeHints),
             8 => Some(Self::CellMetadata),
+            9 => Some(Self::ReplicationCore),
             _ => None,
         }
     }
