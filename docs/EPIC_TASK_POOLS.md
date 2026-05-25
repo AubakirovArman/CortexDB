@@ -245,7 +245,7 @@ Epic 161 -> agent memory foundation
 Epic 165 -> memory TTL expiry
 Epic 174 -> VERIFY FACT report v0
 Epic 142 -> metadata encoding
-Epic 047 -> WAL group commit
+Epic 048 -> WAL writer metrics
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed

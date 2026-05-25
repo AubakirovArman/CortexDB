@@ -230,6 +230,31 @@ fn bounded_writer_queue_mode_appends_records() {
     assert_eq!(scan.records.len(), 2);
 }
 
+#[test]
+fn balanced_writer_group_commit_accepts_parallel_appends() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("group.aclog");
+    let writer = WalWriter::start(&path, DurabilityMode::Balanced).unwrap();
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(4));
+    let handles = (0..4)
+        .map(|value| {
+            let writer = writer.clone();
+            let barrier = barrier.clone();
+            std::thread::spawn(move || {
+                barrier.wait();
+                writer.append(record_with_payload(vec![value])).unwrap();
+            })
+        })
+        .collect::<Vec<_>>();
+    for handle in handles {
+        handle.join().unwrap();
+    }
+    writer.shutdown().unwrap();
+
+    let scan = WalReader::open(&path).unwrap().scan().unwrap();
+    assert_eq!(scan.records.len(), 4);
+}
+
 fn rewrite_header_crc(encoded: &mut [u8]) {
     let header_len = get_u16(&encoded[4..6]) as usize;
     encoded[28..32].copy_from_slice(&0u32.to_le_bytes());

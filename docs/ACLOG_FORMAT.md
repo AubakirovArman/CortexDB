@@ -86,7 +86,9 @@ WalWriterOptions {
 
 `queue_capacity = None` keeps the legacy unbounded queue. `Some(n)` creates a
 bounded writer channel, so callers naturally block when the writer falls behind.
-The database still uses the default path until engine-level tuning is added.
+In `Balanced` durability mode the actor drains a short append batch and performs
+one `sync_data` before acknowledging that batch. `Strict` still syncs each
+record independently.
 
 ## Diagnostics
 

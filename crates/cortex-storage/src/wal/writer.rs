@@ -3,12 +3,14 @@ use std::io::{Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::thread;
 
-use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
+use crossbeam_channel::{bounded, unbounded, Receiver, Sender, TryRecvError};
 
 use crate::error::{StorageError, StorageResult};
 
 use super::codec::WalCodec;
 use super::record::WalRecord;
+
+const BALANCED_BATCH_MAX: usize = 32;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DurabilityMode {
@@ -130,8 +132,14 @@ fn run_writer(path: PathBuf, mode: DurabilityMode, rx: Receiver<WalWriterCommand
     while let Ok(command) = rx.recv() {
         match command {
             WalWriterCommand::Append { record, reply } => {
-                let result = append_record(&mut file, mode, record, &mut next_lsn);
-                let _ = reply.send(result);
+                if mode == DurabilityMode::Balanced {
+                    if append_balanced_batch(&mut file, record, reply, &rx, &mut next_lsn) {
+                        break;
+                    }
+                } else {
+                    let result = append_strict_record(&mut file, record, &mut next_lsn);
+                    let _ = reply.send(result);
+                }
             }
             WalWriterCommand::Shutdown { reply } => {
                 let result = file.sync_data().map_err(StorageError::from);
@@ -142,18 +150,83 @@ fn run_writer(path: PathBuf, mode: DurabilityMode, rx: Receiver<WalWriterCommand
     }
 }
 
-fn append_record(
+fn append_strict_record(
     file: &mut std::fs::File,
-    mode: DurabilityMode,
+    record: WalRecord,
+    next_lsn: &mut u64,
+) -> StorageResult<CommitAck> {
+    let ack = append_record_without_sync(file, record, next_lsn)?;
+    file.sync_data()?;
+    Ok(ack)
+}
+
+fn append_balanced_batch(
+    file: &mut std::fs::File,
+    record: WalRecord,
+    reply: Sender<StorageResult<CommitAck>>,
+    rx: &Receiver<WalWriterCommand>,
+    next_lsn: &mut u64,
+) -> bool {
+    let mut batch = vec![(record, reply)];
+    let mut shutdown = None;
+    while batch.len() < BALANCED_BATCH_MAX {
+        match rx.try_recv() {
+            Ok(WalWriterCommand::Append { record, reply }) => batch.push((record, reply)),
+            Ok(WalWriterCommand::Shutdown { reply }) => {
+                shutdown = Some(reply);
+                break;
+            }
+            Err(TryRecvError::Empty) => break,
+            Err(TryRecvError::Disconnected) => break,
+        }
+    }
+
+    let mut replies = Vec::new();
+    for (record, reply) in batch {
+        match append_record_without_sync(file, record, next_lsn) {
+            Ok(ack) => replies.push((reply, Ok(ack))),
+            Err(error) => replies.push((reply, Err(error))),
+        }
+    }
+    if let Some(message) = replies
+        .iter()
+        .find_map(|(_, result)| result.as_ref().err().map(ToString::to_string))
+    {
+        for (reply, _) in replies {
+            let _ = reply.send(Err(io_error(&message)));
+        }
+        return shutdown.is_some();
+    }
+    if let Err(error) = file.sync_data() {
+        let message = error.to_string();
+        for (reply, _) in replies {
+            let _ = reply.send(Err(io_error(&message)));
+        }
+        return shutdown.is_some();
+    }
+    for (reply, result) in replies {
+        let _ = reply.send(result);
+    }
+    if let Some(reply) = shutdown {
+        let result = file.sync_data().map_err(StorageError::from);
+        let _ = reply.send(result);
+        return true;
+    }
+    false
+}
+
+fn append_record_without_sync(
+    file: &mut std::fs::File,
     record: WalRecord,
     next_lsn: &mut u64,
 ) -> StorageResult<CommitAck> {
     let lsn = *next_lsn;
     let bytes = WalCodec::encode_record_at(&record, lsn)?;
     file.write_all(&bytes)?;
-    if mode == DurabilityMode::Strict {
-        file.sync_data()?;
-    }
     *next_lsn += bytes.len() as u64;
     Ok(CommitAck { durable_lsn: lsn })
+}
+
+fn io_error(message: &str) -> StorageError {
+    StorageError::Io(std::io::Error::other(message.to_owned()))
 }

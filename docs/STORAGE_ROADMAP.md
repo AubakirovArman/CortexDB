@@ -47,11 +47,12 @@
 - Centralized payload-header metadata parser with body-only lexical terms.
 - `.aci` lexical index v2 with per-candidate document lengths and `ACI0` read compatibility.
 - WAL writer bounded queue option for caller-side backpressure.
+- Balanced WAL writer group commit batches queued appends before acknowledgment.
 
 ## Next
 
 1. Add metadata WAL sections beyond the payload-line bridge.
-2. Add real WAL group commit batching and writer metrics.
+2. Add WAL writer metrics.
 3. Persist consensus log entries through ACLOG or a dedicated replication log.
 4. Add natural-language contradiction extraction after structured markers.
 5. Run search directly over persisted `.aci` without snapshot rebuild.
