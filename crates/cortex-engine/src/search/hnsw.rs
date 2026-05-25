@@ -9,10 +9,32 @@ pub struct HnswRebuildPolicy {
     pub deleted_fraction_q16: u16,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct HnswMaintenancePolicy {
+    pub rebuild_policy: HnswRebuildPolicy,
+    pub min_deleted_vectors: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct HnswMaintenanceReport {
+    pub vectors_before: usize,
+    pub deleted_before: usize,
+    pub rebuilt: bool,
+}
+
 impl Default for HnswRebuildPolicy {
     fn default() -> Self {
         Self {
             deleted_fraction_q16: 16_384,
+        }
+    }
+}
+
+impl Default for HnswMaintenancePolicy {
+    fn default() -> Self {
+        Self {
+            rebuild_policy: HnswRebuildPolicy::default(),
+            min_deleted_vectors: 1,
         }
     }
 }
@@ -79,6 +101,31 @@ impl HnswIndex {
         self.deleted.clear();
         self.rebuild_links();
         true
+    }
+
+    pub fn apply_maintenance(&mut self, policy: HnswMaintenancePolicy) -> HnswMaintenanceReport {
+        let vectors_before = self.vectors.len();
+        let deleted_before = self.deleted.len();
+        let rebuilt = deleted_before >= policy.min_deleted_vectors
+            && self.rebuild_if_needed(policy.rebuild_policy);
+        HnswMaintenanceReport {
+            vectors_before,
+            deleted_before,
+            rebuilt,
+        }
+    }
+
+    pub fn vector_count(&self) -> usize {
+        self.vectors.len()
+    }
+
+    pub fn deleted_count(&self) -> usize {
+        self.deleted.len()
+    }
+
+    pub fn maintenance_due(&self, policy: HnswMaintenancePolicy) -> bool {
+        self.deleted.len() >= policy.min_deleted_vectors
+            && self.should_rebuild(policy.rebuild_policy)
     }
 
     pub fn layer_count(&self) -> usize {

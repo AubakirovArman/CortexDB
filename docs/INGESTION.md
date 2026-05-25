@@ -52,9 +52,13 @@ The native PDF extractor handles literal strings and hex strings inside
 intentionally rejects unsupported/empty PDFs instead of silently storing an
 empty document.
 
+`IngestionProgressTracker` provides a small synchronous progress surface for
+adapter jobs. The first tracked helper is `Database::ingest_csv_with_progress`,
+which records total rows, completed cells, status, and the last written
+`CellId`.
+
 ## Not Yet
 
 - PDF layout reconstruction and object graph repair.
 - Enrichment jobs.
-- Progress API.
 - TTL expiry/decay scanning.

@@ -82,11 +82,19 @@
   entries over loopback tests.
 - Token-authenticated replication frames, a blocking peer-server loop, and
   snapshot chunk transfer cover the first network recovery path.
+- Ingestion progress tracking exposes synchronous job status for CSV adapter
+  imports.
+- Durable snapshot install writes received snapshot cells as a normal segment
+  bundle and publishes the manifest.
+- Replication recovery planning chooses append-entry catch-up or snapshot
+  install based on follower lag.
+- HNSW maintenance reports deleted-vector pressure and rebuilds when configured
+  thresholds are crossed.
 
 ## Next
 
-1. Add ingestion job progress tracking.
-2. Add durable snapshot install into segments.
+1. Expand progress tracking to async enrichment jobs.
+2. Connect recovery planning to an automatic node rejoin loop.
 3. Add production distributed recovery orchestration.
 
 ## Not Yet

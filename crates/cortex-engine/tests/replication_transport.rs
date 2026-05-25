@@ -1,10 +1,14 @@
 use std::collections::BTreeSet;
 
+use cortex_core::{CellId, CommitSeq};
 use cortex_engine::{
-    AppendEntriesRequest, ConsensusState, ElectionRole, ElectionState,
+    decode_snapshot_segment, encode_snapshot_segment, plan_replication_recovery,
+    AppendEntriesRequest, ConsensusState, Database, ElectionRole, ElectionState,
     InMemoryReplicationTransport, LogIndex, NodeId, ReplicationPeerServer, ReplicationPeerState,
-    ReplicationTransport, SnapshotChunk, TcpReplicationTransport, Term,
+    ReplicationRecoveryAction, ReplicationRecoveryPolicy, ReplicationTransport, SnapshotChunk,
+    SnapshotSegment, TcpReplicationTransport, Term,
 };
+use cortex_storage::segment::SegmentCell;
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
 use std::net::TcpListener;
@@ -190,6 +194,67 @@ fn authenticated_replication_frame_rejects_wrong_token() {
     );
 
     assert!(result.is_err());
+}
+
+#[test]
+fn snapshot_segment_roundtrips_and_installs_durably() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let snapshot = SnapshotSegment {
+        checkpoint_seq: CommitSeq(7),
+        cells: vec![SegmentCell {
+            candidate_id: 1,
+            cell_id: 99,
+            created_seq: 7,
+            deleted_seq: None,
+            payload: b"scope=project:investments\nstatus=ready\n\nsnapshot cell".to_vec(),
+        }],
+    };
+    let encoded = encode_snapshot_segment(&snapshot).unwrap();
+    let decoded = decode_snapshot_segment(&encoded).unwrap();
+
+    let stats = db.install_snapshot_segment(decoded).unwrap();
+    db.close().unwrap();
+    let db = Database::open(dir.path()).unwrap();
+
+    assert_eq!(stats.checkpoint_seq, CommitSeq(7));
+    assert_eq!(
+        db.get_latest_cell(CellId(99)).unwrap(),
+        snapshot.cells[0].payload
+    );
+    assert_eq!(db.manifest().live_segments.len(), 1);
+}
+
+#[test]
+fn replication_recovery_planner_selects_append_or_snapshot() {
+    let append = plan_replication_recovery(
+        LogIndex(10),
+        LogIndex(12),
+        ReplicationRecoveryPolicy {
+            snapshot_threshold: 10,
+        },
+    );
+    assert_eq!(
+        append.action,
+        ReplicationRecoveryAction::AppendEntries {
+            from_exclusive: LogIndex(10),
+            to_inclusive: LogIndex(12),
+        }
+    );
+
+    let snapshot = plan_replication_recovery(
+        LogIndex(1),
+        LogIndex(20),
+        ReplicationRecoveryPolicy {
+            snapshot_threshold: 10,
+        },
+    );
+    assert_eq!(
+        snapshot.action,
+        ReplicationRecoveryAction::InstallSnapshot {
+            checkpoint: LogIndex(20),
+        }
+    );
 }
 
 fn voters() -> BTreeSet<NodeId> {

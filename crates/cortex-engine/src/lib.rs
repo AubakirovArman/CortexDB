@@ -30,7 +30,8 @@ pub use database::{
 pub use distributed::*;
 pub use error::{EngineError, EngineResult};
 pub use ingestion::{
-    extract_pdf_text, CsvIngestOptions, IngestedCell, JsonIngestOptions, PdfExtractionStats,
+    extract_pdf_text, CsvIngestOptions, IngestedCell, IngestionJobId, IngestionJobStatus,
+    IngestionProgress, IngestionProgressTracker, JsonIngestOptions, PdfExtractionStats,
     PdfIngestOptions, TextIngestOptions,
 };
 pub use operation::*;

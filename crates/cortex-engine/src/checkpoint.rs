@@ -3,10 +3,10 @@ use std::fs;
 use std::path::Path;
 
 mod candidates;
-mod hnsw;
+pub(crate) mod hnsw;
 mod index_merge;
 mod paths;
-mod vector;
+pub(crate) mod vector;
 
 use cortex_core::memtable::MemTable;
 use cortex_core::{CellId, CommitSeq};

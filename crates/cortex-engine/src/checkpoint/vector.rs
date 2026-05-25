@@ -9,7 +9,7 @@ use crate::search::vector::vector_from_payload;
 
 use super::{segment_path, vector_path};
 
-pub(super) fn vector_index_for_cells(cells: &[SegmentCell]) -> VectorIndex {
+pub(crate) fn vector_index_for_cells(cells: &[SegmentCell]) -> VectorIndex {
     let vectors = cells
         .iter()
         .filter(|cell| cell.deleted_seq.is_none())

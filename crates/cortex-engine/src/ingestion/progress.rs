@@ -1,0 +1,132 @@
+use std::collections::BTreeMap;
+
+use cortex_core::CellId;
+
+use crate::database::Database;
+use crate::error::{EngineError, EngineResult};
+
+use super::{CsvIngestOptions, IngestedCell};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct IngestionJobId(pub u64);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IngestionJobStatus {
+    Running,
+    Completed,
+    Failed,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IngestionProgress {
+    pub job_id: IngestionJobId,
+    pub label: String,
+    pub status: IngestionJobStatus,
+    pub total_items: Option<u64>,
+    pub completed_items: u64,
+    pub failed_items: u64,
+    pub last_cell_id: Option<CellId>,
+    pub message: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct IngestionProgressTracker {
+    next_id: u64,
+    jobs: BTreeMap<IngestionJobId, IngestionProgress>,
+}
+
+impl IngestionProgressTracker {
+    pub fn start(
+        &mut self,
+        label: impl Into<String>,
+        total_items: Option<u64>,
+    ) -> EngineResult<IngestionJobId> {
+        self.next_id = self.next_id.checked_add(1).ok_or_else(progress_overflow)?;
+        let job_id = IngestionJobId(self.next_id);
+        self.jobs.insert(
+            job_id,
+            IngestionProgress {
+                job_id,
+                label: label.into(),
+                status: IngestionJobStatus::Running,
+                total_items,
+                completed_items: 0,
+                failed_items: 0,
+                last_cell_id: None,
+                message: None,
+            },
+        );
+        Ok(job_id)
+    }
+
+    pub fn record_cell(&mut self, job_id: IngestionJobId, cell_id: CellId) -> EngineResult<()> {
+        let progress = self.job_mut(job_id)?;
+        progress.completed_items = progress
+            .completed_items
+            .checked_add(1)
+            .ok_or_else(progress_overflow)?;
+        progress.last_cell_id = Some(cell_id);
+        Ok(())
+    }
+
+    pub fn finish(&mut self, job_id: IngestionJobId) -> EngineResult<()> {
+        self.job_mut(job_id)?.status = IngestionJobStatus::Completed;
+        Ok(())
+    }
+
+    pub fn fail(&mut self, job_id: IngestionJobId, message: impl Into<String>) -> EngineResult<()> {
+        let progress = self.job_mut(job_id)?;
+        progress.status = IngestionJobStatus::Failed;
+        progress.failed_items = progress
+            .failed_items
+            .checked_add(1)
+            .ok_or_else(progress_overflow)?;
+        progress.message = Some(message.into());
+        Ok(())
+    }
+
+    pub fn get(&self, job_id: IngestionJobId) -> Option<&IngestionProgress> {
+        self.jobs.get(&job_id)
+    }
+
+    pub fn list(&self) -> Vec<IngestionProgress> {
+        self.jobs.values().cloned().collect()
+    }
+
+    fn job_mut(&mut self, job_id: IngestionJobId) -> EngineResult<&mut IngestionProgress> {
+        self.jobs
+            .get_mut(&job_id)
+            .ok_or(EngineError::InvalidOperation)
+    }
+}
+
+impl Database {
+    pub fn ingest_csv_with_progress(
+        &mut self,
+        first_cell_id: CellId,
+        csv: &str,
+        options: CsvIngestOptions,
+        tracker: &mut IngestionProgressTracker,
+        label: impl Into<String>,
+    ) -> EngineResult<(IngestionJobId, Vec<IngestedCell>)> {
+        let total = csv.lines().count().saturating_sub(1) as u64;
+        let job_id = tracker.start(label, Some(total))?;
+        match self.ingest_csv(first_cell_id, csv, options) {
+            Ok(cells) => {
+                for cell in &cells {
+                    tracker.record_cell(job_id, cell.cell_id)?;
+                }
+                tracker.finish(job_id)?;
+                Ok((job_id, cells))
+            }
+            Err(error) => {
+                let _ = tracker.fail(job_id, error.to_string());
+                Err(error)
+            }
+        }
+    }
+}
+
+fn progress_overflow() -> EngineError {
+    EngineError::StorageInvariant("ingestion progress counter overflow".to_owned())
+}

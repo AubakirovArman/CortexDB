@@ -6,6 +6,7 @@ use super::{tokenize, Bm25Index};
 pub struct TextAnalyzer {
     field_weights: BTreeMap<String, u32>,
     stopwords: BTreeSet<String>,
+    lemmas: BTreeMap<String, String>,
     stemmer: Stemmer,
 }
 
@@ -35,6 +36,7 @@ impl Default for TextAnalyzer {
                 ("source".to_owned(), 1),
             ]),
             stopwords: BTreeSet::new(),
+            lemmas: BTreeMap::new(),
             stemmer: Stemmer::None,
         }
     }
@@ -58,6 +60,11 @@ impl TextAnalyzer {
 
     pub fn with_stopwords(mut self, stopwords: impl IntoIterator<Item = String>) -> Self {
         self.stopwords = stopwords.into_iter().collect();
+        self
+    }
+
+    pub fn with_lemmas(mut self, lemmas: impl IntoIterator<Item = (String, String)>) -> Self {
+        self.lemmas = lemmas.into_iter().collect();
         self
     }
 
@@ -88,7 +95,7 @@ impl TextAnalyzer {
     }
 
     fn normalize_term(&self, term: String) -> String {
-        match self.stemmer {
+        let stemmed = match self.stemmer {
             Stemmer::None => term,
             Stemmer::EnglishLight => light_english_stem(term),
             Stemmer::RussianLight => light_suffix_stem(
@@ -105,7 +112,8 @@ impl TextAnalyzer {
                     "тер",
                 ],
             ),
-        }
+        };
+        self.lemmas.get(&stemmed).cloned().unwrap_or(stemmed)
     }
 }
 

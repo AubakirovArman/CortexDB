@@ -6,11 +6,15 @@ use crate::error::{EngineError, EngineResult};
 
 mod adapters;
 mod pdf;
+mod progress;
 
 pub use adapters::{
     CsvIngestOptions, IngestedCell, JsonIngestOptions, PdfIngestOptions, TextIngestOptions,
 };
 pub use pdf::{extract_pdf_text, PdfExtractionStats};
+pub use progress::{
+    IngestionJobId, IngestionJobStatus, IngestionProgress, IngestionProgressTracker,
+};
 
 const MEMORY_CELL_NAMESPACE: u64 = 0x8000_0000_0000_0000;
 

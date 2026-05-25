@@ -26,6 +26,15 @@ SNAPSHOT <term> <leader_id> <leader_commit> <chunk_index> <last> <hex_payload>
 The receiver appends chunks into an in-memory snapshot buffer and acknowledges
 the number of received bytes.
 
+Snapshot payloads can also be encoded as `SnapshotSegment` values and installed
+durably through `Database::install_snapshot_segment`. Install writes a normal
+segment bundle (`.acs/.acb/.aci/.acv/.ach`), publishes the manifest, resets the
+WAL tail, and rebuilds the MemTable from the installed snapshot.
+
+`plan_replication_recovery` is the first recovery orchestrator. It compares a
+follower commit index with a leader commit index and chooses either append-entry
+catch-up or snapshot install when the lag crosses a configured threshold.
+
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 
 ```rust
@@ -37,5 +46,4 @@ let state = ReplicationLog::recover_consensus(path, node, voters, commit_index)?
 
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS
   terminator for now.
-- Durable snapshot install into segment files.
 - Automatic distributed repair after a node rejoins.

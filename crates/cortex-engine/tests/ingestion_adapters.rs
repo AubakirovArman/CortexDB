@@ -1,7 +1,7 @@
 use cortex_core::CellId;
-use cortex_engine::TextIngestOptions;
 use cortex_engine::{extract_pdf_text, scope_id};
 use cortex_engine::{CsvIngestOptions, Database, JsonIngestOptions, PdfIngestOptions};
+use cortex_engine::{IngestionJobStatus, IngestionProgressTracker, TextIngestOptions};
 
 #[test]
 fn text_ingestion_writes_document_cell() {
@@ -145,6 +145,33 @@ fn native_pdf_ingestion_extracts_flate_decode_streams() {
     let extracted = extract_pdf_text(&pdf).unwrap();
 
     assert!(extracted.text.contains("Compressed budget 12000"));
+}
+
+#[test]
+fn csv_ingestion_reports_progress() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let mut tracker = IngestionProgressTracker::default();
+
+    let (job_id, cells) = db
+        .ingest_csv_with_progress(
+            CellId(50),
+            "project,budget\nABC,12000\nXYZ,9000",
+            CsvIngestOptions {
+                scope: "project:investments".to_owned(),
+                source: "budget.csv".to_owned(),
+            },
+            &mut tracker,
+            "budget import",
+        )
+        .unwrap();
+
+    let progress = tracker.get(job_id).unwrap();
+    assert_eq!(cells.len(), 2);
+    assert_eq!(progress.status, IngestionJobStatus::Completed);
+    assert_eq!(progress.total_items, Some(2));
+    assert_eq!(progress.completed_items, 2);
+    assert_eq!(progress.last_cell_id, Some(CellId(51)));
 }
 
 fn crate_view() -> cortex_aql::AgentView {

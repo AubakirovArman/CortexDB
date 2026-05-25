@@ -9,14 +9,23 @@ use cortex_storage::wal::{
 };
 
 mod election;
+mod install;
 mod peer;
+mod recovery;
 mod snapshot;
 mod tcp;
 mod transport;
 
 pub use election::{ElectionOutcome, ElectionRole, ElectionState, VoteRequest, VoteResponse};
 pub use peer::{ReplicationPeerServer, ReplicationPeerState};
-pub use snapshot::{decode_snapshot_chunk, encode_snapshot_chunk, SnapshotChunk};
+pub use recovery::{
+    plan_replication_recovery, ReplicationRecoveryAction, ReplicationRecoveryPlan,
+    ReplicationRecoveryPolicy,
+};
+pub use snapshot::{
+    decode_snapshot_chunk, decode_snapshot_segment, encode_snapshot_chunk, encode_snapshot_segment,
+    SnapshotChunk, SnapshotSegment,
+};
 pub use tcp::{
     handle_authenticated_replication_frame, handle_replication_frame, TcpReplicationTransport,
 };

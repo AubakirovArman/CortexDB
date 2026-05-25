@@ -54,3 +54,14 @@ fn language_analyzer_packs_apply_stopwords_and_light_stemming() {
     assert!(terms.contains_key("жоба"));
     assert!(!terms.contains_key("және"));
 }
+
+#[test]
+fn analyzer_lemma_overrides_normalized_terms() {
+    let analyzer = TextAnalyzer::for_language(Language::Russian)
+        .with_lemmas([("бюджет".to_owned(), "budget".to_owned())]);
+
+    let terms = analyzer.weighted_terms([("body", "бюджеты проекта")]);
+
+    assert_eq!(terms.get("budget"), Some(&1));
+    assert!(!terms.contains_key("бюджет"));
+}

@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use cortex_engine::{HnswIndex, HnswRebuildPolicy};
+use cortex_engine::{HnswIndex, HnswMaintenancePolicy, HnswRebuildPolicy};
 use cortex_storage::hnsw::HnswGraphIndex;
 
 #[test]
@@ -51,4 +51,28 @@ fn hnsw_delete_and_rebuild_policy_removes_deleted_vectors() {
     }));
 
     assert_ne!(index.search(&[10, 0], 1)[0].cell_id, 1);
+}
+
+#[test]
+fn hnsw_maintenance_reports_rebuild_lifecycle() {
+    let mut index = HnswIndex::new(2, 8);
+    index.add_vector(1, vec![10, 0]);
+    index.add_vector(2, vec![9, 0]);
+    index.add_vector(3, vec![0, 10]);
+    assert!(index.remove_vector(2));
+    let policy = HnswMaintenancePolicy {
+        rebuild_policy: HnswRebuildPolicy {
+            deleted_fraction_q16: 1,
+        },
+        min_deleted_vectors: 1,
+    };
+
+    assert!(index.maintenance_due(policy));
+    let report = index.apply_maintenance(policy);
+
+    assert!(report.rebuilt);
+    assert_eq!(report.vectors_before, 3);
+    assert_eq!(report.deleted_before, 1);
+    assert_eq!(index.deleted_count(), 0);
+    assert_eq!(index.vector_count(), 2);
 }

@@ -28,8 +28,13 @@ signals as snapshot search.
 
 `TextAnalyzer` supports field weights, stopwords, weighted terms, deterministic
 MRR checks, and built-in English/Russian/Kazakh analyzer packs. The language
-packs include light suffix stemmers and stopword lists. They are deterministic
+packs include light suffix stemmers and stopword lists. Custom lemma overrides
+can map normalized terms into domain dictionaries. The packs are deterministic
 and dependency-light, not full morphological analyzers.
+
+`HnswIndex::apply_maintenance` reports deleted-vector pressure and rebuilds the
+graph when `HnswMaintenancePolicy` thresholds are reached. This gives the engine
+a deterministic lifecycle hook without a background scheduler thread.
 
 Current smoke surfaces:
 
@@ -47,4 +52,4 @@ comma or space separated signed 16-bit integers.
 ## Not Yet
 
 - Full dictionary-grade lemmatization packs.
-- Production HNSW tuning beyond the current delete/rebuild policy.
+- Production HNSW tuning beyond the current deterministic maintenance hook.
