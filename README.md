@@ -96,6 +96,8 @@ The Core Alpha tag gate is tracked in
 [`docs/CORE_ALPHA_RELEASE_CHECKLIST.md`](docs/CORE_ALPHA_RELEASE_CHECKLIST.md).
 Crash/restart/corruption coverage is tracked in
 [`docs/CRASH_SIMULATION.md`](docs/CRASH_SIMULATION.md).
+The current code/dataflow consistency audit is in
+[`docs/CORE_CONSISTENCY_AUDIT.md`](docs/CORE_CONSISTENCY_AUDIT.md).
 Storage atomicity and binary formats are documented in
 [`docs/ATOMIC_WRITE_AUDIT.md`](docs/ATOMIC_WRITE_AUDIT.md) and
 [`docs/STORAGE_FORMATS.md`](docs/STORAGE_FORMATS.md).

@@ -18,6 +18,7 @@ every required row is green on `main`.
 | Repair safety | `Database::repair_best_effort` removes orphan temps and truncates only safe WAL tails. |
 | Restart safety | put, patch, tombstone, checkpoint, compact, and WAL tail tests pass. |
 | Crash matrix | Orphan bundles, temp manifests, restart tails, and corruption matrix tests pass. |
+| Consistency audit | `CORE_CONSISTENCY_AUDIT.md` is current and full-stack consistency tests pass. |
 | Atomic audit | `ATOMIC_WRITE_AUDIT.md` and `STORAGE_FORMATS.md` match the current writers/readers. |
 | Benchmark baseline | `cargo bench -p cortex-engine --bench core_baseline` runs without external services. |
 | Query safety | AQL retrieve respects AgentView masks and candidate mappings. |
