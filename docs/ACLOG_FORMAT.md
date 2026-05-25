@@ -97,6 +97,10 @@ Replay returns `ReplayMetrics` with records seen, records applied, records
 skipped by checkpoint base sequence, payload bytes scanned, and safe truncate
 offset.
 
+Operation records written by the engine must include both little-endian
+`CellId` and little-endian `CommitSeq` in `CellCore`. Records missing
+`CommitSeq` are rejected by replay.
+
 ## Diagnostics
 
 `WalDiagnostics::summarize` reports record count, safe truncate offset, payload

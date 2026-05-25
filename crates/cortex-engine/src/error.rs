@@ -20,6 +20,8 @@ pub enum EngineError {
     InvalidOperation,
     #[error("missing WAL section: {0}")]
     MissingWalSection(&'static str),
+    #[error("missing WAL commit sequence")]
+    MissingCommitSeq,
     #[error("cell not found after WAL append: {0:?}")]
     FatalCellMissingAfterWal(CellId),
     #[error("missing storage file: {0}")]

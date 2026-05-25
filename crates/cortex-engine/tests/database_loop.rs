@@ -1,7 +1,8 @@
 use cortex_core::{CellId, CommitSeq};
 use cortex_engine::{
-    decode_cell_core, decode_cell_id, encode_cell_id, operation_from_decoded_wal_record, Database,
-    DbOperation, EngineError, OperationDecoder, OperationEncoder,
+    decode_cell_core, decode_cell_id, encode_cell_core, encode_cell_id,
+    operation_from_decoded_wal_record, Database, DbOperation, EngineError, OperationDecoder,
+    OperationEncoder,
 };
 use cortex_storage::wal::{
     checksum::crc32c, SectionTag, WalCodec, WalRecord, WalRecordType, WalSection,
@@ -20,7 +21,7 @@ fn operation_put_cell_roundtrips_through_wal() {
     assert_eq!(OperationDecoder::decode(&decoded).unwrap(), operation);
     assert_eq!(
         OperationDecoder::decode_with_seq(&decoded).unwrap().seq,
-        Some(CommitSeq(3))
+        CommitSeq(3)
     );
     assert_eq!(
         decode_cell_core(&decoded.sections[0].data).unwrap().seq,
@@ -33,11 +34,43 @@ fn operation_put_cell_roundtrips_through_wal() {
 }
 
 #[test]
-fn wal_record_with_extra_unknown_section_still_decodes_operation() {
+fn operation_encoder_without_commit_seq_is_rejected() {
+    let operation = DbOperation::PutCell {
+        cell_id: CellId(7),
+        payload: b"hello".to_vec(),
+    };
+    assert!(matches!(
+        OperationEncoder::encode(&operation).unwrap_err(),
+        EngineError::MissingCommitSeq
+    ));
+}
+
+#[test]
+fn operation_decoder_rejects_missing_commit_seq() {
     let record = WalRecord::new(
         WalRecordType::PutCellBatch,
         vec![
             WalSection::new(SectionTag::CellCore, encode_cell_id(CellId(1))),
+            WalSection::new(SectionTag::PayloadInline, b"hello".to_vec()),
+        ],
+    );
+    let encoded = WalCodec::encode_record(&record).unwrap();
+    let decoded = WalCodec::decode_record(&encoded).unwrap();
+    assert!(matches!(
+        operation_from_decoded_wal_record(&decoded).unwrap_err(),
+        EngineError::MissingCommitSeq
+    ));
+}
+
+#[test]
+fn wal_record_with_extra_unknown_section_still_decodes_operation() {
+    let record = WalRecord::new(
+        WalRecordType::PutCellBatch,
+        vec![
+            WalSection::new(
+                SectionTag::CellCore,
+                encode_cell_core(CellId(1), CommitSeq(1)),
+            ),
             WalSection::new(SectionTag::PayloadInline, b"hello".to_vec()),
             WalSection::new(SectionTag::EdgeHints, b"ignored".to_vec()),
         ],
@@ -63,7 +96,7 @@ fn invalid_operation_missing_payload_is_rejected() {
         WalRecordType::PutCellBatch,
         vec![WalSection::new(
             SectionTag::CellCore,
-            encode_cell_id(CellId(1)),
+            encode_cell_core(CellId(1), CommitSeq(1)),
         )],
     );
     let encoded = WalCodec::encode_record(&record).unwrap();

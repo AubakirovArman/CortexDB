@@ -81,11 +81,9 @@ fn replay_scan(
         safe_truncate_offset: scan.safe_truncate_offset,
         ..ReplayMetrics::default()
     };
-    for (index, record) in scan.records.iter().enumerate() {
+    for record in &scan.records {
         let decoded = decoded_operation_from_wal_record(record)?;
-        let seq = decoded
-            .seq
-            .unwrap_or(CommitSeq(base_seq.0 + index as u64 + 1));
+        let seq = decoded.seq;
         if seq <= base_seq {
             metrics.records_skipped += 1;
             continue;

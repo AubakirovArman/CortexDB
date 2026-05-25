@@ -2,13 +2,15 @@
 
 `cortex-engine::replay_wal(path)` scans ACLOG records and rebuilds a MemTable.
 
-Replay reads durable commit sequence from `CellCore`:
+Replay requires a durable commit sequence in every operation `CellCore`:
 
 ```text
 CellCore = little-endian CellId + little-endian CommitSeq
 ```
 
-If an old WAL record only contains `CellId`, replay falls back to record order.
+If an operation record only contains `CellId`, replay fails closed with a
+missing commit sequence error. This keeps restart order independent from record
+position and prevents silent resequencing after checkpoint boundaries.
 
 Partial WAL tails are handled through `safe_truncate_offset`. `Database::open`
 truncates bytes after the safe offset before starting a writer, so later appends

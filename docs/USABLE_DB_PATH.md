@@ -25,8 +25,9 @@ The current MVP stores operations as ACLOG records:
 `CellCore` stores little-endian `CellId` and durable `CommitSeq`.
 `PayloadInline` stores payload bytes.
 
-Replay uses durable `CommitSeq` from `CellCore`. Old records without that field
-fall back to replay order for compatibility.
+Replay uses durable `CommitSeq` from `CellCore`. Operation records without that
+field are rejected instead of being silently assigned replay-order sequence
+numbers.
 
 Checkpoint writes only visible versions and tombstone markers changed after the
 previous manifest `checkpoint_seq`. The manifest is updated through an atomic

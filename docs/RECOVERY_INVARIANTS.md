@@ -8,7 +8,8 @@
   best-effort recovery stops at the last valid record.
 - Unknown WAL sections may be ignored by operation decoding when required
   sections are present.
-- `CommitSeq` is durable in `CellCore`; replay order is only a compatibility fallback.
+- `CommitSeq` is durable in `CellCore`; replay order must not be used as an
+  implicit sequence fallback for operation records.
 - Manifest `checkpoint_seq` defines the highest sequence already represented in
   live `.acs` segments.
 - Recovery loads live segments first, then skips WAL records with durable

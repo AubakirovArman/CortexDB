@@ -19,7 +19,7 @@ pub enum DbOperation {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DecodedDbOperation {
-    pub seq: Option<CommitSeq>,
+    pub seq: CommitSeq,
     pub operation: DbOperation,
 }
 
@@ -40,7 +40,7 @@ impl DbOperation {
 }
 
 impl OperationEncoder {
-    pub fn encode(operation: &DbOperation) -> WalRecord {
+    pub fn encode(operation: &DbOperation) -> EngineResult<WalRecord> {
         wal_record_from_operation(operation)
     }
 
@@ -59,18 +59,15 @@ impl OperationDecoder {
     }
 }
 
-pub fn wal_record_from_operation(operation: &DbOperation) -> WalRecord {
-    wal_record_from_operation_inner(None, operation)
+pub fn wal_record_from_operation(_operation: &DbOperation) -> EngineResult<WalRecord> {
+    Err(EngineError::MissingCommitSeq)
 }
 
 pub fn wal_record_from_operation_with_seq(seq: CommitSeq, operation: &DbOperation) -> WalRecord {
-    wal_record_from_operation_inner(Some(seq), operation)
+    wal_record_from_operation_inner(seq, operation)
 }
 
-pub fn wal_record_from_operation_inner(
-    seq: Option<CommitSeq>,
-    operation: &DbOperation,
-) -> WalRecord {
+fn wal_record_from_operation_inner(seq: CommitSeq, operation: &DbOperation) -> WalRecord {
     match operation {
         DbOperation::PutCell { cell_id, payload } => {
             record_with_payload(WalRecordType::PutCellBatch, *cell_id, seq, payload.clone())
@@ -101,6 +98,7 @@ pub fn decoded_operation_from_wal_record(
     let cell_core = decode_cell_core(
         section(record, SectionTag::CellCore).ok_or(EngineError::MissingWalSection("CellCore"))?,
     )?;
+    let seq = cell_core.seq.ok_or(EngineError::MissingCommitSeq)?;
     let operation = match record.record.record_type {
         WalRecordType::PutCellBatch => Ok(DbOperation::PutCell {
             cell_id: cell_core.cell_id,
@@ -115,22 +113,17 @@ pub fn decoded_operation_from_wal_record(
         }),
         _ => Err(EngineError::InvalidOperation),
     }?;
-    Ok(DecodedDbOperation {
-        seq: cell_core.seq,
-        operation,
-    })
+    Ok(DecodedDbOperation { seq, operation })
 }
 
 pub fn encode_cell_id(cell_id: CellId) -> [u8; 8] {
     cell_id.0.to_le_bytes()
 }
 
-pub fn encode_cell_core(cell_id: CellId, seq: Option<CommitSeq>) -> Vec<u8> {
+pub fn encode_cell_core(cell_id: CellId, seq: CommitSeq) -> Vec<u8> {
     let mut out = Vec::with_capacity(16);
     out.extend_from_slice(&cell_id.0.to_le_bytes());
-    if let Some(seq) = seq {
-        out.extend_from_slice(&seq.0.to_le_bytes());
-    }
+    out.extend_from_slice(&seq.0.to_le_bytes());
     out
 }
 
@@ -166,7 +159,7 @@ pub fn decode_cell_core(bytes: &[u8]) -> EngineResult<DecodedCellCore> {
 fn record_with_payload(
     record_type: WalRecordType,
     cell_id: CellId,
-    seq: Option<CommitSeq>,
+    seq: CommitSeq,
     payload: Vec<u8>,
 ) -> WalRecord {
     WalRecord::new(

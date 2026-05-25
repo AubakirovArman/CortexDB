@@ -24,7 +24,7 @@ Database::put_cell / patch_cell / tombstone_cell
 | Area | Status | Evidence |
 | --- | --- | --- |
 | WAL before MemTable | OK | `Database::append_then_apply` appends before `apply_operation`; database loop tests cover restart. |
-| Durable sequence | OK | New operations use `wal_record_from_operation_with_seq`; replay prefers durable seq. |
+| Durable sequence | OK | New operations use `wal_record_from_operation_with_seq`; replay rejects operation records missing seq. |
 | Candidate mapping | OK | `EngineAqlIndex` stores both `candidate_to_cell` and `cell_to_candidate`; old truncation patterns are absent. |
 | Persisted index merge | OK | Checkpoint index merge unions postings across live segments. |
 | Agent permissions | OK | `EngineAqlProvider` builds `agent_allowed` from readable scopes, not the full universe. |
