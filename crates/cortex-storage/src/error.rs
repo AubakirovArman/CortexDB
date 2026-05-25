@@ -8,6 +8,10 @@ pub enum StorageError {
     InvalidWalRecord,
     #[error("WAL checksum mismatch")]
     WalChecksumMismatch,
+    #[error("invalid WAL file header")]
+    InvalidWalFileHeader,
+    #[error("WAL writer is closed")]
+    WalWriterClosed,
     #[error("operation is not implemented yet: {0}")]
     NotImplemented(&'static str),
 }

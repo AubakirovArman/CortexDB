@@ -4,6 +4,7 @@ pub mod reader;
 pub mod record;
 pub mod writer;
 
+pub use codec::WalCodec;
 pub use reader::WalReader;
-pub use record::{WalRecord, WalRecordType};
-pub use writer::{CommitAck, WalWriterHandle};
+pub use record::{SectionTag, WalRecord, WalRecordType, WalSection};
+pub use writer::{CommitAck, DurabilityMode, WalWriter, WalWriterHandle};
