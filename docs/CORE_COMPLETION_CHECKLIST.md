@@ -54,7 +54,7 @@ RUSTFLAGS="-D warnings" cargo clippy --workspace --all-targets -- -D warnings
 ## Deliberately Out Of Core
 
 - Production BM25 ranking.
-- Persistent vector pages.
 - Production HNSW.
+- Persistent approximate vector indexes beyond exact `.acv` scan.
 - Network replication and leader election.
 - Document ingestion and LLM integration.

@@ -5,7 +5,7 @@ single-node loop:
 
 ```text
 PutCell -> WAL append -> MemTable update -> restart -> WAL replay -> Retrieve
-Checkpoint -> .acs/.acb/.aci -> manifest.acm -> restart -> segment load -> WAL tail replay
+Checkpoint -> .acs/.acb/.aci/.acv -> manifest.acm -> restart -> segment load -> WAL tail replay
 ```
 
 The critical write invariant is:

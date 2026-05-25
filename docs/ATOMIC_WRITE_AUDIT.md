@@ -19,6 +19,7 @@ encode bytes
 | `.acs` | `SegmentWriter::write` | `write_atomic` | CRC32C footer | `SegmentReader::read` |
 | `.acb` | `BitmapIndex::write` | `write_atomic` | CRC32C footer | `BitmapIndex::read` |
 | `.aci` | `LexicalIndex::write` | `write_atomic` | CRC32C footer | `LexicalIndex::read` |
+| `.acv` | `VectorIndex::write` | `write_atomic` | CRC32C footer | `VectorIndex::read` |
 | `.acm` | `StorageManifest::store` | `write_atomic` | CRC32C footer | `StorageManifest::load` |
 
 ## Temp Naming

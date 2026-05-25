@@ -3,6 +3,7 @@ use cortex_engine::Database;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::{ManifestSegment, StorageManifest};
 use cortex_storage::segment::{SegmentCell, SegmentWriter};
+use cortex_storage::vectors::VectorIndex;
 
 #[test]
 fn duplicate_live_segment_id_fails_validation() {
@@ -127,6 +128,9 @@ fn write_bundle(root: &std::path::Path, segment_id: u64, seq: u64, candidate: u3
         .unwrap();
     LexicalIndex::default()
         .write(segments.join(format!("segment-{segment_id}.aci")))
+        .unwrap();
+    VectorIndex::default()
+        .write(segments.join(format!("segment-{segment_id}.acv")))
         .unwrap();
 }
 

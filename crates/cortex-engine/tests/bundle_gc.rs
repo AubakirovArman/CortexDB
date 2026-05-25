@@ -9,6 +9,7 @@ fn segment_bundle_paths_are_stable() {
     assert_eq!(bundle.segment_path, root.join("segment-7.acs"));
     assert_eq!(bundle.bitmap_path, root.join("segment-7.acb"));
     assert_eq!(bundle.lexical_path, root.join("segment-7.aci"));
+    assert_eq!(bundle.vector_path, root.join("segment-7.acv"));
 }
 
 #[test]
@@ -40,7 +41,7 @@ fn gc_retired_segments_removes_files_and_preserves_live_data() {
 
     let report = db.garbage_collect_retired_segments().unwrap();
     assert_eq!(report.retired_segments_removed, 1);
-    assert_eq!(report.files_removed, 3);
+    assert_eq!(report.files_removed, 4);
     assert!(db.retired_segment_bundles().is_empty());
     assert!(!retired[0].segment_path.exists());
     assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"two");

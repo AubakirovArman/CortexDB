@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use super::{ranked, tokenize, ScoredCandidate};
+use super::{dot_nonnegative, ranked, tokenize, ScoredCandidate};
 
 pub(super) fn search_persisted_lexical(
     terms: &BTreeMap<String, BTreeSet<u32>>,
@@ -28,6 +28,20 @@ pub(super) fn search_persisted_lexical(
             *scores.entry(*candidate).or_default() += idf_q10 * tf_norm_q10;
         }
     }
+    ranked(scores, limit)
+}
+
+pub(super) fn search_persisted_vectors(
+    vectors: &BTreeMap<u32, Vec<i16>>,
+    query: &[i16],
+    allowed: &BTreeSet<u32>,
+    limit: usize,
+) -> Vec<ScoredCandidate> {
+    let scores = vectors
+        .iter()
+        .filter(|(candidate, _)| allowed.contains(candidate))
+        .map(|(candidate, vector)| (*candidate, dot_nonnegative(query, vector)))
+        .collect();
     ranked(scores, limit)
 }
 
@@ -68,6 +82,19 @@ mod tests {
             &BTreeMap::from([("budget".to_owned(), BTreeSet::from([1, 2]))]),
             &BTreeMap::from([(1, 3), (2, 3)]),
             "budget",
+            &BTreeSet::from([2]),
+            10,
+        );
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].cell_id, 2);
+    }
+
+    #[test]
+    fn persisted_vector_search_filters_allowed_candidates() {
+        let results = search_persisted_vectors(
+            &BTreeMap::from([(1, vec![9, 0]), (2, vec![0, 9])]),
+            &[0, 2],
             &BTreeSet::from([2]),
             10,
         );

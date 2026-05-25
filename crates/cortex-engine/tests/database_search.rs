@@ -4,6 +4,7 @@ use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZER
 use cortex_core::CellId;
 use cortex_engine::{scope_id, Database, SearchLimit};
 use cortex_storage::indexes::LexicalIndex;
+use cortex_storage::vectors::VectorIndex;
 
 #[test]
 fn database_keyword_search_returns_visible_cells() {
@@ -98,6 +99,56 @@ fn database_keyword_search_falls_back_to_snapshot_for_uncheckpointed_changes() {
 }
 
 #[test]
+fn database_vector_search_reads_persisted_acv_without_wal_tail_changes() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nvector=5,0\n\nalpha".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=tenant:private\nstatus=ready\nvector=9,0\n\nhidden".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+
+    let results = db
+        .search_vector(&[2, 0], &view("project:investments"), SearchLimit(10))
+        .unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].cell_id, CellId(1));
+    assert!(results[0].vector_score > 0);
+}
+
+#[test]
+fn database_vector_search_falls_back_to_snapshot_for_uncheckpointed_changes() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nvector=0,9\n\nold".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+    db.patch_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nvector=9,0\n\nfresh".to_vec(),
+    )
+    .unwrap();
+
+    let results = db
+        .search_vector(&[3, 0], &view("project:investments"), SearchLimit(10))
+        .unwrap();
+
+    assert_eq!(results[0].cell_id, CellId(1));
+    assert!(results[0].vector_score > 0);
+    assert!(String::from_utf8_lossy(&results[0].payload).contains("fresh"));
+}
+
+#[test]
 fn database_keyword_search_uses_body_terms_not_header_terms() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
@@ -132,6 +183,21 @@ fn checkpoint_lexical_index_persists_doc_lengths() {
 
     let index = LexicalIndex::read(dir.path().join("segments").join("segment-1.aci")).unwrap();
     assert_eq!(index.doc_lengths.get(&1), Some(&3));
+}
+
+#[test]
+fn checkpoint_vector_index_persists_payload_vectors() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nvector=3,4\n\nalpha".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+
+    let index = VectorIndex::read(dir.path().join("segments").join("segment-1.acv")).unwrap();
+    assert_eq!(index.vectors.get(&1), Some(&vec![3, 4]));
 }
 
 fn view(scope: &str) -> AgentView {

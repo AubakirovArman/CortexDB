@@ -19,7 +19,7 @@ Core Alpha is the first durable single-node CortexDB prototype.
 ## Explicit Non-Goals
 
 - Production BM25 ranking.
-- Persistent vector index pages.
+- Persistent approximate vector indexes beyond exact `.acv` scan.
 - Production HNSW.
 - Real distributed consensus or replication transport.
 - Document/PDF/API ingestion.

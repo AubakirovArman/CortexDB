@@ -35,7 +35,7 @@ git push origin v0.1.0-core-alpha
 ## Explicit Non-Goals For This Tag
 
 - Production BM25 ranking.
-- Persistent vector index pages.
+- Persistent approximate vector indexes beyond exact `.acv` scan.
 - Production HNSW.
 - Distributed consensus.
 - Document ingestion.

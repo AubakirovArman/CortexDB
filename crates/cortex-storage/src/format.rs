@@ -4,6 +4,7 @@ pub const SEGMENT_MAGIC: [u8; 4] = *b"ACS1";
 pub const BITMAP_INDEX_MAGIC: [u8; 4] = *b"ACB0";
 pub const LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI1";
 pub const LEGACY_LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI0";
+pub const VECTOR_INDEX_MAGIC: [u8; 4] = *b"ACV0";
 pub const MANIFEST_MAGIC: [u8; 4] = *b"ACM0";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -12,6 +13,7 @@ pub enum StorageFormatKind {
     Segment,
     BitmapIndex,
     LexicalIndex,
+    VectorIndex,
     Manifest,
 }
 
@@ -26,7 +28,7 @@ pub struct StorageFormatSpec {
     pub compatibility_rule: &'static str,
 }
 
-pub fn storage_format_specs() -> [StorageFormatSpec; 5] {
+pub fn storage_format_specs() -> [StorageFormatSpec; 6] {
     [
         StorageFormatSpec {
             kind: StorageFormatKind::AclogWal,
@@ -63,6 +65,15 @@ pub fn storage_format_specs() -> [StorageFormatSpec; 5] {
             current_version: 1,
             legacy_magics: &[&LEGACY_LEXICAL_INDEX_MAGIC],
             compatibility_rule: "ACI0 remains read-only compatible",
+        },
+        StorageFormatSpec {
+            kind: StorageFormatKind::VectorIndex,
+            name: "Vector index",
+            extension: "acv",
+            current_magic: &VECTOR_INDEX_MAGIC,
+            current_version: 0,
+            legacy_magics: &[],
+            compatibility_rule: "breaking changes require a new vector magic",
         },
         StorageFormatSpec {
             kind: StorageFormatKind::Manifest,

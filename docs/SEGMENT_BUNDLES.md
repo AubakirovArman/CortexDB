@@ -6,6 +6,7 @@ Segment bundles are the unit that ties persisted row data and indexes together.
 segment-{id}.acs  data cells
 segment-{id}.acb  bitmap index
 segment-{id}.aci  lexical index
+segment-{id}.acv  exact vector index
 ```
 
 ## Current API
@@ -18,7 +19,7 @@ segment-{id}.aci  lexical index
 
 ## Invariants
 
-1. Live bundles must have all three files readable.
+1. Live bundles must have all four files readable.
 2. Retired bundles are not used for reads or validation of live data.
 3. Retired bundle GC must not remove live bundle files.
 4. GC is explicit; compaction only retires old bundles.

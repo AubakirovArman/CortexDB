@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 
 mod candidates;
 mod index_merge;
+mod vector;
 
 use cortex_core::memtable::MemTable;
 use cortex_core::{CellId, CommitSeq};
@@ -55,6 +56,8 @@ impl Database {
         index
             .lexical_index()
             .write(lexical_path(&self.segments_path, segment_id))?;
+        vector::vector_index_for_cells(&cells)
+            .write(vector_path(&self.segments_path, segment_id))?;
 
         self.manifest.checkpoint_segment(ManifestSegment {
             id: segment_id,
@@ -95,6 +98,8 @@ impl Database {
         index
             .lexical_index()
             .write(lexical_path(&self.segments_path, segment_id))?;
+        vector::vector_index_for_cells(&cells)
+            .write(vector_path(&self.segments_path, segment_id))?;
 
         self.manifest.compact_to_segment(ManifestSegment {
             id: segment_id,
@@ -275,4 +280,8 @@ pub(crate) fn bitmap_path(root: &Path, id: u64) -> PathBuf {
 
 pub(crate) fn lexical_path(root: &Path, id: u64) -> PathBuf {
     root.join(format!("segment-{id}.aci"))
+}
+
+pub(crate) fn vector_path(root: &Path, id: u64) -> PathBuf {
+    root.join(format!("segment-{id}.acv"))
 }

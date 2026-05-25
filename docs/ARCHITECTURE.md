@@ -9,7 +9,7 @@ AQL -> Parser -> Raw AST -> Binder -> Bitmap VM -> Candidates_0
                               ACLOG WAL -> MemTable -> Segments
                                    |             |
                                    v             v
-                              atomic manifest.acm   .acs/.acb/.aci
+                              atomic manifest.acm   .acs/.acb/.aci/.acv
 ```
 
 ## Crates

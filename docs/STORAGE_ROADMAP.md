@@ -58,16 +58,18 @@
 - Public storage format inventory for current magic/version compatibility.
 - Scoped keyword search reads persisted `.aci` postings directly when there is
   no uncheckpointed WAL tail, with MemTable snapshot fallback for fresh writes.
+- `.acv` vector pages persist integer vectors and support exact scoped vector
+  scan without snapshot rebuild when there is no uncheckpointed WAL tail.
 
 ## Next
 
 1. Persist consensus log entries through ACLOG or a dedicated replication log.
 2. Add natural-language contradiction extraction after structured markers.
-3. Add persisted vector pages for exact vector scan without snapshot rebuild.
+3. Add public vector input over CLI and HTTP.
 
 ## Not Yet
 
 - Large-scale BM25 ranking pipeline with analyzers and field weighting.
-- Persistent vector index pages.
+- Persistent ANN vector index pages.
 - Multi-layer HNSW with deletion and rebuild policy.
 - Consensus, replication transport, and distributed recovery.

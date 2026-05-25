@@ -5,6 +5,7 @@ mod database;
 mod hnsw;
 mod persisted;
 mod tokenizer;
+pub(crate) mod vector;
 
 pub use database::{DatabaseSearchResult, SearchLimit};
 pub use hnsw::HnswIndex;

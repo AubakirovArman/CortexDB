@@ -3,6 +3,7 @@ use cortex_engine::Database;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::{ManifestSegment, StorageManifest};
 use cortex_storage::segment::{SegmentCell, SegmentWriter};
+use cortex_storage::vectors::VectorIndex;
 
 #[test]
 fn checkpoint_persists_segment_indexes_and_manifest() {
@@ -164,6 +165,9 @@ fn tombstone_only_checkpoint_does_not_resurrect_cell() {
     LexicalIndex::default()
         .write(segments.join("segment-1.aci"))
         .unwrap();
+    VectorIndex::default()
+        .write(segments.join("segment-1.acv"))
+        .unwrap();
     StorageManifest {
         generation: 1,
         checkpoint_seq: 7,
@@ -223,6 +227,9 @@ fn validate_storage_rejects_segment_count_mismatch() {
         .unwrap();
     LexicalIndex::default()
         .write(segments.join("segment-1.aci"))
+        .unwrap();
+    VectorIndex::default()
+        .write(segments.join("segment-1.acv"))
         .unwrap();
     StorageManifest {
         generation: 1,

@@ -37,11 +37,11 @@ The release checklist for tagging this scope is
 - Durable AgentView persistence for local policy objects.
 - Best-effort repair for orphan temp cleanup and safe WAL tail truncation.
 - ContextPack v0 with token budget and citation anomaly reporting.
+- Persisted `.acv` vector pages for exact vector scan.
 
 ## Excluded
 
 - Production BM25 scoring.
-- Persistent vector pages.
 - Production HNSW.
 - Distributed consensus.
 - Document ingestion.

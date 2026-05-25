@@ -3,6 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::{ManifestSegment, StorageManifest};
 use cortex_storage::segment::{SegmentCell, SegmentReader, SegmentWriter};
+use cortex_storage::vectors::VectorIndex;
 use cortex_storage::wal::checksum::crc32c;
 use cortex_storage::StorageError;
 
@@ -100,6 +101,18 @@ fn aci_lexical_index_roundtrips_terms() {
 }
 
 #[test]
+fn acv_vector_index_roundtrips_vectors() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("0001.acv");
+    let index = VectorIndex {
+        vectors: BTreeMap::from([(1, vec![3, -1, 9]), (2, vec![0, 4])]),
+    };
+    index.write(&path).unwrap();
+    assert_eq!(VectorIndex::read(&path).unwrap(), index);
+    assert!(!dir.path().join("0001.acv.tmp").exists());
+}
+
+#[test]
 fn aci0_lexical_index_remains_readable_without_doc_lengths() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("old.aci");
@@ -161,10 +174,12 @@ fn invalid_storage_files_are_rejected() {
     let segment = dir.path().join("bad.acs");
     let bitmap = dir.path().join("bad.acb");
     let lexical = dir.path().join("bad.aci");
+    let vector = dir.path().join("bad.acv");
     let manifest = dir.path().join("bad.acm");
     std::fs::write(&segment, b"bad").unwrap();
     std::fs::write(&bitmap, b"bad").unwrap();
     std::fs::write(&lexical, b"bad").unwrap();
+    std::fs::write(&vector, b"bad").unwrap();
     std::fs::write(&manifest, b"bad").unwrap();
     assert!(matches!(
         SegmentReader::read(&segment).unwrap_err(),
@@ -179,6 +194,10 @@ fn invalid_storage_files_are_rejected() {
         StorageError::InvalidLexicalIndexFile
     ));
     assert!(matches!(
+        VectorIndex::read(&vector).unwrap_err(),
+        StorageError::InvalidVectorIndexFile
+    ));
+    assert!(matches!(
         StorageManifest::load(&manifest).unwrap_err(),
         StorageError::InvalidManifestFile
     ));
@@ -190,6 +209,7 @@ fn checksum_corruption_is_rejected() {
     let segment = dir.path().join("ok.acs");
     let bitmap = dir.path().join("ok.acb");
     let lexical = dir.path().join("ok.aci");
+    let vector = dir.path().join("ok.acv");
     let manifest = dir.path().join("manifest.acm");
 
     SegmentWriter::write(
@@ -214,11 +234,17 @@ fn checksum_corruption_is_rejected() {
     }
     .write(&lexical)
     .unwrap();
+    VectorIndex {
+        vectors: BTreeMap::from([(1, vec![1, 2])]),
+    }
+    .write(&vector)
+    .unwrap();
     StorageManifest::default().store(&manifest).unwrap();
 
     corrupt_last_byte(&segment);
     corrupt_last_byte(&bitmap);
     corrupt_last_byte(&lexical);
+    corrupt_last_byte(&vector);
     corrupt_last_byte(&manifest);
 
     assert!(matches!(
@@ -232,6 +258,10 @@ fn checksum_corruption_is_rejected() {
     assert!(matches!(
         LexicalIndex::read(&lexical).unwrap_err(),
         StorageError::InvalidLexicalIndexFile
+    ));
+    assert!(matches!(
+        VectorIndex::read(&vector).unwrap_err(),
+        StorageError::InvalidVectorIndexFile
     ));
     assert!(matches!(
         StorageManifest::load(&manifest).unwrap_err(),

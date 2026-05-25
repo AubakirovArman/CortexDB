@@ -60,7 +60,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 | 023 Candidate Overflow Safety | CANDIDATE | Make allocation fallible. | Overflow returns error, never panic/saturate. |
 | 024 Segment Candidate Persistence | CANDIDATE | Persist mapping across segments. | Checkpoint/compact/restart preserve mapping. |
 | 025 Candidate Mapping Validation | CANDIDATE | Validate duplicate/missing ids. | Validation catches mapping corruption. |
-| 026 Segment Bundle Model | CANDIDATE | Define `.acs/.acb/.aci` bundle. | Manifest references bundle metadata. |
+| 026 Segment Bundle Model | CANDIDATE | Define `.acs/.acb/.aci/.acv` bundle. | Manifest references bundle metadata. |
 | 027 Manifest Bundle Awareness | CANDIDATE | Store bundle references. | Manifest and files are consistent. |
 | 028 Segment Generation Semantics | CANDIDATE | Define generation rules. | Delta and compact generations are distinct. |
 | 029 Retired Segment Lifecycle | CANDIDATE | Define retired state. | Retired segments are safe to inspect/GC. |
@@ -253,7 +253,8 @@ Epic 015 -> storage format versioning (closed)
 Epic 035 -> segment sort order (closed)
 Epic 036 -> segment lookup index (closed)
 Epic 108 -> persisted lexical search over `.aci` postings (closed for current keyword scorer)
+Epic 111 -> vector persistence `.acv` exact scan foundation (closed)
 ```
 
-Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed
-consensus, SDKs, and LLM integration remain outside this slice.
+Public vector CLI/HTTP input, HNSW, real BM25 ranking, ingestion adapters,
+distributed consensus, SDKs, and LLM integration remain outside this slice.

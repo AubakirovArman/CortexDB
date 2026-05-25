@@ -4,6 +4,7 @@ pub mod format;
 pub mod indexes;
 pub mod manifest;
 pub mod segment;
+pub mod vectors;
 pub mod wal;
 
 pub use error::{StorageError, StorageResult};

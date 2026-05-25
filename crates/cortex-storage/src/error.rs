@@ -18,6 +18,8 @@ pub enum StorageError {
     InvalidBitmapIndexFile,
     #[error("invalid lexical index file")]
     InvalidLexicalIndexFile,
+    #[error("invalid vector index file")]
+    InvalidVectorIndexFile,
     #[error("invalid manifest file")]
     InvalidManifestFile,
     #[error("WAL writer is closed")]

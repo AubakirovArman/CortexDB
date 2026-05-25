@@ -9,7 +9,8 @@ use crate::error::{EngineError, EngineResult};
 use crate::query::metadata::scope_handle;
 use crate::query::{scope_id, CellMetadata};
 
-use super::persisted::search_persisted_lexical;
+use super::persisted::{search_persisted_lexical, search_persisted_vectors};
+use super::vector::vector_from_payload;
 use super::{SearchIndexes, SearchMode, SearchQuery};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -31,9 +32,6 @@ impl Database {
         view: &AgentView,
         limit: SearchLimit,
     ) -> EngineResult<Vec<DatabaseSearchResult>> {
-        if let Some(results) = self.search_persisted_keyword(text, view, limit)? {
-            return Ok(results);
-        }
         self.search_cells(
             SearchQuery {
                 text,
@@ -45,11 +43,27 @@ impl Database {
         )
     }
 
-    fn search_persisted_keyword(
+    pub fn search_vector(
         &self,
-        text: &str,
+        vector: &[i16],
         view: &AgentView,
         limit: SearchLimit,
+    ) -> EngineResult<Vec<DatabaseSearchResult>> {
+        self.search_cells(
+            SearchQuery {
+                text: "",
+                vector: Some(vector),
+                limit: limit.0,
+                mode: SearchMode::Vector,
+            },
+            view,
+        )
+    }
+
+    fn search_persisted_query(
+        &self,
+        query: SearchQuery<'_>,
+        view: &AgentView,
     ) -> EngineResult<Option<Vec<DatabaseSearchResult>>> {
         if self.manifest().live_segments.is_empty() {
             return Ok(None);
@@ -64,28 +78,45 @@ impl Database {
         }
         let state = self.persisted_index_state()?;
         let allowed = allowed_candidates(&state.bitmap, view);
-        let txn = self.read_txn();
-        Ok(Some(
-            search_persisted_lexical(
+        let ranked = match query.mode {
+            SearchMode::Keyword => search_persisted_lexical(
                 &state.lexical.terms,
                 &state.lexical.doc_lengths,
-                text,
+                query.text,
                 &allowed,
-                limit.0,
-            )
-            .into_iter()
-            .filter_map(|candidate| {
-                let cell_id = state.candidate_to_cell.get(&candidate.cell_id)?;
-                self.get_cell(txn, *cell_id)
-                    .map(|payload| DatabaseSearchResult {
-                        cell_id: *cell_id,
-                        score: candidate.score,
-                        lexical_score: candidate.score,
-                        vector_score: 0,
-                        payload,
+                query.limit,
+            ),
+            SearchMode::Vector => {
+                let Some(vector) = query.vector else {
+                    return Ok(Some(Vec::new()));
+                };
+                let index = self.persisted_vector_index()?;
+                search_persisted_vectors(&index.vectors, vector, &allowed, query.limit)
+            }
+            SearchMode::Hybrid => return Ok(None),
+        };
+        let txn = self.read_txn();
+        Ok(Some(
+            ranked
+                .into_iter()
+                .filter_map(|candidate| {
+                    let cell_id = state.candidate_to_cell.get(&candidate.cell_id)?;
+                    self.get_cell(txn, *cell_id).map(|payload| {
+                        let (lexical_score, vector_score) = match query.mode {
+                            SearchMode::Keyword => (candidate.score, 0),
+                            SearchMode::Vector => (0, candidate.score),
+                            SearchMode::Hybrid => (0, 0),
+                        };
+                        DatabaseSearchResult {
+                            cell_id: *cell_id,
+                            score: candidate.score,
+                            lexical_score,
+                            vector_score,
+                            payload,
+                        }
                     })
-            })
-            .collect(),
+                })
+                .collect(),
         ))
     }
 
@@ -94,6 +125,9 @@ impl Database {
         query: SearchQuery<'_>,
         view: &AgentView,
     ) -> EngineResult<Vec<DatabaseSearchResult>> {
+        if let Some(results) = self.search_persisted_query(query, view)? {
+            return Ok(results);
+        }
         let mut indexes = SearchIndexes::default();
         let mut cells = BTreeMap::<u32, (CellId, Vec<u8>)>::new();
         for (index, (version, metadata)) in self
@@ -109,7 +143,7 @@ impl Database {
             let candidate =
                 u32::try_from(index + 1).map_err(|_| EngineError::CandidateIdOverflow)?;
             indexes.add_document(candidate, &metadata.body_text);
-            if let Some(vector) = vector_line(&version.payload) {
+            if let Some(vector) = vector_from_payload(&version.payload) {
                 indexes.add_vector(candidate, vector);
             }
             cells.insert(candidate, (version.cell_id, version.payload));
@@ -139,18 +173,4 @@ fn allowed_candidates(bitmap: &BitmapIndex, view: &AgentView) -> BTreeSet<u32> {
         }
     }
     allowed
-}
-
-fn vector_line(payload: &[u8]) -> Option<Vec<i16>> {
-    let text = String::from_utf8_lossy(payload);
-    text.lines().find_map(|line| {
-        let value = line.trim().strip_prefix("vector=")?;
-        let vector = value
-            .split([',', ' '])
-            .filter(|part| !part.is_empty())
-            .map(str::parse::<i16>)
-            .collect::<Result<Vec<_>, _>>()
-            .ok()?;
-        (!vector.is_empty()).then_some(vector)
-    })
 }

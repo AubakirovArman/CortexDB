@@ -36,6 +36,7 @@ fn is_known_temp(path: &Path) -> bool {
         ".acs.tmp",
         ".acb.tmp",
         ".aci.tmp",
+        ".acv.tmp",
         ".acm.tmp",
         ".aclog.tmp",
         ".view.tmp",

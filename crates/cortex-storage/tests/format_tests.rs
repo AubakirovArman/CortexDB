@@ -6,17 +6,19 @@ use cortex_storage::format::{
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::StorageManifest;
 use cortex_storage::segment::{SegmentCell, SegmentWriter};
+use cortex_storage::vectors::VectorIndex;
 use cortex_storage::wal::{DurabilityMode, WalWriter, ACLOG_MAGIC};
 
 #[test]
 fn storage_format_inventory_lists_current_core_formats() {
     let specs = storage_format_specs();
-    assert_eq!(specs.len(), 5);
+    assert_eq!(specs.len(), 6);
     assert_eq!(specs[0].kind, StorageFormatKind::AclogWal);
     assert_eq!(specs[0].current_magic, ACLOG_MAGIC);
     assert_eq!(specs[3].kind, StorageFormatKind::LexicalIndex);
     assert_eq!(specs[3].current_magic, LEXICAL_INDEX_MAGIC);
     assert_eq!(specs[3].legacy_magics, &[&LEGACY_LEXICAL_INDEX_MAGIC]);
+    assert_eq!(specs[4].kind, StorageFormatKind::VectorIndex);
 }
 
 #[test]
@@ -26,6 +28,7 @@ fn written_storage_files_match_current_format_inventory() {
     let segment = dir.path().join("s.acs");
     let bitmap = dir.path().join("s.acb");
     let lexical = dir.path().join("s.aci");
+    let vector = dir.path().join("s.acv");
     let manifest = dir.path().join("manifest.acm");
 
     let writer = WalWriter::start(&wal, DurabilityMode::Strict).unwrap();
@@ -42,6 +45,11 @@ fn written_storage_files_match_current_format_inventory() {
     }
     .write(&lexical)
     .unwrap();
+    VectorIndex {
+        vectors: BTreeMap::from([(1, vec![1, 2])]),
+    }
+    .write(&vector)
+    .unwrap();
     StorageManifest::default().store(&manifest).unwrap();
 
     for (kind, path) in [
@@ -49,6 +57,7 @@ fn written_storage_files_match_current_format_inventory() {
         (StorageFormatKind::Segment, segment),
         (StorageFormatKind::BitmapIndex, bitmap),
         (StorageFormatKind::LexicalIndex, lexical),
+        (StorageFormatKind::VectorIndex, vector),
         (StorageFormatKind::Manifest, manifest),
     ] {
         let spec = storage_format_specs()

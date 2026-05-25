@@ -41,6 +41,7 @@ fn v1_stats_and_validate_report_storage_state() {
 
     let validation = handle_http(dir.path(), "GET /v1/validate HTTP/1.1\r\n\r\n");
     assert!(validation.contains(r#""ok":true"#));
+    assert!(validation.contains(r#""vector_indexes_checked":0"#));
     assert!(validation.contains(r#""wal_records_checked":1"#));
 }
 

@@ -6,6 +6,7 @@
 - `Database::search_keyword` / `Database::search_cells` for scoped database
   search over the current visible snapshot.
 - `.aci` lexical files persist term postings and per-candidate document lengths.
+- `.acv` vector files persist per-candidate integer vectors for exact dot scan.
 
 The database path filters cells through `AgentView.readable_scopes`, assigns
 compact candidate ids internally, and returns full `CellId` values in
@@ -13,8 +14,9 @@ compact candidate ids internally, and returns full `CellId` values in
 
 When live segments exist and there are no uncheckpointed changes after the
 manifest checkpoint sequence, keyword search reads the persisted `.aci` postings
-directly. If a WAL tail has newer put/patch/tombstone records, the engine falls
-back to the visible MemTable snapshot so fresh writes are not missed.
+directly and vector search reads persisted `.acv` vectors directly. If a WAL
+tail has newer put/patch/tombstone records, the engine falls back to the visible
+MemTable snapshot so fresh writes are not missed.
 
 Current smoke surfaces:
 
@@ -29,3 +31,4 @@ The HTTP body is used as the query text when `q` is omitted.
 
 - Production BM25 analyzers.
 - Public vector input over CLI/HTTP.
+- Persistent ANN/HNSW vector pages.

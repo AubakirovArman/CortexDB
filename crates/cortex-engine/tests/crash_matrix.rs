@@ -2,6 +2,7 @@ use cortex_core::{CellId, CommitSeq};
 use cortex_engine::Database;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::segment::{SegmentCell, SegmentWriter};
+use cortex_storage::vectors::VectorIndex;
 
 #[test]
 fn interrupted_checkpoint_orphan_bundle_is_ignored() {
@@ -76,5 +77,8 @@ fn write_orphan_bundle(root: &std::path::Path, segment_id: u64, cell_id: CellId)
         .unwrap();
     LexicalIndex::default()
         .write(segments.join(format!("segment-{segment_id}.aci")))
+        .unwrap();
+    VectorIndex::default()
+        .write(segments.join(format!("segment-{segment_id}.acv")))
         .unwrap();
 }

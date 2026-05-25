@@ -11,6 +11,7 @@ little-endian integer fields, and CRC32C validation.
 | Segment | `.acs` | `ACS1` | magic carries v1 | Breaking changes require a new magic. |
 | Bitmap index | `.acb` | `ACB0` | magic carries v0 | Breaking changes require a new magic. |
 | Lexical index | `.aci` | `ACI1` | magic carries v1 | `ACI0` remains read-only compatible. |
+| Vector index | `.acv` | `ACV0` | magic carries v0 | Breaking changes require a new magic. |
 | Manifest | `.acm` | `ACM0` | magic carries v0 | Breaking changes require a new magic. |
 
 All multi-byte integer fields are little-endian.
@@ -66,6 +67,21 @@ crc32c u32 over all previous bytes
 ```
 
 Legacy `ACI0` files omit the doc length table and remain readable.
+
+## Vector Index `.acv`
+
+```text
+magic[4] = "ACV0"
+vector_count u32
+repeat vector_count:
+  candidate_id u32
+  dimension u32
+  repeat dimension:
+    value i16
+crc32c u32 over all previous bytes
+```
+
+The current vector path is exact integer dot-product scan, not ANN.
 
 ## Manifest `.acm`
 
