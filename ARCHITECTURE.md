@@ -1,6 +1,7 @@
 # Architecture
 
-Current CortexDB scope is the AQL compiler and mock bitmap execution layer.
+Current CortexDB scope covers the AQL compiler, mock bitmap execution layer,
+ACLOG WAL v0, and an in-memory MVCC core.
 
 ```text
 AQL string
@@ -10,6 +11,8 @@ AQL string
 -> BoundRetrievePlan
 -> Bitmap VM
 -> Candidates_0 mask
+-> ACLOG WAL
+-> MemTable
 ```
 
 ## Crates

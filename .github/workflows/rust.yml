@@ -7,11 +7,18 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain: [stable, beta]
+    env:
+      RUSTFLAGS: -D warnings
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ matrix.toolchain }}
           components: rustfmt, clippy
-      - run: cargo test --workspace
+      - run: cargo check --workspace
+      - run: cargo test --workspace --all-features
       - run: cargo fmt --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
