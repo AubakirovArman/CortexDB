@@ -241,7 +241,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 The active slice is:
 
 ```text
-Epic 161 -> agent memory foundation
+Epic 161 -> agent memory foundation (closed)
 Epic 165 -> memory TTL expiry
 Epic 174 -> VERIFY FACT report v0
 Epic 142 -> metadata encoding (closed)

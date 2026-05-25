@@ -34,6 +34,7 @@ The release checklist for tagging this scope is
 - CLI and HTTP smoke paths for put/get/flush/compact/stats/validate.
 - Explicit stale lock recovery and collect-all validation reports.
 - `db.lock` owner metadata with process id and creation timestamp.
+- Durable AgentView persistence for local policy objects.
 - Best-effort repair for orphan temp cleanup and safe WAL tail truncation.
 - ContextPack v0 with token budget and citation anomaly reporting.
 

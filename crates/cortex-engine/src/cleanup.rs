@@ -5,7 +5,9 @@ use std::path::{Path, PathBuf};
 use crate::error::{EngineError, EngineResult};
 
 pub(crate) fn cleanup_orphans(root: &Path) -> EngineResult<usize> {
-    Ok(cleanup_dir(root)? + cleanup_dir(&root.join("segments"))?)
+    Ok(cleanup_dir(root)?
+        + cleanup_dir(&root.join("segments"))?
+        + cleanup_dir(&root.join("agent_views"))?)
 }
 
 fn cleanup_dir(path: &Path) -> EngineResult<usize> {
@@ -30,9 +32,16 @@ fn is_known_temp(path: &Path) -> bool {
     let Some(name) = file_name(path) else {
         return false;
     };
-    [".acs.tmp", ".acb.tmp", ".aci.tmp", ".acm.tmp", ".aclog.tmp"]
-        .iter()
-        .any(|marker| name.ends_with(marker) || name.contains(&format!("{marker}.")))
+    [
+        ".acs.tmp",
+        ".acb.tmp",
+        ".aci.tmp",
+        ".acm.tmp",
+        ".aclog.tmp",
+        ".view.tmp",
+    ]
+    .iter()
+    .any(|marker| name.ends_with(marker) || name.contains(&format!("{marker}.")))
 }
 
 fn file_name(path: &Path) -> Option<String> {

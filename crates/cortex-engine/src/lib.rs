@@ -1,3 +1,4 @@
+pub mod agent_views;
 pub mod bundle;
 pub mod checkpoint;
 mod cleanup;
