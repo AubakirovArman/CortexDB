@@ -22,14 +22,17 @@
 - Minimal `cortexdb` CLI for local put/get/tombstone/flush checks.
 - JSON HTTP server API for put/get/tombstone/flush/compact/health checks with optional bearer auth.
 - Single-node/distributed placement and deterministic quorum log skeleton.
+- Crash/restart/corruption matrix tests for Core Alpha.
+- Best-effort repair for orphan temp cleanup and safe WAL tail truncation.
+- Atomic write audit and storage format documentation.
 
 ## Next
 
-1. Add crash-matrix tests around every checkpoint phase.
-2. Add segment garbage collection for retired handles.
-3. Persist consensus log entries through ACLOG or a dedicated replication log.
-4. Add real network replication and leader election.
-5. Add structured JSON request bodies and richer API version negotiation.
+1. Add segment garbage collection for retired handles.
+2. Persist consensus log entries through ACLOG or a dedicated replication log.
+3. Add real network replication and leader election.
+4. Add structured JSON request bodies and richer API version negotiation.
+5. Add richer benchmark history and trend reporting.
 
 ## Not Yet
 

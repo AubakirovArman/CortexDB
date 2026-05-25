@@ -96,6 +96,11 @@ The Core Alpha tag gate is tracked in
 [`docs/CORE_ALPHA_RELEASE_CHECKLIST.md`](docs/CORE_ALPHA_RELEASE_CHECKLIST.md).
 Crash/restart/corruption coverage is tracked in
 [`docs/CRASH_SIMULATION.md`](docs/CRASH_SIMULATION.md).
+Storage atomicity and binary formats are documented in
+[`docs/ATOMIC_WRITE_AUDIT.md`](docs/ATOMIC_WRITE_AUDIT.md) and
+[`docs/STORAGE_FORMATS.md`](docs/STORAGE_FORMATS.md).
+Core Alpha release notes are in
+[`docs/RELEASE_NOTES_v0.1.0-core-alpha.md`](docs/RELEASE_NOTES_v0.1.0-core-alpha.md).
 
 ## Roadmap
 
