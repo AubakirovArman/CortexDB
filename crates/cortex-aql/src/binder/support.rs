@@ -75,7 +75,7 @@ pub fn optimize_bitmap_ops(ops: Vec<BitmapOp>) -> Vec<BitmapOp> {
                 continue;
             }
             if len >= 3
-                && optimized[len - 1] == BitmapOp::And
+                && matches!(optimized[len - 1], BitmapOp::And | BitmapOp::Or)
                 && optimized[len - 2] == optimized[len - 3]
                 && is_push(&optimized[len - 2])
             {
@@ -180,6 +180,14 @@ impl BitmapProgram {
                 BitmapOp::Not => 1,
             })
             .sum()
+    }
+
+    pub fn explain(&self) -> String {
+        format!(
+            "BitmapProgram(max_stack_depth={})\n{}",
+            self.max_stack_depth,
+            self.debug_bytecode()
+        )
     }
 
     pub fn debug_bytecode(&self) -> String {

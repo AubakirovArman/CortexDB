@@ -1,5 +1,7 @@
 use crate::ast::SourceSpan;
 
+use std::fmt;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AqlParseErrorKind {
     Unexpected,
@@ -18,6 +20,13 @@ pub struct AqlParseError {
     pub message: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AqlParseDiagnostic {
+    pub kind: AqlParseErrorKind,
+    pub span: SourceSpan,
+    pub message: String,
+}
+
 impl AqlParseError {
     pub fn new(kind: AqlParseErrorKind, span: SourceSpan) -> Self {
         let message = format!(
@@ -31,6 +40,32 @@ impl AqlParseError {
             span,
             message,
         }
+    }
+
+    pub fn diagnostic(&self) -> AqlParseDiagnostic {
+        AqlParseDiagnostic {
+            kind: self.kind.clone(),
+            span: self.span,
+            message: self.message.clone(),
+        }
+    }
+}
+
+impl From<AqlParseError> for AqlParseDiagnostic {
+    fn from(error: AqlParseError) -> Self {
+        error.diagnostic()
+    }
+}
+
+impl fmt::Display for AqlParseError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.message)
+    }
+}
+
+impl fmt::Display for AqlParseDiagnostic {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.message)
     }
 }
 

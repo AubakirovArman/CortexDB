@@ -6,6 +6,7 @@ Current sequence:
 AQL hardening
 -> ACLOG WAL
 -> MemTable MVCC
+-> WAL replay into MemTable
 -> Manifest recovery
 -> .acs segments
 -> .acb bitmap index
