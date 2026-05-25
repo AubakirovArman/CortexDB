@@ -75,6 +75,10 @@ impl Bm25Index {
         self.replace_document_terms(cell_id, terms);
     }
 
+    pub fn add_weighted_terms(&mut self, cell_id: u32, terms: BTreeMap<String, u32>) {
+        self.replace_document_terms(cell_id, terms);
+    }
+
     fn replace_document_terms(&mut self, cell_id: u32, terms: BTreeMap<String, u32>) {
         if let Some(old_terms) = self.docs.get(&cell_id) {
             for term in old_terms.keys() {
@@ -140,6 +144,10 @@ impl SearchIndexes {
 
     pub fn add_document_fields(&mut self, cell_id: u32, fields: &[(&str, u32)]) {
         self.lexical.add_document_fields(cell_id, fields);
+    }
+
+    pub fn add_weighted_terms(&mut self, cell_id: u32, terms: BTreeMap<String, u32>) {
+        self.lexical.add_weighted_terms(cell_id, terms);
     }
 
     pub fn add_vector(&mut self, cell_id: u32, vector: Vec<i16>) {

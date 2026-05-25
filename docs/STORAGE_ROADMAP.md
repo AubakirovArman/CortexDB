@@ -44,8 +44,10 @@
 - Explicit contradiction markers for VERIFY FACT reports.
 - Scoped database keyword search exposed through CLI and HTTP.
 - Queryable structured conflict index from contradiction markers.
-- Centralized payload-header metadata parser with body-only lexical terms.
+- Centralized payload-header metadata parser with body/title lexical scoring fields.
 - `.aci` lexical index v2 with per-candidate document lengths and `ACI0` read compatibility.
+- `.aci` lexical index format magic `ACI2` with weighted term-frequency
+  statistics and `ACI0`/`ACI1` read compatibility.
 - WAL writer bounded queue option for caller-side backpressure.
 - Balanced WAL writer group commit batches queued appends before acknowledgment.
 - WAL writer metrics for records, bytes, fsyncs, and committed batches.
@@ -69,9 +71,9 @@
 
 ## Next
 
-1. Add field-aware persisted lexical scoring statistics.
-2. Add replication transport and leader-election semantics.
-3. Add richer verification guards for citations and numeric claims.
+1. Add replication transport and leader-election semantics.
+2. Add richer verification guards for citations and numeric claims.
+3. Add production BM25 analyzers and quality fixtures.
 
 ## Not Yet
 

@@ -10,7 +10,7 @@ little-endian integer fields, and CRC32C validation.
 | ACLOG WAL | `.aclog` | `ACLOGv0\0` | `version = 0` in file header | Breaking changes require a new WAL version. |
 | Segment | `.acs` | `ACS1` | magic carries v1 | Breaking changes require a new magic. |
 | Bitmap index | `.acb` | `ACB0` | magic carries v0 | Breaking changes require a new magic. |
-| Lexical index | `.aci` | `ACI1` | magic carries v1 | `ACI0` remains read-only compatible. |
+| Lexical index | `.aci` | `ACI2` | magic carries v2 | `ACI0` and `ACI1` remain read-only compatible. |
 | Vector index | `.acv` | `ACV0` | magic carries v0 | Breaking changes require a new magic. |
 | Manifest | `.acm` | `ACM0` | magic carries v0 | Breaking changes require a new magic. |
 
@@ -51,7 +51,7 @@ crc32c u32 over all previous bytes
 ## Lexical Index `.aci`
 
 ```text
-magic[4] = "ACI1"
+magic[4] = "ACI2"
 term_count u32
 repeat term_count:
   term_len u16
@@ -63,10 +63,20 @@ doc_length_count u32
 repeat doc_length_count:
   candidate_id u32
   document_length u32
+term_frequency_term_count u32
+repeat term_frequency_term_count:
+  term_len u16
+  term utf8 bytes
+  frequency_count u32
+  repeat frequency_count:
+    candidate_id u32
+    weighted_term_frequency u32
 crc32c u32 over all previous bytes
 ```
 
-Legacy `ACI0` files omit the doc length table and remain readable.
+Legacy `ACI0` files omit the doc length and term-frequency tables. Legacy
+`ACI1` files include doc lengths but omit term frequencies. Both remain
+readable.
 
 ## Vector Index `.acv`
 

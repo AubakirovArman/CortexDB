@@ -2,8 +2,9 @@ use crate::wal::{ACLOG_MAGIC, WAL_FORMAT_VERSION};
 
 pub const SEGMENT_MAGIC: [u8; 4] = *b"ACS1";
 pub const BITMAP_INDEX_MAGIC: [u8; 4] = *b"ACB0";
-pub const LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI1";
+pub const LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI2";
 pub const LEGACY_LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI0";
+pub const LEGACY_LEXICAL_INDEX_V1_MAGIC: [u8; 4] = *b"ACI1";
 pub const VECTOR_INDEX_MAGIC: [u8; 4] = *b"ACV0";
 pub const MANIFEST_MAGIC: [u8; 4] = *b"ACM0";
 
@@ -62,9 +63,9 @@ pub fn storage_format_specs() -> [StorageFormatSpec; 6] {
             name: "Lexical index",
             extension: "aci",
             current_magic: &LEXICAL_INDEX_MAGIC,
-            current_version: 1,
-            legacy_magics: &[&LEGACY_LEXICAL_INDEX_MAGIC],
-            compatibility_rule: "ACI0 remains read-only compatible",
+            current_version: 2,
+            legacy_magics: &[&LEGACY_LEXICAL_INDEX_MAGIC, &LEGACY_LEXICAL_INDEX_V1_MAGIC],
+            compatibility_rule: "ACI0 and ACI1 remain read-only compatible",
         },
         StorageFormatSpec {
             kind: StorageFormatKind::VectorIndex,

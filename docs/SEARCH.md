@@ -5,7 +5,8 @@
 - `SearchIndexes` for standalone keyword/vector/hybrid scoring tests.
 - `Database::search_keyword` / `Database::search_cells` for scoped database
   search over the current visible snapshot.
-- `.aci` lexical files persist term postings and per-candidate document lengths.
+- `.aci` lexical files persist term postings, per-candidate document lengths,
+  and weighted term-frequency statistics.
 - `.acv` vector files persist per-candidate integer vectors for exact dot scan.
 
 The database path filters cells through `AgentView.readable_scopes`, assigns
@@ -17,6 +18,11 @@ manifest checkpoint sequence, keyword search reads the persisted `.aci` postings
 directly and vector search reads persisted `.acv` vectors directly. If a WAL
 tail has newer put/patch/tombstone records, the engine falls back to the visible
 MemTable snapshot so fresh writes are not missed.
+
+Keyword scoring uses deterministic integer statistics. Body text has weight 1;
+an optional `title=` payload header has weight 6. Persisted `.aci` files store
+the same weighted term frequencies so checkpointed search keeps the same ranking
+signals as snapshot search.
 
 Current smoke surfaces:
 

@@ -240,6 +240,12 @@ fn remove_candidates(
     lexical
         .doc_lengths
         .retain(|candidate, _| !candidates.contains(candidate));
+    for values in lexical.term_frequencies.values_mut() {
+        values.retain(|candidate, _| !candidates.contains(candidate));
+    }
+    lexical
+        .term_frequencies
+        .retain(|_, values| !values.is_empty());
 }
 
 pub(crate) fn load_checkpoint(root: &Path) -> EngineResult<CheckpointLoad> {

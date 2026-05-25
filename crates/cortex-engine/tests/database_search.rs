@@ -183,6 +183,37 @@ fn checkpoint_lexical_index_persists_doc_lengths() {
 
     let index = LexicalIndex::read(dir.path().join("segments").join("segment-1.aci")).unwrap();
     assert_eq!(index.doc_lengths.get(&1), Some(&3));
+    assert_eq!(
+        index
+            .term_frequencies
+            .get("budget")
+            .and_then(|values| values.get(&1)),
+        Some(&2)
+    );
+}
+
+#[test]
+fn database_keyword_search_uses_persisted_title_weighting() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\ntitle=budget\n\nworkflow note".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\n\nbudget budget".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+
+    let results = db
+        .search_keyword("budget", &view("project:investments"), SearchLimit(2))
+        .unwrap();
+
+    assert_eq!(results[0].cell_id, CellId(1));
+    assert!(results[0].lexical_score > results[1].lexical_score);
 }
 
 #[test]

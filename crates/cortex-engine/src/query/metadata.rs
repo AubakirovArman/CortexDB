@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use cortex_aql::{BitmapHandle, CellTypeId, MemoryType, ScopeId, StatusId};
 
 use crate::search::tokenize;
@@ -18,6 +20,7 @@ pub struct CellMetadata {
     pub source_trust_q16: Option<u16>,
     pub source: Option<String>,
     pub citation: Option<String>,
+    pub title: Option<String>,
     pub body_text: String,
     pub terms: Vec<String>,
 }
@@ -34,6 +37,7 @@ impl CellMetadata {
         let mut source_trust_q16 = None;
         let mut source = None;
         let mut citation = None;
+        let mut title = None;
         let mut body_lines = Vec::new();
         let mut in_header = true;
         for line in text.lines() {
@@ -69,6 +73,9 @@ impl CellMetadata {
                 } else if let Some(value) = line.strip_prefix("citation=") {
                     citation = non_empty(value);
                     continue;
+                } else if let Some(value) = line.strip_prefix("title=") {
+                    title = non_empty(value);
+                    continue;
                 }
                 in_header = false;
             }
@@ -86,6 +93,7 @@ impl CellMetadata {
             source_trust_q16,
             source,
             citation,
+            title,
             body_text,
             terms,
         }
@@ -94,11 +102,26 @@ impl CellMetadata {
     pub fn citation(&self) -> Option<&str> {
         self.citation.as_deref().or(self.source.as_deref())
     }
+
+    pub fn weighted_lexical_terms(&self) -> BTreeMap<String, u32> {
+        let mut terms = BTreeMap::new();
+        add_weighted_terms(&mut terms, &self.body_text, 1);
+        if let Some(title) = &self.title {
+            add_weighted_terms(&mut terms, title, 6);
+        }
+        terms
+    }
 }
 
 fn non_empty(value: &str) -> Option<String> {
     let value = value.trim();
     (!value.is_empty()).then(|| value.to_owned())
+}
+
+fn add_weighted_terms(terms: &mut BTreeMap<String, u32>, text: &str, weight: u32) {
+    for term in tokenize(text) {
+        *terms.entry(term).or_default() += weight;
+    }
 }
 
 pub fn scope_id(name: &str) -> ScopeId {

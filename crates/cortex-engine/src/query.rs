@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+mod candidates;
 mod catalog;
 pub(crate) mod metadata;
 mod provider;
@@ -12,6 +13,10 @@ use cortex_storage::segment::SegmentCell;
 
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
+use candidates::{
+    candidate_from_ordinal, increment_candidate, next_candidate_after, reverse_candidate_map,
+    validate_candidate,
+};
 use metadata::{
     cell_type_handle, cell_type_id, memory_type_handle, scope_handle, status_handle, status_id,
 };
@@ -25,6 +30,7 @@ pub struct EngineAqlIndex {
     pub bitmaps: BTreeMap<BitmapHandle, BTreeSet<u32>>,
     pub lexical: BTreeMap<String, BTreeSet<u32>>,
     pub lexical_doc_lengths: BTreeMap<u32, u32>,
+    pub lexical_term_frequencies: BTreeMap<String, BTreeMap<u32, u32>>,
     pub universe: BTreeSet<u32>,
     pub candidate_to_cell: BTreeMap<u32, CellId>,
     pub cell_to_candidate: BTreeMap<CellId, u32>,
@@ -124,6 +130,7 @@ impl EngineAqlIndex {
                 .collect(),
             lexical: lexical.terms,
             lexical_doc_lengths: lexical.doc_lengths,
+            lexical_term_frequencies: lexical.term_frequencies,
             universe: BTreeSet::new(),
             candidate_to_cell,
             cell_to_candidate,
@@ -165,6 +172,7 @@ impl EngineAqlIndex {
         LexicalIndex {
             terms: self.lexical.clone(),
             doc_lengths: self.lexical_doc_lengths.clone(),
+            term_frequencies: self.lexical_term_frequencies.clone(),
         }
     }
 
@@ -211,10 +219,18 @@ impl EngineAqlIndex {
                 self.push(memory_type_handle(memory_type), candidate);
             }
             self.push(BitmapHandle(cell_id.0), candidate);
-            self.lexical_doc_lengths
-                .insert(candidate, metadata.terms.len().max(1) as u32);
-            for term in metadata.terms {
-                self.lexical.entry(term).or_default().insert(candidate);
+            let weighted_terms = metadata.weighted_lexical_terms();
+            let doc_length = weighted_terms.values().copied().sum::<u32>().max(1);
+            self.lexical_doc_lengths.insert(candidate, doc_length);
+            for (term, frequency) in weighted_terms {
+                self.lexical
+                    .entry(term.clone())
+                    .or_default()
+                    .insert(candidate);
+                self.lexical_term_frequencies
+                    .entry(term)
+                    .or_default()
+                    .insert(candidate, frequency);
             }
         }
         Ok(())
@@ -235,6 +251,11 @@ impl EngineAqlIndex {
         self.lexical.retain(|_, values| !values.is_empty());
         self.lexical_doc_lengths
             .retain(|candidate, _| !candidates.contains(candidate));
+        for values in self.lexical_term_frequencies.values_mut() {
+            values.retain(|candidate, _| !candidates.contains(candidate));
+        }
+        self.lexical_term_frequencies
+            .retain(|_, values| !values.is_empty());
         self.candidate_to_cell
             .retain(|candidate, _| !candidates.contains(candidate));
         self.cell_to_candidate
@@ -243,54 +264,5 @@ impl EngineAqlIndex {
 
     fn rebuild_universe(&mut self) {
         self.universe = self.candidate_to_cell.keys().copied().collect();
-    }
-}
-
-fn reverse_candidate_map(
-    candidate_to_cell: &BTreeMap<u32, CellId>,
-) -> EngineResult<BTreeMap<CellId, u32>> {
-    let mut cell_to_candidate = BTreeMap::new();
-    for (candidate, cell_id) in candidate_to_cell {
-        validate_candidate(*candidate)?;
-        if cell_to_candidate.insert(*cell_id, *candidate).is_some() {
-            return Err(EngineError::StorageInvariant(format!(
-                "cell {} maps to multiple candidates",
-                cell_id.0
-            )));
-        }
-    }
-    Ok(cell_to_candidate)
-}
-
-fn candidate_from_ordinal(index: usize) -> EngineResult<u32> {
-    let one_based = index
-        .checked_add(1)
-        .ok_or(EngineError::CandidateIdOverflow)?;
-    let candidate = u32::try_from(one_based).map_err(|_| EngineError::CandidateIdOverflow)?;
-    validate_candidate(candidate)?;
-    Ok(candidate)
-}
-
-fn next_candidate_after(candidates: impl IntoIterator<Item = u32>) -> EngineResult<u32> {
-    let max = candidates.into_iter().max().unwrap_or(0);
-    if max == 0 {
-        Ok(1)
-    } else {
-        increment_candidate(max)
-    }
-}
-
-fn increment_candidate(candidate: u32) -> EngineResult<u32> {
-    candidate
-        .checked_add(1)
-        .filter(|value| *value != 0)
-        .ok_or(EngineError::CandidateIdOverflow)
-}
-
-fn validate_candidate(candidate: u32) -> EngineResult<()> {
-    if candidate == 0 {
-        Err(EngineError::InvalidCandidateId(candidate))
-    } else {
-        Ok(())
     }
 }

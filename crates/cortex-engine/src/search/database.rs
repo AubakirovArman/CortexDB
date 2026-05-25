@@ -82,6 +82,7 @@ impl Database {
             SearchMode::Keyword => search_persisted_lexical(
                 &state.lexical.terms,
                 &state.lexical.doc_lengths,
+                &state.lexical.term_frequencies,
                 query.text,
                 &allowed,
                 query.limit,
@@ -142,7 +143,7 @@ impl Database {
         {
             let candidate =
                 u32::try_from(index + 1).map_err(|_| EngineError::CandidateIdOverflow)?;
-            indexes.add_document(candidate, &metadata.body_text);
+            indexes.add_weighted_terms(candidate, metadata.weighted_lexical_terms());
             if let Some(vector) = vector_from_payload(&version.payload) {
                 indexes.add_vector(candidate, vector);
             }
