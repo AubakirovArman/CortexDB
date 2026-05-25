@@ -1,10 +1,39 @@
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 
+mod hnsw;
+mod tokenizer;
+
+pub use hnsw::HnswIndex;
+pub use tokenizer::tokenize;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ScoredCandidate {
     pub cell_id: u32,
     pub score: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SearchMode {
+    Keyword,
+    Vector,
+    Hybrid,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SearchQuery<'a> {
+    pub text: &'a str,
+    pub vector: Option<&'a [i16]>,
+    pub limit: usize,
+    pub mode: SearchMode,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SearchResult {
+    pub cell_id: u32,
+    pub score: u64,
+    pub lexical_score: u64,
+    pub vector_score: u64,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -19,19 +48,36 @@ pub struct VectorIndex {
     vectors: BTreeMap<u32, Vec<i16>>,
 }
 
-#[derive(Clone, Debug)]
-pub struct HnswIndex {
-    vectors: BTreeMap<u32, Vec<i16>>,
-    links: BTreeMap<u32, BTreeSet<u32>>,
-    max_neighbors: usize,
-    ef_search: usize,
+#[derive(Clone, Debug, Default)]
+pub struct SearchIndexes {
+    pub lexical: Bm25Index,
+    pub vector: VectorIndex,
 }
 
 impl Bm25Index {
     pub fn add_document(&mut self, cell_id: u32, text: &str) {
+        self.add_document_fields(cell_id, &[(text, 1)]);
+    }
+
+    pub fn add_document_fields(&mut self, cell_id: u32, fields: &[(&str, u32)]) {
         let mut terms = BTreeMap::<String, u32>::new();
-        for term in tokenize(text) {
-            *terms.entry(term).or_default() += 1;
+        for (text, weight) in fields {
+            let weight = (*weight).max(1);
+            for term in tokenize(text) {
+                *terms.entry(term).or_default() += weight;
+            }
+        }
+        self.replace_document_terms(cell_id, terms);
+    }
+
+    fn replace_document_terms(&mut self, cell_id: u32, terms: BTreeMap<String, u32>) {
+        if let Some(old_terms) = self.docs.get(&cell_id) {
+            for term in old_terms.keys() {
+                if let Some(posting) = self.postings.get_mut(term) {
+                    posting.remove(&cell_id);
+                }
+            }
+            self.postings.retain(|_, posting| !posting.is_empty());
         }
         for term in terms.keys() {
             self.postings
@@ -82,6 +128,77 @@ impl Bm25Index {
     }
 }
 
+impl SearchIndexes {
+    pub fn add_document(&mut self, cell_id: u32, text: &str) {
+        self.lexical.add_document(cell_id, text);
+    }
+
+    pub fn add_document_fields(&mut self, cell_id: u32, fields: &[(&str, u32)]) {
+        self.lexical.add_document_fields(cell_id, fields);
+    }
+
+    pub fn add_vector(&mut self, cell_id: u32, vector: Vec<i16>) {
+        self.vector.add_vector(cell_id, vector);
+    }
+
+    pub fn search(&self, query: SearchQuery<'_>) -> Vec<SearchResult> {
+        match query.mode {
+            SearchMode::Keyword => self
+                .lexical
+                .search(query.text, query.limit)
+                .into_iter()
+                .map(SearchResult::from_lexical)
+                .collect(),
+            SearchMode::Vector => query
+                .vector
+                .map(|vector| self.vector.search_dot(vector, query.limit))
+                .unwrap_or_default()
+                .into_iter()
+                .map(SearchResult::from_vector)
+                .collect(),
+            SearchMode::Hybrid => self.hybrid_search(query),
+        }
+    }
+
+    fn hybrid_search(&self, query: SearchQuery<'_>) -> Vec<SearchResult> {
+        let Some(vector) = query.vector else {
+            return self.search(SearchQuery {
+                mode: SearchMode::Keyword,
+                ..query
+            });
+        };
+        let lexical = self.lexical.search(query.text, query.limit.max(32));
+        let vector = self.vector.search_dot(vector, query.limit.max(32));
+        let mut results = BTreeMap::<u32, SearchResult>::new();
+        apply_rrf(&mut results, lexical, true);
+        apply_rrf(&mut results, vector, false);
+        let mut values = results.into_values().collect::<Vec<_>>();
+        values.sort_by_key(|result| (Reverse(result.score), result.cell_id));
+        values.truncate(query.limit);
+        values
+    }
+}
+
+impl SearchResult {
+    fn from_lexical(candidate: ScoredCandidate) -> Self {
+        Self {
+            cell_id: candidate.cell_id,
+            score: candidate.score,
+            lexical_score: candidate.score,
+            vector_score: 0,
+        }
+    }
+
+    fn from_vector(candidate: ScoredCandidate) -> Self {
+        Self {
+            cell_id: candidate.cell_id,
+            score: candidate.score,
+            lexical_score: 0,
+            vector_score: candidate.score,
+        }
+    }
+}
+
 impl VectorIndex {
     pub fn add_vector(&mut self, cell_id: u32, vector: Vec<i16>) {
         self.vectors.insert(cell_id, vector);
@@ -97,71 +214,7 @@ impl VectorIndex {
     }
 }
 
-impl HnswIndex {
-    pub fn new(max_neighbors: usize, ef_search: usize) -> Self {
-        Self {
-            vectors: BTreeMap::new(),
-            links: BTreeMap::new(),
-            max_neighbors: max_neighbors.max(1),
-            ef_search: ef_search.max(1),
-        }
-    }
-
-    pub fn add_vector(&mut self, cell_id: u32, vector: Vec<i16>) {
-        let neighbors = self.nearest_existing(&vector, self.max_neighbors);
-        for neighbor in &neighbors {
-            self.links.entry(*neighbor).or_default().insert(cell_id);
-        }
-        self.links
-            .insert(cell_id, neighbors.iter().copied().collect::<BTreeSet<_>>());
-        self.vectors.insert(cell_id, vector);
-    }
-
-    pub fn search(&self, query: &[i16], limit: usize) -> Vec<ScoredCandidate> {
-        let Some(entry) = self.vectors.keys().next().copied() else {
-            return Vec::new();
-        };
-        let mut visited = BTreeSet::new();
-        let mut frontier = BTreeSet::from([entry]);
-        let mut scores = BTreeMap::new();
-        while let Some(candidate) = best_frontier(query, &frontier, &self.vectors) {
-            frontier.remove(&candidate);
-            if !visited.insert(candidate) || visited.len() > self.ef_search {
-                continue;
-            }
-            let score = dot_nonnegative(query, &self.vectors[&candidate]);
-            scores.insert(candidate, score);
-            if let Some(neighbors) = self.links.get(&candidate) {
-                for neighbor in neighbors {
-                    if !visited.contains(neighbor) {
-                        frontier.insert(*neighbor);
-                    }
-                }
-            }
-        }
-        ranked(scores, limit)
-    }
-
-    fn nearest_existing(&self, vector: &[i16], limit: usize) -> Vec<u32> {
-        let scores = self
-            .vectors
-            .iter()
-            .map(|(cell_id, existing)| (*cell_id, dot_nonnegative(vector, existing)))
-            .collect();
-        ranked(scores, limit)
-            .into_iter()
-            .map(|candidate| candidate.cell_id)
-            .collect()
-    }
-}
-
-impl Default for HnswIndex {
-    fn default() -> Self {
-        Self::new(8, 32)
-    }
-}
-
-fn ranked(scores: BTreeMap<u32, u64>, limit: usize) -> Vec<ScoredCandidate> {
+pub(super) fn ranked(scores: BTreeMap<u32, u64>, limit: usize) -> Vec<ScoredCandidate> {
     let mut values: Vec<_> = scores
         .into_iter()
         .map(|(cell_id, score)| ScoredCandidate { cell_id, score })
@@ -171,7 +224,7 @@ fn ranked(scores: BTreeMap<u32, u64>, limit: usize) -> Vec<ScoredCandidate> {
     values
 }
 
-fn dot_nonnegative(lhs: &[i16], rhs: &[i16]) -> u64 {
+pub(super) fn dot_nonnegative(lhs: &[i16], rhs: &[i16]) -> u64 {
     lhs.iter()
         .zip(rhs)
         .map(|(left, right)| i64::from(*left) * i64::from(*right))
@@ -179,20 +232,24 @@ fn dot_nonnegative(lhs: &[i16], rhs: &[i16]) -> u64 {
         .max(0) as u64
 }
 
-fn best_frontier(
-    query: &[i16],
-    frontier: &BTreeSet<u32>,
-    vectors: &BTreeMap<u32, Vec<i16>>,
-) -> Option<u32> {
-    frontier
-        .iter()
-        .copied()
-        .max_by_key(|cell_id| dot_nonnegative(query, &vectors[cell_id]))
-}
-
-fn tokenize(text: &str) -> Vec<String> {
-    text.split(|value: char| !value.is_ascii_alphanumeric())
-        .filter(|term| !term.is_empty())
-        .map(|term| term.to_ascii_lowercase())
-        .collect()
+fn apply_rrf(
+    results: &mut BTreeMap<u32, SearchResult>,
+    ranked: Vec<ScoredCandidate>,
+    lexical: bool,
+) {
+    for (rank, candidate) in ranked.into_iter().enumerate() {
+        let rrf = 1_000_000 / (60 + rank as u64 + 1);
+        let result = results.entry(candidate.cell_id).or_insert(SearchResult {
+            cell_id: candidate.cell_id,
+            score: 0,
+            lexical_score: 0,
+            vector_score: 0,
+        });
+        result.score += rrf;
+        if lexical {
+            result.lexical_score = candidate.score;
+        } else {
+            result.vector_score = candidate.score;
+        }
+    }
 }

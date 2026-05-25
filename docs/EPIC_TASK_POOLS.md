@@ -241,11 +241,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 The active slice is:
 
 ```text
-Epic 081 -> AQL grammar surface docs
-Epic 095 -> runtime AgentAllowed execution path
-Epic 098 -> AQL command smoke tests
-Epic 099 -> CLI AQL command
-Epic 100 -> HTTP AQL endpoint
+Epic 101 -> Search API v1
+Epic 103 -> Unicode tokenizer
+Epic 104 -> token normalization
+Epic 106 -> field-aware lexical input
+Epic 116 -> hybrid search fusion
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed

@@ -29,14 +29,15 @@
 - ACLOG format freeze notes and read-only WAL diagnostics CLI.
 - MemTable historical reads, deterministic iterators, range scan, and stats v2.
 - AQL retrieve execution exposed through CLI and HTTP.
+- Search API v1 with Unicode tokenization, field weights, and hybrid fusion.
 
 ## Next
 
-1. Formalize core cell metadata instead of payload-line metadata parsing.
-2. Add WAL writer backpressure and real group commit batching.
-3. Persist consensus log entries through ACLOG or a dedicated replication log.
-4. Add real network replication and leader election.
-5. Add background GC policy around active readers.
+1. Add search CLI/HTTP surfaces and persisted lexical metadata v2.
+2. Formalize core cell metadata instead of payload-line metadata parsing.
+3. Add WAL writer backpressure and real group commit batching.
+4. Persist consensus log entries through ACLOG or a dedicated replication log.
+5. Add real network replication and leader election.
 
 ## Not Yet
 

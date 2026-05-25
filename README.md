@@ -30,7 +30,7 @@ AQL retrieve -> ContextPack -> token budget -> citation anomalies
 - `crates/cortex-aql`: AQL parser, AST, policy validation, binder, bitmap bytecode, and mock bitmap VM.
 - `crates/cortex-storage`: ACLOG WAL v0, manifest, segment, bitmap-index, and lexical-index files.
 - `crates/cortex-core`: in-memory MVCC MemTable, read transactions, cell versions, and manifest primitives.
-- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, ContextPack v0, search helpers, and consensus model primitives.
+- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, ContextPack v0, search helpers with hybrid fusion, and consensus model primitives.
 - `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone/flush/compact/stats/validate/context checks.
 - `crates/cortex-server`: minimal JSON HTTP API for put/get/tombstone/flush/compact/context/health checks.
 

@@ -3,8 +3,8 @@ use std::collections::BTreeSet;
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, ScopeId, Q16_ZERO};
 use cortex_core::CellId;
 use cortex_engine::{
-    scope_id, Bm25Index, ClusterConfig, ConsensusState, Database, HnswIndex, LogIndex, NodeId,
-    ReplicatedEntry, Term, VectorIndex,
+    scope_id, tokenize, Bm25Index, ClusterConfig, ConsensusState, Database, HnswIndex, LogIndex,
+    NodeId, ReplicatedEntry, SearchIndexes, SearchMode, SearchQuery, Term, VectorIndex,
 };
 
 #[test]
@@ -139,6 +139,79 @@ fn bm25_and_vector_indexes_rank_candidates() {
     let mut hnsw = HnswIndex::default();
     hnsw.add_vector(7, vec![1, 2, 3]);
     assert_eq!(hnsw.search(&[1, 1, 1], 1)[0].cell_id, 7);
+}
+
+#[test]
+fn unicode_tokenizer_handles_ru_kz_en_terms() {
+    let terms = tokenize("Бюджет және Project-2025, инвестиции");
+    assert!(terms.contains(&"бюджет".to_owned()));
+    assert!(terms.contains(&"project".to_owned()));
+    assert!(terms.contains(&"2025".to_owned()));
+    assert!(terms.contains(&"инвестиции".to_owned()));
+    assert!(!terms.contains(&"және".to_owned()));
+}
+
+#[test]
+fn field_weighting_prioritizes_important_fields() {
+    let mut index = Bm25Index::default();
+    index.add_document_fields(1, &[("budget", 6), ("workflow note", 1)]);
+    index.add_document_fields(2, &[("budget budget", 1)]);
+
+    let results = index.search("budget", 2);
+    assert_eq!(results[0].cell_id, 1);
+}
+
+#[test]
+fn replacing_document_removes_old_postings() {
+    let mut index = Bm25Index::default();
+    index.add_document(1, "obsolete");
+    index.add_document(1, "current");
+
+    assert!(index.search("obsolete", 10).is_empty());
+    assert_eq!(index.search("current", 10)[0].cell_id, 1);
+}
+
+#[test]
+fn hybrid_search_fuses_keyword_and_vector_rankings() {
+    let mut indexes = SearchIndexes::default();
+    indexes.add_document(1, "ready investment budget");
+    indexes.add_document(2, "workflow note");
+    indexes.add_vector(1, vec![1, 0, 0]);
+    indexes.add_vector(2, vec![5, 0, 0]);
+
+    let results = indexes.search(SearchQuery {
+        text: "budget",
+        vector: Some(&[5, 0, 0]),
+        limit: 2,
+        mode: SearchMode::Hybrid,
+    });
+    assert_eq!(results.len(), 2);
+    assert_eq!(results[0].cell_id, 1);
+    assert!(results[0].lexical_score > 0);
+    assert!(results[0].vector_score > 0);
+}
+
+#[test]
+fn search_api_supports_keyword_and_vector_modes() {
+    let mut indexes = SearchIndexes::default();
+    indexes.add_document(1, "alpha budget");
+    indexes.add_vector(2, vec![0, 9]);
+
+    let keyword = indexes.search(SearchQuery {
+        text: "budget",
+        vector: None,
+        limit: 1,
+        mode: SearchMode::Keyword,
+    });
+    assert_eq!(keyword[0].cell_id, 1);
+
+    let vector = indexes.search(SearchQuery {
+        text: "",
+        vector: Some(&[0, 2]),
+        limit: 1,
+        mode: SearchMode::Vector,
+    });
+    assert_eq!(vector[0].cell_id, 2);
 }
 
 #[test]
