@@ -34,6 +34,41 @@ WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#,
 }
 
 #[test]
+fn retrieve_aql_preserves_large_cell_ids_after_checkpoint_and_compact() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(
+            CellId(u64::MAX),
+            b"scope=project:investments\nstatus=ready\nlarge alpha".to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(u64::MAX - 1),
+            b"scope=project:investments\nstatus=draft\nlarge beta".to_vec(),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+        db.compact().unwrap();
+    }
+
+    let db = Database::open(dir.path()).unwrap();
+    let cells = db
+        .retrieve_aql(
+            r#"RETRIEVE CONTEXT FOR TASK "large" IN BRAIN investment_projects
+WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#,
+            &view(scope_id("project:investments")),
+        )
+        .unwrap();
+    assert_eq!(cells.len(), 1);
+    assert_eq!(cells[0].cell_id, CellId(u64::MAX));
+    assert_eq!(
+        cells[0].payload,
+        b"scope=project:investments\nstatus=ready\nlarge alpha"
+    );
+}
+
+#[test]
 fn persisted_index_overlay_removes_changed_checkpoint_candidates() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();

@@ -1,8 +1,8 @@
-use std::fs::{self, File, OpenOptions};
+use std::fs;
 use std::io::ErrorKind;
-use std::io::Write;
 use std::path::Path;
 
+use crate::atomic::{append_crc32c, verify_crc32c, write_atomic};
 use crate::error::{StorageError, StorageResult};
 
 const MAGIC: &[u8; 4] = b"ACM0";
@@ -33,7 +33,7 @@ impl StorageManifest {
     }
 
     pub fn store(&self, path: impl AsRef<Path>) -> StorageResult<()> {
-        store_atomic(path.as_ref(), &encode_manifest(self))?;
+        write_atomic(path.as_ref(), &encode_manifest(self))?;
         Ok(())
     }
 
@@ -51,21 +51,6 @@ impl StorageManifest {
     }
 }
 
-fn store_atomic(path: &Path, bytes: &[u8]) -> StorageResult<()> {
-    let tmp = path.with_extension("acm.tmp");
-    {
-        let mut file = File::create(&tmp)?;
-        file.write_all(bytes)?;
-        file.sync_all()?;
-    }
-    fs::rename(&tmp, path)?;
-    if let Some(parent) = path.parent() {
-        let directory = OpenOptions::new().read(true).open(parent)?;
-        directory.sync_all()?;
-    }
-    Ok(())
-}
-
 fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend_from_slice(MAGIC);
@@ -73,10 +58,12 @@ fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
     put_u64(&mut out, manifest.checkpoint_seq);
     put_segments(&mut out, &manifest.live_segments);
     put_segments(&mut out, &manifest.retired_segments);
+    append_crc32c(&mut out);
     out
 }
 
 fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
+    let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidManifestFile)?;
     if bytes.len() < 24 || &bytes[..4] != MAGIC {
         return Err(StorageError::InvalidManifestFile);
     }

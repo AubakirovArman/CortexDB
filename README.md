@@ -69,6 +69,13 @@ curl 'http://127.0.0.1:8080/v1/cell?cell_id=1'
 Set `CORTEXDB_AUTH_TOKEN` before starting `cortex-server` to require
 `Authorization: Bearer <token>` on HTTP requests.
 
+## Core Status
+
+The single-node durable core is the current completion target. The checklist is
+tracked in [`docs/CORE_COMPLETION_CHECKLIST.md`](docs/CORE_COMPLETION_CHECKLIST.md):
+WAL durability, MVCC reads, restart recovery, checkpoint, compact, AQL retrieve,
+candidate mapping, atomic storage writes, and corruption detection.
+
 ## Roadmap
 
 | Milestone | Scope |

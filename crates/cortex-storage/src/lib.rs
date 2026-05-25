@@ -1,3 +1,4 @@
+pub(crate) mod atomic;
 pub mod error;
 pub mod indexes;
 pub mod manifest;

@@ -12,6 +12,10 @@ use crate::error::{EngineError, EngineResult};
 use crate::operation::{wal_record_from_operation_with_seq, DbOperation};
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
 
+pub trait CandidateResolver: BitmapProvider {
+    fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId>;
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RecoveryMode {
     Strict,
@@ -131,7 +135,7 @@ impl Database {
         self.get_cell(self.read_txn(), cell_id)
     }
 
-    pub fn retrieve_cells<P: BitmapProvider>(
+    pub fn retrieve_cells<P: CandidateResolver>(
         &self,
         plan: &BoundRetrievePlan,
         provider: &P,
@@ -140,8 +144,8 @@ impl Database {
         let txn = self.read_txn();
         Ok(candidates
             .into_iter()
-            .filter_map(|candidate| {
-                let cell_id = CellId(u64::from(candidate));
+            .filter_map(|candidate| provider.cell_id_for_candidate(candidate))
+            .filter_map(|cell_id| {
                 self.get_cell(txn, cell_id)
                     .map(|payload| RetrievedCell { cell_id, payload })
             })

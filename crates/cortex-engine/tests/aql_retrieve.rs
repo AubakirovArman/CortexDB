@@ -1,16 +1,22 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_aql::{
-    parse_aql, AgentId, AgentView, AqlCatalog, AqlStatement, Binder, BitmapHandle, BrainId,
-    CellTypeId, MemoryType, MockBitmapProvider, RetrievalMode, ScopeId, StatusId, Q16_ZERO,
+    parse_aql, AgentId, AgentView, AqlCatalog, AqlStatement, Binder, BitmapHandle, BitmapProvider,
+    BrainId, CellTypeId, MemoryType, MockBitmapProvider, RetrievalMode, ScopeId, StatusId,
+    Q16_ZERO,
 };
 use cortex_core::CellId;
-use cortex_engine::Database;
+use cortex_engine::{CandidateResolver, Database};
 
 #[derive(Default)]
 struct Catalog {
     brains: BTreeMap<String, BrainId>,
     status_bitmaps: BTreeMap<StatusId, BitmapHandle>,
+}
+
+struct Provider {
+    bitmap: MockBitmapProvider,
+    candidate_to_cell: BTreeMap<u32, CellId>,
 }
 
 impl AqlCatalog for Catalog {
@@ -73,17 +79,44 @@ WHERE status = "ready" LIMIT 10 CANDIDATES;"#;
     };
     let view = view();
     let plan = Binder::new(&catalog, &view).bind_retrieve(&raw).unwrap();
-    let provider = MockBitmapProvider {
-        universe: BTreeSet::from([1, 2, 3]),
-        agent_allowed: BTreeSet::from([1, 2, 3]),
-        live: BTreeSet::from([1, 2, 3]),
-        bitmaps: BTreeMap::from([(BitmapHandle(200), BTreeSet::from([1]))]),
+    let provider = Provider {
+        bitmap: MockBitmapProvider {
+            universe: BTreeSet::from([7, 8, 9]),
+            agent_allowed: BTreeSet::from([7, 8, 9]),
+            live: BTreeSet::from([7, 8, 9]),
+            bitmaps: BTreeMap::from([(BitmapHandle(200), BTreeSet::from([7]))]),
+        },
+        candidate_to_cell: BTreeMap::from([(7, CellId(1)), (8, CellId(2))]),
     };
 
     let cells = db.retrieve_cells(&plan, &provider).unwrap();
     assert_eq!(cells.len(), 1);
     assert_eq!(cells[0].cell_id, CellId(1));
     assert_eq!(cells[0].payload, b"ready payload");
+}
+
+impl BitmapProvider for Provider {
+    fn bitmap(&self, handle: BitmapHandle) -> Option<BTreeSet<u32>> {
+        self.bitmap.bitmap(handle)
+    }
+
+    fn agent_allowed(&self) -> BTreeSet<u32> {
+        self.bitmap.agent_allowed()
+    }
+
+    fn live(&self) -> BTreeSet<u32> {
+        self.bitmap.live()
+    }
+
+    fn universe(&self) -> BTreeSet<u32> {
+        self.bitmap.universe()
+    }
+}
+
+impl CandidateResolver for Provider {
+    fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId> {
+        self.candidate_to_cell.get(&candidate).copied()
+    }
 }
 
 fn view() -> AgentView {

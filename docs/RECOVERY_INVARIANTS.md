@@ -18,3 +18,7 @@
 - Tombstone markers in incremental segments must prevent old checkpointed cells
   from resurrecting after WAL truncation.
 - Compaction writes a full visible snapshot and retires previous segment handles.
+- Bitmap candidates are compact ids. Segment cells persist the mapping back to
+  full `CellId`, so large ids are not truncated.
+- Segment, bitmap index, lexical index, and manifest files include CRC footers
+  and must fail closed on corruption.

@@ -1,12 +1,13 @@
-use std::fs;
 use std::path::Path;
 
+use crate::atomic::{append_crc32c, verify_crc32c, write_atomic};
 use crate::error::{StorageError, StorageResult};
 
 const MAGIC: &[u8; 4] = b"ACS1";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SegmentCell {
+    pub candidate_id: u32,
     pub cell_id: u64,
     pub created_seq: u64,
     pub deleted_seq: Option<u64>,
@@ -26,24 +27,27 @@ impl SegmentWriter {
         put_u32(&mut out, cells.len() as u32);
         for cell in cells {
             put_u64(&mut out, cell.cell_id);
+            put_u32(&mut out, cell.candidate_id);
             put_u64(&mut out, cell.created_seq);
             put_u64(&mut out, cell.deleted_seq.unwrap_or(0));
             put_u32(&mut out, cell.payload.len() as u32);
             out.extend_from_slice(&cell.payload);
         }
-        fs::write(path, out)?;
+        append_crc32c(&mut out);
+        write_atomic(path.as_ref(), &out)?;
         Ok(())
     }
 }
 
 impl SegmentReader {
     pub fn read(path: impl AsRef<Path>) -> StorageResult<Vec<SegmentCell>> {
-        let bytes = fs::read(path)?;
+        let bytes = std::fs::read(path)?;
         decode_segment(&bytes)
     }
 }
 
 fn decode_segment(bytes: &[u8]) -> StorageResult<Vec<SegmentCell>> {
+    let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidSegmentFile)?;
     if bytes.len() < 8 || &bytes[..4] != MAGIC {
         return Err(StorageError::InvalidSegmentFile);
     }
@@ -52,6 +56,7 @@ fn decode_segment(bytes: &[u8]) -> StorageResult<Vec<SegmentCell>> {
     let mut cells = Vec::with_capacity(count);
     for _ in 0..count {
         let cell_id = read_u64(bytes, &mut cursor)?;
+        let candidate_id = read_u32(bytes, &mut cursor)?;
         let created_seq = read_u64(bytes, &mut cursor)?;
         let deleted_seq = match read_u64(bytes, &mut cursor)? {
             0 => None,
@@ -60,6 +65,7 @@ fn decode_segment(bytes: &[u8]) -> StorageResult<Vec<SegmentCell>> {
         let len = read_u32(bytes, &mut cursor)? as usize;
         let payload = read_bytes(bytes, &mut cursor, len)?.to_vec();
         cells.push(SegmentCell {
+            candidate_id,
             cell_id,
             created_seq,
             deleted_seq,
