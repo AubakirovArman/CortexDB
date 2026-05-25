@@ -235,6 +235,22 @@ fn test_recovery_with_multiple_rotated_wal_files() {
     }
 }
 
+#[test]
+fn test_put_cells_batch_put() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cells(vec![
+            (CellId(1), b"batch1".to_vec()),
+            (CellId(2), b"batch2".to_vec()),
+        ])
+        .unwrap();
+    }
+    let db = Database::open(dir.path()).unwrap();
+    assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"batch1");
+    assert_eq!(db.get_latest_cell(CellId(2)).unwrap(), b"batch2");
+}
+
 fn rewrite_header_crc(encoded: &mut [u8]) {
     let header_len = u16::from_le_bytes(encoded[4..6].try_into().unwrap()) as usize;
     encoded[28..32].copy_from_slice(&0u32.to_le_bytes());

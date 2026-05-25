@@ -147,6 +147,31 @@ impl Database {
         self.append_then_apply(DbOperation::PutCell { cell_id, payload })
     }
 
+    pub fn put_cells(&mut self, cells: Vec<(CellId, Vec<u8>)>) -> EngineResult<CommitSeq> {
+        if cells.is_empty() {
+            return Ok(self.current_seq);
+        }
+        let mut records = Vec::with_capacity(cells.len());
+        let mut ops = Vec::with_capacity(cells.len());
+        let mut next_seq = self.current_seq.0;
+
+        for (cell_id, payload) in cells {
+            next_seq += 1;
+            let op = DbOperation::PutCell { cell_id, payload };
+            let record = wal_record_from_operation_with_seq(CommitSeq(next_seq), &op);
+            records.push(record);
+            ops.push((CommitSeq(next_seq), op));
+        }
+
+        self.writer.append_batch(records)?;
+
+        for (seq, op) in ops {
+            self.apply_operation(seq, op)?;
+        }
+        self.current_seq = CommitSeq(next_seq);
+        Ok(self.current_seq)
+    }
+
     pub fn patch_cell(&mut self, cell_id: CellId, payload: Vec<u8>) -> EngineResult<CommitSeq> {
         self.require_visible_cell(cell_id)?;
         self.append_then_apply(DbOperation::PatchCell { cell_id, payload })

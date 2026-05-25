@@ -11,6 +11,8 @@ alpha-check:
 	cargo test --workspace --all-features
 	cargo fmt --check
 	cargo clippy --workspace --all-targets -- -D warnings
+	cargo bench -p cortex-engine --bench core_baseline
+	./examples/demo/investment_projects/run.sh
 
 demo:
 	./examples/demo/investment_projects/run.sh

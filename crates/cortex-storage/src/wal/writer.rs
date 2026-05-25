@@ -62,6 +62,10 @@ enum WalWriterCommand {
         record: WalRecord,
         reply: Sender<StorageResult<CommitAck>>,
     },
+    AppendBatch {
+        records: Vec<WalRecord>,
+        reply: Sender<StorageResult<CommitAck>>,
+    },
     Shutdown {
         reply: Sender<StorageResult<()>>,
     },
@@ -103,6 +107,17 @@ impl WalWriterHandle {
         let (reply, rx) = bounded(1);
         self.tx
             .send(WalWriterCommand::Append { record, reply })
+            .map_err(|_| StorageError::WalWriterClosed)?;
+        rx.recv().map_err(|_| StorageError::WalWriterClosed)?
+    }
+
+    pub fn append_batch(&self, records: Vec<WalRecord>) -> StorageResult<CommitAck> {
+        if records.is_empty() {
+            return Err(StorageError::Io(std::io::Error::other("empty batch")));
+        }
+        let (reply, rx) = bounded(1);
+        self.tx
+            .send(WalWriterCommand::AppendBatch { records, reply })
             .map_err(|_| StorageError::WalWriterClosed)?;
         rx.recv().map_err(|_| StorageError::WalWriterClosed)?
     }
@@ -216,6 +231,65 @@ fn run_writer(path: PathBuf, options: WalWriterOptions, rx: Receiver<WalWriterCo
                     let _ = reply.send(result);
                 }
             }
+            WalWriterCommand::AppendBatch { records, reply } => {
+                if let Some(max_size) = options.max_wal_size {
+                    let mut needs_rotation = false;
+                    if let Some(ref f) = file_opt {
+                        if let Ok(metadata) = f.metadata() {
+                            if metadata.len() >= max_size {
+                                needs_rotation = true;
+                            }
+                        }
+                    }
+                    if needs_rotation {
+                        if let Some(f) = file_opt.take() {
+                            let _ = f.sync_data();
+                        }
+                        let timestamp = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_micros();
+                        let rotated_path = path.with_file_name(format!("db.{}.aclog", timestamp));
+                        if std::fs::rename(&path, &rotated_path).is_ok() {
+                            if let Ok(mut new_file) =
+                                OpenOptions::new().create(true).append(true).open(&path)
+                            {
+                                if new_file.metadata().map_or(true, |m| m.len() == 0) {
+                                    let _ = new_file.write_all(&WalCodec::file_header());
+                                    let _ = new_file.sync_data();
+                                }
+                                next_lsn = new_file.seek(SeekFrom::End(0)).unwrap_or(0);
+                                file_opt = Some(new_file);
+                            }
+                        }
+                    }
+                }
+
+                if file_opt.is_none() {
+                    let _ = reply.send(Err(StorageError::WalWriterClosed));
+                    continue;
+                }
+
+                let file = file_opt.as_mut().unwrap();
+                let mut last_result = Err(StorageError::Io(std::io::Error::other("empty batch")));
+                for record in records {
+                    last_result =
+                        append_record_without_sync(file, record, &mut next_lsn, &mut metrics);
+                    if last_result.is_err() {
+                        break;
+                    }
+                }
+
+                if mode == DurabilityMode::Strict && last_result.is_ok() {
+                    if let Err(e) = file.sync_data() {
+                        last_result = Err(e.into());
+                    } else {
+                        metrics.fsync_count += 1;
+                        metrics.batches_committed += 1;
+                    }
+                }
+                let _ = reply.send(last_result);
+            }
             WalWriterCommand::Shutdown { reply } => {
                 let result = if let Some(ref mut f) = file_opt {
                     f.sync_data().map_err(StorageError::from)
@@ -258,6 +332,7 @@ fn append_balanced_batch(
     while batch.len() < BALANCED_BATCH_MAX {
         match rx.try_recv() {
             Ok(WalWriterCommand::Append { record, reply }) => batch.push((record, reply)),
+            Ok(WalWriterCommand::AppendBatch { .. }) => break,
             Ok(WalWriterCommand::Shutdown { reply }) => {
                 shutdown = Some(reply);
                 break;
