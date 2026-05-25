@@ -1,6 +1,15 @@
 use std::borrow::Cow;
 
-use cortex_aql::{parse_aql, AqlParseErrorKind, AqlStatement, Condition, Literal, RetrievalMode};
+use cortex_aql::{
+    parse_aql, AqlParseErrorKind, AqlStatement, Condition, Literal, Requirement, RetrievalMode,
+};
+
+fn retrieve(query: &str) -> Box<cortex_aql::RawRetrieveContext<'_>> {
+    let AqlStatement::RetrieveContext(raw) = parse_aql(query).unwrap() else {
+        panic!("expected retrieve");
+    };
+    raw
+}
 
 #[test]
 fn parse_basic_retrieve_context() {
@@ -15,12 +24,13 @@ WHERE space = "project:investments" AND status = "ready";"#,
     .unwrap();
 
     let AqlStatement::RetrieveContext(raw) = statement else {
-        panic!("expected retrieve");
+        panic!("expected retrieve")
     };
     assert_eq!(raw.task.node.value, "compare");
+    assert_eq!(raw.task.span.len, "\"compare\"".len());
     assert_eq!(raw.brain.node.value, "investment_projects");
-    assert_eq!(raw.mode.node, RetrievalMode::Balanced);
-    assert_eq!(raw.budget_tokens.node, 12_000);
+    assert_eq!(raw.mode.unwrap().node, RetrievalMode::Balanced);
+    assert_eq!(raw.budget_tokens.unwrap().node, 12_000);
 }
 
 #[test]
@@ -49,18 +59,59 @@ fn missing_semicolon_fails() {
 
 #[test]
 fn where_and_parse() {
-    let statement = parse_aql(
+    let raw = retrieve(
         r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN b USING MODE fast BUDGET 1 TOKENS
 WHERE space = "s" AND status = "ready";"#,
-    )
-    .unwrap();
-    let AqlStatement::RetrieveContext(raw) = statement else {
-        panic!("expected retrieve");
-    };
+    );
     assert!(matches!(
         raw.where_clause.unwrap().node,
         Condition::And(_, _)
     ));
+}
+
+#[test]
+fn parse_limit_and_require() {
+    let raw = retrieve(
+        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN b
+LIMIT 500 CANDIDATES REQUIRE citations = true, confidence >= 0.80, source_trust >= 0.90,
+freshness <= 86400 SECONDS;"#,
+    );
+    assert_eq!(raw.candidate_limit.unwrap().node, 500);
+    assert_eq!(raw.requirements.len(), 4);
+    assert!(matches!(
+        raw.requirements[0].node,
+        Requirement::RequireCitations
+    ));
+}
+
+#[test]
+fn parse_identifier_with_colon_as_literal() {
+    let raw = retrieve(
+        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN b
+WHERE space = project:investments;"#,
+    );
+    let Condition::Predicate { literal, .. } = raw.where_clause.unwrap().node else {
+        panic!("expected predicate");
+    };
+    let Literal::Identifier(value) = literal.node else {
+        panic!("expected identifier literal");
+    };
+    assert_eq!(value.value, "project:investments");
+}
+
+#[test]
+fn where_precedence_not_and_or() {
+    let raw = retrieve(
+        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN b
+WHERE NOT status = "ready" AND space = "s" OR memory_type = "decision";"#,
+    );
+    let Condition::Or(lhs, _) = raw.where_clause.unwrap().node else {
+        panic!("expected OR at root");
+    };
+    let Condition::And(lhs, _) = lhs.node else {
+        panic!("expected AND below OR");
+    };
+    assert!(matches!(lhs.node, Condition::Not(_)));
 }
 
 #[test]

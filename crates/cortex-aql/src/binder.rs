@@ -132,13 +132,21 @@ impl<'a, C: AqlCatalog> Binder<'a, C> {
             .catalog
             .resolve_brain(raw.brain.node.value.as_ref())
             .ok_or(BindError::UnknownBrain)?;
-        let requested_budget = u32::try_from(raw.budget_tokens.node).unwrap_or(u32::MAX);
+        let mode = raw
+            .mode
+            .as_ref()
+            .map_or(RetrievalMode::Balanced, |mode| mode.node);
+        let budget_tokens = raw.budget_tokens.as_ref().map_or(
+            u64::from(self.view.default_context_budget_tokens),
+            |budget| budget.node,
+        );
+        let requested_budget = u32::try_from(budget_tokens).unwrap_or(u32::MAX);
         let requested_limit = raw
             .candidate_limit
             .as_ref()
             .map_or(self.view.default_candidate_limit, |limit| limit.node);
         let effective = PolicyValidator::new(self.view)
-            .enforce_retrieve(brain, raw.mode.node, requested_budget, requested_limit)
+            .enforce_retrieve(brain, mode, requested_budget, requested_limit)
             .map_err(BindError::PolicyDenied)?;
 
         let mut thresholds = QualityThresholds {
@@ -146,7 +154,7 @@ impl<'a, C: AqlCatalog> Binder<'a, C> {
             min_source_trust_q16: Q16_ZERO,
             max_freshness_seconds: None,
         };
-        let mut context_policy = context_policy_for_mode(raw.mode.node, self.view, &effective);
+        let mut context_policy = context_policy_for_mode(mode, self.view, &effective);
         for requirement in &raw.requirements {
             apply_requirement(&mut thresholds, &mut context_policy, &requirement.node)?;
         }
@@ -164,14 +172,14 @@ impl<'a, C: AqlCatalog> Binder<'a, C> {
         Ok(BoundRetrievePlan {
             brain_id: brain,
             task: raw.task.node.value.to_string(),
-            mode: raw.mode.node,
+            mode,
             bitmap_program: BitmapProgram {
                 ops,
                 max_stack_depth,
             },
             context_policy,
             quality_thresholds: thresholds,
-            weights: default_weights(raw.mode.node),
+            weights: default_weights(mode),
         })
     }
 

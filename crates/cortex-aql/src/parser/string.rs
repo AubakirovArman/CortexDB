@@ -3,7 +3,7 @@ use nom::{Err, InputTake};
 use crate::ast::{AqlString, Spanned};
 use crate::errors::AqlParseErrorKind;
 
-use super::{source_span, PResult, ParseFailure, Span};
+use super::{span_between, PResult, ParseFailure, Span};
 
 pub(super) fn parse_quoted_string(input: Span<'_>) -> PResult<'_, Spanned<AqlString<'_>>> {
     let source: &str = input.fragment();
@@ -30,7 +30,7 @@ pub(super) fn parse_quoted_string(input: Span<'_>) -> PResult<'_, Spanned<AqlStr
                 } else {
                     AqlString::borrowed(&fragment[1..fragment.len() - 1])
                 };
-                return Ok((rest, Spanned::new(node, source_span(input))));
+                return Ok((rest, Spanned::new(node, span_between(input, rest))));
             }
             b'\\' => {
                 let Some(escaped) = bytes.get(index + 1).copied() else {

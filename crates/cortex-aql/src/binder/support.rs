@@ -22,7 +22,10 @@ pub fn decimal_to_q16(literal: &DecimalLiteral<'_>) -> Result<Q16, BindError> {
         .checked_mul(scale)
         .and_then(|value| value.checked_add(fraction_value))
         .ok_or(BindError::InvalidDecimal)?;
-    if numerator >= scale {
+    if numerator > scale {
+        return Err(BindError::InvalidDecimal);
+    }
+    if numerator == scale {
         return Ok(Q16_ONE);
     }
     Ok(((numerator * u128::from(Q16_ONE) + (scale / 2)) / scale) as Q16)

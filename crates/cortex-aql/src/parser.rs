@@ -1,5 +1,4 @@
 use std::num::ParseIntError;
-use std::str::FromStr;
 
 use nom::bytes::complete::{tag_no_case, take_while, take_while1};
 use nom::character::complete::{char, digit1, multispace0};
@@ -10,16 +9,16 @@ use nom::{Err, IResult};
 use nom_locate::LocatedSpan;
 
 use crate::ast::{
-    AqlStatement, Identifier, RawRemember, RawRetrieveContext, RawVerifyFact, SourceSpan, Spanned,
+    AqlStatement, DecimalLiteral, Identifier, RawRemember, RawVerifyFact, SourceSpan, Spanned,
     TtlValue,
 };
 use crate::errors::{AqlParseError, AqlParseErrorKind};
-use crate::types::RetrievalMode;
 
 mod condition;
+mod retrieve;
 mod string;
 
-use condition::parse_condition;
+use retrieve::parse_retrieve_context;
 use string::parse_quoted_string;
 
 pub(super) type Span<'a> = LocatedSpan<&'a str>;
@@ -61,61 +60,6 @@ fn parse_statement(input: Span<'_>) -> PResult<'_, AqlStatement<'_>> {
             AqlParseErrorKind::Unexpected,
         )))
     }
-}
-
-fn parse_retrieve_context(input: Span<'_>) -> PResult<'_, RawRetrieveContext<'_>> {
-    let (input, _) = kw("RETRIEVE")(input)?;
-    let (input, _) = ws1(input)?;
-    let (input, _) = kw("CONTEXT")(input)?;
-    let (input, _) = ws1(input)?;
-    let (input, _) = kw("FOR")(input)?;
-    let (input, _) = ws1(input)?;
-    let (input, _) = kw("TASK")(input)?;
-    let (input, _) = ws1(input)?;
-    let (input, task) = parse_quoted_string(input)?;
-    let (input, _) = ws1(input)?;
-    let (input, _) = kw("IN")(input)?;
-    let (input, _) = ws1(input)?;
-    let (input, _) = kw("BRAIN")(input)?;
-    let (input, _) = ws1(input)?;
-    let (input, brain) = parse_identifier(input)?;
-    let (input, _) = ws1(input)?;
-    let (input, _) = kw("USING")(input)?;
-    let (input, _) = ws1(input)?;
-    let (input, _) = kw("MODE")(input)?;
-    let (input, _) = ws1(input)?;
-    let (input, mode) = parse_mode(input)?;
-    let (input, _) = ws1(input)?;
-    let (input, _) = kw("BUDGET")(input)?;
-    let (input, _) = ws1(input)?;
-    let (input, budget_tokens) = parse_spanned_integer(input)?;
-    let (input, _) = ws1(input)?;
-    let (input, _) = kw("TOKENS")(input)?;
-    let (input, where_clause) =
-        opt(preceded(tuple((ws1, kw("WHERE"), ws1)), parse_condition))(input)?;
-    let (input, _) = delimited(multispace0, char(';'), multispace0)(input)?;
-
-    Ok((
-        input,
-        RawRetrieveContext {
-            task,
-            brain,
-            mode,
-            budget_tokens,
-            candidate_limit: None,
-            where_clause,
-            requirements: Vec::new(),
-            strategy: None,
-        },
-    ))
-}
-
-fn parse_mode(input: Span<'_>) -> PResult<'_, Spanned<RetrievalMode>> {
-    let start = input;
-    let (input, identifier) = parse_identifier(input)?;
-    let mode = RetrievalMode::from_str(identifier.node.value.as_ref())
-        .map_err(|_| Err::Failure(ParseFailure::new(start, AqlParseErrorKind::InvalidMode)))?;
-    Ok((input, Spanned::new(mode, identifier.span)))
 }
 
 fn parse_verify_fact(input: Span<'_>) -> PResult<'_, RawVerifyFact<'_>> {
@@ -184,6 +128,21 @@ pub(super) fn parse_integer(input: Span<'_>) -> PResult<'_, u64> {
     map_res(digit1, |span: Span<'_>| span.fragment().parse::<u64>())(input)
 }
 
+pub(super) fn parse_spanned_u32(input: Span<'_>) -> PResult<'_, Spanned<u32>> {
+    spanned(parse_u32)(input)
+}
+
+pub(super) fn parse_u32(input: Span<'_>) -> PResult<'_, u32> {
+    map_res(digit1, |span: Span<'_>| span.fragment().parse::<u32>())(input)
+}
+
+pub(super) fn parse_decimal(input: Span<'_>) -> PResult<'_, DecimalLiteral<'_>> {
+    map(
+        recognize(tuple((digit1, char('.'), digit1))),
+        |span: Span<'_>| DecimalLiteral::borrowed(span.fragment()),
+    )(input)
+}
+
 pub(super) fn spanned<'a, O, F>(mut parser: F) -> impl FnMut(Span<'a>) -> PResult<'a, Spanned<O>>
 where
     F: FnMut(Span<'a>) -> PResult<'a, O>,
@@ -191,7 +150,7 @@ where
     move |input| {
         let start = input;
         let (input, node) = parser(input)?;
-        Ok((input, Spanned::new(node, source_span(start))))
+        Ok((input, Spanned::new(node, span_between(start, input))))
     }
 }
 
@@ -208,10 +167,10 @@ fn is_ident_start(value: char) -> bool {
 }
 
 fn is_ident_rest(value: char) -> bool {
-    value == '_' || value == '-' || value.is_ascii_alphanumeric()
+    value == '_' || value == '-' || value == ':' || value.is_ascii_alphanumeric()
 }
 
-fn starts_with_keyword(input: Span<'_>, keyword: &str) -> bool {
+pub(super) fn starts_with_keyword(input: Span<'_>, keyword: &str) -> bool {
     input
         .fragment()
         .get(..keyword.len())
@@ -223,6 +182,18 @@ pub(super) fn source_span(input: Span<'_>) -> SourceSpan {
         offset: input.location_offset(),
         line: input.location_line(),
         column: input.get_column(),
+        len: 0,
+    }
+}
+
+pub(super) fn span_between(start: Span<'_>, end: Span<'_>) -> SourceSpan {
+    SourceSpan {
+        offset: start.location_offset(),
+        line: start.location_line(),
+        column: start.get_column(),
+        len: end
+            .location_offset()
+            .saturating_sub(start.location_offset()),
     }
 }
 

@@ -7,6 +7,7 @@ pub struct SourceSpan {
     pub offset: usize,
     pub line: u32,
     pub column: usize,
+    pub len: usize,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -39,6 +40,7 @@ pub struct DecimalLiteral<'a> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Literal<'a> {
     String(AqlString<'a>),
+    Identifier(Identifier<'a>),
     Integer(u64),
     Decimal(DecimalLiteral<'a>),
     Boolean(bool),
@@ -90,8 +92,8 @@ pub enum TtlValue {
 pub struct RawRetrieveContext<'a> {
     pub task: Spanned<AqlString<'a>>,
     pub brain: Spanned<Identifier<'a>>,
-    pub mode: Spanned<RetrievalMode>,
-    pub budget_tokens: Spanned<u64>,
+    pub mode: Option<Spanned<RetrievalMode>>,
+    pub budget_tokens: Option<Spanned<u64>>,
     pub candidate_limit: Option<Spanned<u32>>,
     pub where_clause: Option<Spanned<Condition<'a>>>,
     pub requirements: Vec<Spanned<Requirement<'a>>>,

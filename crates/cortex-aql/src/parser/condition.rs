@@ -1,16 +1,17 @@
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{char, digit1, multispace0};
-use nom::combinator::{map, recognize};
-use nom::sequence::{delimited, terminated, tuple};
+use nom::character::complete::{char, multispace0};
+use nom::combinator::map;
+use nom::sequence::{delimited, terminated};
 use nom::Err;
 
-use crate::ast::{Comparator, Condition, DecimalLiteral, Literal, Spanned};
+use crate::ast::{Comparator, Condition, Literal, Spanned};
 use crate::errors::AqlParseErrorKind;
 
 use super::string::parse_quoted_string;
 use super::{
-    kw, parse_identifier, parse_integer, source_span, spanned, ws1, PResult, ParseFailure, Span,
+    kw, parse_decimal, parse_identifier, parse_integer, span_between, spanned, ws1, PResult,
+    ParseFailure, Span,
 };
 
 const MAX_WHERE_DEPTH: usize = 32;
@@ -55,7 +56,7 @@ fn parse_condition_not(input: Span<'_>, depth: usize) -> PResult<'_, Spanned<Con
         let (next, child) = parse_condition_not(next, depth + 1)?;
         return Ok((
             next,
-            Spanned::new(Condition::Not(Box::new(child)), source_span(input)),
+            Spanned::new(Condition::Not(Box::new(child)), span_between(input, next)),
         ));
     }
     parse_condition_primary(input, depth)
@@ -88,7 +89,7 @@ fn parse_predicate(input: Span<'_>) -> PResult<'_, Spanned<Condition<'_>>> {
                 comparator,
                 literal,
             },
-            source_span(start),
+            span_between(start, input),
         ),
     ))
 }
@@ -114,14 +115,10 @@ fn parse_literal(input: Span<'_>) -> PResult<'_, Spanned<Literal<'_>>> {
         spanned(map(alt((kw("true"), kw("false"))), |value: Span<'_>| {
             Literal::Boolean(value.fragment().eq_ignore_ascii_case("true"))
         })),
+        spanned(map(parse_identifier, |identifier| {
+            Literal::Identifier(identifier.node)
+        })),
     ))(input)
-}
-
-fn parse_decimal(input: Span<'_>) -> PResult<'_, DecimalLiteral<'_>> {
-    map(
-        recognize(tuple((digit1, char('.'), digit1))),
-        |span: Span<'_>| DecimalLiteral::borrowed(span.fragment()),
-    )(input)
 }
 
 fn guard_depth(input: Span<'_>, depth: usize) -> PResult<'_, ()> {
