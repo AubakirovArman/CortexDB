@@ -1,13 +1,14 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use cortex_aql::{eval_bitmap_program, BitmapProvider, BoundRetrievePlan};
 use cortex_core::memtable::{MemTable, ReadTxn};
 use cortex_core::{CellId, CommitSeq};
 use cortex_storage::wal::{DurabilityMode, WalWriter, WalWriterHandle};
 
 use crate::error::{EngineError, EngineResult};
-use crate::operation::{wal_record_from_operation, DbOperation};
-use crate::replay::replay_wal;
+use crate::operation::{wal_record_from_operation_with_seq, DbOperation};
+use crate::replay::{replay_wal, replay_wal_best_effort};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RecoveryMode {
@@ -39,6 +40,12 @@ pub struct Database {
     current_seq: CommitSeq,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RetrievedCell {
+    pub cell_id: CellId,
+    pub payload: Vec<u8>,
+}
+
 impl Database {
     pub fn open(path: impl AsRef<Path>) -> EngineResult<Self> {
         Self::open_with_options(path, DatabaseOptions::default())
@@ -51,7 +58,10 @@ impl Database {
         let root_path = path.as_ref().to_owned();
         fs::create_dir_all(&root_path)?;
         let wal_path = root_path.join("db.aclog");
-        let replay = replay_wal(&wal_path)?;
+        let replay = match options.recovery_mode {
+            RecoveryMode::Strict => replay_wal(&wal_path)?,
+            RecoveryMode::BestEffort => replay_wal_best_effort(&wal_path)?,
+        };
         truncate_wal_tail(&wal_path, replay.safe_truncate_offset)?;
         let writer = WalWriter::start(&wal_path, options.durability_mode)?;
         Ok(Self {
@@ -68,10 +78,12 @@ impl Database {
     }
 
     pub fn patch_cell(&mut self, cell_id: CellId, payload: Vec<u8>) -> EngineResult<CommitSeq> {
+        self.require_visible_cell(cell_id)?;
         self.append_then_apply(DbOperation::PatchCell { cell_id, payload })
     }
 
     pub fn tombstone_cell(&mut self, cell_id: CellId) -> EngineResult<CommitSeq> {
+        self.require_visible_cell(cell_id)?;
         self.append_then_apply(DbOperation::TombstoneCell { cell_id })
     }
 
@@ -91,6 +103,24 @@ impl Database {
         self.get_cell(self.read_txn(), cell_id)
     }
 
+    pub fn retrieve_cells<P: BitmapProvider>(
+        &self,
+        plan: &BoundRetrievePlan,
+        provider: &P,
+    ) -> EngineResult<Vec<RetrievedCell>> {
+        let candidates = eval_bitmap_program(&plan.bitmap_program, provider)?;
+        let txn = self.read_txn();
+        Ok(candidates
+            .into_iter()
+            .filter_map(|candidate| {
+                let cell_id = CellId(u64::from(candidate));
+                self.get_cell(txn, cell_id)
+                    .map(|payload| RetrievedCell { cell_id, payload })
+            })
+            .take(plan.context_policy.candidate_limit as usize)
+            .collect())
+    }
+
     pub fn current_seq(&self) -> CommitSeq {
         self.current_seq
     }
@@ -107,7 +137,7 @@ impl Database {
 
     fn append_then_apply(&mut self, operation: DbOperation) -> EngineResult<CommitSeq> {
         let next_seq = CommitSeq(self.current_seq.0 + 1);
-        let record = wal_record_from_operation(&operation);
+        let record = wal_record_from_operation_with_seq(next_seq, &operation);
         self.writer.append(record)?;
         self.apply_operation(next_seq, operation)?;
         self.current_seq = next_seq;
@@ -129,6 +159,13 @@ impl Database {
                 .tombstone_cell(cell_id, seq)
                 .map_err(EngineError::from),
         }
+    }
+
+    fn require_visible_cell(&self, cell_id: CellId) -> EngineResult<()> {
+        self.memtable
+            .read(self.read_txn(), cell_id)
+            .map(|_| ())
+            .ok_or_else(|| cortex_core::CoreError::CellNotFound(cell_id).into())
     }
 }
 

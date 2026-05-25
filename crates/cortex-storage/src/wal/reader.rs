@@ -29,15 +29,26 @@ impl WalReader {
         Self::open(path)?.scan()
     }
 
+    pub fn scan_best_effort_path(path: impl AsRef<Path>) -> StorageResult<WalScan> {
+        Self::open(path)?.scan_best_effort()
+    }
+
     pub fn scan(&self) -> StorageResult<WalScan> {
         let mut file = File::open(&self.path)?;
         let mut bytes = Vec::new();
         file.read_to_end(&mut bytes)?;
-        scan_bytes(&bytes)
+        scan_bytes(&bytes, true)
+    }
+
+    pub fn scan_best_effort(&self) -> StorageResult<WalScan> {
+        let mut file = File::open(&self.path)?;
+        let mut bytes = Vec::new();
+        file.read_to_end(&mut bytes)?;
+        scan_bytes(&bytes, false)
     }
 }
 
-fn scan_bytes(bytes: &[u8]) -> StorageResult<WalScan> {
+fn scan_bytes(bytes: &[u8], strict_checksums: bool) -> StorageResult<WalScan> {
     if bytes.is_empty() {
         return Ok(WalScan {
             records: Vec::new(),
@@ -59,6 +70,7 @@ fn scan_bytes(bytes: &[u8]) -> StorageResult<WalScan> {
             Ok(None) | Err(StorageError::IncompleteTail) | Err(StorageError::InvalidWalRecord) => {
                 break;
             }
+            Err(_) if !strict_checksums => break,
             Err(error) => return Err(error),
         }
     }

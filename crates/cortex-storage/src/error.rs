@@ -12,6 +12,12 @@ pub enum StorageError {
     IncompleteTail,
     #[error("invalid WAL file header")]
     InvalidWalFileHeader,
+    #[error("invalid segment file")]
+    InvalidSegmentFile,
+    #[error("invalid bitmap index file")]
+    InvalidBitmapIndexFile,
+    #[error("invalid lexical index file")]
+    InvalidLexicalIndexFile,
     #[error("WAL writer is closed")]
     WalWriterClosed,
     #[error("operation is not implemented yet: {0}")]

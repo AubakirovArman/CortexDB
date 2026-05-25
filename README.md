@@ -29,8 +29,9 @@ PutCell -> WAL append -> MemTable update -> restart -> WAL replay -> Retrieve
 - `crates/cortex-storage`: ACLOG WAL v0 codec, reader recovery scan, and writer actor.
 - `crates/cortex-core`: in-memory MVCC MemTable, read transactions, cell versions, and manifest primitives.
 - `crates/cortex-engine`: first usable single-node database loop over WAL and MemTable.
+- `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone checks.
 
-Still intentionally out of scope: storage segments, BM25, vector search, HNSW, distributed mode, and server APIs.
+Still intentionally out of scope: BM25, vector search, HNSW, distributed mode, and server APIs.
 
 ## Minimal Engine Example
 
@@ -45,13 +46,20 @@ assert_eq!(value, Some(b"hello".to_vec()));
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
+## Minimal CLI Check
+
+```bash
+cargo run -p cortex-cli -- put ./data 1 hello
+cargo run -p cortex-cli -- get ./data 1
+```
+
 ## Roadmap
 
 | Milestone | Scope |
 | --- | --- |
 | 0.5 | ACLOG WAL v0 |
 | 0.6 | Usable single-node DB loop |
-| 0.7 | Patch/tombstone replay hardening |
+| 0.7 | Segment/index integration |
 | 0.8 | Snapshot reads and recovery polish |
 
 ## Checks

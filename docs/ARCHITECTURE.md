@@ -15,6 +15,7 @@ AQL -> Parser -> Raw AST -> Binder -> Bitmap VM -> Candidates_0
 - `cortex-storage`: ACLOG WAL v0 binary codec, reader recovery scan, and writer actor.
 - `cortex-core`: in-memory MVCC MemTable, cell versions, read transactions, and manifest primitives.
 - `cortex-engine`: database facade connecting WAL append, MemTable update, and replay.
+- `cortex-cli`: minimal local CLI for checking the engine loop.
 
 ## Boundaries
 
