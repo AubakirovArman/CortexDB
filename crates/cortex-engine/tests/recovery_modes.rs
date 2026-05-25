@@ -6,7 +6,9 @@ use cortex_engine::{
     wal_record_from_operation_with_seq, Database, DatabaseOptions, DbOperation, RecoveryMode,
     ReplayResult,
 };
-use cortex_storage::wal::{DurabilityMode, WalCodec};
+use cortex_storage::wal::{
+    DurabilityMode, SectionTag, WalCodec, WalRecord, WalRecordType, WalSection,
+};
 
 #[test]
 fn replay_wal_reports_records_and_safe_truncate_offset() {
@@ -106,11 +108,66 @@ fn best_effort_recovery_stops_at_corrupt_payload() {
     assert_eq!(db.get_latest_cell(CellId(2)), None);
 }
 
+#[test]
+fn replay_wal_is_idempotent_when_replayed_from_last_seq() {
+    let dir = tempfile::tempdir().unwrap();
+    let wal_path = dir.path().join("db.aclog");
+    write_header_and_records(
+        &wal_path,
+        &[
+            (CommitSeq(1), put_op(CellId(1), b"one")),
+            (CommitSeq(2), put_op(CellId(2), b"two")),
+        ],
+        false,
+    );
+
+    let first = cortex_engine::replay_wal(&wal_path).unwrap();
+    let second =
+        cortex_engine::replay_wal_into(&wal_path, first.memtable.clone(), first.last_seq).unwrap();
+
+    assert_eq!(second.records_replayed, 0);
+    assert_eq!(second.metrics.records_skipped, 2);
+    assert_eq!(second.last_seq, CommitSeq(2));
+}
+
+#[test]
+fn replay_error_does_not_mutate_caller_memtable() {
+    let dir = tempfile::tempdir().unwrap();
+    let wal_path = dir.path().join("db.aclog");
+    write_invalid_record_missing_payload(&wal_path);
+    let mut base = cortex_core::memtable::MemTable::default();
+    base.put_cell(CellId(7), CommitSeq(7), b"base".to_vec());
+
+    let error = cortex_engine::replay_wal_into(&wal_path, base.clone(), CommitSeq(7))
+        .unwrap_err()
+        .to_string();
+
+    assert!(error.contains("missing WAL section"));
+    let txn = cortex_core::memtable::ReadTxn {
+        read_seq: CommitSeq(7),
+    };
+    assert_eq!(base.read(txn, CellId(7)).unwrap().payload, b"base");
+}
+
 fn put_op(cell_id: CellId, payload: &[u8]) -> DbOperation {
     DbOperation::PutCell {
         cell_id,
         payload: payload.to_vec(),
     }
+}
+
+fn write_invalid_record_missing_payload(path: &std::path::Path) {
+    let mut file = File::create(path).unwrap();
+    file.write_all(&WalCodec::file_header()).unwrap();
+    let record = WalRecord::new(
+        WalRecordType::PutCellBatch,
+        vec![WalSection::new(
+            SectionTag::CellCore,
+            cortex_engine::encode_cell_core(CellId(1), CommitSeq(8)),
+        )],
+    );
+    let encoded = WalCodec::encode_record_at(&record, WalCodec::file_header_len() as u64).unwrap();
+    file.write_all(&encoded).unwrap();
 }
 
 fn write_header_and_records(

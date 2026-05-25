@@ -78,6 +78,13 @@ repeat retired_segment_count:
 crc32c u32 over all previous bytes
 ```
 
+The CLI can inspect the manifest without opening a database writer:
+
+```bash
+cortexdb manifest-validate ./data
+cortexdb manifest-dump ./data
+```
+
 ## Candidate Rules
 
 - Candidate ids are internal compact `u32` ids.

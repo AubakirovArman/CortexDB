@@ -115,4 +115,9 @@ bytes, known sections, unknown sections, and last LSN. The CLI exposes this as:
 ```bash
 cortexdb wal-validate ./data
 cortexdb wal-dump ./data
+cortexdb wal-truncate ./data
 ```
+
+`wal-truncate` uses the same locked best-effort repair path as
+`Database::repair_best_effort` and truncates only to the reader-reported safe
+offset.

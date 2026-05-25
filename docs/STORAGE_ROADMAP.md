@@ -52,6 +52,7 @@
 - WAL replay metrics for seen, applied, skipped, payload bytes, and safe offset.
 - Public WAL writer metrics exposed through engine stats, CLI stats, and HTTP stats.
 - Knowledge-cell writes include structured `CellMetadata` WAL sections.
+- WAL truncate and manifest dump/validate CLI tools.
 
 ## Next
 

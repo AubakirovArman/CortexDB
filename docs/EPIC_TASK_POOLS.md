@@ -246,6 +246,8 @@ Epic 165 -> memory TTL expiry
 Epic 174 -> VERIFY FACT report v0
 Epic 142 -> metadata encoding (closed)
 Epic 042 -> WAL CommitSeq hard requirement (closed)
+Epic 060 -> WAL debug tooling (closed)
+Epic 193 -> CLI manifest tools (closed)
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed

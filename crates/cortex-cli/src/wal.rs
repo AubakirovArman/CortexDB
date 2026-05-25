@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use cortex_engine::Database;
 use cortex_storage::wal::{WalDiagnostics, WalReader};
 
 pub fn validate(root: &str) -> Result<String, String> {
@@ -34,6 +35,18 @@ pub fn dump(root: &str) -> Result<String, String> {
     } else {
         Ok(lines.join("\n"))
     }
+}
+
+pub fn truncate(root: &str) -> Result<String, String> {
+    let report = Database::repair_best_effort(root).map_err(|error| error.to_string())?;
+    Ok(format!(
+        "wal_records_preserved={} wal_safe_truncate_offset={} wal_bytes_before={} wal_bytes_after={} wal_truncated={}",
+        report.wal_records_preserved,
+        report.wal_safe_truncate_offset,
+        report.wal_bytes_before,
+        report.wal_bytes_after,
+        report.wal_truncated
+    ))
 }
 
 fn wal_path(root: &str) -> std::path::PathBuf {

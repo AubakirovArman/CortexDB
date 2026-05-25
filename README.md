@@ -63,6 +63,9 @@ cargo run -p cortex-cli -- repair ./data
 cargo run -p cortex-cli -- gc-retired ./data
 cargo run -p cortex-cli -- wal-validate ./data
 cargo run -p cortex-cli -- wal-dump ./data
+cargo run -p cortex-cli -- wal-truncate ./data
+cargo run -p cortex-cli -- manifest-validate ./data
+cargo run -p cortex-cli -- manifest-dump ./data
 cargo run -p cortex-cli -- context ./data project:investments '<AQL RETRIEVE CONTEXT>'
 cargo run -p cortex-cli -- aql ./data project:investments '<AQL RETRIEVE CONTEXT>'
 cargo run -p cortex-cli -- search ./data project:investments budget
