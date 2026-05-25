@@ -1,6 +1,8 @@
+use std::cmp::Reverse;
+use std::collections::{BTreeMap, BTreeSet};
+
 use cortex_aql::AgentView;
 use cortex_core::CellId;
-use std::collections::BTreeSet;
 
 use crate::database::{Database, RetrievedCell};
 use crate::error::EngineResult;
@@ -61,7 +63,7 @@ impl Database {
     ) -> EngineResult<ContextPack> {
         let budget = effective_budget(view, options.token_budget_tokens);
         let citations_required = options.require_citations || view.require_citations_by_default;
-        let cells = self.retrieve_aql(aql, view)?;
+        let cells = order_by_feedback(self.retrieve_aql(aql, view)?, &self.feedback_scores());
         Ok(ContextPack::from_retrieved_with_options(
             cells,
             budget,
@@ -149,6 +151,20 @@ impl ContextPack {
             anomalies,
         }
     }
+}
+
+fn order_by_feedback(
+    cells: Vec<RetrievedCell>,
+    feedback_scores: &BTreeMap<CellId, i32>,
+) -> Vec<RetrievedCell> {
+    let mut indexed = cells.into_iter().enumerate().collect::<Vec<_>>();
+    indexed.sort_by_key(|(index, cell)| {
+        (
+            Reverse(*feedback_scores.get(&cell.cell_id).unwrap_or(&0)),
+            *index,
+        )
+    });
+    indexed.into_iter().map(|(_, cell)| cell).collect()
 }
 
 pub fn estimate_tokens(payload: &[u8]) -> u32 {

@@ -39,8 +39,16 @@ Feedback is queryable with ordinary AQL filters, for example:
 WHERE scope = agent:7 AND type = "feedback"
 ```
 
+The engine also exposes aggregate scores:
+
+```rust
+let scores = db.feedback_scores();
+```
+
+`ContextPack` uses these scores as a deterministic pre-pack ordering signal:
+positive feedback moves a cell earlier while preserving original order for ties.
+
 ## Not Yet
 
-- Feedback weighting in ContextPack selection.
 - Aggregated usefulness statistics.
 - AgentView persistence for feedback scopes.

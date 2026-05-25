@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
+use cortex_engine::feedback::ContextFeedback;
 use cortex_engine::{scope_id, ContextPack, ContextPackOptions, Database, RetrievedCell};
 
 #[test]
@@ -73,6 +74,36 @@ fn context_pack_uses_source_line_as_citation() {
 
     assert!(pack.anomalies.is_empty());
     assert_eq!(pack.cells[0].citation.as_deref(), Some("annual-report"));
+}
+
+#[test]
+fn context_pack_orders_cells_by_feedback_score() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nsource=doc-a\nalpha budget".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\nsource=doc-b\nbeta budget".to_vec(),
+    )
+    .unwrap();
+    db.record_context_feedback(
+        AgentId(1),
+        ContextFeedback {
+            source_cell_id: CellId(2),
+            useful: true,
+            note: None,
+        },
+    )
+    .unwrap();
+
+    let pack = db
+        .context_pack_from_aql(query(), &view(false), ContextPackOptions::default())
+        .unwrap();
+    assert_eq!(pack.cells[0].cell_id, CellId(2));
 }
 
 #[test]

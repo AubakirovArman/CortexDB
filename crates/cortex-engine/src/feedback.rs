@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use cortex_aql::AgentId;
 use cortex_core::{CellId, CommitSeq, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 
@@ -56,6 +58,18 @@ impl Database {
             FEEDBACK_CELL_NAMESPACE | agent_bits | (sequence & 0xffff_ffff),
         ))
     }
+
+    pub fn feedback_scores(&self) -> BTreeMap<CellId, i32> {
+        let mut scores = BTreeMap::<CellId, i32>::new();
+        for version in self.snapshot_versions() {
+            let Some((source_cell_id, useful)) = feedback_target(&version.payload) else {
+                continue;
+            };
+            let delta = if useful { 1 } else { -1 };
+            *scores.entry(source_cell_id).or_default() += delta;
+        }
+        scores
+    }
 }
 
 fn feedback_payload(feedback: &ContextFeedback) -> Vec<u8> {
@@ -79,6 +93,27 @@ fn sanitize_line(value: &str) -> String {
             other => other,
         })
         .collect()
+}
+
+fn feedback_target(payload: &[u8]) -> Option<(CellId, bool)> {
+    let text = String::from_utf8_lossy(payload);
+    let mut is_feedback = false;
+    let mut source_cell_id = None;
+    let mut useful = None;
+    for line in text.lines() {
+        if line.trim() == "type=feedback" {
+            is_feedback = true;
+        } else if let Some(value) = line.strip_prefix("source_cell_id=") {
+            source_cell_id = value.trim().parse::<u64>().ok().map(CellId);
+        } else if let Some(value) = line.strip_prefix("useful=") {
+            useful = match value.trim() {
+                "true" => Some(true),
+                "false" => Some(false),
+                _ => None,
+            };
+        }
+    }
+    is_feedback.then_some((source_cell_id?, useful?))
 }
 
 fn unix_now() -> u64 {

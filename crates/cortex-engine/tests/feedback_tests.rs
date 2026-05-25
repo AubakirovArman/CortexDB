@@ -59,6 +59,43 @@ WHERE scope = agent:7 AND type = "feedback" LIMIT 10 CANDIDATES;"#,
     assert_eq!(cells[0].cell_id, stored.cell_id);
 }
 
+#[test]
+fn feedback_scores_aggregate_useful_and_not_useful_votes() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.record_context_feedback(
+        AgentId(7),
+        ContextFeedback {
+            source_cell_id: CellId(42),
+            useful: true,
+            note: None,
+        },
+    )
+    .unwrap();
+    db.record_context_feedback(
+        AgentId(7),
+        ContextFeedback {
+            source_cell_id: CellId(42),
+            useful: false,
+            note: None,
+        },
+    )
+    .unwrap();
+    db.record_context_feedback(
+        AgentId(7),
+        ContextFeedback {
+            source_cell_id: CellId(43),
+            useful: true,
+            note: None,
+        },
+    )
+    .unwrap();
+
+    let scores = db.feedback_scores();
+    assert_eq!(scores.get(&CellId(42)), Some(&0));
+    assert_eq!(scores.get(&CellId(43)), Some(&1));
+}
+
 fn view() -> AgentView {
     AgentView {
         agent_id: AgentId(7),

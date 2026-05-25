@@ -38,10 +38,11 @@
 - Memory TTL expiry scan and WAL-backed tombstone path.
 - Fixed-point memory decay scoring.
 - Durable context feedback cells.
+- ContextPack feedback ordering signal.
 
 ## Next
 
-1. Add feedback weighting in ContextPack selection.
+1. Add aggregated feedback statistics.
 2. Add search CLI/HTTP surfaces and persisted lexical metadata v2.
 3. Formalize core cell metadata instead of payload-line metadata parsing.
 4. Add WAL writer backpressure and real group commit batching.
