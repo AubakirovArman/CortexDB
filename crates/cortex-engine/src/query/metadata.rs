@@ -10,6 +10,16 @@ const TYPE_NS: u64 = 0x3000_0000_0000_0000;
 const MEMORY_NS: u64 = 0x4000_0000_0000_0000;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceRef {
+    pub source_id: String,
+    pub document_id: Option<String>,
+    pub page: Option<u32>,
+    pub cell_range: Option<String>,
+    pub json_path: Option<String>,
+    pub confidence_q16: u16,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CellMetadata {
     pub scope: String,
     pub status: String,
@@ -23,6 +33,7 @@ pub struct CellMetadata {
     pub title: Option<String>,
     pub body_text: String,
     pub terms: Vec<String>,
+    pub source_ref: Option<SourceRef>,
 }
 
 impl CellMetadata {
@@ -40,6 +51,14 @@ impl CellMetadata {
         let mut title = None;
         let mut body_lines = Vec::new();
         let mut in_header = true;
+
+        let mut source_id_val = None;
+        let mut document_id = None;
+        let mut page = None;
+        let mut cell_range = None;
+        let mut json_path = None;
+        let mut confidence_q16 = None;
+
         for line in text.lines() {
             if in_header {
                 if line.trim().is_empty() {
@@ -76,6 +95,24 @@ impl CellMetadata {
                 } else if let Some(value) = line.strip_prefix("title=") {
                     title = non_empty(value);
                     continue;
+                } else if let Some(value) = line.strip_prefix("source_id=") {
+                    source_id_val = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("document_id=") {
+                    document_id = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("page=") {
+                    page = value.trim().parse().ok();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("cell_range=") {
+                    cell_range = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("json_path=") {
+                    json_path = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("confidence_q16=") {
+                    confidence_q16 = value.trim().parse().ok();
+                    continue;
                 }
                 in_header = false;
             }
@@ -83,6 +120,19 @@ impl CellMetadata {
         }
         let body_text = body_lines.join("\n");
         let terms = tokenize(&body_text);
+
+        let final_source_id = source_id_val
+            .or_else(|| source.clone())
+            .or_else(|| citation.clone());
+        let source_ref = final_source_id.map(|id| SourceRef {
+            source_id: id,
+            document_id,
+            page,
+            cell_range,
+            json_path,
+            confidence_q16: confidence_q16.or(source_trust_q16).unwrap_or(32768),
+        });
+
         Self {
             scope,
             status,
@@ -96,6 +146,7 @@ impl CellMetadata {
             title,
             body_text,
             terms,
+            source_ref,
         }
     }
 

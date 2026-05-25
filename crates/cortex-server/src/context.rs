@@ -52,7 +52,8 @@ fn context_pack_json(pack: &ContextPack) -> String {
         .collect::<Vec<_>>()
         .join(",");
     format!(
-        r#"{{"token_budget":{},"estimated_tokens":{},"truncated":{},"citations_required":{},"cells":[{}],"anomalies":[{}]}}"#,
+        r#"{{"token_budget":{},"token_budget_tokens":{},"estimated_tokens":{},"truncated":{},"citations_required":{},"cells":[{}],"anomalies":[{}]}}"#,
+        pack.token_budget_tokens,
         pack.token_budget_tokens,
         pack.estimated_tokens,
         pack.truncated,
@@ -63,12 +64,61 @@ fn context_pack_json(pack: &ContextPack) -> String {
 }
 
 fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> String {
+    let metadata = cortex_engine::query::CellMetadata::from_payload(&cell.payload);
+    let source_ref_json = if let Some(ref sr) = metadata.source_ref {
+        format!(
+            r#"{{"source_id":"{}","document_id":{},"page":{},"cell_range":{},"json_path":{},"confidence_q16":{}}}"#,
+            escape_json(&sr.source_id),
+            sr.document_id
+                .as_deref()
+                .map(|d| format!(r#""{}""#, escape_json(d)))
+                .unwrap_or_else(|| "null".to_owned()),
+            sr.page
+                .map(|p| p.to_string())
+                .unwrap_or_else(|| "null".to_owned()),
+            sr.cell_range
+                .as_deref()
+                .map(|r| format!(r#""{}""#, escape_json(r)))
+                .unwrap_or_else(|| "null".to_owned()),
+            sr.json_path
+                .as_deref()
+                .map(|j| format!(r#""{}""#, escape_json(j)))
+                .unwrap_or_else(|| "null".to_owned()),
+            sr.confidence_q16
+        )
+    } else {
+        "null".to_owned()
+    };
+
+    let explain_json = if let Some(ref exp) = cell.explain {
+        let matched_terms_json = exp
+            .matched_terms
+            .iter()
+            .map(|t| format!(r#""{}""#, escape_json(t)))
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            r#"{{"score":{},"matched_terms":[{}],"why_selected":"{}","base_bm25":{},"source_trust_bonus":{},"redundancy_penalty":{}}}"#,
+            exp.score,
+            matched_terms_json,
+            escape_json(&exp.why_selected),
+            exp.base_bm25,
+            exp.source_trust_bonus,
+            exp.redundancy_penalty
+        )
+    } else {
+        "null".to_owned()
+    };
+
     format!(
-        r#"{{"cell_id":{},"estimated_tokens":{},"citation":{},"payload":"{}"}}"#,
+        r#"{{"cell_id":{},"estimated_tokens":{},"citation":{},"payload":"{}","payload_text":"{}","explain":{},"source_ref":{}}}"#,
         cell.cell_id.0,
         cell.estimated_tokens,
         json_optional_string(cell.citation.as_deref()),
-        escape_json(&String::from_utf8_lossy(&cell.payload))
+        escape_json(&String::from_utf8_lossy(&cell.payload)),
+        escape_json(&String::from_utf8_lossy(&cell.payload)),
+        explain_json,
+        source_ref_json
     )
 }
 

@@ -9,7 +9,13 @@ use crate::error::EngineResult;
 use crate::query::CellMetadata;
 use crate::search::tokenize;
 
-const DEFAULT_REDUNDANCY_THRESHOLD_Q16: u16 = 32_768;
+pub mod dedup;
+pub mod explain;
+
+use dedup::{effective_redundancy_threshold, is_redundant, term_set, weighted_jaccard_q16};
+use explain::extract_query_terms;
+
+pub const DEFAULT_REDUNDANCY_THRESHOLD_Q16: u16 = 32_768;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ContextPackOptions {
@@ -31,13 +37,13 @@ impl Default for ContextPackOptions {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ContextPack {
-    pub cells: Vec<ContextPackCell>,
-    pub token_budget_tokens: u32,
-    pub estimated_tokens: u32,
-    pub truncated: bool,
-    pub citations_required: bool,
-    pub anomalies: Vec<ContextPackAnomaly>,
+pub struct ContextExplain {
+    pub score: u32,
+    pub matched_terms: Vec<String>,
+    pub why_selected: String,
+    pub base_bm25: u32,
+    pub source_trust_bonus: u32,
+    pub redundancy_penalty: u32,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -46,6 +52,17 @@ pub struct ContextPackCell {
     pub payload: Vec<u8>,
     pub estimated_tokens: u32,
     pub citation: Option<String>,
+    pub explain: Option<ContextExplain>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ContextPack {
+    pub cells: Vec<ContextPackCell>,
+    pub token_budget_tokens: u32,
+    pub estimated_tokens: u32,
+    pub truncated: bool,
+    pub citations_required: bool,
+    pub anomalies: Vec<ContextPackAnomaly>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -70,6 +87,7 @@ impl Database {
             budget,
             citations_required,
             &options,
+            aql,
         ))
     }
 }
@@ -85,6 +103,7 @@ impl ContextPack {
             token_budget_tokens,
             citations_required,
             &ContextPackOptions::default(),
+            "",
         )
     }
 
@@ -93,6 +112,7 @@ impl ContextPack {
         token_budget_tokens: u32,
         citations_required: bool,
         options: &ContextPackOptions,
+        query: &str,
     ) -> Self {
         let mut pack_cells = Vec::new();
         let mut estimated_tokens = 0u32;
@@ -134,12 +154,59 @@ impl ContextPack {
                     message: "selected cell does not include source= or citation=".to_owned(),
                 });
             }
+
+            let query_terms = extract_query_terms(query);
+            let metadata = CellMetadata::from_payload(&cell.payload);
+            let cell_body_terms = tokenize(&metadata.body_text)
+                .into_iter()
+                .collect::<BTreeSet<_>>();
+            let matched: Vec<String> = query_terms
+                .iter()
+                .filter(|term| cell_body_terms.contains(*term))
+                .cloned()
+                .collect();
+
+            let base_bm25 = (matched.len() as u32) * 10_000;
+            let source_trust_bonus = metadata.source_trust_q16.unwrap_or(32768) as u32;
+
+            let mut max_jaccard_similarity_q16 = 0u32;
+            for packed in &pack_cells {
+                let jaccard =
+                    weighted_jaccard_q16(&cell_body_terms, &term_set(&packed.payload)) as u32;
+                if jaccard > max_jaccard_similarity_q16 {
+                    max_jaccard_similarity_q16 = jaccard;
+                }
+            }
+            let redundancy_penalty = (max_jaccard_similarity_q16 * 10_000) / 65536;
+
+            let score = base_bm25
+                .saturating_add(source_trust_bonus)
+                .saturating_sub(redundancy_penalty);
+
+            let why_selected = if redundancy_penalty > 5000 {
+                "contains relevant terms but heavily penalised for semantic redundancy".to_owned()
+            } else if source_trust_bonus > 40000 {
+                "highest semantic relevance and highly trusted source provenance".to_owned()
+            } else {
+                "contains relevant matched terms with standard provenance trust".to_owned()
+            };
+
+            let explain = Some(ContextExplain {
+                score,
+                matched_terms: matched,
+                why_selected,
+                base_bm25,
+                source_trust_bonus,
+                redundancy_penalty,
+            });
+
             estimated_tokens = estimated_tokens.saturating_add(cell_tokens);
             pack_cells.push(ContextPackCell {
                 cell_id: cell.cell_id,
                 payload: cell.payload,
                 estimated_tokens: cell_tokens,
                 citation,
+                explain,
             });
         }
 
@@ -192,71 +259,4 @@ fn extract_citation(payload: &[u8]) -> Option<String> {
     CellMetadata::from_payload(payload)
         .citation()
         .map(str::to_owned)
-}
-
-fn effective_redundancy_threshold(value: u16) -> u16 {
-    if value == 0 {
-        DEFAULT_REDUNDANCY_THRESHOLD_Q16
-    } else {
-        value
-    }
-}
-
-fn cosine_similarity_q16(u: &[i16], v: &[i16]) -> u16 {
-    if u.len() != v.len() || u.is_empty() {
-        return 0;
-    }
-    let mut dot_product = 0.0;
-    let mut norm_u = 0.0;
-    let mut norm_v = 0.0;
-    for i in 0..u.len() {
-        let ui = u[i] as f64;
-        let vi = v[i] as f64;
-        dot_product += ui * vi;
-        norm_u += ui * ui;
-        norm_v += vi * vi;
-    }
-    if norm_u == 0.0 || norm_v == 0.0 {
-        return 0;
-    }
-    let similarity = dot_product / (norm_u.sqrt() * norm_v.sqrt());
-    if similarity <= 0.0 {
-        0
-    } else {
-        (similarity * 65536.0).min(65535.0) as u16
-    }
-}
-
-fn is_redundant(payload: &[u8], packed: &[ContextPackCell], threshold_q16: u16) -> bool {
-    if let Some(current_vec) = crate::search::vector::vector_from_payload(payload) {
-        return packed.iter().any(|cell| {
-            if let Some(cell_vec) = crate::search::vector::vector_from_payload(&cell.payload) {
-                cosine_similarity_q16(&current_vec, &cell_vec) >= threshold_q16
-            } else {
-                false
-            }
-        });
-    }
-
-    let current = term_set(payload);
-    if current.is_empty() {
-        return false;
-    }
-    packed
-        .iter()
-        .any(|cell| weighted_jaccard_q16(&current, &term_set(&cell.payload)) >= threshold_q16)
-}
-
-fn term_set(payload: &[u8]) -> BTreeSet<String> {
-    let metadata = CellMetadata::from_payload(payload);
-    tokenize(&metadata.body_text).into_iter().collect()
-}
-
-fn weighted_jaccard_q16(left: &BTreeSet<String>, right: &BTreeSet<String>) -> u16 {
-    if left.is_empty() || right.is_empty() {
-        return 0;
-    }
-    let intersection = left.intersection(right).count() as u64;
-    let union = left.union(right).count() as u64;
-    ((intersection * 65_535 + union / 2) / union) as u16
 }

@@ -153,15 +153,64 @@ pub(crate) fn context_pack_to_json(pack: &ContextPack) -> String {
     let mut cells_json = Vec::new();
     for cell in &pack.cells {
         let payload_text = String::from_utf8_lossy(&cell.payload).into_owned();
+        let metadata = cortex_engine::query::CellMetadata::from_payload(&cell.payload);
+
+        let source_ref_json = if let Some(ref sr) = metadata.source_ref {
+            format!(
+                r#"{{"source_id":"{}","document_id":{},"page":{},"cell_range":{},"json_path":{},"confidence_q16":{}}}"#,
+                escape_json(&sr.source_id),
+                sr.document_id
+                    .as_deref()
+                    .map(|d| format!(r#""{}""#, escape_json(d)))
+                    .unwrap_or_else(|| "null".to_owned()),
+                sr.page
+                    .map(|p| p.to_string())
+                    .unwrap_or_else(|| "null".to_owned()),
+                sr.cell_range
+                    .as_deref()
+                    .map(|r| format!(r#""{}""#, escape_json(r)))
+                    .unwrap_or_else(|| "null".to_owned()),
+                sr.json_path
+                    .as_deref()
+                    .map(|j| format!(r#""{}""#, escape_json(j)))
+                    .unwrap_or_else(|| "null".to_owned()),
+                sr.confidence_q16
+            )
+        } else {
+            "null".to_owned()
+        };
+
+        let explain_json = if let Some(ref exp) = cell.explain {
+            let matched_terms_json = exp
+                .matched_terms
+                .iter()
+                .map(|t| format!(r#""{}""#, escape_json(t)))
+                .collect::<Vec<_>>()
+                .join(",");
+            format!(
+                r#"{{"score":{},"matched_terms":[{}],"why_selected":"{}","base_bm25":{},"source_trust_bonus":{},"redundancy_penalty":{}}}"#,
+                exp.score,
+                matched_terms_json,
+                escape_json(&exp.why_selected),
+                exp.base_bm25,
+                exp.source_trust_bonus,
+                exp.redundancy_penalty
+            )
+        } else {
+            "null".to_owned()
+        };
+
         cells_json.push(format!(
-            r#"{{"cell_id":{},"estimated_tokens":{},"citation":{},"payload_text":"{}"}}"#,
+            r#"{{"cell_id":{},"estimated_tokens":{},"citation":{},"payload_text":"{}","explain":{},"source_ref":{}}}"#,
             cell.cell_id.0,
             cell.estimated_tokens,
             cell.citation
                 .as_deref()
                 .map(|c| format!(r#""{}""#, escape_json(c)))
                 .unwrap_or_else(|| "null".to_owned()),
-            escape_json(&payload_text)
+            escape_json(&payload_text),
+            explain_json,
+            source_ref_json
         ));
     }
 

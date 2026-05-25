@@ -122,6 +122,7 @@ fn context_pack_can_reduce_sparse_redundancy() {
             redundancy_threshold_q16: 32_768,
             ..ContextPackOptions::default()
         },
+        "",
     );
 
     assert_eq!(
@@ -151,6 +152,7 @@ fn context_pack_can_reduce_dense_vector_redundancy() {
             redundancy_threshold_q16: 32_768,
             ..ContextPackOptions::default()
         },
+        "",
     );
 
     assert_eq!(
@@ -209,4 +211,67 @@ fn view(require_citations: bool) -> AgentView {
         require_citations_by_default: require_citations,
         private_scope: None,
     }
+}
+
+#[test]
+fn test_deterministic_cosine_similarity() {
+    let cells = vec![
+        retrieved(1, "scope=project\nvector=100, 200, 300\ncell 1"),
+        retrieved(2, "scope=project\nvector=100, 200, 300\ncell 2"), // Identical vectors!
+    ];
+    let pack = ContextPack::from_retrieved_with_options(
+        cells,
+        1_000,
+        false,
+        &ContextPackOptions {
+            reduce_redundancy: true,
+            redundancy_threshold_q16: 65535, // Exact match
+            ..ContextPackOptions::default()
+        },
+        "",
+    );
+    // Pruned cell 2 because the vectors are exactly identical (cosine similarity = 65535 >= threshold)
+    assert_eq!(pack.cells.len(), 1);
+    assert_eq!(pack.anomalies.len(), 1);
+}
+
+#[test]
+fn test_numeric_guard_coexistence() {
+    let cells = vec![
+        retrieved(1, "scope=project:investments\nstatus=ready\nproject=Solar\nmetric=budget\nvalue=1200000000\ncurrency=KZT\n\nSolar Plant budget is 1.2B"),
+        retrieved(2, "scope=project:investments\nstatus=ready\nproject=Solar\nmetric=budget\nvalue=1400000000\ncurrency=KZT\n\nSolar Plant budget is 1.4B"), // Conflicting values!
+    ];
+    let pack = ContextPack::from_retrieved_with_options(
+        cells,
+        2_000,
+        false,
+        &ContextPackOptions {
+            reduce_redundancy: true,
+            redundancy_threshold_q16: 10, // Very low threshold, but should not prune!
+            ..ContextPackOptions::default()
+        },
+        "",
+    );
+    // Both are kept together because they represent different values for same project+metric (Numeric Guard!)
+    assert_eq!(pack.cells.len(), 2);
+}
+
+#[test]
+fn test_context_pack_scoring_and_explain() {
+    let cells = vec![
+        retrieved(1, "scope=project:investments\nstatus=ready\nsource=report_q1\nproject=Solar\nmetric=budget\nvalue=12\ncurrency=KZT\n\nSolar Plant budget is 1.2B"),
+    ];
+    let pack = ContextPack::from_retrieved_with_options(
+        cells,
+        1_000,
+        false,
+        &ContextPackOptions::default(),
+        "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects WHERE space = project:investments LIMIT 10 CANDIDATES;",
+    );
+    let cell = &pack.cells[0];
+    let exp = cell.explain.as_ref().unwrap();
+    assert_eq!(exp.matched_terms, vec!["budget"]);
+    assert_eq!(exp.base_bm25, 10_000);
+    assert!(exp.score > 0);
+    assert!(!exp.why_selected.is_empty());
 }
