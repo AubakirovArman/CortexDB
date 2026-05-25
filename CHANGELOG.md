@@ -7,3 +7,4 @@
 - Added in-memory MVCC MemTable and manifest skeleton.
 - Added statement-level binding, bound plan variants, catalog facade traits, parser diagnostics,
   and bitmap bytecode explain output.
+- Added `cortex-engine` usable single-node database loop with WAL replay and MemTable reads.
