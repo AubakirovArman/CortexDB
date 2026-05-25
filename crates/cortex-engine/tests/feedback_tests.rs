@@ -96,6 +96,35 @@ fn feedback_scores_aggregate_useful_and_not_useful_votes() {
     assert_eq!(scores.get(&CellId(43)), Some(&1));
 }
 
+#[test]
+fn feedback_stats_reports_totals_and_per_cell_breakdown() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.record_context_feedback(AgentId(7), feedback(CellId(42), true))
+        .unwrap();
+    db.record_context_feedback(AgentId(7), feedback(CellId(42), false))
+        .unwrap();
+    db.record_context_feedback(AgentId(7), feedback(CellId(43), true))
+        .unwrap();
+
+    let stats = db.feedback_stats();
+    assert_eq!(stats.total, 3);
+    assert_eq!(stats.useful, 2);
+    assert_eq!(stats.not_useful, 1);
+    assert_eq!(stats.by_source_cell[&CellId(42)].score, 0);
+    assert_eq!(stats.by_source_cell[&CellId(42)].useful, 1);
+    assert_eq!(stats.by_source_cell[&CellId(42)].not_useful, 1);
+    assert_eq!(stats.by_source_cell[&CellId(43)].score, 1);
+}
+
+fn feedback(source_cell_id: CellId, useful: bool) -> ContextFeedback {
+    ContextFeedback {
+        source_cell_id,
+        useful,
+        note: None,
+    }
+}
+
 fn view() -> AgentView {
     AgentView {
         agent_id: AgentId(7),

@@ -43,12 +43,14 @@ The engine also exposes aggregate scores:
 
 ```rust
 let scores = db.feedback_scores();
+let stats = db.feedback_stats();
 ```
 
 `ContextPack` uses these scores as a deterministic pre-pack ordering signal:
 positive feedback moves a cell earlier while preserving original order for ties.
+`feedback_stats` reports total useful/not-useful votes and per-source-cell
+breakdowns.
 
 ## Not Yet
 
-- Aggregated usefulness statistics.
 - AgentView persistence for feedback scopes.

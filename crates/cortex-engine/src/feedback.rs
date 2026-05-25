@@ -21,6 +21,21 @@ pub struct StoredFeedback {
     pub commit_seq: CommitSeq,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct FeedbackStats {
+    pub total: u32,
+    pub useful: u32,
+    pub not_useful: u32,
+    pub by_source_cell: BTreeMap<CellId, FeedbackCellStats>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct FeedbackCellStats {
+    pub useful: u32,
+    pub not_useful: u32,
+    pub score: i32,
+}
+
 impl Database {
     pub fn record_context_feedback(
         &mut self,
@@ -70,6 +85,27 @@ impl Database {
             *scores.entry(source_cell_id).or_default() += delta;
         }
         scores
+    }
+
+    pub fn feedback_stats(&self) -> FeedbackStats {
+        let mut stats = FeedbackStats::default();
+        for version in self.snapshot_versions() {
+            let Some((source_cell_id, useful)) = feedback_target(&version.payload) else {
+                continue;
+            };
+            stats.total += 1;
+            let cell_stats = stats.by_source_cell.entry(source_cell_id).or_default();
+            if useful {
+                stats.useful += 1;
+                cell_stats.useful += 1;
+                cell_stats.score += 1;
+            } else {
+                stats.not_useful += 1;
+                cell_stats.not_useful += 1;
+                cell_stats.score -= 1;
+            }
+        }
+        stats
     }
 }
 

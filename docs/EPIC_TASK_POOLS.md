@@ -243,9 +243,9 @@ The active slice is:
 ```text
 Epic 161 -> agent memory foundation
 Epic 165 -> memory TTL expiry
-Epic 170 -> feedback aggregation
-Epic 175 -> contradiction detection
 Epic 174 -> VERIFY FACT report v0
+Epic 175 -> contradiction detection
+Epic 188 -> search HTTP endpoint
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed
