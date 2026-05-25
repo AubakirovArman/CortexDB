@@ -70,6 +70,59 @@ fn verify_fact_aql_orders_equal_matches_by_source_trust() {
 }
 
 #[test]
+fn verify_fact_aql_reports_contradicted_from_contradicts_line() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        fact_cell(
+            "project:investments",
+            "contradicts=ABC budget approved\nABC budget rejected",
+        ),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;"#,
+            &view("project:investments", true),
+        )
+        .unwrap();
+    assert_eq!(report.status, VerificationStatus::Contradicted);
+    assert!(report.evidence.is_empty());
+    assert_eq!(report.contradicting_evidence[0].cell_id, CellId(1));
+}
+
+#[test]
+fn verify_fact_aql_reports_mixed_when_support_and_contradiction_exist() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        fact_cell("project:investments", "ABC budget approved"),
+    )
+    .unwrap();
+    db.put_knowledge_cell(
+        CellId(2),
+        fact_cell(
+            "project:investments",
+            "contradicts=ABC budget approved\nABC budget rejected",
+        ),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;"#,
+            &view("project:investments", true),
+        )
+        .unwrap();
+    assert_eq!(report.status, VerificationStatus::Mixed);
+    assert_eq!(report.evidence[0].cell_id, CellId(1));
+    assert_eq!(report.contradicting_evidence[0].cell_id, CellId(2));
+}
+
+#[test]
 fn verify_fact_aql_denied_by_agent_view_policy() {
     let dir = tempfile::tempdir().unwrap();
     let db = Database::open(dir.path()).unwrap();

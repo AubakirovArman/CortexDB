@@ -61,14 +61,21 @@ pub(crate) fn format_context_pack(pack: &ContextPack) -> String {
 
 pub(crate) fn format_verification_report(report: &VerificationReport) -> String {
     let mut lines = vec![format!(
-        "status={} evidence={} fact={}",
+        "status={} evidence={} contradictions={} fact={}",
         verification_status(report.status),
         report.evidence.len(),
+        report.contradicting_evidence.len(),
         report.fact
     )];
     lines.extend(report.evidence.iter().map(|evidence| {
         format!(
             "cell_id={} matched_terms={} source_trust_q16={}",
+            evidence.cell_id.0, evidence.matched_terms, evidence.source_trust_q16
+        )
+    }));
+    lines.extend(report.contradicting_evidence.iter().map(|evidence| {
+        format!(
+            "contradiction_cell_id={} matched_terms={} source_trust_q16={}",
             evidence.cell_id.0, evidence.matched_terms, evidence.source_trust_q16
         )
     }));

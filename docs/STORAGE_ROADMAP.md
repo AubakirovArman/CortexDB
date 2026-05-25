@@ -41,14 +41,15 @@
 - ContextPack feedback ordering signal.
 - Q16 source trust metadata and VERIFY FACT evidence ordering.
 - Aggregated context feedback statistics.
+- Explicit contradiction markers for VERIFY FACT reports.
 
 ## Next
 
-1. Add contradiction detection for VERIFY FACT.
-2. Add search CLI/HTTP surfaces and persisted lexical metadata v2.
-3. Formalize core cell metadata instead of payload-line metadata parsing.
-4. Add WAL writer backpressure and real group commit batching.
-5. Persist consensus log entries through ACLOG or a dedicated replication log.
+1. Add search CLI/HTTP surfaces and persisted lexical metadata v2.
+2. Formalize core cell metadata instead of payload-line metadata parsing.
+3. Add WAL writer backpressure and real group commit batching.
+4. Persist consensus log entries through ACLOG or a dedicated replication log.
+5. Add natural-language contradiction extraction after structured markers.
 
 ## Not Yet
 

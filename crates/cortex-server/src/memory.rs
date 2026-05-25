@@ -49,11 +49,23 @@ fn report_json(report: &VerificationReport) -> String {
         })
         .collect::<Vec<_>>()
         .join(",");
+    let contradicting_evidence = report
+        .contradicting_evidence
+        .iter()
+        .map(|evidence| {
+            format!(
+                r#"{{"cell_id":{},"matched_terms":{},"source_trust_q16":{}}}"#,
+                evidence.cell_id.0, evidence.matched_terms, evidence.source_trust_q16
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
     format!(
-        r#"{{"fact":"{}","status":"{}","evidence":[{}]}}"#,
+        r#"{{"fact":"{}","status":"{}","evidence":[{}],"contradicting_evidence":[{}]}}"#,
         escape_json(&report.fact),
         verification_status(report.status),
-        evidence
+        evidence,
+        contradicting_evidence
     )
 }
 
