@@ -1,17 +1,24 @@
 use thiserror::Error;
 
 use crate::agent_view::AgentView;
-use crate::ast::{RawRemember, RawRetrieveContext, RawVerifyFact, TtlValue};
+use crate::ast::{AqlStatement, RawRemember, RawRetrieveContext, RawVerifyFact, TtlValue};
 use crate::policy::{PolicyError, PolicyValidator};
 use crate::types::{
     BrainId, CellTypeId, MemoryType, RetrievalMode, ScopeId, StatusId, Q16, Q16_ZERO,
 };
 
+mod catalog;
 mod diagnostics;
+mod plan;
 mod support;
 mod where_bitmap;
 
+pub use catalog::{BrainCatalog, CellTypeCatalog, MemoryTypeCatalog, ScopeCatalog, StatusCatalog};
 pub use diagnostics::{BindDiagnostic, BindDiagnosticExport};
+pub use plan::{
+    BoundPlan, BoundRememberPlan, BoundRetrievePlan, BoundVerifyFactPlan, ContextPolicy,
+    QualityThresholds,
+};
 use support::apply_requirement;
 pub use support::{
     compute_bitmap_stack_depth, context_policy_for_mode, decimal_to_q16, default_weights,
@@ -20,13 +27,6 @@ pub use support::{
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BitmapHandle(pub u64);
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct QualityThresholds {
-    pub min_confidence_q16: Q16,
-    pub min_source_trust_q16: Q16,
-    pub max_freshness_seconds: Option<u64>,
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BitmapProgram {
@@ -73,38 +73,6 @@ pub struct RetrievalWeights {
     pub trust_q16: Q16,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ContextPolicy {
-    pub budget_tokens: u32,
-    pub candidate_limit: u32,
-    pub require_citations: bool,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BoundRetrievePlan {
-    pub brain_id: BrainId,
-    pub task: String,
-    pub mode: RetrievalMode,
-    pub bitmap_program: BitmapProgram,
-    pub context_policy: ContextPolicy,
-    pub quality_thresholds: QualityThresholds,
-    pub weights: RetrievalWeights,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BoundVerifyFactPlan {
-    pub brain_id: BrainId,
-    pub fact: String,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BoundRememberPlan {
-    pub scope_id: ScopeId,
-    pub memory_type: MemoryType,
-    pub content: String,
-    pub ttl_seconds: Option<u64>,
-}
-
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum BindError {
     #[error("unknown brain")]
@@ -125,6 +93,8 @@ pub enum BindError {
     InvalidDecimal,
     #[error("invalid bitmap program")]
     InvalidBitmapProgram,
+    #[error("statement is not supported by binder")]
+    UnsupportedStatement,
     #[error("policy denied: {0:?}")]
     PolicyDenied(PolicyError),
 }
@@ -141,6 +111,7 @@ impl BindError {
             Self::InvalidMemoryType => "InvalidMemoryType",
             Self::InvalidDecimal => "InvalidDecimal",
             Self::InvalidBitmapProgram => "InvalidBitmapProgram",
+            Self::UnsupportedStatement => "UnsupportedStatement",
             Self::PolicyDenied(_) => "PolicyDenied",
         }
     }
@@ -156,6 +127,7 @@ impl BindError {
             Self::InvalidMemoryType => "memory type is invalid",
             Self::InvalidDecimal => "decimal literal is invalid",
             Self::InvalidBitmapProgram => "bitmap program is invalid",
+            Self::UnsupportedStatement => "statement is not supported by binder",
             Self::PolicyDenied(error) => error.safe_message(),
         }
     }
@@ -169,6 +141,21 @@ pub struct Binder<'a, C> {
 impl<'a, C: AqlCatalog> Binder<'a, C> {
     pub fn new(catalog: &'a C, view: &'a AgentView) -> Self {
         Self { catalog, view }
+    }
+
+    pub fn bind_statement(&self, statement: &AqlStatement<'_>) -> Result<BoundPlan, BindError> {
+        match statement {
+            AqlStatement::RetrieveContext(raw) => self
+                .bind_retrieve(raw)
+                .map(|plan| BoundPlan::Retrieve(Box::new(plan))),
+            AqlStatement::VerifyFact(raw) => self
+                .bind_verify_fact(raw)
+                .map(|plan| BoundPlan::VerifyFact(Box::new(plan))),
+            AqlStatement::Remember(raw) => self
+                .bind_remember(raw)
+                .map(|plan| BoundPlan::Remember(Box::new(plan))),
+            AqlStatement::Explain(inner) => self.bind_statement(inner),
+        }
     }
 
     pub fn bind_retrieve(
