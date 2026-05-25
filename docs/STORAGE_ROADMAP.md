@@ -9,26 +9,28 @@
 - Usable single-node loop through `cortex-engine`.
 - Durable operation `CommitSeq` in WAL `CellCore`.
 - Initial `.acs`, `.acb`, and `.aci` file foundations.
-- Manifest persistence and recovery into MemTable.
-- Engine checkpoint into `.acs`, `.acb`, `.aci`, and `manifest.acm`.
+- Atomic manifest persistence and recovery into MemTable.
+- Incremental engine checkpoint into `.acs`, `.acb`, `.aci`, and `manifest.acm`.
+- Full snapshot compaction that retires older live segment handles.
 - AQL retrieve over engine-built bitmap indexes.
-- Minimal fixed-point BM25-style ranking helper.
-- Minimal integer vector search and HNSW-compatible exact fallback helper.
+- Persisted-index-first AQL retrieve with in-memory delta overlay.
+- Fixed-point BM25-style ranking helper.
+- Integer vector search and graph-backed HNSW-style search helper.
 - Minimal `cortexdb` CLI for local put/get/tombstone/flush checks.
-- Minimal HTTP server API for put/get/tombstone/flush checks.
-- Single-node/distributed placement configuration skeleton.
+- JSON HTTP server API for put/get/tombstone/flush/compact/health checks with optional bearer auth.
+- Single-node/distributed placement and deterministic quorum log skeleton.
 
 ## Next
 
-1. Replace full-snapshot checkpoint with incremental segment flush.
-2. Add manifest atomic-write protocol and crash tests around checkpoint phases.
-3. Use persisted `.acb` / `.aci` directly without rebuilding query indexes from payloads.
-4. Replace HNSW exact fallback with graph ANN insertion/search.
-5. Add production server protocol, auth, and structured responses.
+1. Add crash-matrix tests around every checkpoint phase.
+2. Add segment garbage collection for retired handles.
+3. Persist consensus log entries through ACLOG or a dedicated replication log.
+4. Add real network replication and leader election.
+5. Add structured JSON request bodies and richer API version negotiation.
 
 ## Not Yet
 
-- Production BM25 ranking pipeline.
-- Production vector index.
-- Real HNSW graph ANN.
+- Large-scale BM25 ranking pipeline with analyzers and field weighting.
+- Persistent vector index pages.
+- Multi-layer HNSW with deletion and rebuild policy.
 - Consensus, replication transport, and distributed recovery.

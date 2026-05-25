@@ -8,7 +8,10 @@ fn main() -> ExitCode {
         eprintln!("usage: cortex-server <path> <addr>");
         return ExitCode::FAILURE;
     };
-    match cortex_server::serve(&PathBuf::from(root), addr) {
+    let options = cortex_server::ServerOptions {
+        auth_token: env::var("CORTEXDB_AUTH_TOKEN").ok(),
+    };
+    match cortex_server::serve_with_options(&PathBuf::from(root), addr, options) {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             eprintln!("{error}");

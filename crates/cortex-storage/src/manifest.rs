@@ -1,5 +1,6 @@
-use std::fs;
+use std::fs::{self, File, OpenOptions};
 use std::io::ErrorKind;
+use std::io::Write;
 use std::path::Path;
 
 use crate::error::{StorageError, StorageResult};
@@ -32,16 +33,37 @@ impl StorageManifest {
     }
 
     pub fn store(&self, path: impl AsRef<Path>) -> StorageResult<()> {
-        fs::write(path, encode_manifest(self))?;
+        store_atomic(path.as_ref(), &encode_manifest(self))?;
         Ok(())
     }
 
     pub fn checkpoint_segment(&mut self, segment: ManifestSegment) {
         self.generation += 1;
         self.checkpoint_seq = segment.checkpoint_seq;
+        self.live_segments.push(segment);
+    }
+
+    pub fn compact_to_segment(&mut self, segment: ManifestSegment) {
+        self.generation += 1;
+        self.checkpoint_seq = segment.checkpoint_seq;
         self.retired_segments.append(&mut self.live_segments);
         self.live_segments.push(segment);
     }
+}
+
+fn store_atomic(path: &Path, bytes: &[u8]) -> StorageResult<()> {
+    let tmp = path.with_extension("acm.tmp");
+    {
+        let mut file = File::create(&tmp)?;
+        file.write_all(bytes)?;
+        file.sync_all()?;
+    }
+    fs::rename(&tmp, path)?;
+    if let Some(parent) = path.parent() {
+        let directory = OpenOptions::new().read(true).open(parent)?;
+        directory.sync_all()?;
+    }
+    Ok(())
 }
 
 fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {

@@ -13,11 +13,13 @@ fn acs_segment_roundtrips_cells() {
         SegmentCell {
             cell_id: 1,
             created_seq: 7,
+            deleted_seq: None,
             payload: b"one".to_vec(),
         },
         SegmentCell {
             cell_id: 2,
             created_seq: 8,
+            deleted_seq: Some(9),
             payload: b"two".to_vec(),
         },
     ];
@@ -66,6 +68,29 @@ fn manifest_roundtrips_checkpoint_segments() {
     });
     manifest.store(&path).unwrap();
     assert_eq!(StorageManifest::load(&path).unwrap(), manifest);
+}
+
+#[test]
+fn manifest_store_is_atomic_and_ignores_leftover_tmp() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("manifest.acm");
+    std::fs::write(dir.path().join("manifest.acm.tmp"), b"bad").unwrap();
+    let manifest = StorageManifest {
+        generation: 3,
+        checkpoint_seq: 11,
+        live_segments: vec![cortex_storage::manifest::ManifestSegment {
+            id: 2,
+            generation: 3,
+            checkpoint_seq: 11,
+            cell_count: 4,
+        }],
+        retired_segments: Vec::new(),
+    };
+
+    manifest.store(&path).unwrap();
+
+    assert_eq!(StorageManifest::load(&path).unwrap(), manifest);
+    assert!(!dir.path().join("manifest.acm.tmp").exists());
 }
 
 #[test]

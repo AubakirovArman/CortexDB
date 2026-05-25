@@ -65,6 +65,17 @@ fn run(args: Vec<String>) -> Result<String, String> {
                 stats.checkpoint_seq.0, stats.cells_flushed
             ))
         }
+        "compact" => {
+            if !rest.is_empty() {
+                return Err(usage());
+            }
+            let mut db = Database::open(path).map_err(|error| error.to_string())?;
+            let stats = db.compact().map_err(|error| error.to_string())?;
+            Ok(format!(
+                "checkpoint_seq={} cells_flushed={}",
+                stats.checkpoint_seq.0, stats.cells_flushed
+            ))
+        }
         _ => Err(usage()),
     }
 }
@@ -77,7 +88,7 @@ fn parse_cell_id(value: &str) -> Result<CellId, String> {
 }
 
 fn usage() -> String {
-    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path>"
+    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path>"
         .to_owned()
 }
 
