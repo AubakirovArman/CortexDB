@@ -257,7 +257,8 @@ Epic 109 -> vector API v1 over CLI/HTTP exact scan (closed)
 Epic 111 -> vector persistence `.acv` exact scan foundation (closed)
 Replication log ACLOG persistence for consensus-model entries (closed)
 Field-aware persisted lexical scoring statistics in `.aci` (closed)
+Deterministic in-memory replication transport and leader election (closed)
 ```
 
-Replication transport, leader election, HNSW, real BM25 ranking, ingestion
-adapters, SDKs, and LLM integration remain outside this slice.
+Networked consensus transport, HNSW, real BM25 ranking, ingestion adapters,
+SDKs, and LLM integration remain outside this slice.

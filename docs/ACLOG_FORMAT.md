@@ -112,8 +112,9 @@ the current MemTable, segment, AQL, and search paths.
 `ReplicatedLogEntry` stores local consensus-model entries in ACLOG records.
 `ReplicationCore` is 16 bytes: little-endian `Term(u64)` followed by
 little-endian `LogIndex(u64)`. `PayloadInline` stores the replicated command
-payload. This is a durable log foundation only; it is not a network transport
-or leader-election implementation.
+payload. The engine includes deterministic in-memory transport and leader
+election semantics for tests and local modeling; production network transport
+is still out of scope.
 
 ## Diagnostics
 

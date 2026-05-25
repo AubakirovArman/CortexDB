@@ -8,6 +8,14 @@ use cortex_storage::wal::{
     WalSection, WalWriter, WalWriterHandle,
 };
 
+mod election;
+mod transport;
+
+pub use election::{ElectionOutcome, ElectionRole, ElectionState, VoteRequest, VoteResponse};
+pub use transport::{
+    AppendEntriesRequest, AppendEntriesResponse, InMemoryReplicationTransport, ReplicationTransport,
+};
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Term(pub u64);
 
@@ -86,6 +94,18 @@ impl ConsensusState {
             .filter(|entry| entry.index <= self.commit_index)
             .cloned()
             .collect()
+    }
+
+    pub fn entries(&self) -> &[ReplicatedEntry] {
+        &self.log
+    }
+
+    pub fn last_log_index(&self) -> LogIndex {
+        self.log.last().map(|entry| entry.index).unwrap_or_default()
+    }
+
+    pub fn last_log_term(&self) -> Term {
+        self.log.last().map(|entry| entry.term).unwrap_or_default()
     }
 
     pub fn recover(

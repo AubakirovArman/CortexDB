@@ -16,6 +16,7 @@ It owns:
 - ContextPack v0 construction over retrieved cells
 - storage stats, validation, and best-effort repair surfaces
 - ACLOG-backed replication log entry persistence for local consensus-model recovery
+- deterministic in-memory replication transport and leader-election semantics
 
-It still does not provide production BM25, HNSW storage, replication transport,
-leader election, document ingestion, or LLM integration.
+It still does not provide production BM25, HNSW storage, production consensus
+networking, document ingestion, or LLM integration.

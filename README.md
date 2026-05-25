@@ -30,12 +30,12 @@ AQL retrieve -> ContextPack -> token budget -> citation anomalies
 - `crates/cortex-aql`: AQL parser, AST, policy validation, binder, bitmap bytecode, and mock bitmap VM.
 - `crates/cortex-storage`: ACLOG WAL v0, manifest, segment, bitmap-index, and lexical-index files.
 - `crates/cortex-core`: in-memory MVCC MemTable, read transactions, cell versions, KnowledgeCell schema, and manifest primitives.
-- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, AQL `REMEMBER`, memory TTL/decay, durable feedback, source trust, `VERIFY FACT` reports with structured and conservative natural-language contradiction hints, ContextPack v0, scoped search, search helpers with hybrid fusion, ACLOG-backed replication log entries, and consensus model primitives.
+- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, AQL `REMEMBER`, memory TTL/decay, durable feedback, source trust, `VERIFY FACT` reports with structured and conservative natural-language contradiction hints, ContextPack v0, scoped search, search helpers with hybrid fusion, ACLOG-backed replication log entries, deterministic in-memory replication transport, and consensus model primitives.
 - `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone/flush/compact/stats/validate/search/context/remember/verify checks.
 - `crates/cortex-server`: minimal JSON HTTP API for put/get/tombstone/flush/compact/search/context/remember/verify/health checks.
 
 BM25, vector search, HNSW, distributed placement, and server APIs exist as MVP foundations.
-They are not production-grade ranking, ANN, replication transport, consensus, or service layers yet.
+They are not production-grade ranking, ANN, network consensus, or service layers yet.
 
 ## Minimal Engine Example
 

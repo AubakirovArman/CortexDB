@@ -68,16 +68,18 @@
   `LogIndex`, and payload records for local recovery.
 - `VERIFY FACT` now applies conservative natural-language contradiction hints
   after structured `contradicts=` markers.
+- Deterministic in-memory replication transport covers vote requests,
+  append-entry acknowledgements, majority election, and stale-term rejection.
 
 ## Next
 
-1. Add replication transport and leader-election semantics.
-2. Add richer verification guards for citations and numeric claims.
-3. Add production BM25 analyzers and quality fixtures.
+1. Add richer verification guards for citations and numeric claims.
+2. Add production BM25 analyzers and quality fixtures.
+3. Add networked consensus transport and distributed recovery.
 
 ## Not Yet
 
 - Large-scale BM25 ranking pipeline with analyzers and field weighting.
 - Persistent ANN vector index pages.
 - Multi-layer HNSW with deletion and rebuild policy.
-- Consensus transport, leader election, and distributed recovery.
+- Production consensus transport and distributed recovery.
