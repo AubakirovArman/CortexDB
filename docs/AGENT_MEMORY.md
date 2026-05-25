@@ -46,9 +46,17 @@ let tombstoned = db.expire_memory_cells(now_unix_seconds)?;
 
 `expire_memory_cells` writes tombstones through the normal WAL path.
 
+Decay scoring is also deterministic and fixed-point:
+
+```rust
+let scores = db.memory_decay_scores(now_unix_seconds);
+```
+
+`freshness_q16` is `Q16_ONE` for permanent memory, decreases linearly over the
+TTL window, and becomes `Q16_ZERO` after expiry.
+
 ## Not Yet
 
-- Memory decay scoring.
 - AgentView persistence.
 - VERIFY FACT contradiction detection.
 - Feedback loop storage.

@@ -36,10 +36,11 @@
 - Policy-checked AQL `VERIFY FACT` evidence report v0.
 - CLI and HTTP smoke surfaces for AQL `REMEMBER` and `VERIFY FACT`.
 - Memory TTL expiry scan and WAL-backed tombstone path.
+- Fixed-point memory decay scoring.
 
 ## Next
 
-1. Add memory decay scoring.
+1. Add agent feedback storage.
 2. Add search CLI/HTTP surfaces and persisted lexical metadata v2.
 3. Formalize core cell metadata instead of payload-line metadata parsing.
 4. Add WAL writer backpressure and real group commit batching.
