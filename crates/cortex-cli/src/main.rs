@@ -5,6 +5,8 @@ use cortex_core::CellId;
 use cortex_engine::{ContextPackOptions, Database};
 
 mod context;
+#[cfg(test)]
+mod tests;
 
 use context::{format_context_pack, view_for_scope};
 
@@ -126,6 +128,19 @@ fn run(args: Vec<String>) -> Result<String, String> {
                 report.wal_truncated
             ))
         }
+        "gc-retired" => {
+            if !rest.is_empty() {
+                return Err(usage());
+            }
+            let mut db = Database::open(path).map_err(|error| error.to_string())?;
+            let report = db
+                .garbage_collect_retired_segments()
+                .map_err(|error| error.to_string())?;
+            Ok(format!(
+                "retired_segments_removed={} files_removed={}",
+                report.retired_segments_removed, report.files_removed
+            ))
+        }
         "context" => {
             let [scope, aql] = rest else {
                 return Err(usage());
@@ -158,121 +173,6 @@ fn parse_cell_id(value: &str) -> Result<CellId, String> {
 }
 
 fn usage() -> String {
-    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | repair <path> | context <path> <scope> <aql> | unlock <path> --force"
+    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | repair <path> | gc-retired <path> | context <path> <scope> <aql> | unlock <path> --force"
         .to_owned()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::run;
-
-    #[test]
-    fn usage_is_reported_for_missing_args() {
-        assert!(run(vec!["cortexdb".to_owned()])
-            .unwrap_err()
-            .contains("usage:"));
-    }
-
-    #[test]
-    fn stats_and_validate_commands_work() {
-        let path = unique_path("cortexdb-cli-stats");
-        let path_arg = path.to_string_lossy().into_owned();
-        run(vec![
-            "cortexdb".to_owned(),
-            "put".to_owned(),
-            path_arg.clone(),
-            "1".to_owned(),
-            "hello".to_owned(),
-        ])
-        .unwrap();
-
-        let stats = run(vec![
-            "cortexdb".to_owned(),
-            "stats".to_owned(),
-            path_arg.clone(),
-        ])
-        .unwrap();
-        assert!(stats.contains("current_seq=1"));
-
-        let validation = run(vec!["cortexdb".to_owned(), "validate".to_owned(), path_arg]).unwrap();
-        assert!(validation.starts_with("ok "));
-
-        let _ = std::fs::remove_dir_all(path);
-    }
-
-    #[test]
-    fn context_command_returns_pack_summary() {
-        let path = unique_path("cortexdb-cli-context");
-        let path_arg = path.to_string_lossy().into_owned();
-        run(vec![
-            "cortexdb".to_owned(),
-            "put".to_owned(),
-            path_arg.clone(),
-            "1".to_owned(),
-            "scope=project:investments\nstatus=ready\nsource=doc-a\nalpha budget".to_owned(),
-        ])
-        .unwrap();
-
-        let output = run(vec![
-            "cortexdb".to_owned(),
-            "context".to_owned(),
-            path_arg.clone(),
-            "project:investments".to_owned(),
-            r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#.to_owned(),
-        ])
-        .unwrap();
-        assert!(output.contains("cells=1"));
-        assert!(output.contains("citation=doc-a"));
-
-        let _ = std::fs::remove_dir_all(path);
-    }
-
-    #[test]
-    fn repair_command_reports_best_effort_cleanup() {
-        let path = unique_path("cortexdb-cli-repair");
-        let path_arg = path.to_string_lossy().into_owned();
-        std::fs::create_dir_all(&path).unwrap();
-        std::fs::write(path.join("db.aclog.tmp"), b"bad").unwrap();
-
-        let output = run(vec![
-            "cortexdb".to_owned(),
-            "repair".to_owned(),
-            path_arg.clone(),
-        ])
-        .unwrap();
-        assert!(output.contains("orphan_temp_files_removed=1"));
-        assert!(output.contains("wal_truncated=false"));
-
-        let _ = std::fs::remove_dir_all(path);
-    }
-
-    #[test]
-    fn unlock_force_removes_stale_lock() {
-        let path = unique_path("cortexdb-cli-unlock");
-        std::fs::create_dir_all(&path).unwrap();
-        std::fs::write(path.join("db.lock"), b"stale").unwrap();
-        let path_arg = path.to_string_lossy().into_owned();
-
-        let output = run(vec![
-            "cortexdb".to_owned(),
-            "unlock".to_owned(),
-            path_arg,
-            "--force".to_owned(),
-        ])
-        .unwrap();
-        assert_eq!(output, "stale lock removed");
-        assert!(!path.join("db.lock").exists());
-
-        let _ = std::fs::remove_dir_all(path);
-    }
-
-    fn unique_path(prefix: &str) -> std::path::PathBuf {
-        std::env::temp_dir().join(format!(
-            "{prefix}-{}",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ))
-    }
 }

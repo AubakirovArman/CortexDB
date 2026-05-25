@@ -241,11 +241,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 The active slice is:
 
 ```text
-Epic 001 -> keep Core Alpha scope frozen
-Epic 121 -> ContextPack structs/API
-Epic 129 -> citation anomaly enforcement
-Epic 138 -> CLI context command
-Epic 139 -> HTTP context endpoint
+Epic 021 -> candidate mapping consistency
+Epic 026 -> SegmentBundle API
+Epic 029 -> retired segment lifecycle
+Epic 030 -> explicit retired segment GC
+Epic 040 -> storage bundle validator path
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed

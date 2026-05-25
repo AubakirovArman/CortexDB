@@ -1,3 +1,4 @@
+pub mod bundle;
 pub mod checkpoint;
 mod cleanup;
 pub mod context;
@@ -13,6 +14,7 @@ pub mod replication;
 pub mod search;
 pub mod validation;
 
+pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use context::{
     estimate_tokens, ContextPack, ContextPackAnomaly, ContextPackCell, ContextPackOptions,
 };
