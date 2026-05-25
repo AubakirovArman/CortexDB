@@ -3,7 +3,7 @@ use std::io::Write;
 
 use cortex_storage::wal::{
     DurabilityMode, SectionTag, WalCodec, WalDiagnostics, WalReader, WalRecord, WalRecordType,
-    WalSection, WalWriter, WAL_RECORD_HEADER_LEN, WAL_SECTION_ENTRY_LEN,
+    WalSection, WalWriter, WalWriterOptions, WAL_RECORD_HEADER_LEN, WAL_SECTION_ENTRY_LEN,
 };
 use cortex_storage::StorageError;
 
@@ -208,6 +208,26 @@ fn balanced_writer_mode_appends_without_sync_requirement() {
     let writer = WalWriter::start(&path, DurabilityMode::Balanced).unwrap();
     let ack = writer.append(record_with_payload(vec![1, 2, 3])).unwrap();
     assert_eq!(ack.durable_lsn, WalCodec::file_header_len() as u64);
+}
+
+#[test]
+fn bounded_writer_queue_mode_appends_records() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("bounded.aclog");
+    let writer = WalWriter::start_with_options(
+        &path,
+        WalWriterOptions {
+            durability_mode: DurabilityMode::Balanced,
+            queue_capacity: Some(1),
+        },
+    )
+    .unwrap();
+    writer.append(record_with_payload(vec![1])).unwrap();
+    writer.append(record_with_payload(vec![2])).unwrap();
+    writer.shutdown().unwrap();
+
+    let scan = WalReader::open(&path).unwrap().scan().unwrap();
+    assert_eq!(scan.records.len(), 2);
 }
 
 fn rewrite_header_crc(encoded: &mut [u8]) {

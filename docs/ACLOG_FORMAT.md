@@ -73,6 +73,21 @@ Strict recovery fails on checksum or header corruption. Best-effort recovery
 stops at the last valid record and lets the engine truncate the unsafe tail
 before appending new records.
 
+## Writer Backpressure
+
+`WalWriter::start_with_options` accepts `WalWriterOptions`.
+
+```rust
+WalWriterOptions {
+    durability_mode: DurabilityMode::Balanced,
+    queue_capacity: Some(1024),
+}
+```
+
+`queue_capacity = None` keeps the legacy unbounded queue. `Some(n)` creates a
+bounded writer channel, so callers naturally block when the writer falls behind.
+The database still uses the default path until engine-level tuning is added.
+
 ## Diagnostics
 
 `WalDiagnostics::summarize` reports record count, safe truncate offset, payload

@@ -16,6 +16,21 @@ pub enum DurabilityMode {
     Balanced,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct WalWriterOptions {
+    pub durability_mode: DurabilityMode,
+    pub queue_capacity: Option<usize>,
+}
+
+impl Default for WalWriterOptions {
+    fn default() -> Self {
+        Self {
+            durability_mode: DurabilityMode::Strict,
+            queue_capacity: None,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct WalWriterHandle {
     tx: Sender<WalWriterCommand>,
@@ -46,10 +61,23 @@ impl WalWriter {
     }
 
     pub fn start(path: impl AsRef<Path>, mode: DurabilityMode) -> StorageResult<WalWriterHandle> {
+        Self::start_with_options(
+            path,
+            WalWriterOptions {
+                durability_mode: mode,
+                queue_capacity: None,
+            },
+        )
+    }
+
+    pub fn start_with_options(
+        path: impl AsRef<Path>,
+        options: WalWriterOptions,
+    ) -> StorageResult<WalWriterHandle> {
         let path = path.as_ref().to_owned();
         ensure_file_header(&path)?;
-        let (tx, rx) = unbounded();
-        thread::spawn(move || run_writer(path, mode, rx));
+        let (tx, rx) = writer_channel(options.queue_capacity);
+        thread::spawn(move || run_writer(path, options.durability_mode, rx));
         Ok(WalWriterHandle { tx })
     }
 }
@@ -69,6 +97,15 @@ impl WalWriterHandle {
             .send(WalWriterCommand::Shutdown { reply })
             .map_err(|_| StorageError::WalWriterClosed)?;
         rx.recv().map_err(|_| StorageError::WalWriterClosed)?
+    }
+}
+
+fn writer_channel(
+    queue_capacity: Option<usize>,
+) -> (Sender<WalWriterCommand>, Receiver<WalWriterCommand>) {
+    match queue_capacity {
+        Some(capacity) => bounded(capacity),
+        None => unbounded(),
     }
 }
 
