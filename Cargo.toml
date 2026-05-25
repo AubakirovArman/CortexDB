@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/cortex-aql", "crates/cortex-storage"]
+members = ["crates/cortex-aql", "crates/cortex-core", "crates/cortex-storage"]
 resolver = "2"
 
 [workspace.package]
