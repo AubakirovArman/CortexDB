@@ -21,8 +21,8 @@ The current MVP stores operations as ACLOG records:
 - `PatchCell` uses `WalRecordType::PatchCellBatch`
 - `TombstoneCell` uses `WalRecordType::TombstoneBatch`
 
-`CellCore` stores little-endian `CellId`. `PayloadInline` stores payload bytes.
+`CellCore` stores little-endian `CellId` and durable `CommitSeq`.
+`PayloadInline` stores payload bytes.
 
-Replay currently derives `CommitSeq` from record order. This is sufficient for
-the first local loop, but `commit_seq` must become durable in a future WAL
-header or operation section.
+Replay uses durable `CommitSeq` from `CellCore`. Old records without that field
+fall back to replay order for compatibility.

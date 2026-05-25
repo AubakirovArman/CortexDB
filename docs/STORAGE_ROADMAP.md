@@ -7,15 +7,17 @@
 - ACLOG writer actor with strict and balanced durability modes.
 - In-memory MVCC MemTable skeleton.
 - Usable single-node loop through `cortex-engine`.
+- Durable operation `CommitSeq` in WAL `CellCore`.
+- Initial `.acs`, `.acb`, and `.aci` file foundations.
+- Minimal `cortexdb` CLI for local put/get/tombstone checks.
 
 ## Next
 
-1. Persist commit sequence in WAL.
-2. Persist and recover manifest generations.
-3. Add `.acs` immutable cell segment files.
-4. Add `.acb` bitmap index files.
-5. Add `.aci` lexical index files.
-6. Add compaction and segment retirement.
+1. Persist and recover manifest generations.
+2. Integrate `.acs` segments with engine flush.
+3. Integrate `.acb` bitmap indexes with AQL retrieve planning.
+4. Integrate `.aci` lexical index with ranking.
+5. Add compaction and segment retirement.
 
 ## Not Yet
 

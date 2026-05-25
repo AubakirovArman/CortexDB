@@ -6,7 +6,7 @@ use cortex_core::CommitSeq;
 use cortex_storage::wal::WalReader;
 
 use crate::error::EngineResult;
-use crate::operation::{operation_from_decoded_wal_record, DbOperation};
+use crate::operation::{decoded_operation_from_wal_record, DbOperation};
 
 #[derive(Clone, Debug)]
 pub struct ReplayResult {
@@ -24,19 +24,36 @@ pub fn replay_wal(path: &Path) -> EngineResult<ReplayResult> {
         }
         Err(error) => return Err(error.into()),
     };
+    replay_scan(scan)
+}
+
+pub fn replay_wal_best_effort(path: &Path) -> EngineResult<ReplayResult> {
+    let scan = match WalReader::scan_best_effort_path(path) {
+        Ok(scan) => scan,
+        Err(cortex_storage::StorageError::Io(error)) if error.kind() == ErrorKind::NotFound => {
+            return Ok(empty_replay());
+        }
+        Err(error) => return Err(error.into()),
+    };
+    replay_scan(scan)
+}
+
+fn replay_scan(scan: cortex_storage::wal::WalScan) -> EngineResult<ReplayResult> {
     let mut memtable = MemTable::default();
     let mut last_seq = CommitSeq(0);
-    for record in &scan.records {
-        last_seq = CommitSeq(last_seq.0 + 1);
-        match operation_from_decoded_wal_record(record)? {
+    for (index, record) in scan.records.iter().enumerate() {
+        let decoded = decoded_operation_from_wal_record(record)?;
+        let seq = decoded.seq.unwrap_or(CommitSeq(index as u64 + 1));
+        last_seq = last_seq.max(seq);
+        match decoded.operation {
             DbOperation::PutCell { cell_id, payload } => {
-                memtable.put_cell(cell_id, last_seq, payload);
+                memtable.put_cell(cell_id, seq, payload);
             }
             DbOperation::PatchCell { cell_id, payload } => {
-                memtable.patch_cell(cell_id, last_seq, payload)?;
+                memtable.patch_cell(cell_id, seq, payload)?;
             }
             DbOperation::TombstoneCell { cell_id } => {
-                memtable.tombstone_cell(cell_id, last_seq)?;
+                memtable.tombstone_cell(cell_id, seq)?;
             }
         }
     }

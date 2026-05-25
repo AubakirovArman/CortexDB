@@ -1,0 +1,13 @@
+[package]
+name = "cortex-cli"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "cortexdb"
+path = "src/main.rs"
+
+[dependencies]
+cortex-core = { path = "../cortex-core" }
+cortex-engine = { path = "../cortex-engine" }

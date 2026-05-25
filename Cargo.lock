@@ -36,6 +36,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "cortex-cli"
+version = "0.1.0"
+dependencies = [
+ "cortex-core",
+ "cortex-engine",
+]
+
+[[package]]
 name = "cortex-core"
 version = "0.1.0"
 dependencies = [
@@ -46,6 +54,7 @@ dependencies = [
 name = "cortex-engine"
 version = "0.1.0"
 dependencies = [
+ "cortex-aql",
  "cortex-core",
  "cortex-storage",
  "tempfile",

@@ -7,6 +7,8 @@ pub enum EngineError {
     Core(#[from] CoreError),
     #[error("storage error: {0}")]
     Storage(#[from] StorageError),
+    #[error("bitmap VM error: {0}")]
+    BitmapVm(#[from] cortex_aql::BitmapVmError),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
     #[error("invalid database operation")]
