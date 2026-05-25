@@ -1,5 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use cortex_storage::hnsw::HnswGraphIndex;
+
 use super::{dot_nonnegative, ranked, ScoredCandidate};
 
 #[derive(Clone, Debug)]
@@ -52,6 +54,26 @@ impl HnswIndex {
             }
         }
         ranked(scores, limit)
+    }
+
+    pub fn graph_index(&self) -> HnswGraphIndex {
+        HnswGraphIndex {
+            links: self.links.clone(),
+        }
+    }
+
+    pub fn from_graph(
+        vectors: BTreeMap<u32, Vec<i16>>,
+        graph: HnswGraphIndex,
+        max_neighbors: usize,
+        ef_search: usize,
+    ) -> Self {
+        Self {
+            vectors,
+            links: graph.links,
+            max_neighbors: max_neighbors.max(1),
+            ef_search: ef_search.max(1),
+        }
     }
 
     fn nearest_existing(&self, vector: &[i16], limit: usize) -> Vec<u32> {

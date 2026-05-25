@@ -20,6 +20,8 @@ pub enum StorageError {
     InvalidLexicalIndexFile,
     #[error("invalid vector index file")]
     InvalidVectorIndexFile,
+    #[error("invalid HNSW graph file")]
+    InvalidHnswGraphFile,
     #[error("invalid manifest file")]
     InvalidManifestFile,
     #[error("WAL writer is closed")]

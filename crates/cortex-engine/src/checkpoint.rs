@@ -1,9 +1,11 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 mod candidates;
+mod hnsw;
 mod index_merge;
+mod paths;
 mod vector;
 
 use cortex_core::memtable::MemTable;
@@ -18,6 +20,9 @@ use crate::error::EngineResult;
 use crate::query::EngineAqlIndex;
 use candidates::{candidate_from_ordinal, segment_cell_count, CandidateAllocator};
 use index_merge::{merge_bitmap_index, merge_lexical_index};
+pub(crate) use paths::{
+    bitmap_path, hnsw_path, lexical_path, manifest_path, segment_path, segments_path, vector_path,
+};
 
 pub(crate) struct CheckpointLoad {
     pub manifest: StorageManifest,
@@ -58,6 +63,7 @@ impl Database {
             .write(lexical_path(&self.segments_path, segment_id))?;
         vector::vector_index_for_cells(&cells)
             .write(vector_path(&self.segments_path, segment_id))?;
+        hnsw::hnsw_graph_for_cells(&cells).write(hnsw_path(&self.segments_path, segment_id))?;
 
         self.manifest.checkpoint_segment(ManifestSegment {
             id: segment_id,
@@ -100,6 +106,7 @@ impl Database {
             .write(lexical_path(&self.segments_path, segment_id))?;
         vector::vector_index_for_cells(&cells)
             .write(vector_path(&self.segments_path, segment_id))?;
+        hnsw::hnsw_graph_for_cells(&cells).write(hnsw_path(&self.segments_path, segment_id))?;
 
         self.manifest.compact_to_segment(ManifestSegment {
             id: segment_id,
@@ -266,28 +273,4 @@ pub(crate) fn load_checkpoint(root: &Path) -> EngineResult<CheckpointLoad> {
         }
     }
     Ok(CheckpointLoad { manifest, memtable })
-}
-
-pub(crate) fn manifest_path(root: &Path) -> PathBuf {
-    root.join("manifest.acm")
-}
-
-pub(crate) fn segments_path(root: &Path) -> PathBuf {
-    root.join("segments")
-}
-
-pub(crate) fn segment_path(root: &Path, id: u64) -> PathBuf {
-    root.join(format!("segment-{id}.acs"))
-}
-
-pub(crate) fn bitmap_path(root: &Path, id: u64) -> PathBuf {
-    root.join(format!("segment-{id}.acb"))
-}
-
-pub(crate) fn lexical_path(root: &Path, id: u64) -> PathBuf {
-    root.join(format!("segment-{id}.aci"))
-}
-
-pub(crate) fn vector_path(root: &Path, id: u64) -> PathBuf {
-    root.join(format!("segment-{id}.acv"))
 }

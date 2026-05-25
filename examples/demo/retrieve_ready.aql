@@ -1,0 +1,8 @@
+RETRIEVE CONTEXT
+FOR TASK "Compare ready investment project budgets for 2025"
+IN BRAIN investment_projects
+USING MODE balanced
+BUDGET 12000 TOKENS
+WHERE scope = "project:investments" AND status = "ready"
+REQUIRE citations, confidence >= 0.80
+LIMIT 20 CANDIDATES;

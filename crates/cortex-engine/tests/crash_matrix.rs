@@ -1,5 +1,6 @@
 use cortex_core::{CellId, CommitSeq};
 use cortex_engine::Database;
+use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::segment::{SegmentCell, SegmentWriter};
 use cortex_storage::vectors::VectorIndex;
@@ -80,5 +81,8 @@ fn write_orphan_bundle(root: &std::path::Path, segment_id: u64, cell_id: CellId)
         .unwrap();
     VectorIndex::default()
         .write(segments.join(format!("segment-{segment_id}.acv")))
+        .unwrap();
+    HnswGraphIndex::default()
+        .write(segments.join(format!("segment-{segment_id}.ach")))
         .unwrap();
 }

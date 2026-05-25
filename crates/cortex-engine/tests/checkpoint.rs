@@ -1,5 +1,6 @@
 use cortex_core::{CellId, CommitSeq};
 use cortex_engine::Database;
+use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::{ManifestSegment, StorageManifest};
 use cortex_storage::segment::{SegmentCell, SegmentWriter};
@@ -168,6 +169,9 @@ fn tombstone_only_checkpoint_does_not_resurrect_cell() {
     VectorIndex::default()
         .write(segments.join("segment-1.acv"))
         .unwrap();
+    HnswGraphIndex::default()
+        .write(segments.join("segment-1.ach"))
+        .unwrap();
     StorageManifest {
         generation: 1,
         checkpoint_seq: 7,
@@ -230,6 +234,9 @@ fn validate_storage_rejects_segment_count_mismatch() {
         .unwrap();
     VectorIndex::default()
         .write(segments.join("segment-1.acv"))
+        .unwrap();
+    HnswGraphIndex::default()
+        .write(segments.join("segment-1.ach"))
         .unwrap();
     StorageManifest {
         generation: 1,

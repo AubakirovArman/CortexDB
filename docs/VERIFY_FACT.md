@@ -26,6 +26,7 @@ The v0 report has:
 - `status`
 - `evidence`
 - `contradicting_evidence`
+- `guards`
 
 The engine returns `Supported` when readable evidence overlaps the fact terms,
 `Contradicted` when readable cells declare or imply a contradiction, `Mixed`
@@ -35,6 +36,16 @@ visible.
 Evidence includes `source_trust_q16`. If a payload has `source_trust_q16=<u16>`,
 that value is used as an integer trust signal. Evidence with the same term match
 count is ordered by higher trust first. Missing trust defaults to `32768`.
+
+Guard v0 adds deterministic safety checks before a matching payload is accepted
+as support:
+
+- `missing_citation`: supporting evidence lacks `source=` or `citation=`.
+- `numeric_mismatch`: the fact and payload share non-numeric terms but mention
+  disjoint normalized numeric values.
+
+Numeric mismatches are reported as contradictions, not support, so direct budget
+or quantity disagreements cannot silently strengthen a fact.
 
 Contradiction v0 first uses an explicit payload line:
 
@@ -74,6 +85,5 @@ POST /v1/verify?scope=<scope>
 
 ## Not Yet
 
-- Citation quality scoring.
-- Numeric guard checks.
+- Citation quality ranking beyond presence checks.
 - Full natural-language inference or semantic contradiction extraction.

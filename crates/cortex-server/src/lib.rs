@@ -90,7 +90,7 @@ fn route(root: &Path, method: &str, target: &str, body: &[u8]) -> Result<String,
             let db = Database::open(root).map_err(|error| error.to_string())?;
             let validation = db.validate_storage_report();
             Ok(format!(
-                r#"{{"ok":{},"manifest_ok":{},"wal_ok":{},"live_segments_checked":{},"bitmap_indexes_checked":{},"lexical_indexes_checked":{},"vector_indexes_checked":{},"cells_checked":{},"wal_records_checked":{},"wal_safe_truncate_offset":{},"errors":[{}]}}"#,
+                r#"{{"ok":{},"manifest_ok":{},"wal_ok":{},"live_segments_checked":{},"bitmap_indexes_checked":{},"lexical_indexes_checked":{},"vector_indexes_checked":{},"hnsw_graphs_checked":{},"cells_checked":{},"wal_records_checked":{},"wal_safe_truncate_offset":{},"errors":[{}]}}"#,
                 validation.errors.is_empty(),
                 validation.manifest_ok,
                 validation.wal_ok,
@@ -98,6 +98,7 @@ fn route(root: &Path, method: &str, target: &str, body: &[u8]) -> Result<String,
                 validation.bitmap_indexes_checked,
                 validation.lexical_indexes_checked,
                 validation.vector_indexes_checked,
+                validation.hnsw_graphs_checked,
                 validation.cells_checked,
                 validation.wal_records_checked,
                 validation.wal_safe_truncate_offset,

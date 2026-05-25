@@ -1,12 +1,14 @@
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 
+mod analyzer;
 mod database;
 mod hnsw;
 mod persisted;
 mod tokenizer;
 pub(crate) mod vector;
 
+pub use analyzer::{mean_reciprocal_rank_q16, TextAnalyzer};
 pub use database::{DatabaseSearchResult, SearchLimit};
 pub use hnsw::HnswIndex;
 pub use tokenizer::tokenize;

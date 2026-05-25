@@ -6,6 +6,7 @@ pub const LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI2";
 pub const LEGACY_LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI0";
 pub const LEGACY_LEXICAL_INDEX_V1_MAGIC: [u8; 4] = *b"ACI1";
 pub const VECTOR_INDEX_MAGIC: [u8; 4] = *b"ACV0";
+pub const HNSW_GRAPH_MAGIC: [u8; 4] = *b"ACH0";
 pub const MANIFEST_MAGIC: [u8; 4] = *b"ACM0";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -15,6 +16,7 @@ pub enum StorageFormatKind {
     BitmapIndex,
     LexicalIndex,
     VectorIndex,
+    HnswGraph,
     Manifest,
 }
 
@@ -29,7 +31,7 @@ pub struct StorageFormatSpec {
     pub compatibility_rule: &'static str,
 }
 
-pub fn storage_format_specs() -> [StorageFormatSpec; 6] {
+pub fn storage_format_specs() -> [StorageFormatSpec; 7] {
     [
         StorageFormatSpec {
             kind: StorageFormatKind::AclogWal,
@@ -75,6 +77,15 @@ pub fn storage_format_specs() -> [StorageFormatSpec; 6] {
             current_version: 0,
             legacy_magics: &[],
             compatibility_rule: "breaking changes require a new vector magic",
+        },
+        StorageFormatSpec {
+            kind: StorageFormatKind::HnswGraph,
+            name: "HNSW graph",
+            extension: "ach",
+            current_magic: &HNSW_GRAPH_MAGIC,
+            current_version: 0,
+            legacy_magics: &[],
+            compatibility_rule: "breaking changes require a new HNSW graph magic",
         },
         StorageFormatSpec {
             kind: StorageFormatKind::Manifest,

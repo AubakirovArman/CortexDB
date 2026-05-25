@@ -29,6 +29,9 @@ pub use database::{
 };
 pub use distributed::*;
 pub use error::{EngineError, EngineResult};
+pub use ingestion::{
+    CsvIngestOptions, IngestedCell, JsonIngestOptions, PdfIngestOptions, TextIngestOptions,
+};
 pub use operation::*;
 pub use query::{scope_id, CandidateId, CellMetadata, EngineAqlIndex};
 pub use repair::RepairReport;

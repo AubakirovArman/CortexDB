@@ -4,13 +4,14 @@ use std::io::ErrorKind;
 
 use cortex_core::memtable::MemTableStats;
 use cortex_core::CommitSeq;
+use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::StorageManifest;
 use cortex_storage::segment::SegmentReader;
 use cortex_storage::vectors::VectorIndex;
 use cortex_storage::wal::{WalReader, WalWriterMetrics};
 
-use crate::checkpoint::{bitmap_path, lexical_path, segment_path, vector_path};
+use crate::checkpoint::{bitmap_path, hnsw_path, lexical_path, segment_path, vector_path};
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 
@@ -41,6 +42,7 @@ pub struct StorageValidationReport {
     pub bitmap_indexes_checked: usize,
     pub lexical_indexes_checked: usize,
     pub vector_indexes_checked: usize,
+    pub hnsw_graphs_checked: usize,
     pub cells_checked: usize,
     pub wal_records_checked: usize,
     pub wal_safe_truncate_offset: u64,
@@ -157,6 +159,12 @@ impl Database {
                 Err(error) => report
                     .errors
                     .push(format!("vector index {}: {error}", segment.id)),
+            }
+            match HnswGraphIndex::read(hnsw_path(&self.segments_path, segment.id)) {
+                Ok(_) => report.hnsw_graphs_checked += 1,
+                Err(error) => report
+                    .errors
+                    .push(format!("hnsw graph {}: {error}", segment.id)),
             }
             cells_checked += cells.len();
         }

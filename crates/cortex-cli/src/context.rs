@@ -79,6 +79,17 @@ pub(crate) fn format_verification_report(report: &VerificationReport) -> String 
             evidence.cell_id.0, evidence.matched_terms, evidence.source_trust_q16
         )
     }));
+    lines.extend(report.guards.iter().map(|guard| {
+        format!(
+            "guard={} cell_id={} message={}",
+            guard.code,
+            guard
+                .cell_id
+                .map(|cell_id| cell_id.0.to_string())
+                .unwrap_or_else(|| "null".to_owned()),
+            guard.message
+        )
+    }));
     lines.join("\n")
 }
 

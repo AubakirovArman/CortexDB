@@ -1,0 +1,17 @@
+1|scope=project:investments
+status=ready
+type=fact
+source=demo:budget
+ABC investment project budget is 12000 for 2025.
+
+2|scope=project:investments
+status=ready
+type=fact
+source=demo:budget
+XYZ investment project budget is 9000 for 2025.
+
+3|scope=project:investments
+status=draft
+type=document_block
+source=demo:notes
+Draft note: Delta project budget is still under review.

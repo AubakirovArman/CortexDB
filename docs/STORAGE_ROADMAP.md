@@ -62,24 +62,31 @@
   no uncheckpointed WAL tail, with MemTable snapshot fallback for fresh writes.
 - `.acv` vector pages persist integer vectors and support exact scoped vector
   scan without snapshot rebuild when there is no uncheckpointed WAL tail.
+- `.ach` HNSW graph pages persist experimental graph links next to segment
+  vector pages and are covered by validation.
 - Public scoped vector search input is exposed through CLI and HTTP over the
   current exact `.acv`/snapshot vector path.
 - ACLOG-backed replication log entries persist consensus-model `Term`,
   `LogIndex`, and payload records for local recovery.
 - `VERIFY FACT` now applies conservative natural-language contradiction hints
   after structured `contradicts=` markers.
+- `VERIFY FACT` emits citation presence and numeric mismatch guards.
 - Deterministic in-memory replication transport covers vote requests,
   append-entry acknowledgements, majority election, and stale-term rejection.
+- Minimal text, flat JSON, CSV, and externally extracted PDF text ingestion
+  adapters are exposed on `Database`.
+- Minimal SDK sketches, Docker packaging, observability probes, and demo data
+  are checked into the repo for integration smoke tests.
 
 ## Next
 
-1. Add richer verification guards for citations and numeric claims.
-2. Add production BM25 analyzers and quality fixtures.
+1. Add native PDF/document parsers and ingestion job progress tracking.
+2. Add production ANN search over persisted HNSW graph pages.
 3. Add networked consensus transport and distributed recovery.
 
 ## Not Yet
 
-- Large-scale BM25 ranking pipeline with analyzers and field weighting.
-- Persistent ANN vector index pages.
+- Large-scale language-specific BM25 analyzers and stemming packs.
+- Production ANN vector search over persisted graph pages.
 - Multi-layer HNSW with deletion and rebuild policy.
 - Production consensus transport and distributed recovery.

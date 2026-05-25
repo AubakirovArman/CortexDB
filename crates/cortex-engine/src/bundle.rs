@@ -12,6 +12,7 @@ pub struct SegmentBundle {
     pub bitmap_path: PathBuf,
     pub lexical_path: PathBuf,
     pub vector_path: PathBuf,
+    pub hnsw_path: PathBuf,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -28,6 +29,7 @@ impl SegmentBundle {
             bitmap_path: root.join(format!("segment-{segment_id}.acb")),
             lexical_path: root.join(format!("segment-{segment_id}.aci")),
             vector_path: root.join(format!("segment-{segment_id}.acv")),
+            hnsw_path: root.join(format!("segment-{segment_id}.ach")),
         }
     }
 
@@ -36,6 +38,7 @@ impl SegmentBundle {
             && self.bitmap_path.exists()
             && self.lexical_path.exists()
             && self.vector_path.exists()
+            && self.hnsw_path.exists()
     }
 
     pub fn remove_files(&self) -> EngineResult<usize> {
@@ -45,6 +48,7 @@ impl SegmentBundle {
             &self.bitmap_path,
             &self.lexical_path,
             &self.vector_path,
+            &self.hnsw_path,
         ] {
             match fs::remove_file(path) {
                 Ok(()) => removed += 1,

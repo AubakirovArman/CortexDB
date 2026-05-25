@@ -36,10 +36,17 @@ enforce `AgentView.allow_remember`, write-scope access, allowed `MemoryType`, an
 TTL policy. The engine then stores the memory as a `KnowledgeCellType::Memory`
 payload with `memory_type`, optional `ttl_seconds`, and `source=agent:<id>`.
 
+Minimal adapters now exist on `Database`:
+
+- `ingest_text`: one document block from plain text.
+- `ingest_json`: flat JSON object fields into fact cells.
+- `ingest_csv`: header row plus one document block per data row.
+- `ingest_pdf_text`: external PDF extraction hook that stores extracted text
+  with `source_format=pdf` and optional page metadata.
+
 ## Not Yet
 
-- Document loaders.
-- JSON/CSV/PDF ingestion adapters.
+- Native PDF parsing.
 - Enrichment jobs.
 - Progress API.
 - TTL expiry/decay scanning.

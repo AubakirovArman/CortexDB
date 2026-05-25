@@ -16,6 +16,20 @@ cargo fmt --check
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
+## Current Closed Slice
+
+The current implementation slice closes the five follow-up areas that were
+blocking the next roadmap pass:
+
+- Verification guards: citation presence and numeric mismatch diagnostics.
+- BM25/search fixtures: field-weight analyzer and deterministic MRR quality
+  checks.
+- HNSW persistence: `.ach` graph files with CRC validation and checkpoint/
+  compact writes.
+- Ingestion adapters: text, flat JSON, CSV, and externally extracted PDF text.
+- Ops surface: Dockerfile, SDK sketches, observability smoke script, and demo
+  investment-project data.
+
 ## Pool Definitions
 
 | Pool | Task pool |

@@ -12,6 +12,7 @@ little-endian integer fields, and CRC32C validation.
 | Bitmap index | `.acb` | `ACB0` | magic carries v0 | Breaking changes require a new magic. |
 | Lexical index | `.aci` | `ACI2` | magic carries v2 | `ACI0` and `ACI1` remain read-only compatible. |
 | Vector index | `.acv` | `ACV0` | magic carries v0 | Breaking changes require a new magic. |
+| HNSW graph | `.ach` | `ACH0` | magic carries v0 | Breaking changes require a new magic. |
 | Manifest | `.acm` | `ACM0` | magic carries v0 | Breaking changes require a new magic. |
 
 All multi-byte integer fields are little-endian.
@@ -92,6 +93,22 @@ crc32c u32 over all previous bytes
 ```
 
 The current vector path is exact integer dot-product scan, not ANN.
+
+## HNSW Graph `.ach`
+
+```text
+magic[4] = "ACH0"
+link_count u32
+repeat link_count:
+  candidate_id u32
+  neighbor_count u32
+  repeat neighbor_count:
+    neighbor_candidate_id u32
+crc32c u32 over all previous bytes
+```
+
+Candidate id `0` is rejected for both node ids and neighbor ids. Checkpoint and
+compact write one graph file per segment next to `.acs/.acb/.aci/.acv`.
 
 ## Manifest `.acm`
 

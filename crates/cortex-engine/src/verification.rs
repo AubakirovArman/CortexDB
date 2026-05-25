@@ -7,10 +7,12 @@ use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
 
 mod contradiction;
+mod guards;
 
 use contradiction::{
     contradiction_facts, contradiction_match, contradiction_text_matches, tokenize_support_text,
 };
+use guards::{citation_guard, numeric_mismatch, numeric_mismatch_guard};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VerificationStatus {
@@ -25,6 +27,7 @@ pub struct VerificationEvidence {
     pub cell_id: CellId,
     pub matched_terms: u32,
     pub source_trust_q16: Q16,
+    pub citation: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,6 +36,14 @@ pub struct VerificationReport {
     pub status: VerificationStatus,
     pub evidence: Vec<VerificationEvidence>,
     pub contradicting_evidence: Vec<VerificationEvidence>,
+    pub guards: Vec<VerificationGuard>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VerificationGuard {
+    pub cell_id: Option<CellId>,
+    pub code: &'static str,
+    pub message: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -50,18 +61,24 @@ impl Database {
         let BoundPlan::VerifyFact(plan) = bound else {
             return Err(EngineError::InvalidOperation);
         };
-        let fact_terms = tokenize(&plan.fact);
         let mut evidence = Vec::new();
         let mut contradicting_evidence = Vec::new();
+        let mut guards = Vec::new();
         for version in self.snapshot_versions() {
             if let Some(item) =
-                evidence_for_version(version.cell_id, &version.payload, view, &fact_terms)
+                evidence_for_version(version.cell_id, &version.payload, view, &plan.fact)
             {
+                if let Some(guard) = citation_guard(&item) {
+                    guards.push(guard);
+                }
                 evidence.push(item);
             }
             if let Some(item) =
-                contradiction_for_version(version.cell_id, &version.payload, view, &fact_terms)
+                contradiction_for_version(version.cell_id, &version.payload, view, &plan.fact)
             {
+                if let Some(guard) = numeric_mismatch_guard(&plan.fact, &version.payload, &item) {
+                    guards.push(guard);
+                }
                 contradicting_evidence.push(item);
             }
         }
@@ -75,6 +92,7 @@ impl Database {
             status,
             evidence,
             contradicting_evidence,
+            guards,
         })
     }
 
@@ -133,13 +151,15 @@ fn evidence_for_version(
     cell_id: CellId,
     payload: &[u8],
     view: &AgentView,
-    fact_terms: &[String],
+    fact: &str,
 ) -> Option<VerificationEvidence> {
     let metadata = CellMetadata::from_payload(payload);
+    let fact_terms = tokenize(fact);
     if !view.can_read_scope(scope_id(&metadata.scope)) {
         return None;
     }
-    if has_matching_contradiction(payload, fact_terms) {
+    if has_matching_contradiction(payload, &fact_terms) || numeric_mismatch(fact, payload).is_some()
+    {
         return None;
     }
     let payload_terms = tokenize_support_text(payload);
@@ -151,6 +171,7 @@ fn evidence_for_version(
         cell_id,
         matched_terms: matched_terms as u32,
         source_trust_q16: source_trust_q16(payload),
+        citation: metadata.citation().map(str::to_owned),
     })
 }
 
@@ -158,18 +179,22 @@ fn contradiction_for_version(
     cell_id: CellId,
     payload: &[u8],
     view: &AgentView,
-    fact_terms: &[String],
+    fact: &str,
 ) -> Option<VerificationEvidence> {
     let metadata = CellMetadata::from_payload(payload);
+    let fact_terms = tokenize(fact);
     if !view.can_read_scope(scope_id(&metadata.scope)) || fact_terms.is_empty() {
         return None;
     }
     let source_trust_q16 = source_trust_q16(payload);
-    contradiction_match(payload, fact_terms).map(|matched_terms| VerificationEvidence {
-        cell_id,
-        matched_terms,
-        source_trust_q16,
-    })
+    numeric_mismatch(fact, payload)
+        .or_else(|| contradiction_match(payload, &fact_terms))
+        .map(|matched_terms| VerificationEvidence {
+            cell_id,
+            matched_terms,
+            source_trust_q16,
+            citation: metadata.citation().map(str::to_owned),
+        })
 }
 
 fn has_matching_contradiction(payload: &[u8], fact_terms: &[String]) -> bool {

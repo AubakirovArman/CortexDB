@@ -64,6 +64,21 @@ fn corrupt_vector_index_fails_validation_report() {
         .any(|error| error.contains("vector index 1")));
 }
 
+#[test]
+fn corrupt_hnsw_graph_fails_validation_report() {
+    let dir = tempfile::tempdir().unwrap();
+    write_checkpoint(dir.path());
+    corrupt_last_byte(&dir.path().join("segments").join("segment-1.ach"));
+
+    let db = Database::open(dir.path()).unwrap();
+    let report = db.validate_storage_report();
+    assert!(!report.errors.is_empty());
+    assert!(report
+        .errors
+        .iter()
+        .any(|error| error.contains("hnsw graph 1")));
+}
+
 fn write_checkpoint(root: &std::path::Path) {
     let mut db = Database::open(root).unwrap();
     db.put_cell(CellId(1), b"scope=default\nstatus=ready\none".to_vec())

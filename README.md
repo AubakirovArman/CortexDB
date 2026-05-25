@@ -21,21 +21,25 @@ The storage path has started with ACLOG WAL v0 and an in-memory MVCC core:
 ```text
 AQL -> Binder -> Bitmap VM -> WAL -> MemTable -> Segments
 PutCell -> WAL append -> MemTable update -> restart -> WAL replay -> Retrieve
-Incremental checkpoint -> .acs segment + .acb bitmap index + .aci lexical index + atomic manifest
+Incremental checkpoint -> .acs segment + .acb bitmap + .aci lexical + .acv vector + .ach HNSW + atomic manifest
 AQL retrieve -> ContextPack -> token budget -> citation anomalies
 ```
 
 ## Crates
 
 - `crates/cortex-aql`: AQL parser, AST, policy validation, binder, bitmap bytecode, and mock bitmap VM.
-- `crates/cortex-storage`: ACLOG WAL v0, manifest, segment, bitmap-index, and lexical-index files.
+- `crates/cortex-storage`: ACLOG WAL v0, manifest, segment, bitmap-index, lexical-index, vector-index, and HNSW graph files.
 - `crates/cortex-core`: in-memory MVCC MemTable, read transactions, cell versions, KnowledgeCell schema, and manifest primitives.
-- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, AQL `REMEMBER`, memory TTL/decay, durable feedback, source trust, `VERIFY FACT` reports with structured and conservative natural-language contradiction hints, ContextPack v0, scoped search, search helpers with hybrid fusion, ACLOG-backed replication log entries, deterministic in-memory replication transport, and consensus model primitives.
+- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, AQL `REMEMBER`, memory TTL/decay, durable feedback, source trust, `VERIFY FACT` reports with citation/numeric guards, structured and conservative natural-language contradiction hints, ContextPack v0, scoped search, analyzer quality fixtures, hybrid fusion, ingestion adapters, ACLOG-backed replication log entries, deterministic in-memory replication transport, and consensus model primitives.
 - `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone/flush/compact/stats/validate/search/context/remember/verify checks.
 - `crates/cortex-server`: minimal JSON HTTP API for put/get/tombstone/flush/compact/search/context/remember/verify/health checks.
 
 BM25, vector search, HNSW, distributed placement, and server APIs exist as MVP foundations.
 They are not production-grade ranking, ANN, network consensus, or service layers yet.
+
+SDK sketches, Docker smoke packaging, observability endpoints, and a tiny demo
+dataset live in [`sdk/`](sdk), [`Dockerfile`](Dockerfile),
+[`examples/metrics`](examples/metrics), and [`examples/demo`](examples/demo).
 
 ## Minimal Engine Example
 
@@ -115,6 +119,8 @@ Storage atomicity and binary formats are documented in
 Core Alpha release notes are in
 [`docs/RELEASE_NOTES_v0.1.0-core-alpha.md`](docs/RELEASE_NOTES_v0.1.0-core-alpha.md).
 Core benchmark instructions are in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).
+SDK, Docker, observability, and demo surfaces are documented in
+[`docs/SDK_DOCKER_OBSERVABILITY.md`](docs/SDK_DOCKER_OBSERVABILITY.md).
 
 ## Roadmap
 

@@ -4,6 +4,12 @@ use cortex_core::{CellId, CommitSeq, KnowledgeCell, KnowledgeCellMetadata, Knowl
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 
+mod adapters;
+
+pub use adapters::{
+    CsvIngestOptions, IngestedCell, JsonIngestOptions, PdfIngestOptions, TextIngestOptions,
+};
+
 const MEMORY_CELL_NAMESPACE: u64 = 0x8000_0000_0000_0000;
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -60,12 +60,30 @@ fn report_json(report: &VerificationReport) -> String {
         })
         .collect::<Vec<_>>()
         .join(",");
+    let guards = report
+        .guards
+        .iter()
+        .map(|guard| {
+            let cell_id = guard
+                .cell_id
+                .map(|cell_id| cell_id.0.to_string())
+                .unwrap_or_else(|| "null".to_owned());
+            format!(
+                r#"{{"cell_id":{},"code":"{}","message":"{}"}}"#,
+                cell_id,
+                guard.code,
+                escape_json(&guard.message)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
     format!(
-        r#"{{"fact":"{}","status":"{}","evidence":[{}],"contradicting_evidence":[{}]}}"#,
+        r#"{{"fact":"{}","status":"{}","evidence":[{}],"contradicting_evidence":[{}],"guards":[{}]}}"#,
         escape_json(&report.fact),
         verification_status(report.status),
         evidence,
-        contradicting_evidence
+        contradicting_evidence,
+        guards
     )
 }
 
