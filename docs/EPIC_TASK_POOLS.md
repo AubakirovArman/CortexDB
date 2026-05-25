@@ -242,9 +242,9 @@ The active slice is:
 
 ```text
 Epic 161 -> agent memory foundation
-Epic 165 -> memory TTL metadata
-Epic 167 -> REMEMBER execution
-Epic 169 -> memory retrieval through AQL filters
+Epic 165 -> memory TTL expiry
+Epic 166 -> memory decay policy
+Epic 170 -> agent feedback loop
 Epic 174 -> VERIFY FACT report v0
 ```
 

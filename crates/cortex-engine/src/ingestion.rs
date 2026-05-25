@@ -44,6 +44,7 @@ impl Database {
                 cell_type: KnowledgeCellType::Memory,
                 memory_type: Some(memory_type_name(memory_type).to_owned()),
                 ttl_seconds,
+                created_unix_seconds: Some(unix_now()),
                 source: Some(format!("agent:{}", view.agent_id.0)),
             },
             content.into_bytes(),
@@ -90,4 +91,11 @@ fn memory_type_name(memory_type: MemoryType) -> &'static str {
 
 fn memory_id_overflow() -> EngineError {
     EngineError::StorageInvariant("memory cell id space is exhausted".to_owned())
+}
+
+fn unix_now() -> u64 {
+    match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
+        Ok(duration) => duration.as_secs(),
+        Err(_) => 0,
+    }
 }

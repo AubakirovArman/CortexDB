@@ -31,14 +31,23 @@ status=ready
 type=memory
 memory_type=decision
 ttl_seconds=60
+created_unix_seconds=1760000000
 source=agent:1
 
 body bytes...
 ```
 
+TTL enforcement is available through:
+
+```rust
+let expired = db.expired_memory_cells(now_unix_seconds);
+let tombstoned = db.expire_memory_cells(now_unix_seconds)?;
+```
+
+`expire_memory_cells` writes tombstones through the normal WAL path.
+
 ## Not Yet
 
-- TTL expiry scan.
 - Memory decay scoring.
 - AgentView persistence.
 - VERIFY FACT contradiction detection.

@@ -7,6 +7,7 @@ pub mod distributed;
 pub mod error;
 pub mod ingestion;
 mod lock;
+pub mod memory;
 pub mod operation;
 pub mod query;
 pub mod repair;

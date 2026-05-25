@@ -17,6 +17,7 @@ pub struct KnowledgeCellMetadata {
     pub cell_type: KnowledgeCellType,
     pub memory_type: Option<String>,
     pub ttl_seconds: Option<u64>,
+    pub created_unix_seconds: Option<u64>,
     pub source: Option<String>,
 }
 
@@ -46,6 +47,9 @@ impl KnowledgeCell {
         if let Some(ttl_seconds) = self.metadata.ttl_seconds {
             lines.push(format!("ttl_seconds={ttl_seconds}"));
         }
+        if let Some(created_unix_seconds) = self.metadata.created_unix_seconds {
+            lines.push(format!("created_unix_seconds={created_unix_seconds}"));
+        }
         if let Some(source) = &self.metadata.source {
             lines.push(format!("source={}", sanitize_line_value(source)));
         }
@@ -64,6 +68,7 @@ impl Default for KnowledgeCellMetadata {
             cell_type: KnowledgeCellType::Raw,
             memory_type: None,
             ttl_seconds: None,
+            created_unix_seconds: None,
             source: None,
         }
     }

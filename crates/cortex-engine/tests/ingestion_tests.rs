@@ -14,6 +14,7 @@ fn put_knowledge_cell_encodes_metadata_for_aql_retrieve() {
             cell_type: KnowledgeCellType::Fact,
             memory_type: None,
             ttl_seconds: None,
+            created_unix_seconds: None,
             source: Some("annual-report".to_owned()),
         },
         "Бюджет проекта ABC подтвержден",
@@ -63,6 +64,7 @@ fn remember_aql_writes_policy_checked_memory_cell() {
     assert!(text.contains("type=memory"));
     assert!(text.contains("memory_type=decision"));
     assert!(text.contains("ttl_seconds=60"));
+    assert!(text.contains("created_unix_seconds="));
     assert!(text.contains("use conservative budget"));
 
     let cells = db

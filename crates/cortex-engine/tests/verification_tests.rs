@@ -65,6 +65,7 @@ fn fact_cell(scope: &str, body: &str) -> KnowledgeCell {
             cell_type: KnowledgeCellType::Fact,
             memory_type: None,
             ttl_seconds: None,
+            created_unix_seconds: None,
             source: Some("fixture".to_owned()),
         },
         body,
