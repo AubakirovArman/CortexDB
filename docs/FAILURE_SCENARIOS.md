@@ -5,12 +5,16 @@
 - Strict recovery rejects corrupted WAL records.
 - Best-effort recovery stops at the last safe offset.
 - Partial WAL tails are truncated before the next writer starts.
+- `Database::repair_best_effort` can truncate a WAL file to its best-effort
+  safe offset while holding `db.lock`.
 
 ## Checkpoint Files
 
 - `.acs`, `.acb`, `.aci`, and `.acm` files include CRC32C footers.
 - Corrupted live files fail validation.
 - Temp files with known checkpoint/index extensions are removed during open.
+- `Database::repair_best_effort` removes known orphan temp files without
+  rewriting durable segment, index, or manifest files.
 - Atomic writes use unique temp filenames of the form
   `<target>.tmp.<pid>.<counter>`.
 

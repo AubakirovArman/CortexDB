@@ -15,6 +15,7 @@ every required row is green on `main`.
 | File size | Rust source files stay under 300 lines unless explicitly split next. |
 | Storage safety | WAL, segment, bitmap, lexical, and manifest corruption tests pass. |
 | Lifecycle safety | open, close, Drop, lock, and stale unlock tests pass. |
+| Repair safety | `Database::repair_best_effort` removes orphan temps and truncates only safe WAL tails. |
 | Restart safety | put, patch, tombstone, checkpoint, compact, and WAL tail tests pass. |
 | Query safety | AQL retrieve respects AgentView masks and candidate mappings. |
 | ContextPack v0 | AQL-to-ContextPack tests pass for budget and citation anomalies. |

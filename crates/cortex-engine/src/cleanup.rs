@@ -4,26 +4,26 @@ use std::path::{Path, PathBuf};
 
 use crate::error::{EngineError, EngineResult};
 
-pub(crate) fn cleanup_orphans(root: &Path) -> EngineResult<()> {
-    cleanup_dir(root)?;
-    cleanup_dir(&root.join("segments"))?;
-    Ok(())
+pub(crate) fn cleanup_orphans(root: &Path) -> EngineResult<usize> {
+    Ok(cleanup_dir(root)? + cleanup_dir(&root.join("segments"))?)
 }
 
-fn cleanup_dir(path: &Path) -> EngineResult<()> {
+fn cleanup_dir(path: &Path) -> EngineResult<usize> {
     let entries = match fs::read_dir(path) {
         Ok(entries) => entries,
-        Err(error) if error.kind() == ErrorKind::NotFound => return Ok(()),
+        Err(error) if error.kind() == ErrorKind::NotFound => return Ok(0),
         Err(error) => return Err(error.into()),
     };
+    let mut removed = 0;
     for entry in entries {
         let entry = entry?;
         let file_type = entry.file_type()?;
         if file_type.is_file() && is_known_temp(&entry.path()) {
             fs::remove_file(entry.path())?;
+            removed += 1;
         }
     }
-    Ok(())
+    Ok(removed)
 }
 
 fn is_known_temp(path: &Path) -> bool {

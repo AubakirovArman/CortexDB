@@ -1,9 +1,12 @@
 use std::env;
 use std::process::ExitCode;
 
-use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
-use cortex_engine::{scope_id, ContextPackOptions, Database};
+use cortex_engine::{ContextPackOptions, Database};
+
+mod context;
+
+use context::{format_context_pack, view_for_scope};
 
 fn main() -> ExitCode {
     match run(env::args().collect()) {
@@ -108,6 +111,21 @@ fn run(args: Vec<String>) -> Result<String, String> {
                 validation.wal_safe_truncate_offset
             ))
         }
+        "repair" => {
+            if !rest.is_empty() {
+                return Err(usage());
+            }
+            let report = Database::repair_best_effort(path).map_err(|error| error.to_string())?;
+            Ok(format!(
+                "orphan_temp_files_removed={} wal_records_preserved={} wal_safe_truncate_offset={} wal_bytes_before={} wal_bytes_after={} wal_truncated={}",
+                report.orphan_temp_files_removed,
+                report.wal_records_preserved,
+                report.wal_safe_truncate_offset,
+                report.wal_bytes_before,
+                report.wal_bytes_after,
+                report.wal_truncated
+            ))
+        }
         "context" => {
             let [scope, aql] = rest else {
                 return Err(usage());
@@ -140,52 +158,8 @@ fn parse_cell_id(value: &str) -> Result<CellId, String> {
 }
 
 fn usage() -> String {
-    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | context <path> <scope> <aql> | unlock <path> --force"
+    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | repair <path> | context <path> <scope> <aql> | unlock <path> --force"
         .to_owned()
-}
-
-fn view_for_scope(scope: &str) -> AgentView {
-    AgentView {
-        agent_id: AgentId(1),
-        label: Some("local-cli".to_owned()),
-        readable_brains: std::collections::BTreeSet::from([BrainId(1)]),
-        readable_scopes: std::collections::BTreeSet::from([scope_id(scope)]),
-        writable_scopes: std::collections::BTreeSet::new(),
-        allowed_modes: std::collections::BTreeSet::from([RetrievalMode::Balanced]),
-        allowed_memory_types: std::collections::BTreeSet::from([MemoryType::Decision]),
-        max_context_budget_tokens: 4_000,
-        default_context_budget_tokens: 1_000,
-        max_candidate_limit: 100,
-        default_candidate_limit: 20,
-        min_required_confidence_q16: Q16_ZERO,
-        max_ttl_seconds: Some(3_600),
-        allow_remember: false,
-        allow_verify_fact: false,
-        allow_audit_mode: false,
-        require_citations_by_default: false,
-        private_scope: None,
-    }
-}
-
-fn format_context_pack(pack: &cortex_engine::ContextPack) -> String {
-    let mut lines = vec![format!(
-        "cells={} estimated_tokens={} token_budget={} truncated={} anomalies={}",
-        pack.cells.len(),
-        pack.estimated_tokens,
-        pack.token_budget_tokens,
-        pack.truncated,
-        pack.anomalies.len()
-    )];
-    lines.extend(pack.cells.iter().map(|cell| {
-        format!(
-            "cell_id={} estimated_tokens={} citation={} payload={}",
-            cell.cell_id.0,
-            cell.estimated_tokens,
-            cell.citation.as_deref().unwrap_or("null"),
-            String::from_utf8_lossy(&cell.payload)
-        )
-    }));
-    lines.join("\n")
 }
 
 #[cfg(test)]
@@ -249,6 +223,25 @@ mod tests {
         .unwrap();
         assert!(output.contains("cells=1"));
         assert!(output.contains("citation=doc-a"));
+
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[test]
+    fn repair_command_reports_best_effort_cleanup() {
+        let path = unique_path("cortexdb-cli-repair");
+        let path_arg = path.to_string_lossy().into_owned();
+        std::fs::create_dir_all(&path).unwrap();
+        std::fs::write(path.join("db.aclog.tmp"), b"bad").unwrap();
+
+        let output = run(vec![
+            "cortexdb".to_owned(),
+            "repair".to_owned(),
+            path_arg.clone(),
+        ])
+        .unwrap();
+        assert!(output.contains("orphan_temp_files_removed=1"));
+        assert!(output.contains("wal_truncated=false"));
 
         let _ = std::fs::remove_dir_all(path);
     }
