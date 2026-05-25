@@ -63,6 +63,36 @@ fn wal_tail_after_checkpoint_replays_newer_records() {
 }
 
 #[test]
+fn put_after_compact_survives_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"one".to_vec()).unwrap();
+        db.compact().unwrap();
+        db.put_cell(CellId(2), b"two".to_vec()).unwrap();
+    }
+    let db = Database::open(dir.path()).unwrap();
+    assert_eq!(db.current_seq(), CommitSeq(2));
+    assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"one");
+    assert_eq!(db.get_latest_cell(CellId(2)).unwrap(), b"two");
+}
+
+#[test]
+fn checkpoint_truncates_wal_and_writer_restarts_with_header() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"one".to_vec()).unwrap();
+        db.checkpoint().unwrap();
+        db.put_cell(CellId(2), b"two".to_vec()).unwrap();
+    }
+    let db = Database::open(dir.path()).unwrap();
+    assert_eq!(db.current_seq(), CommitSeq(2));
+    assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"one");
+    assert_eq!(db.get_latest_cell(CellId(2)).unwrap(), b"two");
+}
+
+#[test]
 fn second_checkpoint_is_incremental() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();

@@ -14,6 +14,9 @@
 - Full snapshot compaction that retires older live segment handles.
 - AQL retrieve over engine-built bitmap indexes.
 - Persisted-index-first AQL retrieve with in-memory delta overlay.
+- Compact bitmap candidate ids with persisted full `CellId` mapping.
+- Atomic segment, bitmap-index, lexical-index, and manifest writes.
+- CRC corruption detection for segment, bitmap-index, lexical-index, and manifest files.
 - Fixed-point BM25-style ranking helper.
 - Integer vector search and graph-backed HNSW-style search helper.
 - Minimal `cortexdb` CLI for local put/get/tombstone/flush checks.

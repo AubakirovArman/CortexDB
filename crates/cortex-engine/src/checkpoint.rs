@@ -1,3 +1,4 @@
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -17,10 +18,17 @@ pub(crate) struct CheckpointLoad {
     pub memtable: MemTable,
 }
 
+pub(crate) struct PersistedIndexState {
+    pub bitmap: BitmapIndex,
+    pub lexical: LexicalIndex,
+    pub candidate_to_cell: BTreeMap<u32, CellId>,
+}
+
 impl Database {
     pub fn checkpoint(&mut self) -> EngineResult<CheckpointStats> {
         let base_seq = CommitSeq(self.manifest.checkpoint_seq);
-        let cells = self.checkpoint_delta_cells(base_seq);
+        let candidate_map = self.persisted_candidate_map()?;
+        let cells = self.checkpoint_delta_cells(base_seq, &candidate_map);
         if cells.is_empty() && self.current_seq == base_seq {
             return Ok(CheckpointStats {
                 segment_id: None,
@@ -100,39 +108,92 @@ impl Database {
     }
 
     pub fn persisted_indexes(&self) -> EngineResult<(BitmapIndex, LexicalIndex)> {
+        let state = self.persisted_index_state()?;
+        Ok((state.bitmap, state.lexical))
+    }
+
+    pub(crate) fn persisted_index_state(&self) -> EngineResult<PersistedIndexState> {
         let mut bitmap = BitmapIndex::default();
         let mut lexical = LexicalIndex::default();
+        let mut tombstoned = BTreeSet::new();
+        let mut candidate_to_cell = BTreeMap::new();
         for segment in &self.manifest.live_segments {
+            let cells = SegmentReader::read(segment_path(&self.segments_path, segment.id))?;
+            let segment_candidates = cells
+                .iter()
+                .map(|cell| cell.candidate_id)
+                .collect::<BTreeSet<_>>();
+            remove_candidates(&mut bitmap, &mut lexical, &segment_candidates);
+            for cell in cells {
+                if cell.deleted_seq.is_some() {
+                    tombstoned.insert(cell.candidate_id);
+                    candidate_to_cell.remove(&cell.candidate_id);
+                } else {
+                    tombstoned.remove(&cell.candidate_id);
+                    candidate_to_cell.insert(cell.candidate_id, CellId(cell.cell_id));
+                }
+            }
             let segment_bitmap = BitmapIndex::read(bitmap_path(&self.segments_path, segment.id))?;
             let segment_lexical =
                 LexicalIndex::read(lexical_path(&self.segments_path, segment.id))?;
             bitmap.bitmaps.extend(segment_bitmap.bitmaps);
             lexical.terms.extend(segment_lexical.terms);
         }
-        Ok((bitmap, lexical))
+        remove_candidates(&mut bitmap, &mut lexical, &tombstoned);
+        Ok(PersistedIndexState {
+            bitmap,
+            lexical,
+            candidate_to_cell,
+        })
     }
 
-    fn checkpoint_delta_cells(&self, base_seq: CommitSeq) -> Vec<SegmentCell> {
+    fn persisted_candidate_map(&self) -> EngineResult<BTreeMap<CellId, u32>> {
+        let mut map = BTreeMap::new();
+        for segment in &self.manifest.live_segments {
+            for cell in SegmentReader::read(segment_path(&self.segments_path, segment.id))? {
+                if cell.deleted_seq.is_some() {
+                    map.remove(&CellId(cell.cell_id));
+                } else {
+                    map.insert(CellId(cell.cell_id), cell.candidate_id);
+                }
+            }
+        }
+        Ok(map)
+    }
+
+    fn checkpoint_delta_cells(
+        &self,
+        base_seq: CommitSeq,
+        existing: &BTreeMap<CellId, u32>,
+    ) -> Vec<SegmentCell> {
         let txn = self.read_txn();
+        let mut allocator = CandidateAllocator::new(existing);
         let mut cells = self
             .memtable
             .visible_cells_created_after(txn, base_seq)
             .into_iter()
             .map(|version| SegmentCell {
+                candidate_id: allocator.candidate_for(version.cell_id),
                 cell_id: version.cell_id.0,
                 created_seq: version.created_seq.0,
                 deleted_seq: None,
                 payload: version.payload,
             })
             .collect::<Vec<_>>();
-        cells.extend(self.memtable.tombstones_after(base_seq).into_iter().map(
-            |(cell_id, deleted)| SegmentCell {
-                cell_id: cell_id.0,
-                created_seq: 0,
-                deleted_seq: Some(deleted.0),
-                payload: Vec::new(),
-            },
-        ));
+        cells.extend(
+            self.memtable
+                .tombstones_after(base_seq)
+                .into_iter()
+                .filter_map(|(cell_id, deleted)| {
+                    Some(SegmentCell {
+                        candidate_id: *existing.get(&cell_id)?,
+                        cell_id: cell_id.0,
+                        created_seq: 0,
+                        deleted_seq: Some(deleted.0),
+                        payload: Vec::new(),
+                    })
+                }),
+        );
         cells.sort_by_key(|cell| {
             (
                 cell.deleted_seq.unwrap_or(cell.created_seq),
@@ -146,14 +207,56 @@ impl Database {
     fn full_snapshot_cells(&self) -> Vec<SegmentCell> {
         self.snapshot_versions()
             .into_iter()
+            .enumerate()
             .map(|version| SegmentCell {
-                cell_id: version.cell_id.0,
-                created_seq: version.created_seq.0,
+                candidate_id: u32::try_from(version.0 + 1).expect("candidate id overflow"),
+                cell_id: version.1.cell_id.0,
+                created_seq: version.1.created_seq.0,
                 deleted_seq: None,
-                payload: version.payload,
+                payload: version.1.payload,
             })
             .collect()
     }
+}
+
+struct CandidateAllocator {
+    existing: BTreeMap<CellId, u32>,
+    next: u32,
+}
+
+impl CandidateAllocator {
+    fn new(existing: &BTreeMap<CellId, u32>) -> Self {
+        Self {
+            existing: existing.clone(),
+            next: existing.values().copied().max().unwrap_or(0) + 1,
+        }
+    }
+
+    fn candidate_for(&mut self, cell_id: CellId) -> u32 {
+        if let Some(candidate) = self.existing.get(&cell_id) {
+            *candidate
+        } else {
+            let candidate = self.next;
+            self.next = self.next.saturating_add(1);
+            self.existing.insert(cell_id, candidate);
+            candidate
+        }
+    }
+}
+
+fn remove_candidates(
+    bitmap: &mut BitmapIndex,
+    lexical: &mut LexicalIndex,
+    candidates: &BTreeSet<u32>,
+) {
+    for values in bitmap.bitmaps.values_mut() {
+        values.retain(|candidate| !candidates.contains(candidate));
+    }
+    bitmap.bitmaps.retain(|_, values| !values.is_empty());
+    for values in lexical.terms.values_mut() {
+        values.retain(|candidate| !candidates.contains(candidate));
+    }
+    lexical.terms.retain(|_, values| !values.is_empty());
 }
 
 pub(crate) fn load_checkpoint(root: &Path) -> EngineResult<CheckpointLoad> {

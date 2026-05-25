@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::fs;
 use std::path::Path;
 
+use crate::atomic::{append_crc32c, verify_crc32c, write_atomic};
 use crate::error::{StorageError, StorageResult};
 
 #[derive(Clone, Copy, Debug)]
@@ -31,12 +31,13 @@ impl BitmapIndex {
                 put_u32(&mut out, *value);
             }
         }
-        fs::write(path, out)?;
+        append_crc32c(&mut out);
+        write_atomic(path.as_ref(), &out)?;
         Ok(())
     }
 
     pub fn read(path: impl AsRef<Path>) -> StorageResult<Self> {
-        let bytes = fs::read(path)?;
+        let bytes = std::fs::read(path)?;
         decode_bitmap(&bytes)
     }
 }
@@ -53,17 +54,19 @@ impl LexicalIndex {
                 put_u32(&mut out, *value);
             }
         }
-        fs::write(path, out)?;
+        append_crc32c(&mut out);
+        write_atomic(path.as_ref(), &out)?;
         Ok(())
     }
 
     pub fn read(path: impl AsRef<Path>) -> StorageResult<Self> {
-        let bytes = fs::read(path)?;
+        let bytes = std::fs::read(path)?;
         decode_lexical(&bytes)
     }
 }
 
 fn decode_bitmap(bytes: &[u8]) -> StorageResult<BitmapIndex> {
+    let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidBitmapIndexFile)?;
     if bytes.len() < 8 || &bytes[..4] != b"ACB0" {
         return Err(StorageError::InvalidBitmapIndexFile);
     }
@@ -81,6 +84,7 @@ fn decode_bitmap(bytes: &[u8]) -> StorageResult<BitmapIndex> {
 }
 
 fn decode_lexical(bytes: &[u8]) -> StorageResult<LexicalIndex> {
+    let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidLexicalIndexFile)?;
     if bytes.len() < 8 || &bytes[..4] != b"ACI0" {
         return Err(StorageError::InvalidLexicalIndexFile);
     }

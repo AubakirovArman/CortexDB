@@ -11,12 +11,14 @@ fn acs_segment_roundtrips_cells() {
     let path = dir.path().join("0001.acs");
     let cells = vec![
         SegmentCell {
+            candidate_id: 1,
             cell_id: 1,
             created_seq: 7,
             deleted_seq: None,
             payload: b"one".to_vec(),
         },
         SegmentCell {
+            candidate_id: 2,
             cell_id: 2,
             created_seq: 8,
             deleted_seq: Some(9),
@@ -25,6 +27,7 @@ fn acs_segment_roundtrips_cells() {
     ];
     SegmentWriter::write(&path, &cells).unwrap();
     assert_eq!(SegmentReader::read(&path).unwrap(), cells);
+    assert!(!dir.path().join("0001.acs.tmp").exists());
 }
 
 #[test]
@@ -39,6 +42,7 @@ fn acb_bitmap_index_roundtrips_sorted_sets() {
     };
     index.write(&path).unwrap();
     assert_eq!(BitmapIndex::read(&path).unwrap(), index);
+    assert!(!dir.path().join("0001.acb.tmp").exists());
 }
 
 #[test]
@@ -53,6 +57,7 @@ fn aci_lexical_index_roundtrips_terms() {
     };
     index.write(&path).unwrap();
     assert_eq!(LexicalIndex::read(&path).unwrap(), index);
+    assert!(!dir.path().join("0001.aci.tmp").exists());
 }
 
 #[test]
@@ -120,4 +125,65 @@ fn invalid_storage_files_are_rejected() {
         StorageManifest::load(&manifest).unwrap_err(),
         StorageError::InvalidManifestFile
     ));
+}
+
+#[test]
+fn checksum_corruption_is_rejected() {
+    let dir = tempfile::tempdir().unwrap();
+    let segment = dir.path().join("ok.acs");
+    let bitmap = dir.path().join("ok.acb");
+    let lexical = dir.path().join("ok.aci");
+    let manifest = dir.path().join("manifest.acm");
+
+    SegmentWriter::write(
+        &segment,
+        &[SegmentCell {
+            candidate_id: 1,
+            cell_id: 1,
+            created_seq: 1,
+            deleted_seq: None,
+            payload: b"one".to_vec(),
+        }],
+    )
+    .unwrap();
+    BitmapIndex {
+        bitmaps: BTreeMap::from([(1, BTreeSet::from([1]))]),
+    }
+    .write(&bitmap)
+    .unwrap();
+    LexicalIndex {
+        terms: BTreeMap::from([("one".to_owned(), BTreeSet::from([1]))]),
+    }
+    .write(&lexical)
+    .unwrap();
+    StorageManifest::default().store(&manifest).unwrap();
+
+    corrupt_last_byte(&segment);
+    corrupt_last_byte(&bitmap);
+    corrupt_last_byte(&lexical);
+    corrupt_last_byte(&manifest);
+
+    assert!(matches!(
+        SegmentReader::read(&segment).unwrap_err(),
+        StorageError::InvalidSegmentFile
+    ));
+    assert!(matches!(
+        BitmapIndex::read(&bitmap).unwrap_err(),
+        StorageError::InvalidBitmapIndexFile
+    ));
+    assert!(matches!(
+        LexicalIndex::read(&lexical).unwrap_err(),
+        StorageError::InvalidLexicalIndexFile
+    ));
+    assert!(matches!(
+        StorageManifest::load(&manifest).unwrap_err(),
+        StorageError::InvalidManifestFile
+    ));
+}
+
+fn corrupt_last_byte(path: &std::path::Path) {
+    let mut bytes = std::fs::read(path).unwrap();
+    let last = bytes.last_mut().unwrap();
+    *last ^= 0xff;
+    std::fs::write(path, bytes).unwrap();
 }
