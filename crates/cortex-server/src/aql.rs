@@ -1,18 +1,6 @@
-use std::path::Path;
-
 use cortex_engine::{Database, RetrievedCell};
 
 use crate::context::{escape_json, view_for_scope};
-
-pub fn handle_aql(root: &Path, query: &str, body: &[u8]) -> Result<String, String> {
-    let scope = query_param(query, "scope")?;
-    let db = Database::open(root).map_err(|error| error.to_string())?;
-    let aql = String::from_utf8_lossy(body);
-    let cells = db
-        .retrieve_aql(&aql, &view_for_scope(scope))
-        .map_err(|error| error.to_string())?;
-    Ok(cells_json(&cells))
-}
 
 pub fn handle_aql_shared(
     db: &std::sync::RwLock<Database>,
