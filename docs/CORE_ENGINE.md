@@ -10,6 +10,10 @@ It owns:
 - WAL writer startup
 - MemTable updates after successful WAL append
 - snapshot reads from the current commit sequence
+- checkpoint and compact publication into segment/index/manifest files
+- AQL retrieve execution over engine bitmap indexes
+- ContextPack v0 construction over retrieved cells
+- storage stats, validation, and best-effort repair surfaces
 
-It does not execute AQL yet. AQL still compiles to bound plans and bitmap
-programs; connecting those plans to persisted cells is a later milestone.
+It still does not provide production BM25, persistent vector pages, HNSW
+storage, distributed consensus, document ingestion, or LLM integration.
