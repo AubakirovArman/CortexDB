@@ -28,14 +28,15 @@ The v0 report has:
 - `contradicting_evidence`
 
 The engine returns `Supported` when readable evidence overlaps the fact terms,
-`Contradicted` when readable cells declare a contradiction, `Mixed` when both
-signals are present, and `Insufficient` when neither signal is visible.
+`Contradicted` when readable cells declare or imply a contradiction, `Mixed`
+when both signals are present, and `Insufficient` when neither signal is
+visible.
 
 Evidence includes `source_trust_q16`. If a payload has `source_trust_q16=<u16>`,
 that value is used as an integer trust signal. Evidence with the same term match
 count is ordered by higher trust first. Missing trust defaults to `32768`.
 
-Contradiction v0 uses an explicit payload line:
+Contradiction v0 first uses an explicit payload line:
 
 ```text
 contradicts=ABC budget approved
@@ -43,6 +44,19 @@ contradicts=ABC budget approved
 
 The marker line is not counted as supporting evidence. It only contributes to
 `contradicting_evidence` when it matches all normalized fact terms.
+
+After structured markers, the engine applies a conservative natural-language
+heuristic over the payload body. It recognizes scoped clauses such as:
+
+```text
+ABC budget was not approved.
+The committee rejected the ABC budget.
+```
+
+This is not a full NLI model. It only handles direct negation near fact terms
+and a small deterministic antonym table for common state words such as
+`approved/rejected`, `valid/invalid`, `increased/decreased`, and
+`open/closed`.
 
 The same structured markers are queryable through:
 
@@ -62,4 +76,4 @@ POST /v1/verify?scope=<scope>
 
 - Citation quality scoring.
 - Numeric guard checks.
-- Natural-language contradiction extraction.
+- Full natural-language inference or semantic contradiction extraction.

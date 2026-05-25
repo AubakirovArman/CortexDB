@@ -64,12 +64,14 @@
   current exact `.acv`/snapshot vector path.
 - ACLOG-backed replication log entries persist consensus-model `Term`,
   `LogIndex`, and payload records for local recovery.
+- `VERIFY FACT` now applies conservative natural-language contradiction hints
+  after structured `contradicts=` markers.
 
 ## Next
 
-1. Add natural-language contradiction extraction after structured markers.
-2. Add field-aware persisted lexical scoring statistics.
-3. Add replication transport and leader-election semantics.
+1. Add field-aware persisted lexical scoring statistics.
+2. Add replication transport and leader-election semantics.
+3. Add richer verification guards for citations and numeric claims.
 
 ## Not Yet
 

@@ -6,6 +6,12 @@ use crate::error::{EngineError, EngineResult};
 use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
 
+mod contradiction;
+
+use contradiction::{
+    contradiction_facts, contradiction_match, contradiction_text_matches, tokenize_support_text,
+};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VerificationStatus {
     Supported,
@@ -168,48 +174,6 @@ fn contradiction_for_version(
 
 fn has_matching_contradiction(payload: &[u8], fact_terms: &[String]) -> bool {
     contradiction_match(payload, fact_terms).is_some()
-}
-
-fn contradiction_match(payload: &[u8], fact_terms: &[String]) -> Option<u32> {
-    if fact_terms.is_empty() {
-        return None;
-    }
-    contradiction_facts(payload).into_iter().find_map(|fact| {
-        contradiction_text_matches(&fact, fact_terms).then_some(fact_terms.len() as u32)
-    })
-}
-
-fn contradiction_text_matches(value: &str, fact_terms: &[String]) -> bool {
-    if fact_terms.is_empty() {
-        return false;
-    }
-    let contradicts_terms = tokenize(value);
-    let matched_terms = fact_terms
-        .iter()
-        .filter(|term| contradicts_terms.contains(term))
-        .count();
-    matched_terms == fact_terms.len()
-}
-
-fn contradiction_facts(payload: &[u8]) -> Vec<String> {
-    String::from_utf8_lossy(payload)
-        .lines()
-        .filter_map(|line| line.trim().strip_prefix("contradicts="))
-        .map(str::trim)
-        .filter(|fact| !fact.is_empty())
-        .map(str::to_owned)
-        .collect()
-}
-
-fn tokenize_support_text(payload: &[u8]) -> Vec<String> {
-    let text = String::from_utf8_lossy(payload);
-    tokenize(
-        &text
-            .lines()
-            .filter(|line| !line.trim().starts_with("contradicts="))
-            .collect::<Vec<_>>()
-            .join("\n"),
-    )
 }
 
 fn source_trust_q16(payload: &[u8]) -> Q16 {
