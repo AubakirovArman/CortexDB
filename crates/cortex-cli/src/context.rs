@@ -1,5 +1,5 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
-use cortex_engine::{scope_id, ContextPack};
+use cortex_engine::{scope_id, ContextPack, RetrievedCell};
 
 pub(crate) fn view_for_scope(scope: &str) -> AgentView {
     AgentView {
@@ -39,6 +39,21 @@ pub(crate) fn format_context_pack(pack: &ContextPack) -> String {
             cell.cell_id.0,
             cell.estimated_tokens,
             cell.citation.as_deref().unwrap_or("null"),
+            String::from_utf8_lossy(&cell.payload)
+        )
+    }));
+    lines.join("\n")
+}
+
+pub(crate) fn format_retrieved_cells(cells: &[RetrievedCell]) -> String {
+    if cells.is_empty() {
+        return "cells=0".to_owned();
+    }
+    let mut lines = vec![format!("cells={}", cells.len())];
+    lines.extend(cells.iter().map(|cell| {
+        format!(
+            "cell_id={} payload={}",
+            cell.cell_id.0,
             String::from_utf8_lossy(&cell.payload)
         )
     }));

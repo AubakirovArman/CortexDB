@@ -21,7 +21,7 @@ fn query_param<'a>(query: &'a str, key: &str) -> Result<&'a str, String> {
         .ok_or_else(|| format!("missing {key}"))
 }
 
-fn view_for_scope(scope: &str) -> AgentView {
+pub(crate) fn view_for_scope(scope: &str) -> AgentView {
     AgentView {
         agent_id: AgentId(1),
         label: Some("local-http".to_owned()),
@@ -97,7 +97,7 @@ fn json_optional_string(value: Option<&str>) -> String {
         .unwrap_or_else(|| "null".to_owned())
 }
 
-fn escape_json(value: &str) -> String {
+pub(crate) fn escape_json(value: &str) -> String {
     value
         .chars()
         .flat_map(|character| match character {

@@ -62,6 +62,34 @@ fn context_command_returns_pack_summary() {
 }
 
 #[test]
+fn aql_command_returns_retrieved_cells() {
+    let path = unique_path("cortexdb-cli-aql");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nalpha budget".to_owned(),
+    ])
+    .unwrap();
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "aql".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#.to_owned(),
+    ])
+    .unwrap();
+    assert!(output.contains("cells=1"));
+    assert!(output.contains("cell_id=1"));
+    assert!(output.contains("alpha budget"));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
 fn repair_command_reports_best_effort_cleanup() {
     let path = unique_path("cortexdb-cli-repair");
     let path_arg = path.to_string_lossy().into_owned();

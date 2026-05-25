@@ -28,6 +28,7 @@
 - SegmentBundle API and explicit retired segment garbage collection.
 - ACLOG format freeze notes and read-only WAL diagnostics CLI.
 - MemTable historical reads, deterministic iterators, range scan, and stats v2.
+- AQL retrieve execution exposed through CLI and HTTP.
 
 ## Next
 

@@ -241,11 +241,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 The active slice is:
 
 ```text
-Epic 061 -> MemTable stats v2
-Epic 062 -> MemTable payload byte accounting
-Epic 064 -> historical read helper
-Epic 074 -> deterministic MemTable iterators
-Epic 075 -> MemTable range scan
+Epic 081 -> AQL grammar surface docs
+Epic 095 -> runtime AgentAllowed execution path
+Epic 098 -> AQL command smoke tests
+Epic 099 -> CLI AQL command
+Epic 100 -> HTTP AQL endpoint
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed

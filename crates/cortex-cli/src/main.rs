@@ -9,7 +9,7 @@ mod context;
 mod tests;
 mod wal;
 
-use context::{format_context_pack, view_for_scope};
+use context::{format_context_pack, format_retrieved_cells, view_for_scope};
 
 fn main() -> ExitCode {
     match run(env::args().collect()) {
@@ -164,6 +164,16 @@ fn run(args: Vec<String>) -> Result<String, String> {
                 .map_err(|error| error.to_string())?;
             Ok(format_context_pack(&pack))
         }
+        "aql" => {
+            let [scope, aql] = rest else {
+                return Err(usage());
+            };
+            let db = Database::open(path).map_err(|error| error.to_string())?;
+            let cells = db
+                .retrieve_aql(aql, &view_for_scope(scope))
+                .map_err(|error| error.to_string())?;
+            Ok(format_retrieved_cells(&cells))
+        }
         "unlock" => {
             let [flag] = rest else {
                 return Err(usage());
@@ -186,6 +196,6 @@ fn parse_cell_id(value: &str) -> Result<CellId, String> {
 }
 
 fn usage() -> String {
-    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | repair <path> | gc-retired <path> | wal-validate <path> | wal-dump <path> | context <path> <scope> <aql> | unlock <path> --force"
+    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | repair <path> | gc-retired <path> | wal-validate <path> | wal-dump <path> | context <path> <scope> <aql> | aql <path> <scope> <aql> | unlock <path> --force"
         .to_owned()
 }

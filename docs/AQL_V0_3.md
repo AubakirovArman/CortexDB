@@ -56,3 +56,20 @@ Supported requirements:
 
 Decimal thresholds are parsed deterministically and values above `1.0` are bind
 errors.
+
+## Execution Surfaces
+
+Core Alpha exposes `RETRIEVE CONTEXT` execution through:
+
+```bash
+cortexdb aql ./data project:investments '<AQL RETRIEVE CONTEXT>'
+```
+
+and:
+
+```text
+POST /v1/aql?scope=project:investments
+```
+
+Both use an `AgentView` scoped to the supplied `scope`; runtime
+`AgentAllowed` masks still intersect the bitmap result.
