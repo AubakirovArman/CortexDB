@@ -43,6 +43,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cortex-engine"
+version = "0.1.0"
+dependencies = [
+ "cortex-core",
+ "cortex-storage",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "cortex-storage"
 version = "0.1.0"
 dependencies = [

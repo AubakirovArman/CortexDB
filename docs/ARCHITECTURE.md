@@ -14,6 +14,7 @@ AQL -> Parser -> Raw AST -> Binder -> Bitmap VM -> Candidates_0
 - `cortex-aql`: query language, policy validation, binding, bitmap bytecode, and mock VM.
 - `cortex-storage`: ACLOG WAL v0 binary codec, reader recovery scan, and writer actor.
 - `cortex-core`: in-memory MVCC MemTable, cell versions, read transactions, and manifest primitives.
+- `cortex-engine`: database facade connecting WAL append, MemTable update, and replay.
 
 ## Boundaries
 

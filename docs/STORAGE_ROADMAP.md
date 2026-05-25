@@ -6,10 +6,11 @@
 - ACLOG reader scan with safe truncate offset.
 - ACLOG writer actor with strict and balanced durability modes.
 - In-memory MVCC MemTable skeleton.
+- Usable single-node loop through `cortex-engine`.
 
 ## Next
 
-1. Connect WAL replay to `cortex-core::MemTable`.
+1. Persist commit sequence in WAL.
 2. Persist and recover manifest generations.
 3. Add `.acs` immutable cell segment files.
 4. Add `.acb` bitmap index files.
