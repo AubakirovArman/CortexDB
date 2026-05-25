@@ -182,6 +182,16 @@ impl Database {
         self.append_then_apply(DbOperation::TombstoneCell { cell_id })
     }
 
+    pub fn allocate_cell_id(&self) -> CellId {
+        let max_id = self.memtable.max_cell_id().map(|id| id.0).unwrap_or(0);
+        CellId(max_id.max(1000) + 1)
+    }
+
+    pub fn allocate_cell_id_range(&self, _count: usize) -> CellId {
+        let max_id = self.memtable.max_cell_id().map(|id| id.0).unwrap_or(0);
+        CellId(max_id.max(10000) + 1)
+    }
+
     pub fn read_txn(&self) -> ReadTxn {
         ReadTxn {
             read_seq: self.current_seq,

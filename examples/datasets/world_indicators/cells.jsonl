@@ -1,0 +1,2 @@
+{"cell_id": 4001, "payload": "scope=world:indicators\nstatus=ready\ntype=fact\nsource=worldbank_2024\ncountry=Kazakhstan\nindicator=gdp_growth\nvalue=4.3\nyear=2024\n\nKazakhstan GDP growth reached 4.3% in full year 2024."}
+{"cell_id": 4002, "payload": "scope=world:indicators\nstatus=ready\ntype=fact\nsource=worldbank_2025\ncountry=Kazakhstan\nindicator=gdp_growth\nvalue=4.5\nyear=2025\n\nKazakhstan GDP growth projected at 4.5% for 2025."}

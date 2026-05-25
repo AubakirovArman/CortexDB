@@ -242,9 +242,10 @@ fn route_shared(
             let source = query_param_opt(query, "source").unwrap_or("http_post");
             let mut db = db.write().map_err(|e| e.to_string())?;
             let text = String::from_utf8_lossy(body);
+            let start_id = db.allocate_cell_id_range(0);
             let results = db
                 .ingest_text_chunks(
-                    CellId(1),
+                    start_id,
                     &text,
                     cortex_engine::TextIngestOptions {
                         scope: scope.to_owned(),
@@ -263,9 +264,10 @@ fn route_shared(
             let source = query_param_opt(query, "source").unwrap_or("http_post");
             let mut db = db.write().map_err(|e| e.to_string())?;
             let json = String::from_utf8_lossy(body);
+            let start_id = db.allocate_cell_id_range(0);
             let results = db
                 .ingest_json(
-                    CellId(1),
+                    start_id,
                     &json,
                     cortex_engine::JsonIngestOptions {
                         scope: scope.to_owned(),
@@ -284,9 +286,10 @@ fn route_shared(
             let source = query_param_opt(query, "source").unwrap_or("http_post");
             let mut db = db.write().map_err(|e| e.to_string())?;
             let csv = String::from_utf8_lossy(body);
+            let start_id = db.allocate_cell_id_range(0);
             let results = db
                 .ingest_csv(
-                    CellId(1),
+                    start_id,
                     &csv,
                     cortex_engine::CsvIngestOptions {
                         scope: scope.to_owned(),

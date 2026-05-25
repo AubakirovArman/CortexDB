@@ -98,6 +98,10 @@ impl MemTable {
         self.read(ReadTxn::at(seq), cell_id)
     }
 
+    pub fn max_cell_id(&self) -> Option<CellId> {
+        self.versions.keys().next_back().copied()
+    }
+
     pub fn visible_cells(&self, txn: ReadTxn) -> Vec<CellVersion> {
         self.versions
             .keys()

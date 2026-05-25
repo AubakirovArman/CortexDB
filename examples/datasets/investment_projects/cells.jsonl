@@ -1,0 +1,2 @@
+{"cell_id": 1, "payload": "scope=project:investments\nstatus=ready\ntype=fact\nsource=report_q1.pdf#page=3\nproject=Solar Plant\nmetric=budget\nvalue=1.2\ncurrency=KZT\n\nSolar Plant report highlights. The total approved budget for the Solar Plant project in first quarter is 1.2B KZT."}
+{"cell_id": 2, "payload": "scope=project:investments\nstatus=ready\ntype=fact\nsource=report_q2.pdf#page=5\nproject=Solar Plant\nmetric=budget\nvalue=1400000000\ncurrency=KZT\n\nSolar Plant Q2 update. Following recent expansions, the budget for Solar Plant has been adjusted to 1.4B KZT."}
