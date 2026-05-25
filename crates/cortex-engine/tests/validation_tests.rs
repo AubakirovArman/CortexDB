@@ -1,0 +1,123 @@
+use cortex_core::CellId;
+use cortex_engine::Database;
+use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
+use cortex_storage::manifest::{ManifestSegment, StorageManifest};
+use cortex_storage::segment::{SegmentCell, SegmentWriter};
+
+#[test]
+fn duplicate_live_segment_id_fails_validation() {
+    let dir = tempfile::tempdir().unwrap();
+    write_bundle(dir.path(), 1, 1, 1, CellId(1));
+    write_manifest(
+        dir.path(),
+        1,
+        vec![manifest_segment(1, 1, 1), manifest_segment(1, 1, 1)],
+        Vec::new(),
+    );
+
+    let db = Database::open(dir.path()).unwrap();
+    let error = db.validate_storage().unwrap_err().to_string();
+    assert!(error.contains("duplicate live segment id"));
+}
+
+#[test]
+fn duplicate_candidate_id_across_segments_fails_validation() {
+    let dir = tempfile::tempdir().unwrap();
+    write_bundle(dir.path(), 1, 1, 1, CellId(1));
+    write_bundle(dir.path(), 2, 2, 1, CellId(2));
+    write_manifest(
+        dir.path(),
+        2,
+        vec![manifest_segment(1, 1, 1), manifest_segment(2, 2, 1)],
+        Vec::new(),
+    );
+
+    let db = Database::open(dir.path()).unwrap();
+    let error = db.validate_storage().unwrap_err().to_string();
+    assert!(error.contains("maps to multiple cells"));
+}
+
+#[test]
+fn manifest_checkpoint_seq_regression_fails_validation() {
+    let dir = tempfile::tempdir().unwrap();
+    write_bundle(dir.path(), 1, 5, 1, CellId(1));
+    write_manifest(dir.path(), 4, vec![manifest_segment(1, 5, 1)], Vec::new());
+
+    let db = Database::open(dir.path()).unwrap();
+    let error = db.validate_storage().unwrap_err().to_string();
+    assert!(error.contains("is behind segment"));
+}
+
+#[test]
+fn segment_with_zero_candidate_id_is_invalid() {
+    let dir = tempfile::tempdir().unwrap();
+    write_bundle(dir.path(), 1, 1, 0, CellId(1));
+    write_manifest(dir.path(), 1, vec![manifest_segment(1, 1, 1)], Vec::new());
+
+    let db = Database::open(dir.path()).unwrap();
+    let error = db.validate_storage().unwrap_err().to_string();
+    assert!(error.contains("invalid candidate id"));
+}
+
+#[test]
+fn live_retired_segment_overlap_fails_validation() {
+    let dir = tempfile::tempdir().unwrap();
+    write_bundle(dir.path(), 1, 1, 1, CellId(1));
+    write_manifest(
+        dir.path(),
+        1,
+        vec![manifest_segment(1, 1, 1)],
+        vec![manifest_segment(1, 1, 1)],
+    );
+
+    let db = Database::open(dir.path()).unwrap();
+    let error = db.validate_storage().unwrap_err().to_string();
+    assert!(error.contains("conflicts with manifest references"));
+}
+
+fn write_bundle(root: &std::path::Path, segment_id: u64, seq: u64, candidate: u32, cell: CellId) {
+    let segments = root.join("segments");
+    std::fs::create_dir_all(&segments).unwrap();
+    SegmentWriter::write(
+        segments.join(format!("segment-{segment_id}.acs")),
+        &[SegmentCell {
+            candidate_id: candidate,
+            cell_id: cell.0,
+            created_seq: seq,
+            deleted_seq: None,
+            payload: b"scope=default\nstatus=ready\npayload".to_vec(),
+        }],
+    )
+    .unwrap();
+    BitmapIndex::default()
+        .write(segments.join(format!("segment-{segment_id}.acb")))
+        .unwrap();
+    LexicalIndex::default()
+        .write(segments.join(format!("segment-{segment_id}.aci")))
+        .unwrap();
+}
+
+fn write_manifest(
+    root: &std::path::Path,
+    checkpoint_seq: u64,
+    live_segments: Vec<ManifestSegment>,
+    retired_segments: Vec<ManifestSegment>,
+) {
+    StorageManifest {
+        generation: 1,
+        checkpoint_seq,
+        live_segments,
+        retired_segments,
+    }
+    .store(root.join("manifest.acm"))
+    .unwrap();
+}
+
+fn manifest_segment(id: u64, checkpoint_seq: u64, cell_count: u32) -> ManifestSegment {
+    ManifestSegment {
+        id,
+        generation: id,
+        checkpoint_seq,
+        cell_count,
+    }
+}

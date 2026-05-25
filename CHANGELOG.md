@@ -23,3 +23,5 @@
 - Fixed persisted index merging across multiple checkpoint segments, added fallible candidate
   allocation, reverse candidate maps, database lock/drop shutdown, AgentView-aware runtime masks,
   and HTTP `stats`/`validate`.
+- Added orphan temp cleanup on open, explicit `Database::close`, stronger storage validation,
+  lifecycle/validation tests, and Core Alpha invariant documentation.

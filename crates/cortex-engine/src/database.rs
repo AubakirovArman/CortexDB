@@ -8,6 +8,7 @@ use cortex_storage::manifest::StorageManifest;
 use cortex_storage::wal::{DurabilityMode, WalWriter, WalWriterHandle};
 
 use crate::checkpoint::{load_checkpoint, manifest_path, segments_path};
+use crate::cleanup::cleanup_orphans;
 use crate::error::{EngineError, EngineResult};
 use crate::lock::DatabaseLock;
 use crate::operation::{wal_record_from_operation_with_seq, DbOperation};
@@ -50,6 +51,7 @@ pub struct Database {
     pub(crate) current_seq: CommitSeq,
     pub(crate) durability_mode: DurabilityMode,
     pub(crate) _lock: DatabaseLock,
+    closed: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -77,6 +79,7 @@ impl Database {
         let root_path = path.as_ref().to_owned();
         fs::create_dir_all(&root_path)?;
         let lock = DatabaseLock::acquire(&root_path)?;
+        cleanup_orphans(&root_path)?;
         let wal_path = root_path.join("db.aclog");
         let manifest_path = manifest_path(&root_path);
         let segments_path = segments_path(&root_path);
@@ -106,6 +109,7 @@ impl Database {
             current_seq: replay.last_seq,
             durability_mode: options.durability_mode,
             _lock: lock,
+            closed: false,
         })
     }
 
@@ -173,7 +177,11 @@ impl Database {
         &self.manifest
     }
 
-    pub fn close(self) {}
+    pub fn close(mut self) -> EngineResult<()> {
+        self.writer.shutdown()?;
+        self.closed = true;
+        Ok(())
+    }
 
     pub(crate) fn snapshot_versions(&self) -> Vec<CellVersion> {
         self.memtable.visible_cells(self.read_txn())
@@ -215,7 +223,9 @@ impl Database {
 
 impl Drop for Database {
     fn drop(&mut self) {
-        let _ = self.writer.shutdown();
+        if !self.closed {
+            let _ = self.writer.shutdown();
+        }
     }
 }
 

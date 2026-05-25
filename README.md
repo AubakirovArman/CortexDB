@@ -81,6 +81,10 @@ WAL durability, MVCC reads, restart recovery, checkpoint, compact, AQL retrieve,
 candidate mapping, atomic storage writes, corruption detection, and local
 storage validation.
 
+Core Alpha scope and invariants are documented in
+[`docs/CORE_ALPHA.md`](docs/CORE_ALPHA.md) and
+[`docs/CORE_INVARIANTS.md`](docs/CORE_INVARIANTS.md).
+
 ## Roadmap
 
 | Milestone | Scope |

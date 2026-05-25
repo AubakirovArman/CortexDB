@@ -1,4 +1,5 @@
 pub mod checkpoint;
+mod cleanup;
 pub mod database;
 pub mod distributed;
 pub mod error;

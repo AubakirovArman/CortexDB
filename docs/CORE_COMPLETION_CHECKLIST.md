@@ -28,6 +28,13 @@ covered by tests.
   from `Drop`.
 - Runtime bitmap evaluation uses an AgentView-derived allowed mask, not only the
   full segment universe.
+- `Database::open()` removes known orphan temp files in the database root and
+  segment directory after acquiring the process lock.
+- `Database::close()` performs explicit writer shutdown and releases the lock
+  through normal drop.
+- Validation rejects duplicate live segment ids, live/retired overlap,
+  candidate id `0`, candidate ids mapped to multiple cells, and manifest
+  checkpoint sequence regressions.
 
 ## Validation Commands
 

@@ -1,3 +1,4 @@
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io::ErrorKind;
 
@@ -45,7 +46,22 @@ impl Database {
     pub fn validate_storage(&self) -> EngineResult<StorageValidation> {
         let manifest = StorageManifest::load(&self.manifest_path)?;
         let mut cells_checked = 0;
+        let mut live_ids = BTreeSet::new();
+        let mut retired_ids = BTreeSet::new();
+        let mut candidates = BTreeMap::new();
         for segment in &manifest.live_segments {
+            if !live_ids.insert(segment.id) {
+                return Err(EngineError::StorageInvariant(format!(
+                    "duplicate live segment id: {}",
+                    segment.id
+                )));
+            }
+            if manifest.checkpoint_seq < segment.checkpoint_seq {
+                return Err(EngineError::StorageInvariant(format!(
+                    "manifest checkpoint_seq {} is behind segment {} checkpoint_seq {}",
+                    manifest.checkpoint_seq, segment.id, segment.checkpoint_seq
+                )));
+            }
             let segment_file = segment_path(&self.segments_path, segment.id);
             if !segment_file.exists() {
                 return Err(EngineError::MissingStorageFile(segment_file));
@@ -62,9 +78,27 @@ impl Database {
             if cells.iter().any(|cell| cell.candidate_id == 0) {
                 return Err(EngineError::InvalidCandidateId(0));
             }
+            for cell in &cells {
+                if let Some(previous) = candidates.insert(cell.candidate_id, cell.cell_id) {
+                    if previous != cell.cell_id {
+                        return Err(EngineError::StorageInvariant(format!(
+                            "candidate {} maps to multiple cells",
+                            cell.candidate_id
+                        )));
+                    }
+                }
+            }
             BitmapIndex::read(bitmap_path(&self.segments_path, segment.id))?;
             LexicalIndex::read(lexical_path(&self.segments_path, segment.id))?;
             cells_checked += cells.len();
+        }
+        for segment in &manifest.retired_segments {
+            if !retired_ids.insert(segment.id) || live_ids.contains(&segment.id) {
+                return Err(EngineError::StorageInvariant(format!(
+                    "retired segment {} conflicts with manifest references",
+                    segment.id
+                )));
+            }
         }
         let wal = WalReader::scan_best_effort_path(&self.wal_path)?;
         Ok(StorageValidation {

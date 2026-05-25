@@ -2,6 +2,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
+use crate::cleanup::lock_path;
 use crate::error::{EngineError, EngineResult};
 
 #[derive(Debug)]
@@ -12,7 +13,7 @@ pub(crate) struct DatabaseLock {
 
 impl DatabaseLock {
     pub(crate) fn acquire(root: &Path) -> EngineResult<Self> {
-        let path = root.join("db.lock");
+        let path = lock_path(root);
         match OpenOptions::new().write(true).create_new(true).open(&path) {
             Ok(file) => Ok(Self { path, _file: file }),
             Err(error) if error.kind() == ErrorKind::AlreadyExists => {
