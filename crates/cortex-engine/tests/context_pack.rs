@@ -136,6 +136,35 @@ fn context_pack_can_reduce_sparse_redundancy() {
 }
 
 #[test]
+fn context_pack_can_reduce_dense_vector_redundancy() {
+    let cells = vec![
+        retrieved(1, "scope=project\nvector=1, 2, 3\nfirst cell"),
+        retrieved(2, "scope=project\nvector=1, 2, 4\nsecond cell"),
+        retrieved(3, "scope=project\nvector=-1, -2, -3\nthird cell"),
+    ];
+    let pack = ContextPack::from_retrieved_with_options(
+        cells,
+        1_000,
+        false,
+        &ContextPackOptions {
+            reduce_redundancy: true,
+            redundancy_threshold_q16: 32_768,
+            ..ContextPackOptions::default()
+        },
+    );
+
+    assert_eq!(
+        pack.cells
+            .iter()
+            .map(|cell| cell.cell_id)
+            .collect::<Vec<_>>(),
+        vec![CellId(1), CellId(3)]
+    );
+    assert_eq!(pack.anomalies[0].code, "redundant_cell");
+    assert_eq!(pack.anomalies[0].cell_id, Some(CellId(2)));
+}
+
+#[test]
 fn context_pack_keeps_redundant_cells_by_default() {
     let cells = vec![
         retrieved(1, "alpha budget project"),

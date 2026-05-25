@@ -107,19 +107,26 @@ impl Database {
         let manifest_path = manifest_path(&root_path);
         let segments_path = segments_path(&root_path);
         let checkpoint = load_checkpoint(&root_path)?;
-        let replay = match options.recovery_mode {
-            RecoveryMode::Strict => replay_wal_into(
-                &wal_path,
-                checkpoint.memtable,
-                CommitSeq(checkpoint.manifest.checkpoint_seq),
-            )?,
-            RecoveryMode::BestEffort => replay_wal_best_effort_into(
-                &wal_path,
-                checkpoint.memtable,
-                CommitSeq(checkpoint.manifest.checkpoint_seq),
-            )?,
-        };
-        truncate_wal_tail(&wal_path, replay.safe_truncate_offset)?;
+        let wal_files = find_wal_files(&wal_path);
+        let mut current_memtable = checkpoint.memtable;
+        let mut current_seq = CommitSeq(checkpoint.manifest.checkpoint_seq);
+        let mut last_safe_offset = 0;
+
+        for file in &wal_files {
+            let replay = match options.recovery_mode {
+                RecoveryMode::Strict => replay_wal_into(file, current_memtable, current_seq)?,
+                RecoveryMode::BestEffort => {
+                    replay_wal_best_effort_into(file, current_memtable, current_seq)?
+                }
+            };
+            current_memtable = replay.memtable;
+            current_seq = replay.last_seq;
+            if file == &wal_path {
+                last_safe_offset = replay.safe_truncate_offset;
+            }
+        }
+
+        truncate_wal_tail(&wal_path, last_safe_offset)?;
         let writer = WalWriter::start(&wal_path, options.durability_mode)?;
         Ok(Self {
             root_path,
@@ -127,9 +134,9 @@ impl Database {
             manifest_path,
             segments_path,
             manifest: checkpoint.manifest,
-            memtable: replay.memtable,
+            memtable: current_memtable,
             writer,
-            current_seq: replay.last_seq,
+            current_seq,
             durability_mode: options.durability_mode,
             _lock: lock,
             closed: false,
@@ -266,6 +273,7 @@ impl Drop for Database {
 }
 
 pub(crate) fn truncate_wal_tail(path: &Path, safe_offset: u64) -> EngineResult<()> {
+    let exists = path.exists();
     match fs::metadata(path) {
         Ok(metadata) if metadata.len() > safe_offset => {
             fs::OpenOptions::new()
@@ -277,5 +285,46 @@ pub(crate) fn truncate_wal_tail(path: &Path, safe_offset: u64) -> EngineResult<(
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
         Err(error) => return Err(error.into()),
     }
+    if safe_offset == 0 && exists {
+        let parent = path.parent().unwrap_or_else(|| Path::new("."));
+        if let Ok(entries) = std::fs::read_dir(parent) {
+            for entry in entries.flatten() {
+                let entry_path = entry.path();
+                if entry_path.is_file() {
+                    if let Some(filename) = entry_path.file_name().and_then(|f| f.to_str()) {
+                        if filename.starts_with("db.")
+                            && filename.ends_with(".aclog")
+                            && filename != "db.aclog"
+                        {
+                            let _ = std::fs::remove_file(entry_path);
+                        }
+                    }
+                }
+            }
+        }
+    }
     Ok(())
+}
+
+fn find_wal_files(active_wal: &Path) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    let parent = active_wal.parent().unwrap_or_else(|| Path::new("."));
+    if let Ok(entries) = std::fs::read_dir(parent) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                if let Some(filename) = path.file_name().and_then(|f| f.to_str()) {
+                    if filename.starts_with("db.")
+                        && filename.ends_with(".aclog")
+                        && filename != "db.aclog"
+                    {
+                        files.push(path);
+                    }
+                }
+            }
+        }
+    }
+    files.sort();
+    files.push(active_wal.to_owned());
+    files
 }

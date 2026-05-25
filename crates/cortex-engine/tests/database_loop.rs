@@ -205,6 +205,36 @@ fn patch_survives_restart() {
     assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"v2");
 }
 
+#[test]
+fn test_recovery_with_multiple_rotated_wal_files() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"val1".to_vec()).unwrap();
+        db.put_cell(CellId(2), b"val2".to_vec()).unwrap();
+    }
+
+    let active_wal = dir.path().join("db.aclog");
+    assert!(active_wal.exists());
+    let rotated_wal = dir.path().join("db.100.aclog");
+    std::fs::rename(&active_wal, &rotated_wal).unwrap();
+
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"val1".to_vec());
+        assert_eq!(db.get_latest_cell(CellId(2)).unwrap(), b"val2".to_vec());
+
+        db.put_cell(CellId(3), b"val3".to_vec()).unwrap();
+    }
+
+    {
+        let db = Database::open(dir.path()).unwrap();
+        assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"val1".to_vec());
+        assert_eq!(db.get_latest_cell(CellId(2)).unwrap(), b"val2".to_vec());
+        assert_eq!(db.get_latest_cell(CellId(3)).unwrap(), b"val3".to_vec());
+    }
+}
+
 fn rewrite_header_crc(encoded: &mut [u8]) {
     let header_len = u16::from_le_bytes(encoded[4..6].try_into().unwrap()) as usize;
     encoded[28..32].copy_from_slice(&0u32.to_le_bytes());

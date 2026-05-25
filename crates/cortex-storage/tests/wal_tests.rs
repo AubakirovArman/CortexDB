@@ -219,6 +219,7 @@ fn bounded_writer_queue_mode_appends_records() {
         WalWriterOptions {
             durability_mode: DurabilityMode::Balanced,
             queue_capacity: Some(1),
+            max_wal_size: None,
         },
     )
     .unwrap();
@@ -228,6 +229,35 @@ fn bounded_writer_queue_mode_appends_records() {
 
     let scan = WalReader::open(&path).unwrap().scan().unwrap();
     assert_eq!(scan.records.len(), 2);
+}
+
+#[test]
+fn wal_size_based_rotation_and_archiving() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("db.aclog");
+    let writer = WalWriter::start_with_options(
+        &path,
+        WalWriterOptions {
+            durability_mode: DurabilityMode::Strict,
+            queue_capacity: None,
+            max_wal_size: Some(100),
+        },
+    )
+    .unwrap();
+
+    for i in 0..5 {
+        writer.append(record_with_payload(vec![i])).unwrap();
+    }
+    writer.shutdown().unwrap();
+
+    let mut aclog_files = vec![];
+    for entry in std::fs::read_dir(dir.path()).unwrap().flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if name.starts_with("db.") && name.ends_with(".aclog") {
+            aclog_files.push(name);
+        }
+    }
+    assert!(aclog_files.len() >= 2);
 }
 
 #[test]

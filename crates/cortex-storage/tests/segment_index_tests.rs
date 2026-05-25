@@ -134,6 +134,30 @@ fn manifest_store_is_atomic_and_ignores_leftover_tmp() {
 }
 
 #[test]
+fn manifest_forward_compatibility() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("manifest.acm");
+    let mut manifest = StorageManifest::default();
+    manifest.checkpoint_segment(ManifestSegment {
+        id: 1,
+        generation: 1,
+        checkpoint_seq: 9,
+        cell_count: 2,
+    });
+    manifest.store(&path).unwrap();
+
+    let mut bytes = std::fs::read(&path).unwrap();
+    bytes.truncate(bytes.len() - 4);
+    bytes.extend_from_slice(&[42, 43, 44, 45]);
+    let checksum = crc32c::crc32c(&bytes);
+    bytes.extend_from_slice(&checksum.to_le_bytes());
+    std::fs::write(&path, &bytes).unwrap();
+
+    let loaded = StorageManifest::load(&path).unwrap();
+    assert_eq!(loaded, manifest);
+}
+
+#[test]
 fn invalid_storage_files_are_rejected() {
     let dir = tempfile::tempdir().unwrap();
     let segment = dir.path().join("bad.acs");

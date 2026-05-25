@@ -71,7 +71,7 @@ fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
     let checkpoint_seq = read_u64(bytes, &mut cursor)?;
     let live_segments = read_segments(bytes, &mut cursor)?;
     let retired_segments = read_segments(bytes, &mut cursor)?;
-    if cursor != bytes.len() {
+    if cursor > bytes.len() {
         return Err(StorageError::InvalidManifestFile);
     }
     Ok(StorageManifest {

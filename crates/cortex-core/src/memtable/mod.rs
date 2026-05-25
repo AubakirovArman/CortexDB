@@ -150,6 +150,34 @@ impl MemTable {
             .collect()
     }
 
+    pub fn gc_versions_before(&mut self, seq: CommitSeq) {
+        let mut to_remove = Vec::new();
+        for (cell_id, versions) in self.versions.iter_mut() {
+            let Some(visible_idx) = versions
+                .iter()
+                .enumerate()
+                .rev()
+                .find(|(_, version)| version.created_seq <= seq)
+                .map(|(idx, _)| idx)
+            else {
+                continue;
+            };
+
+            *versions = versions.split_off(visible_idx);
+
+            if versions.len() == 1 {
+                let first = &versions[0];
+                if first.deleted_seq.is_some_and(|deleted| deleted <= seq) {
+                    to_remove.push(*cell_id);
+                }
+            }
+        }
+
+        for cell_id in to_remove {
+            self.versions.remove(&cell_id);
+        }
+    }
+
     pub fn changed_cell_ids_after(&self, seq: CommitSeq) -> Vec<CellId> {
         self.versions
             .iter()

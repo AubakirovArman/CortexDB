@@ -22,6 +22,7 @@ pub enum DurabilityMode {
 pub struct WalWriterOptions {
     pub durability_mode: DurabilityMode,
     pub queue_capacity: Option<usize>,
+    pub max_wal_size: Option<u64>,
 }
 
 impl Default for WalWriterOptions {
@@ -29,6 +30,7 @@ impl Default for WalWriterOptions {
         Self {
             durability_mode: DurabilityMode::Strict,
             queue_capacity: None,
+            max_wal_size: None,
         }
     }
 }
@@ -79,6 +81,7 @@ impl WalWriter {
             WalWriterOptions {
                 durability_mode: mode,
                 queue_capacity: None,
+                max_wal_size: None,
             },
         )
     }
@@ -90,7 +93,7 @@ impl WalWriter {
         let path = path.as_ref().to_owned();
         ensure_file_header(&path)?;
         let (tx, rx) = writer_channel(options.queue_capacity);
-        thread::spawn(move || run_writer(path, options.durability_mode, rx));
+        thread::spawn(move || run_writer(path, options, rx));
         Ok(WalWriterHandle { tx })
     }
 }
@@ -143,18 +146,58 @@ fn ensure_file_header(path: &Path) -> StorageResult<()> {
     Ok(())
 }
 
-fn run_writer(path: PathBuf, mode: DurabilityMode, rx: Receiver<WalWriterCommand>) {
-    let Ok(mut file) = OpenOptions::new().create(true).append(true).open(path) else {
+fn run_writer(path: PathBuf, options: WalWriterOptions, rx: Receiver<WalWriterCommand>) {
+    let mode = options.durability_mode;
+    let Ok(mut file) = OpenOptions::new().create(true).append(true).open(&path) else {
         return;
     };
     let mut next_lsn = file.seek(SeekFrom::End(0)).unwrap_or(0);
+    let mut file_opt = Some(file);
     let mut metrics = WalWriterMetrics::default();
     while let Ok(command) = rx.recv() {
         match command {
             WalWriterCommand::Append { record, reply } => {
+                if let Some(max_size) = options.max_wal_size {
+                    let mut needs_rotation = false;
+                    if let Some(ref f) = file_opt {
+                        if let Ok(metadata) = f.metadata() {
+                            if metadata.len() >= max_size {
+                                needs_rotation = true;
+                            }
+                        }
+                    }
+                    if needs_rotation {
+                        if let Some(f) = file_opt.take() {
+                            let _ = f.sync_data();
+                        }
+                        let timestamp = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_micros();
+                        let rotated_path = path.with_file_name(format!("db.{}.aclog", timestamp));
+                        if std::fs::rename(&path, &rotated_path).is_ok() {
+                            if let Ok(mut new_file) =
+                                OpenOptions::new().create(true).append(true).open(&path)
+                            {
+                                if new_file.metadata().map_or(true, |m| m.len() == 0) {
+                                    let _ = new_file.write_all(&WalCodec::file_header());
+                                    let _ = new_file.sync_data();
+                                }
+                                next_lsn = new_file.seek(SeekFrom::End(0)).unwrap_or(0);
+                                file_opt = Some(new_file);
+                            }
+                        }
+                    }
+                }
+
+                if file_opt.is_none() {
+                    let _ = reply.send(Err(StorageError::WalWriterClosed));
+                    continue;
+                }
+
                 if mode == DurabilityMode::Balanced {
                     if append_balanced_batch(
-                        &mut file,
+                        file_opt.as_mut().unwrap(),
                         record,
                         reply,
                         &rx,
@@ -164,13 +207,21 @@ fn run_writer(path: PathBuf, mode: DurabilityMode, rx: Receiver<WalWriterCommand
                         break;
                     }
                 } else {
-                    let result =
-                        append_strict_record(&mut file, record, &mut next_lsn, &mut metrics);
+                    let result = append_strict_record(
+                        file_opt.as_mut().unwrap(),
+                        record,
+                        &mut next_lsn,
+                        &mut metrics,
+                    );
                     let _ = reply.send(result);
                 }
             }
             WalWriterCommand::Shutdown { reply } => {
-                let result = file.sync_data().map_err(StorageError::from);
+                let result = if let Some(ref mut f) = file_opt {
+                    f.sync_data().map_err(StorageError::from)
+                } else {
+                    Ok(())
+                };
                 let _ = reply.send(result);
                 break;
             }

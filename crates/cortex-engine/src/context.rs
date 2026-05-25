@@ -202,7 +202,42 @@ fn effective_redundancy_threshold(value: u16) -> u16 {
     }
 }
 
+fn cosine_similarity_q16(u: &[i16], v: &[i16]) -> u16 {
+    if u.len() != v.len() || u.is_empty() {
+        return 0;
+    }
+    let mut dot_product = 0.0;
+    let mut norm_u = 0.0;
+    let mut norm_v = 0.0;
+    for i in 0..u.len() {
+        let ui = u[i] as f64;
+        let vi = v[i] as f64;
+        dot_product += ui * vi;
+        norm_u += ui * ui;
+        norm_v += vi * vi;
+    }
+    if norm_u == 0.0 || norm_v == 0.0 {
+        return 0;
+    }
+    let similarity = dot_product / (norm_u.sqrt() * norm_v.sqrt());
+    if similarity <= 0.0 {
+        0
+    } else {
+        (similarity * 65536.0).min(65535.0) as u16
+    }
+}
+
 fn is_redundant(payload: &[u8], packed: &[ContextPackCell], threshold_q16: u16) -> bool {
+    if let Some(current_vec) = crate::search::vector::vector_from_payload(payload) {
+        return packed.iter().any(|cell| {
+            if let Some(cell_vec) = crate::search::vector::vector_from_payload(&cell.payload) {
+                cosine_similarity_q16(&current_vec, &cell_vec) >= threshold_q16
+            } else {
+                false
+            }
+        });
+    }
+
     let current = term_set(payload);
     if current.is_empty() {
         return false;

@@ -23,8 +23,15 @@ pub fn serve(root: &Path, addr: &str) -> std::io::Result<()> {
 
 pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> std::io::Result<()> {
     let listener = TcpListener::bind(addr)?;
+    let root = root.to_owned();
+    let options = std::sync::Arc::new(options);
     for stream in listener.incoming() {
-        handle_stream(root, &options, stream?)?;
+        let stream = stream?;
+        let root = root.clone();
+        let options = options.clone();
+        std::thread::spawn(move || {
+            let _ = handle_stream(&root, &options, stream);
+        });
     }
     Ok(())
 }
@@ -58,10 +65,52 @@ fn handle_stream(
     options: &ServerOptions,
     mut stream: TcpStream,
 ) -> std::io::Result<()> {
-    let mut buffer = vec![0; 8192];
-    let read = stream.read(&mut buffer)?;
-    let request = String::from_utf8_lossy(&buffer[..read]);
+    let mut accumulated = Vec::new();
+    let mut chunk = [0u8; 4096];
+    let max_size = 2 * 1024 * 1024; // 2MB Limit
+
+    loop {
+        let read = stream.read(&mut chunk)?;
+        if read == 0 {
+            break;
+        }
+        accumulated.extend_from_slice(&chunk[..read]);
+        if accumulated.len() > max_size {
+            let response = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{\"error\":\"payload_too_large\",\"message\":\"request body exceeds 2MB limit\"}";
+            let _ = stream.write_all(response.as_bytes());
+            return Ok(());
+        }
+
+        if let Some(pos) = find_subsequence(&accumulated, b"\r\n\r\n") {
+            let headers_part = &accumulated[..pos];
+            let headers_str = String::from_utf8_lossy(headers_part);
+            let mut content_length = None;
+            for line in headers_str.lines() {
+                if let Some(val) = line.to_ascii_lowercase().strip_prefix("content-length:") {
+                    if let Ok(len) = val.trim().parse::<usize>() {
+                        content_length = Some(len);
+                    }
+                }
+            }
+
+            if let Some(len) = content_length {
+                if accumulated.len() >= pos + 4 + len {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    let request = String::from_utf8_lossy(&accumulated);
     stream.write_all(handle_http_with_options(root, &request, options).as_bytes())
+}
+
+fn find_subsequence(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    haystack
+        .windows(needle.len())
+        .position(|window| window == needle)
 }
 
 fn route(root: &Path, method: &str, target: &str, body: &[u8]) -> Result<String, String> {
