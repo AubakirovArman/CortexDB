@@ -5,6 +5,7 @@ single-node loop:
 
 ```text
 PutCell -> WAL append -> MemTable update -> restart -> WAL replay -> Retrieve
+Checkpoint -> .acs/.acb/.aci -> manifest.acm -> restart -> segment load -> WAL tail replay
 ```
 
 The critical write invariant is:
@@ -26,3 +27,7 @@ The current MVP stores operations as ACLOG records:
 
 Replay uses durable `CommitSeq` from `CellCore`. Old records without that field
 fall back to replay order for compatibility.
+
+Checkpoint writes a full visible snapshot for the current MVP. The manifest stores
+the checkpoint sequence, so recovery can skip durable WAL records already included
+in the segment snapshot and replay only newer tail records.

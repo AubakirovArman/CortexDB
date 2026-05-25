@@ -3,11 +3,12 @@ use std::path::Path;
 
 use crate::error::{StorageError, StorageResult};
 
-const MAGIC: &[u8; 4] = b"ACS0";
+const MAGIC: &[u8; 4] = b"ACS1";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SegmentCell {
     pub cell_id: u64,
+    pub created_seq: u64,
     pub payload: Vec<u8>,
 }
 
@@ -24,6 +25,7 @@ impl SegmentWriter {
         put_u32(&mut out, cells.len() as u32);
         for cell in cells {
             put_u64(&mut out, cell.cell_id);
+            put_u64(&mut out, cell.created_seq);
             put_u32(&mut out, cell.payload.len() as u32);
             out.extend_from_slice(&cell.payload);
         }
@@ -48,9 +50,14 @@ fn decode_segment(bytes: &[u8]) -> StorageResult<Vec<SegmentCell>> {
     let mut cells = Vec::with_capacity(count);
     for _ in 0..count {
         let cell_id = read_u64(bytes, &mut cursor)?;
+        let created_seq = read_u64(bytes, &mut cursor)?;
         let len = read_u32(bytes, &mut cursor)? as usize;
         let payload = read_bytes(bytes, &mut cursor, len)?.to_vec();
-        cells.push(SegmentCell { cell_id, payload });
+        cells.push(SegmentCell {
+            cell_id,
+            created_seq,
+            payload,
+        });
     }
     if cursor != bytes.len() {
         return Err(StorageError::InvalidSegmentFile);

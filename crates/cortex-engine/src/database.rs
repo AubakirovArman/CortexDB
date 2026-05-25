@@ -2,13 +2,15 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use cortex_aql::{eval_bitmap_program, BitmapProvider, BoundRetrievePlan};
-use cortex_core::memtable::{MemTable, ReadTxn};
+use cortex_core::memtable::{CellVersion, MemTable, ReadTxn};
 use cortex_core::{CellId, CommitSeq};
+use cortex_storage::manifest::StorageManifest;
 use cortex_storage::wal::{DurabilityMode, WalWriter, WalWriterHandle};
 
+use crate::checkpoint::{load_checkpoint, manifest_path, segments_path};
 use crate::error::{EngineError, EngineResult};
 use crate::operation::{wal_record_from_operation_with_seq, DbOperation};
-use crate::replay::{replay_wal, replay_wal_best_effort};
+use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RecoveryMode {
@@ -33,17 +35,28 @@ impl Default for DatabaseOptions {
 
 #[derive(Debug)]
 pub struct Database {
-    root_path: PathBuf,
-    wal_path: PathBuf,
-    memtable: MemTable,
-    writer: WalWriterHandle,
-    current_seq: CommitSeq,
+    pub(crate) root_path: PathBuf,
+    pub(crate) wal_path: PathBuf,
+    pub(crate) manifest_path: PathBuf,
+    pub(crate) segments_path: PathBuf,
+    pub(crate) manifest: StorageManifest,
+    pub(crate) memtable: MemTable,
+    pub(crate) writer: WalWriterHandle,
+    pub(crate) current_seq: CommitSeq,
+    pub(crate) durability_mode: DurabilityMode,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RetrievedCell {
     pub cell_id: CellId,
     pub payload: Vec<u8>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CheckpointStats {
+    pub segment_id: Option<u64>,
+    pub cells_flushed: usize,
+    pub checkpoint_seq: CommitSeq,
 }
 
 impl Database {
@@ -58,18 +71,33 @@ impl Database {
         let root_path = path.as_ref().to_owned();
         fs::create_dir_all(&root_path)?;
         let wal_path = root_path.join("db.aclog");
+        let manifest_path = manifest_path(&root_path);
+        let segments_path = segments_path(&root_path);
+        let checkpoint = load_checkpoint(&root_path)?;
         let replay = match options.recovery_mode {
-            RecoveryMode::Strict => replay_wal(&wal_path)?,
-            RecoveryMode::BestEffort => replay_wal_best_effort(&wal_path)?,
+            RecoveryMode::Strict => replay_wal_into(
+                &wal_path,
+                checkpoint.memtable,
+                CommitSeq(checkpoint.manifest.checkpoint_seq),
+            )?,
+            RecoveryMode::BestEffort => replay_wal_best_effort_into(
+                &wal_path,
+                checkpoint.memtable,
+                CommitSeq(checkpoint.manifest.checkpoint_seq),
+            )?,
         };
         truncate_wal_tail(&wal_path, replay.safe_truncate_offset)?;
         let writer = WalWriter::start(&wal_path, options.durability_mode)?;
         Ok(Self {
             root_path,
             wal_path,
+            manifest_path,
+            segments_path,
+            manifest: checkpoint.manifest,
             memtable: replay.memtable,
             writer,
             current_seq: replay.last_seq,
+            durability_mode: options.durability_mode,
         })
     }
 
@@ -133,7 +161,15 @@ impl Database {
         &self.wal_path
     }
 
+    pub fn manifest(&self) -> &StorageManifest {
+        &self.manifest
+    }
+
     pub fn close(self) {}
+
+    pub(crate) fn snapshot_versions(&self) -> Vec<CellVersion> {
+        self.memtable.visible_cells(self.read_txn())
+    }
 
     fn append_then_apply(&mut self, operation: DbOperation) -> EngineResult<CommitSeq> {
         let next_seq = CommitSeq(self.current_seq.0 + 1);
@@ -169,7 +205,7 @@ impl Database {
     }
 }
 
-fn truncate_wal_tail(path: &Path, safe_offset: u64) -> EngineResult<()> {
+pub(crate) fn truncate_wal_tail(path: &Path, safe_offset: u64) -> EngineResult<()> {
     match fs::metadata(path) {
         Ok(metadata) if metadata.len() > safe_offset => {
             fs::OpenOptions::new()
