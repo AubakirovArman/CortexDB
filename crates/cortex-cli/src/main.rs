@@ -93,14 +93,18 @@ fn run(args: Vec<String>) -> Result<String, String> {
             let db = Database::open(path).map_err(|error| error.to_string())?;
             let stats = db.storage_stats().map_err(|error| error.to_string())?;
             Ok(format!(
-                "current_seq={} checkpoint_seq={} live_segments={} retired_segments={} memtable_cells={} memtable_versions={} wal_size_bytes={}",
+                "current_seq={} checkpoint_seq={} live_segments={} retired_segments={} memtable_cells={} memtable_versions={} wal_size_bytes={} wal_writer_records={} wal_writer_bytes={} wal_writer_fsyncs={} wal_writer_batches={}",
                 stats.current_seq.0,
                 stats.checkpoint_seq.0,
                 stats.live_segments,
                 stats.retired_segments,
                 stats.memtable.cell_count,
                 stats.memtable.version_count,
-                stats.wal_size_bytes
+                stats.wal_size_bytes,
+                stats.wal_writer.records_written,
+                stats.wal_writer.bytes_written,
+                stats.wal_writer.fsync_count,
+                stats.wal_writer.batches_committed
             ))
         }
         "validate" => {

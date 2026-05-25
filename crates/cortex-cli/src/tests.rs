@@ -27,6 +27,7 @@ fn stats_and_validate_commands_work() {
     ])
     .unwrap();
     assert!(stats.contains("current_seq=1"));
+    assert!(stats.contains("wal_writer_records=0"));
 
     let validation = run(vec!["cortexdb".to_owned(), "validate".to_owned(), path_arg]).unwrap();
     assert!(validation.starts_with("ok "));

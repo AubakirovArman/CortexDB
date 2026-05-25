@@ -20,7 +20,7 @@ covered by tests.
 - `Database::validate_storage()` checks manifest segment counts, core storage
   files, indexes, and recoverable WAL state.
 - `Database::storage_stats()` reports current sequence, checkpoint sequence,
-  segment counts, MemTable stats, and WAL size.
+  segment counts, MemTable stats, WAL size, and live WAL writer metrics.
 - Persisted bitmap and lexical indexes merge same-key postings by set union
   across checkpoint segments.
 - Candidate allocation is fallible; overflow and candidate id `0` fail closed.

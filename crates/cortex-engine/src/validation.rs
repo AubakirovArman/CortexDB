@@ -7,7 +7,7 @@ use cortex_core::CommitSeq;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::StorageManifest;
 use cortex_storage::segment::SegmentReader;
-use cortex_storage::wal::WalReader;
+use cortex_storage::wal::{WalReader, WalWriterMetrics};
 
 use crate::checkpoint::{bitmap_path, lexical_path, segment_path};
 use crate::database::Database;
@@ -21,6 +21,7 @@ pub struct StorageStats {
     pub retired_segments: usize,
     pub memtable: MemTableStats,
     pub wal_size_bytes: u64,
+    pub wal_writer: WalWriterMetrics,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -53,6 +54,7 @@ impl Database {
             retired_segments: self.manifest.retired_segments.len(),
             memtable: self.memtable.stats(),
             wal_size_bytes: file_len_or_zero(&self.wal_path)?,
+            wal_writer: self.writer.metrics()?,
         })
     }
 

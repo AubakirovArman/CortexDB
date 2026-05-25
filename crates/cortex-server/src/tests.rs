@@ -37,6 +37,7 @@ fn v1_stats_and_validate_report_storage_state() {
     let stats = handle_http(dir.path(), "GET /v1/stats HTTP/1.1\r\n\r\n");
     assert!(stats.contains(r#""current_seq":1"#));
     assert!(stats.contains(r#""memtable_cells":1"#));
+    assert!(stats.contains(r#""wal_writer_records":0"#));
 
     let validation = handle_http(dir.path(), "GET /v1/validate HTTP/1.1\r\n\r\n");
     assert!(validation.contains(r#""ok":true"#));
