@@ -94,6 +94,8 @@ The 200-epic execution backlog is tracked in
 documented in [`docs/CONTEXT_PACK.md`](docs/CONTEXT_PACK.md).
 The Core Alpha tag gate is tracked in
 [`docs/CORE_ALPHA_RELEASE_CHECKLIST.md`](docs/CORE_ALPHA_RELEASE_CHECKLIST.md).
+Crash/restart/corruption coverage is tracked in
+[`docs/CRASH_SIMULATION.md`](docs/CRASH_SIMULATION.md).
 
 ## Roadmap
 

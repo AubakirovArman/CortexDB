@@ -17,6 +17,7 @@ every required row is green on `main`.
 | Lifecycle safety | open, close, Drop, lock, and stale unlock tests pass. |
 | Repair safety | `Database::repair_best_effort` removes orphan temps and truncates only safe WAL tails. |
 | Restart safety | put, patch, tombstone, checkpoint, compact, and WAL tail tests pass. |
+| Crash matrix | Orphan bundles, temp manifests, restart tails, and corruption matrix tests pass. |
 | Query safety | AQL retrieve respects AgentView masks and candidate mappings. |
 | ContextPack v0 | AQL-to-ContextPack tests pass for budget and citation anomalies. |
 | Docs | README, Core Alpha docs, invariants, failure scenarios, and task pools are current. |
