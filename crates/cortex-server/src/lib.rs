@@ -1,6 +1,11 @@
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
+use axum::{
+    extract::{Request, State},
+    http::StatusCode,
+    response::IntoResponse,
+    Json, Router,
+};
 use std::path::Path;
+use tower_http::limit::RequestBodyLimitLayer;
 
 use cortex_core::CellId;
 use cortex_engine::Database;
@@ -17,94 +22,105 @@ pub struct ServerOptions {
     pub auth_token: Option<String>,
 }
 
+#[derive(Clone)]
+pub struct AppState {
+    db: std::sync::Arc<std::sync::RwLock<Database>>,
+    options: std::sync::Arc<ServerOptions>,
+}
+
 pub fn serve(root: &Path, addr: &str) -> std::io::Result<()> {
     serve_with_options(root, addr, ServerOptions::default())
 }
 
 pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> std::io::Result<()> {
-    let listener = TcpListener::bind(addr)?;
-    let db = Database::open(root).map_err(|error| std::io::Error::other(error.to_string()))?;
-    let db = std::sync::Arc::new(std::sync::RwLock::new(db));
-    let options = std::sync::Arc::new(options);
-    for stream in listener.incoming() {
-        let stream = stream?;
-        let db = db.clone();
-        let options = options.clone();
-        std::thread::spawn(move || {
-            let _ = handle_stream_shared(&db, &options, stream);
-        });
-    }
-    Ok(())
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?;
+    rt.block_on(async {
+        let db = Database::open(root).map_err(|error| std::io::Error::other(error.to_string()))?;
+        let state = AppState {
+            db: std::sync::Arc::new(std::sync::RwLock::new(db)),
+            options: std::sync::Arc::new(options),
+        };
+
+        let app = Router::new()
+            .fallback(axum_handler)
+            .layer(RequestBodyLimitLayer::new(2 * 1024 * 1024)) // 2MB Limit
+            .with_state(state);
+
+        let listener = tokio::net::TcpListener::bind(addr).await?;
+        axum::serve(listener, app).await?;
+        Ok(())
+    })
 }
 
-fn handle_stream_shared(
-    db: &std::sync::Arc<std::sync::RwLock<Database>>,
-    options: &ServerOptions,
-    mut stream: TcpStream,
-) -> std::io::Result<()> {
-    let mut accumulated = Vec::new();
-    let mut chunk = [0u8; 4096];
-    let max_size = 2 * 1024 * 1024; // 2MB Limit
+async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoResponse {
+    let method = req.method().as_str().to_owned();
+    let uri = req.uri().to_owned();
+    let path = uri.path().to_owned();
+    let query = uri.query().unwrap_or("").to_owned();
 
-    loop {
-        let read = stream.read(&mut chunk)?;
-        if read == 0 {
-            break;
+    let auth_header = req
+        .headers()
+        .get("authorization")
+        .or_else(|| req.headers().get("Authorization"))
+        .and_then(|h| h.to_str().ok());
+
+    if let Some(ref expected_token) = state.options.auth_token {
+        let expected_bearer = format!("Bearer {expected_token}");
+        if auth_header != Some(expected_bearer.as_str()) {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(serde_json::json!({
+                    "error": "unauthorized",
+                    "message": "missing or invalid authorization"
+                })),
+            )
+                .into_response();
         }
-        accumulated.extend_from_slice(&chunk[..read]);
-        if accumulated.len() > max_size {
-            let response = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{\"error\":\"payload_too_large\",\"message\":\"request body exceeds 2MB limit\"}";
-            let _ = stream.write_all(response.as_bytes());
-            return Ok(());
+    }
+
+    let body_bytes = match axum::body::to_bytes(req.into_body(), 2 * 1024 * 1024).await {
+        Ok(bytes) => bytes.to_vec(),
+        Err(_) => {
+            return (
+                StatusCode::PAYLOAD_TOO_LARGE,
+                Json(serde_json::json!({
+                    "error": "payload_too_large",
+                    "message": "request body exceeds 2MB limit"
+                })),
+            )
+                .into_response();
         }
+    };
 
-        if let Some(pos) = find_subsequence(&accumulated, b"\r\n\r\n") {
-            let headers_part = &accumulated[..pos];
-            let headers_str = String::from_utf8_lossy(headers_part);
-            let mut content_length = None;
-            for line in headers_str.lines() {
-                if let Some(val) = line.to_ascii_lowercase().strip_prefix("content-length:") {
-                    if let Ok(len) = val.trim().parse::<usize>() {
-                        content_length = Some(len);
-                    }
-                }
-            }
-
-            if let Some(len) = content_length {
-                if accumulated.len() >= pos + 4 + len {
-                    break;
-                }
+    let target = if query.is_empty() {
+        path
+    } else {
+        format!("{path}?{query}")
+    };
+    match route_shared(&state.db, &method, &target, &body_bytes) {
+        Ok(body_str) => {
+            if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_str) {
+                (StatusCode::OK, Json(json_val)).into_response()
             } else {
-                break;
+                (StatusCode::OK, body_str).into_response()
             }
         }
-    }
-
-    let request = String::from_utf8_lossy(&accumulated);
-    stream.write_all(handle_http_with_options_shared(db, &request, options).as_bytes())
-}
-
-fn handle_http_with_options_shared(
-    db: &std::sync::Arc<std::sync::RwLock<Database>>,
-    request: &str,
-    options: &ServerOptions,
-) -> String {
-    let Some((head, body)) = request.split_once("\r\n\r\n") else {
-        return json_error(400, "bad_request", "bad request");
-    };
-    let Some(first_line) = head.lines().next() else {
-        return json_error(400, "bad_request", "bad request");
-    };
-    let parts = first_line.split_whitespace().collect::<Vec<_>>();
-    if parts.len() != 3 {
-        return json_error(400, "bad_request", "bad request");
-    }
-    if !authorized(head, options) {
-        return json_error(401, "unauthorized", "missing or invalid authorization");
-    }
-    match route_shared(db, parts[0], parts[1], body.as_bytes()) {
-        Ok(value) => json_response(200, &value),
-        Err(error) => json_error(400, "bad_request", &error),
+        Err(err_msg) => {
+            let status = match err_msg.as_str() {
+                "cell not found" | "job not found" => StatusCode::NOT_FOUND,
+                _ => StatusCode::BAD_REQUEST,
+            };
+            (
+                status,
+                Json(serde_json::json!({
+                    "error": "bad_request",
+                    "message": err_msg
+                })),
+            )
+                .into_response()
+        }
     }
 }
 
@@ -123,23 +139,34 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
     if parts.len() != 3 {
         return json_error(400, "bad_request", "bad request");
     }
-    if !authorized(head, options) {
-        return json_error(401, "unauthorized", "missing or invalid authorization");
+
+    // Check Authorization
+    if let Some(ref expected_token) = options.auth_token {
+        let expected_bearer = format!("Bearer {expected_token}");
+        let auth_header = head.lines().skip(1).find_map(|line| {
+            line.strip_prefix("authorization:")
+                .or_else(|| line.strip_prefix("Authorization:"))
+                .map(|val| val.trim())
+        });
+        if auth_header != Some(expected_bearer.as_str()) {
+            return json_error(401, "unauthorized", "missing or invalid authorization");
+        }
     }
+
     let Ok(db) = Database::open(root) else {
         return json_error(500, "internal_error", "failed to open database");
     };
     let db = std::sync::RwLock::new(db);
     match route_shared(&db, parts[0], parts[1], body.as_bytes()) {
         Ok(value) => json_response(200, &value),
-        Err(error) => json_error(400, "bad_request", &error),
+        Err(error) => {
+            let status = match error.as_str() {
+                "cell not found" | "job not found" => 404,
+                _ => 400,
+            };
+            json_error(status, "bad_request", &error)
+        }
     }
-}
-
-fn find_subsequence(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    haystack
-        .windows(needle.len())
-        .position(|window| window == needle)
 }
 
 fn route_shared(
@@ -328,17 +355,6 @@ fn query_param_opt<'a>(query: &'a str, key: &str) -> Option<&'a str> {
     query.split('&').find_map(|pair| pair.strip_prefix(&prefix))
 }
 
-fn authorized(head: &str, options: &ServerOptions) -> bool {
-    let Some(token) = &options.auth_token else {
-        return true;
-    };
-    head.lines().skip(1).any(|line| {
-        line.strip_prefix("authorization:")
-            .or_else(|| line.strip_prefix("Authorization:"))
-            .is_some_and(|value| value.trim() == format!("Bearer {token}"))
-    })
-}
-
 fn cell_id(query: &str) -> Result<CellId, String> {
     query_param(query, "cell_id")?
         .parse::<u64>()
@@ -377,6 +393,9 @@ fn reason(status: u16) -> &'static str {
     match status {
         200 => "OK",
         401 => "Unauthorized",
+        404 => "Not Found",
+        413 => "Payload Too Large",
+        500 => "Internal Error",
         _ => "Bad Request",
     }
 }

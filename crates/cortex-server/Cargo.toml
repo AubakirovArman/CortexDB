@@ -9,6 +9,11 @@ cortex-aql = { path = "../cortex-aql" }
 cortex-core = { path = "../cortex-core" }
 cortex-engine = { path = "../cortex-engine" }
 serde_json = "1"
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
 
 [dev-dependencies]
 tempfile = "3"
