@@ -56,6 +56,19 @@ fn not_works_as_universe_complement() {
 }
 
 #[test]
+fn push_universe_loads_segment_universe() {
+    let provider = MockBitmapProvider {
+        universe: set(&[1, 2, 3]),
+        ..MockBitmapProvider::default()
+    };
+    let program = program(vec![BitmapOp::PushUniverse]);
+    assert_eq!(
+        eval_bitmap_program(&program, &provider).unwrap(),
+        set(&[1, 2, 3])
+    );
+}
+
+#[test]
 fn invalid_stack_program_fails() {
     let provider = MockBitmapProvider::default();
     let program = BitmapProgram {

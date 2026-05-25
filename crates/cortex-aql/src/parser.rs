@@ -48,7 +48,9 @@ pub fn parse_aql_diagnostic(input: &str) -> Result<AqlStatement<'_>, AqlParseErr
 }
 
 fn parse_statement(input: Span<'_>) -> PResult<'_, AqlStatement<'_>> {
-    if starts_with_keyword(input, "RETRIEVE") {
+    if starts_with_keyword(input, "EXPLAIN") {
+        parse_explain(input)
+    } else if starts_with_keyword(input, "RETRIEVE") {
         map(parse_retrieve_context, |raw| {
             AqlStatement::RetrieveContext(Box::new(raw))
         })(input)
@@ -64,6 +66,14 @@ fn parse_statement(input: Span<'_>) -> PResult<'_, AqlStatement<'_>> {
             AqlParseErrorKind::Unexpected,
         )))
     }
+}
+
+fn parse_explain(input: Span<'_>) -> PResult<'_, AqlStatement<'_>> {
+    let (input, _) = kw("EXPLAIN")(input)?;
+    let (input, _) = ws1(input)?;
+    map(parse_statement, |statement| {
+        AqlStatement::Explain(Box::new(statement))
+    })(input)
 }
 
 fn parse_verify_fact(input: Span<'_>) -> PResult<'_, RawVerifyFact<'_>> {

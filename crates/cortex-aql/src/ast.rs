@@ -41,6 +41,7 @@ pub struct DecimalLiteral<'a> {
 pub enum Literal<'a> {
     String(AqlString<'a>),
     Identifier(Identifier<'a>),
+    List(Vec<Spanned<Literal<'a>>>),
     Integer(u64),
     Decimal(DecimalLiteral<'a>),
     Boolean(bool),
@@ -54,6 +55,7 @@ pub enum Comparator {
     Gte,
     Lt,
     Lte,
+    In,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -119,6 +121,7 @@ pub enum AqlStatement<'a> {
     RetrieveContext(Box<RawRetrieveContext<'a>>),
     VerifyFact(Box<RawVerifyFact<'a>>),
     Remember(Box<RawRemember<'a>>),
+    Explain(Box<AqlStatement<'a>>),
 }
 
 impl<'a> AqlString<'a> {

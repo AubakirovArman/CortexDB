@@ -2,8 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_aql::{
     decimal_to_q16, eval_bitmap_program, parse_aql, AgentId, AgentView, AqlCatalog, AqlStatement,
-    BindError, Binder, BitmapHandle, BrainId, DecimalLiteral, MemoryType, MockBitmapProvider,
-    RetrievalMode, ScopeId, Q16_ONE, Q16_ZERO,
+    BindError, Binder, BitmapHandle, BrainId, CellTypeId, DecimalLiteral, MemoryType,
+    MockBitmapProvider, RetrievalMode, ScopeId, StatusId, Q16_ONE, Q16_ZERO,
 };
 
 #[derive(Default)]
@@ -11,7 +11,9 @@ struct Catalog {
     brains: BTreeMap<String, BrainId>,
     scopes: BTreeMap<String, ScopeId>,
     scope_bitmaps: BTreeMap<ScopeId, BitmapHandle>,
-    status_bitmaps: BTreeMap<String, BitmapHandle>,
+    status_bitmaps: BTreeMap<StatusId, BitmapHandle>,
+    cell_type_bitmaps: BTreeMap<CellTypeId, BitmapHandle>,
+    memory_type_bitmaps: BTreeMap<MemoryType, BitmapHandle>,
 }
 
 impl AqlCatalog for Catalog {
@@ -19,24 +21,44 @@ impl AqlCatalog for Catalog {
         self.brains.get(name).copied()
     }
 
-    fn resolve_scope(&self, name: &str) -> Option<ScopeId> {
+    fn resolve_scope(&self, _brain: BrainId, name: &str) -> Option<ScopeId> {
         self.scopes.get(name).copied()
     }
 
-    fn scope_bitmap(&self, scope: ScopeId) -> Option<BitmapHandle> {
+    fn resolve_status(&self, _brain: BrainId, status: &str) -> Option<StatusId> {
+        match status {
+            "ready" => Some(StatusId(1)),
+            "verified" => Some(StatusId(2)),
+            _ => None,
+        }
+    }
+
+    fn resolve_cell_type(&self, _brain: BrainId, cell_type: &str) -> Option<CellTypeId> {
+        match cell_type {
+            "fact" => Some(CellTypeId(1)),
+            "document_block" => Some(CellTypeId(2)),
+            _ => None,
+        }
+    }
+
+    fn scope_bitmap(&self, _brain: BrainId, scope: ScopeId) -> Option<BitmapHandle> {
         self.scope_bitmaps.get(&scope).copied()
     }
 
-    fn status_bitmap(&self, status: &str) -> Option<BitmapHandle> {
-        self.status_bitmaps.get(status).copied()
+    fn status_bitmap(&self, _brain: BrainId, status: StatusId) -> Option<BitmapHandle> {
+        self.status_bitmaps.get(&status).copied()
     }
 
-    fn cell_type_bitmap(&self, _memory_type: MemoryType) -> Option<BitmapHandle> {
-        None
+    fn cell_type_bitmap(&self, _brain: BrainId, cell_type: CellTypeId) -> Option<BitmapHandle> {
+        self.cell_type_bitmaps.get(&cell_type).copied()
     }
 
-    fn field_is_filterable(&self, field: &str) -> bool {
-        matches!(field, "space" | "status")
+    fn memory_type_bitmap(&self, _brain: BrainId, memory_type: MemoryType) -> Option<BitmapHandle> {
+        self.memory_type_bitmaps.get(&memory_type).copied()
+    }
+
+    fn field_is_filterable(&self, _brain: BrainId, field: &str) -> bool {
+        matches!(field, "space" | "status" | "type" | "memory_type")
     }
 }
 
@@ -45,13 +67,22 @@ fn catalog() -> Catalog {
         brains: BTreeMap::from([("brain".to_owned(), BrainId(1))]),
         scopes: BTreeMap::from([("project:investments".to_owned(), ScopeId(10))]),
         scope_bitmaps: BTreeMap::from([(ScopeId(10), BitmapHandle(100))]),
-        status_bitmaps: BTreeMap::from([("ready".to_owned(), BitmapHandle(200))]),
+        status_bitmaps: BTreeMap::from([
+            (StatusId(1), BitmapHandle(200)),
+            (StatusId(2), BitmapHandle(201)),
+        ]),
+        cell_type_bitmaps: BTreeMap::from([
+            (CellTypeId(1), BitmapHandle(300)),
+            (CellTypeId(2), BitmapHandle(301)),
+        ]),
+        memory_type_bitmaps: BTreeMap::from([(MemoryType::Decision, BitmapHandle(400))]),
     }
 }
 
 fn view() -> AgentView {
     AgentView {
         agent_id: AgentId(1),
+        label: None,
         readable_brains: BTreeSet::from([BrainId(1)]),
         readable_scopes: BTreeSet::from([ScopeId(10)]),
         writable_scopes: BTreeSet::new(),
@@ -62,12 +93,12 @@ fn view() -> AgentView {
         max_candidate_limit: 100,
         default_candidate_limit: 20,
         min_required_confidence_q16: Q16_ZERO,
-        max_ttl_seconds: 3_600,
+        max_ttl_seconds: Some(3_600),
         allow_remember: false,
         allow_verify_fact: false,
         allow_audit_mode: false,
         require_citations_by_default: false,
-        private_scope: ScopeId(99),
+        private_scope: Some(ScopeId(99)),
     }
 }
 

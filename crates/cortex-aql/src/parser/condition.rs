@@ -2,7 +2,8 @@ use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{char, multispace0};
 use nom::combinator::map;
-use nom::sequence::{delimited, terminated};
+use nom::multi::separated_list1;
+use nom::sequence::{delimited, terminated, tuple};
 use nom::Err;
 
 use crate::ast::{Comparator, Condition, Literal, Spanned};
@@ -99,6 +100,7 @@ fn parse_comparator(input: Span<'_>) -> PResult<'_, Spanned<Comparator>> {
         map(tag("!="), |_| Comparator::NotEq),
         map(tag(">="), |_| Comparator::Gte),
         map(tag("<="), |_| Comparator::Lte),
+        map(kw("IN"), |_| Comparator::In),
         map(tag("="), |_| Comparator::Eq),
         map(tag(">"), |_| Comparator::Gt),
         map(tag("<"), |_| Comparator::Lt),
@@ -106,6 +108,26 @@ fn parse_comparator(input: Span<'_>) -> PResult<'_, Spanned<Comparator>> {
 }
 
 fn parse_literal(input: Span<'_>) -> PResult<'_, Spanned<Literal<'_>>> {
+    alt((parse_list_literal, parse_scalar_literal))(input)
+}
+
+fn parse_list_literal(input: Span<'_>) -> PResult<'_, Spanned<Literal<'_>>> {
+    let start = input;
+    let (input, values) = delimited(
+        tuple((char('['), multispace0)),
+        separated_list1(
+            delimited(multispace0, char(','), multispace0),
+            parse_scalar_literal,
+        ),
+        tuple((multispace0, char(']'))),
+    )(input)?;
+    Ok((
+        input,
+        Spanned::new(Literal::List(values), span_between(start, input)),
+    ))
+}
+
+fn parse_scalar_literal(input: Span<'_>) -> PResult<'_, Spanned<Literal<'_>>> {
     alt((
         map(parse_quoted_string, |s| {
             Spanned::new(Literal::String(s.node), s.span)

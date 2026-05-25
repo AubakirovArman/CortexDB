@@ -3,15 +3,19 @@ use thiserror::Error;
 use crate::agent_view::AgentView;
 use crate::ast::{RawRemember, RawRetrieveContext, RawVerifyFact, TtlValue};
 use crate::policy::{PolicyError, PolicyValidator};
-use crate::types::{BrainId, MemoryType, RetrievalMode, ScopeId, Q16, Q16_ZERO};
+use crate::types::{
+    BrainId, CellTypeId, MemoryType, RetrievalMode, ScopeId, StatusId, Q16, Q16_ZERO,
+};
 
+mod diagnostics;
 mod support;
 mod where_bitmap;
 
+pub use diagnostics::{BindDiagnostic, BindDiagnosticExport};
 use support::apply_requirement;
 pub use support::{
     compute_bitmap_stack_depth, context_policy_for_mode, decimal_to_q16, default_weights,
-    normalize_weights,
+    normalize_weights, optimize_bitmap_ops,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -33,6 +37,7 @@ pub struct BitmapProgram {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BitmapOp {
     Push(BitmapHandle),
+    PushUniverse,
     PushAgentAllowed,
     PushLive,
     And,
@@ -43,11 +48,21 @@ pub enum BitmapOp {
 
 pub trait AqlCatalog {
     fn resolve_brain(&self, name: &str) -> Option<BrainId>;
-    fn resolve_scope(&self, name: &str) -> Option<ScopeId>;
-    fn scope_bitmap(&self, scope: ScopeId) -> Option<BitmapHandle>;
-    fn status_bitmap(&self, status: &str) -> Option<BitmapHandle>;
-    fn cell_type_bitmap(&self, memory_type: MemoryType) -> Option<BitmapHandle>;
-    fn field_is_filterable(&self, field: &str) -> bool;
+    fn resolve_scope(&self, brain: BrainId, name: &str) -> Option<ScopeId>;
+    fn resolve_write_scope(&self, _name: &str) -> Option<ScopeId> {
+        None
+    }
+    fn resolve_status(&self, brain: BrainId, status: &str) -> Option<StatusId>;
+    fn resolve_cell_type(&self, brain: BrainId, cell_type: &str) -> Option<CellTypeId>;
+    fn scope_bitmap(&self, brain: BrainId, scope: ScopeId) -> Option<BitmapHandle>;
+    fn status_bitmap(&self, brain: BrainId, status: StatusId) -> Option<BitmapHandle>;
+    fn cell_type_bitmap(&self, brain: BrainId, cell_type: CellTypeId) -> Option<BitmapHandle>;
+    fn memory_type_bitmap(&self, brain: BrainId, memory_type: MemoryType) -> Option<BitmapHandle>;
+    fn field_is_filterable(&self, brain: BrainId, field: &str) -> bool;
+
+    fn bitmap_estimated_cardinality(&self, _brain: BrainId, _handle: BitmapHandle) -> Option<u64> {
+        None
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -114,6 +129,38 @@ pub enum BindError {
     PolicyDenied(PolicyError),
 }
 
+impl BindError {
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::UnknownBrain => "UnknownBrain",
+            Self::UnknownScope => "UnknownScope",
+            Self::UnknownBitmap => "UnknownBitmap",
+            Self::FieldNotFilterable(_) => "FieldNotFilterable",
+            Self::UnsupportedComparator => "UnsupportedComparator",
+            Self::UnsupportedLiteral => "UnsupportedLiteral",
+            Self::InvalidMemoryType => "InvalidMemoryType",
+            Self::InvalidDecimal => "InvalidDecimal",
+            Self::InvalidBitmapProgram => "InvalidBitmapProgram",
+            Self::PolicyDenied(_) => "PolicyDenied",
+        }
+    }
+
+    pub fn safe_message(&self) -> &'static str {
+        match self {
+            Self::UnknownBrain => "requested brain is unavailable",
+            Self::UnknownScope => "requested scope is unavailable",
+            Self::UnknownBitmap => "required bitmap is unavailable",
+            Self::FieldNotFilterable(_) => "field is not filterable",
+            Self::UnsupportedComparator => "comparator is not supported for this field",
+            Self::UnsupportedLiteral => "literal is not supported for this field",
+            Self::InvalidMemoryType => "memory type is invalid",
+            Self::InvalidDecimal => "decimal literal is invalid",
+            Self::InvalidBitmapProgram => "bitmap program is invalid",
+            Self::PolicyDenied(error) => error.safe_message(),
+        }
+    }
+}
+
 pub struct Binder<'a, C> {
     catalog: &'a C,
     view: &'a AgentView,
@@ -165,9 +212,10 @@ impl<'a, C: AqlCatalog> Binder<'a, C> {
             BitmapOp::And,
         ];
         if let Some(condition) = &raw.where_clause {
-            where_bitmap::compile_condition(self, &condition.node, &mut ops)?;
+            where_bitmap::compile_condition(self, brain, &condition.node, &mut ops)?;
             ops.push(BitmapOp::And);
         }
+        let ops = optimize_bitmap_ops(ops);
         let max_stack_depth = compute_bitmap_stack_depth(&ops)?;
         Ok(BoundRetrievePlan {
             brain_id: brain,
@@ -203,7 +251,7 @@ impl<'a, C: AqlCatalog> Binder<'a, C> {
     pub fn bind_remember(&self, raw: &RawRemember<'_>) -> Result<BoundRememberPlan, BindError> {
         let scope = self
             .catalog
-            .resolve_scope(raw.scope.node.value.as_ref())
+            .resolve_write_scope(raw.scope.node.value.as_ref())
             .ok_or(BindError::UnknownScope)?;
         let memory_type = raw
             .memory_type

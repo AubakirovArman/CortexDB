@@ -45,6 +45,14 @@ pub struct PolicyDiagnostic {
     pub safe_message: &'static str,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PolicyDiagnosticExport {
+    pub code: PolicyCode,
+    pub severity: PolicySeverity,
+    pub message: &'static str,
+    pub agent_id: Option<crate::types::AgentId>,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PolicyReport {
     pub diagnostics: Vec<PolicyDiagnostic>,
@@ -81,7 +89,7 @@ impl<'a> PolicyValidator<'a> {
         if !self.view.can_use_mode(mode) {
             return Err(PolicyError::ModeNotAllowed);
         }
-        if mode == RetrievalMode::Audit && !self.view.allow_audit_mode {
+        if mode == RetrievalMode::Audit && !self.view.can_use_audit_mode() {
             return Err(PolicyError::AuditModeNotAllowed);
         }
         Ok(self.effective_retrieve(mode, requested_budget_tokens, requested_candidate_limit))
@@ -101,7 +109,7 @@ impl<'a> PolicyValidator<'a> {
         if !self.view.can_use_mode(mode) {
             report.push(PolicyError::ModeNotAllowed);
         }
-        if mode == RetrievalMode::Audit && !self.view.allow_audit_mode {
+        if mode == RetrievalMode::Audit && !self.view.can_use_audit_mode() {
             report.push(PolicyError::AuditModeNotAllowed);
         }
         if requested_budget_tokens > self.view.max_context_budget_tokens {
@@ -131,14 +139,16 @@ impl<'a> PolicyValidator<'a> {
         if !self.view.can_remember_type(memory_type) {
             return Err(PolicyError::MemoryTypeNotAllowed);
         }
-        if ttl_seconds.is_some_and(|ttl| ttl > self.view.max_ttl_seconds) {
-            return Err(PolicyError::TtlTooLong);
+        if let (Some(ttl), Some(max_ttl)) = (ttl_seconds, self.view.max_ttl_seconds) {
+            if ttl > max_ttl {
+                return Err(PolicyError::TtlTooLong);
+            }
         }
         Ok(())
     }
 
     pub fn enforce_verify_fact(&self, brain: BrainId) -> Result<(), PolicyError> {
-        if !self.view.allow_verify_fact {
+        if !self.view.can_verify_fact() {
             return Err(PolicyError::VerifyFactNotAllowed);
         }
         if !self.view.can_read_brain(brain) {
@@ -155,8 +165,10 @@ impl<'a> PolicyValidator<'a> {
     ) -> EffectiveRetrievePolicy {
         EffectiveRetrievePolicy {
             mode,
-            context_budget_tokens: requested_budget_tokens.min(self.view.max_context_budget_tokens),
-            candidate_limit: requested_candidate_limit.min(self.view.max_candidate_limit),
+            context_budget_tokens: self.view.effective_budget(requested_budget_tokens),
+            candidate_limit: self
+                .view
+                .effective_candidate_limit(requested_candidate_limit),
             min_required_confidence_q16: self.view.min_required_confidence_q16,
             require_citations: self.view.require_citations_by_default,
         }
@@ -168,6 +180,40 @@ impl PolicyReport {
         self.diagnostics
             .iter()
             .any(|diagnostic| diagnostic.severity == PolicySeverity::Deny)
+    }
+
+    pub fn allowed(&self) -> bool {
+        !self.has_denies()
+    }
+
+    pub fn has_clamps(&self) -> bool {
+        self.diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.severity == PolicySeverity::Clamp)
+    }
+
+    pub fn safe_export(&self) -> Vec<PolicyDiagnosticExport> {
+        self.diagnostics
+            .iter()
+            .map(|diagnostic| PolicyDiagnosticExport {
+                code: diagnostic.code,
+                severity: diagnostic.severity,
+                message: diagnostic.safe_message,
+                agent_id: None,
+            })
+            .collect()
+    }
+
+    pub fn internal_export(&self, agent_id: crate::types::AgentId) -> Vec<PolicyDiagnosticExport> {
+        self.diagnostics
+            .iter()
+            .map(|diagnostic| PolicyDiagnosticExport {
+                code: diagnostic.code,
+                severity: diagnostic.severity,
+                message: diagnostic.safe_message,
+                agent_id: Some(agent_id),
+            })
+            .collect()
     }
 
     fn push(&mut self, error: PolicyError) {
