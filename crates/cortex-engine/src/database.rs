@@ -11,7 +11,9 @@ use crate::checkpoint::{load_checkpoint, manifest_path, segments_path};
 use crate::cleanup::{cleanup_orphans, remove_lock_file};
 use crate::error::{EngineError, EngineResult};
 use crate::lock::DatabaseLock;
-use crate::operation::{wal_record_from_operation_with_seq, DbOperation};
+use crate::operation::{
+    wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq, DbOperation,
+};
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
 
 pub trait CandidateResolver: BitmapProvider {
@@ -211,6 +213,19 @@ impl Database {
     fn append_then_apply(&mut self, operation: DbOperation) -> EngineResult<CommitSeq> {
         let next_seq = CommitSeq(self.current_seq.0 + 1);
         let record = wal_record_from_operation_with_seq(next_seq, &operation);
+        self.writer.append(record)?;
+        self.apply_operation(next_seq, operation)?;
+        self.current_seq = next_seq;
+        Ok(next_seq)
+    }
+
+    pub(crate) fn append_then_apply_with_metadata(
+        &mut self,
+        operation: DbOperation,
+        metadata: Vec<u8>,
+    ) -> EngineResult<CommitSeq> {
+        let next_seq = CommitSeq(self.current_seq.0 + 1);
+        let record = wal_record_from_operation_with_metadata(next_seq, &operation, metadata);
         self.writer.append(record)?;
         self.apply_operation(next_seq, operation)?;
         self.current_seq = next_seq;

@@ -67,6 +67,20 @@ pub fn wal_record_from_operation_with_seq(seq: CommitSeq, operation: &DbOperatio
     wal_record_from_operation_inner(seq, operation)
 }
 
+pub fn wal_record_from_operation_with_metadata(
+    seq: CommitSeq,
+    operation: &DbOperation,
+    metadata: Vec<u8>,
+) -> WalRecord {
+    let mut record = wal_record_from_operation_inner(seq, operation);
+    if !metadata.is_empty() {
+        record
+            .sections
+            .push(WalSection::new(SectionTag::CellMetadata, metadata));
+    }
+    record
+}
+
 fn wal_record_from_operation_inner(seq: CommitSeq, operation: &DbOperation) -> WalRecord {
     match operation {
         DbOperation::PutCell { cell_id, payload } => {
@@ -135,6 +149,10 @@ pub fn decode_cell_id(bytes: &[u8]) -> EngineResult<CellId> {
         .try_into()
         .map_err(|_| EngineError::InvalidOperation)?;
     Ok(CellId(u64::from_le_bytes(raw)))
+}
+
+pub fn metadata_from_decoded_wal_record(record: &DecodedWalRecord) -> Option<&[u8]> {
+    section(record, SectionTag::CellMetadata)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

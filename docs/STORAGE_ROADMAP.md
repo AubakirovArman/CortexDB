@@ -51,13 +51,13 @@
 - WAL writer metrics for records, bytes, fsyncs, and committed batches.
 - WAL replay metrics for seen, applied, skipped, payload bytes, and safe offset.
 - Public WAL writer metrics exposed through engine stats, CLI stats, and HTTP stats.
+- Knowledge-cell writes include structured `CellMetadata` WAL sections.
 
 ## Next
 
-1. Add metadata WAL sections beyond the payload-line bridge.
-2. Persist consensus log entries through ACLOG or a dedicated replication log.
-3. Add natural-language contradiction extraction after structured markers.
-4. Run search directly over persisted `.aci` without snapshot rebuild.
+1. Persist consensus log entries through ACLOG or a dedicated replication log.
+2. Add natural-language contradiction extraction after structured markers.
+3. Run search directly over persisted `.aci` without snapshot rebuild.
 
 ## Not Yet
 

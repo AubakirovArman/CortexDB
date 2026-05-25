@@ -65,6 +65,33 @@ impl KnowledgeCell {
     }
 }
 
+impl KnowledgeCellMetadata {
+    pub fn encode_wal_section(&self) -> Vec<u8> {
+        let mut lines = vec![
+            "cortexdb.cell_metadata.v1".to_owned(),
+            format!("scope={}", sanitize_line_value(&self.scope)),
+            format!("status={}", sanitize_line_value(&self.status)),
+            format!("type={}", self.cell_type.as_str()),
+        ];
+        if let Some(memory_type) = &self.memory_type {
+            lines.push(format!("memory_type={}", sanitize_line_value(memory_type)));
+        }
+        if let Some(ttl_seconds) = self.ttl_seconds {
+            lines.push(format!("ttl_seconds={ttl_seconds}"));
+        }
+        if let Some(created_unix_seconds) = self.created_unix_seconds {
+            lines.push(format!("created_unix_seconds={created_unix_seconds}"));
+        }
+        if let Some(source_trust_q16) = self.source_trust_q16 {
+            lines.push(format!("source_trust_q16={source_trust_q16}"));
+        }
+        if let Some(source) = &self.source {
+            lines.push(format!("source={}", sanitize_line_value(source)));
+        }
+        lines.join("\n").into_bytes()
+    }
+}
+
 impl Default for KnowledgeCellMetadata {
     fn default() -> Self {
         Self {

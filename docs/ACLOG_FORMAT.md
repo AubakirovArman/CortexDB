@@ -60,6 +60,7 @@ Sections are 8-byte aligned in the payload. Padding bytes are zero-filled.
 - `NumericGuards`
 - `VectorRef`
 - `EdgeHints`
+- `CellMetadata`
 
 Unknown section tags are retained in decoded section metadata and skipped from
 the known `WalRecord.sections` view.
@@ -100,6 +101,11 @@ offset.
 Operation records written by the engine must include both little-endian
 `CellId` and little-endian `CommitSeq` in `CellCore`. Records missing
 `CommitSeq` are rejected by replay.
+
+`CellMetadata` is an optional structured metadata section for new knowledge-cell
+writes. The current v1 payload is deterministic UTF-8 key/value lines starting
+with `cortexdb.cell_metadata.v1`; existing payload headers remain present for
+the current MemTable, segment, AQL, and search paths.
 
 ## Diagnostics
 

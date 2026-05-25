@@ -19,7 +19,14 @@ impl Database {
         cell_id: CellId,
         cell: KnowledgeCell,
     ) -> EngineResult<CommitSeq> {
-        self.put_cell(cell_id, cell.encode_payload())
+        let metadata = cell.metadata.encode_wal_section();
+        self.append_then_apply_with_metadata(
+            crate::operation::DbOperation::PutCell {
+                cell_id,
+                payload: cell.encode_payload(),
+            },
+            metadata,
+        )
     }
 
     pub fn remember_aql(&mut self, aql: &str, view: &AgentView) -> EngineResult<RememberedCell> {

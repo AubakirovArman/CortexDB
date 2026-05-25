@@ -1,6 +1,7 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
-use cortex_engine::{scope_id, CellMetadata, Database};
+use cortex_engine::{metadata_from_decoded_wal_record, scope_id, CellMetadata, Database};
+use cortex_storage::wal::WalReader;
 use std::collections::BTreeSet;
 
 #[test]
@@ -33,6 +34,35 @@ WHERE space = project:investments AND status = "verified" AND type = "fact" LIMI
     assert_eq!(cells[0].cell_id, CellId(77));
     assert!(String::from_utf8_lossy(&cells[0].payload).contains("source=annual-report"));
     assert!(String::from_utf8_lossy(&cells[0].payload).contains("source_trust_q16=60000"));
+}
+
+#[test]
+fn put_knowledge_cell_writes_metadata_wal_section() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let cell = KnowledgeCell::new(
+        KnowledgeCellMetadata {
+            scope: "project:investments".to_owned(),
+            status: "verified".to_owned(),
+            cell_type: KnowledgeCellType::Fact,
+            source_trust_q16: Some(60_000),
+            source: Some("annual-report".to_owned()),
+            ..KnowledgeCellMetadata::default()
+        },
+        "body",
+    );
+
+    db.put_knowledge_cell(CellId(88), cell).unwrap();
+
+    let scan = WalReader::scan_path(db.wal_path()).unwrap();
+    let metadata = metadata_from_decoded_wal_record(&scan.records[0]).unwrap();
+    let metadata = String::from_utf8_lossy(metadata);
+    assert!(metadata.contains("cortexdb.cell_metadata.v1"));
+    assert!(metadata.contains("scope=project:investments"));
+    assert!(metadata.contains("status=verified"));
+    assert!(metadata.contains("type=fact"));
+    assert!(metadata.contains("source_trust_q16=60000"));
+    assert!(metadata.contains("source=annual-report"));
 }
 
 #[test]

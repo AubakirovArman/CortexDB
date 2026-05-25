@@ -54,6 +54,7 @@ pub enum SectionTag {
     NumericGuards,
     VectorRef,
     EdgeHints,
+    CellMetadata,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -144,6 +145,7 @@ impl SectionTag {
             Self::NumericGuards => 5,
             Self::VectorRef => 6,
             Self::EdgeHints => 7,
+            Self::CellMetadata => 8,
         }
     }
 
@@ -156,6 +158,7 @@ impl SectionTag {
             5 => Some(Self::NumericGuards),
             6 => Some(Self::VectorRef),
             7 => Some(Self::EdgeHints),
+            8 => Some(Self::CellMetadata),
             _ => None,
         }
     }
