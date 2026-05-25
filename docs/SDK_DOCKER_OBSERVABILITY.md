@@ -23,6 +23,9 @@ They cover put, get, search, stats, and validate. Packaging metadata is present
 in `sdk/python/pyproject.toml` and `sdk/typescript/package.json`. Their APIs are
 not frozen.
 
+`sdk/publish/check.sh` runs the current publish preflight: Python bytecode
+compile plus `npm pack --dry-run` when npm is available.
+
 ## Observability
 
 Core Alpha exposes operational smoke endpoints:

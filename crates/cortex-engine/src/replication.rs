@@ -9,11 +9,17 @@ use cortex_storage::wal::{
 };
 
 mod election;
+mod peer;
+mod snapshot;
 mod tcp;
 mod transport;
 
 pub use election::{ElectionOutcome, ElectionRole, ElectionState, VoteRequest, VoteResponse};
-pub use tcp::{handle_replication_frame, TcpReplicationTransport};
+pub use peer::{ReplicationPeerServer, ReplicationPeerState};
+pub use snapshot::{decode_snapshot_chunk, encode_snapshot_chunk, SnapshotChunk};
+pub use tcp::{
+    handle_authenticated_replication_frame, handle_replication_frame, TcpReplicationTransport,
+};
 pub use transport::{
     AppendEntriesRequest, AppendEntriesResponse, InMemoryReplicationTransport, ReplicationTransport,
 };

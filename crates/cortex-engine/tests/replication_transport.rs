@@ -2,8 +2,8 @@ use std::collections::BTreeSet;
 
 use cortex_engine::{
     AppendEntriesRequest, ConsensusState, ElectionRole, ElectionState,
-    InMemoryReplicationTransport, LogIndex, NodeId, ReplicationTransport, TcpReplicationTransport,
-    Term,
+    InMemoryReplicationTransport, LogIndex, NodeId, ReplicationPeerServer, ReplicationPeerState,
+    ReplicationTransport, SnapshotChunk, TcpReplicationTransport, Term,
 };
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
@@ -140,8 +140,66 @@ fn tcp_replication_transport_sends_append_entries() {
     assert_eq!(handle.join().unwrap(), vec![entry]);
 }
 
+#[test]
+fn replication_peer_server_accepts_authenticated_snapshot_chunk() {
+    let server = ReplicationPeerServer::bind(
+        "127.0.0.1:0",
+        ReplicationPeerState {
+            election: follower_state(),
+            log: Vec::new(),
+            snapshot: Vec::new(),
+        },
+        Some("secret".to_owned()),
+    )
+    .unwrap();
+    let addr = server.local_addr().unwrap().to_string();
+    let handle = thread::spawn(move || server.serve_n(1).unwrap());
+    let transport =
+        TcpReplicationTransport::with_token(BTreeMap::from([(NodeId(2), addr)]), "secret".into());
+
+    let received = transport
+        .send_snapshot_chunk(
+            NodeId(2),
+            &SnapshotChunk {
+                term: Term(1),
+                leader_id: NodeId(1),
+                leader_commit: LogIndex(9),
+                chunk_index: 0,
+                last: true,
+                payload: b"snapshot".to_vec(),
+            },
+        )
+        .unwrap();
+
+    assert_eq!(received, 8);
+    handle.join().unwrap();
+}
+
+#[test]
+fn authenticated_replication_frame_rejects_wrong_token() {
+    let mut state = follower_state();
+    let mut log = Vec::new();
+    let mut snapshot = Vec::new();
+
+    let result = cortex_engine::handle_authenticated_replication_frame(
+        &mut state,
+        &mut log,
+        &mut snapshot,
+        Some("secret"),
+        "AUTH wrong VOTE 1 1 0 0",
+    );
+
+    assert!(result.is_err());
+}
+
 fn voters() -> BTreeSet<NodeId> {
     BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)])
+}
+
+fn follower_state() -> ElectionState {
+    let mut state = ElectionState::new(NodeId(2), voters());
+    state.current_term = Term(1);
+    state
 }
 
 fn transport_with_followers(

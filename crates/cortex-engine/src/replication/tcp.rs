@@ -6,17 +6,28 @@ use crate::distributed::NodeId;
 use crate::error::{EngineError, EngineResult};
 
 use super::election::{ElectionState, VoteRequest, VoteResponse};
+use super::snapshot::{
+    decode_snapshot_chunk, hex_decode, hex_encode, parse_bool, parse_u64, SnapshotChunk,
+};
 use super::transport::{AppendEntriesRequest, AppendEntriesResponse, ReplicationTransport};
 use super::{LogIndex, ReplicatedEntry, Term};
 
 #[derive(Clone, Debug, Default)]
 pub struct TcpReplicationTransport {
     peers: BTreeMap<NodeId, String>,
+    token: Option<String>,
 }
 
 impl TcpReplicationTransport {
     pub fn new(peers: BTreeMap<NodeId, String>) -> Self {
-        Self { peers }
+        Self { peers, token: None }
+    }
+
+    pub fn with_token(peers: BTreeMap<NodeId, String>, token: String) -> Self {
+        Self {
+            peers,
+            token: Some(token),
+        }
     }
 
     fn roundtrip(&self, target: NodeId, frame: String) -> EngineResult<String> {
@@ -25,11 +36,21 @@ impl TcpReplicationTransport {
             .get(&target)
             .ok_or(EngineError::InvalidOperation)?;
         let mut stream = TcpStream::connect(addr)?;
+        let frame = self
+            .token
+            .as_ref()
+            .map(|token| format!("AUTH {token} {frame}"))
+            .unwrap_or(frame);
         stream.write_all(frame.as_bytes())?;
         stream.shutdown(std::net::Shutdown::Write)?;
         let mut response = String::new();
         stream.read_to_string(&mut response)?;
         Ok(response)
+    }
+
+    pub fn send_snapshot_chunk(&self, target: NodeId, chunk: &SnapshotChunk) -> EngineResult<u64> {
+        let response = self.roundtrip(target, encode_snapshot_frame(chunk))?;
+        decode_snapshot_response(&response)
     }
 }
 
@@ -52,6 +73,18 @@ pub fn handle_replication_frame(
     log: &mut Vec<ReplicatedEntry>,
     frame: &str,
 ) -> EngineResult<String> {
+    let mut snapshot = Vec::new();
+    handle_authenticated_replication_frame(state, log, &mut snapshot, None, frame)
+}
+
+pub fn handle_authenticated_replication_frame(
+    state: &mut ElectionState,
+    log: &mut Vec<ReplicatedEntry>,
+    snapshot: &mut Vec<u8>,
+    expected_token: Option<&str>,
+    frame: &str,
+) -> EngineResult<String> {
+    let frame = authenticated_payload(expected_token, frame)?;
     let parts = frame.split_whitespace().collect::<Vec<_>>();
     match parts.as_slice() {
         ["VOTE", term, candidate, last_index, last_term] => {
@@ -87,7 +120,45 @@ pub fn handle_replication_frame(
                 match_index,
             }))
         }
+        ["SNAPSHOT", rest @ ..] => {
+            let chunk = decode_snapshot_chunk(rest)?;
+            if !state.accept_leader(chunk.term, chunk.leader_id) {
+                return Ok(format!("SNAPSHOT_RESP {} 0 {}\n", state.current_term.0, 0));
+            }
+            if chunk.chunk_index == 0 {
+                snapshot.clear();
+            }
+            snapshot.extend_from_slice(&chunk.payload);
+            Ok(format!(
+                "SNAPSHOT_RESP {} 1 {}\n",
+                state.current_term.0,
+                snapshot.len()
+            ))
+        }
         _ => Err(EngineError::InvalidOperation),
+    }
+}
+
+fn authenticated_payload<'a>(
+    expected_token: Option<&str>,
+    frame: &'a str,
+) -> EngineResult<&'a str> {
+    match expected_token {
+        Some(token) => {
+            let frame = frame.trim_start();
+            let Some(rest) = frame.strip_prefix("AUTH ") else {
+                return Err(EngineError::InvalidOperation);
+            };
+            let Some((actual, payload)) = rest.split_once(' ') else {
+                return Err(EngineError::InvalidOperation);
+            };
+            if actual == token {
+                Ok(payload)
+            } else {
+                Err(EngineError::InvalidOperation)
+            }
+        }
+        None => Ok(frame),
     }
 }
 
@@ -171,32 +242,17 @@ fn decode_entries(parts: &[&str]) -> EngineResult<Vec<ReplicatedEntry>> {
         .collect()
 }
 
-fn parse_u64(value: &str) -> EngineResult<u64> {
-    value.parse().map_err(|_| EngineError::InvalidOperation)
+pub fn encode_snapshot_frame(chunk: &SnapshotChunk) -> String {
+    super::snapshot::encode_snapshot_chunk(chunk)
 }
 
-fn parse_bool(value: &str) -> EngineResult<bool> {
-    match value {
-        "0" => Ok(false),
-        "1" => Ok(true),
-        _ => Err(EngineError::InvalidOperation),
-    }
-}
-
-fn hex_encode(bytes: &[u8]) -> String {
-    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
-}
-
-fn hex_decode(value: &str) -> EngineResult<Vec<u8>> {
-    if value.len() & 1 == 1 {
+fn decode_snapshot_response(frame: &str) -> EngineResult<u64> {
+    let parts = frame.split_whitespace().collect::<Vec<_>>();
+    let ["SNAPSHOT_RESP", _, success, bytes] = parts.as_slice() else {
+        return Err(EngineError::InvalidOperation);
+    };
+    if !parse_bool(success)? {
         return Err(EngineError::InvalidOperation);
     }
-    value
-        .as_bytes()
-        .chunks(2)
-        .map(|chunk| {
-            let text = std::str::from_utf8(chunk).map_err(|_| EngineError::InvalidOperation)?;
-            u8::from_str_radix(text, 16).map_err(|_| EngineError::InvalidOperation)
-        })
-        .collect()
+    parse_u64(bytes)
 }

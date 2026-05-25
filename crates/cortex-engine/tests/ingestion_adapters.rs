@@ -127,6 +127,26 @@ endobj
     assert!(String::from_utf8_lossy(&payload).contains("ABC budget"));
 }
 
+#[test]
+fn native_pdf_ingestion_extracts_flate_decode_streams() {
+    use flate2::write::ZlibEncoder;
+    use flate2::Compression;
+    use std::io::Write;
+
+    let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+    encoder
+        .write_all(b"BT (Compressed budget 12000) Tj ET")
+        .unwrap();
+    let compressed = encoder.finish().unwrap();
+    let mut pdf = b"%PDF-1.4\n1 0 obj\n<< /Filter /FlateDecode >>\nstream\n".to_vec();
+    pdf.extend_from_slice(&compressed);
+    pdf.extend_from_slice(b"\nendstream\nendobj\n%%EOF");
+
+    let extracted = extract_pdf_text(&pdf).unwrap();
+
+    assert!(extracted.text.contains("Compressed budget 12000"));
+}
+
 fn crate_view() -> cortex_aql::AgentView {
     use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
     use std::collections::BTreeSet;

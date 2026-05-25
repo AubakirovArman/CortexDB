@@ -80,15 +80,17 @@
   are checked into the repo for integration smoke tests.
 - TCP replication transport frame handling covers vote requests and append
   entries over loopback tests.
+- Token-authenticated replication frames, a blocking peer-server loop, and
+  snapshot chunk transfer cover the first network recovery path.
 
 ## Next
 
 1. Add ingestion job progress tracking.
-2. Add multi-layer HNSW deletion/rebuild policy.
+2. Add durable snapshot install into segments.
 3. Add production distributed recovery orchestration.
 
 ## Not Yet
 
-- Full language-specific BM25 stemming/lemmatization packs.
-- Multi-layer HNSW with deletion and rebuild policy.
+- Dictionary-grade language lemmatization packs.
+- Production HNSW tuning and background rebuild scheduler.
 - Production distributed recovery orchestration.

@@ -22,6 +22,8 @@ enum Stemmer {
     #[default]
     None,
     EnglishLight,
+    RussianLight,
+    KazakhLight,
 }
 
 impl Default for TextAnalyzer {
@@ -47,7 +49,8 @@ impl TextAnalyzer {
                 .collect(),
             stemmer: match language {
                 Language::English => Stemmer::EnglishLight,
-                Language::Russian | Language::Kazakh => Stemmer::None,
+                Language::Russian => Stemmer::RussianLight,
+                Language::Kazakh => Stemmer::KazakhLight,
             },
             ..Self::default()
         }
@@ -88,6 +91,20 @@ impl TextAnalyzer {
         match self.stemmer {
             Stemmer::None => term,
             Stemmer::EnglishLight => light_english_stem(term),
+            Stemmer::RussianLight => light_suffix_stem(
+                term,
+                &[
+                    "ами", "ями", "ого", "ему", "ами", "ов", "ев", "ый", "ая", "ое", "ые", "а",
+                    "ы", "и",
+                ],
+            ),
+            Stemmer::KazakhLight => light_suffix_stem(
+                term,
+                &[
+                    "лары", "лері", "дың", "дің", "тың", "тің", "лар", "лер", "дар", "дер", "тар",
+                    "тер",
+                ],
+            ),
         }
     }
 }
@@ -125,6 +142,17 @@ fn light_english_stem(mut term: String) -> String {
     for suffix in ["ing", "ed", "es", "s"] {
         if term.len() > suffix.len() + 3 && term.ends_with(suffix) {
             term.truncate(term.len() - suffix.len());
+            break;
+        }
+    }
+    term
+}
+
+fn light_suffix_stem(mut term: String, suffixes: &[&str]) -> String {
+    for suffix in suffixes {
+        if term.chars().count() > suffix.chars().count() + 3 && term.ends_with(suffix) {
+            let new_len = term.len() - suffix.len();
+            term.truncate(new_len);
             break;
         }
     }

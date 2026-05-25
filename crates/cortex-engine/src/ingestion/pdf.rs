@@ -1,3 +1,7 @@
+use std::io::Read;
+
+use flate2::read::ZlibDecoder;
+
 use crate::error::{EngineError, EngineResult};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -11,7 +15,8 @@ pub fn extract_pdf_text(bytes: &[u8]) -> EngineResult<PdfExtractionStats> {
     if !bytes.starts_with(b"%PDF-") {
         return Err(EngineError::InvalidOperation);
     }
-    let text = String::from_utf8_lossy(bytes);
+    let expanded = expand_pdf_streams(bytes)?;
+    let text = String::from_utf8_lossy(&expanded);
     let mut stats = PdfExtractionStats {
         text: String::new(),
         literal_strings: 0,
@@ -37,6 +42,71 @@ pub fn extract_pdf_text(bytes: &[u8]) -> EngineResult<PdfExtractionStats> {
         return Err(EngineError::InvalidOperation);
     }
     Ok(stats)
+}
+
+fn expand_pdf_streams(bytes: &[u8]) -> EngineResult<Vec<u8>> {
+    let mut out = bytes.to_vec();
+    for (dict, stream) in stream_sections(bytes) {
+        if contains_bytes(dict, b"/FlateDecode") {
+            out.extend_from_slice(b"\n");
+            out.extend_from_slice(&inflate_zlib(stream)?);
+        }
+    }
+    Ok(out)
+}
+
+fn stream_sections(bytes: &[u8]) -> Vec<(&[u8], &[u8])> {
+    let mut sections = Vec::new();
+    let mut offset = 0;
+    while let Some(stream_at) = find_bytes(&bytes[offset..], b"stream") {
+        let stream_at = offset + stream_at;
+        let before = &bytes[..stream_at];
+        let after_marker_start = stream_at + b"stream".len();
+        let Some(end_rel) = find_bytes(&bytes[after_marker_start..], b"endstream") else {
+            break;
+        };
+        let end_at = after_marker_start + end_rel;
+        let stream = trim_newlines(&bytes[after_marker_start..end_at]);
+        let dict_start = rfind_bytes(before, b"<<").unwrap_or(0);
+        sections.push((&before[dict_start..], stream));
+        offset = end_at + b"endstream".len();
+    }
+    sections
+}
+
+fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    haystack
+        .windows(needle.len())
+        .position(|value| value == needle)
+}
+
+fn rfind_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    haystack
+        .windows(needle.len())
+        .rposition(|value| value == needle)
+}
+
+fn contains_bytes(haystack: &[u8], needle: &[u8]) -> bool {
+    find_bytes(haystack, needle).is_some()
+}
+
+fn trim_newlines(mut value: &[u8]) -> &[u8] {
+    while matches!(value.first(), Some(b'\r' | b'\n')) {
+        value = &value[1..];
+    }
+    while matches!(value.last(), Some(b'\r' | b'\n')) {
+        value = &value[..value.len() - 1];
+    }
+    value
+}
+
+fn inflate_zlib(bytes: &[u8]) -> EngineResult<Vec<u8>> {
+    let mut decoder = ZlibDecoder::new(bytes);
+    let mut out = Vec::new();
+    decoder
+        .read_to_end(&mut out)
+        .map_err(|_| EngineError::InvalidOperation)?;
+    Ok(out)
 }
 
 fn tokenize_pdf(text: &str) -> Vec<String> {

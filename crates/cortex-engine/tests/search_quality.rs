@@ -45,12 +45,12 @@ fn language_analyzer_packs_apply_stopwords_and_light_stemming() {
     assert_eq!(terms.get("budget"), Some(&1));
 
     let russian = TextAnalyzer::for_language(Language::Russian);
-    let terms = russian.weighted_terms([("body", "бюджет и проект")]);
+    let terms = russian.weighted_terms([("body", "бюджеты и проект")]);
     assert!(terms.contains_key("бюджет"));
     assert!(!terms.contains_key("и"));
 
     let kazakh = TextAnalyzer::for_language(Language::Kazakh);
-    let terms = kazakh.weighted_terms([("body", "жоба және бюджет")]);
+    let terms = kazakh.weighted_terms([("body", "жобалар және бюджет")]);
     assert!(terms.contains_key("жоба"));
     assert!(!terms.contains_key("және"));
 }

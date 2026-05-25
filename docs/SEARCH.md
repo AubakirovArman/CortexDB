@@ -27,9 +27,9 @@ the same weighted term frequencies so checkpointed search keeps the same ranking
 signals as snapshot search.
 
 `TextAnalyzer` supports field weights, stopwords, weighted terms, deterministic
-MRR checks, and built-in English/Russian/Kazakh analyzer packs. The English pack
-includes a light suffix stemmer; Russian and Kazakh packs currently provide
-tokenization plus stopword filtering without morphological stemming.
+MRR checks, and built-in English/Russian/Kazakh analyzer packs. The language
+packs include light suffix stemmers and stopword lists. They are deterministic
+and dependency-light, not full morphological analyzers.
 
 Current smoke surfaces:
 
@@ -46,5 +46,5 @@ comma or space separated signed 16-bit integers.
 
 ## Not Yet
 
-- Full morphological stemming/lemmatization packs.
-- Multi-layer HNSW with deletion and background rebuild policy.
+- Full dictionary-grade lemmatization packs.
+- Production HNSW tuning beyond the current delete/rebuild policy.
