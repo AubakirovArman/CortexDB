@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
 use cortex_engine::{scope_id, Database, SearchLimit};
+use cortex_storage::indexes::LexicalIndex;
 
 #[test]
 fn database_keyword_search_returns_visible_cells() {
@@ -67,6 +68,21 @@ fn database_keyword_search_uses_body_terms_not_header_terms() {
             .cell_id,
         CellId(1)
     );
+}
+
+#[test]
+fn checkpoint_lexical_index_persists_doc_lengths() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\n\nalpha budget budget".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+
+    let index = LexicalIndex::read(dir.path().join("segments").join("segment-1.aci")).unwrap();
+    assert_eq!(index.doc_lengths.get(&1), Some(&3));
 }
 
 fn view(scope: &str) -> AgentView {

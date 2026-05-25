@@ -24,6 +24,7 @@ const DEFAULT_BRAIN: BrainId = BrainId(1);
 pub struct EngineAqlIndex {
     pub bitmaps: BTreeMap<BitmapHandle, BTreeSet<u32>>,
     pub lexical: BTreeMap<String, BTreeSet<u32>>,
+    pub lexical_doc_lengths: BTreeMap<u32, u32>,
     pub universe: BTreeSet<u32>,
     pub candidate_to_cell: BTreeMap<u32, CellId>,
     pub cell_to_candidate: BTreeMap<CellId, u32>,
@@ -122,6 +123,7 @@ impl EngineAqlIndex {
                 .map(|(handle, values)| (BitmapHandle(handle), values))
                 .collect(),
             lexical: lexical.terms,
+            lexical_doc_lengths: lexical.doc_lengths,
             universe: BTreeSet::new(),
             candidate_to_cell,
             cell_to_candidate,
@@ -162,6 +164,7 @@ impl EngineAqlIndex {
     pub fn lexical_index(&self) -> LexicalIndex {
         LexicalIndex {
             terms: self.lexical.clone(),
+            doc_lengths: self.lexical_doc_lengths.clone(),
         }
     }
 
@@ -208,6 +211,8 @@ impl EngineAqlIndex {
                 self.push(memory_type_handle(memory_type), candidate);
             }
             self.push(BitmapHandle(cell_id.0), candidate);
+            self.lexical_doc_lengths
+                .insert(candidate, metadata.terms.len().max(1) as u32);
             for term in metadata.terms {
                 self.lexical.entry(term).or_default().insert(candidate);
             }
@@ -228,6 +233,8 @@ impl EngineAqlIndex {
             values.retain(|candidate| !candidates.contains(candidate));
         }
         self.lexical.retain(|_, values| !values.is_empty());
+        self.lexical_doc_lengths
+            .retain(|candidate, _| !candidates.contains(candidate));
         self.candidate_to_cell
             .retain(|candidate, _| !candidates.contains(candidate));
         self.cell_to_candidate

@@ -18,6 +18,7 @@ pub struct BitmapIndex {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct LexicalIndex {
     pub terms: BTreeMap<String, BTreeSet<u32>>,
+    pub doc_lengths: BTreeMap<u32, u32>,
 }
 
 impl BitmapIndex {
@@ -44,7 +45,7 @@ impl BitmapIndex {
 
 impl LexicalIndex {
     pub fn write(&self, path: impl AsRef<Path>) -> StorageResult<()> {
-        let mut out = Vec::from(&b"ACI0"[..]);
+        let mut out = Vec::from(&b"ACI1"[..]);
         put_u32(&mut out, self.terms.len() as u32);
         for (term, values) in &self.terms {
             put_u16(&mut out, term.len() as u16);
@@ -53,6 +54,11 @@ impl LexicalIndex {
             for value in values {
                 put_u32(&mut out, *value);
             }
+        }
+        put_u32(&mut out, self.doc_lengths.len() as u32);
+        for (candidate, length) in &self.doc_lengths {
+            put_u32(&mut out, *candidate);
+            put_u32(&mut out, *length);
         }
         append_crc32c(&mut out);
         write_atomic(path.as_ref(), &out)?;
@@ -85,9 +91,10 @@ fn decode_bitmap(bytes: &[u8]) -> StorageResult<BitmapIndex> {
 
 fn decode_lexical(bytes: &[u8]) -> StorageResult<LexicalIndex> {
     let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidLexicalIndexFile)?;
-    if bytes.len() < 8 || &bytes[..4] != b"ACI0" {
+    if bytes.len() < 8 || (&bytes[..4] != b"ACI0" && &bytes[..4] != b"ACI1") {
         return Err(StorageError::InvalidLexicalIndexFile);
     }
+    let version = &bytes[..4];
     let mut cursor = 4;
     let count = read_u32(bytes, &mut cursor, IndexKind::Lexical)? as usize;
     let mut terms = BTreeMap::new();
@@ -98,10 +105,19 @@ fn decode_lexical(bytes: &[u8]) -> StorageResult<LexicalIndex> {
             .to_owned();
         terms.insert(term, read_set(bytes, &mut cursor, IndexKind::Lexical)?);
     }
+    let mut doc_lengths = BTreeMap::new();
+    if version == b"ACI1" {
+        let count = read_u32(bytes, &mut cursor, IndexKind::Lexical)? as usize;
+        for _ in 0..count {
+            let candidate = read_u32(bytes, &mut cursor, IndexKind::Lexical)?;
+            let length = read_u32(bytes, &mut cursor, IndexKind::Lexical)?;
+            doc_lengths.insert(candidate, length);
+        }
+    }
     if cursor != bytes.len() {
         return Err(StorageError::InvalidLexicalIndexFile);
     }
-    Ok(LexicalIndex { terms })
+    Ok(LexicalIndex { terms, doc_lengths })
 }
 
 fn read_set(bytes: &[u8], cursor: &mut usize, kind: IndexKind) -> StorageResult<BTreeSet<u32>> {

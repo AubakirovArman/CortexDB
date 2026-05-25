@@ -10,4 +10,5 @@ pub(super) fn merge_lexical_index(dst: &mut LexicalIndex, src: LexicalIndex) {
     for (term, values) in src.terms {
         dst.terms.entry(term).or_default().extend(values);
     }
+    dst.doc_lengths.extend(src.doc_lengths);
 }

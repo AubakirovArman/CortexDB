@@ -232,6 +232,9 @@ fn remove_candidates(
         values.retain(|candidate| !candidates.contains(candidate));
     }
     lexical.terms.retain(|_, values| !values.is_empty());
+    lexical
+        .doc_lengths
+        .retain(|candidate, _| !candidates.contains(candidate));
 }
 
 pub(crate) fn load_checkpoint(root: &Path) -> EngineResult<CheckpointLoad> {

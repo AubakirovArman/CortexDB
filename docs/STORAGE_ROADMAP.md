@@ -45,14 +45,15 @@
 - Scoped database keyword search exposed through CLI and HTTP.
 - Queryable structured conflict index from contradiction markers.
 - Centralized payload-header metadata parser with body-only lexical terms.
+- `.aci` lexical index v2 with per-candidate document lengths and `ACI0` read compatibility.
 
 ## Next
 
-1. Add persisted lexical metadata v2.
-2. Add metadata WAL sections beyond the payload-line bridge.
-3. Add WAL writer backpressure and real group commit batching.
-4. Persist consensus log entries through ACLOG or a dedicated replication log.
-5. Add natural-language contradiction extraction after structured markers.
+1. Add metadata WAL sections beyond the payload-line bridge.
+2. Add WAL writer backpressure and real group commit batching.
+3. Persist consensus log entries through ACLOG or a dedicated replication log.
+4. Add natural-language contradiction extraction after structured markers.
+5. Run search directly over persisted `.aci` without snapshot rebuild.
 
 ## Not Yet
 
