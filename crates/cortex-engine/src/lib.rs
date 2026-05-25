@@ -1,5 +1,6 @@
 pub mod checkpoint;
 mod cleanup;
+pub mod context;
 pub mod database;
 pub mod distributed;
 pub mod error;
@@ -11,6 +12,9 @@ pub mod replication;
 pub mod search;
 pub mod validation;
 
+pub use context::{
+    estimate_tokens, ContextPack, ContextPackAnomaly, ContextPackCell, ContextPackOptions,
+};
 pub use database::{
     CandidateResolver, CheckpointStats, Database, DatabaseOptions, RecoveryMode, RetrievedCell,
     StaleLockPolicy,

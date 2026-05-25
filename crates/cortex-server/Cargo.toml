@@ -5,6 +5,7 @@ license.workspace = true
 version.workspace = true
 
 [dependencies]
+cortex-aql = { path = "../cortex-aql" }
 cortex-core = { path = "../cortex-core" }
 cortex-engine = { path = "../cortex-engine" }
 

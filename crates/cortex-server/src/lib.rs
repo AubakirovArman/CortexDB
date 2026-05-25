@@ -5,6 +5,8 @@ use std::path::Path;
 use cortex_core::CellId;
 use cortex_engine::Database;
 
+mod context;
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ServerOptions {
     pub auth_token: Option<String>,
@@ -136,6 +138,7 @@ fn route(root: &Path, method: &str, target: &str, body: &[u8]) -> Result<String,
                 stats.checkpoint_seq.0, stats.cells_flushed
             ))
         }
+        ("POST", "/v1/context") => context::handle_context(root, query, body),
         _ => Err("unknown route".to_owned()),
     }
 }
@@ -152,13 +155,18 @@ fn authorized(head: &str, options: &ServerOptions) -> bool {
 }
 
 fn cell_id(query: &str) -> Result<CellId, String> {
-    query
-        .split('&')
-        .find_map(|pair| pair.strip_prefix("cell_id="))
-        .ok_or_else(|| "missing cell_id".to_owned())?
+    query_param(query, "cell_id")?
         .parse::<u64>()
         .map(CellId)
         .map_err(|_| "cell_id must be u64".to_owned())
+}
+
+fn query_param<'a>(query: &'a str, key: &str) -> Result<&'a str, String> {
+    let prefix = format!("{key}=");
+    query
+        .split('&')
+        .find_map(|pair| pair.strip_prefix(&prefix))
+        .ok_or_else(|| format!("missing {key}"))
 }
 
 fn json_response(status: u16, body: &str) -> String {
@@ -256,5 +264,24 @@ mod tests {
         let validation = handle_http(dir.path(), "GET /v1/validate HTTP/1.1\r\n\r\n");
         assert!(validation.contains(r#""ok":true"#));
         assert!(validation.contains(r#""wal_records_checked":1"#));
+    }
+
+    #[test]
+    fn v1_context_returns_context_pack() {
+        let dir = tempfile::tempdir().unwrap();
+        let put = concat!(
+            "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+            "scope=project:investments\nstatus=ready\nsource=doc-a\nalpha budget"
+        );
+        assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+
+        let request = concat!(
+            "POST /v1/context?scope=project:investments HTTP/1.1\r\n\r\n",
+            "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects ",
+            "WHERE space = project:investments AND status = \"ready\" LIMIT 10 CANDIDATES;"
+        );
+        let response = handle_http(dir.path(), request);
+        assert!(response.contains(r#""cells":[{"cell_id":1"#));
+        assert!(response.contains(r#""citation":"doc-a""#));
     }
 }

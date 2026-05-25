@@ -39,6 +39,7 @@ dependencies = [
 name = "cortex-cli"
 version = "0.1.0"
 dependencies = [
+ "cortex-aql",
  "cortex-core",
  "cortex-engine",
 ]
@@ -65,6 +66,7 @@ dependencies = [
 name = "cortex-server"
 version = "0.1.0"
 dependencies = [
+ "cortex-aql",
  "cortex-core",
  "cortex-engine",
  "tempfile",

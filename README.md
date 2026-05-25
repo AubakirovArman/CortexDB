@@ -22,6 +22,7 @@ The storage path has started with ACLOG WAL v0 and an in-memory MVCC core:
 AQL -> Binder -> Bitmap VM -> WAL -> MemTable -> Segments
 PutCell -> WAL append -> MemTable update -> restart -> WAL replay -> Retrieve
 Incremental checkpoint -> .acs segment + .acb bitmap index + .aci lexical index + atomic manifest
+AQL retrieve -> ContextPack -> token budget -> citation anomalies
 ```
 
 ## Crates
@@ -29,9 +30,9 @@ Incremental checkpoint -> .acs segment + .acb bitmap index + .aci lexical index 
 - `crates/cortex-aql`: AQL parser, AST, policy validation, binder, bitmap bytecode, and mock bitmap VM.
 - `crates/cortex-storage`: ACLOG WAL v0, manifest, segment, bitmap-index, and lexical-index files.
 - `crates/cortex-core`: in-memory MVCC MemTable, read transactions, cell versions, and manifest primitives.
-- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, search helpers, and consensus model primitives.
-- `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone/flush/compact/stats/validate checks.
-- `crates/cortex-server`: minimal JSON HTTP API for put/get/tombstone/flush/compact/health checks.
+- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, ContextPack v0, search helpers, and consensus model primitives.
+- `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone/flush/compact/stats/validate/context checks.
+- `crates/cortex-server`: minimal JSON HTTP API for put/get/tombstone/flush/compact/context/health checks.
 
 BM25, vector search, HNSW, distributed placement, and server APIs exist as MVP foundations.
 They are not production-grade ranking, ANN, consensus, or service layers yet.
@@ -58,6 +59,7 @@ cargo run -p cortex-cli -- flush ./data
 cargo run -p cortex-cli -- compact ./data
 cargo run -p cortex-cli -- stats ./data
 cargo run -p cortex-cli -- validate ./data
+cargo run -p cortex-cli -- context ./data project:investments '<AQL RETRIEVE CONTEXT>'
 cargo run -p cortex-cli -- unlock ./data --force
 ```
 
@@ -69,6 +71,7 @@ curl -X POST 'http://127.0.0.1:8080/v1/cell?cell_id=1' --data-binary 'hello'
 curl 'http://127.0.0.1:8080/v1/cell?cell_id=1'
 curl 'http://127.0.0.1:8080/v1/stats'
 curl 'http://127.0.0.1:8080/v1/validate'
+curl -X POST 'http://127.0.0.1:8080/v1/context?scope=project:investments' --data-binary '<AQL RETRIEVE CONTEXT>'
 ```
 
 Set `CORTEXDB_AUTH_TOKEN` before starting `cortex-server` to require
@@ -85,6 +88,9 @@ storage validation.
 Core Alpha scope and invariants are documented in
 [`docs/CORE_ALPHA.md`](docs/CORE_ALPHA.md) and
 [`docs/CORE_INVARIANTS.md`](docs/CORE_INVARIANTS.md).
+The 200-epic execution backlog is tracked in
+[`docs/EPIC_TASK_POOLS.md`](docs/EPIC_TASK_POOLS.md), and ContextPack v0 is
+documented in [`docs/CONTEXT_PACK.md`](docs/CONTEXT_PACK.md).
 
 ## Roadmap
 
@@ -95,6 +101,7 @@ Core Alpha scope and invariants are documented in
 | 0.7 | Segment/index integration |
 | 0.8 | Snapshot reads and recovery polish |
 | 0.9 | Query/search/server MVP foundations |
+| 0.10 | Agent-ready ContextPack retrieval |
 
 ## Checks
 

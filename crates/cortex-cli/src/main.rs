@@ -1,8 +1,9 @@
 use std::env;
 use std::process::ExitCode;
 
+use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
-use cortex_engine::Database;
+use cortex_engine::{scope_id, ContextPackOptions, Database};
 
 fn main() -> ExitCode {
     match run(env::args().collect()) {
@@ -107,6 +108,16 @@ fn run(args: Vec<String>) -> Result<String, String> {
                 validation.wal_safe_truncate_offset
             ))
         }
+        "context" => {
+            let [scope, aql] = rest else {
+                return Err(usage());
+            };
+            let db = Database::open(path).map_err(|error| error.to_string())?;
+            let pack = db
+                .context_pack_from_aql(aql, &view_for_scope(scope), ContextPackOptions::default())
+                .map_err(|error| error.to_string())?;
+            Ok(format_context_pack(&pack))
+        }
         "unlock" => {
             let [flag] = rest else {
                 return Err(usage());
@@ -129,8 +140,52 @@ fn parse_cell_id(value: &str) -> Result<CellId, String> {
 }
 
 fn usage() -> String {
-    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | unlock <path> --force"
+    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | context <path> <scope> <aql> | unlock <path> --force"
         .to_owned()
+}
+
+fn view_for_scope(scope: &str) -> AgentView {
+    AgentView {
+        agent_id: AgentId(1),
+        label: Some("local-cli".to_owned()),
+        readable_brains: std::collections::BTreeSet::from([BrainId(1)]),
+        readable_scopes: std::collections::BTreeSet::from([scope_id(scope)]),
+        writable_scopes: std::collections::BTreeSet::new(),
+        allowed_modes: std::collections::BTreeSet::from([RetrievalMode::Balanced]),
+        allowed_memory_types: std::collections::BTreeSet::from([MemoryType::Decision]),
+        max_context_budget_tokens: 4_000,
+        default_context_budget_tokens: 1_000,
+        max_candidate_limit: 100,
+        default_candidate_limit: 20,
+        min_required_confidence_q16: Q16_ZERO,
+        max_ttl_seconds: Some(3_600),
+        allow_remember: false,
+        allow_verify_fact: false,
+        allow_audit_mode: false,
+        require_citations_by_default: false,
+        private_scope: None,
+    }
+}
+
+fn format_context_pack(pack: &cortex_engine::ContextPack) -> String {
+    let mut lines = vec![format!(
+        "cells={} estimated_tokens={} token_budget={} truncated={} anomalies={}",
+        pack.cells.len(),
+        pack.estimated_tokens,
+        pack.token_budget_tokens,
+        pack.truncated,
+        pack.anomalies.len()
+    )];
+    lines.extend(pack.cells.iter().map(|cell| {
+        format!(
+            "cell_id={} estimated_tokens={} citation={} payload={}",
+            cell.cell_id.0,
+            cell.estimated_tokens,
+            cell.citation.as_deref().unwrap_or("null"),
+            String::from_utf8_lossy(&cell.payload)
+        )
+    }));
+    lines.join("\n")
 }
 
 #[cfg(test)]
@@ -167,6 +222,33 @@ mod tests {
 
         let validation = run(vec!["cortexdb".to_owned(), "validate".to_owned(), path_arg]).unwrap();
         assert!(validation.starts_with("ok "));
+
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[test]
+    fn context_command_returns_pack_summary() {
+        let path = unique_path("cortexdb-cli-context");
+        let path_arg = path.to_string_lossy().into_owned();
+        run(vec![
+            "cortexdb".to_owned(),
+            "put".to_owned(),
+            path_arg.clone(),
+            "1".to_owned(),
+            "scope=project:investments\nstatus=ready\nsource=doc-a\nalpha budget".to_owned(),
+        ])
+        .unwrap();
+
+        let output = run(vec![
+            "cortexdb".to_owned(),
+            "context".to_owned(),
+            path_arg.clone(),
+            "project:investments".to_owned(),
+            r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#.to_owned(),
+        ])
+        .unwrap();
+        assert!(output.contains("cells=1"));
+        assert!(output.contains("citation=doc-a"));
 
         let _ = std::fs::remove_dir_all(path);
     }
