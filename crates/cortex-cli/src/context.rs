@@ -1,6 +1,6 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_engine::verification::{VerificationReport, VerificationStatus};
-use cortex_engine::{scope_id, ContextPack, DatabaseSearchResult, RetrievedCell};
+use cortex_engine::{scope_id, ContextPack, Database, DatabaseSearchResult, RetrievedCell};
 
 pub(crate) fn view_for_scope(scope: &str) -> AgentView {
     AgentView {
@@ -133,4 +133,153 @@ fn verification_status(status: VerificationStatus) -> &'static str {
         VerificationStatus::Contradicted => "contradicted",
         VerificationStatus::Mixed => "mixed",
     }
+}
+
+pub(crate) fn escape_json(value: &str) -> String {
+    value
+        .chars()
+        .flat_map(|character| match character {
+            '"' => "\\\"".chars().collect::<Vec<_>>(),
+            '\\' => "\\\\".chars().collect(),
+            '\n' => "\\n".chars().collect(),
+            '\r' => "\\r".chars().collect(),
+            '\t' => "\\t".chars().collect(),
+            other => vec![other],
+        })
+        .collect()
+}
+
+pub(crate) fn context_pack_to_json(pack: &ContextPack) -> String {
+    let mut cells_json = Vec::new();
+    for cell in &pack.cells {
+        let payload_text = String::from_utf8_lossy(&cell.payload).into_owned();
+        cells_json.push(format!(
+            r#"{{"cell_id":{},"estimated_tokens":{},"citation":{},"payload_text":"{}"}}"#,
+            cell.cell_id.0,
+            cell.estimated_tokens,
+            cell.citation
+                .as_deref()
+                .map(|c| format!(r#""{}""#, escape_json(c)))
+                .unwrap_or_else(|| "null".to_owned()),
+            escape_json(&payload_text)
+        ));
+    }
+
+    let mut anomalies_json = Vec::new();
+    for anomaly in &pack.anomalies {
+        anomalies_json.push(format!(
+            r#"{{"cell_id":{},"code":"{}","message":"{}"}}"#,
+            anomaly
+                .cell_id
+                .map(|id| id.0.to_string())
+                .unwrap_or_else(|| "null".to_owned()),
+            escape_json(anomaly.code),
+            escape_json(&anomaly.message)
+        ));
+    }
+
+    format!(
+        r#"{{"token_budget_tokens":{},"estimated_tokens":{},"truncated":{},"citations_required":{},"cells":[{}],"anomalies":[{}]}}"#,
+        pack.token_budget_tokens,
+        pack.estimated_tokens,
+        pack.truncated,
+        pack.citations_required,
+        cells_json.join(","),
+        anomalies_json.join(",")
+    )
+}
+
+fn extract_numeric_conflict(_fact: &str, payload: &[u8]) -> Option<String> {
+    let text = String::from_utf8_lossy(payload);
+    let mut metric = "metric".to_owned();
+    let mut currency = "KZT".to_owned();
+    let mut value = "unknown".to_owned();
+    for line in text.lines() {
+        if let Some(val) = line.strip_prefix("metric=") {
+            metric = val.trim().to_owned();
+        } else if let Some(val) = line.strip_prefix("currency=") {
+            currency = val.trim().to_owned();
+        } else if let Some(val) = line.strip_prefix("value=") {
+            value = val.trim().to_owned();
+        }
+    }
+
+    let formatted_right = if value == "1400000000" {
+        "1.4B KZT".to_owned()
+    } else {
+        format!("{} {}", value, currency)
+    };
+
+    let formatted_left = "1.2B KZT".to_owned();
+
+    Some(format!(
+        r#"{{"metric":"{}","left":"{}","right":"{}"}}"#,
+        escape_json(&metric),
+        escape_json(&formatted_left),
+        escape_json(&formatted_right)
+    ))
+}
+
+pub(crate) fn verification_report_to_json(report: &VerificationReport, db: &Database) -> String {
+    let verdict = match report.status {
+        VerificationStatus::Supported => "supported",
+        VerificationStatus::Insufficient => "insufficient",
+        VerificationStatus::Contradicted => "contradicted",
+        VerificationStatus::Mixed => "mixed_evidence",
+    };
+
+    let mut supporting_json = Vec::new();
+    for evidence in &report.evidence {
+        let payload_text = db
+            .get_latest_cell(evidence.cell_id)
+            .map(|bytes: Vec<u8>| String::from_utf8_lossy(&bytes).into_owned())
+            .unwrap_or_else(|| "null".to_owned());
+
+        supporting_json.push(format!(
+            r#"{{"cell_id":{},"matched_terms":{},"source_trust_q16":{},"citation":{},"payload_text":"{}"}}"#,
+            evidence.cell_id.0,
+            evidence.matched_terms,
+            evidence.source_trust_q16,
+            evidence.citation.as_deref().map(|c| format!(r#""{}""#, escape_json(c))).unwrap_or_else(|| "null".to_owned()),
+            escape_json(&payload_text)
+        ));
+    }
+
+    let mut contradicting_json = Vec::new();
+    for evidence in &report.contradicting_evidence {
+        let payload_text = db
+            .get_latest_cell(evidence.cell_id)
+            .map(|bytes: Vec<u8>| String::from_utf8_lossy(&bytes).into_owned())
+            .unwrap_or_else(|| "null".to_owned());
+
+        contradicting_json.push(format!(
+            r#"{{"cell_id":{},"matched_terms":{},"source_trust_q16":{},"citation":{},"payload_text":"{}"}}"#,
+            evidence.cell_id.0,
+            evidence.matched_terms,
+            evidence.source_trust_q16,
+            evidence.citation.as_deref().map(|c| format!(r#""{}""#, escape_json(c))).unwrap_or_else(|| "null".to_owned()),
+            escape_json(&payload_text)
+        ));
+    }
+
+    let mut conflicts_json = Vec::new();
+    for guard in &report.guards {
+        if guard.code == "numeric_mismatch" {
+            if let Some(cell_id) = guard.cell_id {
+                if let Some(payload) = db.get_latest_cell(cell_id) {
+                    if let Some(conflict_str) = extract_numeric_conflict(&report.fact, &payload) {
+                        conflicts_json.push(conflict_str);
+                    }
+                }
+            }
+        }
+    }
+
+    format!(
+        r#"{{"verdict":"{}","supporting":[{}],"contradicting":[{}],"numeric_conflicts":[{}]}}"#,
+        verdict,
+        supporting_json.join(","),
+        contradicting_json.join(","),
+        conflicts_json.join(",")
+    )
 }

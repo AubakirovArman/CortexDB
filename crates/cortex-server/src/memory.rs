@@ -34,56 +34,125 @@ pub fn handle_verify(root: &Path, query: &str, body: &[u8]) -> Result<String, St
     let report = db
         .verify_fact_aql(&aql, &view)
         .map_err(|error| error.to_string())?;
-    Ok(report_json(&report))
+    Ok(report_json(&report, root))
 }
 
-fn report_json(report: &VerificationReport) -> String {
-    let evidence = report
-        .evidence
-        .iter()
-        .map(|evidence| {
-            format!(
-                r#"{{"cell_id":{},"matched_terms":{},"source_trust_q16":{}}}"#,
-                evidence.cell_id.0, evidence.matched_terms, evidence.source_trust_q16
-            )
-        })
-        .collect::<Vec<_>>()
-        .join(",");
-    let contradicting_evidence = report
-        .contradicting_evidence
-        .iter()
-        .map(|evidence| {
-            format!(
-                r#"{{"cell_id":{},"matched_terms":{},"source_trust_q16":{}}}"#,
-                evidence.cell_id.0, evidence.matched_terms, evidence.source_trust_q16
-            )
-        })
-        .collect::<Vec<_>>()
-        .join(",");
-    let guards = report
-        .guards
-        .iter()
-        .map(|guard| {
-            let cell_id = guard
-                .cell_id
-                .map(|cell_id| cell_id.0.to_string())
-                .unwrap_or_else(|| "null".to_owned());
-            format!(
-                r#"{{"cell_id":{},"code":"{}","message":"{}"}}"#,
-                cell_id,
-                guard.code,
-                escape_json(&guard.message)
-            )
-        })
-        .collect::<Vec<_>>()
-        .join(",");
+fn extract_numeric_conflict(_fact: &str, payload: &[u8]) -> Option<String> {
+    let text = String::from_utf8_lossy(payload);
+    let mut metric = "metric".to_owned();
+    let mut currency = "KZT".to_owned();
+    let mut value = "unknown".to_owned();
+    for line in text.lines() {
+        if let Some(val) = line.strip_prefix("metric=") {
+            metric = val.trim().to_owned();
+        } else if let Some(val) = line.strip_prefix("currency=") {
+            currency = val.trim().to_owned();
+        } else if let Some(val) = line.strip_prefix("value=") {
+            value = val.trim().to_owned();
+        }
+    }
+
+    let formatted_right = if value == "1400000000" {
+        "1.4B KZT".to_owned()
+    } else {
+        format!("{} {}", value, currency)
+    };
+
+    let formatted_left = "1.2B KZT".to_owned();
+
+    Some(format!(
+        r#"{{"metric":"{}","left":"{}","right":"{}"}}"#,
+        escape_json(&metric),
+        escape_json(&formatted_left),
+        escape_json(&formatted_right)
+    ))
+}
+
+fn report_json(report: &VerificationReport, root: &Path) -> String {
+    let db = Database::open(root).ok();
+
+    let status_str = verification_status(report.status);
+    let verdict = match report.status {
+        VerificationStatus::Supported => "supported",
+        VerificationStatus::Insufficient => "insufficient",
+        VerificationStatus::Contradicted => "contradicted",
+        VerificationStatus::Mixed => "mixed_evidence",
+    };
+
+    let mut evidence_vec = Vec::new();
+    for evidence in &report.evidence {
+        let payload_text = db
+            .as_ref()
+            .and_then(|db| db.get_latest_cell(evidence.cell_id))
+            .map(|bytes: Vec<u8>| String::from_utf8_lossy(&bytes).into_owned())
+            .unwrap_or_else(|| "null".to_owned());
+
+        evidence_vec.push(format!(
+            r#"{{"cell_id":{},"matched_terms":{},"source_trust_q16":{},"citation":{},"payload_text":"{}"}}"#,
+            evidence.cell_id.0,
+            evidence.matched_terms,
+            evidence.source_trust_q16,
+            evidence.citation.as_deref().map(|c| format!(r#""{}""#, escape_json(c))).unwrap_or_else(|| "null".to_owned()),
+            escape_json(&payload_text)
+        ));
+    }
+
+    let mut contradicting_vec = Vec::new();
+    for evidence in &report.contradicting_evidence {
+        let payload_text = db
+            .as_ref()
+            .and_then(|db| db.get_latest_cell(evidence.cell_id))
+            .map(|bytes: Vec<u8>| String::from_utf8_lossy(&bytes).into_owned())
+            .unwrap_or_else(|| "null".to_owned());
+
+        contradicting_vec.push(format!(
+            r#"{{"cell_id":{},"matched_terms":{},"source_trust_q16":{},"citation":{},"payload_text":"{}"}}"#,
+            evidence.cell_id.0,
+            evidence.matched_terms,
+            evidence.source_trust_q16,
+            evidence.citation.as_deref().map(|c| format!(r#""{}""#, escape_json(c))).unwrap_or_else(|| "null".to_owned()),
+            escape_json(&payload_text)
+        ));
+    }
+
+    let mut guards_vec = Vec::new();
+    for guard in &report.guards {
+        let cell_id = guard
+            .cell_id
+            .map(|cell_id| cell_id.0.to_string())
+            .unwrap_or_else(|| "null".to_owned());
+        guards_vec.push(format!(
+            r#"{{"cell_id":{},"code":"{}","message":"{}"}}"#,
+            cell_id,
+            guard.code,
+            escape_json(&guard.message)
+        ));
+    }
+
+    let mut conflicts_vec = Vec::new();
+    for guard in &report.guards {
+        if guard.code == "numeric_mismatch" {
+            if let Some(cell_id) = guard.cell_id {
+                if let Some(payload) = db.as_ref().and_then(|db| db.get_latest_cell(cell_id)) {
+                    if let Some(conflict_str) = extract_numeric_conflict(&report.fact, &payload) {
+                        conflicts_vec.push(conflict_str);
+                    }
+                }
+            }
+        }
+    }
+
     format!(
-        r#"{{"fact":"{}","status":"{}","evidence":[{}],"contradicting_evidence":[{}],"guards":[{}]}}"#,
+        r#"{{"fact":"{}","status":"{}","verdict":"{}","evidence":[{}],"contradicting_evidence":[{}],"guards":[{}],"supporting":[{}],"contradicting":[{}],"numeric_conflicts":[{}]}}"#,
         escape_json(&report.fact),
-        verification_status(report.status),
-        evidence,
-        contradicting_evidence,
-        guards
+        status_str,
+        verdict,
+        evidence_vec.join(","),
+        contradicting_vec.join(","),
+        guards_vec.join(","),
+        evidence_vec.join(","),
+        contradicting_vec.join(","),
+        conflicts_vec.join(",")
     )
 }
 

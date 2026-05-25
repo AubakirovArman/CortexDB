@@ -5,6 +5,8 @@ use cortex_core::CellId;
 use cortex_engine::{parse_vector_literal, ContextPackOptions, Database, SearchLimit};
 
 mod context;
+#[cfg(test)]
+mod json_tests;
 mod manifest;
 #[cfg(test)]
 mod tests;
@@ -15,8 +17,9 @@ mod vector_tests;
 mod wal;
 
 use context::{
-    format_context_pack, format_retrieved_cells, format_search_results, format_verification_report,
-    remember_view_for_scope, verify_view_for_scope, view_for_scope,
+    context_pack_to_json, format_context_pack, format_retrieved_cells, format_search_results,
+    format_verification_report, remember_view_for_scope, verification_report_to_json,
+    verify_view_for_scope, view_for_scope,
 };
 
 fn main() -> ExitCode {
@@ -35,9 +38,28 @@ fn main() -> ExitCode {
 }
 
 fn run(args: Vec<String>) -> Result<String, String> {
+    if args.len() == 2 && args[1] == "demo" {
+        let output = std::process::Command::new("./examples/demo/investment_projects/run.sh")
+            .output()
+            .map_err(|e| format!("Failed to run demo script: {}", e))?;
+        return Ok(String::from_utf8_lossy(&output.stdout).into_owned()
+            + &String::from_utf8_lossy(&output.stderr));
+    }
+
     let [_, command, path, rest @ ..] = args.as_slice() else {
         return Err(usage());
     };
+    let mut rest_vec = rest.to_vec();
+    let json_flag = rest_vec
+        .iter()
+        .position(|r| r == "--json")
+        .map(|idx| {
+            rest_vec.remove(idx);
+            true
+        })
+        .unwrap_or(false);
+    let rest = rest_vec.as_slice();
+
     match command.as_str() {
         "put" => {
             let [cell_id, payload] = rest else {
@@ -97,20 +119,37 @@ fn run(args: Vec<String>) -> Result<String, String> {
             }
             let db = Database::open(path).map_err(|error| error.to_string())?;
             let stats = db.storage_stats().map_err(|error| error.to_string())?;
-            Ok(format!(
-                "current_seq={} checkpoint_seq={} live_segments={} retired_segments={} memtable_cells={} memtable_versions={} wal_size_bytes={} wal_writer_records={} wal_writer_bytes={} wal_writer_fsyncs={} wal_writer_batches={}",
-                stats.current_seq.0,
-                stats.checkpoint_seq.0,
-                stats.live_segments,
-                stats.retired_segments,
-                stats.memtable.cell_count,
-                stats.memtable.version_count,
-                stats.wal_size_bytes,
-                stats.wal_writer.records_written,
-                stats.wal_writer.bytes_written,
-                stats.wal_writer.fsync_count,
-                stats.wal_writer.batches_committed
-            ))
+            if json_flag {
+                Ok(format!(
+                    r#"{{"current_seq":{},"checkpoint_seq":{},"live_segments":{},"retired_segments":{},"memtable_cells":{},"memtable_versions":{},"wal_size_bytes":{},"wal_writer_records":{},"wal_writer_bytes":{},"wal_writer_fsyncs":{},"wal_writer_batches":{}}}"#,
+                    stats.current_seq.0,
+                    stats.checkpoint_seq.0,
+                    stats.live_segments,
+                    stats.retired_segments,
+                    stats.memtable.cell_count,
+                    stats.memtable.version_count,
+                    stats.wal_size_bytes,
+                    stats.wal_writer.records_written,
+                    stats.wal_writer.bytes_written,
+                    stats.wal_writer.fsync_count,
+                    stats.wal_writer.batches_committed
+                ))
+            } else {
+                Ok(format!(
+                    "current_seq={} checkpoint_seq={} live_segments={} retired_segments={} memtable_cells={} memtable_versions={} wal_size_bytes={} wal_writer_records={} wal_writer_bytes={} wal_writer_fsyncs={} wal_writer_batches={}",
+                    stats.current_seq.0,
+                    stats.checkpoint_seq.0,
+                    stats.live_segments,
+                    stats.retired_segments,
+                    stats.memtable.cell_count,
+                    stats.memtable.version_count,
+                    stats.wal_size_bytes,
+                    stats.wal_writer.records_written,
+                    stats.wal_writer.bytes_written,
+                    stats.wal_writer.fsync_count,
+                    stats.wal_writer.batches_committed
+                ))
+            }
         }
         "validate" => {
             if !rest.is_empty() {
@@ -118,13 +157,23 @@ fn run(args: Vec<String>) -> Result<String, String> {
             }
             let db = Database::open(path).map_err(|error| error.to_string())?;
             let validation = db.validate_storage().map_err(|error| error.to_string())?;
-            Ok(format!(
-                "ok live_segments_checked={} cells_checked={} wal_records_checked={} wal_safe_truncate_offset={}",
-                validation.live_segments_checked,
-                validation.cells_checked,
-                validation.wal_records_checked,
-                validation.wal_safe_truncate_offset
-            ))
+            if json_flag {
+                Ok(format!(
+                    r#"{{"ok":true,"live_segments_checked":{},"cells_checked":{},"wal_records_checked":{},"wal_safe_truncate_offset":{}}}"#,
+                    validation.live_segments_checked,
+                    validation.cells_checked,
+                    validation.wal_records_checked,
+                    validation.wal_safe_truncate_offset
+                ))
+            } else {
+                Ok(format!(
+                    "ok live_segments_checked={} cells_checked={} wal_records_checked={} wal_safe_truncate_offset={}",
+                    validation.live_segments_checked,
+                    validation.cells_checked,
+                    validation.wal_records_checked,
+                    validation.wal_safe_truncate_offset
+                ))
+            }
         }
         "repair" => {
             if !rest.is_empty() {
@@ -192,7 +241,11 @@ fn run(args: Vec<String>) -> Result<String, String> {
             let pack = db
                 .context_pack_from_aql(aql, &view_for_scope(scope), ContextPackOptions::default())
                 .map_err(|error| error.to_string())?;
-            Ok(format_context_pack(&pack))
+            if json_flag {
+                Ok(context_pack_to_json(&pack))
+            } else {
+                Ok(format_context_pack(&pack))
+            }
         }
         "remember" => {
             let [scope, aql] = rest else {
@@ -220,7 +273,11 @@ fn run(args: Vec<String>) -> Result<String, String> {
             let report = db
                 .verify_fact_aql(aql, &verify_view_for_scope(scope))
                 .map_err(|error| error.to_string())?;
-            Ok(format_verification_report(&report))
+            if json_flag {
+                Ok(verification_report_to_json(&report, &db))
+            } else {
+                Ok(format_verification_report(&report))
+            }
         }
         "aql" => {
             let [scope, aql] = rest else {

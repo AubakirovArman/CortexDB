@@ -2,7 +2,9 @@
 
 [![Rust](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml/badge.svg)](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml)
 
-Agent-native context database prototype for AI agents.
+**CortexDB is currently in Core Alpha status.** It is suitable for local experiments, architecture validation, and agent-memory demos. It is not ready for production workloads.
+
+CortexDB is an agent-native context database specifically engineered for autonomous AI agents. Unlike traditional databases that return raw rows or tables, or vector databases that return fragmented, unverified text chunks, CortexDB returns permission-safe, evidence-aware **Context Packs** with strict token-budget limits and deterministic fact verification.
 
 This repository currently implements the compiler and first storage milestones:
 
