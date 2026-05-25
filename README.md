@@ -91,6 +91,8 @@ Core Alpha scope and invariants are documented in
 The 200-epic execution backlog is tracked in
 [`docs/EPIC_TASK_POOLS.md`](docs/EPIC_TASK_POOLS.md), and ContextPack v0 is
 documented in [`docs/CONTEXT_PACK.md`](docs/CONTEXT_PACK.md).
+The Core Alpha tag gate is tracked in
+[`docs/CORE_ALPHA_RELEASE_CHECKLIST.md`](docs/CORE_ALPHA_RELEASE_CHECKLIST.md).
 
 ## Roadmap
 

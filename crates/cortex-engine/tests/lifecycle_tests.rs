@@ -36,6 +36,18 @@ fn second_open_same_path_fails_until_first_database_drops() {
 }
 
 #[test]
+fn lock_file_contains_owner_metadata() {
+    let dir = tempfile::tempdir().unwrap();
+    let _db = Database::open(dir.path()).unwrap();
+    let lock = std::fs::read_to_string(dir.path().join("db.lock")).unwrap();
+
+    assert!(lock.contains("format=cortexdb-lock-v1"));
+    assert!(lock.contains(&format!("pid={}", std::process::id())));
+    assert!(lock.contains("created_unix_seconds="));
+    assert!(lock.contains("root="));
+}
+
+#[test]
 fn orphan_tmp_files_do_not_break_database_open() {
     let dir = tempfile::tempdir().unwrap();
     let segments = dir.path().join("segments");

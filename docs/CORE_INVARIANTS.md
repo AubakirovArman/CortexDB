@@ -16,3 +16,4 @@ These invariants define the current single-node durable core.
 12. One process may own a database directory at a time.
 13. Atomic temp paths are unique per process and write counter.
 14. Validation report generation collects all detectable storage errors.
+15. Lock files carry owner metadata for explicit stale-lock decisions.

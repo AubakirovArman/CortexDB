@@ -3,6 +3,23 @@
 Core Alpha is the single-node durable database path. It is intentionally smaller
 than the full CortexDB roadmap.
 
+## Frozen Scope
+
+The Core Alpha scope is frozen around durable single-node behavior:
+
+```text
+Put/Patch/Tombstone
+-> WAL append
+-> MemTable MVCC
+-> checkpoint/compact
+-> restart recovery
+-> AQL retrieve
+-> ContextPack v0
+```
+
+The release checklist for tagging this scope is
+[`CORE_ALPHA_RELEASE_CHECKLIST.md`](CORE_ALPHA_RELEASE_CHECKLIST.md).
+
 ## Included
 
 - `PutCell`, `PatchCell`, and `TombstoneCell`.
@@ -16,6 +33,8 @@ than the full CortexDB roadmap.
 - CRC checks for WAL, segment, bitmap index, lexical index, and manifest files.
 - CLI and HTTP smoke paths for put/get/flush/compact/stats/validate.
 - Explicit stale lock recovery and collect-all validation reports.
+- `db.lock` owner metadata with process id and creation timestamp.
+- ContextPack v0 with token budget and citation anomaly reporting.
 
 ## Excluded
 

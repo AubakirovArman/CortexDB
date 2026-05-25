@@ -26,6 +26,8 @@
 ## Locking
 
 - `Database::open` creates `db.lock`.
+- The lock file records `format=cortexdb-lock-v1`, process id, creation Unix
+  timestamp, and database root for operator inspection.
 - A second open fails while the first database handle is alive.
 - `Database::close` and `Drop` release the lock after shutting down the writer.
 - If a process dies, stale `db.lock` cleanup is explicit through
