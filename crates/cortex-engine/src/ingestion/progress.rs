@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use serde::{Serialize, Deserialize};
 
 use cortex_core::CellId;
 
@@ -7,17 +8,19 @@ use crate::error::{EngineError, EngineResult};
 
 use super::{CsvIngestOptions, IngestedCell};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct IngestionJobId(pub u64);
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum IngestionJobStatus {
+    Queued,
     Running,
     Completed,
     Failed,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IngestionProgress {
     pub job_id: IngestionJobId,
     pub label: String,
@@ -25,8 +28,32 @@ pub struct IngestionProgress {
     pub total_items: Option<u64>,
     pub completed_items: u64,
     pub failed_items: u64,
+    #[serde(with = "cell_id_opt_serde")]
     pub last_cell_id: Option<CellId>,
     pub message: Option<String>,
+}
+
+mod cell_id_opt_serde {
+    use cortex_core::CellId;
+    use serde::{self, Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(value: &Option<CellId>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match value {
+            Some(cell_id) => serializer.serialize_some(&cell_id.0),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<CellId>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let opt: Option<u64> = Option::deserialize(deserializer)?;
+        Ok(opt.map(CellId))
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -101,6 +128,46 @@ impl IngestionProgressTracker {
 }
 
 impl Database {
+    pub fn save_ingestion_job(&self, progress: &IngestionProgress) -> EngineResult<()> {
+        let dir = self.root_path.join("ingestion_jobs");
+        std::fs::create_dir_all(&dir)?;
+        let path = dir.join(format!("{}.json", progress.job_id.0));
+        let content = serde_json::to_string_pretty(progress)
+            .map_err(|e| EngineError::StorageInvariant(e.to_string()))?;
+        std::fs::write(path, content)?;
+        Ok(())
+    }
+
+    pub fn load_ingestion_job(&self, id: u64) -> EngineResult<Option<IngestionProgress>> {
+        let path = self.root_path.join("ingestion_jobs").join(format!("{id}.json"));
+        if !path.exists() {
+            return Ok(None);
+        }
+        let content = std::fs::read_to_string(path)?;
+        let progress: IngestionProgress = serde_json::from_str(&content)
+            .map_err(|e| EngineError::StorageInvariant(e.to_string()))?;
+        Ok(Some(progress))
+    }
+
+    pub fn list_ingestion_jobs(&self) -> EngineResult<Vec<IngestionProgress>> {
+        let dir = self.root_path.join("ingestion_jobs");
+        if !dir.exists() {
+            return Ok(Vec::new());
+        }
+        let mut jobs = Vec::new();
+        for entry in std::fs::read_dir(dir)?.flatten() {
+            let path = entry.path();
+            if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {
+                let content = std::fs::read_to_string(path)?;
+                if let Ok(progress) = serde_json::from_str::<IngestionProgress>(&content) {
+                    jobs.push(progress);
+                }
+            }
+        }
+        jobs.sort_by_key(|j| j.job_id.0);
+        Ok(jobs)
+    }
+
     pub fn ingest_csv_with_progress(
         &mut self,
         first_cell_id: CellId,
@@ -111,16 +178,19 @@ impl Database {
     ) -> EngineResult<(IngestionJobId, Vec<IngestedCell>)> {
         let total = csv.lines().count().saturating_sub(1) as u64;
         let job_id = tracker.start(label, Some(total))?;
+        let _ = self.save_ingestion_job(tracker.get(job_id).unwrap());
         match self.ingest_csv(first_cell_id, csv, options) {
             Ok(cells) => {
                 for cell in &cells {
                     tracker.record_cell(job_id, cell.cell_id)?;
                 }
                 tracker.finish(job_id)?;
+                let _ = self.save_ingestion_job(tracker.get(job_id).unwrap());
                 Ok((job_id, cells))
             }
             Err(error) => {
                 let _ = tracker.fail(job_id, error.to_string());
+                let _ = self.save_ingestion_job(tracker.get(job_id).unwrap());
                 Err(error)
             }
         }

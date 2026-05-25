@@ -320,6 +320,42 @@ fn run(args: Vec<String>) -> Result<String, String> {
             Database::break_stale_lock(path).map_err(|error| error.to_string())?;
             Ok("stale lock removed".to_owned())
         }
+        "ingest-text" => {
+            let [scope, file] = rest else {
+                return Err(usage());
+            };
+            let content = std::fs::read_to_string(file).map_err(|e| e.to_string())?;
+            let mut db = Database::open(path).map_err(|error| error.to_string())?;
+            let results = db.ingest_text_chunks(CellId(1), &content, cortex_engine::TextIngestOptions {
+                scope: scope.to_owned(),
+                source: file.to_owned(),
+            }).map_err(|error| error.to_string())?;
+            Ok(format!("ingested_chunks={} first_cell_id={}", results.len(), results[0].cell_id.0))
+        }
+        "ingest-json" => {
+            let [scope, file] = rest else {
+                return Err(usage());
+            };
+            let content = std::fs::read_to_string(file).map_err(|e| e.to_string())?;
+            let mut db = Database::open(path).map_err(|error| error.to_string())?;
+            let results = db.ingest_json(CellId(1), &content, cortex_engine::JsonIngestOptions {
+                scope: scope.to_owned(),
+                source: file.to_owned(),
+            }).map_err(|error| error.to_string())?;
+            Ok(format!("ingested_facts={} first_cell_id={}", results.len(), results[0].cell_id.0))
+        }
+        "ingest-csv" => {
+            let [scope, file] = rest else {
+                return Err(usage());
+            };
+            let content = std::fs::read_to_string(file).map_err(|e| e.to_string())?;
+            let mut db = Database::open(path).map_err(|error| error.to_string())?;
+            let results = db.ingest_csv(CellId(1), &content, cortex_engine::CsvIngestOptions {
+                scope: scope.to_owned(),
+                source: file.to_owned(),
+            }).map_err(|error| error.to_string())?;
+            Ok(format!("ingested_rows={} first_cell_id={}", results.len(), results[0].cell_id.0))
+        }
         _ => Err(usage()),
     }
 }

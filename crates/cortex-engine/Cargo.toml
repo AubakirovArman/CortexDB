@@ -10,6 +10,9 @@ cortex-core = { path = "../cortex-core" }
 cortex-storage = { path = "../cortex-storage" }
 flate2 = "1"
 thiserror = "1"
+csv = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [dev-dependencies]
 tempfile = "3"

@@ -42,14 +42,57 @@ impl Database {
         text: &str,
         options: TextIngestOptions,
     ) -> EngineResult<IngestedCell> {
-        let commit_seq = self.put_knowledge_cell(
-            cell_id,
-            KnowledgeCell::new(document_metadata(options.scope, options.source), text),
-        )?;
-        Ok(IngestedCell {
-            cell_id,
-            commit_seq,
-        })
+        let results = self.ingest_text_chunks(cell_id, text, options)?;
+        Ok(results[0].clone())
+    }
+
+    pub fn ingest_text_chunks(
+        &mut self,
+        first_cell_id: CellId,
+        text: &str,
+        options: TextIngestOptions,
+    ) -> EngineResult<Vec<IngestedCell>> {
+        let mut chunks = Vec::new();
+        let mut current_chunk = String::new();
+        for paragraph in text.split("\n\n") {
+            let paragraph = paragraph.trim();
+            if paragraph.is_empty() {
+                continue;
+            }
+            if current_chunk.is_empty() {
+                current_chunk = paragraph.to_owned();
+            } else if current_chunk.len() + paragraph.len() < 1000 {
+                current_chunk.push_str("\n\n");
+                current_chunk.push_str(paragraph);
+            } else {
+                chunks.push(current_chunk);
+                current_chunk = paragraph.to_owned();
+            }
+        }
+        if !current_chunk.is_empty() {
+            chunks.push(current_chunk);
+        }
+
+        if chunks.is_empty() {
+            chunks.push(text.to_owned());
+        }
+
+        let mut ingested = Vec::new();
+        for (index, chunk) in chunks.into_iter().enumerate() {
+            let cell_id = offset_cell_id(first_cell_id, index)?;
+            let commit_seq = self.put_knowledge_cell(
+                cell_id,
+                KnowledgeCell::new(
+                    document_metadata(options.scope.clone(), options.source.clone()),
+                    chunk,
+                ),
+            )?;
+            ingested.push(IngestedCell {
+                cell_id,
+                commit_seq,
+            });
+        }
+        Ok(ingested)
     }
 
     pub fn ingest_json(
@@ -58,7 +101,7 @@ impl Database {
         json: &str,
         options: JsonIngestOptions,
     ) -> EngineResult<Vec<IngestedCell>> {
-        flat_json_fields(json)?
+        flat_json_fields_serde(json)?
             .into_iter()
             .enumerate()
             .map(|(index, (key, value))| {
@@ -85,7 +128,7 @@ impl Database {
         csv: &str,
         options: CsvIngestOptions,
     ) -> EngineResult<Vec<IngestedCell>> {
-        let rows = csv_rows(csv)?;
+        let rows = csv_rows_serde(csv)?;
         let Some(headers) = rows.first() else {
             return Ok(Vec::new());
         };
@@ -177,75 +220,48 @@ fn offset_cell_id(first: CellId, offset: usize) -> EngineResult<CellId> {
         .ok_or_else(|| EngineError::StorageInvariant("cell id overflow".to_owned()))
 }
 
-fn flat_json_fields(json: &str) -> EngineResult<Vec<(String, String)>> {
-    let trimmed = json.trim();
-    let body = trimmed
-        .strip_prefix('{')
-        .and_then(|value| value.strip_suffix('}'))
-        .ok_or(EngineError::InvalidOperation)?;
-    split_top_level(body, ',')
-        .into_iter()
-        .map(|pair| {
-            let parts = split_top_level(pair, ':');
-            if parts.len() != 2 {
-                return Err(EngineError::InvalidOperation);
+fn flat_json_fields_serde(json: &str) -> EngineResult<Vec<(String, String)>> {
+    let parsed: serde_json::Value = serde_json::from_str(json)
+        .map_err(|e| EngineError::StorageInvariant(format!("invalid json: {e}")))?;
+    let mut out = Vec::new();
+    flatten_json_value(&parsed, "", &mut out);
+    Ok(out)
+}
+
+fn flatten_json_value(value: &serde_json::Value, prefix: &str, out: &mut Vec<(String, String)>) {
+    match value {
+        serde_json::Value::Object(map) => {
+            for (k, v) in map {
+                let new_prefix = if prefix.is_empty() { k.clone() } else { format!("{}.{}", prefix, k) };
+                flatten_json_value(v, &new_prefix, out);
             }
-            Ok((clean_json_value(parts[0]), clean_json_value(parts[1])))
-        })
-        .collect()
-}
-
-fn clean_json_value(value: &str) -> String {
-    value.trim().trim_matches('"').replace("\\\"", "\"")
-}
-
-fn split_top_level(value: &str, delimiter: char) -> Vec<&str> {
-    let mut parts = Vec::new();
-    let mut start = 0;
-    let mut quoted = false;
-    let mut escaped = false;
-    for (index, character) in value.char_indices() {
-        if escaped {
-            escaped = false;
-        } else if character == '\\' {
-            escaped = true;
-        } else if character == '"' {
-            quoted = !quoted;
-        } else if character == delimiter && !quoted {
-            parts.push(&value[start..index]);
-            start = index + character.len_utf8();
+        }
+        serde_json::Value::Array(arr) => {
+            for (i, v) in arr.iter().enumerate() {
+                flatten_json_value(v, &format!("{}.{}", prefix, i), out);
+            }
+        }
+        serde_json::Value::String(s) => {
+            out.push((prefix.to_owned(), s.clone()));
+        }
+        other => {
+            out.push((prefix.to_owned(), other.to_string()));
         }
     }
-    parts.push(&value[start..]);
-    parts
 }
 
-fn csv_rows(csv: &str) -> EngineResult<Vec<Vec<String>>> {
-    csv.lines().map(csv_row).collect()
-}
-
-fn csv_row(line: &str) -> EngineResult<Vec<String>> {
-    let mut values = Vec::new();
-    let mut current = String::new();
-    let mut quoted = false;
-    let mut chars = line.chars().peekable();
-    while let Some(character) = chars.next() {
-        match character {
-            '"' if quoted && chars.peek() == Some(&'"') => {
-                current.push('"');
-                chars.next();
-            }
-            '"' => quoted = !quoted,
-            ',' if !quoted => {
-                values.push(current.trim().to_owned());
-                current.clear();
-            }
-            other => current.push(other),
+fn csv_rows_serde(csv: &str) -> EngineResult<Vec<Vec<String>>> {
+    let mut rdr = csv::ReaderBuilder::new()
+        .has_headers(false)
+        .from_reader(csv.as_bytes());
+    let mut rows = Vec::new();
+    for result in rdr.records() {
+        let record = result.map_err(|e| EngineError::StorageInvariant(format!("csv error: {e}")))?;
+        let mut row = Vec::new();
+        for field in record.iter() {
+            row.push(field.trim().to_owned());
         }
+        rows.push(row);
     }
-    if quoted {
-        return Err(EngineError::InvalidOperation);
-    }
-    values.push(current.trim().to_owned());
-    Ok(values)
+    Ok(rows)
 }

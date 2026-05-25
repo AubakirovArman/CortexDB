@@ -203,8 +203,60 @@ fn route(root: &Path, method: &str, target: &str, body: &[u8]) -> Result<String,
         ("POST", "/v1/search") => search::handle_search(root, query, body),
         ("POST", "/v1/remember") => memory::handle_remember(root, query, body),
         ("POST", "/v1/verify") => memory::handle_verify(root, query, body),
+        ("POST", "/v1/ingest/text") => {
+            let scope = query_param_opt(query, "scope").unwrap_or("default");
+            let source = query_param_opt(query, "source").unwrap_or("http_post");
+            let mut db = Database::open(root).map_err(|error| error.to_string())?;
+            let text = String::from_utf8_lossy(body);
+            let results = db.ingest_text_chunks(CellId(1), &text, cortex_engine::TextIngestOptions {
+                scope: scope.to_owned(),
+                source: source.to_owned(),
+            }).map_err(|error| error.to_string())?;
+            Ok(format!(r#"{{"chunks_ingested":{},"first_cell_id":{}}}"#, results.len(), results[0].cell_id.0))
+        }
+        ("POST", "/v1/ingest/json") => {
+            let scope = query_param_opt(query, "scope").unwrap_or("default");
+            let source = query_param_opt(query, "source").unwrap_or("http_post");
+            let mut db = Database::open(root).map_err(|error| error.to_string())?;
+            let json = String::from_utf8_lossy(body);
+            let results = db.ingest_json(CellId(1), &json, cortex_engine::JsonIngestOptions {
+                scope: scope.to_owned(),
+                source: source.to_owned(),
+            }).map_err(|error| error.to_string())?;
+            Ok(format!(r#"{{"facts_ingested":{},"first_cell_id":{}}}"#, results.len(), results[0].cell_id.0))
+        }
+        ("POST", "/v1/ingest/csv") => {
+            let scope = query_param_opt(query, "scope").unwrap_or("default");
+            let source = query_param_opt(query, "source").unwrap_or("http_post");
+            let mut db = Database::open(root).map_err(|error| error.to_string())?;
+            let csv = String::from_utf8_lossy(body);
+            let results = db.ingest_csv(CellId(1), &csv, cortex_engine::CsvIngestOptions {
+                scope: scope.to_owned(),
+                source: source.to_owned(),
+            }).map_err(|error| error.to_string())?;
+            Ok(format!(r#"{{"rows_ingested":{},"first_cell_id":{}}}"#, results.len(), results[0].cell_id.0))
+        }
+        _ if method == "GET" && path.starts_with("/v1/ingest/jobs/") => {
+            let id_str = path.strip_prefix("/v1/ingest/jobs/").unwrap();
+            let id = id_str.parse::<u64>().map_err(|_| "invalid job id".to_owned())?;
+            let db = Database::open(root).map_err(|error| error.to_string())?;
+            let progress = db.load_ingestion_job(id).map_err(|error| error.to_string())?;
+            if let Some(p) = progress {
+                let content = serde_json::to_string(&p).map_err(|e| e.to_string())?;
+                Ok(content)
+            } else {
+                Err("job not found".to_owned())
+            }
+        }
         _ => Err("unknown route".to_owned()),
     }
+}
+
+fn query_param_opt<'a>(query: &'a str, key: &str) -> Option<&'a str> {
+    let prefix = format!("{key}=");
+    query
+        .split('&')
+        .find_map(|pair| pair.strip_prefix(&prefix))
 }
 
 fn authorized(head: &str, options: &ServerOptions) -> bool {
