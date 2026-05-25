@@ -5,6 +5,7 @@ pub mod context;
 pub mod database;
 pub mod distributed;
 pub mod error;
+pub mod ingestion;
 mod lock;
 pub mod operation;
 pub mod query;

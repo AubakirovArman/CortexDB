@@ -1,5 +1,7 @@
 use cortex_aql::{BitmapHandle, CellTypeId, MemoryType, ScopeId, StatusId};
 
+use crate::search::tokenize;
+
 const SCOPE_NS: u64 = 0x1000_0000_0000_0000;
 const STATUS_NS: u64 = 0x2000_0000_0000_0000;
 const TYPE_NS: u64 = 0x3000_0000_0000_0000;
@@ -77,11 +79,4 @@ fn stable_hash(value: &str) -> u64 {
         hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
     }
     hash & 0x0fff_ffff_ffff_ffff
-}
-
-fn tokenize(text: &str) -> Vec<String> {
-    text.split(|value: char| !value.is_ascii_alphanumeric())
-        .filter(|term| !term.is_empty())
-        .map(|term| term.to_ascii_lowercase())
-        .collect()
 }

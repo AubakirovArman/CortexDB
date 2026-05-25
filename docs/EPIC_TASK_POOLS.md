@@ -241,11 +241,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 The active slice is:
 
 ```text
-Epic 121 -> ContextPack API
-Epic 122 -> token budget estimator
-Epic 123 -> sparse MMR-style packing
-Epic 124 -> weighted Jaccard redundancy
-Epic 134 -> ContextPack diagnostics
+Epic 141 -> KnowledgeCell schema v1
+Epic 142 -> metadata encoding bridge
+Epic 143 -> put cell metadata API
+Epic 144 -> document block cell type
+Epic 145 -> fact cell type
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed
