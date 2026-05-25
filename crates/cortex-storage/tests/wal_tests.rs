@@ -255,6 +255,21 @@ fn balanced_writer_group_commit_accepts_parallel_appends() {
     assert_eq!(scan.records.len(), 4);
 }
 
+#[test]
+fn writer_metrics_report_records_bytes_fsyncs_and_batches() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("metrics.aclog");
+    let writer = WalWriter::create(&path).unwrap();
+    writer.append(record_with_payload(vec![1, 2])).unwrap();
+    writer.append(record_with_payload(vec![3, 4])).unwrap();
+
+    let metrics = writer.metrics().unwrap();
+    assert_eq!(metrics.records_written, 2);
+    assert!(metrics.bytes_written > 0);
+    assert_eq!(metrics.fsync_count, 2);
+    assert_eq!(metrics.batches_committed, 2);
+}
+
 fn rewrite_header_crc(encoded: &mut [u8]) {
     let header_len = get_u16(&encoded[4..6]) as usize;
     encoded[28..32].copy_from_slice(&0u32.to_le_bytes());

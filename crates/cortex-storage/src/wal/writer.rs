@@ -38,6 +38,14 @@ pub struct WalWriterHandle {
     tx: Sender<WalWriterCommand>,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct WalWriterMetrics {
+    pub records_written: u64,
+    pub bytes_written: u64,
+    pub fsync_count: u64,
+    pub batches_committed: u64,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CommitAck {
     pub durable_lsn: u64,
@@ -54,6 +62,9 @@ enum WalWriterCommand {
     },
     Shutdown {
         reply: Sender<StorageResult<()>>,
+    },
+    Metrics {
+        reply: Sender<StorageResult<WalWriterMetrics>>,
     },
 }
 
@@ -100,6 +111,14 @@ impl WalWriterHandle {
             .map_err(|_| StorageError::WalWriterClosed)?;
         rx.recv().map_err(|_| StorageError::WalWriterClosed)?
     }
+
+    pub fn metrics(&self) -> StorageResult<WalWriterMetrics> {
+        let (reply, rx) = bounded(1);
+        self.tx
+            .send(WalWriterCommand::Metrics { reply })
+            .map_err(|_| StorageError::WalWriterClosed)?;
+        rx.recv().map_err(|_| StorageError::WalWriterClosed)?
+    }
 }
 
 fn writer_channel(
@@ -129,15 +148,24 @@ fn run_writer(path: PathBuf, mode: DurabilityMode, rx: Receiver<WalWriterCommand
         return;
     };
     let mut next_lsn = file.seek(SeekFrom::End(0)).unwrap_or(0);
+    let mut metrics = WalWriterMetrics::default();
     while let Ok(command) = rx.recv() {
         match command {
             WalWriterCommand::Append { record, reply } => {
                 if mode == DurabilityMode::Balanced {
-                    if append_balanced_batch(&mut file, record, reply, &rx, &mut next_lsn) {
+                    if append_balanced_batch(
+                        &mut file,
+                        record,
+                        reply,
+                        &rx,
+                        &mut next_lsn,
+                        &mut metrics,
+                    ) {
                         break;
                     }
                 } else {
-                    let result = append_strict_record(&mut file, record, &mut next_lsn);
+                    let result =
+                        append_strict_record(&mut file, record, &mut next_lsn, &mut metrics);
                     let _ = reply.send(result);
                 }
             }
@@ -145,6 +173,9 @@ fn run_writer(path: PathBuf, mode: DurabilityMode, rx: Receiver<WalWriterCommand
                 let result = file.sync_data().map_err(StorageError::from);
                 let _ = reply.send(result);
                 break;
+            }
+            WalWriterCommand::Metrics { reply } => {
+                let _ = reply.send(Ok(metrics));
             }
         }
     }
@@ -154,9 +185,12 @@ fn append_strict_record(
     file: &mut std::fs::File,
     record: WalRecord,
     next_lsn: &mut u64,
+    metrics: &mut WalWriterMetrics,
 ) -> StorageResult<CommitAck> {
-    let ack = append_record_without_sync(file, record, next_lsn)?;
+    let ack = append_record_without_sync(file, record, next_lsn, metrics)?;
     file.sync_data()?;
+    metrics.fsync_count += 1;
+    metrics.batches_committed += 1;
     Ok(ack)
 }
 
@@ -166,6 +200,7 @@ fn append_balanced_batch(
     reply: Sender<StorageResult<CommitAck>>,
     rx: &Receiver<WalWriterCommand>,
     next_lsn: &mut u64,
+    metrics: &mut WalWriterMetrics,
 ) -> bool {
     let mut batch = vec![(record, reply)];
     let mut shutdown = None;
@@ -176,6 +211,9 @@ fn append_balanced_batch(
                 shutdown = Some(reply);
                 break;
             }
+            Ok(WalWriterCommand::Metrics { reply }) => {
+                let _ = reply.send(Ok(*metrics));
+            }
             Err(TryRecvError::Empty) => break,
             Err(TryRecvError::Disconnected) => break,
         }
@@ -183,7 +221,7 @@ fn append_balanced_batch(
 
     let mut replies = Vec::new();
     for (record, reply) in batch {
-        match append_record_without_sync(file, record, next_lsn) {
+        match append_record_without_sync(file, record, next_lsn, metrics) {
             Ok(ack) => replies.push((reply, Ok(ack))),
             Err(error) => replies.push((reply, Err(error))),
         }
@@ -204,6 +242,8 @@ fn append_balanced_batch(
         }
         return shutdown.is_some();
     }
+    metrics.fsync_count += 1;
+    metrics.batches_committed += 1;
     for (reply, result) in replies {
         let _ = reply.send(result);
     }
@@ -219,11 +259,14 @@ fn append_record_without_sync(
     file: &mut std::fs::File,
     record: WalRecord,
     next_lsn: &mut u64,
+    metrics: &mut WalWriterMetrics,
 ) -> StorageResult<CommitAck> {
     let lsn = *next_lsn;
     let bytes = WalCodec::encode_record_at(&record, lsn)?;
     file.write_all(&bytes)?;
     *next_lsn += bytes.len() as u64;
+    metrics.records_written += 1;
+    metrics.bytes_written += bytes.len() as u64;
     Ok(CommitAck { durable_lsn: lsn })
 }
 

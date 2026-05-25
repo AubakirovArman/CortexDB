@@ -90,6 +90,9 @@ In `Balanced` durability mode the actor drains a short append batch and performs
 one `sync_data` before acknowledging that batch. `Strict` still syncs each
 record independently.
 
+`WalWriterHandle::metrics()` reports records written, bytes written, fsync
+count, and committed batch count for the current writer actor.
+
 ## Diagnostics
 
 `WalDiagnostics::summarize` reports record count, safe truncate offset, payload

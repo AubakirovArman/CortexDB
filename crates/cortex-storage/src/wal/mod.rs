@@ -14,4 +14,6 @@ pub use record::{
     WAL_FILE_HEADER_LEN, WAL_FORMAT_VERSION, WAL_RECORD_HEADER_LEN, WAL_RECORD_MAGIC,
     WAL_SECTION_ENTRY_LEN,
 };
-pub use writer::{CommitAck, DurabilityMode, WalWriter, WalWriterHandle, WalWriterOptions};
+pub use writer::{
+    CommitAck, DurabilityMode, WalWriter, WalWriterHandle, WalWriterMetrics, WalWriterOptions,
+};

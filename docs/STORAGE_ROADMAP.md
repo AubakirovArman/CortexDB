@@ -48,14 +48,15 @@
 - `.aci` lexical index v2 with per-candidate document lengths and `ACI0` read compatibility.
 - WAL writer bounded queue option for caller-side backpressure.
 - Balanced WAL writer group commit batches queued appends before acknowledgment.
+- WAL writer metrics for records, bytes, fsyncs, and committed batches.
 
 ## Next
 
 1. Add metadata WAL sections beyond the payload-line bridge.
-2. Add WAL writer metrics.
-3. Persist consensus log entries through ACLOG or a dedicated replication log.
-4. Add natural-language contradiction extraction after structured markers.
-5. Run search directly over persisted `.aci` without snapshot rebuild.
+2. Persist consensus log entries through ACLOG or a dedicated replication log.
+3. Add natural-language contradiction extraction after structured markers.
+4. Run search directly over persisted `.aci` without snapshot rebuild.
+5. Add public writer metrics through engine stats.
 
 ## Not Yet
 
