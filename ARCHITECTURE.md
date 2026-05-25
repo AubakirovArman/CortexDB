@@ -15,7 +15,8 @@ AQL string
 ## Crates
 
 - `crates/cortex-aql`: parser, AST, policy validation, binder, bitmap bytecode, and mock bitmap VM.
-- `crates/cortex-storage`: storage skeleton for the next WAL milestone. WAL is not implemented yet.
+- `crates/cortex-core`: in-memory MVCC core skeleton, read transactions, cell versions, and manifest primitives.
+- `crates/cortex-storage`: ACLOG WAL v0 codec, reader recovery scan, and writer actor.
 
 ## Safety Boundary
 
