@@ -53,6 +53,7 @@
 - Public WAL writer metrics exposed through engine stats, CLI stats, and HTTP stats.
 - Knowledge-cell writes include structured `CellMetadata` WAL sections.
 - WAL truncate and manifest dump/validate CLI tools.
+- Core benchmark baseline for put/get/checkpoint/reopen/context pack.
 
 ## Next
 

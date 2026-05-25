@@ -114,6 +114,7 @@ Storage atomicity and binary formats are documented in
 [`docs/STORAGE_FORMATS.md`](docs/STORAGE_FORMATS.md).
 Core Alpha release notes are in
 [`docs/RELEASE_NOTES_v0.1.0-core-alpha.md`](docs/RELEASE_NOTES_v0.1.0-core-alpha.md).
+Core benchmark instructions are in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).
 
 ## Roadmap
 
