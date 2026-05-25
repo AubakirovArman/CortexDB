@@ -245,7 +245,7 @@ Epic 161 -> agent memory foundation
 Epic 165 -> memory TTL metadata
 Epic 167 -> REMEMBER execution
 Epic 169 -> memory retrieval through AQL filters
-Epic 179 -> agent API memory primitive
+Epic 174 -> VERIFY FACT report v0
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed

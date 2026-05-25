@@ -33,6 +33,7 @@
 - ContextPack sparse redundancy reduction with anomaly diagnostics.
 - Structured `KnowledgeCell` ingestion API over the current payload encoding.
 - Policy-checked AQL `REMEMBER` execution into memory cells.
+- Policy-checked AQL `VERIFY FACT` evidence report v0.
 
 ## Next
 

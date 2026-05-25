@@ -14,6 +14,7 @@ pub mod replay;
 pub mod replication;
 pub mod search;
 pub mod validation;
+pub mod verification;
 
 pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use context::{
