@@ -59,4 +59,4 @@ TTL window, and becomes `Q16_ZERO` after expiry.
 
 - AgentView persistence.
 - VERIFY FACT contradiction detection.
-- Feedback loop storage.
+- Feedback weighting in ContextPack selection.
