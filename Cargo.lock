@@ -49,6 +49,7 @@ dependencies = [
  "cortex-core",
  "cortex-engine",
  "cortex-storage",
+ "serde_json",
 ]
 
 [[package]]

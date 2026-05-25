@@ -1,0 +1,2 @@
+{"cell_id": 3001, "payload": "scope=support:tickets\nstatus=ready\ntype=fact\nsource=zendesk_3001\nticket_id=T-3001\ncustomer=John Doe\nproduct=CortexDB\n\nTicket T-3001: Customer John Doe reported WAL lock acquisition timeout error on local server restart."}
+{"cell_id": 3002, "payload": "scope=support:tickets\nstatus=ready\ntype=fact\nsource=zendesk_3002\nticket_id=T-3002\ncustomer=Jane Smith\nproduct=CortexDB\n\nTicket T-3002: Customer Jane Smith resolved memory decay scoring issue by updating freshness parameters."}

@@ -1,0 +1,2 @@
+{"cell_id": 2001, "payload": "scope=sec:filings\nstatus=ready\ntype=fact\nsource=sec_10k_2024.pdf#page=15\ncompany=Tesla\nmetric=revenue\nvalue=96770000000\ncurrency=USD\nperiod=2024\n\nTesla reported full year 2024 total revenues of 96.77B USD."}
+{"cell_id": 2002, "payload": "scope=sec:filings\nstatus=ready\ntype=fact\nsource=sec_10q_2025q1.pdf#page=8\ncompany=Tesla\nmetric=revenue\nvalue=21300000000\ncurrency=USD\nperiod=2025Q1\n\nTesla reported first quarter 2025 revenues of 21.30B USD."}

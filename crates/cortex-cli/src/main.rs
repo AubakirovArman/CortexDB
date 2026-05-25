@@ -331,6 +331,40 @@ fn run(args: Vec<String>) -> Result<String, String> {
             Database::break_stale_lock(path).map_err(|error| error.to_string())?;
             Ok("stale lock removed".to_owned())
         }
+        "load-fixture" => {
+            let [fixture_path] = rest else {
+                return Err(usage());
+            };
+            let jsonl_file = std::path::Path::new(fixture_path).join("cells.jsonl");
+            if !jsonl_file.exists() {
+                return Err(format!("fixture file not found: {}", jsonl_file.display()));
+            }
+            let content = std::fs::read_to_string(&jsonl_file).map_err(|e| e.to_string())?;
+            let mut db = Database::open(path).map_err(|error| error.to_string())?;
+            let mut count = 0;
+            for line in content.lines() {
+                let trimmed = line.trim();
+                if trimmed.is_empty() {
+                    continue;
+                }
+                let parsed: serde_json::Value =
+                    serde_json::from_str(trimmed).map_err(|e| format!("invalid json line: {e}"))?;
+                let cell_id = parsed["cell_id"]
+                    .as_u64()
+                    .ok_or_else(|| "missing cell_id in json".to_owned())?;
+                let payload = parsed["payload"]
+                    .as_str()
+                    .ok_or_else(|| "missing payload in json".to_owned())?;
+                db.put_cell(CellId(cell_id), payload.as_bytes().to_vec())
+                    .map_err(|e| e.to_string())?;
+                count += 1;
+            }
+            Ok(format!(
+                "successfully loaded cells_count={} from {}",
+                count,
+                jsonl_file.display()
+            ))
+        }
         "ingest-text" => {
             let [scope, file] = rest else {
                 return Err(usage());
