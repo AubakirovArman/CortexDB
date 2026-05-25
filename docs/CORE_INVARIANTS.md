@@ -14,3 +14,5 @@ These invariants define the current single-node durable core.
 10. Best-effort recovery stops at a safe WAL offset.
 11. Runtime `AgentAllowed` masks are agent-specific.
 12. One process may own a database directory at a time.
+13. Atomic temp paths are unique per process and write counter.
+14. Validation report generation collects all detectable storage errors.

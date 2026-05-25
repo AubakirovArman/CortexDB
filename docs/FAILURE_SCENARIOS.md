@@ -11,6 +11,8 @@
 - `.acs`, `.acb`, `.aci`, and `.acm` files include CRC32C footers.
 - Corrupted live files fail validation.
 - Temp files with known checkpoint/index extensions are removed during open.
+- Atomic writes use unique temp filenames of the form
+  `<target>.tmp.<pid>.<counter>`.
 
 ## Manifest Consistency
 
@@ -26,4 +28,5 @@
 - `Database::open` creates `db.lock`.
 - A second open fails while the first database handle is alive.
 - `Database::close` and `Drop` release the lock after shutting down the writer.
-- If a process dies, stale `db.lock` cleanup is still manual in this milestone.
+- If a process dies, stale `db.lock` cleanup is explicit through
+  `cortexdb unlock <path> --force` or `StaleLockPolicy::Break`.

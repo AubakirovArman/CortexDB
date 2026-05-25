@@ -58,6 +58,7 @@ cargo run -p cortex-cli -- flush ./data
 cargo run -p cortex-cli -- compact ./data
 cargo run -p cortex-cli -- stats ./data
 cargo run -p cortex-cli -- validate ./data
+cargo run -p cortex-cli -- unlock ./data --force
 ```
 
 ## Minimal HTTP Check

@@ -13,6 +13,7 @@ pub mod validation;
 
 pub use database::{
     CandidateResolver, CheckpointStats, Database, DatabaseOptions, RecoveryMode, RetrievedCell,
+    StaleLockPolicy,
 };
 pub use distributed::*;
 pub use error::{EngineError, EngineResult};
@@ -23,4 +24,4 @@ pub use replay::{
 };
 pub use replication::*;
 pub use search::*;
-pub use validation::{StorageStats, StorageValidation};
+pub use validation::{StorageStats, StorageValidation, StorageValidationReport};

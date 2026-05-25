@@ -25,3 +25,5 @@
   and HTTP `stats`/`validate`.
 - Added orphan temp cleanup on open, explicit `Database::close`, stronger storage validation,
   lifecycle/validation tests, and Core Alpha invariant documentation.
+- Added unique atomic temp filenames, collect-all storage validation reports, explicit stale lock
+  recovery, CLI `unlock --force`, and tests for those lifecycle paths.

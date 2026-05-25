@@ -8,7 +8,7 @@ use cortex_storage::manifest::StorageManifest;
 use cortex_storage::wal::{DurabilityMode, WalWriter, WalWriterHandle};
 
 use crate::checkpoint::{load_checkpoint, manifest_path, segments_path};
-use crate::cleanup::cleanup_orphans;
+use crate::cleanup::{cleanup_orphans, remove_lock_file};
 use crate::error::{EngineError, EngineResult};
 use crate::lock::DatabaseLock;
 use crate::operation::{wal_record_from_operation_with_seq, DbOperation};
@@ -25,9 +25,16 @@ pub enum RecoveryMode {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StaleLockPolicy {
+    Reject,
+    Break,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct DatabaseOptions {
     pub durability_mode: DurabilityMode,
     pub recovery_mode: RecoveryMode,
+    pub stale_lock_policy: StaleLockPolicy,
 }
 
 impl Default for DatabaseOptions {
@@ -35,6 +42,7 @@ impl Default for DatabaseOptions {
         Self {
             durability_mode: DurabilityMode::Strict,
             recovery_mode: RecoveryMode::Strict,
+            stale_lock_policy: StaleLockPolicy::Reject,
         }
     }
 }
@@ -72,13 +80,26 @@ impl Database {
         Self::open_with_options(path, DatabaseOptions::default())
     }
 
+    pub fn break_stale_lock(path: impl AsRef<Path>) -> EngineResult<()> {
+        remove_lock_file(path.as_ref())
+    }
+
     pub fn open_with_options(
         path: impl AsRef<Path>,
         options: DatabaseOptions,
     ) -> EngineResult<Self> {
         let root_path = path.as_ref().to_owned();
         fs::create_dir_all(&root_path)?;
-        let lock = DatabaseLock::acquire(&root_path)?;
+        let lock = match DatabaseLock::acquire(&root_path) {
+            Ok(lock) => lock,
+            Err(EngineError::DatabaseAlreadyOpen(_))
+                if options.stale_lock_policy == StaleLockPolicy::Break =>
+            {
+                Self::break_stale_lock(&root_path)?;
+                DatabaseLock::acquire(&root_path)?
+            }
+            Err(error) => return Err(error),
+        };
         cleanup_orphans(&root_path)?;
         let wal_path = root_path.join("db.aclog");
         let manifest_path = manifest_path(&root_path);

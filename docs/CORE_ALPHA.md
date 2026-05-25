@@ -15,6 +15,7 @@ than the full CortexDB roadmap.
 - Full `CellId` preservation through internal candidate mappings.
 - CRC checks for WAL, segment, bitmap index, lexical index, and manifest files.
 - CLI and HTTP smoke paths for put/get/flush/compact/stats/validate.
+- Explicit stale lock recovery and collect-all validation reports.
 
 ## Excluded
 

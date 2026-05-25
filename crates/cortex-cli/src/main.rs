@@ -107,6 +107,16 @@ fn run(args: Vec<String>) -> Result<String, String> {
                 validation.wal_safe_truncate_offset
             ))
         }
+        "unlock" => {
+            let [flag] = rest else {
+                return Err(usage());
+            };
+            if flag != "--force" {
+                return Err(usage());
+            }
+            Database::break_stale_lock(path).map_err(|error| error.to_string())?;
+            Ok("stale lock removed".to_owned())
+        }
         _ => Err(usage()),
     }
 }
@@ -119,7 +129,7 @@ fn parse_cell_id(value: &str) -> Result<CellId, String> {
 }
 
 fn usage() -> String {
-    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path>"
+    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | unlock <path> --force"
         .to_owned()
 }
 
@@ -157,6 +167,26 @@ mod tests {
 
         let validation = run(vec!["cortexdb".to_owned(), "validate".to_owned(), path_arg]).unwrap();
         assert!(validation.starts_with("ok "));
+
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[test]
+    fn unlock_force_removes_stale_lock() {
+        let path = unique_path("cortexdb-cli-unlock");
+        std::fs::create_dir_all(&path).unwrap();
+        std::fs::write(path.join("db.lock"), b"stale").unwrap();
+        let path_arg = path.to_string_lossy().into_owned();
+
+        let output = run(vec![
+            "cortexdb".to_owned(),
+            "unlock".to_owned(),
+            path_arg,
+            "--force".to_owned(),
+        ])
+        .unwrap();
+        assert_eq!(output, "stale lock removed");
+        assert!(!path.join("db.lock").exists());
 
         let _ = std::fs::remove_dir_all(path);
     }

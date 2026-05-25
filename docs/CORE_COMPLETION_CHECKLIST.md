@@ -35,6 +35,12 @@ covered by tests.
 - Validation rejects duplicate live segment ids, live/retired overlap,
   candidate id `0`, candidate ids mapped to multiple cells, and manifest
   checkpoint sequence regressions.
+- `Database::validate_storage_report()` collects all detectable validation
+  errors instead of stopping at the first one.
+- Atomic writes use unique temp filenames and open-time cleanup removes both
+  legacy and unique temp files.
+- Stale lock recovery is explicit through `StaleLockPolicy::Break` or
+  `cortexdb unlock <path> --force`.
 
 ## Validation Commands
 

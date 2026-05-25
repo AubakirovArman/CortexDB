@@ -2,7 +2,7 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
-use crate::error::EngineResult;
+use crate::error::{EngineError, EngineResult};
 
 pub(crate) fn cleanup_orphans(root: &Path) -> EngineResult<()> {
     cleanup_dir(root)?;
@@ -30,10 +30,9 @@ fn is_known_temp(path: &Path) -> bool {
     let Some(name) = file_name(path) else {
         return false;
     };
-    name.ends_with(".tmp")
-        && [".acs.tmp", ".acb.tmp", ".aci.tmp", ".acm.tmp", ".aclog.tmp"]
-            .iter()
-            .any(|suffix| name.ends_with(suffix))
+    [".acs.tmp", ".acb.tmp", ".aci.tmp", ".acm.tmp", ".aclog.tmp"]
+        .iter()
+        .any(|marker| name.ends_with(marker) || name.contains(&format!("{marker}.")))
 }
 
 fn file_name(path: &Path) -> Option<String> {
@@ -44,4 +43,12 @@ fn file_name(path: &Path) -> Option<String> {
 
 pub(crate) fn lock_path(root: &Path) -> PathBuf {
     root.join("db.lock")
+}
+
+pub(crate) fn remove_lock_file(root: &Path) -> EngineResult<()> {
+    match fs::remove_file(lock_path(root)) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(EngineError::from(error)),
+    }
 }

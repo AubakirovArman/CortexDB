@@ -30,7 +30,7 @@ pub enum EngineError {
     CandidateIdOverflow,
     #[error("invalid candidate id: {0}")]
     InvalidCandidateId(u32),
-    #[error("database is already open: {0}")]
+    #[error("database is already open: {0}; if this is a stale lock, close the running process or remove db.lock with cortexdb unlock <path> --force")]
     DatabaseAlreadyOpen(PathBuf),
 }
 

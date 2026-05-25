@@ -72,6 +72,7 @@ fn best_effort_recovery_stops_at_corrupt_payload() {
         DatabaseOptions {
             durability_mode: DurabilityMode::Strict,
             recovery_mode: RecoveryMode::BestEffort,
+            ..DatabaseOptions::default()
         },
     )
     .unwrap();

@@ -75,6 +75,39 @@ fn live_retired_segment_overlap_fails_validation() {
     assert!(error.contains("conflicts with manifest references"));
 }
 
+#[test]
+fn validation_report_collects_multiple_errors() {
+    let dir = tempfile::tempdir().unwrap();
+    write_bundle(dir.path(), 1, 5, 0, CellId(1));
+    write_bundle(dir.path(), 2, 6, 0, CellId(2));
+    write_manifest(
+        dir.path(),
+        4,
+        vec![manifest_segment(1, 5, 1), manifest_segment(2, 6, 1)],
+        vec![manifest_segment(1, 5, 1)],
+    );
+
+    let db = Database::open(dir.path()).unwrap();
+    let report = db.validate_storage_report();
+    assert!(!report.errors.is_empty());
+    assert!(report
+        .errors
+        .iter()
+        .any(|error| error.contains("behind segment")));
+    assert!(report
+        .errors
+        .iter()
+        .any(|error| error.contains("invalid candidate id")));
+    assert!(report
+        .errors
+        .iter()
+        .any(|error| error.contains("maps to multiple cells")));
+    assert!(report
+        .errors
+        .iter()
+        .any(|error| error.contains("conflicts with manifest references")));
+}
+
 fn write_bundle(root: &std::path::Path, segment_id: u64, seq: u64, candidate: u32, cell: CellId) {
     let segments = root.join("segments");
     std::fs::create_dir_all(&segments).unwrap();
