@@ -45,6 +45,8 @@ let tombstoned = db.expire_memory_cells(now_unix_seconds)?;
 ```
 
 `expire_memory_cells` writes tombstones through the normal WAL path.
+After the expiry scan, tombstoned memory is excluded from AQL retrieve and
+survives restart through WAL replay.
 
 Decay scoring is also deterministic and fixed-point:
 
@@ -57,6 +59,6 @@ TTL window, and becomes `Q16_ZERO` after expiry.
 
 ## Not Yet
 
-- AgentView persistence.
-- VERIFY FACT contradiction detection.
-- Aggregated feedback statistics.
+- Automatic background TTL scheduling.
+- Natural-language contradiction extraction.
+- Production memory ranking beyond fixed-point decay and feedback ordering.

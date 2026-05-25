@@ -242,8 +242,8 @@ The active slice is:
 
 ```text
 Epic 161 -> agent memory foundation (closed)
-Epic 165 -> memory TTL expiry
-Epic 174 -> VERIFY FACT report v0
+Epic 165 -> memory TTL expiry (closed)
+Epic 174 -> VERIFY FACT report v0 (closed)
 Epic 142 -> metadata encoding (closed)
 Epic 042 -> WAL CommitSeq hard requirement (closed)
 Epic 060 -> WAL debug tooling (closed)

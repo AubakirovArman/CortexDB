@@ -17,6 +17,9 @@ AQL VERIFY FACT
 -> term-overlap evidence report
 ```
 
+The report path is restart-safe because it reads the same MemTable snapshot
+rebuilt from checkpoint plus WAL replay.
+
 The v0 report has:
 
 - `fact`

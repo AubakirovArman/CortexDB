@@ -25,6 +25,30 @@ fn verify_fact_aql_reports_supported_evidence() {
 }
 
 #[test]
+fn verify_fact_aql_survives_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_knowledge_cell(
+            CellId(1),
+            fact_cell("project:investments", "ABC budget approved"),
+        )
+        .unwrap();
+    }
+
+    let db = Database::open(dir.path()).unwrap();
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;"#,
+            &view("project:investments", true),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Supported);
+    assert_eq!(report.evidence[0].cell_id, CellId(1));
+}
+
+#[test]
 fn verify_fact_aql_respects_agent_scope() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
