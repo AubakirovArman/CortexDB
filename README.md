@@ -4,7 +4,7 @@
 
 Agent-native context database prototype for AI agents.
 
-This repository currently implements the first compiler milestone:
+This repository currently implements the compiler and first storage milestones:
 
 ```text
 AQL string
@@ -16,13 +16,25 @@ AQL string
 -> Candidates_0 mask
 ```
 
-The current scope is intentionally limited to the `cortex-aql` crate. It does
-not implement WAL, storage segments, BM25, vector search, HNSW, or a server.
+The storage path has started with ACLOG WAL v0 and an in-memory MVCC core:
+
+```text
+AQL -> Binder -> Bitmap VM -> WAL -> MemTable -> Segments
+```
+
+## Crates
+
+- `crates/cortex-aql`: AQL parser, AST, policy validation, binder, bitmap bytecode, and mock bitmap VM.
+- `crates/cortex-storage`: ACLOG WAL v0 codec, reader recovery scan, and writer actor.
+- `crates/cortex-core`: in-memory MVCC MemTable, read transactions, cell versions, and manifest primitives.
+
+Still intentionally out of scope: storage segments, BM25, vector search, HNSW, distributed mode, and server APIs.
 
 ## Checks
 
 ```bash
-cargo test
+cargo check --workspace
+cargo test --workspace --all-features
 cargo fmt --check
-cargo clippy --all-targets -- -D warnings
+cargo clippy --workspace --all-targets -- -D warnings
 ```

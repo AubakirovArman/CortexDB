@@ -36,6 +36,10 @@ struct WalWriterCommand {
 }
 
 impl WalWriter {
+    pub fn create(path: impl AsRef<Path>) -> StorageResult<WalWriterHandle> {
+        Self::start(path, DurabilityMode::Strict)
+    }
+
     pub fn start(path: impl AsRef<Path>, mode: DurabilityMode) -> StorageResult<WalWriterHandle> {
         let path = path.as_ref().to_owned();
         ensure_file_header(&path)?;
@@ -86,7 +90,7 @@ fn append_record(
     next_lsn: &mut u64,
 ) -> StorageResult<CommitAck> {
     let lsn = *next_lsn;
-    let bytes = WalCodec::encode_record(&record, lsn)?;
+    let bytes = WalCodec::encode_record_at(&record, lsn)?;
     file.write_all(&bytes)?;
     if mode == DurabilityMode::Strict {
         file.sync_data()?;
