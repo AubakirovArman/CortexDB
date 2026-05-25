@@ -27,6 +27,13 @@ For now the engine returns `Supported` when readable evidence overlaps the fact
 terms, otherwise `Insufficient`. The enum reserves `Contradicted` and `Mixed`,
 but contradiction detection is not implemented yet.
 
+Smoke surfaces:
+
+```text
+cortexdb verify <path> <scope> '<VERIFY FACT ...;>'
+POST /v1/verify?scope=<scope>
+```
+
 ## Not Yet
 
 - Contradiction extraction.

@@ -1,4 +1,5 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
+use cortex_engine::verification::{VerificationReport, VerificationStatus};
 use cortex_engine::{scope_id, ContextPack, RetrievedCell};
 
 pub(crate) fn view_for_scope(scope: &str) -> AgentView {
@@ -24,6 +25,19 @@ pub(crate) fn view_for_scope(scope: &str) -> AgentView {
     }
 }
 
+pub(crate) fn remember_view_for_scope(scope: &str) -> AgentView {
+    let mut view = view_for_scope(scope);
+    view.allow_remember = true;
+    view.writable_scopes = std::collections::BTreeSet::from([scope_id(scope)]);
+    view
+}
+
+pub(crate) fn verify_view_for_scope(scope: &str) -> AgentView {
+    let mut view = view_for_scope(scope);
+    view.allow_verify_fact = true;
+    view
+}
+
 pub(crate) fn format_context_pack(pack: &ContextPack) -> String {
     let mut lines = vec![format!(
         "cells={} estimated_tokens={} token_budget={} truncated={} anomalies={}",
@@ -45,6 +59,22 @@ pub(crate) fn format_context_pack(pack: &ContextPack) -> String {
     lines.join("\n")
 }
 
+pub(crate) fn format_verification_report(report: &VerificationReport) -> String {
+    let mut lines = vec![format!(
+        "status={} evidence={} fact={}",
+        verification_status(report.status),
+        report.evidence.len(),
+        report.fact
+    )];
+    lines.extend(report.evidence.iter().map(|evidence| {
+        format!(
+            "cell_id={} matched_terms={}",
+            evidence.cell_id.0, evidence.matched_terms
+        )
+    }));
+    lines.join("\n")
+}
+
 pub(crate) fn format_retrieved_cells(cells: &[RetrievedCell]) -> String {
     if cells.is_empty() {
         return "cells=0".to_owned();
@@ -58,4 +88,13 @@ pub(crate) fn format_retrieved_cells(cells: &[RetrievedCell]) -> String {
         )
     }));
     lines.join("\n")
+}
+
+fn verification_status(status: VerificationStatus) -> &'static str {
+    match status {
+        VerificationStatus::Supported => "supported",
+        VerificationStatus::Insufficient => "insufficient",
+        VerificationStatus::Contradicted => "contradicted",
+        VerificationStatus::Mixed => "mixed",
+    }
 }

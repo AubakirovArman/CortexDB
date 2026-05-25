@@ -34,6 +34,7 @@
 - Structured `KnowledgeCell` ingestion API over the current payload encoding.
 - Policy-checked AQL `REMEMBER` execution into memory cells.
 - Policy-checked AQL `VERIFY FACT` evidence report v0.
+- CLI and HTTP smoke surfaces for AQL `REMEMBER` and `VERIFY FACT`.
 
 ## Next
 

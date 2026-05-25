@@ -16,6 +16,12 @@ AQL REMEMBER
 `Database::remember_aql` accepts only `REMEMBER` statements. It reuses the AQL
 binder, so the write is denied unless the `AgentView` allows remember, owns the
 target write scope, allows the memory type, and accepts the requested TTL.
+The same path is exposed for smoke usage through:
+
+```text
+cortexdb remember <path> <scope> '<REMEMBER ...;>'
+POST /v1/remember?scope=<scope>
+```
 
 The current storage bridge still writes metadata as payload header lines:
 
@@ -35,5 +41,5 @@ body bytes...
 - TTL expiry scan.
 - Memory decay scoring.
 - AgentView persistence.
-- VERIFY FACT execution report.
+- VERIFY FACT contradiction detection.
 - Feedback loop storage.

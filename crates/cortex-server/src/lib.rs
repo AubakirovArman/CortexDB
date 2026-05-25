@@ -7,6 +7,7 @@ use cortex_engine::Database;
 
 mod aql;
 mod context;
+mod memory;
 #[cfg(test)]
 mod tests;
 
@@ -143,6 +144,8 @@ fn route(root: &Path, method: &str, target: &str, body: &[u8]) -> Result<String,
         }
         ("POST", "/v1/context") => context::handle_context(root, query, body),
         ("POST", "/v1/aql") => aql::handle_aql(root, query, body),
+        ("POST", "/v1/remember") => memory::handle_remember(root, query, body),
+        ("POST", "/v1/verify") => memory::handle_verify(root, query, body),
         _ => Err("unknown route".to_owned()),
     }
 }

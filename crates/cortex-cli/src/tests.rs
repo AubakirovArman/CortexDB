@@ -90,6 +90,35 @@ fn aql_command_returns_retrieved_cells() {
 }
 
 #[test]
+fn remember_and_verify_commands_work() {
+    let path = unique_path("cortexdb-cli-memory");
+    let path_arg = path.to_string_lossy().into_owned();
+    let remember = run(vec![
+        "cortexdb".to_owned(),
+        "remember".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        r#"REMEMBER "ABC budget approved" IN SCOPE project:investments AS TYPE decision TTL 60 SECONDS;"#.to_owned(),
+    ])
+    .unwrap();
+    assert!(remember.contains("seq=1"));
+    assert!(remember.contains("ttl_seconds=60"));
+
+    let verify = run(vec![
+        "cortexdb".to_owned(),
+        "verify".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        r#"VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;"#.to_owned(),
+    ])
+    .unwrap();
+    assert!(verify.contains("status=supported"));
+    assert!(verify.contains("evidence=1"));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
 fn repair_command_reports_best_effort_cleanup() {
     let path = unique_path("cortexdb-cli-repair");
     let path_arg = path.to_string_lossy().into_owned();

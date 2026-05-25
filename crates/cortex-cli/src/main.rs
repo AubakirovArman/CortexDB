@@ -9,7 +9,10 @@ mod context;
 mod tests;
 mod wal;
 
-use context::{format_context_pack, format_retrieved_cells, view_for_scope};
+use context::{
+    format_context_pack, format_retrieved_cells, format_verification_report,
+    remember_view_for_scope, verify_view_for_scope, view_for_scope,
+};
 
 fn main() -> ExitCode {
     match run(env::args().collect()) {
@@ -164,6 +167,34 @@ fn run(args: Vec<String>) -> Result<String, String> {
                 .map_err(|error| error.to_string())?;
             Ok(format_context_pack(&pack))
         }
+        "remember" => {
+            let [scope, aql] = rest else {
+                return Err(usage());
+            };
+            let mut db = Database::open(path).map_err(|error| error.to_string())?;
+            let result = db
+                .remember_aql(aql, &remember_view_for_scope(scope))
+                .map_err(|error| error.to_string())?;
+            Ok(format!(
+                "seq={} cell_id={} ttl_seconds={}",
+                result.commit_seq.0,
+                result.cell_id.0,
+                result
+                    .ttl_seconds
+                    .map(|value| value.to_string())
+                    .unwrap_or_else(|| "null".to_owned())
+            ))
+        }
+        "verify" => {
+            let [scope, aql] = rest else {
+                return Err(usage());
+            };
+            let db = Database::open(path).map_err(|error| error.to_string())?;
+            let report = db
+                .verify_fact_aql(aql, &verify_view_for_scope(scope))
+                .map_err(|error| error.to_string())?;
+            Ok(format_verification_report(&report))
+        }
         "aql" => {
             let [scope, aql] = rest else {
                 return Err(usage());
@@ -196,6 +227,6 @@ fn parse_cell_id(value: &str) -> Result<CellId, String> {
 }
 
 fn usage() -> String {
-    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | repair <path> | gc-retired <path> | wal-validate <path> | wal-dump <path> | context <path> <scope> <aql> | aql <path> <scope> <aql> | unlock <path> --force"
+    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | repair <path> | gc-retired <path> | wal-validate <path> | wal-dump <path> | context <path> <scope> <aql> | remember <path> <scope> <aql> | verify <path> <scope> <aql> | aql <path> <scope> <aql> | unlock <path> --force"
         .to_owned()
 }
