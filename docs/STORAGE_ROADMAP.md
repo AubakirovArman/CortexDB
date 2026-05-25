@@ -27,13 +27,14 @@
 - Atomic write audit and storage format documentation.
 - SegmentBundle API and explicit retired segment garbage collection.
 - ACLOG format freeze notes and read-only WAL diagnostics CLI.
+- MemTable historical reads, deterministic iterators, range scan, and stats v2.
 
 ## Next
 
-1. Add WAL writer backpressure and real group commit batching.
-2. Persist consensus log entries through ACLOG or a dedicated replication log.
-3. Add real network replication and leader election.
-4. Add structured JSON request bodies and richer API version negotiation.
+1. Formalize core cell metadata instead of payload-line metadata parsing.
+2. Add WAL writer backpressure and real group commit batching.
+3. Persist consensus log entries through ACLOG or a dedicated replication log.
+4. Add real network replication and leader election.
 5. Add background GC policy around active readers.
 
 ## Not Yet

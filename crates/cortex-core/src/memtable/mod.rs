@@ -14,6 +14,12 @@ pub struct ReadTxn {
     pub read_seq: CommitSeq,
 }
 
+impl ReadTxn {
+    pub fn at(read_seq: CommitSeq) -> Self {
+        Self { read_seq }
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct MemTable {
     versions: BTreeMap<CellId, Vec<CellVersion>>,
@@ -22,10 +28,13 @@ pub struct MemTable {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct MemTableStats {
     pub cell_count: usize,
+    pub live_cell_count: usize,
+    pub deleted_cell_count: usize,
     pub version_count: usize,
     pub tombstone_count: usize,
     pub max_delta_depth: u32,
     pub index_debt_total: u32,
+    pub payload_bytes: usize,
 }
 
 impl MemTable {
@@ -85,10 +94,41 @@ impl MemTable {
             .find(|version| version.visible_at(txn.read_seq))
     }
 
+    pub fn read_at(&self, seq: CommitSeq, cell_id: CellId) -> Option<&CellVersion> {
+        self.read(ReadTxn::at(seq), cell_id)
+    }
+
     pub fn visible_cells(&self, txn: ReadTxn) -> Vec<CellVersion> {
         self.versions
             .keys()
             .filter_map(|cell_id| self.read(txn, *cell_id).cloned())
+            .collect()
+    }
+
+    pub fn live_cell_ids(&self, txn: ReadTxn) -> Vec<CellId> {
+        self.versions
+            .keys()
+            .filter(|cell_id| self.contains_visible(txn, **cell_id))
+            .copied()
+            .collect()
+    }
+
+    pub fn deleted_cell_ids(&self) -> Vec<CellId> {
+        self.versions
+            .iter()
+            .filter_map(|(cell_id, versions)| {
+                versions
+                    .last()
+                    .is_some_and(|version| version.deleted_seq.is_some())
+                    .then_some(*cell_id)
+            })
+            .collect()
+    }
+
+    pub fn range_scan(&self, txn: ReadTxn, start: CellId, end: CellId) -> Vec<CellVersion> {
+        self.versions
+            .range(start..=end)
+            .filter_map(|(cell_id, _)| self.read(txn, *cell_id).cloned())
             .collect()
     }
 
@@ -151,11 +191,18 @@ impl MemTable {
         };
         for versions in self.versions.values() {
             stats.version_count += versions.len();
+            stats.payload_bytes += versions
+                .iter()
+                .map(|version| version.payload.len())
+                .sum::<usize>();
             if versions
                 .last()
                 .is_some_and(|version| version.deleted_seq.is_some())
             {
                 stats.tombstone_count += 1;
+                stats.deleted_cell_count += 1;
+            } else {
+                stats.live_cell_count += 1;
             }
             for version in versions {
                 stats.max_delta_depth = stats.max_delta_depth.max(version.delta_depth);

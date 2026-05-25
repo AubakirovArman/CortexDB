@@ -45,6 +45,24 @@ fn old_read_txn_does_not_see_new_patch() {
 }
 
 #[test]
+fn read_at_uses_historical_visibility() {
+    let mut table = MemTable::default();
+    table.put_cell(CellId(1), CommitSeq(10), b"v1".to_vec());
+    table
+        .patch_cell(CellId(1), CommitSeq(20), b"v2".to_vec())
+        .unwrap();
+
+    assert_eq!(
+        table.read_at(CommitSeq(15), CellId(1)).unwrap().payload,
+        b"v1"
+    );
+    assert_eq!(
+        table.read_at(CommitSeq(20), CellId(1)).unwrap().payload,
+        b"v2"
+    );
+}
+
+#[test]
 fn tombstone_hides_cell_after_delete_seq() {
     let mut table = MemTable::default();
     table.put_cell(CellId(1), CommitSeq(10), b"v1".to_vec());
@@ -104,9 +122,12 @@ fn memtable_stats_track_versions_and_tombstones() {
 
     let stats = table.stats();
     assert_eq!(stats.cell_count, 2);
+    assert_eq!(stats.live_cell_count, 1);
+    assert_eq!(stats.deleted_cell_count, 1);
     assert_eq!(stats.version_count, 3);
     assert_eq!(stats.tombstone_count, 1);
     assert_eq!(stats.max_delta_depth, 1);
+    assert_eq!(stats.payload_bytes, 4);
     assert_eq!(table.latest_seq(), CommitSeq(30));
     assert!(table.contains_visible(
         ReadTxn {
@@ -114,6 +135,48 @@ fn memtable_stats_track_versions_and_tombstones() {
         },
         CellId(1)
     ));
+}
+
+#[test]
+fn live_deleted_iterators_are_deterministic() {
+    let mut table = MemTable::default();
+    table.put_cell(CellId(3), CommitSeq(10), b"c".to_vec());
+    table.put_cell(CellId(1), CommitSeq(11), b"a".to_vec());
+    table.put_cell(CellId(2), CommitSeq(12), b"b".to_vec());
+    table.tombstone_cell(CellId(2), CommitSeq(20)).unwrap();
+
+    assert_eq!(
+        table.live_cell_ids(ReadTxn::at(CommitSeq(20))),
+        vec![CellId(1), CellId(3)]
+    );
+    assert_eq!(table.deleted_cell_ids(), vec![CellId(2)]);
+}
+
+#[test]
+fn range_scan_obeys_mvcc_and_cell_order() {
+    let mut table = MemTable::default();
+    table.put_cell(CellId(1), CommitSeq(10), b"a".to_vec());
+    table.put_cell(CellId(2), CommitSeq(11), b"b1".to_vec());
+    table.put_cell(CellId(3), CommitSeq(12), b"c".to_vec());
+    table
+        .patch_cell(CellId(2), CommitSeq(20), b"b2".to_vec())
+        .unwrap();
+
+    let old = table.range_scan(ReadTxn::at(CommitSeq(15)), CellId(1), CellId(3));
+    assert_eq!(
+        old.iter()
+            .map(|version| version.payload.as_slice())
+            .collect::<Vec<_>>(),
+        vec![b"a".as_slice(), b"b1".as_slice(), b"c".as_slice()]
+    );
+
+    let new = table.range_scan(ReadTxn::at(CommitSeq(20)), CellId(2), CellId(3));
+    assert_eq!(
+        new.iter()
+            .map(|version| version.payload.as_slice())
+            .collect::<Vec<_>>(),
+        vec![b"b2".as_slice(), b"c".as_slice()]
+    );
 }
 
 #[test]

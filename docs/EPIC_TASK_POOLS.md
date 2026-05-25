@@ -241,11 +241,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 The active slice is:
 
 ```text
-Epic 041 -> ACLOG v0 format freeze docs
-Epic 043 -> BestEffort recovery policy docs
-Epic 044 -> Strict recovery policy docs
-Epic 049 -> WAL scan diagnostics
-Epic 060 -> WAL debug CLI surface
+Epic 061 -> MemTable stats v2
+Epic 062 -> MemTable payload byte accounting
+Epic 064 -> historical read helper
+Epic 074 -> deterministic MemTable iterators
+Epic 075 -> MemTable range scan
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed
