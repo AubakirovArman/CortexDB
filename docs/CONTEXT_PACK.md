@@ -22,6 +22,7 @@ Implemented in `cortex-engine`:
 - `ContextPackAnomaly`
 - `Database::context_pack_from_aql`
 - `estimate_tokens`
+- Optional sparse redundancy reduction using fixed-point Jaccard.
 
 The CLI exposes:
 
@@ -44,11 +45,12 @@ RETRIEVE CONTEXT ...
 3. Token estimates are deterministic integer estimates.
 4. Requested budget is clamped by `AgentView::effective_budget`.
 5. Citation requirements produce anomalies instead of silently passing.
-6. No vector search, HNSW, reranking, or LLM calls run in v0.
+6. Redundancy reduction, when enabled, reports skipped cells as anomalies.
+7. No vector search, HNSW, reranking, or LLM calls run in v0.
 
 ## Known Limits
 
 - Token estimation is byte-based and approximate.
 - Citations are recognized only from `source=` or `citation=` payload lines.
-- MMR, redundancy control, contradiction detection, and dense semantic scoring
-  are future milestones.
+- Redundancy control is sparse term based; dense semantic scoring and
+  contradiction detection are future milestones.

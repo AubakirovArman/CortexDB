@@ -64,6 +64,7 @@ fn context_pack_reports_policy_visible_citation_state_after_restart() {
             ContextPackOptions {
                 token_budget_tokens: 128,
                 require_citations: false,
+                ..ContextPackOptions::default()
             },
         )
         .unwrap();
@@ -85,6 +86,7 @@ fn assert_project_ready_context(db: &Database, expected: &[CellId]) {
             ContextPackOptions {
                 token_budget_tokens: 256,
                 require_citations: false,
+                ..ContextPackOptions::default()
             },
         )
         .unwrap();

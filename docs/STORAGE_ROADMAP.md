@@ -30,6 +30,7 @@
 - MemTable historical reads, deterministic iterators, range scan, and stats v2.
 - AQL retrieve execution exposed through CLI and HTTP.
 - Search API v1 with Unicode tokenization, field weights, and hybrid fusion.
+- ContextPack sparse redundancy reduction with anomaly diagnostics.
 
 ## Next
 

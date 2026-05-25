@@ -241,11 +241,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 The active slice is:
 
 ```text
-Epic 101 -> Search API v1
-Epic 103 -> Unicode tokenizer
-Epic 104 -> token normalization
-Epic 106 -> field-aware lexical input
-Epic 116 -> hybrid search fusion
+Epic 121 -> ContextPack API
+Epic 122 -> token budget estimator
+Epic 123 -> sparse MMR-style packing
+Epic 124 -> weighted Jaccard redundancy
+Epic 134 -> ContextPack diagnostics
 ```
 
 Vector search, HNSW, real BM25 ranking, ingestion adapters, distributed
