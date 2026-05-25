@@ -31,6 +31,8 @@ crc32c u32 over all previous bytes
 ```
 
 Writers persist cells in ascending `candidate_id` order.
+`SegmentReader::read_lookup` builds an in-memory lookup for `candidate_id` and
+full `cell_id` access without repeated segment scans.
 
 ## Bitmap Index `.acb`
 

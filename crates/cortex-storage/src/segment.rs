@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::Path;
 
 use crate::atomic::{append_crc32c, verify_crc32c, write_atomic};
@@ -18,6 +19,13 @@ pub struct SegmentWriter;
 
 #[derive(Clone, Debug)]
 pub struct SegmentReader;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SegmentLookup {
+    cells: Vec<SegmentCell>,
+    by_candidate: BTreeMap<u32, usize>,
+    by_cell_id: BTreeMap<u64, usize>,
+}
 
 impl SegmentWriter {
     pub fn write(path: impl AsRef<Path>, cells: &[SegmentCell]) -> StorageResult<()> {
@@ -44,6 +52,45 @@ impl SegmentReader {
     pub fn read(path: impl AsRef<Path>) -> StorageResult<Vec<SegmentCell>> {
         let bytes = std::fs::read(path)?;
         decode_segment(&bytes)
+    }
+
+    pub fn read_lookup(path: impl AsRef<Path>) -> StorageResult<SegmentLookup> {
+        SegmentLookup::new(Self::read(path)?)
+    }
+}
+
+impl SegmentLookup {
+    pub fn new(cells: Vec<SegmentCell>) -> StorageResult<Self> {
+        let mut by_candidate = BTreeMap::new();
+        let mut by_cell_id = BTreeMap::new();
+        for (index, cell) in cells.iter().enumerate() {
+            if by_candidate.insert(cell.candidate_id, index).is_some()
+                || by_cell_id.insert(cell.cell_id, index).is_some()
+            {
+                return Err(StorageError::InvalidSegmentFile);
+            }
+        }
+        Ok(Self {
+            cells,
+            by_candidate,
+            by_cell_id,
+        })
+    }
+
+    pub fn cell_by_candidate(&self, candidate_id: u32) -> Option<&SegmentCell> {
+        self.by_candidate
+            .get(&candidate_id)
+            .and_then(|index| self.cells.get(*index))
+    }
+
+    pub fn cell_by_cell_id(&self, cell_id: u64) -> Option<&SegmentCell> {
+        self.by_cell_id
+            .get(&cell_id)
+            .and_then(|index| self.cells.get(*index))
+    }
+
+    pub fn cells(&self) -> &[SegmentCell] {
+        &self.cells
     }
 }
 

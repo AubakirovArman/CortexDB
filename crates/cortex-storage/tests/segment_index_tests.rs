@@ -54,6 +54,21 @@ fn acs_segment_persists_cells_in_candidate_order() {
 }
 
 #[test]
+fn segment_lookup_finds_cells_by_candidate_and_cell_id() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("lookup.acs");
+    SegmentWriter::write(&path, &[segment_cell(2, 20), segment_cell(1, 10)]).unwrap();
+
+    let lookup = SegmentReader::read_lookup(&path).unwrap();
+
+    assert_eq!(lookup.cells().len(), 2);
+    assert_eq!(lookup.cell_by_candidate(1).unwrap().cell_id, 10);
+    assert_eq!(lookup.cell_by_candidate(2).unwrap().cell_id, 20);
+    assert_eq!(lookup.cell_by_cell_id(20).unwrap().candidate_id, 2);
+    assert!(lookup.cell_by_candidate(99).is_none());
+}
+
+#[test]
 fn acb_bitmap_index_roundtrips_sorted_sets() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("0001.acb");
