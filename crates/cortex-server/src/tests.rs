@@ -104,6 +104,28 @@ fn v1_search_returns_scope_filtered_results() {
 }
 
 #[test]
+fn v1_vector_search_accepts_query_vector() {
+    let dir = tempfile::tempdir().unwrap();
+    let put_a = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\nvector=5,0\nalpha"
+    );
+    let put_b = concat!(
+        "POST /v1/cell?cell_id=2 HTTP/1.1\r\n\r\n",
+        "scope=tenant:private\nstatus=ready\nvector=9,0\nhidden"
+    );
+    assert!(handle_http(dir.path(), put_a).contains(r#""seq":1"#));
+    assert!(handle_http(dir.path(), put_b).contains(r#""seq":2"#));
+
+    let request =
+        "POST /v1/search?scope=project:investments&mode=vector&vector=2,0 HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""cell_id":1"#));
+    assert!(response.contains(r#""vector_score":"#));
+    assert!(!response.contains(r#""cell_id":2"#));
+}
+
+#[test]
 fn v1_remember_and_verify_work() {
     let dir = tempfile::tempdir().unwrap();
     let remember = concat!(

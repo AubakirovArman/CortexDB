@@ -10,6 +10,7 @@ pub(crate) mod vector;
 pub use database::{DatabaseSearchResult, SearchLimit};
 pub use hnsw::HnswIndex;
 pub use tokenizer::tokenize;
+pub use vector::parse_vector_literal;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ScoredCandidate {

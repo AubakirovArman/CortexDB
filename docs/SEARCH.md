@@ -22,13 +22,16 @@ Current smoke surfaces:
 
 ```text
 cortexdb search <path> <scope> <query>
+cortexdb search-vector <path> <scope> <i16-vector>
 POST /v1/search?scope=<scope>&q=<query>
+POST /v1/search?scope=<scope>&mode=vector&vector=<i16-vector>
 ```
 
-The HTTP body is used as the query text when `q` is omitted.
+The HTTP body is used as the keyword query text when `q` is omitted, and as the
+vector literal when `mode=vector&vector=...` is omitted. Vector literals accept
+comma or space separated signed 16-bit integers.
 
 ## Not Yet
 
 - Production BM25 analyzers.
-- Public vector input over CLI/HTTP.
 - Persistent ANN/HNSW vector pages.

@@ -60,12 +60,14 @@
   no uncheckpointed WAL tail, with MemTable snapshot fallback for fresh writes.
 - `.acv` vector pages persist integer vectors and support exact scoped vector
   scan without snapshot rebuild when there is no uncheckpointed WAL tail.
+- Public scoped vector search input is exposed through CLI and HTTP over the
+  current exact `.acv`/snapshot vector path.
 
 ## Next
 
 1. Persist consensus log entries through ACLOG or a dedicated replication log.
 2. Add natural-language contradiction extraction after structured markers.
-3. Add public vector input over CLI and HTTP.
+3. Add field-aware persisted lexical scoring statistics.
 
 ## Not Yet
 

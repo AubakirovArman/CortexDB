@@ -253,8 +253,9 @@ Epic 015 -> storage format versioning (closed)
 Epic 035 -> segment sort order (closed)
 Epic 036 -> segment lookup index (closed)
 Epic 108 -> persisted lexical search over `.aci` postings (closed for current keyword scorer)
+Epic 109 -> vector API v1 over CLI/HTTP exact scan (closed)
 Epic 111 -> vector persistence `.acv` exact scan foundation (closed)
 ```
 
-Public vector CLI/HTTP input, HNSW, real BM25 ranking, ingestion adapters,
-distributed consensus, SDKs, and LLM integration remain outside this slice.
+HNSW, real BM25 ranking, ingestion adapters, distributed consensus, SDKs, and
+LLM integration remain outside this slice.
