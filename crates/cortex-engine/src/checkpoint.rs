@@ -19,8 +19,9 @@ pub(crate) struct CheckpointLoad {
 
 impl Database {
     pub fn checkpoint(&mut self) -> EngineResult<CheckpointStats> {
-        let versions = self.snapshot_versions();
-        if versions.is_empty() {
+        let base_seq = CommitSeq(self.manifest.checkpoint_seq);
+        let cells = self.checkpoint_delta_cells(base_seq);
+        if cells.is_empty() && self.current_seq == base_seq {
             return Ok(CheckpointStats {
                 segment_id: None,
                 cells_flushed: 0,
@@ -31,14 +32,6 @@ impl Database {
         self.writer.shutdown()?;
         fs::create_dir_all(&self.segments_path)?;
         let segment_id = self.manifest.generation + 1;
-        let cells: Vec<_> = versions
-            .into_iter()
-            .map(|version| SegmentCell {
-                cell_id: version.cell_id.0,
-                created_seq: version.created_seq.0,
-                payload: version.payload,
-            })
-            .collect();
         let segment_path = segment_path(&self.segments_path, segment_id);
         SegmentWriter::write(&segment_path, &cells)?;
 
@@ -66,6 +59,46 @@ impl Database {
         })
     }
 
+    pub fn compact(&mut self) -> EngineResult<CheckpointStats> {
+        let cells = self.full_snapshot_cells();
+        if cells.is_empty() {
+            return Ok(CheckpointStats {
+                segment_id: None,
+                cells_flushed: 0,
+                checkpoint_seq: self.current_seq,
+            });
+        }
+
+        self.writer.shutdown()?;
+        fs::create_dir_all(&self.segments_path)?;
+        let segment_id = self.manifest.generation + 1;
+        let segment_path = segment_path(&self.segments_path, segment_id);
+        SegmentWriter::write(&segment_path, &cells)?;
+
+        let index = EngineAqlIndex::from_segment_cells(&cells);
+        index
+            .bitmap_index()
+            .write(bitmap_path(&self.segments_path, segment_id))?;
+        index
+            .lexical_index()
+            .write(lexical_path(&self.segments_path, segment_id))?;
+
+        self.manifest.compact_to_segment(ManifestSegment {
+            id: segment_id,
+            generation: self.manifest.generation + 1,
+            checkpoint_seq: self.current_seq.0,
+            cell_count: cells.len() as u32,
+        });
+        self.manifest.store(&self.manifest_path)?;
+        super::database::truncate_wal_tail(&self.wal_path, 0)?;
+        self.writer = WalWriter::start(&self.wal_path, self.durability_mode)?;
+        Ok(CheckpointStats {
+            segment_id: Some(segment_id),
+            cells_flushed: cells.len(),
+            checkpoint_seq: self.current_seq,
+        })
+    }
+
     pub fn persisted_indexes(&self) -> EngineResult<(BitmapIndex, LexicalIndex)> {
         let mut bitmap = BitmapIndex::default();
         let mut lexical = LexicalIndex::default();
@@ -78,6 +111,49 @@ impl Database {
         }
         Ok((bitmap, lexical))
     }
+
+    fn checkpoint_delta_cells(&self, base_seq: CommitSeq) -> Vec<SegmentCell> {
+        let txn = self.read_txn();
+        let mut cells = self
+            .memtable
+            .visible_cells_created_after(txn, base_seq)
+            .into_iter()
+            .map(|version| SegmentCell {
+                cell_id: version.cell_id.0,
+                created_seq: version.created_seq.0,
+                deleted_seq: None,
+                payload: version.payload,
+            })
+            .collect::<Vec<_>>();
+        cells.extend(self.memtable.tombstones_after(base_seq).into_iter().map(
+            |(cell_id, deleted)| SegmentCell {
+                cell_id: cell_id.0,
+                created_seq: 0,
+                deleted_seq: Some(deleted.0),
+                payload: Vec::new(),
+            },
+        ));
+        cells.sort_by_key(|cell| {
+            (
+                cell.deleted_seq.unwrap_or(cell.created_seq),
+                cell.cell_id,
+                cell.created_seq,
+            )
+        });
+        cells
+    }
+
+    fn full_snapshot_cells(&self) -> Vec<SegmentCell> {
+        self.snapshot_versions()
+            .into_iter()
+            .map(|version| SegmentCell {
+                cell_id: version.cell_id.0,
+                created_seq: version.created_seq.0,
+                deleted_seq: None,
+                payload: version.payload,
+            })
+            .collect()
+    }
 }
 
 pub(crate) fn load_checkpoint(root: &Path) -> EngineResult<CheckpointLoad> {
@@ -86,11 +162,15 @@ pub(crate) fn load_checkpoint(root: &Path) -> EngineResult<CheckpointLoad> {
     for segment in &manifest.live_segments {
         let cells = SegmentReader::read(segment_path(&segments_path(root), segment.id))?;
         for cell in cells {
-            memtable.put_cell(
-                CellId(cell.cell_id),
-                CommitSeq(cell.created_seq),
-                cell.payload,
-            );
+            if let Some(deleted) = cell.deleted_seq {
+                let _ = memtable.tombstone_cell(CellId(cell.cell_id), CommitSeq(deleted));
+            } else {
+                memtable.put_cell(
+                    CellId(cell.cell_id),
+                    CommitSeq(cell.created_seq),
+                    cell.payload,
+                );
+            }
         }
     }
     Ok(CheckpointLoad { manifest, memtable })

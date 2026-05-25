@@ -71,6 +71,39 @@ impl MemTable {
             .collect()
     }
 
+    pub fn visible_cells_created_after(&self, txn: ReadTxn, seq: CommitSeq) -> Vec<CellVersion> {
+        self.visible_cells(txn)
+            .into_iter()
+            .filter(|version| version.created_seq > seq)
+            .collect()
+    }
+
+    pub fn tombstones_after(&self, seq: CommitSeq) -> Vec<(CellId, CommitSeq)> {
+        self.versions
+            .iter()
+            .filter_map(|(cell_id, versions)| {
+                let last = versions.last()?;
+                let deleted = last.deleted_seq?;
+                (deleted > seq).then_some((*cell_id, deleted))
+            })
+            .collect()
+    }
+
+    pub fn changed_cell_ids_after(&self, seq: CommitSeq) -> Vec<CellId> {
+        self.versions
+            .iter()
+            .filter_map(|(cell_id, versions)| {
+                versions
+                    .iter()
+                    .any(|version| {
+                        version.created_seq > seq
+                            || version.deleted_seq.is_some_and(|deleted| deleted > seq)
+                    })
+                    .then_some(*cell_id)
+            })
+            .collect()
+    }
+
     pub fn is_empty(&self) -> bool {
         self.versions.is_empty()
     }

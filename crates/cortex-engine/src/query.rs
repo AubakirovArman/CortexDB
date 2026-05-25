@@ -1,30 +1,24 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+mod metadata;
+
 use cortex_aql::{
     parse_aql, AgentView, AqlCatalog, Binder, BitmapHandle, BitmapProvider, BoundPlan, BrainId,
     CellTypeId, MemoryType, ScopeId, StatusId,
 };
 use cortex_core::memtable::CellVersion;
+use cortex_core::{CellId, CommitSeq};
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::segment::SegmentCell;
 
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
+use metadata::{
+    cell_type_handle, cell_type_id, memory_type_handle, scope_handle, status_handle, status_id,
+};
+pub use metadata::{scope_id, CellMetadata};
 
 const DEFAULT_BRAIN: BrainId = BrainId(1);
-const SCOPE_NS: u64 = 0x1000_0000_0000_0000;
-const STATUS_NS: u64 = 0x2000_0000_0000_0000;
-const TYPE_NS: u64 = 0x3000_0000_0000_0000;
-const MEMORY_NS: u64 = 0x4000_0000_0000_0000;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CellMetadata {
-    pub scope: String,
-    pub status: String,
-    pub cell_type: String,
-    pub memory_type: Option<MemoryType>,
-    pub terms: Vec<String>,
-}
 
 #[derive(Clone, Debug, Default)]
 pub struct EngineAqlIndex {
@@ -35,12 +29,28 @@ pub struct EngineAqlIndex {
 
 impl Database {
     pub fn aql_index(&self) -> EngineAqlIndex {
-        EngineAqlIndex::from_versions(&self.snapshot_versions())
+        self.try_aql_index()
+            .unwrap_or_else(|_| EngineAqlIndex::from_versions(&self.snapshot_versions()))
+    }
+
+    pub fn try_aql_index(&self) -> EngineResult<EngineAqlIndex> {
+        let checkpoint_seq = CommitSeq(self.manifest().checkpoint_seq);
+        let changed = self.memtable.changed_cell_ids_after(checkpoint_seq);
+        if self.manifest().live_segments.is_empty() {
+            return Ok(EngineAqlIndex::from_versions(&self.snapshot_versions()));
+        }
+        let (bitmap, lexical) = self.persisted_indexes()?;
+        Ok(EngineAqlIndex::from_persisted(
+            bitmap,
+            lexical,
+            &self.snapshot_versions(),
+            &changed,
+        ))
     }
 
     pub fn retrieve_aql(&self, aql: &str, view: &AgentView) -> EngineResult<Vec<RetrievedCell>> {
         let statement = parse_aql(aql).map_err(|error| EngineError::AqlParse(error.to_string()))?;
-        let index = self.aql_index();
+        let index = self.try_aql_index()?;
         let bound = Binder::new(&index, view).bind_statement(&statement)?;
         match bound {
             BoundPlan::Retrieve(plan) => self.retrieve_cells(&plan, &index),
@@ -61,11 +71,47 @@ impl EngineAqlIndex {
     }
 
     pub fn from_segment_cells(cells: &[SegmentCell]) -> Self {
-        Self::from_cells(
-            cells
-                .iter()
-                .map(|cell| (cell.cell_id as u32, cell.payload.as_slice(), cell.cell_id)),
-        )
+        Self::from_cells(cells.iter().filter_map(|cell| {
+            cell.deleted_seq.is_none().then_some((
+                cell.cell_id as u32,
+                cell.payload.as_slice(),
+                cell.cell_id,
+            ))
+        }))
+    }
+
+    pub fn from_persisted(
+        bitmap: BitmapIndex,
+        lexical: LexicalIndex,
+        current: &[CellVersion],
+        changed: &[CellId],
+    ) -> Self {
+        let changed_candidates = changed
+            .iter()
+            .map(|cell_id| cell_id.0 as u32)
+            .collect::<BTreeSet<_>>();
+        let mut index = Self {
+            bitmaps: bitmap
+                .bitmaps
+                .into_iter()
+                .map(|(handle, values)| (BitmapHandle(handle), values))
+                .collect(),
+            lexical: lexical.terms,
+            universe: BTreeSet::new(),
+        };
+        index.remove_candidates(&changed_candidates);
+        let changed_current = current
+            .iter()
+            .filter(|version| changed.contains(&version.cell_id));
+        index.extend_cells(changed_current.map(|version| {
+            (
+                version.cell_id.0 as u32,
+                version.payload.as_slice(),
+                version.cell_id.0,
+            )
+        }));
+        index.rebuild_universe();
+        index
     }
 
     pub fn bitmap_index(&self) -> BitmapIndex {
@@ -86,57 +132,51 @@ impl EngineAqlIndex {
 
     fn from_cells<'a>(cells: impl IntoIterator<Item = (u32, &'a [u8], u64)>) -> Self {
         let mut index = Self::default();
+        index.extend_cells(cells);
+        index
+    }
+
+    fn extend_cells<'a>(&mut self, cells: impl IntoIterator<Item = (u32, &'a [u8], u64)>) {
         for (candidate, payload, cell_id) in cells {
             let metadata = CellMetadata::from_payload(payload);
-            index.universe.insert(candidate);
-            index.push(scope_handle(scope_id(&metadata.scope)), candidate);
-            index.push(status_handle(status_id(&metadata.status)), candidate);
-            index.push(
+            self.universe.insert(candidate);
+            self.push(scope_handle(scope_id(&metadata.scope)), candidate);
+            self.push(status_handle(status_id(&metadata.status)), candidate);
+            self.push(
                 cell_type_handle(cell_type_id(&metadata.cell_type)),
                 candidate,
             );
             if let Some(memory_type) = metadata.memory_type {
-                index.push(memory_type_handle(memory_type), candidate);
+                self.push(memory_type_handle(memory_type), candidate);
             }
-            index.push(BitmapHandle(cell_id), candidate);
+            self.push(BitmapHandle(cell_id), candidate);
             for term in metadata.terms {
-                index.lexical.entry(term).or_default().insert(candidate);
+                self.lexical.entry(term).or_default().insert(candidate);
             }
         }
-        index
     }
 
     fn push(&mut self, handle: BitmapHandle, candidate: u32) {
         self.bitmaps.entry(handle).or_default().insert(candidate);
     }
-}
 
-impl CellMetadata {
-    pub fn from_payload(payload: &[u8]) -> Self {
-        let text = String::from_utf8_lossy(payload);
-        let mut scope = "default".to_owned();
-        let mut status = "ready".to_owned();
-        let mut cell_type = "cell".to_owned();
-        let mut memory_type = None;
-        for line in text.lines() {
-            if let Some(value) = line.strip_prefix("scope=") {
-                scope = value.trim().to_owned();
-            } else if let Some(value) = line.strip_prefix("status=") {
-                status = value.trim().to_owned();
-            } else if let Some(value) = line.strip_prefix("type=") {
-                cell_type = value.trim().to_owned();
-            } else if let Some(value) = line.strip_prefix("memory_type=") {
-                memory_type = value.trim().parse().ok();
-            }
+    fn remove_candidates(&mut self, candidates: &BTreeSet<u32>) {
+        for values in self.bitmaps.values_mut() {
+            values.retain(|candidate| !candidates.contains(candidate));
         }
-        let terms = tokenize(&text);
-        Self {
-            scope,
-            status,
-            cell_type,
-            memory_type,
-            terms,
+        self.bitmaps.retain(|_, values| !values.is_empty());
+        for values in self.lexical.values_mut() {
+            values.retain(|candidate| !candidates.contains(candidate));
         }
+        self.lexical.retain(|_, values| !values.is_empty());
+    }
+
+    fn rebuild_universe(&mut self) {
+        self.universe = self
+            .bitmaps
+            .values()
+            .flat_map(|values| values.iter().copied())
+            .collect();
     }
 }
 
@@ -187,7 +227,7 @@ impl AqlCatalog for EngineAqlIndex {
 
 impl BitmapProvider for EngineAqlIndex {
     fn bitmap(&self, handle: BitmapHandle) -> Option<BTreeSet<u32>> {
-        self.bitmaps.get(&handle).cloned()
+        Some(self.bitmaps.get(&handle).cloned().unwrap_or_default())
     }
 
     fn agent_allowed(&self) -> BTreeSet<u32> {
@@ -201,48 +241,4 @@ impl BitmapProvider for EngineAqlIndex {
     fn universe(&self) -> BTreeSet<u32> {
         self.universe.clone()
     }
-}
-
-pub fn scope_id(name: &str) -> ScopeId {
-    ScopeId(stable_hash(name))
-}
-
-fn status_id(name: &str) -> StatusId {
-    StatusId(stable_hash(name))
-}
-
-fn cell_type_id(name: &str) -> CellTypeId {
-    CellTypeId(stable_hash(name))
-}
-
-fn scope_handle(scope: ScopeId) -> BitmapHandle {
-    BitmapHandle(SCOPE_NS | scope.0)
-}
-
-fn status_handle(status: StatusId) -> BitmapHandle {
-    BitmapHandle(STATUS_NS | status.0)
-}
-
-fn cell_type_handle(cell_type: CellTypeId) -> BitmapHandle {
-    BitmapHandle(TYPE_NS | cell_type.0)
-}
-
-fn memory_type_handle(memory_type: MemoryType) -> BitmapHandle {
-    BitmapHandle(MEMORY_NS | memory_type as u64)
-}
-
-fn stable_hash(value: &str) -> u64 {
-    let mut hash = 0xcbf2_9ce4_8422_2325u64;
-    for byte in value.as_bytes() {
-        hash ^= u64::from(*byte);
-        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
-    }
-    hash & 0x0fff_ffff_ffff_ffff
-}
-
-fn tokenize(text: &str) -> Vec<String> {
-    text.split(|value: char| !value.is_ascii_alphanumeric())
-        .filter(|term| !term.is_empty())
-        .map(|term| term.to_ascii_lowercase())
-        .collect()
 }

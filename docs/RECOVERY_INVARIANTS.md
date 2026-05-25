@@ -13,5 +13,8 @@
   live `.acs` segments.
 - Recovery loads live segments first, then skips WAL records with durable
   `CommitSeq <= checkpoint_seq`.
-- Checkpoint currently writes a full visible snapshot and retires previous
-  segment handles as a simple compaction baseline.
+- Checkpoint writes only versions and tombstone markers changed after the last
+  manifest checkpoint.
+- Tombstone markers in incremental segments must prevent old checkpointed cells
+  from resurrecting after WAL truncation.
+- Compaction writes a full visible snapshot and retires previous segment handles.

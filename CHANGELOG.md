@@ -12,3 +12,6 @@
   file foundations, and a minimal CLI.
 - Added manifest-backed checkpoint/recovery, engine flush to `.acs/.acb/.aci`, engine-backed AQL
   retrieve, MVP BM25/vector/HNSW helpers, minimal distributed placement, and `cortex-server`.
+- Added incremental checkpoint tombstone markers, atomic manifest writes, persisted-index-first
+  AQL retrieval with delta overlay, compaction, graph-backed HNSW-style search, JSON/auth server
+  responses, CLI compact, and deterministic quorum log primitives.

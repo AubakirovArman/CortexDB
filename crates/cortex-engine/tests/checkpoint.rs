@@ -63,7 +63,7 @@ fn wal_tail_after_checkpoint_replays_newer_records() {
 }
 
 #[test]
-fn second_checkpoint_compacts_visible_cells_to_new_segment() {
+fn second_checkpoint_is_incremental() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
     db.put_cell(CellId(1), b"v1".to_vec()).unwrap();
@@ -73,7 +73,39 @@ fn second_checkpoint_compacts_visible_cells_to_new_segment() {
 
     assert_eq!(stats.segment_id, Some(2));
     assert_eq!(stats.cells_flushed, 1);
-    assert_eq!(db.manifest().live_segments.len(), 1);
-    assert_eq!(db.manifest().retired_segments.len(), 1);
+    assert_eq!(db.manifest().live_segments.len(), 2);
+    assert_eq!(db.manifest().retired_segments.len(), 0);
     assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"v2");
+}
+
+#[test]
+fn compact_retires_old_segments_to_full_visible_snapshot() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(CellId(1), b"v1".to_vec()).unwrap();
+    db.checkpoint().unwrap();
+    db.patch_cell(CellId(1), b"v2".to_vec()).unwrap();
+    db.checkpoint().unwrap();
+    let stats = db.compact().unwrap();
+
+    assert_eq!(stats.segment_id, Some(3));
+    assert_eq!(stats.cells_flushed, 1);
+    assert_eq!(db.manifest().live_segments.len(), 1);
+    assert_eq!(db.manifest().retired_segments.len(), 2);
+    assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"v2");
+}
+
+#[test]
+fn tombstone_after_checkpoint_does_not_resurrect_after_flush() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"hello".to_vec()).unwrap();
+        db.checkpoint().unwrap();
+        db.tombstone_cell(CellId(1)).unwrap();
+        db.checkpoint().unwrap();
+    }
+    let db = Database::open(dir.path()).unwrap();
+    assert_eq!(db.current_seq(), CommitSeq(2));
+    assert_eq!(db.get_latest_cell(CellId(1)), None);
 }

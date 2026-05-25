@@ -9,6 +9,7 @@ const MAGIC: &[u8; 4] = b"ACS1";
 pub struct SegmentCell {
     pub cell_id: u64,
     pub created_seq: u64,
+    pub deleted_seq: Option<u64>,
     pub payload: Vec<u8>,
 }
 
@@ -26,6 +27,7 @@ impl SegmentWriter {
         for cell in cells {
             put_u64(&mut out, cell.cell_id);
             put_u64(&mut out, cell.created_seq);
+            put_u64(&mut out, cell.deleted_seq.unwrap_or(0));
             put_u32(&mut out, cell.payload.len() as u32);
             out.extend_from_slice(&cell.payload);
         }
@@ -51,11 +53,16 @@ fn decode_segment(bytes: &[u8]) -> StorageResult<Vec<SegmentCell>> {
     for _ in 0..count {
         let cell_id = read_u64(bytes, &mut cursor)?;
         let created_seq = read_u64(bytes, &mut cursor)?;
+        let deleted_seq = match read_u64(bytes, &mut cursor)? {
+            0 => None,
+            value => Some(value),
+        };
         let len = read_u32(bytes, &mut cursor)? as usize;
         let payload = read_bytes(bytes, &mut cursor, len)?.to_vec();
         cells.push(SegmentCell {
             cell_id,
             created_seq,
+            deleted_seq,
             payload,
         });
     }

@@ -28,6 +28,11 @@ The current MVP stores operations as ACLOG records:
 Replay uses durable `CommitSeq` from `CellCore`. Old records without that field
 fall back to replay order for compatibility.
 
-Checkpoint writes a full visible snapshot for the current MVP. The manifest stores
-the checkpoint sequence, so recovery can skip durable WAL records already included
-in the segment snapshot and replay only newer tail records.
+Checkpoint writes only visible versions and tombstone markers changed after the
+previous manifest `checkpoint_seq`. The manifest is updated through an atomic
+temp-file plus rename protocol. Recovery loads live segments first, then skips
+durable WAL records already covered by the manifest and replays only newer tail
+records.
+
+Compaction is a separate full visible snapshot operation. It retires previous
+live segment handles and produces one current segment/index set.

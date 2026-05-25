@@ -21,7 +21,7 @@ The storage path has started with ACLOG WAL v0 and an in-memory MVCC core:
 ```text
 AQL -> Binder -> Bitmap VM -> WAL -> MemTable -> Segments
 PutCell -> WAL append -> MemTable update -> restart -> WAL replay -> Retrieve
-Checkpoint -> .acs segment + .acb bitmap index + .aci lexical index + manifest
+Incremental checkpoint -> .acs segment + .acb bitmap index + .aci lexical index + atomic manifest
 ```
 
 ## Crates
@@ -29,9 +29,9 @@ Checkpoint -> .acs segment + .acb bitmap index + .aci lexical index + manifest
 - `crates/cortex-aql`: AQL parser, AST, policy validation, binder, bitmap bytecode, and mock bitmap VM.
 - `crates/cortex-storage`: ACLOG WAL v0, manifest, segment, bitmap-index, and lexical-index files.
 - `crates/cortex-core`: in-memory MVCC MemTable, read transactions, cell versions, and manifest primitives.
-- `crates/cortex-engine`: single-node database loop, checkpoint, AQL-backed retrieve, and MVP search helpers.
-- `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone/flush checks.
-- `crates/cortex-server`: minimal HTTP API for put/get/tombstone/flush checks.
+- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, search helpers, and consensus model primitives.
+- `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone/flush/compact checks.
+- `crates/cortex-server`: minimal JSON HTTP API for put/get/tombstone/flush/compact/health checks.
 
 BM25, vector search, HNSW, distributed placement, and server APIs exist as MVP foundations.
 They are not production-grade ranking, ANN, consensus, or service layers yet.
@@ -55,15 +55,19 @@ assert_eq!(value, Some(b"hello".to_vec()));
 cargo run -p cortex-cli -- put ./data 1 hello
 cargo run -p cortex-cli -- get ./data 1
 cargo run -p cortex-cli -- flush ./data
+cargo run -p cortex-cli -- compact ./data
 ```
 
 ## Minimal HTTP Check
 
 ```bash
 cargo run -p cortex-server -- ./data 127.0.0.1:8080
-curl -X POST 'http://127.0.0.1:8080/put?cell_id=1' --data-binary 'hello'
-curl 'http://127.0.0.1:8080/get?cell_id=1'
+curl -X POST 'http://127.0.0.1:8080/v1/cell?cell_id=1' --data-binary 'hello'
+curl 'http://127.0.0.1:8080/v1/cell?cell_id=1'
 ```
+
+Set `CORTEXDB_AUTH_TOKEN` before starting `cortex-server` to require
+`Authorization: Bearer <token>` on HTTP requests.
 
 ## Roadmap
 
