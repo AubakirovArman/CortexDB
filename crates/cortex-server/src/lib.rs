@@ -61,6 +61,31 @@ fn route(root: &Path, method: &str, target: &str, body: &[u8]) -> Result<String,
     let (path, query) = target.split_once('?').unwrap_or((target, ""));
     match (method, path) {
         ("GET", "/v1/health") => Ok(r#"{"status":"ok","version":"v1"}"#.to_owned()),
+        ("GET", "/v1/stats") => {
+            let db = Database::open(root).map_err(|error| error.to_string())?;
+            let stats = db.storage_stats().map_err(|error| error.to_string())?;
+            Ok(format!(
+                r#"{{"current_seq":{},"checkpoint_seq":{},"live_segments":{},"retired_segments":{},"memtable_cells":{},"memtable_versions":{},"wal_size_bytes":{}}}"#,
+                stats.current_seq.0,
+                stats.checkpoint_seq.0,
+                stats.live_segments,
+                stats.retired_segments,
+                stats.memtable.cell_count,
+                stats.memtable.version_count,
+                stats.wal_size_bytes
+            ))
+        }
+        ("GET", "/v1/validate") => {
+            let db = Database::open(root).map_err(|error| error.to_string())?;
+            let validation = db.validate_storage().map_err(|error| error.to_string())?;
+            Ok(format!(
+                r#"{{"ok":true,"live_segments_checked":{},"cells_checked":{},"wal_records_checked":{},"wal_safe_truncate_offset":{}}}"#,
+                validation.live_segments_checked,
+                validation.cells_checked,
+                validation.wal_records_checked,
+                validation.wal_safe_truncate_offset
+            ))
+        }
         ("GET", "/get") | ("GET", "/v1/cell") => {
             let cell_id = cell_id(query)?;
             let db = Database::open(root).map_err(|error| error.to_string())?;
@@ -202,5 +227,20 @@ mod tests {
             &options,
         );
         assert!(allowed.contains(r#""status":"ok""#));
+    }
+
+    #[test]
+    fn v1_stats_and_validate_report_storage_state() {
+        let dir = tempfile::tempdir().unwrap();
+        let put = "POST /v1/cell?cell_id=1 HTTP/1.1\r\ncontent-length: 5\r\n\r\nhello";
+        assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+
+        let stats = handle_http(dir.path(), "GET /v1/stats HTTP/1.1\r\n\r\n");
+        assert!(stats.contains(r#""current_seq":1"#));
+        assert!(stats.contains(r#""memtable_cells":1"#));
+
+        let validation = handle_http(dir.path(), "GET /v1/validate HTTP/1.1\r\n\r\n");
+        assert!(validation.contains(r#""ok":true"#));
+        assert!(validation.contains(r#""wal_records_checked":1"#));
     }
 }

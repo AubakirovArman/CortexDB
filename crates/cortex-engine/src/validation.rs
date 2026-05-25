@@ -59,6 +59,9 @@ impl Database {
                     cells.len()
                 )));
             }
+            if cells.iter().any(|cell| cell.candidate_id == 0) {
+                return Err(EngineError::InvalidCandidateId(0));
+            }
             BitmapIndex::read(bitmap_path(&self.segments_path, segment.id))?;
             LexicalIndex::read(lexical_path(&self.segments_path, segment.id))?;
             cells_checked += cells.len();

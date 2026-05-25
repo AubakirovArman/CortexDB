@@ -2,6 +2,7 @@ pub mod checkpoint;
 pub mod database;
 pub mod distributed;
 pub mod error;
+mod lock;
 pub mod operation;
 pub mod query;
 pub mod replay;

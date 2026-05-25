@@ -1,22 +1,22 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+mod catalog;
 mod metadata;
+mod provider;
 
-use cortex_aql::{
-    parse_aql, AgentView, AqlCatalog, Binder, BitmapHandle, BitmapProvider, BoundPlan, BrainId,
-    CellTypeId, MemoryType, ScopeId, StatusId,
-};
+use cortex_aql::{parse_aql, AgentView, Binder, BitmapHandle, BoundPlan, BrainId};
 use cortex_core::memtable::CellVersion;
 use cortex_core::{CellId, CommitSeq};
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::segment::SegmentCell;
 
-use crate::database::{CandidateResolver, Database, RetrievedCell};
+use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
 use metadata::{
     cell_type_handle, cell_type_id, memory_type_handle, scope_handle, status_handle, status_id,
 };
 pub use metadata::{scope_id, CellMetadata};
+pub use provider::EngineAqlProvider;
 
 const DEFAULT_BRAIN: BrainId = BrainId(1);
 
@@ -26,31 +26,31 @@ pub struct EngineAqlIndex {
     pub lexical: BTreeMap<String, BTreeSet<u32>>,
     pub universe: BTreeSet<u32>,
     pub candidate_to_cell: BTreeMap<u32, CellId>,
+    pub cell_to_candidate: BTreeMap<CellId, u32>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CandidateId(pub u32);
 
 impl Database {
-    pub fn aql_index(&self) -> EngineAqlIndex {
+    pub fn aql_index(&self) -> EngineResult<EngineAqlIndex> {
         self.try_aql_index()
-            .unwrap_or_else(|_| EngineAqlIndex::from_versions(&self.snapshot_versions()))
     }
 
     pub fn try_aql_index(&self) -> EngineResult<EngineAqlIndex> {
         let checkpoint_seq = CommitSeq(self.manifest().checkpoint_seq);
         let changed = self.memtable.changed_cell_ids_after(checkpoint_seq);
         if self.manifest().live_segments.is_empty() {
-            return Ok(EngineAqlIndex::from_versions(&self.snapshot_versions()));
+            return EngineAqlIndex::try_from_versions(&self.snapshot_versions());
         }
         let persisted = self.persisted_index_state()?;
-        Ok(EngineAqlIndex::from_persisted(
+        EngineAqlIndex::from_persisted(
             persisted.bitmap,
             persisted.lexical,
             persisted.candidate_to_cell,
             &self.snapshot_versions(),
             &changed,
-        ))
+        )
     }
 
     pub fn retrieve_aql(&self, aql: &str, view: &AgentView) -> EngineResult<Vec<RetrievedCell>> {
@@ -58,24 +58,35 @@ impl Database {
         let index = self.try_aql_index()?;
         let bound = Binder::new(&index, view).bind_statement(&statement)?;
         match bound {
-            BoundPlan::Retrieve(plan) => self.retrieve_cells(&plan, &index),
+            BoundPlan::Retrieve(plan) => {
+                let provider = EngineAqlProvider::new(index, view);
+                self.retrieve_cells(&plan, &provider)
+            }
             _ => Err(EngineError::InvalidOperation),
         }
     }
 }
 
 impl EngineAqlIndex {
-    pub fn from_versions(versions: &[CellVersion]) -> Self {
+    pub fn try_from_versions(versions: &[CellVersion]) -> EngineResult<Self> {
         let mut sorted = versions.iter().collect::<Vec<_>>();
         sorted.sort_by_key(|version| version.cell_id);
-        Self::from_cells(sorted.into_iter().enumerate().map(|(index, version)| {
-            let candidate = u32::try_from(index + 1).expect("candidate id overflow");
-            (candidate, version.payload.as_slice(), version.cell_id)
-        }))
+        let cells = sorted
+            .into_iter()
+            .enumerate()
+            .map(|(index, version)| {
+                Ok((
+                    candidate_from_ordinal(index)?,
+                    version.payload.as_slice(),
+                    version.cell_id,
+                ))
+            })
+            .collect::<EngineResult<Vec<_>>>()?;
+        Self::try_from_cells(cells)
     }
 
-    pub fn from_segment_cells(cells: &[SegmentCell]) -> Self {
-        Self::from_cells(cells.iter().filter_map(|cell| {
+    pub fn try_from_segment_cells(cells: &[SegmentCell]) -> EngineResult<Self> {
+        Self::try_from_cells(cells.iter().filter_map(|cell| {
             cell.deleted_seq.is_none().then_some((
                 cell.candidate_id,
                 cell.payload.as_slice(),
@@ -90,11 +101,20 @@ impl EngineAqlIndex {
         candidate_to_cell: BTreeMap<u32, CellId>,
         current: &[CellVersion],
         changed: &[CellId],
-    ) -> Self {
+    ) -> EngineResult<Self> {
+        let cell_to_candidate = reverse_candidate_map(&candidate_to_cell)?;
         let changed_candidates = changed
             .iter()
-            .filter_map(|cell_id| candidate_for_cell(&candidate_to_cell, *cell_id))
+            .filter_map(|cell_id| cell_to_candidate.get(cell_id).copied())
             .collect::<BTreeSet<_>>();
+        let changed_cell_candidates = changed
+            .iter()
+            .filter_map(|cell_id| {
+                cell_to_candidate
+                    .get(cell_id)
+                    .map(|candidate| (*cell_id, *candidate))
+            })
+            .collect::<BTreeMap<_, _>>();
         let mut index = Self {
             bitmaps: bitmap
                 .bitmaps
@@ -104,31 +124,29 @@ impl EngineAqlIndex {
             lexical: lexical.terms,
             universe: BTreeSet::new(),
             candidate_to_cell,
+            cell_to_candidate,
         };
         index.remove_candidates(&changed_candidates);
-        let mut next_candidate = index
-            .candidate_to_cell
-            .keys()
-            .next_back()
-            .copied()
-            .unwrap_or(0)
-            .saturating_add(1);
-        let changed_current = current
+        let mut next_candidate = None;
+        let mut changed_current = Vec::new();
+        for version in current
             .iter()
             .filter(|version| changed.contains(&version.cell_id))
-            .map(|version| {
-                let candidate = candidate_for_cell(&index.candidate_to_cell, version.cell_id)
-                    .unwrap_or_else(|| {
-                        let value = next_candidate;
-                        next_candidate = next_candidate.saturating_add(1);
-                        value
-                    });
-                (candidate, version.payload.as_slice(), version.cell_id)
-            })
-            .collect::<Vec<_>>();
-        index.extend_cells(changed_current);
+        {
+            let candidate = if let Some(candidate) = changed_cell_candidates.get(&version.cell_id) {
+                *candidate
+            } else {
+                let value = *next_candidate.get_or_insert(next_candidate_after(
+                    index.candidate_to_cell.keys().copied(),
+                )?);
+                next_candidate = Some(increment_candidate(value)?);
+                value
+            };
+            changed_current.push((candidate, version.payload.as_slice(), version.cell_id));
+        }
+        index.extend_cells(changed_current)?;
         index.rebuild_universe();
-        index
+        Ok(index)
     }
 
     pub fn bitmap_index(&self) -> BitmapIndex {
@@ -147,16 +165,38 @@ impl EngineAqlIndex {
         }
     }
 
-    fn from_cells<'a>(cells: impl IntoIterator<Item = (u32, &'a [u8], CellId)>) -> Self {
+    fn try_from_cells<'a>(
+        cells: impl IntoIterator<Item = (u32, &'a [u8], CellId)>,
+    ) -> EngineResult<Self> {
         let mut index = Self::default();
-        index.extend_cells(cells);
-        index
+        index.extend_cells(cells)?;
+        Ok(index)
     }
 
-    fn extend_cells<'a>(&mut self, cells: impl IntoIterator<Item = (u32, &'a [u8], CellId)>) {
+    fn extend_cells<'a>(
+        &mut self,
+        cells: impl IntoIterator<Item = (u32, &'a [u8], CellId)>,
+    ) -> EngineResult<()> {
         for (candidate, payload, cell_id) in cells {
+            validate_candidate(candidate)?;
+            if let Some(mapped) = self.candidate_to_cell.get(&candidate) {
+                if *mapped != cell_id {
+                    return Err(EngineError::StorageInvariant(format!(
+                        "candidate {candidate} maps to multiple cells"
+                    )));
+                }
+            }
+            if let Some(mapped) = self.cell_to_candidate.get(&cell_id) {
+                if *mapped != candidate {
+                    return Err(EngineError::StorageInvariant(format!(
+                        "cell {} maps to multiple candidates",
+                        cell_id.0
+                    )));
+                }
+            }
             let metadata = CellMetadata::from_payload(payload);
             self.candidate_to_cell.insert(candidate, cell_id);
+            self.cell_to_candidate.insert(cell_id, candidate);
             self.universe.insert(candidate);
             self.push(scope_handle(scope_id(&metadata.scope)), candidate);
             self.push(status_handle(status_id(&metadata.status)), candidate);
@@ -172,6 +212,7 @@ impl EngineAqlIndex {
                 self.lexical.entry(term).or_default().insert(candidate);
             }
         }
+        Ok(())
     }
 
     fn push(&mut self, handle: BitmapHandle, candidate: u32) {
@@ -189,88 +230,60 @@ impl EngineAqlIndex {
         self.lexical.retain(|_, values| !values.is_empty());
         self.candidate_to_cell
             .retain(|candidate, _| !candidates.contains(candidate));
+        self.cell_to_candidate
+            .retain(|_, candidate| !candidates.contains(candidate));
     }
 
     fn rebuild_universe(&mut self) {
-        self.universe = self
-            .bitmaps
-            .values()
-            .flat_map(|values| values.iter().copied())
-            .collect();
+        self.universe = self.candidate_to_cell.keys().copied().collect();
     }
 }
 
-fn candidate_for_cell(candidate_to_cell: &BTreeMap<u32, CellId>, cell_id: CellId) -> Option<u32> {
-    candidate_to_cell
-        .iter()
-        .find_map(|(candidate, mapped)| (*mapped == cell_id).then_some(*candidate))
+fn reverse_candidate_map(
+    candidate_to_cell: &BTreeMap<u32, CellId>,
+) -> EngineResult<BTreeMap<CellId, u32>> {
+    let mut cell_to_candidate = BTreeMap::new();
+    for (candidate, cell_id) in candidate_to_cell {
+        validate_candidate(*candidate)?;
+        if cell_to_candidate.insert(*cell_id, *candidate).is_some() {
+            return Err(EngineError::StorageInvariant(format!(
+                "cell {} maps to multiple candidates",
+                cell_id.0
+            )));
+        }
+    }
+    Ok(cell_to_candidate)
 }
 
-impl AqlCatalog for EngineAqlIndex {
-    fn resolve_brain(&self, _name: &str) -> Option<BrainId> {
-        Some(DEFAULT_BRAIN)
-    }
+fn candidate_from_ordinal(index: usize) -> EngineResult<u32> {
+    let one_based = index
+        .checked_add(1)
+        .ok_or(EngineError::CandidateIdOverflow)?;
+    let candidate = u32::try_from(one_based).map_err(|_| EngineError::CandidateIdOverflow)?;
+    validate_candidate(candidate)?;
+    Ok(candidate)
+}
 
-    fn resolve_scope(&self, _brain: BrainId, name: &str) -> Option<ScopeId> {
-        Some(scope_id(name))
-    }
-
-    fn resolve_status(&self, _brain: BrainId, status: &str) -> Option<StatusId> {
-        Some(status_id(status))
-    }
-
-    fn resolve_cell_type(&self, _brain: BrainId, cell_type: &str) -> Option<CellTypeId> {
-        Some(cell_type_id(cell_type))
-    }
-
-    fn scope_bitmap(&self, _brain: BrainId, scope: ScopeId) -> Option<BitmapHandle> {
-        Some(scope_handle(scope))
-    }
-
-    fn status_bitmap(&self, _brain: BrainId, status: StatusId) -> Option<BitmapHandle> {
-        Some(status_handle(status))
-    }
-
-    fn cell_type_bitmap(&self, _brain: BrainId, cell_type: CellTypeId) -> Option<BitmapHandle> {
-        Some(cell_type_handle(cell_type))
-    }
-
-    fn memory_type_bitmap(&self, _brain: BrainId, memory_type: MemoryType) -> Option<BitmapHandle> {
-        Some(memory_type_handle(memory_type))
-    }
-
-    fn field_is_filterable(&self, _brain: BrainId, field: &str) -> bool {
-        matches!(
-            field,
-            "space" | "scope" | "status" | "type" | "cell_type" | "memory_type"
-        )
-    }
-
-    fn bitmap_estimated_cardinality(&self, _brain: BrainId, handle: BitmapHandle) -> Option<u64> {
-        self.bitmaps.get(&handle).map(|values| values.len() as u64)
+fn next_candidate_after(candidates: impl IntoIterator<Item = u32>) -> EngineResult<u32> {
+    let max = candidates.into_iter().max().unwrap_or(0);
+    if max == 0 {
+        Ok(1)
+    } else {
+        increment_candidate(max)
     }
 }
 
-impl BitmapProvider for EngineAqlIndex {
-    fn bitmap(&self, handle: BitmapHandle) -> Option<BTreeSet<u32>> {
-        Some(self.bitmaps.get(&handle).cloned().unwrap_or_default())
-    }
-
-    fn agent_allowed(&self) -> BTreeSet<u32> {
-        self.universe.clone()
-    }
-
-    fn live(&self) -> BTreeSet<u32> {
-        self.universe.clone()
-    }
-
-    fn universe(&self) -> BTreeSet<u32> {
-        self.universe.clone()
-    }
+fn increment_candidate(candidate: u32) -> EngineResult<u32> {
+    candidate
+        .checked_add(1)
+        .filter(|value| *value != 0)
+        .ok_or(EngineError::CandidateIdOverflow)
 }
 
-impl CandidateResolver for EngineAqlIndex {
-    fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId> {
-        self.candidate_to_cell.get(&candidate).copied()
+fn validate_candidate(candidate: u32) -> EngineResult<()> {
+    if candidate == 0 {
+        Err(EngineError::InvalidCandidateId(candidate))
+    } else {
+        Ok(())
     }
 }

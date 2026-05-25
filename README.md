@@ -66,6 +66,8 @@ cargo run -p cortex-cli -- validate ./data
 cargo run -p cortex-server -- ./data 127.0.0.1:8080
 curl -X POST 'http://127.0.0.1:8080/v1/cell?cell_id=1' --data-binary 'hello'
 curl 'http://127.0.0.1:8080/v1/cell?cell_id=1'
+curl 'http://127.0.0.1:8080/v1/stats'
+curl 'http://127.0.0.1:8080/v1/validate'
 ```
 
 Set `CORTEXDB_AUTH_TOKEN` before starting `cortex-server` to require

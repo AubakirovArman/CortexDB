@@ -9,6 +9,7 @@ use cortex_storage::wal::{DurabilityMode, WalWriter, WalWriterHandle};
 
 use crate::checkpoint::{load_checkpoint, manifest_path, segments_path};
 use crate::error::{EngineError, EngineResult};
+use crate::lock::DatabaseLock;
 use crate::operation::{wal_record_from_operation_with_seq, DbOperation};
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
 
@@ -48,6 +49,7 @@ pub struct Database {
     pub(crate) writer: WalWriterHandle,
     pub(crate) current_seq: CommitSeq,
     pub(crate) durability_mode: DurabilityMode,
+    pub(crate) _lock: DatabaseLock,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -74,6 +76,7 @@ impl Database {
     ) -> EngineResult<Self> {
         let root_path = path.as_ref().to_owned();
         fs::create_dir_all(&root_path)?;
+        let lock = DatabaseLock::acquire(&root_path)?;
         let wal_path = root_path.join("db.aclog");
         let manifest_path = manifest_path(&root_path);
         let segments_path = segments_path(&root_path);
@@ -102,6 +105,7 @@ impl Database {
             writer,
             current_seq: replay.last_seq,
             durability_mode: options.durability_mode,
+            _lock: lock,
         })
     }
 
@@ -206,6 +210,12 @@ impl Database {
             .read(self.read_txn(), cell_id)
             .map(|_| ())
             .ok_or_else(|| cortex_core::CoreError::CellNotFound(cell_id).into())
+    }
+}
+
+impl Drop for Database {
+    fn drop(&mut self) {
+        let _ = self.writer.shutdown();
     }
 }
 

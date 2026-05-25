@@ -20,3 +20,6 @@
   tests, and the core completion checklist.
 - Added tombstone-only checkpoint handling, MemTable stats, database storage validation/stats,
   CLI `stats`/`validate`, and tests for validation failures.
+- Fixed persisted index merging across multiple checkpoint segments, added fallible candidate
+  allocation, reverse candidate maps, database lock/drop shutdown, AgentView-aware runtime masks,
+  and HTTP `stats`/`validate`.

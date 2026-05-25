@@ -26,6 +26,12 @@ pub enum EngineError {
     MissingStorageFile(PathBuf),
     #[error("storage invariant violation: {0}")]
     StorageInvariant(String),
+    #[error("candidate id overflow")]
+    CandidateIdOverflow,
+    #[error("invalid candidate id: {0}")]
+    InvalidCandidateId(u32),
+    #[error("database is already open: {0}")]
+    DatabaseAlreadyOpen(PathBuf),
 }
 
 pub type EngineResult<T> = Result<T, EngineError>;

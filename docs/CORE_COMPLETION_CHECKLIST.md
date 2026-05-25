@@ -21,6 +21,13 @@ covered by tests.
   files, indexes, and recoverable WAL state.
 - `Database::storage_stats()` reports current sequence, checkpoint sequence,
   segment counts, MemTable stats, and WAL size.
+- Persisted bitmap and lexical indexes merge same-key postings by set union
+  across checkpoint segments.
+- Candidate allocation is fallible; overflow and candidate id `0` fail closed.
+- A single database directory has a process lock and shuts down its WAL writer
+  from `Drop`.
+- Runtime bitmap evaluation uses an AgentView-derived allowed mask, not only the
+  full segment universe.
 
 ## Validation Commands
 
