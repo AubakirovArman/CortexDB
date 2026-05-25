@@ -14,6 +14,20 @@ pub fn handle_aql(root: &Path, query: &str, body: &[u8]) -> Result<String, Strin
     Ok(cells_json(&cells))
 }
 
+pub fn handle_aql_shared(
+    db: &std::sync::RwLock<Database>,
+    query: &str,
+    body: &[u8],
+) -> Result<String, String> {
+    let scope = query_param(query, "scope")?;
+    let db = db.read().map_err(|e| e.to_string())?;
+    let aql = String::from_utf8_lossy(body);
+    let cells = db
+        .retrieve_aql(&aql, &view_for_scope(scope))
+        .map_err(|error| error.to_string())?;
+    Ok(cells_json(&cells))
+}
+
 fn query_param<'a>(query: &'a str, key: &str) -> Result<&'a str, String> {
     let prefix = format!("{key}=");
     query

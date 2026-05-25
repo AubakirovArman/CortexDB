@@ -13,6 +13,20 @@ pub fn handle_context(root: &Path, query: &str, body: &[u8]) -> Result<String, S
     Ok(context_pack_json(&pack))
 }
 
+pub fn handle_context_shared(
+    db: &std::sync::RwLock<Database>,
+    query: &str,
+    body: &[u8],
+) -> Result<String, String> {
+    let scope = query_param(query, "scope")?;
+    let db = db.read().map_err(|e| e.to_string())?;
+    let aql = String::from_utf8_lossy(body);
+    let pack = db
+        .context_pack_from_aql(&aql, &view_for_scope(scope), ContextPackOptions::default())
+        .map_err(|error| error.to_string())?;
+    Ok(context_pack_json(&pack))
+}
+
 fn query_param<'a>(query: &'a str, key: &str) -> Result<&'a str, String> {
     let prefix = format!("{key}=");
     query

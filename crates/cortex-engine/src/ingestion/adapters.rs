@@ -232,7 +232,11 @@ fn flatten_json_value(value: &serde_json::Value, prefix: &str, out: &mut Vec<(St
     match value {
         serde_json::Value::Object(map) => {
             for (k, v) in map {
-                let new_prefix = if prefix.is_empty() { k.clone() } else { format!("{}.{}", prefix, k) };
+                let new_prefix = if prefix.is_empty() {
+                    k.clone()
+                } else {
+                    format!("{}.{}", prefix, k)
+                };
                 flatten_json_value(v, &new_prefix, out);
             }
         }
@@ -256,7 +260,8 @@ fn csv_rows_serde(csv: &str) -> EngineResult<Vec<Vec<String>>> {
         .from_reader(csv.as_bytes());
     let mut rows = Vec::new();
     for result in rdr.records() {
-        let record = result.map_err(|e| EngineError::StorageInvariant(format!("csv error: {e}")))?;
+        let record =
+            result.map_err(|e| EngineError::StorageInvariant(format!("csv error: {e}")))?;
         let mut row = Vec::new();
         for field in record.iter() {
             row.push(field.trim().to_owned());

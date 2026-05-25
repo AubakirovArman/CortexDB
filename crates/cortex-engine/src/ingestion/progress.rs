@@ -1,5 +1,5 @@
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use serde::{Serialize, Deserialize};
 
 use cortex_core::CellId;
 
@@ -139,7 +139,10 @@ impl Database {
     }
 
     pub fn load_ingestion_job(&self, id: u64) -> EngineResult<Option<IngestionProgress>> {
-        let path = self.root_path.join("ingestion_jobs").join(format!("{id}.json"));
+        let path = self
+            .root_path
+            .join("ingestion_jobs")
+            .join(format!("{id}.json"));
         if !path.exists() {
             return Ok(None);
         }
