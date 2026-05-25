@@ -29,6 +29,13 @@ pub struct VerificationReport {
     pub contradicting_evidence: Vec<VerificationEvidence>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConflictRecord {
+    pub cell_id: CellId,
+    pub fact: String,
+    pub source_trust_q16: Q16,
+}
+
 impl Database {
     pub fn verify_fact_aql(&self, aql: &str, view: &AgentView) -> EngineResult<VerificationReport> {
         let statement = parse_aql(aql).map_err(|error| EngineError::AqlParse(error.to_string()))?;
@@ -63,6 +70,37 @@ impl Database {
             evidence,
             contradicting_evidence,
         })
+    }
+
+    pub fn conflict_index(&self, view: &AgentView) -> Vec<ConflictRecord> {
+        let mut records = self
+            .snapshot_versions()
+            .into_iter()
+            .filter(|version| {
+                let metadata = CellMetadata::from_payload(&version.payload);
+                view.can_read_scope(scope_id(&metadata.scope))
+            })
+            .flat_map(|version| {
+                let source_trust_q16 = source_trust_q16(&version.payload);
+                contradiction_facts(&version.payload)
+                    .into_iter()
+                    .map(move |fact| ConflictRecord {
+                        cell_id: version.cell_id,
+                        fact,
+                        source_trust_q16,
+                    })
+            })
+            .collect::<Vec<_>>();
+        records.sort_by_key(|record| (record.fact.clone(), record.cell_id));
+        records
+    }
+
+    pub fn conflicts_for_fact(&self, fact: &str, view: &AgentView) -> Vec<ConflictRecord> {
+        let fact_terms = tokenize(fact);
+        self.conflict_index(view)
+            .into_iter()
+            .filter(|record| contradiction_text_matches(&record.fact, &fact_terms))
+            .collect()
     }
 }
 
@@ -136,15 +174,31 @@ fn contradiction_match(payload: &[u8], fact_terms: &[String]) -> Option<u32> {
     if fact_terms.is_empty() {
         return None;
     }
-    String::from_utf8_lossy(payload).lines().find_map(|line| {
-        let value = line.trim().strip_prefix("contradicts=")?;
-        let contradicts_terms = tokenize(value);
-        let matched_terms = fact_terms
-            .iter()
-            .filter(|term| contradicts_terms.contains(term))
-            .count();
-        (matched_terms == fact_terms.len()).then_some(matched_terms as u32)
+    contradiction_facts(payload).into_iter().find_map(|fact| {
+        contradiction_text_matches(&fact, fact_terms).then_some(fact_terms.len() as u32)
     })
+}
+
+fn contradiction_text_matches(value: &str, fact_terms: &[String]) -> bool {
+    if fact_terms.is_empty() {
+        return false;
+    }
+    let contradicts_terms = tokenize(value);
+    let matched_terms = fact_terms
+        .iter()
+        .filter(|term| contradicts_terms.contains(term))
+        .count();
+    matched_terms == fact_terms.len()
+}
+
+fn contradiction_facts(payload: &[u8]) -> Vec<String> {
+    String::from_utf8_lossy(payload)
+        .lines()
+        .filter_map(|line| line.trim().strip_prefix("contradicts="))
+        .map(str::trim)
+        .filter(|fact| !fact.is_empty())
+        .map(str::to_owned)
+        .collect()
 }
 
 fn tokenize_support_text(payload: &[u8]) -> Vec<String> {

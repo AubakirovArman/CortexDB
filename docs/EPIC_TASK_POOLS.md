@@ -244,7 +244,7 @@ The active slice is:
 Epic 161 -> agent memory foundation
 Epic 165 -> memory TTL expiry
 Epic 174 -> VERIFY FACT report v0
-Epic 176 -> conflict index
+Epic 080 -> core cell model v1
 Epic 107 -> persisted lexical index v2
 ```
 

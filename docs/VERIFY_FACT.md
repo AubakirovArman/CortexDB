@@ -41,6 +41,13 @@ contradicts=ABC budget approved
 The marker line is not counted as supporting evidence. It only contributes to
 `contradicting_evidence` when it matches all normalized fact terms.
 
+The same structured markers are queryable through:
+
+```rust
+let conflicts = db.conflict_index(&view);
+let conflicts = db.conflicts_for_fact("ABC budget approved", &view);
+```
+
 Smoke surfaces:
 
 ```text

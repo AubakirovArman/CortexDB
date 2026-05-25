@@ -43,6 +43,7 @@
 - Aggregated context feedback statistics.
 - Explicit contradiction markers for VERIFY FACT reports.
 - Scoped database keyword search exposed through CLI and HTTP.
+- Queryable structured conflict index from contradiction markers.
 
 ## Next
 

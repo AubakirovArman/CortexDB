@@ -123,6 +123,59 @@ fn verify_fact_aql_reports_mixed_when_support_and_contradiction_exist() {
 }
 
 #[test]
+fn conflict_index_lists_readable_contradiction_markers() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        fact_cell(
+            "project:investments",
+            "contradicts=ABC budget approved\nABC budget rejected",
+        ),
+    )
+    .unwrap();
+    db.put_knowledge_cell(
+        CellId(2),
+        fact_cell(
+            "tenant:private",
+            "contradicts=hidden budget approved\nhidden budget rejected",
+        ),
+    )
+    .unwrap();
+
+    let records = db.conflict_index(&view("project:investments", true));
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].cell_id, CellId(1));
+    assert_eq!(records[0].fact, "ABC budget approved");
+}
+
+#[test]
+fn conflicts_for_fact_filters_by_normalized_terms() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        fact_cell(
+            "project:investments",
+            "contradicts=ABC budget approved\nABC budget rejected",
+        ),
+    )
+    .unwrap();
+    db.put_knowledge_cell(
+        CellId(2),
+        fact_cell(
+            "project:investments",
+            "contradicts=XYZ budget approved\nXYZ budget rejected",
+        ),
+    )
+    .unwrap();
+
+    let records = db.conflicts_for_fact("abc budget approved", &view("project:investments", true));
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].cell_id, CellId(1));
+}
+
+#[test]
 fn verify_fact_aql_denied_by_agent_view_policy() {
     let dir = tempfile::tempdir().unwrap();
     let db = Database::open(dir.path()).unwrap();
