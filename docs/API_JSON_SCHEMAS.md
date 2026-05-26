@@ -6,6 +6,8 @@ The HTTP API now serializes response bodies from typed Rust structs with
 `serde::Serialize`. The legacy `handle_http` test harness still builds raw HTTP
 headers manually, but the JSON payloads themselves are typed.
 
+The OpenAPI 3.1 contract lives in [`openapi.yaml`](openapi.yaml).
+
 ## Common Error
 
 Returned by failed routes, auth failures, payload limit failures, and database

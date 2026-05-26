@@ -4,6 +4,7 @@ pub mod checkpoint;
 mod cleanup;
 pub mod context;
 pub mod database;
+mod database_files;
 pub mod distributed;
 pub mod error;
 pub mod feedback;
@@ -11,6 +12,7 @@ pub mod ingestion;
 mod lock;
 pub mod memory;
 pub mod operation;
+mod options;
 pub mod query;
 pub mod repair;
 pub mod replay;
@@ -23,10 +25,7 @@ pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use context::{
     estimate_tokens, ContextPack, ContextPackAnomaly, ContextPackCell, ContextPackOptions,
 };
-pub use database::{
-    CandidateResolver, CheckpointStats, Database, DatabaseOptions, RecoveryMode, RetrievedCell,
-    StaleLockPolicy,
-};
+pub use database::{CandidateResolver, CheckpointStats, Database, RetrievedCell};
 pub use distributed::*;
 pub use error::{EngineError, EngineResult};
 pub use ingestion::{
@@ -35,6 +34,7 @@ pub use ingestion::{
     PdfIngestOptions, TextIngestOptions,
 };
 pub use operation::*;
+pub use options::{DatabaseOptions, RecoveryMode, StaleLockPolicy};
 pub use query::{scope_id, CandidateId, CellMetadata, EngineAqlIndex};
 pub use repair::RepairReport;
 pub use replay::{

@@ -9,6 +9,7 @@ name = "cortexdb"
 path = "src/main.rs"
 
 [dependencies]
+clap = { version = "4", features = ["derive"] }
 cortex-aql = { path = "../cortex-aql" }
 cortex-core = { path = "../cortex-core" }
 cortex-engine = { path = "../cortex-engine" }

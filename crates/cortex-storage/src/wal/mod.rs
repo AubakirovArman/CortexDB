@@ -4,6 +4,8 @@ pub mod diagnostics;
 pub mod reader;
 pub mod record;
 pub mod writer;
+mod writer_append;
+mod writer_rotation;
 
 pub use codec::WalCodec;
 pub use diagnostics::{WalDiagnostics, WalScanSummary};

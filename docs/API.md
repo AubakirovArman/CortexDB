@@ -9,6 +9,7 @@ CortexDB exposes a lightweight, ultra-high-performance HTTP JSON API for interac
 * **Default Base URL:** `http://127.0.0.1:8181`
 * **Content-Type:** `application/json`
 * **Max Payload Boundary:** 2MB (Requests exceeding 2MB will return `413 Payload Too Large`)
+* **OpenAPI contract:** [`openapi.yaml`](openapi.yaml)
 
 ---
 
@@ -72,28 +73,29 @@ Validates the structural and checksum integrity of all storage segments, bitmap 
 
 ---
 
-### 2.4. GET `/v1/cell?id=<cell_id>`
+### 2.4. GET `/v1/cell?cell_id=<cell_id>`
 Retrieves a single raw knowledge cell by its ID.
 
 * **Response (200 OK):**
   ```json
   {
-    "cell_id": 1,
-    "payload": "scope=project:investments\nstatus=ready\n\nSolar Plant approved budget is 1.2B KZT."
+    "cell": {
+      "cell_id": 1,
+      "payload": "scope=project:investments\nstatus=ready\n\nSolar Plant approved budget is 1.2B KZT."
+    }
   }
   ```
 
-* **Response (400 Bad Request / 404 Not Found):**
+* **Missing Cell Response (200 OK):**
   ```json
   {
-    "error": "bad_request",
-    "message": "cell not found"
+    "cell": null
   }
   ```
 
 ---
 
-### 2.5. POST `/v1/cell?id=<cell_id>`
+### 2.5. POST `/v1/cell?cell_id=<cell_id>`
 Writes or overwrites a single knowledge cell payload.
 
 * **Request Body:** Raw text/bytes payload.
@@ -201,6 +203,8 @@ Ingests a structured JSON payload recursively flattening keys into multiple fact
 * **Response (200 OK):**
   ```json
   {
+    "rows_ingested": 0,
+    "chunks_ingested": 0,
     "facts_ingested": 10,
     "first_cell_id": 1000
   }
@@ -214,6 +218,8 @@ Ingests a structured CSV table creating one document block cell per row.
 * **Response (200 OK):**
   ```json
   {
+    "chunks_ingested": 0,
+    "facts_ingested": 0,
     "rows_ingested": 150,
     "first_cell_id": 2000
   }

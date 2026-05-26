@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use cortex_aql::{eval_bitmap_program, BitmapProvider, BoundRetrievePlan};
@@ -9,44 +8,18 @@ use cortex_storage::wal::{DurabilityMode, WalWriter, WalWriterHandle};
 
 use crate::checkpoint::{load_checkpoint, manifest_path, segments_path};
 use crate::cleanup::{cleanup_orphans, remove_lock_file};
+use crate::database_files::find_wal_files;
+pub(crate) use crate::database_files::truncate_wal_tail;
 use crate::error::{EngineError, EngineResult};
 use crate::lock::DatabaseLock;
 use crate::operation::{
     wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq, DbOperation,
 };
+use crate::options::{DatabaseOptions, RecoveryMode, StaleLockPolicy};
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
 
 pub trait CandidateResolver: BitmapProvider {
     fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId>;
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RecoveryMode {
-    Strict,
-    BestEffort,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum StaleLockPolicy {
-    Reject,
-    Break,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct DatabaseOptions {
-    pub durability_mode: DurabilityMode,
-    pub recovery_mode: RecoveryMode,
-    pub stale_lock_policy: StaleLockPolicy,
-}
-
-impl Default for DatabaseOptions {
-    fn default() -> Self {
-        Self {
-            durability_mode: DurabilityMode::Strict,
-            recovery_mode: RecoveryMode::Strict,
-            stale_lock_policy: StaleLockPolicy::Reject,
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -91,7 +64,7 @@ impl Database {
         options: DatabaseOptions,
     ) -> EngineResult<Self> {
         let root_path = path.as_ref().to_owned();
-        fs::create_dir_all(&root_path)?;
+        std::fs::create_dir_all(&root_path)?;
         let lock = match DatabaseLock::acquire(&root_path) {
             Ok(lock) => lock,
             Err(EngineError::DatabaseAlreadyOpen(_))
@@ -313,61 +286,4 @@ impl Drop for Database {
             let _ = self.writer.shutdown();
         }
     }
-}
-
-pub(crate) fn truncate_wal_tail(path: &Path, safe_offset: u64) -> EngineResult<()> {
-    let exists = path.exists();
-    match fs::metadata(path) {
-        Ok(metadata) if metadata.len() > safe_offset => {
-            fs::OpenOptions::new()
-                .write(true)
-                .open(path)?
-                .set_len(safe_offset)?;
-        }
-        Ok(_) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(error) => return Err(error.into()),
-    }
-    if safe_offset == 0 && exists {
-        let parent = path.parent().unwrap_or_else(|| Path::new("."));
-        if let Ok(entries) = std::fs::read_dir(parent) {
-            for entry in entries.flatten() {
-                let entry_path = entry.path();
-                if entry_path.is_file() {
-                    if let Some(filename) = entry_path.file_name().and_then(|f| f.to_str()) {
-                        if filename.starts_with("db.")
-                            && filename.ends_with(".aclog")
-                            && filename != "db.aclog"
-                        {
-                            let _ = std::fs::remove_file(entry_path);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    Ok(())
-}
-
-fn find_wal_files(active_wal: &Path) -> Vec<PathBuf> {
-    let mut files = Vec::new();
-    let parent = active_wal.parent().unwrap_or_else(|| Path::new("."));
-    if let Ok(entries) = std::fs::read_dir(parent) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_file() {
-                if let Some(filename) = path.file_name().and_then(|f| f.to_str()) {
-                    if filename.starts_with("db.")
-                        && filename.ends_with(".aclog")
-                        && filename != "db.aclog"
-                    {
-                        files.push(path);
-                    }
-                }
-            }
-        }
-    }
-    files.sort();
-    files.push(active_wal.to_owned());
-    files
 }

@@ -1,0 +1,452 @@
+openapi: 3.1.0
+info:
+  title: CortexDB Core Alpha API
+  version: 0.1.0-core-alpha
+  description: >
+    Experimental Core Alpha HTTP API for the local single-node CortexDB engine.
+    The HTTP layer is async, while the database core is a local blocking engine
+    executed through a blocking task boundary.
+servers:
+  - url: http://127.0.0.1:8181
+paths:
+  /v1/health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Server is alive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /v1/stats:
+    get:
+      summary: Storage and WAL statistics
+      responses:
+        "200":
+          description: Storage stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsResponse"
+  /v1/validate:
+    get:
+      summary: Validate storage integrity
+      responses:
+        "200":
+          description: Validation report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationResponse"
+  /v1/cell:
+    get:
+      summary: Read one cell
+      parameters:
+        - $ref: "#/components/parameters/CellId"
+      responses:
+        "200":
+          description: Cell lookup result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CellLookupResponse"
+    post:
+      summary: Put one cell
+      parameters:
+        - $ref: "#/components/parameters/CellId"
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Commit acknowledgement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PutCellResponse"
+    delete:
+      summary: Tombstone one cell
+      parameters:
+        - $ref: "#/components/parameters/CellId"
+      responses:
+        "200":
+          description: Commit acknowledgement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PutCellResponse"
+  /v1/flush:
+    post:
+      summary: Checkpoint current changes
+      responses:
+        "200":
+          description: Checkpoint result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckpointResponse"
+  /v1/compact:
+    post:
+      summary: Compact visible snapshot
+      responses:
+        "200":
+          description: Compaction result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckpointResponse"
+  /v1/aql:
+    post:
+      summary: Run AQL retrieve
+      parameters:
+        - $ref: "#/components/parameters/Scope"
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Retrieved cells
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AqlResponse"
+  /v1/search:
+    post:
+      summary: Keyword or vector search
+      parameters:
+        - $ref: "#/components/parameters/Scope"
+        - name: mode
+          in: query
+          schema:
+            type: string
+            enum: [keyword, vector]
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: vector
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+  /v1/context:
+    post:
+      summary: Build a ContextPack from AQL
+      parameters:
+        - $ref: "#/components/parameters/Scope"
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: ContextPack
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextPackResponse"
+  /v1/remember:
+    post:
+      summary: Execute AQL REMEMBER
+      parameters:
+        - $ref: "#/components/parameters/Scope"
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Remember result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RememberResponse"
+  /v1/verify:
+    post:
+      summary: Execute AQL VERIFY FACT
+      parameters:
+        - $ref: "#/components/parameters/Scope"
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Verification report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationReportResponse"
+  /v1/ingest/text:
+    post:
+      summary: Ingest raw text chunks
+      parameters:
+        - $ref: "#/components/parameters/Scope"
+        - $ref: "#/components/parameters/Source"
+      responses:
+        "200":
+          description: Ingestion result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestResponse"
+  /v1/ingest/json:
+    post:
+      summary: Ingest flattened JSON facts
+      parameters:
+        - $ref: "#/components/parameters/Scope"
+        - $ref: "#/components/parameters/Source"
+      responses:
+        "200":
+          description: Ingestion result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestResponse"
+  /v1/ingest/csv:
+    post:
+      summary: Ingest CSV rows
+      parameters:
+        - $ref: "#/components/parameters/Scope"
+        - $ref: "#/components/parameters/Source"
+      responses:
+        "200":
+          description: Ingestion result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestResponse"
+components:
+  parameters:
+    CellId:
+      name: cell_id
+      in: query
+      required: true
+      schema:
+        type: integer
+        format: uint64
+    Scope:
+      name: scope
+      in: query
+      required: true
+      schema:
+        type: string
+    Source:
+      name: source
+      in: query
+      required: false
+      schema:
+        type: string
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, version]
+      properties:
+        status:
+          type: string
+        version:
+          type: string
+    Cell:
+      type: object
+      required: [cell_id, payload]
+      properties:
+        cell_id:
+          type: integer
+          format: uint64
+        payload:
+          type: string
+    CellLookupResponse:
+      type: object
+      required: [cell]
+      properties:
+        cell:
+          anyOf:
+            - $ref: "#/components/schemas/Cell"
+            - type: "null"
+    PutCellResponse:
+      type: object
+      required: [seq, cell_id]
+      properties:
+        seq:
+          type: integer
+          format: uint64
+        cell_id:
+          type: integer
+          format: uint64
+    CheckpointResponse:
+      type: object
+      required: [checkpoint_seq, cells_flushed]
+      properties:
+        checkpoint_seq:
+          type: integer
+          format: uint64
+        cells_flushed:
+          type: integer
+    StatsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - current_seq
+        - checkpoint_seq
+        - live_segments
+        - retired_segments
+        - memtable_cells
+        - memtable_versions
+        - wal_size_bytes
+        - wal_writer_records
+        - wal_writer_bytes
+        - wal_writer_fsyncs
+        - wal_writer_batches
+      properties:
+        current_seq: { type: integer, format: uint64 }
+        checkpoint_seq: { type: integer, format: uint64 }
+        live_segments: { type: integer }
+        retired_segments: { type: integer }
+        memtable_cells: { type: integer }
+        memtable_versions: { type: integer }
+        wal_size_bytes: { type: integer, format: uint64 }
+        wal_writer_records: { type: integer, format: uint64 }
+        wal_writer_bytes: { type: integer, format: uint64 }
+        wal_writer_fsyncs: { type: integer, format: uint64 }
+        wal_writer_batches: { type: integer, format: uint64 }
+    ValidationResponse:
+      type: object
+      required: [ok, manifest_ok, wal_ok, errors]
+      properties:
+        ok: { type: boolean }
+        manifest_ok: { type: boolean }
+        wal_ok: { type: boolean }
+        live_segments_checked: { type: integer }
+        bitmap_indexes_checked: { type: integer }
+        lexical_indexes_checked: { type: integer }
+        vector_indexes_checked: { type: integer }
+        hnsw_graphs_checked: { type: integer }
+        cells_checked: { type: integer }
+        wal_records_checked: { type: integer, format: uint64 }
+        wal_safe_truncate_offset: { type: integer, format: uint64 }
+        errors:
+          type: array
+          items: { type: string }
+    AqlResponse:
+      type: object
+      required: [cells]
+      properties:
+        cells:
+          type: array
+          items:
+            $ref: "#/components/schemas/Cell"
+    SearchResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            required: [cell_id, score, lexical_score, vector_score, payload]
+            properties:
+              cell_id: { type: integer, format: uint64 }
+              score: { type: integer, format: uint64 }
+              lexical_score: { type: integer, format: uint64 }
+              vector_score: { type: integer, format: uint64 }
+              payload: { type: string }
+    ContextPackResponse:
+      type: object
+      required: [token_budget_tokens, estimated_tokens, truncated, citations_required, cells, anomalies]
+      properties:
+        token_budget_tokens: { type: integer }
+        estimated_tokens: { type: integer }
+        truncated: { type: boolean }
+        citations_required: { type: boolean }
+        cells:
+          type: array
+          items:
+            type: object
+        anomalies:
+          type: array
+          items:
+            type: object
+    RememberResponse:
+      type: object
+      required: [seq, cell_id, ttl_seconds]
+      properties:
+        seq: { type: integer, format: uint64 }
+        cell_id: { type: integer, format: uint64 }
+        ttl_seconds:
+          anyOf:
+            - type: integer
+              format: uint64
+            - type: "null"
+    VerificationReportResponse:
+      type: object
+      required: [fact, status, verdict, evidence, contradicting_evidence, guards, numeric_conflicts]
+      properties:
+        fact: { type: string }
+        status: { type: string }
+        verdict: { type: string }
+        evidence:
+          type: array
+          items: { type: object }
+        contradicting_evidence:
+          type: array
+          items: { type: object }
+        guards:
+          type: array
+          items: { type: object }
+        supporting:
+          type: array
+          items: { type: object }
+        contradicting:
+          type: array
+          items: { type: object }
+        numeric_conflicts:
+          type: array
+          items:
+            type: object
+            required: [metric, left, right]
+            properties:
+              metric: { type: string }
+              left: { type: string }
+              right: { type: string }
+    IngestResponse:
+      type: object
+      required: [rows_ingested, chunks_ingested, facts_ingested, first_cell_id]
+      properties:
+        rows_ingested: { type: integer }
+        chunks_ingested: { type: integer }
+        facts_ingested: { type: integer }
+        first_cell_id:
+          anyOf:
+            - type: integer
+              format: uint64
+            - type: "null"
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error: { type: string }
+        message: { type: string }

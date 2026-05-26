@@ -13,8 +13,10 @@ Core Alpha is the first durable single-node CortexDB prototype.
 - Candidate mapping that preserves full `CellId(u64)`.
 - ContextPack v0 with token budget and citation anomaly reporting.
 - CLI commands for put/get/tombstone/flush/compact/stats/validate/repair/context/AQL/search/verify/remember/ingest/unlock.
+- `clap`-backed CLI parser with structured help/version output.
 - HTTP API for health, put/get/tombstone/flush/compact/stats/validate/AQL/search/context/verify/remember/ingest.
 - Typed serde JSON response structs for server API payloads.
+- OpenAPI 3.1 contract in `docs/openapi.yaml`.
 - Empty ingestion safety for text, JSON, and CSV inputs.
 - Crash, restart, corruption, lifecycle, repair, AQL retrieve, and storage validation tests.
 
