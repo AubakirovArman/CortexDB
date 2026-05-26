@@ -9,9 +9,10 @@ use crate::error::{EngineError, EngineResult};
 use crate::query::metadata::scope_handle;
 use crate::query::{scope_id, CellMetadata};
 
+use super::ann::search_persisted_ann;
 use super::persisted::{search_persisted_lexical, search_persisted_vectors};
 use super::vector::vector_from_payload;
-use super::{HnswIndex, SearchIndexes, SearchMode, SearchQuery};
+use super::{SearchIndexes, SearchMode, SearchQuery};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SearchLimit(pub usize);
@@ -110,15 +111,7 @@ impl Database {
                 };
                 let index = self.persisted_vector_index()?;
                 let graph = self.persisted_hnsw_graph()?;
-                if graph.links.is_empty() {
-                    search_persisted_vectors(&index.vectors, vector, &allowed, query.limit)
-                } else {
-                    HnswIndex::from_graph(index.vectors, graph, 8, 64).search_allowed(
-                        vector,
-                        &allowed,
-                        query.limit,
-                    )
-                }
+                search_persisted_ann(&index.vectors, &graph, vector, &allowed, query.limit).results
             }
             SearchMode::VectorExact => {
                 let Some(vector) = query.vector else {

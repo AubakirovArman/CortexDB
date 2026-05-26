@@ -51,11 +51,12 @@ The HTTP body is used as the keyword query text when `q` is omitted, and as the
 vector literal when `mode=vector&vector=...` is omitted. Vector literals accept
 comma or space separated signed 16-bit integers.
 
-`algorithm=exact` forces the `.acv` exact scan path. `algorithm=ann` uses the
-persisted `.ach` HNSW graph when one is available and falls back to exact vector
-scan for uncheckpointed or graph-missing states. Search responses include
-`search_mode` so clients can record whether keyword, exact vector, or ANN vector
-search was requested.
+`algorithm=exact` forces the `.acv` exact scan path. `algorithm=ann` requests
+the persisted `.ach` HNSW graph and now applies a correctness guard: empty
+graphs, invalid graph links, and graph traversals that return fewer candidates
+than the requested visible set fall back to exact vector scan. Search responses
+include `search_mode` so clients can record whether keyword, exact vector, or
+ANN vector search was requested.
 
 ## Not Yet
 

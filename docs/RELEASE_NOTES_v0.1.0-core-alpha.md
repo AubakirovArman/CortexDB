@@ -24,6 +24,8 @@ Core Alpha is the first durable single-node CortexDB prototype.
 - Experimental replication now enforces AppendEntries previous-log matching,
   conflict suffix truncation, and follower commit-index clamping in local
   transport tests.
+- Experimental ANN search now guards HNSW graph usage with exact-vector
+  fallback for empty, invalid, or under-returning graph traversals.
 - Empty ingestion safety for text, JSON, and CSV inputs.
 - Crash, restart, corruption, lifecycle, repair, AQL retrieve, and storage validation tests.
 
