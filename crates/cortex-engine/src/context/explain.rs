@@ -10,14 +10,11 @@ pub fn generate_selection_reason(
         "Selected due to matching terms, but penalized for high redundancy with other context"
             .to_owned()
     } else if source_trust > 40000 {
-        "Selected due to high provenance source trust and relevant query terms"
-            .to_owned()
+        "Selected due to high provenance source trust and relevant query terms".to_owned()
     } else if base_bm25 > 8000 {
-        "Selected due to strong keyword relevance match"
-            .to_owned()
+        "Selected due to strong keyword relevance match".to_owned()
     } else {
-        "Selected as relevant background context"
-            .to_owned()
+        "Selected as relevant background context".to_owned()
     }
 }
 

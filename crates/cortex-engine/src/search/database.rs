@@ -200,7 +200,11 @@ impl Database {
 
     pub fn search_diagnostics(&self, query: &str) -> EngineResult<String> {
         let terms = crate::search::tokenize(query);
-        Ok(format!("query_terms_count={} terms=[{}]", terms.len(), terms.join(", ")))
+        Ok(format!(
+            "query_terms_count={} terms=[{}]",
+            terms.len(),
+            terms.join(", ")
+        ))
     }
 }
 
