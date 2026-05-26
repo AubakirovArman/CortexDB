@@ -381,11 +381,15 @@ fn run(args: Vec<String>) -> Result<String, String> {
                     },
                 )
                 .map_err(|error| error.to_string())?;
-            Ok(format!(
-                "ingested_chunks={} first_cell_id={}",
-                results.len(),
-                results[0].cell_id.0
-            ))
+            if results.is_empty() {
+                Ok("ingested_chunks=0 first_cell_id=null".to_owned())
+            } else {
+                Ok(format!(
+                    "ingested_chunks={} first_cell_id={}",
+                    results.len(),
+                    results[0].cell_id.0
+                ))
+            }
         }
         "ingest-json" => {
             let [scope, file] = rest else {
@@ -403,11 +407,15 @@ fn run(args: Vec<String>) -> Result<String, String> {
                     },
                 )
                 .map_err(|error| error.to_string())?;
-            Ok(format!(
-                "ingested_facts={} first_cell_id={}",
-                results.len(),
-                results[0].cell_id.0
-            ))
+            if results.is_empty() {
+                Ok("ingested_facts=0 first_cell_id=null".to_owned())
+            } else {
+                Ok(format!(
+                    "ingested_facts={} first_cell_id={}",
+                    results.len(),
+                    results[0].cell_id.0
+                ))
+            }
         }
         "ingest-csv" => {
             let [scope, file] = rest else {
@@ -425,11 +433,15 @@ fn run(args: Vec<String>) -> Result<String, String> {
                     },
                 )
                 .map_err(|error| error.to_string())?;
-            Ok(format!(
-                "ingested_rows={} first_cell_id={}",
-                results.len(),
-                results[0].cell_id.0
-            ))
+            if results.is_empty() {
+                Ok("ingested_rows=0 first_cell_id=null".to_owned())
+            } else {
+                Ok(format!(
+                    "ingested_rows={} first_cell_id={}",
+                    results.len(),
+                    results[0].cell_id.0
+                ))
+            }
         }
         _ => Err(usage()),
     }

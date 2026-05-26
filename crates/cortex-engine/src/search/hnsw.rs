@@ -4,6 +4,21 @@ use cortex_storage::hnsw::HnswGraphIndex;
 
 use super::{dot_nonnegative, ranked, ScoredCandidate};
 
+/// Abstraction for distance calculation between high-dimensional vector embeddings.
+pub trait DistanceMetric {
+    /// Calculate the similarity score (distance) between two vector embeddings.
+    fn distance(u: &[i16], v: &[i16]) -> u64;
+}
+
+/// Dot-product similarity implementation of DistanceMetric.
+pub struct DotProductMetric;
+
+impl DistanceMetric for DotProductMetric {
+    fn distance(u: &[i16], v: &[i16]) -> u64 {
+        dot_nonnegative(u, v)
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct HnswRebuildPolicy {
     pub deleted_fraction_q16: u16,
@@ -166,7 +181,10 @@ impl HnswIndex {
                 continue;
             }
             if allowed.is_none_or(|values| values.contains(&candidate)) {
-                scores.insert(candidate, dot_nonnegative(query, &self.vectors[&candidate]));
+                scores.insert(
+                    candidate,
+                    DotProductMetric::distance(query, &self.vectors[&candidate]),
+                );
             }
             if let Some(neighbors) = self.links.get(&candidate) {
                 for neighbor in neighbors {
@@ -206,7 +224,7 @@ impl HnswIndex {
             .vectors
             .iter()
             .filter(|(cell_id, _)| !self.deleted.contains(cell_id))
-            .map(|(cell_id, existing)| (*cell_id, dot_nonnegative(vector, existing)))
+            .map(|(cell_id, existing)| (*cell_id, DotProductMetric::distance(vector, existing)))
             .collect();
         ranked(scores, limit)
             .into_iter()
@@ -239,7 +257,7 @@ impl HnswIndex {
             .vectors
             .iter()
             .filter(|(cell_id, _)| **cell_id != skip)
-            .map(|(cell_id, existing)| (*cell_id, dot_nonnegative(vector, existing)))
+            .map(|(cell_id, existing)| (*cell_id, DotProductMetric::distance(vector, existing)))
             .collect();
         ranked(scores, limit)
             .into_iter()

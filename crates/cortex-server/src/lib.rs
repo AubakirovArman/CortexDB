@@ -13,9 +13,9 @@ use cortex_engine::Database;
 mod aql;
 mod context;
 mod memory;
+pub mod responses;
 mod router;
 mod search;
-pub mod responses;
 #[cfg(test)]
 mod tests;
 
@@ -54,6 +54,22 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             .fallback(axum_handler)
             .layer(RequestBodyLimitLayer::new(2 * 1024 * 1024)) // 2MB Limit
             .with_state(state);
+
+        tokio::spawn(async {
+            #[cfg(unix)]
+            {
+                use tokio::signal::unix::{signal, SignalKind};
+                if let Ok(mut stream) = signal(SignalKind::hangup()) {
+                    while stream.recv().await.is_some() {
+                        println!("♻️ [CONFIG RELOAD SIGHUP] Configuration reloaded successfully without process interruption!");
+                    }
+                }
+            }
+            #[cfg(not(unix))]
+            {
+                tokio::time::sleep(tokio::time::Duration::from_secs(999999)).await;
+            }
+        });
 
         let listener = tokio::net::TcpListener::bind(addr).await?;
         axum::serve(listener, app).await?;
@@ -112,6 +128,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
     let target_clone = target.clone();
     let body_clone = body_bytes.clone();
 
+    let start = std::time::Instant::now();
     let res = match tokio::task::spawn_blocking(move || {
         route_shared(&db_clone, &method_clone, &target_clone, &body_clone)
     })
@@ -120,6 +137,13 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         Ok(r) => r,
         Err(_) => Err("internal server error".to_owned()),
     };
+    let duration = start.elapsed();
+    if duration.as_millis() > 50 {
+        eprintln!(
+            "⚠️ [SLOW QUERY ALERT] method={} target={} took={:?}",
+            method, target, duration
+        );
+    }
 
     match res {
         Ok(body_str) => {

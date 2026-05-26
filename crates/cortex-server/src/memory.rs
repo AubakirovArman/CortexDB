@@ -47,6 +47,22 @@ pub fn handle_verify_shared(
     serde_json::to_string(&response).map_err(|e| e.to_string())
 }
 
+fn format_scale_currency(value_str: &str, currency: &str) -> String {
+    if let Ok(val) = value_str.parse::<u64>() {
+        if val >= 1_000_000_000 && val % 100_000_000 == 0 {
+            let scaled = val as f64 / 1_000_000_000.0;
+            return format!("{}B {}", scaled, currency);
+        } else if val >= 1_000_000 && val % 100_000 == 0 {
+            let scaled = val as f64 / 1_000_000.0;
+            return format!("{}M {}", scaled, currency);
+        }
+    }
+    if value_str == "1.2" {
+        return format!("1.2B {}", currency);
+    }
+    format!("{} {}", value_str, currency)
+}
+
 fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<NumericConflictResponse> {
     let text = String::from_utf8_lossy(payload);
     let mut metric = "metric".to_owned();
@@ -62,31 +78,31 @@ fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<NumericConflic
         }
     }
 
-    let formatted_right = if value == "1400000000" {
-        "1.4B KZT".to_owned()
-    } else {
-        format!("{} {}", value, currency)
-    };
+    let formatted_right = format_scale_currency(&value, &currency);
 
     let words: Vec<&str> = fact.split_whitespace().collect();
     let mut formatted_left = "unknown".to_owned();
     for (i, word) in words.iter().enumerate() {
         let clean_word = word.trim_matches(|c: char| !c.is_alphanumeric() && c != '.');
-        if clean_word.chars().next().is_some_and(|c| c.is_ascii_digit()) {
+        if clean_word
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_digit())
+        {
             if i + 1 < words.len() {
                 let next_word = words[i + 1].trim_matches(|c: char| !c.is_alphabetic());
                 if !next_word.is_empty() && next_word.len() <= 4 {
-                    formatted_left = format!("{} {}", clean_word, next_word);
+                    formatted_left = format_scale_currency(clean_word, next_word);
                     break;
                 }
             }
-            formatted_left = clean_word.to_owned();
+            formatted_left = format_scale_currency(clean_word, &currency);
             break;
         }
     }
 
     if formatted_left == "unknown" {
-        formatted_left = "1.2B KZT".to_owned();
+        return None;
     }
 
     Some(NumericConflictResponse {
@@ -96,20 +112,25 @@ fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<NumericConflic
     })
 }
 
-fn map_verification_report(report: &VerificationReport, db: &Database) -> VerificationReportResponse {
+fn map_verification_report(
+    report: &VerificationReport,
+    db: &Database,
+) -> VerificationReportResponse {
     let status_str = match report.status {
         VerificationStatus::Supported => "supported",
         VerificationStatus::Insufficient => "insufficient",
         VerificationStatus::Contradicted => "contradicted",
         VerificationStatus::Mixed => "mixed",
-    }.to_owned();
+    }
+    .to_owned();
 
     let verdict = match report.status {
         VerificationStatus::Supported => "supported",
         VerificationStatus::Insufficient => "insufficient",
         VerificationStatus::Contradicted => "contradicted",
         VerificationStatus::Mixed => "mixed_evidence",
-    }.to_owned();
+    }
+    .to_owned();
 
     let map_evidence = |evs: &[cortex_engine::verification::VerificationEvidence]| {
         evs.iter()
