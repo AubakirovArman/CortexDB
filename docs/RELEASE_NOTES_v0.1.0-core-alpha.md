@@ -20,6 +20,8 @@ Core Alpha is the first durable single-node CortexDB prototype.
   ANN evaluation, ingestion, AQL, ContextPack, and VERIFY smoke paths.
 - Dashboard requests can target per-tenant realms, keep a short request history,
   and inspect persisted ingestion job progress.
+- Dashboard markup, style, and behavior are split into separate server modules
+  so the built-in console can grow without a large monolithic raw string.
 - Typed serde JSON response structs for server API payloads.
 - OpenAPI 3.1 contract in `docs/openapi.yaml`.
 - Python, TypeScript, and Rust SDK clients cover the health/cell/maintenance/AQL/search/context/verify/remember/ingestion API surface.

@@ -1,0 +1,127 @@
+pub const BODY: &str = r##"<body>
+    <header>
+        <div class="shell topbar">
+            <h1>CortexDB Console</h1>
+            <form id="session-form" class="topbar">
+                <label for="tenant">Tenant</label>
+                <input id="tenant" name="tenant" autocomplete="organization" value="default">
+                <label for="token">Bearer token</label>
+                <input id="token" name="token" type="password" autocomplete="current-password">
+                <button type="submit">Apply</button>
+            </form>
+        </div>
+    </header>
+    <main class="shell">
+        <nav aria-label="Console views">
+            <div class="tabs" role="tablist" aria-label="CortexDB tools">
+                <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="ops" data-tab="ops">Ops</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="cells" data-tab="cells">Cells</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="search" data-tab="search">Search</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="ann-eval" data-tab="ann-eval">ANN Eval</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="aql" data-tab="aql">AQL</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="context" data-tab="context">Context</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="verify" data-tab="verify">Verify</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="ingest" data-tab="ingest">Ingest</button>
+            </div>
+        </nav>
+        <section aria-live="polite">
+            <section id="ops" class="panel active" role="tabpanel">
+                <h2>Ops</h2>
+                <div class="status" id="metrics"></div>
+                <div class="actions">
+                    <button type="button" data-action="health">Health</button>
+                    <button type="button" data-action="stats">Stats</button>
+                    <button type="button" data-action="validate">Validate</button>
+                    <button type="button" data-action="flush" class="secondary">Flush</button>
+                    <button type="button" data-action="compact" class="secondary">Compact</button>
+                </div>
+            </section>
+            <section id="cells" class="panel" role="tabpanel">
+                <h2>Cells</h2>
+                <form id="cell-form">
+                    <div class="grid">
+                        <div class="field"><label for="cell-id">Cell ID</label><input id="cell-id" name="cell_id" inputmode="numeric" required value="1"></div>
+                        <div class="field"><label for="cell-op">Operation</label><select id="cell-op" name="op"><option value="put">Put</option><option value="get">Get</option><option value="delete">Tombstone</option></select></div>
+                    </div>
+                    <div class="field"><label for="cell-payload">Payload</label><textarea id="cell-payload" name="payload">scope=project:investments
+status=ready
+type=fact
+source=console
+
+Solar budget note</textarea></div>
+                    <button type="submit">Run Cell Operation</button>
+                </form>
+            </section>
+            <section id="search" class="panel" role="tabpanel">
+                <h2>Search</h2>
+                <form id="search-form">
+                    <div class="grid">
+                        <div class="field"><label for="search-scope">Scope</label><input id="search-scope" name="scope" required value="project:investments"></div>
+                        <div class="field"><label for="search-mode">Mode</label><select id="search-mode" name="mode"><option value="keyword">Keyword</option><option value="vector">Vector</option></select></div>
+                        <div class="field"><label for="search-algorithm">Vector algorithm</label><select id="search-algorithm" name="algorithm"><option value="ann">ANN</option><option value="exact">Exact</option></select></div>
+                        <div class="field"><label for="search-limit">Limit</label><input id="search-limit" name="limit" inputmode="numeric" value="20"></div>
+                    </div>
+                    <div class="field"><label for="search-query">Query or vector</label><input id="search-query" name="q" value="budget"></div>
+                    <button type="submit">Search</button>
+                </form>
+            </section>
+            <section id="ann-eval" class="panel" role="tabpanel">
+                <h2>ANN Eval</h2>
+                <form id="ann-eval-form">
+                    <div class="grid">
+                        <div class="field"><label for="ann-scope">Scope</label><input id="ann-scope" name="scope" required value="project:investments"></div>
+                        <div class="field"><label for="ann-vector">Vector</label><input id="ann-vector" name="vector" inputmode="decimal" required value="0,10"></div>
+                        <div class="field"><label for="ann-limit">Limit</label><input id="ann-limit" name="limit" inputmode="numeric" value="20"></div>
+                    </div>
+                    <button type="submit">Evaluate ANN</button>
+                </form>
+            </section>
+            <section id="aql" class="panel" role="tabpanel">
+                <h2>AQL</h2>
+                <form id="aql-form">
+                    <div class="field"><label for="aql-scope">Scope</label><input id="aql-scope" name="scope" required value="project:investments"></div>
+                    <div class="field"><label for="aql-query">Statement</label><textarea id="aql-query" name="query">RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;</textarea></div>
+                    <button type="submit">Run AQL</button>
+                </form>
+            </section>
+            <section id="context" class="panel" role="tabpanel">
+                <h2>Context</h2>
+                <form id="context-form">
+                    <div class="field"><label for="context-scope">Scope</label><input id="context-scope" name="scope" required value="project:investments"></div>
+                    <div class="field"><label for="context-query">Statement</label><textarea id="context-query" name="query">RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;</textarea></div>
+                    <button type="submit">Build Context Pack</button>
+                </form>
+            </section>
+            <section id="verify" class="panel" role="tabpanel">
+                <h2>Verify</h2>
+                <form id="verify-form">
+                    <div class="field"><label for="verify-scope">Scope</label><input id="verify-scope" name="scope" required value="project:investments"></div>
+                    <div class="field"><label for="verify-query">Statement</label><textarea id="verify-query" name="query">VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;</textarea></div>
+                    <button type="submit">Verify Fact</button>
+                </form>
+            </section>
+            <section id="ingest" class="panel" role="tabpanel">
+                <h2>Ingest</h2>
+                <form id="ingest-form">
+                    <div class="grid">
+                        <div class="field"><label for="ingest-scope">Scope</label><input id="ingest-scope" name="scope" required value="project:investments"></div>
+                        <div class="field"><label for="ingest-source">Source</label><input id="ingest-source" name="source" value="dashboard"></div>
+                        <div class="field"><label for="ingest-type">Type</label><select id="ingest-type" name="type"><option value="text">Text</option><option value="json">JSON</option><option value="csv">CSV</option></select></div>
+                    </div>
+                    <div class="field"><label for="ingest-document">Document</label><textarea id="ingest-document" name="document">Solar Plant budget approved.
+Wind Farm status ready.</textarea></div>
+                    <button type="submit">Ingest</button>
+                </form>
+                <form id="ingest-job-form">
+                    <div class="field"><label for="ingest-job-id">Job ID</label><input id="ingest-job-id" name="job_id" inputmode="numeric" value="1"></div>
+                    <button type="submit" class="secondary">Load Ingest Job</button>
+                </form>
+            </section>
+        </section>
+        <aside>
+            <h2>Response</h2>
+            <pre id="output" tabindex="0" aria-live="polite">{"status":"ready"}</pre>
+            <h2>History</h2>
+            <ol id="history" class="history" aria-label="Request history"></ol>
+        </aside>
+    </main>"##;
