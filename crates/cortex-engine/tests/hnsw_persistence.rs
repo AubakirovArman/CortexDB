@@ -76,3 +76,22 @@ fn hnsw_maintenance_reports_rebuild_lifecycle() {
     assert_eq!(index.deleted_count(), 0);
     assert_eq!(index.vector_count(), 2);
 }
+
+#[test]
+fn hnsw_integrity_report_catches_structural_link_errors() {
+    let index = HnswIndex::from_graph(
+        BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
+        HnswGraphIndex {
+            links: BTreeMap::from([(1, BTreeSet::from([1, 999]))]),
+        },
+        2,
+        8,
+    );
+
+    let report = index.integrity_report();
+
+    assert!(!report.is_valid());
+    assert_eq!(report.self_links, 1);
+    assert_eq!(report.missing_neighbor_links, 1);
+    assert!(report.summary().contains("missing_neighbor_links=1"));
+}

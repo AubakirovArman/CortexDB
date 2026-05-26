@@ -35,6 +35,11 @@ and dependency-light, not full morphological analyzers.
 `HnswIndex::apply_maintenance` reports deleted-vector pressure and rebuilds the
 graph when `HnswMaintenancePolicy` thresholds are reached. This gives the engine
 a deterministic lifecycle hook without a background scheduler thread.
+`HnswIndex::integrity_report` also checks structural graph health: zero
+candidate ids, link nodes missing from the vector index, neighbor links missing
+from the vector index, self-links, and deleted-vector references. Storage
+validation cross-checks `.ach` graph links against `.acv` vector candidates so
+a corrupted or mismatched ANN bundle is reported before query execution.
 
 Current smoke surfaces:
 

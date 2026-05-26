@@ -1,3 +1,5 @@
+use std::collections::{BTreeMap, BTreeSet};
+
 use cortex_core::CellId;
 use cortex_engine::Database;
 use cortex_storage::hnsw::HnswGraphIndex;
@@ -75,6 +77,30 @@ fn live_retired_segment_overlap_fails_validation() {
     let db = Database::open(dir.path()).unwrap();
     let error = db.validate_storage().unwrap_err().to_string();
     assert!(error.contains("conflicts with manifest references"));
+}
+
+#[test]
+fn hnsw_graph_candidate_without_vector_fails_validation() {
+    let dir = tempfile::tempdir().unwrap();
+    write_bundle(dir.path(), 1, 1, 1, CellId(1));
+    let segments = dir.path().join("segments");
+    VectorIndex {
+        vectors: BTreeMap::from([(1, vec![10, 0])]),
+    }
+    .write(segments.join("segment-1.acv"))
+    .unwrap();
+    HnswGraphIndex {
+        links: BTreeMap::from([(1, BTreeSet::from([2]))]),
+    }
+    .write(segments.join("segment-1.ach"))
+    .unwrap();
+    write_manifest(dir.path(), 1, vec![manifest_segment(1, 1, 1)], Vec::new());
+
+    let db = Database::open(dir.path()).unwrap();
+    let error = db.validate_storage().unwrap_err().to_string();
+
+    assert!(error.contains("hnsw graph 1 integrity"));
+    assert!(error.contains("missing_neighbor_links=1"));
 }
 
 #[test]

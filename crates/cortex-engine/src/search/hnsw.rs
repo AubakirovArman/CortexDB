@@ -5,6 +5,8 @@ use cortex_storage::hnsw::HnswGraphIndex;
 use super::hnsw_policy::{HnswMaintenancePolicy, HnswMaintenanceReport, HnswRebuildPolicy};
 use super::{dot_nonnegative, ranked, ScoredCandidate};
 
+pub mod integrity;
+
 /// Abstraction for distance calculation between high-dimensional vector embeddings.
 pub trait DistanceMetric {
     /// Calculate the similarity score (distance) between two vector embeddings.
@@ -229,20 +231,6 @@ impl HnswIndex {
             .into_iter()
             .map(|candidate| candidate.cell_id)
             .collect()
-    }
-
-    pub fn verify_hnsw_integrity(&self) -> bool {
-        for (node, neighbors) in &self.links {
-            if !self.vectors.contains_key(node) {
-                return false;
-            }
-            for neighbor in neighbors {
-                if !self.vectors.contains_key(neighbor) {
-                    return false;
-                }
-            }
-        }
-        true
     }
 }
 

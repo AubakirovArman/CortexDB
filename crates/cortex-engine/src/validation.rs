@@ -14,6 +14,7 @@ use cortex_storage::wal::{WalReader, WalWriterMetrics};
 use crate::checkpoint::{bitmap_path, hnsw_path, lexical_path, segment_path, vector_path};
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
+use crate::search::HnswIndex;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct StorageStats {
@@ -154,14 +155,35 @@ impl Database {
                     .errors
                     .push(format!("lexical index {}: {error}", segment.id)),
             }
-            match VectorIndex::read(vector_path(&self.segments_path, segment.id)) {
-                Ok(_) => report.vector_indexes_checked += 1,
-                Err(error) => report
-                    .errors
-                    .push(format!("vector index {}: {error}", segment.id)),
-            }
+            let vector_index = match VectorIndex::read(vector_path(&self.segments_path, segment.id))
+            {
+                Ok(index) => {
+                    report.vector_indexes_checked += 1;
+                    Some(index)
+                }
+                Err(error) => {
+                    report
+                        .errors
+                        .push(format!("vector index {}: {error}", segment.id));
+                    None
+                }
+            };
             match HnswGraphIndex::read(hnsw_path(&self.segments_path, segment.id)) {
-                Ok(_) => report.hnsw_graphs_checked += 1,
+                Ok(graph) => {
+                    report.hnsw_graphs_checked += 1;
+                    if let Some(vector_index) = &vector_index {
+                        let index =
+                            HnswIndex::from_graph(vector_index.vectors.clone(), graph, 8, 64);
+                        let hnsw_report = index.integrity_report();
+                        if !hnsw_report.is_valid() {
+                            report.errors.push(format!(
+                                "hnsw graph {} integrity: {}",
+                                segment.id,
+                                hnsw_report.summary()
+                            ));
+                        }
+                    }
+                }
                 Err(error) => report
                     .errors
                     .push(format!("hnsw graph {}: {error}", segment.id)),

@@ -47,6 +47,8 @@ Core Alpha is the first durable single-node CortexDB prototype.
   measures raw HNSW top-k recall.
 - ANN reports expose `recall_q16` and `min_recall_q16` when the top-k recall
   guard runs, so clients can inspect HNSW quality decisions.
+- HNSW integrity reports now cross-check persisted graph links against vector
+  candidates during storage validation.
 - Replication consensus state now enforces current-term commit rules and
   majority match-index advancement.
 - Replication followers reject non-contiguous AppendEntries batches and
