@@ -104,8 +104,11 @@ SDK publication preflight covers Python wheel building, npm package dry-runs,
 and Rust `cargo package`:
 
 ```bash
-./sdk/publish/check.sh
+make sdk-check
 ```
+
+Manual tag-gated package publishing is documented in
+[`docs/SDK_RELEASE.md`](docs/SDK_RELEASE.md).
 
 ---
 

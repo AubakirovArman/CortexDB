@@ -18,3 +18,8 @@ response with exact top-k, ANN top-k, overlap, and fixed-point `recall_q16`.
 `publish/check.sh` validates Python bytecode/tests/wheel packaging, Rust tests
 and `cargo package`, SDK version consistency, ANN evaluation surface presence,
 and npm package dry-runs when npm is installed.
+
+Use `make sdk-check` for the local gate. The GitHub `SDK Release` workflow runs
+the same preflight on SDK changes and can publish all three packages manually
+from a `v*` tag after registry credentials are configured. See
+[`docs/SDK_RELEASE.md`](../docs/SDK_RELEASE.md).

@@ -1,4 +1,4 @@
-.PHONY: check test alpha-check demo
+.PHONY: check test sdk-check alpha-check demo
 
 check:
 	cargo check --workspace
@@ -6,12 +6,15 @@ check:
 test:
 	cargo test --workspace
 
+sdk-check:
+	./sdk/publish/check.sh
+
 alpha-check:
 	RUSTFLAGS="-D warnings" cargo check --workspace
 	RUSTFLAGS="-D warnings" cargo test --workspace --all-features
 	cargo fmt --check
 	cargo clippy --workspace --all-targets -- -D warnings
-	./sdk/publish/check.sh
+	$(MAKE) sdk-check
 	cargo bench -p cortex-engine --bench core_baseline
 	./examples/demo/investment_projects/run.sh
 
