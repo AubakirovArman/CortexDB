@@ -143,6 +143,7 @@ Missing cells return:
 ```json
 {
   "search_mode": "keyword",
+  "ann_report": null,
   "results": [
     {
       "cell_id": 1,
@@ -152,6 +153,19 @@ Missing cells return:
       "payload": "scope=project:investments\nstatus=ready\n..."
     }
   ]
+}
+```
+
+For `search_mode: "vector_ann"`, `ann_report` is populated:
+
+```json
+{
+  "path": "exact_fallback",
+  "fallback_reason": "no_persisted_segments",
+  "requested_limit": 20,
+  "allowed_candidates": 1,
+  "graph_nodes": 0,
+  "returned_candidates": 1
 }
 ```
 

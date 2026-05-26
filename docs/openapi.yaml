@@ -384,9 +384,13 @@ components:
             $ref: "#/components/schemas/Cell"
     SearchResponse:
       type: object
-      required: [search_mode, results]
+      required: [search_mode, ann_report, results]
       properties:
         search_mode: { type: string, enum: [keyword, vector_exact, vector_ann] }
+        ann_report:
+          anyOf:
+            - $ref: "#/components/schemas/AnnSearchReport"
+            - type: "null"
         results:
           type: array
           items:
@@ -398,6 +402,22 @@ components:
               lexical_score: { type: integer, format: uint64 }
               vector_score: { type: integer, format: uint64 }
               payload: { type: string }
+    AnnSearchReport:
+      type: object
+      required: [path, fallback_reason, requested_limit, allowed_candidates, graph_nodes, returned_candidates]
+      properties:
+        path:
+          type: string
+          enum: [hnsw_graph, exact_fallback]
+        fallback_reason:
+          anyOf:
+            - type: string
+              enum: [empty_graph, invalid_graph, insufficient_results, no_persisted_segments, uncheckpointed_changes]
+            - type: "null"
+        requested_limit: { type: integer }
+        allowed_candidates: { type: integer }
+        graph_nodes: { type: integer }
+        returned_candidates: { type: integer }
     ContextPackResponse:
       type: object
       required: [token_budget_tokens, estimated_tokens, truncated, citations_required, cells, anomalies]

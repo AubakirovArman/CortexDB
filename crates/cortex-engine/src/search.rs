@@ -11,7 +11,8 @@ mod tokenizer;
 pub(crate) mod vector;
 
 pub use analyzer::{mean_reciprocal_rank_q16, Language, TextAnalyzer};
-pub use database::{DatabaseSearchResult, SearchLimit};
+pub use ann::{AnnFallbackReason, AnnSearchPath, AnnSearchReport};
+pub use database::{DatabaseSearchOutcome, DatabaseSearchResult, SearchLimit};
 pub use hnsw::HnswIndex;
 pub use hnsw_policy::{HnswMaintenancePolicy, HnswMaintenanceReport, HnswRebuildPolicy};
 pub use tokenizer::tokenize;

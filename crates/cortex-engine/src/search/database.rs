@@ -9,7 +9,7 @@ use crate::error::{EngineError, EngineResult};
 use crate::query::metadata::scope_handle;
 use crate::query::{scope_id, CellMetadata};
 
-use super::ann::search_persisted_ann;
+use super::ann::{search_persisted_ann, AnnFallbackReason, AnnSearchPath, AnnSearchReport};
 use super::persisted::{search_persisted_lexical, search_persisted_vectors};
 use super::vector::vector_from_payload;
 use super::{SearchIndexes, SearchMode, SearchQuery};
@@ -24,6 +24,12 @@ pub struct DatabaseSearchResult {
     pub lexical_score: u64,
     pub vector_score: u64,
     pub payload: Vec<u8>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DatabaseSearchOutcome {
+    pub results: Vec<DatabaseSearchResult>,
+    pub ann_report: Option<AnnSearchReport>,
 }
 
 impl Database {
@@ -61,6 +67,23 @@ impl Database {
         )
     }
 
+    pub fn search_vector_with_report(
+        &self,
+        vector: &[i16],
+        view: &AgentView,
+        limit: SearchLimit,
+    ) -> EngineResult<DatabaseSearchOutcome> {
+        self.search_cells_with_report(
+            SearchQuery {
+                text: "",
+                vector: Some(vector),
+                limit: limit.0,
+                mode: SearchMode::Vector,
+            },
+            view,
+        )
+    }
+
     pub fn search_vector_exact(
         &self,
         vector: &[i16],
@@ -82,7 +105,7 @@ impl Database {
         &self,
         query: SearchQuery<'_>,
         view: &AgentView,
-    ) -> EngineResult<Option<Vec<DatabaseSearchResult>>> {
+    ) -> EngineResult<Option<DatabaseSearchOutcome>> {
         if self.manifest().live_segments.is_empty() {
             return Ok(None);
         }
@@ -96,6 +119,7 @@ impl Database {
         }
         let state = self.persisted_index_state()?;
         let allowed = allowed_candidates(&state.bitmap, view);
+        let mut ann_report = None;
         let ranked = match query.mode {
             SearchMode::Keyword => search_persisted_lexical(
                 &state.lexical.terms,
@@ -107,15 +131,24 @@ impl Database {
             ),
             SearchMode::Vector => {
                 let Some(vector) = query.vector else {
-                    return Ok(Some(Vec::new()));
+                    return Ok(Some(DatabaseSearchOutcome {
+                        results: Vec::new(),
+                        ann_report: None,
+                    }));
                 };
                 let index = self.persisted_vector_index()?;
                 let graph = self.persisted_hnsw_graph()?;
-                search_persisted_ann(&index.vectors, &graph, vector, &allowed, query.limit).results
+                let outcome =
+                    search_persisted_ann(&index.vectors, &graph, vector, &allowed, query.limit);
+                ann_report = Some(outcome.report);
+                outcome.results
             }
             SearchMode::VectorExact => {
                 let Some(vector) = query.vector else {
-                    return Ok(Some(Vec::new()));
+                    return Ok(Some(DatabaseSearchOutcome {
+                        results: Vec::new(),
+                        ann_report: None,
+                    }));
                 };
                 let index = self.persisted_vector_index()?;
                 search_persisted_vectors(&index.vectors, vector, &allowed, query.limit)
@@ -123,8 +156,8 @@ impl Database {
             SearchMode::Hybrid => return Ok(None),
         };
         let txn = self.read_txn();
-        Ok(Some(
-            ranked
+        Ok(Some(DatabaseSearchOutcome {
+            results: ranked
                 .into_iter()
                 .filter_map(|candidate| {
                     let cell_id = state.candidate_to_cell.get(&candidate.cell_id)?;
@@ -144,7 +177,8 @@ impl Database {
                     })
                 })
                 .collect(),
-        ))
+            ann_report,
+        }))
     }
 
     pub fn search_cells(
@@ -152,11 +186,20 @@ impl Database {
         query: SearchQuery<'_>,
         view: &AgentView,
     ) -> EngineResult<Vec<DatabaseSearchResult>> {
+        Ok(self.search_cells_with_report(query, view)?.results)
+    }
+
+    pub fn search_cells_with_report(
+        &self,
+        query: SearchQuery<'_>,
+        view: &AgentView,
+    ) -> EngineResult<DatabaseSearchOutcome> {
         if let Some(results) = self.search_persisted_query(query, view)? {
             return Ok(results);
         }
         let mut indexes = SearchIndexes::default();
         let mut cells = BTreeMap::<u32, (CellId, Vec<u8>)>::new();
+        let mut vector_candidates = 0usize;
         for (index, (version, metadata)) in self
             .snapshot_versions()
             .into_iter()
@@ -172,10 +215,11 @@ impl Database {
             indexes.add_weighted_terms(candidate, metadata.weighted_lexical_terms());
             if let Some(vector) = vector_from_payload(&version.payload) {
                 indexes.add_vector(candidate, vector);
+                vector_candidates += 1;
             }
             cells.insert(candidate, (version.cell_id, version.payload));
         }
-        Ok(indexes
+        let results = indexes
             .search(query)
             .into_iter()
             .filter_map(|result| {
@@ -188,7 +232,12 @@ impl Database {
                     payload,
                 })
             })
-            .collect())
+            .collect::<Vec<_>>();
+        let ann_report = snapshot_ann_report(self, query, vector_candidates, results.len());
+        Ok(DatabaseSearchOutcome {
+            results,
+            ann_report,
+        })
     }
 
     pub fn search_diagnostics(&self, query: &str) -> EngineResult<String> {
@@ -199,6 +248,30 @@ impl Database {
             terms.join(", ")
         ))
     }
+}
+
+fn snapshot_ann_report(
+    db: &Database,
+    query: SearchQuery<'_>,
+    allowed_candidates: usize,
+    returned_candidates: usize,
+) -> Option<AnnSearchReport> {
+    if query.mode != SearchMode::Vector {
+        return None;
+    }
+    let reason = if db.manifest().live_segments.is_empty() {
+        AnnFallbackReason::NoPersistedSegments
+    } else {
+        AnnFallbackReason::UncheckpointedChanges
+    };
+    Some(AnnSearchReport {
+        path: AnnSearchPath::ExactFallback,
+        fallback_reason: Some(reason),
+        requested_limit: query.limit,
+        allowed_candidates,
+        graph_nodes: 0,
+        returned_candidates,
+    })
 }
 
 fn allowed_candidates(bitmap: &BitmapIndex, view: &AgentView) -> BTreeSet<u32> {

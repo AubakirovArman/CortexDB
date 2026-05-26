@@ -170,8 +170,19 @@ pub struct SearchResultResponse {
 }
 
 #[derive(Serialize, Debug, Clone)]
+pub struct AnnSearchReportResponse {
+    pub path: String,
+    pub fallback_reason: Option<String>,
+    pub requested_limit: usize,
+    pub allowed_candidates: usize,
+    pub graph_nodes: usize,
+    pub returned_candidates: usize,
+}
+
+#[derive(Serialize, Debug, Clone)]
 pub struct SearchResponse {
     pub search_mode: String,
+    pub ann_report: Option<AnnSearchReportResponse>,
     pub results: Vec<SearchResultResponse>,
 }
 

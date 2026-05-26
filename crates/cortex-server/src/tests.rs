@@ -158,6 +158,8 @@ fn v1_vector_search_can_request_ann_mode() {
         "POST /v1/search?scope=project:investments&mode=vector&algorithm=ann&vector=2,0 HTTP/1.1\r\n\r\n";
     let response = handle_http(dir.path(), request);
     assert!(response.contains(r#""search_mode":"vector_ann""#));
+    assert!(response.contains(r#""ann_report":{"path":"exact_fallback""#));
+    assert!(response.contains(r#""fallback_reason":"no_persisted_segments""#));
     assert!(response.contains(r#""cell_id":1"#));
 }
 

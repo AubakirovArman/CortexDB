@@ -12,11 +12,34 @@ pub enum AnnSearchPath {
     ExactFallback,
 }
 
+impl AnnSearchPath {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::HnswGraph => "hnsw_graph",
+            Self::ExactFallback => "exact_fallback",
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AnnFallbackReason {
     EmptyGraph,
     InvalidGraph,
     InsufficientResults,
+    NoPersistedSegments,
+    UncheckpointedChanges,
+}
+
+impl AnnFallbackReason {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::EmptyGraph => "empty_graph",
+            Self::InvalidGraph => "invalid_graph",
+            Self::InsufficientResults => "insufficient_results",
+            Self::NoPersistedSegments => "no_persisted_segments",
+            Self::UncheckpointedChanges => "uncheckpointed_changes",
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

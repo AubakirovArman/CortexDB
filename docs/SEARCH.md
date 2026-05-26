@@ -58,6 +58,25 @@ than the requested visible set fall back to exact vector scan. Search responses
 include `search_mode` so clients can record whether keyword, exact vector, or
 ANN vector search was requested.
 
+Search responses also include `ann_report`. It is `null` for keyword and exact
+vector search. For `algorithm=ann`, it records the actual path:
+
+```json
+{
+  "path": "exact_fallback",
+  "fallback_reason": "no_persisted_segments",
+  "requested_limit": 20,
+  "allowed_candidates": 1,
+  "graph_nodes": 0,
+  "returned_candidates": 1
+}
+```
+
+`path` is either `hnsw_graph` or `exact_fallback`. `fallback_reason` is `null`
+when the persisted HNSW graph is used, or one of `empty_graph`,
+`invalid_graph`, `insufficient_results`, `no_persisted_segments`, or
+`uncheckpointed_changes` when exact scan is used instead.
+
 ## Not Yet
 
 - Full dictionary-grade lemmatization packs.

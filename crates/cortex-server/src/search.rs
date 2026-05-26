@@ -1,7 +1,7 @@
-use cortex_engine::{parse_vector_literal, Database, SearchLimit};
+use cortex_engine::{parse_vector_literal, AnnSearchReport, Database, SearchLimit};
 
 use crate::context::view_for_scope;
-use crate::responses::{SearchResponse, SearchResultResponse};
+use crate::responses::{AnnSearchReportResponse, SearchResponse, SearchResultResponse};
 
 pub fn handle_search_shared(
     db: &std::sync::RwLock<Database>,
@@ -17,13 +17,17 @@ pub fn handle_search_shared(
     let mode = query_param(query, "mode").unwrap_or("keyword");
     let algorithm = query_param(query, "algorithm").unwrap_or("ann");
     let db = db.read().map_err(|e| e.to_string())?;
-    let (search_mode, results) = match mode {
-        "keyword" => ("keyword", {
-            let text = query_param(query, "q")
-                .map(str::to_owned)
-                .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
-            db.search_keyword(&text, &view_for_scope(scope), SearchLimit(limit))
-        }),
+    let (search_mode, results, ann_report) = match mode {
+        "keyword" => (
+            "keyword",
+            {
+                let text = query_param(query, "q")
+                    .map(str::to_owned)
+                    .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
+                db.search_keyword(&text, &view_for_scope(scope), SearchLimit(limit))
+            },
+            None,
+        ),
         "vector" => {
             let vector = query_param(query, "vector")
                 .map(str::to_owned)
@@ -33,20 +37,35 @@ pub fn handle_search_shared(
                 "exact" => (
                     "vector_exact",
                     db.search_vector_exact(&vector, &view_for_scope(scope), SearchLimit(limit)),
+                    None,
                 ),
-                "ann" => (
-                    "vector_ann",
-                    db.search_vector(&vector, &view_for_scope(scope), SearchLimit(limit)),
-                ),
+                "ann" => {
+                    let outcome = db
+                        .search_vector_with_report(
+                            &vector,
+                            &view_for_scope(scope),
+                            SearchLimit(limit),
+                        )
+                        .map_err(|error| error.to_string())?;
+                    return encode_response("vector_ann", outcome.results, outcome.ann_report);
+                }
                 _ => return Err("algorithm must be exact or ann".to_owned()),
             }
         }
         _ => return Err("mode must be keyword or vector".to_owned()),
     };
     let results = results.map_err(|error| error.to_string())?;
+    encode_response(search_mode, results, ann_report)
+}
 
+fn encode_response(
+    search_mode: &str,
+    results: Vec<cortex_engine::DatabaseSearchResult>,
+    ann_report: Option<AnnSearchReport>,
+) -> Result<String, String> {
     let response = SearchResponse {
         search_mode: search_mode.to_owned(),
+        ann_report: ann_report.map(report_response),
         results: results
             .iter()
             .map(|result| SearchResultResponse {
@@ -59,6 +78,19 @@ pub fn handle_search_shared(
             .collect(),
     };
     serde_json::to_string(&response).map_err(|e| e.to_string())
+}
+
+fn report_response(report: AnnSearchReport) -> AnnSearchReportResponse {
+    AnnSearchReportResponse {
+        path: report.path.as_str().to_owned(),
+        fallback_reason: report
+            .fallback_reason
+            .map(|reason| reason.as_str().to_owned()),
+        requested_limit: report.requested_limit,
+        allowed_candidates: report.allowed_candidates,
+        graph_nodes: report.graph_nodes,
+        returned_candidates: report.returned_candidates,
+    }
 }
 
 fn parse_limit(value: &str) -> Result<usize, String> {
