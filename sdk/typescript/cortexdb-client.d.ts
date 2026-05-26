@@ -32,6 +32,16 @@ export interface SearchResponse {
   results: SearchResult[];
 }
 
+export interface AnnEvaluationResponse {
+  available: boolean;
+  reason: "requires_persisted_checkpoint_without_wal_tail" | null;
+  ann_report: AnnSearchReport | null;
+  exact_top_k: number[];
+  ann_top_k: number[];
+  overlap_count: number;
+  recall_q16: number;
+}
+
 export class CortexDBClient {
   constructor(baseUrl?: string, token?: string);
   health(): Promise<JsonObject>;
@@ -47,6 +57,7 @@ export class CortexDBClient {
     limit?: number,
     algorithm?: VectorAlgorithm,
   ): Promise<SearchResponse>;
+  evaluateAnn(scope: string, vector: number[], limit?: number): Promise<AnnEvaluationResponse>;
   aql(scope: string, statement: string): Promise<JsonObject>;
   retrieveContext(scope: string, statement: string): Promise<JsonObject>;
   verifyFact(scope: string, statement: string): Promise<JsonObject>;

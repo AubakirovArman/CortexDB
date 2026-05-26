@@ -32,6 +32,8 @@ Core Alpha is the first durable single-node CortexDB prototype.
   and report recall as fixed-point `recall_q16`.
 - ANN evaluation is exposed through `cortexdb search-vector-eval` and
   `POST /v1/search/ann-evaluate`.
+- Rust, Python, and TypeScript SDK surfaces include typed ANN evaluation
+  responses for package-readiness checks.
 - Empty ingestion safety for text, JSON, and CSV inputs.
 - Crash, restart, corruption, lifecycle, repair, AQL retrieve, and storage validation tests.
 

@@ -1,12 +1,15 @@
 use std::time::Duration;
 
 use serde::de::DeserializeOwned;
-use serde::Deserialize;
 use thiserror::Error;
 
 mod http;
+mod types;
 
 use http::{parse_response, path};
+pub use types::{
+    AnnEvaluationResponse, AnnSearchReport, SearchResponse, SearchResult, VectorAlgorithm,
+};
 
 #[cfg(test)]
 mod tests;
@@ -22,47 +25,6 @@ pub enum SdkError {
 }
 
 pub type SdkResult<T> = Result<T, SdkError>;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum VectorAlgorithm {
-    Ann,
-    Exact,
-}
-
-impl VectorAlgorithm {
-    fn as_str(self) -> &'static str {
-        match self {
-            Self::Ann => "ann",
-            Self::Exact => "exact",
-        }
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-pub struct AnnSearchReport {
-    pub path: String,
-    pub fallback_reason: Option<String>,
-    pub requested_limit: usize,
-    pub allowed_candidates: usize,
-    pub graph_nodes: usize,
-    pub returned_candidates: usize,
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-pub struct SearchResult {
-    pub cell_id: u64,
-    pub score: u64,
-    pub lexical_score: u64,
-    pub vector_score: u64,
-    pub payload: String,
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-pub struct SearchResponse {
-    pub search_mode: String,
-    pub ann_report: Option<AnnSearchReport>,
-    pub results: Vec<SearchResult>,
-}
 
 #[derive(Clone, Debug)]
 pub struct CortexDbClient {
@@ -188,6 +150,39 @@ impl CortexDbClient {
         limit: usize,
     ) -> SdkResult<SearchResponse> {
         decode_value(self.search_vector(scope, vector, algorithm, limit)?)
+    }
+
+    pub fn evaluate_ann(
+        &self,
+        scope: &str,
+        vector: &[i16],
+        limit: usize,
+    ) -> SdkResult<serde_json::Value> {
+        let literal = vector
+            .iter()
+            .map(i16::to_string)
+            .collect::<Vec<_>>()
+            .join(",");
+        self.post(
+            &path(
+                "/v1/search/ann-evaluate",
+                &[
+                    ("scope", scope),
+                    ("vector", &literal),
+                    ("limit", &limit.to_string()),
+                ],
+            ),
+            "",
+        )
+    }
+
+    pub fn evaluate_ann_response(
+        &self,
+        scope: &str,
+        vector: &[i16],
+        limit: usize,
+    ) -> SdkResult<AnnEvaluationResponse> {
+        decode_value(self.evaluate_ann(scope, vector, limit)?)
     }
 
     pub fn aql(&self, scope: &str, statement: &str) -> SdkResult<serde_json::Value> {

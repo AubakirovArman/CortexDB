@@ -10,6 +10,8 @@ client.put_cell(1, "scope=default\nstatus=ready\nhello")
 print(client.get_cell(1))
 results = client.search_response("default", "hello")
 print(results.search_mode, results.ann_report, results.results)
+ann_eval = client.evaluate_ann_response("default", [1, 2, 3])
+print(ann_eval.available, ann_eval.recall_q16)
 print(client.ingest_text("default", "hello from sdk"))
 ```
 

@@ -32,6 +32,16 @@ export interface SearchResponse {
   results: SearchResult[];
 }
 
+export interface AnnEvaluationResponse {
+  available: boolean;
+  reason: "requires_persisted_checkpoint_without_wal_tail" | null;
+  ann_report: AnnSearchReport | null;
+  exact_top_k: number[];
+  ann_top_k: number[];
+  overlap_count: number;
+  recall_q16: number;
+}
+
 export class CortexDBClient {
   constructor(
     private readonly baseUrl = "http://127.0.0.1:8181",
@@ -84,6 +94,18 @@ export class CortexDBClient {
       vector: vector.join(","),
       limit,
     })) as Promise<SearchResponse>;
+  }
+
+  evaluateAnn(
+    scope: string,
+    vector: number[],
+    limit = 20,
+  ): Promise<AnnEvaluationResponse> {
+    return this.request("POST", this.path("/v1/search/ann-evaluate", {
+      scope,
+      vector: vector.join(","),
+      limit,
+    })) as Promise<AnnEvaluationResponse>;
   }
 
   aql(scope: string, statement: string): Promise<JsonObject> {

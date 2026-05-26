@@ -10,6 +10,8 @@ await client.putCell(1, "scope=default\nstatus=ready\nhello");
 console.log(await client.getCell(1));
 const results = await client.search("default", "hello");
 console.log(results.search_mode, results.ann_report, results.results);
+const annEval = await client.evaluateAnn("default", [1, 2, 3]);
+console.log(annEval.available, annEval.recall_q16);
 console.log(await client.ingestText("default", "hello from sdk"));
 ```
 

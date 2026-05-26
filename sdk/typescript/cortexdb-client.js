@@ -47,6 +47,14 @@ export class CortexDBClient {
     }));
   }
 
+  evaluateAnn(scope, vector, limit = 20) {
+    return this.request("POST", this.path("/v1/search/ann-evaluate", {
+      scope,
+      vector: vector.join(","),
+      limit,
+    }));
+  }
+
   aql(scope, statement) {
     return this.request("POST", this.path("/v1/aql", { scope }), statement);
   }

@@ -25,6 +25,22 @@ fn vector_algorithm_is_wire_stable() {
 }
 
 #[test]
+fn ann_evaluation_path_matches_http_api_contract() {
+    let value = path(
+        "/v1/search/ann-evaluate",
+        &[
+            ("scope", "project:investments"),
+            ("vector", "1,2,3"),
+            ("limit", "20"),
+        ],
+    );
+    assert_eq!(
+        value,
+        "/v1/search/ann-evaluate?scope=project%3Ainvestments&vector=1%2C2%2C3&limit=20"
+    );
+}
+
+#[test]
 fn typed_search_response_decodes_ann_report_contract() {
     let value = serde_json::json!({
         "search_mode": "vector_ann",
@@ -66,5 +82,36 @@ fn ingest_path_encodes_source_contract() {
     assert_eq!(
         value,
         "/v1/ingest/text?scope=project%3Ainvestments&source=rust+sdk"
+    );
+}
+
+#[test]
+fn typed_ann_evaluation_response_decodes_contract() {
+    let value = serde_json::json!({
+        "available": true,
+        "reason": null,
+        "ann_report": {
+            "path": "hnsw_graph",
+            "fallback_reason": null,
+            "requested_limit": 20,
+            "allowed_candidates": 2,
+            "graph_nodes": 2,
+            "returned_candidates": 2
+        },
+        "exact_top_k": [2, 1],
+        "ann_top_k": [2, 1],
+        "overlap_count": 2,
+        "recall_q16": 65535
+    });
+
+    let response: AnnEvaluationResponse =
+        serde_json::from_value(value).expect("ann evaluation response should decode");
+
+    assert!(response.available);
+    assert_eq!(response.recall_q16, 65535);
+    assert_eq!(response.exact_top_k, vec![2, 1]);
+    assert_eq!(
+        response.ann_report.expect("report").path.as_str(),
+        "hnsw_graph"
     );
 }

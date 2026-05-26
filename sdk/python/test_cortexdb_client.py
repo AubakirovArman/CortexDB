@@ -1,6 +1,6 @@
 import unittest
 
-from cortexdb_client import CortexDBClient, SearchResponse
+from cortexdb_client import AnnEvaluationResponse, CortexDBClient, SearchResponse
 
 
 class CortexDBClientPathTests(unittest.TestCase):
@@ -59,6 +59,43 @@ class CortexDBClientPathTests(unittest.TestCase):
         self.assertEqual(response.results[0].cell_id, 1)
         self.assertIsNotNone(response.ann_report)
         self.assertEqual(response.ann_report.fallback_reason, "no_persisted_segments")
+
+    def test_ann_evaluation_path_matches_http_api_contract(self) -> None:
+        path = CortexDBClient._path(
+            "/v1/search/ann-evaluate",
+            scope="project:investments",
+            vector="1,2,3",
+            limit=20,
+        )
+        self.assertEqual(
+            path,
+            "/v1/search/ann-evaluate?scope=project%3Ainvestments&vector=1%2C2%2C3&limit=20",
+        )
+
+    def test_typed_ann_evaluation_response_decodes_contract(self) -> None:
+        response = AnnEvaluationResponse.from_json(
+            {
+                "available": True,
+                "reason": None,
+                "ann_report": {
+                    "path": "hnsw_graph",
+                    "fallback_reason": None,
+                    "requested_limit": 20,
+                    "allowed_candidates": 2,
+                    "graph_nodes": 2,
+                    "returned_candidates": 2,
+                },
+                "exact_top_k": [2, 1],
+                "ann_top_k": [2, 1],
+                "overlap_count": 2,
+                "recall_q16": 65535,
+            }
+        )
+
+        self.assertTrue(response.available)
+        self.assertEqual(response.exact_top_k, (2, 1))
+        self.assertIsNotNone(response.ann_report)
+        self.assertEqual(response.ann_report.path, "hnsw_graph")
 
     def test_ingest_path_matches_http_api_contract(self) -> None:
         path = CortexDBClient._path(

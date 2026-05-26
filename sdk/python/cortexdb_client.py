@@ -65,6 +65,31 @@ class SearchResponse:
 
 
 @dataclass(frozen=True)
+class AnnEvaluationResponse:
+    available: bool
+    reason: str | None
+    ann_report: AnnSearchReport | None
+    exact_top_k: tuple[int, ...]
+    ann_top_k: tuple[int, ...]
+    overlap_count: int
+    recall_q16: int
+
+    @classmethod
+    def from_json(cls, value: dict[str, Any]) -> "AnnEvaluationResponse":
+        report = value.get("ann_report")
+        reason = value.get("reason")
+        return cls(
+            available=bool(value["available"]),
+            reason=str(reason) if reason is not None else None,
+            ann_report=AnnSearchReport.from_json(report) if report else None,
+            exact_top_k=tuple(int(row) for row in value["exact_top_k"]),
+            ann_top_k=tuple(int(row) for row in value["ann_top_k"]),
+            overlap_count=int(value["overlap_count"]),
+            recall_q16=int(value["recall_q16"]),
+        )
+
+
+@dataclass(frozen=True)
 class CortexDBClient:
     base_url: str = "http://127.0.0.1:8181"
     token: str | None = None
@@ -120,6 +145,29 @@ class CortexDBClient:
         algorithm: str = "ann",
     ) -> SearchResponse:
         return SearchResponse.from_json(self.search_vector(scope, vector, limit, algorithm))
+
+    def evaluate_ann(
+        self,
+        scope: str,
+        vector: list[int] | tuple[int, ...],
+        limit: int = 20,
+    ) -> dict[str, Any]:
+        literal = ",".join(str(value) for value in vector)
+        path = self._path(
+            "/v1/search/ann-evaluate",
+            scope=scope,
+            vector=literal,
+            limit=limit,
+        )
+        return self._request("POST", path, b"")
+
+    def evaluate_ann_response(
+        self,
+        scope: str,
+        vector: list[int] | tuple[int, ...],
+        limit: int = 20,
+    ) -> AnnEvaluationResponse:
+        return AnnEvaluationResponse.from_json(self.evaluate_ann(scope, vector, limit))
 
     def aql(self, scope: str, statement: str) -> dict[str, Any]:
         return self._request("POST", self._path("/v1/aql", scope=scope), statement.encode())
