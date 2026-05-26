@@ -1,4 +1,4 @@
-# CortexDB API JSON Schemas Specification (v1.0.0-stable)
+# CortexDB API JSON Schemas Specification (v0.1.0-core-alpha candidate)
 
 CortexDB uses strictly typed, serde-driven JSON schemas for all server responses, eliminating manual string formatting entirely. This document provides the formal JSON schema specification for client integrations.
 

@@ -1,4 +1,4 @@
-# CortexDB HTTP API Contract Specification (v0.6.0)
+# CortexDB HTTP API Contract Specification (v0.1.0-core-alpha candidate)
 
 CortexDB exposes a lightweight, ultra-high-performance HTTP JSON API for interacting with Agent Memory, Retrieving Context, and Verifying Facts.
 

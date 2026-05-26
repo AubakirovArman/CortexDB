@@ -1,4 +1,4 @@
-# CortexDB Cell Payload Metadata Model (v1.0.0-stable)
+# CortexDB Cell Payload Metadata Model (v0.1.0-core-alpha candidate)
 
 CortexDB uses the cell payload's text lines as the single, authoritative **Source of Truth (SoT)** for query metadata. This document formalizes the payload metadata serialization standard.
 

@@ -10,7 +10,7 @@ CortexDB is specifically engineered for autonomous AI agents. Unlike traditional
 
 ---
 
-## Current Core Alpha Features (v1.0.0-alpha)
+## Current Core Alpha Features (v0.1.0-core-alpha candidate)
 
 - **Single-Node Durable Storage:** Strict Write-Ahead Log (WAL) with group commit, MVCC MemTable, and incremental check-pointing/compaction.
 - **Durable Local Agent Memory:** Scope-isolated agent-facing memory retrieval with dynamic decay/TTL scoring.
