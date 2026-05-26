@@ -5,7 +5,8 @@ use crate::aql;
 use crate::context;
 use crate::memory;
 use crate::responses::{
-    CellResponse, IngestResponse, PutCellResponse, StatsResponse, ValidationResponse,
+    CellLookupResponse, CellResponse, CheckpointResponse, ErrorResponse, HealthResponse,
+    IngestResponse, PutCellResponse, StatsResponse, ValidationResponse,
 };
 use crate::search;
 
@@ -17,7 +18,11 @@ pub fn route_shared(
 ) -> Result<String, String> {
     let (path, query) = target.split_once('?').unwrap_or((target, ""));
     match (method, path) {
-        ("GET", "/v1/health") => Ok(r#"{"status":"ok","version":"v1"}"#.to_owned()),
+        ("GET", "/v1/health") => serde_json::to_string(&HealthResponse {
+            status: "ok".to_owned(),
+            version: "v1".to_owned(),
+        })
+        .map_err(|e| e.to_string()),
         ("GET", "/v1/stats") => {
             let db = db.read().map_err(|e| e.to_string())?;
             let stats = db.storage_stats().map_err(|error| error.to_string())?;
@@ -58,15 +63,13 @@ pub fn route_shared(
         ("GET", "/get") | ("GET", "/v1/cell") => {
             let cell_id = cell_id(query)?;
             let db = db.read().map_err(|e| e.to_string())?;
-            let value = db.get_latest_cell(cell_id).map(|payload| CellResponse {
-                cell_id: cell_id.0,
-                payload: String::from_utf8_lossy(&payload).into_owned(),
-            });
-            if let Some(res) = value {
-                serde_json::to_string(&res).map_err(|e| e.to_string())
-            } else {
-                Ok(r#"{"cell":null}"#.to_owned())
-            }
+            let response = CellLookupResponse {
+                cell: db.get_latest_cell(cell_id).map(|payload| CellResponse {
+                    cell_id: cell_id.0,
+                    payload: String::from_utf8_lossy(&payload).into_owned(),
+                }),
+            };
+            serde_json::to_string(&response).map_err(|e| e.to_string())
         }
         ("POST", "/put") | ("POST", "/v1/cell") => {
             let cell_id = cell_id(query)?;
@@ -95,19 +98,19 @@ pub fn route_shared(
         ("POST", "/flush") | ("POST", "/v1/flush") => {
             let mut db = db.write().map_err(|e| e.to_string())?;
             let stats = db.checkpoint().map_err(|error| error.to_string())?;
-            let response = serde_json::json!({
-                "checkpoint_seq": stats.checkpoint_seq.0,
-                "cells_flushed": stats.cells_flushed
-            });
+            let response = CheckpointResponse {
+                checkpoint_seq: stats.checkpoint_seq.0,
+                cells_flushed: stats.cells_flushed,
+            };
             serde_json::to_string(&response).map_err(|e| e.to_string())
         }
         ("POST", "/v1/compact") => {
             let mut db = db.write().map_err(|e| e.to_string())?;
             let stats = db.compact().map_err(|error| error.to_string())?;
-            let response = serde_json::json!({
-                "checkpoint_seq": stats.checkpoint_seq.0,
-                "cells_flushed": stats.cells_flushed
-            });
+            let response = CheckpointResponse {
+                checkpoint_seq: stats.checkpoint_seq.0,
+                cells_flushed: stats.cells_flushed,
+            };
             serde_json::to_string(&response).map_err(|e| e.to_string())
         }
         ("POST", "/v1/context") => context::handle_context_shared(db, query, body),
@@ -236,14 +239,14 @@ pub fn json_response(status: u16, body: &str) -> String {
 }
 
 pub fn json_error(status: u16, code: &str, message: &str) -> String {
-    json_response(
-        status,
-        &format!(
-            r#"{{"error":"{}","message":"{}"}}"#,
-            escape_json(code),
-            escape_json(message)
-        ),
-    )
+    let body = serde_json::to_string(&ErrorResponse {
+        error: code.to_owned(),
+        message: message.to_owned(),
+    })
+    .unwrap_or_else(|_| {
+        r#"{"error":"internal_error","message":"serialization failed"}"#.to_owned()
+    });
+    json_response(status, &body)
 }
 
 pub fn reason(status: u16) -> &'static str {
@@ -255,26 +258,4 @@ pub fn reason(status: u16) -> &'static str {
         500 => "Internal Error",
         _ => "Bad Request",
     }
-}
-
-pub fn escape_json(value: &str) -> String {
-    value
-        .chars()
-        .flat_map(|character| match character {
-            '"' => "\\\"".chars().collect::<Vec<_>>(),
-            '\\' => "\\\\".chars().collect(),
-            '\n' => "\\n".chars().collect(),
-            '\r' => "\\r".chars().collect(),
-            '\t' => "\\t".chars().collect(),
-            other => vec![other],
-        })
-        .collect()
-}
-
-pub fn json_string_list(values: &[String]) -> String {
-    values
-        .iter()
-        .map(|value| format!(r#""{}""#, escape_json(value)))
-        .collect::<Vec<_>>()
-        .join(",")
 }

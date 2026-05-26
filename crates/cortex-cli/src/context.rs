@@ -238,7 +238,7 @@ pub(crate) fn context_pack_to_json(pack: &ContextPack) -> String {
     )
 }
 
-fn format_scale_currency(value_str: &str, currency: &str, fact: &str) -> String {
+fn format_scale_currency(value_str: &str, currency: &str) -> String {
     if let Ok(val) = value_str.parse::<u64>() {
         if val >= 1_000_000_000 && val % 100_000_000 == 0 {
             let scaled = val as f64 / 1_000_000_000.0;
@@ -247,12 +247,6 @@ fn format_scale_currency(value_str: &str, currency: &str, fact: &str) -> String 
             let scaled = val as f64 / 1_000_000.0;
             return format!("{}M {}", scaled, currency);
         }
-    }
-    if fact.contains(&format!("{}B", value_str)) {
-        return format!("{}B {}", value_str, currency);
-    }
-    if fact.contains(&format!("{}M", value_str)) {
-        return format!("{}M {}", value_str, currency);
     }
     format!("{} {}", value_str, currency)
 }
@@ -272,7 +266,7 @@ fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<String> {
         }
     }
 
-    let formatted_right = format_scale_currency(&value, &currency, fact);
+    let formatted_right = format_scale_currency(&value, &currency);
 
     let words: Vec<&str> = fact.split_whitespace().collect();
     let mut formatted_left = "unknown".to_owned();
@@ -286,11 +280,11 @@ fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<String> {
             if i + 1 < words.len() {
                 let next_word = words[i + 1].trim_matches(|c: char| !c.is_alphabetic());
                 if !next_word.is_empty() && next_word.len() <= 4 {
-                    formatted_left = format_scale_currency(clean_word, next_word, fact);
+                    formatted_left = format_scale_currency(clean_word, next_word);
                     break;
                 }
             }
-            formatted_left = format_scale_currency(clean_word, &currency, fact);
+            formatted_left = format_scale_currency(clean_word, &currency);
             break;
         }
     }

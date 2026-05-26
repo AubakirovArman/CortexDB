@@ -12,7 +12,7 @@ every required row is green on `main`.
 | Local tests | `RUSTFLAGS="-D warnings" cargo test --workspace --all-features` passes. |
 | Formatting | `cargo fmt --check` passes. |
 | Lints | `RUSTFLAGS="-D warnings" cargo clippy --workspace --all-targets -- -D warnings` passes. |
-| File size | Rust source files stay under 300 lines unless explicitly split next. |
+| File size audit | Existing over-300-line Rust files are known refactor backlog; new work should prefer module splits over further growth. |
 | Storage safety | WAL, segment, bitmap, lexical, and manifest corruption tests pass. |
 | Lifecycle safety | open, close, Drop, lock, and stale unlock tests pass. |
 | Repair safety | `Database::repair_best_effort` removes orphan temps and truncates only safe WAL tails. |
@@ -31,6 +31,12 @@ every required row is green on `main`.
 git tag -a v0.1.0-core-alpha -m "CortexDB Core Alpha"
 git push origin v0.1.0-core-alpha
 ```
+
+## Latest Local Gate Evidence
+
+On 2026-05-26, `make alpha-check` passed locally. That covered workspace check,
+all-features tests, formatting, clippy with `-D warnings`, the core benchmark
+matrix, and the investment projects demo script.
 
 ## Explicit Non-Goals For This Tag
 

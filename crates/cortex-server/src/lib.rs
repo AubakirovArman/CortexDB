@@ -11,6 +11,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use tower_http::limit::RequestBodyLimitLayer;
 
 use cortex_engine::Database;
+use responses::ErrorResponse;
 
 mod aql;
 mod context;
@@ -21,10 +22,7 @@ mod search;
 #[cfg(test)]
 mod tests;
 
-pub use router::{
-    cell_id, escape_json, json_error, json_response, json_string_list, query_param,
-    query_param_opt, route_shared,
-};
+pub use router::{cell_id, json_error, json_response, query_param, query_param_opt, route_shared};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ServerOptions {
@@ -124,10 +122,10 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         if auth_header != Some(expected_bearer.as_str()) {
             return (
                 StatusCode::UNAUTHORIZED,
-                Json(serde_json::json!({
-                    "error": "unauthorized",
-                    "message": "missing or invalid authorization"
-                })),
+                Json(error_response(
+                    "unauthorized",
+                    "missing or invalid authorization",
+                )),
             )
                 .into_response();
         }
@@ -138,10 +136,10 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         Err(_) => {
             return (
                 StatusCode::PAYLOAD_TOO_LARGE,
-                Json(serde_json::json!({
-                    "error": "payload_too_large",
-                    "message": "request body exceeds 2MB limit"
-                })),
+                Json(error_response(
+                    "payload_too_large",
+                    "request body exceeds 2MB limit",
+                )),
             )
                 .into_response();
         }
@@ -153,10 +151,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         Err(e) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({
-                    "error": "internal_error",
-                    "message": e.to_string()
-                })),
+                Json(error_response("internal_error", e.to_string())),
             )
                 .into_response();
         }
@@ -202,15 +197,15 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
                 "cell not found" | "job not found" => StatusCode::NOT_FOUND,
                 _ => StatusCode::BAD_REQUEST,
             };
-            (
-                status,
-                Json(serde_json::json!({
-                    "error": "bad_request",
-                    "message": err_msg
-                })),
-            )
-                .into_response()
+            (status, Json(error_response("bad_request", err_msg))).into_response()
         }
+    }
+}
+
+fn error_response(error: impl Into<String>, message: impl Into<String>) -> ErrorResponse {
+    ErrorResponse {
+        error: error.into(),
+        message: message.into(),
     }
 }
 

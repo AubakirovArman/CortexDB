@@ -46,6 +46,13 @@ fn v1_stats_and_validate_report_storage_state() {
 }
 
 #[test]
+fn v1_cell_miss_returns_typed_null_cell() {
+    let dir = tempfile::tempdir().unwrap();
+    let response = handle_http(dir.path(), "GET /v1/cell?cell_id=99 HTTP/1.1\r\n\r\n");
+    assert!(response.contains(r#""cell":null"#));
+}
+
+#[test]
 fn v1_context_returns_context_pack() {
     let dir = tempfile::tempdir().unwrap();
     let put = concat!(
@@ -207,6 +214,11 @@ fn test_server_concurrency_and_size_limit() {
 #[test]
 fn empty_ingestion_endpoints_safety() {
     let dir = tempfile::tempdir().unwrap();
+
+    let text_request = "POST /v1/ingest/text?scope=project:investments HTTP/1.1\r\n\r\n";
+    let text_response = handle_http(dir.path(), text_request);
+    assert!(text_response.contains(r#""chunks_ingested":0"#));
+    assert!(text_response.contains(r#""first_cell_id":null"#));
 
     let json_request = "POST /v1/ingest/json?scope=project:investments HTTP/1.1\r\n\r\n{}";
     let json_response = handle_http(dir.path(), json_request);

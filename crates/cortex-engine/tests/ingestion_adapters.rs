@@ -27,6 +27,26 @@ fn text_ingestion_writes_document_cell() {
 }
 
 #[test]
+fn empty_text_chunk_ingestion_returns_zero_cells() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+
+    let cells = db
+        .ingest_text_chunks(
+            CellId(1),
+            " \n\n\t ",
+            TextIngestOptions {
+                scope: "project:investments".to_owned(),
+                source: "empty.md".to_owned(),
+            },
+        )
+        .unwrap();
+
+    assert!(cells.is_empty());
+    assert!(db.get_latest_cell(CellId(1)).is_none());
+}
+
+#[test]
 fn json_ingestion_writes_fact_cells() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();

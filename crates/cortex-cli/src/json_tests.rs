@@ -131,6 +131,35 @@ fn verify_json_mixed_evidence_with_numeric_conflict() {
 }
 
 #[test]
+fn verify_json_does_not_infer_billions_from_decimal_percent() {
+    let path = unique_path("cortexdb-cli-verify-percent");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\ntype=fact\nsource=risk.txt\nmetric=risk\nvalue=2\ncurrency=%\n\nRisk changed to 2%.".to_owned(),
+    ])
+    .unwrap();
+
+    let verify = run(vec![
+        "cortexdb".to_owned(),
+        "verify".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        r#"VERIFY FACT "Project risk is 1.2%" IN BRAIN investment_projects;"#.to_owned(),
+        "--json".to_owned(),
+    ])
+    .unwrap();
+
+    assert!(verify.contains(r#""left":"1.2 %""#));
+    assert!(!verify.contains(r#""left":"1.2B"#));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
 fn verify_json_insufficient_evidence() {
     let path = unique_path("cortexdb-cli-verify-insufficient");
     let path_arg = path.to_string_lossy().into_owned();

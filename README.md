@@ -15,7 +15,7 @@ CortexDB is specifically engineered for autonomous AI agents. Unlike traditional
 - **Single-Node Durable Storage:** Strict Write-Ahead Log (WAL) with group commit, MVCC MemTable, and incremental check-pointing/compaction.
 - **Durable Local Agent Memory:** Scope-isolated agent-facing memory retrieval with dynamic decay/TTL scoring.
 - **Deterministic Fact Verification (`VERIFY FACT`):** Heuristic and deterministic numerical and citation checking that detects contradictions before they reach the agent.
-- **Asynchronous HTTP Server:** A clean, fully asynchronous server built on **Tokio**, **Axum**, and **Tower-HTTP** with strict 2MB body limit boundaries.
+- **HTTP Server:** An async HTTP surface built on **Tokio**, **Axum**, and **Tower-HTTP** over a local blocking single-node database core with strict 2MB body limit boundaries.
 - **Crate Ecosystem:** Fully modular workspace crates: `cortex-core`, `cortex-aql`, `cortex-storage`, `cortex-engine`, `cortex-server`, and `cortex-cli`.
 
 ## Long-Term Vision (Experimental/Under Active Development)
@@ -29,11 +29,11 @@ CortexDB is specifically engineered for autonomous AI agents. Unlike traditional
 ## Crates
 
 - `crates/cortex-aql`: AQL parser, AST, policy validation, binder, and bitmap VM.
-- `crates/cortex-storage`: ACLOG WAL, manifest, segment, bitmap, lexical, vector, and HNSW graph files.
+- `crates/cortex-storage`: ACLOG WAL, manifest, segment, bitmap, lexical, vector, and experimental HNSW graph files.
 - `crates/cortex-core`: In-memory MVCC MemTable, read transactions, cell versions, and manifest primitives.
-- `crates/cortex-engine`: Single-node database loop, compaction, AQL-backed retrieve, memory TTL/decay, source trust, `VERIFY FACT` reports, ContextPack, and HNSW-backed vector search.
+- `crates/cortex-engine`: Single-node database loop, compaction, AQL-backed retrieve, memory TTL/decay, source trust, `VERIFY FACT` reports, ContextPack, exact vector search, and experimental HNSW foundations.
 - `crates/cortex-cli`: Command `cortexdb` for local operations and loading fixtures.
-- `crates/cortex-server`: High-performance asynchronous JSON HTTP API built on Axum and Tokio.
+- `crates/cortex-server`: Async JSON HTTP API built on Axum and Tokio over the local blocking database core.
 
 ---
 

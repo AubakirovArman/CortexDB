@@ -43,7 +43,10 @@ impl Database {
         options: TextIngestOptions,
     ) -> EngineResult<IngestedCell> {
         let results = self.ingest_text_chunks(cell_id, text, options)?;
-        Ok(results[0].clone())
+        results
+            .first()
+            .cloned()
+            .ok_or(EngineError::InvalidOperation)
     }
 
     pub fn ingest_text_chunks(
@@ -74,7 +77,7 @@ impl Database {
         }
 
         if chunks.is_empty() {
-            chunks.push(text.to_owned());
+            return Ok(Vec::new());
         }
 
         let mut ingested = Vec::new();

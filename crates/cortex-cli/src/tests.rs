@@ -8,6 +8,16 @@ fn usage_is_reported_for_missing_args() {
 }
 
 #[test]
+fn help_and_version_commands_work() {
+    let help = run(vec!["cortexdb".to_owned(), "--help".to_owned()]).unwrap();
+    assert!(help.contains("usage: cortexdb <command>"));
+    assert!(help.contains("ingest-json <path> <scope> <file>"));
+
+    let version = run(vec!["cortexdb".to_owned(), "version".to_owned()]).unwrap();
+    assert!(version.starts_with("cortexdb "));
+}
+
+#[test]
 fn stats_and_validate_commands_work() {
     let path = unique_path("cortexdb-cli-stats");
     let path_arg = path.to_string_lossy().into_owned();
@@ -172,6 +182,54 @@ fn repair_command_reports_best_effort_cleanup() {
     assert!(output.contains("wal_truncated=false"));
 
     let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
+fn empty_ingestion_commands_return_null_first_cell_id() {
+    let path = unique_path("cortexdb-cli-empty-ingest-db");
+    let input_dir = unique_path("cortexdb-cli-empty-ingest-inputs");
+    std::fs::create_dir_all(&input_dir).unwrap();
+    let path_arg = path.to_string_lossy().into_owned();
+
+    let text_file = input_dir.join("empty.txt");
+    let json_file = input_dir.join("empty.json");
+    let csv_file = input_dir.join("empty.csv");
+    std::fs::write(&text_file, "").unwrap();
+    std::fs::write(&json_file, "{}").unwrap();
+    std::fs::write(&csv_file, "").unwrap();
+
+    let text_output = run(vec![
+        "cortexdb".to_owned(),
+        "ingest-text".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        text_file.to_string_lossy().into_owned(),
+    ])
+    .unwrap();
+    assert_eq!(text_output, "ingested_chunks=0 first_cell_id=null");
+
+    let json_output = run(vec![
+        "cortexdb".to_owned(),
+        "ingest-json".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        json_file.to_string_lossy().into_owned(),
+    ])
+    .unwrap();
+    assert_eq!(json_output, "ingested_facts=0 first_cell_id=null");
+
+    let csv_output = run(vec![
+        "cortexdb".to_owned(),
+        "ingest-csv".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        csv_file.to_string_lossy().into_owned(),
+    ])
+    .unwrap();
+    assert_eq!(csv_output, "ingested_rows=0 first_cell_id=null");
+
+    let _ = std::fs::remove_dir_all(path);
+    let _ = std::fs::remove_dir_all(input_dir);
 }
 
 #[test]

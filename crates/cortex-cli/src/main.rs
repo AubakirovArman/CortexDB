@@ -38,6 +38,12 @@ fn main() -> ExitCode {
 }
 
 fn run(args: Vec<String>) -> Result<String, String> {
+    if args.len() == 2 && matches!(args[1].as_str(), "--help" | "-h" | "help") {
+        return Ok(usage());
+    }
+    if args.len() == 2 && args[1] == "version" {
+        return Ok(format!("cortexdb {}", env!("CARGO_PKG_VERSION")));
+    }
     if args.len() == 2 && args[1] == "demo" {
         let output = std::process::Command::new("./examples/demo/investment_projects/run.sh")
             .output()
@@ -455,6 +461,47 @@ fn parse_cell_id(value: &str) -> Result<CellId, String> {
 }
 
 fn usage() -> String {
-    "usage: cortexdb put <path> <cell_id> <payload> | get <path> <cell_id> | tombstone <path> <cell_id> | flush <path> | compact <path> | stats <path> | validate <path> | repair <path> | gc-retired <path> | wal-validate <path> | wal-dump <path> | wal-truncate <path> | manifest-dump <path> | manifest-validate <path> | context <path> <scope> <aql> | remember <path> <scope> <aql> | verify <path> <scope> <aql> | aql <path> <scope> <aql> | search <path> <scope> <query> | search-vector <path> <scope> <vector> | unlock <path> --force"
-        .to_owned()
+    [
+        "usage: cortexdb <command> [args] [--json]",
+        "",
+        "core:",
+        "  put <path> <cell_id> <payload>",
+        "  get <path> <cell_id>",
+        "  tombstone <path> <cell_id>",
+        "  flush <path>",
+        "  compact <path>",
+        "  stats <path>",
+        "  validate <path>",
+        "  repair <path>",
+        "  unlock <path> --force",
+        "",
+        "query:",
+        "  context <path> <scope> <aql>",
+        "  remember <path> <scope> <aql>",
+        "  verify <path> <scope> <aql>",
+        "  aql <path> <scope> <aql>",
+        "  search <path> <scope> <query>",
+        "  search-vector <path> <scope> <vector>",
+        "  search-vector-exact <path> <scope> <vector>",
+        "",
+        "ingest:",
+        "  ingest-text <path> <scope> <file>",
+        "  ingest-json <path> <scope> <file>",
+        "  ingest-csv <path> <scope> <file>",
+        "  load-fixture <path> <fixture_dir>",
+        "",
+        "storage tools:",
+        "  wal-validate <path>",
+        "  wal-dump <path>",
+        "  wal-truncate <path>",
+        "  manifest-dump <path>",
+        "  manifest-validate <path>",
+        "  gc-retired <path>",
+        "",
+        "misc:",
+        "  demo",
+        "  version",
+        "  --help",
+    ]
+    .join("\n")
 }

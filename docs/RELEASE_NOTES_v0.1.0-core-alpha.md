@@ -12,8 +12,10 @@ Core Alpha is the first durable single-node CortexDB prototype.
 - `.acs`, `.acb`, `.aci`, and `.acm` files with atomic writes and CRC32C footers.
 - Candidate mapping that preserves full `CellId(u64)`.
 - ContextPack v0 with token budget and citation anomaly reporting.
-- CLI commands for put/get/tombstone/flush/compact/stats/validate/repair/context/unlock.
-- Minimal HTTP API for health, put/get/tombstone/flush/compact/stats/validate/context.
+- CLI commands for put/get/tombstone/flush/compact/stats/validate/repair/context/AQL/search/verify/remember/ingest/unlock.
+- HTTP API for health, put/get/tombstone/flush/compact/stats/validate/AQL/search/context/verify/remember/ingest.
+- Typed serde JSON response structs for server API payloads.
+- Empty ingestion safety for text, JSON, and CSV inputs.
 - Crash, restart, corruption, lifecycle, repair, AQL retrieve, and storage validation tests.
 
 ## Explicit Non-Goals
@@ -22,7 +24,7 @@ Core Alpha is the first durable single-node CortexDB prototype.
 - Persistent approximate vector indexes beyond exact `.acv` scan.
 - Production HNSW.
 - Real distributed consensus or replication transport.
-- Document/PDF/API ingestion.
+- Production document/OCR/API ingestion pipelines; current ingestion adapters are alpha smoke paths.
 - LLM integration.
 
 ## Release Gates
@@ -37,3 +39,7 @@ RUSTFLAGS="-D warnings" cargo clippy --workspace --all-targets -- -D warnings
 ```
 
 and after the GitHub Actions `Rust` workflow is green on stable and beta.
+
+Latest local evidence: `make alpha-check` passed on 2026-05-26, including
+workspace check, all-features tests, formatting, clippy with `-D warnings`, the
+core benchmark matrix, and the investment projects demo.

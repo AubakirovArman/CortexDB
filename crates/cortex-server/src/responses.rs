@@ -1,5 +1,11 @@
 use serde::Serialize;
 
+#[derive(Serialize, Debug, Clone)]
+pub struct HealthResponse {
+    pub status: String,
+    pub version: String,
+}
+
 /// Response metrics containing detailed storage, MemTable, and WAL statistics.
 #[derive(Serialize, Debug, Clone)]
 pub struct StatsResponse {
@@ -55,9 +61,20 @@ pub struct CellResponse {
 }
 
 #[derive(Serialize, Debug, Clone)]
+pub struct CellLookupResponse {
+    pub cell: Option<CellResponse>,
+}
+
+#[derive(Serialize, Debug, Clone)]
 pub struct PutCellResponse {
     pub seq: u64,
     pub cell_id: u64,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct CheckpointResponse {
+    pub checkpoint_seq: u64,
+    pub cells_flushed: usize,
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -155,6 +172,24 @@ pub struct SearchResultResponse {
 #[derive(Serialize, Debug, Clone)]
 pub struct SearchResponse {
     pub results: Vec<SearchResultResponse>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct AqlCellResponse {
+    pub cell_id: u64,
+    pub payload: String,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct AqlResponse {
+    pub cells: Vec<AqlCellResponse>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct RememberResponse {
+    pub seq: u64,
+    pub cell_id: u64,
+    pub ttl_seconds: Option<u64>,
 }
 
 #[derive(Serialize, Debug, Clone)]
