@@ -6,7 +6,7 @@ use thiserror::Error;
 mod http;
 mod types;
 
-use http::{parse_response, path};
+use http::{append_query_param, parse_response, path};
 pub use types::{
     AnnEvaluationResponse, AnnSearchReport, SearchResponse, SearchResult, VectorAlgorithm,
 };
@@ -30,6 +30,7 @@ pub type SdkResult<T> = Result<T, SdkError>;
 pub struct CortexDbClient {
     base_url: String,
     token: Option<String>,
+    tenant: Option<String>,
     agent: ureq::Agent,
 }
 
@@ -42,12 +43,18 @@ impl CortexDbClient {
         Self {
             base_url: base_url.into().trim_end_matches('/').to_owned(),
             token: None,
+            tenant: None,
             agent: ureq::AgentBuilder::new().timeout(timeout).build(),
         }
     }
 
     pub fn with_token(mut self, token: impl Into<String>) -> Self {
         self.token = Some(token.into());
+        self
+    }
+
+    pub fn with_tenant(mut self, tenant: impl Into<String>) -> Self {
+        self.tenant = Some(tenant.into());
         self
     }
 
@@ -276,7 +283,11 @@ impl CortexDbClient {
     }
 
     fn url(&self, path: &str) -> String {
-        format!("{}{}", self.base_url, path)
+        let scoped_path = match self.tenant.as_deref() {
+            Some("default") | None => path.to_owned(),
+            Some(tenant) => append_query_param(path, "tenant", tenant),
+        };
+        format!("{}{}", self.base_url, scoped_path)
     }
 }
 

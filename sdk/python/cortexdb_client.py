@@ -4,7 +4,7 @@ import json
 import urllib.parse
 import urllib.request
 from typing import Any
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 
 @dataclass(frozen=True)
@@ -99,6 +99,10 @@ class AnnEvaluationResponse:
 class CortexDBClient:
     base_url: str = "http://127.0.0.1:8181"
     token: str | None = None
+    tenant: str | None = None
+
+    def with_tenant(self, tenant: str) -> "CortexDBClient":
+        return replace(self, tenant=tenant)
 
     def health(self) -> dict[str, Any]:
         return self._request("GET", "/v1/health", b"")
@@ -228,10 +232,20 @@ class CortexDBClient:
         if self.token:
             headers["authorization"] = f"Bearer {self.token}"
         request = urllib.request.Request(
-            f"{self.base_url}{path}", data=body or None, headers=headers, method=method
+            f"{self.base_url}{self._scoped(path)}",
+            data=body or None,
+            headers=headers,
+            method=method,
         )
         with urllib.request.urlopen(request, timeout=10) as response:
             return json.loads(response.read().decode())
+
+    def _scoped(self, path: str) -> str:
+        if not self.tenant or self.tenant == "default":
+            return path
+        separator = "&" if "?" in path else "?"
+        encoded = urllib.parse.urlencode({"tenant": self.tenant})
+        return f"{path}{separator}{encoded}"
 
     @staticmethod
     def _path(path: str, **query: object) -> str:

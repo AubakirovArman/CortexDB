@@ -6,8 +6,10 @@ Fetch-based JavaScript/TypeScript client for the Core Alpha CortexDB HTTP API.
 import { CortexDBClient } from "@cortexdb/client";
 
 const client = new CortexDBClient("http://127.0.0.1:8181");
+const tenantClient = client.withTenant("tenant:alpha");
 await client.putCell(1, "scope=default\nstatus=ready\nhello");
 console.log(await client.getCell(1));
+console.log(await tenantClient.stats());
 const results = await client.search("default", "hello");
 console.log(results.search_mode, results.ann_report, results.results);
 const annEval = await client.evaluateAnn("default", [1, 2, 3]);

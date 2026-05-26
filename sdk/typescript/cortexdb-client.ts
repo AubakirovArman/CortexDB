@@ -49,7 +49,12 @@ export class CortexDBClient {
   constructor(
     private readonly baseUrl = "http://127.0.0.1:8181",
     private readonly token?: string,
+    private readonly tenant?: string,
   ) {}
+
+  withTenant(tenant: string): CortexDBClient {
+    return new CortexDBClient(this.baseUrl, this.token, tenant);
+  }
 
   health(): Promise<JsonObject> {
     return this.request("GET", "/v1/health");
@@ -168,7 +173,7 @@ export class CortexDBClient {
       init.body = typeof body === "string" ? body : JSON.stringify(body);
       headers["content-type"] = "application/json";
     }
-    const response = await fetch(`${this.baseUrl}${path}`, init);
+    const response = await fetch(`${this.baseUrl}${this.scoped(path)}`, init);
     if (!response.ok) throw new Error(await response.text());
     return response.json() as Promise<JsonObject>;
   }
@@ -179,5 +184,11 @@ export class CortexDBClient {
       params.set(key, String(value));
     }
     return `${path}?${params.toString()}`;
+  }
+
+  private scoped(path: string): string {
+    if (!this.tenant || this.tenant === "default") return path;
+    const params = new URLSearchParams({ tenant: this.tenant });
+    return `${path}${path.includes("?") ? "&" : "?"}${params.toString()}`;
   }
 }

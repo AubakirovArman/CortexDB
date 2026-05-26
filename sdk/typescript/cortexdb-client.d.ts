@@ -46,7 +46,8 @@ export interface AnnEvaluationResponse {
 }
 
 export class CortexDBClient {
-  constructor(baseUrl?: string, token?: string);
+  constructor(baseUrl?: string, token?: string, tenant?: string);
+  withTenant(tenant: string): CortexDBClient;
   health(): Promise<JsonObject>;
   putCell(cellId: number, payload: string): Promise<JsonObject>;
   getCell(cellId: number): Promise<JsonObject>;

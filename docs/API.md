@@ -10,6 +10,9 @@ CortexDB exposes a lightweight, ultra-high-performance HTTP JSON API for interac
 * **Content-Type:** `application/json`
 * **Max Payload Boundary:** 2MB (Requests exceeding 2MB will return `413 Payload Too Large`)
 * **OpenAPI contract:** [`openapi.yaml`](openapi.yaml)
+* **Tenant routing:** database endpoints accept optional `tenant=<realm>`. Omit
+  it or use `tenant=default` for the root database; any other value routes to a
+  per-tenant realm under the server data directory.
 
 ---
 

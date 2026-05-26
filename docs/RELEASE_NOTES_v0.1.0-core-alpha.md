@@ -23,6 +23,8 @@ Core Alpha is the first durable single-node CortexDB prototype.
 - Typed serde JSON response structs for server API payloads.
 - OpenAPI 3.1 contract in `docs/openapi.yaml`.
 - Python, TypeScript, and Rust SDK clients cover the health/cell/maintenance/AQL/search/context/verify/remember/ingestion API surface.
+- Python, TypeScript, and Rust SDK clients support tenant/realm routing through
+  additive builder helpers.
 - SDK publication preflight builds a Python wheel, checks npm package contents, and verifies Rust `cargo package`.
 - SDK release workflow runs package preflight on SDK changes and supports
   manual tag-gated publishing for PyPI, npm, and crates.io.

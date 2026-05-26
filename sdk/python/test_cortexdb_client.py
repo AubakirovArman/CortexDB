@@ -31,6 +31,14 @@ class CortexDBClientPathTests(unittest.TestCase):
             "/v1/search?scope=project%3Ainvestments&mode=vector&algorithm=ann&vector=1%2C2%2C3&limit=5",
         )
 
+    def test_client_with_tenant_scopes_requests(self) -> None:
+        client = CortexDBClient().with_tenant("tenant:alpha")
+        self.assertEqual(client._scoped("/v1/stats"), "/v1/stats?tenant=tenant%3Aalpha")
+        self.assertEqual(
+            client._scoped("/v1/search?scope=project%3Ainvestments"),
+            "/v1/search?scope=project%3Ainvestments&tenant=tenant%3Aalpha",
+        )
+
     def test_typed_search_response_decodes_ann_report_contract(self) -> None:
         response = SearchResponse.from_json(
             {

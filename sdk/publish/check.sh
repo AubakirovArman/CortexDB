@@ -22,6 +22,8 @@ grep -q 'evaluateAnn(scope' "$ROOT/typescript/cortexdb-client.d.ts"
 grep -q '"low_recall"' "$ROOT/typescript/cortexdb-client.d.ts"
 grep -q 'min_recall_q16' "$ROOT/python/cortexdb_client.py"
 grep -q 'min_recall_q16' "$ROOT/typescript/cortexdb-client.d.ts"
+grep -q 'with_tenant' "$ROOT/python/cortexdb_client.py"
+grep -q 'withTenant' "$ROOT/typescript/cortexdb-client.d.ts"
 
 python3 -m py_compile "$ROOT/python/cortexdb_client.py"
 PYTHONPATH="$ROOT/python" python3 -m unittest discover "$ROOT/python"
@@ -56,11 +58,12 @@ globalThis.fetch = async (url, init) => {
   };
 };
 
-const client = new CortexDBClient("http://127.0.0.1:8181");
+const client = new CortexDBClient("http://127.0.0.1:8181").withTenant("tenant:alpha");
 const response = await client.evaluateAnn("project:investments", [1, 2, 3], 20);
 if (!observedUrl.includes("/v1/search/ann-evaluate?")) throw new Error(observedUrl);
 if (!observedUrl.includes("scope=project%3Ainvestments")) throw new Error(observedUrl);
 if (!observedUrl.includes("vector=1%2C2%2C3")) throw new Error(observedUrl);
+if (!observedUrl.includes("tenant=tenant%3Aalpha")) throw new Error(observedUrl);
 if (response.available !== false) throw new Error("unexpected response");
 NODE
   npm pack --dry-run >/dev/null)

@@ -17,8 +17,10 @@ ANN evaluation clients expose the `/v1/search/ann-evaluate` contract as a typed
 response with exact top-k, ANN top-k, overlap, and fixed-point `recall_q16`.
 `ann_report` also exposes `recall_q16` and `min_recall_q16` when the ANN recall
 guard evaluates a persisted HNSW graph.
+All clients support additive tenant/realm scoping so package users can target
+the same per-tenant database layout exposed by `cortex-server` and `/dashboard`.
 `publish/check.sh` validates Python bytecode/tests/wheel packaging, Rust tests
-and `cargo package`, SDK version consistency, ANN evaluation surface presence,
+and `cargo package`, SDK version consistency, tenant routing, ANN evaluation surface presence,
 and npm package dry-runs when npm is installed.
 
 Use `make sdk-check` for the local gate. The GitHub `SDK Release` workflow runs

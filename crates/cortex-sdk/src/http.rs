@@ -19,6 +19,11 @@ pub(crate) fn path(base: &str, query: &[(&str, &str)]) -> String {
     }
 }
 
+pub(crate) fn append_query_param(path: &str, key: &str, value: &str) -> String {
+    let separator = if path.contains('?') { '&' } else { '?' };
+    format!("{path}{separator}{}={}", escape(key), escape(value))
+}
+
 fn escape(value: &str) -> String {
     let mut out = String::new();
     for byte in value.bytes() {

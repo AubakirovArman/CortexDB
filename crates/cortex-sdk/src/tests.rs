@@ -1,5 +1,5 @@
 use super::*;
-use crate::http::path;
+use crate::http::{append_query_param, path};
 
 #[test]
 fn path_encodes_search_query_contract() {
@@ -15,6 +15,25 @@ fn path_encodes_search_query_contract() {
     assert_eq!(
         value,
         "/v1/search?scope=project%3Ainvestments&mode=keyword&q=solar+budget&limit=10"
+    );
+}
+
+#[test]
+fn tenant_query_param_is_appended_to_existing_queries() {
+    let value = append_query_param("/v1/stats?limit=10", "tenant", "tenant:alpha");
+    assert_eq!(value, "/v1/stats?limit=10&tenant=tenant%3Aalpha");
+}
+
+#[test]
+fn client_with_tenant_scopes_requests() {
+    let client = CortexDbClient::new("http://127.0.0.1:8181").with_tenant("tenant:alpha");
+    assert_eq!(
+        client.url("/v1/stats"),
+        "http://127.0.0.1:8181/v1/stats?tenant=tenant%3Aalpha"
+    );
+    assert_eq!(
+        client.url("/v1/search?scope=project%3Ainvestments"),
+        "http://127.0.0.1:8181/v1/search?scope=project%3Ainvestments&tenant=tenant%3Aalpha"
     );
 }
 

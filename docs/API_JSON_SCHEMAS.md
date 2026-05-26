@@ -8,6 +8,10 @@ headers manually, but the JSON payloads themselves are typed.
 
 The OpenAPI 3.1 contract lives in [`openapi.yaml`](openapi.yaml).
 
+All database endpoints accept optional query parameter `tenant=<realm>`.
+Omitting it or sending `tenant=default` targets the root database. Other values
+target per-tenant database realms and are supported by the dashboard and SDKs.
+
 ## Common Error
 
 Returned by failed routes, auth failures, payload limit failures, and database

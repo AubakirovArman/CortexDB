@@ -24,6 +24,7 @@ This invokes `sdk/publish/check.sh`, which verifies:
 - TypeScript/JavaScript syntax and package dry-run when `npm` is installed.
 - Rust SDK tests and `cargo package`.
 - Cross-SDK version consistency.
+- Tenant/realm routing coverage.
 - ANN evaluation contract coverage.
 
 ## GitHub Workflow
