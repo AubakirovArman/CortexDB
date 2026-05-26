@@ -7,8 +7,8 @@ test:
 	cargo test --workspace
 
 alpha-check:
-	cargo check --workspace
-	cargo test --workspace --all-features
+	RUSTFLAGS="-D warnings" cargo check --workspace
+	RUSTFLAGS="-D warnings" cargo test --workspace --all-features
 	cargo fmt --check
 	cargo clippy --workspace --all-targets -- -D warnings
 	cargo bench -p cortex-engine --bench core_baseline

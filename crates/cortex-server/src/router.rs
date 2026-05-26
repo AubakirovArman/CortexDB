@@ -117,11 +117,15 @@ pub fn route_shared(
                     },
                 )
                 .map_err(|error| error.to_string())?;
-            Ok(format!(
-                r#"{{"chunks_ingested":{},"first_cell_id":{}}}"#,
-                results.len(),
-                results[0].cell_id.0
-            ))
+            if results.is_empty() {
+                Ok(r#"{"chunks_ingested":0,"first_cell_id":null}"#.to_owned())
+            } else {
+                Ok(format!(
+                    r#"{{"chunks_ingested":{},"first_cell_id":{}}}"#,
+                    results.len(),
+                    results[0].cell_id.0
+                ))
+            }
         }
         ("POST", "/v1/ingest/json") => {
             let scope = query_param_opt(query, "scope").unwrap_or("default");
@@ -139,11 +143,15 @@ pub fn route_shared(
                     },
                 )
                 .map_err(|error| error.to_string())?;
-            Ok(format!(
-                r#"{{"facts_ingested":{},"first_cell_id":{}}}"#,
-                results.len(),
-                results[0].cell_id.0
-            ))
+            if results.is_empty() {
+                Ok(r#"{"facts_ingested":0,"first_cell_id":null}"#.to_owned())
+            } else {
+                Ok(format!(
+                    r#"{{"facts_ingested":{},"first_cell_id":{}}}"#,
+                    results.len(),
+                    results[0].cell_id.0
+                ))
+            }
         }
         ("POST", "/v1/ingest/csv") => {
             let scope = query_param_opt(query, "scope").unwrap_or("default");
@@ -161,11 +169,15 @@ pub fn route_shared(
                     },
                 )
                 .map_err(|error| error.to_string())?;
-            Ok(format!(
-                r#"{{"rows_ingested":{},"first_cell_id":{}}}"#,
-                results.len(),
-                results[0].cell_id.0
-            ))
+            if results.is_empty() {
+                Ok(r#"{"rows_ingested":0,"first_cell_id":null}"#.to_owned())
+            } else {
+                Ok(format!(
+                    r#"{{"rows_ingested":{},"first_cell_id":{}}}"#,
+                    results.len(),
+                    results[0].cell_id.0
+                ))
+            }
         }
         _ if method == "GET" && path.starts_with("/v1/ingest/jobs/") => {
             let id_str = path.strip_prefix("/v1/ingest/jobs/").unwrap();

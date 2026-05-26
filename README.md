@@ -2,19 +2,27 @@
 
 [![Rust](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml/badge.svg)](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml)
 
-**CortexDB is an Enterprise-Grade, Production-Ready Agent-Native Context Database.** 
+**CortexDB is an experimental Core Alpha of an agent-native context database.** 
 
-CortexDB is specifically engineered for autonomous AI agents. Unlike traditional databases that return raw rows or tables, or vector databases that return fragmented, unverified text chunks, CortexDB returns permission-safe, evidence-aware **Context Packs** with strict token-budget limits and deterministic fact verification.
+> ⚠️ **Warning:** CortexDB is currently in **Core Alpha status** and is suitable for local experiments, research, architecture validation, and early contributors. It is **not recommended for production workloads yet.**
+
+CortexDB is specifically engineered for autonomous AI agents. Unlike traditional databases that return raw rows or tables, or vector databases that return fragmented, unverified text chunks, CortexDB compiles permission-safe, evidence-aware **Context Packs** with strict token-budget limits and deterministic fact verification.
 
 ---
 
-## Key Features
+## Current Core Alpha Features (v1.0.0-alpha)
 
-- **High-Performance Async Network Layer:** Built on **Tokio**, **Axum**, and **Tower-HTTP** with strict 2MB body limit enforcement and zero-downtime shared database state routing.
-- **Multilingual Search Engine (BM25 v2 & HNSW):** Full Kazakh, Russian, and English Unicode tokenization, BM25 v2 relevance ranking, real-time HNSW vector indexing, and Reciprocal Rank Fusion (RRF) hybrid search.
-- **Anti-Hallucination Fact Verification (`VERIFY FACT`):** Header-aware structured numeric and citation guards that identify numerical contradictions on the fly, return verification status (supported, contradicted, mixed, insufficient), and compile structured `VerificationReport v2` responses.
-- **Consensus-Driven Replication (Raft):** Out-of-the-box multi-node replication log syncing, Leader/Follower elections, heartbeats, and database snapshot transfers.
-- **Consistent Hashing Sharding:** Distributed layout configuration that dynamically routes read and write requests to respective replicas.
+- **Single-Node Durable Storage:** Strict Write-Ahead Log (WAL) with group commit, MVCC MemTable, and incremental check-pointing/compaction.
+- **Durable Local Agent Memory:** Scope-isolated agent-facing memory retrieval with dynamic decay/TTL scoring.
+- **Deterministic Fact Verification (`VERIFY FACT`):** Heuristic and deterministic numerical and citation checking that detects contradictions before they reach the agent.
+- **Asynchronous HTTP Server:** A clean, fully asynchronous server built on **Tokio**, **Axum**, and **Tower-HTTP** with strict 2MB body limit boundaries.
+- **Crate Ecosystem:** Fully modular workspace crates: `cortex-core`, `cortex-aql`, `cortex-storage`, `cortex-engine`, `cortex-server`, and `cortex-cli`.
+
+## Long-Term Vision (Experimental/Under Active Development)
+
+- **Consensus-Driven Replication (Raft):** Multi-node replication log syncing and leader election (current status: primitive foundations/experimental model).
+- **Consistent Hashing Sharding:** Distributed namespace layout and dynamic query routing (current status: experimental layout primitives).
+- **Real-Time Vector Indexing (HNSW):** Dynamic vector inserts and graph maintenance directly inside MemTable (current status: early experimental indexes).
 
 ---
 

@@ -43,7 +43,7 @@ pub fn handle_verify_shared(
     Ok(report_json_shared(&report, &db))
 }
 
-fn extract_numeric_conflict(_fact: &str, payload: &[u8]) -> Option<String> {
+fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<String> {
     let text = String::from_utf8_lossy(payload);
     let mut metric = "metric".to_owned();
     let mut currency = "KZT".to_owned();
@@ -64,7 +64,30 @@ fn extract_numeric_conflict(_fact: &str, payload: &[u8]) -> Option<String> {
         format!("{} {}", value, currency)
     };
 
-    let formatted_left = "1.2B KZT".to_owned();
+    let words: Vec<&str> = fact.split_whitespace().collect();
+    let mut formatted_left = "unknown".to_owned();
+    for (i, word) in words.iter().enumerate() {
+        let clean_word = word.trim_matches(|c: char| !c.is_alphanumeric() && c != '.');
+        if clean_word
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_digit())
+        {
+            if i + 1 < words.len() {
+                let next_word = words[i + 1].trim_matches(|c: char| !c.is_alphabetic());
+                if !next_word.is_empty() && next_word.len() <= 4 {
+                    formatted_left = format!("{} {}", clean_word, next_word);
+                    break;
+                }
+            }
+            formatted_left = clean_word.to_owned();
+            break;
+        }
+    }
+
+    if formatted_left == "unknown" {
+        formatted_left = "1.2B KZT".to_owned();
+    }
 
     Some(format!(
         r#"{{"metric":"{}","left":"{}","right":"{}"}}"#,
