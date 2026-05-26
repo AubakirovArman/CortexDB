@@ -1,13 +1,29 @@
 {
   "name": "@cortexdb/client",
   "version": "0.1.0",
-  "description": "Minimal CortexDB HTTP client",
+  "description": "Core Alpha CortexDB HTTP client",
   "type": "module",
+  "main": "./cortexdb-client.js",
+  "types": "./cortexdb-client.d.ts",
   "exports": {
-    ".": "./cortexdb-client.ts"
+    ".": {
+      "types": "./cortexdb-client.d.ts",
+      "import": "./cortexdb-client.js"
+    }
   },
   "files": [
+    "cortexdb-client.d.ts",
+    "cortexdb-client.js",
     "cortexdb-client.ts"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AubakirovArman/CortexDB.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AubakirovArman/CortexDB/issues"
+  },
+  "homepage": "https://github.com/AubakirovArman/CortexDB#readme",
+  "sideEffects": false,
   "license": "MIT"
 }

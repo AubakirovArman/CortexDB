@@ -11,7 +11,7 @@ CortexDB has successfully transitioned from an early database loop prototype int
 - **Developer Web Console:** Built-in `/dashboard` UI for health, stats, validation, cell operations, keyword/vector search, AQL, ContextPack, and VERIFY FACT smoke paths.
 - **Heuristic Fact Verification (`VERIFY FACT`):** Deterministic numeric and citation mismatch parser that runs without LLM calls. API display formatting may scale large integer values for readability.
 - **Context Pack Compiler:** Budgeted, scored, and deduplicated Context Packs generated directly from AQL queries.
-- **Ecosystem:** Python, TypeScript, and Rust SDK clients, local dataset fixture loaders, and complete automated verification gates (`make alpha-check`).
+- **Ecosystem:** Python, TypeScript, and Rust SDK clients with package dry-runs, local dataset fixture loaders, and complete automated verification gates (`make alpha-check`).
 
 ---
 

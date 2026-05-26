@@ -1,7 +1,10 @@
 [package]
 name = "cortex-sdk"
+description = "Blocking Rust HTTP client for CortexDB Core Alpha"
 edition.workspace = true
 license.workspace = true
+repository = "https://github.com/AubakirovArman/CortexDB"
+readme = "../../sdk/README.md"
 version.workspace = true
 
 [dependencies]

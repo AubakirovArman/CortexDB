@@ -31,6 +31,17 @@ class CortexDBClientPathTests(unittest.TestCase):
             "/v1/search?scope=project%3Ainvestments&mode=vector&algorithm=ann&vector=1%2C2%2C3&limit=5",
         )
 
+    def test_ingest_path_matches_http_api_contract(self) -> None:
+        path = CortexDBClient._path(
+            "/v1/ingest/text",
+            scope="project:investments",
+            source="python sdk",
+        )
+        self.assertEqual(
+            path,
+            "/v1/ingest/text?scope=project%3Ainvestments&source=python+sdk",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,12 +1,15 @@
 # CortexDB SDK Surface
 
-This directory contains minimal HTTP client sketches for early integration tests.
-They target the existing `cortex-server` endpoints and intentionally avoid
-extra runtime dependencies.
+This directory contains Core Alpha HTTP clients for early integrations and
+package publication dry-runs. They target the stable `/v1/*` `cortex-server`
+surface and intentionally keep runtime dependencies small.
 
-- `python/cortexdb_client.py`: stdlib Python client.
-- `typescript/cortexdb-client.ts`: fetch-based TypeScript client.
-- `crates/cortex-sdk`: blocking Rust HTTP client.
-- `python/pyproject.toml` and `typescript/package.json`: early package metadata.
+- `python/cortexdb_client.py`: stdlib Python client with PyPI metadata.
+- `typescript/cortexdb-client.js`: fetch-based JavaScript runtime entrypoint.
+- `typescript/cortexdb-client.d.ts`: TypeScript declarations.
+- `typescript/cortexdb-client.ts`: TypeScript source reference.
+- `crates/cortex-sdk`: blocking Rust HTTP client with crates.io metadata.
 
 The SDK APIs are Core Alpha contracts and may still receive additive changes.
+`publish/check.sh` validates Python bytecode/tests/wheel packaging, Rust tests
+and `cargo package`, and npm package dry-runs when npm is installed.

@@ -246,6 +246,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IngestResponse"
+  /v1/ingest/jobs/{job_id}:
+    get:
+      summary: Read persisted ingestion job progress
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: uint64
+      responses:
+        "200":
+          description: Ingestion job progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestionProgress"
 components:
   parameters:
     CellId:
@@ -450,6 +467,29 @@ components:
           anyOf:
             - type: integer
               format: uint64
+            - type: "null"
+    IngestionProgress:
+      type: object
+      required: [job_id, label, status, total_items, completed_items, failed_items, last_cell_id, message]
+      properties:
+        job_id: { type: integer, format: uint64 }
+        label: { type: string }
+        status: { type: string, enum: [queued, running, completed, failed] }
+        total_items:
+          anyOf:
+            - type: integer
+              format: uint64
+            - type: "null"
+        completed_items: { type: integer, format: uint64 }
+        failed_items: { type: integer, format: uint64 }
+        last_cell_id:
+          anyOf:
+            - type: integer
+              format: uint64
+            - type: "null"
+        message:
+          anyOf:
+            - type: string
             - type: "null"
     ErrorResponse:
       type: object

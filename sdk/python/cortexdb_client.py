@@ -12,11 +12,23 @@ class CortexDBClient:
     base_url: str = "http://127.0.0.1:8181"
     token: str | None = None
 
+    def health(self) -> dict[str, Any]:
+        return self._request("GET", "/v1/health", b"")
+
     def put_cell(self, cell_id: int, payload: str) -> dict[str, Any]:
         return self._request("POST", self._path("/v1/cell", cell_id=cell_id), payload.encode())
 
     def get_cell(self, cell_id: int) -> dict[str, Any]:
         return self._request("GET", self._path("/v1/cell", cell_id=cell_id), b"")
+
+    def tombstone_cell(self, cell_id: int) -> dict[str, Any]:
+        return self._request("DELETE", self._path("/v1/cell", cell_id=cell_id), b"")
+
+    def flush(self) -> dict[str, Any]:
+        return self._request("POST", "/v1/flush", b"")
+
+    def compact(self) -> dict[str, Any]:
+        return self._request("POST", "/v1/compact", b"")
 
     def search(self, scope: str, query: str, limit: int = 20) -> dict[str, Any]:
         path = self._path("/v1/search", scope=scope, mode="keyword", q=query, limit=limit)
@@ -51,6 +63,36 @@ class CortexDBClient:
 
     def remember(self, scope: str, statement: str) -> dict[str, Any]:
         return self._request("POST", self._path("/v1/remember", scope=scope), statement.encode())
+
+    def ingest_text(
+        self,
+        scope: str,
+        text: str,
+        source: str = "python_sdk",
+    ) -> dict[str, Any]:
+        path = self._path("/v1/ingest/text", scope=scope, source=source)
+        return self._request("POST", path, text.encode())
+
+    def ingest_json(
+        self,
+        scope: str,
+        document: str,
+        source: str = "python_sdk",
+    ) -> dict[str, Any]:
+        path = self._path("/v1/ingest/json", scope=scope, source=source)
+        return self._request("POST", path, document.encode())
+
+    def ingest_csv(
+        self,
+        scope: str,
+        document: str,
+        source: str = "python_sdk",
+    ) -> dict[str, Any]:
+        path = self._path("/v1/ingest/csv", scope=scope, source=source)
+        return self._request("POST", path, document.encode())
+
+    def ingestion_job(self, job_id: int) -> dict[str, Any]:
+        return self._request("GET", f"/v1/ingest/jobs/{job_id}", b"")
 
     def validate(self) -> dict[str, Any]:
         return self._request("GET", "/v1/validate", b"")

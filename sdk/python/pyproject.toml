@@ -1,10 +1,29 @@
 [project]
 name = "cortexdb-client"
 version = "0.1.0"
-description = "Minimal CortexDB HTTP client"
+description = "Core Alpha CortexDB HTTP client"
+readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "CortexDB" }]
 license = { text = "MIT" }
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/AubakirovArman/CortexDB"
+Repository = "https://github.com/AubakirovArman/CortexDB"
+Issues = "https://github.com/AubakirovArman/CortexDB/issues"
 
 [tool.setuptools]
 py-modules = ["cortexdb_client"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"

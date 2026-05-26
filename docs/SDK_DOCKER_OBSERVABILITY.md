@@ -14,20 +14,22 @@ docker run --rm -p 8181:8181 -v "$PWD/data:/data" cortexdb:core-alpha
 
 ## SDK Clients
 
-Minimal dependency-light HTTP clients live in `sdk/`:
+Dependency-light HTTP clients live in `sdk/`:
 
 - `sdk/python/cortexdb_client.py`
-- `sdk/typescript/cortexdb-client.ts`
+- `sdk/typescript/cortexdb-client.js` plus `cortexdb-client.d.ts`
 - `crates/cortex-sdk`
 
-They cover put, get, AQL, context, verify, remember, keyword search, vector
-search, stats, and validate. Packaging metadata is present in
+They cover health, put, get, tombstone, flush, compact, AQL, context, verify,
+remember, ingestion, keyword search, vector search, stats, and validate.
+Packaging metadata is present in
 `sdk/python/pyproject.toml`, `sdk/typescript/package.json`, and
 `crates/cortex-sdk/Cargo.toml`. Their APIs are usable for Core Alpha smoke
 integrations and may still receive additive changes.
 
-`sdk/publish/check.sh` runs the current publish preflight: Python bytecode
-compile plus `npm pack --dry-run` when npm is available.
+`sdk/publish/check.sh` runs the current publish preflight: Python bytecode,
+Python unit tests, Python wheel build, Rust SDK tests, `cargo package`, JS
+syntax check, and `npm pack --dry-run` when npm is available.
 
 ## Observability
 

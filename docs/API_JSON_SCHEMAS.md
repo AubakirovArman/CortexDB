@@ -246,7 +246,8 @@ Missing cells return:
 ## Ingestion
 
 `POST /v1/ingest/text`, `POST /v1/ingest/json`, and
-`POST /v1/ingest/csv`
+`POST /v1/ingest/csv`. Each route accepts optional `scope` and `source` query
+parameters.
 
 ```json
 {
@@ -258,3 +259,6 @@ Missing cells return:
 ```
 
 Empty inputs return zero counts and `first_cell_id: null`.
+
+`GET /v1/ingest/jobs/<job_id>` returns the persisted ingestion job progress
+object for jobs created by engine-side job workflows.

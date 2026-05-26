@@ -6,12 +6,28 @@ export class CortexDBClient {
     private readonly token?: string,
   ) {}
 
+  health(): Promise<JsonObject> {
+    return this.request("GET", "/v1/health");
+  }
+
   putCell(cellId: number, payload: string): Promise<JsonObject> {
     return this.request("POST", this.path("/v1/cell", { cell_id: cellId }), payload);
   }
 
   getCell(cellId: number): Promise<JsonObject> {
     return this.request("GET", this.path("/v1/cell", { cell_id: cellId }));
+  }
+
+  tombstoneCell(cellId: number): Promise<JsonObject> {
+    return this.request("DELETE", this.path("/v1/cell", { cell_id: cellId }));
+  }
+
+  flush(): Promise<JsonObject> {
+    return this.request("POST", "/v1/flush");
+  }
+
+  compact(): Promise<JsonObject> {
+    return this.request("POST", "/v1/compact");
   }
 
   search(scope: string, query: string, limit = 20): Promise<JsonObject> {
@@ -52,6 +68,31 @@ export class CortexDBClient {
 
   remember(scope: string, statement: string): Promise<JsonObject> {
     return this.request("POST", this.path("/v1/remember", { scope }), statement);
+  }
+
+  ingestText(scope: string, text: string, source = "typescript_sdk"): Promise<JsonObject> {
+    return this.request("POST", this.path("/v1/ingest/text", {
+      scope,
+      source,
+    }), text);
+  }
+
+  ingestJson(scope: string, document: string, source = "typescript_sdk"): Promise<JsonObject> {
+    return this.request("POST", this.path("/v1/ingest/json", {
+      scope,
+      source,
+    }), document);
+  }
+
+  ingestCsv(scope: string, document: string, source = "typescript_sdk"): Promise<JsonObject> {
+    return this.request("POST", this.path("/v1/ingest/csv", {
+      scope,
+      source,
+    }), document);
+  }
+
+  ingestionJob(jobId: number): Promise<JsonObject> {
+    return this.request("GET", `/v1/ingest/jobs/${jobId}`);
   }
 
   validate(): Promise<JsonObject> {

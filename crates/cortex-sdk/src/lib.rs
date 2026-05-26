@@ -2,6 +2,13 @@ use std::time::Duration;
 
 use thiserror::Error;
 
+mod http;
+
+use http::{parse_response, path};
+
+#[cfg(test)]
+mod tests;
+
 #[derive(Debug, Error)]
 pub enum SdkError {
     #[error("transport error: {0}")]
@@ -81,6 +88,14 @@ impl CortexDbClient {
         self.delete(&path("/v1/cell", &[("cell_id", &cell_id.to_string())]))
     }
 
+    pub fn flush(&self) -> SdkResult<serde_json::Value> {
+        self.post("/v1/flush", "")
+    }
+
+    pub fn compact(&self) -> SdkResult<serde_json::Value> {
+        self.post("/v1/compact", "")
+    }
+
     pub fn search_keyword(
         &self,
         scope: &str,
@@ -144,6 +159,46 @@ impl CortexDbClient {
         self.post(&path("/v1/remember", &[("scope", scope)]), statement)
     }
 
+    pub fn ingest_text(
+        &self,
+        scope: &str,
+        source: &str,
+        text: &str,
+    ) -> SdkResult<serde_json::Value> {
+        self.post(
+            &path("/v1/ingest/text", &[("scope", scope), ("source", source)]),
+            text,
+        )
+    }
+
+    pub fn ingest_json(
+        &self,
+        scope: &str,
+        source: &str,
+        document: &str,
+    ) -> SdkResult<serde_json::Value> {
+        self.post(
+            &path("/v1/ingest/json", &[("scope", scope), ("source", source)]),
+            document,
+        )
+    }
+
+    pub fn ingest_csv(
+        &self,
+        scope: &str,
+        source: &str,
+        document: &str,
+    ) -> SdkResult<serde_json::Value> {
+        self.post(
+            &path("/v1/ingest/csv", &[("scope", scope), ("source", source)]),
+            document,
+        )
+    }
+
+    pub fn ingestion_job(&self, job_id: u64) -> SdkResult<serde_json::Value> {
+        self.get(&format!("/v1/ingest/jobs/{job_id}"))
+    }
+
     fn get(&self, path: &str) -> SdkResult<serde_json::Value> {
         self.finish(self.authorized(self.agent.get(&self.url(path))).call())
     }
@@ -180,66 +235,5 @@ impl CortexDbClient {
 
     fn url(&self, path: &str) -> String {
         format!("{}{}", self.base_url, path)
-    }
-}
-
-fn parse_response(response: ureq::Response) -> SdkResult<serde_json::Value> {
-    Ok(serde_json::from_str(
-        &response.into_string().unwrap_or_default(),
-    )?)
-}
-
-fn path(base: &str, query: &[(&str, &str)]) -> String {
-    let encoded = query
-        .iter()
-        .map(|(key, value)| format!("{}={}", escape(key), escape(value)))
-        .collect::<Vec<_>>()
-        .join("&");
-    if encoded.is_empty() {
-        base.to_owned()
-    } else {
-        format!("{base}?{encoded}")
-    }
-}
-
-fn escape(value: &str) -> String {
-    let mut out = String::new();
-    for byte in value.bytes() {
-        match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
-                out.push(byte as char);
-            }
-            b' ' => out.push('+'),
-            _ => out.push_str(&format!("%{byte:02X}")),
-        }
-    }
-    out
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn path_encodes_search_query_contract() {
-        let value = path(
-            "/v1/search",
-            &[
-                ("scope", "project:investments"),
-                ("mode", "keyword"),
-                ("q", "solar budget"),
-                ("limit", "10"),
-            ],
-        );
-        assert_eq!(
-            value,
-            "/v1/search?scope=project%3Ainvestments&mode=keyword&q=solar+budget&limit=10"
-        );
-    }
-
-    #[test]
-    fn vector_algorithm_is_wire_stable() {
-        assert_eq!(VectorAlgorithm::Ann.as_str(), "ann");
-        assert_eq!(VectorAlgorithm::Exact.as_str(), "exact");
     }
 }

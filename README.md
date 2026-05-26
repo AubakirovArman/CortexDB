@@ -32,7 +32,7 @@ CortexDB is specifically engineered for autonomous AI agents. Unlike traditional
 - `crates/cortex-storage`: ACLOG WAL, manifest, segment, bitmap, lexical, vector, and experimental HNSW graph files.
 - `crates/cortex-core`: In-memory MVCC MemTable, read transactions, cell versions, and manifest primitives.
 - `crates/cortex-engine`: Single-node database loop, compaction, AQL-backed retrieve, memory TTL/decay, source trust, `VERIFY FACT` reports, ContextPack, exact vector search, and experimental HNSW foundations.
-- `crates/cortex-sdk`: Blocking Rust HTTP client for the versioned server API.
+- `crates/cortex-sdk`: Blocking Rust HTTP client for the versioned server API, with `cargo package` preflight coverage.
 - `crates/cortex-cli`: Command `cortexdb` for local operations and loading fixtures.
 - `crates/cortex-server`: Async JSON HTTP API built on Axum and Tokio with per-tenant `DatabaseActor` workers over the local blocking database core.
 
@@ -98,6 +98,13 @@ The built-in developer console is available at:
 
 ```text
 http://127.0.0.1:8181/dashboard
+```
+
+SDK publication preflight covers Python wheel building, npm package dry-runs,
+and Rust `cargo package`:
+
+```bash
+./sdk/publish/check.sh
 ```
 
 ---
