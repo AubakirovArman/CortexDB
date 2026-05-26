@@ -7,12 +7,13 @@ use axum::{
 };
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 use tower_http::limit::RequestBodyLimitLayer;
 
 use cortex_engine::Database;
 use responses::ErrorResponse;
 
+mod actor;
 mod aql;
 mod context;
 mod dashboard;
@@ -33,12 +34,12 @@ pub struct ServerOptions {
 #[derive(Clone)]
 pub struct AppState {
     root: PathBuf,
-    dbs: Arc<Mutex<BTreeMap<String, Arc<RwLock<Database>>>>>,
+    dbs: Arc<Mutex<BTreeMap<String, Arc<actor::DatabaseActor>>>>,
     options: Arc<ServerOptions>,
 }
 
 impl AppState {
-    pub fn get_db(&self, tenant: &str) -> std::io::Result<Arc<RwLock<Database>>> {
+    pub fn get_db(&self, tenant: &str) -> std::io::Result<Arc<actor::DatabaseActor>> {
         let mut dbs = self
             .dbs
             .lock()
@@ -52,9 +53,7 @@ impl AppState {
             self.root.join("realms").join(tenant)
         };
         std::fs::create_dir_all(&tenant_path)?;
-        let db = Database::open(&tenant_path)
-            .map_err(|error| std::io::Error::other(error.to_string()))?;
-        let db_shared = Arc::new(RwLock::new(db));
+        let db_shared = Arc::new(actor::DatabaseActor::open(&tenant_path)?);
         dbs.insert(tenant.to_owned(), db_shared.clone());
         Ok(db_shared)
     }
@@ -164,13 +163,13 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         format!("{path}?{query}")
     };
     let start = std::time::Instant::now();
-    let db_clone = db.clone();
+    let actor = db.clone();
     let method_clone = method.clone();
     let target_clone = target.clone();
     let body_clone = body_bytes.clone();
 
     let res = match tokio::task::spawn_blocking(move || {
-        route_shared(&db_clone, &method_clone, &target_clone, &body_clone)
+        actor.route(&method_clone, &target_clone, &body_clone)
     })
     .await
     {

@@ -13,6 +13,7 @@ every required row is green on `main`.
 | Formatting | `cargo fmt --check` passes. |
 | Lints | `RUSTFLAGS="-D warnings" cargo clippy --workspace --all-targets -- -D warnings` passes. |
 | File size audit | All checked-in Rust source and integration test files stay under 300 lines. |
+| SDK smoke | `./sdk/publish/check.sh` passes Python bytecode, Python SDK unit tests, and TypeScript package dry-run. |
 | Storage safety | WAL, segment, bitmap, lexical, and manifest corruption tests pass. |
 | Lifecycle safety | open, close, Drop, lock, and stale unlock tests pass. |
 | Repair safety | `Database::repair_best_effort` removes orphan temps and truncates only safe WAL tails. |
@@ -35,8 +36,8 @@ git push origin v0.1.0-core-alpha
 ## Latest Local Gate Evidence
 
 On 2026-05-26, `make alpha-check` passed locally. That covered workspace check,
-all-features tests, formatting, clippy with `-D warnings`, the core benchmark
-matrix, and the investment projects demo script.
+all-features tests, formatting, clippy with `-D warnings`, SDK smoke checks, the
+core benchmark matrix, and the investment projects demo script.
 
 ## Explicit Non-Goals For This Tag
 

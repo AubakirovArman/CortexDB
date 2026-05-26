@@ -15,8 +15,10 @@ Core Alpha is the first durable single-node CortexDB prototype.
 - CLI commands for put/get/tombstone/flush/compact/stats/validate/repair/context/AQL/search/verify/remember/ingest/unlock.
 - `clap`-backed CLI parser with structured help/version output.
 - HTTP API for health, put/get/tombstone/flush/compact/stats/validate/AQL/search/context/verify/remember/ingest.
+- Server requests route through per-tenant `DatabaseActor` workers.
 - Typed serde JSON response structs for server API payloads.
 - OpenAPI 3.1 contract in `docs/openapi.yaml`.
+- Python and TypeScript SDK clients cover the real keyword/vector search API contract.
 - Empty ingestion safety for text, JSON, and CSV inputs.
 - Crash, restart, corruption, lifecycle, repair, AQL retrieve, and storage validation tests.
 
@@ -43,5 +45,5 @@ RUSTFLAGS="-D warnings" cargo clippy --workspace --all-targets -- -D warnings
 and after the GitHub Actions `Rust` workflow is green on stable and beta.
 
 Latest local evidence: `make alpha-check` passed on 2026-05-26, including
-workspace check, all-features tests, formatting, clippy with `-D warnings`, the
-core benchmark matrix, and the investment projects demo.
+workspace check, all-features tests, formatting, clippy with `-D warnings`, SDK
+smoke checks, the core benchmark matrix, and the investment projects demo.

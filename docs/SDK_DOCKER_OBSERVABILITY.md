@@ -12,16 +12,18 @@ docker build -t cortexdb:core-alpha .
 docker run --rm -p 8181:8181 -v "$PWD/data:/data" cortexdb:core-alpha
 ```
 
-## SDK Sketches
+## SDK Clients
 
-Minimal HTTP clients live in `sdk/`:
+Minimal dependency-light HTTP clients live in `sdk/`:
 
 - `sdk/python/cortexdb_client.py`
 - `sdk/typescript/cortexdb-client.ts`
 
-They cover put, get, search, stats, and validate. Packaging metadata is present
-in `sdk/python/pyproject.toml` and `sdk/typescript/package.json`. Their APIs are
-not frozen.
+They cover put, get, AQL, context, verify, remember, keyword search, vector
+search, stats, and validate. Packaging metadata is present in
+`sdk/python/pyproject.toml` and `sdk/typescript/package.json`. Their APIs are
+usable for Core Alpha smoke integrations, but not frozen as long-term stable
+SDK contracts.
 
 `sdk/publish/check.sh` runs the current publish preflight: Python bytecode
 compile plus `npm pack --dry-run` when npm is available.

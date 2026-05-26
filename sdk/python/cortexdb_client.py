@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import urllib.parse
 import urllib.request
+from typing import Any
 from dataclasses import dataclass
 
 
@@ -10,32 +12,42 @@ class CortexDBClient:
     base_url: str = "http://127.0.0.1:8181"
     token: str | None = None
 
-    def put_cell(self, cell_id: int, payload: str) -> dict:
-        return self._request("POST", f"/v1/cell?cell_id={cell_id}", payload.encode())
+    def put_cell(self, cell_id: int, payload: str) -> dict[str, Any]:
+        return self._request("POST", self._path("/v1/cell", cell_id=cell_id), payload.encode())
 
-    def get_cell(self, cell_id: int) -> dict:
-        return self._request("GET", f"/v1/cell?cell_id={cell_id}", b"")
+    def get_cell(self, cell_id: int) -> dict[str, Any]:
+        return self._request("GET", self._path("/v1/cell", cell_id=cell_id), b"")
 
-    def search(self, scope: str, query: str, limit: int = 20) -> dict:
-        body = json.dumps({"scope": scope, "query": query, "limit": limit}).encode()
-        return self._request("POST", "/v1/search", body)
+    def search(self, scope: str, query: str, limit: int = 20) -> dict[str, Any]:
+        path = self._path("/v1/search", scope=scope, mode="keyword", q=query, limit=limit)
+        return self._request("POST", path, b"")
 
-    def context(self, scope: str, aql: str) -> dict:
-        return self._request("POST", f"/v1/context?scope={scope}", aql.encode())
+    def search_vector(
+        self, scope: str, vector: list[int] | tuple[int, ...], limit: int = 20
+    ) -> dict[str, Any]:
+        literal = ",".join(str(value) for value in vector)
+        path = self._path("/v1/search", scope=scope, mode="vector", vector=literal, limit=limit)
+        return self._request("POST", path, b"")
 
-    def verify(self, scope: str, aql: str) -> dict:
-        return self._request("POST", f"/v1/verify?scope={scope}", aql.encode())
+    def aql(self, scope: str, statement: str) -> dict[str, Any]:
+        return self._request("POST", self._path("/v1/aql", scope=scope), statement.encode())
 
-    def remember(self, scope: str, aql: str) -> dict:
-        return self._request("POST", f"/v1/remember?scope={scope}", aql.encode())
+    def context(self, scope: str, statement: str) -> dict[str, Any]:
+        return self._request("POST", self._path("/v1/context", scope=scope), statement.encode())
 
-    def validate(self) -> dict:
+    def verify(self, scope: str, statement: str) -> dict[str, Any]:
+        return self._request("POST", self._path("/v1/verify", scope=scope), statement.encode())
+
+    def remember(self, scope: str, statement: str) -> dict[str, Any]:
+        return self._request("POST", self._path("/v1/remember", scope=scope), statement.encode())
+
+    def validate(self) -> dict[str, Any]:
         return self._request("GET", "/v1/validate", b"")
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, Any]:
         return self._request("GET", "/v1/stats", b"")
 
-    def _request(self, method: str, path: str, body: bytes) -> dict:
+    def _request(self, method: str, path: str, body: bytes) -> dict[str, Any]:
         headers = {"content-type": "application/json"}
         if self.token:
             headers["authorization"] = f"Bearer {self.token}"
@@ -44,3 +56,8 @@ class CortexDBClient:
         )
         with urllib.request.urlopen(request, timeout=10) as response:
             return json.loads(response.read().decode())
+
+    @staticmethod
+    def _path(path: str, **query: object) -> str:
+        encoded = urllib.parse.urlencode({key: str(value) for key, value in query.items()})
+        return f"{path}?{encoded}" if encoded else path

@@ -7,10 +7,10 @@ CortexDB has successfully transitioned from an early database loop prototype int
 ## 1. What is Fully Completed & Stable (v0.1.0-core-alpha candidate)
 
 - **Durable Single-Node Storage:** Strict Write-Ahead Log (WAL) with group commits, MVCC MemTable, and incremental compaction.
-- **Asynchronous Network Surface:** Async HTTP server built on Axum and Tokio. Blocking DB transactions run through `tokio::task::spawn_blocking`; the database core itself remains local and blocking.
+- **Asynchronous Network Surface:** Async HTTP server built on Axum and Tokio. Blocking DB transactions run through per-tenant `DatabaseActor` workers behind `tokio::task::spawn_blocking`; the database core itself remains local and blocking.
 - **Heuristic Fact Verification (`VERIFY FACT`):** Deterministic numeric and citation mismatch parser that runs without LLM calls. API display formatting may scale large integer values for readability.
 - **Context Pack Compiler:** Budgeted, scored, and deduplicated Context Packs generated directly from AQL queries.
-- **Ecosystem:** Python and TypeScript SDK client foundations, local dataset fixture loaders, and complete automated verification gates (`make alpha-check`).
+- **Ecosystem:** Python and TypeScript SDK clients, local dataset fixture loaders, and complete automated verification gates (`make alpha-check`).
 
 ---
 

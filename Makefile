@@ -11,6 +11,7 @@ alpha-check:
 	RUSTFLAGS="-D warnings" cargo test --workspace --all-features
 	cargo fmt --check
 	cargo clippy --workspace --all-targets -- -D warnings
+	./sdk/publish/check.sh
 	cargo bench -p cortex-engine --bench core_baseline
 	./examples/demo/investment_projects/run.sh
 
