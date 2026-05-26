@@ -134,6 +134,8 @@ fn report_response(report: AnnSearchReport) -> AnnSearchReportResponse {
         allowed_candidates: report.allowed_candidates,
         graph_nodes: report.graph_nodes,
         returned_candidates: report.returned_candidates,
+        recall_q16: report.recall_q16,
+        min_recall_q16: report.min_recall_q16,
     }
 }
 

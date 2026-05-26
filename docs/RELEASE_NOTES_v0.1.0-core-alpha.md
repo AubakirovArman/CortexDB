@@ -39,6 +39,8 @@ Core Alpha is the first durable single-node CortexDB prototype.
   responses for package-readiness checks.
 - ANN search now has a `low_recall` exact fallback guard while evaluation still
   measures raw HNSW top-k recall.
+- ANN reports expose `recall_q16` and `min_recall_q16` when the top-k recall
+  guard runs, so clients can inspect HNSW quality decisions.
 - Replication consensus state now enforces current-term commit rules and
   majority match-index advancement.
 - Empty ingestion safety for text, JSON, and CSV inputs.

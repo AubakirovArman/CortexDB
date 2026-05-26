@@ -15,10 +15,14 @@ class AnnSearchReport:
     allowed_candidates: int
     graph_nodes: int
     returned_candidates: int
+    recall_q16: int | None
+    min_recall_q16: int | None
 
     @classmethod
     def from_json(cls, value: dict[str, Any]) -> "AnnSearchReport":
         reason = value.get("fallback_reason")
+        recall = value.get("recall_q16")
+        minimum = value.get("min_recall_q16")
         return cls(
             path=str(value["path"]),
             fallback_reason=str(reason) if reason is not None else None,
@@ -26,6 +30,8 @@ class AnnSearchReport:
             allowed_candidates=int(value["allowed_candidates"]),
             graph_nodes=int(value["graph_nodes"]),
             returned_candidates=int(value["returned_candidates"]),
+            recall_q16=int(recall) if recall is not None else None,
+            min_recall_q16=int(minimum) if minimum is not None else None,
         )
 
 

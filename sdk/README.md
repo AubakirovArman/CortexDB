@@ -15,6 +15,8 @@ Search clients expose a typed response shape with `search_mode`, `ann_report`,
 and ranked `results` so ANN fallback behavior is visible to callers.
 ANN evaluation clients expose the `/v1/search/ann-evaluate` contract as a typed
 response with exact top-k, ANN top-k, overlap, and fixed-point `recall_q16`.
+`ann_report` also exposes `recall_q16` and `min_recall_q16` when the ANN recall
+guard evaluates a persisted HNSW graph.
 `publish/check.sh` validates Python bytecode/tests/wheel packaging, Rust tests
 and `cargo package`, SDK version consistency, ANN evaluation surface presence,
 and npm package dry-runs when npm is installed.

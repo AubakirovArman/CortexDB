@@ -425,7 +425,7 @@ components:
               payload: { type: string }
     AnnSearchReport:
       type: object
-      required: [path, fallback_reason, requested_limit, allowed_candidates, graph_nodes, returned_candidates]
+      required: [path, fallback_reason, requested_limit, allowed_candidates, graph_nodes, returned_candidates, recall_q16, min_recall_q16]
       properties:
         path:
           type: string
@@ -439,6 +439,18 @@ components:
         allowed_candidates: { type: integer }
         graph_nodes: { type: integer }
         returned_candidates: { type: integer }
+        recall_q16:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 65535
+            - type: "null"
+        min_recall_q16:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 65535
+            - type: "null"
     AnnEvaluationResponse:
       type: object
       required: [available, reason, ann_report, exact_top_k, ann_top_k, overlap_count, recall_q16]

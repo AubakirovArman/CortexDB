@@ -44,7 +44,7 @@ impl AnnFallbackReason {
     }
 }
 
-const MIN_ANN_RECALL_Q16: u16 = 65_535;
+pub const MIN_ANN_RECALL_Q16: u16 = 65_535;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct AnnSearchReport {
@@ -54,6 +54,8 @@ pub struct AnnSearchReport {
     pub allowed_candidates: usize,
     pub graph_nodes: usize,
     pub returned_candidates: usize,
+    pub recall_q16: Option<u16>,
+    pub min_recall_q16: Option<u16>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -115,13 +117,16 @@ pub fn search_persisted_ann(
         .iter()
         .filter(|candidate| exact_set.contains(&candidate.cell_id))
         .count();
-    if recall_q16(overlap, exact_results.len()) < MIN_ANN_RECALL_Q16 {
+    let recall = recall_q16(overlap, exact_results.len());
+    if recall < MIN_ANN_RECALL_Q16 {
         return exact_from_results(
             exact_results,
             limit,
             available,
             graph_nodes,
             AnnFallbackReason::LowRecall,
+            Some(recall),
+            Some(MIN_ANN_RECALL_Q16),
         );
     }
     let returned = ann.len();
@@ -134,6 +139,8 @@ pub fn search_persisted_ann(
             allowed_candidates: available,
             graph_nodes,
             returned_candidates: returned,
+            recall_q16: Some(recall),
+            min_recall_q16: Some(MIN_ANN_RECALL_Q16),
         },
     }
 }
@@ -158,12 +165,20 @@ pub fn evaluate_persisted_ann(
                 allowed_candidates: available,
                 graph_nodes,
                 returned_candidates: results.len(),
+                recall_q16: None,
+                min_recall_q16: None,
             },
             results,
         },
-        Err(reason) => {
-            exact_from_results(exact_results.clone(), limit, available, graph_nodes, reason)
-        }
+        Err(reason) => exact_from_results(
+            exact_results.clone(),
+            limit,
+            available,
+            graph_nodes,
+            reason,
+            None,
+            None,
+        ),
     };
     let exact_top_k = exact_results
         .iter()
@@ -179,12 +194,18 @@ pub fn evaluate_persisted_ann(
         .iter()
         .filter(|candidate| exact_set.contains(candidate))
         .count();
+    let recall = recall_q16(overlap_count, exact_results.len());
+    let mut search = ann_outcome.report;
+    if search.path == AnnSearchPath::HnswGraph {
+        search.recall_q16 = Some(recall);
+        search.min_recall_q16 = Some(MIN_ANN_RECALL_Q16);
+    }
     AnnEvaluationReport {
-        search: ann_outcome.report,
+        search,
         exact_top_k,
         ann_top_k,
         overlap_count,
-        recall_q16: recall_q16(overlap_count, exact_results.len()),
+        recall_q16: recall,
     }
 }
 
@@ -221,7 +242,7 @@ fn exact(
     reason: AnnFallbackReason,
 ) -> AnnSearchOutcome {
     let results = search_persisted_vectors(vectors, query, allowed, limit);
-    exact_from_results(results, limit, available, graph_nodes, reason)
+    exact_from_results(results, limit, available, graph_nodes, reason, None, None)
 }
 
 fn exact_from_results(
@@ -230,6 +251,8 @@ fn exact_from_results(
     available: usize,
     graph_nodes: usize,
     reason: AnnFallbackReason,
+    recall_q16: Option<u16>,
+    min_recall_q16: Option<u16>,
 ) -> AnnSearchOutcome {
     let returned = results.len();
     AnnSearchOutcome {
@@ -241,6 +264,8 @@ fn exact_from_results(
             allowed_candidates: available,
             graph_nodes,
             returned_candidates: returned,
+            recall_q16,
+            min_recall_q16,
         },
     }
 }

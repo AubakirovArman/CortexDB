@@ -17,6 +17,8 @@ export interface AnnSearchReport {
   allowed_candidates: number;
   graph_nodes: number;
   returned_candidates: number;
+  recall_q16: number | null;
+  min_recall_q16: number | null;
 }
 
 export interface SearchResult {

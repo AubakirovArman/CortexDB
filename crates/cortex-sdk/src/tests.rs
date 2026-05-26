@@ -50,7 +50,9 @@ fn typed_search_response_decodes_ann_report_contract() {
             "requested_limit": 20,
             "allowed_candidates": 1,
             "graph_nodes": 0,
-            "returned_candidates": 1
+            "returned_candidates": 1,
+            "recall_q16": null,
+            "min_recall_q16": null
         },
         "results": [{
             "cell_id": 1,
@@ -71,6 +73,8 @@ fn typed_search_response_decodes_ann_report_contract() {
         report.fallback_reason.as_deref(),
         Some("no_persisted_segments")
     );
+    assert_eq!(report.recall_q16, None);
+    assert_eq!(report.min_recall_q16, None);
 }
 
 #[test]
@@ -96,7 +100,9 @@ fn typed_ann_evaluation_response_decodes_contract() {
             "requested_limit": 20,
             "allowed_candidates": 2,
             "graph_nodes": 2,
-            "returned_candidates": 2
+            "returned_candidates": 2,
+            "recall_q16": 65535,
+            "min_recall_q16": 65535
         },
         "exact_top_k": [2, 1],
         "ann_top_k": [2, 1],
@@ -110,8 +116,8 @@ fn typed_ann_evaluation_response_decodes_contract() {
     assert!(response.available);
     assert_eq!(response.recall_q16, 65535);
     assert_eq!(response.exact_top_k, vec![2, 1]);
-    assert_eq!(
-        response.ann_report.expect("report").path.as_str(),
-        "hnsw_graph"
-    );
+    let report = response.ann_report.expect("report");
+    assert_eq!(report.path.as_str(), "hnsw_graph");
+    assert_eq!(report.recall_q16, Some(65535));
+    assert_eq!(report.min_recall_q16, Some(65535));
 }

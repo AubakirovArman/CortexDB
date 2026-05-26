@@ -165,12 +165,16 @@ For `search_mode: "vector_ann"`, `ann_report` is populated:
   "requested_limit": 20,
   "allowed_candidates": 1,
   "graph_nodes": 0,
-  "returned_candidates": 1
+  "returned_candidates": 1,
+  "recall_q16": null,
+  "min_recall_q16": null
 }
 ```
 
 `fallback_reason` may also be `low_recall` when the HNSW graph returns enough
-candidates but fails the exact top-k recall guard.
+candidates but fails the exact top-k recall guard. In that case `recall_q16`
+contains the observed top-k recall and `min_recall_q16` contains the guard
+threshold.
 
 ## ANN Evaluation
 
@@ -186,7 +190,9 @@ candidates but fails the exact top-k recall guard.
     "requested_limit": 20,
     "allowed_candidates": 2,
     "graph_nodes": 2,
-    "returned_candidates": 2
+    "returned_candidates": 2,
+    "recall_q16": 65535,
+    "min_recall_q16": 65535
   },
   "exact_top_k": [2, 1],
   "ann_top_k": [2, 1],

@@ -20,6 +20,8 @@ grep -q 'def evaluate_ann_response' "$ROOT/python/cortexdb_client.py"
 grep -q 'interface AnnEvaluationResponse' "$ROOT/typescript/cortexdb-client.d.ts"
 grep -q 'evaluateAnn(scope' "$ROOT/typescript/cortexdb-client.d.ts"
 grep -q '"low_recall"' "$ROOT/typescript/cortexdb-client.d.ts"
+grep -q 'min_recall_q16' "$ROOT/python/cortexdb_client.py"
+grep -q 'min_recall_q16' "$ROOT/typescript/cortexdb-client.d.ts"
 
 python3 -m py_compile "$ROOT/python/cortexdb_client.py"
 PYTHONPATH="$ROOT/python" python3 -m unittest discover "$ROOT/python"

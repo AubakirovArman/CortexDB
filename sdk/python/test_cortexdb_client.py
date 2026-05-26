@@ -42,6 +42,8 @@ class CortexDBClientPathTests(unittest.TestCase):
                     "allowed_candidates": 1,
                     "graph_nodes": 0,
                     "returned_candidates": 1,
+                    "recall_q16": None,
+                    "min_recall_q16": None,
                 },
                 "results": [
                     {
@@ -59,6 +61,8 @@ class CortexDBClientPathTests(unittest.TestCase):
         self.assertEqual(response.results[0].cell_id, 1)
         self.assertIsNotNone(response.ann_report)
         self.assertEqual(response.ann_report.fallback_reason, "no_persisted_segments")
+        self.assertIsNone(response.ann_report.recall_q16)
+        self.assertIsNone(response.ann_report.min_recall_q16)
 
     def test_ann_evaluation_path_matches_http_api_contract(self) -> None:
         path = CortexDBClient._path(
@@ -84,6 +88,8 @@ class CortexDBClientPathTests(unittest.TestCase):
                     "allowed_candidates": 2,
                     "graph_nodes": 2,
                     "returned_candidates": 2,
+                    "recall_q16": 65535,
+                    "min_recall_q16": 65535,
                 },
                 "exact_top_k": [2, 1],
                 "ann_top_k": [2, 1],
@@ -96,6 +102,8 @@ class CortexDBClientPathTests(unittest.TestCase):
         self.assertEqual(response.exact_top_k, (2, 1))
         self.assertIsNotNone(response.ann_report)
         self.assertEqual(response.ann_report.path, "hnsw_graph")
+        self.assertEqual(response.ann_report.recall_q16, 65535)
+        self.assertEqual(response.ann_report.min_recall_q16, 65535)
 
     def test_ingest_path_matches_http_api_contract(self) -> None:
         path = CortexDBClient._path(

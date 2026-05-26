@@ -14,6 +14,7 @@ fn v1_ann_evaluate_reports_recall_for_checkpointed_vectors() {
 
     assert!(response.contains(r#""available":true"#));
     assert!(response.contains(r#""recall_q16":65535"#));
+    assert!(response.contains(r#""min_recall_q16":65535"#));
     assert!(response.contains(r#""exact_top_k":[2,1]"#));
     assert!(response.contains(r#""ann_top_k":[2,1]"#));
 }

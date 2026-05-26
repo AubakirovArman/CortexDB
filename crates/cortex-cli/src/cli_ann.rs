@@ -27,7 +27,7 @@ pub fn search_vector_eval(
 
 fn format_ann_evaluation(report: &AnnEvaluationReport) -> String {
     format!(
-        "ann_evaluation available=true path={} fallback_reason={} recall_q16={} overlap_count={} exact_top_k={:?} ann_top_k={:?}",
+        "ann_evaluation available=true path={} fallback_reason={} recall_q16={} min_recall_q16={} overlap_count={} exact_top_k={:?} ann_top_k={:?}",
         report.search.path.as_str(),
         report
             .search
@@ -35,6 +35,11 @@ fn format_ann_evaluation(report: &AnnEvaluationReport) -> String {
             .map(|reason| reason.as_str())
             .unwrap_or("null"),
         report.recall_q16,
+        report
+            .search
+            .min_recall_q16
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "null".to_owned()),
         report.overlap_count,
         report.exact_top_k,
         report.ann_top_k
@@ -53,6 +58,8 @@ fn ann_evaluation_json(report: Option<AnnEvaluationReport>) -> String {
                 "allowed_candidates": report.search.allowed_candidates,
                 "graph_nodes": report.search.graph_nodes,
                 "returned_candidates": report.search.returned_candidates,
+                "recall_q16": report.search.recall_q16,
+                "min_recall_q16": report.search.min_recall_q16,
             },
             "exact_top_k": report.exact_top_k,
             "ann_top_k": report.ann_top_k,

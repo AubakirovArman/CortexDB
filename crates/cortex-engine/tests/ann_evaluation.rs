@@ -35,6 +35,8 @@ fn database_ann_evaluation_reports_recall_against_exact_baseline() {
     assert_eq!(report.ann_top_k, vec![2, 1]);
     assert_eq!(report.overlap_count, 2);
     assert_eq!(report.recall_q16, 65_535);
+    assert_eq!(report.search.recall_q16, Some(65_535));
+    assert_eq!(report.search.min_recall_q16, Some(65_535));
 }
 
 #[test]

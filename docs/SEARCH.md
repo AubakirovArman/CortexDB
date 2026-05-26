@@ -70,7 +70,9 @@ vector search. For `algorithm=ann`, it records the actual path:
   "requested_limit": 20,
   "allowed_candidates": 1,
   "graph_nodes": 0,
-  "returned_candidates": 1
+  "returned_candidates": 1,
+  "recall_q16": null,
+  "min_recall_q16": null
 }
 ```
 
@@ -78,9 +80,10 @@ vector search. For `algorithm=ann`, it records the actual path:
 when the persisted HNSW graph is used, or one of `empty_graph`,
 `invalid_graph`, `insufficient_results`, `low_recall`,
 `no_persisted_segments`, or `uncheckpointed_changes` when exact scan is used
-instead. `low_recall` is emitted when HNSW returns enough candidates but fails
-the exact top-k recall guard, preserving result correctness while ANN quality is
-still being tuned.
+instead. `recall_q16` and `min_recall_q16` are populated when the exact top-k
+recall guard runs. `low_recall` is emitted when HNSW returns enough candidates
+but fails that guard, preserving result correctness while ANN quality is still
+being tuned.
 
 For ANN quality work, `Database::evaluate_vector_ann` compares the persisted
 HNSW path with exact `.acv` vector scan for the same `AgentView`, query vector,

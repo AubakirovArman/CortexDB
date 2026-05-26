@@ -75,6 +75,8 @@ fn low_recall_graph_falls_back_to_exact() {
         outcome.report.fallback_reason,
         Some(AnnFallbackReason::LowRecall)
     );
+    assert_eq!(outcome.report.recall_q16, Some(0));
+    assert_eq!(outcome.report.min_recall_q16, Some(MIN_ANN_RECALL_Q16));
 }
 
 #[test]
@@ -93,6 +95,8 @@ fn evaluation_reports_exact_overlap_and_recall() {
     assert_eq!(report.ann_top_k, vec![2, 3]);
     assert_eq!(report.overlap_count, 2);
     assert_eq!(report.recall_q16, 65_535);
+    assert_eq!(report.search.recall_q16, Some(65_535));
+    assert_eq!(report.search.min_recall_q16, Some(MIN_ANN_RECALL_Q16));
 }
 
 #[test]
