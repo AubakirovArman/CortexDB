@@ -1,9 +1,11 @@
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 
+mod access;
 mod analyzer;
 mod ann;
 mod database;
+mod evaluation;
 mod hnsw;
 mod hnsw_policy;
 mod persisted;
@@ -11,7 +13,7 @@ mod tokenizer;
 pub(crate) mod vector;
 
 pub use analyzer::{mean_reciprocal_rank_q16, Language, TextAnalyzer};
-pub use ann::{AnnFallbackReason, AnnSearchPath, AnnSearchReport};
+pub use ann::{AnnEvaluationReport, AnnFallbackReason, AnnSearchPath, AnnSearchReport};
 pub use database::{DatabaseSearchOutcome, DatabaseSearchResult, SearchLimit};
 pub use hnsw::HnswIndex;
 pub use hnsw_policy::{HnswMaintenancePolicy, HnswMaintenanceReport, HnswRebuildPolicy};

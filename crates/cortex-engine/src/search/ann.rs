@@ -58,6 +58,15 @@ pub struct AnnSearchOutcome {
     pub report: AnnSearchReport,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AnnEvaluationReport {
+    pub search: AnnSearchReport,
+    pub exact_top_k: Vec<u32>,
+    pub ann_top_k: Vec<u32>,
+    pub overlap_count: usize,
+    pub recall_q16: u16,
+}
+
 pub fn search_persisted_ann(
     vectors: &BTreeMap<u32, Vec<i16>>,
     graph: &HnswGraphIndex,
@@ -119,6 +128,38 @@ pub fn search_persisted_ann(
     }
 }
 
+pub fn evaluate_persisted_ann(
+    vectors: &BTreeMap<u32, Vec<i16>>,
+    graph: &HnswGraphIndex,
+    query: &[i16],
+    allowed: &BTreeSet<u32>,
+    limit: usize,
+) -> AnnEvaluationReport {
+    let exact_results = search_persisted_vectors(vectors, query, allowed, limit);
+    let ann_outcome = search_persisted_ann(vectors, graph, query, allowed, limit);
+    let exact_top_k = exact_results
+        .iter()
+        .map(|candidate| candidate.cell_id)
+        .collect::<Vec<_>>();
+    let ann_top_k = ann_outcome
+        .results
+        .iter()
+        .map(|candidate| candidate.cell_id)
+        .collect::<Vec<_>>();
+    let exact_set = exact_top_k.iter().copied().collect::<BTreeSet<_>>();
+    let overlap_count = ann_top_k
+        .iter()
+        .filter(|candidate| exact_set.contains(candidate))
+        .count();
+    AnnEvaluationReport {
+        search: ann_outcome.report,
+        exact_top_k,
+        ann_top_k,
+        overlap_count,
+        recall_q16: recall_q16(overlap_count, exact_results.len()),
+    }
+}
+
 fn exact(
     vectors: &BTreeMap<u32, Vec<i16>>,
     query: &[i16],
@@ -141,6 +182,13 @@ fn exact(
             returned_candidates: returned,
         },
     }
+}
+
+fn recall_q16(overlap_count: usize, expected_count: usize) -> u16 {
+    if expected_count == 0 {
+        return 65_535;
+    }
+    ((overlap_count as u64 * 65_535) / expected_count as u64) as u16
 }
 
 #[cfg(test)]
@@ -202,5 +250,38 @@ mod tests {
             outcome.report.fallback_reason,
             Some(AnnFallbackReason::InsufficientResults)
         );
+    }
+
+    #[test]
+    fn evaluation_reports_exact_overlap_and_recall() {
+        let report = evaluate_persisted_ann(
+            &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10]), (3, vec![2, 8])]),
+            &HnswGraphIndex {
+                links: BTreeMap::from([(1, BTreeSet::from([2])), (2, BTreeSet::from([3]))]),
+            },
+            &[0, 10],
+            &BTreeSet::from([1, 2, 3]),
+            2,
+        );
+
+        assert_eq!(report.exact_top_k, vec![2, 3]);
+        assert_eq!(report.ann_top_k, vec![2, 3]);
+        assert_eq!(report.overlap_count, 2);
+        assert_eq!(report.recall_q16, 65_535);
+    }
+
+    #[test]
+    fn evaluation_treats_empty_exact_set_as_full_recall() {
+        let report = evaluate_persisted_ann(
+            &BTreeMap::from([(1, vec![10, 0])]),
+            &HnswGraphIndex::default(),
+            &[0, 10],
+            &BTreeSet::new(),
+            2,
+        );
+
+        assert!(report.exact_top_k.is_empty());
+        assert_eq!(report.overlap_count, 0);
+        assert_eq!(report.recall_q16, 65_535);
     }
 }

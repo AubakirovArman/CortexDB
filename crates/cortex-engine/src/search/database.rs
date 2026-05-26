@@ -1,14 +1,13 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 use cortex_aql::AgentView;
 use cortex_core::CellId;
-use cortex_storage::indexes::BitmapIndex;
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
-use crate::query::metadata::scope_handle;
 use crate::query::{scope_id, CellMetadata};
 
+use super::access::allowed_candidates;
 use super::ann::{search_persisted_ann, AnnFallbackReason, AnnSearchPath, AnnSearchReport};
 use super::persisted::{search_persisted_lexical, search_persisted_vectors};
 use super::vector::vector_from_payload;
@@ -272,14 +271,4 @@ fn snapshot_ann_report(
         graph_nodes: 0,
         returned_candidates,
     })
-}
-
-fn allowed_candidates(bitmap: &BitmapIndex, view: &AgentView) -> BTreeSet<u32> {
-    let mut allowed = BTreeSet::new();
-    for scope in &view.readable_scopes {
-        if let Some(candidates) = bitmap.bitmaps.get(&scope_handle(*scope).0) {
-            allowed.extend(candidates.iter().copied());
-        }
-    }
-    allowed
 }

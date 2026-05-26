@@ -77,7 +77,15 @@ when the persisted HNSW graph is used, or one of `empty_graph`,
 `invalid_graph`, `insufficient_results`, `no_persisted_segments`, or
 `uncheckpointed_changes` when exact scan is used instead.
 
+For ANN quality work, `Database::evaluate_vector_ann` compares the persisted
+HNSW path with exact `.acv` vector scan for the same `AgentView`, query vector,
+and limit. It returns an `AnnEvaluationReport` with exact top-k ids, ANN top-k
+ids, overlap count, and fixed-point `recall_q16`. The evaluator only runs when
+there is a persisted checkpoint and no newer WAL tail, so the exact and ANN
+baselines are comparing the same durable snapshot.
+
 ## Not Yet
 
 - Full dictionary-grade lemmatization packs.
-- Production HNSW tuning beyond the current deterministic maintenance hook.
+- Production HNSW tuning beyond the current deterministic maintenance and
+  exact-baseline recall evaluation hooks.
