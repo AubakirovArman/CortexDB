@@ -106,7 +106,22 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
     } else {
         format!("{path}?{query}")
     };
-    match route_shared(&state.db, &method, &target, &body_bytes) {
+
+    let db_clone = state.db.clone();
+    let method_clone = method.clone();
+    let target_clone = target.clone();
+    let body_clone = body_bytes.clone();
+
+    let res = match tokio::task::spawn_blocking(move || {
+        route_shared(&db_clone, &method_clone, &target_clone, &body_clone)
+    })
+    .await
+    {
+        Ok(r) => r,
+        Err(_) => Err("internal server error".to_owned()),
+    };
+
+    match res {
         Ok(body_str) => {
             if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_str) {
                 (StatusCode::OK, Json(json_val)).into_response()
