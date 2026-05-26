@@ -238,7 +238,26 @@ pub(crate) fn context_pack_to_json(pack: &ContextPack) -> String {
     )
 }
 
-fn extract_numeric_conflict(_fact: &str, payload: &[u8]) -> Option<String> {
+fn format_scale_currency(value_str: &str, currency: &str, fact: &str) -> String {
+    if let Ok(val) = value_str.parse::<u64>() {
+        if val >= 1_000_000_000 && val % 100_000_000 == 0 {
+            let scaled = val as f64 / 1_000_000_000.0;
+            return format!("{}B {}", scaled, currency);
+        } else if val >= 1_000_000 && val % 100_000 == 0 {
+            let scaled = val as f64 / 1_000_000.0;
+            return format!("{}M {}", scaled, currency);
+        }
+    }
+    if fact.contains(&format!("{}B", value_str)) {
+        return format!("{}B {}", value_str, currency);
+    }
+    if fact.contains(&format!("{}M", value_str)) {
+        return format!("{}M {}", value_str, currency);
+    }
+    format!("{} {}", value_str, currency)
+}
+
+fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<String> {
     let text = String::from_utf8_lossy(payload);
     let mut metric = "metric".to_owned();
     let mut currency = "KZT".to_owned();
@@ -253,13 +272,32 @@ fn extract_numeric_conflict(_fact: &str, payload: &[u8]) -> Option<String> {
         }
     }
 
-    let formatted_right = if value == "1400000000" {
-        "1.4B KZT".to_owned()
-    } else {
-        format!("{} {}", value, currency)
-    };
+    let formatted_right = format_scale_currency(&value, &currency, fact);
 
-    let formatted_left = "1.2B KZT".to_owned();
+    let words: Vec<&str> = fact.split_whitespace().collect();
+    let mut formatted_left = "unknown".to_owned();
+    for (i, word) in words.iter().enumerate() {
+        let clean_word = word.trim_matches(|c: char| !c.is_alphanumeric() && c != '.');
+        if clean_word
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_digit())
+        {
+            if i + 1 < words.len() {
+                let next_word = words[i + 1].trim_matches(|c: char| !c.is_alphabetic());
+                if !next_word.is_empty() && next_word.len() <= 4 {
+                    formatted_left = format_scale_currency(clean_word, next_word, fact);
+                    break;
+                }
+            }
+            formatted_left = format_scale_currency(clean_word, &currency, fact);
+            break;
+        }
+    }
+
+    if formatted_left == "unknown" {
+        return None;
+    }
 
     Some(format!(
         r#"{{"metric":"{}","left":"{}","right":"{}"}}"#,
