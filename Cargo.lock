@@ -204,7 +204,7 @@ checksum = "cc14f565cf027a105f7a44ccf9e5b424348421a1d8952a8fc9d499d313107789"
 
 [[package]]
 name = "cortex-aql"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "nom",
  "nom_locate",
@@ -213,7 +213,7 @@ dependencies = [
 
 [[package]]
 name = "cortex-cli"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "cortex-aql",
  "cortex-core",
@@ -224,14 +224,14 @@ dependencies = [
 
 [[package]]
 name = "cortex-core"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "thiserror",
 ]
 
 [[package]]
 name = "cortex-engine"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "cortex-aql",
  "cortex-core",
@@ -246,7 +246,7 @@ dependencies = [
 
 [[package]]
 name = "cortex-server"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "axum",
  "cortex-aql",
@@ -262,7 +262,7 @@ dependencies = [
 
 [[package]]
 name = "cortex-storage"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "crc32c",
  "crossbeam-channel",
