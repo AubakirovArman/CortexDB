@@ -36,6 +36,8 @@ Core Alpha is the first durable single-node CortexDB prototype.
   responses for package-readiness checks.
 - ANN search now has a `low_recall` exact fallback guard while evaluation still
   measures raw HNSW top-k recall.
+- Replication consensus state now enforces current-term commit rules and
+  majority match-index advancement.
 - Empty ingestion safety for text, JSON, and CSV inputs.
 - Crash, restart, corruption, lifecycle, repair, AQL retrieve, and storage validation tests.
 

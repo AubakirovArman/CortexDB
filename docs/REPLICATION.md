@@ -50,6 +50,20 @@ let entries = ReplicationLog::recover_entries(path)?;
 let state = ReplicationLog::recover_consensus(path, node, voters, commit_index)?;
 ```
 
+## Commit Rule
+
+`ConsensusState` follows the Raft current-term commit restriction:
+
+- a majority ACK can directly advance `commit_index` only for an entry that
+  exists in the local leader log and belongs to `current_term`;
+- old-term entries are committed indirectly only when a later current-term entry
+  reaches quorum;
+- `record_match_indexes` computes the highest current-term index replicated on
+  a majority of voters and ignores non-voter progress.
+
+This keeps the model from treating arbitrary ACK sets or stale-term entries as
+committed data.
+
 ## Not Yet
 
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS
