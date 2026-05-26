@@ -187,6 +187,17 @@ pub struct SearchResponse {
 }
 
 #[derive(Serialize, Debug, Clone)]
+pub struct AnnEvaluationResponse {
+    pub available: bool,
+    pub reason: Option<String>,
+    pub ann_report: Option<AnnSearchReportResponse>,
+    pub exact_top_k: Vec<u32>,
+    pub ann_top_k: Vec<u32>,
+    pub overlap_count: usize,
+    pub recall_q16: u16,
+}
+
+#[derive(Serialize, Debug, Clone)]
 pub struct AqlCellResponse {
     pub cell_id: u64,
     pub payload: String,

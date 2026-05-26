@@ -153,6 +153,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SearchResponse"
+  /v1/search/ann-evaluate:
+    post:
+      summary: Compare persisted ANN search against exact vector scan
+      parameters:
+        - $ref: "#/components/parameters/Scope"
+        - name: vector
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: ANN recall evaluation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnEvaluationResponse"
   /v1/context:
     post:
       summary: Build a ContextPack from AQL
@@ -418,6 +439,28 @@ components:
         allowed_candidates: { type: integer }
         graph_nodes: { type: integer }
         returned_candidates: { type: integer }
+    AnnEvaluationResponse:
+      type: object
+      required: [available, reason, ann_report, exact_top_k, ann_top_k, overlap_count, recall_q16]
+      properties:
+        available: { type: boolean }
+        reason:
+          anyOf:
+            - type: string
+              enum: [requires_persisted_checkpoint_without_wal_tail]
+            - type: "null"
+        ann_report:
+          anyOf:
+            - $ref: "#/components/schemas/AnnSearchReport"
+            - type: "null"
+        exact_top_k:
+          type: array
+          items: { type: integer }
+        ann_top_k:
+          type: array
+          items: { type: integer }
+        overlap_count: { type: integer }
+        recall_q16: { type: integer, minimum: 0, maximum: 65535 }
     ContextPackResponse:
       type: object
       required: [token_budget_tokens, estimated_tokens, truncated, citations_required, cells, anomalies]

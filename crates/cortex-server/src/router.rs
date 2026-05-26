@@ -116,6 +116,7 @@ pub fn route_shared(
         ("POST", "/v1/context") => context::handle_context_shared(db, query, body),
         ("POST", "/v1/aql") => aql::handle_aql_shared(db, query, body),
         ("POST", "/v1/search") => search::handle_search_shared(db, query, body),
+        ("POST", "/v1/search/ann-evaluate") => search::handle_ann_evaluate_shared(db, query, body),
         ("POST", "/v1/remember") => memory::handle_remember_shared(db, query, body),
         ("POST", "/v1/verify") => memory::handle_verify_shared(db, query, body),
         ("POST", "/v1/ingest/text") => {

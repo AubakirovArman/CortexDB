@@ -30,6 +30,8 @@ Core Alpha is the first durable single-node CortexDB prototype.
   whether HNSW was used or an exact fallback protected correctness.
 - ANN evaluation can compare persisted HNSW results against exact vector scan
   and report recall as fixed-point `recall_q16`.
+- ANN evaluation is exposed through `cortexdb search-vector-eval` and
+  `POST /v1/search/ann-evaluate`.
 - Empty ingestion safety for text, JSON, and CSV inputs.
 - Crash, restart, corruption, lifecycle, repair, AQL retrieve, and storage validation tests.
 

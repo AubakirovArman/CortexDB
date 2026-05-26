@@ -169,6 +169,33 @@ For `search_mode: "vector_ann"`, `ann_report` is populated:
 }
 ```
 
+## ANN Evaluation
+
+`POST /v1/search/ann-evaluate?scope=<scope>&vector=1,2,3&limit=20`
+
+```json
+{
+  "available": true,
+  "reason": null,
+  "ann_report": {
+    "path": "hnsw_graph",
+    "fallback_reason": null,
+    "requested_limit": 20,
+    "allowed_candidates": 2,
+    "graph_nodes": 2,
+    "returned_candidates": 2
+  },
+  "exact_top_k": [2, 1],
+  "ann_top_k": [2, 1],
+  "overlap_count": 2,
+  "recall_q16": 65535
+}
+```
+
+When the database has no checkpointed vector snapshot, or when newer WAL tail
+changes exist, `available` is `false` and `reason` is
+`requires_persisted_checkpoint_without_wal_tail`.
+
 ## Context Pack
 
 `POST /v1/context?scope=<scope>` with an AQL body.

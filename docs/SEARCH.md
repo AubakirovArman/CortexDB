@@ -41,10 +41,12 @@ Current smoke surfaces:
 ```text
 cortexdb search <path> <scope> <query>
 cortexdb search-vector <path> <scope> <i16-vector>
+cortexdb search-vector-eval <path> <scope> <i16-vector>
 POST /v1/search?scope=<scope>&q=<query>
 POST /v1/search?scope=<scope>&mode=vector&vector=<i16-vector>
 POST /v1/search?scope=<scope>&mode=vector&algorithm=exact&vector=<i16-vector>
 POST /v1/search?scope=<scope>&mode=vector&algorithm=ann&vector=<i16-vector>
+POST /v1/search/ann-evaluate?scope=<scope>&vector=<i16-vector>
 ```
 
 The HTTP body is used as the keyword query text when `q` is omitted, and as the
@@ -82,7 +84,9 @@ HNSW path with exact `.acv` vector scan for the same `AgentView`, query vector,
 and limit. It returns an `AnnEvaluationReport` with exact top-k ids, ANN top-k
 ids, overlap count, and fixed-point `recall_q16`. The evaluator only runs when
 there is a persisted checkpoint and no newer WAL tail, so the exact and ANN
-baselines are comparing the same durable snapshot.
+baselines are comparing the same durable snapshot. The CLI and HTTP evaluation
+surfaces expose the same data and return `available=false` until this durable
+snapshot precondition is met.
 
 ## Not Yet
 

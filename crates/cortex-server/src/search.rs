@@ -1,7 +1,9 @@
 use cortex_engine::{parse_vector_literal, AnnSearchReport, Database, SearchLimit};
 
 use crate::context::view_for_scope;
-use crate::responses::{AnnSearchReportResponse, SearchResponse, SearchResultResponse};
+use crate::responses::{
+    AnnEvaluationResponse, AnnSearchReportResponse, SearchResponse, SearchResultResponse,
+};
 
 pub fn handle_search_shared(
     db: &std::sync::RwLock<Database>,
@@ -56,6 +58,48 @@ pub fn handle_search_shared(
     };
     let results = results.map_err(|error| error.to_string())?;
     encode_response(search_mode, results, ann_report)
+}
+
+pub fn handle_ann_evaluate_shared(
+    db: &std::sync::RwLock<Database>,
+    query: &str,
+    body: &[u8],
+) -> Result<String, String> {
+    let scope = query_param(query, "scope")?;
+    let limit = query_param(query, "limit")
+        .ok()
+        .map(parse_limit)
+        .transpose()?
+        .unwrap_or(20);
+    let vector = query_param(query, "vector")
+        .map(str::to_owned)
+        .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
+    let vector = parse_vector_literal(&vector)?;
+    let db = db.read().map_err(|e| e.to_string())?;
+    let response = match db
+        .evaluate_vector_ann(&vector, &view_for_scope(scope), SearchLimit(limit))
+        .map_err(|error| error.to_string())?
+    {
+        Some(report) => AnnEvaluationResponse {
+            available: true,
+            reason: None,
+            ann_report: Some(report_response(report.search)),
+            exact_top_k: report.exact_top_k,
+            ann_top_k: report.ann_top_k,
+            overlap_count: report.overlap_count,
+            recall_q16: report.recall_q16,
+        },
+        None => AnnEvaluationResponse {
+            available: false,
+            reason: Some("requires_persisted_checkpoint_without_wal_tail".to_owned()),
+            ann_report: None,
+            exact_top_k: Vec::new(),
+            ann_top_k: Vec::new(),
+            overlap_count: 0,
+            recall_q16: 0,
+        },
+    };
+    serde_json::to_string(&response).map_err(|e| e.to_string())
 }
 
 fn encode_response(

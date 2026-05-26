@@ -1,6 +1,6 @@
 use clap::{error::ErrorKind, Parser, Subcommand};
 
-use crate::{cli_ingest as ingest, cli_ops as ops};
+use crate::{cli_ann as ann, cli_ingest as ingest, cli_ops as ops};
 
 #[derive(Parser, Debug)]
 #[command(name = "cortexdb", version, about = "CortexDB local CLI")]
@@ -100,6 +100,11 @@ enum Command {
         scope: String,
         vector: String,
     },
+    SearchVectorEval {
+        path: String,
+        scope: String,
+        vector: String,
+    },
     Unlock {
         path: String,
         #[arg(long)]
@@ -175,6 +180,11 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             scope,
             vector,
         } => ops::search_vector(&path, &scope, &vector, true),
+        Command::SearchVectorEval {
+            path,
+            scope,
+            vector,
+        } => ann::search_vector_eval(&path, &scope, &vector, cli.json),
         Command::Unlock { path, force } => ops::unlock(&path, force),
         Command::LoadFixture { path, fixture_path } => ingest::load_fixture(&path, &fixture_path),
         Command::IngestText { path, scope, file } => ingest::text(&path, &scope, &file),

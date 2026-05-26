@@ -22,6 +22,8 @@ pub mod responses;
 mod router;
 mod search;
 #[cfg(test)]
+mod search_tests;
+#[cfg(test)]
 mod tests;
 
 pub use router::{cell_id, json_error, json_response, query_param, query_param_opt, route_shared};
