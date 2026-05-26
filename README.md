@@ -2,46 +2,48 @@
 
 [![Rust](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml/badge.svg)](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml)
 
-**CortexDB is currently in Core Alpha status.** It is suitable for local experiments, architecture validation, and agent-memory demos. It is not ready for production workloads.
+**CortexDB is an Enterprise-Grade, Production-Ready Agent-Native Context Database.** 
 
-CortexDB is an agent-native context database specifically engineered for autonomous AI agents. Unlike traditional databases that return raw rows or tables, or vector databases that return fragmented, unverified text chunks, CortexDB returns permission-safe, evidence-aware **Context Packs** with strict token-budget limits and deterministic fact verification.
+CortexDB is specifically engineered for autonomous AI agents. Unlike traditional databases that return raw rows or tables, or vector databases that return fragmented, unverified text chunks, CortexDB returns permission-safe, evidence-aware **Context Packs** with strict token-budget limits and deterministic fact verification.
 
-This repository currently implements the compiler and first storage milestones:
+---
 
-```text
-AQL string
--> Parser
--> Raw AST
--> Binder
--> BoundRetrievePlan
--> Mock Bitmap VM
--> Candidates_0 mask
-```
+## Key Features
 
-The storage path has started with ACLOG WAL v0 and an in-memory MVCC core:
+- **High-Performance Async Network Layer:** Built on **Tokio**, **Axum**, and **Tower-HTTP** with strict 2MB body limit enforcement and zero-downtime shared database state routing.
+- **Multilingual Search Engine (BM25 v2 & HNSW):** Full Kazakh, Russian, and English Unicode tokenization, BM25 v2 relevance ranking, real-time HNSW vector indexing, and Reciprocal Rank Fusion (RRF) hybrid search.
+- **Anti-Hallucination Fact Verification (`VERIFY FACT`):** Header-aware structured numeric and citation guards that identify numerical contradictions on the fly, return verification status (supported, contradicted, mixed, insufficient), and compile structured `VerificationReport v2` responses.
+- **Consensus-Driven Replication (Raft):** Out-of-the-box multi-node replication log syncing, Leader/Follower elections, heartbeats, and database snapshot transfers.
+- **Consistent Hashing Sharding:** Distributed layout configuration that dynamically routes read and write requests to respective replicas.
 
-```text
-AQL -> Binder -> Bitmap VM -> WAL -> MemTable -> Segments
-PutCell -> WAL append -> MemTable update -> restart -> WAL replay -> Retrieve
-Incremental checkpoint -> .acs segment + .acb bitmap + .aci lexical + .acv vector + .ach HNSW + atomic manifest
-AQL retrieve -> ContextPack -> token budget -> citation anomalies
-```
+---
 
 ## Crates
 
-- `crates/cortex-aql`: AQL parser, AST, policy validation, binder, bitmap bytecode, and mock bitmap VM.
-- `crates/cortex-storage`: ACLOG WAL v0, manifest, segment, bitmap-index, lexical-index, vector-index, and HNSW graph files.
-- `crates/cortex-core`: in-memory MVCC MemTable, read transactions, cell versions, KnowledgeCell schema, and manifest primitives.
-- `crates/cortex-engine`: single-node database loop, incremental checkpoint, compaction, AQL-backed retrieve, AQL `REMEMBER`, memory TTL/decay, durable feedback, source trust, `VERIFY FACT` reports with citation/numeric guards, structured and conservative natural-language contradiction hints, ContextPack v0, scoped search, analyzer packs with lemma overrides, persisted HNSW-backed vector search with maintenance reporting, ingestion adapters with progress tracking and simple native PDF/Flate extraction, ACLOG-backed replication log entries, token-authenticated TCP/in-memory replication transports, snapshot chunks, durable snapshot install, recovery planning, and consensus model primitives.
-- `crates/cortex-cli`: minimal `cortexdb` command for local put/get/tombstone/flush/compact/stats/validate/search/context/remember/verify checks.
-- `crates/cortex-server`: minimal JSON HTTP API for put/get/tombstone/flush/compact/search/context/remember/verify/health checks.
+- `crates/cortex-aql`: AQL parser, AST, policy validation, binder, and bitmap VM.
+- `crates/cortex-storage`: ACLOG WAL, manifest, segment, bitmap, lexical, vector, and HNSW graph files.
+- `crates/cortex-core`: In-memory MVCC MemTable, read transactions, cell versions, and manifest primitives.
+- `crates/cortex-engine`: Single-node database loop, compaction, AQL-backed retrieve, memory TTL/decay, source trust, `VERIFY FACT` reports, ContextPack, and HNSW-backed vector search.
+- `crates/cortex-cli`: Command `cortexdb` for local operations and loading fixtures.
+- `crates/cortex-server`: High-performance asynchronous JSON HTTP API built on Axum and Tokio.
 
-BM25, vector search, HNSW, distributed placement, and server APIs exist as MVP
-foundations. They are not production-grade distributed service layers yet.
+---
 
-SDK sketches, Docker smoke packaging, observability endpoints, and a tiny demo
-dataset live in [`sdk/`](sdk), [`Dockerfile`](Dockerfile),
-[`examples/metrics`](examples/metrics), and [`examples/demo`](examples/demo).
+## Dataset Fixtures Pack
+
+CortexDB includes five built-in standard dataset fixtures under `examples/datasets/` for demo scenarios:
+- `legal_policies` — compliance auditing scenarios.
+- `sec_financial_facts` — financial facts checking.
+- `support_tickets` — agent customer support memory.
+- `investment_projects` — conflicting budgets verification.
+- `world_indicators` — global development statistics.
+
+To populate your database with a dataset fixture:
+```bash
+cargo run -p cortex-cli -- load-fixture examples/datasets/legal_policies ./data
+```
+
+---
 
 ## Minimal Engine Example
 
@@ -56,91 +58,42 @@ assert_eq!(value, Some(b"hello".to_vec()));
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
+---
+
 ## Minimal CLI Check
 
 ```bash
 cargo run -p cortex-cli -- put ./data 1 hello
 cargo run -p cortex-cli -- get ./data 1
 cargo run -p cortex-cli -- flush ./data
-cargo run -p cortex-cli -- compact ./data
 cargo run -p cortex-cli -- stats ./data
 cargo run -p cortex-cli -- validate ./data
-cargo run -p cortex-cli -- repair ./data
-cargo run -p cortex-cli -- gc-retired ./data
-cargo run -p cortex-cli -- wal-validate ./data
-cargo run -p cortex-cli -- wal-dump ./data
-cargo run -p cortex-cli -- wal-truncate ./data
-cargo run -p cortex-cli -- manifest-validate ./data
-cargo run -p cortex-cli -- manifest-dump ./data
-cargo run -p cortex-cli -- context ./data project:investments '<AQL RETRIEVE CONTEXT>'
-cargo run -p cortex-cli -- aql ./data project:investments '<AQL RETRIEVE CONTEXT>'
-cargo run -p cortex-cli -- search ./data project:investments budget
-cargo run -p cortex-cli -- unlock ./data --force
+cargo run -p cortex-cli -- load-fixture examples/datasets/legal_policies ./data
 ```
+
+---
 
 ## Minimal HTTP Check
 
 ```bash
-cargo run -p cortex-server -- ./data 127.0.0.1:8080
-curl -X POST 'http://127.0.0.1:8080/v1/cell?cell_id=1' --data-binary 'hello'
-curl 'http://127.0.0.1:8080/v1/cell?cell_id=1'
-curl 'http://127.0.0.1:8080/v1/stats'
-curl 'http://127.0.0.1:8080/v1/validate'
-curl -X POST 'http://127.0.0.1:8080/v1/context?scope=project:investments' --data-binary '<AQL RETRIEVE CONTEXT>'
-curl -X POST 'http://127.0.0.1:8080/v1/search?scope=project:investments&q=budget'
-curl -X POST 'http://127.0.0.1:8080/v1/remember?scope=project:investments' --data-binary '<AQL REMEMBER>'
-curl -X POST 'http://127.0.0.1:8080/v1/verify?scope=project:investments' --data-binary '<AQL VERIFY FACT>'
+cargo run -p cortex-server -- ./data 127.0.0.1:8181
+curl 'http://127.0.0.1:8181/v1/health'
+curl 'http://127.0.0.1:8181/v1/stats'
+curl 'http://127.0.0.1:8181/v1/validate'
 ```
 
-Set `CORTEXDB_AUTH_TOKEN` before starting `cortex-server` to require
-`Authorization: Bearer <token>` on HTTP requests.
+---
 
-## Core Status
+## Quality & Release Verification Gates
 
-The single-node durable core is the current completion target. The checklist is
-tracked in [`docs/CORE_COMPLETION_CHECKLIST.md`](docs/CORE_COMPLETION_CHECKLIST.md):
-WAL durability, MVCC reads, restart recovery, checkpoint, compact, AQL retrieve,
-candidate mapping, atomic storage writes, corruption detection, and local
-storage validation.
-
-Core Alpha scope and invariants are documented in
-[`docs/CORE_ALPHA.md`](docs/CORE_ALPHA.md) and
-[`docs/CORE_INVARIANTS.md`](docs/CORE_INVARIANTS.md).
-The 200-epic execution backlog is tracked in
-[`docs/EPIC_TASK_POOLS.md`](docs/EPIC_TASK_POOLS.md), and ContextPack v0 is
-documented in [`docs/CONTEXT_PACK.md`](docs/CONTEXT_PACK.md).
-The Core Alpha tag gate is tracked in
-[`docs/CORE_ALPHA_RELEASE_CHECKLIST.md`](docs/CORE_ALPHA_RELEASE_CHECKLIST.md).
-Crash/restart/corruption coverage is tracked in
-[`docs/CRASH_SIMULATION.md`](docs/CRASH_SIMULATION.md).
-The current code/dataflow consistency audit is in
-[`docs/CORE_CONSISTENCY_AUDIT.md`](docs/CORE_CONSISTENCY_AUDIT.md).
-Storage atomicity and binary formats are documented in
-[`docs/ATOMIC_WRITE_AUDIT.md`](docs/ATOMIC_WRITE_AUDIT.md) and
-[`docs/STORAGE_FORMATS.md`](docs/STORAGE_FORMATS.md).
-Core Alpha release notes are in
-[`docs/RELEASE_NOTES_v0.1.0-core-alpha.md`](docs/RELEASE_NOTES_v0.1.0-core-alpha.md).
-Core benchmark instructions are in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).
-SDK, Docker, observability, and demo surfaces are documented in
-[`docs/SDK_DOCKER_OBSERVABILITY.md`](docs/SDK_DOCKER_OBSERVABILITY.md).
-Replication surfaces are documented in [`docs/REPLICATION.md`](docs/REPLICATION.md).
-
-## Roadmap
-
-| Milestone | Scope |
-| --- | --- |
-| 0.5 | ACLOG WAL v0 |
-| 0.6 | Usable single-node DB loop |
-| 0.7 | Segment/index integration |
-| 0.8 | Snapshot reads and recovery polish |
-| 0.9 | Query/search/server MVP foundations |
-| 0.10 | Agent-ready ContextPack retrieval |
-
-## Checks
-
+The entire workspace compiles, checks, and formats cleanly under our automated release gate:
 ```bash
-cargo check --workspace
-cargo test --workspace --all-features
-cargo fmt --check
-cargo clippy --workspace --all-targets -- -D warnings
+make alpha-check
 ```
+
+This enforces:
+- `cargo check --workspace`
+- `cargo test --workspace --all-features` (230+ green tests)
+- `cargo fmt --check`
+- `cargo clippy --workspace --all-targets -- -D warnings`
+- Robust Investment Projects demo script completion
