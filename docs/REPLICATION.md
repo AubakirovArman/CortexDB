@@ -9,13 +9,21 @@ The TCP transport is intentionally small. It supports:
 
 ```text
 VOTE <term> <candidate_id> <last_log_index> <last_log_term>
-APPEND <term> <leader_id> <leader_commit> <term>:<index>:<hex_payload>...
+APPEND <term> <leader_id> <prev_log_index> <prev_log_term> <leader_commit> <term>:<index>:<hex_payload>...
 ```
 
 `handle_replication_frame` applies the frame to an `ElectionState` plus follower
 log and returns a deterministic response frame. `handle_authenticated_replication_frame`
 adds shared-token authentication. `ReplicationPeerServer::serve_n` is a small
 blocking peer loop used by tests and smoke deployments.
+
+AppendEntries now enforces the core Raft log-matching invariant:
+
+- the follower rejects an append if it does not contain `prev_log_index` with
+  `prev_log_term`;
+- conflicting suffixes are truncated before replacement entries are appended;
+- follower commit indexes in the in-memory transport are advanced to
+  `min(leader_commit, last_replicated_index)`.
 
 Snapshot transfer v0 uses:
 

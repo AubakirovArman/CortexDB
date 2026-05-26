@@ -17,7 +17,7 @@ CortexDB has successfully transitioned from an early database loop prototype int
 
 ## 2. What is Experimental & Under Active Development (Non-goals for v1.0.0)
 
-- **Consensus-Driven Replication (Raft):** Multi-node log syncing and election states (current status: primitive experimental models).
+- **Consensus-Driven Replication (Raft):** Multi-node log syncing and election states (current status: experimental model with vote freshness checks, AppendEntries log matching, conflict truncation, and snapshot transfer smoke paths).
 - **Consistent Hashing Sharding:** Distributed namespace layout and routing (current status: early layout primitives).
 - **HNSW Approximate Search:** High-dimensional vector indexing (current status: exact scan is our production-grade standard; HNSW remains an experimental module).
 

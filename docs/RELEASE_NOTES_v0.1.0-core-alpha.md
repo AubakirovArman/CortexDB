@@ -21,6 +21,9 @@ Core Alpha is the first durable single-node CortexDB prototype.
 - OpenAPI 3.1 contract in `docs/openapi.yaml`.
 - Python, TypeScript, and Rust SDK clients cover the health/cell/maintenance/AQL/search/context/verify/remember/ingestion API surface.
 - SDK publication preflight builds a Python wheel, checks npm package contents, and verifies Rust `cargo package`.
+- Experimental replication now enforces AppendEntries previous-log matching,
+  conflict suffix truncation, and follower commit-index clamping in local
+  transport tests.
 - Empty ingestion safety for text, JSON, and CSV inputs.
 - Crash, restart, corruption, lifecycle, repair, AQL retrieve, and storage validation tests.
 

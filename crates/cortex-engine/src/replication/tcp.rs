@@ -6,6 +6,7 @@ use crate::distributed::NodeId;
 use crate::error::{EngineError, EngineResult};
 
 use super::election::{ElectionState, VoteRequest, VoteResponse};
+use super::log_matching;
 use super::snapshot::{
     decode_snapshot_chunk, hex_decode, hex_encode, parse_bool, parse_u64, SnapshotChunk,
 };
@@ -96,22 +97,17 @@ pub fn handle_authenticated_replication_frame(
             };
             Ok(encode_vote_response(&state.handle_vote_request(&request)))
         }
-        ["APPEND", term, leader, commit, rest @ ..] => {
+        ["APPEND", term, leader, prev_index, prev_term, commit, rest @ ..] => {
             let request = AppendEntriesRequest {
                 term: Term(parse_u64(term)?),
                 leader_id: NodeId(parse_u64(leader)?),
+                prev_log_index: LogIndex(parse_u64(prev_index)?),
+                prev_log_term: Term(parse_u64(prev_term)?),
                 leader_commit: LogIndex(parse_u64(commit)?),
                 entries: decode_entries(rest)?,
             };
-            let success = state.accept_leader(request.term, request.leader_id);
-            if success {
-                for entry in request.entries {
-                    if !log.iter().any(|existing| existing.index == entry.index) {
-                        log.push(entry);
-                    }
-                }
-                log.sort_by_key(|entry| entry.index);
-            }
+            let success = state.accept_leader(request.term, request.leader_id)
+                && log_matching::append_entries(log, &request).is_some();
             let match_index = log.last().map(|entry| entry.index).unwrap_or_default();
             Ok(encode_append_response(&AppendEntriesResponse {
                 term: state.current_term,
@@ -190,8 +186,12 @@ fn decode_vote_response(frame: &str) -> EngineResult<VoteResponse> {
 
 fn encode_append_request(request: &AppendEntriesRequest) -> String {
     let mut out = format!(
-        "APPEND {} {} {}",
-        request.term.0, request.leader_id.0, request.leader_commit.0
+        "APPEND {} {} {} {} {}",
+        request.term.0,
+        request.leader_id.0,
+        request.prev_log_index.0,
+        request.prev_log_term.0,
+        request.leader_commit.0
     );
     for entry in &request.entries {
         out.push_str(&format!(

@@ -4,12 +4,15 @@ use crate::distributed::NodeId;
 use crate::error::{EngineError, EngineResult};
 
 use super::election::{ElectionState, VoteRequest, VoteResponse};
+use super::log_matching;
 use super::{LogIndex, ReplicatedEntry, Term};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppendEntriesRequest {
     pub term: Term,
     pub leader_id: NodeId,
+    pub prev_log_index: LogIndex,
+    pub prev_log_term: Term,
     pub entries: Vec<ReplicatedEntry>,
     pub leader_commit: LogIndex,
 }
@@ -36,16 +39,22 @@ pub trait ReplicationTransport {
 pub struct InMemoryReplicationTransport {
     peers: BTreeMap<NodeId, ElectionState>,
     logs: BTreeMap<NodeId, Vec<ReplicatedEntry>>,
+    commits: BTreeMap<NodeId, LogIndex>,
 }
 
 impl InMemoryReplicationTransport {
     pub fn register_peer(&mut self, state: ElectionState) {
         self.logs.entry(state.local_node).or_default();
+        self.commits.entry(state.local_node).or_default();
         self.peers.insert(state.local_node, state);
     }
 
     pub fn peer_log(&self, node: NodeId) -> Option<&[ReplicatedEntry]> {
         self.logs.get(&node).map(Vec::as_slice)
+    }
+
+    pub fn peer_commit(&self, node: NodeId) -> Option<LogIndex> {
+        self.commits.get(&node).copied()
     }
 
     pub fn replicate_to(
@@ -81,15 +90,15 @@ impl ReplicationTransport for InMemoryReplicationTransport {
             .peers
             .get_mut(&target)
             .ok_or(EngineError::InvalidOperation)?;
-        let success = peer.accept_leader(request.term, request.leader_id);
         let log = self.logs.entry(target).or_default();
+        let success = peer.accept_leader(request.term, request.leader_id)
+            && log_matching::append_entries(log, &request).is_some();
         if success {
-            for entry in request.entries {
-                if !log.iter().any(|existing| existing.index == entry.index) {
-                    log.push(entry);
-                }
-            }
-            log.sort_by_key(|entry| entry.index);
+            let last_index = log.last().map(|entry| entry.index).unwrap_or_default();
+            self.commits.insert(
+                target,
+                log_matching::committed_from_leader(request.leader_commit, last_index),
+            );
         }
         let match_index = log.last().map(|entry| entry.index).unwrap_or_default();
         Ok(AppendEntriesResponse {

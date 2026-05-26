@@ -10,6 +10,7 @@ use cortex_storage::wal::{
 
 mod election;
 mod install;
+mod log_matching;
 mod peer;
 mod recovery;
 mod snapshot;

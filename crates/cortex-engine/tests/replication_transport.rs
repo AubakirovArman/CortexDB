@@ -59,6 +59,8 @@ fn append_entries_rejects_stale_term_and_accepts_current_leader() {
             AppendEntriesRequest {
                 term: Term(0),
                 leader_id: NodeId(1),
+                prev_log_index: LogIndex(0),
+                prev_log_term: Term(0),
                 entries: vec![entry.clone()],
                 leader_commit: LogIndex(0),
             },
@@ -72,6 +74,8 @@ fn append_entries_rejects_stale_term_and_accepts_current_leader() {
             AppendEntriesRequest {
                 term: Term(1),
                 leader_id: NodeId(1),
+                prev_log_index: LogIndex(0),
+                prev_log_term: Term(0),
                 entries: vec![entry.clone()],
                 leader_commit: LogIndex(1),
             },
@@ -94,6 +98,8 @@ fn replicated_entry_acks_can_commit_consensus_state() {
             AppendEntriesRequest {
                 term: leader.current_term,
                 leader_id: NodeId(1),
+                prev_log_index: LogIndex(0),
+                prev_log_term: Term(0),
                 entries: vec![entry.clone()],
                 leader_commit: LogIndex(0),
             },
@@ -133,6 +139,8 @@ fn tcp_replication_transport_sends_append_entries() {
             AppendEntriesRequest {
                 term: Term(1),
                 leader_id: NodeId(1),
+                prev_log_index: LogIndex(0),
+                prev_log_term: Term(0),
                 entries: vec![entry.clone()],
                 leader_commit: LogIndex(0),
             },
