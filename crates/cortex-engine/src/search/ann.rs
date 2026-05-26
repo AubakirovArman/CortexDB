@@ -80,7 +80,10 @@ pub fn search_persisted_ann(
     allowed: &BTreeSet<u32>,
     limit: usize,
 ) -> AnnSearchOutcome {
-    let available = vectors.keys().filter(|id| allowed.contains(id)).count();
+    let available = vectors
+        .iter()
+        .filter(|(id, vector)| allowed.contains(id) && vector.len() == query.len())
+        .count();
     let expected = limit.min(available);
     let graph_nodes = graph.links.len();
     if graph.links.is_empty() {
@@ -153,7 +156,10 @@ pub fn evaluate_persisted_ann(
     limit: usize,
 ) -> AnnEvaluationReport {
     let exact_results = search_persisted_vectors(vectors, query, allowed, limit);
-    let available = vectors.keys().filter(|id| allowed.contains(id)).count();
+    let available = vectors
+        .iter()
+        .filter(|(id, vector)| allowed.contains(id) && vector.len() == query.len())
+        .count();
     let expected = limit.min(available);
     let graph_nodes = graph.links.len();
     let ann_outcome = match search_hnsw(vectors, graph, query, allowed, limit, expected) {

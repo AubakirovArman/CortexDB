@@ -40,6 +40,9 @@ candidate ids, link nodes missing from the vector index, neighbor links missing
 from the vector index, self-links, and deleted-vector references. Storage
 validation cross-checks `.ach` graph links against `.acv` vector candidates so
 a corrupted or mismatched ANN bundle is reported before query execution.
+Validation also checks that all vectors inside one persisted `.acv` file share
+one non-empty dimension. Exact vector scan and HNSW scoring skip vectors whose
+dimension differs from the query rather than comparing only a shared prefix.
 
 Current smoke surfaces:
 

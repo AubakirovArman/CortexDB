@@ -93,6 +93,9 @@ crc32c u32 over all previous bytes
 ```
 
 The current vector path is exact integer dot-product scan, not ANN.
+All vectors in one `.acv` file must be non-empty and have the same dimension.
+Storage validation reports mixed dimensions before query execution; search
+paths ignore vectors whose dimension does not match the query vector.
 
 ## HNSW Graph `.ach`
 

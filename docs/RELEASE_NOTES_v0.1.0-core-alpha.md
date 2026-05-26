@@ -49,6 +49,8 @@ Core Alpha is the first durable single-node CortexDB prototype.
   guard runs, so clients can inspect HNSW quality decisions.
 - HNSW integrity reports now cross-check persisted graph links against vector
   candidates during storage validation.
+- Persisted `.acv` validation checks vector dimensions so ANN/exact scoring
+  cannot silently compare only shared vector prefixes.
 - Replication consensus state now enforces current-term commit rules and
   majority match-index advancement.
 - Replication followers reject non-contiguous AppendEntries batches and

@@ -230,7 +230,9 @@ impl VectorIndex {
         let scores = self
             .vectors
             .iter()
-            .map(|(cell_id, vector)| (*cell_id, dot_nonnegative(query, vector)))
+            .filter_map(|(cell_id, vector)| {
+                dot_nonnegative(query, vector).map(|score| (*cell_id, score))
+            })
             .collect();
         ranked(scores, limit)
     }
@@ -246,12 +248,17 @@ pub(super) fn ranked(scores: BTreeMap<u32, u64>, limit: usize) -> Vec<ScoredCand
     values
 }
 
-pub(super) fn dot_nonnegative(lhs: &[i16], rhs: &[i16]) -> u64 {
-    lhs.iter()
-        .zip(rhs)
-        .map(|(left, right)| i64::from(*left) * i64::from(*right))
-        .sum::<i64>()
-        .max(0) as u64
+pub(super) fn dot_nonnegative(lhs: &[i16], rhs: &[i16]) -> Option<u64> {
+    if lhs.len() != rhs.len() {
+        return None;
+    }
+    Some(
+        lhs.iter()
+            .zip(rhs)
+            .map(|(left, right)| i64::from(*left) * i64::from(*right))
+            .sum::<i64>()
+            .max(0) as u64,
+    )
 }
 
 fn apply_rrf(

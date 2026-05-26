@@ -104,6 +104,24 @@ fn hnsw_graph_candidate_without_vector_fails_validation() {
 }
 
 #[test]
+fn vector_index_dimension_mismatch_fails_validation() {
+    let dir = tempfile::tempdir().unwrap();
+    write_bundle(dir.path(), 1, 1, 1, CellId(1));
+    VectorIndex {
+        vectors: BTreeMap::from([(1, vec![10, 0]), (2, vec![10])]),
+    }
+    .write(dir.path().join("segments").join("segment-1.acv"))
+    .unwrap();
+    write_manifest(dir.path(), 1, vec![manifest_segment(1, 1, 1)], Vec::new());
+
+    let db = Database::open(dir.path()).unwrap();
+    let error = db.validate_storage().unwrap_err().to_string();
+
+    assert!(error.contains("vector index 1 dimensions"));
+    assert!(error.contains("mismatched_vectors=1"));
+}
+
+#[test]
 fn validation_report_collects_multiple_errors() {
     let dir = tempfile::tempdir().unwrap();
     write_bundle(dir.path(), 1, 5, 0, CellId(1));

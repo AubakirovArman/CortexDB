@@ -55,7 +55,9 @@ pub(super) fn search_persisted_vectors(
     let scores = vectors
         .iter()
         .filter(|(candidate, _)| allowed.contains(candidate))
-        .map(|(candidate, vector)| (*candidate, dot_nonnegative(query, vector)))
+        .filter_map(|(candidate, vector)| {
+            dot_nonnegative(query, vector).map(|score| (*candidate, score))
+        })
         .collect();
     ranked(scores, limit)
 }
@@ -131,5 +133,19 @@ mod tests {
 
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].cell_id, 2);
+    }
+
+    #[test]
+    fn persisted_vector_search_skips_dimension_mismatches() {
+        let results = search_persisted_vectors(
+            &BTreeMap::from([(1, vec![9]), (2, vec![0, 9])]),
+            &[0, 3],
+            &BTreeSet::from([1, 2]),
+            10,
+        );
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].cell_id, 2);
+        assert_eq!(results[0].score, 27);
     }
 }

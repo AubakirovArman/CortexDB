@@ -10,14 +10,14 @@ pub mod integrity;
 /// Abstraction for distance calculation between high-dimensional vector embeddings.
 pub trait DistanceMetric {
     /// Calculate the similarity score (distance) between two vector embeddings.
-    fn distance(u: &[i16], v: &[i16]) -> u64;
+    fn distance(u: &[i16], v: &[i16]) -> Option<u64>;
 }
 
 /// Dot-product similarity implementation of DistanceMetric.
 pub struct DotProductMetric;
 
 impl DistanceMetric for DotProductMetric {
-    fn distance(u: &[i16], v: &[i16]) -> u64 {
+    fn distance(u: &[i16], v: &[i16]) -> Option<u64> {
         dot_nonnegative(u, v)
     }
 }
@@ -149,10 +149,9 @@ impl HnswIndex {
                 continue;
             }
             if allowed.is_none_or(|values| values.contains(&candidate)) {
-                scores.insert(
-                    candidate,
-                    DotProductMetric::distance(query, &self.vectors[&candidate]),
-                );
+                if let Some(score) = DotProductMetric::distance(query, &self.vectors[&candidate]) {
+                    scores.insert(candidate, score);
+                }
             }
             if let Some(neighbors) = self.links.get(&candidate) {
                 for neighbor in neighbors {
@@ -192,7 +191,9 @@ impl HnswIndex {
             .vectors
             .iter()
             .filter(|(cell_id, _)| !self.deleted.contains(cell_id))
-            .map(|(cell_id, existing)| (*cell_id, DotProductMetric::distance(vector, existing)))
+            .filter_map(|(cell_id, existing)| {
+                DotProductMetric::distance(vector, existing).map(|score| (*cell_id, score))
+            })
             .collect();
         ranked(scores, limit)
             .into_iter()
@@ -225,7 +226,9 @@ impl HnswIndex {
             .vectors
             .iter()
             .filter(|(cell_id, _)| **cell_id != skip)
-            .map(|(cell_id, existing)| (*cell_id, DotProductMetric::distance(vector, existing)))
+            .filter_map(|(cell_id, existing)| {
+                DotProductMetric::distance(vector, existing).map(|score| (*cell_id, score))
+            })
             .collect();
         ranked(scores, limit)
             .into_iter()
@@ -248,5 +251,9 @@ fn best_frontier(
     frontier
         .iter()
         .copied()
-        .max_by_key(|cell_id| dot_nonnegative(query, &vectors[cell_id]))
+        .filter_map(|cell_id| {
+            dot_nonnegative(query, &vectors[&cell_id]).map(|score| (cell_id, score))
+        })
+        .max_by_key(|(_, score)| *score)
+        .map(|(cell_id, _)| cell_id)
 }

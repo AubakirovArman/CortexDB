@@ -159,6 +159,14 @@ impl Database {
             {
                 Ok(index) => {
                     report.vector_indexes_checked += 1;
+                    let dimension_report = index.dimension_report();
+                    if !dimension_report.is_valid() {
+                        report.errors.push(format!(
+                            "vector index {} dimensions: {}",
+                            segment.id,
+                            dimension_report.summary()
+                        ));
+                    }
                     Some(index)
                 }
                 Err(error) => {
