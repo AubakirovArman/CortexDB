@@ -4,6 +4,9 @@ use cortex_engine::Database;
 use crate::aql;
 use crate::context;
 use crate::memory;
+use crate::responses::{
+    CellResponse, IngestResponse, PutCellResponse, StatsResponse, ValidationResponse,
+};
 use crate::search;
 
 pub fn route_shared(
@@ -18,51 +21,52 @@ pub fn route_shared(
         ("GET", "/v1/stats") => {
             let db = db.read().map_err(|e| e.to_string())?;
             let stats = db.storage_stats().map_err(|error| error.to_string())?;
-            Ok(format!(
-                r#"{{"current_seq":{},"checkpoint_seq":{},"live_segments":{},"retired_segments":{},"memtable_cells":{},"memtable_versions":{},"wal_size_bytes":{},"wal_writer_records":{},"wal_writer_bytes":{},"wal_writer_fsyncs":{},"wal_writer_batches":{}}}"#,
-                stats.current_seq.0,
-                stats.checkpoint_seq.0,
-                stats.live_segments,
-                stats.retired_segments,
-                stats.memtable.cell_count,
-                stats.memtable.version_count,
-                stats.wal_size_bytes,
-                stats.wal_writer.records_written,
-                stats.wal_writer.bytes_written,
-                stats.wal_writer.fsync_count,
-                stats.wal_writer.batches_committed
-            ))
+            let response = StatsResponse {
+                current_seq: stats.current_seq.0,
+                checkpoint_seq: stats.checkpoint_seq.0,
+                live_segments: stats.live_segments,
+                retired_segments: stats.retired_segments,
+                memtable_cells: stats.memtable.cell_count,
+                memtable_versions: stats.memtable.version_count,
+                wal_size_bytes: stats.wal_size_bytes,
+                wal_writer_records: stats.wal_writer.records_written,
+                wal_writer_bytes: stats.wal_writer.bytes_written,
+                wal_writer_fsyncs: stats.wal_writer.fsync_count,
+                wal_writer_batches: stats.wal_writer.batches_committed,
+            };
+            serde_json::to_string(&response).map_err(|e| e.to_string())
         }
         ("GET", "/v1/validate") => {
             let db = db.read().map_err(|e| e.to_string())?;
             let validation = db.validate_storage_report();
-            Ok(format!(
-                r#"{{"ok":{},"manifest_ok":{},"wal_ok":{},"live_segments_checked":{},"bitmap_indexes_checked":{},"lexical_indexes_checked":{},"vector_indexes_checked":{},"hnsw_graphs_checked":{},"cells_checked":{},"wal_records_checked":{},"wal_safe_truncate_offset":{},"errors":[{}]}}"#,
-                validation.errors.is_empty(),
-                validation.manifest_ok,
-                validation.wal_ok,
-                validation.live_segments_checked,
-                validation.bitmap_indexes_checked,
-                validation.lexical_indexes_checked,
-                validation.vector_indexes_checked,
-                validation.hnsw_graphs_checked,
-                validation.cells_checked,
-                validation.wal_records_checked,
-                validation.wal_safe_truncate_offset,
-                json_string_list(&validation.errors)
-            ))
+            let response = ValidationResponse {
+                ok: validation.errors.is_empty(),
+                manifest_ok: validation.manifest_ok,
+                wal_ok: validation.wal_ok,
+                live_segments_checked: validation.live_segments_checked,
+                bitmap_indexes_checked: validation.bitmap_indexes_checked,
+                lexical_indexes_checked: validation.lexical_indexes_checked,
+                vector_indexes_checked: validation.vector_indexes_checked,
+                hnsw_graphs_checked: validation.hnsw_graphs_checked,
+                cells_checked: validation.cells_checked,
+                wal_records_checked: validation.wal_records_checked as u64,
+                wal_safe_truncate_offset: validation.wal_safe_truncate_offset,
+                errors: validation.errors,
+            };
+            serde_json::to_string(&response).map_err(|e| e.to_string())
         }
         ("GET", "/get") | ("GET", "/v1/cell") => {
             let cell_id = cell_id(query)?;
             let db = db.read().map_err(|e| e.to_string())?;
-            let value = db.get_latest_cell(cell_id).map(|payload| {
-                format!(
-                    r#"{{"cell_id":{},"payload":"{}"}}"#,
-                    cell_id.0,
-                    escape_json(&String::from_utf8_lossy(&payload))
-                )
+            let value = db.get_latest_cell(cell_id).map(|payload| CellResponse {
+                cell_id: cell_id.0,
+                payload: String::from_utf8_lossy(&payload).into_owned(),
             });
-            Ok(value.unwrap_or_else(|| r#"{"cell":null}"#.to_owned()))
+            if let Some(res) = value {
+                serde_json::to_string(&res).map_err(|e| e.to_string())
+            } else {
+                Ok(r#"{"cell":null}"#.to_owned())
+            }
         }
         ("POST", "/put") | ("POST", "/v1/cell") => {
             let cell_id = cell_id(query)?;
@@ -70,7 +74,11 @@ pub fn route_shared(
             let seq = db
                 .put_cell(cell_id, body.to_vec())
                 .map_err(|error| error.to_string())?;
-            Ok(format!(r#"{{"seq":{},"cell_id":{}}}"#, seq.0, cell_id.0))
+            let response = PutCellResponse {
+                seq: seq.0,
+                cell_id: cell_id.0,
+            };
+            serde_json::to_string(&response).map_err(|e| e.to_string())
         }
         ("POST", "/tombstone") | ("DELETE", "/v1/cell") => {
             let cell_id = cell_id(query)?;
@@ -78,23 +86,29 @@ pub fn route_shared(
             let seq = db
                 .tombstone_cell(cell_id)
                 .map_err(|error| error.to_string())?;
-            Ok(format!(r#"{{"seq":{},"cell_id":{}}}"#, seq.0, cell_id.0))
+            let response = PutCellResponse {
+                seq: seq.0,
+                cell_id: cell_id.0,
+            };
+            serde_json::to_string(&response).map_err(|e| e.to_string())
         }
         ("POST", "/flush") | ("POST", "/v1/flush") => {
             let mut db = db.write().map_err(|e| e.to_string())?;
             let stats = db.checkpoint().map_err(|error| error.to_string())?;
-            Ok(format!(
-                r#"{{"checkpoint_seq":{},"cells_flushed":{}}}"#,
-                stats.checkpoint_seq.0, stats.cells_flushed
-            ))
+            let response = serde_json::json!({
+                "checkpoint_seq": stats.checkpoint_seq.0,
+                "cells_flushed": stats.cells_flushed
+            });
+            serde_json::to_string(&response).map_err(|e| e.to_string())
         }
         ("POST", "/v1/compact") => {
             let mut db = db.write().map_err(|e| e.to_string())?;
             let stats = db.compact().map_err(|error| error.to_string())?;
-            Ok(format!(
-                r#"{{"checkpoint_seq":{},"cells_flushed":{}}}"#,
-                stats.checkpoint_seq.0, stats.cells_flushed
-            ))
+            let response = serde_json::json!({
+                "checkpoint_seq": stats.checkpoint_seq.0,
+                "cells_flushed": stats.cells_flushed
+            });
+            serde_json::to_string(&response).map_err(|e| e.to_string())
         }
         ("POST", "/v1/context") => context::handle_context_shared(db, query, body),
         ("POST", "/v1/aql") => aql::handle_aql_shared(db, query, body),
@@ -117,15 +131,13 @@ pub fn route_shared(
                     },
                 )
                 .map_err(|error| error.to_string())?;
-            if results.is_empty() {
-                Ok(r#"{"chunks_ingested":0,"first_cell_id":null}"#.to_owned())
-            } else {
-                Ok(format!(
-                    r#"{{"chunks_ingested":{},"first_cell_id":{}}}"#,
-                    results.len(),
-                    results[0].cell_id.0
-                ))
-            }
+            let response = IngestResponse {
+                rows_ingested: 0,
+                chunks_ingested: results.len(),
+                facts_ingested: 0,
+                first_cell_id: results.first().map(|cell| cell.cell_id.0),
+            };
+            serde_json::to_string(&response).map_err(|e| e.to_string())
         }
         ("POST", "/v1/ingest/json") => {
             let scope = query_param_opt(query, "scope").unwrap_or("default");
@@ -143,15 +155,13 @@ pub fn route_shared(
                     },
                 )
                 .map_err(|error| error.to_string())?;
-            if results.is_empty() {
-                Ok(r#"{"facts_ingested":0,"first_cell_id":null}"#.to_owned())
-            } else {
-                Ok(format!(
-                    r#"{{"facts_ingested":{},"first_cell_id":{}}}"#,
-                    results.len(),
-                    results[0].cell_id.0
-                ))
-            }
+            let response = IngestResponse {
+                rows_ingested: 0,
+                chunks_ingested: 0,
+                facts_ingested: results.len(),
+                first_cell_id: results.first().map(|cell| cell.cell_id.0),
+            };
+            serde_json::to_string(&response).map_err(|e| e.to_string())
         }
         ("POST", "/v1/ingest/csv") => {
             let scope = query_param_opt(query, "scope").unwrap_or("default");
@@ -169,15 +179,13 @@ pub fn route_shared(
                     },
                 )
                 .map_err(|error| error.to_string())?;
-            if results.is_empty() {
-                Ok(r#"{"rows_ingested":0,"first_cell_id":null}"#.to_owned())
-            } else {
-                Ok(format!(
-                    r#"{{"rows_ingested":{},"first_cell_id":{}}}"#,
-                    results.len(),
-                    results[0].cell_id.0
-                ))
-            }
+            let response = IngestResponse {
+                rows_ingested: results.len(),
+                chunks_ingested: 0,
+                facts_ingested: 0,
+                first_cell_id: results.first().map(|cell| cell.cell_id.0),
+            };
+            serde_json::to_string(&response).map_err(|e| e.to_string())
         }
         _ if method == "GET" && path.starts_with("/v1/ingest/jobs/") => {
             let id_str = path.strip_prefix("/v1/ingest/jobs/").unwrap();
