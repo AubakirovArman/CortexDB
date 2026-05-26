@@ -15,6 +15,7 @@ mod context;
 mod memory;
 mod router;
 mod search;
+pub mod responses;
 #[cfg(test)]
 mod tests;
 

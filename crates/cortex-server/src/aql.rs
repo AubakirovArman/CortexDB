@@ -1,6 +1,7 @@
 use cortex_engine::{Database, RetrievedCell};
 
-use crate::context::{escape_json, view_for_scope};
+use crate::context::view_for_scope;
+use crate::escape_json;
 
 pub fn handle_aql_shared(
     db: &std::sync::RwLock<Database>,
