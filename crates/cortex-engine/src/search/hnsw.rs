@@ -246,6 +246,20 @@ impl HnswIndex {
             .map(|candidate| candidate.cell_id)
             .collect()
     }
+
+    pub fn verify_hnsw_integrity(&self) -> bool {
+        for (node, neighbors) in &self.links {
+            if !self.vectors.contains_key(node) {
+                return false;
+            }
+            for neighbor in neighbors {
+                if !self.vectors.contains_key(neighbor) {
+                    return false;
+                }
+            }
+        }
+        true
+    }
 }
 
 impl Default for HnswIndex {
