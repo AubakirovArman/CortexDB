@@ -17,6 +17,8 @@ mod actor;
 mod aql;
 mod context;
 mod dashboard;
+#[cfg(test)]
+mod dashboard_tests;
 mod memory;
 pub mod responses;
 mod router;

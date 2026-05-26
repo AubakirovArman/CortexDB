@@ -29,18 +29,6 @@ fn v1_api_requires_bearer_token_when_configured() {
 }
 
 #[test]
-fn dashboard_html_exposes_admin_console_surfaces() {
-    let html = super::dashboard::html();
-    assert!(html.contains("CortexDB Console"));
-    assert!(html.contains("data-tab=\"cells\""));
-    assert!(html.contains("data-tab=\"search\""));
-    assert!(html.contains("data-tab=\"context\""));
-    assert!(html.contains("data-tab=\"verify\""));
-    assert!(html.contains("/v1/stats"));
-    assert!(html.contains("/v1/cell"));
-}
-
-#[test]
 fn v1_stats_and_validate_report_storage_state() {
     let dir = tempfile::tempdir().unwrap();
     let put = "POST /v1/cell?cell_id=1 HTTP/1.1\r\ncontent-length: 5\r\n\r\nhello";

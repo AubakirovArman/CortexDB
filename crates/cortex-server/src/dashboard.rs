@@ -60,9 +60,11 @@ pub fn html() -> String {
                 <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="ops" data-tab="ops">Ops</button>
                 <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="cells" data-tab="cells">Cells</button>
                 <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="search" data-tab="search">Search</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="ann-eval" data-tab="ann-eval">ANN Eval</button>
                 <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="aql" data-tab="aql">AQL</button>
                 <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="context" data-tab="context">Context</button>
                 <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="verify" data-tab="verify">Verify</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="ingest" data-tab="ingest">Ingest</button>
             </div>
         </nav>
         <section aria-live="polite">
@@ -106,6 +108,17 @@ Solar budget note</textarea></div>
                     <button type="submit">Search</button>
                 </form>
             </section>
+            <section id="ann-eval" class="panel" role="tabpanel">
+                <h2>ANN Eval</h2>
+                <form id="ann-eval-form">
+                    <div class="grid">
+                        <div class="field"><label for="ann-scope">Scope</label><input id="ann-scope" name="scope" required value="project:investments"></div>
+                        <div class="field"><label for="ann-vector">Vector</label><input id="ann-vector" name="vector" inputmode="decimal" required value="0,10"></div>
+                        <div class="field"><label for="ann-limit">Limit</label><input id="ann-limit" name="limit" inputmode="numeric" value="20"></div>
+                    </div>
+                    <button type="submit">Evaluate ANN</button>
+                </form>
+            </section>
             <section id="aql" class="panel" role="tabpanel">
                 <h2>AQL</h2>
                 <form id="aql-form">
@@ -130,10 +143,23 @@ Solar budget note</textarea></div>
                     <button type="submit">Verify Fact</button>
                 </form>
             </section>
+            <section id="ingest" class="panel" role="tabpanel">
+                <h2>Ingest</h2>
+                <form id="ingest-form">
+                    <div class="grid">
+                        <div class="field"><label for="ingest-scope">Scope</label><input id="ingest-scope" name="scope" required value="project:investments"></div>
+                        <div class="field"><label for="ingest-source">Source</label><input id="ingest-source" name="source" value="dashboard"></div>
+                        <div class="field"><label for="ingest-type">Type</label><select id="ingest-type" name="type"><option value="text">Text</option><option value="json">JSON</option><option value="csv">CSV</option></select></div>
+                    </div>
+                    <div class="field"><label for="ingest-document">Document</label><textarea id="ingest-document" name="document">Solar Plant budget approved.
+Wind Farm status ready.</textarea></div>
+                    <button type="submit">Ingest</button>
+                </form>
+            </section>
         </section>
         <aside>
             <h2>Response</h2>
-            <pre id="output" tabindex="0">{"status":"ready"}</pre>
+            <pre id="output" tabindex="0" aria-live="polite">{"status":"ready"}</pre>
         </aside>
     </main>
     <script>
@@ -201,6 +227,12 @@ Solar budget note</textarea></div>
             else params.set("q", data.get("q") || "");
             run("search", () => api(`/v1/search?${params}`, { method: "POST" }));
         });
+        document.querySelector("#ann-eval-form").addEventListener("submit", event => {
+            event.preventDefault();
+            const data = new FormData(event.currentTarget);
+            const params = new URLSearchParams({ scope: data.get("scope"), vector: data.get("vector"), limit: data.get("limit") || "20" });
+            run("ann evaluate", () => api(`/v1/search/ann-evaluate?${params}`, { method: "POST" }));
+        });
         for (const id of ["aql", "context", "verify"]) {
             document.querySelector(`#${id}-form`).addEventListener("submit", event => {
                 event.preventDefault();
@@ -209,6 +241,13 @@ Solar budget note</textarea></div>
                 run(id, () => api(`/v1/${id}?${params}`, { method: "POST", body: data.get("query") || "" }));
             });
         }
+        document.querySelector("#ingest-form").addEventListener("submit", event => {
+            event.preventDefault();
+            const data = new FormData(event.currentTarget);
+            const kind = data.get("type") || "text";
+            const params = new URLSearchParams({ scope: data.get("scope"), source: data.get("source") || "dashboard" });
+            run("ingest", () => api(`/v1/ingest/${kind}?${params}`, { method: "POST", body: data.get("document") || "" }));
+        });
         run("stats", () => api("/v1/stats"));
     </script>
 </body>
