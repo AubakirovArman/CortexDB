@@ -12,7 +12,7 @@ every required row is green on `main`.
 | Local tests | `RUSTFLAGS="-D warnings" cargo test --workspace --all-features` passes. |
 | Formatting | `cargo fmt --check` passes. |
 | Lints | `RUSTFLAGS="-D warnings" cargo clippy --workspace --all-targets -- -D warnings` passes. |
-| File size audit | Production Rust modules stay under 300 lines; remaining over-300-line Rust files are legacy test fixtures only. |
+| File size audit | All checked-in Rust source and integration test files stay under 300 lines. |
 | Storage safety | WAL, segment, bitmap, lexical, and manifest corruption tests pass. |
 | Lifecycle safety | open, close, Drop, lock, and stale unlock tests pass. |
 | Repair safety | `Database::repair_best_effort` removes orphan temps and truncates only safe WAL tails. |
