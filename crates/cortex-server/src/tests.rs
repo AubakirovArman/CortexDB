@@ -172,7 +172,7 @@ fn test_server_concurrency_and_size_limit() {
         huge_request.extend_from_slice(b"\r\n\r\n");
         huge_request.resize(huge_request.len() + huge_size, b'A');
 
-        stream.write_all(&huge_request).unwrap();
+        let _ = stream.write_all(&huge_request);
 
         let mut response = [0u8; 1024];
         let read = stream.read(&mut response).unwrap();

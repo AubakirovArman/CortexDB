@@ -1,11 +1,13 @@
 use axum::{
     extract::{Request, State},
     http::StatusCode,
-    response::IntoResponse,
+    response::{Html, IntoResponse},
     routing::Router,
     Json,
 };
-use std::path::Path;
+use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex, RwLock};
 use tower_http::limit::RequestBodyLimitLayer;
 
 use cortex_engine::Database;
@@ -31,8 +33,32 @@ pub struct ServerOptions {
 
 #[derive(Clone)]
 pub struct AppState {
-    db: std::sync::Arc<std::sync::RwLock<Database>>,
-    options: std::sync::Arc<ServerOptions>,
+    root: PathBuf,
+    dbs: Arc<Mutex<BTreeMap<String, Arc<RwLock<Database>>>>>,
+    options: Arc<ServerOptions>,
+}
+
+impl AppState {
+    pub fn get_db(&self, tenant: &str) -> std::io::Result<Arc<RwLock<Database>>> {
+        let mut dbs = self
+            .dbs
+            .lock()
+            .map_err(|e| std::io::Error::other(e.to_string()))?;
+        if let Some(db) = dbs.get(tenant) {
+            return Ok(db.clone());
+        }
+        let tenant_path = if tenant == "default" {
+            self.root.clone()
+        } else {
+            self.root.join("realms").join(tenant)
+        };
+        std::fs::create_dir_all(&tenant_path)?;
+        let db = Database::open(&tenant_path)
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        let db_shared = Arc::new(RwLock::new(db));
+        dbs.insert(tenant.to_owned(), db_shared.clone());
+        Ok(db_shared)
+    }
 }
 
 pub fn serve(root: &Path, addr: &str) -> std::io::Result<()> {
@@ -44,10 +70,10 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
         .enable_all()
         .build()?;
     rt.block_on(async {
-        let db = Database::open(root).map_err(|error| std::io::Error::other(error.to_string()))?;
         let state = AppState {
-            db: std::sync::Arc::new(std::sync::RwLock::new(db)),
-            options: std::sync::Arc::new(options),
+            root: root.to_owned(),
+            dbs: Arc::new(Mutex::new(BTreeMap::new())),
+            options: Arc::new(options),
         };
 
         let app = Router::new()
@@ -83,6 +109,10 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
     let path = uri.path().to_owned();
     let query = uri.query().unwrap_or("").to_owned();
 
+    if method == "GET" && (path == "/" || path == "/dashboard") {
+        return Html(serve_dashboard_html()).into_response();
+    }
+
     let auth_header = req
         .headers()
         .get("authorization")
@@ -117,18 +147,32 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         }
     };
 
+    let tenant = query_param_opt(&query, "tenant").unwrap_or("default");
+    let db = match state.get_db(tenant) {
+        Ok(db) => db,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({
+                    "error": "internal_error",
+                    "message": e.to_string()
+                })),
+            )
+                .into_response();
+        }
+    };
+
     let target = if query.is_empty() {
         path
     } else {
         format!("{path}?{query}")
     };
-
-    let db_clone = state.db.clone();
+    let start = std::time::Instant::now();
+    let db_clone = db.clone();
     let method_clone = method.clone();
     let target_clone = target.clone();
     let body_clone = body_bytes.clone();
 
-    let start = std::time::Instant::now();
     let res = match tokio::task::spawn_blocking(move || {
         route_shared(&db_clone, &method_clone, &target_clone, &body_clone)
     })
@@ -213,4 +257,56 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
             json_error(status, "bad_request", &error)
         }
     }
+}
+
+fn serve_dashboard_html() -> String {
+    r#"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CortexDB Memory Console</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 24px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #38bdf8; border-bottom: 2px solid #334155; padding-bottom: 12px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; }
+        textarea { width: 100%; height: 120px; background: #0f172a; color: #38bdf8; border: 1px solid #334155; border-radius: 4px; font-family: monospace; padding: 12px; box-sizing: border-box; }
+        button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0369a1; }
+        pre { background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 4px; overflow-x: auto; font-family: monospace; max-height: 400px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CortexDB Interactive Memory Console</h1>
+        <div class="grid">
+            <div class="card">
+                <h2>AQL / ContextPack Playground</h2>
+                <p>Run AQL queries to build budgeting Context Packs on the fly:</p>
+                <textarea id="aql-query">RETRIEVE CONTEXT FOR "Solar Plant" LIMIT 5;</textarea>
+                <br><br>
+                <button onclick="runQuery('/v1/context')">Build Context Pack</button>
+                <button onclick="runQuery('/v1/verify')">Verify Fact</button>
+            </div>
+            <div class="card">
+                <h2>Execution Output</h2>
+                <pre id="output">Run a query to view structured JSON schema response...</pre>
+            </div>
+        </div>
+    </div>
+    <script>
+        async function runQuery(endpoint) {
+            const query = document.getElementById('aql-query').value;
+            const res = await fetch(endpoint + "?scope=project:investments", {
+                method: "POST",
+                body: query
+            });
+            const json = await res.json();
+            document.getElementById('output').textContent = JSON.stringify(json, null, 2);
+        }
+    </script>
+</body>
+</html>
+"#.to_owned()
 }
