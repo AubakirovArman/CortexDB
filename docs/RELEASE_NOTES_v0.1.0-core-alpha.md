@@ -18,6 +18,8 @@ Core Alpha is the first durable single-node CortexDB prototype.
 - Server requests route through per-tenant `DatabaseActor` workers.
 - Built-in `/dashboard` developer console for operations, cell writes, search,
   ANN evaluation, ingestion, AQL, ContextPack, and VERIFY smoke paths.
+- Dashboard requests can target per-tenant realms, keep a short request history,
+  and inspect persisted ingestion job progress.
 - Typed serde JSON response structs for server API payloads.
 - OpenAPI 3.1 contract in `docs/openapi.yaml`.
 - Python, TypeScript, and Rust SDK clients cover the health/cell/maintenance/AQL/search/context/verify/remember/ingestion API surface.

@@ -37,6 +37,7 @@ pub fn html() -> String {
         .metric { border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: #fbfcfd; }
         .metric span { display: block; color: var(--muted); font-size: .85rem; }
         .metric strong { font-size: 1.2rem; }
+        .history { margin: 12px 0 0; padding-inline-start: 20px; max-block-size: 160px; overflow: auto; color: var(--muted); }
         pre { margin: 0; max-block-size: 70dvh; overflow: auto; scrollbar-gutter: stable; border-radius: 6px; padding: 12px; background: var(--code); color: #d1fae5; font: .9rem/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
         .ok { color: var(--green); }
         .error { color: var(--red); }
@@ -47,7 +48,9 @@ pub fn html() -> String {
     <header>
         <div class="shell topbar">
             <h1>CortexDB Console</h1>
-            <form id="auth-form" class="topbar">
+            <form id="session-form" class="topbar">
+                <label for="tenant">Tenant</label>
+                <input id="tenant" name="tenant" autocomplete="organization" value="default">
                 <label for="token">Bearer token</label>
                 <input id="token" name="token" type="password" autocomplete="current-password">
                 <button type="submit">Apply</button>
@@ -155,27 +158,45 @@ Solar budget note</textarea></div>
 Wind Farm status ready.</textarea></div>
                     <button type="submit">Ingest</button>
                 </form>
+                <form id="ingest-job-form">
+                    <div class="field"><label for="ingest-job-id">Job ID</label><input id="ingest-job-id" name="job_id" inputmode="numeric" value="1"></div>
+                    <button type="submit" class="secondary">Load Ingest Job</button>
+                </form>
             </section>
         </section>
         <aside>
             <h2>Response</h2>
             <pre id="output" tabindex="0" aria-live="polite">{"status":"ready"}</pre>
+            <h2>History</h2>
+            <ol id="history" class="history" aria-label="Request history"></ol>
         </aside>
     </main>
     <script>
         const output = document.querySelector("#output");
         const metrics = document.querySelector("#metrics");
+        const history = document.querySelector("#history");
         let token = "";
+        let tenant = "default";
 
         function headers() {
             return token ? { authorization: `Bearer ${token}` } : {};
+        }
+        function scoped(path) {
+            if (!tenant || tenant === "default") return path;
+            return `${path}${path.includes("?") ? "&" : "?"}tenant=${encodeURIComponent(tenant)}`;
+        }
+        function addHistory(label, ok) {
+            const item = document.createElement("li");
+            item.textContent = `${ok ? "OK" : "ERR"} ${label}`;
+            history.prepend(item);
+            while (history.children.length > 8) history.lastElementChild.remove();
         }
         function show(value, ok = true) {
             output.className = ok ? "ok" : "error";
             output.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
         }
         async function api(path, init = {}) {
-            const response = await fetch(path, { ...init, headers: { ...headers(), ...(init.headers || {}) } });
+            const response = await fetch(scoped(path), { ...init, headers: { ...headers(), ...(init.headers || {}) } });
             const text = await response.text();
             let body;
             try { body = JSON.parse(text); } catch { body = text; }
@@ -187,19 +208,23 @@ Wind Farm status ready.</textarea></div>
             try {
                 const body = await task();
                 show(body);
+                addHistory(label, true);
                 if (body.current_seq !== undefined || body.ok !== undefined) renderMetrics(body);
             } catch (error) {
                 show(error, false);
+                addHistory(label, false);
             }
         }
         function renderMetrics(body) {
             const items = Object.entries(body).filter(([, value]) => typeof value !== "object").slice(0, 8);
             metrics.innerHTML = items.map(([key, value]) => `<div class="metric"><span>${key}</span><strong>${value}</strong></div>`).join("");
         }
-        document.querySelector("#auth-form").addEventListener("submit", event => {
+        document.querySelector("#session-form").addEventListener("submit", event => {
             event.preventDefault();
-            token = new FormData(event.currentTarget).get("token") || "";
-            show({ auth: token ? "token_applied" : "cleared" });
+            const data = new FormData(event.currentTarget);
+            token = data.get("token") || "";
+            tenant = data.get("tenant") || "default";
+            show({ auth: token ? "token_applied" : "cleared", tenant });
         });
         document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => {
             document.querySelectorAll(".tab").forEach(item => item.setAttribute("aria-selected", String(item === tab)));
@@ -247,6 +272,11 @@ Wind Farm status ready.</textarea></div>
             const kind = data.get("type") || "text";
             const params = new URLSearchParams({ scope: data.get("scope"), source: data.get("source") || "dashboard" });
             run("ingest", () => api(`/v1/ingest/${kind}?${params}`, { method: "POST", body: data.get("document") || "" }));
+        });
+        document.querySelector("#ingest-job-form").addEventListener("submit", event => {
+            event.preventDefault();
+            const id = encodeURIComponent(new FormData(event.currentTarget).get("job_id") || "");
+            run("ingest job", () => api(`/v1/ingest/jobs/${id}`));
         });
         run("stats", () => api("/v1/stats"));
     </script>
