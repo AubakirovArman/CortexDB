@@ -23,10 +23,21 @@ class CortexDBClient:
         return self._request("POST", path, b"")
 
     def search_vector(
-        self, scope: str, vector: list[int] | tuple[int, ...], limit: int = 20
+        self,
+        scope: str,
+        vector: list[int] | tuple[int, ...],
+        limit: int = 20,
+        algorithm: str = "ann",
     ) -> dict[str, Any]:
         literal = ",".join(str(value) for value in vector)
-        path = self._path("/v1/search", scope=scope, mode="vector", vector=literal, limit=limit)
+        path = self._path(
+            "/v1/search",
+            scope=scope,
+            mode="vector",
+            algorithm=algorithm,
+            vector=literal,
+            limit=limit,
+        )
         return self._request("POST", path, b"")
 
     def aql(self, scope: str, statement: str) -> dict[str, Any]:

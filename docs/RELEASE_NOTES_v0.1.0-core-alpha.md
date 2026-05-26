@@ -16,9 +16,11 @@ Core Alpha is the first durable single-node CortexDB prototype.
 - `clap`-backed CLI parser with structured help/version output.
 - HTTP API for health, put/get/tombstone/flush/compact/stats/validate/AQL/search/context/verify/remember/ingest.
 - Server requests route through per-tenant `DatabaseActor` workers.
+- Built-in `/dashboard` developer console for operational and retrieval smoke paths.
 - Typed serde JSON response structs for server API payloads.
 - OpenAPI 3.1 contract in `docs/openapi.yaml`.
 - Python and TypeScript SDK clients cover the real keyword/vector search API contract.
+- Rust `cortex-sdk` client crate covers the same HTTP API surface.
 - Empty ingestion safety for text, JSON, and CSV inputs.
 - Crash, restart, corruption, lifecycle, repair, AQL retrieve, and storage validation tests.
 

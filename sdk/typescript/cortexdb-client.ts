@@ -23,10 +23,16 @@ export class CortexDBClient {
     }));
   }
 
-  searchVector(scope: string, vector: number[], limit = 20): Promise<JsonObject> {
+  searchVector(
+    scope: string,
+    vector: number[],
+    limit = 20,
+    algorithm: "ann" | "exact" = "ann",
+  ): Promise<JsonObject> {
     return this.request("POST", this.path("/v1/search", {
       scope,
       mode: "vector",
+      algorithm,
       vector: vector.join(","),
       limit,
     }));

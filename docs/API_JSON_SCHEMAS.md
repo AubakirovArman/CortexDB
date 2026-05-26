@@ -138,10 +138,11 @@ Missing cells return:
 ## Search
 
 `POST /v1/search?scope=<scope>&q=<term>` or
-`POST /v1/search?scope=<scope>&mode=vector&vector=1,2,3`
+`POST /v1/search?scope=<scope>&mode=vector&algorithm=exact&vector=1,2,3`
 
 ```json
 {
+  "search_mode": "keyword",
   "results": [
     {
       "cell_id": 1,

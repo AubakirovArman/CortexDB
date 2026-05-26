@@ -171,6 +171,7 @@ pub struct SearchResultResponse {
 
 #[derive(Serialize, Debug, Clone)]
 pub struct SearchResponse {
+    pub search_mode: String,
     pub results: Vec<SearchResultResponse>,
 }
 

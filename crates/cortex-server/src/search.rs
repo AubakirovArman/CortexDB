@@ -15,26 +15,38 @@ pub fn handle_search_shared(
         .transpose()?
         .unwrap_or(20);
     let mode = query_param(query, "mode").unwrap_or("keyword");
+    let algorithm = query_param(query, "algorithm").unwrap_or("ann");
     let db = db.read().map_err(|e| e.to_string())?;
-    let results = match mode {
-        "keyword" => {
+    let (search_mode, results) = match mode {
+        "keyword" => ("keyword", {
             let text = query_param(query, "q")
                 .map(str::to_owned)
                 .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
             db.search_keyword(&text, &view_for_scope(scope), SearchLimit(limit))
-        }
+        }),
         "vector" => {
             let vector = query_param(query, "vector")
                 .map(str::to_owned)
                 .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
             let vector = parse_vector_literal(&vector)?;
-            db.search_vector(&vector, &view_for_scope(scope), SearchLimit(limit))
+            match algorithm {
+                "exact" => (
+                    "vector_exact",
+                    db.search_vector_exact(&vector, &view_for_scope(scope), SearchLimit(limit)),
+                ),
+                "ann" => (
+                    "vector_ann",
+                    db.search_vector(&vector, &view_for_scope(scope), SearchLimit(limit)),
+                ),
+                _ => return Err("algorithm must be exact or ann".to_owned()),
+            }
         }
         _ => return Err("mode must be keyword or vector".to_owned()),
-    }
-    .map_err(|error| error.to_string())?;
+    };
+    let results = results.map_err(|error| error.to_string())?;
 
     let response = SearchResponse {
+        search_mode: search_mode.to_owned(),
         results: results
             .iter()
             .map(|result| SearchResultResponse {

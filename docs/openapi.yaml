@@ -127,6 +127,12 @@ paths:
           schema:
             type: string
             enum: [keyword, vector]
+        - name: algorithm
+          in: query
+          description: Vector search algorithm. `ann` may fall back to exact scan when no graph is available.
+          schema:
+            type: string
+            enum: [ann, exact]
         - name: q
           in: query
           schema:
@@ -361,8 +367,9 @@ components:
             $ref: "#/components/schemas/Cell"
     SearchResponse:
       type: object
-      required: [results]
+      required: [search_mode, results]
       properties:
+        search_mode: { type: string, enum: [keyword, vector_exact, vector_ann] }
         results:
           type: array
           items:

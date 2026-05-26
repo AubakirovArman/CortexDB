@@ -18,12 +18,13 @@ Minimal dependency-light HTTP clients live in `sdk/`:
 
 - `sdk/python/cortexdb_client.py`
 - `sdk/typescript/cortexdb-client.ts`
+- `crates/cortex-sdk`
 
 They cover put, get, AQL, context, verify, remember, keyword search, vector
 search, stats, and validate. Packaging metadata is present in
-`sdk/python/pyproject.toml` and `sdk/typescript/package.json`. Their APIs are
-usable for Core Alpha smoke integrations, but not frozen as long-term stable
-SDK contracts.
+`sdk/python/pyproject.toml`, `sdk/typescript/package.json`, and
+`crates/cortex-sdk/Cargo.toml`. Their APIs are usable for Core Alpha smoke
+integrations and may still receive additive changes.
 
 `sdk/publish/check.sh` runs the current publish preflight: Python bytecode
 compile plus `npm pack --dry-run` when npm is available.

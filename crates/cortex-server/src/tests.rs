@@ -29,6 +29,18 @@ fn v1_api_requires_bearer_token_when_configured() {
 }
 
 #[test]
+fn dashboard_html_exposes_admin_console_surfaces() {
+    let html = super::dashboard::html();
+    assert!(html.contains("CortexDB Console"));
+    assert!(html.contains("data-tab=\"cells\""));
+    assert!(html.contains("data-tab=\"search\""));
+    assert!(html.contains("data-tab=\"context\""));
+    assert!(html.contains("data-tab=\"verify\""));
+    assert!(html.contains("/v1/stats"));
+    assert!(html.contains("/v1/cell"));
+}
+
+#[test]
 fn v1_stats_and_validate_report_storage_state() {
     let dir = tempfile::tempdir().unwrap();
     let put = "POST /v1/cell?cell_id=1 HTTP/1.1\r\ncontent-length: 5\r\n\r\nhello";
@@ -106,6 +118,7 @@ fn v1_search_returns_scope_filtered_results() {
 
     let request = "POST /v1/search?scope=project:investments&q=budget HTTP/1.1\r\n\r\n";
     let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""search_mode":"keyword""#));
     assert!(response.contains(r#""cell_id":1"#));
     assert!(!response.contains(r#""cell_id":2"#));
 }
@@ -124,12 +137,28 @@ fn v1_vector_search_accepts_query_vector() {
     assert!(handle_http(dir.path(), put_a).contains(r#""seq":1"#));
     assert!(handle_http(dir.path(), put_b).contains(r#""seq":2"#));
 
-    let request =
-        "POST /v1/search?scope=project:investments&mode=vector&vector=2,0 HTTP/1.1\r\n\r\n";
+    let request = "POST /v1/search?scope=project:investments&mode=vector&algorithm=exact&vector=2,0 HTTP/1.1\r\n\r\n";
     let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""search_mode":"vector_exact""#));
     assert!(response.contains(r#""cell_id":1"#));
     assert!(response.contains(r#""vector_score":"#));
     assert!(!response.contains(r#""cell_id":2"#));
+}
+
+#[test]
+fn v1_vector_search_can_request_ann_mode() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\nvector=5,0\nalpha"
+    );
+    assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+
+    let request =
+        "POST /v1/search?scope=project:investments&mode=vector&algorithm=ann&vector=2,0 HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""search_mode":"vector_ann""#));
+    assert!(response.contains(r#""cell_id":1"#));
 }
 
 #[test]

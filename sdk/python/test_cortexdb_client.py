@@ -22,12 +22,13 @@ class CortexDBClientPathTests(unittest.TestCase):
             "/v1/search",
             scope="project:investments",
             mode="vector",
+            algorithm="ann",
             vector="1,2,3",
             limit=5,
         )
         self.assertEqual(
             path,
-            "/v1/search?scope=project%3Ainvestments&mode=vector&vector=1%2C2%2C3&limit=5",
+            "/v1/search?scope=project%3Ainvestments&mode=vector&algorithm=ann&vector=1%2C2%2C3&limit=5",
         )
 
 
