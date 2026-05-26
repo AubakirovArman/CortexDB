@@ -1,4 +1,36 @@
 export type JsonObject = Record<string, unknown>;
+export type VectorAlgorithm = "ann" | "exact";
+export type SearchMode = "keyword" | "vector_exact" | "vector_ann";
+export type AnnSearchPath = "hnsw_graph" | "exact_fallback";
+export type AnnFallbackReason =
+  | "empty_graph"
+  | "invalid_graph"
+  | "insufficient_results"
+  | "no_persisted_segments"
+  | "uncheckpointed_changes";
+
+export interface AnnSearchReport {
+  path: AnnSearchPath;
+  fallback_reason: AnnFallbackReason | null;
+  requested_limit: number;
+  allowed_candidates: number;
+  graph_nodes: number;
+  returned_candidates: number;
+}
+
+export interface SearchResult {
+  cell_id: number;
+  score: number;
+  lexical_score: number;
+  vector_score: number;
+  payload: string;
+}
+
+export interface SearchResponse {
+  search_mode: SearchMode;
+  ann_report: AnnSearchReport | null;
+  results: SearchResult[];
+}
 
 export class CortexDBClient {
   constructor(
@@ -30,28 +62,28 @@ export class CortexDBClient {
     return this.request("POST", "/v1/compact");
   }
 
-  search(scope: string, query: string, limit = 20): Promise<JsonObject> {
+  search(scope: string, query: string, limit = 20): Promise<SearchResponse> {
     return this.request("POST", this.path("/v1/search", {
       scope,
       mode: "keyword",
       q: query,
       limit,
-    }));
+    })) as Promise<SearchResponse>;
   }
 
   searchVector(
     scope: string,
     vector: number[],
     limit = 20,
-    algorithm: "ann" | "exact" = "ann",
-  ): Promise<JsonObject> {
+    algorithm: VectorAlgorithm = "ann",
+  ): Promise<SearchResponse> {
     return this.request("POST", this.path("/v1/search", {
       scope,
       mode: "vector",
       algorithm,
       vector: vector.join(","),
       limit,
-    }));
+    })) as Promise<SearchResponse>;
   }
 
   aql(scope: string, statement: string): Promise<JsonObject> {

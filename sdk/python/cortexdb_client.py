@@ -8,6 +8,63 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class AnnSearchReport:
+    path: str
+    fallback_reason: str | None
+    requested_limit: int
+    allowed_candidates: int
+    graph_nodes: int
+    returned_candidates: int
+
+    @classmethod
+    def from_json(cls, value: dict[str, Any]) -> "AnnSearchReport":
+        reason = value.get("fallback_reason")
+        return cls(
+            path=str(value["path"]),
+            fallback_reason=str(reason) if reason is not None else None,
+            requested_limit=int(value["requested_limit"]),
+            allowed_candidates=int(value["allowed_candidates"]),
+            graph_nodes=int(value["graph_nodes"]),
+            returned_candidates=int(value["returned_candidates"]),
+        )
+
+
+@dataclass(frozen=True)
+class SearchResult:
+    cell_id: int
+    score: int
+    lexical_score: int
+    vector_score: int
+    payload: str
+
+    @classmethod
+    def from_json(cls, value: dict[str, Any]) -> "SearchResult":
+        return cls(
+            cell_id=int(value["cell_id"]),
+            score=int(value["score"]),
+            lexical_score=int(value["lexical_score"]),
+            vector_score=int(value["vector_score"]),
+            payload=str(value["payload"]),
+        )
+
+
+@dataclass(frozen=True)
+class SearchResponse:
+    search_mode: str
+    ann_report: AnnSearchReport | None
+    results: tuple[SearchResult, ...]
+
+    @classmethod
+    def from_json(cls, value: dict[str, Any]) -> "SearchResponse":
+        report = value.get("ann_report")
+        return cls(
+            search_mode=str(value["search_mode"]),
+            ann_report=AnnSearchReport.from_json(report) if report else None,
+            results=tuple(SearchResult.from_json(row) for row in value["results"]),
+        )
+
+
+@dataclass(frozen=True)
 class CortexDBClient:
     base_url: str = "http://127.0.0.1:8181"
     token: str | None = None
@@ -34,6 +91,9 @@ class CortexDBClient:
         path = self._path("/v1/search", scope=scope, mode="keyword", q=query, limit=limit)
         return self._request("POST", path, b"")
 
+    def search_response(self, scope: str, query: str, limit: int = 20) -> SearchResponse:
+        return SearchResponse.from_json(self.search(scope, query, limit))
+
     def search_vector(
         self,
         scope: str,
@@ -51,6 +111,15 @@ class CortexDBClient:
             limit=limit,
         )
         return self._request("POST", path, b"")
+
+    def search_vector_response(
+        self,
+        scope: str,
+        vector: list[int] | tuple[int, ...],
+        limit: int = 20,
+        algorithm: str = "ann",
+    ) -> SearchResponse:
+        return SearchResponse.from_json(self.search_vector(scope, vector, limit, algorithm))
 
     def aql(self, scope: str, statement: str) -> dict[str, Any]:
         return self._request("POST", self._path("/v1/aql", scope=scope), statement.encode())

@@ -11,5 +11,7 @@ surface and intentionally keep runtime dependencies small.
 - `crates/cortex-sdk`: blocking Rust HTTP client with crates.io metadata.
 
 The SDK APIs are Core Alpha contracts and may still receive additive changes.
+Search clients expose a typed response shape with `search_mode`, `ann_report`,
+and ranked `results` so ANN fallback behavior is visible to callers.
 `publish/check.sh` validates Python bytecode/tests/wheel packaging, Rust tests
 and `cargo package`, and npm package dry-runs when npm is installed.

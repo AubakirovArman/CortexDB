@@ -1,5 +1,36 @@
 export type JsonObject = Record<string, unknown>;
 export type VectorAlgorithm = "ann" | "exact";
+export type SearchMode = "keyword" | "vector_exact" | "vector_ann";
+export type AnnSearchPath = "hnsw_graph" | "exact_fallback";
+export type AnnFallbackReason =
+  | "empty_graph"
+  | "invalid_graph"
+  | "insufficient_results"
+  | "no_persisted_segments"
+  | "uncheckpointed_changes";
+
+export interface AnnSearchReport {
+  path: AnnSearchPath;
+  fallback_reason: AnnFallbackReason | null;
+  requested_limit: number;
+  allowed_candidates: number;
+  graph_nodes: number;
+  returned_candidates: number;
+}
+
+export interface SearchResult {
+  cell_id: number;
+  score: number;
+  lexical_score: number;
+  vector_score: number;
+  payload: string;
+}
+
+export interface SearchResponse {
+  search_mode: SearchMode;
+  ann_report: AnnSearchReport | null;
+  results: SearchResult[];
+}
 
 export class CortexDBClient {
   constructor(baseUrl?: string, token?: string);
@@ -9,13 +40,13 @@ export class CortexDBClient {
   tombstoneCell(cellId: number): Promise<JsonObject>;
   flush(): Promise<JsonObject>;
   compact(): Promise<JsonObject>;
-  search(scope: string, query: string, limit?: number): Promise<JsonObject>;
+  search(scope: string, query: string, limit?: number): Promise<SearchResponse>;
   searchVector(
     scope: string,
     vector: number[],
     limit?: number,
     algorithm?: VectorAlgorithm,
-  ): Promise<JsonObject>;
+  ): Promise<SearchResponse>;
   aql(scope: string, statement: string): Promise<JsonObject>;
   retrieveContext(scope: string, statement: string): Promise<JsonObject>;
   verifyFact(scope: string, statement: string): Promise<JsonObject>;
