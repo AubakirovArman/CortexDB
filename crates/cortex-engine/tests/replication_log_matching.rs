@@ -78,6 +78,57 @@ fn append_entries_clamps_commit_to_last_replicated_index() {
     assert_eq!(transport.peer_commit(NodeId(2)), Some(LogIndex(1)));
 }
 
+#[test]
+fn append_entries_rejects_non_contiguous_entry_indexes() {
+    let mut transport = follower_transport();
+    append(&mut transport, LogIndex(0), Term(0), entry(1, 1, b"base"));
+
+    let response = transport
+        .append_entries(
+            NodeId(2),
+            AppendEntriesRequest {
+                term: Term(1),
+                leader_id: NodeId(1),
+                prev_log_index: LogIndex(1),
+                prev_log_term: Term(1),
+                entries: vec![entry(3, 1, b"gap")],
+                leader_commit: LogIndex(3),
+            },
+        )
+        .unwrap();
+
+    assert!(!response.success);
+    assert_eq!(response.match_index, LogIndex(1));
+    assert_eq!(
+        transport.peer_log(NodeId(2)).unwrap(),
+        &[entry(1, 1, b"base")]
+    );
+    assert_eq!(transport.peer_commit(NodeId(2)), Some(LogIndex(0)));
+}
+
+#[test]
+fn append_entries_rejects_out_of_order_entry_indexes() {
+    let mut transport = follower_transport();
+
+    let response = transport
+        .append_entries(
+            NodeId(2),
+            AppendEntriesRequest {
+                term: Term(1),
+                leader_id: NodeId(1),
+                prev_log_index: LogIndex(0),
+                prev_log_term: Term(0),
+                entries: vec![entry(2, 1, b"two"), entry(1, 1, b"one")],
+                leader_commit: LogIndex(2),
+            },
+        )
+        .unwrap();
+
+    assert!(!response.success);
+    assert_eq!(response.match_index, LogIndex(0));
+    assert_eq!(transport.peer_log(NodeId(2)).unwrap(), &[]);
+}
+
 fn follower_transport() -> InMemoryReplicationTransport {
     let voters = BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)]);
     let mut state = ElectionState::new(NodeId(2), voters);

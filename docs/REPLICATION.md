@@ -21,9 +21,15 @@ AppendEntries now enforces the core Raft log-matching invariant:
 
 - the follower rejects an append if it does not contain `prev_log_index` with
   `prev_log_term`;
+- entry indexes in a request must be contiguous from `prev_log_index + 1`; gaps
+  and out-of-order batches are rejected before mutating the follower log;
 - conflicting suffixes are truncated before replacement entries are appended;
 - follower commit indexes in the in-memory transport are advanced to
   `min(leader_commit, last_replicated_index)`.
+
+Follower election state also rejects a conflicting same-term leader after a
+leader has already been accepted for that term. A higher-term leader still
+forces the follower to step down and replace the previous leader metadata.
 
 Snapshot transfer v0 uses:
 

@@ -43,6 +43,8 @@ Core Alpha is the first durable single-node CortexDB prototype.
   guard runs, so clients can inspect HNSW quality decisions.
 - Replication consensus state now enforces current-term commit rules and
   majority match-index advancement.
+- Replication followers reject non-contiguous AppendEntries batches and
+  conflicting same-term leaders in the local consensus model.
 - Empty ingestion safety for text, JSON, and CSV inputs.
 - Crash, restart, corruption, lifecycle, repair, AQL retrieve, and storage validation tests.
 

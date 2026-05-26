@@ -123,6 +123,9 @@ impl ElectionState {
         if term < self.current_term || !self.voters.contains(&leader) {
             return false;
         }
+        if term == self.current_term && self.leader.is_some_and(|known| known != leader) {
+            return false;
+        }
         if term > self.current_term {
             self.step_down(term);
         }
