@@ -234,6 +234,14 @@ impl Database {
         &self.root_path
     }
 
+    pub fn enterprise_system_check(&self) -> EngineResult<bool> {
+        let report = self.validate_storage_report();
+        if !report.manifest_ok || !report.wal_ok {
+            return Ok(false);
+        }
+        Ok(true)
+    }
+
     pub fn wal_path(&self) -> &Path {
         &self.wal_path
     }
