@@ -6,6 +6,7 @@ export type AnnFallbackReason =
   | "empty_graph"
   | "invalid_graph"
   | "insufficient_results"
+  | "low_recall"
   | "no_persisted_segments"
   | "uncheckpointed_changes";
 

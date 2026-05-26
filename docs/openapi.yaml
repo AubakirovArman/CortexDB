@@ -433,7 +433,7 @@ components:
         fallback_reason:
           anyOf:
             - type: string
-              enum: [empty_graph, invalid_graph, insufficient_results, no_persisted_segments, uncheckpointed_changes]
+              enum: [empty_graph, invalid_graph, insufficient_results, low_recall, no_persisted_segments, uncheckpointed_changes]
             - type: "null"
         requested_limit: { type: integer }
         allowed_candidates: { type: integer }

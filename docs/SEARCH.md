@@ -76,8 +76,11 @@ vector search. For `algorithm=ann`, it records the actual path:
 
 `path` is either `hnsw_graph` or `exact_fallback`. `fallback_reason` is `null`
 when the persisted HNSW graph is used, or one of `empty_graph`,
-`invalid_graph`, `insufficient_results`, `no_persisted_segments`, or
-`uncheckpointed_changes` when exact scan is used instead.
+`invalid_graph`, `insufficient_results`, `low_recall`,
+`no_persisted_segments`, or `uncheckpointed_changes` when exact scan is used
+instead. `low_recall` is emitted when HNSW returns enough candidates but fails
+the exact top-k recall guard, preserving result correctness while ANN quality is
+still being tuned.
 
 For ANN quality work, `Database::evaluate_vector_ann` compares the persisted
 HNSW path with exact `.acv` vector scan for the same `AgentView`, query vector,
@@ -91,5 +94,5 @@ snapshot precondition is met.
 ## Not Yet
 
 - Full dictionary-grade lemmatization packs.
-- Production HNSW tuning beyond the current deterministic maintenance and
-  exact-baseline recall evaluation hooks.
+- Production HNSW tuning beyond the current deterministic maintenance, recall
+  guard, and exact-baseline recall evaluation hooks.

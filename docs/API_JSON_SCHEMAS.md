@@ -169,6 +169,9 @@ For `search_mode: "vector_ann"`, `ann_report` is populated:
 }
 ```
 
+`fallback_reason` may also be `low_recall` when the HNSW graph returns enough
+candidates but fails the exact top-k recall guard.
+
 ## ANN Evaluation
 
 `POST /v1/search/ann-evaluate?scope=<scope>&vector=1,2,3&limit=20`

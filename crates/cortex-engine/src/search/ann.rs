@@ -26,6 +26,7 @@ pub enum AnnFallbackReason {
     EmptyGraph,
     InvalidGraph,
     InsufficientResults,
+    LowRecall,
     NoPersistedSegments,
     UncheckpointedChanges,
 }
@@ -36,11 +37,14 @@ impl AnnFallbackReason {
             Self::EmptyGraph => "empty_graph",
             Self::InvalidGraph => "invalid_graph",
             Self::InsufficientResults => "insufficient_results",
+            Self::LowRecall => "low_recall",
             Self::NoPersistedSegments => "no_persisted_segments",
             Self::UncheckpointedChanges => "uncheckpointed_changes",
         }
     }
 }
+
+const MIN_ANN_RECALL_Q16: u16 = 65_535;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct AnnSearchReport {
@@ -88,30 +92,36 @@ pub fn search_persisted_ann(
             AnnFallbackReason::EmptyGraph,
         );
     }
-
-    let index = HnswIndex::from_graph(vectors.clone(), graph.clone(), 8, 64);
-    if !index.verify_hnsw_integrity() {
-        return exact(
-            vectors,
-            query,
-            allowed,
+    let ann = match search_hnsw(vectors, graph, query, allowed, limit, expected) {
+        Ok(ann) => ann,
+        Err(reason) => {
+            return exact(
+                vectors,
+                query,
+                allowed,
+                limit,
+                available,
+                graph_nodes,
+                reason,
+            )
+        }
+    };
+    let exact_results = search_persisted_vectors(vectors, query, allowed, limit);
+    let exact_set = exact_results
+        .iter()
+        .map(|candidate| candidate.cell_id)
+        .collect::<BTreeSet<_>>();
+    let overlap = ann
+        .iter()
+        .filter(|candidate| exact_set.contains(&candidate.cell_id))
+        .count();
+    if recall_q16(overlap, exact_results.len()) < MIN_ANN_RECALL_Q16 {
+        return exact_from_results(
+            exact_results,
             limit,
             available,
             graph_nodes,
-            AnnFallbackReason::InvalidGraph,
-        );
-    }
-
-    let ann = index.search_allowed(query, allowed, limit);
-    if ann.len() < expected {
-        return exact(
-            vectors,
-            query,
-            allowed,
-            limit,
-            available,
-            graph_nodes,
-            AnnFallbackReason::InsufficientResults,
+            AnnFallbackReason::LowRecall,
         );
     }
     let returned = ann.len();
@@ -136,7 +146,25 @@ pub fn evaluate_persisted_ann(
     limit: usize,
 ) -> AnnEvaluationReport {
     let exact_results = search_persisted_vectors(vectors, query, allowed, limit);
-    let ann_outcome = search_persisted_ann(vectors, graph, query, allowed, limit);
+    let available = vectors.keys().filter(|id| allowed.contains(id)).count();
+    let expected = limit.min(available);
+    let graph_nodes = graph.links.len();
+    let ann_outcome = match search_hnsw(vectors, graph, query, allowed, limit, expected) {
+        Ok(results) => AnnSearchOutcome {
+            report: AnnSearchReport {
+                path: AnnSearchPath::HnswGraph,
+                fallback_reason: None,
+                requested_limit: limit,
+                allowed_candidates: available,
+                graph_nodes,
+                returned_candidates: results.len(),
+            },
+            results,
+        },
+        Err(reason) => {
+            exact_from_results(exact_results.clone(), limit, available, graph_nodes, reason)
+        }
+    };
     let exact_top_k = exact_results
         .iter()
         .map(|candidate| candidate.cell_id)
@@ -160,6 +188,29 @@ pub fn evaluate_persisted_ann(
     }
 }
 
+fn search_hnsw(
+    vectors: &BTreeMap<u32, Vec<i16>>,
+    graph: &HnswGraphIndex,
+    query: &[i16],
+    allowed: &BTreeSet<u32>,
+    limit: usize,
+    expected: usize,
+) -> Result<Vec<ScoredCandidate>, AnnFallbackReason> {
+    if graph.links.is_empty() {
+        return Err(AnnFallbackReason::EmptyGraph);
+    }
+    let index = HnswIndex::from_graph(vectors.clone(), graph.clone(), 8, 64);
+    if !index.verify_hnsw_integrity() {
+        return Err(AnnFallbackReason::InvalidGraph);
+    }
+    let ann = index.search_allowed(query, allowed, limit);
+    if ann.len() < expected {
+        Err(AnnFallbackReason::InsufficientResults)
+    } else {
+        Ok(ann)
+    }
+}
+
 fn exact(
     vectors: &BTreeMap<u32, Vec<i16>>,
     query: &[i16],
@@ -170,6 +221,16 @@ fn exact(
     reason: AnnFallbackReason,
 ) -> AnnSearchOutcome {
     let results = search_persisted_vectors(vectors, query, allowed, limit);
+    exact_from_results(results, limit, available, graph_nodes, reason)
+}
+
+fn exact_from_results(
+    results: Vec<ScoredCandidate>,
+    limit: usize,
+    available: usize,
+    graph_nodes: usize,
+    reason: AnnFallbackReason,
+) -> AnnSearchOutcome {
     let returned = results.len();
     AnnSearchOutcome {
         results,
@@ -192,96 +253,4 @@ fn recall_q16(overlap_count: usize, expected_count: usize) -> u16 {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn empty_graph_falls_back_to_exact() {
-        let outcome = search_persisted_ann(
-            &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
-            &HnswGraphIndex::default(),
-            &[0, 5],
-            &BTreeSet::from([1, 2]),
-            1,
-        );
-
-        assert_eq!(outcome.results[0].cell_id, 2);
-        assert_eq!(outcome.report.path, AnnSearchPath::ExactFallback);
-        assert_eq!(
-            outcome.report.fallback_reason,
-            Some(AnnFallbackReason::EmptyGraph)
-        );
-    }
-
-    #[test]
-    fn invalid_graph_falls_back_to_exact() {
-        let outcome = search_persisted_ann(
-            &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
-            &HnswGraphIndex {
-                links: BTreeMap::from([(1, BTreeSet::from([999]))]),
-            },
-            &[0, 5],
-            &BTreeSet::from([1, 2]),
-            1,
-        );
-
-        assert_eq!(outcome.results[0].cell_id, 2);
-        assert_eq!(
-            outcome.report.fallback_reason,
-            Some(AnnFallbackReason::InvalidGraph)
-        );
-    }
-
-    #[test]
-    fn incomplete_graph_results_fall_back_to_exact() {
-        let outcome = search_persisted_ann(
-            &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
-            &HnswGraphIndex {
-                links: BTreeMap::from([(1, BTreeSet::new())]),
-            },
-            &[0, 5],
-            &BTreeSet::from([1, 2]),
-            2,
-        );
-
-        assert_eq!(outcome.results.len(), 2);
-        assert_eq!(outcome.results[0].cell_id, 2);
-        assert_eq!(
-            outcome.report.fallback_reason,
-            Some(AnnFallbackReason::InsufficientResults)
-        );
-    }
-
-    #[test]
-    fn evaluation_reports_exact_overlap_and_recall() {
-        let report = evaluate_persisted_ann(
-            &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10]), (3, vec![2, 8])]),
-            &HnswGraphIndex {
-                links: BTreeMap::from([(1, BTreeSet::from([2])), (2, BTreeSet::from([3]))]),
-            },
-            &[0, 10],
-            &BTreeSet::from([1, 2, 3]),
-            2,
-        );
-
-        assert_eq!(report.exact_top_k, vec![2, 3]);
-        assert_eq!(report.ann_top_k, vec![2, 3]);
-        assert_eq!(report.overlap_count, 2);
-        assert_eq!(report.recall_q16, 65_535);
-    }
-
-    #[test]
-    fn evaluation_treats_empty_exact_set_as_full_recall() {
-        let report = evaluate_persisted_ann(
-            &BTreeMap::from([(1, vec![10, 0])]),
-            &HnswGraphIndex::default(),
-            &[0, 10],
-            &BTreeSet::new(),
-            2,
-        );
-
-        assert!(report.exact_top_k.is_empty());
-        assert_eq!(report.overlap_count, 0);
-        assert_eq!(report.recall_q16, 65_535);
-    }
-}
+mod tests;
