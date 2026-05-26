@@ -1,7 +1,7 @@
 use cortex_engine::{parse_vector_literal, Database, SearchLimit};
 
 use crate::context::view_for_scope;
-use crate::escape_json;
+use crate::responses::{SearchResponse, SearchResultResponse};
 
 pub fn handle_search_shared(
     db: &std::sync::RwLock<Database>,
@@ -33,23 +33,20 @@ pub fn handle_search_shared(
         _ => return Err("mode must be keyword or vector".to_owned()),
     }
     .map_err(|error| error.to_string())?;
-    Ok(format!(
-        r#"{{"results":[{}]}}"#,
-        results
+
+    let response = SearchResponse {
+        results: results
             .iter()
-            .map(|result| {
-                format!(
-                    r#"{{"cell_id":{},"score":{},"lexical_score":{},"vector_score":{},"payload":"{}"}}"#,
-                    result.cell_id.0,
-                    result.score,
-                    result.lexical_score,
-                    result.vector_score,
-                    escape_json(&String::from_utf8_lossy(&result.payload))
-                )
+            .map(|result| SearchResultResponse {
+                cell_id: result.cell_id.0,
+                score: result.score,
+                lexical_score: result.lexical_score,
+                vector_score: result.vector_score,
+                payload: String::from_utf8_lossy(&result.payload).into_owned(),
             })
-            .collect::<Vec<_>>()
-            .join(",")
-    ))
+            .collect(),
+    };
+    serde_json::to_string(&response).map_err(|e| e.to_string())
 }
 
 fn parse_limit(value: &str) -> Result<usize, String> {

@@ -1,7 +1,6 @@
 use cortex_engine::{Database, RetrievedCell};
 
 use crate::context::view_for_scope;
-use crate::escape_json;
 
 pub fn handle_aql_shared(
     db: &std::sync::RwLock<Database>,
@@ -26,16 +25,13 @@ fn query_param<'a>(query: &'a str, key: &str) -> Result<&'a str, String> {
 }
 
 fn cells_json(cells: &[RetrievedCell]) -> String {
-    let cells = cells
-        .iter()
-        .map(|cell| {
-            format!(
-                r#"{{"cell_id":{},"payload":"{}"}}"#,
-                cell.cell_id.0,
-                escape_json(&String::from_utf8_lossy(&cell.payload))
-            )
-        })
-        .collect::<Vec<_>>()
-        .join(",");
-    format!(r#"{{"cells":[{cells}]}}"#)
+    let response = serde_json::json!({
+        "cells": cells.iter().map(|cell| {
+            serde_json::json!({
+                "cell_id": cell.cell_id.0,
+                "payload": String::from_utf8_lossy(&cell.payload).into_owned()
+            })
+        }).collect::<Vec<_>>()
+    });
+    serde_json::to_string(&response).unwrap_or_default()
 }
