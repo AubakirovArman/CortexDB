@@ -2,65 +2,85 @@ openapi: 3.1.0
 info:
   title: CortexDB Core Alpha API
   version: 0.1.0-core-alpha
-  description: >
-    Experimental Core Alpha HTTP API for the local single-node CortexDB engine.
-    The HTTP layer is async, while the database core is a local blocking engine
+  description: 'Experimental Core Alpha HTTP API for the local single-node CortexDB
+    engine. The HTTP layer is async, while the database core is a local blocking engine
     executed through a blocking task boundary.
+
+    '
 servers:
-  - url: http://127.0.0.1:8181
+- url: http://127.0.0.1:8181
 paths:
   /v1/health:
     get:
       summary: Health check
       responses:
-        "200":
+        '200':
           description: Server is alive
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HealthResponse"
+                $ref: '#/components/schemas/HealthResponse'
   /v1/stats:
     get:
       summary: Storage and WAL statistics
       parameters:
-        - $ref: "#/components/parameters/Tenant"
+      - $ref: '#/components/parameters/Tenant'
       responses:
-        "200":
+        '200':
           description: Storage stats
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StatsResponse"
+                $ref: '#/components/schemas/StatsResponse'
   /v1/validate:
     get:
       summary: Validate storage integrity
       parameters:
-        - $ref: "#/components/parameters/Tenant"
+      - $ref: '#/components/parameters/Tenant'
       responses:
-        "200":
+        '200':
           description: Validation report
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ValidationResponse"
+                $ref: '#/components/schemas/ValidationResponse'
   /v1/cell:
     get:
       summary: Read one cell
       parameters:
-        - $ref: "#/components/parameters/Tenant"
-        - $ref: "#/components/parameters/CellId"
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/CellId'
       responses:
-        "200":
+        '200':
           description: Cell lookup result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CellLookupResponse"
+                $ref: '#/components/schemas/CellLookupResponse'
+        '400': &id001
+          description: Bad Request — missing parameters, invalid AQL, or malformed
+            payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404': &id003
+          description: Not Found — cell or job does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500': &id002
+          description: Internal Error — database operation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     post:
       summary: Put one cell
       parameters:
-        - $ref: "#/components/parameters/Tenant"
-        - $ref: "#/components/parameters/CellId"
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/CellId'
       requestBody:
         required: true
         content:
@@ -68,54 +88,59 @@ paths:
             schema:
               type: string
       responses:
-        "200":
+        '200':
           description: Commit acknowledgement
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PutCellResponse"
+                $ref: '#/components/schemas/PutCellResponse'
+        '400': *id001
+        '500': *id002
     delete:
       summary: Tombstone one cell
       parameters:
-        - $ref: "#/components/parameters/Tenant"
-        - $ref: "#/components/parameters/CellId"
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/CellId'
       responses:
-        "200":
+        '200':
           description: Commit acknowledgement
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PutCellResponse"
+                $ref: '#/components/schemas/PutCellResponse'
+        '400': *id001
+        '404': *id003
+        '500': *id002
   /v1/flush:
     post:
       summary: Checkpoint current changes
       parameters:
-        - $ref: "#/components/parameters/Tenant"
+      - $ref: '#/components/parameters/Tenant'
       responses:
-        "200":
+        '200':
           description: Checkpoint result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CheckpointResponse"
+                $ref: '#/components/schemas/CheckpointResponse'
   /v1/compact:
     post:
       summary: Compact visible snapshot
       parameters:
-        - $ref: "#/components/parameters/Tenant"
+      - $ref: '#/components/parameters/Tenant'
       responses:
-        "200":
+        '200':
           description: Compaction result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CheckpointResponse"
+                $ref: '#/components/schemas/CheckpointResponse'
   /v1/aql:
     post:
       summary: Run AQL retrieve
       parameters:
-        - $ref: "#/components/parameters/Tenant"
-        - $ref: "#/components/parameters/Scope"
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/Scope'
       requestBody:
         required: true
         content:
@@ -123,77 +148,88 @@ paths:
             schema:
               type: string
       responses:
-        "200":
+        '200':
           description: Retrieved cells
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AqlResponse"
+                $ref: '#/components/schemas/AqlResponse'
+        '400': *id001
+        '500': *id002
   /v1/search:
     post:
       summary: Keyword or vector search
       parameters:
-        - $ref: "#/components/parameters/Tenant"
-        - $ref: "#/components/parameters/Scope"
-        - name: mode
-          in: query
-          schema:
-            type: string
-            enum: [keyword, vector]
-        - name: algorithm
-          in: query
-          description: Vector search algorithm. `ann` may fall back to exact scan when no graph is available.
-          schema:
-            type: string
-            enum: [ann, exact]
-        - name: q
-          in: query
-          schema:
-            type: string
-        - name: vector
-          in: query
-          schema:
-            type: string
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            minimum: 1
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/Scope'
+      - name: mode
+        in: query
+        schema:
+          type: string
+          enum:
+          - keyword
+          - vector
+      - name: algorithm
+        in: query
+        description: Vector search algorithm. `ann` may fall back to exact scan when
+          no graph is available.
+        schema:
+          type: string
+          enum:
+          - ann
+          - exact
+      - name: q
+        in: query
+        schema:
+          type: string
+      - name: vector
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
       responses:
-        "200":
+        '200':
           description: Search results
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SearchResponse"
+                $ref: '#/components/schemas/SearchResponse'
+        '400': *id001
+        '500': *id002
   /v1/search/ann-evaluate:
     post:
       summary: Compare persisted ANN search against exact vector scan
       parameters:
-        - $ref: "#/components/parameters/Tenant"
-        - $ref: "#/components/parameters/Scope"
-        - name: vector
-          in: query
-          schema:
-            type: string
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            minimum: 1
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/Scope'
+      - name: vector
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
       responses:
-        "200":
+        '200':
           description: ANN recall evaluation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AnnEvaluationResponse"
+                $ref: '#/components/schemas/AnnEvaluationResponse'
+        '400': *id001
+        '500': *id002
   /v1/context:
     post:
       summary: Build a ContextPack from AQL
       parameters:
-        - $ref: "#/components/parameters/Tenant"
-        - $ref: "#/components/parameters/Scope"
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/Scope'
       requestBody:
         required: true
         content:
@@ -201,18 +237,20 @@ paths:
             schema:
               type: string
       responses:
-        "200":
+        '200':
           description: ContextPack
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ContextPackResponse"
+                $ref: '#/components/schemas/ContextPackResponse'
+        '400': *id001
+        '500': *id002
   /v1/remember:
     post:
       summary: Execute AQL REMEMBER
       parameters:
-        - $ref: "#/components/parameters/Tenant"
-        - $ref: "#/components/parameters/Scope"
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/Scope'
       requestBody:
         required: true
         content:
@@ -220,18 +258,20 @@ paths:
             schema:
               type: string
       responses:
-        "200":
+        '200':
           description: Remember result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RememberResponse"
+                $ref: '#/components/schemas/RememberResponse'
+        '400': *id001
+        '500': *id002
   /v1/verify:
     post:
       summary: Execute AQL VERIFY FACT
       parameters:
-        - $ref: "#/components/parameters/Tenant"
-        - $ref: "#/components/parameters/Scope"
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/Scope'
       requestBody:
         required: true
         content:
@@ -239,72 +279,80 @@ paths:
             schema:
               type: string
       responses:
-        "200":
+        '200':
           description: Verification report
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/VerificationReportResponse"
+                $ref: '#/components/schemas/VerificationReportResponse'
+        '400': *id001
+        '500': *id002
   /v1/ingest/text:
     post:
       summary: Ingest raw text chunks
       parameters:
-        - $ref: "#/components/parameters/Tenant"
-        - $ref: "#/components/parameters/Scope"
-        - $ref: "#/components/parameters/Source"
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/Scope'
+      - $ref: '#/components/parameters/Source'
       responses:
-        "200":
+        '200':
           description: Ingestion result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/IngestResponse"
+                $ref: '#/components/schemas/IngestResponse'
+        '400': *id001
+        '500': *id002
   /v1/ingest/json:
     post:
       summary: Ingest flattened JSON facts
       parameters:
-        - $ref: "#/components/parameters/Tenant"
-        - $ref: "#/components/parameters/Scope"
-        - $ref: "#/components/parameters/Source"
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/Scope'
+      - $ref: '#/components/parameters/Source'
       responses:
-        "200":
+        '200':
           description: Ingestion result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/IngestResponse"
+                $ref: '#/components/schemas/IngestResponse'
+        '400': *id001
+        '500': *id002
   /v1/ingest/csv:
     post:
       summary: Ingest CSV rows
       parameters:
-        - $ref: "#/components/parameters/Tenant"
-        - $ref: "#/components/parameters/Scope"
-        - $ref: "#/components/parameters/Source"
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/Scope'
+      - $ref: '#/components/parameters/Source'
       responses:
-        "200":
+        '200':
           description: Ingestion result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/IngestResponse"
+                $ref: '#/components/schemas/IngestResponse'
+        '400': *id001
+        '500': *id002
   /v1/ingest/jobs/{job_id}:
     get:
       summary: Read persisted ingestion job progress
       parameters:
-        - $ref: "#/components/parameters/Tenant"
-        - name: job_id
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: uint64
+      - $ref: '#/components/parameters/Tenant'
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: uint64
       responses:
-        "200":
+        '200':
           description: Ingestion job progress
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/IngestionProgress"
+                $ref: '#/components/schemas/IngestionProgress'
 components:
   parameters:
     Tenant:
@@ -336,7 +384,9 @@ components:
   schemas:
     HealthResponse:
       type: object
-      required: [status, version]
+      required:
+      - status
+      - version
       properties:
         status:
           type: string
@@ -344,7 +394,9 @@ components:
           type: string
     Cell:
       type: object
-      required: [cell_id, payload]
+      required:
+      - cell_id
+      - payload
       properties:
         cell_id:
           type: integer
@@ -353,15 +405,18 @@ components:
           type: string
     CellLookupResponse:
       type: object
-      required: [cell]
+      required:
+      - cell
       properties:
         cell:
           anyOf:
-            - $ref: "#/components/schemas/Cell"
-            - type: "null"
+          - $ref: '#/components/schemas/Cell'
+          - type: 'null'
     PutCellResponse:
       type: object
-      required: [seq, cell_id]
+      required:
+      - seq
+      - cell_id
       properties:
         seq:
           type: integer
@@ -371,7 +426,9 @@ components:
           format: uint64
     CheckpointResponse:
       type: object
-      required: [checkpoint_seq, cells_flushed]
+      required:
+      - checkpoint_seq
+      - cells_flushed
       properties:
         checkpoint_seq:
           type: integer
@@ -382,133 +439,237 @@ components:
       type: object
       additionalProperties: false
       required:
-        - current_seq
-        - checkpoint_seq
-        - live_segments
-        - retired_segments
-        - memtable_cells
-        - memtable_versions
-        - wal_size_bytes
-        - wal_writer_records
-        - wal_writer_bytes
-        - wal_writer_fsyncs
-        - wal_writer_batches
+      - current_seq
+      - checkpoint_seq
+      - live_segments
+      - retired_segments
+      - memtable_cells
+      - memtable_versions
+      - wal_size_bytes
+      - wal_writer_records
+      - wal_writer_bytes
+      - wal_writer_fsyncs
+      - wal_writer_batches
       properties:
-        current_seq: { type: integer, format: uint64 }
-        checkpoint_seq: { type: integer, format: uint64 }
-        live_segments: { type: integer }
-        retired_segments: { type: integer }
-        memtable_cells: { type: integer }
-        memtable_versions: { type: integer }
-        wal_size_bytes: { type: integer, format: uint64 }
-        wal_writer_records: { type: integer, format: uint64 }
-        wal_writer_bytes: { type: integer, format: uint64 }
-        wal_writer_fsyncs: { type: integer, format: uint64 }
-        wal_writer_batches: { type: integer, format: uint64 }
+        current_seq:
+          type: integer
+          format: uint64
+        checkpoint_seq:
+          type: integer
+          format: uint64
+        live_segments:
+          type: integer
+        retired_segments:
+          type: integer
+        memtable_cells:
+          type: integer
+        memtable_versions:
+          type: integer
+        wal_size_bytes:
+          type: integer
+          format: uint64
+        wal_writer_records:
+          type: integer
+          format: uint64
+        wal_writer_bytes:
+          type: integer
+          format: uint64
+        wal_writer_fsyncs:
+          type: integer
+          format: uint64
+        wal_writer_batches:
+          type: integer
+          format: uint64
     ValidationResponse:
       type: object
-      required: [ok, manifest_ok, wal_ok, errors]
+      required:
+      - ok
+      - manifest_ok
+      - wal_ok
+      - errors
       properties:
-        ok: { type: boolean }
-        manifest_ok: { type: boolean }
-        wal_ok: { type: boolean }
-        live_segments_checked: { type: integer }
-        bitmap_indexes_checked: { type: integer }
-        lexical_indexes_checked: { type: integer }
-        vector_indexes_checked: { type: integer }
-        hnsw_graphs_checked: { type: integer }
-        cells_checked: { type: integer }
-        wal_records_checked: { type: integer, format: uint64 }
-        wal_safe_truncate_offset: { type: integer, format: uint64 }
+        ok:
+          type: boolean
+        manifest_ok:
+          type: boolean
+        wal_ok:
+          type: boolean
+        live_segments_checked:
+          type: integer
+        bitmap_indexes_checked:
+          type: integer
+        lexical_indexes_checked:
+          type: integer
+        vector_indexes_checked:
+          type: integer
+        hnsw_graphs_checked:
+          type: integer
+        cells_checked:
+          type: integer
+        wal_records_checked:
+          type: integer
+          format: uint64
+        wal_safe_truncate_offset:
+          type: integer
+          format: uint64
         errors:
           type: array
-          items: { type: string }
+          items:
+            type: string
     AqlResponse:
       type: object
-      required: [cells]
+      required:
+      - cells
       properties:
         cells:
           type: array
           items:
-            $ref: "#/components/schemas/Cell"
+            $ref: '#/components/schemas/Cell'
     SearchResponse:
       type: object
-      required: [search_mode, ann_report, results]
+      required:
+      - search_mode
+      - ann_report
+      - results
       properties:
-        search_mode: { type: string, enum: [keyword, vector_exact, vector_ann] }
+        search_mode:
+          type: string
+          enum:
+          - keyword
+          - vector_exact
+          - vector_ann
         ann_report:
           anyOf:
-            - $ref: "#/components/schemas/AnnSearchReport"
-            - type: "null"
+          - $ref: '#/components/schemas/AnnSearchReport'
+          - type: 'null'
         results:
           type: array
           items:
             type: object
-            required: [cell_id, score, lexical_score, vector_score, payload]
+            required:
+            - cell_id
+            - score
+            - lexical_score
+            - vector_score
+            - payload
             properties:
-              cell_id: { type: integer, format: uint64 }
-              score: { type: integer, format: uint64 }
-              lexical_score: { type: integer, format: uint64 }
-              vector_score: { type: integer, format: uint64 }
-              payload: { type: string }
+              cell_id:
+                type: integer
+                format: uint64
+              score:
+                type: integer
+                format: uint64
+              lexical_score:
+                type: integer
+                format: uint64
+              vector_score:
+                type: integer
+                format: uint64
+              payload:
+                type: string
     AnnSearchReport:
       type: object
-      required: [path, fallback_reason, requested_limit, allowed_candidates, graph_nodes, returned_candidates, recall_q16, min_recall_q16]
+      required:
+      - path
+      - fallback_reason
+      - requested_limit
+      - allowed_candidates
+      - graph_nodes
+      - returned_candidates
+      - recall_q16
+      - min_recall_q16
       properties:
         path:
           type: string
-          enum: [hnsw_graph, exact_fallback]
+          enum:
+          - hnsw_graph
+          - exact_fallback
         fallback_reason:
           anyOf:
-            - type: string
-              enum: [empty_graph, invalid_graph, insufficient_results, low_recall, no_persisted_segments, uncheckpointed_changes]
-            - type: "null"
-        requested_limit: { type: integer }
-        allowed_candidates: { type: integer }
-        graph_nodes: { type: integer }
-        returned_candidates: { type: integer }
+          - type: string
+            enum:
+            - empty_graph
+            - invalid_graph
+            - insufficient_results
+            - low_recall
+            - no_persisted_segments
+            - uncheckpointed_changes
+          - type: 'null'
+        requested_limit:
+          type: integer
+        allowed_candidates:
+          type: integer
+        graph_nodes:
+          type: integer
+        returned_candidates:
+          type: integer
         recall_q16:
           anyOf:
-            - type: integer
-              minimum: 0
-              maximum: 65535
-            - type: "null"
+          - type: integer
+            minimum: 0
+            maximum: 65535
+          - type: 'null'
         min_recall_q16:
           anyOf:
-            - type: integer
-              minimum: 0
-              maximum: 65535
-            - type: "null"
+          - type: integer
+            minimum: 0
+            maximum: 65535
+          - type: 'null'
     AnnEvaluationResponse:
       type: object
-      required: [available, reason, ann_report, exact_top_k, ann_top_k, overlap_count, recall_q16]
+      required:
+      - available
+      - reason
+      - ann_report
+      - exact_top_k
+      - ann_top_k
+      - overlap_count
+      - recall_q16
       properties:
-        available: { type: boolean }
+        available:
+          type: boolean
         reason:
           anyOf:
-            - type: string
-              enum: [requires_persisted_checkpoint_without_wal_tail]
-            - type: "null"
+          - type: string
+            enum:
+            - requires_persisted_checkpoint_without_wal_tail
+          - type: 'null'
         ann_report:
           anyOf:
-            - $ref: "#/components/schemas/AnnSearchReport"
-            - type: "null"
+          - $ref: '#/components/schemas/AnnSearchReport'
+          - type: 'null'
         exact_top_k:
           type: array
-          items: { type: integer }
+          items:
+            type: integer
         ann_top_k:
           type: array
-          items: { type: integer }
-        overlap_count: { type: integer }
-        recall_q16: { type: integer, minimum: 0, maximum: 65535 }
+          items:
+            type: integer
+        overlap_count:
+          type: integer
+        recall_q16:
+          type: integer
+          minimum: 0
+          maximum: 65535
     ContextPackResponse:
       type: object
-      required: [token_budget_tokens, estimated_tokens, truncated, citations_required, cells, anomalies]
+      required:
+      - token_budget_tokens
+      - estimated_tokens
+      - truncated
+      - citations_required
+      - cells
+      - anomalies
       properties:
-        token_budget_tokens: { type: integer }
-        estimated_tokens: { type: integer }
-        truncated: { type: boolean }
-        citations_required: { type: boolean }
+        token_budget_tokens:
+          type: integer
+        estimated_tokens:
+          type: integer
+        truncated:
+          type: boolean
+        citations_required:
+          type: boolean
         cells:
           type: array
           items:
@@ -519,84 +680,144 @@ components:
             type: object
     RememberResponse:
       type: object
-      required: [seq, cell_id, ttl_seconds]
+      required:
+      - seq
+      - cell_id
+      - ttl_seconds
       properties:
-        seq: { type: integer, format: uint64 }
-        cell_id: { type: integer, format: uint64 }
+        seq:
+          type: integer
+          format: uint64
+        cell_id:
+          type: integer
+          format: uint64
         ttl_seconds:
           anyOf:
-            - type: integer
-              format: uint64
-            - type: "null"
+          - type: integer
+            format: uint64
+          - type: 'null'
     VerificationReportResponse:
       type: object
-      required: [fact, status, verdict, evidence, contradicting_evidence, guards, numeric_conflicts]
+      required:
+      - fact
+      - status
+      - verdict
+      - evidence
+      - contradicting_evidence
+      - guards
+      - numeric_conflicts
       properties:
-        fact: { type: string }
-        status: { type: string }
-        verdict: { type: string }
+        fact:
+          type: string
+        status:
+          type: string
+        verdict:
+          type: string
         evidence:
           type: array
-          items: { type: object }
+          items:
+            type: object
         contradicting_evidence:
           type: array
-          items: { type: object }
+          items:
+            type: object
         guards:
           type: array
-          items: { type: object }
+          items:
+            type: object
         supporting:
           type: array
-          items: { type: object }
+          items:
+            type: object
         contradicting:
           type: array
-          items: { type: object }
+          items:
+            type: object
         numeric_conflicts:
           type: array
           items:
             type: object
-            required: [metric, left, right]
+            required:
+            - metric
+            - left
+            - right
             properties:
-              metric: { type: string }
-              left: { type: string }
-              right: { type: string }
+              metric:
+                type: string
+              left:
+                type: string
+              right:
+                type: string
     IngestResponse:
       type: object
-      required: [rows_ingested, chunks_ingested, facts_ingested, first_cell_id]
+      required:
+      - rows_ingested
+      - chunks_ingested
+      - facts_ingested
+      - first_cell_id
       properties:
-        rows_ingested: { type: integer }
-        chunks_ingested: { type: integer }
-        facts_ingested: { type: integer }
+        rows_ingested:
+          type: integer
+        chunks_ingested:
+          type: integer
+        facts_ingested:
+          type: integer
         first_cell_id:
           anyOf:
-            - type: integer
-              format: uint64
-            - type: "null"
+          - type: integer
+            format: uint64
+          - type: 'null'
     IngestionProgress:
       type: object
-      required: [job_id, label, status, total_items, completed_items, failed_items, last_cell_id, message]
+      required:
+      - job_id
+      - label
+      - status
+      - total_items
+      - completed_items
+      - failed_items
+      - last_cell_id
+      - message
       properties:
-        job_id: { type: integer, format: uint64 }
-        label: { type: string }
-        status: { type: string, enum: [queued, running, completed, failed] }
+        job_id:
+          type: integer
+          format: uint64
+        label:
+          type: string
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          - failed
         total_items:
           anyOf:
-            - type: integer
-              format: uint64
-            - type: "null"
-        completed_items: { type: integer, format: uint64 }
-        failed_items: { type: integer, format: uint64 }
+          - type: integer
+            format: uint64
+          - type: 'null'
+        completed_items:
+          type: integer
+          format: uint64
+        failed_items:
+          type: integer
+          format: uint64
         last_cell_id:
           anyOf:
-            - type: integer
-              format: uint64
-            - type: "null"
+          - type: integer
+            format: uint64
+          - type: 'null'
         message:
           anyOf:
-            - type: string
-            - type: "null"
+          - type: string
+          - type: 'null'
     ErrorResponse:
       type: object
-      required: [error, message]
+      required:
+      - error
+      - message
       properties:
-        error: { type: string }
-        message: { type: string }
+        error:
+          type: string
+        message:
+          type: string

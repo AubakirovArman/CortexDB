@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Added engine-level `NumericValue` parser with magnitude/unit/currency support for verification.
+- Refactored verification guards and server memory layer to delegate numeric formatting to engine.
+- Added snapshot/golden API response tests for all public endpoints (health, stats, cell, context,
+  verify, search, remember, ingest, flush, compact, error shapes).
+- Added Search Quality v1 tests: unicode tokenizer (English, Russian, Kazakh), BM25 golden dataset,
+  top-k limit, and descending score invariants.
+- Added Metadata Model v1 validation with `CellMetadata::validate()` and `sanitized()` for stable
+  decode and graceful degradation (scope path-traversal guard, empty field defaults).
+- Added durable ingestion job tests: `save_ingestion_job`, `load_ingestion_job`,
+  `list_ingestion_jobs`, and `IngestionProgressTracker` lifecycle coverage.
+- Synced `docs/API_JSON_SCHEMAS.md` and `docs/openapi.yaml` with actual response shapes and
+  error response codes.
+- Added CLI integration tests with `assert_cmd`.
+
 - Added AQL parser, binder, policy validation, and mock bitmap VM.
 - Added ACLOG WAL v0 codec, reader recovery scan, and writer actor.
 - Added in-memory MVCC MemTable and manifest skeleton.
@@ -57,6 +71,6 @@ context_pack_10k:               1.144221087s
 
 ### Test Matrix
 
-- Workspace unit tests: 372 passed (all-features).
+- Workspace unit tests: 432 passed (all-features).
 - CI gates: `cargo check`, `cargo test`, `cargo fmt --check`, `cargo clippy -D warnings`,
   `sdk-check`, `cargo bench`, demo script — all green.

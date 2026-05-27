@@ -1,6 +1,4 @@
-use cortex_engine::verification::numeric::{
-    extract_numeric_values, numeric_conflict, NumericValue,
-};
+use cortex_engine::verification::numeric::{extract_numeric_values, numeric_conflict};
 use cortex_engine::verification::{VerificationReport, VerificationStatus};
 use cortex_engine::Database;
 
@@ -47,23 +45,24 @@ fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<NumericConflic
     let text = String::from_utf8_lossy(payload);
     let mut metric = "metric".to_owned();
     let mut currency: Option<String> = None;
-    let mut payload_value: Option<NumericValue> = None;
+    let mut value_str: Option<&str> = None;
 
+    // First pass: collect metric, currency and raw value
     for line in text.lines() {
         if let Some(val) = line.strip_prefix("metric=") {
             metric = val.trim().to_owned();
         } else if let Some(val) = line.strip_prefix("currency=") {
             currency = Some(val.trim().to_ascii_uppercase().to_owned());
         } else if let Some(val) = line.strip_prefix("value=") {
-            let val_str = val.trim();
-            // Try to parse the value with the known currency
-            let candidate = format!("{val_str} {}", currency.as_deref().unwrap_or(""));
-            let vals = extract_numeric_values(&candidate);
-            if let Some(v) = vals.into_iter().next() {
-                payload_value = Some(v);
-            }
+            value_str = Some(val.trim());
         }
     }
+
+    // Parse the numeric value after currency is known
+    let payload_value = value_str.and_then(|val_str| {
+        let candidate = format!("{val_str} {}", currency.as_deref().unwrap_or(""));
+        extract_numeric_values(&candidate).into_iter().next()
+    });
 
     let fact_values = extract_numeric_values(fact);
     if fact_values.is_empty() {

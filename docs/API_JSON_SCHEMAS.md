@@ -263,35 +263,93 @@ changes exist, `available` is `false` and `reason` is
 
 `POST /v1/verify?scope=<scope>` with a `VERIFY FACT` AQL body.
 
+Supported fact:
+
 ```json
 {
-  "fact": "ABC budget is 1.2B KZT",
-  "status": "contradicted",
-  "verdict": "contradicted",
-  "evidence": [],
-  "contradicting_evidence": [
+  "fact": "The budget is 1.2B KZT",
+  "status": "supported",
+  "verdict": "supported",
+  "evidence": [
     {
       "cell_id": 1,
-      "matched_terms": 3,
-      "source_trust_q16": 65535,
+      "matched_terms": 5,
+      "source_trust_q16": 32768,
       "citation": "doc-a",
+      "payload_text": "scope=project:investments\nstatus=ready\n..."
+    }
+  ],
+  "contradicting_evidence": [],
+  "guards": [],
+  "supporting": [
+    {
+      "cell_id": 1,
+      "matched_terms": 5,
+      "source_trust_q16": 32768,
+      "citation": "doc-a",
+      "payload_text": "scope=project:investments\nstatus=ready\n..."
+    }
+  ],
+  "contradicting": [],
+  "numeric_conflicts": []
+}
+```
+
+Mixed evidence with numeric conflict:
+
+```json
+{
+  "fact": "The budget is 1.2B KZT",
+  "status": "mixed",
+  "verdict": "mixed_evidence",
+  "evidence": [
+    {
+      "cell_id": 1,
+      "matched_terms": 5,
+      "source_trust_q16": 32768,
+      "citation": "doc-a",
+      "payload_text": "scope=project:investments\nstatus=ready\n..."
+    }
+  ],
+  "contradicting_evidence": [
+    {
+      "cell_id": 2,
+      "matched_terms": 2,
+      "source_trust_q16": 32768,
+      "citation": "doc-b",
       "payload_text": "scope=project:investments\nstatus=ready\n..."
     }
   ],
   "guards": [
     {
-      "cell_id": 1,
+      "cell_id": 2,
       "code": "numeric_mismatch",
-      "message": "numeric value differs from stored evidence"
+      "message": "payload numeric claim differs from fact numeric claim"
     }
   ],
-  "supporting": [],
-  "contradicting": [],
+  "supporting": [
+    {
+      "cell_id": 1,
+      "matched_terms": 5,
+      "source_trust_q16": 32768,
+      "citation": "doc-a",
+      "payload_text": "scope=project:investments\nstatus=ready\n..."
+    }
+  ],
+  "contradicting": [
+    {
+      "cell_id": 2,
+      "matched_terms": 2,
+      "source_trust_q16": 32768,
+      "citation": "doc-b",
+      "payload_text": "scope=project:investments\nstatus=ready\n..."
+    }
+  ],
   "numeric_conflicts": [
     {
       "metric": "budget",
       "left": "1.2B KZT",
-      "right": "1.4B KZT"
+      "right": "1400000000 KZT"
     }
   ]
 }

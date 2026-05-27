@@ -9,6 +9,7 @@ mod evaluation;
 mod hnsw;
 mod hnsw_policy;
 mod persisted;
+mod quality_tests;
 mod tokenizer;
 pub(crate) mod vector;
 

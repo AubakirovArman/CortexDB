@@ -120,11 +120,7 @@ fn try_parse_numeric_word(word: &str, words: &[&str], index: usize) -> Option<Nu
     }
 
     // Treat trailing % as unit if not already captured
-    if unit.is_none()
-        && word
-            .trim_end_matches(['.', ','])
-            .ends_with('%')
-    {
+    if unit.is_none() && word.trim_end_matches(['.', ',']).ends_with('%') {
         unit = Some("%".to_owned());
     }
 

@@ -3,6 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 mod candidates;
 mod catalog;
 pub(crate) mod metadata;
+mod metadata_validation;
 mod provider;
 
 use cortex_aql::{parse_aql, AgentView, Binder, BitmapHandle, BoundPlan, BrainId};
