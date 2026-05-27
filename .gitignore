@@ -8,3 +8,4 @@ __pycache__/
 .env.*
 !.env.example
 examples/kimi_rag
+*.whl

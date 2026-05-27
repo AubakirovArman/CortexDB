@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check openapi-check smoke-test alpha-check demo
+.PHONY: check test sdk-check openapi-check smoke-test sdk-smoke-test alpha-check demo
 
 check:
 	cargo check --workspace
@@ -14,6 +14,9 @@ openapi-check:
 
 smoke-test:
 	scripts/smoke_test.sh
+
+sdk-smoke-test:
+	python3 scripts/sdk_smoke_test.py
 
 alpha-check:
 	RUSTFLAGS="-D warnings" cargo check --workspace
