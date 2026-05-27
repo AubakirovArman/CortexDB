@@ -8,7 +8,7 @@ use crate::responses::{
 };
 
 pub fn handle_remember_shared(
-    db: &std::sync::RwLock<Database>,
+    db: &mut Database,
     query: &str,
     body: &[u8],
 ) -> Result<String, String> {
@@ -16,7 +16,6 @@ pub fn handle_remember_shared(
     let mut view = view_for_scope(scope);
     view.allow_remember = true;
     view.writable_scopes = std::collections::BTreeSet::from([cortex_engine::scope_id(scope)]);
-    let mut db = db.write().map_err(|e| e.to_string())?;
     let aql = String::from_utf8_lossy(body);
     let result = db
         .remember_aql(&aql, &view)
@@ -29,31 +28,34 @@ pub fn handle_remember_shared(
     serde_json::to_string(&response).map_err(|e| e.to_string())
 }
 
-pub fn handle_verify_shared(
-    db: &std::sync::RwLock<Database>,
-    query: &str,
-    body: &[u8],
-) -> Result<String, String> {
+pub fn handle_verify_shared(db: &Database, query: &str, body: &[u8]) -> Result<String, String> {
     let scope = query_param(query, "scope")?;
     let mut view = view_for_scope(scope);
     view.allow_verify_fact = true;
-    let db = db.read().map_err(|e| e.to_string())?;
     let aql = String::from_utf8_lossy(body);
     let report = db
         .verify_fact_aql(&aql, &view)
         .map_err(|error| error.to_string())?;
-    let response = map_verification_report(&report, &db);
+    let response = map_verification_report(&report, db);
     serde_json::to_string(&response).map_err(|e| e.to_string())
 }
 
-fn format_scale_currency(value_str: &str, currency: &str) -> String {
+pub(crate) fn format_scale_currency(value_str: &str, currency: &str) -> String {
     if let Ok(val) = value_str.parse::<u64>() {
         if val >= 1_000_000_000 && val % 100_000_000 == 0 {
-            let scaled = val as f64 / 1_000_000_000.0;
-            return format!("{}B {}", scaled, currency);
+            let whole = val / 1_000_000_000;
+            let tenths = (val % 1_000_000_000) / 100_000_000;
+            if tenths == 0 {
+                return format!("{}B {}", whole, currency);
+            }
+            return format!("{}.{}B {}", whole, tenths, currency);
         } else if val >= 1_000_000 && val % 100_000 == 0 {
-            let scaled = val as f64 / 1_000_000.0;
-            return format!("{}M {}", scaled, currency);
+            let whole = val / 1_000_000;
+            let tenths = (val % 1_000_000) / 100_000;
+            if tenths == 0 {
+                return format!("{}M {}", whole, currency);
+            }
+            return format!("{}.{}M {}", whole, tenths, currency);
         }
     }
     format!("{} {}", value_str, currency)

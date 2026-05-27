@@ -44,6 +44,9 @@ enum Command {
     Validate {
         path: String,
     },
+    AnnValidate {
+        path: String,
+    },
     Repair {
         path: String,
     },
@@ -158,6 +161,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         Command::Compact { path } => ops::compact(&path),
         Command::Stats { path } => ops::stats(&path, cli.json),
         Command::Validate { path } => ops::validate(&path, cli.json),
+        Command::AnnValidate { path } => ops::ann_validate(&path, cli.json),
         Command::Repair { path } => ops::repair(&path),
         Command::GcRetired { path } => ops::gc_retired(&path),
         Command::WalValidate { path } => ops::wal_validate(&path),

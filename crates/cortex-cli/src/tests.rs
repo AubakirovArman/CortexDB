@@ -39,8 +39,21 @@ fn stats_and_validate_commands_work() {
     assert!(stats.contains("current_seq=1"));
     assert!(stats.contains("wal_writer_records=0"));
 
-    let validation = run(vec!["cortexdb".to_owned(), "validate".to_owned(), path_arg]).unwrap();
+    let validation = run(vec![
+        "cortexdb".to_owned(),
+        "validate".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
     assert!(validation.starts_with("ok "));
+
+    let ann_val = run(vec![
+        "cortexdb".to_owned(),
+        "ann-validate".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    assert!(ann_val.contains("ok vector_indexes_checked="));
 
     let _ = std::fs::remove_dir_all(path);
 }

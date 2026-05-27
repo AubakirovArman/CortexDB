@@ -230,3 +230,61 @@ pub struct ErrorResponse {
     pub error: String,
     pub message: String,
 }
+
+/// Typed router error taxonomy for consistent HTTP status mapping.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RouterError {
+    NotFound(String),
+    BadRequest(String),
+    Unauthorized,
+    PayloadTooLarge,
+    ServiceUnavailable,
+    Internal(String),
+}
+
+impl std::fmt::Display for RouterError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RouterError::NotFound(msg) => write!(f, "{msg}"),
+            RouterError::BadRequest(msg) => write!(f, "{msg}"),
+            RouterError::Unauthorized => write!(f, "missing or invalid authorization"),
+            RouterError::PayloadTooLarge => write!(f, "request body exceeds 2MB limit"),
+            RouterError::ServiceUnavailable => write!(f, "database actor busy"),
+            RouterError::Internal(msg) => write!(f, "{msg}"),
+        }
+    }
+}
+
+impl From<String> for RouterError {
+    fn from(value: String) -> Self {
+        match value.as_str() {
+            "cell not found" | "job not found" => RouterError::NotFound(value),
+            _ => RouterError::BadRequest(value),
+        }
+    }
+}
+
+impl From<std::io::Error> for RouterError {
+    fn from(value: std::io::Error) -> Self {
+        RouterError::Internal(value.to_string())
+    }
+}
+
+impl From<serde_json::Error> for RouterError {
+    fn from(value: serde_json::Error) -> Self {
+        RouterError::Internal(value.to_string())
+    }
+}
+
+impl RouterError {
+    pub fn status_code(&self) -> u16 {
+        match self {
+            RouterError::NotFound(_) => 404,
+            RouterError::BadRequest(_) => 400,
+            RouterError::Unauthorized => 401,
+            RouterError::PayloadTooLarge => 413,
+            RouterError::ServiceUnavailable => 503,
+            RouterError::Internal(_) => 500,
+        }
+    }
+}

@@ -6,25 +6,27 @@ use crate::context;
 use crate::memory;
 use crate::responses::{
     CellLookupResponse, CellResponse, CheckpointResponse, ErrorResponse, HealthResponse,
-    IngestResponse, PutCellResponse, StatsResponse, ValidationResponse,
+    IngestResponse, PutCellResponse, RouterError, StatsResponse, ValidationResponse,
 };
 use crate::search;
 
-pub fn route_shared(
-    db: &std::sync::RwLock<Database>,
+/// Production route entrypoint used by `DatabaseActor`.
+/// Operates directly on `&mut Database` because the actor guarantees
+/// single-threaded sequential access, eliminating the need for an inner `RwLock`.
+pub fn route_database(
+    db: &mut Database,
     method: &str,
     target: &str,
     body: &[u8],
-) -> Result<String, String> {
+) -> Result<String, RouterError> {
     let (path, query) = target.split_once('?').unwrap_or((target, ""));
     match (method, path) {
         ("GET", "/v1/health") => serde_json::to_string(&HealthResponse {
             status: "ok".to_owned(),
             version: "v1".to_owned(),
         })
-        .map_err(|e| e.to_string()),
+        .map_err(|e| RouterError::BadRequest(e.to_string())),
         ("GET", "/v1/stats") => {
-            let db = db.read().map_err(|e| e.to_string())?;
             let stats = db.storage_stats().map_err(|error| error.to_string())?;
             let response = StatsResponse {
                 current_seq: stats.current_seq.0,
@@ -39,10 +41,9 @@ pub fn route_shared(
                 wal_writer_fsyncs: stats.wal_writer.fsync_count,
                 wal_writer_batches: stats.wal_writer.batches_committed,
             };
-            serde_json::to_string(&response).map_err(|e| e.to_string())
+            Ok(serde_json::to_string(&response)?)
         }
         ("GET", "/v1/validate") => {
-            let db = db.read().map_err(|e| e.to_string())?;
             let validation = db.validate_storage_report();
             let response = ValidationResponse {
                 ok: validation.errors.is_empty(),
@@ -58,22 +59,20 @@ pub fn route_shared(
                 wal_safe_truncate_offset: validation.wal_safe_truncate_offset,
                 errors: validation.errors,
             };
-            serde_json::to_string(&response).map_err(|e| e.to_string())
+            Ok(serde_json::to_string(&response)?)
         }
         ("GET", "/get") | ("GET", "/v1/cell") => {
-            let cell_id = cell_id(query)?;
-            let db = db.read().map_err(|e| e.to_string())?;
+            let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
             let response = CellLookupResponse {
                 cell: db.get_latest_cell(cell_id).map(|payload| CellResponse {
                     cell_id: cell_id.0,
                     payload: String::from_utf8_lossy(&payload).into_owned(),
                 }),
             };
-            serde_json::to_string(&response).map_err(|e| e.to_string())
+            Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/put") | ("POST", "/v1/cell") => {
-            let cell_id = cell_id(query)?;
-            let mut db = db.write().map_err(|e| e.to_string())?;
+            let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
             let seq = db
                 .put_cell(cell_id, body.to_vec())
                 .map_err(|error| error.to_string())?;
@@ -81,11 +80,10 @@ pub fn route_shared(
                 seq: seq.0,
                 cell_id: cell_id.0,
             };
-            serde_json::to_string(&response).map_err(|e| e.to_string())
+            Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/tombstone") | ("DELETE", "/v1/cell") => {
-            let cell_id = cell_id(query)?;
-            let mut db = db.write().map_err(|e| e.to_string())?;
+            let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
             let seq = db
                 .tombstone_cell(cell_id)
                 .map_err(|error| error.to_string())?;
@@ -93,36 +91,45 @@ pub fn route_shared(
                 seq: seq.0,
                 cell_id: cell_id.0,
             };
-            serde_json::to_string(&response).map_err(|e| e.to_string())
+            Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/flush") | ("POST", "/v1/flush") => {
-            let mut db = db.write().map_err(|e| e.to_string())?;
             let stats = db.checkpoint().map_err(|error| error.to_string())?;
             let response = CheckpointResponse {
                 checkpoint_seq: stats.checkpoint_seq.0,
                 cells_flushed: stats.cells_flushed,
             };
-            serde_json::to_string(&response).map_err(|e| e.to_string())
+            Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/v1/compact") => {
-            let mut db = db.write().map_err(|e| e.to_string())?;
             let stats = db.compact().map_err(|error| error.to_string())?;
             let response = CheckpointResponse {
                 checkpoint_seq: stats.checkpoint_seq.0,
                 cells_flushed: stats.cells_flushed,
             };
-            serde_json::to_string(&response).map_err(|e| e.to_string())
+            Ok(serde_json::to_string(&response)?)
         }
-        ("POST", "/v1/context") => context::handle_context_shared(db, query, body),
-        ("POST", "/v1/aql") => aql::handle_aql_shared(db, query, body),
-        ("POST", "/v1/search") => search::handle_search_shared(db, query, body),
-        ("POST", "/v1/search/ann-evaluate") => search::handle_ann_evaluate_shared(db, query, body),
-        ("POST", "/v1/remember") => memory::handle_remember_shared(db, query, body),
-        ("POST", "/v1/verify") => memory::handle_verify_shared(db, query, body),
+        ("POST", "/v1/context") => {
+            context::handle_context_shared(db, query, body).map_err(RouterError::BadRequest)
+        }
+        ("POST", "/v1/aql") => {
+            aql::handle_aql_shared(db, query, body).map_err(RouterError::BadRequest)
+        }
+        ("POST", "/v1/search") => {
+            search::handle_search_shared(db, query, body).map_err(RouterError::BadRequest)
+        }
+        ("POST", "/v1/search/ann-evaluate") => {
+            search::handle_ann_evaluate_shared(db, query, body).map_err(RouterError::BadRequest)
+        }
+        ("POST", "/v1/remember") => {
+            memory::handle_remember_shared(db, query, body).map_err(RouterError::BadRequest)
+        }
+        ("POST", "/v1/verify") => {
+            memory::handle_verify_shared(db, query, body).map_err(RouterError::BadRequest)
+        }
         ("POST", "/v1/ingest/text") => {
             let scope = query_param_opt(query, "scope").unwrap_or("default");
             let source = query_param_opt(query, "source").unwrap_or("http_post");
-            let mut db = db.write().map_err(|e| e.to_string())?;
             let text = String::from_utf8_lossy(body);
             let start_id = db.allocate_cell_id_range(0);
             let results = db
@@ -141,12 +148,11 @@ pub fn route_shared(
                 facts_ingested: 0,
                 first_cell_id: results.first().map(|cell| cell.cell_id.0),
             };
-            serde_json::to_string(&response).map_err(|e| e.to_string())
+            Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/v1/ingest/json") => {
             let scope = query_param_opt(query, "scope").unwrap_or("default");
             let source = query_param_opt(query, "source").unwrap_or("http_post");
-            let mut db = db.write().map_err(|e| e.to_string())?;
             let json = String::from_utf8_lossy(body);
             let start_id = db.allocate_cell_id_range(0);
             let results = db
@@ -165,12 +171,11 @@ pub fn route_shared(
                 facts_ingested: results.len(),
                 first_cell_id: results.first().map(|cell| cell.cell_id.0),
             };
-            serde_json::to_string(&response).map_err(|e| e.to_string())
+            Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/v1/ingest/csv") => {
             let scope = query_param_opt(query, "scope").unwrap_or("default");
             let source = query_param_opt(query, "source").unwrap_or("http_post");
-            let mut db = db.write().map_err(|e| e.to_string())?;
             let csv = String::from_utf8_lossy(body);
             let start_id = db.allocate_cell_id_range(0);
             let results = db
@@ -189,14 +194,13 @@ pub fn route_shared(
                 facts_ingested: 0,
                 first_cell_id: results.first().map(|cell| cell.cell_id.0),
             };
-            serde_json::to_string(&response).map_err(|e| e.to_string())
+            Ok(serde_json::to_string(&response)?)
         }
         _ if method == "GET" && path.starts_with("/v1/ingest/jobs/") => {
             let id_str = path.strip_prefix("/v1/ingest/jobs/").unwrap();
             let id = id_str
                 .parse::<u64>()
-                .map_err(|_| "invalid job id".to_owned())?;
-            let db = db.read().map_err(|e| e.to_string())?;
+                .map_err(|_| RouterError::BadRequest("invalid job id".to_owned()))?;
             let progress = db
                 .load_ingestion_job(id)
                 .map_err(|error| error.to_string())?;
@@ -204,11 +208,23 @@ pub fn route_shared(
                 let content = serde_json::to_string(&p).map_err(|e| e.to_string())?;
                 Ok(content)
             } else {
-                Err("job not found".to_owned())
+                Err(RouterError::NotFound("job not found".to_owned()))
             }
         }
-        _ => Err("unknown route".to_owned()),
+        _ => Err(RouterError::BadRequest("unknown route".to_owned())),
     }
+}
+
+/// Legacy/test compatibility wrapper that acquires a write lock and delegates to `route_database`.
+/// Prefer `route_database` in production paths where the caller already owns exclusive access.
+pub fn route_shared(
+    db: &std::sync::RwLock<Database>,
+    method: &str,
+    target: &str,
+    body: &[u8],
+) -> Result<String, String> {
+    let mut db = db.write().map_err(|e| e.to_string())?;
+    route_database(&mut db, method, target, body).map_err(|e| e.to_string())
 }
 
 pub fn query_param_opt<'a>(query: &'a str, key: &str) -> Option<&'a str> {

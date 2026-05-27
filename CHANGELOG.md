@@ -27,3 +27,36 @@
   lifecycle/validation tests, and Core Alpha invariant documentation.
 - Added unique atomic temp filenames, collect-all storage validation reports, explicit stale lock
   recovery, CLI `unlock --force`, and tests for those lifecycle paths.
+
+## v0.1.0-core-alpha — Release Evidence
+
+### Benchmark Matrix (release profile, local workstation)
+
+```
+put_1k_cells:                   373.070625ms
+get_1k_cells:                   280.122µs
+checkpoint_1k:                  18.904873ms
+restart_replay_1k:              1.313963ms
+compact_1k:                     16.205037ms
+aql_retrieve_1k:                5.884727ms
+context_pack_1k:                20.111004ms
+batch_put_1k_cells:             3.316253ms
+batch_put_10k_cells:            24.995694ms
+checkpoint_10k:                 100.958304ms
+compact_10k:                    79.051873ms
+aql_retrieve_10k:               46.651475ms
+context_pack_10k:               1.144221087s
+```
+
+### Demo Output (investment_projects fixture)
+
+- ContextPack retrieval: 2 cells, 126 estimated tokens, 1000 token budget, truncated=false.
+- VERIFY FACT "Solar Plant budget is 1.2B KZT": verdict=`mixed_evidence`, 1 supporting cell,
+  1 contradicting cell, numeric conflict detected (`1.2B KZT` vs `1.4B KZT`).
+- Storage validation: 1 live segment, 3 cells checked, WAL integrity ok.
+
+### Test Matrix
+
+- Workspace unit tests: 372 passed (all-features).
+- CI gates: `cargo check`, `cargo test`, `cargo fmt --check`, `cargo clippy -D warnings`,
+  `sdk-check`, `cargo bench`, demo script — all green.

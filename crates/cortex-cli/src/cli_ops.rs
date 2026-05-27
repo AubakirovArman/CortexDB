@@ -118,6 +118,38 @@ pub fn validate(path: &str, json: bool) -> Result<String, String> {
     ))
 }
 
+pub fn ann_validate(path: &str, json: bool) -> Result<String, String> {
+    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let report = db.validate_storage_report();
+    let ann_errors: Vec<String> = report
+        .errors
+        .iter()
+        .filter(|e| e.contains("vector index") || e.contains("hnsw") || e.contains("HNSW"))
+        .cloned()
+        .collect();
+    let ok = ann_errors.is_empty();
+    if json {
+        return Ok(serde_json::json!({
+            "ok": ok,
+            "vector_indexes_checked": report.vector_indexes_checked,
+            "hnsw_graphs_checked": report.hnsw_graphs_checked,
+            "errors": ann_errors,
+        })
+        .to_string());
+    }
+    if ok {
+        Ok(format!(
+            "ok vector_indexes_checked={} hnsw_graphs_checked={}",
+            report.vector_indexes_checked, report.hnsw_graphs_checked
+        ))
+    } else {
+        Err(format!(
+            "ANN/HNSW validation failed: {}",
+            ann_errors.join("; ")
+        ))
+    }
+}
+
 pub fn repair(path: &str) -> Result<String, String> {
     let report = Database::repair_best_effort(path).map_err(|error| error.to_string())?;
     Ok(format!(

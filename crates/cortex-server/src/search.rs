@@ -5,11 +5,7 @@ use crate::responses::{
     AnnEvaluationResponse, AnnSearchReportResponse, SearchResponse, SearchResultResponse,
 };
 
-pub fn handle_search_shared(
-    db: &std::sync::RwLock<Database>,
-    query: &str,
-    body: &[u8],
-) -> Result<String, String> {
+pub fn handle_search_shared(db: &Database, query: &str, body: &[u8]) -> Result<String, String> {
     let scope = query_param(query, "scope")?;
     let limit = query_param(query, "limit")
         .ok()
@@ -18,7 +14,6 @@ pub fn handle_search_shared(
         .unwrap_or(20);
     let mode = query_param(query, "mode").unwrap_or("keyword");
     let algorithm = query_param(query, "algorithm").unwrap_or("ann");
-    let db = db.read().map_err(|e| e.to_string())?;
     let (search_mode, results, ann_report) = match mode {
         "keyword" => (
             "keyword",
@@ -61,7 +56,7 @@ pub fn handle_search_shared(
 }
 
 pub fn handle_ann_evaluate_shared(
-    db: &std::sync::RwLock<Database>,
+    db: &Database,
     query: &str,
     body: &[u8],
 ) -> Result<String, String> {
@@ -75,7 +70,6 @@ pub fn handle_ann_evaluate_shared(
         .map(str::to_owned)
         .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
     let vector = parse_vector_literal(&vector)?;
-    let db = db.read().map_err(|e| e.to_string())?;
     let response = match db
         .evaluate_vector_ann(&vector, &view_for_scope(scope), SearchLimit(limit))
         .map_err(|error| error.to_string())?

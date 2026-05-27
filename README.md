@@ -15,7 +15,7 @@ CortexDB is specifically engineered for autonomous AI agents. Unlike traditional
 - **Single-Node Durable Storage:** Strict Write-Ahead Log (WAL) with group commit, MVCC MemTable, and incremental check-pointing/compaction.
 - **Durable Local Agent Memory:** Scope-isolated agent-facing memory retrieval with dynamic decay/TTL scoring.
 - **Deterministic Fact Verification (`VERIFY FACT`):** Heuristic and deterministic numerical and citation checking that detects contradictions before they reach the agent.
-- **HTTP Server:** An async HTTP surface built on **Tokio**, **Axum**, and **Tower-HTTP** over a local blocking single-node database core with strict 2MB body limit boundaries.
+- **HTTP Server:** An async HTTP surface over actor-isolated local core built on **Tokio**, **Axum**, and **Tower-HTTP** with strict 2MB body limit boundaries.
 - **Crate Ecosystem:** Fully modular workspace crates: `cortex-core`, `cortex-aql`, `cortex-storage`, `cortex-engine`, `cortex-server`, and `cortex-cli`.
 
 ## Long-Term Vision (Experimental/Under Active Development)

@@ -28,11 +28,26 @@ mod search_tests;
 #[cfg(test)]
 mod tests;
 
-pub use router::{cell_id, json_error, json_response, query_param, query_param_opt, route_shared};
+use crate::responses::RouterError;
+pub use router::{
+    cell_id, json_error, json_response, query_param, query_param_opt, route_database, route_shared,
+};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ServerOptions {
     pub auth_token: Option<String>,
+}
+
+/// Validates that a tenant ID is safe and conforms to the alphanumeric format,
+/// preventing path traversal attacks.
+/// Allowed characters are alphanumeric, `_`, `-`, and `:`. Length must be between 1 and 64.
+pub fn validate_tenant_id(tenant: &str) -> bool {
+    if tenant.is_empty() || tenant.len() > 64 {
+        return false;
+    }
+    tenant
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == ':')
 }
 
 #[derive(Clone)]
@@ -44,6 +59,11 @@ pub struct AppState {
 
 impl AppState {
     pub fn get_db(&self, tenant: &str) -> std::io::Result<Arc<actor::DatabaseActor>> {
+        if !validate_tenant_id(tenant) {
+            return Err(std::io::Error::other(format!(
+                "invalid tenant id: '{tenant}'"
+            )));
+        }
         let mut dbs = self
             .dbs
             .lock()
@@ -150,6 +170,16 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
     };
 
     let tenant = query_param_opt(&query, "tenant").unwrap_or("default");
+    if !validate_tenant_id(tenant) {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(error_response(
+                "invalid_tenant",
+                "invalid tenant ID structure. Only alphanumeric, '_', '-', and ':' up to 64 characters are allowed.",
+            )),
+        )
+            .into_response();
+    }
     let db = match state.get_db(tenant) {
         Ok(db) => db,
         Err(e) => {
@@ -178,7 +208,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
     .await
     {
         Ok(r) => r,
-        Err(_) => Err("internal server error".to_owned()),
+        Err(_) => Err(RouterError::Internal("internal server error".to_owned())),
     };
     let duration = start.elapsed();
     if duration.as_millis() > 50 {
@@ -196,12 +226,17 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
                 (StatusCode::OK, body_str).into_response()
             }
         }
-        Err(err_msg) => {
-            let status = match err_msg.as_str() {
-                "cell not found" | "job not found" => StatusCode::NOT_FOUND,
-                _ => StatusCode::BAD_REQUEST,
+        Err(err) => {
+            let status = StatusCode::from_u16(err.status_code()).unwrap_or(StatusCode::BAD_REQUEST);
+            let code = match err {
+                RouterError::NotFound(_) => "not_found",
+                RouterError::BadRequest(_) => "bad_request",
+                RouterError::Unauthorized => "unauthorized",
+                RouterError::PayloadTooLarge => "payload_too_large",
+                RouterError::ServiceUnavailable => "service_unavailable",
+                RouterError::Internal(_) => "internal_error",
             };
-            (status, Json(error_response("bad_request", err_msg))).into_response()
+            (status, Json(error_response(code, err.to_string()))).into_response()
         }
     }
 }
@@ -213,10 +248,14 @@ fn error_response(error: impl Into<String>, message: impl Into<String>) -> Error
     }
 }
 
+/// ⚠️ WARNING: This is a legacy synchronous test harness, not the production async server entry point.
+/// The real entry point is `serve` or `serve_with_options`.
 pub fn handle_http(root: &Path, request: &str) -> String {
     handle_http_with_options(root, request, &ServerOptions::default())
 }
 
+/// ⚠️ WARNING: This is a legacy synchronous test harness, not the production async server entry point.
+/// The real entry point is `serve` or `serve_with_options`.
 pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOptions) -> String {
     let Some((head, body)) = request.split_once("\r\n\r\n") else {
         return json_error(400, "bad_request", "bad request");

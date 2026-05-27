@@ -5,6 +5,9 @@
   "type": "module",
   "main": "./cortexdb-client.js",
   "types": "./cortexdb-client.d.ts",
+  "scripts": {
+    "test": "node --test test.js"
+  },
   "exports": {
     ".": {
       "types": "./cortexdb-client.d.ts",

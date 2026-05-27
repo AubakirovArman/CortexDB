@@ -3,13 +3,8 @@ use cortex_engine::Database;
 use crate::context::view_for_scope;
 use crate::responses::{AqlCellResponse, AqlResponse};
 
-pub fn handle_aql_shared(
-    db: &std::sync::RwLock<Database>,
-    query: &str,
-    body: &[u8],
-) -> Result<String, String> {
+pub fn handle_aql_shared(db: &Database, query: &str, body: &[u8]) -> Result<String, String> {
     let scope = query_param(query, "scope")?;
-    let db = db.read().map_err(|e| e.to_string())?;
     let aql = String::from_utf8_lossy(body);
     let cells = db
         .retrieve_aql(&aql, &view_for_scope(scope))
