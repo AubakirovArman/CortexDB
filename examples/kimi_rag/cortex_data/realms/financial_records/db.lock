@@ -1,0 +1,4 @@
+format=cortexdb-lock-v1
+pid=1618573
+created_unix_seconds=1779896324
+root=examples/kimi_rag/cortex_data/realms/financial_records
