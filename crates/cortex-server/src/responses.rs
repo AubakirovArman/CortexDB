@@ -232,7 +232,15 @@ pub struct ErrorResponse {
 }
 
 /// Typed router error taxonomy for consistent HTTP status mapping.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone)]
+pub struct AnnMetricsResponse {
+    pub graph_nodes: usize,
+    pub total_edges: usize,
+    pub persisted_segments: usize,
+    pub has_checkpoint: bool,
+    pub has_uncheckpointed_changes: bool,
+}
+
 pub enum RouterError {
     NotFound(String),
     BadRequest(String),

@@ -428,6 +428,20 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/ann/metrics:
+    get:
+      summary: ANN/HNSW graph metrics
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      responses:
+        '200':
+          description: ANN metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnMetricsResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   parameters:
     Tenant:
@@ -896,6 +910,25 @@ components:
           type: string
         message:
           type: string
+    AnnMetricsResponse:
+      type: object
+      required:
+      - graph_nodes
+      - total_edges
+      - persisted_segments
+      - has_checkpoint
+      - has_uncheckpointed_changes
+      properties:
+        graph_nodes:
+          type: integer
+        total_edges:
+          type: integer
+        persisted_segments:
+          type: integer
+        has_checkpoint:
+          type: boolean
+        has_uncheckpointed_changes:
+          type: boolean
   responses:
     BadRequest:
       description: Bad Request

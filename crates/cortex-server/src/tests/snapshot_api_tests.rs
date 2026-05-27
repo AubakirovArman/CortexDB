@@ -111,6 +111,19 @@ fn snapshot_ingest_csv_response_shape() {
 }
 
 #[test]
+fn snapshot_ann_metrics_response_shape() {
+    let dir = tempfile::tempdir().unwrap();
+    handle_http(dir.path(), "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\nhello");
+    handle_http(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n");
+    let response = handle_http(dir.path(), "GET /v1/ann/metrics HTTP/1.1\r\n\r\n");
+    assert!(response.contains(r#""graph_nodes":"#));
+    assert!(response.contains(r#""total_edges":"#));
+    assert!(response.contains(r#""persisted_segments":"#));
+    assert!(response.contains(r#""has_checkpoint":"#));
+    assert!(response.contains(r#""has_uncheckpointed_changes":"#));
+}
+
+#[test]
 fn snapshot_ingest_job_not_found_response_shape() {
     let dir = tempfile::tempdir().unwrap();
     let response = handle_http(dir.path(), "GET /v1/ingest/jobs/99 HTTP/1.1\r\n\r\n");

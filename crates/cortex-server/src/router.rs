@@ -5,8 +5,9 @@ use crate::aql;
 use crate::context;
 use crate::memory;
 use crate::responses::{
-    CellLookupResponse, CellResponse, CheckpointResponse, ErrorResponse, HealthResponse,
-    IngestResponse, PutCellResponse, RouterError, StatsResponse, ValidationResponse,
+    AnnMetricsResponse, CellLookupResponse, CellResponse, CheckpointResponse, ErrorResponse,
+    HealthResponse, IngestResponse, PutCellResponse, RouterError, StatsResponse,
+    ValidationResponse,
 };
 use crate::search;
 
@@ -120,6 +121,17 @@ pub fn route_database(
         }
         ("POST", "/v1/search/ann-evaluate") => {
             search::handle_ann_evaluate_shared(db, query, body).map_err(RouterError::BadRequest)
+        }
+        ("GET", "/v1/ann/metrics") => {
+            let metrics = db.ann_metrics();
+            let response = AnnMetricsResponse {
+                graph_nodes: metrics.graph_nodes,
+                total_edges: metrics.total_edges,
+                persisted_segments: metrics.persisted_segments,
+                has_checkpoint: metrics.has_checkpoint,
+                has_uncheckpointed_changes: metrics.has_uncheckpointed_changes,
+            };
+            Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/v1/remember") => {
             memory::handle_remember_shared(db, query, body).map_err(RouterError::BadRequest)

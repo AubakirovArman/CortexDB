@@ -6,7 +6,7 @@ use cortex_storage::segment::{SegmentCell, SegmentReader};
 use crate::database::Database;
 use crate::error::EngineResult;
 use crate::search::vector::vector_from_payload;
-use crate::search::HnswIndex;
+use crate::search::{AnnMetrics, HnswIndex};
 
 use super::{hnsw_path, segment_path};
 
@@ -21,6 +21,30 @@ pub(crate) fn hnsw_graph_for_cells(cells: &[SegmentCell]) -> HnswGraphIndex {
 }
 
 impl Database {
+    pub fn ann_metrics(&self) -> AnnMetrics {
+        let persisted_segments = self.manifest.live_segments.len();
+        let has_checkpoint = self.manifest.checkpoint_seq > 0;
+        let (graph_nodes, total_edges) = self
+            .persisted_hnsw_graph()
+            .map(|graph| (graph.links.len(), graph.links.values().map(|v| v.len()).sum()))
+            .unwrap_or((0, 0));
+        let has_uncheckpointed_changes = if self.persisted_vector_index().is_ok() {
+            !self
+                .memtable
+                .changed_cell_ids_after(cortex_core::CommitSeq(self.manifest.checkpoint_seq))
+                .is_empty()
+        } else {
+            false
+        };
+        AnnMetrics {
+            graph_nodes,
+            total_edges,
+            persisted_segments,
+            has_checkpoint,
+            has_uncheckpointed_changes,
+        }
+    }
+
     pub(crate) fn persisted_hnsw_graph(&self) -> EngineResult<HnswGraphIndex> {
         let mut graph = HnswGraphIndex::default();
         let mut tombstoned = BTreeSet::new();

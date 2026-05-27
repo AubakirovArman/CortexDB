@@ -73,6 +73,15 @@ pub struct AnnEvaluationReport {
     pub recall_q16: u16,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct AnnMetrics {
+    pub graph_nodes: usize,
+    pub total_edges: usize,
+    pub persisted_segments: usize,
+    pub has_checkpoint: bool,
+    pub has_uncheckpointed_changes: bool,
+}
+
 pub fn search_persisted_ann(
     vectors: &BTreeMap<u32, Vec<i16>>,
     graph: &HnswGraphIndex,

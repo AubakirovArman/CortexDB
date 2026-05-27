@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 mod access;
 mod analyzer;
 mod ann;
+mod ann_recall_tests;
 mod database;
 mod evaluation;
 mod hnsw;
@@ -14,7 +15,7 @@ mod tokenizer;
 pub(crate) mod vector;
 
 pub use analyzer::{mean_reciprocal_rank_q16, Language, TextAnalyzer};
-pub use ann::{AnnEvaluationReport, AnnFallbackReason, AnnSearchPath, AnnSearchReport};
+pub use ann::{AnnEvaluationReport, AnnFallbackReason, AnnMetrics, AnnSearchPath, AnnSearchReport};
 pub use database::{DatabaseSearchOutcome, DatabaseSearchResult, SearchLimit};
 pub use hnsw::{integrity::HnswIntegrityReport, HnswIndex};
 pub use hnsw_policy::{HnswMaintenancePolicy, HnswMaintenanceReport, HnswRebuildPolicy};
