@@ -353,6 +353,81 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IngestionProgress'
+  /get:
+    get:
+      summary: Legacy cell read
+      deprecated: true
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/CellId'
+      responses:
+        '200':
+          description: Cell lookup result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CellLookupResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /put:
+    post:
+      summary: Legacy cell write
+      deprecated: true
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/CellId'
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Commit acknowledgement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PutCellResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /flush:
+    post:
+      summary: Legacy checkpoint flush
+      deprecated: true
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      responses:
+        '200':
+          description: Checkpoint result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckpointResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /tombstone:
+    post:
+      summary: Legacy cell tombstone
+      deprecated: true
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/CellId'
+      responses:
+        '200':
+          description: Commit acknowledgement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PutCellResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   parameters:
     Tenant:
@@ -821,3 +896,22 @@ components:
           type: string
         message:
           type: string
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
