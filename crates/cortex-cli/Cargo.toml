@@ -15,3 +15,6 @@ cortex-core = { path = "../cortex-core" }
 cortex-engine = { path = "../cortex-engine" }
 cortex-storage = { path = "../cortex-storage" }
 serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"

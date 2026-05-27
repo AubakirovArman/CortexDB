@@ -274,6 +274,7 @@ async def chat_endpoint(payload: dict):
                 f"{local_summary.replace('\n', '<br>')}"
             )
 
++
     return {
         "response": ai_text,
         "context": context_pack,

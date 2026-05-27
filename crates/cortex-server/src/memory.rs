@@ -1,3 +1,6 @@
+use cortex_engine::verification::numeric::{
+    extract_numeric_values, numeric_conflict, NumericValue,
+};
 use cortex_engine::verification::{VerificationReport, VerificationStatus};
 use cortex_engine::Database;
 
@@ -40,73 +43,53 @@ pub fn handle_verify_shared(db: &Database, query: &str, body: &[u8]) -> Result<S
     serde_json::to_string(&response).map_err(|e| e.to_string())
 }
 
-pub(crate) fn format_scale_currency(value_str: &str, currency: &str) -> String {
-    if let Ok(val) = value_str.parse::<u64>() {
-        if val >= 1_000_000_000 && val % 100_000_000 == 0 {
-            let whole = val / 1_000_000_000;
-            let tenths = (val % 1_000_000_000) / 100_000_000;
-            if tenths == 0 {
-                return format!("{}B {}", whole, currency);
-            }
-            return format!("{}.{}B {}", whole, tenths, currency);
-        } else if val >= 1_000_000 && val % 100_000 == 0 {
-            let whole = val / 1_000_000;
-            let tenths = (val % 1_000_000) / 100_000;
-            if tenths == 0 {
-                return format!("{}M {}", whole, currency);
-            }
-            return format!("{}.{}M {}", whole, tenths, currency);
-        }
-    }
-    format!("{} {}", value_str, currency)
-}
-
 fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<NumericConflictResponse> {
     let text = String::from_utf8_lossy(payload);
     let mut metric = "metric".to_owned();
-    let mut currency = "KZT".to_owned();
-    let mut value = "unknown".to_owned();
+    let mut currency: Option<String> = None;
+    let mut payload_value: Option<NumericValue> = None;
+
     for line in text.lines() {
         if let Some(val) = line.strip_prefix("metric=") {
             metric = val.trim().to_owned();
         } else if let Some(val) = line.strip_prefix("currency=") {
-            currency = val.trim().to_owned();
+            currency = Some(val.trim().to_ascii_uppercase().to_owned());
         } else if let Some(val) = line.strip_prefix("value=") {
-            value = val.trim().to_owned();
-        }
-    }
-
-    let formatted_right = format_scale_currency(&value, &currency);
-
-    let words: Vec<&str> = fact.split_whitespace().collect();
-    let mut formatted_left = "unknown".to_owned();
-    for (i, word) in words.iter().enumerate() {
-        let clean_word = word.trim_matches(|c: char| !c.is_alphanumeric() && c != '.');
-        if clean_word
-            .chars()
-            .next()
-            .is_some_and(|c| c.is_ascii_digit())
-        {
-            if i + 1 < words.len() {
-                let next_word = words[i + 1].trim_matches(|c: char| !c.is_alphabetic());
-                if !next_word.is_empty() && next_word.len() <= 4 {
-                    formatted_left = format_scale_currency(clean_word, next_word);
-                    break;
-                }
+            let val_str = val.trim();
+            // Try to parse the value with the known currency
+            let candidate = format!("{val_str} {}", currency.as_deref().unwrap_or(""));
+            let vals = extract_numeric_values(&candidate);
+            if let Some(v) = vals.into_iter().next() {
+                payload_value = Some(v);
             }
-            formatted_left = format_scale_currency(clean_word, &currency);
-            break;
         }
     }
 
-    if formatted_left == "unknown" {
+    let fact_values = extract_numeric_values(fact);
+    if fact_values.is_empty() {
         return None;
     }
 
+    let fact_value = &fact_values[0];
+    let payload_value = payload_value.as_ref()?;
+
+    if !numeric_conflict(fact_value, payload_value) {
+        return None;
+    }
+
+    let left = format_display(
+        &fact_value.raw,
+        fact_value.currency.as_deref().or(currency.as_deref()),
+    );
+    let right = format_display(
+        &payload_value.raw,
+        payload_value.currency.as_deref().or(currency.as_deref()),
+    );
+
     Some(NumericConflictResponse {
         metric,
-        left: formatted_left,
-        right: formatted_right,
+        left,
+        right,
     })
 }
 
@@ -185,6 +168,16 @@ fn map_verification_report(
         contradicting: contradicting_evidence,
         numeric_conflicts,
     }
+}
+
+fn format_display(raw: &str, currency: Option<&str>) -> String {
+    if let Some(c) = currency {
+        if raw.ends_with(c) || raw.to_ascii_uppercase().ends_with(c) {
+            return raw.to_owned();
+        }
+        return format!("{} {}", raw, c);
+    }
+    raw.to_owned()
 }
 
 fn query_param<'a>(query: &'a str, key: &str) -> Result<&'a str, String> {

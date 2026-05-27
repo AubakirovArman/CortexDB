@@ -1,89 +1,82 @@
-# VERIFY FACT v0
+# VERIFY FACT Design
 
-`Database::verify_fact_aql` executes the existing AQL `VERIFY FACT` statement:
+CortexDB provides deterministic fact verification through the `VERIFY FACT` AQL statement and the `/v1/verify` HTTP endpoint.
 
-```text
-VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;
-```
+## Purpose
 
-The path is policy checked:
+Unlike LLM-based verification (probabilistic), CortexDB verification is **deterministic**:
 
-```text
-AQL VERIFY FACT
--> parser
--> binder and AgentView policy
--> visible snapshot scan
--> readable-scope filter
--> term-overlap evidence report
-```
+1. Parses numeric claims from both the fact and stored cell payloads.
+2. Detects contradictions using integer-only arithmetic.
+3. Returns structured evidence with citations.
 
-The report path is restart-safe because it reads the same MemTable snapshot
-rebuilt from checkpoint plus WAL replay.
+## NumericValue Model
 
-The v0 report has:
-
-- `fact`
-- `status`
-- `evidence`
-- `contradicting_evidence`
-- `guards`
-
-The engine returns `Supported` when readable evidence overlaps the fact terms,
-`Contradicted` when readable cells declare or imply a contradiction, `Mixed`
-when both signals are present, and `Insufficient` when neither signal is
-visible.
-
-Evidence includes `source_trust_q16`. If a payload has `source_trust_q16=<u16>`,
-that value is used as an integer trust signal. Evidence with the same term match
-count is ordered by higher trust first. Missing trust defaults to `32768`.
-
-Guard v0 adds deterministic safety checks before a matching payload is accepted
-as support:
-
-- `missing_citation`: supporting evidence lacks `source=` or `citation=`.
-- `numeric_mismatch`: the fact and payload share non-numeric terms but mention
-  disjoint normalized numeric values.
-
-Numeric mismatches are reported as contradictions, not support, so direct budget
-or quantity disagreements cannot silently strengthen a fact.
-
-Contradiction v0 first uses an explicit payload line:
-
-```text
-contradicts=ABC budget approved
-```
-
-The marker line is not counted as supporting evidence. It only contributes to
-`contradicting_evidence` when it matches all normalized fact terms.
-
-After structured markers, the engine applies a conservative natural-language
-heuristic over the payload body. It recognizes scoped clauses such as:
-
-```text
-ABC budget was not approved.
-The committee rejected the ABC budget.
-```
-
-This is not a full NLI model. It only handles direct negation near fact terms
-and a small deterministic antonym table for common state words such as
-`approved/rejected`, `valid/invalid`, `increased/decreased`, and
-`open/closed`.
-
-The same structured markers are queryable through:
+The core of verification is the `NumericValue` struct:
 
 ```rust
-let conflicts = db.conflict_index(&view);
-let conflicts = db.conflicts_for_fact("ABC budget approved", &view);
+pub struct NumericValue {
+    pub raw: String,           // Original text
+    pub scaled_value: u64,     // Normalized integer
+    pub currency: Option<String>, // KZT, USD, EUR, etc.
+    pub unit: Option<String>,  // m, kg, %, etc.
+    pub magnitude: Option<Magnitude>, // Billion, Million, Thousand, Percent
+}
 ```
 
-Smoke surfaces:
+### Magnitude Suffixes
 
-```text
-cortexdb verify <path> <scope> '<VERIFY FACT ...;>'
-POST /v1/verify?scope=<scope>
+| Suffix | Scaled Value |
+|--------|-------------|
+| `B`, `billion`, `млрд` | × 1,000,000,000 |
+| `M`, `million`, `млн` | × 1,000,000 |
+| `K`, `thousand`, `тыс` | × 1,000 |
+| `%`, `percent` | × 1 |
+
+### Example Parsing
+
+| Input | scaled_value | currency | magnitude |
+|-------|-------------|----------|-----------|
+| `1.2B KZT` | 1,200,000,000 | KZT | Billion |
+| `1.5M USD` | 1,500,000 | USD | Million |
+| `15K m` | 15,000 | — | Thousand |
+| `12.5%` | 12 | — | Percent |
+
+## Conflict Detection
+
+Two numeric values **conflict** when:
+
+1. They have the same currency or unit context.
+2. Their `scaled_value` differs.
+
+## Verification Verdicts
+
+| Status | Meaning |
+|--------|---------|
+| `supported` | Evidence found, no contradictions |
+| `contradicted` | No evidence, but contradictions found |
+| `mixed_evidence` | Both supporting and contradicting evidence |
+| `insufficient` | No relevant evidence found |
+
+## Guards
+
+Verification may emit guards (warnings):
+
+| Code | Meaning |
+|------|---------|
+| `missing_citation` | Evidence lacks source reference |
+| `numeric_mismatch` | Payload number contradicts fact number |
+
+## Usage
+
+```bash
+cargo run -p cortex-cli -- verify ./data project:investments \
+  'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;'
 ```
 
-## Not Yet
+Or via HTTP:
 
-- Citation quality ranking beyond presence checks.
-- Full natural-language inference or semantic contradiction extraction.
+```bash
+curl -X POST 'http://127.0.0.1:8090/v1/verify?scope=project:investments' \
+  -d 'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;'
+```

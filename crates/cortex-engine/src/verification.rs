@@ -8,6 +8,7 @@ use crate::search::tokenize;
 
 mod contradiction;
 mod guards;
+pub mod numeric;
 
 use contradiction::{
     contradiction_facts, contradiction_match, contradiction_text_matches, tokenize_support_text,
