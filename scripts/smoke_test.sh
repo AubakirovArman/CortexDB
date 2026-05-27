@@ -57,7 +57,26 @@ check_json() {
     fi
 }
 
+check_html() {
+    local url=$1
+    local expected=$2
+    local response
+    response=$(curl -sf "$url" || true)
+    if [[ -z "$response" ]]; then
+        echo "FAIL: GET $url — no response"
+        exit 1
+    fi
+    if echo "$response" | grep -q "$expected"; then
+        echo "OK: GET $url"
+    else
+        echo "FAIL: GET $url — expected '$expected' in response"
+        exit 1
+    fi
+}
+
 echo "Running smoke tests..."
+
+check_html "$BASE/dashboard" "CortexDB Console"
 
 check_json "$BASE/v1/health" '"status":"ok"'
 check_json "$BASE/v1/stats" '"current_seq"'
