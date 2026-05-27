@@ -102,8 +102,17 @@ baselines are comparing the same durable snapshot. The CLI and HTTP evaluation
 surfaces expose the same data and return `available=false` until this durable
 snapshot precondition is met.
 
-## Not Yet
+## HNSW Tuning Parameters & Production Guidelines
 
-- Full dictionary-grade lemmatization packs.
-- Production HNSW tuning beyond the current deterministic maintenance, recall
-  guard, and exact-baseline recall evaluation hooks.
+### 1. Hard Constraints & Dimension Enforcement
+- **Dimension Homogeneity:** All vectors inside a single `.acv` partition must share a single, non-zero dimension. The write path validates each incoming payload's vector shape. If any vector has mismatched dimensions (detected on checkpoint/compaction), the indexing pipeline logs a validation mismatch and gracefully falls back to `exact_fallback`.
+- **Fixed-Point Score Stability:** Dot-product and similarity scoring operate strictly on non-negative `i16` fixed-point embeddings (Q16 scaling representation), completely avoiding non-deterministic floating-point (`f64`) operations.
+
+### 2. Tuning Parameters
+- **`max_neighbors` (M):** The maximum number of bidirectional connection links per node in the HNSW graph (default: 8). Higher values improve search quality (recall) on high-dimensional vectors but increase graph build time and memory usage during compaction.
+- **`ef_search` (EF):** The size of the dynamic candidate list kept during the graph traversal phase (default: 64). Increasing `ef_search` improves recall but adds a linear search latency cost.
+- **`deleted_fraction_q16`:** HNSW rebuild threshold (default: `16,384`, representing 25% deletion pressure). When deleted vectors exceed this fraction, `HnswIndex::apply_maintenance` triggers a graph rebuild.
+
+### 3. Limitations & Fail-Safes
+- **Static Rebuild Lifecycle:** Graphs are built during the `checkpoint` (compaction) phase and remain static in the `.ach` files. Real-time updates inside the MemTable (WAL tail) bypass HNSW and are merged on-the-fly using `Exact Scan`, ensuring 100% freshness and correctness.
+- **Zero-Recall exact fallback:** If a graph traversal yields fewer candidates than the requested visible set, or if the index validation detects corruption, the system automatically degrades to `Exact Scan` (`fallback_reason: "low_recall" / "uncheckpointed_changes"`), preserving exact accuracy.
