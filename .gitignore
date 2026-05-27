@@ -2,6 +2,9 @@
 .idea/
 .vscode/
 **/*.rs.bk
+__pycache__/
+*.py[cod]
 .env
 .env.*
 !.env.example
+examples/kimi_rag
