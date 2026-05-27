@@ -248,6 +248,15 @@ fn error_response(error: impl Into<String>, message: impl Into<String>) -> Error
     }
 }
 
+fn serve_dashboard() -> String {
+    let html = dashboard::html();
+    format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\n\r\n{}",
+        html.len(),
+        html
+    )
+}
+
 /// ⚠️ WARNING: This is a legacy synchronous test harness, not the production async server entry point.
 /// The real entry point is `serve` or `serve_with_options`.
 pub fn handle_http(root: &Path, request: &str) -> String {
@@ -279,6 +288,10 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
         if auth_header != Some(expected_bearer.as_str()) {
             return json_error(401, "unauthorized", "missing or invalid authorization");
         }
+    }
+
+    if parts[1] == "/dashboard" {
+        return serve_dashboard();
     }
 
     let Ok(db) = Database::open(root) else {

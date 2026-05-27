@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CortexDB Dashboard</title>
+<style>
+  * { box-sizing: border-box; font-family: system-ui, sans-serif; }
+  body { margin: 0; padding: 1rem; background: #f5f5f5; }
+  h1 { margin: 0 0 1rem; font-size: 1.5rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; }
+  .card { background: #fff; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .card h2 { margin: 0 0 0.5rem; font-size: 1rem; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 0.75rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; }
+  input, textarea, button, select { width: 100%; padding: 0.5rem; margin: 0.25rem 0; border: 1px solid #ccc; border-radius: 4px; }
+  button { background: #0066cc; color: #fff; border: none; cursor: pointer; }
+  button:hover { background: #0055aa; }
+  .row { display: flex; gap: 0.5rem; }
+  .row > * { flex: 1; }
+  .status-ok { color: #228b22; }
+  .status-err { color: #cc0000; }
+</style>
+</head>
+<body>
+<h1>🧠 CortexDB Dashboard</h1>
+<div class="grid">
+  <div class="card">
+    <h2>Health</h2>
+    <button onclick="fetchHealth()">Check</button>
+    <pre id="health">Click Check to load</pre>
+  </div>
+  <div class="card">
+    <h2>Stats</h2>
+    <button onclick="fetchStats()">Load</button>
+    <pre id="stats">Click Load to fetch</pre>
+  </div>
+  <div class="card">
+    <h2>Cell Lookup</h2>
+    <div class="row"><input id="cellId" type="number" value="1" placeholder="cell_id"></div>
+    <button onclick="fetchCell()">Get Cell</button>
+    <pre id="cell">Enter cell_id and click Get</pre>
+  </div>
+  <div class="card">
+    <h2>Put Cell</h2>
+    <div class="row"><input id="putId" type="number" value="1" placeholder="cell_id"></div>
+    <textarea id="putBody" rows="4">scope=project:dashboard
+status=ready
+
+Hello from dashboard</textarea>
+    <button onclick="putCell()">Put</button>
+    <pre id="putResult">Click Put to send</pre>
+  </div>
+  <div class="card">
+    <h2>Search</h2>
+    <div class="row">
+      <input id="searchScope" value="project:dashboard" placeholder="scope">
+      <input id="searchQ" value="hello" placeholder="query">
+    </div>
+    <button onclick="doSearch()">Search</button>
+    <pre id="searchResult">Enter query and click Search</pre>
+  </div>
+  <div class="card">
+    <h2>AQL Console</h2>
+    <textarea id="aql" rows="3">RETRIEVE CONTEXT FOR TASK "demo" IN BRAIN dashboard WHERE space = project:dashboard LIMIT 10 CANDIDATES;</textarea>
+    <div class="row"><input id="aqlScope" value="project:dashboard" placeholder="scope"></div>
+    <button onclick="runAql()">Run</button>
+    <pre id="aqlResult">Enter AQL and click Run</pre>
+  </div>
+  <div class="card">
+    <h2>Verify Fact</h2>
+    <div class="row"><input id="verifyScope" value="project:dashboard" placeholder="scope"></div>
+    <textarea id="verifyFact" rows="2">VERIFY FACT "Hello from dashboard" IN BRAIN dashboard;</textarea>
+    <button onclick="doVerify()">Verify</button>
+    <pre id="verifyResult">Enter fact and click Verify</pre>
+  </div>
+  <div class="card">
+    <h2>ANN Metrics</h2>
+    <button onclick="fetchAnnMetrics()">Load</button>
+    <pre id="annMetrics">Click Load to fetch</pre>
+  </div>
+</div>
+
+<script>
+const API = '';
+
+async function api(method, path, body) {
+  const opts = { method, headers: {} };
+  if (body && typeof body === 'string') {
+    opts.headers['Content-Type'] = 'text/plain';
+    opts.body = body;
+  }
+  try {
+    const r = await fetch(API + path, opts);
+    const text = await r.text();
+    let json;
+    try { json = JSON.parse(text); } catch { json = text; }
+    return { ok: r.ok, status: r.status, data: json };
+  } catch (e) {
+    return { ok: false, status: 0, data: e.message };
+  }
+}
+
+function show(id, obj) {
+  document.getElementById(id).textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+}
+
+async function fetchHealth() {
+  const r = await api('GET', '/v1/health');
+  show('health', r.data);
+}
+
+async function fetchStats() {
+  const r = await api('GET', '/v1/stats');
+  show('stats', r.data);
+}
+
+async function fetchCell() {
+  const id = document.getElementById('cellId').value;
+  const r = await api('GET', `/v1/cell?cell_id=${id}`);
+  show('cell', r.data);
+}
+
+async function putCell() {
+  const id = document.getElementById('putId').value;
+  const body = document.getElementById('putBody').value;
+  const r = await api('POST', `/v1/cell?cell_id=${id}`, body);
+  show('putResult', r.data);
+}
+
+async function doSearch() {
+  const scope = encodeURIComponent(document.getElementById('searchScope').value);
+  const q = encodeURIComponent(document.getElementById('searchQ').value);
+  const r = await api('POST', `/v1/search?scope=${scope}&q=${q}`);
+  show('searchResult', r.data);
+}
+
+async function runAql() {
+  const scope = encodeURIComponent(document.getElementById('aqlScope').value);
+  const body = document.getElementById('aql').value;
+  const r = await api('POST', `/v1/context?scope=${scope}`, body);
+  show('aqlResult', r.data);
+}
+
+async function doVerify() {
+  const scope = encodeURIComponent(document.getElementById('verifyScope').value);
+  const body = document.getElementById('verifyFact').value;
+  const r = await api('POST', `/v1/verify?scope=${scope}`, body);
+  show('verifyResult', r.data);
+}
+
+async function fetchAnnMetrics() {
+  const r = await api('GET', '/v1/ann/metrics');
+  show('annMetrics', r.data);
+}
+
+fetchHealth();
+fetchStats();
+</script>
+</body>
+</html>

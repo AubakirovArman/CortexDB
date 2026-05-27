@@ -26,7 +26,12 @@ impl Database {
         let has_checkpoint = self.manifest.checkpoint_seq > 0;
         let (graph_nodes, total_edges) = self
             .persisted_hnsw_graph()
-            .map(|graph| (graph.links.len(), graph.links.values().map(|v| v.len()).sum()))
+            .map(|graph| {
+                (
+                    graph.links.len(),
+                    graph.links.values().map(|v| v.len()).sum(),
+                )
+            })
             .unwrap_or((0, 0));
         let has_uncheckpointed_changes = if self.persisted_vector_index().is_ok() {
             !self
