@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ingest Russian dummy data into CortexDB via /v1/ingest/text API."""
+"""Ingest Russian dummy data into CortexDB via /v1/cell API (direct put)."""
 import json
 import os
 import urllib.request
@@ -10,8 +10,8 @@ CORTEX_HOST = os.getenv("CORTEX_HOST", "http://127.0.0.1:8090")
 DATA_DIR = Path(__file__).parent / "data"
 
 
-def ingest_cell(scope: str, payload_text: str) -> dict:
-    url = f"{CORTEX_HOST}/v1/ingest/text?scope={urllib.parse.quote(scope)}"
+def put_cell(cell_id: int, payload_text: str) -> dict:
+    url = f"{CORTEX_HOST}/v1/cell?cell_id={cell_id}"
     req = urllib.request.Request(
         url,
         data=payload_text.encode("utf-8"),
@@ -22,7 +22,7 @@ def ingest_cell(scope: str, payload_text: str) -> dict:
         with urllib.request.urlopen(req, timeout=30) as res:
             return json.loads(res.read().decode("utf-8"))
     except Exception as e:
-        return {"error": str(e), "scope": scope}
+        return {"error": str(e), "cell_id": cell_id}
 
 
 def main():
@@ -34,6 +34,7 @@ def main():
     total = 0
     success = 0
     errors = []
+    cell_id = 1
 
     for filepath in jsonl_files:
         print(f"Processing {filepath.relative_to(DATA_DIR)} ...")
@@ -49,18 +50,18 @@ def main():
                     errors.append(f"JSON parse error in {filepath}: {e}")
                     continue
 
-                scope = record.get("scope", "default")
                 payload = record.get("payload_text", "")
                 if not payload:
                     errors.append(f"Empty payload in {filepath}")
                     continue
 
-                result = ingest_cell(scope, payload)
+                result = put_cell(cell_id, payload)
                 if "error" in result:
-                    errors.append(f"Ingest failed for {scope}: {result['error']}")
+                    errors.append(f"Put failed for cell {cell_id}: {result['error']}")
                 else:
                     success += 1
-                    print(f"  [{success}] {scope} → ok")
+                    print(f"  [{success}] cell_id={cell_id} → ok")
+                cell_id += 1
 
     print(f"\n=== Ingestion complete ===")
     print(f"Total: {total}, Success: {success}, Errors: {len(errors)}")

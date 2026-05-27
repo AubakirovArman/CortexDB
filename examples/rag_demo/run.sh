@@ -16,7 +16,7 @@ pip install -q -r "$DIR/requirements.txt"
 
 # Build cortex-server
 echo "⚙️ Building cortex-server..."
-cargo build -q --bin cortex-server
+cd "$REPO_ROOT" && cargo build -q --bin cortex-server
 
 # Start cortex-server if not running
 CORTEX_PID=""
@@ -43,13 +43,13 @@ echo "📊 Ingesting Russian dummy data into CortexDB..."
 python3 "$DIR/ingest.py"
 
 # Check vLLM
-echo "🔌 Checking vLLM at $VLLM_URL (http://127.0.0.1:8000/v1/chat/completions)..."
-if curl -sf http://127.0.0.1:8000/v1/models >/dev/null 2>&1; then
-    echo "✅ vLLM is available"
+echo "🔌 Checking vLLM at http://127.0.0.1:8018 ..."
+if curl -sf http://127.0.0.1:8018/v1/models >/dev/null 2>&1; then
+    echo "✅ vLLM is available on port 8018"
 else
-    echo "⚠️ vLLM not detected at port 8000. The chatbot will show LLM errors but CortexDB retrieval will still work."
+    echo "⚠️ vLLM not detected at port 8018. The chatbot will show LLM errors but CortexDB retrieval will still work."
     echo "   To start vLLM with Gemma-4, run something like:"
-    echo "   vllm serve google/gemma-4-31B-it --tensor-parallel-size 4 --port 8000"
+    echo "   vllm serve google/gemma-4-31B-it --port 8018"
 fi
 
 # Start FastAPI
