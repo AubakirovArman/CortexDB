@@ -1,0 +1,17 @@
+---
+source: crates/cortex-server/src/tests/response_snapshot_tests.rs
+expression: resp
+---
+{
+  "search_mode": "keyword",
+  "ann_report": null,
+  "results": [
+    {
+      "cell_id": 1,
+      "score": 150,
+      "lexical_score": 100,
+      "vector_score": 50,
+      "payload": "Solar Plant budget is 1.2B KZT"
+    }
+  ]
+}

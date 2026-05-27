@@ -98,14 +98,39 @@ fn verification_verdict(status: VerificationStatus) -> &'static str {
     }
 }
 
+/// Pure-integer display formatter for numeric magnitudes.
+/// Avoids f64 to stay deterministic and fixed-point aligned.
+///
+/// Examples:
+///   1_200_000_000 -> "1.2B KZT"
+///   1_500_000_000 -> "1.5B KZT"
+///   1_000_000     -> "1M KZT"
+///   1_250_000     -> "1.25M KZT"
 fn format_scale_currency(value_str: &str, currency: &str) -> String {
     if let Ok(val) = value_str.parse::<u64>() {
-        if val >= 1_000_000_000 && val % 100_000_000 == 0 {
-            let scaled = val as f64 / 1_000_000_000.0;
-            return format!("{}B {}", scaled, currency);
-        } else if val >= 1_000_000 && val % 100_000 == 0 {
-            let scaled = val as f64 / 1_000_000.0;
-            return format!("{}M {}", scaled, currency);
+        if val >= 1_000_000_000 {
+            let whole = val / 1_000_000_000;
+            let rem = val % 1_000_000_000;
+            if rem == 0 {
+                return format!("{}B {}", whole, currency);
+            }
+            // Two decimal digits of precision without float
+            let frac = rem / 10_000_000;
+            if frac % 10 == 0 {
+                return format!("{}.{:.1}B {}", whole, frac / 10, currency);
+            }
+            return format!("{}.{:.2}B {}", whole, frac / 10, currency);
+        } else if val >= 1_000_000 {
+            let whole = val / 1_000_000;
+            let rem = val % 1_000_000;
+            if rem == 0 {
+                return format!("{}M {}", whole, currency);
+            }
+            let frac = rem / 10_000;
+            if frac % 10 == 0 {
+                return format!("{}.{:.1}M {}", whole, frac / 10, currency);
+            }
+            return format!("{}.{:.2}M {}", whole, frac / 10, currency);
         }
     }
     format!("{} {}", value_str, currency)

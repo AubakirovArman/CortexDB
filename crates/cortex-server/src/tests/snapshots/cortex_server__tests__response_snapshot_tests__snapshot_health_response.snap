@@ -1,0 +1,8 @@
+---
+source: crates/cortex-server/src/tests/response_snapshot_tests.rs
+expression: resp
+---
+{
+  "status": "ok",
+  "version": "0.1.0-core-alpha"
+}

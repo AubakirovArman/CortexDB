@@ -87,7 +87,7 @@ fn map_context_pack(pack: &ContextPack) -> ContextPackResponse {
         .anomalies
         .iter()
         .map(|anom| ContextPackAnomalyResponse {
-            cell_id: anom.cell_id.map(|cid| cid.0).unwrap_or(0),
+            cell_id: anom.cell_id.map(|cid| cid.0),
             code: anom.code.to_string(),
             message: anom.message.clone(),
         })

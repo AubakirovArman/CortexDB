@@ -1,0 +1,17 @@
+---
+source: crates/cortex-server/src/tests/response_snapshot_tests.rs
+expression: resp
+---
+{
+  "current_seq": 42,
+  "checkpoint_seq": 30,
+  "live_segments": 3,
+  "retired_segments": 1,
+  "memtable_cells": 12,
+  "memtable_versions": 15,
+  "wal_size_bytes": 4096,
+  "wal_writer_records": 100,
+  "wal_writer_bytes": 8192,
+  "wal_writer_fsyncs": 10,
+  "wal_writer_batches": 5
+}

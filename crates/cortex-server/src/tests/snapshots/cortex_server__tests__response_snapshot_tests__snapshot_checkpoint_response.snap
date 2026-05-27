@@ -1,0 +1,8 @@
+---
+source: crates/cortex-server/src/tests/response_snapshot_tests.rs
+expression: resp
+---
+{
+  "checkpoint_seq": 30,
+  "cells_flushed": 12
+}

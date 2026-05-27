@@ -76,20 +76,37 @@ fn test_server_concurrency_and_size_limit() {
 }
 
 #[test]
-fn test_tenant_validation_and_path_traversal() {
-    // 1. Test validate_tenant_id helper directly
+fn test_tenant_validation_unit_cases() {
+    // Accepted tenants
     assert!(crate::validate_tenant_id("default"));
     assert!(crate::validate_tenant_id("tenant1"));
     assert!(crate::validate_tenant_id("tenant-1"));
     assert!(crate::validate_tenant_id("tenant_1"));
     assert!(crate::validate_tenant_id("tenant:1"));
+    assert!(crate::validate_tenant_id("project_1"));
+    assert!(crate::validate_tenant_id("project:investments"));
+
+    // Rejected — path traversal patterns
     assert!(!crate::validate_tenant_id("../../escape"));
     assert!(!crate::validate_tenant_id("..%2f..%2fescape"));
     assert!(!crate::validate_tenant_id("a/b"));
+    assert!(!crate::validate_tenant_id("a%2Fb"));
+    assert!(!crate::validate_tenant_id("."));
+    assert!(!crate::validate_tenant_id(".."));
+    assert!(!crate::validate_tenant_id("../x"));
+
+    // Rejected — length and empty
     assert!(!crate::validate_tenant_id(""));
     assert!(!crate::validate_tenant_id(&"a".repeat(65)));
 
-    // 2. Test path traversal block over the HTTP service
+    // Rejected — special characters
+    assert!(!crate::validate_tenant_id("tenant@home"));
+    assert!(!crate::validate_tenant_id("tenant space"));
+    assert!(!crate::validate_tenant_id("tenant\nline"));
+}
+
+#[test]
+fn test_tenant_path_traversal_over_http() {
     let dir = tempfile::tempdir().unwrap();
     let addr = "127.0.0.1:0";
     let listener = std::net::TcpListener::bind(addr).unwrap();
@@ -103,18 +120,37 @@ fn test_tenant_validation_and_path_traversal() {
 
     std::thread::sleep(std::time::Duration::from_millis(100));
 
-    {
+    let bad_tenants = [
+        "../../escape",
+        "..%2f..%2fescape",
+        "a/b",
+        "a%2Fb",
+        ".",
+        "..",
+        "../x",
+    ];
+
+    for tenant in &bad_tenants {
         use std::io::{Read, Write};
         use std::net::TcpStream;
         let mut stream = TcpStream::connect(local_addr).unwrap();
-        stream
-            .write_all(b"GET /v1/health?tenant=../../escape HTTP/1.1\r\n\r\n")
-            .unwrap();
+        let req = format!("GET /v1/health?tenant={} HTTP/1.1\r\n\r\n", tenant);
+        stream.write_all(req.as_bytes()).unwrap();
 
         let mut response = [0u8; 1024];
         let read = stream.read(&mut response).unwrap();
         let resp_str = String::from_utf8_lossy(&response[..read]);
-        assert!(resp_str.contains("400 Bad Request"));
-        assert!(resp_str.contains("invalid_tenant"));
+        assert!(
+            resp_str.contains("400 Bad Request"),
+            "tenant='{}' should be rejected with 400, got: {}",
+            tenant,
+            resp_str
+        );
+        assert!(
+            resp_str.contains("invalid_tenant"),
+            "tenant='{}' response should contain invalid_tenant, got: {}",
+            tenant,
+            resp_str
+        );
     }
 }

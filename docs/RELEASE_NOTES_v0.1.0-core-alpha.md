@@ -80,6 +80,7 @@ RUSTFLAGS="-D warnings" cargo clippy --workspace --all-targets -- -D warnings
 
 and after the GitHub Actions `Rust` workflow is green on stable and beta.
 
-Latest local evidence: `make alpha-check` passed on 2026-05-26, including
+Latest local evidence: `make alpha-check` passed on 2026-05-27, including
 workspace check, all-features tests, formatting, clippy with `-D warnings`, SDK
-smoke checks, the core benchmark matrix, and the investment projects demo.
+smoke checks, the core benchmark matrix, and the upgraded investment projects
+demo (search + AQL + ContextPack + Verify with numeric conflict detection).

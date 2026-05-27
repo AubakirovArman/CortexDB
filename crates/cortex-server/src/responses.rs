@@ -109,7 +109,7 @@ pub struct ContextPackCellResponse {
 
 #[derive(Serialize, Debug, Clone)]
 pub struct ContextPackAnomalyResponse {
-    pub cell_id: u64,
+    pub cell_id: Option<u64>,
     pub code: String,
     pub message: String,
 }

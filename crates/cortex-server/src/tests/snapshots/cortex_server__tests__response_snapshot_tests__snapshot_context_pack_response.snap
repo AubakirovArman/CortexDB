@@ -1,0 +1,49 @@
+---
+source: crates/cortex-server/src/tests/response_snapshot_tests.rs
+expression: resp
+---
+{
+  "token_budget_tokens": 4000,
+  "estimated_tokens": 2500,
+  "truncated": false,
+  "citations_required": true,
+  "cells": [
+    {
+      "cell_id": 1,
+      "estimated_tokens": 120,
+      "citation": "report_q1.pdf#page=3",
+      "payload_text": "Solar Plant budget is 1.2B KZT",
+      "explain": {
+        "score": 95,
+        "matched_terms": [
+          "budget",
+          "solar"
+        ],
+        "why_selected": "high lexical match",
+        "base_bm25": 80,
+        "source_trust_bonus": 10,
+        "redundancy_penalty": 0
+      },
+      "source_ref": {
+        "source_id": "report_q1.pdf",
+        "document_id": "doc-1",
+        "page": 3,
+        "cell_range": null,
+        "json_path": null,
+        "confidence_q16": 65535
+      }
+    }
+  ],
+  "anomalies": [
+    {
+      "cell_id": 1,
+      "code": "token_overload",
+      "message": "Cell exceeds token budget"
+    },
+    {
+      "cell_id": null,
+      "code": "scope_mismatch",
+      "message": "Anomaly without cell association"
+    }
+  ]
+}

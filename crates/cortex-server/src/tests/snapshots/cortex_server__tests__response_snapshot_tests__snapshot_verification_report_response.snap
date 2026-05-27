@@ -1,0 +1,64 @@
+---
+source: crates/cortex-server/src/tests/response_snapshot_tests.rs
+expression: resp
+---
+{
+  "fact": "Solar Plant budget is 1.2B KZT",
+  "status": "mixed_evidence",
+  "verdict": "mixed_evidence",
+  "evidence": [
+    {
+      "cell_id": 1,
+      "matched_terms": 3,
+      "source_trust_q16": 65535,
+      "citation": "report_q1.pdf#page=3",
+      "payload_text": "Solar Plant budget is 1.2B KZT"
+    }
+  ],
+  "contradicting_evidence": [
+    {
+      "cell_id": 2,
+      "matched_terms": 3,
+      "source_trust_q16": 65535,
+      "citation": "report_q2.pdf#page=5",
+      "payload_text": "Solar Plant budget is 1.4B KZT"
+    }
+  ],
+  "guards": [
+    {
+      "cell_id": 1,
+      "code": "numeric_mismatch",
+      "message": "Value mismatch detected"
+    },
+    {
+      "cell_id": null,
+      "code": "missing_citation",
+      "message": "Fact lacks source citation"
+    }
+  ],
+  "supporting": [
+    {
+      "cell_id": 1,
+      "matched_terms": 3,
+      "source_trust_q16": 65535,
+      "citation": "report_q1.pdf#page=3",
+      "payload_text": "Solar Plant budget is 1.2B KZT"
+    }
+  ],
+  "contradicting": [
+    {
+      "cell_id": 2,
+      "matched_terms": 3,
+      "source_trust_q16": 65535,
+      "citation": "report_q2.pdf#page=5",
+      "payload_text": "Solar Plant budget is 1.4B KZT"
+    }
+  ],
+  "numeric_conflicts": [
+    {
+      "metric": "budget",
+      "left": "1.2B KZT",
+      "right": "1.4B KZT"
+    }
+  ]
+}

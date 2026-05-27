@@ -13,14 +13,23 @@ fn serve_dashboard() -> String {
     )
 }
 
-/// ⚠️ WARNING: This is a legacy synchronous test harness, not the production async server entry point.
-/// The real entry point is `serve` or `serve_with_options`.
+/// ⚠️ TEST-ONLY / COMPATIBILITY-ONLY HARNESS
+///
+/// This is a **legacy synchronous test harness**, not the production async server path.
+/// It opens `Database` directly on every request and wraps it in `RwLock`.
+///
+/// For production use, always call `serve` or `serve_with_options`, which runs
+/// the actor-isolated Tokio/Axum server with per-tenant `DatabaseActor` workers.
+///
+/// Tests should migrate to the async server path when possible.
 pub fn handle_http(root: &Path, request: &str) -> String {
     handle_http_with_options(root, request, &ServerOptions::default())
 }
 
-/// ⚠️ WARNING: This is a legacy synchronous test harness, not the production async server entry point.
-/// The real entry point is `serve` or `serve_with_options`.
+/// ⚠️ TEST-ONLY / COMPATIBILITY-ONLY HARNESS
+///
+/// See `handle_http` for details. This variant accepts `ServerOptions` for auth-token
+/// configuration in legacy integration tests.
 pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOptions) -> String {
     let Some((head, body)) = request.split_once("\r\n\r\n") else {
         return json_error(400, "bad_request", "bad request");

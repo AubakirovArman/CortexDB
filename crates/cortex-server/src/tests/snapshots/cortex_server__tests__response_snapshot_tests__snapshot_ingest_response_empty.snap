@@ -1,0 +1,10 @@
+---
+source: crates/cortex-server/src/tests/response_snapshot_tests.rs
+expression: resp
+---
+{
+  "rows_ingested": 0,
+  "chunks_ingested": 0,
+  "facts_ingested": 0,
+  "first_cell_id": null
+}

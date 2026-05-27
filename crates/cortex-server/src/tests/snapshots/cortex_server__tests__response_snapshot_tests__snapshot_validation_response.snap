@@ -1,0 +1,18 @@
+---
+source: crates/cortex-server/src/tests/response_snapshot_tests.rs
+expression: resp
+---
+{
+  "ok": true,
+  "manifest_ok": true,
+  "wal_ok": true,
+  "live_segments_checked": 3,
+  "bitmap_indexes_checked": 3,
+  "lexical_indexes_checked": 3,
+  "vector_indexes_checked": 0,
+  "hnsw_graphs_checked": 0,
+  "cells_checked": 12,
+  "wal_records_checked": 100,
+  "wal_safe_truncate_offset": 4096,
+  "errors": []
+}

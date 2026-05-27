@@ -10,12 +10,34 @@ CortexDB is specifically engineered for autonomous AI agents. Unlike traditional
 
 ---
 
+## 3-Minute Demo
+
+```bash
+# 1. Load a fixture
+cargo run -p cortex-cli -- load-fixture examples/datasets/investment_projects ./demo-db
+
+# 2. Search
+cargo run -p cortex-cli -- search ./demo-db project:investments "Solar Plant budget"
+
+# 3. Retrieve a ContextPack with anomaly reports
+cargo run -p cortex-cli -- context ./demo-db project:investments \
+  "RETRIEVE CONTEXT FOR TASK 'budget' IN BRAIN default LIMIT 10 CANDIDATES;" --json
+
+# 4. Verify a fact for numeric conflicts
+cargo run -p cortex-cli -- verify ./demo-db project:investments \
+  "VERIFY FACT 'Solar Plant budget is 1.2B KZT' IN BRAIN default;" --json
+```
+
+Or run the full demo: `make demo`
+
+---
+
 ## Current Core Alpha Features (v0.1.0-core-alpha candidate)
 
 - **Single-Node Durable Storage:** Strict Write-Ahead Log (WAL) with group commit, MVCC MemTable, and incremental check-pointing/compaction.
 - **Durable Local Agent Memory:** Scope-isolated agent-facing memory retrieval with dynamic decay/TTL scoring.
 - **Deterministic Fact Verification (`VERIFY FACT`):** Heuristic and deterministic numerical and citation checking that detects contradictions before they reach the agent.
-- **HTTP Server:** An async HTTP surface over actor-isolated local core built on **Tokio**, **Axum**, and **Tower-HTTP** with strict 2MB body limit boundaries.
+- **HTTP Server:** Async HTTP surface over actor-isolated local single-node core built on **Tokio**, **Axum**, and **Tower-HTTP** with strict 2MB body limit boundaries.
 - **Crate Ecosystem:** Fully modular workspace crates: `cortex-core`, `cortex-aql`, `cortex-storage`, `cortex-engine`, `cortex-server`, and `cortex-cli`.
 
 ## Long-Term Vision (Experimental/Under Active Development)
@@ -93,6 +115,84 @@ curl 'http://127.0.0.1:8181/v1/validate'
 
 The HTTP response schema is documented in [`docs/API_JSON_SCHEMAS.md`](docs/API_JSON_SCHEMAS.md)
 and the OpenAPI contract is available at [`docs/openapi.yaml`](docs/openapi.yaml).
+
+### ContextPack JSON Example
+
+```json
+{
+  "token_budget_tokens": 4000,
+  "estimated_tokens": 2500,
+  "truncated": false,
+  "citations_required": true,
+  "cells": [
+    {
+      "cell_id": 1,
+      "estimated_tokens": 120,
+      "citation": "report_q1.pdf#page=3",
+      "payload_text": "Solar Plant budget is 1.2B KZT",
+      "explain": {
+        "score": 95,
+        "matched_terms": ["budget", "solar"],
+        "why_selected": "high lexical match",
+        "base_bm25": 80,
+        "source_trust_bonus": 10,
+        "redundancy_penalty": 0
+      }
+    }
+  ],
+  "anomalies": [
+    {
+      "cell_id": null,
+      "code": "token_overload",
+      "message": "Cell exceeds token budget"
+    }
+  ]
+}
+```
+
+### VERIFY FACT JSON Example
+
+```json
+{
+  "verdict": "mixed_evidence",
+  "supporting": [
+    {
+      "cell_id": 1,
+      "matched_terms": 3,
+      "source_trust_q16": 65535,
+      "citation": "report_q1.pdf#page=3",
+      "payload_text": "Solar Plant budget is 1.2B KZT"
+    }
+  ],
+  "contradicting": [
+    {
+      "cell_id": 2,
+      "matched_terms": 3,
+      "source_trust_q16": 65535,
+      "citation": "report_q2.pdf#page=5",
+      "payload_text": "Solar Plant budget is 1.4B KZT"
+    }
+  ],
+  "numeric_conflicts": [
+    {
+      "metric": "budget",
+      "left": "1.2B KZT",
+      "right": "1.4B KZT"
+    }
+  ]
+}
+```
+
+---
+
+## What Is Not Production-Ready Yet
+
+- **BM25 ranking** is heuristic, not production-tuned.
+- **HNSW** is experimental; exact vector scan is the safe default.
+- **Replication** is a local consensus model, not a real distributed transport.
+- **Ingestion pipelines** are alpha smoke paths, not production document/OCR/API adapters.
+- **No built-in LLM integration** — ContextPack is designed to be consumed by external agents.
+- **Single-node only** — sharding and multi-node replication are on the long-term roadmap.
 
 The built-in developer console is available at:
 
