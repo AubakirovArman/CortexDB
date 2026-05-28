@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug, Clone)]
 pub struct HealthResponse {
@@ -252,7 +252,7 @@ pub struct ErrorResponse {
 }
 
 /// Aggregated metrics combining storage, WAL, MemTable, and ANN/HNSW stats.
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MetricsResponse {
     pub current_seq: u64,
     pub checkpoint_seq: u64,
