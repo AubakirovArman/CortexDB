@@ -432,6 +432,23 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/metrics:
+    get:
+      summary: Aggregated database metrics
+      description: |
+        Returns a unified view of storage, WAL, MemTable, and ANN/HNSW metrics.
+        This is the recommended observability entry point for monitoring and dashboards.
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      responses:
+        '200':
+          description: Aggregated metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/ann/metrics:
     get:
       summary: ANN/HNSW graph metrics
@@ -914,6 +931,65 @@ components:
           type: string
         message:
           type: string
+    MetricsResponse:
+      type: object
+      required:
+      - current_seq
+      - checkpoint_seq
+      - live_segments
+      - retired_segments
+      - memtable_cells
+      - memtable_versions
+      - wal_size_bytes
+      - wal_writer_records
+      - wal_writer_bytes
+      - wal_writer_fsyncs
+      - wal_writer_batches
+      - ann_graph_nodes
+      - ann_total_edges
+      - ann_persisted_segments
+      - ann_has_checkpoint
+      - ann_has_uncheckpointed_changes
+      properties:
+        current_seq:
+          type: integer
+          format: uint64
+        checkpoint_seq:
+          type: integer
+          format: uint64
+        live_segments:
+          type: integer
+        retired_segments:
+          type: integer
+        memtable_cells:
+          type: integer
+        memtable_versions:
+          type: integer
+        wal_size_bytes:
+          type: integer
+          format: uint64
+        wal_writer_records:
+          type: integer
+          format: uint64
+        wal_writer_bytes:
+          type: integer
+          format: uint64
+        wal_writer_fsyncs:
+          type: integer
+          format: uint64
+        wal_writer_batches:
+          type: integer
+          format: uint64
+        ann_graph_nodes:
+          type: integer
+        ann_total_edges:
+          type: integer
+        ann_persisted_segments:
+          type: integer
+        ann_has_checkpoint:
+          type: boolean
+        ann_has_uncheckpointed_changes:
+          type: boolean
     AnnMetricsResponse:
       type: object
       required:

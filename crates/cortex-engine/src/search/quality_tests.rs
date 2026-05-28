@@ -75,12 +75,18 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mut db = Database::open(dir.path()).unwrap();
 
-        let docs: [(u64, &str); 5] = [
+        let docs: [(u64, &str); 8] = [
             (1, "Solar Plant budget is 1.2B KZT approved."),
             (2, "Wind Farm budget is 800M KZT approved."),
             (3, "Hydro Plant budget is 2.1B KZT under review."),
             (4, "Solar Plant expansion plan and risk analysis."),
             (5, "General investment strategy for renewable energy."),
+            (
+                6,
+                "Бюджет Солнечной электростанции составляет 1.2 млрд тенге.",
+            ),
+            (7, "Бюджет Ветряной фермы составляет 800 млн тенге."),
+            (8, "Бюджет күн электр станциясы 1.2 млрд теңге."),
         ];
 
         for (cell_id, body) in docs {
@@ -174,5 +180,51 @@ mod tests {
                 window[1].score
             );
         }
+    }
+
+    #[test]
+    fn bm25_russian_budget_query() {
+        let db = golden_database();
+        let view = default_view();
+        let results = db.search_keyword("бюджет", &view, SearchLimit(10)).unwrap();
+
+        let cell_ids: Vec<u64> = results.iter().map(|r| r.cell_id.0).collect();
+        assert!(cell_ids.contains(&6), "Russian 'бюджет' should find cell 6");
+        assert!(cell_ids.contains(&7), "Russian 'бюджет' should find cell 7");
+    }
+
+    #[test]
+    fn bm25_kazakh_budget_query() {
+        let db = golden_database();
+        let view = default_view();
+        let results = db.search_keyword("бюджет", &view, SearchLimit(10)).unwrap();
+
+        let cell_ids: Vec<u64> = results.iter().map(|r| r.cell_id.0).collect();
+        assert!(cell_ids.contains(&8), "Kazakh 'бюджет' should find cell 8");
+    }
+
+    #[test]
+    fn bm25_multilingual_mixed_query() {
+        let db = golden_database();
+        let view = default_view();
+        // Query with English, Russian and Kazakh terms together
+        let results = db
+            .search_keyword("budget бюджет", &view, SearchLimit(10))
+            .unwrap();
+
+        let cell_ids: Vec<u64> = results.iter().map(|r| r.cell_id.0).collect();
+        // Should find English docs (1,2,3), Russian docs (6,7), Kazakh doc (8)
+        assert!(
+            cell_ids.contains(&1),
+            "Mixed query should find English cell 1"
+        );
+        assert!(
+            cell_ids.contains(&6),
+            "Mixed query should find Russian cell 6"
+        );
+        assert!(
+            cell_ids.contains(&8),
+            "Mixed query should find Kazakh cell 8"
+        );
     }
 }

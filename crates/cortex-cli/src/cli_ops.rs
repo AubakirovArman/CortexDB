@@ -8,6 +8,89 @@ use crate::context::{
 };
 use crate::{manifest, wal};
 
+pub fn doctor(path: &str) -> Result<String, String> {
+    let mut checks = Vec::new();
+    let mut all_ok = true;
+
+    // 1. Can we open the database?
+    let db = match Database::open(path) {
+        Ok(db) => {
+            checks.push(("open", true, "database opened successfully".to_owned()));
+            db
+        }
+        Err(e) => {
+            checks.push(("open", false, format!("failed to open: {e}")));
+            all_ok = false;
+            return Ok(format_doctor_report(checks, all_ok));
+        }
+    };
+
+    // 2. Storage stats
+    match db.storage_stats() {
+        Ok(stats) => {
+            checks.push((
+                "storage_stats",
+                true,
+                format!(
+                    "seq={} segments={} memtable_cells={}",
+                    stats.current_seq.0, stats.live_segments, stats.memtable.cell_count
+                ),
+            ));
+        }
+        Err(e) => {
+            checks.push(("storage_stats", false, e.to_string()));
+            all_ok = false;
+        }
+    }
+
+    // 3. Validation
+    let report = db.validate_storage_report();
+    if report.errors.is_empty() {
+        checks.push((
+            "validate",
+            true,
+            format!(
+                "cells={} wal_records={}",
+                report.cells_checked, report.wal_records_checked
+            ),
+        ));
+    } else {
+        checks.push(("validate", false, report.errors.join("; ")));
+        all_ok = false;
+    }
+
+    // 4. ANN metrics (if checkpoint exists)
+    let ann = db.ann_metrics();
+    checks.push((
+        "ann_metrics",
+        true,
+        format!(
+            "graph_nodes={} persisted_segments={} has_checkpoint={}",
+            ann.graph_nodes, ann.persisted_segments, ann.has_checkpoint
+        ),
+    ));
+
+    Ok(format_doctor_report(checks, all_ok))
+}
+
+fn format_doctor_report(checks: Vec<(&str, bool, String)>, all_ok: bool) -> String {
+    let mut lines = vec![
+        "CortexDB Doctor Report".to_owned(),
+        "======================".to_owned(),
+    ];
+    for (name, ok, detail) in checks {
+        let status = if ok { "✅" } else { "❌" };
+        lines.push(format!("{status} {name}: {detail}"));
+    }
+    lines.push("".to_owned());
+    if all_ok {
+        lines.push("All checks passed. Database is healthy.".to_owned());
+    } else {
+        lines.push("Some checks failed. See details above.".to_owned());
+    }
+    lines.join("\n")
+}
+
 pub fn run_demo() -> Result<String, String> {
     let output = std::process::Command::new("./examples/demo/investment_projects/run.sh")
         .output()

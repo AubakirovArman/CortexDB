@@ -231,6 +231,27 @@ pub struct ErrorResponse {
     pub message: String,
 }
 
+/// Aggregated metrics combining storage, WAL, MemTable, and ANN/HNSW stats.
+#[derive(Serialize, Debug, Clone)]
+pub struct MetricsResponse {
+    pub current_seq: u64,
+    pub checkpoint_seq: u64,
+    pub live_segments: usize,
+    pub retired_segments: usize,
+    pub memtable_cells: usize,
+    pub memtable_versions: usize,
+    pub wal_size_bytes: u64,
+    pub wal_writer_records: u64,
+    pub wal_writer_bytes: u64,
+    pub wal_writer_fsyncs: u64,
+    pub wal_writer_batches: u64,
+    pub ann_graph_nodes: usize,
+    pub ann_total_edges: usize,
+    pub ann_persisted_segments: usize,
+    pub ann_has_checkpoint: bool,
+    pub ann_has_uncheckpointed_changes: bool,
+}
+
 /// Typed router error taxonomy for consistent HTTP status mapping.
 #[derive(Serialize, Debug, Clone)]
 pub struct AnnMetricsResponse {

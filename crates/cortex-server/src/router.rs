@@ -6,7 +6,7 @@ use crate::context;
 use crate::memory;
 use crate::responses::{
     AnnMetricsResponse, CellLookupResponse, CellResponse, CheckpointResponse, ErrorResponse,
-    HealthResponse, IngestResponse, PutCellResponse, RouterError, StatsResponse,
+    HealthResponse, IngestResponse, MetricsResponse, PutCellResponse, RouterError, StatsResponse,
     ValidationResponse,
 };
 use crate::search;
@@ -117,6 +117,29 @@ pub fn route_database(
         }
         ("POST", "/v1/search/ann-evaluate") => {
             search::handle_ann_evaluate_shared(db, query, body).map_err(RouterError::BadRequest)
+        }
+        ("GET", "/v1/metrics") => {
+            let stats = db.storage_stats()?;
+            let ann = db.ann_metrics();
+            let response = MetricsResponse {
+                current_seq: stats.current_seq.0,
+                checkpoint_seq: stats.checkpoint_seq.0,
+                live_segments: stats.live_segments,
+                retired_segments: stats.retired_segments,
+                memtable_cells: stats.memtable.cell_count,
+                memtable_versions: stats.memtable.version_count,
+                wal_size_bytes: stats.wal_size_bytes,
+                wal_writer_records: stats.wal_writer.records_written,
+                wal_writer_bytes: stats.wal_writer.bytes_written,
+                wal_writer_fsyncs: stats.wal_writer.fsync_count,
+                wal_writer_batches: stats.wal_writer.batches_committed,
+                ann_graph_nodes: ann.graph_nodes,
+                ann_total_edges: ann.total_edges,
+                ann_persisted_segments: ann.persisted_segments,
+                ann_has_checkpoint: ann.has_checkpoint,
+                ann_has_uncheckpointed_changes: ann.has_uncheckpointed_changes,
+            };
+            Ok(serde_json::to_string(&response)?)
         }
         ("GET", "/v1/ann/metrics") => {
             let metrics = db.ann_metrics();

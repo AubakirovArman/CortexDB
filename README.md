@@ -116,6 +116,52 @@ curl 'http://127.0.0.1:8181/v1/validate'
 The HTTP response schema is documented in [`docs/API_JSON_SCHEMAS.md`](docs/API_JSON_SCHEMAS.md)
 and the OpenAPI contract is available at [`docs/openapi.yaml`](docs/openapi.yaml).
 
+---
+
+## SDK Quickstart
+
+### Python
+
+```python
+from cortexdb_client import CortexDBClient
+
+client = CortexDBClient("http://127.0.0.1:8181")
+
+# Put a cell
+client.put_cell(1, "scope=finance\n\nBudget is 450M KZT")
+
+# Search
+results = client.search("finance", "budget")
+print(results["results"][0]["payload"])
+
+# ContextPack
+pack = client.context("finance", 'RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN default LIMIT 5 CANDIDATES;')
+print(pack["cells"][0]["payload_text"])
+```
+
+### TypeScript
+
+```typescript
+import { CortexDBClient } from "@cortexdb/client";
+
+const client = new CortexDBClient("http://127.0.0.1:8181");
+
+await client.putCell(1, "scope=finance\n\nBudget is 450M KZT");
+const results = await client.search("finance", "budget");
+console.log(results.results[0].payload);
+```
+
+### Rust
+
+```rust
+use cortex_sdk::CortexDBClient;
+
+let client = CortexDBClient::new("http://127.0.0.1:8181");
+client.put_cell(1, b"scope=finance\n\nBudget is 450M KZT")?;
+let results = client.search("finance", "budget")?;
+println!("{}", results.results[0].payload);
+```
+
 ### ContextPack JSON Example
 
 ```json

@@ -18,6 +18,13 @@ struct Cli {
 #[derive(Subcommand, Debug)]
 enum Command {
     Demo,
+    Doctor {
+        path: String,
+    },
+    Completions {
+        #[arg(value_enum)]
+        shell: clap_complete::Shell,
+    },
     Version,
     Put {
         path: String,
@@ -149,6 +156,13 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
     };
     match cli.command {
         Command::Demo => ops::run_demo(),
+        Command::Doctor { path } => ops::doctor(&path),
+        Command::Completions { shell } => {
+            let mut cmd = <Cli as clap::CommandFactory>::command();
+            let name = cmd.get_name().to_owned();
+            clap_complete::generate(shell, &mut cmd, name, &mut std::io::stdout());
+            Ok("".to_owned())
+        }
         Command::Version => Ok(format!("cortexdb {}", env!("CARGO_PKG_VERSION"))),
         Command::Put {
             path,
