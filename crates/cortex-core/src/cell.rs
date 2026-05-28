@@ -123,6 +123,25 @@ impl KnowledgeCellType {
     }
 }
 
+impl std::str::FromStr for KnowledgeCellType {
+    type Err = ();
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value {
+            "document_block" => Ok(Self::DocumentBlock),
+            "fact" => Ok(Self::Fact),
+            "entity" => Ok(Self::Entity),
+            "relation" => Ok(Self::Relation),
+            "memory" => Ok(Self::Memory),
+            "feedback" => Ok(Self::Feedback),
+            "tool" => Ok(Self::Tool),
+            "source_ref" => Ok(Self::SourceRef),
+            "raw" => Ok(Self::Raw),
+            _ => Err(()),
+        }
+    }
+}
+
 fn sanitize_line_value(value: &str) -> String {
     value
         .chars()

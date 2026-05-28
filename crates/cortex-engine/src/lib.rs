@@ -19,6 +19,7 @@ pub mod repair;
 pub mod replay;
 pub mod replication;
 pub mod search;
+pub mod typed_body;
 pub mod validation;
 pub mod verification;
 
@@ -30,9 +31,9 @@ pub use database::{CandidateResolver, CheckpointStats, Database, RetrievedCell};
 pub use distributed::*;
 pub use error::{EngineError, EngineResult};
 pub use ingestion::{
-    extract_pdf_text, CsvIngestOptions, IngestedCell, IngestionJobId, IngestionJobStatus,
-    IngestionProgress, IngestionProgressTracker, JsonIngestOptions, PdfExtractionStats,
-    PdfIngestOptions, TextIngestOptions,
+    extract_pdf_text, CsvIngestOptions, EntityIngestOptions, IngestedCell, IngestionJobId,
+    IngestionJobStatus, IngestionProgress, IngestionProgressTracker, JsonIngestOptions,
+    PdfExtractionStats, PdfIngestOptions, RelationIngestOptions, TextIngestOptions,
 };
 pub use operation::*;
 pub use options::{DatabaseOptions, RecoveryMode, StaleLockPolicy};
@@ -44,4 +45,5 @@ pub use replay::{
 };
 pub use replication::*;
 pub use search::*;
+pub use typed_body::{EntityBody, FactBody, RelationBody};
 pub use validation::{StorageStats, StorageValidation, StorageValidationReport};

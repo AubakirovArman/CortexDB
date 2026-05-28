@@ -41,7 +41,7 @@ impl CellMetadata {
         let text = String::from_utf8_lossy(payload);
         let mut scope = "default".to_owned();
         let mut status = "ready".to_owned();
-        let mut cell_type = "cell".to_owned();
+        let mut cell_type = "raw".to_owned();
         let mut memory_type = None;
         let mut ttl_seconds = None;
         let mut created_unix_seconds = None;

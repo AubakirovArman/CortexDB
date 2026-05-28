@@ -9,6 +9,7 @@ pub enum MetadataValidationError {
     EmptyStatus,
     InvalidScopeCharacters(String),
     InvalidTtlSeconds(u64),
+    InvalidCellType(String),
 }
 
 impl core::fmt::Display for MetadataValidationError {
@@ -21,6 +22,9 @@ impl core::fmt::Display for MetadataValidationError {
             }
             MetadataValidationError::InvalidTtlSeconds(v) => {
                 write!(f, "ttl_seconds must be > 0: {v}")
+            }
+            MetadataValidationError::InvalidCellType(v) => {
+                write!(f, "unknown cell type: {v}")
             }
         }
     }
@@ -44,6 +48,15 @@ impl CellMetadata {
             if ttl == 0 {
                 return Err(MetadataValidationError::InvalidTtlSeconds(ttl));
             }
+        }
+        if self
+            .cell_type
+            .parse::<cortex_core::KnowledgeCellType>()
+            .is_err()
+        {
+            return Err(MetadataValidationError::InvalidCellType(
+                self.cell_type.clone(),
+            ));
         }
         Ok(())
     }

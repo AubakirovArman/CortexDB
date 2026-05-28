@@ -9,7 +9,8 @@ mod pdf;
 mod progress;
 
 pub use adapters::{
-    CsvIngestOptions, IngestedCell, JsonIngestOptions, PdfIngestOptions, TextIngestOptions,
+    CsvIngestOptions, EntityIngestOptions, IngestedCell, JsonIngestOptions, PdfIngestOptions,
+    RelationIngestOptions, TextIngestOptions,
 };
 pub use pdf::{extract_pdf_text, PdfExtractionStats};
 pub use progress::{

@@ -213,6 +213,70 @@ fn fact_metadata(scope: String, source: String) -> KnowledgeCellMetadata {
     }
 }
 
+fn entity_metadata(scope: String, source: String) -> KnowledgeCellMetadata {
+    KnowledgeCellMetadata {
+        scope,
+        status: "ready".to_owned(),
+        cell_type: KnowledgeCellType::Entity,
+        source: Some(source),
+        ..KnowledgeCellMetadata::default()
+    }
+}
+
+fn relation_metadata(scope: String, source: String) -> KnowledgeCellMetadata {
+    KnowledgeCellMetadata {
+        scope,
+        status: "ready".to_owned(),
+        cell_type: KnowledgeCellType::Relation,
+        source: Some(source),
+        ..KnowledgeCellMetadata::default()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EntityIngestOptions {
+    pub scope: String,
+    pub source: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RelationIngestOptions {
+    pub scope: String,
+    pub source: String,
+}
+
+impl Database {
+    pub fn ingest_entity(
+        &mut self,
+        cell_id: CellId,
+        body: &str,
+        options: EntityIngestOptions,
+    ) -> EngineResult<IngestedCell> {
+        let metadata = entity_metadata(options.scope, options.source);
+        let cell = KnowledgeCell::new(metadata, body);
+        let seq = self.put_knowledge_cell(cell_id, cell)?;
+        Ok(IngestedCell {
+            cell_id,
+            commit_seq: seq,
+        })
+    }
+
+    pub fn ingest_relation(
+        &mut self,
+        cell_id: CellId,
+        body: &str,
+        options: RelationIngestOptions,
+    ) -> EngineResult<IngestedCell> {
+        let metadata = relation_metadata(options.scope, options.source);
+        let cell = KnowledgeCell::new(metadata, body);
+        let seq = self.put_knowledge_cell(cell_id, cell)?;
+        Ok(IngestedCell {
+            cell_id,
+            commit_seq: seq,
+        })
+    }
+}
+
 fn offset_cell_id(first: CellId, offset: usize) -> EngineResult<CellId> {
     let offset = u64::try_from(offset)
         .map_err(|_| EngineError::StorageInvariant("ingestion batch is too large".to_owned()))?;
