@@ -8,6 +8,7 @@ mod database_files;
 pub mod distributed;
 pub mod error;
 pub mod feedback;
+pub mod graph;
 pub mod ingestion;
 mod lock;
 pub mod memory;
@@ -30,6 +31,7 @@ pub use context::{
 pub use database::{CandidateResolver, CheckpointStats, Database, RetrievedCell};
 pub use distributed::*;
 pub use error::{EngineError, EngineResult};
+pub use graph::{GraphEdge, ToolCell};
 pub use ingestion::{
     extract_pdf_text, CsvIngestOptions, EntityIngestOptions, IngestedCell, IngestionJobId,
     IngestionJobStatus, IngestionProgress, IngestionProgressTracker, JsonIngestOptions,
