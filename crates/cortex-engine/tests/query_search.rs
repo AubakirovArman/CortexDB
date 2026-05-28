@@ -192,6 +192,87 @@ fn hybrid_search_fuses_keyword_and_vector_rankings() {
 }
 
 #[test]
+fn rrf_both_lists_boosts_overlap_document() {
+    let mut indexes = SearchIndexes::default();
+    // Cell 1: appears in both lexical (rank 0) and vector (rank 1)
+    indexes.add_document(1, "budget investment");
+    indexes.add_vector(1, vec![1, 0, 0]);
+    // Cell 2: appears only in lexical (rank 1)
+    indexes.add_document(2, "budget workflow");
+    // Cell 3: appears only in vector (rank 0)
+    indexes.add_vector(3, vec![5, 0, 0]);
+
+    let results = indexes.search(SearchQuery {
+        text: "budget",
+        vector: Some(&[5, 0, 0]),
+        limit: 3,
+        mode: SearchMode::Hybrid,
+    });
+    assert_eq!(results.len(), 3);
+    // Cell 1 is in both lists → highest fused score
+    assert_eq!(results[0].cell_id, 1);
+    assert!(results[0].lexical_score > 0);
+    assert!(results[0].vector_score > 0);
+}
+
+#[test]
+fn rrf_empty_lexical_falls_back_to_vector_only() {
+    let mut indexes = SearchIndexes::default();
+    indexes.add_document(1, "unrelated text");
+    indexes.add_vector(1, vec![1, 0, 0]);
+    indexes.add_vector(2, vec![5, 0, 0]);
+
+    let results = indexes.search(SearchQuery {
+        text: "nonexistent_term_xyz",
+        vector: Some(&[5, 0, 0]),
+        limit: 2,
+        mode: SearchMode::Hybrid,
+    });
+    assert_eq!(results.len(), 2);
+    // Pure vector ranking when lexical is empty
+    assert_eq!(results[0].cell_id, 2);
+    assert_eq!(results[1].cell_id, 1);
+    assert_eq!(results[0].lexical_score, 0);
+    assert!(results[0].vector_score > 0);
+}
+
+#[test]
+fn rrf_empty_vector_falls_back_to_keyword_only() {
+    let mut indexes = SearchIndexes::default();
+    indexes.add_document(1, "alpha budget");
+    indexes.add_document(2, "beta budget");
+
+    let results = indexes.search(SearchQuery {
+        text: "budget",
+        vector: Some(&[0, 0, 0]), // no vector match
+        limit: 2,
+        mode: SearchMode::Hybrid,
+    });
+    assert_eq!(results.len(), 2);
+    // Pure lexical ranking when vector is empty
+    assert_eq!(results[0].cell_id, 1);
+    assert!(results[0].lexical_score > 0);
+    assert_eq!(results[0].vector_score, 0);
+}
+
+#[test]
+fn rrf_truncate_respects_limit() {
+    let mut indexes = SearchIndexes::default();
+    for id in 1..=10 {
+        indexes.add_document(id, &format!("term {id}"));
+        indexes.add_vector(id, vec![id as i16, 0]);
+    }
+
+    let results = indexes.search(SearchQuery {
+        text: "term",
+        vector: Some(&[5, 0]),
+        limit: 3,
+        mode: SearchMode::Hybrid,
+    });
+    assert_eq!(results.len(), 3);
+}
+
+#[test]
 fn search_api_supports_keyword_and_vector_modes() {
     let mut indexes = SearchIndexes::default();
     indexes.add_document(1, "alpha budget");

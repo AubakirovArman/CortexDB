@@ -1,82 +1,107 @@
-# VERIFY FACT Design
+# VERIFY FACT
 
-CortexDB provides deterministic fact verification through the `VERIFY FACT` AQL statement and the `/v1/verify` HTTP endpoint.
+`VERIFY FACT` is CortexDB's deterministic fact-checking primitive. Unlike LLM-based verification, it runs entirely inside the database engine and produces a structured report with evidence, contradictions, and numeric guards.
 
-## Purpose
+## How It Works
 
-Unlike LLM-based verification (probabilistic), CortexDB verification is **deterministic**:
+1. **Parse the fact** — extract numeric values, units, and currencies from the statement.
+2. **Search evidence** — find cells that support or contradict the fact.
+3. **Compare numbers** — detect numeric mismatches between the claimed value and stored values.
+4. **Produce a verdict** — `supported`, `insufficient`, `contradicted`, or `mixed_evidence`.
 
-1. Parses numeric claims from both the fact and stored cell payloads.
-2. Detects contradictions using integer-only arithmetic.
-3. Returns structured evidence with citations.
+## AQL Syntax
 
-## NumericValue Model
+```aql
+VERIFY FACT "Solar Plant budget is 1.2B KZT"
+IN BRAIN default;
+```
 
-The core of verification is the `NumericValue` struct:
+## CLI Usage
 
-```rust
-pub struct NumericValue {
-    pub raw: String,           // Original text
-    pub scaled_value: u64,     // Normalized integer
-    pub currency: Option<String>, // KZT, USD, EUR, etc.
-    pub unit: Option<String>,  // m, kg, %, etc.
-    pub magnitude: Option<Magnitude>, // Billion, Million, Thousand, Percent
+```bash
+cortexdb verify ./db project:investments \
+  'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN default;' --json
+```
+
+## Response Format
+
+```json
+{
+  "verdict": "mixed_evidence",
+  "supporting": [
+    {
+      "cell_id": 1,
+      "citation": "report_q1.pdf#page=3",
+      "matched_terms": 7,
+      "payload_text": "Solar Plant budget is 1.2B KZT in Q1.",
+      "source_trust_q16": 32768
+    }
+  ],
+  "contradicting": [
+    {
+      "cell_id": 2,
+      "citation": "report_q2.pdf#page=5",
+      "matched_terms": 4,
+      "payload_text": "Solar Plant budget is 1.4B KZT in Q2.",
+      "source_trust_q16": 32768
+    }
+  ],
+  "numeric_conflicts": [
+    {
+      "metric": "budget",
+      "left": "1.2B KZT",
+      "right": "1.4B KZT"
+    }
+  ]
 }
 ```
 
-### Magnitude Suffixes
+## Verdicts
 
-| Suffix | Scaled Value |
-|--------|-------------|
-| `B`, `billion`, `млрд` | × 1,000,000,000 |
-| `M`, `million`, `млн` | × 1,000,000 |
-| `K`, `thousand`, `тыс` | × 1,000 |
-| `%`, `percent` | × 1 |
+| Verdict | Meaning | When It Happens |
+|---------|---------|-----------------|
+| `supported` | All evidence agrees with the fact. | No contradictions, sufficient evidence. |
+| `insufficient` | Not enough evidence to judge. | Few or no matching cells. |
+| `contradicted` | Evidence directly contradicts the fact. | Strong contradicting evidence, no supporting. |
+| `mixed_evidence` | Some evidence supports, some contradicts. | The most common case for real-world data. |
 
-### Example Parsing
+## Numeric Conflict Detection
 
-| Input | scaled_value | currency | magnitude |
-|-------|-------------|----------|-----------|
-| `1.2B KZT` | 1,200,000,000 | KZT | Billion |
-| `1.5M USD` | 1,500,000 | USD | Million |
-| `15K m` | 15,000 | — | Thousand |
-| `12.5%` | 12 | — | Percent |
+CortexDB parses numbers from:
+- The **fact statement** itself (e.g. `"1.2B KZT"` → `1200000000`).
+- **Cell metadata** lines `value=` and `currency=`.
+- **Cell body text** for fallback parsing.
 
-## Conflict Detection
+If a cell contains a different numeric value for the same metric, a `numeric_conflict` is reported.
 
-Two numeric values **conflict** when:
+### Example Cell Metadata
 
-1. They have the same currency or unit context.
-2. Their `scaled_value` differs.
+```text
+scope=project:investments
+status=ready
+type=fact
+source=report_q1.pdf
+project=Solar Plant
+metric=budget
+value=1200000000
+currency=KZT
 
-## Verification Verdicts
-
-| Status | Meaning |
-|--------|---------|
-| `supported` | Evidence found, no contradictions |
-| `contradicted` | No evidence, but contradictions found |
-| `mixed_evidence` | Both supporting and contradicting evidence |
-| `insufficient` | No relevant evidence found |
-
-## Guards
-
-Verification may emit guards (warnings):
-
-| Code | Meaning |
-|------|---------|
-| `missing_citation` | Evidence lacks source reference |
-| `numeric_mismatch` | Payload number contradicts fact number |
-
-## Usage
-
-```bash
-cargo run -p cortex-cli -- verify ./data project:investments \
-  'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;'
+Solar Plant budget is 1.2B KZT in Q1.
 ```
 
-Or via HTTP:
+The `metric=budget` and `value=1200000000` lines help VERIFY FACT produce precise `numeric_conflicts`.
 
-```bash
-curl -X POST 'http://127.0.0.1:8090/v1/verify?scope=project:investments' \
-  -d 'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;'
-```
+## Limitations (Alpha)
+
+- **Unit parsing** is heuristic, not a full SI unit converter.
+- **Magnitude parsing** relies on explicit `B`/`M`/`K` suffixes or raw integers.
+- **Currency** must be explicit in the fact or in cell metadata.
+- **No temporal reasoning** — "budget was 1.2B in Q1" and "budget is 1.4B in Q2" are treated as a conflict, not as a timeline update.
+- **No source trust scoring** — all sources are treated equally in alpha.
+
+## Future (Verification v1)
+
+- `NumericValue` struct with normalized unit representation.
+- Metric-aware comparison (budget vs revenue vs cost).
+- Source trust scoring and evidence ranking.
+- Contradiction index output.

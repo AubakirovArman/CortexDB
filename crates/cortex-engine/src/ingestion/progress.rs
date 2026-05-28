@@ -120,6 +120,16 @@ impl IngestionProgressTracker {
         self.jobs.values().cloned().collect()
     }
 
+    /// Seeds `next_id` from the largest existing job id on disk so that
+    /// new job ids never collide with persisted jobs.
+    pub fn seed_next_id_from_disk(&mut self, db: &Database) {
+        if let Ok(jobs) = db.list_ingestion_jobs() {
+            if let Some(max) = jobs.iter().map(|j| j.job_id.0).max() {
+                self.next_id = self.next_id.max(max);
+            }
+        }
+    }
+
     fn job_mut(&mut self, job_id: IngestionJobId) -> EngineResult<&mut IngestionProgress> {
         self.jobs
             .get_mut(&job_id)

@@ -2,9 +2,73 @@ use cortex_engine::{parse_vector_literal, AnnSearchReport, Database, SearchLimit
 
 use crate::context::view_for_scope;
 use crate::responses::{
-    AnnEvaluationResponse, AnnSearchReportResponse, SearchResponse, SearchResultResponse,
+    AnnEvaluationResponse, AnnSearchReportResponse, SearchExplainItemResponse,
+    SearchExplainResponse, SearchResponse, SearchResultResponse,
 };
 use crate::router::query_param_decoded;
+
+pub fn handle_search_explain_shared(
+    db: &Database,
+    query: &str,
+    body: &[u8],
+) -> Result<String, String> {
+    let scope = query_param_decoded(query, "scope")?;
+    let limit = query_param_decoded(query, "limit")
+        .ok()
+        .map(|s| parse_limit(&s))
+        .transpose()?
+        .unwrap_or(20);
+    let mode = query_param_decoded(query, "mode").unwrap_or_else(|_| "keyword".to_owned());
+    let q = query_param_decoded(query, "q")
+        .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
+
+    let diagnostics = db.search_diagnostics(&q).map_err(|e| e.to_string())?;
+    let query_terms = extract_terms_from_diagnostics(&diagnostics);
+
+    let results = match mode.as_str() {
+        "keyword" => db.search_keyword(&q, &view_for_scope(&scope), SearchLimit(limit)),
+        "vector" => {
+            let v = parse_vector_literal(&q)?;
+            db.search_vector(&v, &view_for_scope(&scope), SearchLimit(limit))
+        }
+        _ => return Err("mode must be keyword or vector".to_owned()),
+    }
+    .map_err(|e| e.to_string())?;
+
+    let response = SearchExplainResponse {
+        query_terms,
+        search_mode: mode,
+        results: results
+            .iter()
+            .map(|r| SearchExplainItemResponse {
+                cell_id: r.cell_id.0,
+                score: r.score,
+                lexical_score: r.lexical_score,
+                vector_score: r.vector_score,
+                payload_preview: truncate_preview(&r.payload, 200),
+            })
+            .collect(),
+    };
+    serde_json::to_string(&response).map_err(|e| e.to_string())
+}
+
+fn extract_terms_from_diagnostics(diagnostics: &str) -> Vec<String> {
+    diagnostics
+        .split("terms=[")
+        .nth(1)
+        .and_then(|s| s.strip_suffix(']'))
+        .map(|terms| terms.split(", ").map(|t| t.to_owned()).collect())
+        .unwrap_or_default()
+}
+
+fn truncate_preview(payload: &[u8], max_len: usize) -> String {
+    let s = String::from_utf8_lossy(payload);
+    if s.len() <= max_len {
+        s.into_owned()
+    } else {
+        format!("{}...", &s[..max_len])
+    }
+}
 
 pub fn handle_search_shared(db: &Database, query: &str, body: &[u8]) -> Result<String, String> {
     let scope = query_param_decoded(query, "scope")?;

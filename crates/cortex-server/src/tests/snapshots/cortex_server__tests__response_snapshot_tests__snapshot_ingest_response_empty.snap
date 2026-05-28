@@ -6,5 +6,6 @@ expression: resp
   "rows_ingested": 0,
   "chunks_ingested": 0,
   "facts_ingested": 0,
-  "first_cell_id": null
+  "first_cell_id": null,
+  "job_id": 1
 }

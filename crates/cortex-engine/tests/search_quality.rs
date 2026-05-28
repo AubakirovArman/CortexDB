@@ -11,6 +11,22 @@ fn text_analyzer_applies_field_weights_and_stopwords() {
 }
 
 #[test]
+fn title_field_weights_six_times_body() {
+    let analyzer = TextAnalyzer::default();
+    let terms = analyzer.weighted_terms([("title", "budget"), ("body", "budget")]);
+    // title weight = 6, body weight = 1
+    assert_eq!(terms.get("budget"), Some(&7));
+}
+
+#[test]
+fn source_field_weights_same_as_body() {
+    let analyzer = TextAnalyzer::default();
+    let terms = analyzer.weighted_terms([("source", "budget"), ("body", "budget")]);
+    // source weight = 1, body weight = 1
+    assert_eq!(terms.get("budget"), Some(&2));
+}
+
+#[test]
 fn bm25_quality_fixture_has_perfect_mrr_for_golden_queries() {
     let analyzer = TextAnalyzer::default();
     let mut index = Bm25Index::default();

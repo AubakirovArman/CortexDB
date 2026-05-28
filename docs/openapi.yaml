@@ -204,6 +204,40 @@ paths:
                 $ref: '#/components/schemas/SearchResponse'
         '400': *id001
         '500': *id002
+  /v1/search/explain:
+    post:
+      summary: Explain search scores
+      description: |
+        Returns tokenized query terms and a per-cell score breakdown.
+        Useful for debugging why a cell ranked where it did.
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/Scope'
+      - name: mode
+        in: query
+        schema:
+          type: string
+          enum:
+          - keyword
+          - vector
+      - name: q
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+      responses:
+        '200':
+          description: Search explain results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchExplainResponse'
+        '400': *id001
+        '500': *id002
   /v1/search/ann-evaluate:
     post:
       summary: Compare persisted ANN search against exact vector scan
@@ -339,6 +373,21 @@ paths:
                 $ref: '#/components/schemas/IngestResponse'
         '400': *id001
         '500': *id002
+  /v1/ingest/jobs:
+    get:
+      summary: List persisted ingestion jobs
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      responses:
+        '200':
+          description: List of ingestion jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IngestionProgress'
+        '500': *id002
   /v1/ingest/jobs/{job_id}:
     get:
       summary: Read persisted ingestion job progress
@@ -357,6 +406,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IngestionProgress'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500': *id002
   /get:
     get:
       summary: Legacy cell read
@@ -865,6 +921,7 @@ components:
       - chunks_ingested
       - facts_ingested
       - first_cell_id
+      - job_id
       properties:
         rows_ingested:
           type: integer
@@ -873,6 +930,11 @@ components:
         facts_ingested:
           type: integer
         first_cell_id:
+          anyOf:
+          - type: integer
+            format: uint64
+          - type: 'null'
+        job_id:
           anyOf:
           - type: integer
             format: uint64
@@ -1009,6 +1071,44 @@ components:
           type: boolean
         has_uncheckpointed_changes:
           type: boolean
+    SearchExplainResponse:
+      type: object
+      required:
+      - query_terms
+      - search_mode
+      - results
+      properties:
+        query_terms:
+          type: array
+          items:
+            type: string
+        search_mode:
+          type: string
+        results:
+          type: array
+          items:
+            type: object
+            required:
+            - cell_id
+            - score
+            - lexical_score
+            - vector_score
+            - payload_preview
+            properties:
+              cell_id:
+                type: integer
+                format: uint64
+              score:
+                type: integer
+                format: uint64
+              lexical_score:
+                type: integer
+                format: uint64
+              vector_score:
+                type: integer
+                format: uint64
+              payload_preview:
+                type: string
   responses:
     BadRequest:
       description: Bad Request

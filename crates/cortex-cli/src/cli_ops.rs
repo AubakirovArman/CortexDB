@@ -1,5 +1,5 @@
 use cortex_core::CellId;
-use cortex_engine::{parse_vector_literal, ContextPackOptions, Database, SearchLimit};
+use cortex_engine::{parse_vector_literal, ContextPackOptions, Database, EngineError, SearchLimit};
 
 use crate::cli_json::{context_pack_to_json, verification_report_to_json};
 use crate::context::{
@@ -7,6 +7,28 @@ use crate::context::{
     remember_view_for_scope, verify_view_for_scope, view_for_scope,
 };
 use crate::{manifest, wal};
+
+fn fmt_engine_error(e: EngineError) -> String {
+    match e {
+        EngineError::DatabaseAlreadyOpen(_) => e.to_string(),
+        EngineError::StorageInvariant(_) | EngineError::MissingStorageFile(_) => {
+            format!("{e}\n  → try: cortexdb repair <path>")
+        }
+        EngineError::AqlParse(_) | EngineError::AqlBind(_) => {
+            format!("{e}\n  → check AQL syntax in docs/AQL.md")
+        }
+        EngineError::InvalidOperation => {
+            format!("{e}\n  → ensure the database path exists and is valid")
+        }
+        EngineError::Io(ref io) if io.kind() == std::io::ErrorKind::NotFound => {
+            format!("{e}\n  → check that the database directory exists")
+        }
+        EngineError::Io(ref io) if io.kind() == std::io::ErrorKind::PermissionDenied => {
+            format!("{e}\n  → check file permissions for the database directory")
+        }
+        _ => e.to_string(),
+    }
+}
 
 pub fn doctor(path: &str) -> Result<String, String> {
     let mut checks = Vec::new();
@@ -101,16 +123,16 @@ pub fn run_demo() -> Result<String, String> {
 
 pub fn put(path: &str, cell_id: &str, payload: &str) -> Result<String, String> {
     let cell_id = parse_cell_id(cell_id)?;
-    let mut db = Database::open(path).map_err(|error| error.to_string())?;
+    let mut db = Database::open(path).map_err(fmt_engine_error)?;
     let seq = db
         .put_cell(cell_id, payload.as_bytes().to_vec())
-        .map_err(|error| error.to_string())?;
+        .map_err(fmt_engine_error)?;
     Ok(format!("seq={}", seq.0))
 }
 
 pub fn get(path: &str, cell_id: &str) -> Result<String, String> {
     let cell_id = parse_cell_id(cell_id)?;
-    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let db = Database::open(path).map_err(fmt_engine_error)?;
     Ok(db
         .get_latest_cell(cell_id)
         .map(|payload| String::from_utf8_lossy(&payload).into_owned())
@@ -119,16 +141,14 @@ pub fn get(path: &str, cell_id: &str) -> Result<String, String> {
 
 pub fn tombstone(path: &str, cell_id: &str) -> Result<String, String> {
     let cell_id = parse_cell_id(cell_id)?;
-    let mut db = Database::open(path).map_err(|error| error.to_string())?;
-    let seq = db
-        .tombstone_cell(cell_id)
-        .map_err(|error| error.to_string())?;
+    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+    let seq = db.tombstone_cell(cell_id).map_err(fmt_engine_error)?;
     Ok(format!("seq={}", seq.0))
 }
 
 pub fn flush(path: &str) -> Result<String, String> {
-    let mut db = Database::open(path).map_err(|error| error.to_string())?;
-    let stats = db.checkpoint().map_err(|error| error.to_string())?;
+    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+    let stats = db.checkpoint().map_err(fmt_engine_error)?;
     Ok(format!(
         "checkpoint_seq={} cells_flushed={}",
         stats.checkpoint_seq.0, stats.cells_flushed
@@ -136,8 +156,8 @@ pub fn flush(path: &str) -> Result<String, String> {
 }
 
 pub fn compact(path: &str) -> Result<String, String> {
-    let mut db = Database::open(path).map_err(|error| error.to_string())?;
-    let stats = db.compact().map_err(|error| error.to_string())?;
+    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+    let stats = db.compact().map_err(fmt_engine_error)?;
     Ok(format!(
         "checkpoint_seq={} cells_flushed={}",
         stats.checkpoint_seq.0, stats.cells_flushed
@@ -145,8 +165,8 @@ pub fn compact(path: &str) -> Result<String, String> {
 }
 
 pub fn stats(path: &str, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(|error| error.to_string())?;
-    let stats = db.storage_stats().map_err(|error| error.to_string())?;
+    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let stats = db.storage_stats().map_err(fmt_engine_error)?;
     if json {
         return Ok(serde_json::json!({
             "current_seq": stats.current_seq.0,
@@ -180,8 +200,8 @@ pub fn stats(path: &str, json: bool) -> Result<String, String> {
 }
 
 pub fn validate(path: &str, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(|error| error.to_string())?;
-    let validation = db.validate_storage().map_err(|error| error.to_string())?;
+    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let validation = db.validate_storage().map_err(fmt_engine_error)?;
     if json {
         return Ok(serde_json::json!({
             "ok": true,
@@ -202,7 +222,7 @@ pub fn validate(path: &str, json: bool) -> Result<String, String> {
 }
 
 pub fn ann_validate(path: &str, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let db = Database::open(path).map_err(fmt_engine_error)?;
     let report = db.validate_storage_report();
     let ann_errors: Vec<String> = report
         .errors
@@ -234,7 +254,7 @@ pub fn ann_validate(path: &str, json: bool) -> Result<String, String> {
 }
 
 pub fn repair(path: &str) -> Result<String, String> {
-    let report = Database::repair_best_effort(path).map_err(|error| error.to_string())?;
+    let report = Database::repair_best_effort(path).map_err(fmt_engine_error)?;
     Ok(format!(
         "orphan_temp_files_removed={} wal_records_preserved={} wal_safe_truncate_offset={} wal_bytes_before={} wal_bytes_after={} wal_truncated={}",
         report.orphan_temp_files_removed,
@@ -247,10 +267,10 @@ pub fn repair(path: &str) -> Result<String, String> {
 }
 
 pub fn gc_retired(path: &str) -> Result<String, String> {
-    let mut db = Database::open(path).map_err(|error| error.to_string())?;
+    let mut db = Database::open(path).map_err(fmt_engine_error)?;
     let report = db
         .garbage_collect_retired_segments()
-        .map_err(|error| error.to_string())?;
+        .map_err(fmt_engine_error)?;
     Ok(format!(
         "retired_segments_removed={} files_removed={}",
         report.retired_segments_removed, report.files_removed
@@ -258,10 +278,10 @@ pub fn gc_retired(path: &str) -> Result<String, String> {
 }
 
 pub fn context(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let db = Database::open(path).map_err(fmt_engine_error)?;
     let pack = db
         .context_pack_from_aql(aql, &view_for_scope(scope), ContextPackOptions::default())
-        .map_err(|error| error.to_string())?;
+        .map_err(fmt_engine_error)?;
     if json {
         Ok(context_pack_to_json(&pack))
     } else {
@@ -270,10 +290,10 @@ pub fn context(path: &str, scope: &str, aql: &str, json: bool) -> Result<String,
 }
 
 pub fn remember(path: &str, scope: &str, aql: &str) -> Result<String, String> {
-    let mut db = Database::open(path).map_err(|error| error.to_string())?;
+    let mut db = Database::open(path).map_err(fmt_engine_error)?;
     let result = db
         .remember_aql(aql, &remember_view_for_scope(scope))
-        .map_err(|error| error.to_string())?;
+        .map_err(fmt_engine_error)?;
     Ok(format!(
         "seq={} cell_id={} ttl_seconds={}",
         result.commit_seq.0,
@@ -286,10 +306,10 @@ pub fn remember(path: &str, scope: &str, aql: &str) -> Result<String, String> {
 }
 
 pub fn verify(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let db = Database::open(path).map_err(fmt_engine_error)?;
     let report = db
         .verify_fact_aql(aql, &verify_view_for_scope(scope))
-        .map_err(|error| error.to_string())?;
+        .map_err(fmt_engine_error)?;
     if json {
         Ok(verification_report_to_json(&report, &db))
     } else {
@@ -298,39 +318,39 @@ pub fn verify(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, 
 }
 
 pub fn aql(path: &str, scope: &str, aql: &str) -> Result<String, String> {
-    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let db = Database::open(path).map_err(fmt_engine_error)?;
     let cells = db
         .retrieve_aql(aql, &view_for_scope(scope))
-        .map_err(|error| error.to_string())?;
+        .map_err(fmt_engine_error)?;
     Ok(format_retrieved_cells(&cells))
 }
 
 pub fn search(path: &str, scope: &str, query: &str) -> Result<String, String> {
-    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let db = Database::open(path).map_err(fmt_engine_error)?;
     let results = db
         .search_keyword(query, &view_for_scope(scope), SearchLimit(20))
-        .map_err(|error| error.to_string())?;
+        .map_err(fmt_engine_error)?;
     Ok(format_search_results(&results))
 }
 
 pub fn search_vector(path: &str, scope: &str, vector: &str, exact: bool) -> Result<String, String> {
     let vector = parse_vector_literal(vector)?;
-    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let db = Database::open(path).map_err(fmt_engine_error)?;
     let view = view_for_scope(scope);
     let results = if exact {
         db.search_vector_exact(&vector, &view, SearchLimit(20))
     } else {
         db.search_vector(&vector, &view, SearchLimit(20))
     }
-    .map_err(|error| error.to_string())?;
+    .map_err(fmt_engine_error)?;
     Ok(format_search_results(&results))
 }
 
 pub fn unlock(path: &str, force: bool) -> Result<String, String> {
     if !force {
-        return Err("unlock requires --force".to_owned());
+        return Err("unlock requires --force. Warning: this may corrupt data if another process is using the database.\n  → try: cortexdb unlock <path> --force".to_owned());
     }
-    Database::break_stale_lock(path).map_err(|error| error.to_string())?;
+    Database::break_stale_lock(path).map_err(fmt_engine_error)?;
     Ok("stale lock removed".to_owned())
 }
 
@@ -355,8 +375,9 @@ pub fn manifest_validate(path: &str) -> Result<String, String> {
 }
 
 fn parse_cell_id(value: &str) -> Result<CellId, String> {
-    value
-        .parse::<u64>()
-        .map(CellId)
-        .map_err(|_| "cell_id must be u64".to_owned())
+    value.parse::<u64>().map(CellId).map_err(|_| {
+        format!(
+            "cell_id must be a positive integer, got: {value:?}\n  → example: cortexdb get ./db 42"
+        )
+    })
 }

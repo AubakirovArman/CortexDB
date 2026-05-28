@@ -189,6 +189,7 @@ fn snapshot_ingest_response_empty() {
         chunks_ingested: 0,
         facts_ingested: 0,
         first_cell_id: None,
+        job_id: Some(1),
     };
     insta::assert_json_snapshot!(resp);
 }
@@ -200,6 +201,7 @@ fn snapshot_ingest_response_with_cells() {
         chunks_ingested: 3,
         facts_ingested: 3,
         first_cell_id: Some(1),
+        job_id: Some(1),
     };
     insta::assert_json_snapshot!(resp);
 }

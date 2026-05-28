@@ -189,6 +189,22 @@ pub struct SearchResponse {
 }
 
 #[derive(Serialize, Debug, Clone)]
+pub struct SearchExplainItemResponse {
+    pub cell_id: u64,
+    pub score: u64,
+    pub lexical_score: u64,
+    pub vector_score: u64,
+    pub payload_preview: String,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct SearchExplainResponse {
+    pub query_terms: Vec<String>,
+    pub search_mode: String,
+    pub results: Vec<SearchExplainItemResponse>,
+}
+
+#[derive(Serialize, Debug, Clone)]
 pub struct AnnEvaluationResponse {
     pub available: bool,
     pub reason: Option<String>,
@@ -223,6 +239,7 @@ pub struct IngestResponse {
     pub chunks_ingested: usize,
     pub facts_ingested: usize,
     pub first_cell_id: Option<u64>,
+    pub job_id: Option<u64>,
 }
 
 #[derive(Serialize, Debug, Clone)]
