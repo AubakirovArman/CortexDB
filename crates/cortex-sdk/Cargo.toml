@@ -6,6 +6,15 @@ license.workspace = true
 repository = "https://github.com/AubakirovArman/CortexDB"
 readme = "../../sdk/README.md"
 version.workspace = true
+keywords = ["cortexdb", "database", "client", "sdk", "http"]
+categories = ["database", "web-programming::http-client"]
+documentation = "https://docs.rs/cortex-sdk"
+authors = ["CortexDB Contributors"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

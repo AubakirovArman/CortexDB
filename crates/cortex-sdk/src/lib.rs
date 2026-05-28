@@ -1,3 +1,19 @@
+//! Blocking Rust HTTP client for CortexDB.
+//!
+//! `cortex-sdk` provides a synchronous, ergonomic client for the CortexDB
+//! Core Alpha HTTP API. All methods return strongly-typed responses or
+//! `serde_json::Value` for raw access.
+//!
+//! # Quickstart
+//!
+//! ```no_run
+//! use cortex_sdk::CortexDbClient;
+//!
+//! let client = CortexDbClient::new("http://127.0.0.1:8181");
+//! let health = client.health_response().unwrap();
+//! println!("Server version: {}", health.server_version);
+//! ```
+
 use std::time::Duration;
 
 use serde::de::DeserializeOwned;
@@ -31,6 +47,16 @@ pub enum SdkError {
 
 pub type SdkResult<T> = Result<T, SdkError>;
 
+/// Blocking HTTP client for the CortexDB API.
+///
+/// Create with [`CortexDbClient::new`] and chain configuration:
+///
+/// ```no_run
+/// use cortex_sdk::CortexDbClient;
+/// let client = CortexDbClient::new("http://127.0.0.1:8181")
+///     .with_token("secret")
+///     .with_tenant("tenant:alpha");
+/// ```
 #[derive(Clone, Debug)]
 pub struct CortexDbClient {
     base_url: String,
@@ -40,10 +66,12 @@ pub struct CortexDbClient {
 }
 
 impl CortexDbClient {
+    /// Create a client with the default 10-second timeout.
     pub fn new(base_url: impl Into<String>) -> Self {
         Self::with_timeout(base_url, Duration::from_secs(10))
     }
 
+    /// Create a client with a custom timeout.
     pub fn with_timeout(base_url: impl Into<String>, timeout: Duration) -> Self {
         Self {
             base_url: base_url.into().trim_end_matches('/').to_owned(),
@@ -53,11 +81,13 @@ impl CortexDbClient {
         }
     }
 
+    /// Set the Bearer token for authenticated requests.
     pub fn with_token(mut self, token: impl Into<String>) -> Self {
         self.token = Some(token.into());
         self
     }
 
+    /// Set the tenant ID for per-tenant database routing.
     pub fn with_tenant(mut self, tenant: impl Into<String>) -> Self {
         self.tenant = Some(tenant.into());
         self

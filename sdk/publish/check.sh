@@ -15,6 +15,10 @@ TS_VERSION="$(sed -n 's/.*"version": "\(.*\)".*/\1/p' "$ROOT/typescript/package.
 test "$ROOT_VERSION" = "$PY_VERSION"
 test "$ROOT_VERSION" = "$TS_VERSION"
 
+grep -q 'class HealthResponse' "$ROOT/python/cortexdb_client.py"
+grep -q 'def health_response' "$ROOT/python/cortexdb_client.py"
+grep -q 'interface HealthResponse' "$ROOT/typescript/cortexdb-client.d.ts"
+grep -q 'server_version' "$ROOT/typescript/cortexdb-client.d.ts"
 grep -q 'class AnnEvaluationResponse' "$ROOT/python/cortexdb_client.py"
 grep -q 'def evaluate_ann_response' "$ROOT/python/cortexdb_client.py"
 grep -q 'interface AnnEvaluationResponse' "$ROOT/typescript/cortexdb-client.d.ts"
@@ -24,6 +28,7 @@ grep -q 'min_recall_q16' "$ROOT/python/cortexdb_client.py"
 grep -q 'min_recall_q16' "$ROOT/typescript/cortexdb-client.d.ts"
 grep -q 'with_tenant' "$ROOT/python/cortexdb_client.py"
 grep -q 'withTenant' "$ROOT/typescript/cortexdb-client.d.ts"
+grep -q 'cortexdb-client.cjs' "$ROOT/typescript/package.json"
 
 python3 -m py_compile "$ROOT/python/cortexdb_client.py"
 PYTHONPATH="$ROOT/python" python3 -m unittest discover "$ROOT/python"

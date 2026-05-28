@@ -3,20 +3,24 @@
   "version": "0.1.0",
   "description": "Core Alpha CortexDB HTTP client",
   "type": "module",
-  "main": "./cortexdb-client.js",
+  "main": "./cortexdb-client.cjs",
+  "module": "./cortexdb-client.js",
   "types": "./cortexdb-client.d.ts",
   "scripts": {
-    "test": "node --test test.js"
+    "test": "node --test test.js",
+    "build": "esbuild cortexdb-client.ts --outfile=cortexdb-client.js --format=esm --target=es2022 && esbuild cortexdb-client.ts --outfile=cortexdb-client.cjs --format=cjs --target=node18"
   },
   "exports": {
     ".": {
       "types": "./cortexdb-client.d.ts",
-      "import": "./cortexdb-client.js"
+      "import": "./cortexdb-client.js",
+      "require": "./cortexdb-client.cjs"
     }
   },
   "files": [
     "cortexdb-client.d.ts",
     "cortexdb-client.js",
+    "cortexdb-client.cjs",
     "cortexdb-client.ts"
   ],
   "repository": {

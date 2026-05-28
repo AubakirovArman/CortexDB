@@ -1,21 +1,40 @@
 # SDK Quickstart
 
+CortexDB provides official SDKs for **Rust**, **Python**, and **TypeScript**.
+All SDKs share the same typed response models and support tenant + Bearer token authentication.
+
+## Version Alignment
+
+| Artifact | Version |
+|---|---|
+| Server | `0.1.0` |
+| OpenAPI | `0.1.0-core-alpha` |
+| Rust SDK (`cortex-sdk`) | `0.1.0` |
+| Python SDK (`cortexdb-client`) | `0.1.0` |
+| TypeScript SDK (`@cortexdb/client`) | `0.1.0` |
+
 ## Rust
 
-```bash
-cargo add cortex-sdk
+```toml
+[dependencies]
+cortex-sdk = "0.1.0"
 ```
 
 ```rust
-use cortex_sdk::CortexDBClient;
+use cortex_sdk::CortexDbClient;
 
-fn main() {
-    let client = CortexDBClient::new("http://127.0.0.1:8181");
-    let response = client.search_keyword("project:investments", "budget", 10)
-        .unwrap();
-    println!("Found {} results", response.results.len());
-}
+let client = CortexDbClient::new("http://127.0.0.1:8181")
+    .with_token("secret")
+    .with_tenant("tenant:alpha");
+
+let health = client.health_response()?;
+println!("Server version: {}", health.server_version);
+
+let put = client.put_cell_response(1, "hello world")?;
+let search = client.search_keyword_response("default", "hello", 10)?;
 ```
+
+See `crates/cortex-sdk/examples/basic.rs` for a runnable example.
 
 ## Python
 
@@ -27,11 +46,17 @@ pip install cortexdb-client
 from cortexdb_client import CortexDBClient
 
 client = CortexDBClient("http://127.0.0.1:8181")
-response = client.search_keyword("project:investments", "budget", limit=10)
-print(f"Found {len(response.results)} results")
+client.token = "secret"
+client.tenant = "tenant:alpha"
+
+health = client.health_response()
+print(f"Server version: {health.server_version}")
+
+put = client.put_cell_response(1, "hello world")
+search = client.search_response("default", "hello", limit=10)
 ```
 
-## TypeScript / JavaScript
+## TypeScript
 
 ```bash
 npm install @cortexdb/client
@@ -40,31 +65,40 @@ npm install @cortexdb/client
 ```typescript
 import { CortexDBClient } from "@cortexdb/client";
 
-const client = new CortexDBClient("http://127.0.0.1:8181");
-const response = await client.searchKeyword("project:investments", "budget", 10);
-console.log(`Found ${response.results.length} results`);
+const client = new CortexDBClient("http://127.0.0.1:8181", "secret", "tenant:alpha");
+
+const health = await client.health();
+console.log(`Server version: ${health.server_version}`);
+
+const put = await client.putCell(1, "hello world");
+const search = await client.search("default", "hello", 10);
 ```
 
-## Tenant Scoping
+### ESM / CJS Policy
 
-All SDKs support per-tenant database realms:
+`@cortexdb/client` ships both ESM (`.js`) and CommonJS (`.cjs`) builds.
+- **ESM** is the primary format (`import`).
+- **CJS** is provided for backward compatibility (`require`).
+- The source `.ts` file is included for TypeScript consumers who prefer their own compilation.
 
-```rust
-let client = CortexDBClient::new("http://127.0.0.1:8181")
-    .with_tenant("tenant:alpha");
-```
+## Authentication & Tenant
 
-```python
-client = CortexDBClient("http://127.0.0.1:8181").with_tenant("tenant:alpha")
-```
+All SDKs support the same auth model:
 
-```typescript
-const client = new CortexDBClient("http://127.0.0.1:8181", undefined, "tenant:alpha");
-```
+| SDK | Token | Tenant |
+|---|---|---|
+| Rust | `.with_token("...")` | `.with_tenant("...")` |
+| Python | `client.token = "..."` | `client.tenant = "..."` |
+| TypeScript | `new CortexDBClient(url, "...")` | `new CortexDBClient(url, token, "...")` or `.withTenant("...")` |
 
-## ANN Evaluation
+## Typed vs Raw Responses
 
-```rust
-let eval = client.evaluate_ann("project:investments", &[1, 2, 3], 20).unwrap();
-println!("ANN available: {}, recall: {:?}", eval.available, eval.recall_q16);
-```
+Every endpoint has two methods:
+
+| Typed | Raw (`dict`/`JsonObject`) |
+|---|---|
+| `client.health_response()` | `client.health()` |
+| `client.put_cell_response(...)` | `client.put_cell(...)` |
+| `client.search_response(...)` | `client.search(...)` |
+
+Use typed methods for compile-time safety. Use raw methods when experimenting or when the server returns fields not yet modeled in the SDK.

@@ -44,6 +44,21 @@ jobs:
         with:
           node-version: "22"
       - run: python -m pip install --upgrade pip setuptools wheel build
+
+      # SDK contract smoke tests
+      - run: cargo build --release -p cortex-server
+      - run: python3 scripts/check_sdk_contract.py
+
+      # Package dry-run checks
+      - name: Rust crates.io dry-run
+        run: cargo publish -p cortex-sdk --dry-run
+      - name: Python wheel dry-run
+        run: python -m build sdk/python --wheel --outdir dist/python
+      - name: TypeScript npm pack dry-run
+        run: npm pack --dry-run
+        working-directory: sdk/typescript
+
+      # Existing publish check script
       - run: ./sdk/publish/check.sh
 
   publish:
