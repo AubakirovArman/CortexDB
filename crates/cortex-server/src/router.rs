@@ -28,7 +28,7 @@ pub fn route_database(
         })
         .map_err(|e| RouterError::BadRequest(e.to_string())),
         ("GET", "/v1/stats") => {
-            let stats = db.storage_stats().map_err(|error| error.to_string())?;
+            let stats = db.storage_stats()?;
             let response = StatsResponse {
                 current_seq: stats.current_seq.0,
                 checkpoint_seq: stats.checkpoint_seq.0,
@@ -74,9 +74,7 @@ pub fn route_database(
         }
         ("POST", "/put") | ("POST", "/v1/cell") => {
             let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
-            let seq = db
-                .put_cell(cell_id, body.to_vec())
-                .map_err(|error| error.to_string())?;
+            let seq = db.put_cell(cell_id, body.to_vec())?;
             let response = PutCellResponse {
                 seq: seq.0,
                 cell_id: cell_id.0,
@@ -85,9 +83,7 @@ pub fn route_database(
         }
         ("POST", "/tombstone") | ("DELETE", "/v1/cell") => {
             let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
-            let seq = db
-                .tombstone_cell(cell_id)
-                .map_err(|error| error.to_string())?;
+            let seq = db.tombstone_cell(cell_id)?;
             let response = PutCellResponse {
                 seq: seq.0,
                 cell_id: cell_id.0,
@@ -95,7 +91,7 @@ pub fn route_database(
             Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/flush") | ("POST", "/v1/flush") => {
-            let stats = db.checkpoint().map_err(|error| error.to_string())?;
+            let stats = db.checkpoint()?;
             let response = CheckpointResponse {
                 checkpoint_seq: stats.checkpoint_seq.0,
                 cells_flushed: stats.cells_flushed,
@@ -103,7 +99,7 @@ pub fn route_database(
             Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/v1/compact") => {
-            let stats = db.compact().map_err(|error| error.to_string())?;
+            let stats = db.compact()?;
             let response = CheckpointResponse {
                 checkpoint_seq: stats.checkpoint_seq.0,
                 cells_flushed: stats.cells_flushed,
@@ -144,16 +140,14 @@ pub fn route_database(
             let source = query_param_opt(query, "source").unwrap_or("http_post");
             let text = String::from_utf8_lossy(body);
             let start_id = db.allocate_cell_id_range(0);
-            let results = db
-                .ingest_text_chunks(
-                    start_id,
-                    &text,
-                    cortex_engine::TextIngestOptions {
-                        scope: scope.to_owned(),
-                        source: source.to_owned(),
-                    },
-                )
-                .map_err(|error| error.to_string())?;
+            let results = db.ingest_text_chunks(
+                start_id,
+                &text,
+                cortex_engine::TextIngestOptions {
+                    scope: scope.to_owned(),
+                    source: source.to_owned(),
+                },
+            )?;
             let response = IngestResponse {
                 rows_ingested: 0,
                 chunks_ingested: results.len(),
@@ -167,16 +161,14 @@ pub fn route_database(
             let source = query_param_opt(query, "source").unwrap_or("http_post");
             let json = String::from_utf8_lossy(body);
             let start_id = db.allocate_cell_id_range(0);
-            let results = db
-                .ingest_json(
-                    start_id,
-                    &json,
-                    cortex_engine::JsonIngestOptions {
-                        scope: scope.to_owned(),
-                        source: source.to_owned(),
-                    },
-                )
-                .map_err(|error| error.to_string())?;
+            let results = db.ingest_json(
+                start_id,
+                &json,
+                cortex_engine::JsonIngestOptions {
+                    scope: scope.to_owned(),
+                    source: source.to_owned(),
+                },
+            )?;
             let response = IngestResponse {
                 rows_ingested: 0,
                 chunks_ingested: 0,
@@ -190,16 +182,14 @@ pub fn route_database(
             let source = query_param_opt(query, "source").unwrap_or("http_post");
             let csv = String::from_utf8_lossy(body);
             let start_id = db.allocate_cell_id_range(0);
-            let results = db
-                .ingest_csv(
-                    start_id,
-                    &csv,
-                    cortex_engine::CsvIngestOptions {
-                        scope: scope.to_owned(),
-                        source: source.to_owned(),
-                    },
-                )
-                .map_err(|error| error.to_string())?;
+            let results = db.ingest_csv(
+                start_id,
+                &csv,
+                cortex_engine::CsvIngestOptions {
+                    scope: scope.to_owned(),
+                    source: source.to_owned(),
+                },
+            )?;
             let response = IngestResponse {
                 rows_ingested: results.len(),
                 chunks_ingested: 0,
@@ -213,9 +203,7 @@ pub fn route_database(
             let id = id_str
                 .parse::<u64>()
                 .map_err(|_| RouterError::BadRequest("invalid job id".to_owned()))?;
-            let progress = db
-                .load_ingestion_job(id)
-                .map_err(|error| error.to_string())?;
+            let progress = db.load_ingestion_job(id)?;
             if let Some(p) = progress {
                 let content = serde_json::to_string(&p).map_err(|e| e.to_string())?;
                 Ok(content)

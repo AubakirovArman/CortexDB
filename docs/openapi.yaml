@@ -159,6 +159,10 @@ paths:
   /v1/search:
     post:
       summary: Keyword or vector search
+      description: |
+        **Alpha/Experimental.** Search quality, HNSW graph behavior, and ANN fallback
+        semantics are under active development. Exact vector scan is the safe default;
+        ANN may silently fall back to exact when the graph is empty or under-returning.
       parameters:
       - $ref: '#/components/parameters/Tenant'
       - $ref: '#/components/parameters/Scope'

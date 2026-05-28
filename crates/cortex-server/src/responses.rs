@@ -245,6 +245,7 @@ pub enum RouterError {
     NotFound(String),
     BadRequest(String),
     Unauthorized,
+    Forbidden(String),
     PayloadTooLarge,
     ServiceUnavailable,
     Internal(String),
@@ -256,6 +257,7 @@ impl std::fmt::Display for RouterError {
             RouterError::NotFound(msg) => write!(f, "{msg}"),
             RouterError::BadRequest(msg) => write!(f, "{msg}"),
             RouterError::Unauthorized => write!(f, "missing or invalid authorization"),
+            RouterError::Forbidden(msg) => write!(f, "{msg}"),
             RouterError::PayloadTooLarge => write!(f, "request body exceeds 2MB limit"),
             RouterError::ServiceUnavailable => write!(f, "database actor busy"),
             RouterError::Internal(msg) => write!(f, "{msg}"),
@@ -284,12 +286,31 @@ impl From<serde_json::Error> for RouterError {
     }
 }
 
+impl From<cortex_engine::error::EngineError> for RouterError {
+    fn from(e: cortex_engine::error::EngineError) -> Self {
+        use cortex_engine::error::EngineError;
+        let msg = e.to_string();
+        match e {
+            EngineError::AqlParse(_) | EngineError::AqlBind(_) => RouterError::BadRequest(msg),
+            EngineError::InvalidOperation => RouterError::BadRequest(msg),
+            EngineError::DatabaseAlreadyOpen(_) => RouterError::ServiceUnavailable,
+            EngineError::StorageInvariant(_)
+            | EngineError::MissingStorageFile(_)
+            | EngineError::FatalCellMissingAfterWal(_)
+            | EngineError::MissingWalSection(_)
+            | EngineError::MissingCommitSeq => RouterError::Internal(msg),
+            _ => RouterError::Internal(msg),
+        }
+    }
+}
+
 impl RouterError {
     pub fn status_code(&self) -> u16 {
         match self {
             RouterError::NotFound(_) => 404,
             RouterError::BadRequest(_) => 400,
             RouterError::Unauthorized => 401,
+            RouterError::Forbidden(_) => 403,
             RouterError::PayloadTooLarge => 413,
             RouterError::ServiceUnavailable => 503,
             RouterError::Internal(_) => 500,

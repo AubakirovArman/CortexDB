@@ -24,6 +24,7 @@ mod router;
 mod search;
 #[cfg(test)]
 mod search_tests;
+#[cfg(test)]
 mod sync_handler;
 #[cfg(test)]
 mod tests;
@@ -33,6 +34,7 @@ pub use router::{
     cell_id, json_error, json_response, query_param, query_param_decoded, query_param_opt,
     query_param_opt_decoded, route_database, route_shared,
 };
+#[cfg(test)]
 pub use sync_handler::{handle_http, handle_http_with_options};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -253,6 +255,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
                 RouterError::NotFound(_) => "not_found",
                 RouterError::BadRequest(_) => "bad_request",
                 RouterError::Unauthorized => "unauthorized",
+                RouterError::Forbidden(_) => "forbidden",
                 RouterError::PayloadTooLarge => "payload_too_large",
                 RouterError::ServiceUnavailable => "service_unavailable",
                 RouterError::Internal(_) => "internal_error",
