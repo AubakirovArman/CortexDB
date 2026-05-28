@@ -19,6 +19,11 @@ pub struct MemoryDecayScore {
 }
 
 impl Database {
+    pub fn forget_cell(&mut self, cell_id: CellId) -> EngineResult<()> {
+        self.tombstone_cell(cell_id)?;
+        Ok(())
+    }
+
     pub fn expired_memory_cells(&self, now_unix_seconds: u64) -> Vec<ExpiredMemoryCell> {
         self.snapshot_versions()
             .into_iter()

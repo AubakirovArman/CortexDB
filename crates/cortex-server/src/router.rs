@@ -225,6 +225,14 @@ pub fn route_database(
         ("POST", "/v1/remember") => {
             memory::handle_remember_shared(db, query, body).map_err(RouterError::BadRequest)
         }
+        ("POST", "/v1/forget") => {
+            let cell_id = cell_id(query)?;
+            db.forget_cell(cell_id)?;
+            Ok(serde_json::to_string(&PutCellResponse {
+                seq: 0,
+                cell_id: cell_id.0,
+            })?)
+        }
         ("POST", "/v1/verify") => {
             memory::handle_verify_shared(db, query, body).map_err(RouterError::BadRequest)
         }

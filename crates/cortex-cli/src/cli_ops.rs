@@ -289,6 +289,13 @@ pub fn context(path: &str, scope: &str, aql: &str, json: bool) -> Result<String,
     }
 }
 
+pub fn forget(path: &str, cell_id: &str) -> Result<String, String> {
+    let cell_id = parse_cell_id(cell_id)?;
+    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+    db.forget_cell(cell_id).map_err(fmt_engine_error)?;
+    Ok(format!("cell_id={} forgotten (tombstoned)", cell_id.0))
+}
+
 pub fn remember(path: &str, scope: &str, aql: &str) -> Result<String, String> {
     let mut db = Database::open(path).map_err(fmt_engine_error)?;
     let result = db

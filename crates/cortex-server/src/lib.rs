@@ -129,7 +129,7 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
         let app = Router::new()
             .fallback(axum_handler)
             .layer(RequestBodyLimitLayer::new(2 * 1024 * 1024)) // 2MB Limit
-            .with_state(state);
+            .with_state(state.clone());
 
         tokio::spawn(async {
             #[cfg(unix)]
@@ -144,6 +144,34 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             #[cfg(not(unix))]
             {
                 tokio::time::sleep(tokio::time::Duration::from_secs(999999)).await;
+            }
+        });
+
+        // Background TTL expiration task
+        let ttl_state = state.clone();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60));
+            loop {
+                interval.tick().await;
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs();
+                let dbs = match ttl_state.dbs.lock() {
+                    Ok(d) => d,
+                    Err(_) => continue,
+                };
+                for actor in dbs.values() {
+                    match actor.expire_memory(now) {
+                        Ok(expired) if !expired.is_empty() => {
+                            tracing::info!(
+                                "TTL expiry: {} memory cells tombstoned",
+                                expired.len()
+                            );
+                        }
+                        _ => {}
+                    }
+                }
             }
         });
 

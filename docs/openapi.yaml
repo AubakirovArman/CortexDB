@@ -304,6 +304,21 @@ paths:
                 $ref: '#/components/schemas/RememberResponse'
         '400': *id001
         '500': *id002
+  /v1/forget:
+    post:
+      summary: Forget (tombstone) a cell
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/CellId'
+      responses:
+        '200':
+          description: Forget result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PutCellResponse'
+        '400': *id001
+        '500': *id002
   /v1/verify:
     post:
       summary: Execute AQL VERIFY FACT

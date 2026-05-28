@@ -11,6 +11,7 @@ pub mod feedback;
 pub mod ingestion;
 mod lock;
 pub mod memory;
+pub use memory::{ExpiredMemoryCell, MemoryDecayScore};
 pub mod operation;
 mod options;
 pub mod query;

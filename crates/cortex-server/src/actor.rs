@@ -15,6 +15,10 @@ enum ActorCommand {
         body: Vec<u8>,
         reply: mpsc::Sender<Result<String, RouterError>>,
     },
+    ExpireMemory {
+        now_unix_seconds: u64,
+        reply: mpsc::Sender<Result<Vec<cortex_engine::memory::ExpiredMemoryCell>, RouterError>>,
+    },
     Shutdown,
 }
 
@@ -47,6 +51,15 @@ impl DatabaseActor {
                         reply,
                     } => {
                         let result = route_database(&mut db, &method, &target, &body);
+                        let _ = reply.send(result);
+                    }
+                    ActorCommand::ExpireMemory {
+                        now_unix_seconds,
+                        reply,
+                    } => {
+                        let result = db
+                            .expire_memory_cells(now_unix_seconds)
+                            .map_err(|e| RouterError::Internal(e.to_string()));
                         let _ = reply.send(result);
                     }
                     ActorCommand::Shutdown => break,
@@ -91,6 +104,30 @@ impl DatabaseActor {
 
     pub fn queue_capacity(&self) -> usize {
         self.capacity
+    }
+
+    pub fn expire_memory(
+        &self,
+        now_unix_seconds: u64,
+    ) -> Result<Vec<cortex_engine::memory::ExpiredMemoryCell>, RouterError> {
+        let (reply_tx, reply_rx) = mpsc::channel();
+        match self.tx.try_send(ActorCommand::ExpireMemory {
+            now_unix_seconds,
+            reply: reply_tx,
+        }) {
+            Ok(()) => {
+                self.queued.fetch_add(1, Ordering::Relaxed);
+            }
+            Err(mpsc::TrySendError::Full(_)) => {
+                return Err(RouterError::ServiceUnavailable);
+            }
+            Err(mpsc::TrySendError::Disconnected(_)) => {
+                return Err(RouterError::Internal("database actor stopped".to_owned()));
+            }
+        }
+        reply_rx
+            .recv()
+            .map_err(|_| RouterError::Internal("database actor stopped".to_owned()))?
     }
 }
 

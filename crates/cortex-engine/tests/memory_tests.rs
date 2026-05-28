@@ -5,6 +5,17 @@ use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellTyp
 use cortex_engine::{scope_id, Database};
 
 #[test]
+fn forget_cell_tombstones_immediately() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(CellId(1), memory_cell(100, Some(10)))
+        .unwrap();
+    assert!(db.get_latest_cell(CellId(1)).is_some());
+    db.forget_cell(CellId(1)).unwrap();
+    assert!(db.get_latest_cell(CellId(1)).is_none());
+}
+
+#[test]
 fn expired_memory_cells_reports_only_due_memory() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();

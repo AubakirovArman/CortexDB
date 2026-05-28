@@ -85,6 +85,10 @@ enum Command {
         scope: String,
         aql: String,
     },
+    Forget {
+        path: String,
+        cell_id: String,
+    },
     Verify {
         path: String,
         scope: String,
@@ -185,6 +189,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         Command::ManifestValidate { path } => ops::manifest_validate(&path),
         Command::Context { path, scope, aql } => ops::context(&path, &scope, &aql, cli.json),
         Command::Remember { path, scope, aql } => ops::remember(&path, &scope, &aql),
+        Command::Forget { path, cell_id } => ops::forget(&path, &cell_id),
         Command::Verify { path, scope, aql } => ops::verify(&path, &scope, &aql, cli.json),
         Command::Aql { path, scope, aql } => ops::aql(&path, &scope, &aql),
         Command::Search { path, scope, query } => ops::search(&path, &scope, &query),

@@ -47,3 +47,18 @@ fn ingestion_jobs_list_and_get() {
     let missing_response = handle_http(dir.path(), missing_request);
     assert!(missing_response.contains("job not found"));
 }
+
+#[test]
+fn forget_endpoint_tombstones_cell() {
+    let dir = tempfile::tempdir().unwrap();
+    let put_request = "POST /v1/cell?cell_id=42 HTTP/1.1\r\n\r\nhello world";
+    handle_http(dir.path(), put_request);
+
+    let forget_request = "POST /v1/forget?cell_id=42 HTTP/1.1\r\n\r\n";
+    let forget_response = handle_http(dir.path(), forget_request);
+    assert!(forget_response.contains(r#""cell_id":42"#));
+
+    let get_request = "GET /v1/cell?cell_id=42 HTTP/1.1\r\n\r\n";
+    let get_response = handle_http(dir.path(), get_request);
+    assert!(get_response.contains(r#""cell":null"#));
+}
