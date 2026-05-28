@@ -1,5 +1,6 @@
 use cortex_engine::{parse_vector_literal, AnnEvaluationReport, Database, SearchLimit};
 
+use crate::cli_json::ann_evaluation_to_json;
 use crate::context::view_for_scope;
 
 pub fn search_vector_eval(
@@ -14,7 +15,26 @@ pub fn search_vector_eval(
         .evaluate_vector_ann(&vector, &view_for_scope(scope), SearchLimit(20))
         .map_err(|error| error.to_string())?;
     if json {
-        return Ok(ann_evaluation_json(report));
+        return Ok(match report {
+            Some(report) => ann_evaluation_to_json(
+                true,
+                None,
+                Some(to_ann_search_report(&report)),
+                report.exact_top_k.clone(),
+                report.ann_top_k.clone(),
+                report.overlap_count,
+                report.recall_q16,
+            ),
+            None => ann_evaluation_to_json(
+                false,
+                Some("requires_persisted_checkpoint_without_wal_tail".to_owned()),
+                None,
+                Vec::new(),
+                Vec::new(),
+                0,
+                0,
+            ),
+        });
     }
     Ok(match report {
         Some(report) => format_ann_evaluation(&report),
@@ -46,36 +66,20 @@ fn format_ann_evaluation(report: &AnnEvaluationReport) -> String {
     )
 }
 
-fn ann_evaluation_json(report: Option<AnnEvaluationReport>) -> String {
-    match report {
-        Some(report) => serde_json::json!({
-            "available": true,
-            "reason": null,
-            "ann_report": {
-                "path": report.search.path.as_str(),
-                "fallback_reason": report.search.fallback_reason.map(|reason| reason.as_str()),
-                "requested_limit": report.search.requested_limit,
-                "allowed_candidates": report.search.allowed_candidates,
-                "graph_nodes": report.search.graph_nodes,
-                "returned_candidates": report.search.returned_candidates,
-                "recall_q16": report.search.recall_q16,
-                "min_recall_q16": report.search.min_recall_q16,
-            },
-            "exact_top_k": report.exact_top_k,
-            "ann_top_k": report.ann_top_k,
-            "overlap_count": report.overlap_count,
-            "recall_q16": report.recall_q16,
-        })
-        .to_string(),
-        None => serde_json::json!({
-            "available": false,
-            "reason": "requires_persisted_checkpoint_without_wal_tail",
-            "ann_report": null,
-            "exact_top_k": [],
-            "ann_top_k": [],
-            "overlap_count": 0,
-            "recall_q16": 0,
-        })
-        .to_string(),
+fn to_ann_search_report(
+    report: &AnnEvaluationReport,
+) -> crate::cli_json_types::CliAnnSearchReportResponse {
+    crate::cli_json_types::CliAnnSearchReportResponse {
+        path: report.search.path.as_str().to_owned(),
+        fallback_reason: report
+            .search
+            .fallback_reason
+            .map(|reason| reason.as_str().to_owned()),
+        requested_limit: report.search.requested_limit,
+        allowed_candidates: report.search.allowed_candidates,
+        graph_nodes: report.search.graph_nodes,
+        returned_candidates: report.search.returned_candidates,
+        recall_q16: report.search.recall_q16,
+        min_recall_q16: report.search.min_recall_q16,
     }
 }

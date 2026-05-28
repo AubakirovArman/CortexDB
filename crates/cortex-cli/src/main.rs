@@ -6,6 +6,7 @@ mod cli_ingest;
 #[cfg(test)]
 mod cli_ingest_tests;
 mod cli_json;
+mod cli_json_types;
 mod cli_ops;
 mod context;
 #[cfg(test)]

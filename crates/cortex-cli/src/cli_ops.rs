@@ -1,7 +1,10 @@
 use cortex_core::CellId;
 use cortex_engine::{parse_vector_literal, ContextPackOptions, Database, EngineError, SearchLimit};
 
-use crate::cli_json::{context_pack_to_json, verification_report_to_json};
+use crate::cli_json::{
+    ann_validate_to_json, context_pack_to_json, stats_to_json, validation_to_json,
+    verification_report_to_json,
+};
 use crate::context::{
     format_context_pack, format_retrieved_cells, format_search_results, format_verification_report,
     remember_view_for_scope, verify_view_for_scope, view_for_scope,
@@ -168,20 +171,7 @@ pub fn stats(path: &str, json: bool) -> Result<String, String> {
     let db = Database::open(path).map_err(fmt_engine_error)?;
     let stats = db.storage_stats().map_err(fmt_engine_error)?;
     if json {
-        return Ok(serde_json::json!({
-            "current_seq": stats.current_seq.0,
-            "checkpoint_seq": stats.checkpoint_seq.0,
-            "live_segments": stats.live_segments,
-            "retired_segments": stats.retired_segments,
-            "memtable_cells": stats.memtable.cell_count,
-            "memtable_versions": stats.memtable.version_count,
-            "wal_size_bytes": stats.wal_size_bytes,
-            "wal_writer_records": stats.wal_writer.records_written,
-            "wal_writer_bytes": stats.wal_writer.bytes_written,
-            "wal_writer_fsyncs": stats.wal_writer.fsync_count,
-            "wal_writer_batches": stats.wal_writer.batches_committed,
-        })
-        .to_string());
+        return Ok(stats_to_json(&stats));
     }
     Ok(format!(
         "current_seq={} checkpoint_seq={} live_segments={} retired_segments={} memtable_cells={} memtable_versions={} wal_size_bytes={} wal_writer_records={} wal_writer_bytes={} wal_writer_fsyncs={} wal_writer_batches={}",
@@ -203,14 +193,16 @@ pub fn validate(path: &str, json: bool) -> Result<String, String> {
     let db = Database::open(path).map_err(fmt_engine_error)?;
     let validation = db.validate_storage().map_err(fmt_engine_error)?;
     if json {
-        return Ok(serde_json::json!({
-            "ok": true,
-            "live_segments_checked": validation.live_segments_checked,
-            "cells_checked": validation.cells_checked,
-            "wal_records_checked": validation.wal_records_checked,
-            "wal_safe_truncate_offset": validation.wal_safe_truncate_offset,
-        })
-        .to_string());
+        return Ok(validation_to_json(
+            validation.live_segments_checked,
+            validation.cells_checked,
+            validation
+                .wal_records_checked
+                .try_into()
+                .unwrap_or(u64::MAX),
+            validation.wal_safe_truncate_offset,
+            true,
+        ));
     }
     Ok(format!(
         "ok live_segments_checked={} cells_checked={} wal_records_checked={} wal_safe_truncate_offset={}",
@@ -232,13 +224,11 @@ pub fn ann_validate(path: &str, json: bool) -> Result<String, String> {
         .collect();
     let ok = ann_errors.is_empty();
     if json {
-        return Ok(serde_json::json!({
-            "ok": ok,
-            "vector_indexes_checked": report.vector_indexes_checked,
-            "hnsw_graphs_checked": report.hnsw_graphs_checked,
-            "errors": ann_errors,
-        })
-        .to_string());
+        return Ok(ann_validate_to_json(
+            report.vector_indexes_checked,
+            report.hnsw_graphs_checked,
+            ann_errors,
+        ));
     }
     if ok {
         Ok(format!(

@@ -352,6 +352,7 @@ dependencies = [
  "cortex-core",
  "cortex-engine",
  "cortex-storage",
+ "serde",
  "serde_json",
  "tempfile",
 ]

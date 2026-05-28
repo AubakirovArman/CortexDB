@@ -1,22 +1,28 @@
 use cortex_engine::verification::{VerificationReport, VerificationStatus};
 use cortex_engine::{ContextPack, Database};
+use serde_json::to_string;
+
+use crate::cli_json_types::{
+    CliAnnEvaluationResponse, CliAnnSearchReportResponse, CliAnnValidateResponse, CliStatsResponse,
+    CliValidateResponse, ContextPackAnomalyResponse, ContextPackCellResponse,
+    ContextPackExplainResponse, ContextPackResponse, NumericConflictResponse, SourceRefResponse,
+    VerificationEvidenceResponse, VerificationResponse,
+};
+
+fn serialize_or_error<T: serde::Serialize>(value: &T) -> String {
+    to_string(value).unwrap_or_else(|e| {
+        to_string(&crate::cli_json_types::ErrorResponse {
+            error: "internal_error".to_owned(),
+            message: e.to_string(),
+        })
+        .unwrap_or_else(|_| {
+            "{\"error\":\"internal_error\",\"message\":\"serialization failed\"}".to_owned()
+        })
+    })
+}
 
 pub(crate) fn context_pack_to_json(pack: &ContextPack) -> String {
-    serde_json::json!({
-        "token_budget_tokens": pack.token_budget_tokens,
-        "estimated_tokens": pack.estimated_tokens,
-        "truncated": pack.truncated,
-        "citations_required": pack.citations_required,
-        "cells": pack.cells.iter().map(context_cell_json).collect::<Vec<_>>(),
-        "anomalies": pack.anomalies.iter().map(|anomaly| {
-            serde_json::json!({
-                "cell_id": anomaly.cell_id.map(|id| id.0),
-                "code": anomaly.code.to_string(),
-                "message": anomaly.message,
-            })
-        }).collect::<Vec<_>>(),
-    })
-    .to_string()
+    serialize_or_error(&context_pack_response(pack))
 }
 
 pub(crate) fn verification_report_to_json(report: &VerificationReport, db: &Database) -> String {
@@ -29,64 +35,153 @@ pub(crate) fn verification_report_to_json(report: &VerificationReport, db: &Data
         .filter_map(|payload| extract_numeric_conflict(&report.fact, &payload))
         .collect::<Vec<_>>();
 
-    serde_json::json!({
-        "verdict": verification_verdict(report.status),
-        "supporting": report.evidence.iter().map(|e| evidence_json(e, db)).collect::<Vec<_>>(),
-        "contradicting": report
+    let response = VerificationResponse {
+        verdict: verification_verdict(report.status).to_owned(),
+        supporting: report
+            .evidence
+            .iter()
+            .map(|e| evidence_response(e, db))
+            .collect(),
+        contradicting: report
             .contradicting_evidence
             .iter()
-            .map(|e| evidence_json(e, db))
-            .collect::<Vec<_>>(),
-        "numeric_conflicts": numeric_conflicts,
-    })
-    .to_string()
+            .map(|e| evidence_response(e, db))
+            .collect(),
+        numeric_conflicts,
+    };
+
+    serialize_or_error(&response)
 }
 
-fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> serde_json::Value {
+pub(crate) fn stats_to_json(stats: &cortex_engine::validation::StorageStats) -> String {
+    serialize_or_error(&CliStatsResponse {
+        current_seq: stats.current_seq.0,
+        checkpoint_seq: stats.checkpoint_seq.0,
+        live_segments: stats.live_segments,
+        retired_segments: stats.retired_segments,
+        memtable_cells: stats.memtable.cell_count,
+        memtable_versions: stats.memtable.version_count,
+        wal_size_bytes: stats.wal_size_bytes,
+        wal_writer_records: stats.wal_writer.records_written,
+        wal_writer_bytes: stats.wal_writer.bytes_written,
+        wal_writer_fsyncs: stats.wal_writer.fsync_count,
+        wal_writer_batches: stats.wal_writer.batches_committed,
+    })
+}
+
+pub(crate) fn validation_to_json(
+    live_segments_checked: usize,
+    cells_checked: usize,
+    wal_records_checked: u64,
+    wal_safe_truncate_offset: u64,
+    ok: bool,
+) -> String {
+    serialize_or_error(&CliValidateResponse {
+        ok,
+        live_segments_checked,
+        cells_checked,
+        wal_records_checked,
+        wal_safe_truncate_offset,
+    })
+}
+
+pub(crate) fn ann_validate_to_json(
+    vector_indexes_checked: usize,
+    hnsw_graphs_checked: usize,
+    errors: Vec<String>,
+) -> String {
+    let ok = errors.is_empty();
+    serialize_or_error(&CliAnnValidateResponse {
+        ok,
+        vector_indexes_checked,
+        hnsw_graphs_checked,
+        errors,
+    })
+}
+
+pub(crate) fn ann_evaluation_to_json(
+    available: bool,
+    reason: Option<String>,
+    report: Option<CliAnnSearchReportResponse>,
+    exact_top_k: Vec<u32>,
+    ann_top_k: Vec<u32>,
+    overlap_count: usize,
+    recall_q16: u16,
+) -> String {
+    serialize_or_error(&CliAnnEvaluationResponse {
+        available,
+        reason,
+        ann_report: report,
+        exact_top_k,
+        ann_top_k,
+        overlap_count,
+        recall_q16,
+    })
+}
+
+fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> ContextPackCellResponse {
     let metadata = cortex_engine::query::CellMetadata::from_payload(&cell.payload);
-    serde_json::json!({
-        "cell_id": cell.cell_id.0,
-        "estimated_tokens": cell.estimated_tokens,
-        "citation": cell.citation,
-        "payload_text": String::from_utf8_lossy(&cell.payload),
-        "explain": cell.explain.as_ref().map(|exp| {
-            serde_json::json!({
-                "score": exp.score,
-                "matched_terms": exp.matched_terms,
-                "why_selected": exp.why_selected,
-                "base_bm25": exp.base_bm25,
-                "source_trust_bonus": exp.source_trust_bonus,
-                "redundancy_penalty": exp.redundancy_penalty,
-            })
-        }),
-        "source_ref": metadata.source_ref.as_ref().map(|sr| {
-            serde_json::json!({
-                "source_id": sr.source_id,
-                "document_id": sr.document_id,
-                "page": sr.page,
-                "cell_range": sr.cell_range,
-                "json_path": sr.json_path,
-                "confidence_q16": sr.confidence_q16,
-            })
-        }),
-    })
+    let explain = cell.explain.as_ref().map(|exp| ContextPackExplainResponse {
+        score: exp.score,
+        matched_terms: exp.matched_terms.clone(),
+        why_selected: exp.why_selected.clone(),
+        base_bm25: exp.base_bm25,
+        source_trust_bonus: exp.source_trust_bonus,
+        redundancy_penalty: exp.redundancy_penalty,
+    });
+    let source_ref = metadata.source_ref.as_ref().map(|sr| SourceRefResponse {
+        source_id: sr.source_id.clone(),
+        document_id: sr.document_id.clone(),
+        page: sr.page,
+        cell_range: sr.cell_range.clone(),
+        json_path: sr.json_path.clone(),
+        confidence_q16: sr.confidence_q16,
+    });
+
+    ContextPackCellResponse {
+        cell_id: cell.cell_id.0,
+        estimated_tokens: cell.estimated_tokens,
+        citation: cell.citation.clone(),
+        payload_text: String::from_utf8_lossy(&cell.payload).into_owned(),
+        explain,
+        source_ref,
+    }
 }
 
-fn evidence_json(
+fn context_pack_response(pack: &ContextPack) -> ContextPackResponse {
+    ContextPackResponse {
+        token_budget_tokens: pack.token_budget_tokens,
+        estimated_tokens: pack.estimated_tokens,
+        truncated: pack.truncated,
+        citations_required: pack.citations_required,
+        cells: pack.cells.iter().map(context_cell_json).collect(),
+        anomalies: pack
+            .anomalies
+            .iter()
+            .map(|anomaly| ContextPackAnomalyResponse {
+                cell_id: anomaly.cell_id.map(|id| id.0),
+                code: anomaly.code.to_string(),
+                message: anomaly.message.clone(),
+            })
+            .collect(),
+    }
+}
+
+fn evidence_response(
     evidence: &cortex_engine::verification::VerificationEvidence,
     db: &Database,
-) -> serde_json::Value {
+) -> VerificationEvidenceResponse {
     let payload_text = db
         .get_latest_cell(evidence.cell_id)
         .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
         .unwrap_or_else(|| "null".to_owned());
-    serde_json::json!({
-        "cell_id": evidence.cell_id.0,
-        "matched_terms": evidence.matched_terms,
-        "source_trust_q16": evidence.source_trust_q16,
-        "citation": evidence.citation,
-        "payload_text": payload_text,
-    })
+    VerificationEvidenceResponse {
+        cell_id: evidence.cell_id.0,
+        matched_terms: evidence.matched_terms,
+        source_trust_q16: evidence.source_trust_q16,
+        citation: evidence.citation.clone(),
+        payload_text,
+    }
 }
 
 fn verification_verdict(status: VerificationStatus) -> &'static str {
@@ -136,7 +231,7 @@ fn format_scale_currency(value_str: &str, currency: &str) -> String {
     format!("{} {}", value_str, currency)
 }
 
-fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<serde_json::Value> {
+fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<NumericConflictResponse> {
     let text = String::from_utf8_lossy(payload);
     let mut metric = "metric".to_owned();
     let mut currency = "KZT".to_owned();
@@ -153,11 +248,11 @@ fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<serde_json::Va
 
     let formatted_right = format_scale_currency(&value, &currency);
     let formatted_left = fact_numeric_value(fact, &currency)?;
-    Some(serde_json::json!({
-        "metric": metric,
-        "left": formatted_left,
-        "right": formatted_right,
-    }))
+    Some(NumericConflictResponse {
+        metric,
+        left: formatted_left,
+        right: formatted_right,
+    })
 }
 
 fn fact_numeric_value(fact: &str, default_currency: &str) -> Option<String> {
