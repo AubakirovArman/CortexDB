@@ -45,6 +45,152 @@ export interface AnnEvaluationResponse {
   recall_q16: number;
 }
 
+export interface HealthResponse {
+  status: string;
+  version: string;
+  server_version: string;
+}
+
+export interface StatsResponse {
+  current_seq: number;
+  checkpoint_seq: number;
+  live_segments: number;
+  retired_segments: number;
+  memtable_cells: number;
+  memtable_versions: number;
+  wal_size_bytes: number;
+  wal_writer_records: number;
+  wal_writer_bytes: number;
+  wal_writer_fsyncs: number;
+  wal_writer_batches: number;
+}
+
+export interface ValidationResponse {
+  ok: boolean;
+  manifest_ok: boolean;
+  wal_ok: boolean;
+  live_segments_checked: number;
+  bitmap_indexes_checked: number;
+  lexical_indexes_checked: number;
+  vector_indexes_checked: number;
+  hnsw_graphs_checked: number;
+  cells_checked: number;
+  wal_records_checked: number;
+  wal_safe_truncate_offset: number;
+  errors: string[];
+}
+
+export interface PutCellResponse {
+  seq: number;
+  cell_id: number;
+}
+
+export interface CellResponse {
+  cell_id: number;
+  payload: string;
+}
+
+export interface CellLookupResponse {
+  cell: CellResponse | null;
+}
+
+export interface AqlCellResponse {
+  cell_id: number;
+  payload: string;
+}
+
+export interface AqlResponse {
+  cells: AqlCellResponse[];
+}
+
+export interface ExplainResponse {
+  score: number;
+  matched_terms: string[];
+  why_selected: string;
+  base_bm25: number;
+  source_trust_bonus: number;
+  redundancy_penalty: number;
+}
+
+export interface SourceRefResponse {
+  source_id: string;
+  document_id: string | null;
+  page: number | null;
+  cell_range: string | null;
+  json_path: string | null;
+  confidence_q16: number;
+}
+
+export interface ContextPackCellResponse {
+  cell_id: number;
+  estimated_tokens: number;
+  citation: string | null;
+  payload_text: string;
+  explain: ExplainResponse | null;
+  source_ref: SourceRefResponse | null;
+}
+
+export interface ContextPackAnomalyResponse {
+  cell_id: number | null;
+  code: string;
+  message: string;
+}
+
+export interface ContextPackResponse {
+  token_budget_tokens: number;
+  estimated_tokens: number;
+  truncated: boolean;
+  citations_required: boolean;
+  cells: ContextPackCellResponse[];
+  anomalies: ContextPackAnomalyResponse[];
+}
+
+export interface EvidenceResponse {
+  cell_id: number;
+  matched_terms: number;
+  source_trust_q16: number;
+  citation: string | null;
+  payload_text: string;
+}
+
+export interface GuardResponse {
+  cell_id: number | null;
+  code: string;
+  message: string;
+}
+
+export interface NumericConflictResponse {
+  metric: string;
+  left: string;
+  right: string;
+}
+
+export interface VerificationReportResponse {
+  fact: string;
+  status: string;
+  verdict: string;
+  evidence: EvidenceResponse[];
+  contradicting_evidence: EvidenceResponse[];
+  guards: GuardResponse[];
+  supporting: EvidenceResponse[];
+  contradicting: EvidenceResponse[];
+  numeric_conflicts: NumericConflictResponse[];
+}
+
+export interface IngestResponse {
+  rows_ingested: number;
+  chunks_ingested: number;
+  facts_ingested: number;
+  first_cell_id: number | null;
+  job_id: number | null;
+}
+
+export interface RememberResponse {
+  seq: number;
+  cell_id: number;
+  ttl_seconds: number | null;
+}
+
 export class CortexDBClient {
   constructor(
     private readonly baseUrl = "http://127.0.0.1:8181",
@@ -56,15 +202,15 @@ export class CortexDBClient {
     return new CortexDBClient(this.baseUrl, this.token, tenant);
   }
 
-  health(): Promise<JsonObject> {
+  health(): Promise<HealthResponse> {
     return this.request("GET", "/v1/health");
   }
 
-  putCell(cellId: number, payload: string): Promise<JsonObject> {
+  putCell(cellId: number, payload: string): Promise<PutCellResponse> {
     return this.request("POST", this.path("/v1/cell", { cell_id: cellId }), payload);
   }
 
-  getCell(cellId: number): Promise<JsonObject> {
+  getCell(cellId: number): Promise<CellLookupResponse> {
     return this.request("GET", this.path("/v1/cell", { cell_id: cellId }));
   }
 
@@ -86,7 +232,7 @@ export class CortexDBClient {
       mode: "keyword",
       q: query,
       limit,
-    })) as Promise<SearchResponse>;
+    }));
   }
 
   searchVector(
@@ -101,7 +247,7 @@ export class CortexDBClient {
       algorithm,
       vector: vector.join(","),
       limit,
-    })) as Promise<SearchResponse>;
+    }));
   }
 
   evaluateAnn(
@@ -113,40 +259,40 @@ export class CortexDBClient {
       scope,
       vector: vector.join(","),
       limit,
-    })) as Promise<AnnEvaluationResponse>;
+    }));
   }
 
-  aql(scope: string, statement: string): Promise<JsonObject> {
+  aql(scope: string, statement: string): Promise<AqlResponse> {
     return this.request("POST", this.path("/v1/aql", { scope }), statement);
   }
 
-  retrieveContext(scope: string, statement: string): Promise<JsonObject> {
+  retrieveContext(scope: string, statement: string): Promise<ContextPackResponse> {
     return this.request("POST", this.path("/v1/context", { scope }), statement);
   }
 
-  verifyFact(scope: string, statement: string): Promise<JsonObject> {
+  verifyFact(scope: string, statement: string): Promise<VerificationReportResponse> {
     return this.request("POST", this.path("/v1/verify", { scope }), statement);
   }
 
-  remember(scope: string, statement: string): Promise<JsonObject> {
+  remember(scope: string, statement: string): Promise<RememberResponse> {
     return this.request("POST", this.path("/v1/remember", { scope }), statement);
   }
 
-  ingestText(scope: string, text: string, source = "typescript_sdk"): Promise<JsonObject> {
+  ingestText(scope: string, text: string, source = "typescript_sdk"): Promise<IngestResponse> {
     return this.request("POST", this.path("/v1/ingest/text", {
       scope,
       source,
     }), text);
   }
 
-  ingestJson(scope: string, document: string, source = "typescript_sdk"): Promise<JsonObject> {
+  ingestJson(scope: string, document: string, source = "typescript_sdk"): Promise<IngestResponse> {
     return this.request("POST", this.path("/v1/ingest/json", {
       scope,
       source,
     }), document);
   }
 
-  ingestCsv(scope: string, document: string, source = "typescript_sdk"): Promise<JsonObject> {
+  ingestCsv(scope: string, document: string, source = "typescript_sdk"): Promise<IngestResponse> {
     return this.request("POST", this.path("/v1/ingest/csv", {
       scope,
       source,
@@ -157,15 +303,15 @@ export class CortexDBClient {
     return this.request("GET", `/v1/ingest/jobs/${jobId}`);
   }
 
-  validate(): Promise<JsonObject> {
+  validate(): Promise<ValidationResponse> {
     return this.request("GET", "/v1/validate");
   }
 
-  stats(): Promise<JsonObject> {
+  stats(): Promise<StatsResponse> {
     return this.request("GET", "/v1/stats");
   }
 
-  private async request(method: string, path: string, body?: unknown): Promise<JsonObject> {
+  private async request(method: string, path: string, body?: unknown): Promise<unknown> {
     const headers: Record<string, string> = {};
     if (this.token) headers.authorization = `Bearer ${this.token}`;
     const init: RequestInit = { method, headers };
@@ -175,7 +321,7 @@ export class CortexDBClient {
     }
     const response = await fetch(`${this.baseUrl}${this.scoped(path)}`, init);
     if (!response.ok) throw new Error(await response.text());
-    return response.json() as Promise<JsonObject>;
+    return response.json();
   }
 
   private path(path: string, query: Record<string, string | number>): string {
