@@ -9,11 +9,16 @@ app = FastAPI()
 
 KIMI_API_BASE_URL = os.environ.get("KIMI_API_BASE_URL", "http://127.0.0.1:8000/v1")
 KIMI_MODEL = os.environ.get("KIMI_MODEL", "google/gemma-4-31B-it")
-KIMI_KEY_PATH = os.environ.get("KIMI_API_KEY_FILE", "/mnt/hf_model_weights/arman/3bit/.kimi")
+KIMI_KEY_PATH = os.environ.get("KIMI_API_KEY_FILE", "").strip()
 KIMI_KEY = os.environ.get("KIMI_API_KEY", "").strip()
 if not KIMI_KEY and os.path.exists(KIMI_KEY_PATH):
-    with open(KIMI_KEY_PATH, "r") as f:
+    with open(os.path.expanduser(KIMI_KEY_PATH), "r") as f:
         KIMI_KEY = f.read().strip()
+elif not KIMI_KEY:
+    fallback_key_path = os.path.expanduser("~/.kimi")
+    if os.path.exists(fallback_key_path):
+        with open(fallback_key_path, "r") as f:
+            KIMI_KEY = f.read().strip()
 
 def query_cortex(endpoint, method, tenant, data_str):
     url = f"http://127.0.0.1:8090{endpoint}?tenant={tenant}"
@@ -274,7 +279,6 @@ async def chat_endpoint(payload: dict):
                 f"{local_summary.replace('\n', '<br>')}"
             )
 
-+
     return {
         "response": ai_text,
         "context": context_pack,
