@@ -4,6 +4,14 @@ set -euo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$DIR/../.." && pwd)"
 
+if [[ -f "$DIR/.env" ]]; then
+    echo "📄 Loading environment from $DIR/.env"
+    set -a
+    # shellcheck disable=SC1090
+    source "$DIR/.env"
+    set +a
+fi
+
 echo "🚀 [CortexDB RAG Demo] Starting setup..."
 
 # Create venv

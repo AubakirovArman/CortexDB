@@ -9,7 +9,11 @@ app = FastAPI()
 
 # ── Configuration ──────────────────────────────────────────────────────────
 VLLM_URL = os.getenv("VLLM_URL", "http://127.0.0.1:8018/v1/chat/completions")
-VLLM_API_KEY = os.getenv("VLLM_API_KEY", "5zxyqINY37FEicJ_rMfpacCBxhcjJhE0wcSTi4ADgus")
+VLLM_API_KEY_PATH = os.getenv("VLLM_API_KEY_FILE", "").strip()
+VLLM_API_KEY = os.getenv("VLLM_API_KEY", "").strip()
+if not VLLM_API_KEY and VLLM_API_KEY_PATH and os.path.exists(VLLM_API_KEY_PATH):
+    with open(VLLM_API_KEY_PATH, "r", encoding="utf-8") as key_file:
+        VLLM_API_KEY = key_file.read().strip()
 VLLM_MODEL = os.getenv("VLLM_MODEL", "/mnt/hf_model_weights/arman/3bit/models/google-gemma-4-31B-it")
 CORTEX_HOST = os.getenv("CORTEX_HOST", "http://127.0.0.1:8090")
 
@@ -31,6 +35,9 @@ def query_cortex(endpoint: str, scope: str, body: str) -> dict:
 
 
 def call_vllm(system_prompt: str, user_query: str) -> str:
+    if not VLLM_API_KEY:
+        return "[Ошибка подключения к языковой модели: задайте VLLM_API_KEY или VLLM_API_KEY_FILE.]"
+
     payload = {
         "model": VLLM_MODEL,
         "messages": [
@@ -40,13 +47,13 @@ def call_vllm(system_prompt: str, user_query: str) -> str:
         "temperature": 0.3,
         "max_tokens": 1024,
     }
+    headers = {"Content-Type": "application/json"}
+    if VLLM_API_KEY:
+        headers["Authorization"] = f"Bearer {VLLM_API_KEY}"
     req = urllib.request.Request(
         VLLM_URL,
         data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {VLLM_API_KEY}",
-        },
+        headers=headers,
         method="POST",
     )
     try:

@@ -57,6 +57,34 @@ cd examples/rag_demo
 - Проверит доступность vLLM
 - Запустит FastAPI на порту 8085
 
+### Настройки переменных окружения
+
+По умолчанию секреты не хардкодятся. Перед запуском задайте ключ LLM:
+
+```bash
+export VLLM_API_KEY=<ваш_ключ>
+```
+
+или путь к файлу с ключом:
+
+```bash
+export VLLM_API_KEY_FILE=/path/to/key.txt
+```
+
+Также можно переопределить:
+
+```bash
+export VLLM_URL=http://127.0.0.1:8018/v1/chat/completions
+export VLLM_MODEL=/mnt/hf_model_weights/arman/3bit/models/google-gemma-4-31B-it
+export CORTEX_HOST=http://127.0.0.1:8090
+```
+
+Для локальной разработки есть шаблон:
+
+```bash
+cp examples/rag_demo/.env.example .env
+```
+
 ### Ручной запуск (если нужно)
 
 ```bash
