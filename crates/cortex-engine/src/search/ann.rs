@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_storage::hnsw::HnswGraphIndex;
 
-use super::hnsw::HnswIndex;
+use super::hnsw::{DistanceMetric, HnswIndex};
 use super::persisted::search_persisted_vectors;
 use super::ScoredCandidate;
 
@@ -44,7 +44,11 @@ impl AnnFallbackReason {
     }
 }
 
-pub const MIN_ANN_RECALL_Q16: u16 = 65_535;
+/// Minimum acceptable ANN recall threshold.
+/// Q16_ONE = 65_535 represents 100% recall.
+/// Production default is 75% (49_151) to allow approximate results
+/// while preserving correctness through exact fallback when recall drops.
+pub const MIN_ANN_RECALL_Q16: u16 = 49_151;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct AnnSearchReport {
@@ -80,6 +84,8 @@ pub struct AnnMetrics {
     pub persisted_segments: usize,
     pub has_checkpoint: bool,
     pub has_uncheckpointed_changes: bool,
+    pub deleted_vectors: usize,
+    pub rebuild_count: u64,
 }
 
 pub fn search_persisted_ann(
@@ -120,7 +126,8 @@ pub fn search_persisted_ann(
             )
         }
     };
-    let exact_results = search_persisted_vectors(vectors, query, allowed, limit);
+    let exact_results =
+        search_persisted_vectors(vectors, query, allowed, limit, &DistanceMetric::default());
     let exact_set = exact_results
         .iter()
         .map(|candidate| candidate.cell_id)
@@ -164,7 +171,8 @@ pub fn evaluate_persisted_ann(
     allowed: &BTreeSet<u32>,
     limit: usize,
 ) -> AnnEvaluationReport {
-    let exact_results = search_persisted_vectors(vectors, query, allowed, limit);
+    let exact_results =
+        search_persisted_vectors(vectors, query, allowed, limit, &DistanceMetric::default());
     let available = vectors
         .iter()
         .filter(|(id, vector)| allowed.contains(id) && vector.len() == query.len())
@@ -256,7 +264,8 @@ fn exact(
     graph_nodes: usize,
     reason: AnnFallbackReason,
 ) -> AnnSearchOutcome {
-    let results = search_persisted_vectors(vectors, query, allowed, limit);
+    let results =
+        search_persisted_vectors(vectors, query, allowed, limit, &DistanceMetric::default());
     exact_from_results(results, limit, available, graph_nodes, reason, None, None)
 }
 

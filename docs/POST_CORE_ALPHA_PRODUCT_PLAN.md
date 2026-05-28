@@ -87,28 +87,25 @@ Publishing is tag-driven and repeatable.
 
 Goal: move vector search from experimental to reliable.
 
-Tasks:
+Status: **Complete**.
 
-1. Add persistent vector collection metadata:
-   - dimension
-   - metric
-   - normalization policy
-2. Enforce dimension and metric compatibility on the write path.
-3. Keep validation checks for persisted `.acv` and `.ach` bundles.
-4. Add cosine and L2 policies if they are part of the public API.
-5. Add deterministic HNSW build planner.
-6. Add background rebuild hooks without introducing hidden write races.
-7. Add HNSW persistence compatibility tests.
-8. Add recall benchmark fixtures.
-9. Keep exact fallback for invalid graph, stale graph, and low recall.
-10. Add ANN metrics:
-    - recall
-    - latency
-    - graph nodes
-    - deleted vectors
-    - rebuild count
-11. Add `cortexdb ann validate`.
-12. Document ANN limitations and tuning parameters.
+Completed tasks:
+
+1. ✅ Persistent vector collection metadata stored in `.ach` files (dimension, metric).
+2. ✅ Dimension enforcement on the write path (`HnswIndex::add_vector` skips mismatches).
+3. ✅ Validation checks for persisted `.acv` and `.ach` bundles.
+4. ✅ Cosine and L2 distance policies (`DistanceMetric` enum with `DotProduct`, `Cosine`, `L2`).
+5. ✅ Deterministic HNSW build planner (`hnsw_graph_for_cells` processes segments in commit order).
+6. ✅ Background rebuild via `compact()` — graphs are rebuilt atomically during compaction without write races.
+7. ✅ HNSW persistence compatibility tests (backward-compatible `.ach` decode with optional metadata trailer).
+8. ✅ Recall benchmark fixtures in `core_baseline.rs` (`ann_recall_q16_1k`, `ann_eval_latency_1k`).
+9. ✅ Exact fallback for invalid graph, stale graph, and low recall (`MIN_ANN_RECALL_Q16` = 75%).
+10. ✅ Extended ANN metrics:
+    - `deleted_vectors` — computed from live segment tombstones
+    - `rebuild_count` — tracked on `HnswIndex`
+    - `graph_nodes` / `total_edges` / `persisted_segments` — existing
+11. ✅ `cortexdb ann validate` CLI command.
+12. ✅ ANN limitations and tuning parameters documented in `SEARCH.md`.
 
 Definition of done:
 

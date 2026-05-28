@@ -61,6 +61,8 @@ fn written_storage_files_match_current_format_inventory() {
     .unwrap();
     HnswGraphIndex {
         links: BTreeMap::from([(1, BTreeSet::from([2]))]),
+        dimension: 0,
+        metric: 0,
     }
     .write(&hnsw)
     .unwrap();

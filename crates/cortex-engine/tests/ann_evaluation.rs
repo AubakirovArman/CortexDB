@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
-use cortex_engine::{scope_id, AnnSearchPath, Database, SearchLimit};
+use cortex_engine::{scope_id, AnnSearchPath, Database, SearchLimit, MIN_ANN_RECALL_Q16};
 
 #[test]
 fn database_ann_evaluation_reports_recall_against_exact_baseline() {
@@ -36,7 +36,7 @@ fn database_ann_evaluation_reports_recall_against_exact_baseline() {
     assert_eq!(report.overlap_count, 2);
     assert_eq!(report.recall_q16, 65_535);
     assert_eq!(report.search.recall_q16, Some(65_535));
-    assert_eq!(report.search.min_recall_q16, Some(65_535));
+    assert_eq!(report.search.min_recall_q16, Some(MIN_ANN_RECALL_Q16));
 }
 
 #[test]

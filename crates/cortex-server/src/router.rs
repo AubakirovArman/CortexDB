@@ -220,6 +220,8 @@ pub fn route_database(
                 persisted_segments: metrics.persisted_segments,
                 has_checkpoint: metrics.has_checkpoint,
                 has_uncheckpointed_changes: metrics.has_uncheckpointed_changes,
+                deleted_vectors: metrics.deleted_vectors,
+                rebuild_count: metrics.rebuild_count,
             };
             Ok(serde_json::to_string(&response)?)
         }

@@ -24,6 +24,8 @@ fn invalid_graph_falls_back_to_exact() {
         &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
         &HnswGraphIndex {
             links: BTreeMap::from([(1, BTreeSet::from([999]))]),
+            dimension: 2,
+            metric: 0,
         },
         &[0, 5],
         &BTreeSet::from([1, 2]),
@@ -43,6 +45,8 @@ fn incomplete_graph_results_fall_back_to_exact() {
         &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
         &HnswGraphIndex {
             links: BTreeMap::from([(1, BTreeSet::new())]),
+            dimension: 2,
+            metric: 0,
         },
         &[0, 5],
         &BTreeSet::from([1, 2]),
@@ -63,6 +67,8 @@ fn low_recall_graph_falls_back_to_exact() {
         &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
         &HnswGraphIndex {
             links: BTreeMap::from([(1, BTreeSet::new())]),
+            dimension: 2,
+            metric: 0,
         },
         &[0, 10],
         &BTreeSet::from([1, 2]),
@@ -85,6 +91,8 @@ fn evaluation_reports_exact_overlap_and_recall() {
         &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10]), (3, vec![2, 8])]),
         &HnswGraphIndex {
             links: BTreeMap::from([(1, BTreeSet::from([2])), (2, BTreeSet::from([3]))]),
+            dimension: 2,
+            metric: 0,
         },
         &[0, 10],
         &BTreeSet::from([1, 2, 3]),
@@ -105,6 +113,8 @@ fn evaluation_exposes_raw_low_recall_without_guarded_fallback() {
         &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
         &HnswGraphIndex {
             links: BTreeMap::from([(1, BTreeSet::new())]),
+            dimension: 2,
+            metric: 0,
         },
         &[0, 10],
         &BTreeSet::from([1, 2]),

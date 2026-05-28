@@ -3,7 +3,7 @@ use std::time::Instant;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
-use cortex_engine::{scope_id, ContextPackOptions, Database, DatabaseOptions};
+use cortex_engine::{scope_id, ContextPackOptions, Database, DatabaseOptions, SearchLimit};
 use cortex_storage::wal::DurabilityMode;
 
 fn main() {
@@ -142,6 +142,44 @@ fn main() {
         .unwrap();
     let context_10k_time = context_10k_start.elapsed();
 
+    // --- ANN Recall Benchmark (1K vectors, dim=8) ---
+    let dir_ann = tempfile::tempdir().unwrap();
+    let mut db_ann = Database::open(dir_ann.path()).unwrap();
+    for id in 1..=1000 {
+        let v = [
+            (id % 256) as i16,
+            ((id * 7) % 256) as i16,
+            ((id * 13) % 256) as i16,
+            ((id * 31) % 256) as i16,
+            0,
+            0,
+            0,
+            0,
+        ];
+        db_ann
+            .put_cell(
+                CellId(id),
+                format!(
+                    "scope=bench\nstatus=ready\nvector={},{},{},{},0,0,0,0\n\nbody",
+                    v[0], v[1], v[2], v[3]
+                )
+                .into_bytes(),
+            )
+            .unwrap();
+    }
+    db_ann.checkpoint().unwrap();
+    db_ann.compact().unwrap();
+
+    let ann_eval_start = Instant::now();
+    let ann_report = db_ann
+        .evaluate_vector_ann(&[10i16, 70, 130, 190, 0, 0, 0, 0], &view(), SearchLimit(10))
+        .unwrap();
+    let ann_eval_time = ann_eval_start.elapsed();
+    let (ann_recall_q16, ann_nodes) = match ann_report {
+        Some(r) => (r.recall_q16, r.search.graph_nodes),
+        None => (0, 0),
+    };
+
     println!("================================================");
     println!("CORTEXDB BENCHMARK MATRIX V2");
     println!("================================================");
@@ -172,6 +210,10 @@ fn main() {
     println!("compact_10k:                    {:?}", compact_10k_time);
     println!("aql_retrieve_10k:               {:?}", aql_10k_time);
     println!("context_pack_10k:               {:?}", context_10k_time);
+    println!("------------------------------------------------");
+    println!("ann_recall_q16_1k:              {}", ann_recall_q16);
+    println!("ann_graph_nodes_1k:             {}", ann_nodes);
+    println!("ann_eval_latency_1k:            {:?}", ann_eval_time);
     println!("================================================");
 }
 

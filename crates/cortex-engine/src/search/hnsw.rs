@@ -3,23 +3,74 @@ use std::collections::{BTreeMap, BTreeSet};
 use cortex_storage::hnsw::HnswGraphIndex;
 
 use super::hnsw_policy::{HnswMaintenancePolicy, HnswMaintenanceReport, HnswRebuildPolicy};
-use super::{dot_nonnegative, ranked, ScoredCandidate};
+use super::{ranked, ScoredCandidate};
 
 pub mod integrity;
 
-/// Abstraction for distance calculation between high-dimensional vector embeddings.
-pub trait DistanceMetric {
-    /// Calculate the similarity score (distance) between two vector embeddings.
-    fn distance(u: &[i16], v: &[i16]) -> Option<u64>;
+/// Supported distance metrics for vector similarity search.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum DistanceMetric {
+    /// Non-negative dot-product similarity. Higher is better.
+    #[default]
+    DotProduct,
+    /// Cosine similarity scaled to [0, 65_535]. Higher is better.
+    Cosine,
+    /// Negative squared Euclidean distance. Higher (less negative) is better.
+    L2,
 }
 
-/// Dot-product similarity implementation of DistanceMetric.
-pub struct DotProductMetric;
-
-impl DistanceMetric for DotProductMetric {
-    fn distance(u: &[i16], v: &[i16]) -> Option<u64> {
-        dot_nonnegative(u, v)
+impl DistanceMetric {
+    /// Compute similarity between two vectors. Returns `None` if dimensions mismatch.
+    pub fn distance(&self, u: &[i16], v: &[i16]) -> Option<u64> {
+        if u.len() != v.len() {
+            return None;
+        }
+        match self {
+            Self::DotProduct => Some(
+                u.iter()
+                    .zip(v)
+                    .map(|(left, right)| i64::from(*left) * i64::from(*right))
+                    .sum::<i64>()
+                    .max(0) as u64,
+            ),
+            Self::Cosine => {
+                let dot: i64 = u
+                    .iter()
+                    .zip(v)
+                    .map(|(a, b)| i64::from(*a) * i64::from(*b))
+                    .sum();
+                let u_norm_sq: i64 = u.iter().map(|x| i64::from(*x) * i64::from(*x)).sum();
+                let v_norm_sq: i64 = v.iter().map(|x| i64::from(*x) * i64::from(*x)).sum();
+                if u_norm_sq == 0 || v_norm_sq == 0 {
+                    return Some(0);
+                }
+                let norm = ((u_norm_sq as f64).sqrt() * (v_norm_sq as f64).sqrt()) as i64;
+                if norm == 0 {
+                    return Some(0);
+                }
+                Some(((dot.abs() * 65_535) / norm.abs()) as u64)
+            }
+            Self::L2 => {
+                let dist_sq: i64 = u
+                    .iter()
+                    .zip(v)
+                    .map(|(a, b)| {
+                        let diff = i64::from(*a) - i64::from(*b);
+                        diff * diff
+                    })
+                    .sum();
+                let max_dist = (u.len() as i64) * 65_536i64 * 65_536i64;
+                Some((max_dist - dist_sq.min(max_dist)).max(0) as u64)
+            }
+        }
     }
+}
+
+/// Configuration for a vector collection persisted alongside the HNSW graph.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub struct VectorCollectionConfig {
+    pub dimension: usize,
+    pub metric: DistanceMetric,
 }
 
 #[derive(Clone, Debug)]
@@ -30,6 +81,8 @@ pub struct HnswIndex {
     layer_count: usize,
     max_neighbors: usize,
     ef_search: usize,
+    config: VectorCollectionConfig,
+    pub rebuild_count: u64,
 }
 
 impl HnswIndex {
@@ -41,6 +94,19 @@ impl HnswIndex {
             layer_count: 1,
             max_neighbors: max_neighbors.max(1),
             ef_search: ef_search.max(1),
+            config: VectorCollectionConfig::default(),
+            rebuild_count: 0,
+        }
+    }
+
+    pub fn new_with_config(
+        max_neighbors: usize,
+        ef_search: usize,
+        config: VectorCollectionConfig,
+    ) -> Self {
+        Self {
+            config,
+            ..Self::new(max_neighbors, ef_search)
         }
     }
 
@@ -51,7 +117,14 @@ impl HnswIndex {
         }
     }
 
+    pub fn set_config(&mut self, config: VectorCollectionConfig) {
+        self.config = config;
+    }
+
     pub fn add_vector(&mut self, cell_id: u32, vector: Vec<i16>) {
+        if self.config.dimension > 0 && vector.len() != self.config.dimension {
+            return;
+        }
         self.deleted.remove(&cell_id);
         let neighbors = self.nearest_existing(&vector, self.max_neighbors);
         for neighbor in &neighbors {
@@ -83,6 +156,7 @@ impl HnswIndex {
             .retain(|candidate, _| !self.deleted.contains(candidate));
         self.deleted.clear();
         self.rebuild_links();
+        self.rebuild_count += 1;
         true
     }
 
@@ -140,7 +214,9 @@ impl HnswIndex {
         let mut visited = BTreeSet::new();
         let mut frontier = BTreeSet::from([entry]);
         let mut scores = BTreeMap::new();
-        while let Some(candidate) = best_frontier(query, &frontier, &self.vectors) {
+        while let Some(candidate) =
+            best_frontier(query, &frontier, &self.vectors, &self.config.metric)
+        {
             frontier.remove(&candidate);
             if self.deleted.contains(&candidate)
                 || !visited.insert(candidate)
@@ -149,7 +225,11 @@ impl HnswIndex {
                 continue;
             }
             if allowed.is_none_or(|values| values.contains(&candidate)) {
-                if let Some(score) = DotProductMetric::distance(query, &self.vectors[&candidate]) {
+                if let Some(score) = self
+                    .config
+                    .metric
+                    .distance(query, &self.vectors[&candidate])
+                {
                     scores.insert(candidate, score);
                 }
             }
@@ -167,6 +247,8 @@ impl HnswIndex {
     pub fn graph_index(&self) -> HnswGraphIndex {
         HnswGraphIndex {
             links: self.links.clone(),
+            dimension: self.config.dimension as u32,
+            metric: self.config.metric as u8,
         }
     }
 
@@ -176,6 +258,16 @@ impl HnswIndex {
         max_neighbors: usize,
         ef_search: usize,
     ) -> Self {
+        let dimension = if graph.dimension > 0 {
+            graph.dimension as usize
+        } else {
+            vectors.values().next().map(|v| v.len()).unwrap_or(0)
+        };
+        let metric = match graph.metric {
+            1 => DistanceMetric::Cosine,
+            2 => DistanceMetric::L2,
+            _ => DistanceMetric::DotProduct,
+        };
         Self {
             vectors,
             links: graph.links,
@@ -183,6 +275,8 @@ impl HnswIndex {
             layer_count: 1,
             max_neighbors: max_neighbors.max(1),
             ef_search: ef_search.max(1),
+            config: VectorCollectionConfig { dimension, metric },
+            rebuild_count: 0,
         }
     }
 
@@ -192,7 +286,10 @@ impl HnswIndex {
             .iter()
             .filter(|(cell_id, _)| !self.deleted.contains(cell_id))
             .filter_map(|(cell_id, existing)| {
-                DotProductMetric::distance(vector, existing).map(|score| (*cell_id, score))
+                self.config
+                    .metric
+                    .distance(vector, existing)
+                    .map(|score| (*cell_id, score))
             })
             .collect();
         ranked(scores, limit)
@@ -227,7 +324,10 @@ impl HnswIndex {
             .iter()
             .filter(|(cell_id, _)| **cell_id != skip)
             .filter_map(|(cell_id, existing)| {
-                DotProductMetric::distance(vector, existing).map(|score| (*cell_id, score))
+                self.config
+                    .metric
+                    .distance(vector, existing)
+                    .map(|score| (*cell_id, score))
             })
             .collect();
         ranked(scores, limit)
@@ -247,12 +347,15 @@ fn best_frontier(
     query: &[i16],
     frontier: &BTreeSet<u32>,
     vectors: &BTreeMap<u32, Vec<i16>>,
+    metric: &DistanceMetric,
 ) -> Option<u32> {
     frontier
         .iter()
         .copied()
         .filter_map(|cell_id| {
-            dot_nonnegative(query, &vectors[&cell_id]).map(|score| (cell_id, score))
+            metric
+                .distance(query, &vectors[&cell_id])
+                .map(|score| (cell_id, score))
         })
         .max_by_key(|(_, score)| *score)
         .map(|(cell_id, _)| cell_id)

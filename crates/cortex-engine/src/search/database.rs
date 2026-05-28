@@ -9,6 +9,7 @@ use crate::query::{scope_id, CellMetadata};
 
 use super::access::allowed_candidates;
 use super::ann::{search_persisted_ann, AnnFallbackReason, AnnSearchPath, AnnSearchReport};
+use super::hnsw::DistanceMetric;
 use super::persisted::{search_persisted_lexical, search_persisted_vectors};
 use super::vector::vector_from_payload;
 use super::{SearchIndexes, SearchMode, SearchQuery};
@@ -150,7 +151,13 @@ impl Database {
                     }));
                 };
                 let index = self.persisted_vector_index()?;
-                search_persisted_vectors(&index.vectors, vector, &allowed, query.limit)
+                search_persisted_vectors(
+                    &index.vectors,
+                    vector,
+                    &allowed,
+                    query.limit,
+                    &DistanceMetric::default(),
+                )
             }
             SearchMode::Hybrid => return Ok(None),
         };

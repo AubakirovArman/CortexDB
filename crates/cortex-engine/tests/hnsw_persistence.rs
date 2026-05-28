@@ -83,6 +83,8 @@ fn hnsw_integrity_report_catches_structural_link_errors() {
         BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
         HnswGraphIndex {
             links: BTreeMap::from([(1, BTreeSet::from([1, 999]))]),
+            dimension: 2,
+            metric: 0,
         },
         2,
         8,

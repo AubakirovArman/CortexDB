@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use super::{dot_nonnegative, ranked, tokenize, ScoredCandidate};
+use super::{hnsw::DistanceMetric, ranked, tokenize, ScoredCandidate};
 
 pub(super) fn search_persisted_lexical(
     terms: &BTreeMap<String, BTreeSet<u32>>,
@@ -51,12 +51,15 @@ pub(super) fn search_persisted_vectors(
     query: &[i16],
     allowed: &BTreeSet<u32>,
     limit: usize,
+    metric: &DistanceMetric,
 ) -> Vec<ScoredCandidate> {
     let scores = vectors
         .iter()
         .filter(|(candidate, _)| allowed.contains(candidate))
         .filter_map(|(candidate, vector)| {
-            dot_nonnegative(query, vector).map(|score| (*candidate, score))
+            metric
+                .distance(query, vector)
+                .map(|score| (*candidate, score))
         })
         .collect();
     ranked(scores, limit)
@@ -129,6 +132,7 @@ mod tests {
             &[0, 2],
             &BTreeSet::from([2]),
             10,
+            &DistanceMetric::default(),
         );
 
         assert_eq!(results.len(), 1);
@@ -142,6 +146,7 @@ mod tests {
             &[0, 3],
             &BTreeSet::from([1, 2]),
             10,
+            &DistanceMetric::default(),
         );
 
         assert_eq!(results.len(), 1);

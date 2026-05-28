@@ -6,14 +6,22 @@ use cortex_storage::segment::{SegmentCell, SegmentReader};
 use crate::database::Database;
 use crate::error::EngineResult;
 use crate::search::vector::vector_from_payload;
-use crate::search::{AnnMetrics, HnswIndex};
+use crate::search::{AnnMetrics, DistanceMetric, HnswIndex, VectorCollectionConfig};
 
 use super::{hnsw_path, segment_path};
 
 pub(crate) fn hnsw_graph_for_cells(cells: &[SegmentCell]) -> HnswGraphIndex {
     let mut index = HnswIndex::default();
+    let mut dimension = 0usize;
     for cell in cells.iter().filter(|cell| cell.deleted_seq.is_none()) {
         if let Some(vector) = vector_from_payload(&cell.payload) {
+            if dimension == 0 {
+                dimension = vector.len();
+                index.set_config(VectorCollectionConfig {
+                    dimension,
+                    metric: DistanceMetric::DotProduct,
+                });
+            }
             index.add_vector(cell.candidate_id, vector);
         }
     }
@@ -41,12 +49,29 @@ impl Database {
         } else {
             false
         };
+        let mut deleted = BTreeSet::new();
+        let mut active = BTreeSet::new();
+        for segment in &self.manifest.live_segments {
+            if let Ok(cells) = SegmentReader::read(segment_path(&self.segments_path, segment.id)) {
+                for cell in cells {
+                    if cell.deleted_seq.is_some() {
+                        deleted.insert(cell.candidate_id);
+                    } else {
+                        active.insert(cell.candidate_id);
+                        deleted.remove(&cell.candidate_id);
+                    }
+                }
+            }
+        }
+        let deleted_vectors = deleted.len();
         AnnMetrics {
             graph_nodes,
             total_edges,
             persisted_segments,
             has_checkpoint,
             has_uncheckpointed_changes,
+            deleted_vectors,
+            rebuild_count: 0,
         }
     }
 

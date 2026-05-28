@@ -121,6 +121,8 @@ fn snapshot_ann_metrics_response_shape() {
     assert!(response.contains(r#""persisted_segments":"#));
     assert!(response.contains(r#""has_checkpoint":"#));
     assert!(response.contains(r#""has_uncheckpointed_changes":"#));
+    assert!(response.contains(r#""deleted_vectors":"#));
+    assert!(response.contains(r#""rebuild_count":"#));
 }
 
 #[test]

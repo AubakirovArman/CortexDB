@@ -8,6 +8,8 @@ use crate::format::HNSW_GRAPH_MAGIC;
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct HnswGraphIndex {
     pub links: BTreeMap<u32, BTreeSet<u32>>,
+    pub dimension: u32,
+    pub metric: u8,
 }
 
 impl HnswGraphIndex {
@@ -21,6 +23,8 @@ impl HnswGraphIndex {
                 put_u32(&mut out, *neighbor);
             }
         }
+        put_u32(&mut out, self.dimension);
+        put_u32(&mut out, u32::from(self.metric));
         append_crc32c(&mut out);
         write_atomic(path.as_ref(), &out)
     }
@@ -45,10 +49,22 @@ fn decode(bytes: &[u8]) -> StorageResult<HnswGraphIndex> {
             return Err(StorageError::InvalidHnswGraphFile);
         }
     }
+    let (dimension, metric) = if bytes.len() >= cursor + 8 {
+        (
+            read_u32(bytes, &mut cursor)?,
+            read_u32(bytes, &mut cursor)? as u8,
+        )
+    } else {
+        (0, 0)
+    };
     if cursor != bytes.len() {
         return Err(StorageError::InvalidHnswGraphFile);
     }
-    Ok(HnswGraphIndex { links })
+    Ok(HnswGraphIndex {
+        links,
+        dimension,
+        metric,
+    })
 }
 
 fn read_set(bytes: &[u8], cursor: &mut usize) -> StorageResult<BTreeSet<u32>> {

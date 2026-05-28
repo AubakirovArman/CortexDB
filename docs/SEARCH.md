@@ -105,14 +105,30 @@ snapshot precondition is met.
 ## HNSW Tuning Parameters & Production Guidelines
 
 ### 1. Hard Constraints & Dimension Enforcement
-- **Dimension Homogeneity:** All vectors inside a single `.acv` partition must share a single, non-zero dimension. The write path validates each incoming payload's vector shape. If any vector has mismatched dimensions (detected on checkpoint/compaction), the indexing pipeline logs a validation mismatch and gracefully falls back to `exact_fallback`.
-- **Fixed-Point Score Stability:** Dot-product and similarity scoring operate strictly on non-negative `i16` fixed-point embeddings (Q16 scaling representation), completely avoiding non-deterministic floating-point (`f64`) operations.
+- **Dimension Homogeneity:** All vectors inside a single `.acv` partition must share a single, non-zero dimension. The write path validates each incoming payload's vector shape via `HnswIndex::add_vector`, silently skipping dimension mismatches. Persisted `.ach` files store `dimension` and `metric` metadata so graphs are self-describing across restarts.
+- **Fixed-Point Score Stability:** All distance metrics operate on `i16` fixed-point embeddings (Q16 scaling representation), completely avoiding non-deterministic floating-point (`f64`) operations.
 
-### 2. Tuning Parameters
+### 2. Supported Distance Metrics
+`HnswIndex` supports three distance metrics, selectable per collection:
+- **`DotProduct` (default):** Non-negative dot-product similarity. Higher is better.
+- **`Cosine:`** Cosine similarity scaled to `[0, 65_535]`. Higher is better. Automatically handles zero-length vectors.
+- **`L2:`** Negative squared Euclidean distance. Higher (less negative) is better. Computed as `max_dist - dist_sq` so scores remain comparable across queries.
+
+### 3. Tuning Parameters
 - **`max_neighbors` (M):** The maximum number of bidirectional connection links per node in the HNSW graph (default: 8). Higher values improve search quality (recall) on high-dimensional vectors but increase graph build time and memory usage during compaction.
 - **`ef_search` (EF):** The size of the dynamic candidate list kept during the graph traversal phase (default: 64). Increasing `ef_search` improves recall but adds a linear search latency cost.
-- **`deleted_fraction_q16`:** HNSW rebuild threshold (default: `16,384`, representing 25% deletion pressure). When deleted vectors exceed this fraction, `HnswIndex::apply_maintenance` triggers a graph rebuild.
+- **`deleted_fraction_q16`:** HNSW rebuild threshold (default: `16,384`, representing 25% deletion pressure). When deleted vectors exceed this fraction, `HnswIndex::apply_maintenance` triggers a graph rebuild and increments `rebuild_count`.
+- **`MIN_ANN_RECALL_Q16`:** Production recall guard (default: `49_151`, representing 75%). If HNSW traversal recall falls below this threshold, the engine falls back to exact vector scan to preserve correctness.
 
-### 3. Limitations & Fail-Safes
-- **Static Rebuild Lifecycle:** Graphs are built during the `checkpoint` (compaction) phase and remain static in the `.ach` files. Real-time updates inside the MemTable (WAL tail) bypass HNSW and are merged on-the-fly using `Exact Scan`, ensuring 100% freshness and correctness.
-- **Zero-Recall exact fallback:** If a graph traversal yields fewer candidates than the requested visible set, or if the index validation detects corruption, the system automatically degrades to `Exact Scan` (`fallback_reason: "low_recall" / "uncheckpointed_changes"`), preserving exact accuracy.
+### 4. ANN Metrics & Observability
+`GET /v1/ann/metrics` and `cortexdb ann validate` expose:
+- `graph_nodes` / `total_edges` — graph size
+- `persisted_segments` — number of live segments
+- `has_checkpoint` / `has_uncheckpointed_changes` — durability state
+- `deleted_vectors` — tombstoned vectors across all live segments
+- `rebuild_count` — number of graph rebuilds performed
+
+### 5. Limitations & Fail-Safes
+- **Static Rebuild Lifecycle:** Graphs are built deterministically during the `checkpoint`/`compact` phase and remain static in `.ach` files. Real-time updates inside the MemTable (WAL tail) bypass HNSW and are merged on-the-fly using exact scan, ensuring 100% freshness and correctness.
+- **Exact fallback guardrails:** If a graph is empty, structurally invalid, returns insufficient candidates, or fails the 75% recall guard, the system automatically degrades to exact scan. Fallback reasons are exposed in `ann_report.path` and `ann_report.fallback_reason`.
+- **Recall benchmark fixtures:** The `core_baseline` benchmark includes an ANN recall section (`ann_recall_q16_1k`, `ann_graph_nodes_1k`, `ann_eval_latency_1k`) for regression tracking.

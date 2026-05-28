@@ -15,9 +15,12 @@ mod tokenizer;
 pub(crate) mod vector;
 
 pub use analyzer::{mean_reciprocal_rank_q16, Language, TextAnalyzer};
-pub use ann::{AnnEvaluationReport, AnnFallbackReason, AnnMetrics, AnnSearchPath, AnnSearchReport};
+pub use ann::{
+    AnnEvaluationReport, AnnFallbackReason, AnnMetrics, AnnSearchPath, AnnSearchReport,
+    MIN_ANN_RECALL_Q16,
+};
 pub use database::{DatabaseSearchOutcome, DatabaseSearchResult, SearchLimit};
-pub use hnsw::{integrity::HnswIntegrityReport, HnswIndex};
+pub use hnsw::{integrity::HnswIntegrityReport, DistanceMetric, HnswIndex, VectorCollectionConfig};
 pub use hnsw_policy::{HnswMaintenancePolicy, HnswMaintenanceReport, HnswRebuildPolicy};
 pub use tokenizer::tokenize;
 pub use vector::parse_vector_literal;
@@ -62,6 +65,7 @@ pub struct Bm25Index {
 #[derive(Clone, Debug, Default)]
 pub struct VectorIndex {
     vectors: BTreeMap<u32, Vec<i16>>,
+    metric: hnsw::DistanceMetric,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -233,7 +237,9 @@ impl VectorIndex {
             .vectors
             .iter()
             .filter_map(|(cell_id, vector)| {
-                dot_nonnegative(query, vector).map(|score| (*cell_id, score))
+                self.metric
+                    .distance(query, vector)
+                    .map(|score| (*cell_id, score))
             })
             .collect();
         ranked(scores, limit)
@@ -248,19 +254,6 @@ pub(super) fn ranked(scores: BTreeMap<u32, u64>, limit: usize) -> Vec<ScoredCand
     values.sort_by_key(|candidate| (Reverse(candidate.score), candidate.cell_id));
     values.truncate(limit);
     values
-}
-
-pub(super) fn dot_nonnegative(lhs: &[i16], rhs: &[i16]) -> Option<u64> {
-    if lhs.len() != rhs.len() {
-        return None;
-    }
-    Some(
-        lhs.iter()
-            .zip(rhs)
-            .map(|(left, right)| i64::from(*left) * i64::from(*right))
-            .sum::<i64>()
-            .max(0) as u64,
-    )
 }
 
 fn apply_rrf(

@@ -1092,6 +1092,8 @@ components:
       - persisted_segments
       - has_checkpoint
       - has_uncheckpointed_changes
+      - deleted_vectors
+      - rebuild_count
       properties:
         graph_nodes:
           type: integer
@@ -1103,6 +1105,11 @@ components:
           type: boolean
         has_uncheckpointed_changes:
           type: boolean
+        deleted_vectors:
+          type: integer
+        rebuild_count:
+          type: integer
+          format: uint64
     SearchExplainResponse:
       type: object
       required:

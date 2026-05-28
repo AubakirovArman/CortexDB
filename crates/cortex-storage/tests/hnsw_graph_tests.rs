@@ -9,6 +9,8 @@ fn ach_hnsw_graph_roundtrips_links() {
     let path = dir.path().join("segment-1.ach");
     let graph = HnswGraphIndex {
         links: BTreeMap::from([(1, BTreeSet::from([2, 3])), (2, BTreeSet::from([1]))]),
+        dimension: 8,
+        metric: 0,
     };
 
     graph.write(&path).unwrap();
@@ -23,6 +25,8 @@ fn corrupt_hnsw_graph_is_rejected() {
     let path = dir.path().join("segment-1.ach");
     HnswGraphIndex {
         links: BTreeMap::from([(1, BTreeSet::from([2]))]),
+        dimension: 0,
+        metric: 0,
     }
     .write(&path)
     .unwrap();

@@ -284,6 +284,8 @@ pub struct AnnMetricsResponse {
     pub persisted_segments: usize,
     pub has_checkpoint: bool,
     pub has_uncheckpointed_changes: bool,
+    pub deleted_vectors: usize,
+    pub rebuild_count: u64,
 }
 
 pub enum RouterError {
