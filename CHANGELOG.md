@@ -28,6 +28,23 @@
 - Verified ContextPack benchmark: 1K cells = ~15ms, 10K cells = ~1s.
 - SDK tenant/auth support confirmed complete (Python/TS/Rust already supported).
 
+### P3 (Big Epics)
+
+- **Observability v0**: Actor queue depth tracking (AtomicUsize), request latency
+  counters (count + duration_ms_total), tracing subscriber with `RUST_LOG` support,
+  `tracing::info_span` per HTTP request. Metrics endpoint returns 17 fields including
+  actor + request metrics in both JSON and Prometheus formats.
+- **Agent Memory v1**: `Database::forget_cell()` soft-deletes cells, `POST /v1/forget`
+  HTTP endpoint, CLI `cortexdb forget` command, background TTL scheduler (every 60s)
+  via `ActorCommand::ExpireMemory` + `DatabaseActor::expire_memory()`.
+- **Typed Knowledge Model v1**: `KnowledgeCellType` implements `std::str::FromStr`,
+  cell type validation rejects unknown types, default cell_type fixed to `"raw"`,
+  typed body parsers (`FactBody`, `EntityBody`, `RelationBody`),
+  `Database::ingest_entity()` and `Database::ingest_relation()` methods.
+- **Knowledge Graph foundation**: `Database::graph_neighbors(entity_name)` traverses
+  Relation cells by subject/object, `Database::tool_cells()` queries Tool cells,
+  `GraphEdge` and `ToolCell` structs.
+
 ### Earlier
 
 - Added engine-level `NumericValue` parser with magnitude/unit/currency support for verification.
