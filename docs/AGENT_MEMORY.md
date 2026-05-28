@@ -57,8 +57,14 @@ let scores = db.memory_decay_scores(now_unix_seconds);
 `freshness_q16` is `Q16_ONE` for permanent memory, decreases linearly over the
 TTL window, and becomes `Q16_ZERO` after expiry.
 
+## Implemented
+
+- **Automatic background TTL scheduling** — A background task runs every 60s on each
+  active tenant database, scans for expired memory cells, and tombstones them via WAL.
+  See `cortex-server/src/lib.rs` (background interval loop) and
+  `cortex-engine/src/memory.rs` (`expire_memory_cells`).
+
 ## Not Yet
 
-- Automatic background TTL scheduling.
 - Natural-language contradiction extraction.
 - Production memory ranking beyond fixed-point decay and feedback ordering.

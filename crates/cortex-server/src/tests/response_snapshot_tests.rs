@@ -9,7 +9,8 @@ use crate::responses::{
 fn snapshot_health_response() {
     let resp = HealthResponse {
         status: "ok".to_owned(),
-        version: "0.1.0-core-alpha".to_owned(),
+        version: "v1".to_owned(),
+        server_version: "0.1.0-core-alpha".to_owned(),
     };
     insta::assert_json_snapshot!(resp);
 }

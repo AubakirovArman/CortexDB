@@ -4,5 +4,6 @@ expression: resp
 ---
 {
   "status": "ok",
-  "version": "0.1.0-core-alpha"
+  "version": "v1",
+  "server_version": "0.1.0-core-alpha"
 }

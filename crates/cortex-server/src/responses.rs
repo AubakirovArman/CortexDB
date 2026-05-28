@@ -3,7 +3,10 @@ use serde::Serialize;
 #[derive(Serialize, Debug, Clone)]
 pub struct HealthResponse {
     pub status: String,
+    /// API version path segment (e.g. "v1").
     pub version: String,
+    /// Server package version from Cargo.toml.
+    pub server_version: String,
 }
 
 /// Response metrics containing detailed storage, MemTable, and WAL statistics.

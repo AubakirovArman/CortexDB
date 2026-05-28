@@ -73,6 +73,48 @@ pub struct ContextPackAnomaly {
 }
 
 impl Database {
+    /// Compile a `RETRIEVE CONTEXT` AQL statement into a scored ContextPack.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use cortex_engine::Database;
+    /// # use cortex_core::CellId;
+    /// # use cortex_aql::{AgentId, AgentView, BrainId, RetrievalMode, ScopeId};
+    /// # use cortex_engine::context::ContextPackOptions;
+    /// # let dir = tempfile::tempdir().unwrap();
+    /// # let mut db = Database::open(dir.path()).unwrap();
+    /// # db.put_cell(CellId(1), b"scope=project:investments\n\nSolar budget 1.2B".to_vec()).unwrap();
+    /// let view = AgentView {
+    ///     agent_id: AgentId(1),
+    ///     label: None,
+    ///     readable_brains: [BrainId(1)].into_iter().collect(),
+    ///     readable_scopes: [ScopeId(841510221546309118)].into_iter().collect(),
+    ///     writable_scopes: Default::default(),
+    ///     allowed_modes: [RetrievalMode::Balanced].into_iter().collect(),
+    ///     allowed_memory_types: Default::default(),
+    ///     max_context_budget_tokens: 10000,
+    ///     default_context_budget_tokens: 1000,
+    ///     max_candidate_limit: 100,
+    ///     default_candidate_limit: 10,
+    ///     min_required_confidence_q16: Default::default(),
+    ///     max_ttl_seconds: None,
+    ///     allow_remember: false,
+    ///     allow_verify_fact: false,
+    ///     allow_audit_mode: false,
+    ///     require_citations_by_default: false,
+    ///     private_scope: None,
+    /// };
+    /// let pack = db.context_pack_from_aql(
+    ///     r#"RETRIEVE CONTEXT FOR TASK "budgets" IN BRAIN default BUDGET 500 TOKENS;"#,
+    ///     &view,
+    ///     ContextPackOptions {
+    ///         token_budget_tokens: 500,
+    ///         ..ContextPackOptions::default()
+    ///     },
+    /// ).unwrap();
+    /// assert_eq!(pack.token_budget_tokens, 500);
+    /// ```
     pub fn context_pack_from_aql(
         &self,
         aql: &str,

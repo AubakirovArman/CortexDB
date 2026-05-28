@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check openapi-check smoke-test sdk-smoke-test alpha-check demo
+.PHONY: check test sdk-check openapi-check openapi-contract-check smoke-test sdk-smoke-test alpha-check demo
 
 check:
 	cargo check --workspace
@@ -11,6 +11,9 @@ sdk-check:
 
 openapi-check:
 	python3 scripts/check_openapi_coverage.py
+
+openapi-contract-check:
+	python3 scripts/check_openapi_contract.py
 
 smoke-test:
 	scripts/smoke_test.sh
@@ -25,6 +28,7 @@ alpha-check:
 	cargo clippy --workspace --all-targets -- -D warnings
 	$(MAKE) sdk-check
 	$(MAKE) openapi-check
+	$(MAKE) openapi-contract-check
 	cargo bench -p cortex-engine --bench core_baseline
 	./examples/demo/investment_projects/run.sh
 

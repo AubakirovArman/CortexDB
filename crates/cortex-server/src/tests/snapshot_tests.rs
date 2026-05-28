@@ -9,6 +9,7 @@ fn snapshot_health_response() {
     let response = handle_http(dir.path(), "GET /v1/health HTTP/1.1\r\n\r\n");
     assert!(response.contains(r#""status":"ok""#));
     assert!(response.contains(r#""version":"v1""#));
+    assert!(response.contains(r#""server_version":"#));
 }
 
 #[test]

@@ -568,10 +568,13 @@ components:
       required:
       - status
       - version
+      - server_version
       properties:
         status:
           type: string
         version:
+          type: string
+        server_version:
           type: string
     Cell:
       type: object

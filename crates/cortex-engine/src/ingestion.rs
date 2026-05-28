@@ -42,6 +42,38 @@ impl Database {
         )
     }
 
+    /// Execute a `REMEMBER` AQL statement, creating a durable memory cell.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use cortex_engine::Database;
+    /// # use cortex_aql::{AgentId, AgentView, MemoryType, ScopeId};
+    /// # let dir = tempfile::tempdir().unwrap();
+    /// # let mut db = Database::open(dir.path()).unwrap();
+    /// let view = AgentView {
+    ///     agent_id: AgentId(1),
+    ///     label: None,
+    ///     readable_brains: Default::default(),
+    ///     readable_scopes: Default::default(),
+    ///     writable_scopes: [ScopeId(841510221546309118)].into_iter().collect(),
+    ///     allowed_modes: Default::default(),
+    ///     allowed_memory_types: [MemoryType::Decision].into_iter().collect(),
+    ///     max_context_budget_tokens: 10000,
+    ///     default_context_budget_tokens: 1000,
+    ///     max_candidate_limit: 100,
+    ///     default_candidate_limit: 10,
+    ///     min_required_confidence_q16: Default::default(),
+    ///     max_ttl_seconds: None,
+    ///     allow_remember: true,
+    ///     allow_verify_fact: false,
+    ///     allow_audit_mode: false,
+    ///     require_citations_by_default: false,
+    ///     private_scope: None,
+    /// };
+    /// let result = db.remember_aql(r#"REMEMBER "use conservative budget" IN SCOPE default AS TYPE decision TTL 3600 SECONDS;"#, &view);
+    /// assert!(result.is_ok(), "{}", result.unwrap_err());
+    /// ```
     pub fn remember_aql(&mut self, aql: &str, view: &AgentView) -> EngineResult<RememberedCell> {
         let statement = parse_aql(aql).map_err(|error| EngineError::AqlParse(error.to_string()))?;
         let index = self.try_aql_index()?;

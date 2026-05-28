@@ -25,6 +25,7 @@ pub fn route_database(
         ("GET", "/v1/health") => serde_json::to_string(&HealthResponse {
             status: "ok".to_owned(),
             version: "v1".to_owned(),
+            server_version: env!("CARGO_PKG_VERSION").to_owned(),
         })
         .map_err(|e| RouterError::BadRequest(e.to_string())),
         ("GET", "/v1/stats") => {

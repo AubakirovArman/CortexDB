@@ -55,6 +55,40 @@ pub struct ConflictRecord {
 }
 
 impl Database {
+    /// Execute a `VERIFY FACT` AQL statement against stored evidence.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use cortex_engine::Database;
+    /// # use cortex_core::CellId;
+    /// # use cortex_aql::{AgentId, AgentView, BrainId, ScopeId};
+    /// # let dir = tempfile::tempdir().unwrap();
+    /// # let mut db = Database::open(dir.path()).unwrap();
+    /// # db.put_cell(CellId(1), b"budget is approved".to_vec()).unwrap();
+    /// let view = AgentView {
+    ///     agent_id: AgentId(1),
+    ///     label: None,
+    ///     readable_brains: [BrainId(1)].into_iter().collect(),
+    ///     readable_scopes: Default::default(),
+    ///     writable_scopes: Default::default(),
+    ///     allowed_modes: Default::default(),
+    ///     allowed_memory_types: Default::default(),
+    ///     max_context_budget_tokens: 10000,
+    ///     default_context_budget_tokens: 1000,
+    ///     max_candidate_limit: 100,
+    ///     default_candidate_limit: 10,
+    ///     min_required_confidence_q16: Default::default(),
+    ///     max_ttl_seconds: None,
+    ///     allow_remember: false,
+    ///     allow_verify_fact: true,
+    ///     allow_audit_mode: false,
+    ///     require_citations_by_default: false,
+    ///     private_scope: None,
+    /// };
+    /// let report = db.verify_fact_aql(r#"VERIFY FACT "budget is approved" IN BRAIN default;"#, &view).unwrap();
+    /// assert_eq!(report.fact, "budget is approved");
+    /// ```
     pub fn verify_fact_aql(&self, aql: &str, view: &AgentView) -> EngineResult<VerificationReport> {
         let statement = parse_aql(aql).map_err(|error| EngineError::AqlParse(error.to_string()))?;
         let index = self.try_aql_index()?;

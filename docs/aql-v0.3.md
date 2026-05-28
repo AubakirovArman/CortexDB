@@ -25,13 +25,14 @@ Default binder values:
 
 ## EXPLAIN
 
-Parser support exists for future explain APIs:
+`EXPLAIN RETRIEVE CONTEXT` is supported by the AQL parser and has a working
+executor that returns a JSON breakdown of the retrieval plan:
 
 ```sql
 EXPLAIN RETRIEVE CONTEXT FOR TASK "x" IN BRAIN investment_projects;
 ```
 
-The explain executor output is not implemented yet.
+The server exposes this via `POST /v1/search/explain`.
 
 Supported retrieval modes:
 

@@ -8,7 +8,12 @@ mod types;
 
 use http::{append_query_param, parse_response, path};
 pub use types::{
-    AnnEvaluationResponse, AnnSearchReport, SearchResponse, SearchResult, VectorAlgorithm,
+    AnnEvaluationResponse, AnnSearchReport, AqlCellResponse, AqlResponse, CellLookupResponse,
+    CellResponse, ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
+    EvidenceResponse, ExplainResponse, GuardResponse, HealthResponse, IngestResponse,
+    NumericConflictResponse, PutCellResponse, RememberResponse, SearchResponse, SearchResult,
+    SourceRefResponse, StatsResponse, ValidationResponse, VectorAlgorithm,
+    VerificationReportResponse,
 };
 
 #[cfg(test)]
@@ -62,12 +67,24 @@ impl CortexDbClient {
         self.get("/v1/health")
     }
 
+    pub fn health_response(&self) -> SdkResult<HealthResponse> {
+        decode_value(self.health()?)
+    }
+
     pub fn stats(&self) -> SdkResult<serde_json::Value> {
         self.get("/v1/stats")
     }
 
+    pub fn stats_response(&self) -> SdkResult<StatsResponse> {
+        decode_value(self.stats()?)
+    }
+
     pub fn validate(&self) -> SdkResult<serde_json::Value> {
         self.get("/v1/validate")
+    }
+
+    pub fn validate_response(&self) -> SdkResult<ValidationResponse> {
+        decode_value(self.validate()?)
     }
 
     pub fn put_cell(&self, cell_id: u64, payload: &str) -> SdkResult<serde_json::Value> {
@@ -77,8 +94,16 @@ impl CortexDbClient {
         )
     }
 
+    pub fn put_cell_response(&self, cell_id: u64, payload: &str) -> SdkResult<PutCellResponse> {
+        decode_value(self.put_cell(cell_id, payload)?)
+    }
+
     pub fn get_cell(&self, cell_id: u64) -> SdkResult<serde_json::Value> {
         self.get(&path("/v1/cell", &[("cell_id", &cell_id.to_string())]))
+    }
+
+    pub fn get_cell_response(&self, cell_id: u64) -> SdkResult<CellLookupResponse> {
+        decode_value(self.get_cell(cell_id)?)
     }
 
     pub fn tombstone_cell(&self, cell_id: u64) -> SdkResult<serde_json::Value> {
@@ -196,16 +221,36 @@ impl CortexDbClient {
         self.post(&path("/v1/aql", &[("scope", scope)]), statement)
     }
 
+    pub fn aql_response(&self, scope: &str, statement: &str) -> SdkResult<AqlResponse> {
+        decode_value(self.aql(scope, statement)?)
+    }
+
     pub fn context(&self, scope: &str, statement: &str) -> SdkResult<serde_json::Value> {
         self.post(&path("/v1/context", &[("scope", scope)]), statement)
+    }
+
+    pub fn context_response(&self, scope: &str, statement: &str) -> SdkResult<ContextPackResponse> {
+        decode_value(self.context(scope, statement)?)
     }
 
     pub fn verify(&self, scope: &str, statement: &str) -> SdkResult<serde_json::Value> {
         self.post(&path("/v1/verify", &[("scope", scope)]), statement)
     }
 
+    pub fn verify_response(
+        &self,
+        scope: &str,
+        statement: &str,
+    ) -> SdkResult<VerificationReportResponse> {
+        decode_value(self.verify(scope, statement)?)
+    }
+
     pub fn remember(&self, scope: &str, statement: &str) -> SdkResult<serde_json::Value> {
         self.post(&path("/v1/remember", &[("scope", scope)]), statement)
+    }
+
+    pub fn remember_response(&self, scope: &str, statement: &str) -> SdkResult<RememberResponse> {
+        decode_value(self.remember(scope, statement)?)
     }
 
     pub fn ingest_text(
@@ -220,6 +265,15 @@ impl CortexDbClient {
         )
     }
 
+    pub fn ingest_text_response(
+        &self,
+        scope: &str,
+        source: &str,
+        text: &str,
+    ) -> SdkResult<IngestResponse> {
+        decode_value(self.ingest_text(scope, source, text)?)
+    }
+
     pub fn ingest_json(
         &self,
         scope: &str,
@@ -232,6 +286,15 @@ impl CortexDbClient {
         )
     }
 
+    pub fn ingest_json_response(
+        &self,
+        scope: &str,
+        source: &str,
+        document: &str,
+    ) -> SdkResult<IngestResponse> {
+        decode_value(self.ingest_json(scope, source, document)?)
+    }
+
     pub fn ingest_csv(
         &self,
         scope: &str,
@@ -242,6 +305,15 @@ impl CortexDbClient {
             &path("/v1/ingest/csv", &[("scope", scope), ("source", source)]),
             document,
         )
+    }
+
+    pub fn ingest_csv_response(
+        &self,
+        scope: &str,
+        source: &str,
+        document: &str,
+    ) -> SdkResult<IngestResponse> {
+        decode_value(self.ingest_csv(scope, source, document)?)
     }
 
     pub fn ingestion_job(&self, job_id: u64) -> SdkResult<serde_json::Value> {

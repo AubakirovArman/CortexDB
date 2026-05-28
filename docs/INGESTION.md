@@ -57,8 +57,14 @@ adapter jobs. The first tracked helper is `Database::ingest_csv_with_progress`,
 which records total rows, completed cells, status, and the last written
 `CellId`.
 
+## Implemented
+
+- **TTL expiry/decay scanning** — `Database::expired_memory_cells` and
+  `Database::expire_memory_cells` scan snapshots for TTL-elapsed memory cells and
+  tombstone them through WAL. `Database::memory_decay_scores` returns fixed-point
+  freshness scores per cell. See `cortex-engine/src/memory.rs`.
+
 ## Not Yet
 
 - PDF layout reconstruction and object graph repair.
 - Enrichment jobs.
-- TTL expiry/decay scanning.

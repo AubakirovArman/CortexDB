@@ -51,6 +51,17 @@ pub struct CheckpointStats {
 }
 
 impl Database {
+    /// Open a database at the given path with default options.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use std::path::Path;
+    /// # let dir = tempfile::tempdir().unwrap();
+    /// # let path = dir.path();
+    /// use cortex_engine::Database;
+    /// let db = Database::open(path).unwrap();
+    /// ```
     pub fn open(path: impl AsRef<Path>) -> EngineResult<Self> {
         Self::open_with_options(path, DatabaseOptions::default())
     }
@@ -116,6 +127,18 @@ impl Database {
         })
     }
 
+    /// Store a single cell payload and return the commit sequence.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use cortex_engine::Database;
+    /// # use cortex_core::CellId;
+    /// # let dir = tempfile::tempdir().unwrap();
+    /// # let mut db = Database::open(dir.path()).unwrap();
+    /// let seq = db.put_cell(CellId(1), b"hello world".to_vec()).unwrap();
+    /// assert!(seq.0 > 0);
+    /// ```
     pub fn put_cell(&mut self, cell_id: CellId, payload: Vec<u8>) -> EngineResult<CommitSeq> {
         self.append_then_apply(DbOperation::PutCell { cell_id, payload })
     }
@@ -177,6 +200,19 @@ impl Database {
             .map(|version| version.payload.clone())
     }
 
+    /// Read the latest visible payload for a cell.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use cortex_engine::Database;
+    /// # use cortex_core::CellId;
+    /// # let dir = tempfile::tempdir().unwrap();
+    /// # let mut db = Database::open(dir.path()).unwrap();
+    /// db.put_cell(CellId(1), b"hello world".to_vec()).unwrap();
+    /// let payload = db.get_latest_cell(CellId(1)).unwrap();
+    /// assert_eq!(payload, b"hello world");
+    /// ```
     pub fn get_latest_cell(&self, cell_id: CellId) -> Option<Vec<u8>> {
         self.get_cell(self.read_txn(), cell_id)
     }
@@ -223,6 +259,16 @@ impl Database {
         &self.manifest
     }
 
+    /// Gracefully shut down the database, flushing WAL and releasing the lock.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use cortex_engine::Database;
+    /// # let dir = tempfile::tempdir().unwrap();
+    /// # let db = Database::open(dir.path()).unwrap();
+    /// db.close().unwrap();
+    /// ```
     pub fn close(mut self) -> EngineResult<()> {
         self.writer.shutdown()?;
         self.closed = true;
