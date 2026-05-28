@@ -58,6 +58,18 @@ fn snapshot_cell_miss_response_shape() {
 }
 
 #[test]
+fn snapshot_metrics_includes_actor_and_request_fields() {
+    let dir = tempfile::tempdir().unwrap();
+    // Make a request first so request_count > 0
+    handle_http(dir.path(), "GET /v1/health HTTP/1.1\r\n\r\n");
+    let response = handle_http(dir.path(), "GET /v1/metrics HTTP/1.1\r\n\r\n");
+    assert!(response.contains(r#""actor_queue_depth":"#));
+    assert!(response.contains(r#""actor_queue_capacity":"#));
+    assert!(response.contains(r#""request_count":"#));
+    assert!(response.contains(r#""request_duration_ms_total":"#));
+}
+
+#[test]
 fn snapshot_put_cell_response_shape() {
     let dir = tempfile::tempdir().unwrap();
     let response = handle_http(dir.path(), "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\nhello");

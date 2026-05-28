@@ -1012,6 +1012,10 @@ components:
       - ann_persisted_segments
       - ann_has_checkpoint
       - ann_has_uncheckpointed_changes
+      - actor_queue_depth
+      - actor_queue_capacity
+      - request_count
+      - request_duration_ms_total
       properties:
         current_seq:
           type: integer
@@ -1052,6 +1056,16 @@ components:
           type: boolean
         ann_has_uncheckpointed_changes:
           type: boolean
+        actor_queue_depth:
+          type: integer
+        actor_queue_capacity:
+          type: integer
+        request_count:
+          type: integer
+          format: uint64
+        request_duration_ms_total:
+          type: integer
+          format: uint64
     AnnMetricsResponse:
       type: object
       required:

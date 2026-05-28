@@ -7,6 +7,7 @@ use axum::{
 };
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use tower_http::limit::RequestBodyLimitLayer;
 
@@ -74,6 +75,8 @@ pub struct AppState {
     root: PathBuf,
     dbs: Arc<Mutex<BTreeMap<String, Arc<actor::DatabaseActor>>>>,
     options: Arc<ServerOptions>,
+    request_count: Arc<AtomicU64>,
+    request_duration_ms_total: Arc<AtomicU64>,
 }
 
 impl AppState {
@@ -119,6 +122,8 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             root: root.to_owned(),
             dbs: Arc::new(Mutex::new(BTreeMap::new())),
             options: Arc::new(options),
+            request_count: Arc::new(AtomicU64::new(0)),
+            request_duration_ms_total: Arc::new(AtomicU64::new(0)),
         };
 
         let app = Router::new()
@@ -153,6 +158,9 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
     let uri = req.uri().to_owned();
     let path = uri.path().to_owned();
     let query = uri.query().unwrap_or("").to_owned();
+
+    let span = tracing::info_span!("http_request", %method, %path);
+    let _enter = span.enter();
 
     if method == "GET" && (path == "/" || path == "/dashboard") {
         return Html(dashboard::html()).into_response();
@@ -215,7 +223,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
     };
 
     let target = if query.is_empty() {
-        path
+        path.clone()
     } else {
         format!("{path}?{query}")
     };
@@ -234,7 +242,12 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         Err(_) => Err(RouterError::Internal("internal server error".to_owned())),
     };
     let duration = start.elapsed();
-    if duration.as_millis() > 50 {
+    let duration_ms = duration.as_millis() as u64;
+    state.request_count.fetch_add(1, Ordering::Relaxed);
+    state
+        .request_duration_ms_total
+        .fetch_add(duration_ms, Ordering::Relaxed);
+    if duration_ms > 50 {
         eprintln!(
             "⚠️ [SLOW QUERY ALERT] method={} target={} took={:?}",
             method, target, duration
@@ -243,6 +256,52 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
 
     match res {
         Ok(body_str) => {
+            if method == "GET" && path == "/v1/metrics" {
+                if query.contains("format=prometheus") {
+                    let extra = format!(
+                        "# HELP cortexdb_actor_queue_depth Current actor command queue depth.\n\
+                         # TYPE cortexdb_actor_queue_depth gauge\n\
+                         cortexdb_actor_queue_depth {}\n\
+                         # HELP cortexdb_actor_queue_capacity Actor command queue capacity.\n\
+                         # TYPE cortexdb_actor_queue_capacity gauge\n\
+                         cortexdb_actor_queue_capacity {}\n\
+                         # HELP cortexdb_request_count Total HTTP requests served.\n\
+                         # TYPE cortexdb_request_count counter\n\
+                         cortexdb_request_count {}\n\
+                         # HELP cortexdb_request_duration_ms_total Total HTTP request duration in milliseconds.\n\
+                         # TYPE cortexdb_request_duration_ms_total counter\n\
+                         cortexdb_request_duration_ms_total {}\n",
+                        db.queue_depth(),
+                        db.queue_capacity(),
+                        state.request_count.load(Ordering::Relaxed),
+                        state.request_duration_ms_total.load(Ordering::Relaxed),
+                    );
+                    return (StatusCode::OK, body_str + &extra).into_response();
+                }
+                if let Ok(mut json_val) = serde_json::from_str::<serde_json::Value>(&body_str) {
+                    if let Some(obj) = json_val.as_object_mut() {
+                        obj.insert(
+                            "actor_queue_depth".to_owned(),
+                            serde_json::json!(db.queue_depth()),
+                        );
+                        obj.insert(
+                            "actor_queue_capacity".to_owned(),
+                            serde_json::json!(db.queue_capacity()),
+                        );
+                        obj.insert(
+                            "request_count".to_owned(),
+                            serde_json::json!(state.request_count.load(Ordering::Relaxed)),
+                        );
+                        obj.insert(
+                            "request_duration_ms_total".to_owned(),
+                            serde_json::json!(state
+                                .request_duration_ms_total
+                                .load(Ordering::Relaxed)),
+                        );
+                    }
+                    return (StatusCode::OK, Json(json_val)).into_response();
+                }
+            }
             if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_str) {
                 (StatusCode::OK, Json(json_val)).into_response()
             } else {

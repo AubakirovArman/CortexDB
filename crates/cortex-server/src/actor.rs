@@ -1,5 +1,6 @@
 use std::path::Path;
-use std::sync::{mpsc, Mutex};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{mpsc, Arc, Mutex};
 use std::thread::JoinHandle;
 
 use cortex_engine::Database;
@@ -20,6 +21,8 @@ enum ActorCommand {
 pub struct DatabaseActor {
     tx: mpsc::SyncSender<ActorCommand>,
     worker: Mutex<Option<JoinHandle<()>>>,
+    queued: AtomicUsize,
+    capacity: usize,
 }
 
 impl DatabaseActor {
@@ -30,9 +33,12 @@ impl DatabaseActor {
     pub fn open_with_capacity(path: &Path, capacity: usize) -> std::io::Result<Self> {
         let db = Database::open(path).map_err(|error| std::io::Error::other(error.to_string()))?;
         let (tx, rx) = mpsc::sync_channel::<ActorCommand>(capacity);
+        let queued = Arc::new(AtomicUsize::new(0));
+        let queued_worker = queued.clone();
         let worker = std::thread::spawn(move || {
             let mut db = db;
             while let Ok(command) = rx.recv() {
+                queued_worker.fetch_sub(1, Ordering::Relaxed);
                 match command {
                     ActorCommand::Route {
                         method,
@@ -51,6 +57,8 @@ impl DatabaseActor {
         Ok(Self {
             tx,
             worker: Mutex::new(Some(worker)),
+            queued: AtomicUsize::new(0),
+            capacity,
         })
     }
 
@@ -62,7 +70,9 @@ impl DatabaseActor {
             body: body.to_vec(),
             reply: reply_tx,
         }) {
-            Ok(()) => {}
+            Ok(()) => {
+                self.queued.fetch_add(1, Ordering::Relaxed);
+            }
             Err(mpsc::TrySendError::Full(_)) => {
                 return Err(RouterError::ServiceUnavailable);
             }
@@ -73,6 +83,14 @@ impl DatabaseActor {
         reply_rx
             .recv()
             .map_err(|_| RouterError::Internal("database actor stopped".to_owned()))?
+    }
+
+    pub fn queue_depth(&self) -> usize {
+        self.queued.load(Ordering::Relaxed)
+    }
+
+    pub fn queue_capacity(&self) -> usize {
+        self.capacity
     }
 }
 
