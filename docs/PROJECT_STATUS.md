@@ -19,7 +19,7 @@ CortexDB has successfully transitioned from an early database loop prototype int
 
 - **Consensus-Driven Replication (Raft):** Multi-node log syncing and election states (current status: experimental model with vote freshness checks, AppendEntries log matching, conflict truncation, and snapshot transfer smoke paths).
 - **Consistent Hashing Sharding:** Distributed namespace layout and routing (current status: early layout primitives).
-- **HNSW Approximate Search:** High-dimensional vector indexing (current status: exact scan is our production-grade standard; HNSW remains experimental but guarded by exact fallback for empty, invalid, or under-returning graphs).
+- **Guarded HNSW Approximate Search (Alpha):** High-dimensional vector indexing with exact-fallback guardrails. `DistanceMetric` supports fixed-point DotProduct, Cosine, and L2. HNSW is not yet production-grade — it lacks multi-layer construction, golden recall fixtures, and benchmark history. Exact vector scan remains the reliable default.
 
 ---
 

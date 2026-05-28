@@ -38,7 +38,7 @@ impl Database {
             .write(lexical_path(&self.segments_path, segment_id))?;
         vector_index_for_cells(&snapshot.cells)
             .write(vector_path(&self.segments_path, segment_id))?;
-        hnsw_graph_for_cells(&snapshot.cells).write(hnsw_path(&self.segments_path, segment_id))?;
+        hnsw_graph_for_cells(&snapshot.cells)?.write(hnsw_path(&self.segments_path, segment_id))?;
 
         self.manifest.compact_to_segment(ManifestSegment {
             id: segment_id,

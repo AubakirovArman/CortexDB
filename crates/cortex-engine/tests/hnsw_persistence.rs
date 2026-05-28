@@ -8,9 +8,9 @@ fn hnsw_graph_persistence_preserves_search_path() {
     let dir = tempfile::tempdir().unwrap();
     let graph_path = dir.path().join("segment-1.ach");
     let mut index = HnswIndex::new(2, 8);
-    index.add_vector(1, vec![5, 0]);
-    index.add_vector(2, vec![0, 5]);
-    index.add_vector(3, vec![4, 0]);
+    let _ = index.add_vector(1, vec![5, 0]);
+    let _ = index.add_vector(2, vec![0, 5]);
+    let _ = index.add_vector(3, vec![4, 0]);
 
     index.graph_index().write(&graph_path).unwrap();
     let graph = HnswGraphIndex::read(&graph_path).unwrap();
@@ -27,9 +27,9 @@ fn hnsw_graph_persistence_preserves_search_path() {
 #[test]
 fn hnsw_search_allowed_filters_runtime_scope_mask() {
     let mut index = HnswIndex::new(2, 8);
-    index.add_vector(1, vec![10, 0]);
-    index.add_vector(2, vec![9, 0]);
-    index.add_vector(3, vec![0, 10]);
+    let _ = index.add_vector(1, vec![10, 0]);
+    let _ = index.add_vector(2, vec![9, 0]);
+    let _ = index.add_vector(3, vec![0, 10]);
 
     let results = index.search_allowed(&[10, 0], &BTreeSet::from([2]), 10);
 
@@ -40,9 +40,9 @@ fn hnsw_search_allowed_filters_runtime_scope_mask() {
 #[test]
 fn hnsw_delete_and_rebuild_policy_removes_deleted_vectors() {
     let mut index = HnswIndex::new_multilayer(2, 8, 3);
-    index.add_vector(1, vec![10, 0]);
-    index.add_vector(2, vec![9, 0]);
-    index.add_vector(3, vec![0, 10]);
+    let _ = index.add_vector(1, vec![10, 0]);
+    let _ = index.add_vector(2, vec![9, 0]);
+    let _ = index.add_vector(3, vec![0, 10]);
 
     assert_eq!(index.layer_count(), 3);
     assert!(index.remove_vector(1));
@@ -56,9 +56,9 @@ fn hnsw_delete_and_rebuild_policy_removes_deleted_vectors() {
 #[test]
 fn hnsw_maintenance_reports_rebuild_lifecycle() {
     let mut index = HnswIndex::new(2, 8);
-    index.add_vector(1, vec![10, 0]);
-    index.add_vector(2, vec![9, 0]);
-    index.add_vector(3, vec![0, 10]);
+    let _ = index.add_vector(1, vec![10, 0]);
+    let _ = index.add_vector(2, vec![9, 0]);
+    let _ = index.add_vector(3, vec![0, 10]);
     assert!(index.remove_vector(2));
     let policy = HnswMaintenancePolicy {
         rebuild_policy: HnswRebuildPolicy {

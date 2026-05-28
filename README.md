@@ -44,7 +44,7 @@ Or run the full demo: `make demo`
 
 - **Consensus-Driven Replication (Raft):** Multi-node replication log syncing and leader election (current status: primitive foundations/experimental model).
 - **Consistent Hashing Sharding:** Distributed namespace layout and dynamic query routing (current status: experimental layout primitives).
-- **Real-Time Vector Indexing (HNSW):** Dynamic vector inserts and graph maintenance directly inside MemTable (current status: early experimental indexes).
+- **Guarded HNSW Approximate Search (Alpha):** Fixed-point distance metrics (DotProduct, Cosine, L2) with exact-fallback guardrails. Graphs rebuild during compaction. Not yet production-grade — multi-layer construction, golden recall fixtures, and benchmark history remain future work.
 
 ---
 

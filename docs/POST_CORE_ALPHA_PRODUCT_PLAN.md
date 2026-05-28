@@ -83,18 +83,18 @@ SDKs pass live server smoke tests.
 Publishing is tag-driven and repeatable.
 ```
 
-## Milestone 3 - Production-Grade ANN/HNSW
+## Milestone 3 - Guarded ANN/HNSW Alpha
 
-Goal: move vector search from experimental to reliable.
+Goal: move vector search from experimental to guarded alpha with exact-fallback guardrails.
 
-Status: **Complete**.
+Status: **Guarded Alpha — not production-grade yet**.
 
-Completed tasks:
+What landed:
 
 1. ✅ Persistent vector collection metadata stored in `.ach` files (dimension, metric).
-2. ✅ Dimension enforcement on the write path (`HnswIndex::add_vector` skips mismatches).
+2. ✅ Dimension enforcement on the write path (`HnswIndex::add_vector` returns `EngineError` on mismatch).
 3. ✅ Validation checks for persisted `.acv` and `.ach` bundles.
-4. ✅ Cosine and L2 distance policies (`DistanceMetric` enum with `DotProduct`, `Cosine`, `L2`).
+4. ✅ Cosine and L2 distance policies (`DistanceMetric` enum with `DotProduct`, `Cosine`, `L2`) — all fixed-point, no `f64`.
 5. ✅ Deterministic HNSW build planner (`hnsw_graph_for_cells` processes segments in commit order).
 6. ✅ Background rebuild via `compact()` — graphs are rebuilt atomically during compaction without write races.
 7. ✅ HNSW persistence compatibility tests (backward-compatible `.ach` decode with optional metadata trailer).
@@ -106,6 +106,13 @@ Completed tasks:
     - `graph_nodes` / `total_edges` / `persisted_segments` — existing
 11. ✅ `cortexdb ann validate` CLI command.
 12. ✅ ANN limitations and tuning parameters documented in `SEARCH.md`.
+
+What remains before "production-grade":
+
+- Collection-level metadata (not just per-segment `.ach` trailer).
+- Recall fixtures beyond smoke tests (sift/glove-style golden sets).
+- Benchmark history tracking across commits.
+- Deterministic multi-layer HNSW with tuned `ef_construction`.
 
 Definition of done:
 

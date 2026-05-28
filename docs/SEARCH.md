@@ -102,11 +102,11 @@ baselines are comparing the same durable snapshot. The CLI and HTTP evaluation
 surfaces expose the same data and return `available=false` until this durable
 snapshot precondition is met.
 
-## HNSW Tuning Parameters & Production Guidelines
+## HNSW Tuning Parameters & Guarded Alpha Guidelines
 
 ### 1. Hard Constraints & Dimension Enforcement
-- **Dimension Homogeneity:** All vectors inside a single `.acv` partition must share a single, non-zero dimension. The write path validates each incoming payload's vector shape via `HnswIndex::add_vector`, silently skipping dimension mismatches. Persisted `.ach` files store `dimension` and `metric` metadata so graphs are self-describing across restarts.
-- **Fixed-Point Score Stability:** All distance metrics operate on `i16` fixed-point embeddings (Q16 scaling representation), completely avoiding non-deterministic floating-point (`f64`) operations.
+- **Dimension Homogeneity:** All vectors inside a single `.acv` partition must share a single, non-zero dimension. The write path validates each incoming payload's vector shape via `HnswIndex::add_vector`; mismatches return `EngineError::VectorDimensionMismatch` so they cannot happen silently.
+- **Fixed-Point Score Stability:** All distance metrics operate on `i16` fixed-point embeddings (Q16 scaling representation). Cosine similarity uses integer-only fixed-point approximation (`dot * 65_535 / sqrt_norm`) without `f64` arithmetic.
 
 ### 2. Supported Distance Metrics
 `HnswIndex` supports three distance metrics, selectable per collection:
@@ -132,3 +132,4 @@ snapshot precondition is met.
 - **Static Rebuild Lifecycle:** Graphs are built deterministically during the `checkpoint`/`compact` phase and remain static in `.ach` files. Real-time updates inside the MemTable (WAL tail) bypass HNSW and are merged on-the-fly using exact scan, ensuring 100% freshness and correctness.
 - **Exact fallback guardrails:** If a graph is empty, structurally invalid, returns insufficient candidates, or fails the 75% recall guard, the system automatically degrades to exact scan. Fallback reasons are exposed in `ann_report.path` and `ann_report.fallback_reason`.
 - **Recall benchmark fixtures:** The `core_baseline` benchmark includes an ANN recall section (`ann_recall_q16_1k`, `ann_graph_nodes_1k`, `ann_eval_latency_1k`) for regression tracking.
+- **Not production-grade yet:** HNSW is guarded alpha. It lacks multi-layer construction, large-scale golden recall fixtures, and benchmark history. Exact vector scan remains the reliable default for critical workloads.

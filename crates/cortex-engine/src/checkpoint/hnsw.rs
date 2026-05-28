@@ -10,7 +10,9 @@ use crate::search::{AnnMetrics, DistanceMetric, HnswIndex, VectorCollectionConfi
 
 use super::{hnsw_path, segment_path};
 
-pub(crate) fn hnsw_graph_for_cells(cells: &[SegmentCell]) -> HnswGraphIndex {
+pub(crate) fn hnsw_graph_for_cells(
+    cells: &[SegmentCell],
+) -> crate::error::EngineResult<HnswGraphIndex> {
     let mut index = HnswIndex::default();
     let mut dimension = 0usize;
     for cell in cells.iter().filter(|cell| cell.deleted_seq.is_none()) {
@@ -22,10 +24,10 @@ pub(crate) fn hnsw_graph_for_cells(cells: &[SegmentCell]) -> HnswGraphIndex {
                     metric: DistanceMetric::DotProduct,
                 });
             }
-            index.add_vector(cell.candidate_id, vector);
+            index.add_vector(cell.candidate_id, vector)?;
         }
     }
-    index.graph_index()
+    Ok(index.graph_index())
 }
 
 impl Database {

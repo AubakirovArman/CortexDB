@@ -137,7 +137,7 @@ fn bm25_and_vector_indexes_rank_candidates() {
     assert_eq!(vector.search_dot(&[2, 0, 1], 1)[0].cell_id, 1);
 
     let mut hnsw = HnswIndex::default();
-    hnsw.add_vector(7, vec![1, 2, 3]);
+    let _ = hnsw.add_vector(7, vec![1, 2, 3]);
     assert_eq!(hnsw.search(&[1, 1, 1], 1)[0].cell_id, 7);
 }
 

@@ -63,7 +63,7 @@ impl Database {
             .write(lexical_path(&self.segments_path, segment_id))?;
         vector::vector_index_for_cells(&cells)
             .write(vector_path(&self.segments_path, segment_id))?;
-        hnsw::hnsw_graph_for_cells(&cells).write(hnsw_path(&self.segments_path, segment_id))?;
+        hnsw::hnsw_graph_for_cells(&cells)?.write(hnsw_path(&self.segments_path, segment_id))?;
 
         self.manifest.checkpoint_segment(ManifestSegment {
             id: segment_id,
@@ -107,7 +107,7 @@ impl Database {
             .write(lexical_path(&self.segments_path, segment_id))?;
         vector::vector_index_for_cells(&cells)
             .write(vector_path(&self.segments_path, segment_id))?;
-        hnsw::hnsw_graph_for_cells(&cells).write(hnsw_path(&self.segments_path, segment_id))?;
+        hnsw::hnsw_graph_for_cells(&cells)?.write(hnsw_path(&self.segments_path, segment_id))?;
 
         self.manifest.compact_to_segment(ManifestSegment {
             id: segment_id,

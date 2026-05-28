@@ -4,6 +4,7 @@ use cortex_storage::hnsw::HnswGraphIndex;
 
 use super::hnsw_policy::{HnswMaintenancePolicy, HnswMaintenanceReport, HnswRebuildPolicy};
 use super::{ranked, ScoredCandidate};
+use crate::error::EngineError;
 
 pub mod integrity;
 
@@ -44,7 +45,8 @@ impl DistanceMetric {
                 if u_norm_sq == 0 || v_norm_sq == 0 {
                     return Some(0);
                 }
-                let norm = ((u_norm_sq as f64).sqrt() * (v_norm_sq as f64).sqrt()) as i64;
+                let norm_sq = (u_norm_sq as u128).saturating_mul(v_norm_sq as u128);
+                let norm = norm_sq.isqrt() as i64;
                 if norm == 0 {
                     return Some(0);
                 }
@@ -121,9 +123,12 @@ impl HnswIndex {
         self.config = config;
     }
 
-    pub fn add_vector(&mut self, cell_id: u32, vector: Vec<i16>) {
+    pub fn add_vector(&mut self, cell_id: u32, vector: Vec<i16>) -> Result<(), EngineError> {
         if self.config.dimension > 0 && vector.len() != self.config.dimension {
-            return;
+            return Err(EngineError::VectorDimensionMismatch {
+                expected: self.config.dimension,
+                actual: vector.len(),
+            });
         }
         self.deleted.remove(&cell_id);
         let neighbors = self.nearest_existing(&vector, self.max_neighbors);
@@ -133,6 +138,7 @@ impl HnswIndex {
         self.links
             .insert(cell_id, neighbors.iter().copied().collect::<BTreeSet<_>>());
         self.vectors.insert(cell_id, vector);
+        Ok(())
     }
 
     pub fn remove_vector(&mut self, cell_id: u32) -> bool {
