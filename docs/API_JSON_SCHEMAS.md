@@ -2,11 +2,10 @@
 
 Version: `v0.1.0-core-alpha candidate`
 
-The HTTP API now serializes response bodies from typed Rust structs with
-`serde::Serialize`. The legacy `handle_http` test harness still builds raw HTTP
-headers manually, but the JSON payloads themselves are typed.
+The HTTP API serializes response bodies from typed Rust structs with
+`serde::Serialize`.
 
-The OpenAPI 3.1 contract lives in [`openapi.yaml`](openapi.yaml).
+The OpenAPI 3.1 contract lives in [`docs/openapi.yaml`](docs/openapi.yaml).
 
 All database endpoints accept optional query parameter `tenant=<realm>`.
 Omitting it or sending `tenant=default` targets the root database. Other values

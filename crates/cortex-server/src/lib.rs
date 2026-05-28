@@ -11,7 +11,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use tower_http::limit::RequestBodyLimitLayer;
 
-use responses::ErrorResponse;
+use responses::{ErrorResponse, MetricsResponse};
 
 mod actor;
 mod aql;
@@ -306,27 +306,15 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
                     );
                     return (StatusCode::OK, body_str + &extra).into_response();
                 }
-                if let Ok(mut json_val) = serde_json::from_str::<serde_json::Value>(&body_str) {
-                    if let Some(obj) = json_val.as_object_mut() {
-                        obj.insert(
-                            "actor_queue_depth".to_owned(),
-                            serde_json::json!(db.queue_depth()),
-                        );
-                        obj.insert(
-                            "actor_queue_capacity".to_owned(),
-                            serde_json::json!(db.queue_capacity()),
-                        );
-                        obj.insert(
-                            "request_count".to_owned(),
-                            serde_json::json!(state.request_count.load(Ordering::Relaxed)),
-                        );
-                        obj.insert(
-                            "request_duration_ms_total".to_owned(),
-                            serde_json::json!(state
-                                .request_duration_ms_total
-                                .load(Ordering::Relaxed)),
-                        );
-                    }
+                if let Ok(mut metrics) = serde_json::from_str::<MetricsResponse>(&body_str) {
+                    metrics.actor_queue_depth = db.queue_depth();
+                    metrics.actor_queue_capacity = db.queue_capacity();
+                    metrics.request_count = state.request_count.load(Ordering::Relaxed);
+                    metrics.request_duration_ms_total =
+                        state.request_duration_ms_total.load(Ordering::Relaxed);
+                    return (StatusCode::OK, Json(metrics)).into_response();
+                }
+                if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_str) {
                     return (StatusCode::OK, Json(json_val)).into_response();
                 }
             }
