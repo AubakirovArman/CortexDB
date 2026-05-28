@@ -30,25 +30,41 @@ mod tests;
 
 use crate::responses::RouterError;
 pub use router::{
-    cell_id, json_error, json_response, query_param, query_param_opt, route_database, route_shared,
+    cell_id, json_error, json_response, query_param, query_param_decoded, query_param_opt,
+    query_param_opt_decoded, route_database, route_shared,
 };
 pub use sync_handler::{handle_http, handle_http_with_options};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ServerOptions {
     pub auth_token: Option<String>,
+    /// Capacity of the bounded actor command queue. Default is 1024.
+    pub actor_queue_capacity: usize,
+}
+
+impl ServerOptions {
+    pub fn actor_queue_capacity(&self) -> usize {
+        if self.actor_queue_capacity == 0 {
+            1024
+        } else {
+            self.actor_queue_capacity
+        }
+    }
 }
 
 /// Validates that a tenant ID is safe and conforms to the alphanumeric format,
 /// preventing path traversal attacks.
-/// Allowed characters are alphanumeric, `_`, `-`, and `:`. Length must be between 1 and 64.
+///
+/// Allowed characters are ASCII alphanumeric, `_`, and `-`. Length must be between 1 and 64.
+/// `:` is intentionally disallowed in tenant IDs to ensure cross-platform safety
+/// (Windows reserves `:` in file paths), even though Linux permits it.
 pub fn validate_tenant_id(tenant: &str) -> bool {
     if tenant.is_empty() || tenant.len() > 64 {
         return false;
     }
     tenant
         .chars()
-        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == ':')
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
 }
 
 #[derive(Clone)]
@@ -78,7 +94,11 @@ impl AppState {
             self.root.join("realms").join(tenant)
         };
         std::fs::create_dir_all(&tenant_path)?;
-        let db_shared = Arc::new(actor::DatabaseActor::open(&tenant_path)?);
+        let capacity = self.options.actor_queue_capacity();
+        let db_shared = Arc::new(actor::DatabaseActor::open_with_capacity(
+            &tenant_path,
+            capacity,
+        )?);
         dbs.insert(tenant.to_owned(), db_shared.clone());
         Ok(db_shared)
     }
@@ -170,18 +190,18 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         }
     };
 
-    let tenant = query_param_opt(&query, "tenant").unwrap_or("default");
-    if !validate_tenant_id(tenant) {
+    let tenant = query_param_opt_decoded(&query, "tenant").unwrap_or_else(|| "default".to_owned());
+    if !validate_tenant_id(&tenant) {
         return (
             StatusCode::BAD_REQUEST,
             Json(error_response(
                 "invalid_tenant",
-                "invalid tenant ID structure. Only alphanumeric, '_', '-', and ':' up to 64 characters are allowed.",
+                "invalid tenant ID structure. Only alphanumeric, '_', and '-' up to 64 characters are allowed.",
             )),
         )
             .into_response();
     }
-    let db = match state.get_db(tenant) {
+    let db = match state.get_db(&tenant) {
         Ok(db) => db,
         Err(e) => {
             return (

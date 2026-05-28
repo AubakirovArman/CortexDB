@@ -4,43 +4,42 @@ use crate::context::view_for_scope;
 use crate::responses::{
     AnnEvaluationResponse, AnnSearchReportResponse, SearchResponse, SearchResultResponse,
 };
+use crate::router::query_param_decoded;
 
 pub fn handle_search_shared(db: &Database, query: &str, body: &[u8]) -> Result<String, String> {
-    let scope = query_param(query, "scope")?;
-    let limit = query_param(query, "limit")
+    let scope = query_param_decoded(query, "scope")?;
+    let limit = query_param_decoded(query, "limit")
         .ok()
-        .map(parse_limit)
+        .map(|s| parse_limit(&s))
         .transpose()?
         .unwrap_or(20);
-    let mode = query_param(query, "mode").unwrap_or("keyword");
-    let algorithm = query_param(query, "algorithm").unwrap_or("ann");
-    let (search_mode, results, ann_report) = match mode {
+    let mode = query_param_decoded(query, "mode").unwrap_or_else(|_| "keyword".to_owned());
+    let algorithm = query_param_decoded(query, "algorithm").unwrap_or_else(|_| "ann".to_owned());
+    let (search_mode, results, ann_report) = match mode.as_str() {
         "keyword" => (
             "keyword",
             {
-                let text = query_param(query, "q")
-                    .map(str::to_owned)
+                let text = query_param_decoded(query, "q")
                     .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
-                db.search_keyword(&text, &view_for_scope(scope), SearchLimit(limit))
+                db.search_keyword(&text, &view_for_scope(&scope), SearchLimit(limit))
             },
             None,
         ),
         "vector" => {
-            let vector = query_param(query, "vector")
-                .map(str::to_owned)
+            let vector = query_param_decoded(query, "vector")
                 .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
             let vector = parse_vector_literal(&vector)?;
-            match algorithm {
+            match algorithm.as_str() {
                 "exact" => (
                     "vector_exact",
-                    db.search_vector_exact(&vector, &view_for_scope(scope), SearchLimit(limit)),
+                    db.search_vector_exact(&vector, &view_for_scope(&scope), SearchLimit(limit)),
                     None,
                 ),
                 "ann" => {
                     let outcome = db
                         .search_vector_with_report(
                             &vector,
-                            &view_for_scope(scope),
+                            &view_for_scope(&scope),
                             SearchLimit(limit),
                         )
                         .map_err(|error| error.to_string())?;
@@ -60,18 +59,17 @@ pub fn handle_ann_evaluate_shared(
     query: &str,
     body: &[u8],
 ) -> Result<String, String> {
-    let scope = query_param(query, "scope")?;
-    let limit = query_param(query, "limit")
+    let scope = query_param_decoded(query, "scope")?;
+    let limit = query_param_decoded(query, "limit")
         .ok()
-        .map(parse_limit)
+        .map(|s| parse_limit(&s))
         .transpose()?
         .unwrap_or(20);
-    let vector = query_param(query, "vector")
-        .map(str::to_owned)
+    let vector = query_param_decoded(query, "vector")
         .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
     let vector = parse_vector_literal(&vector)?;
     let response = match db
-        .evaluate_vector_ann(&vector, &view_for_scope(scope), SearchLimit(limit))
+        .evaluate_vector_ann(&vector, &view_for_scope(&scope), SearchLimit(limit))
         .map_err(|error| error.to_string())?
     {
         Some(report) => AnnEvaluationResponse {
@@ -138,12 +136,4 @@ fn parse_limit(value: &str) -> Result<usize, String> {
         .parse::<usize>()
         .map(|limit| limit.max(1))
         .map_err(|_| "limit must be usize".to_owned())
-}
-
-fn query_param<'a>(query: &'a str, key: &str) -> Result<&'a str, String> {
-    let prefix = format!("{key}=");
-    query
-        .split('&')
-        .find_map(|pair| pair.strip_prefix(&prefix))
-        .ok_or_else(|| format!("missing {key}"))
 }

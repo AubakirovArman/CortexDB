@@ -7,16 +7,17 @@ use crate::responses::{
     EvidenceResponse, GuardResponse, NumericConflictResponse, RememberResponse,
     VerificationReportResponse,
 };
+use crate::router::query_param_decoded;
 
 pub fn handle_remember_shared(
     db: &mut Database,
     query: &str,
     body: &[u8],
 ) -> Result<String, String> {
-    let scope = query_param(query, "scope")?;
-    let mut view = view_for_scope(scope);
+    let scope = query_param_decoded(query, "scope")?;
+    let mut view = view_for_scope(&scope);
     view.allow_remember = true;
-    view.writable_scopes = std::collections::BTreeSet::from([cortex_engine::scope_id(scope)]);
+    view.writable_scopes = std::collections::BTreeSet::from([cortex_engine::scope_id(&scope)]);
     let aql = String::from_utf8_lossy(body);
     let result = db
         .remember_aql(&aql, &view)
@@ -30,8 +31,8 @@ pub fn handle_remember_shared(
 }
 
 pub fn handle_verify_shared(db: &Database, query: &str, body: &[u8]) -> Result<String, String> {
-    let scope = query_param(query, "scope")?;
-    let mut view = view_for_scope(scope);
+    let scope = query_param_decoded(query, "scope")?;
+    let mut view = view_for_scope(&scope);
     view.allow_verify_fact = true;
     let aql = String::from_utf8_lossy(body);
     let report = db
@@ -177,12 +178,4 @@ fn format_display(raw: &str, currency: Option<&str>) -> String {
         return format!("{} {}", raw, c);
     }
     raw.to_owned()
-}
-
-fn query_param<'a>(query: &'a str, key: &str) -> Result<&'a str, String> {
-    let prefix = format!("{key}=");
-    query
-        .split('&')
-        .find_map(|pair| pair.strip_prefix(&prefix))
-        .ok_or_else(|| format!("missing {key}"))
 }

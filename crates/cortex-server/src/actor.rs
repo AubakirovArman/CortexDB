@@ -7,8 +7,6 @@ use cortex_engine::Database;
 use crate::responses::RouterError;
 use crate::router::route_database;
 
-const ACTOR_QUEUE_CAPACITY: usize = 1024;
-
 enum ActorCommand {
     Route {
         method: String,
@@ -26,8 +24,12 @@ pub struct DatabaseActor {
 
 impl DatabaseActor {
     pub fn open(path: &Path) -> std::io::Result<Self> {
+        Self::open_with_capacity(path, 1024)
+    }
+
+    pub fn open_with_capacity(path: &Path, capacity: usize) -> std::io::Result<Self> {
         let db = Database::open(path).map_err(|error| std::io::Error::other(error.to_string()))?;
-        let (tx, rx) = mpsc::sync_channel::<ActorCommand>(ACTOR_QUEUE_CAPACITY);
+        let (tx, rx) = mpsc::sync_channel::<ActorCommand>(capacity);
         let worker = std::thread::spawn(move || {
             let mut db = db;
             while let Ok(command) = rx.recv() {
@@ -76,7 +78,8 @@ impl DatabaseActor {
 
 impl Drop for DatabaseActor {
     fn drop(&mut self) {
-        let _ = self.tx.send(ActorCommand::Shutdown);
+        // Use try_send so shutdown never blocks even if the queue is full.
+        let _ = self.tx.try_send(ActorCommand::Shutdown);
         if let Ok(mut worker) = self.worker.lock() {
             if let Some(handle) = worker.take() {
                 let _ = handle.join();

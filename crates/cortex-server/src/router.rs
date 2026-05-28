@@ -244,6 +244,28 @@ pub fn query_param_opt<'a>(query: &'a str, key: &str) -> Option<&'a str> {
     query.split('&').find_map(|pair| pair.strip_prefix(&prefix))
 }
 
+/// Returns the percent-decoded value of a query parameter.
+/// Falls back to the raw value if decoding fails.
+pub fn query_param_decoded(query: &str, key: &str) -> Result<String, String> {
+    let raw = query_param(query, key)?;
+    decode_percent(raw)
+}
+
+/// Returns the percent-decoded value of an optional query parameter.
+/// Falls back to the raw value if decoding fails.
+pub fn query_param_opt_decoded(query: &str, key: &str) -> Option<String> {
+    query_param_opt(query, key).and_then(|raw| decode_percent(raw).ok())
+}
+
+fn decode_percent(raw: &str) -> Result<String, String> {
+    // Replace '+' with space for application/x-www-form-urlencoded compatibility
+    let normalized = raw.replace('+', " ");
+    percent_encoding::percent_decode_str(&normalized)
+        .decode_utf8()
+        .map(|cow| cow.into_owned())
+        .map_err(|e| format!("invalid percent-encoding: {e}"))
+}
+
 pub fn cell_id(query: &str) -> Result<CellId, String> {
     query_param(query, "cell_id")?
         .parse::<u64>()

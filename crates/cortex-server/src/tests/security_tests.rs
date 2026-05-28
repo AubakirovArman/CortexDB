@@ -5,6 +5,7 @@ fn v1_api_requires_bearer_token_when_configured() {
     let dir = tempfile::tempdir().unwrap();
     let options = ServerOptions {
         auth_token: Some("secret".to_owned()),
+        ..Default::default()
     };
     let denied = handle_http_with_options(dir.path(), "GET /v1/health HTTP/1.1\r\n\r\n", &options);
     assert!(denied.contains("401 Unauthorized"));
@@ -82,9 +83,11 @@ fn test_tenant_validation_unit_cases() {
     assert!(crate::validate_tenant_id("tenant1"));
     assert!(crate::validate_tenant_id("tenant-1"));
     assert!(crate::validate_tenant_id("tenant_1"));
-    assert!(crate::validate_tenant_id("tenant:1"));
     assert!(crate::validate_tenant_id("project_1"));
-    assert!(crate::validate_tenant_id("project:investments"));
+    // tenant:1 and project:investments are now rejected because ':' is
+    // disallowed for cross-platform safety (Windows reserves it in paths).
+    assert!(!crate::validate_tenant_id("tenant:1"));
+    assert!(!crate::validate_tenant_id("project:investments"));
 
     // Rejected — path traversal patterns
     assert!(!crate::validate_tenant_id("../../escape"));
@@ -103,6 +106,31 @@ fn test_tenant_validation_unit_cases() {
     assert!(!crate::validate_tenant_id("tenant@home"));
     assert!(!crate::validate_tenant_id("tenant space"));
     assert!(!crate::validate_tenant_id("tenant\nline"));
+    assert!(!crate::validate_tenant_id("tenant:alpha"));
+}
+
+#[test]
+fn test_query_param_percent_decoding() {
+    // Scope with colon
+    assert_eq!(
+        crate::router::query_param_decoded("scope=project%3Ainvestments", "scope").unwrap(),
+        "project:investments"
+    );
+    // Search query with space
+    assert_eq!(
+        crate::router::query_param_decoded("q=Solar%20Plant", "q").unwrap(),
+        "Solar Plant"
+    );
+    // Plus sign (common form encoding)
+    assert_eq!(
+        crate::router::query_param_decoded("q=Solar+Plant", "q").unwrap(),
+        "Solar Plant"
+    );
+    // Unencoded value passes through
+    assert_eq!(
+        crate::router::query_param_decoded("scope=finance", "scope").unwrap(),
+        "finance"
+    );
 }
 
 #[test]

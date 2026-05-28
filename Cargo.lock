@@ -378,6 +378,7 @@ dependencies = [
  "cortex-core",
  "cortex-engine",
  "insta",
+ "percent-encoding",
  "serde",
  "serde_json",
  "tempfile",
