@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### P1 (Alpha Polish)
+
+- Added `POST /v1/search/explain` endpoint — returns tokenized query terms and per-cell
+  score breakdown (total, lexical, vector scores + payload preview).
+- Added `?format=prometheus` to `GET /v1/metrics` — outputs 13 metrics in Prometheus
+  text exposition format with `# HELP`/`# TYPE` annotations.
+- Added `docs/AUTH.md` — Bearer token authentication guide with SDK examples.
+- Added `docs/API_CHANGELOG.md` — version tracking from alpha through alpha.3.
+- Added `docs/CLI.md` — full reference for 20+ CLI commands with examples.
+- Added `docs/VERIFY_FACT.md` — how numeric conflict detection works, verdict taxonomy,
+  and alpha limitations.
+- Improved CLI error messages with actionable advice (suggest `repair`, `unlock --force`,
+  check AQL syntax, etc.).
+
+### P2 (Quality & Test Coverage)
+
+- Added field weights tests: `title_field_weights_six_times_body`,
+  `source_field_weights_same_as_body`.
+- Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,
+  limit respect after fusion.
+- Made ingestion jobs fully persistent via HTTP: all `POST /v1/ingest/*` endpoints now
+  create tracked jobs, `GET /v1/ingest/jobs` lists all jobs, `IngestResponse` includes
+  `job_id`. Added `seed_next_id_from_disk()` to prevent ID collisions across restarts.
+- Verified ContextPack benchmark: 1K cells = ~15ms, 10K cells = ~1s.
+- SDK tenant/auth support confirmed complete (Python/TS/Rust already supported).
+
+### Earlier
+
 - Added engine-level `NumericValue` parser with magnitude/unit/currency support for verification.
 - Refactored verification guards and server memory layer to delegate numeric formatting to engine.
 - Added snapshot/golden API response tests for all public endpoints (health, stats, cell, context,
