@@ -352,6 +352,35 @@ pub fn search(path: &str, scope: &str, query: &str, json: bool) -> Result<String
     }
 }
 
+pub fn search_explain(path: &str, scope: &str, query: &str, mode: &str) -> Result<String, String> {
+    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let diagnostics = db.search_diagnostics(query).map_err(fmt_engine_error)?;
+    let results = match mode {
+        "keyword" => db.search_keyword(query, &view_for_scope(scope), SearchLimit(20)),
+        "vector" => {
+            let v = parse_vector_literal(query)?;
+            db.search_vector(&v, &view_for_scope(scope), SearchLimit(20))
+        }
+        _ => return Err("mode must be keyword or vector".to_owned()),
+    }
+    .map_err(fmt_engine_error)?;
+    let mut lines = vec![diagnostics];
+    for r in &results {
+        lines.push(format!(
+            "cell_id={} score={} lexical={} vector={} preview={}",
+            r.cell_id.0,
+            r.score,
+            r.lexical_score,
+            r.vector_score,
+            String::from_utf8_lossy(&r.payload)
+                .chars()
+                .take(80)
+                .collect::<String>()
+        ));
+    }
+    Ok(lines.join("\n"))
+}
+
 pub fn search_vector(path: &str, scope: &str, vector: &str, exact: bool) -> Result<String, String> {
     let vector = parse_vector_literal(vector)?;
     let db = Database::open(path).map_err(fmt_engine_error)?;

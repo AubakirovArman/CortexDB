@@ -133,6 +133,13 @@ enum Command {
         scope: String,
         vector: String,
     },
+    SearchExplain {
+        path: String,
+        scope: String,
+        query: String,
+        #[arg(long, default_value = "keyword")]
+        mode: String,
+    },
     Unlock {
         path: String,
         #[arg(long)]
@@ -243,6 +250,12 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             scope,
             vector,
         } => ann::search_vector_eval(resolved(&path).to_str().unwrap(), &scope, &vector, cli.json),
+        Command::SearchExplain {
+            path,
+            scope,
+            query,
+            mode,
+        } => ops::search_explain(resolved(&path).to_str().unwrap(), &scope, &query, &mode),
         Command::Unlock { path, force } => ops::unlock(resolved(&path).to_str().unwrap(), force),
         Command::LoadFixture { path, fixture_path } => {
             ingest::load_fixture(resolved(&path).to_str().unwrap(), &fixture_path)
