@@ -882,6 +882,24 @@ components:
           - scope_mismatch
         message:
           type: string
+    GuardResponse:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        cell_id:
+          anyOf:
+          - type: integer
+            format: uint64
+          - type: 'null'
+        code:
+          type: string
+          enum:
+          - missing_citation
+          - numeric_mismatch
+        message:
+          type: string
     RememberResponse:
       type: object
       required:
@@ -928,7 +946,7 @@ components:
         guards:
           type: array
           items:
-            type: object
+            $ref: '#/components/schemas/GuardResponse'
         supporting:
           type: array
           items:

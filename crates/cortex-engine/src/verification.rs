@@ -40,10 +40,25 @@ pub struct VerificationReport {
     pub guards: Vec<VerificationGuard>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VerificationGuardCode {
+    MissingCitation,
+    NumericMismatch,
+}
+
+impl VerificationGuardCode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::MissingCitation => "missing_citation",
+            Self::NumericMismatch => "numeric_mismatch",
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VerificationGuard {
     pub cell_id: Option<CellId>,
-    pub code: &'static str,
+    pub code: VerificationGuardCode,
     pub message: String,
 }
 

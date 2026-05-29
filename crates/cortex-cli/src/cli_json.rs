@@ -31,7 +31,9 @@ pub(crate) fn verification_report_to_json(report: &VerificationReport, db: &Data
     let numeric_conflicts = report
         .guards
         .iter()
-        .filter(|guard| guard.code == "numeric_mismatch")
+        .filter(|guard| {
+            guard.code == cortex_engine::verification::VerificationGuardCode::NumericMismatch
+        })
         .filter_map(|guard| guard.cell_id)
         .filter_map(|cell_id| db.get_latest_cell(cell_id))
         .filter_map(|payload| extract_numeric_conflict(&report.fact, &payload))

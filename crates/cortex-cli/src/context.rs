@@ -82,7 +82,7 @@ pub(crate) fn format_verification_report(report: &VerificationReport) -> String 
     lines.extend(report.guards.iter().map(|guard| {
         format!(
             "guard={} cell_id={} message={}",
-            guard.code,
+            guard.code.as_str(),
             guard
                 .cell_id
                 .map(|cell_id| cell_id.0.to_string())

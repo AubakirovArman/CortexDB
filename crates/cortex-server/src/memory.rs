@@ -139,14 +139,14 @@ fn map_verification_report(
         .iter()
         .map(|g| GuardResponse {
             cell_id: g.cell_id.map(|cid| cid.0),
-            code: g.code.to_string(),
+            code: g.code.as_str().to_owned(),
             message: g.message.clone(),
         })
         .collect();
 
     let mut numeric_conflicts = Vec::new();
     for guard in &report.guards {
-        if guard.code == "numeric_mismatch" {
+        if guard.code == cortex_engine::verification::VerificationGuardCode::NumericMismatch {
             if let Some(cell_id) = guard.cell_id {
                 if let Some(payload) = db.get_latest_cell(cell_id) {
                     if let Some(conflict) = extract_numeric_conflict(&report.fact, &payload) {

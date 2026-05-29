@@ -1,6 +1,6 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
-use cortex_engine::verification::VerificationStatus;
+use cortex_engine::verification::{VerificationGuardCode, VerificationStatus};
 use cortex_engine::{scope_id, Database};
 use std::collections::BTreeSet;
 
@@ -19,7 +19,10 @@ fn verify_fact_reports_missing_citation_guard() {
         .unwrap();
 
     assert_eq!(report.status, VerificationStatus::Supported);
-    assert_eq!(report.guards[0].code, "missing_citation");
+    assert_eq!(
+        report.guards[0].code,
+        VerificationGuardCode::MissingCitation
+    );
     assert_eq!(report.guards[0].cell_id, Some(CellId(1)));
 }
 
@@ -43,7 +46,10 @@ fn verify_fact_reports_numeric_mismatch_guard_as_contradiction() {
     assert_eq!(report.status, VerificationStatus::Contradicted);
     assert!(report.evidence.is_empty());
     assert_eq!(report.contradicting_evidence[0].cell_id, CellId(1));
-    assert_eq!(report.guards[0].code, "numeric_mismatch");
+    assert_eq!(
+        report.guards[0].code,
+        VerificationGuardCode::NumericMismatch
+    );
 }
 
 #[test]
@@ -88,7 +94,10 @@ fn verify_fact_reports_numeric_mismatch_even_with_shared_year() {
         .unwrap();
 
     assert_eq!(report.status, VerificationStatus::Contradicted);
-    assert_eq!(report.guards[0].code, "numeric_mismatch");
+    assert_eq!(
+        report.guards[0].code,
+        VerificationGuardCode::NumericMismatch
+    );
 }
 
 fn fact_cell(source: Option<&str>, body: &str) -> KnowledgeCell {

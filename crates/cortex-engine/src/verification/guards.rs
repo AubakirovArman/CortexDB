@@ -7,7 +7,7 @@ use super::{VerificationEvidence, VerificationGuard};
 pub(super) fn citation_guard(evidence: &VerificationEvidence) -> Option<VerificationGuard> {
     evidence.citation.is_none().then(|| VerificationGuard {
         cell_id: Some(evidence.cell_id),
-        code: "missing_citation",
+        code: crate::verification::VerificationGuardCode::MissingCitation,
         message: "supporting evidence has no source= or citation=".to_owned(),
     })
 }
@@ -19,7 +19,7 @@ pub(super) fn numeric_mismatch_guard(
 ) -> Option<VerificationGuard> {
     numeric_mismatch(fact, payload).map(|_| VerificationGuard {
         cell_id: Some(evidence.cell_id),
-        code: "numeric_mismatch",
+        code: crate::verification::VerificationGuardCode::NumericMismatch,
         message: "payload numeric claim differs from fact numeric claim".to_owned(),
     })
 }
