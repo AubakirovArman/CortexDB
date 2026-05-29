@@ -11,8 +11,22 @@ struct Cli {
         help = "Print machine-readable JSON when supported"
     )]
     json: bool,
+    #[arg(
+        long,
+        global = true,
+        help = "Tenant realm (subdirectory under realms/)"
+    )]
+    tenant: Option<String>,
     #[command(subcommand)]
     command: Command,
+}
+
+fn resolve_path(path: &str, tenant: Option<&str>) -> std::path::PathBuf {
+    let base = std::path::PathBuf::from(path);
+    match tenant {
+        Some(t) if t != "default" => base.join("realms").join(t),
+        _ => base,
+    }
 }
 
 #[derive(Subcommand, Debug)]
@@ -158,9 +172,10 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         }
         Err(err) => return Err(err.to_string()),
     };
+    let resolved = |p: &str| resolve_path(p, cli.tenant.as_deref());
     match cli.command {
         Command::Demo => ops::run_demo(),
-        Command::Doctor { path } => ops::doctor(&path),
+        Command::Doctor { path } => ops::doctor(resolved(&path).to_str().unwrap()),
         Command::Completions { shell } => {
             let mut cmd = <Cli as clap::CommandFactory>::command();
             let name = cmd.get_name().to_owned();
@@ -172,46 +187,74 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             path,
             cell_id,
             payload,
-        } => ops::put(&path, &cell_id, &payload),
-        Command::Get { path, cell_id } => ops::get(&path, &cell_id),
-        Command::Tombstone { path, cell_id } => ops::tombstone(&path, &cell_id),
-        Command::Flush { path } => ops::flush(&path),
-        Command::Compact { path } => ops::compact(&path),
-        Command::Stats { path } => ops::stats(&path, cli.json),
-        Command::Validate { path } => ops::validate(&path, cli.json),
-        Command::AnnValidate { path } => ops::ann_validate(&path, cli.json),
-        Command::Repair { path } => ops::repair(&path),
-        Command::GcRetired { path } => ops::gc_retired(&path),
-        Command::WalValidate { path } => ops::wal_validate(&path),
-        Command::WalDump { path } => ops::wal_dump(&path),
-        Command::WalTruncate { path } => ops::wal_truncate(&path),
-        Command::ManifestDump { path } => ops::manifest_dump(&path),
-        Command::ManifestValidate { path } => ops::manifest_validate(&path),
-        Command::Context { path, scope, aql } => ops::context(&path, &scope, &aql, cli.json),
-        Command::Remember { path, scope, aql } => ops::remember(&path, &scope, &aql),
-        Command::Forget { path, cell_id } => ops::forget(&path, &cell_id),
-        Command::Verify { path, scope, aql } => ops::verify(&path, &scope, &aql, cli.json),
-        Command::Aql { path, scope, aql } => ops::aql(&path, &scope, &aql),
-        Command::Search { path, scope, query } => ops::search(&path, &scope, &query),
+        } => ops::put(resolved(&path).to_str().unwrap(), &cell_id, &payload),
+        Command::Get { path, cell_id } => {
+            ops::get(resolved(&path).to_str().unwrap(), &cell_id, cli.json)
+        }
+        Command::Tombstone { path, cell_id } => {
+            ops::tombstone(resolved(&path).to_str().unwrap(), &cell_id)
+        }
+        Command::Flush { path } => ops::flush(resolved(&path).to_str().unwrap()),
+        Command::Compact { path } => ops::compact(resolved(&path).to_str().unwrap()),
+        Command::Stats { path } => ops::stats(resolved(&path).to_str().unwrap(), cli.json),
+        Command::Validate { path } => ops::validate(resolved(&path).to_str().unwrap(), cli.json),
+        Command::AnnValidate { path } => {
+            ops::ann_validate(resolved(&path).to_str().unwrap(), cli.json)
+        }
+        Command::Repair { path } => ops::repair(resolved(&path).to_str().unwrap()),
+        Command::GcRetired { path } => ops::gc_retired(resolved(&path).to_str().unwrap()),
+        Command::WalValidate { path } => ops::wal_validate(resolved(&path).to_str().unwrap()),
+        Command::WalDump { path } => ops::wal_dump(resolved(&path).to_str().unwrap()),
+        Command::WalTruncate { path } => ops::wal_truncate(resolved(&path).to_str().unwrap()),
+        Command::ManifestDump { path } => ops::manifest_dump(resolved(&path).to_str().unwrap()),
+        Command::ManifestValidate { path } => {
+            ops::manifest_validate(resolved(&path).to_str().unwrap())
+        }
+        Command::Context { path, scope, aql } => {
+            ops::context(resolved(&path).to_str().unwrap(), &scope, &aql, cli.json)
+        }
+        Command::Remember { path, scope, aql } => {
+            ops::remember(resolved(&path).to_str().unwrap(), &scope, &aql, cli.json)
+        }
+        Command::Forget { path, cell_id } => {
+            ops::forget(resolved(&path).to_str().unwrap(), &cell_id, cli.json)
+        }
+        Command::Verify { path, scope, aql } => {
+            ops::verify(resolved(&path).to_str().unwrap(), &scope, &aql, cli.json)
+        }
+        Command::Aql { path, scope, aql } => {
+            ops::aql(resolved(&path).to_str().unwrap(), &scope, &aql, cli.json)
+        }
+        Command::Search { path, scope, query } => {
+            ops::search(resolved(&path).to_str().unwrap(), &scope, &query, cli.json)
+        }
         Command::SearchVector {
             path,
             scope,
             vector,
-        } => ops::search_vector(&path, &scope, &vector, false),
+        } => ops::search_vector(resolved(&path).to_str().unwrap(), &scope, &vector, false),
         Command::SearchVectorExact {
             path,
             scope,
             vector,
-        } => ops::search_vector(&path, &scope, &vector, true),
+        } => ops::search_vector(resolved(&path).to_str().unwrap(), &scope, &vector, true),
         Command::SearchVectorEval {
             path,
             scope,
             vector,
-        } => ann::search_vector_eval(&path, &scope, &vector, cli.json),
-        Command::Unlock { path, force } => ops::unlock(&path, force),
-        Command::LoadFixture { path, fixture_path } => ingest::load_fixture(&path, &fixture_path),
-        Command::IngestText { path, scope, file } => ingest::text(&path, &scope, &file),
-        Command::IngestJson { path, scope, file } => ingest::json(&path, &scope, &file),
-        Command::IngestCsv { path, scope, file } => ingest::csv(&path, &scope, &file),
+        } => ann::search_vector_eval(resolved(&path).to_str().unwrap(), &scope, &vector, cli.json),
+        Command::Unlock { path, force } => ops::unlock(resolved(&path).to_str().unwrap(), force),
+        Command::LoadFixture { path, fixture_path } => {
+            ingest::load_fixture(resolved(&path).to_str().unwrap(), &fixture_path)
+        }
+        Command::IngestText { path, scope, file } => {
+            ingest::text(resolved(&path).to_str().unwrap(), &scope, &file)
+        }
+        Command::IngestJson { path, scope, file } => {
+            ingest::json(resolved(&path).to_str().unwrap(), &scope, &file)
+        }
+        Command::IngestCsv { path, scope, file } => {
+            ingest::csv(resolved(&path).to_str().unwrap(), &scope, &file)
+        }
     }
 }

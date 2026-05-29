@@ -59,8 +59,10 @@ impl ServerOptions {
 /// preventing path traversal attacks.
 ///
 /// Allowed characters are ASCII alphanumeric, `_`, and `-`. Length must be between 1 and 64.
-/// `:` is intentionally disallowed in tenant IDs to ensure cross-platform safety
-/// (Windows reserves `:` in file paths), even though Linux permits it.
+/// `:` is intentionally disallowed in tenant IDs because a tenant maps directly
+/// to a directory name on disk, whereas `:` is reserved for logical scope
+/// namespaces (e.g., `project:investments`). This keeps the filesystem
+/// boundary clean and prevents accidental scope/tenant collisions.
 pub fn validate_tenant_id(tenant: &str) -> bool {
     if tenant.is_empty() || tenant.len() > 64 {
         return false;

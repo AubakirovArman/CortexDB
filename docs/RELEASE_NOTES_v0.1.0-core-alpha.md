@@ -97,9 +97,9 @@ which includes:
 
 and after the GitHub Actions `Rust` workflow is green on stable and beta.
 
-Latest local evidence: `make release-check` passed on 2026-05-28, including
+Latest local evidence: `make release-check` passed on 2026-05-29, including
 workspace check, all-features tests, formatting, clippy with `-D warnings`, SDK
 smoke checks, OpenAPI contract validation, SDK contract validation, the core
-benchmark matrix, CLI smoke tests, server smoke tests, and the upgraded
-investment projects demo (search + AQL + ContextPack + Verify with numeric
-conflict detection).
+benchmark matrix, CLI smoke tests, server smoke tests, API snapshot tests, and
+the upgraded investment projects demo (search + AQL + ContextPack + Verify with
+numeric conflict detection).

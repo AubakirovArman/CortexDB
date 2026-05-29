@@ -133,13 +133,19 @@ pub fn put(path: &str, cell_id: &str, payload: &str) -> Result<String, String> {
     Ok(format!("seq={}", seq.0))
 }
 
-pub fn get(path: &str, cell_id: &str) -> Result<String, String> {
+pub fn get(path: &str, cell_id: &str, json: bool) -> Result<String, String> {
     let cell_id = parse_cell_id(cell_id)?;
     let db = Database::open(path).map_err(fmt_engine_error)?;
-    Ok(db
-        .get_latest_cell(cell_id)
-        .map(|payload| String::from_utf8_lossy(&payload).into_owned())
-        .unwrap_or_else(|| "null".to_owned()))
+    match db.get_latest_cell(cell_id) {
+        Some(payload) => {
+            if json {
+                Ok(crate::cli_json::cell_to_json(cell_id.0, 0, &payload))
+            } else {
+                Ok(String::from_utf8_lossy(&payload).into_owned())
+            }
+        }
+        None => Ok("null".to_owned()),
+    }
 }
 
 pub fn tombstone(path: &str, cell_id: &str) -> Result<String, String> {
@@ -279,27 +285,35 @@ pub fn context(path: &str, scope: &str, aql: &str, json: bool) -> Result<String,
     }
 }
 
-pub fn forget(path: &str, cell_id: &str) -> Result<String, String> {
+pub fn forget(path: &str, cell_id: &str, json: bool) -> Result<String, String> {
     let cell_id = parse_cell_id(cell_id)?;
     let mut db = Database::open(path).map_err(fmt_engine_error)?;
     db.forget_cell(cell_id).map_err(fmt_engine_error)?;
-    Ok(format!("cell_id={} forgotten (tombstoned)", cell_id.0))
+    if json {
+        Ok(crate::cli_json::cell_to_json(cell_id.0, 0, b""))
+    } else {
+        Ok(format!("cell_id={} forgotten (tombstoned)", cell_id.0))
+    }
 }
 
-pub fn remember(path: &str, scope: &str, aql: &str) -> Result<String, String> {
+pub fn remember(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, String> {
     let mut db = Database::open(path).map_err(fmt_engine_error)?;
     let result = db
         .remember_aql(aql, &remember_view_for_scope(scope))
         .map_err(fmt_engine_error)?;
-    Ok(format!(
-        "seq={} cell_id={} ttl_seconds={}",
-        result.commit_seq.0,
-        result.cell_id.0,
-        result
-            .ttl_seconds
-            .map(|value| value.to_string())
-            .unwrap_or_else(|| "null".to_owned())
-    ))
+    if json {
+        Ok(crate::cli_json::remember_to_json(&result))
+    } else {
+        Ok(format!(
+            "seq={} cell_id={} ttl_seconds={}",
+            result.commit_seq.0,
+            result.cell_id.0,
+            result
+                .ttl_seconds
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "null".to_owned())
+        ))
+    }
 }
 
 pub fn verify(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, String> {
@@ -314,20 +328,28 @@ pub fn verify(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, 
     }
 }
 
-pub fn aql(path: &str, scope: &str, aql: &str) -> Result<String, String> {
+pub fn aql(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, String> {
     let db = Database::open(path).map_err(fmt_engine_error)?;
     let cells = db
         .retrieve_aql(aql, &view_for_scope(scope))
         .map_err(fmt_engine_error)?;
-    Ok(format_retrieved_cells(&cells))
+    if json {
+        Ok(crate::cli_json::aql_to_json(&cells))
+    } else {
+        Ok(format_retrieved_cells(&cells))
+    }
 }
 
-pub fn search(path: &str, scope: &str, query: &str) -> Result<String, String> {
+pub fn search(path: &str, scope: &str, query: &str, json: bool) -> Result<String, String> {
     let db = Database::open(path).map_err(fmt_engine_error)?;
     let results = db
         .search_keyword(query, &view_for_scope(scope), SearchLimit(20))
         .map_err(fmt_engine_error)?;
-    Ok(format_search_results(&results))
+    if json {
+        Ok(crate::cli_json::search_to_json(&results, "keyword"))
+    } else {
+        Ok(format_search_results(&results))
+    }
 }
 
 pub fn search_vector(path: &str, scope: &str, vector: &str, exact: bool) -> Result<String, String> {

@@ -132,3 +132,43 @@ pub struct NumericConflictResponse {
     pub left: String,
     pub right: String,
 }
+
+#[derive(Serialize)]
+pub struct CellResponse {
+    pub cell_id: u64,
+    pub seq: u64,
+    pub payload: String,
+}
+
+#[derive(Serialize)]
+pub struct AqlCellResponse {
+    pub cell_id: u64,
+    pub payload: String,
+}
+
+#[derive(Serialize)]
+pub struct AqlResponse {
+    pub cells: Vec<AqlCellResponse>,
+}
+
+#[derive(Serialize)]
+pub struct SearchResultResponse {
+    pub cell_id: u64,
+    pub score: u64,
+    pub lexical_score: u64,
+    pub vector_score: u64,
+    pub payload: String,
+}
+
+#[derive(Serialize)]
+pub struct SearchResponse {
+    pub search_mode: String,
+    pub results: Vec<SearchResultResponse>,
+}
+
+#[derive(Serialize)]
+pub struct RememberResponse {
+    pub seq: u64,
+    pub cell_id: u64,
+    pub ttl_seconds: Option<u64>,
+}

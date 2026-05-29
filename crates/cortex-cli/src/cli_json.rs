@@ -3,10 +3,11 @@ use cortex_engine::{ContextPack, Database};
 use serde_json::to_string;
 
 use crate::cli_json_types::{
-    CliAnnEvaluationResponse, CliAnnSearchReportResponse, CliAnnValidateResponse, CliStatsResponse,
-    CliValidateResponse, ContextPackAnomalyResponse, ContextPackCellResponse,
-    ContextPackExplainResponse, ContextPackResponse, NumericConflictResponse, SourceRefResponse,
-    VerificationEvidenceResponse, VerificationResponse,
+    AqlCellResponse, AqlResponse, CellResponse, CliAnnEvaluationResponse,
+    CliAnnSearchReportResponse, CliAnnValidateResponse, CliStatsResponse, CliValidateResponse,
+    ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackExplainResponse,
+    ContextPackResponse, NumericConflictResponse, RememberResponse, SearchResponse,
+    SearchResultResponse, SourceRefResponse, VerificationEvidenceResponse, VerificationResponse,
 };
 
 fn serialize_or_error<T: serde::Serialize>(value: &T) -> String {
@@ -52,6 +53,53 @@ pub(crate) fn verification_report_to_json(report: &VerificationReport, db: &Data
     };
 
     serialize_or_error(&response)
+}
+
+pub(crate) fn cell_to_json(cell_id: u64, seq: u64, payload: &[u8]) -> String {
+    serialize_or_error(&CellResponse {
+        cell_id,
+        seq,
+        payload: String::from_utf8_lossy(payload).into_owned(),
+    })
+}
+
+pub(crate) fn aql_to_json(cells: &[cortex_engine::RetrievedCell]) -> String {
+    serialize_or_error(&AqlResponse {
+        cells: cells
+            .iter()
+            .map(|c| AqlCellResponse {
+                cell_id: c.cell_id.0,
+                payload: String::from_utf8_lossy(&c.payload).into_owned(),
+            })
+            .collect(),
+    })
+}
+
+pub(crate) fn search_to_json(
+    results: &[cortex_engine::search::DatabaseSearchResult],
+    search_mode: &str,
+) -> String {
+    serialize_or_error(&SearchResponse {
+        search_mode: search_mode.to_owned(),
+        results: results
+            .iter()
+            .map(|r| SearchResultResponse {
+                cell_id: r.cell_id.0,
+                score: r.score,
+                lexical_score: r.lexical_score,
+                vector_score: r.vector_score,
+                payload: String::from_utf8_lossy(&r.payload).into_owned(),
+            })
+            .collect(),
+    })
+}
+
+pub(crate) fn remember_to_json(result: &cortex_engine::ingestion::RememberedCell) -> String {
+    serialize_or_error(&RememberResponse {
+        seq: result.commit_seq.0,
+        cell_id: result.cell_id.0,
+        ttl_seconds: result.ttl_seconds,
+    })
 }
 
 pub(crate) fn stats_to_json(stats: &cortex_engine::validation::StorageStats) -> String {

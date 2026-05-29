@@ -135,6 +135,90 @@ fn snapshot_ingest_job_not_found_response_shape() {
 }
 
 #[test]
+fn snapshot_get_cell_response_shape() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:test\nstatus=ready\nsource=doc-a\n\nhello world"
+    );
+    handle_http(dir.path(), put);
+    handle_http(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n");
+    let response = handle_http(dir.path(), "GET /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n");
+    assert!(response.contains(r#""cell_id":"#));
+    assert!(response.contains(r#""payload":"#));
+}
+
+#[test]
+fn snapshot_flush_response_shape() {
+    let dir = tempfile::tempdir().unwrap();
+    handle_http(dir.path(), "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\nhello");
+    let response = handle_http(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n");
+    assert!(response.contains(r#""checkpoint_seq":"#));
+    assert!(response.contains(r#""cells_flushed":"#));
+}
+
+#[test]
+fn snapshot_context_response_shape() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:test\nstatus=ready\nsource=doc-a\n\nalpha budget proposal"
+    );
+    handle_http(dir.path(), put);
+    handle_http(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n");
+    let request = concat!(
+        "POST /v1/context?scope=project:test HTTP/1.1\r\n\r\n",
+        "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN default LIMIT 10 CANDIDATES;"
+    );
+    let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""token_budget_tokens":"#));
+    assert!(response.contains(r#""cells":"#));
+    assert!(response.contains(r#""estimated_tokens":"#));
+}
+
+#[test]
+fn snapshot_aql_response_shape() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:test\nstatus=ready\nsource=doc-a\n\nalpha budget proposal"
+    );
+    handle_http(dir.path(), put);
+    handle_http(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n");
+    let request = concat!(
+        "POST /v1/aql?scope=project:test HTTP/1.1\r\n\r\n",
+        "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN default LIMIT 10 CANDIDATES;"
+    );
+    let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""cells":"#));
+}
+
+#[test]
+fn snapshot_forget_response_shape() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:test\nstatus=ready\nsource=doc-a\n\nhello world"
+    );
+    handle_http(dir.path(), put);
+    let request = concat!("POST /v1/forget?cell_id=1 HTTP/1.1\r\n\r\n", "FORGET 1;");
+    let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""seq":"#));
+    assert!(response.contains(r#""cell_id":"#));
+}
+
+#[test]
+fn snapshot_metrics_response_shape() {
+    let dir = tempfile::tempdir().unwrap();
+    handle_http(dir.path(), "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\nhello");
+    handle_http(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n");
+    let response = handle_http(dir.path(), "GET /v1/metrics HTTP/1.1\r\n\r\n");
+    assert!(response.contains(r#""current_seq":"#));
+    assert!(response.contains(r#""checkpoint_seq":"#));
+    assert!(response.contains(r#""live_segments":"#));
+}
+
+#[test]
 fn snapshot_error_404_unknown_route_shape() {
     let dir = tempfile::tempdir().unwrap();
     let response = handle_http(dir.path(), "GET /v1/unknown HTTP/1.1\r\n\r\n");
