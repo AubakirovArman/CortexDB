@@ -1,19 +1,52 @@
-# Contributing
+# Contributing to CortexDB
 
-## Checks
+Thank you for your interest in CortexDB! This document will help you get started.
 
-Run these before opening a pull request:
+## Quick Start
 
 ```bash
-cargo test --workspace
-cargo fmt --check
-cargo clippy --workspace --all-targets -- -D warnings
+# Clone the repository
+git clone https://github.com/AubakirovArman/CortexDB.git
+cd CortexDB
+
+# Run the full quality gate
+make release-check
+
+# Run only tests
+cargo test --workspace --all-features
+
+# Run the demo
+make demo
 ```
 
-## Core Rules
+## Project Structure
 
-- Do not use floats in core scoring, policy thresholds, or persistent formats.
-- Do not silently clamp semantic constraints. Clamp operational limits only when policy says clamp.
-- Do not add `unsafe` without a specific design note and review.
-- Do not add PostgreSQL, SQLite, Qdrant, ChromaDB, Neo4j, Elasticsearch, or another database as the internal storage backend.
-- Keep source files focused. Prefer module splits before a file grows large.
+| Crate | Purpose |
+|-------|---------|
+| `crates/cortex-core` | In-memory MVCC MemTable, cell versions |
+| `crates/cortex-storage` | WAL, segments, bitmap/lexical/vector indexes |
+| `crates/cortex-engine` | Database loop, compaction, AQL, ContextPack, VERIFY FACT |
+| `crates/cortex-aql` | AQL parser, AST, binder, bytecode VM |
+| `crates/cortex-server` | Async HTTP API (Axum/Tokio) with per-tenant actors |
+| `crates/cortex-cli` | Local CLI tool |
+| `crates/cortex-sdk` | Rust HTTP client |
+
+## Before Submitting
+
+1. Run `make release-check` — it must pass.
+2. Follow existing code style (`cargo fmt`, `cargo clippy -D warnings`).
+3. Add tests for new functionality.
+4. Update OpenAPI schema (`docs/openapi.yaml`) if you change the API.
+5. Update snapshot tests if response shapes change.
+
+## Architecture Notes
+
+- **Database core is blocking**. The async server wraps it in `DatabaseActor` with a bounded queue.
+- **WAL is the source of truth**. All writes go to WAL first, then MemTable, then segments.
+- **Tenant = directory**. Each tenant maps to a subdirectory under `realms/`.
+- **Fixed-point math only**. Distance metrics use integer arithmetic (`u128::isqrt()`), no `f64` in the scoring path.
+
+## Getting Help
+
+- Open an issue for bugs or feature requests.
+- Check `docs/` for deeper architecture and design documents.

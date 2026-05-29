@@ -1,20 +1,37 @@
 ---
 name: Bug report
-about: Report a reproducible CortexDB bug
-title: "bug: "
+about: Report a bug in CortexDB
+title: '[BUG] '
 labels: bug
+assignees: ''
 ---
 
-## Summary
+## Description
 
-## Steps To Reproduce
+<!-- Clear description of the bug -->
+
+## Steps to Reproduce
+
+1. 
+2. 
+3. 
 
 ## Expected Behavior
 
+<!-- What should happen -->
+
 ## Actual Behavior
+
+<!-- What actually happens -->
 
 ## Environment
 
-- OS:
-- Rust toolchain:
-- Commit:
+- OS: 
+- Rust version: 
+- CortexDB version: 
+
+## Logs / Output
+
+```
+<!-- Paste relevant logs -->
+```

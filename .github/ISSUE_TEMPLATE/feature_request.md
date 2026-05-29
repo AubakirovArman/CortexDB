@@ -1,14 +1,23 @@
 ---
 name: Feature request
-about: Propose a focused feature
-title: "feature: "
+about: Suggest a new feature or improvement
+title: '[FEATURE] '
 labels: enhancement
+assignees: ''
 ---
 
-## Problem
+## Summary
 
-## Proposal
+<!-- Brief description of the feature -->
 
-## Non-Goals
+## Motivation
 
-## Validation
+<!-- Why is this needed? -->
+
+## Proposed Design
+
+<!-- How should it work? -->
+
+## Alternatives
+
+<!-- What else did you consider? -->
