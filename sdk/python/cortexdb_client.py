@@ -1,10 +1,40 @@
 from __future__ import annotations
 
 import json
+import time
 import urllib.parse
 import urllib.request
 from typing import Any
 from dataclasses import dataclass, field, replace
+
+
+class CortexDBError(Exception):
+    """Typed exception raised for CortexDB HTTP errors."""
+
+    def __init__(
+        self,
+        message: str,
+        code: str | None = None,
+        status: int | None = None,
+        body: str | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.status = status
+        self.body = body
+
+    @classmethod
+    def from_response(cls, status: int, body: str) -> "CortexDBError":
+        try:
+            data = json.loads(body)
+            return cls(
+                message=str(data.get("message", body)),
+                code=str(data.get("code", "unknown")),
+                status=status,
+                body=body,
+            )
+        except (json.JSONDecodeError, KeyError):
+            return cls(message=body, code=None, status=status, body=body)
 
 
 @dataclass(frozen=True)
@@ -477,9 +507,14 @@ class CortexDBClient:
     base_url: str = "http://127.0.0.1:8181"
     token: str | None = None
     tenant: str | None = None
+    max_retries: int = 0
+    retry_delay_seconds: float = 0.5
 
     def with_tenant(self, tenant: str) -> "CortexDBClient":
         return replace(self, tenant=tenant)
+
+    def with_retries(self, max_retries: int, retry_delay_seconds: float = 0.5) -> "CortexDBClient":
+        return replace(self, max_retries=max_retries, retry_delay_seconds=retry_delay_seconds)
 
     def health(self) -> dict[str, Any]:
         return self._request("GET", "/v1/health", b"")
@@ -657,14 +692,30 @@ class CortexDBClient:
         headers = {"content-type": "application/json"}
         if self.token:
             headers["authorization"] = f"Bearer {self.token}"
-        request = urllib.request.Request(
-            f"{self.base_url}{self._scoped(path)}",
-            data=body or None,
-            headers=headers,
-            method=method,
-        )
-        with urllib.request.urlopen(request, timeout=10) as response:
-            return json.loads(response.read().decode())
+        url = f"{self.base_url}{self._scoped(path)}"
+        attempt = 0
+        while True:
+            request = urllib.request.Request(url, data=body or None, headers=headers, method=method)
+            try:
+                with urllib.request.urlopen(request, timeout=10) as response:
+                    return json.loads(response.read().decode())
+            except urllib.error.HTTPError as e:
+                body_text = e.read().decode()
+                if attempt < self.max_retries and self._is_retryable(e.code):
+                    attempt += 1
+                    time.sleep(self.retry_delay_seconds * attempt)
+                    continue
+                raise CortexDBError.from_response(e.code, body_text) from None
+            except urllib.error.URLError as e:
+                if attempt < self.max_retries:
+                    attempt += 1
+                    time.sleep(self.retry_delay_seconds * attempt)
+                    continue
+                raise CortexDBError(str(e.reason), code=None, status=None, body=str(e.reason)) from None
+
+    @staticmethod
+    def _is_retryable(status: int) -> bool:
+        return status in (500, 502, 503, 504)
 
     def _scoped(self, path: str) -> str:
         if not self.tenant or self.tenant == "default":

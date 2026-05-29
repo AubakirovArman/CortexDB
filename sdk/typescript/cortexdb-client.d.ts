@@ -1,4 +1,12 @@
 export type JsonObject = Record<string, unknown>;
+
+export class CortexDBError extends Error {
+  readonly code: string | null;
+  readonly status: number | null;
+  readonly body: string | null;
+  constructor(message: string, code?: string | null, status?: number | null, body?: string | null);
+  static fromResponse(response: Response): Promise<CortexDBError>;
+}
 export type VectorAlgorithm = "ann" | "exact";
 export type SearchMode = "keyword" | "vector_exact" | "vector_ann";
 export type AnnSearchPath = "hnsw_graph" | "exact_fallback";
@@ -211,8 +219,9 @@ export interface RememberResponse {
 }
 
 export class CortexDBClient {
-  constructor(baseUrl?: string, token?: string, tenant?: string);
+  constructor(baseUrl?: string, token?: string, tenant?: string, maxRetries?: number, retryDelayMs?: number);
   withTenant(tenant: string): CortexDBClient;
+  withRetries(maxRetries: number, retryDelayMs?: number): CortexDBClient;
   health(): Promise<HealthResponse>;
   putCell(cellId: number, payload: string): Promise<PutCellResponse>;
   getCell(cellId: number): Promise<CellLookupResponse>;

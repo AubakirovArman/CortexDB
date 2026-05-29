@@ -1,14 +1,47 @@
+class CortexDBError extends Error {
+  constructor(message, code = null, status = null, body = null) {
+    super(message);
+    this.code = code;
+    this.status = status;
+    this.body = body;
+    this.name = "CortexDBError";
+  }
+  code;
+  status;
+  body;
+  static async fromResponse(response) {
+    const body = await response.text();
+    try {
+      const data = JSON.parse(body);
+      return new CortexDBError(
+        String(data.message ?? body),
+        data.code ? String(data.code) : null,
+        response.status,
+        body
+      );
+    } catch {
+      return new CortexDBError(body, null, response.status, body);
+    }
+  }
+}
 class CortexDBClient {
-  constructor(baseUrl = "http://127.0.0.1:8181", token, tenant) {
+  constructor(baseUrl = "http://127.0.0.1:8181", token, tenant, maxRetries = 0, retryDelayMs = 500) {
     this.baseUrl = baseUrl;
     this.token = token;
     this.tenant = tenant;
+    this.maxRetries = maxRetries;
+    this.retryDelayMs = retryDelayMs;
   }
   baseUrl;
   token;
   tenant;
+  maxRetries;
+  retryDelayMs;
   withTenant(tenant) {
-    return new CortexDBClient(this.baseUrl, this.token, tenant);
+    return new CortexDBClient(this.baseUrl, this.token, tenant, this.maxRetries, this.retryDelayMs);
+  }
+  withRetries(maxRetries, retryDelayMs = 500) {
+    return new CortexDBClient(this.baseUrl, this.token, this.tenant, maxRetries, retryDelayMs);
   }
   health() {
     return this.request("GET", "/v1/health");
@@ -108,9 +141,36 @@ class CortexDBClient {
       init.body = typeof body === "string" ? body : JSON.stringify(body);
       headers["content-type"] = "application/json";
     }
-    const response = await fetch(`${this.baseUrl}${this.scoped(path)}`, init);
-    if (!response.ok) throw new Error(await response.text());
-    return response.json();
+    const url = `${this.baseUrl}${this.scoped(path)}`;
+    let attempt = 0;
+    while (true) {
+      try {
+        const response = await fetch(url, init);
+        if (!response.ok) {
+          if (this.isRetryable(response.status) && attempt < this.maxRetries) {
+            attempt += 1;
+            await this.sleep(this.retryDelayMs * attempt);
+            continue;
+          }
+          throw await CortexDBError.fromResponse(response);
+        }
+        return response.json();
+      } catch (error) {
+        if (error instanceof CortexDBError) throw error;
+        if (attempt < this.maxRetries) {
+          attempt += 1;
+          await this.sleep(this.retryDelayMs * attempt);
+          continue;
+        }
+        throw error;
+      }
+    }
+  }
+  isRetryable(status) {
+    return [500, 502, 503, 504].includes(status);
+  }
+  sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
   path(path, query) {
     const params = new URLSearchParams();
@@ -126,5 +186,6 @@ class CortexDBClient {
   }
 }
 export {
-  CortexDBClient
+  CortexDBClient,
+  CortexDBError
 };

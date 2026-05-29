@@ -26,10 +26,11 @@ use http::{append_query_param, parse_response, path};
 pub use types::{
     AnnEvaluationResponse, AnnSearchReport, AqlCellResponse, AqlResponse, CellLookupResponse,
     CellResponse, ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
-    DeleteJobResponse, EvidenceResponse, ExplainResponse, GuardResponse, HealthResponse,
-    IngestResponse, IngestionJobResponse, IngestionJobStatus, NumericConflictResponse,
-    PutCellResponse, RememberResponse, SearchResponse, SearchResult, SourceRefResponse,
-    StatsResponse, ValidationResponse, VectorAlgorithm, VerificationReportResponse,
+    DeleteJobResponse, ErrorCode, ErrorResponse, EvidenceResponse, ExplainResponse, GuardResponse,
+    HealthResponse, IngestResponse, IngestionJobResponse, IngestionJobStatus,
+    NumericConflictResponse, PutCellResponse, RememberResponse, SearchResponse, SearchResult,
+    SourceRefResponse, StatsResponse, ValidationResponse, VectorAlgorithm,
+    VerificationReportResponse,
 };
 
 #[cfg(test)]
@@ -41,6 +42,8 @@ pub enum SdkError {
     Transport(String),
     #[error("http status {status}: {body}")]
     HttpStatus { status: u16, body: String },
+    #[error("cortexdb error: {0:?}")]
+    CortexDb(ErrorResponse),
     #[error("json decode error: {0}")]
     Json(#[from] serde_json::Error),
 }
@@ -63,6 +66,8 @@ pub struct CortexDbClient {
     token: Option<String>,
     tenant: Option<String>,
     agent: ureq::Agent,
+    max_retries: u32,
+    retry_delay: Duration,
 }
 
 impl CortexDbClient {
@@ -78,6 +83,8 @@ impl CortexDbClient {
             token: None,
             tenant: None,
             agent: ureq::AgentBuilder::new().timeout(timeout).build(),
+            max_retries: 0,
+            retry_delay: Duration::from_millis(500),
         }
     }
 
@@ -90,6 +97,13 @@ impl CortexDbClient {
     /// Set the tenant ID for per-tenant database routing.
     pub fn with_tenant(mut self, tenant: impl Into<String>) -> Self {
         self.tenant = Some(tenant.into());
+        self
+    }
+
+    /// Set retry behaviour for idempotent requests.
+    pub fn with_retries(mut self, max_retries: u32, retry_delay: Duration) -> Self {
+        self.max_retries = max_retries;
+        self.retry_delay = retry_delay;
         self
     }
 
@@ -363,18 +377,27 @@ impl CortexDbClient {
     }
 
     fn get(&self, path: &str) -> SdkResult<serde_json::Value> {
-        self.finish(self.authorized(self.agent.get(&self.url(path))).call())
+        self.execute(|this| {
+            this.authorized(this.agent.get(&this.url(path)))
+                .call()
+                .map_err(Box::new)
+        })
     }
 
     fn delete(&self, path: &str) -> SdkResult<serde_json::Value> {
-        self.finish(self.authorized(self.agent.delete(&self.url(path))).call())
+        self.execute(|this| {
+            this.authorized(this.agent.delete(&this.url(path)))
+                .call()
+                .map_err(Box::new)
+        })
     }
 
     fn post(&self, path: &str, body: &str) -> SdkResult<serde_json::Value> {
-        self.finish(
-            self.authorized(self.agent.post(&self.url(path)))
-                .send_string(body),
-        )
+        self.execute(|this| {
+            this.authorized(this.agent.post(&this.url(path)))
+                .send_string(body)
+                .map_err(Box::new)
+        })
     }
 
     fn authorized(&self, request: ureq::Request) -> ureq::Request {
@@ -385,15 +408,43 @@ impl CortexDbClient {
         }
     }
 
-    fn finish(&self, result: Result<ureq::Response, ureq::Error>) -> SdkResult<serde_json::Value> {
-        match result {
-            Ok(response) => parse_response(response),
-            Err(ureq::Error::Status(status, response)) => {
-                let body = response.into_string().unwrap_or_default();
-                Err(SdkError::HttpStatus { status, body })
+    fn execute(
+        &self,
+        call: impl Fn(&Self) -> Result<ureq::Response, Box<ureq::Error>>,
+    ) -> SdkResult<serde_json::Value> {
+        let mut attempt = 0u32;
+        loop {
+            match call(self) {
+                Ok(response) => return parse_response(response),
+                Err(boxed) => match *boxed {
+                    ureq::Error::Status(status, response) => {
+                        let body = response.into_string().unwrap_or_default();
+                        // Try to decode structured error response.
+                        if let Ok(error_response) = serde_json::from_str::<ErrorResponse>(&body) {
+                            return Err(SdkError::CortexDb(error_response));
+                        }
+                        if self.is_retryable(status) && attempt < self.max_retries {
+                            attempt += 1;
+                            std::thread::sleep(self.retry_delay * attempt);
+                            continue;
+                        }
+                        return Err(SdkError::HttpStatus { status, body });
+                    }
+                    error => {
+                        if attempt < self.max_retries {
+                            attempt += 1;
+                            std::thread::sleep(self.retry_delay * attempt);
+                            continue;
+                        }
+                        return Err(SdkError::Transport(error.to_string()));
+                    }
+                },
             }
-            Err(error) => Err(SdkError::Transport(error.to_string())),
         }
+    }
+
+    fn is_retryable(&self, status: u16) -> bool {
+        matches!(status, 500 | 502 | 503 | 504)
     }
 
     fn url(&self, path: &str) -> String {

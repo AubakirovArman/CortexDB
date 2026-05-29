@@ -1,4 +1,31 @@
 export type JsonObject = Record<string, unknown>;
+
+export class CortexDBError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string | null = null,
+    public readonly status: number | null = null,
+    public readonly body: string | null = null,
+  ) {
+    super(message);
+    this.name = "CortexDBError";
+  }
+
+  static async fromResponse(response: Response): Promise<CortexDBError> {
+    const body = await response.text();
+    try {
+      const data = JSON.parse(body) as JsonObject;
+      return new CortexDBError(
+        String(data.message ?? body),
+        data.code ? String(data.code) : null,
+        response.status,
+        body,
+      );
+    } catch {
+      return new CortexDBError(body, null, response.status, body);
+    }
+  }
+}
 export type VectorAlgorithm = "ann" | "exact";
 export type SearchMode = "keyword" | "vector_exact" | "vector_ann";
 export type AnnSearchPath = "hnsw_graph" | "exact_fallback";
@@ -215,10 +242,16 @@ export class CortexDBClient {
     private readonly baseUrl = "http://127.0.0.1:8181",
     private readonly token?: string,
     private readonly tenant?: string,
+    private readonly maxRetries = 0,
+    private readonly retryDelayMs = 500,
   ) {}
 
   withTenant(tenant: string): CortexDBClient {
-    return new CortexDBClient(this.baseUrl, this.token, tenant);
+    return new CortexDBClient(this.baseUrl, this.token, tenant, this.maxRetries, this.retryDelayMs);
+  }
+
+  withRetries(maxRetries: number, retryDelayMs = 500): CortexDBClient {
+    return new CortexDBClient(this.baseUrl, this.token, this.tenant, maxRetries, retryDelayMs);
   }
 
   health(): Promise<HealthResponse> {
@@ -350,9 +383,38 @@ export class CortexDBClient {
       init.body = typeof body === "string" ? body : JSON.stringify(body);
       headers["content-type"] = "application/json";
     }
-    const response = await fetch(`${this.baseUrl}${this.scoped(path)}`, init);
-    if (!response.ok) throw new Error(await response.text());
-    return response.json();
+    const url = `${this.baseUrl}${this.scoped(path)}`;
+    let attempt = 0;
+    while (true) {
+      try {
+        const response = await fetch(url, init);
+        if (!response.ok) {
+          if (this.isRetryable(response.status) && attempt < this.maxRetries) {
+            attempt += 1;
+            await this.sleep(this.retryDelayMs * attempt);
+            continue;
+          }
+          throw await CortexDBError.fromResponse(response);
+        }
+        return response.json();
+      } catch (error) {
+        if (error instanceof CortexDBError) throw error;
+        if (attempt < this.maxRetries) {
+          attempt += 1;
+          await this.sleep(this.retryDelayMs * attempt);
+          continue;
+        }
+        throw error;
+      }
+    }
+  }
+
+  private isRetryable(status: number): boolean {
+    return [500, 502, 503, 504].includes(status);
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private path(path: string, query: Record<string, string | number>): string {
