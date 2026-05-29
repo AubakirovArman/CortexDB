@@ -1,11 +1,13 @@
-use cortex_engine::{parse_vector_literal, AnnSearchReport, Database, SearchLimit};
+use cortex_engine::{
+    parse_vector_literal, AnnSearchPolicy, AnnSearchReport, Database, SearchLimit,
+};
 
 use crate::context::view_for_scope;
 use crate::responses::{
     AnnEvaluationResponse, AnnSearchReportResponse, SearchExplainItemResponse,
     SearchExplainResponse, SearchResponse, SearchResultResponse,
 };
-use crate::router::query_param_decoded;
+use crate::router::{query_param_decoded, query_param_opt};
 
 pub fn handle_search_explain_shared(
     db: &Database,
@@ -79,14 +81,19 @@ pub fn handle_search_shared(db: &Database, query: &str, body: &[u8]) -> Result<S
         .unwrap_or(20);
     let mode = query_param_decoded(query, "mode").unwrap_or_else(|_| "keyword".to_owned());
     let algorithm = query_param_decoded(query, "algorithm").unwrap_or_else(|_| "ann".to_owned());
+    let ann_policy = parse_ann_policy(query)?;
+    let view = view_for_scope(&scope);
+
     let (search_mode, results, ann_report) = match mode.as_str() {
         "keyword" => (
             "keyword",
-            {
-                let text = query_param_decoded(query, "q")
-                    .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
-                db.search_keyword(&text, &view_for_scope(&scope), SearchLimit(limit))
-            },
+            db.search_keyword(
+                &query_param_decoded(query, "q")
+                    .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned()),
+                &view,
+                SearchLimit(limit),
+            )
+            .map_err(|error| error.to_string())?,
             None,
         ),
         "vector" => {
@@ -96,15 +103,17 @@ pub fn handle_search_shared(db: &Database, query: &str, body: &[u8]) -> Result<S
             match algorithm.as_str() {
                 "exact" => (
                     "vector_exact",
-                    db.search_vector_exact(&vector, &view_for_scope(&scope), SearchLimit(limit)),
+                    db.search_vector_exact(&vector, &view, SearchLimit(limit))
+                        .map_err(|error| error.to_string())?,
                     None,
                 ),
                 "ann" => {
                     let outcome = db
-                        .search_vector_with_report(
+                        .search_vector_with_report_with_policy(
                             &vector,
-                            &view_for_scope(&scope),
+                            &view,
                             SearchLimit(limit),
+                            ann_policy,
                         )
                         .map_err(|error| error.to_string())?;
                     return encode_response("vector_ann", outcome.results, outcome.ann_report);
@@ -114,7 +123,7 @@ pub fn handle_search_shared(db: &Database, query: &str, body: &[u8]) -> Result<S
         }
         _ => return Err("mode must be keyword or vector".to_owned()),
     };
-    let results = results.map_err(|error| error.to_string())?;
+
     encode_response(search_mode, results, ann_report)
 }
 
@@ -133,7 +142,12 @@ pub fn handle_ann_evaluate_shared(
         .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
     let vector = parse_vector_literal(&vector)?;
     let response = match db
-        .evaluate_vector_ann(&vector, &view_for_scope(&scope), SearchLimit(limit))
+        .evaluate_vector_ann_with_policy(
+            &vector,
+            &view_for_scope(&scope),
+            SearchLimit(limit),
+            parse_ann_policy(query)?,
+        )
         .map_err(|error| error.to_string())?
     {
         Some(report) => AnnEvaluationResponse {
@@ -193,6 +207,71 @@ fn report_response(report: AnnSearchReport) -> AnnSearchReportResponse {
         recall_q16: report.recall_q16,
         min_recall_q16: report.min_recall_q16,
     }
+}
+
+fn parse_ann_policy(query: &str) -> Result<AnnSearchPolicy, String> {
+    let default_policy = AnnSearchPolicy::default();
+    let fallback = query_param_opt(query, "fallback")
+        .map(parse_bool)
+        .transpose()?
+        .unwrap_or(default_policy.fallback);
+    let fallback_scan_cap = query_param_opt(query, "fallback_scan_cap")
+        .map(|value| {
+            value
+                .parse::<usize>()
+                .map_err(|_| "fallback_scan_cap must be usize".to_owned())
+        })
+        .transpose()?;
+    let min_recall_q16 = query_param_opt(query, "min_recall")
+        .map(parse_min_recall_q16)
+        .transpose()?
+        .or(default_policy.min_recall_q16);
+
+    Ok(AnnSearchPolicy {
+        min_recall_q16,
+        fallback,
+        fallback_scan_cap,
+    })
+}
+
+fn parse_bool(value: &str) -> Result<bool, String> {
+    match value.to_ascii_lowercase().as_str() {
+        "true" | "1" | "yes" | "on" => Ok(true),
+        "false" | "0" | "no" | "off" => Ok(false),
+        _ => Err("fallback must be true/false".to_owned()),
+    }
+}
+
+fn parse_min_recall_q16(value: &str) -> Result<u16, String> {
+    let normalized = value.trim();
+    let ratio = if normalized.ends_with('%') {
+        let percent =
+            parse_percent_without_unit(&normalized[..normalized.len().saturating_sub(1)])?;
+        percent / 100.0
+    } else {
+        let number = normalized.parse::<f64>().map_err(|_| {
+            "min_recall must be a decimal fraction, percentage, or integer q16".to_owned()
+        })?;
+        if number > 1.0 && number <= 100.0 {
+            number / 100.0
+        } else if number > 100.0 && number <= f64::from(u16::MAX) {
+            number / f64::from(u16::MAX)
+        } else {
+            number
+        }
+    };
+
+    if !(0.0..=1.0).contains(&ratio) {
+        return Err("min_recall must be in [0.0, 1.0] or [0,100]%".to_owned());
+    }
+    Ok((ratio * f64::from(u16::MAX)) as u16)
+}
+
+fn parse_percent_without_unit(value: &str) -> Result<f64, String> {
+    value
+        .trim()
+        .parse::<f64>()
+        .map_err(|_| "min_recall must be percentage value".to_owned())
 }
 
 fn parse_limit(value: &str) -> Result<usize, String> {
