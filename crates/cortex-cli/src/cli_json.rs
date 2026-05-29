@@ -209,7 +209,7 @@ fn context_pack_response(pack: &ContextPack) -> ContextPackResponse {
             .iter()
             .map(|anomaly| ContextPackAnomalyResponse {
                 cell_id: anomaly.cell_id.map(|id| id.0),
-                code: anomaly.code.to_string(),
+                code: anomaly.code.as_str().to_owned(),
                 message: anomaly.message.clone(),
             })
             .collect(),

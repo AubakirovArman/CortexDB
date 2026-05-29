@@ -3,7 +3,9 @@ use std::collections::BTreeSet;
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
 use cortex_engine::feedback::ContextFeedback;
-use cortex_engine::{scope_id, ContextPack, ContextPackOptions, Database, RetrievedCell};
+use cortex_engine::{
+    scope_id, ContextPack, ContextPackAnomalyCode, ContextPackOptions, Database, RetrievedCell,
+};
 
 #[test]
 fn context_pack_from_aql_respects_budget() {
@@ -54,7 +56,10 @@ fn context_pack_reports_missing_citations_when_required() {
 
     assert!(pack.citations_required);
     assert_eq!(pack.anomalies.len(), 1);
-    assert_eq!(pack.anomalies[0].code, "missing_citation");
+    assert_eq!(
+        pack.anomalies[0].code,
+        ContextPackAnomalyCode::MissingCitation
+    );
     assert_eq!(pack.anomalies[0].cell_id, Some(CellId(1)));
 }
 
@@ -132,7 +137,10 @@ fn context_pack_can_reduce_sparse_redundancy() {
             .collect::<Vec<_>>(),
         vec![CellId(1), CellId(3)]
     );
-    assert_eq!(pack.anomalies[0].code, "redundant_cell");
+    assert_eq!(
+        pack.anomalies[0].code,
+        ContextPackAnomalyCode::RedundantCell
+    );
     assert_eq!(pack.anomalies[0].cell_id, Some(CellId(2)));
 }
 
@@ -162,7 +170,10 @@ fn context_pack_can_reduce_dense_vector_redundancy() {
             .collect::<Vec<_>>(),
         vec![CellId(1), CellId(3)]
     );
-    assert_eq!(pack.anomalies[0].code, "redundant_cell");
+    assert_eq!(
+        pack.anomalies[0].code,
+        ContextPackAnomalyCode::RedundantCell
+    );
     assert_eq!(pack.anomalies[0].cell_id, Some(CellId(2)));
 }
 

@@ -65,10 +65,29 @@ pub struct ContextPack {
     pub anomalies: Vec<ContextPackAnomaly>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ContextPackAnomalyCode {
+    RedundantCell,
+    MissingCitation,
+    TokenOverload,
+    ScopeMismatch,
+}
+
+impl ContextPackAnomalyCode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::RedundantCell => "redundant_cell",
+            Self::MissingCitation => "missing_citation",
+            Self::TokenOverload => "token_overload",
+            Self::ScopeMismatch => "scope_mismatch",
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ContextPackAnomaly {
     pub cell_id: Option<CellId>,
-    pub code: &'static str,
+    pub code: ContextPackAnomalyCode,
     pub message: String,
 }
 
@@ -182,7 +201,7 @@ impl ContextPack {
             {
                 anomalies.push(ContextPackAnomaly {
                     cell_id: Some(cell.cell_id),
-                    code: "redundant_cell",
+                    code: ContextPackAnomalyCode::RedundantCell,
                     message: "selected cell is redundant with an earlier packed cell".to_owned(),
                 });
                 continue;
@@ -192,7 +211,7 @@ impl ContextPack {
             if citations_required && citation.is_none() {
                 anomalies.push(ContextPackAnomaly {
                     cell_id: Some(cell.cell_id),
-                    code: "missing_citation",
+                    code: ContextPackAnomalyCode::MissingCitation,
                     message: "selected cell does not include source= or citation=".to_owned(),
                 });
             }

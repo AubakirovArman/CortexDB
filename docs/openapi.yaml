@@ -861,7 +861,27 @@ components:
         anomalies:
           type: array
           items:
-            type: object
+            $ref: '#/components/schemas/ContextPackAnomalyResponse'
+    ContextPackAnomalyResponse:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        cell_id:
+          anyOf:
+          - type: integer
+            format: uint64
+          - type: 'null'
+        code:
+          type: string
+          enum:
+          - redundant_cell
+          - missing_citation
+          - token_overload
+          - scope_mismatch
+        message:
+          type: string
     RememberResponse:
       type: object
       required:

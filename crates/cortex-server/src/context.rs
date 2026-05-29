@@ -82,7 +82,7 @@ fn map_context_pack(pack: &ContextPack) -> ContextPackResponse {
         .iter()
         .map(|anom| ContextPackAnomalyResponse {
             cell_id: anom.cell_id.map(|cid| cid.0),
-            code: anom.code.to_string(),
+            code: anom.code.as_str().to_owned(),
             message: anom.message.clone(),
         })
         .collect();

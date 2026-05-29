@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::{CellId, CommitSeq};
-use cortex_engine::{scope_id, ContextPackOptions, Database};
+use cortex_engine::{scope_id, ContextPackAnomalyCode, ContextPackOptions, Database};
 
 #[test]
 fn full_stack_write_recover_query_pack_compact_and_repair_stays_consistent() {
@@ -71,7 +71,10 @@ fn context_pack_reports_policy_visible_citation_state_after_restart() {
 
     assert_eq!(pack.cells.len(), 1);
     assert_eq!(pack.anomalies.len(), 1);
-    assert_eq!(pack.anomalies[0].code, "missing_citation");
+    assert_eq!(
+        pack.anomalies[0].code,
+        ContextPackAnomalyCode::MissingCitation
+    );
 }
 
 fn assert_project_ready_context(db: &Database, expected: &[CellId]) {

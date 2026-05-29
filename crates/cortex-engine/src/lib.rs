@@ -26,7 +26,8 @@ pub mod verification;
 
 pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use context::{
-    estimate_tokens, ContextPack, ContextPackAnomaly, ContextPackCell, ContextPackOptions,
+    estimate_tokens, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell,
+    ContextPackOptions,
 };
 pub use database::{CandidateResolver, CheckpointStats, Database, RetrievedCell};
 pub use distributed::*;
