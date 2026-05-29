@@ -33,8 +33,13 @@ Core Alpha is the first durable single-node CortexDB prototype.
 - Experimental replication now enforces AppendEntries previous-log matching,
   conflict suffix truncation, and follower commit-index clamping in local
   transport tests.
-- Experimental ANN search now guards HNSW graph usage with exact-vector
-  fallback for empty, invalid, or under-returning graph traversals.
+- Guarded HNSW approximate search (alpha): fixed-point distance metrics
+  (DotProduct, Cosine, L2) with exact-vector fallback for empty, invalid,
+  under-returning, or low-recall graph traversals. Not production-grade yet.
+- Cosine similarity uses integer-only fixed-point `u128::isqrt()` — no `f64`
+  arithmetic in the scoring path.
+- Vector dimension mismatch on the write path returns
+  `EngineError::VectorDimensionMismatch` instead of being silently skipped.
 - HTTP vector ANN search responses expose `ann_report` so clients can tell
   whether HNSW was used or an exact fallback protected correctness.
 - ANN evaluation can compare persisted HNSW results against exact vector scan
@@ -43,14 +48,16 @@ Core Alpha is the first durable single-node CortexDB prototype.
   `POST /v1/search/ann-evaluate`.
 - Rust, Python, and TypeScript SDK surfaces include typed ANN evaluation
   responses for package-readiness checks.
-- ANN search now has a `low_recall` exact fallback guard while evaluation still
-  measures raw HNSW top-k recall.
+- ANN search now has a `low_recall` exact fallback guard (75% production default)
+  while evaluation still measures raw HNSW top-k recall.
 - ANN reports expose `recall_q16` and `min_recall_q16` when the top-k recall
   guard runs, so clients can inspect HNSW quality decisions.
 - HNSW integrity reports now cross-check persisted graph links against vector
   candidates during storage validation.
 - Persisted `.acv` validation checks vector dimensions so ANN/exact scoring
   cannot silently compare only shared vector prefixes.
+- Persisted `.ach` files store `dimension` and `metric` metadata with
+  backward-compatible decode.
 - Replication consensus state now enforces current-term commit rules and
   majority match-index advancement.
 - Replication followers reject non-contiguous AppendEntries batches and
@@ -72,15 +79,27 @@ Core Alpha is the first durable single-node CortexDB prototype.
 The tag may be pushed only after:
 
 ```bash
-cargo fmt --check
-RUSTFLAGS="-D warnings" cargo check --workspace
-RUSTFLAGS="-D warnings" cargo test --workspace --all-features
-RUSTFLAGS="-D warnings" cargo clippy --workspace --all-targets -- -D warnings
+make release-check
 ```
+
+which includes:
+- `cargo check --workspace` with `-D warnings`
+- `cargo test --workspace --all-features` with `-D warnings`
+- `cargo fmt --check`
+- `cargo clippy --workspace --all-targets -- -D warnings`
+- SDK preflight checks
+- OpenAPI coverage and contract validation
+- SDK contract validation (Python + TypeScript smoke tests against live server)
+- Core benchmark matrix
+- CLI smoke tests
+- Server smoke tests
+- Investment projects demo (search + AQL + ContextPack + Verify)
 
 and after the GitHub Actions `Rust` workflow is green on stable and beta.
 
-Latest local evidence: `make alpha-check` passed on 2026-05-27, including
+Latest local evidence: `make release-check` passed on 2026-05-28, including
 workspace check, all-features tests, formatting, clippy with `-D warnings`, SDK
-smoke checks, the core benchmark matrix, and the upgraded investment projects
-demo (search + AQL + ContextPack + Verify with numeric conflict detection).
+smoke checks, OpenAPI contract validation, SDK contract validation, the core
+benchmark matrix, CLI smoke tests, server smoke tests, and the upgraded
+investment projects demo (search + AQL + ContextPack + Verify with numeric
+conflict detection).

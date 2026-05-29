@@ -36,6 +36,8 @@ pub enum EngineError {
     InvalidCandidateId(u32),
     #[error("database is already open: {0}; if this is a stale lock, close the running process or remove db.lock with cortexdb unlock <path> --force")]
     DatabaseAlreadyOpen(PathBuf),
+    #[error("not leader: node {local} cannot perform write, leader is {leader:?}")]
+    NotLeader { local: u64, leader: Option<u64> },
 }
 
 pub type EngineResult<T> = Result<T, EngineError>;

@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check smoke-test sdk-smoke-test alpha-check demo
+.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check smoke-test sdk-smoke-test alpha-check release-check demo
 
 check:
 	cargo check --workspace
@@ -35,6 +35,11 @@ alpha-check:
 	$(MAKE) sdk-contract-check
 	cargo bench -p cortex-engine --bench core_baseline
 	./examples/demo/investment_projects/run.sh
+
+release-check: alpha-check
+	$(MAKE) smoke-test
+	$(MAKE) sdk-smoke-test
+	@echo "=== Release check passed ==="
 
 demo:
 	./examples/demo/investment_projects/run.sh
