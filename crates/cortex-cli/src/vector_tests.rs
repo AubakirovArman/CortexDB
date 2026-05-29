@@ -38,6 +38,64 @@ fn search_vector_command_returns_scope_filtered_results() {
 }
 
 #[test]
+fn search_vector_command_respects_ann_policy_flags() {
+    let path = unique_path("cortexdb-cli-vector-policy");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nvector=5,0\nalpha".to_owned(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "2".to_owned(),
+        "scope=project:investments\nstatus=ready\nvector=9,1\nbeta".to_owned(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "flush".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+
+    let default_output = run(vec![
+        "cortexdb".to_owned(),
+        "search-vector".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        "5,0".to_owned(),
+    ])
+    .unwrap();
+    assert!(default_output.contains("ann_path="));
+    assert!(default_output.contains("min_recall_q16=49151"));
+
+    let strict_output = run(vec![
+        "cortexdb".to_owned(),
+        "search-vector".to_owned(),
+        "--fallback".to_owned(),
+        "false".to_owned(),
+        "--fallback-scan-cap".to_owned(),
+        "0".to_owned(),
+        "--min-recall".to_owned(),
+        "50%".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        "5,0".to_owned(),
+    ])
+    .unwrap();
+    assert!(strict_output.contains("ann_path="));
+    assert!(strict_output.contains("min_recall_q16=32767"));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
 fn search_vector_eval_command_reports_recall_after_flush() {
     let path = unique_path("cortexdb-cli-vector-eval");
     let path_arg = path.to_string_lossy().into_owned();
@@ -98,6 +156,51 @@ fn search_vector_eval_command_reports_recall_after_flush() {
     .unwrap();
     assert!(json.contains(r#""available":true"#));
     assert!(json.contains(r#""recall_q16":65535"#));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
+fn search_vector_eval_command_applies_min_recall_policy() {
+    let path = unique_path("cortexdb-cli-vector-eval-policy");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nvector=10,0\nalpha".to_owned(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "2".to_owned(),
+        "scope=project:investments\nstatus=ready\nvector=0,10\nbeta".to_owned(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "flush".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+
+    let json = run(vec![
+        "cortexdb".to_owned(),
+        "--json".to_owned(),
+        "search-vector-eval".to_owned(),
+        "--fallback".to_owned(),
+        "false".to_owned(),
+        "--min-recall".to_owned(),
+        "50%".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        "0,10".to_owned(),
+    ])
+    .unwrap();
+    assert!(json.contains(r#""min_recall_q16":32767"#));
 
     let _ = std::fs::remove_dir_all(path);
 }

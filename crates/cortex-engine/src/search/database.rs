@@ -8,7 +8,10 @@ use crate::error::{EngineError, EngineResult};
 use crate::query::{scope_id, CellMetadata};
 
 use super::access::allowed_candidates;
-use super::ann::{search_persisted_ann, AnnFallbackReason, AnnSearchPath, AnnSearchReport};
+use super::ann::{
+    search_persisted_ann_with_policy, AnnFallbackReason, AnnSearchPath, AnnSearchPolicy,
+    AnnSearchReport,
+};
 use super::hnsw::DistanceMetric;
 use super::persisted::{search_persisted_lexical, search_persisted_vectors};
 use super::vector::vector_from_payload;
@@ -73,7 +76,17 @@ impl Database {
         view: &AgentView,
         limit: SearchLimit,
     ) -> EngineResult<DatabaseSearchOutcome> {
-        self.search_cells_with_report(
+        self.search_vector_with_report_with_policy(vector, view, limit, AnnSearchPolicy::default())
+    }
+
+    pub fn search_vector_with_report_with_policy(
+        &self,
+        vector: &[i16],
+        view: &AgentView,
+        limit: SearchLimit,
+        policy: AnnSearchPolicy,
+    ) -> EngineResult<DatabaseSearchOutcome> {
+        self.search_cells_with_report_with_policy(
             SearchQuery {
                 text: "",
                 vector: Some(vector),
@@ -81,6 +94,7 @@ impl Database {
                 mode: SearchMode::Vector,
             },
             view,
+            Some(policy),
         )
     }
 
@@ -105,6 +119,7 @@ impl Database {
         &self,
         query: SearchQuery<'_>,
         view: &AgentView,
+        policy: Option<AnnSearchPolicy>,
     ) -> EngineResult<Option<DatabaseSearchOutcome>> {
         if self.manifest().live_segments.is_empty() {
             return Ok(None);
@@ -138,8 +153,23 @@ impl Database {
                 };
                 let index = self.persisted_vector_index()?;
                 let graph = self.persisted_hnsw_graph()?;
-                let outcome =
-                    search_persisted_ann(&index.vectors, &graph, vector, &allowed, query.limit);
+                let outcome = match policy {
+                    Some(policy) => search_persisted_ann_with_policy(
+                        &index.vectors,
+                        &graph,
+                        vector,
+                        &allowed,
+                        query.limit,
+                        policy,
+                    ),
+                    None => super::ann::search_persisted_ann(
+                        &index.vectors,
+                        &graph,
+                        vector,
+                        &allowed,
+                        query.limit,
+                    ),
+                };
                 ann_report = Some(outcome.report);
                 outcome.results
             }
@@ -200,7 +230,16 @@ impl Database {
         query: SearchQuery<'_>,
         view: &AgentView,
     ) -> EngineResult<DatabaseSearchOutcome> {
-        if let Some(results) = self.search_persisted_query(query, view)? {
+        self.search_cells_with_report_with_policy(query, view, None)
+    }
+
+    pub fn search_cells_with_report_with_policy(
+        &self,
+        query: SearchQuery<'_>,
+        view: &AgentView,
+        policy: Option<AnnSearchPolicy>,
+    ) -> EngineResult<DatabaseSearchOutcome> {
+        if let Some(results) = self.search_persisted_query(query, view, policy)? {
             return Ok(results);
         }
         let mut indexes = SearchIndexes::default();

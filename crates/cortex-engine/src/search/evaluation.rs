@@ -4,7 +4,10 @@ use crate::database::Database;
 use crate::error::EngineResult;
 
 use super::access::allowed_candidates;
-use super::ann::{evaluate_persisted_ann, AnnEvaluationReport};
+use super::ann::{
+    evaluate_persisted_ann, evaluate_persisted_ann_with_policy, AnnEvaluationReport,
+    AnnSearchPolicy,
+};
 use super::database::SearchLimit;
 
 impl Database {
@@ -13,6 +16,16 @@ impl Database {
         vector: &[i16],
         view: &AgentView,
         limit: SearchLimit,
+    ) -> EngineResult<Option<AnnEvaluationReport>> {
+        self.evaluate_vector_ann_with_policy(vector, view, limit, AnnSearchPolicy::default())
+    }
+
+    pub fn evaluate_vector_ann_with_policy(
+        &self,
+        vector: &[i16],
+        view: &AgentView,
+        limit: SearchLimit,
+        policy: AnnSearchPolicy,
     ) -> EngineResult<Option<AnnEvaluationReport>> {
         if self.manifest().live_segments.is_empty() {
             return Ok(None);
@@ -29,12 +42,18 @@ impl Database {
         let allowed = allowed_candidates(&state.bitmap, view);
         let index = self.persisted_vector_index()?;
         let graph = self.persisted_hnsw_graph()?;
-        Ok(Some(evaluate_persisted_ann(
-            &index.vectors,
-            &graph,
-            vector,
-            &allowed,
-            limit.0,
-        )))
+        let report = if policy == AnnSearchPolicy::default() {
+            evaluate_persisted_ann(&index.vectors, &graph, vector, &allowed, limit.0)
+        } else {
+            evaluate_persisted_ann_with_policy(
+                &index.vectors,
+                &graph,
+                vector,
+                &allowed,
+                limit.0,
+                policy,
+            )
+        };
+        Ok(Some(report))
     }
 }

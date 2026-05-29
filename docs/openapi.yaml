@@ -195,6 +195,22 @@ paths:
         schema:
           type: integer
           minimum: 1
+      - name: fallback
+        in: query
+        description: Enable ANN fallback to exact scan when ANN is unavailable or underperforming.
+        schema:
+          type: boolean
+      - name: min_recall
+        in: query
+        description: Minimum acceptable ANN recall (fraction like 0.75 or percent like 75).
+        schema:
+          type: string
+      - name: fallback_scan_cap
+        in: query
+        description: Max number of candidates exact scan may use when fallback is needed.
+        schema:
+          type: integer
+          minimum: 0
       responses:
         '200':
           description: Search results
@@ -253,6 +269,22 @@ paths:
         schema:
           type: integer
           minimum: 1
+      - name: fallback
+        in: query
+        description: Enable ANN fallback to exact scan when ANN is unavailable or underperforming.
+        schema:
+          type: boolean
+      - name: min_recall
+        in: query
+        description: Minimum acceptable ANN recall (fraction like 0.75 or percent like 75).
+        schema:
+          type: string
+      - name: fallback_scan_cap
+        in: query
+        description: Max number of candidates exact scan may use when fallback is needed.
+        schema:
+          type: integer
+          minimum: 0
       responses:
         '200':
           description: ANN recall evaluation
@@ -262,6 +294,19 @@ paths:
                 $ref: '#/components/schemas/AnnEvaluationResponse'
         '400': *id001
         '500': *id002
+  /v1/cluster/status:
+    get:
+      summary: Node and replication status
+      description: Returns cluster layout currently known to this node.
+      responses:
+        '200':
+          description: Cluster status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterStatusResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/context:
     post:
       summary: Build a ContextPack from AQL
@@ -758,6 +803,36 @@ components:
           type: array
           items:
             type: string
+    ClusterNodeResponse:
+      type: object
+      required:
+      - id
+      - address
+      properties:
+        id:
+          type: integer
+          format: uint64
+        address:
+          type: string
+    ClusterStatusResponse:
+      type: object
+      required:
+      - local_node
+      - nodes
+      - replication_factor
+      - distributed_enabled
+      properties:
+        local_node:
+          type: integer
+          format: uint64
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterNodeResponse'
+        replication_factor:
+          type: integer
+        distributed_enabled:
+          type: boolean
     AqlResponse:
       type: object
       required:

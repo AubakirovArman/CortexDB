@@ -1,5 +1,8 @@
 use cortex_core::CellId;
-use cortex_engine::{parse_vector_literal, ContextPackOptions, Database, EngineError, SearchLimit};
+use cortex_engine::{
+    parse_vector_literal, AnnSearchPath, AnnSearchPolicy, ContextPackOptions, Database,
+    EngineError, SearchLimit,
+};
 
 use crate::cli_json::{
     ann_validate_to_json, context_pack_to_json, stats_to_json, validation_to_json,
@@ -381,17 +384,61 @@ pub fn search_explain(path: &str, scope: &str, query: &str, mode: &str) -> Resul
     Ok(lines.join("\n"))
 }
 
-pub fn search_vector(path: &str, scope: &str, vector: &str, exact: bool) -> Result<String, String> {
+pub fn search_vector(
+    path: &str,
+    scope: &str,
+    vector: &str,
+    exact: bool,
+    policy: Option<AnnSearchPolicy>,
+) -> Result<String, String> {
     let vector = parse_vector_literal(vector)?;
     let db = Database::open(path).map_err(fmt_engine_error)?;
     let view = view_for_scope(scope);
-    let results = if exact {
-        db.search_vector_exact(&vector, &view, SearchLimit(20))
+    if exact {
+        let results = db
+            .search_vector_exact(&vector, &view, SearchLimit(20))
+            .map_err(fmt_engine_error)?;
+        Ok(format_search_results(&results))
     } else {
-        db.search_vector(&vector, &view, SearchLimit(20))
+        let outcome = match policy {
+            Some(policy) => db
+                .search_vector_with_report_with_policy(&vector, &view, SearchLimit(20), policy)
+                .map_err(fmt_engine_error)?,
+            None => db
+                .search_vector_with_report(&vector, &view, SearchLimit(20))
+                .map_err(fmt_engine_error)?,
+        };
+        let mut lines = Vec::new();
+        lines.push(format_search_results(&outcome.results));
+        if let Some(report) = outcome.ann_report {
+            lines.push(format_ann_search_report(&report));
+        }
+        Ok(lines.join("\n"))
     }
-    .map_err(fmt_engine_error)?;
-    Ok(format_search_results(&results))
+}
+
+fn format_ann_search_report(report: &cortex_engine::AnnSearchReport) -> String {
+    let fallback_reason = report
+        .fallback_reason
+        .map(|reason| reason.as_str())
+        .unwrap_or("none");
+    let returned = match report.path {
+        AnnSearchPath::HnswGraph => "hnsw_graph",
+        AnnSearchPath::ExactFallback => "exact_fallback",
+    };
+    let recall = report
+        .recall_q16
+        .map(|value| value.to_string())
+        .unwrap_or_else(|| "none".to_owned());
+    let min_recall = report
+        .min_recall_q16
+        .map(|value| value.to_string())
+        .unwrap_or_else(|| "none".to_owned());
+
+    format!(
+        "ann_path={returned} fallback_reason={fallback_reason} recall_q16={recall} min_recall_q16={min_recall} allowed_candidates={}",
+        report.allowed_candidates
+    )
 }
 
 pub fn unlock(path: &str, force: bool) -> Result<String, String> {

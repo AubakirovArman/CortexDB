@@ -1,13 +1,14 @@
 use cortex_core::CellId;
+use cortex_engine::ClusterConfig;
 use cortex_engine::{Database, IngestionJobId, IngestionProgressTracker};
 
 use crate::aql;
 use crate::context;
 use crate::memory;
 use crate::responses::{
-    AnnMetricsResponse, CellLookupResponse, CellResponse, CheckpointResponse, ErrorCode,
-    ErrorResponse, HealthResponse, IngestResponse, MetricsResponse, PutCellResponse, RouterError,
-    StatsResponse, ValidationResponse,
+    AnnMetricsResponse, CellLookupResponse, CellResponse, CheckpointResponse, ClusterNodeResponse,
+    ClusterStatusResponse, ErrorCode, ErrorResponse, HealthResponse, IngestResponse,
+    MetricsResponse, PutCellResponse, RouterError, StatsResponse, ValidationResponse,
 };
 use crate::search;
 
@@ -28,6 +29,24 @@ pub fn route_database(
             server_version: env!("CARGO_PKG_VERSION").to_owned(),
         })
         .map_err(|e| RouterError::BadRequest(e.to_string())),
+        ("GET", "/v1/cluster/status") => {
+            let cluster = ClusterConfig::single_node();
+            let replication_factor = cluster.nodes.len();
+            let response = ClusterStatusResponse {
+                local_node: cluster.local_node.0,
+                nodes: cluster
+                    .nodes
+                    .iter()
+                    .map(|node| ClusterNodeResponse {
+                        id: node.id.0,
+                        address: node.address.clone(),
+                    })
+                    .collect(),
+                replication_factor,
+                distributed_enabled: replication_factor > 1,
+            };
+            Ok(serde_json::to_string(&response)?)
+        }
         ("GET", "/v1/stats") => {
             let stats = db.storage_stats()?;
             let response = StatsResponse {

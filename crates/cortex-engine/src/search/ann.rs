@@ -356,7 +356,11 @@ fn fallback_disabled_outcome(
     graph_nodes: usize,
     policy: AnnSearchPolicy,
 ) -> AnnSearchOutcome {
-    let cap = policy.fallback_scan_cap.unwrap_or(limit).min(limit);
+    let cap = if policy.fallback {
+        policy.fallback_scan_cap.unwrap_or(limit).min(limit)
+    } else {
+        policy.fallback_scan_cap.unwrap_or(0).min(limit)
+    };
     let ann = if cap == 0 {
         Vec::new()
     } else {

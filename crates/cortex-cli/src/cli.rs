@@ -122,6 +122,12 @@ enum Command {
         path: String,
         scope: String,
         vector: String,
+        #[arg(long)]
+        fallback: Option<String>,
+        #[arg(long)]
+        fallback_scan_cap: Option<usize>,
+        #[arg(long)]
+        min_recall: Option<String>,
     },
     SearchVectorExact {
         path: String,
@@ -132,6 +138,12 @@ enum Command {
         path: String,
         scope: String,
         vector: String,
+        #[arg(long)]
+        fallback: Option<String>,
+        #[arg(long)]
+        fallback_scan_cap: Option<usize>,
+        #[arg(long)]
+        min_recall: Option<String>,
     },
     SearchExplain {
         path: String,
@@ -239,17 +251,47 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             path,
             scope,
             vector,
-        } => ops::search_vector(resolved(&path).to_str().unwrap(), &scope, &vector, false),
+            fallback,
+            fallback_scan_cap,
+            min_recall,
+        } => {
+            let policy = ann::parse_ann_policy(fallback, fallback_scan_cap, min_recall)?;
+            ops::search_vector(
+                resolved(&path).to_str().unwrap(),
+                &scope,
+                &vector,
+                false,
+                Some(policy),
+            )
+        }
         Command::SearchVectorExact {
             path,
             scope,
             vector,
-        } => ops::search_vector(resolved(&path).to_str().unwrap(), &scope, &vector, true),
+        } => ops::search_vector(
+            resolved(&path).to_str().unwrap(),
+            &scope,
+            &vector,
+            true,
+            None,
+        ),
         Command::SearchVectorEval {
             path,
             scope,
             vector,
-        } => ann::search_vector_eval(resolved(&path).to_str().unwrap(), &scope, &vector, cli.json),
+            fallback,
+            fallback_scan_cap,
+            min_recall,
+        } => {
+            let policy = ann::parse_ann_policy(fallback, fallback_scan_cap, min_recall)?;
+            ann::search_vector_eval(
+                resolved(&path).to_str().unwrap(),
+                &scope,
+                &vector,
+                cli.json,
+                Some(policy),
+            )
+        }
         Command::SearchExplain {
             path,
             scope,

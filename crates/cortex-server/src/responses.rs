@@ -9,6 +9,20 @@ pub struct HealthResponse {
     pub server_version: String,
 }
 
+#[derive(Serialize, Debug, Clone)]
+pub struct ClusterNodeResponse {
+    pub id: u64,
+    pub address: String,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct ClusterStatusResponse {
+    pub local_node: u64,
+    pub nodes: Vec<ClusterNodeResponse>,
+    pub replication_factor: usize,
+    pub distributed_enabled: bool,
+}
+
 /// Response metrics containing detailed storage, MemTable, and WAL statistics.
 #[derive(Serialize, Debug, Clone)]
 pub struct StatsResponse {
