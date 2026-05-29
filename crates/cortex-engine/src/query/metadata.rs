@@ -164,7 +164,7 @@ impl CellMetadata {
     }
 }
 
-fn non_empty(value: &str) -> Option<String> {
+pub(crate) fn non_empty(value: &str) -> Option<String> {
     let value = value.trim();
     (!value.is_empty()).then(|| value.to_owned())
 }
