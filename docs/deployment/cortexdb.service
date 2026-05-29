@@ -1,0 +1,15 @@
+[Unit]
+Description=CortexDB Server
+After=network.target
+
+[Service]
+Type=simple
+User=cortexdb
+Group=cortexdb
+WorkingDirectory=/var/lib/cortexdb
+ExecStart=/usr/local/bin/cortex-server /var/lib/cortexdb 0.0.0.0:8181
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
