@@ -30,6 +30,7 @@ fn fallback_disabled_uses_scan_cap() {
             min_recall_q16: Some(10_000),
             fallback: false,
             fallback_scan_cap: Some(0),
+            max_visited_candidates: None,
         },
     );
 
@@ -54,6 +55,7 @@ fn fallback_disabled_without_scan_cap_returns_empty_results() {
             min_recall_q16: Some(10_000),
             fallback: false,
             fallback_scan_cap: None,
+            max_visited_candidates: None,
         },
     );
 
@@ -147,6 +149,7 @@ fn policy_min_recall_controls_ann_report() {
             min_recall_q16: Some(65_000),
             fallback: false,
             fallback_scan_cap: None,
+            max_visited_candidates: None,
         },
     );
 
@@ -173,6 +176,39 @@ fn evaluation_reports_exact_overlap_and_recall() {
     assert_eq!(report.recall_q16, 65_535);
     assert_eq!(report.search.recall_q16, Some(65_535));
     assert_eq!(report.search.min_recall_q16, Some(MIN_ANN_RECALL_Q16));
+}
+
+#[test]
+fn hnsw_budget_exceeded_falls_back_to_exact() {
+    let outcome = search_persisted_ann_with_policy(
+        &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10]), (3, vec![9, 1])]),
+        &HnswGraphIndex {
+            links: BTreeMap::from([
+                (1, BTreeSet::from([2, 3])),
+                (2, BTreeSet::from([1, 3])),
+                (3, BTreeSet::from([1, 2])),
+            ]),
+            dimension: 2,
+            metric: 0,
+        },
+        &[0, 10],
+        &BTreeSet::from([1, 2, 3]),
+        2,
+        AnnSearchPolicy {
+            min_recall_q16: Some(MIN_ANN_RECALL_Q16),
+            fallback: true,
+            fallback_scan_cap: None,
+            max_visited_candidates: Some(1),
+        },
+    );
+
+    assert_eq!(outcome.report.path, AnnSearchPath::ExactFallback);
+    assert_eq!(
+        outcome.report.fallback_reason,
+        Some(AnnFallbackReason::VisitBudgetExceeded)
+    );
+    assert_eq!(outcome.report.visited_candidates, 0);
+    assert_eq!(outcome.report.max_visited_candidates, Some(1));
 }
 
 #[test]

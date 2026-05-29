@@ -316,6 +316,8 @@ fn snapshot_ann_report(
         allowed_candidates,
         graph_nodes: 0,
         returned_candidates,
+        visited_candidates: 0,
+        max_visited_candidates: None,
         recall_q16: None,
         min_recall_q16: None,
     })

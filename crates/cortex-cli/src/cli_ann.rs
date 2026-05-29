@@ -87,6 +87,8 @@ fn to_ann_search_report(
         allowed_candidates: report.search.allowed_candidates,
         graph_nodes: report.search.graph_nodes,
         returned_candidates: report.search.returned_candidates,
+        visited_candidates: report.search.visited_candidates,
+        max_visited_candidates: report.search.max_visited_candidates,
         recall_q16: report.search.recall_q16,
         min_recall_q16: report.search.min_recall_q16,
     }
@@ -96,6 +98,7 @@ pub(crate) fn parse_ann_policy(
     fallback: Option<String>,
     fallback_scan_cap: Option<usize>,
     min_recall: Option<String>,
+    max_visited_candidates: Option<usize>,
 ) -> Result<AnnSearchPolicy, String> {
     let default_policy = AnnSearchPolicy::default();
     let fallback = parse_option_bool(fallback)?.unwrap_or(default_policy.fallback);
@@ -107,6 +110,7 @@ pub(crate) fn parse_ann_policy(
         min_recall_q16,
         fallback,
         fallback_scan_cap,
+        max_visited_candidates,
     })
 }
 
@@ -160,23 +164,29 @@ mod tests {
 
     #[test]
     fn parse_ann_policy_default_values() {
-        let policy = parse_ann_policy(None, None, None).unwrap();
+        let policy = parse_ann_policy(None, None, None, None).unwrap();
         assert!(policy.fallback);
         assert_eq!(policy.min_recall_q16, Some(49_151));
     }
 
     #[test]
     fn parse_ann_policy_custom_values() {
-        let policy =
-            parse_ann_policy(Some("false".to_owned()), Some(123), Some("75%".to_owned())).unwrap();
+        let policy = parse_ann_policy(
+            Some("false".to_owned()),
+            Some(123),
+            Some("75%".to_owned()),
+            Some(100),
+        )
+        .unwrap();
         assert!(!policy.fallback);
         assert_eq!(policy.fallback_scan_cap, Some(123));
         assert_eq!(policy.min_recall_q16, Some(49_151));
+        assert_eq!(policy.max_visited_candidates, Some(100));
     }
 
     #[test]
     fn parse_ann_policy_rejects_invalid_bool() {
-        let err = parse_ann_policy(Some("maybe".to_owned()), None, None).unwrap_err();
+        let err = parse_ann_policy(Some("maybe".to_owned()), None, None, None).unwrap_err();
         assert!(err.contains("fallback must be true/false"));
     }
 }

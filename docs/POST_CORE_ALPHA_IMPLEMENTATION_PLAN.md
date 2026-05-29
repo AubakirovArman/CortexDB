@@ -1,0 +1,62 @@
+# Post-Core Alpha Implementation Plan — Current Status
+
+Дата фиксации: 2026-05-29
+
+Цель: не просто добавить фичи, а стабильно довести четыре крупных слоя после Core Alpha.
+
+## Что уже закрыто (в production-ready sense)
+
+- Core Alpha pipeline: WAL + MVCC + checkpoint/compact + restart + validation.
+- AQL compiler и Runtime retrieval (bitmap + persisted индексы).
+- ContextPack v1.
+- Search foundation: keyword + vector exact + ANN/HNSW fallback.
+- REST API (v1), OpenAPI, typed response contracts.
+- CLI + SDK (Rust/Python/TypeScript) scaffolds + контракт-тесты.
+- Replication + cluster primitives присутствуют на уровне модулей (эпические тесты для лидера/логов/репликации уже покрывают базовую механику).
+
+## Что осталось по крупным эпикам (большие TODO)
+
+### 1) Production-grade ANN/HNSW (высокий приоритет)
+- [ ] Конфигурируемый recall-policy guard для production: hard fail / hard fallback policy.
+- [x] Добавлены полиси-поля ANN (fbackoff, fallback + limits), visited-count и budget-guard (`max_visited_candidates`).
+- [x] Порог `MIN_ANN_RECALL_Q16` и fallback в exact.
+- [ ] Golden-фикстуры для recall/latency и CI-базовый benchmark gate.
+- [ ] Нормализация/оценка качества для разных метрик/источников (dot/cosine/L2) на фиксированной матрице.
+- [ ] Наблюдаемость (словарь метрик / отчёт по деградации графа).
+
+### 2) Real distributed consensus
+- [ ] Отделить репликационный consensus-log и local WAL по строгим durability guarantees.
+- [ ] Идемпотентный реплей с корректной синхронизацией term/index across crash/restart.
+- [ ] Полный snapshot transfer + peer resync + membership lifecycle (join/leave/rotation).
+- [ ] Split-brain + partition matrix тесты в CI (не только unit).
+- [x] Базовая документированная модель Raft-like и внутренние модули протокола уже есть.
+- [x] Есть первичные тесты `election/append/log/transport`.
+
+### 3) Full web UI (не embedded HTML only)
+- [ ] Вынести dashboard в отдельный frontend-продукт (SPA/static build), независимый от ручной разметки.
+- [ ] Наборы страниц: dashboard, cells, AQL, search/context, verify, ingest, health/validation.
+- [ ] Tenant-aware auth в UI и понятный путь ошибок.
+- [ ] Playwright/CI smoke путь по критическим flows.
+- [x] Есть минимальный dashboard (embedded HTML) и accessibility smoke tests.
+
+### 4) Stable published SDK packages
+- [ ] Полный release-процедурный lock-step по версиям `server <-> OpenAPI <-> SDK`.
+- [ ] Автономные CI-пайплайны для публичных публикаций в crates.io / npm / PyPI (tag-gated).
+- [ ] Deprecation policy и changelog для breaking changes в SDK contract.
+- [x] Подготовлены release workflows и базовые contract checks (локально, в repo).
+
+## Непосредственный следующий 2-недельный sprint
+
+1. ANN/HNSW: добавить benchmark gate и recall-golden набор (fixed corpus).
+2. ANN/HNSW: экспортировать больше метрик в `AnnSearchReport` и наблюдаемость в server metrics.
+3. Consensus: добавить failure-injection harness для partition/restart recovery в integration tests.
+4. UI: вынести текущее dashboard html в versioned frontend asset в отдельной папке.
+5. SDK: проверить публикационные версии в `sdk/python`, `sdk/typescript`, `rust` как единый release gate.
+
+## Критерий перехода к следующему слою
+
+- `cargo check --workspace`
+- `cargo test --workspace --all-features`
+- `cargo fmt --check`
+- `cargo clippy --workspace --all-targets -- -D warnings`
+- Все contract snapshots не меняются без `API/SDK` change-log заметки.

@@ -204,6 +204,8 @@ fn report_response(report: AnnSearchReport) -> AnnSearchReportResponse {
         allowed_candidates: report.allowed_candidates,
         graph_nodes: report.graph_nodes,
         returned_candidates: report.returned_candidates,
+        visited_candidates: report.visited_candidates,
+        max_visited_candidates: report.max_visited_candidates,
         recall_q16: report.recall_q16,
         min_recall_q16: report.min_recall_q16,
     }
@@ -227,10 +229,19 @@ fn parse_ann_policy(query: &str) -> Result<AnnSearchPolicy, String> {
         .transpose()?
         .or(default_policy.min_recall_q16);
 
+    let max_visited_candidates = query_param_opt(query, "max_visited_candidates")
+        .map(|value| {
+            value
+                .parse::<usize>()
+                .map_err(|_| "max_visited_candidates must be usize".to_owned())
+        })
+        .transpose()?;
+
     Ok(AnnSearchPolicy {
         min_recall_q16,
         fallback,
         fallback_scan_cap,
+        max_visited_candidates,
     })
 }
 

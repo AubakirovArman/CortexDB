@@ -211,6 +211,12 @@ paths:
         schema:
           type: integer
           minimum: 0
+      - name: max_visited_candidates
+        in: query
+        description: Maximum number of HNSW nodes to visit before forcing ANN fallback.
+        schema:
+          type: integer
+          minimum: 0
       responses:
         '200':
           description: Search results
@@ -282,6 +288,12 @@ paths:
       - name: fallback_scan_cap
         in: query
         description: Max number of candidates exact scan may use when fallback is needed.
+        schema:
+          type: integer
+          minimum: 0
+      - name: max_visited_candidates
+        in: query
+        description: Maximum number of HNSW nodes to visit before forcing ANN fallback.
         schema:
           type: integer
           minimum: 0
@@ -893,6 +905,7 @@ components:
       - allowed_candidates
       - graph_nodes
       - returned_candidates
+      - visited_candidates
       - recall_q16
       - min_recall_q16
       properties:
@@ -909,6 +922,7 @@ components:
             - invalid_graph
             - insufficient_results
             - low_recall
+            - visit_budget_exceeded
             - no_persisted_segments
             - uncheckpointed_changes
           - type: 'null'
@@ -920,6 +934,14 @@ components:
           type: integer
         returned_candidates:
           type: integer
+        visited_candidates:
+          type: integer
+          minimum: 0
+        max_visited_candidates:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
         recall_q16:
           anyOf:
           - type: integer

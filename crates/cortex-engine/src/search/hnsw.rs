@@ -196,7 +196,8 @@ impl HnswIndex {
     }
 
     pub fn search(&self, query: &[i16], limit: usize) -> Vec<ScoredCandidate> {
-        self.search_filtered(query, None, limit)
+        let (results, ..) = self.search_filtered_with_budget(query, None, limit, None);
+        results
     }
 
     pub fn search_allowed(
@@ -205,29 +206,50 @@ impl HnswIndex {
         allowed: &BTreeSet<u32>,
         limit: usize,
     ) -> Vec<ScoredCandidate> {
-        self.search_filtered(query, Some(allowed), limit)
+        self.search_allowed_with_budget(query, allowed, limit, None)
+            .0
     }
 
-    fn search_filtered(
+    pub fn search_allowed_with_budget(
+        &self,
+        query: &[i16],
+        allowed: &BTreeSet<u32>,
+        limit: usize,
+        max_visited: Option<usize>,
+    ) -> (Vec<ScoredCandidate>, usize, bool) {
+        self.search_filtered_with_budget(query, Some(allowed), limit, max_visited)
+    }
+
+    fn search_filtered_with_budget(
         &self,
         query: &[i16],
         allowed: Option<&BTreeSet<u32>>,
         limit: usize,
-    ) -> Vec<ScoredCandidate> {
+        max_visited: Option<usize>,
+    ) -> (Vec<ScoredCandidate>, usize, bool) {
         let Some(entry) = self.vectors.keys().next().copied() else {
-            return Vec::new();
+            return (Vec::new(), 0, false);
         };
+        let max_visited = max_visited.unwrap_or(usize::MAX);
+        if max_visited == 0 {
+            return (Vec::new(), 0, true);
+        }
         let mut visited = BTreeSet::new();
         let mut frontier = BTreeSet::from([entry]);
         let mut scores = BTreeMap::new();
+        let mut budget_exceeded = false;
         while let Some(candidate) =
             best_frontier(query, &frontier, &self.vectors, &self.config.metric)
         {
             frontier.remove(&candidate);
-            if self.deleted.contains(&candidate)
-                || !visited.insert(candidate)
-                || visited.len() > self.ef_search
-            {
+            if self.deleted.contains(&candidate) || !visited.insert(candidate) {
+                continue;
+            }
+            if visited.len() > max_visited {
+                budget_exceeded = true;
+                break;
+            }
+            if visited.len() > self.ef_search {
                 continue;
             }
             if allowed.is_none_or(|values| values.contains(&candidate)) {
@@ -247,7 +269,7 @@ impl HnswIndex {
                 }
             }
         }
-        ranked(scores, limit)
+        (ranked(scores, limit), visited.len(), budget_exceeded)
     }
 
     pub fn graph_index(&self) -> HnswGraphIndex {

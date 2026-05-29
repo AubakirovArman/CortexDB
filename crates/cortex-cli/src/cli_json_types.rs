@@ -47,6 +47,8 @@ pub struct CliAnnSearchReportResponse {
     pub allowed_candidates: usize,
     pub graph_nodes: usize,
     pub returned_candidates: usize,
+    pub visited_candidates: usize,
+    pub max_visited_candidates: Option<usize>,
     pub recall_q16: Option<u16>,
     pub min_recall_q16: Option<u16>,
 }

@@ -434,9 +434,13 @@ fn format_ann_search_report(report: &cortex_engine::AnnSearchReport) -> String {
         .min_recall_q16
         .map(|value| value.to_string())
         .unwrap_or_else(|| "none".to_owned());
+    let visited = report.visited_candidates;
+    let max_visited = report
+        .max_visited_candidates
+        .map_or_else(|| "none".to_owned(), |value| value.to_string());
 
     format!(
-        "ann_path={returned} fallback_reason={fallback_reason} recall_q16={recall} min_recall_q16={min_recall} allowed_candidates={}",
+        "ann_path={returned} fallback_reason={fallback_reason} recall_q16={recall} min_recall_q16={min_recall} allowed_candidates={} visited_candidates={visited} max_visited_candidates={max_visited}",
         report.allowed_candidates
     )
 }
