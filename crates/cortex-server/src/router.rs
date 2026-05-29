@@ -5,9 +5,9 @@ use crate::aql;
 use crate::context;
 use crate::memory;
 use crate::responses::{
-    AnnMetricsResponse, CellLookupResponse, CellResponse, CheckpointResponse, ErrorResponse,
-    HealthResponse, IngestResponse, MetricsResponse, PutCellResponse, RouterError, StatsResponse,
-    ValidationResponse,
+    AnnMetricsResponse, CellLookupResponse, CellResponse, CheckpointResponse, ErrorCode,
+    ErrorResponse, HealthResponse, IngestResponse, MetricsResponse, PutCellResponse, RouterError,
+    StatsResponse, ValidationResponse,
 };
 use crate::search;
 
@@ -395,13 +395,14 @@ pub fn json_response(status: u16, body: &str) -> String {
     )
 }
 
-pub fn json_error(status: u16, code: &str, message: &str) -> String {
+pub fn json_error(status: u16, code: ErrorCode, message: &str) -> String {
     let body = serde_json::to_string(&ErrorResponse {
-        error: code.to_owned(),
+        code,
+        error: code.as_str().to_owned(),
         message: message.to_owned(),
     })
     .unwrap_or_else(|_| {
-        r#"{"error":"internal_error","message":"serialization failed"}"#.to_owned()
+        r#"{"code":"internal","error":"internal","message":"serialization failed"}"#.to_owned()
     });
     json_response(status, &body)
 }

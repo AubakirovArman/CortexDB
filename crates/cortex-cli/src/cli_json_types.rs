@@ -2,6 +2,7 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct ErrorResponse {
+    pub code: String,
     pub error: String,
     pub message: String,
 }

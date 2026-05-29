@@ -245,8 +245,45 @@ pub struct IngestResponse {
     pub job_id: Option<u64>,
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ErrorCode {
+    NotFound,
+    BadRequest,
+    Unauthorized,
+    Forbidden,
+    PayloadTooLarge,
+    ServiceUnavailable,
+    Internal,
+    InvalidAql,
+    PermissionDenied,
+    DatabaseBusy,
+    StorageCorruption,
+    InvalidTenant,
+}
+
+impl ErrorCode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NotFound => "not_found",
+            Self::BadRequest => "bad_request",
+            Self::Unauthorized => "unauthorized",
+            Self::Forbidden => "forbidden",
+            Self::PayloadTooLarge => "payload_too_large",
+            Self::ServiceUnavailable => "service_unavailable",
+            Self::Internal => "internal",
+            Self::InvalidAql => "invalid_aql",
+            Self::PermissionDenied => "permission_denied",
+            Self::DatabaseBusy => "database_busy",
+            Self::StorageCorruption => "storage_corruption",
+            Self::InvalidTenant => "invalid_tenant",
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ErrorResponse {
+    pub code: ErrorCode,
     pub error: String,
     pub message: String,
 }
@@ -296,6 +333,20 @@ pub enum RouterError {
     PayloadTooLarge,
     ServiceUnavailable,
     Internal(String),
+}
+
+impl RouterError {
+    pub fn code(&self) -> ErrorCode {
+        match self {
+            Self::NotFound(_) => ErrorCode::NotFound,
+            Self::BadRequest(_) => ErrorCode::BadRequest,
+            Self::Unauthorized => ErrorCode::Unauthorized,
+            Self::Forbidden(_) => ErrorCode::Forbidden,
+            Self::PayloadTooLarge => ErrorCode::PayloadTooLarge,
+            Self::ServiceUnavailable => ErrorCode::ServiceUnavailable,
+            Self::Internal(_) => ErrorCode::Internal,
+        }
+    }
 }
 
 impl std::fmt::Display for RouterError {

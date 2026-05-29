@@ -1,6 +1,6 @@
 use crate::responses::{
     CheckpointResponse, ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
-    ErrorResponse, EvidenceResponse, ExplainResponse, GuardResponse, HealthResponse,
+    ErrorCode, ErrorResponse, EvidenceResponse, ExplainResponse, GuardResponse, HealthResponse,
     IngestResponse, NumericConflictResponse, PutCellResponse, SearchResultResponse,
     SourceRefResponse, StatsResponse, ValidationResponse, VerificationReportResponse,
 };
@@ -210,6 +210,7 @@ fn snapshot_ingest_response_with_cells() {
 #[test]
 fn snapshot_error_response() {
     let resp = ErrorResponse {
+        code: ErrorCode::InvalidTenant,
         error: "invalid_tenant".to_owned(),
         message: "invalid tenant ID structure".to_owned(),
     };

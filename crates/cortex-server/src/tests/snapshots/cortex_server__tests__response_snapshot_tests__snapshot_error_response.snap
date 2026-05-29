@@ -3,6 +3,7 @@ source: crates/cortex-server/src/tests/response_snapshot_tests.rs
 expression: resp
 ---
 {
+  "code": "invalid_tenant",
   "error": "invalid_tenant",
   "message": "invalid tenant ID structure"
 }

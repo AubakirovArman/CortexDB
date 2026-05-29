@@ -12,11 +12,12 @@ use crate::cli_json_types::{
 fn serialize_or_error<T: serde::Serialize>(value: &T) -> String {
     to_string(value).unwrap_or_else(|e| {
         to_string(&crate::cli_json_types::ErrorResponse {
+            code: "internal".to_owned(),
             error: "internal_error".to_owned(),
             message: e.to_string(),
         })
         .unwrap_or_else(|_| {
-            "{\"error\":\"internal_error\",\"message\":\"serialization failed\"}".to_owned()
+            "{\"code\":\"internal\",\"error\":\"internal_error\",\"message\":\"serialization failed\"}".to_owned()
         })
     })
 }

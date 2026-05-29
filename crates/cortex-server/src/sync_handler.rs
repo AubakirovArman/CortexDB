@@ -2,7 +2,7 @@ use std::path::Path;
 
 use cortex_engine::Database;
 
-use crate::{dashboard, json_error, json_response, route_shared, ServerOptions};
+use crate::{dashboard, json_error, json_response, route_shared, ErrorCode, ServerOptions};
 
 fn serve_dashboard() -> String {
     let html = dashboard::html();
@@ -32,14 +32,14 @@ pub fn handle_http(root: &Path, request: &str) -> String {
 /// configuration in legacy integration tests.
 pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOptions) -> String {
     let Some((head, body)) = request.split_once("\r\n\r\n") else {
-        return json_error(400, "bad_request", "bad request");
+        return json_error(400, ErrorCode::BadRequest, "bad request");
     };
     let Some(first_line) = head.lines().next() else {
-        return json_error(400, "bad_request", "bad request");
+        return json_error(400, ErrorCode::BadRequest, "bad request");
     };
     let parts = first_line.split_whitespace().collect::<Vec<_>>();
     if parts.len() != 3 {
-        return json_error(400, "bad_request", "bad request");
+        return json_error(400, ErrorCode::BadRequest, "bad request");
     }
 
     // Check Authorization
@@ -51,7 +51,11 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
                 .map(|val| val.trim())
         });
         if auth_header != Some(expected_bearer.as_str()) {
-            return json_error(401, "unauthorized", "missing or invalid authorization");
+            return json_error(
+                401,
+                ErrorCode::Unauthorized,
+                "missing or invalid authorization",
+            );
         }
     }
 
@@ -60,7 +64,7 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
     }
 
     let Ok(db) = Database::open(root) else {
-        return json_error(500, "internal_error", "failed to open database");
+        return json_error(500, ErrorCode::Internal, "failed to open database");
     };
     let db = std::sync::RwLock::new(db);
     match route_shared(&db, parts[0], parts[1], body.as_bytes()) {
@@ -70,7 +74,7 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
                 "cell not found" | "job not found" => 404,
                 _ => 400,
             };
-            json_error(status, "bad_request", &error)
+            json_error(status, ErrorCode::BadRequest, &error)
         }
     }
 }

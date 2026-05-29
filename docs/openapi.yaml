@@ -1004,9 +1004,25 @@ components:
     ErrorResponse:
       type: object
       required:
+      - code
       - error
       - message
       properties:
+        code:
+          type: string
+          enum:
+          - not_found
+          - bad_request
+          - unauthorized
+          - forbidden
+          - payload_too_large
+          - service_unavailable
+          - internal
+          - invalid_aql
+          - permission_denied
+          - database_busy
+          - storage_corruption
+          - invalid_tenant
         error:
           type: string
         message:

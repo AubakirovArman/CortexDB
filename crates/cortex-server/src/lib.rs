@@ -11,7 +11,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use tower_http::limit::RequestBodyLimitLayer;
 
-use responses::{ErrorResponse, MetricsResponse};
+use responses::{ErrorCode, ErrorResponse, MetricsResponse};
 
 mod actor;
 mod aql;
@@ -206,7 +206,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
             return (
                 StatusCode::UNAUTHORIZED,
                 Json(error_response(
-                    "unauthorized",
+                    ErrorCode::Unauthorized,
                     "missing or invalid authorization",
                 )),
             )
@@ -220,7 +220,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
             return (
                 StatusCode::PAYLOAD_TOO_LARGE,
                 Json(error_response(
-                    "payload_too_large",
+                    ErrorCode::PayloadTooLarge,
                     "request body exceeds 2MB limit",
                 )),
             )
@@ -233,7 +233,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         return (
             StatusCode::BAD_REQUEST,
             Json(error_response(
-                "invalid_tenant",
+                ErrorCode::InvalidTenant,
                 "invalid tenant ID structure. Only alphanumeric, '_', and '-' up to 64 characters are allowed.",
             )),
         )
@@ -244,7 +244,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         Err(e) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(error_response("internal_error", e.to_string())),
+                Json(error_response(ErrorCode::Internal, e.to_string())),
             )
                 .into_response();
         }
@@ -326,23 +326,15 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         }
         Err(err) => {
             let status = StatusCode::from_u16(err.status_code()).unwrap_or(StatusCode::BAD_REQUEST);
-            let code = match err {
-                RouterError::NotFound(_) => "not_found",
-                RouterError::BadRequest(_) => "bad_request",
-                RouterError::Unauthorized => "unauthorized",
-                RouterError::Forbidden(_) => "forbidden",
-                RouterError::PayloadTooLarge => "payload_too_large",
-                RouterError::ServiceUnavailable => "service_unavailable",
-                RouterError::Internal(_) => "internal_error",
-            };
-            (status, Json(error_response(code, err.to_string()))).into_response()
+            (status, Json(error_response(err.code(), err.to_string()))).into_response()
         }
     }
 }
 
-fn error_response(error: impl Into<String>, message: impl Into<String>) -> ErrorResponse {
+fn error_response(code: ErrorCode, message: impl Into<String>) -> ErrorResponse {
     ErrorResponse {
-        error: error.into(),
+        code,
+        error: code.as_str().to_owned(),
         message: message.into(),
     }
 }
