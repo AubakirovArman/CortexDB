@@ -1087,6 +1087,7 @@ components:
       - actor_queue_depth
       - actor_queue_capacity
       - request_count
+      - request_rejected
       - request_duration_ms_total
       properties:
         current_seq:
@@ -1133,6 +1134,9 @@ components:
         actor_queue_capacity:
           type: integer
         request_count:
+          type: integer
+          format: uint64
+        request_rejected:
           type: integer
           format: uint64
         request_duration_ms_total:

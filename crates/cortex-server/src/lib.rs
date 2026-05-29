@@ -78,6 +78,7 @@ pub struct AppState {
     dbs: Arc<Mutex<BTreeMap<String, Arc<actor::DatabaseActor>>>>,
     options: Arc<ServerOptions>,
     request_count: Arc<AtomicU64>,
+    request_rejected: Arc<AtomicU64>,
     request_duration_ms_total: Arc<AtomicU64>,
 }
 
@@ -125,6 +126,7 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             dbs: Arc::new(Mutex::new(BTreeMap::new())),
             options: Arc::new(options),
             request_count: Arc::new(AtomicU64::new(0)),
+            request_rejected: Arc::new(AtomicU64::new(0)),
             request_duration_ms_total: Arc::new(AtomicU64::new(0)),
         };
 
@@ -271,6 +273,9 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         Ok(r) => r,
         Err(_) => Err(RouterError::Internal("internal server error".to_owned())),
     };
+    if matches!(res, Err(RouterError::ServiceUnavailable)) {
+        state.request_rejected.fetch_add(1, Ordering::Relaxed);
+    }
     let duration = start.elapsed();
     let duration_ms = duration.as_millis() as u64;
     state.request_count.fetch_add(1, Ordering::Relaxed);
@@ -298,12 +303,16 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
                          # HELP cortexdb_request_count Total HTTP requests served.\n\
                          # TYPE cortexdb_request_count counter\n\
                          cortexdb_request_count {}\n\
+                         # HELP cortexdb_request_rejected Total HTTP requests rejected due to queue full.\n\
+                         # TYPE cortexdb_request_rejected counter\n\
+                         cortexdb_request_rejected {}\n\
                          # HELP cortexdb_request_duration_ms_total Total HTTP request duration in milliseconds.\n\
                          # TYPE cortexdb_request_duration_ms_total counter\n\
                          cortexdb_request_duration_ms_total {}\n",
                         db.queue_depth(),
                         db.queue_capacity(),
                         state.request_count.load(Ordering::Relaxed),
+                        state.request_rejected.load(Ordering::Relaxed),
                         state.request_duration_ms_total.load(Ordering::Relaxed),
                     );
                     return (StatusCode::OK, body_str + &extra).into_response();
@@ -312,6 +321,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
                     metrics.actor_queue_depth = db.queue_depth();
                     metrics.actor_queue_capacity = db.queue_capacity();
                     metrics.request_count = state.request_count.load(Ordering::Relaxed);
+                    metrics.request_rejected = state.request_rejected.load(Ordering::Relaxed);
                     metrics.request_duration_ms_total =
                         state.request_duration_ms_total.load(Ordering::Relaxed);
                     return (StatusCode::OK, Json(metrics)).into_response();

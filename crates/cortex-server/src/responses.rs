@@ -310,6 +310,7 @@ pub struct MetricsResponse {
     pub actor_queue_depth: usize,
     pub actor_queue_capacity: usize,
     pub request_count: u64,
+    pub request_rejected: u64,
     pub request_duration_ms_total: u64,
 }
 

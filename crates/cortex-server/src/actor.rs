@@ -27,6 +27,9 @@ pub struct DatabaseActor {
     worker: Mutex<Option<JoinHandle<()>>>,
     queued: AtomicUsize,
     capacity: usize,
+    requests_sent: AtomicUsize,
+    requests_rejected: AtomicUsize,
+    requests_completed: AtomicUsize,
 }
 
 impl DatabaseActor {
@@ -72,6 +75,9 @@ impl DatabaseActor {
             worker: Mutex::new(Some(worker)),
             queued: AtomicUsize::new(0),
             capacity,
+            requests_sent: AtomicUsize::new(0),
+            requests_rejected: AtomicUsize::new(0),
+            requests_completed: AtomicUsize::new(0),
         })
     }
 
@@ -85,17 +91,21 @@ impl DatabaseActor {
         }) {
             Ok(()) => {
                 self.queued.fetch_add(1, Ordering::Relaxed);
+                self.requests_sent.fetch_add(1, Ordering::Relaxed);
             }
             Err(mpsc::TrySendError::Full(_)) => {
+                self.requests_rejected.fetch_add(1, Ordering::Relaxed);
                 return Err(RouterError::ServiceUnavailable);
             }
             Err(mpsc::TrySendError::Disconnected(_)) => {
                 return Err(RouterError::Internal("database actor stopped".to_owned()));
             }
         }
-        reply_rx
+        let result = reply_rx
             .recv()
-            .map_err(|_| RouterError::Internal("database actor stopped".to_owned()))?
+            .map_err(|_| RouterError::Internal("database actor stopped".to_owned()))?;
+        self.requests_completed.fetch_add(1, Ordering::Relaxed);
+        result
     }
 
     pub fn queue_depth(&self) -> usize {
@@ -104,6 +114,18 @@ impl DatabaseActor {
 
     pub fn queue_capacity(&self) -> usize {
         self.capacity
+    }
+
+    pub fn requests_sent(&self) -> usize {
+        self.requests_sent.load(Ordering::Relaxed)
+    }
+
+    pub fn requests_rejected(&self) -> usize {
+        self.requests_rejected.load(Ordering::Relaxed)
+    }
+
+    pub fn requests_completed(&self) -> usize {
+        self.requests_completed.load(Ordering::Relaxed)
     }
 
     pub fn expire_memory(
@@ -117,17 +139,21 @@ impl DatabaseActor {
         }) {
             Ok(()) => {
                 self.queued.fetch_add(1, Ordering::Relaxed);
+                self.requests_sent.fetch_add(1, Ordering::Relaxed);
             }
             Err(mpsc::TrySendError::Full(_)) => {
+                self.requests_rejected.fetch_add(1, Ordering::Relaxed);
                 return Err(RouterError::ServiceUnavailable);
             }
             Err(mpsc::TrySendError::Disconnected(_)) => {
                 return Err(RouterError::Internal("database actor stopped".to_owned()));
             }
         }
-        reply_rx
+        let result = reply_rx
             .recv()
-            .map_err(|_| RouterError::Internal("database actor stopped".to_owned()))?
+            .map_err(|_| RouterError::Internal("database actor stopped".to_owned()))?;
+        self.requests_completed.fetch_add(1, Ordering::Relaxed);
+        result
     }
 }
 
