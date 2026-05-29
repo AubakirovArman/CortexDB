@@ -185,6 +185,25 @@ export interface IngestResponse {
   job_id: number | null;
 }
 
+export type IngestionJobStatus = "queued" | "running" | "completed" | "failed" | "cancelled";
+
+export interface IngestionJobResponse {
+  job_id: number;
+  label: string;
+  status: IngestionJobStatus;
+  total_items: number | null;
+  completed_items: number;
+  failed_items: number;
+  last_cell_id: number | null;
+  message: string | null;
+  retry_count: number;
+  max_retries: number;
+}
+
+export interface DeleteJobResponse {
+  deleted: boolean;
+}
+
 export interface RememberResponse {
   seq: number;
   cell_id: number;
@@ -301,6 +320,18 @@ export class CortexDBClient {
 
   ingestionJob(jobId: number): Promise<JsonObject> {
     return this.request("GET", `/v1/ingest/jobs/${jobId}`);
+  }
+
+  ingestionJobResponse(jobId: number): Promise<IngestionJobResponse> {
+    return this.request("GET", `/v1/ingest/jobs/${jobId}`);
+  }
+
+  deleteIngestionJob(jobId: number): Promise<DeleteJobResponse> {
+    return this.request("DELETE", `/v1/ingest/jobs/${jobId}`);
+  }
+
+  retryIngestionJob(jobId: number): Promise<IngestionJobResponse> {
+    return this.request("POST", `/v1/ingest/jobs/${jobId}/retry`);
   }
 
   validate(): Promise<ValidationResponse> {

@@ -420,6 +420,44 @@ class IngestResponse:
 
 
 @dataclass(frozen=True)
+class IngestionJobResponse:
+    job_id: int
+    label: str
+    status: str
+    total_items: int | None
+    completed_items: int
+    failed_items: int
+    last_cell_id: int | None
+    message: str | None
+    retry_count: int = 0
+    max_retries: int = 3
+
+    @classmethod
+    def from_json(cls, value: dict[str, Any]) -> "IngestionJobResponse":
+        return cls(
+            job_id=int(value["job_id"]),
+            label=str(value["label"]),
+            status=str(value["status"]),
+            total_items=int(value["total_items"]) if value.get("total_items") is not None else None,
+            completed_items=int(value["completed_items"]),
+            failed_items=int(value["failed_items"]),
+            last_cell_id=int(value["last_cell_id"]) if value.get("last_cell_id") is not None else None,
+            message=str(value["message"]) if value.get("message") is not None else None,
+            retry_count=int(value.get("retry_count", 0)),
+            max_retries=int(value.get("max_retries", 3)),
+        )
+
+
+@dataclass(frozen=True)
+class DeleteJobResponse:
+    deleted: bool
+
+    @classmethod
+    def from_json(cls, value: dict[str, Any]) -> "DeleteJobResponse":
+        return cls(deleted=bool(value["deleted"]))
+
+
+@dataclass(frozen=True)
 class RememberResponse:
     seq: int
     cell_id: int
@@ -589,6 +627,19 @@ class CortexDBClient:
 
     def ingestion_job(self, job_id: int) -> dict[str, Any]:
         return self._request("GET", f"/v1/ingest/jobs/{job_id}", b"")
+
+    def ingestion_job_response(self, job_id: int) -> IngestionJobResponse:
+        return IngestionJobResponse.from_json(self.ingestion_job(job_id))
+
+    def delete_ingestion_job(self, job_id: int) -> DeleteJobResponse:
+        return DeleteJobResponse.from_json(
+            self._request("DELETE", f"/v1/ingest/jobs/{job_id}", b"")
+        )
+
+    def retry_ingestion_job(self, job_id: int) -> IngestionJobResponse:
+        return IngestionJobResponse.from_json(
+            self._request("POST", f"/v1/ingest/jobs/{job_id}/retry", b"")
+        )
 
     def validate(self) -> dict[str, Any]:
         return self._request("GET", "/v1/validate", b"")

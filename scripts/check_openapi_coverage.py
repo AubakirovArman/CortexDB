@@ -20,8 +20,9 @@ def extract_routes_from_router(router_path: Path) -> set[tuple[str, str]]:
         method, path = match.groups()
         routes.add((method, path))
     # Match wildcard patterns like _ if method == "GET" && path.starts_with("/v1/ingest/jobs/")
+    # Restricted to single-line patterns so compound multi-line guards are excluded.
     for match in re.finditer(
-        r'method\s*==\s*"(GET|POST|DELETE|PUT|PATCH)"\s*&&\s*path\.starts_with\("(/[^"]*)"\)',
+        r'method[^\S\n]*==[^\S\n]*"(GET|POST|DELETE|PUT|PATCH)"[^\S\n]*&&[^\S\n]*path\.starts_with\("(/[^"]*)"\)',
         text,
     ):
         method, prefix = match.groups()
@@ -30,6 +31,17 @@ def extract_routes_from_router(router_path: Path) -> set[tuple[str, str]]:
             path = prefix + "{job_id}"
         else:
             path = prefix + "/{job_id}"
+        routes.add((method, path))
+    # Match compound wildcard patterns with ends_with, e.g. retry endpoints
+    for match in re.finditer(
+        r'method\s*==\s*"(GET|POST|DELETE|PUT|PATCH)"\s*&&\s*path\.starts_with\("(/[^"]*)"\)\s*&&\s*path\.ends_with\("(/[^"]*)"\)',
+        text,
+    ):
+        method, prefix, suffix = match.groups()
+        if prefix.endswith("/"):
+            path = prefix + "{job_id}" + suffix
+        else:
+            path = prefix + "/{job_id}" + suffix
         routes.add((method, path))
     return routes
 

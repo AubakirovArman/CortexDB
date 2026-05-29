@@ -26,10 +26,10 @@ use http::{append_query_param, parse_response, path};
 pub use types::{
     AnnEvaluationResponse, AnnSearchReport, AqlCellResponse, AqlResponse, CellLookupResponse,
     CellResponse, ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
-    EvidenceResponse, ExplainResponse, GuardResponse, HealthResponse, IngestResponse,
-    NumericConflictResponse, PutCellResponse, RememberResponse, SearchResponse, SearchResult,
-    SourceRefResponse, StatsResponse, ValidationResponse, VectorAlgorithm,
-    VerificationReportResponse,
+    DeleteJobResponse, EvidenceResponse, ExplainResponse, GuardResponse, HealthResponse,
+    IngestResponse, IngestionJobResponse, IngestionJobStatus, NumericConflictResponse,
+    PutCellResponse, RememberResponse, SearchResponse, SearchResult, SourceRefResponse,
+    StatsResponse, ValidationResponse, VectorAlgorithm, VerificationReportResponse,
 };
 
 #[cfg(test)]
@@ -348,6 +348,18 @@ impl CortexDbClient {
 
     pub fn ingestion_job(&self, job_id: u64) -> SdkResult<serde_json::Value> {
         self.get(&format!("/v1/ingest/jobs/{job_id}"))
+    }
+
+    pub fn ingestion_job_response(&self, job_id: u64) -> SdkResult<IngestionJobResponse> {
+        decode_value(self.ingestion_job(job_id)?)
+    }
+
+    pub fn delete_ingestion_job(&self, job_id: u64) -> SdkResult<DeleteJobResponse> {
+        decode_value(self.delete(&format!("/v1/ingest/jobs/{job_id}"))?)
+    }
+
+    pub fn retry_ingestion_job(&self, job_id: u64) -> SdkResult<IngestionJobResponse> {
+        decode_value(self.post(&format!("/v1/ingest/jobs/{job_id}/retry"), "")?)
     }
 
     fn get(&self, path: &str) -> SdkResult<serde_json::Value> {

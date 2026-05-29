@@ -185,6 +185,25 @@ export interface IngestResponse {
   job_id: number | null;
 }
 
+export type IngestionJobStatus = "queued" | "running" | "completed" | "failed" | "cancelled";
+
+export interface IngestionJobResponse {
+  job_id: number;
+  label: string;
+  status: IngestionJobStatus;
+  total_items: number | null;
+  completed_items: number;
+  failed_items: number;
+  last_cell_id: number | null;
+  message: string | null;
+  retry_count: number;
+  max_retries: number;
+}
+
+export interface DeleteJobResponse {
+  deleted: boolean;
+}
+
 export interface RememberResponse {
   seq: number;
   cell_id: number;
@@ -211,6 +230,9 @@ export class CortexDBClient {
   ingestJson(scope: string, document: string, source?: string): Promise<IngestResponse>;
   ingestCsv(scope: string, document: string, source?: string): Promise<IngestResponse>;
   ingestionJob(jobId: number): Promise<JsonObject>;
+  ingestionJobResponse(jobId: number): Promise<IngestionJobResponse>;
+  deleteIngestionJob(jobId: number): Promise<DeleteJobResponse>;
+  retryIngestionJob(jobId: number): Promise<IngestionJobResponse>;
   validate(): Promise<ValidationResponse>;
   stats(): Promise<StatsResponse>;
 }

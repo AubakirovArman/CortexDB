@@ -18,6 +18,7 @@ pub enum IngestionJobStatus {
     Running,
     Completed,
     Failed,
+    Cancelled,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -31,6 +32,14 @@ pub struct IngestionProgress {
     #[serde(with = "cell_id_opt_serde")]
     pub last_cell_id: Option<CellId>,
     pub message: Option<String>,
+    #[serde(default)]
+    pub retry_count: u32,
+    #[serde(default = "default_max_retries")]
+    pub max_retries: u32,
+}
+
+const fn default_max_retries() -> u32 {
+    3
 }
 
 mod cell_id_opt_serde {
@@ -81,6 +90,8 @@ impl IngestionProgressTracker {
                 failed_items: 0,
                 last_cell_id: None,
                 message: None,
+                retry_count: 0,
+                max_retries: 3,
             },
         );
         Ok(job_id)
@@ -109,6 +120,33 @@ impl IngestionProgressTracker {
             .checked_add(1)
             .ok_or_else(progress_overflow)?;
         progress.message = Some(message.into());
+        Ok(())
+    }
+
+    pub fn cancel(&mut self, job_id: IngestionJobId) -> EngineResult<()> {
+        let progress = self.job_mut(job_id)?;
+        match progress.status {
+            IngestionJobStatus::Queued | IngestionJobStatus::Running => {
+                progress.status = IngestionJobStatus::Cancelled;
+                Ok(())
+            }
+            _ => Err(EngineError::InvalidOperation),
+        }
+    }
+
+    pub fn retry(&mut self, job_id: IngestionJobId) -> EngineResult<()> {
+        let progress = self.job_mut(job_id)?;
+        if progress.status != IngestionJobStatus::Failed {
+            return Err(EngineError::InvalidOperation);
+        }
+        if progress.retry_count >= progress.max_retries {
+            return Err(EngineError::StorageInvariant(
+                "max retries exceeded".to_owned(),
+            ));
+        }
+        progress.retry_count += 1;
+        progress.status = IngestionJobStatus::Queued;
+        progress.message = None;
         Ok(())
     }
 
@@ -207,6 +245,51 @@ impl Database {
                 Err(error)
             }
         }
+    }
+
+    pub fn cancel_ingestion_job(&self, id: u64) -> EngineResult<IngestionProgress> {
+        let mut progress = self
+            .load_ingestion_job(id)?
+            .ok_or(EngineError::InvalidOperation)?;
+        match progress.status {
+            IngestionJobStatus::Queued | IngestionJobStatus::Running => {
+                progress.status = IngestionJobStatus::Cancelled;
+                self.save_ingestion_job(&progress)?;
+                Ok(progress)
+            }
+            _ => Err(EngineError::InvalidOperation),
+        }
+    }
+
+    pub fn retry_ingestion_job(&self, id: u64) -> EngineResult<IngestionProgress> {
+        let mut progress = self
+            .load_ingestion_job(id)?
+            .ok_or(EngineError::InvalidOperation)?;
+        if progress.status != IngestionJobStatus::Failed {
+            return Err(EngineError::InvalidOperation);
+        }
+        if progress.retry_count >= progress.max_retries {
+            return Err(EngineError::StorageInvariant(
+                "max retries exceeded".to_owned(),
+            ));
+        }
+        progress.retry_count += 1;
+        progress.status = IngestionJobStatus::Queued;
+        progress.message = None;
+        self.save_ingestion_job(&progress)?;
+        Ok(progress)
+    }
+
+    pub fn delete_ingestion_job(&self, id: u64) -> EngineResult<bool> {
+        let path = self
+            .root_path
+            .join("ingestion_jobs")
+            .join(format!("{id}.json"));
+        if !path.exists() {
+            return Ok(false);
+        }
+        std::fs::remove_file(path)?;
+        Ok(true)
     }
 }
 

@@ -330,6 +330,31 @@ pub fn route_database(
                 Err(RouterError::NotFound("job not found".to_owned()))
             }
         }
+        _ if method == "DELETE" && path.starts_with("/v1/ingest/jobs/") => {
+            let id_str = path.strip_prefix("/v1/ingest/jobs/").unwrap();
+            let id = id_str
+                .parse::<u64>()
+                .map_err(|_| RouterError::BadRequest("invalid job id".to_owned()))?;
+            let deleted = db.delete_ingestion_job(id)?;
+            if deleted {
+                Ok(r#"{"deleted":true}"#.to_owned())
+            } else {
+                Err(RouterError::NotFound("job not found".to_owned()))
+            }
+        }
+        _ if method == "POST"
+            && path.starts_with("/v1/ingest/jobs/")
+            && path.ends_with("/retry") =>
+        {
+            let prefix = "/v1/ingest/jobs/";
+            let suffix = "/retry";
+            let id_str = &path[prefix.len()..path.len() - suffix.len()];
+            let id = id_str
+                .parse::<u64>()
+                .map_err(|_| RouterError::BadRequest("invalid job id".to_owned()))?;
+            let progress = db.retry_ingestion_job(id)?;
+            Ok(serde_json::to_string(&progress)?)
+        }
         _ => Err(RouterError::BadRequest("unknown route".to_owned())),
     }
 }

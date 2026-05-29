@@ -85,6 +85,15 @@ class CortexDBClient {
   ingestionJob(jobId) {
     return this.request("GET", `/v1/ingest/jobs/${jobId}`);
   }
+  ingestionJobResponse(jobId) {
+    return this.request("GET", `/v1/ingest/jobs/${jobId}`);
+  }
+  deleteIngestionJob(jobId) {
+    return this.request("DELETE", `/v1/ingest/jobs/${jobId}`);
+  }
+  retryIngestionJob(jobId) {
+    return this.request("POST", `/v1/ingest/jobs/${jobId}/retry`);
+  }
   validate() {
     return this.request("GET", "/v1/validate");
   }

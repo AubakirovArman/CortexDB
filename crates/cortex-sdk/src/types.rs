@@ -218,3 +218,38 @@ pub struct RememberResponse {
     pub cell_id: u64,
     pub ttl_seconds: Option<u64>,
 }
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum IngestionJobStatus {
+    Queued,
+    Running,
+    Completed,
+    Failed,
+    Cancelled,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct IngestionJobResponse {
+    pub job_id: u64,
+    pub label: String,
+    pub status: IngestionJobStatus,
+    pub total_items: Option<u64>,
+    pub completed_items: u64,
+    pub failed_items: u64,
+    pub last_cell_id: Option<u64>,
+    pub message: Option<String>,
+    #[serde(default)]
+    pub retry_count: u32,
+    #[serde(default = "default_max_retries")]
+    pub max_retries: u32,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct DeleteJobResponse {
+    pub deleted: bool,
+}
+
+fn default_max_retries() -> u32 {
+    3
+}

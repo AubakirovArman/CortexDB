@@ -428,6 +428,64 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500': *id002
+    delete:
+      summary: Delete or cancel an ingestion job
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: uint64
+      responses:
+        '200':
+          description: Deletion result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500': *id002
+  /v1/ingest/jobs/{job_id}/retry:
+    post:
+      summary: Retry a failed ingestion job
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: uint64
+      responses:
+        '200':
+          description: Retried job progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestionProgress'
+        '400':
+          description: Job not in failed state or max retries exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500': *id002
   /get:
     get:
       summary: Legacy cell read
@@ -1006,6 +1064,8 @@ components:
       - failed_items
       - last_cell_id
       - message
+      - retry_count
+      - max_retries
       properties:
         job_id:
           type: integer
@@ -1019,6 +1079,7 @@ components:
           - running
           - completed
           - failed
+          - cancelled
         total_items:
           anyOf:
           - type: integer
@@ -1039,6 +1100,12 @@ components:
           anyOf:
           - type: string
           - type: 'null'
+        retry_count:
+          type: integer
+          format: uint32
+        max_retries:
+          type: integer
+          format: uint32
     ErrorResponse:
       type: object
       required:
