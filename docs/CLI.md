@@ -96,6 +96,15 @@ files, and excludes `db.lock` plus known temporary files.
 cortexdb backup ./db ./db.backup
 ```
 
+#### `backup-drill <path> <backup_path> <restore_path>`
+Create a backup, restore it into a new drill target, and validate the restored
+database. Use this before trusting a backup procedure, because it proves the
+copy can be opened and replayed.
+
+```bash
+cortexdb backup-drill ./db ./db.backup ./db.drill-restored
+```
+
 #### `restore <backup_path> <path>`
 Restore a backup into a new target directory and validate the restored database.
 The target path must not already exist, which prevents accidental overwrite.

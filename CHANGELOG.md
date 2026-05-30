@@ -4,6 +4,9 @@
 
 ### P1 (Alpha Polish)
 
+- Added backup restore-drill support through `Database::backup_restore_drill_path`
+  and `cortexdb backup-drill`, proving a backup can be restored, opened,
+  replayed, and validated before it is trusted operationally.
 - Hardened SDK release lifecycle checks: protected `sdk-release` deployment
   environment, Node.js 24 workflow runtime, and tag/version lock-step
   enforcement before public publish jobs.

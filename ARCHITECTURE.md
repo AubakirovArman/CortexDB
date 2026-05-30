@@ -305,7 +305,7 @@ including demo and ANN report gates.
 
 The next architectural hardening items are:
 
-1. Backup/restore operational hardening and restore drills.
+1. Backup/restore retention, offsite target policy, and scheduled drill evidence.
 2. Multi-token auth policy, RBAC, and admin/data route separation.
 3. Crash/fault injection harness.
 4. Search and verification quality datasets.

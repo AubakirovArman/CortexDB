@@ -59,6 +59,47 @@ fn backup_restore_preserves_checkpointed_segment() {
 }
 
 #[test]
+fn backup_restore_drill_proves_recovered_database_is_readable() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let backup = root.path().join("backup");
+    let drill_target = root.path().join("drill-target");
+
+    {
+        let mut db = Database::open(&source).unwrap();
+        db.put_cell(CellId(7), b"drill wal tail".to_vec()).unwrap();
+        db.put_cell(
+            CellId(8),
+            b"scope=project:ops\nstatus=ready\ndrill checkpointed".to_vec(),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+        db.put_cell(CellId(9), b"drill post-checkpoint tail".to_vec())
+            .unwrap();
+    }
+
+    let report = Database::backup_restore_drill_path(&source, &backup, &drill_target).unwrap();
+    assert!(report.backup.files_copied > 0);
+    assert!(report.restore.files_copied > 0);
+    assert_eq!(report.restore.restored_validation.live_segments_checked, 1);
+    assert_eq!(report.restore.restored_validation.wal_records_checked, 1);
+
+    let restored = Database::open(&drill_target).unwrap();
+    assert_eq!(
+        restored.get_latest_cell(CellId(7)).unwrap(),
+        b"drill wal tail"
+    );
+    assert_eq!(
+        restored.get_latest_cell(CellId(8)).unwrap(),
+        b"scope=project:ops\nstatus=ready\ndrill checkpointed"
+    );
+    assert_eq!(
+        restored.get_latest_cell(CellId(9)).unwrap(),
+        b"drill post-checkpoint tail"
+    );
+}
+
+#[test]
 fn restore_rejects_existing_target() {
     let root = tempfile::tempdir().unwrap();
     let source = root.path().join("source");

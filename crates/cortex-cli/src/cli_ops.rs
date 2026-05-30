@@ -289,6 +289,21 @@ pub fn restore(backup_path: &str, path: &str) -> Result<String, String> {
     ))
 }
 
+pub fn backup_drill(path: &str, backup_path: &str, restore_path: &str) -> Result<String, String> {
+    let report = Database::backup_restore_drill_path(path, backup_path, restore_path)
+        .map_err(fmt_engine_error)?;
+    Ok(format!(
+        "backup_files_copied={} backup_bytes_copied={} restored_files_copied={} restored_bytes_copied={} restored_live_segments_checked={} restored_cells_checked={} restored_wal_records_checked={}",
+        report.backup.files_copied,
+        report.backup.bytes_copied,
+        report.restore.files_copied,
+        report.restore.bytes_copied,
+        report.restore.restored_validation.live_segments_checked,
+        report.restore.restored_validation.cells_checked,
+        report.restore.restored_validation.wal_records_checked
+    ))
+}
+
 pub fn gc_retired(path: &str) -> Result<String, String> {
     let mut db = Database::open(path).map_err(fmt_engine_error)?;
     let report = db

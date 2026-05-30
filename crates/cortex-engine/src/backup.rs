@@ -22,6 +22,12 @@ pub struct RestoreReport {
     pub restored_validation: StorageValidation,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct BackupDrillReport {
+    pub backup: BackupReport,
+    pub restore: RestoreReport,
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 struct CopyReport {
     files_copied: usize,
@@ -68,6 +74,16 @@ impl Database {
             bytes_copied: copied.bytes_copied,
             restored_validation,
         })
+    }
+
+    pub fn backup_restore_drill_path(
+        source_path: impl AsRef<Path>,
+        backup_path: impl AsRef<Path>,
+        restore_path: impl AsRef<Path>,
+    ) -> EngineResult<BackupDrillReport> {
+        let backup = Self::backup_path(source_path, backup_path.as_ref())?;
+        let restore = Self::restore_from_backup(backup_path, restore_path)?;
+        Ok(BackupDrillReport { backup, restore })
     }
 }
 

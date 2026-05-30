@@ -75,6 +75,11 @@ enum Command {
         path: String,
         backup_path: String,
     },
+    BackupDrill {
+        path: String,
+        backup_path: String,
+        restore_path: String,
+    },
     Restore {
         backup_path: String,
         path: String,
@@ -240,6 +245,15 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         Command::Backup { path, backup_path } => {
             ops::backup(resolved(&path).to_str().unwrap(), &backup_path)
         }
+        Command::BackupDrill {
+            path,
+            backup_path,
+            restore_path,
+        } => ops::backup_drill(
+            resolved(&path).to_str().unwrap(),
+            &backup_path,
+            &restore_path,
+        ),
         Command::Restore { backup_path, path } => {
             ops::restore(&backup_path, resolved(&path).to_str().unwrap())
         }

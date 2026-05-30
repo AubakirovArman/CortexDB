@@ -9,6 +9,7 @@ locked single-node database directory.
 cortexdb backup ./db ./db.backup
 cortexdb restore ./db.backup ./db.restored
 cortexdb validate ./db.restored
+cortexdb backup-drill ./db ./db.backup ./db.drill-restored
 ```
 
 ## Safety Rules
@@ -19,6 +20,7 @@ cortexdb validate ./db.restored
 - `db.lock` and known temporary files are excluded.
 - Restore only writes to a target path that does not already exist.
 - Restore validates the copied database before reporting success.
+- Backup drills run backup, restore, and restored validation as one operation.
 
 ## What Is Copied
 
@@ -38,3 +40,18 @@ Symlinks and other non-regular files are rejected.
 - There is no incremental backup or remote object-store target yet.
 - The source database must be opened exclusively by this process.
 - The restored target must be new; in-place overwrite is intentionally refused.
+- Backup drill targets must also be new; the command leaves the restored copy in
+  place for inspection.
+
+## Operational Drill
+
+Run a restore drill on the same release and host profile used for backups:
+
+```bash
+cortexdb backup-drill ./db ./db.backup.$(date +%Y%m%d) ./db.restore-drill
+cortexdb validate ./db.restore-drill
+```
+
+The first command proves the backup can be copied, opened, replayed, and
+validated. The second command is optional but useful in runbooks because it
+prints the validation report directly.
