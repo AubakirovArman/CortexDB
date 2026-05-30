@@ -129,6 +129,7 @@ What landed:
 33. ✅ CI now packages ANN release baselines and uploads the tarball as `ann-release-baseline-package`.
 34. ✅ Tag-based Release workflow now attaches the ANN baseline tarball to GitHub Releases as a durable asset.
 35. ✅ GitHub workflows opt into Node.js 24 for JavaScript actions to avoid Node.js 20 deprecation drift.
+36. ✅ Manual `ANN Public Corpus` workflow runs hosted public-corpus recall/latency gates with HNSW tuning inputs.
 
 What remains before broad production tuning:
 

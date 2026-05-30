@@ -169,5 +169,10 @@ repeatability.
 Use `ANN_PUBLIC_MAX_NEIGHBORS`, `ANN_PUBLIC_EF_SEARCH`, and
 `ANN_PUBLIC_LAYER_COUNT` to tune the graph while keeping the corpus fixed.
 
+For hosted runs, use the `ANN Public Corpus` GitHub Actions workflow. It accepts
+the same corpus URL, metric, conversion, SLO, and HNSW tuning inputs, then
+uploads converted JSONL files plus `report.json`, `history.json`, and optional
+baseline packages as artifacts.
+
 For threshold selection, fallback policy, and report-history rules, see
 [`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md).

@@ -279,6 +279,10 @@ Use `--max-neighbors`, `--ef-search`, and `--layer-count` to tune the graph
 without changing the corpus files. The generated report records these values so
 baseline comparisons do not hide HNSW parameter changes.
 
+The same path is available as the manual `ANN Public Corpus` GitHub Actions
+workflow. Use it for public archives that should be evaluated on hosted CI and
+kept as downloadable artifacts instead of only local `target/ann` files.
+
 ### Generate Ground Truth
 
 `exact_ground_truth.py` computes exact top-k candidates from `vectors.jsonl` and

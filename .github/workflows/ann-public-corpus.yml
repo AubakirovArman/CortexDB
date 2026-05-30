@@ -1,0 +1,179 @@
+name: ANN Public Corpus
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_url:
+        description: "Public corpus URL (.tar, .tar.gz, .zip, or compatible archive)"
+        required: true
+        type: string
+      dataset_id:
+        description: "Stable dataset id for output paths"
+        required: true
+        default: "public-ann"
+        type: string
+      corpus_format:
+        description: "Source format"
+        required: true
+        default: "fvecs"
+        type: choice
+        options: ["fvecs", "text"]
+      metric:
+        description: "ANN metric"
+        required: true
+        default: "l2"
+        type: choice
+        options: ["dot_product", "cosine", "l2"]
+      normalization:
+        description: "Vector normalization during conversion"
+        required: true
+        default: "none"
+        type: choice
+        options: ["none", "unit", "max_abs"]
+      scale:
+        description: "Fixed-point conversion scale"
+        required: true
+        default: "1"
+        type: string
+      limit:
+        description: "Top-k limit"
+        required: true
+        default: "10"
+        type: string
+      max_vectors:
+        description: "Optional vector sample limit"
+        required: false
+        type: string
+      max_queries:
+        description: "Optional query sample limit"
+        required: false
+        type: string
+      max_neighbors:
+        description: "HNSW max neighbors"
+        required: true
+        default: "16"
+        type: string
+      ef_search:
+        description: "HNSW ef_search"
+        required: true
+        default: "256"
+        type: string
+      layer_count:
+        description: "HNSW layer count"
+        required: true
+        default: "4"
+        type: string
+      min_recall_q16:
+        description: "Minimum per-query recall in Q16"
+        required: true
+        default: "58981"
+        type: string
+      min_mean_recall_q16:
+        description: "Minimum mean recall in Q16"
+        required: true
+        default: "62258"
+        type: string
+      max_p95_latency_nanos:
+        description: "Maximum p95 latency in nanoseconds"
+        required: true
+        default: "250000000"
+        type: string
+      max_max_latency_nanos:
+        description: "Maximum worst-query latency in nanoseconds"
+        required: true
+        default: "500000000"
+        type: string
+      publish_baseline:
+        description: "Package this run as a release-baseline artifact"
+        required: true
+        default: false
+        type: boolean
+      baseline_id:
+        description: "Optional baseline id when publish_baseline is true"
+        required: false
+        type: string
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  public-corpus:
+    name: Run public ANN corpus
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - name: Run public corpus benchmark
+        env:
+          SOURCE_URL: ${{ inputs.source_url }}
+          DATASET_ID: ${{ inputs.dataset_id }}
+          CORPUS_FORMAT: ${{ inputs.corpus_format }}
+          METRIC: ${{ inputs.metric }}
+          NORMALIZATION: ${{ inputs.normalization }}
+          SCALE: ${{ inputs.scale }}
+          LIMIT: ${{ inputs.limit }}
+          MAX_VECTORS: ${{ inputs.max_vectors }}
+          MAX_QUERIES: ${{ inputs.max_queries }}
+          MAX_NEIGHBORS: ${{ inputs.max_neighbors }}
+          EF_SEARCH: ${{ inputs.ef_search }}
+          LAYER_COUNT: ${{ inputs.layer_count }}
+          MIN_RECALL_Q16: ${{ inputs.min_recall_q16 }}
+          MIN_MEAN_RECALL_Q16: ${{ inputs.min_mean_recall_q16 }}
+          MAX_P95_LATENCY_NANOS: ${{ inputs.max_p95_latency_nanos }}
+          MAX_MAX_LATENCY_NANOS: ${{ inputs.max_max_latency_nanos }}
+        run: |
+          run_id="${DATASET_ID}-${GITHUB_RUN_ID}"
+          echo "ANN_PUBLIC_RUN_ID=${run_id}" >> "$GITHUB_ENV"
+
+          args=(
+            --source-url "$SOURCE_URL"
+            --dataset-id "$DATASET_ID"
+            --format "$CORPUS_FORMAT"
+            --metric "$METRIC"
+            --normalization "$NORMALIZATION"
+            --scale "$SCALE"
+            --limit "$LIMIT"
+            --max-neighbors "$MAX_NEIGHBORS"
+            --ef-search "$EF_SEARCH"
+            --layer-count "$LAYER_COUNT"
+            --min-recall-q16 "$MIN_RECALL_Q16"
+            --min-mean-recall-q16 "$MIN_MEAN_RECALL_Q16"
+            --max-p95-latency-nanos "$MAX_P95_LATENCY_NANOS"
+            --max-max-latency-nanos "$MAX_MAX_LATENCY_NANOS"
+            --run-id "$run_id"
+            --clean
+          )
+          if [ -n "$MAX_VECTORS" ]; then
+            args+=(--max-vectors "$MAX_VECTORS")
+          fi
+          if [ -n "$MAX_QUERIES" ]; then
+            args+=(--max-queries "$MAX_QUERIES")
+          fi
+          python3 scripts/ann/run_public_corpus.py "${args[@]}"
+
+      - name: Package baseline bundle
+        if: inputs.publish_baseline
+        env:
+          BASELINE_ID_INPUT: ${{ inputs.baseline_id }}
+        run: |
+          baseline_id="${BASELINE_ID_INPUT:-${ANN_PUBLIC_RUN_ID}}"
+          echo "ANN_PUBLIC_BASELINE_ID=${baseline_id}" >> "$GITHUB_ENV"
+          make ann-publish-baseline ANN_BASELINE_RUN_ID="$ANN_PUBLIC_RUN_ID" ANN_BASELINE_ID="$baseline_id"
+          make ann-package-baseline ANN_BASELINE_ID="$baseline_id" ANN_BASELINE_ARCHIVE="target/ann/release-baselines/${baseline_id}.tar.gz"
+
+      - name: Upload public ANN corpus reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: ann-public-corpus-${{ inputs.dataset_id }}-${{ github.run_id }}
+          if-no-files-found: error
+          path: |
+            target/ann/public-corpora/${{ inputs.dataset_id }}/public_corpus_manifest.json
+            target/ann/public-corpora/${{ inputs.dataset_id }}/converted/*.jsonl
+            target/ann/corpus-runs/**
+            target/ann/corpus-runs/history.json
+            target/ann/release-baselines/**

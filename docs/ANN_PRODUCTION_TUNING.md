@@ -143,6 +143,25 @@ scripts/ann/run_external_corpus.sh \
 7. Reject candidate runs with recall loss unless the change intentionally shifts
    the quality/latency tradeoff and the docs record that decision.
 
+## GitHub Actions Public Corpus Runs
+
+Use the `ANN Public Corpus` workflow when the corpus is too large for normal CI
+but should still be evaluated in a reproducible hosted run. Trigger it from
+GitHub Actions with:
+
+- `source_url`: public archive URL for a SIFT/GloVe-style corpus;
+- `dataset_id`: stable output id;
+- `corpus_format`: `fvecs` or `text`;
+- `metric`, `normalization`, and `scale` matching the corpus ground truth;
+- HNSW knobs: `max_neighbors`, `ef_search`, `layer_count`;
+- SLO gates: `min_recall_q16`, `min_mean_recall_q16`,
+  `max_p95_latency_nanos`, `max_max_latency_nanos`.
+
+For a quick shakedown, set `max_vectors` and `max_queries`. For a release-grade
+baseline, leave those unset and enable `publish_baseline`; the workflow will
+upload the converted JSONL files, run report, history, and optional baseline
+tarball as an Actions artifact.
+
 ## Fallback Policy
 
 Exact fallback is a correctness boundary, not an implementation detail.
