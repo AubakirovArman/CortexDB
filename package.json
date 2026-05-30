@@ -2,6 +2,9 @@
   "name": "cortexdb-e2e",
   "version": "0.1.0",
   "private": true,
+  "scripts": {
+    "dashboard:smoke": "playwright test e2e/dashboard.spec.ts"
+  },
   "devDependencies": {
     "@playwright/test": "^1.60.0"
   }

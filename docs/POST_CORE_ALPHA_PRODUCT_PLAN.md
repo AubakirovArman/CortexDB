@@ -152,7 +152,9 @@ Exact fallback preserves correctness.
 Goal: turn the dashboard into a real product UI.
 
 Status: the existing developer console is now served from versioned static
-assets under `/dashboard/assets/v1/`. It is still not a standalone frontend app.
+assets under `/dashboard/assets/v1/` and has a Playwright smoke path for asset
+loading, tabs, cell put/get, and keyword search. It is still not a standalone
+frontend app.
 
 Tasks:
 
@@ -171,7 +173,7 @@ Tasks:
 13. Add auth/token handling.
 14. Add request history and JSON inspectors.
 15. Add clear error states.
-16. Add Playwright smoke tests.
+16. ✅ Add Playwright smoke tests for the current dashboard.
 17. ✅ Add static asset serving path for the current developer console.
 18. Add UI screenshots to docs.
 

@@ -1,68 +1,112 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { spawn, type ChildProcess } from 'node:child_process';
+import { createServer } from 'node:net';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-const port = process.env.CORTEX_PORT || '8090';
-const baseURL = `http://127.0.0.1:${port}`;
+async function freePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (!address || typeof address === 'string') {
+        server.close(() => reject(new Error('failed to allocate TCP port')));
+        return;
+      }
+      server.close(() => resolve(address.port));
+    });
+  });
+}
 
-test('dashboard serves HTML with correct title', async ({ page }) => {
-  await page.goto(`${baseURL}/dashboard`);
-  await expect(page).toHaveTitle(/CortexDB Console/);
-});
+async function waitForHealth(baseUrl: string, server: ChildProcess): Promise<void> {
+  const deadline = Date.now() + 10_000;
+  let lastError: unknown;
+  while (Date.now() < deadline) {
+    if (server.exitCode !== null) {
+      throw new Error(`server exited before readiness: ${server.exitCode}`);
+    }
+    try {
+      const response = await fetch(`${baseUrl}/v1/health`);
+      if (response.ok) return;
+    } catch (error) {
+      lastError = error;
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  throw new Error(`server did not become ready: ${String(lastError)}`);
+}
 
-test('health check button is visible', async ({ page }) => {
-  await page.goto(`${baseURL}/dashboard`);
-  const healthBtn = page.locator('button:has-text("Health")');
-  await expect(healthBtn).toBeVisible();
-});
+test('dashboard loads versioned assets and drives core forms', async ({ page, request }) => {
+  const root = mkdtempSync(join(tmpdir(), 'cortexdb-dashboard-e2e-'));
+  const port = await freePort();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const server = spawn('target/debug/cortex-server', [root, `127.0.0.1:${port}`], {
+    cwd: process.cwd(),
+    env: { ...process.env, RUST_LOG: 'warn' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  const stderr: string[] = [];
+  server.stderr?.on('data', chunk => stderr.push(String(chunk)));
 
-test('search smoke test', async ({ page }) => {
-  await page.goto(`${baseURL}/dashboard`);
+  try {
+    await waitForHealth(baseUrl, server);
 
-  // Put a cell with searchable content
-  await page.locator('button[data-tab="cells"]').click();
-  await page.locator('#cell-op').selectOption('put');
-  await page.locator('#cell-payload').fill('scope=default\nstatus=ready\ntype=fact\nsource=e2e\n\nSolar budget approved');
-  await page.locator('#cell-form button[type="submit"]').click();
-  await expect(page.locator('#output')).toContainText('"seq"');
+    const style = await request.get(`${baseUrl}/dashboard/assets/v1/style.css`);
+    expect(style.ok()).toBeTruthy();
+    expect(style.headers()['content-type']).toContain('text/css');
+    expect(await style.text()).toContain('.panel.active');
 
-  // Search for the content
-  await page.locator('button[data-tab="search"]').click();
-  await page.locator('#search-query').fill('Solar');
-  await page.locator('#search-form button[type="submit"]').click();
-  await expect(page.locator('#output')).toContainText('"results"');
-});
+    const script = await request.get(`${baseUrl}/dashboard/assets/v1/app.js`);
+    expect(script.ok()).toBeTruthy();
+    expect(script.headers()['content-type']).toContain('application/javascript');
+    expect(await script.text()).toContain('run("stats"');
 
-test('context smoke test', async ({ page }) => {
-  await page.goto(`${baseURL}/dashboard`);
+    const consoleErrors: string[] = [];
+    page.on('console', message => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+    page.on('pageerror', error => consoleErrors.push(error.message));
 
-  // Put a cell with scope metadata
-  await page.locator('button[data-tab="cells"]').click();
-  await page.locator('#cell-op').selectOption('put');
-  await page.locator('#cell-payload').fill('scope=default\nstatus=ready\ntype=fact\nsource=e2e\n\nWind Farm status ready');
-  await page.locator('#cell-form button[type="submit"]').click();
-  await expect(page.locator('#output')).toContainText('"seq"');
+    await page.goto(`${baseUrl}/dashboard`);
+    await expect(page).toHaveTitle('CortexDB Console');
+    await expect(page.getByRole('heading', { name: 'CortexDB Console' })).toBeVisible();
+    await expect(page.locator('link[href="/dashboard/assets/v1/style.css"]')).toHaveCount(1);
+    await expect(page.locator('script[src="/dashboard/assets/v1/app.js"]')).toHaveCount(1);
+    await expect(page.locator('#output')).toContainText('current_seq');
 
-  // Build context pack
-  await page.locator('button[data-tab="context"]').click();
-  await page.locator('#context-scope').fill('default');
-  await page.locator('#context-query').fill('RETRIEVE CONTEXT FOR TASK "wind" IN BRAIN default WHERE space = default AND status = "ready" LIMIT 10 CANDIDATES;');
-  await page.locator('#context-form button[type="submit"]').click();
-  await expect(page.locator('#output')).toContainText('"cells"');
-});
+    await page.getByRole('tab', { name: 'Cells' }).click();
+    await expect(page.locator('#cells')).toBeVisible();
+    await page.locator('#cell-id').fill('91001');
+    await page.locator('#cell-payload').fill([
+      'scope=project:investments',
+      'status=ready',
+      'type=fact',
+      'source=dashboard-smoke',
+      '',
+      'Dashboard smoke budget note',
+    ].join('\n'));
+    await page.getByRole('button', { name: 'Run Cell Operation' }).click();
+    await expect(page.locator('#output')).toContainText('"seq"');
 
-test('verify smoke test', async ({ page }) => {
-  await page.goto(`${baseURL}/dashboard`);
+    await page.locator('#cell-op').selectOption('get');
+    await page.getByRole('button', { name: 'Run Cell Operation' }).click();
+    await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
 
-  // Put a cell with a fact
-  await page.locator('button[data-tab="cells"]').click();
-  await page.locator('#cell-op').selectOption('put');
-  await page.locator('#cell-payload').fill('scope=default\nstatus=ready\ntype=fact\nsource=e2e\n\nSolar Plant budget is 1.2B KZT');
-  await page.locator('#cell-form button[type="submit"]').click();
-  await expect(page.locator('#output')).toContainText('"seq"');
+    await page.getByRole('tab', { name: 'Search' }).click();
+    await expect(page.locator('#search')).toBeVisible();
+    await page.locator('#search-query').fill('budget');
+    await page.getByRole('button', { name: 'Search' }).click();
+    await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
 
-  // Verify the fact
-  await page.locator('button[data-tab="verify"]').click();
-  await page.locator('#verify-scope').fill('default');
-  await page.locator('#verify-query').fill('VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN default;');
-  await page.locator('#verify-form button[type="submit"]').click();
-  await expect(page.locator('#output')).toContainText('"fact"');
+    await expect(page.locator('#history li').first()).toContainText('OK search');
+    expect(consoleErrors).toEqual([]);
+  } finally {
+    server.kill('SIGTERM');
+    rmSync(root, { recursive: true, force: true });
+    if (server.exitCode && server.exitCode !== 0) {
+      throw new Error(`server exited with ${server.exitCode}: ${stderr.join('')}`);
+    }
+  }
 });

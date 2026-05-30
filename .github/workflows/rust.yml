@@ -25,6 +25,13 @@ jobs:
       - run: cargo test --workspace --all-features
       - run: cargo fmt --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
+      - uses: actions/setup-node@v6
+        if: matrix.toolchain == 'stable'
+        with:
+          node-version: 24
+          cache: npm
+      - run: make dashboard-smoke
+        if: matrix.toolchain == 'stable'
       - name: Generate ANN regression reports
         if: matrix.toolchain == 'stable'
         id: ann_reports
