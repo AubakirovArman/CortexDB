@@ -165,6 +165,7 @@ default until external corpus evidence proves ANN behavior for that domain.
 Every external run should keep:
 
 - `manifest.json`;
+- `machine_profile.json`;
 - `report.json`;
 - `comparison.json` when a baseline exists;
 - `history.json` at the corpus-run root;

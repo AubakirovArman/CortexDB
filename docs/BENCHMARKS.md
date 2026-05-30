@@ -140,6 +140,8 @@ ground-truth generation, `ann_corpus_check`, run manifest creation, and report
 archival under `target/ann/corpus-runs/<run-id>/`. It also refreshes
 `target/ann/corpus-runs/history.json`, which summarizes archived runs and
 adjacent recall/latency regressions.
+Each run also writes `machine_profile.json` so latency reports can be tied to
+the CPU/OS/Rust environment that produced them.
 
 `make ann-publish-baseline` packages one archived run into
 `target/ann/release-baselines/<baseline-id>/` for release artifacts and future

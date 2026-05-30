@@ -367,6 +367,7 @@ scripts/ann/run_external_corpus.sh \
 The script creates `target/ann/corpus-runs/<run-id>/` and writes:
 
 - `ground_truth.jsonl` if `--ground-truth` was omitted;
+- `machine_profile.json` with OS, CPU, memory, Rust, and Cargo versions;
 - `manifest.json` with the run id, commit SHA, metric, input paths, and report
   path;
 - `report.json` from `ann_corpus_check`;
@@ -404,3 +405,6 @@ The comparison is written to
 The comparison also fails when `hnsw_max_neighbors`, `hnsw_ef_search`, or
 `hnsw_layer_count` changes, because recall and latency are only comparable under
 the same graph/search profile.
+Latency baselines should also be interpreted with `machine_profile.json`; p95
+from different CPU/OS/Rust environments is useful as signal, but not as a strict
+apples-to-apples regression unless the machine profile matches.

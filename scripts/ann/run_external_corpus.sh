@@ -187,6 +187,60 @@ report_path="${run_dir}/report.json"
 manifest_path="${run_dir}/manifest.json"
 comparison_path="${run_dir}/comparison.json"
 history_path="${output_root%/}/history.json"
+machine_profile_path="${run_dir}/machine_profile.json"
+
+python3 - "${machine_profile_path}" <<'PY'
+import json
+import os
+import platform
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def run(command):
+    try:
+        return subprocess.check_output(command, text=True, stderr=subprocess.DEVNULL).strip()
+    except Exception:
+        return ""
+
+
+def read_first_cpu_model():
+    try:
+        for line in Path("/proc/cpuinfo").read_text(encoding="utf-8").splitlines():
+            if line.startswith("model name"):
+                return line.split(":", 1)[1].strip()
+    except OSError:
+        return ""
+    return ""
+
+
+def read_mem_total_kib():
+    try:
+        for line in Path("/proc/meminfo").read_text(encoding="utf-8").splitlines():
+            if line.startswith("MemTotal:"):
+                return int(line.split()[1])
+    except (OSError, ValueError, IndexError):
+        return 0
+    return 0
+
+
+profile = {
+    "schema_version": 1,
+    "captured_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+    "os": platform.platform(),
+    "kernel": platform.release(),
+    "machine": platform.machine(),
+    "cpu_model": read_first_cpu_model(),
+    "cpu_count": os.cpu_count() or 0,
+    "mem_total_kib": read_mem_total_kib(),
+    "rustc_version": run(["rustc", "--version"]),
+    "cargo_version": run(["cargo", "--version"]),
+}
+path = Path(sys.argv[1])
+path.write_text(json.dumps(profile, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
 
 cat > "${manifest_path}" <<MANIFEST
 {
@@ -200,6 +254,7 @@ cat > "${manifest_path}" <<MANIFEST
   "queries": "${queries}",
   "ground_truth": "${ground_truth}",
   "baseline_report": "${baseline_report}",
+  "machine_profile": "${machine_profile_path}",
   "report": "${report_path}"
 }
 MANIFEST

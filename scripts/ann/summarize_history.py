@@ -78,6 +78,7 @@ def load_run(manifest_path: Path) -> dict[str, Any]:
             manifest.get("ground_truth", ""),
             f"{manifest_path}:ground_truth",
         ),
+        "machine_profile": as_str(manifest.get("machine_profile", ""), f"{manifest_path}:machine_profile"),
         "baseline_report": as_str(
             manifest.get("baseline_report", ""),
             f"{manifest_path}:baseline_report",

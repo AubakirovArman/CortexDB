@@ -99,6 +99,7 @@ def publish_baseline(
     copy_file(run_root / "history.json", output_dir / "history.json", files)
     copy_file(run_dir / "comparison.json", output_dir / "comparison.json", files)
     copy_file(resolve_path(run_dir, manifest.get("ground_truth")), output_dir / "ground_truth.jsonl", files)
+    copy_file(resolve_path(run_dir, manifest.get("machine_profile")), output_dir / "machine_profile.json", files)
     baseline_manifest = {
         "baseline_id": baseline_id,
         "created_at": created_at,
@@ -108,6 +109,7 @@ def publish_baseline(
         "vectors": manifest.get("vectors", ""),
         "queries": manifest.get("queries", ""),
         "ground_truth": manifest.get("ground_truth", ""),
+        "machine_profile": manifest.get("machine_profile", ""),
         "baseline_report": manifest.get("baseline_report", ""),
         "summary": run_summary(report),
         "files": files,
@@ -154,6 +156,7 @@ class SelfTests(unittest.TestCase):
             "queries": "queries.jsonl",
             "ground_truth": str(run_dir / "ground_truth.jsonl"),
             "baseline_report": "",
+            "machine_profile": str(run_dir / "machine_profile.json"),
             "report": str(run_dir / "report.json"),
         }
         report = {
@@ -179,6 +182,7 @@ class SelfTests(unittest.TestCase):
         }
         (run_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
         (run_dir / "report.json").write_text(json.dumps(report), encoding="utf-8")
+        (run_dir / "machine_profile.json").write_text('{"schema_version":1}\n', encoding="utf-8")
         (run_dir / "ground_truth.jsonl").write_text('{"name":"q","candidates":[1]}\n', encoding="utf-8")
         (root / "history.json").write_text(json.dumps({"run_count": 1}), encoding="utf-8")
 
@@ -195,6 +199,7 @@ class SelfTests(unittest.TestCase):
             self.assertTrue((bundle / "report.json").exists())
             self.assertTrue((bundle / "history.json").exists())
             self.assertTrue((bundle / "ground_truth.jsonl").exists())
+            self.assertTrue((bundle / "machine_profile.json").exists())
 
     def test_invalid_baseline_id_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
