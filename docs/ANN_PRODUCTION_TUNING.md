@@ -34,6 +34,9 @@ construction or search behavior has an objective before/after report.
 | L4 | Production tuning | corpus suite covers size, metric, tenant/domain, and latency classes. |
 
 Core Alpha currently targets L1 plus the tooling for L2/L3.
+The public `siftsmall` full-run baseline attached to the Core Alpha release is
+the first L2 evidence package; the hosted workflow can now compare candidate
+runs against that published bundle.
 
 ## Corpus Selection
 
@@ -49,6 +52,12 @@ The checked-in `ann_domain_*_v1.jsonl` fixture is the first lightweight domain
 gate. It is not a replacement for a real customer/domain corpus, but it keeps
 agent-memory and context-shaped vector regressions visible in every normal CI
 run.
+
+`make ann-demo-domain-corpus-run` adds a larger local product-shaped gate by
+building vectors from the checked-in example datasets and RAG demo payloads. It
+is still deterministic and dependency-free, but it covers more realistic
+finance, legal, HR, support, SEC, and world-indicator text than the tiny
+checked-in fixture.
 
 For each corpus, preserve:
 
@@ -303,11 +312,11 @@ Warnings, not blockers:
 
 ## Current Gaps
 
-- First hosted `siftsmall` public-corpus smoke baseline is recorded as a GitHub
-  Actions artifact; no large all-query public/domain baseline is published yet.
+- Full hosted `siftsmall` public-corpus baseline is published as a release
+  asset and candidate hosted runs can be gated against that baseline bundle.
 - HNSW construction parameters are not yet collection-profile aware.
-- Report history is not stored outside CI artifacts.
-- Public benchmark conversion and one-command public-corpus runs are available,
-  but no SIFT/GloVe-style golden report is checked in or attached to a release
-  yet.
+- Report history is not stored outside CI artifacts and release baseline
+  bundles.
+- Demo-domain corpus generation is available, but no large real customer/domain
+  baseline is published yet.
 - Production SLO profiles per workload are not yet formalized.

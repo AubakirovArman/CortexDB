@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-package-baseline ann-compare-baseline-bundle smoke-test sdk-smoke-test alpha-check release-check demo
+.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-package-baseline ann-compare-baseline-bundle smoke-test sdk-smoke-test alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -17,6 +17,17 @@ ANN_DOMAIN_VECTORS ?= crates/cortex-engine/fixtures/ann_domain_vectors_v1.jsonl
 ANN_DOMAIN_QUERIES ?= crates/cortex-engine/fixtures/ann_domain_queries_v1.jsonl
 ANN_DOMAIN_GROUND_TRUTH ?= crates/cortex-engine/fixtures/ann_domain_ground_truth_v1.jsonl
 ANN_DOMAIN_REPORT ?= target/ann/ann_domain_corpus_report.json
+ANN_DEMO_DOMAIN_SOURCE_ROOT ?= examples/datasets
+ANN_DEMO_DOMAIN_EXTRA_SOURCE_ROOT ?= examples/rag_demo/data
+ANN_DEMO_DOMAIN_OUTPUT_DIR ?= target/ann/demo-domain-corpus/converted
+ANN_DEMO_DOMAIN_RUN_ROOT ?= target/ann/demo-domain-corpus/runs
+ANN_DEMO_DOMAIN_RUN_ID ?= demo-domain
+ANN_DEMO_DOMAIN_DIMENSION ?= 64
+ANN_DEMO_DOMAIN_LIMIT ?= 5
+ANN_DEMO_DOMAIN_SCALE ?= 1200
+ANN_DEMO_DOMAIN_MAX_NEIGHBORS ?= 16
+ANN_DEMO_DOMAIN_EF_SEARCH ?= 128
+ANN_DEMO_DOMAIN_LAYER_COUNT ?= 4
 ANN_BASELINE_REPORT ?= $(ANN_CORPUS_REPORT)
 ANN_CANDIDATE_REPORT ?= $(ANN_CORPUS_REPORT)
 ANN_REPORT_COMPARISON ?= target/ann/ann_report_comparison.json
@@ -101,7 +112,14 @@ ann-domain-corpus-check:
 ann-domain-corpus-report:
 	cargo run --release -p cortex-engine --bin ann_corpus_check -- --vectors $(ANN_DOMAIN_VECTORS) --queries $(ANN_DOMAIN_QUERIES) --ground-truth $(ANN_DOMAIN_GROUND_TRUTH) --metric dot_product --min-recall-q16 65535 --min-mean-recall-q16 65535 --output $(ANN_DOMAIN_REPORT)
 
+ann-demo-domain-corpus-build:
+	python3 scripts/ann/build_demo_domain_corpus.py --source-root $(ANN_DEMO_DOMAIN_SOURCE_ROOT) --source-root $(ANN_DEMO_DOMAIN_EXTRA_SOURCE_ROOT) --output-dir $(ANN_DEMO_DOMAIN_OUTPUT_DIR) --dimension $(ANN_DEMO_DOMAIN_DIMENSION) --limit $(ANN_DEMO_DOMAIN_LIMIT) --scale $(ANN_DEMO_DOMAIN_SCALE)
+
+ann-demo-domain-corpus-run: ann-demo-domain-corpus-build
+	scripts/ann/run_external_corpus.sh --vectors $(ANN_DEMO_DOMAIN_OUTPUT_DIR)/vectors.jsonl --queries $(ANN_DEMO_DOMAIN_OUTPUT_DIR)/queries.jsonl --metric dot_product --output-root $(ANN_DEMO_DOMAIN_RUN_ROOT) --run-id $(ANN_DEMO_DOMAIN_RUN_ID) --min-recall-q16 65535 --min-mean-recall-q16 65535 --max-neighbors $(ANN_DEMO_DOMAIN_MAX_NEIGHBORS) --ef-search $(ANN_DEMO_DOMAIN_EF_SEARCH) --layer-count $(ANN_DEMO_DOMAIN_LAYER_COUNT)
+
 ann-scripts-check:
+	python3 scripts/ann/build_demo_domain_corpus.py --self-test
 	python3 scripts/ann/convert_public_corpus.py --self-test
 	python3 scripts/ann/run_public_corpus.py --self-test
 	python3 scripts/ann/exact_ground_truth.py --self-test
@@ -181,6 +199,7 @@ alpha-check:
 	$(MAKE) ann-domain-corpus-check
 	$(MAKE) ann-scripts-check
 	$(MAKE) ann-corpus-run-smoke
+	$(MAKE) ann-demo-domain-corpus-run
 	cargo bench -p cortex-engine --bench core_baseline
 	./examples/demo/investment_projects/run.sh
 

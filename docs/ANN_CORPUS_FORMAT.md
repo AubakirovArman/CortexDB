@@ -177,11 +177,19 @@ make ann-corpus-smoke-check
 make ann-corpus-smoke-report
 make ann-domain-corpus-check
 make ann-domain-corpus-report
+make ann-demo-domain-corpus-run
 ```
 
 This smoke corpus verifies the file contract and report shape. It is not a
 production-quality benchmark. Real ANN tuning should use larger external
 corpora and archived reports.
+
+`ann-demo-domain-corpus-run` is a larger local demo gate. It does not commit the
+generated corpus. Instead, it scans the checked-in example payloads, writes
+`vectors.jsonl`, `queries.jsonl`, and `documents.jsonl` to
+`target/ann/demo-domain-corpus/converted/`, generates exact ground truth, then
+archives the report and machine profile under
+`target/ann/demo-domain-corpus/runs/<run-id>/`.
 
 ## Recommended Workflow
 
@@ -238,6 +246,26 @@ contract is fixed-point. Use `--normalization unit` for cosine-like public
 embeddings, `--normalization max_abs` for preserving vector shape under large
 coordinate ranges, or `--normalization none` when the source values are already
 scaled.
+
+### Build A Demo-Domain Corpus
+
+`build_demo_domain_corpus.py` turns CortexDB example JSONL payloads into the
+same ANN corpus contract:
+
+```bash
+python3 scripts/ann/build_demo_domain_corpus.py \
+  --source-root examples/datasets \
+  --source-root examples/rag_demo/data \
+  --output-dir target/ann/demo-domain-corpus/converted \
+  --dimension 64 \
+  --limit 5
+```
+
+It uses deterministic hashed sparse vectors. This is not a replacement for real
+embeddings, but it gives the HNSW gate a repeatable product-shaped corpus with
+finance, legal, HR, support, SEC, and world-indicator payloads. The emitted
+`documents.jsonl` maps generated candidate ids back to source files and lines,
+which makes recall failures easier to inspect.
 
 ### Run A Public Corpus End To End
 

@@ -135,6 +135,14 @@ fixture shaped around investment-project, legal-risk, operations-error, and
 agent-memory vectors. This keeps a CortexDB-shaped ANN gate in normal CI without
 checking in a large domain corpus.
 
+`make ann-demo-domain-corpus-run` builds a repeatable corpus from the checked-in
+demo payloads under `examples/datasets` and `examples/rag_demo/data`, generates
+exact ground truth, runs the same HNSW gate, and archives a run directory under
+`target/ann/demo-domain-corpus/runs/<run-id>/`. This is the local bridge between
+tiny CI fixtures and real external corpora: it exercises Russian/Kazakh/English
+finance, legal, HR, support, SEC, and world-indicator payloads without
+committing generated benchmark files.
+
 `make ann-scripts-check` validates the dependency-free helper scripts that
 generate exact ground truth and compare two ANN report JSON files. Use
 `make ann-corpus-compare ANN_BASELINE_REPORT=... ANN_CANDIDATE_REPORT=...` to
