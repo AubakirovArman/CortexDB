@@ -138,3 +138,6 @@ gate a candidate report against an archived baseline.
 `make ann-corpus-run-smoke` exercises the full external-corpus workflow:
 ground-truth generation, `ann_corpus_check`, run manifest creation, and report
 archival under `target/ann/corpus-runs/<run-id>/`.
+
+For threshold selection, fallback policy, and report-history rules, see
+[`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md).

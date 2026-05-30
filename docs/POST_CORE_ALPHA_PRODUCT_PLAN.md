@@ -118,6 +118,7 @@ What landed:
 22. ✅ `ann_corpus_check` can evaluate larger external vectors/queries/ground-truth JSONL suites.
 23. ✅ ANN helper scripts generate exact ground truth and compare corpus reports without extra dependencies.
 24. ✅ `run_external_corpus.sh` orchestrates ground-truth generation, ANN evaluation, optional baseline comparison, and run artifact archival.
+25. ✅ `ANN_PRODUCTION_TUNING.md` defines corpus readiness levels, thresholds, fallback policy, and release blockers.
 
 What remains before broad production tuning:
 
