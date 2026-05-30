@@ -1,8 +1,17 @@
-pub const BODY: &str = r##"<body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CortexDB Console</title>
+    <link rel="stylesheet" href="/dashboard/assets/v1/style.css">
+    <script src="/dashboard/assets/v1/app.js" defer></script>
+</head>
+<body>
     <header>
         <div class="shell topbar">
             <h1>CortexDB Console</h1>
-            <form id="session-form" class="topbar">
+            <form id="session-form" class="topbar" action="/dashboard" method="post">
                 <label for="tenant">Tenant</label>
                 <input id="tenant" name="tenant" autocomplete="organization" value="default">
                 <label for="token">Bearer token</label>
@@ -11,7 +20,7 @@ pub const BODY: &str = r##"<body>
             </form>
         </div>
     </header>
-    <main class="shell">
+    <main class="shell" id="content" tabindex="-1">
         <nav aria-label="Console views">
             <div class="tabs" role="tablist" aria-label="CortexDB tools">
                 <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="ops" data-tab="ops">Ops</button>
@@ -38,7 +47,7 @@ pub const BODY: &str = r##"<body>
             </section>
             <section id="cells" class="panel" role="tabpanel">
                 <h2>Cells</h2>
-                <form id="cell-form">
+                <form id="cell-form" action="/v1/cell" method="post">
                     <div class="grid">
                         <div class="field"><label for="cell-id">Cell ID</label><input id="cell-id" name="cell_id" inputmode="numeric" required value="1"></div>
                         <div class="field"><label for="cell-op">Operation</label><select id="cell-op" name="op"><option value="put">Put</option><option value="get">Get</option><option value="delete">Tombstone</option></select></div>
@@ -54,7 +63,7 @@ Solar budget note</textarea></div>
             </section>
             <section id="search" class="panel" role="tabpanel">
                 <h2>Search</h2>
-                <form id="search-form">
+                <form id="search-form" action="/v1/search" method="get">
                     <div class="grid">
                         <div class="field"><label for="search-scope">Scope</label><input id="search-scope" name="scope" required value="project:investments"></div>
                         <div class="field"><label for="search-mode">Mode</label><select id="search-mode" name="mode"><option value="keyword">Keyword</option><option value="vector">Vector</option></select></div>
@@ -67,7 +76,7 @@ Solar budget note</textarea></div>
             </section>
             <section id="ann-eval" class="panel" role="tabpanel">
                 <h2>ANN Eval</h2>
-                <form id="ann-eval-form">
+                <form id="ann-eval-form" action="/v1/search/ann-evaluate" method="get">
                     <div class="grid">
                         <div class="field"><label for="ann-scope">Scope</label><input id="ann-scope" name="scope" required value="project:investments"></div>
                         <div class="field"><label for="ann-vector">Vector</label><input id="ann-vector" name="vector" inputmode="decimal" required value="0,10"></div>
@@ -78,7 +87,7 @@ Solar budget note</textarea></div>
             </section>
             <section id="aql" class="panel" role="tabpanel">
                 <h2>AQL</h2>
-                <form id="aql-form">
+                <form id="aql-form" action="/v1/aql" method="post">
                     <div class="field"><label for="aql-scope">Scope</label><input id="aql-scope" name="scope" required value="project:investments"></div>
                     <div class="field"><label for="aql-query">Statement</label><textarea id="aql-query" name="query">RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;</textarea></div>
                     <button type="submit">Run AQL</button>
@@ -86,7 +95,7 @@ Solar budget note</textarea></div>
             </section>
             <section id="context" class="panel" role="tabpanel">
                 <h2>Context</h2>
-                <form id="context-form">
+                <form id="context-form" action="/v1/context" method="post">
                     <div class="field"><label for="context-scope">Scope</label><input id="context-scope" name="scope" required value="project:investments"></div>
                     <div class="field"><label for="context-query">Statement</label><textarea id="context-query" name="query">RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;</textarea></div>
                     <button type="submit">Build Context Pack</button>
@@ -94,7 +103,7 @@ Solar budget note</textarea></div>
             </section>
             <section id="verify" class="panel" role="tabpanel">
                 <h2>Verify</h2>
-                <form id="verify-form">
+                <form id="verify-form" action="/v1/verify" method="post">
                     <div class="field"><label for="verify-scope">Scope</label><input id="verify-scope" name="scope" required value="project:investments"></div>
                     <div class="field"><label for="verify-query">Statement</label><textarea id="verify-query" name="query">VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;</textarea></div>
                     <button type="submit">Verify Fact</button>
@@ -102,7 +111,7 @@ Solar budget note</textarea></div>
             </section>
             <section id="ingest" class="panel" role="tabpanel">
                 <h2>Ingest</h2>
-                <form id="ingest-form">
+                <form id="ingest-form" action="/v1/ingest/text" method="post">
                     <div class="grid">
                         <div class="field"><label for="ingest-scope">Scope</label><input id="ingest-scope" name="scope" required value="project:investments"></div>
                         <div class="field"><label for="ingest-source">Source</label><input id="ingest-source" name="source" value="dashboard"></div>
@@ -112,7 +121,7 @@ Solar budget note</textarea></div>
 Wind Farm status ready.</textarea></div>
                     <button type="submit">Ingest</button>
                 </form>
-                <form id="ingest-job-form">
+                <form id="ingest-job-form" action="/v1/ingest/jobs/1" method="get">
                     <div class="field"><label for="ingest-job-id">Job ID</label><input id="ingest-job-id" name="job_id" inputmode="numeric" value="1"></div>
                     <button type="submit" class="secondary">Load Ingest Job</button>
                 </form>
@@ -124,4 +133,6 @@ Wind Farm status ready.</textarea></div>
             <h2>History</h2>
             <ol id="history" class="history" aria-label="Request history"></ol>
         </aside>
-    </main>"##;
+    </main>
+</body>
+</html>

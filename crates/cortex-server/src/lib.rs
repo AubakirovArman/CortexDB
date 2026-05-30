@@ -1,6 +1,6 @@
 use axum::{
     extract::{Request, State},
-    http::StatusCode,
+    http::{header, StatusCode},
     response::{Html, IntoResponse},
     routing::Router,
     Json,
@@ -196,6 +196,16 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
 
     if method == "GET" && (path == "/" || path == "/dashboard") {
         return Html(dashboard::html()).into_response();
+    }
+    if method == "GET" {
+        if let Some(asset) = dashboard::asset(&path) {
+            return (
+                StatusCode::OK,
+                [(header::CONTENT_TYPE, asset.content_type)],
+                asset.body,
+            )
+                .into_response();
+        }
     }
 
     let auth_header = req

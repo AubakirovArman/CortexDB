@@ -13,6 +13,16 @@ fn serve_dashboard() -> String {
     )
 }
 
+fn serve_dashboard_asset(path: &str) -> Option<String> {
+    let asset = dashboard::asset(path)?;
+    Some(format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: {}\r\nContent-Length: {}\r\n\r\n{}",
+        asset.content_type,
+        asset.body.len(),
+        asset.body
+    ))
+}
+
 /// ⚠️ TEST-ONLY / COMPATIBILITY-ONLY HARNESS
 ///
 /// This is a **legacy synchronous test harness**, not the production async server path.
@@ -61,6 +71,9 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
 
     if parts[1] == "/dashboard" {
         return serve_dashboard();
+    }
+    if let Some(response) = serve_dashboard_asset(parts[1]) {
+        return response;
     }
 
     let Ok(db) = Database::open(root) else {

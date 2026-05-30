@@ -151,6 +151,9 @@ Exact fallback preserves correctness.
 
 Goal: turn the dashboard into a real product UI.
 
+Status: the existing developer console is now served from versioned static
+assets under `/dashboard/assets/v1/`. It is still not a standalone frontend app.
+
 Tasks:
 
 1. Choose the frontend stack and repository layout.
@@ -169,7 +172,7 @@ Tasks:
 14. Add request history and JSON inspectors.
 15. Add clear error states.
 16. Add Playwright smoke tests.
-17. Add static asset build and serving path.
+17. ✅ Add static asset serving path for the current developer console.
 18. Add UI screenshots to docs.
 
 Definition of done:

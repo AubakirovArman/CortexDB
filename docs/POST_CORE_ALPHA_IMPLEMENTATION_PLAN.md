@@ -41,11 +41,12 @@
 - [x] Есть первичные тесты `election/append/log/transport`.
 
 ### 3) Full web UI (не embedded HTML only)
-- [ ] Вынести dashboard в отдельный frontend-продукт (SPA/static build), независимый от ручной разметки.
+- [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
+- [ ] Вынести dashboard в отдельный frontend-продукт (SPA/static build), независимый от server crate.
 - [ ] Наборы страниц: dashboard, cells, AQL, search/context, verify, ingest, health/validation.
 - [ ] Tenant-aware auth в UI и понятный путь ошибок.
 - [ ] Playwright/CI smoke путь по критическим flows.
-- [x] Есть минимальный dashboard (embedded HTML) и accessibility smoke tests.
+- [x] Есть минимальный dashboard, static asset routes, and accessibility smoke tests.
 
 ### 4) Stable published SDK packages
 - [ ] Полный release-процедурный lock-step по версиям `server <-> OpenAPI <-> SDK`.
@@ -58,7 +59,7 @@
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
 3. Consensus: добавить failure-injection harness для partition/restart recovery в integration tests.
-4. UI: вынести текущее dashboard html в versioned frontend asset в отдельной папке.
+4. UI: добавить Playwright smoke для versioned dashboard asset и критических форм.
 5. SDK: проверить публикационные версии в `sdk/python`, `sdk/typescript`, `rust` как единый release gate.
 
 ## Критерий перехода к следующему слою
