@@ -34,7 +34,7 @@ To guarantee disk consistency and prevent metadata corruption, the storage layer
 
 The following architectural boundaries are explicitly out-of-scope for the current consensus layer:
 - **Multi-Raft / Sharding**: CortexDB is designed for single-node vertical scale and replicated master-slave high availability. Multi-shard consensus is a future track.
-- **Dynamic Cluster Membership (v0)**: Node configurations and cluster voters are fixed at startup. On-the-fly voter changes are out-of-scope.
+- **Full Joint Consensus Membership**: CortexDB has a persisted membership-entry primitive for committed voter rotations, but production-grade Raft joint consensus, automatic rotation, and removed-node lifecycle handling are future work.
 - **Byzantine Fault Tolerance**: We assume a non-byzantine environment (fail-stop nodes, non-malicious network errors).
 - **Auto-healing Network Relays**: Nodes must be directly reachable. NAT traversal and WAN routing/relaying must be handled by external network overlays (e.g., WireGuard).
 

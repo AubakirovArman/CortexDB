@@ -54,6 +54,8 @@
   and stale minority leader rejection.
 - [x] TCP snapshot transport smoke path now streams multi-chunk
   `SnapshotSegment` payloads and rejects a non-zero first chunk.
+- [x] Membership rotation can now be encoded as replicated log entries and
+  recovered from `replication.aclog` using only committed config entries.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
@@ -78,8 +80,8 @@
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
 3. Consensus: расширить failure-injection harness до crash/restart partition
-   matrix, durable snapshot install over peer transport, and persisted
-   membership rotation.
+   matrix, durable snapshot install over peer transport, and joint-consensus
+   membership safety.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 

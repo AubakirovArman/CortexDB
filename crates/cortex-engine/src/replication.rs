@@ -12,6 +12,7 @@ mod consensus;
 mod election;
 mod install;
 mod log_matching;
+mod membership;
 mod peer;
 mod recovery;
 mod snapshot;
@@ -20,6 +21,9 @@ mod transport;
 
 pub use consensus::{CommitDecision, ConsensusState, LogIndex, ReplicatedEntry, Term};
 pub use election::{ElectionOutcome, ElectionRole, ElectionState, VoteRequest, VoteResponse};
+pub use membership::{
+    decode_membership_entry, membership_entry, recover_membership_config, MembershipConfig,
+};
 pub use peer::{ReplicationPeerServer, ReplicationPeerState};
 pub use recovery::{
     plan_replication_recovery, ReplicationRecoveryAction, ReplicationRecoveryPlan,
@@ -90,6 +94,22 @@ impl ReplicationLog {
         Ok(ConsensusState::recover(
             local_node,
             voters,
+            entries,
+            commit_index,
+        ))
+    }
+
+    pub fn recover_consensus_with_membership(
+        path: impl AsRef<Path>,
+        local_node: NodeId,
+        voters: BTreeSet<NodeId>,
+        commit_index: LogIndex,
+    ) -> EngineResult<ConsensusState> {
+        let entries = Self::recover_entries(path)?;
+        let config = recover_membership_config(&entries, voters, commit_index)?;
+        Ok(ConsensusState::recover(
+            local_node,
+            config.voters,
             entries,
             commit_index,
         ))

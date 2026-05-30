@@ -91,9 +91,26 @@ non-empty and must keep the local node in the configuration. Consensus commit
 counting and election vote tracking then use the updated voter set, so joined
 nodes can count toward quorum and removed nodes stop contributing progress.
 
+`MembershipConfig` can also be encoded as a replicated log entry. Recovery uses
+only committed membership entries (`entry.index <= commit_index`) to rebuild the
+effective voter set from `replication.aclog`:
+
+```rust
+let state = ReplicationLog::recover_consensus_with_membership(
+    path,
+    node,
+    bootstrap_voters,
+    commit_index,
+)?;
+```
+
+This keeps membership rotation in the consensus log rather than in the local
+database WAL.
+
 This is still not a full Raft joint-consensus implementation. Membership changes
-are currently local model transitions used by the test harness; durable
-configuration entries and rotation protocols remain post-Core Alpha work.
+are currently model transitions plus committed configuration entries; joint
+consensus, automated rotation protocol, and removed-node lifecycle handling
+remain post-Core Alpha work.
 
 ## Failure-Injection Coverage
 
@@ -113,10 +130,11 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
 - a five-node partition matrix that blocks minority writes, commits after heal,
   elects a majority-side leader, and rejects stale minority-leader appends;
 - TCP snapshot transport smoke coverage for multi-chunk segment payloads.
+- committed membership rotation surviving replication-log restart.
 
 This is not a full distributed consensus certification yet. The remaining
 production work is a crash/restart partition matrix, durable snapshot install
-over peer transport, persisted membership rotation, and joint-consensus safety.
+over peer transport, automated membership rotation, and joint-consensus safety.
 
 ## Not Yet
 
