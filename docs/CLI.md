@@ -114,6 +114,9 @@ prefix-based and lexicographic, so use sortable names such as
 cortexdb backup-prune ./backups cortexdb- 7
 ```
 
+Release/runbook automation can use `make backup-drill-check` to create a
+repeatable evidence report at `target/backup-drill/report.json`.
+
 #### `restore <backup_path> <path>`
 Restore a backup into a new target directory and validate the restored database.
 The target path must not already exist, which prevents accidental overwrite.

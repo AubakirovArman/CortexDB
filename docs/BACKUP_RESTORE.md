@@ -11,6 +11,7 @@ cortexdb restore ./db.backup ./db.restored
 cortexdb validate ./db.restored
 cortexdb backup-drill ./db ./db.backup ./db.drill-restored
 cortexdb backup-prune ./backups cortexdb- 7
+make backup-drill-check
 ```
 
 ## Safety Rules
@@ -83,3 +84,23 @@ The retention command reports:
 - `backups_kept` — latest matching directories preserved;
 - `backups_removed` — older matching directories deleted;
 - `bytes_removed` — approximate local bytes reclaimed.
+
+## Release Evidence
+
+`make backup-drill-check` is the repeatable local evidence gate. It creates a
+temporary database under `target/backup-drill`, runs three restore drills,
+prunes old backup directories, validates the latest restored copy, reads back
+the latest payload, and writes:
+
+```text
+target/backup-drill/report.json
+```
+
+Override paths in automation when needed:
+
+```bash
+make backup-drill-check \
+  BACKUP_DRILL_ROOT=/var/tmp/cortexdb-backup-drill \
+  BACKUP_DRILL_REPORT=/var/tmp/cortexdb-backup-drill/report.json \
+  BACKUP_DRILL_KEEP_LATEST=7
+```

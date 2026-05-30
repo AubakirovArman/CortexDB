@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check openapi-check openapi-contract-check sdk-contract-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
+.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check openapi-check openapi-contract-check sdk-contract-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -118,6 +118,10 @@ ANN_PUBLIC_LIMIT ?= 10
 ANN_PUBLIC_MAX_NEIGHBORS ?= 8
 ANN_PUBLIC_EF_SEARCH ?= 64
 ANN_PUBLIC_LAYER_COUNT ?= 4
+BACKUP_DRILL_ROOT ?= target/backup-drill
+BACKUP_DRILL_REPORT ?= $(BACKUP_DRILL_ROOT)/report.json
+BACKUP_DRILL_KEEP_LATEST ?= 2
+BACKUP_DRILL_PREFIX ?= cortexdb-
 
 check:
 	cargo check --workspace
@@ -353,6 +357,9 @@ ann-release-evidence-check:
 	$(MAKE) ann-demo-domain-validate-baseline-package
 	@echo "=== ANN release evidence check passed ==="
 
+backup-drill-check:
+	scripts/backup_drill_check.sh "$(BACKUP_DRILL_ROOT)" "$(BACKUP_DRILL_REPORT)" "$(BACKUP_DRILL_KEEP_LATEST)" "$(BACKUP_DRILL_PREFIX)"
+
 smoke-test:
 	scripts/smoke_test.sh
 
@@ -389,6 +396,7 @@ alpha-check:
 
 release-check: alpha-check
 	$(MAKE) ann-release-evidence-check
+	$(MAKE) backup-drill-check
 	$(MAKE) smoke-test
 	$(MAKE) sdk-smoke-test
 	@echo "=== Release check passed ==="

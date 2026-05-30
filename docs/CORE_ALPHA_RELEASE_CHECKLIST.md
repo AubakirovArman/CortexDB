@@ -17,6 +17,7 @@ every required row is green on `main`.
 | Storage safety | WAL, segment, bitmap, lexical, and manifest corruption tests pass. |
 | Lifecycle safety | open, close, Drop, lock, and stale unlock tests pass. |
 | Repair safety | `Database::repair_best_effort` removes orphan temps and truncates only safe WAL tails. |
+| Backup drill evidence | `make backup-drill-check` writes `target/backup-drill/report.json` after backup, restore, prune, validate, and readback checks. |
 | Restart safety | put, patch, tombstone, checkpoint, compact, and WAL tail tests pass. |
 | Crash matrix | Orphan bundles, temp manifests, restart tails, and corruption matrix tests pass. |
 | Consistency audit | `CORE_CONSISTENCY_AUDIT.md` is current and full-stack consistency tests pass. |
@@ -37,9 +38,10 @@ git push origin v0.1.0-core-alpha
 ```
 
 Pushing a `v*` tag also runs the `Release` workflow. `make release-check`
-invokes `make ann-release-evidence-check`, which validates the ANN baseline
-archives before the tag should be cut. The workflow attaches the ANN `.tar.gz`
-baseline package to the GitHub Release as a durable release asset.
+invokes `make ann-release-evidence-check` and `make backup-drill-check`, which
+validate ANN baseline archives and backup/restore drill evidence before the tag
+should be cut. The workflow attaches the ANN `.tar.gz` baseline package to the
+GitHub Release as a durable release asset.
 
 ## Latest Local Gate Evidence
 
