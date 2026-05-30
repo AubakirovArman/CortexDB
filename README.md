@@ -44,7 +44,7 @@ Or run the full demo: `make demo`
 
 - **Consensus-Driven Replication (Raft):** Multi-node replication log syncing and leader election (current status: primitive foundations/experimental model).
 - **Consistent Hashing Sharding:** Distributed namespace layout and dynamic query routing (current status: experimental layout primitives).
-- **Guarded HNSW Approximate Search:** Fixed-point distance metrics (DotProduct, Cosine, L2) with exact fallback, recall gates, visit-budget limits, SLO reporting, and fixture-backed recall checks. Multi-layer tuning and long-running benchmark history remain future work.
+- **Guarded HNSW Approximate Search:** Fixed-point distance metrics (DotProduct, Cosine, L2) with deterministic multi-layer graphs, exact fallback, recall gates, visit-budget limits, SLO reporting, and repeatable recall/latency reports. Large external corpora and long-running benchmark history remain future work.
 
 ---
 

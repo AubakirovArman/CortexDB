@@ -93,6 +93,7 @@ fn hnsw_graph_candidate_without_vector_fails_validation() {
         links: BTreeMap::from([(1, BTreeSet::from([2]))]),
         dimension: 2,
         metric: 0,
+        ..HnswGraphIndex::default()
     }
     .write(segments.join("segment-1.ach"))
     .unwrap();

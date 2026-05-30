@@ -21,6 +21,8 @@
 - [x] Добавлены полиси-поля ANN (fbackoff, fallback + limits), visited-count и budget-guard (`max_visited_candidates`).
 - [x] Порог `MIN_ANN_RECALL_Q16` и fallback в exact.
 - [x] Golden-фикстуры для recall guard и baseline benchmark hooks.
+- [x] Repeatable recall/latency JSON report (`ann_repeatable_report_json`) for benchmark archival.
+- [x] Deterministic multi-layer graph persisted in `.ach` upper-layer trailer.
 - [ ] Нормализация/оценка качества для разных метрик/источников (dot/cosine/L2) на фиксированной матрице.
 - [x] Наблюдаемость (словарь метрик / отчёт по деградации графа) через расширенный `AnnSearchReport`.
 

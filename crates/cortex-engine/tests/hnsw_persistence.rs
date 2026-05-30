@@ -54,6 +54,50 @@ fn hnsw_delete_and_rebuild_policy_removes_deleted_vectors() {
 }
 
 #[test]
+fn hnsw_multilayer_graph_persists_upper_layers() {
+    let dir = tempfile::tempdir().unwrap();
+    let graph_path = dir.path().join("segment-1.ach");
+    let mut index = HnswIndex::new_multilayer(4, 16, 4);
+    for id in 1..=64 {
+        let _ = index.add_vector(id, vec![id as i16, (64 - id) as i16]);
+    }
+
+    let graph = index.graph_index();
+    assert!(
+        !graph.upper_layers.is_empty(),
+        "deterministic multilayer builder should produce upper layers"
+    );
+    graph.write(&graph_path).unwrap();
+
+    let restored_graph = HnswGraphIndex::read(&graph_path).unwrap();
+    let restored = HnswIndex::from_graph(
+        (1..=64)
+            .map(|id| (id, vec![id as i16, (64 - id) as i16]))
+            .collect(),
+        restored_graph,
+        4,
+        16,
+    );
+
+    assert!(restored.layer_count() > 1);
+    assert!(!restored.search(&[64, 0], 5).is_empty());
+}
+
+#[test]
+fn hnsw_multilayer_search_respects_visit_budget() {
+    let mut index = HnswIndex::new_multilayer(4, 16, 4);
+    for id in 1..=64 {
+        let _ = index.add_vector(id, vec![id as i16, (64 - id) as i16]);
+    }
+
+    let (_, visited, budget_exceeded) =
+        index.search_allowed_with_budget(&[64, 0], &BTreeSet::from_iter(1..=64), 5, Some(1));
+
+    assert!(budget_exceeded);
+    assert!(visited >= 1);
+}
+
+#[test]
 fn hnsw_maintenance_reports_rebuild_lifecycle() {
     let mut index = HnswIndex::new(2, 8);
     let _ = index.add_vector(1, vec![10, 0]);
@@ -85,6 +129,7 @@ fn hnsw_integrity_report_catches_structural_link_errors() {
             links: BTreeMap::from([(1, BTreeSet::from([1, 999]))]),
             dimension: 2,
             metric: 0,
+            ..HnswGraphIndex::default()
         },
         2,
         8,

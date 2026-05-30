@@ -79,6 +79,7 @@ pub struct VectorCollectionConfig {
 pub struct HnswIndex {
     vectors: BTreeMap<u32, Vec<i16>>,
     links: BTreeMap<u32, BTreeSet<u32>>,
+    upper_links: BTreeMap<u32, BTreeMap<u32, BTreeSet<u32>>>,
     deleted: BTreeSet<u32>,
     layer_count: usize,
     max_neighbors: usize,
@@ -92,6 +93,7 @@ impl HnswIndex {
         Self {
             vectors: BTreeMap::new(),
             links: BTreeMap::new(),
+            upper_links: BTreeMap::new(),
             deleted: BTreeSet::new(),
             layer_count: 1,
             max_neighbors: max_neighbors.max(1),
@@ -137,6 +139,15 @@ impl HnswIndex {
         }
         self.links
             .insert(cell_id, neighbors.iter().copied().collect::<BTreeSet<_>>());
+        let max_layer = self.max_layer_for_candidate(cell_id);
+        for layer in 1..=max_layer {
+            let layer_neighbors = self.nearest_existing_on_layer(layer, &vector);
+            let layer_links = self.upper_links.entry(layer).or_default();
+            for neighbor in &layer_neighbors {
+                layer_links.entry(*neighbor).or_default().insert(cell_id);
+            }
+            layer_links.insert(cell_id, layer_neighbors.into_iter().collect());
+        }
         self.vectors.insert(cell_id, vector);
         Ok(())
     }
@@ -147,6 +158,12 @@ impl HnswIndex {
             self.links.remove(&cell_id);
             for neighbors in self.links.values_mut() {
                 neighbors.remove(&cell_id);
+            }
+            for links in self.upper_links.values_mut() {
+                links.remove(&cell_id);
+                for neighbors in links.values_mut() {
+                    neighbors.remove(&cell_id);
+                }
             }
             true
         } else {
@@ -227,17 +244,21 @@ impl HnswIndex {
         limit: usize,
         max_visited: Option<usize>,
     ) -> (Vec<ScoredCandidate>, usize, bool) {
-        let Some(entry) = self.vectors.keys().next().copied() else {
+        let Some((entry, mut visited_count, mut budget_exceeded)) =
+            self.entry_point_with_budget(query, max_visited)
+        else {
             return (Vec::new(), 0, false);
         };
         let max_visited = max_visited.unwrap_or(usize::MAX);
         if max_visited == 0 {
             return (Vec::new(), 0, true);
         }
+        if budget_exceeded {
+            return (Vec::new(), visited_count, true);
+        }
         let mut visited = BTreeSet::new();
         let mut frontier = BTreeSet::from([entry]);
         let mut scores = BTreeMap::new();
-        let mut budget_exceeded = false;
         while let Some(candidate) =
             best_frontier(query, &frontier, &self.vectors, &self.config.metric)
         {
@@ -245,7 +266,7 @@ impl HnswIndex {
             if self.deleted.contains(&candidate) || !visited.insert(candidate) {
                 continue;
             }
-            if visited.len() > max_visited {
+            if visited_count.saturating_add(visited.len()) > max_visited {
                 budget_exceeded = true;
                 break;
             }
@@ -269,7 +290,8 @@ impl HnswIndex {
                 }
             }
         }
-        (ranked(scores, limit), visited.len(), budget_exceeded)
+        visited_count += visited.len();
+        (ranked(scores, limit), visited_count, budget_exceeded)
     }
 
     pub fn graph_index(&self) -> HnswGraphIndex {
@@ -277,6 +299,7 @@ impl HnswIndex {
             links: self.links.clone(),
             dimension: self.config.dimension as u32,
             metric: self.config.metric as u8,
+            upper_layers: self.upper_links.clone(),
         }
     }
 
@@ -296,11 +319,18 @@ impl HnswIndex {
             2 => DistanceMetric::L2,
             _ => DistanceMetric::DotProduct,
         };
+        let layer_count = graph
+            .upper_layers
+            .keys()
+            .next_back()
+            .map(|layer| (*layer as usize) + 1)
+            .unwrap_or(1);
         Self {
             vectors,
             links: graph.links,
+            upper_links: graph.upper_layers,
             deleted: BTreeSet::new(),
-            layer_count: 1,
+            layer_count,
             max_neighbors: max_neighbors.max(1),
             ef_search: ef_search.max(1),
             config: VectorCollectionConfig { dimension, metric },
@@ -326,6 +356,87 @@ impl HnswIndex {
             .collect()
     }
 
+    fn nearest_existing_on_layer(&self, layer: u32, vector: &[i16]) -> Vec<u32> {
+        let Some(layer_links) = self.upper_links.get(&layer) else {
+            return Vec::new();
+        };
+        let limit = self.max_neighbors.saturating_div(2).max(1);
+        let scores = layer_links
+            .keys()
+            .filter(|cell_id| !self.deleted.contains(cell_id))
+            .filter_map(|cell_id| {
+                self.vectors
+                    .get(cell_id)
+                    .and_then(|existing| self.config.metric.distance(vector, existing))
+                    .map(|score| (*cell_id, score))
+            })
+            .collect();
+        ranked(scores, limit)
+            .into_iter()
+            .map(|candidate| candidate.cell_id)
+            .collect()
+    }
+
+    fn max_layer_for_candidate(&self, cell_id: u32) -> u32 {
+        if self.layer_count <= 1 {
+            return 0;
+        }
+        let mut hash = deterministic_level_hash(cell_id);
+        let mut layer = 0u32;
+        while layer + 1 < self.layer_count as u32 && hash & 0b11 == 0 {
+            layer += 1;
+            hash >>= 2;
+        }
+        layer
+    }
+
+    fn entry_point_with_budget(
+        &self,
+        query: &[i16],
+        max_visited: Option<usize>,
+    ) -> Option<(u32, usize, bool)> {
+        let max_visited = max_visited.unwrap_or(usize::MAX);
+        let mut visited = 0usize;
+        let mut current = self
+            .upper_links
+            .iter()
+            .rev()
+            .find_map(|(_, links)| links.keys().next().copied())
+            .or_else(|| self.vectors.keys().next().copied())?;
+        for links in self.upper_links.values().rev() {
+            let mut improved = true;
+            while improved {
+                if visited >= max_visited {
+                    return Some((current, visited, true));
+                }
+                visited += 1;
+                improved = false;
+                let current_score = self
+                    .vectors
+                    .get(&current)
+                    .and_then(|vector| self.config.metric.distance(query, vector))
+                    .unwrap_or(0);
+                if let Some(neighbors) = links.get(&current) {
+                    for neighbor in neighbors {
+                        let Some(score) = self
+                            .vectors
+                            .get(neighbor)
+                            .and_then(|vector| self.config.metric.distance(query, vector))
+                        else {
+                            continue;
+                        };
+                        if score > current_score {
+                            current = *neighbor;
+                            improved = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        Some((current, visited, false))
+    }
+
     fn should_rebuild(&self, policy: HnswRebuildPolicy) -> bool {
         if self.deleted.is_empty() || self.vectors.is_empty() {
             return false;
@@ -336,33 +447,23 @@ impl HnswIndex {
 
     fn rebuild_links(&mut self) {
         let vectors = self.vectors.clone();
+        let deleted = self.deleted.clone();
         self.links.clear();
+        self.upper_links.clear();
+        self.vectors.clear();
         for (cell_id, vector) in vectors {
-            let neighbors = self.nearest_existing_except(cell_id, &vector, self.max_neighbors);
-            for neighbor in &neighbors {
-                self.links.entry(*neighbor).or_default().insert(cell_id);
+            if !deleted.contains(&cell_id) {
+                let _ = self.add_vector(cell_id, vector);
             }
-            self.links.insert(cell_id, neighbors.into_iter().collect());
         }
     }
+}
 
-    fn nearest_existing_except(&self, skip: u32, vector: &[i16], limit: usize) -> Vec<u32> {
-        let scores = self
-            .vectors
-            .iter()
-            .filter(|(cell_id, _)| **cell_id != skip)
-            .filter_map(|(cell_id, existing)| {
-                self.config
-                    .metric
-                    .distance(vector, existing)
-                    .map(|score| (*cell_id, score))
-            })
-            .collect();
-        ranked(scores, limit)
-            .into_iter()
-            .map(|candidate| candidate.cell_id)
-            .collect()
-    }
+fn deterministic_level_hash(cell_id: u32) -> u64 {
+    let mut value = u64::from(cell_id).wrapping_add(0x9e37_79b9_7f4a_7c15);
+    value = (value ^ (value >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+    value = (value ^ (value >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+    value ^ (value >> 31)
 }
 
 impl Default for HnswIndex {

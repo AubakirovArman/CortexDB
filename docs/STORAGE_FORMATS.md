@@ -107,11 +107,24 @@ repeat link_count:
   neighbor_count u32
   repeat neighbor_count:
     neighbor_candidate_id u32
+dimension u32
+metric u32
+upper_layer_count u32
+repeat upper_layer_count:
+  layer_id u32
+  layer_link_count u32
+  repeat layer_link_count:
+    candidate_id u32
+    neighbor_count u32
+    repeat neighbor_count:
+      neighbor_candidate_id u32
 crc32c u32 over all previous bytes
 ```
 
 Candidate id `0` is rejected for both node ids and neighbor ids. Checkpoint and
 compact write one graph file per segment next to `.acs/.acb/.aci/.acv`.
+The upper-layer trailer is optional for compatibility with earlier `ACH0`
+files; missing upper layers are interpreted as a valid single-layer graph.
 
 ## Manifest `.acm`
 

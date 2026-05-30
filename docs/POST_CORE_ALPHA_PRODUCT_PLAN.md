@@ -108,13 +108,15 @@ What landed:
 12. ✅ ANN limitations and tuning parameters documented in `SEARCH.md`.
 13. ✅ `require_slo`, `production_safe`, `fallback_performed`, and `slo_violations` are exposed in engine, CLI, HTTP, OpenAPI, and SDK contracts.
 14. ✅ Fast recall fixture gates assert checkpointed ANN evaluation meets `MIN_ANN_RECALL_Q16`.
+15. ✅ Deterministic multi-layer HNSW graph links persist in `.ach` optional upper-layer trailers.
+16. ✅ Repeatable `ann_repeatable_report_json` benchmark output records recall, latency, graph edges, and upper-layer counts.
 
 What remains before broad production tuning:
 
 - Collection-level metadata (not just per-segment `.ach` trailer).
 - Recall fixtures beyond in-repo smoke gates (sift/glove-style golden sets).
 - Benchmark history tracking across commits.
-- Deterministic multi-layer HNSW with tuned `ef_construction`.
+- Tuned `ef_construction` and larger external-corpus parameter sweeps.
 
 Definition of done:
 

@@ -3,7 +3,10 @@ use std::time::Instant;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
-use cortex_engine::{scope_id, ContextPackOptions, Database, DatabaseOptions, SearchLimit};
+use cortex_engine::{
+    scope_id, synthetic_ann_recall_latency_report, AnnSearchPolicy, ContextPackOptions, Database,
+    DatabaseOptions, SearchLimit,
+};
 use cortex_storage::wal::DurabilityMode;
 
 fn main() {
@@ -179,6 +182,17 @@ fn main() {
         Some(r) => (r.recall_q16, r.search.graph_nodes),
         None => (0, 0),
     };
+    let ann_repeatable_report = synthetic_ann_recall_latency_report(
+        1000,
+        8,
+        32,
+        10,
+        AnnSearchPolicy {
+            require_slo: true,
+            ..AnnSearchPolicy::default()
+        },
+    )
+    .unwrap();
 
     println!("================================================");
     println!("CORTEXDB BENCHMARK MATRIX V2");
@@ -214,6 +228,10 @@ fn main() {
     println!("ann_recall_q16_1k:              {}", ann_recall_q16);
     println!("ann_graph_nodes_1k:             {}", ann_nodes);
     println!("ann_eval_latency_1k:            {:?}", ann_eval_time);
+    println!(
+        "ann_repeatable_report_json:     {}",
+        ann_repeatable_report.as_json()
+    );
     println!("================================================");
 }
 

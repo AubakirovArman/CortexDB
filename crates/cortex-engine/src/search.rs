@@ -5,6 +5,7 @@ mod access;
 mod analyzer;
 mod ann;
 mod ann_recall_tests;
+mod ann_report;
 mod database;
 mod evaluation;
 mod hnsw;
@@ -18,6 +19,9 @@ pub use analyzer::{mean_reciprocal_rank_q16, Language, TextAnalyzer};
 pub use ann::{
     AnnEvaluationReport, AnnFallbackReason, AnnMetrics, AnnSearchPath, AnnSearchPolicy,
     AnnSearchReport, AnnSloViolation, MIN_ANN_RECALL_Q16,
+};
+pub use ann_report::{
+    synthetic_ann_recall_latency_report, AnnRecallLatencyReport, SYNTHETIC_ANN_CORPUS_V1,
 };
 pub use database::{DatabaseSearchOutcome, DatabaseSearchResult, SearchLimit};
 pub use hnsw::{integrity::HnswIntegrityReport, DistanceMetric, HnswIndex, VectorCollectionConfig};

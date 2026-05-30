@@ -13,7 +13,7 @@ use super::{hnsw_path, segment_path};
 pub(crate) fn hnsw_graph_for_cells(
     cells: &[SegmentCell],
 ) -> crate::error::EngineResult<HnswGraphIndex> {
-    let mut index = HnswIndex::default();
+    let mut index = HnswIndex::new_multilayer(8, 64, 4);
     let mut dimension = 0usize;
     for cell in cells.iter().filter(|cell| cell.deleted_seq.is_none()) {
         if let Some(vector) = vector_from_payload(&cell.payload) {
@@ -39,7 +39,13 @@ impl Database {
             .map(|graph| {
                 (
                     graph.links.len(),
-                    graph.links.values().map(|v| v.len()).sum(),
+                    graph.links.values().map(|v| v.len()).sum::<usize>()
+                        + graph
+                            .upper_layers
+                            .values()
+                            .flat_map(|links| links.values())
+                            .map(|v| v.len())
+                            .sum::<usize>(),
                 )
             })
             .unwrap_or((0, 0));
@@ -108,11 +114,23 @@ fn merge_graph(dst: &mut HnswGraphIndex, src: HnswGraphIndex) {
     for (candidate, neighbors) in src.links {
         dst.links.entry(candidate).or_default().extend(neighbors);
     }
+    for (layer, links) in src.upper_layers {
+        let dst_links = dst.upper_layers.entry(layer).or_default();
+        for (candidate, neighbors) in links {
+            dst_links.entry(candidate).or_default().extend(neighbors);
+        }
+    }
 }
 
 fn remove_candidates(graph: &mut HnswGraphIndex, candidates: &BTreeSet<u32>) {
     graph.links.retain(|id, _| !candidates.contains(id));
     for neighbors in graph.links.values_mut() {
         neighbors.retain(|id| !candidates.contains(id));
+    }
+    for links in graph.upper_layers.values_mut() {
+        links.retain(|id, _| !candidates.contains(id));
+        for neighbors in links.values_mut() {
+            neighbors.retain(|id| !candidates.contains(id));
+        }
     }
 }

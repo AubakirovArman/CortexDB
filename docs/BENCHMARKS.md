@@ -39,6 +39,7 @@ Below are the benchmark timings recorded using `cargo bench --bench core_baselin
 | **`aql_retrieve_10k`** | AQL query execution (10K database) | ~51.70 ms | Fully scales with larger candidate spaces |
 | **`context_pack_1k`** | Context Pack Compiler (1K database) | ~8.66 ms | Limits candidates, token budgets, checks citations |
 | **`context_pack_10k`** | Context Pack Compiler (10K database) | ~51.47 ms | Compiles packs out of large query matches under budget |
+| **`ann_repeatable_report_json`** | Deterministic synthetic ANN corpus | machine-specific | Emits JSON with recall, p50/p95/max latency, graph edges, and upper-layer counts |
 
 ---
 
@@ -51,3 +52,13 @@ make alpha-check
 # Or directly:
 cargo bench --bench core_baseline
 ```
+
+The ANN section also emits a stable JSON line:
+
+```text
+ann_repeatable_report_json: {"corpus":"synthetic-ann-corpus-v1", ...}
+```
+
+The corpus and query set are deterministic. Latency values are intentionally
+machine-dependent, but the report shape is stable and can be archived by CI to
+track recall and p95/p99 drift across commits.
