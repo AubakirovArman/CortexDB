@@ -150,6 +150,9 @@ candidate comparisons.
 `make ann-package-baseline` turns that baseline directory into a `.tar.gz` with
 a checksum manifest suitable for GitHub Release assets.
 
+The Rust CI workflow runs the same package step on the stable toolchain and
+uploads the tarball as the `ann-release-baseline-package` artifact.
+
 `make ann-compare-baseline-bundle` compares a candidate run against one of
 those baseline bundles and emits `baseline_comparison.json` next to the
 candidate run.

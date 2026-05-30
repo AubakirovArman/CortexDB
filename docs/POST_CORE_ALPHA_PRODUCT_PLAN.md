@@ -126,6 +126,7 @@ What landed:
 30. ✅ `run_public_corpus.py` prepares URL/archive/directory public corpora, converts them, runs ANN evaluation, and writes reproducible run manifests.
 31. ✅ Corpus harness exposes `max_neighbors`, `ef_search`, and `layer_count` so public-corpus runs can tune recall without changing corpus files.
 32. ✅ `package_baseline.py` creates GitHub Release-ready ANN baseline tarballs with SHA-256 file checksums.
+33. ✅ CI now packages ANN release baselines and uploads the tarball as `ann-release-baseline-package`.
 
 What remains before broad production tuning:
 

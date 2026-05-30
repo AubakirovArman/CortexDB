@@ -34,6 +34,7 @@ jobs:
           make ann-corpus-smoke-report
           make ann-corpus-run-smoke
           make ann-publish-baseline
+          make ann-package-baseline
           make ann-compare-baseline-bundle
       - name: Upload ANN regression reports
         if: matrix.toolchain == 'stable' && always()
@@ -49,6 +50,13 @@ jobs:
             target/ann/ann_corpus_report.json
             target/ann/corpus-runs/**
             target/ann/release-baselines/**
+      - name: Upload ANN release baseline package
+        if: matrix.toolchain == 'stable' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ann-release-baseline-package
+          if-no-files-found: warn
+          path: target/ann/release-baselines/*.tar.gz
       - name: Fail on ANN report regression
         if: matrix.toolchain == 'stable' && steps.ann_reports.outcome == 'failure'
         run: exit 1

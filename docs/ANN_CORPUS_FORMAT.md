@@ -354,7 +354,8 @@ make ann-package-baseline \
 ```
 
 The archive includes `package_manifest.json` with SHA-256 checksums for every
-file inside the bundle.
+file inside the bundle. GitHub Actions creates the same tarball on the stable
+toolchain and uploads it as the `ann-release-baseline-package` artifact.
 
 Run helper self-tests and smoke ground-truth generation with:
 

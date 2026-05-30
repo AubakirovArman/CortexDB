@@ -227,6 +227,11 @@ make ann-package-baseline \
 The tarball includes `package_manifest.json` with SHA-256 checksums for each
 included report, manifest, machine profile, and ground-truth file.
 
+CI runs this packaging step on the stable toolchain and uploads the tarball as
+the `ann-release-baseline-package` artifact. That artifact is the preferred
+input for GitHub Releases because it carries both the benchmark report and the
+checksum manifest in one file.
+
 Candidate runs can be gated against a published bundle with:
 
 ```bash
