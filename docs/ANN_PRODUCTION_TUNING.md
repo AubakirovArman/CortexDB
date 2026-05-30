@@ -145,6 +145,19 @@ loss, HNSW parameter drift, or latency regression beyond the configured budget.
 Use `make ann-real-embedding-compare` when the candidate report already exists
 and only the comparison needs to be rerun.
 
+Publish a passing real embedding run as a release-ready baseline package:
+
+```bash
+make ann-real-embedding-package-baseline \
+  ANN_REAL_EMBEDDING_RUN_ID=my-domain-cosine-v1 \
+  ANN_REAL_EMBEDDING_BASELINE_ID=my-domain-cosine-v1
+```
+
+This writes a baseline directory and `.tar.gz` under
+`target/ann/real-embedding/release-baselines/`. The archive includes
+`package_manifest.json` with SHA-256 checksums, so it can be attached to a
+release and reused as the comparison source for future candidate runs.
+
 For each corpus, preserve:
 
 - vector generation version;
@@ -405,7 +418,7 @@ Warnings, not blockers:
   bundles.
 - Demo-domain corpus generation is available, but no large real customer/domain
   baseline is published yet.
-- Embedded-vector and real-embedding corpus tooling exists, including preflight
-  and report comparison gates, but it still needs a real model export and
-  published baseline bundle.
+- Embedded-vector and real-embedding corpus tooling exists, including preflight,
+  report comparison, and baseline packaging gates, but it still needs a real
+  model export and published baseline bundle.
 - Production SLO profiles per workload are not yet formalized.

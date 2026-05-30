@@ -194,6 +194,20 @@ make ann-real-embedding-compare \
 then the same comparison in one command. Use it for release candidates once a
 real embedding baseline report has been published.
 
+Publish a successful real embedding run as a release-ready baseline bundle:
+
+```bash
+make ann-real-embedding-package-baseline \
+  ANN_REAL_EMBEDDING_RUN_ID=my-domain-cosine-v1 \
+  ANN_REAL_EMBEDDING_BASELINE_ID=my-domain-cosine-v1
+```
+
+This creates
+`target/ann/real-embedding/release-baselines/<baseline-id>.tar.gz` with the run
+manifest, report, machine profile, ground truth, and checksum manifest. Future
+candidate runs can use that bundle's `report.json` as
+`ANN_REAL_EMBEDDING_BASELINE_REPORT`.
+
 `make ann-scripts-check` validates the dependency-free helper scripts that
 generate exact ground truth and compare two ANN report JSON files. Use
 `make ann-corpus-compare ANN_BASELINE_REPORT=... ANN_CANDIDATE_REPORT=...` to
