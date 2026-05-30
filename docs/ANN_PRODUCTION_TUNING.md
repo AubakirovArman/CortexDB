@@ -160,7 +160,8 @@ GitHub Actions with:
 For a quick shakedown, set `max_vectors` and `max_queries`. For a release-grade
 baseline, leave those unset and enable `publish_baseline`; the workflow will
 upload the converted JSONL files, run report, history, and optional baseline
-tarball as an Actions artifact.
+tarball as an Actions artifact. Hosted public runs that should be referenced
+later are recorded in [`ANN_PUBLIC_CORPUS_RUNS.md`](ANN_PUBLIC_CORPUS_RUNS.md).
 
 ## Fallback Policy
 
@@ -287,7 +288,8 @@ Warnings, not blockers:
 
 ## Current Gaps
 
-- No archived large external corpus baseline in the repo.
+- First hosted `siftsmall` public-corpus smoke baseline is recorded as a GitHub
+  Actions artifact; no large all-query public/domain baseline is published yet.
 - HNSW construction parameters are not yet collection-profile aware.
 - Report history is not stored outside CI artifacts.
 - Public benchmark conversion and one-command public-corpus runs are available,

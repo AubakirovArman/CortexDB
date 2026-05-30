@@ -173,6 +173,8 @@ For hosted runs, use the `ANN Public Corpus` GitHub Actions workflow. It accepts
 the same corpus URL, metric, conversion, SLO, and HNSW tuning inputs, then
 uploads converted JSONL files plus `report.json`, `history.json`, and optional
 baseline packages as artifacts.
+The first hosted public run is recorded in
+[`ANN_PUBLIC_CORPUS_RUNS.md`](ANN_PUBLIC_CORPUS_RUNS.md).
 
 For threshold selection, fallback policy, and report-history rules, see
 [`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md).
