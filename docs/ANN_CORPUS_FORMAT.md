@@ -348,6 +348,12 @@ reports separate.
 checks. Production recall/latency reports should use `--provider command` with
 the exact embedding client used by the product path.
 
+For real production-style runs, prefer `make ann-real-embedding-preflight`
+followed by `make ann-real-embedding-benchmark`. The preflight layer checks the
+source/query JSONL contract and required environment variables before any
+embedding API calls are made, then the benchmark target delegates to the same
+export and HNSW report pipeline documented here.
+
 `build_embedded_domain_corpus.py` is the path for data that already carries
 model-generated embeddings. Payload rows may include either a top-level
 `vector` field or a payload metadata line like `vector=10,0,-3`. Queries are a

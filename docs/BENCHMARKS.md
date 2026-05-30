@@ -158,6 +158,24 @@ vectors. `scripts/ann/embed_text_command.py` is the default dependency-free
 HTTP wrapper for OpenAI-compatible embedding gateways; pass it through
 `ANN_EMBEDDING_COMMAND` and keep URL/model/key values in environment variables.
 
+For the full real-embedding workflow, prefer the guarded targets:
+
+```bash
+make ann-real-embedding-preflight \
+  ANN_REAL_EMBEDDING_SOURCE_ROOT=/data/cortexdb/text-cells \
+  ANN_REAL_EMBEDDING_QUERIES=/data/cortexdb/query_text.jsonl
+
+make ann-real-embedding-benchmark \
+  ANN_REAL_EMBEDDING_SOURCE_ROOT=/data/cortexdb/text-cells \
+  ANN_REAL_EMBEDDING_QUERIES=/data/cortexdb/query_text.jsonl \
+  ANN_REAL_EMBEDDING_RUN_ID=my-domain-cosine-v1
+```
+
+The preflight target writes a machine-readable report and refuses synthetic
+`hash-smoke` commands, missing corpus/query files, missing endpoint/model env,
+and invalid query limits before the benchmark spends time calling an embedding
+service.
+
 `make ann-scripts-check` validates the dependency-free helper scripts that
 generate exact ground truth and compare two ANN report JSON files. Use
 `make ann-corpus-compare ANN_BASELINE_REPORT=... ANN_CANDIDATE_REPORT=...` to

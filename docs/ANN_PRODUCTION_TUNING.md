@@ -78,6 +78,37 @@ endpoint/model/key settings from environment variables and prints only the
 numeric vector to stdout, which keeps provider secrets out of committed corpus
 artifacts.
 
+Before running an expensive real-embedding benchmark, run the preflight gate:
+
+```bash
+export CORTEXDB_EMBEDDING_URL='https://embedding-gateway.example/v1/embeddings'
+export CORTEXDB_EMBEDDING_MODEL='text-embedding-model'
+export CORTEXDB_EMBEDDING_API_KEY='...'
+
+make ann-real-embedding-preflight \
+  ANN_REAL_EMBEDDING_SOURCE_ROOT=/data/cortexdb/text-cells \
+  ANN_REAL_EMBEDDING_QUERIES=/data/cortexdb/query_text.jsonl \
+  ANN_REAL_EMBEDDING_REQUIRE_API_KEY=true
+```
+
+The preflight validates JSONL source/query shape, required environment
+variables, metric settings, and that the configured command is not a synthetic
+`hash-smoke` path. It writes
+`target/ann/real-embedding/preflight.json` by default. Once that passes, run:
+
+```bash
+make ann-real-embedding-benchmark \
+  ANN_REAL_EMBEDDING_SOURCE_ROOT=/data/cortexdb/text-cells \
+  ANN_REAL_EMBEDDING_QUERIES=/data/cortexdb/query_text.jsonl \
+  ANN_REAL_EMBEDDING_REQUIRE_API_KEY=true \
+  ANN_REAL_EMBEDDING_RUN_ID=my-domain-cosine-v1
+```
+
+This target uses `ANN_REAL_EMBEDDING_COMMAND`, which defaults to
+`python3 scripts/ann/embed_text_command.py --require-model`, then archives the
+normal ANN report and machine profile under
+`target/ann/real-embedding/runs/<run-id>/`.
+
 For each corpus, preserve:
 
 - vector generation version;
