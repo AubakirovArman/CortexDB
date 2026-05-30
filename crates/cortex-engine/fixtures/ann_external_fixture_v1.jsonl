@@ -1,0 +1,16 @@
+{"kind":"vector","candidate":1,"vector":[100,0,0,0,0,0,0,0]}
+{"kind":"vector","candidate":2,"vector":[96,4,0,0,0,0,0,0]}
+{"kind":"vector","candidate":3,"vector":[92,8,0,0,0,0,0,0]}
+{"kind":"vector","candidate":4,"vector":[0,100,0,0,0,0,0,0]}
+{"kind":"vector","candidate":5,"vector":[0,96,4,0,0,0,0,0]}
+{"kind":"vector","candidate":6,"vector":[0,92,8,0,0,0,0,0]}
+{"kind":"vector","candidate":7,"vector":[0,0,100,0,0,0,0,0]}
+{"kind":"vector","candidate":8,"vector":[0,0,96,4,0,0,0,0]}
+{"kind":"vector","candidate":9,"vector":[0,0,92,8,0,0,0,0]}
+{"kind":"vector","candidate":10,"vector":[0,0,0,100,0,0,0,0]}
+{"kind":"vector","candidate":11,"vector":[0,0,0,96,4,0,0,0]}
+{"kind":"vector","candidate":12,"vector":[0,0,0,92,8,0,0,0]}
+{"kind":"query","name":"axis-1","vector":[100,0,0,0,0,0,0,0],"limit":3}
+{"kind":"query","name":"axis-2","vector":[0,100,0,0,0,0,0,0],"limit":3}
+{"kind":"query","name":"axis-3","vector":[0,0,100,0,0,0,0,0],"limit":3}
+{"kind":"query","name":"axis-4","vector":[0,0,0,100,0,0,0,0],"limit":3}

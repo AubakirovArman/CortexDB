@@ -27,9 +27,12 @@ jobs:
       - if: matrix.toolchain == 'stable'
         run: make ann-drift-report
       - if: matrix.toolchain == 'stable'
+        run: make ann-external-report
+      - if: matrix.toolchain == 'stable'
         uses: actions/upload-artifact@v4
         with:
           name: ann-regression-reports
           path: |
             target/ann/ann_fixture_report.json
             target/ann/ann_drift_report.json
+            target/ann/ann_external_fixture_report.json

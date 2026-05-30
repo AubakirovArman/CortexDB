@@ -28,6 +28,8 @@ pub enum EngineError {
     MissingStorageFile(PathBuf),
     #[error("storage invariant violation: {0}")]
     StorageInvariant(String),
+    #[error("invalid ANN fixture: {0}")]
+    InvalidAnnFixture(String),
     #[error("candidate id overflow")]
     CandidateIdOverflow,
     #[error("vector dimension mismatch: expected {expected}, got {actual}")]

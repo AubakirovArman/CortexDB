@@ -53,6 +53,8 @@ make ann-fixture-check
 make ann-fixture-report
 make ann-drift-check
 make ann-drift-report
+make ann-external-check
+make ann-external-report
 # Or directly:
 cargo bench --bench core_baseline
 ```
@@ -89,3 +91,11 @@ than the fixture gate: recall must not drop, multi-layer graph shape must not
 lose edges, and release-mode latency must stay within the configured regression
 budget. `make ann-drift-report` writes `target/ann/ann_drift_report.json`; CI
 uploads it together with the fixture report as `ann-regression-reports`.
+
+`make ann-external-check` evaluates a checked-in JSONL corpus at
+`crates/cortex-engine/fixtures/ann_external_fixture_v1.jsonl`. This is the first
+non-generated ANN fixture gate: it builds the multi-layer graph from explicit
+vectors, evaluates named queries against exact top-k, and enforces recall,
+graph-shape, and latency thresholds from `ann_external_baseline_v1.json`.
+`make ann-external-report` writes `target/ann/ann_external_fixture_report.json`,
+which CI includes in `ann-regression-reports`.
