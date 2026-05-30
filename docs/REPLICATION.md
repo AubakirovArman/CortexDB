@@ -70,6 +70,22 @@ let state = ReplicationLog::recover_consensus(path, node, voters, commit_index)?
 This keeps the model from treating arbitrary ACK sets or stale-term entries as
 committed data.
 
+## Failure-Injection Coverage
+
+The first post-Core Alpha consensus failure harness is an integration test suite
+under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
+
+- a minority partition that cannot advance `commit_index` until a majority
+  heals;
+- a higher-term majority that rejects a stale partitioned leader before the
+  follower log is mutated;
+- idempotent replication-log replay after restart, including preservation of
+  the next log index.
+
+This is not a full distributed consensus certification yet. The remaining
+production work is a broader network partition matrix, snapshot resync after
+long follower lag, and membership lifecycle tests.
+
 ## Not Yet
 
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS

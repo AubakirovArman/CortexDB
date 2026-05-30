@@ -48,6 +48,9 @@
 
 ### P2 (Quality & Test Coverage)
 
+- Added replication failure-injection integration coverage for minority
+  partitions, stale leader rejection after a higher-term majority forms, and
+  idempotent replication-log replay after restart.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,
