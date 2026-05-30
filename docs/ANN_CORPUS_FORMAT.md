@@ -519,6 +519,17 @@ The archive includes `package_manifest.json` with SHA-256 checksums for every
 file inside the bundle. GitHub Actions creates the same tarball on the stable
 toolchain and uploads it as the `ann-release-baseline-package` artifact.
 
+Validate a package before publishing or comparing against it:
+
+```bash
+make ann-validate-baseline-package \
+  ANN_BASELINE_ARCHIVE=target/ann/release-baselines/v0.1.0-core-alpha-smoke.tar.gz
+```
+
+The validation step checks the archive root, rejects links and unsafe paths,
+verifies every manifest-listed file size and SHA-256 digest, and requires a
+passing `production_safe` report with `history.json` and generated ground truth.
+
 Run helper self-tests and smoke ground-truth generation with:
 
 ```bash

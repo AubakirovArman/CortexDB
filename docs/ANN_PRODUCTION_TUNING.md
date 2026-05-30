@@ -177,6 +177,19 @@ This writes a baseline directory and `.tar.gz` under
 `target/ann/real-embedding/release-baselines/`. The archive includes
 `package_manifest.json` with SHA-256 checksums, so it can be attached to a
 release and reused as the comparison source for future candidate runs.
+Validate the archive before publishing it:
+
+```bash
+make ann-real-embedding-validate-baseline-package \
+  ANN_REAL_EMBEDDING_BASELINE_ARCHIVE=target/ann/real-embedding/release-baselines/my-domain-cosine-v1.tar.gz
+```
+
+The validator opens the tarball without extracting it, rejects unsafe archive
+paths and links, checks every manifest-listed file size and SHA-256 digest, and
+requires `report.json` to be passing and `production_safe=true`. Real embedding
+release packages also require `history.json` and generated ground truth, so a
+published baseline carries both quality evidence and replayable correctness
+evidence.
 
 For each corpus, preserve:
 
@@ -430,6 +443,17 @@ make ann-package-baseline \
 
 The tarball includes `package_manifest.json` with SHA-256 checksums for each
 included report, manifest, machine profile, and ground-truth file.
+
+Validate the release archive before attaching it:
+
+```bash
+make ann-validate-baseline-package \
+  ANN_BASELINE_ARCHIVE=target/ann/release-baselines/v0.1.0-core-alpha-smoke.tar.gz
+```
+
+This gate enforces the package contract: one safe archive root, no links, a
+matching `package_manifest.json`, exact file sizes, exact SHA-256 checksums,
+`history.json`, generated ground truth, and a passing production-safe report.
 
 CI runs this packaging step on the stable toolchain and uploads the tarball as
 the `ann-release-baseline-package` artifact. That artifact is the preferred

@@ -212,6 +212,9 @@ jobs:
           make ann-real-embedding-package-baseline \
             ANN_REAL_EMBEDDING_RUN_ID="$ANN_REAL_EMBEDDING_RUN_ID" \
             ANN_REAL_EMBEDDING_BASELINE_ID="$baseline_id"
+          make ann-real-embedding-validate-baseline-package \
+            ANN_REAL_EMBEDDING_BASELINE_ID="$baseline_id" \
+            ANN_REAL_EMBEDDING_BASELINE_ARCHIVE="target/ann/real-embedding/release-baselines/${baseline_id}.tar.gz"
 
       - name: Upload real embedding ANN reports
         uses: actions/upload-artifact@v7
