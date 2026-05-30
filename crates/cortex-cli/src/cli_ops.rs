@@ -304,6 +304,15 @@ pub fn backup_drill(path: &str, backup_path: &str, restore_path: &str) -> Result
     ))
 }
 
+pub fn backup_prune(backup_root: &str, prefix: &str, keep_latest: usize) -> Result<String, String> {
+    let report = Database::prune_backup_retention(backup_root, prefix, keep_latest)
+        .map_err(fmt_engine_error)?;
+    Ok(format!(
+        "backups_seen={} backups_kept={} backups_removed={} bytes_removed={}",
+        report.backups_seen, report.backups_kept, report.backups_removed, report.bytes_removed
+    ))
+}
+
 pub fn gc_retired(path: &str) -> Result<String, String> {
     let mut db = Database::open(path).map_err(fmt_engine_error)?;
     let report = db

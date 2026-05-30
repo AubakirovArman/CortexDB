@@ -131,3 +131,44 @@ fn backup_rejects_target_inside_source() {
     let error = db.backup_to(&backup).unwrap_err().to_string();
     assert!(error.contains("backup target must not be inside source database"));
 }
+
+#[test]
+fn backup_retention_prunes_oldest_matching_backups() {
+    let root = tempfile::tempdir().unwrap();
+    for name in [
+        "cortexdb-20260528T000000Z",
+        "cortexdb-20260529T000000Z",
+        "cortexdb-20260530T000000Z",
+        "other-20260527T000000Z",
+    ] {
+        let dir = root.path().join(name);
+        std::fs::create_dir(&dir).unwrap();
+        std::fs::write(dir.join("marker"), name.as_bytes()).unwrap();
+    }
+
+    let report = Database::prune_backup_retention(root.path(), "cortexdb-", 2).unwrap();
+
+    assert_eq!(report.backups_seen, 3);
+    assert_eq!(report.backups_kept, 2);
+    assert_eq!(report.backups_removed, 1);
+    assert!(report.bytes_removed > 0);
+    assert!(!root.path().join("cortexdb-20260528T000000Z").exists());
+    assert!(root.path().join("cortexdb-20260529T000000Z").exists());
+    assert!(root.path().join("cortexdb-20260530T000000Z").exists());
+    assert!(root.path().join("other-20260527T000000Z").exists());
+}
+
+#[test]
+fn backup_retention_rejects_unsafe_plan() {
+    let root = tempfile::tempdir().unwrap();
+
+    let empty_prefix = Database::prune_backup_retention(root.path(), "", 1)
+        .unwrap_err()
+        .to_string();
+    assert!(empty_prefix.contains("prefix must not be empty"));
+
+    let zero_keep = Database::prune_backup_retention(root.path(), "cortexdb-", 0)
+        .unwrap_err()
+        .to_string();
+    assert!(zero_keep.contains("keep_latest must be greater than zero"));
+}

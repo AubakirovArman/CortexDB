@@ -103,6 +103,7 @@ cargo run -p cortex-cli -- stats ./data
 cargo run -p cortex-cli -- validate ./data
 cargo run -p cortex-cli -- backup ./data ./data.backup
 cargo run -p cortex-cli -- restore ./data.backup ./data.restored
+cargo run -p cortex-cli -- backup-prune ./backups cortexdb- 7
 cargo run -p cortex-cli -- load-fixture examples/datasets/legal_policies ./data
 ```
 

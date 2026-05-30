@@ -8,6 +8,9 @@ use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::validation::StorageValidation;
 
+mod retention;
+pub use retention::{BackupRetentionPlan, BackupRetentionReport};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct BackupReport {
     pub files_copied: usize,

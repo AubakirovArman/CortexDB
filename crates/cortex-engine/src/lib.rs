@@ -25,7 +25,9 @@ pub mod typed_body;
 pub mod validation;
 pub mod verification;
 
-pub use backup::{BackupDrillReport, BackupReport, RestoreReport};
+pub use backup::{
+    BackupDrillReport, BackupReport, BackupRetentionPlan, BackupRetentionReport, RestoreReport,
+};
 pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use context::{
     estimate_tokens, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell,

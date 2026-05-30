@@ -17,6 +17,8 @@ What is still missing vs Redis at this stage:
 - no distributed consensus cluster mode,
 - search and ANN are foundation-grade, not production-tuned,
 - no full web UI.
+- backup/restore now has local restore drills and retention pruning, but still
+  needs external offsite target automation and scheduled drill evidence.
 
 ## Milestone A — API/SDK Runtime Freeze (next)
 

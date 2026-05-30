@@ -289,6 +289,38 @@ fn backup_drill_command_restores_and_validates_copy() {
 }
 
 #[test]
+fn backup_prune_command_removes_old_matching_backups() {
+    let root = unique_path("cortexdb-cli-backup-prune-root");
+    std::fs::create_dir_all(&root).unwrap();
+    for name in [
+        "cortexdb-20260528T000000Z",
+        "cortexdb-20260529T000000Z",
+        "cortexdb-20260530T000000Z",
+    ] {
+        let dir = root.join(name);
+        std::fs::create_dir(&dir).unwrap();
+        std::fs::write(dir.join("marker"), name.as_bytes()).unwrap();
+    }
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "backup-prune".to_owned(),
+        root.to_string_lossy().into_owned(),
+        "cortexdb-".to_owned(),
+        "2".to_owned(),
+    ])
+    .unwrap();
+
+    assert!(output.contains("backups_seen=3"));
+    assert!(output.contains("backups_removed=1"));
+    assert!(!root.join("cortexdb-20260528T000000Z").exists());
+    assert!(root.join("cortexdb-20260529T000000Z").exists());
+    assert!(root.join("cortexdb-20260530T000000Z").exists());
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn gc_retired_command_reports_removed_segments() {
     let path = unique_path("cortexdb-cli-gc-retired");
     let path_arg = path.to_string_lossy().into_owned();

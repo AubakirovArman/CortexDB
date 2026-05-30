@@ -80,6 +80,11 @@ enum Command {
         backup_path: String,
         restore_path: String,
     },
+    BackupPrune {
+        backup_root: String,
+        prefix: String,
+        keep_latest: usize,
+    },
     Restore {
         backup_path: String,
         path: String,
@@ -254,6 +259,11 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             &backup_path,
             &restore_path,
         ),
+        Command::BackupPrune {
+            backup_root,
+            prefix,
+            keep_latest,
+        } => ops::backup_prune(&backup_root, &prefix, keep_latest),
         Command::Restore { backup_path, path } => {
             ops::restore(&backup_path, resolved(&path).to_str().unwrap())
         }
