@@ -167,6 +167,19 @@ and duration. Request bodies and query strings are intentionally not logged.
 Current route categories include `read`, `write`, `delete`, `aql`, `search`,
 `context`, `verify`, `ingest`, `memory`, `admin`, `metrics`, and `health`.
 
+To persist route-level audit events to a local JSONL file, set:
+
+```bash
+export CORTEXDB_AUDIT_LOG_FILE="./audit/http.jsonl"
+cargo run -p cortex-server -- ./data 127.0.0.1:8181
+```
+
+`CORTEXDB_AUDIT_LOG_FILE` implies audit logging. The server creates parent
+directories if needed, appends one JSON object per response, flushes the file,
+and calls `sync_data()` after each event. File sink failures after startup are
+reported through `tracing` target `cortexdb_audit` as `sink_error` events; they
+do not include request bodies or query strings.
+
 ## Browser CORS
 
 CORS is disabled by default. Same-origin dashboard usage does not need CORS.

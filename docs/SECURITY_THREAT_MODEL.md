@@ -51,7 +51,7 @@ be treated as future work.
 | SDK contract drift | Python, TypeScript, and Rust live SDK smoke checks. | Implemented and gated. |
 | Browser cross-origin API calls | CORS disabled by default; optional exact-origin allowlist via `CORTEXDB_CORS_ALLOW_ORIGIN`. | Implemented for one trusted origin. |
 | Request floods against the local API | Optional process-wide fixed-window limit via `CORTEXDB_RATE_LIMIT_PER_MINUTE`. | Implemented as a coarse Core Alpha guard. |
-| Missing operational access trail | Optional structured HTTP audit events via `CORTEXDB_AUDIT_LOG`. | Implemented for route-level events. |
+| Missing operational access trail | Optional structured HTTP audit events via `CORTEXDB_AUDIT_LOG`; optional synced JSONL file sink via `CORTEXDB_AUDIT_LOG_FILE`. | Implemented for route-level events. |
 
 ## Out Of Scope For Core Alpha
 
@@ -62,7 +62,7 @@ The following are not production security guarantees yet:
 - Multi-token or per-user server auth mapping to persisted AgentViews.
 - Per-token quotas or distributed rate limiting.
 - Multi-origin, wildcard, or per-token CORS policies.
-- Durable audit log storage, tamper-evident audit trails, or SIEM export.
+- Tamper-evident audit trails or SIEM export.
 - At-rest encryption or envelope key management.
 - Encrypted backups.
 - Secret rotation workflow.
@@ -89,6 +89,8 @@ For any non-local deployment:
    API gateway or reverse proxy for user-aware quotas.
 11. Set `CORTEXDB_AUDIT_LOG=true` when route-level access auditing is required;
     export `tracing` output to your process supervisor or log pipeline.
+12. Set `CORTEXDB_AUDIT_LOG_FILE` when route-level audit events should also be
+    persisted to a local JSONL file.
 
 ## Error Disclosure Policy
 
@@ -132,7 +134,7 @@ Security-sensitive test areas include:
    adding user/RBAC-aware authorization.
 3. Extend single-token `CORTEXDB_AUTH_AGENT_ID` into multi-token AgentView
    mappings and persisted auth policy.
-4. Add durable audit sinks, tamper-evident audit trails, and SIEM export.
+4. Extend the JSONL audit sink into tamper-evident audit trails and SIEM export.
 5. Add backup/restore with integrity verification.
 6. Add documented secret rotation.
 7. Add deployment hardening guide for reverse proxy and systemd/container use.

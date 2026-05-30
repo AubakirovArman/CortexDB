@@ -72,6 +72,12 @@ pub struct ServerOptions {
     /// metadata, status, tenant, and duration, but not request bodies or query
     /// strings.
     pub audit_log_enabled: bool,
+    /// Optional JSONL file sink for audit events.
+    ///
+    /// If set, audit events are written to this append-only local file and the
+    /// file is synced after each event. The sink stores route metadata only,
+    /// never request bodies or query strings.
+    pub audit_log_path: Option<PathBuf>,
 }
 
 impl ServerOptions {
@@ -106,6 +112,7 @@ pub struct AppState {
     root: PathBuf,
     dbs: Arc<Mutex<BTreeMap<String, Arc<actor::DatabaseActor>>>>,
     options: Arc<ServerOptions>,
+    audit_sink: Option<Arc<audit::AuditSink>>,
     request_count: Arc<AtomicU64>,
     request_rejected: Arc<AtomicU64>,
     request_duration_ms_total: Arc<AtomicU64>,
@@ -153,6 +160,12 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
         .build()?;
     rt.block_on(async {
         let cors = cors_layer(&options)?;
+        let audit_sink = options
+            .audit_log_path
+            .as_ref()
+            .map(|path| audit::AuditSink::open(path))
+            .transpose()?
+            .map(Arc::new);
         let rate_limit = options
             .request_rate_limit_per_minute
             .map(RateLimitState::new)
@@ -162,6 +175,7 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             root: root.to_owned(),
             dbs: Arc::new(Mutex::new(BTreeMap::new())),
             options: Arc::new(options),
+            audit_sink,
             request_count: Arc::new(AtomicU64::new(0)),
             request_rejected: Arc::new(AtomicU64::new(0)),
             request_duration_ms_total: Arc::new(AtomicU64::new(0)),
@@ -313,6 +327,7 @@ fn audit_http_response(
         status.as_u16(),
         error_code.map(ErrorCode::as_str),
         started.elapsed().as_millis() as u64,
+        state.audit_sink.as_deref(),
     );
 }
 

@@ -113,6 +113,42 @@ fn auth_agent_id_requires_auth_token_in_server_options() {
 }
 
 #[test]
+fn audit_log_file_records_route_metadata_without_query() {
+    let dir = tempfile::tempdir().unwrap();
+    let audit_path = dir.path().join("audit").join("http.jsonl");
+    let addr = "127.0.0.1:0";
+    let listener = std::net::TcpListener::bind(addr).unwrap();
+    let local_addr = listener.local_addr().unwrap();
+    drop(listener);
+
+    let root_path = dir.path().join("db");
+    let audit_path_for_server = audit_path.clone();
+    std::thread::spawn(move || {
+        let options = ServerOptions {
+            audit_log_enabled: true,
+            audit_log_path: Some(audit_path_for_server),
+            ..Default::default()
+        };
+        let _ = crate::serve_with_options(&root_path, &local_addr.to_string(), options);
+    });
+
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    let response = request(local_addr, "GET /v1/health?tenant=alpha HTTP/1.1\r\n\r\n");
+    assert!(response.contains("200 OK"), "health failed: {response}");
+
+    let audit = std::fs::read_to_string(audit_path).unwrap();
+    let line = audit.lines().next().unwrap();
+    let value = serde_json::from_str::<serde_json::Value>(line).unwrap();
+    assert_eq!(value["audit_event"], "http_response");
+    assert_eq!(value["audit_action"], "health");
+    assert_eq!(value["method"], "GET");
+    assert_eq!(value["path"], "/v1/health");
+    assert_eq!(value["tenant"], "alpha");
+    assert_eq!(value["status"], 200);
+    assert!(!line.contains("tenant=alpha"));
+}
+
+#[test]
 fn test_server_concurrency_and_size_limit() {
     let dir = tempfile::tempdir().unwrap();
     let addr = "127.0.0.1:0";

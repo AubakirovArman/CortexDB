@@ -38,13 +38,21 @@ fn main() -> ExitCode {
         eprintln!("CORTEXDB_AUTH_AGENT_ID requires CORTEXDB_AUTH_TOKEN");
         return ExitCode::FAILURE;
     }
+    let audit_log_path = match audit_log_path_from_env() {
+        Ok(path) => path,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
     let options = cortex_server::ServerOptions {
         auth_token,
         auth_agent_id,
         actor_queue_capacity,
         cors_allowed_origin: env::var("CORTEXDB_CORS_ALLOW_ORIGIN").ok(),
         request_rate_limit_per_minute,
-        audit_log_enabled: audit_log_enabled_from_env(),
+        audit_log_enabled: audit_log_enabled_from_env() || audit_log_path.is_some(),
+        audit_log_path,
     };
     match cortex_server::serve_with_options(&PathBuf::from(root), addr, options) {
         Ok(()) => ExitCode::SUCCESS,
@@ -52,6 +60,23 @@ fn main() -> ExitCode {
             eprintln!("{error}");
             ExitCode::FAILURE
         }
+    }
+}
+
+fn audit_log_path_from_env() -> Result<Option<PathBuf>, String> {
+    match env::var("CORTEXDB_AUDIT_LOG_FILE") {
+        Ok(raw) => parse_audit_log_path(&raw).map(Some),
+        Err(env::VarError::NotPresent) => Ok(None),
+        Err(error) => Err(format!("invalid CORTEXDB_AUDIT_LOG_FILE: {error}")),
+    }
+}
+
+fn parse_audit_log_path(raw: &str) -> Result<PathBuf, String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        Err("CORTEXDB_AUDIT_LOG_FILE must not be empty".to_owned())
+    } else {
+        Ok(PathBuf::from(trimmed))
     }
 }
 
@@ -126,7 +151,8 @@ fn parse_actor_queue_capacity(raw: &str) -> Result<usize, String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        parse_actor_queue_capacity, parse_auth_agent_id, parse_bool_flag, parse_request_rate_limit,
+        parse_actor_queue_capacity, parse_audit_log_path, parse_auth_agent_id, parse_bool_flag,
+        parse_request_rate_limit,
     };
 
     #[test]
@@ -171,5 +197,16 @@ mod tests {
         assert!(!parse_bool_flag("0"));
         assert!(!parse_bool_flag("false"));
         assert!(!parse_bool_flag("anything_else"));
+    }
+
+    #[test]
+    fn parse_audit_log_path_rejects_empty_value() {
+        assert!(parse_audit_log_path(" ").is_err());
+        assert_eq!(
+            parse_audit_log_path("/tmp/cortexdb-audit.jsonl")
+                .unwrap()
+                .to_string_lossy(),
+            "/tmp/cortexdb-audit.jsonl"
+        );
     }
 }
