@@ -459,6 +459,8 @@ CI runs this packaging step on the stable toolchain and uploads the tarball as
 the `ann-release-baseline-package` artifact. That artifact is the preferred
 input for GitHub Releases because it carries both the benchmark report and the
 checksum manifest in one file.
+The Rust, public-corpus, real-embedding, and Release workflows all run the
+package validator before uploading or attaching baseline archives.
 
 When a `v*` tag is pushed, the `Release` workflow builds the same package and
 uploads it directly to the GitHub Release. That makes the ANN baseline durable:

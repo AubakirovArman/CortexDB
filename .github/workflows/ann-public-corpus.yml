@@ -179,6 +179,7 @@ jobs:
           echo "ANN_PUBLIC_BASELINE_ID=${baseline_id}" >> "$GITHUB_ENV"
           make ann-publish-baseline ANN_BASELINE_RUN_ID="$ANN_PUBLIC_RUN_ID" ANN_BASELINE_ID="$baseline_id"
           make ann-package-baseline ANN_BASELINE_ID="$baseline_id" ANN_BASELINE_ARCHIVE="target/ann/release-baselines/${baseline_id}.tar.gz"
+          make ann-validate-baseline-package ANN_BASELINE_ARCHIVE="target/ann/release-baselines/${baseline_id}.tar.gz"
 
       - name: Compare against baseline bundle
         if: inputs.baseline_bundle_url != ''
@@ -189,6 +190,7 @@ jobs:
         run: |
           mkdir -p target/ann/downloaded-baseline/extracted
           curl -fsSL "$BASELINE_BUNDLE_URL" -o target/ann/downloaded-baseline/baseline.tar.gz
+          make ann-validate-baseline-package ANN_BASELINE_ARCHIVE=target/ann/downloaded-baseline/baseline.tar.gz
           tar -xzf target/ann/downloaded-baseline/baseline.tar.gz -C target/ann/downloaded-baseline/extracted
           baseline_bundle="$(find target/ann/downloaded-baseline/extracted -mindepth 1 -maxdepth 1 -type d | sort | head -n 1)"
           if [ -z "$baseline_bundle" ]; then

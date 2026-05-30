@@ -39,8 +39,10 @@ jobs:
           make ann-corpus-run-smoke
           make ann-demo-domain-corpus-run
           make ann-demo-domain-package-baseline
+          make ann-demo-domain-validate-baseline-package
           make ann-publish-baseline
           make ann-package-baseline
+          make ann-validate-baseline-package
           make ann-compare-baseline-bundle
       - name: Upload ANN regression reports
         if: matrix.toolchain == 'stable' && always()

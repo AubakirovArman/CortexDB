@@ -146,6 +146,8 @@ committing generated benchmark files.
 tarball under `target/ann/demo-domain-corpus/release-baselines/`, so release
 tags can carry both the public ANN baseline and a CortexDB-shaped domain
 baseline.
+`make ann-demo-domain-validate-baseline-package` verifies that tarball before it
+is uploaded or attached to a release.
 
 `make ann-embedding-domain-corpus-run` is the handoff point for text corpora
 that still need embedding. It invokes an external command that reads text on
@@ -232,9 +234,13 @@ candidate comparisons.
 
 `make ann-package-baseline` turns that baseline directory into a `.tar.gz` with
 a checksum manifest suitable for GitHub Release assets.
+`make ann-validate-baseline-package` verifies the archive contract before CI or
+release workflows upload it.
 
 The Rust CI workflow runs the same package step on the stable toolchain and
-uploads the tarball as the `ann-release-baseline-package` artifact.
+uploads the tarball as the `ann-release-baseline-package` artifact only after
+the package validator has checked the archive root, manifest checksums,
+history, generated ground truth, and `production_safe=true`.
 
 `make ann-compare-baseline-bundle` compares a candidate run against one of
 those baseline bundles and emits `baseline_comparison.json` next to the

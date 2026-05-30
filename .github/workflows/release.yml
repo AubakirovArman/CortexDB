@@ -43,7 +43,9 @@ jobs:
           make ann-corpus-run-smoke ANN_CORPUS_RUN_ID="$ANN_BASELINE_ID"
           make ann-publish-baseline ANN_BASELINE_RUN_ID="$ANN_BASELINE_ID" ANN_BASELINE_ID="$ANN_BASELINE_ID"
           make ann-package-baseline ANN_BASELINE_ID="$ANN_BASELINE_ID" ANN_BASELINE_ARCHIVE="$ANN_BASELINE_ARCHIVE"
+          make ann-validate-baseline-package ANN_BASELINE_ARCHIVE="$ANN_BASELINE_ARCHIVE"
           make ann-demo-domain-package-baseline ANN_DEMO_DOMAIN_RUN_ID="$ANN_DEMO_DOMAIN_BASELINE_ID" ANN_DEMO_DOMAIN_BASELINE_ID="$ANN_DEMO_DOMAIN_BASELINE_ID" ANN_DEMO_DOMAIN_BASELINE_ARCHIVE="$ANN_DEMO_DOMAIN_BASELINE_ARCHIVE"
+          make ann-demo-domain-validate-baseline-package ANN_DEMO_DOMAIN_BASELINE_ARCHIVE="$ANN_DEMO_DOMAIN_BASELINE_ARCHIVE"
 
       - name: Prepare release notes
         run: |
