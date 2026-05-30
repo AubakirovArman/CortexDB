@@ -22,7 +22,9 @@ mod transport;
 pub use consensus::{CommitDecision, ConsensusState, LogIndex, ReplicatedEntry, Term};
 pub use election::{ElectionOutcome, ElectionRole, ElectionState, VoteRequest, VoteResponse};
 pub use membership::{
-    decode_membership_entry, membership_entry, recover_membership_config, MembershipConfig,
+    decode_joint_membership_entry, decode_membership_entry, evaluate_joint_consensus,
+    joint_membership_entry, membership_entry, recover_membership_config, recover_voting_config,
+    JointConsensusDecision, JointMembershipConfig, MembershipConfig, VotingConfig,
 };
 pub use peer::{ReplicationPeerServer, ReplicationPeerState};
 pub use recovery::{
@@ -106,10 +108,13 @@ impl ReplicationLog {
         commit_index: LogIndex,
     ) -> EngineResult<ConsensusState> {
         let entries = Self::recover_entries(path)?;
-        let config = recover_membership_config(&entries, voters, commit_index)?;
+        let voters = match recover_voting_config(&entries, voters, commit_index)? {
+            VotingConfig::Stable(config) => config.voters,
+            VotingConfig::Joint(config) => config.voters_union(),
+        };
         Ok(ConsensusState::recover(
             local_node,
-            config.voters,
+            voters,
             entries,
             commit_index,
         ))

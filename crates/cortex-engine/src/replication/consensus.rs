@@ -3,6 +3,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::distributed::NodeId;
 use crate::error::{EngineError, EngineResult};
 
+use super::membership::{evaluate_joint_consensus, JointConsensusDecision, JointMembershipConfig};
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Term(pub u64);
 
@@ -97,6 +99,20 @@ impl ConsensusState {
             committed: false,
             acknowledgements: 0,
         }
+    }
+
+    pub fn record_joint_consensus_acks(
+        &mut self,
+        index: LogIndex,
+        config: &JointMembershipConfig,
+        acks: BTreeSet<NodeId>,
+    ) -> JointConsensusDecision {
+        let mut decision = evaluate_joint_consensus(index, config, &acks);
+        decision.committed = decision.committed && self.is_current_term_entry(index);
+        if decision.committed && index > self.commit_index {
+            self.commit_index = index;
+        }
+        decision
     }
 
     pub fn committed_entries(&self) -> Vec<ReplicatedEntry> {

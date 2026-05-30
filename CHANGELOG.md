@@ -58,6 +58,8 @@
   partition matrix and TCP multi-chunk snapshot transport smoke coverage.
 - Added durable membership rotation primitives in the replication log:
   `MembershipConfig`, `membership_entry`, and committed membership recovery.
+- Added joint-consensus membership safety primitives: joint entries preserve old
+  and new voter sets, and commit requires majorities from both sets.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

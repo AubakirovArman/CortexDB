@@ -107,10 +107,16 @@ let state = ReplicationLog::recover_consensus_with_membership(
 This keeps membership rotation in the consensus log rather than in the local
 database WAL.
 
-This is still not a full Raft joint-consensus implementation. Membership changes
-are currently model transitions plus committed configuration entries; joint
-consensus, automated rotation protocol, and removed-node lifecycle handling
-remain post-Core Alpha work.
+Joint membership entries can represent the transitional `old + new`
+configuration used during safe reconfiguration. The consensus model only marks
+a joint entry committed after both the old voter set and the new voter set have
+their own majorities. This prevents a change from being accepted by only one
+side of a split reconfiguration.
+
+This is still not a full automated Raft membership implementation. CortexDB now
+has the durable entry format and the majority-safety primitive; automated
+rotation orchestration and removed-node lifecycle handling remain post-Core
+Alpha work.
 
 ## Failure-Injection Coverage
 
@@ -131,10 +137,12 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
   elects a majority-side leader, and rejects stale minority-leader appends;
 - TCP snapshot transport smoke coverage for multi-chunk segment payloads.
 - committed membership rotation surviving replication-log restart.
+- joint-consensus membership entries requiring majorities from both old and new
+  voter sets before commit.
 
 This is not a full distributed consensus certification yet. The remaining
 production work is a crash/restart partition matrix, durable snapshot install
-over peer transport, automated membership rotation, and joint-consensus safety.
+over peer transport, and automated membership rotation.
 
 ## Not Yet
 
