@@ -1,4 +1,7 @@
-.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check smoke-test sdk-smoke-test alpha-check release-check demo
+.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report smoke-test sdk-smoke-test alpha-check release-check demo
+
+ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
+ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
 
 check:
 	cargo check --workspace
@@ -19,7 +22,10 @@ sdk-contract-check:
 	python3 scripts/check_sdk_contract.py
 
 ann-fixture-check:
-	cargo run --release -p cortex-engine --bin ann_fixture_gate -- crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
+	cargo run --release -p cortex-engine --bin ann_fixture_gate -- --baseline $(ANN_FIXTURE_BASELINE)
+
+ann-fixture-report:
+	cargo run --release -p cortex-engine --bin ann_fixture_gate -- --baseline $(ANN_FIXTURE_BASELINE) --output $(ANN_FIXTURE_REPORT)
 
 smoke-test:
 	scripts/smoke_test.sh

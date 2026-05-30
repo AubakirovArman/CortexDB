@@ -50,6 +50,7 @@ To run this complete performance matrix on your own machine:
 ```bash
 make alpha-check
 make ann-fixture-check
+make ann-fixture-report
 # Or directly:
 cargo bench --bench core_baseline
 ```
@@ -74,3 +75,8 @@ The gate enforces:
 - minimum graph and upper-layer edge counts;
 - release-build p95/max latency ceilings;
 - `production_safe=true`.
+
+`make ann-fixture-report` runs the same gate and writes the JSON report to
+`target/ann/ann_fixture_report.json`. The Rust CI workflow uploads that file as
+the `ann-fixture-report` artifact on the stable toolchain so recall/latency drift
+can be compared between commits.

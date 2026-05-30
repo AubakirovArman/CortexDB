@@ -22,7 +22,7 @@ every required row is green on `main`.
 | Consistency audit | `CORE_CONSISTENCY_AUDIT.md` is current and full-stack consistency tests pass. |
 | Atomic audit | `ATOMIC_WRITE_AUDIT.md` and `STORAGE_FORMATS.md` match the current writers/readers. |
 | Benchmark baseline | `cargo bench -p cortex-engine --bench core_baseline` runs without external services. |
-| ANN fixture gate | `make ann-fixture-check` passes against `ann_fixture_baseline_v1.json`. |
+| ANN fixture gate | `make ann-fixture-check` passes against `ann_fixture_baseline_v1.json`; CI uploads `target/ann/ann_fixture_report.json`. |
 | Query safety | AQL retrieve respects AgentView masks and candidate mappings. |
 | ContextPack v0 | AQL-to-ContextPack tests pass for budget and citation anomalies. |
 | Docs | README, Core Alpha docs, invariants, failure scenarios, and task pools are current. |
