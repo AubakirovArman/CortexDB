@@ -47,6 +47,7 @@
 - [ ] Наборы страниц: dashboard, cells, AQL, search/context, verify, ingest, health/validation.
 - [ ] Tenant-aware auth в UI и понятный путь ошибок.
 - [x] Playwright/CI smoke путь для текущего `/dashboard`: asset loading, tabs, cell put/get, keyword search.
+- [x] Playwright screenshot artifacts for desktop/mobile dashboard review in CI.
 - [x] Есть минимальный dashboard, static asset routes, and accessibility smoke tests.
 
 ### 4) Stable published SDK packages
@@ -60,7 +61,7 @@
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
 3. Consensus: добавить failure-injection harness для partition/restart recovery в integration tests.
-4. UI: добавить screenshots/docs для текущего dashboard или начать multi-page standalone app.
+4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: проверить публикационные версии в `sdk/python`, `sdk/typescript`, `rust` как единый release gate.
 
 ## Критерий перехода к следующему слою

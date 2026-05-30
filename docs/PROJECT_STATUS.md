@@ -1,10 +1,10 @@
-# CortexDB Project Status & Honesty Manifest (v0.1.0-core-alpha candidate)
+# CortexDB Project Status & Honesty Manifest (v0.1.0-core-alpha)
 
-CortexDB has successfully transitioned from an early database loop prototype into a **Stable Core Alpha Candidate (v0.1.0-core-alpha candidate)**. This document honestly defines the completed boundaries of the database core and separates them from our long-term distributed research goals.
+CortexDB has successfully transitioned from an early database loop prototype into a **published Core Alpha (v0.1.0-core-alpha)**. This document honestly defines the completed boundaries of the database core and separates them from our long-term distributed research goals.
 
 ---
 
-## 1. What is Fully Completed & Stable (v0.1.0-core-alpha candidate)
+## 1. What is Fully Completed & Stable (v0.1.0-core-alpha)
 
 - **Durable Single-Node Storage:** Strict Write-Ahead Log (WAL) with group commits, MVCC MemTable, and incremental compaction.
 - **Asynchronous Network Surface:** Async HTTP server built on Axum and Tokio. Blocking DB transactions run through per-tenant `DatabaseActor` workers behind `tokio::task::spawn_blocking`; the database core itself remains local and blocking.

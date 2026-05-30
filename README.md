@@ -2,7 +2,7 @@
 
 [![Rust](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml/badge.svg)](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml)
 
-**CortexDB is an experimental Core Alpha of an agent-native context database.** 
+**CortexDB is an experimental Core Alpha of an agent-native context database.**
 
 > ⚠️ **Warning:** CortexDB is currently in **Core Alpha status** and is suitable for local experiments, research, architecture validation, and early contributors. It is **not recommended for production workloads yet.**
 
@@ -32,7 +32,7 @@ Or run the full demo: `make demo`
 
 ---
 
-## Current Core Alpha Features (v0.1.0-core-alpha candidate)
+## Current Core Alpha Features (v0.1.0-core-alpha)
 
 - **Single-Node Durable Storage:** Strict Write-Ahead Log (WAL) with group commit, MVCC MemTable, and incremental check-pointing/compaction.
 - **Durable Local Agent Memory:** Scope-isolated agent-facing memory retrieval with dynamic decay/TTL scoring.

@@ -5,7 +5,8 @@
   "scripts": {
     "dashboard:build": "python3 scripts/dashboard_build.py",
     "dashboard:check": "python3 scripts/dashboard_build.py --check",
-    "dashboard:smoke": "playwright test e2e/dashboard.spec.ts"
+    "dashboard:smoke": "playwright test e2e/dashboard.spec.ts",
+    "dashboard:screenshots": "node e2e/dashboard_screenshots.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0"

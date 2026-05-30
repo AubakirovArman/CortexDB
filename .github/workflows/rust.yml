@@ -34,6 +34,17 @@ jobs:
           cache: npm
       - run: make dashboard-smoke
         if: matrix.toolchain == 'stable'
+      - run: make dashboard-screenshots
+        if: matrix.toolchain == 'stable'
+      - name: Upload dashboard screenshots
+        if: matrix.toolchain == 'stable' && always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dashboard-screenshots
+          if-no-files-found: warn
+          path: |
+            target/dashboard/*.png
+            target/dashboard/*.json
       - name: Generate ANN regression reports
         if: matrix.toolchain == 'stable'
         id: ann_reports

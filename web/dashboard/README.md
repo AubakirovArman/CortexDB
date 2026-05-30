@@ -15,6 +15,7 @@ Build and verify:
 make dashboard-build
 make dashboard-check
 make dashboard-smoke
+make dashboard-screenshots
 ```
 
 Current boundary:
@@ -24,6 +25,8 @@ Current boundary:
 - build output is versioned under `/dashboard/assets/v1/`;
 - Playwright smoke covers asset loading, tab switching, cell put/get, and
   keyword search.
+- Playwright screenshots are written to `target/dashboard/` as CI review
+  artifacts for desktop and mobile viewports.
 
 Future work is a full standalone frontend app with separate pages, screenshots,
 and a broader e2e suite.

@@ -154,7 +154,8 @@ Goal: turn the dashboard into a real product UI.
 Status: the existing developer console has a frontend source tree under
 `web/dashboard/src`, is built into versioned static assets under
 `/dashboard/assets/v1/`, and has a Playwright smoke path for asset loading,
-tabs, cell put/get, and keyword search. It is still not a standalone SPA.
+tabs, cell put/get, keyword search, and desktop/mobile screenshot artifacts.
+It is still not a standalone SPA.
 
 Tasks:
 
@@ -175,7 +176,7 @@ Tasks:
 15. Add clear error states.
 16. ✅ Add Playwright smoke tests for the current dashboard.
 17. ✅ Add static asset serving path for the current developer console.
-18. Add UI screenshots to docs.
+18. ✅ Add UI screenshots to docs and CI artifacts for the current dashboard.
 
 Definition of done:
 
