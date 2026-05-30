@@ -165,6 +165,7 @@ Every external run should keep:
 - `manifest.json`;
 - `report.json`;
 - `comparison.json` when a baseline exists;
+- `history.json` at the corpus-run root;
 - git commit SHA;
 - CPU, memory, disk, OS, Rust version;
 - command line used to generate ground truth and run the check.
@@ -181,10 +182,14 @@ target/ann/corpus-runs/
     manifest.json
     report.json
     comparison.json
+  history.json
 ```
 
-Long-term CI should upload these reports to persistent storage so recall and
-latency drift can be graphed across commits.
+`run_external_corpus.sh` refreshes `history.json` after successful runs. The
+history summary groups runs by corpus key and records adjacent recall, latency,
+graph-shape, and production-safety regressions. Long-term CI should upload
+these reports to persistent storage so recall and latency drift can be graphed
+across commits.
 
 ## Release Blockers
 

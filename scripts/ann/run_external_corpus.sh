@@ -165,6 +165,7 @@ fi
 report_path="${run_dir}/report.json"
 manifest_path="${run_dir}/manifest.json"
 comparison_path="${run_dir}/comparison.json"
+history_path="${output_root%/}/history.json"
 
 cat > "${manifest_path}" <<MANIFEST
 {
@@ -205,4 +206,9 @@ if [[ -n "${baseline_report}" ]]; then
     --output "${comparison_path}"
 fi
 
+python3 "${SCRIPT_DIR}/summarize_history.py" \
+  --run-root "${output_root%/}" \
+  --output "${history_path}"
+
 echo "ANN corpus run written to ${run_dir}"
+echo "ANN corpus history written to ${history_path}"

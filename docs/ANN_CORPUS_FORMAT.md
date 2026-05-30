@@ -179,7 +179,7 @@ corpora and archived reports.
 
 ## Helper Scripts
 
-The repository includes two standard-library Python helpers under `scripts/ann`.
+The repository includes standard-library Python helpers under `scripts/ann`.
 They are intentionally dependency-free so they can run in CI and on benchmark
 machines without creating a Python environment.
 
@@ -215,6 +215,22 @@ python3 scripts/ann/compare_reports.py \
 It fails on recall regressions, corpus-shape changes, production-safety loss, or
 latency regressions beyond the configured budget.
 
+### Summarize Report History
+
+`summarize_history.py` scans archived run directories and writes a compact
+history report:
+
+```bash
+python3 scripts/ann/summarize_history.py \
+  --run-root target/ann/corpus-runs \
+  --output target/ann/corpus-runs/history.json
+```
+
+The summary includes every `run_id`, commit SHA, corpus shape, recall,
+latency, graph-shape fields, and adjacent regressions for each corpus key. Use
+`--fail-on-regression` when you want the history pass to fail on any detected
+recall, latency, graph-shape, or production-safety regression.
+
 Run helper self-tests and smoke ground-truth generation with:
 
 ```bash
@@ -241,9 +257,16 @@ The script creates `target/ann/corpus-runs/<run-id>/` and writes:
   path;
 - `report.json` from `ann_corpus_check`;
 - `comparison.json` when `--baseline-report` is provided.
+- `../history.json` summarizing all archived runs under the output root.
 
 Run the built-in smoke workflow with:
 
 ```bash
 make ann-corpus-run-smoke
+```
+
+You can rebuild the history file without rerunning ANN evaluation:
+
+```bash
+make ann-history-report
 ```
