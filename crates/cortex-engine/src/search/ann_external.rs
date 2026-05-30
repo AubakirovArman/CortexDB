@@ -62,15 +62,15 @@ pub struct AnnExternalFixtureReport {
     pub production_safe: bool,
 }
 
-struct AnnExternalFixture {
-    vectors: BTreeMap<u32, Vec<i16>>,
-    queries: Vec<AnnExternalQuery>,
-    dimension: usize,
+pub(super) struct AnnExternalFixture {
+    pub(super) vectors: BTreeMap<u32, Vec<i16>>,
+    pub(super) queries: Vec<AnnExternalQuery>,
+    pub(super) dimension: usize,
 }
 
-struct AnnExternalQuery {
-    vector: Vec<i16>,
-    limit: usize,
+pub(super) struct AnnExternalQuery {
+    pub(super) vector: Vec<i16>,
+    pub(super) limit: usize,
 }
 
 impl AnnExternalFixtureReport {
@@ -150,7 +150,7 @@ pub fn evaluate_ann_external_fixture(
     Ok(report)
 }
 
-fn parse_ann_jsonl_fixture(input: &str) -> EngineResult<AnnExternalFixture> {
+pub(super) fn parse_ann_jsonl_fixture(input: &str) -> EngineResult<AnnExternalFixture> {
     let mut vectors = BTreeMap::new();
     let mut queries = Vec::new();
     let mut dimension = None;

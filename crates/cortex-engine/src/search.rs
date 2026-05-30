@@ -7,6 +7,7 @@ mod ann;
 mod ann_drift;
 mod ann_external;
 mod ann_fixture;
+mod ann_metric_matrix;
 mod ann_recall_tests;
 mod ann_report;
 mod database;
@@ -33,6 +34,10 @@ pub use ann_external::{
 pub use ann_fixture::{
     compare_ann_fixture_baseline, evaluate_ann_fixture_baseline, AnnRecallLatencyBaseline,
     AnnRecallLatencyGateReport,
+};
+pub use ann_metric_matrix::{
+    evaluate_ann_metric_matrix, AnnMetricBaseline, AnnMetricMatrixBaseline, AnnMetricMatrixReport,
+    AnnMetricReport,
 };
 pub use ann_report::{
     synthetic_ann_recall_latency_report, AnnRecallLatencyReport, SYNTHETIC_ANN_CORPUS_V1,

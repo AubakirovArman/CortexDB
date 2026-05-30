@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report smoke-test sdk-smoke-test alpha-check release-check demo
+.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report smoke-test sdk-smoke-test alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -6,6 +6,8 @@ ANN_DRIFT_BASELINE ?= crates/cortex-engine/fixtures/ann_drift_baseline_v1.json
 ANN_DRIFT_REPORT ?= target/ann/ann_drift_report.json
 ANN_EXTERNAL_BASELINE ?= crates/cortex-engine/fixtures/ann_external_baseline_v1.json
 ANN_EXTERNAL_REPORT ?= target/ann/ann_external_fixture_report.json
+ANN_METRIC_MATRIX_BASELINE ?= crates/cortex-engine/fixtures/ann_metric_matrix_baseline_v1.json
+ANN_METRIC_MATRIX_REPORT ?= target/ann/ann_metric_matrix_report.json
 
 check:
 	cargo check --workspace
@@ -43,6 +45,12 @@ ann-external-check:
 ann-external-report:
 	cargo run --release -p cortex-engine --bin ann_external_fixture_check -- --baseline $(ANN_EXTERNAL_BASELINE) --output $(ANN_EXTERNAL_REPORT)
 
+ann-metric-matrix-check:
+	cargo run --release -p cortex-engine --bin ann_metric_matrix_check -- --baseline $(ANN_METRIC_MATRIX_BASELINE)
+
+ann-metric-matrix-report:
+	cargo run --release -p cortex-engine --bin ann_metric_matrix_check -- --baseline $(ANN_METRIC_MATRIX_BASELINE) --output $(ANN_METRIC_MATRIX_REPORT)
+
 smoke-test:
 	scripts/smoke_test.sh
 
@@ -61,6 +69,7 @@ alpha-check:
 	$(MAKE) ann-fixture-check
 	$(MAKE) ann-drift-check
 	$(MAKE) ann-external-check
+	$(MAKE) ann-metric-matrix-check
 	cargo bench -p cortex-engine --bench core_baseline
 	./examples/demo/investment_projects/run.sh
 

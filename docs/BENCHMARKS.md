@@ -55,6 +55,8 @@ make ann-drift-check
 make ann-drift-report
 make ann-external-check
 make ann-external-report
+make ann-metric-matrix-check
+make ann-metric-matrix-report
 # Or directly:
 cargo bench --bench core_baseline
 ```
@@ -99,3 +101,10 @@ vectors, evaluates named queries against exact top-k, and enforces recall,
 graph-shape, and latency thresholds from `ann_external_baseline_v1.json`.
 `make ann-external-report` writes `target/ann/ann_external_fixture_report.json`,
 which CI includes in `ann-regression-reports`.
+
+`make ann-metric-matrix-check` reuses the checked-in JSONL fixture and evaluates
+`dot_product`, `cosine`, and `l2` independently. Each row builds a graph with
+that metric, compares ANN results against exact top-k for the same metric, and
+enforces per-metric recall, graph-shape, and latency thresholds from
+`ann_metric_matrix_baseline_v1.json`. `make ann-metric-matrix-report` writes
+`target/ann/ann_metric_matrix_report.json`, also uploaded by CI.

@@ -114,6 +114,7 @@ What landed:
 18. ✅ CI uploads `ann_fixture_report.json` so ANN recall/latency drift can be inspected between commits.
 19. ✅ ANN drift baseline gate fails on recall loss, graph-shape loss, or latency regression beyond budget.
 20. ✅ External ANN JSONL fixture gate verifies non-generated vectors and named queries.
+21. ✅ ANN metric matrix gate verifies dot-product, cosine, and L2 against exact top-k on the same fixture.
 
 What remains before broad production tuning:
 
