@@ -25,6 +25,36 @@ pub struct SnapshotSegment {
     pub cells: Vec<SegmentCell>,
 }
 
+pub fn assemble_snapshot_chunks(chunks: &[SnapshotChunk]) -> EngineResult<Vec<u8>> {
+    let Some(first) = chunks.first() else {
+        return Err(EngineError::InvalidOperation);
+    };
+    if first.chunk_index != 0 {
+        return Err(EngineError::InvalidOperation);
+    }
+
+    let mut out = Vec::new();
+    let mut saw_last = false;
+    for (expected_index, chunk) in chunks.iter().enumerate() {
+        if saw_last
+            || chunk.term != first.term
+            || chunk.leader_id != first.leader_id
+            || chunk.leader_commit != first.leader_commit
+            || chunk.chunk_index != expected_index as u64
+        {
+            return Err(EngineError::InvalidOperation);
+        }
+        out.extend_from_slice(&chunk.payload);
+        saw_last = chunk.last;
+    }
+
+    if saw_last {
+        Ok(out)
+    } else {
+        Err(EngineError::InvalidOperation)
+    }
+}
+
 pub fn encode_snapshot_chunk(chunk: &SnapshotChunk) -> String {
     format!(
         "SNAPSHOT {} {} {} {} {} {}\n",

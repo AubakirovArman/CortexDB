@@ -40,6 +40,11 @@ SNAPSHOT <term> <leader_id> <leader_commit> <chunk_index> <last> <hex_payload>
 The receiver appends chunks into an in-memory snapshot buffer and acknowledges
 the number of received bytes.
 
+`assemble_snapshot_chunks` validates offline chunk reassembly before install:
+chunks must start at index `0`, be contiguous, come from one leader/term/commit
+tuple, and end with a final `last=true` chunk. This prevents peer resync tests
+from accidentally accepting missing, reordered, or mixed-leader snapshots.
+
 Snapshot payloads can also be encoded as `SnapshotSegment` values and installed
 durably through `Database::install_snapshot_segment`. Install writes a normal
 segment bundle (`.acs/.acb/.aci/.acv/.ach`), publishes the manifest, resets the
@@ -70,6 +75,18 @@ let state = ReplicationLog::recover_consensus(path, node, voters, commit_index)?
 This keeps the model from treating arbitrary ACK sets or stale-term entries as
 committed data.
 
+## Membership Reconfiguration v0
+
+`ConsensusState::reconfigure_voters` and `ElectionState::reconfigure_voters`
+provide the first explicit membership lifecycle surface. The voter set must be
+non-empty and must keep the local node in the configuration. Consensus commit
+counting and election vote tracking then use the updated voter set, so joined
+nodes can count toward quorum and removed nodes stop contributing progress.
+
+This is still not a full Raft joint-consensus implementation. Membership changes
+are currently local model transitions used by the test harness; durable
+configuration entries and rotation protocols remain post-Core Alpha work.
+
 ## Failure-Injection Coverage
 
 The first post-Core Alpha consensus failure harness is an integration test suite
@@ -81,10 +98,14 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
   follower log is mutated;
 - idempotent replication-log replay after restart, including preservation of
   the next log index.
+- chunked snapshot resync that installs durably on a lagging follower and
+  rejects missing or mixed chunks;
+- membership join/leave behavior that changes quorum counting without allowing
+  empty configs or local-node removal.
 
 This is not a full distributed consensus certification yet. The remaining
-production work is a broader network partition matrix, snapshot resync after
-long follower lag, and membership lifecycle tests.
+production work is a broader network partition matrix, snapshot transfer over
+real peer transport, persisted membership rotation, and joint-consensus safety.
 
 ## Not Yet
 

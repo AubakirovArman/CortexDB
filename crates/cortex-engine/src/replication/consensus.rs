@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::distributed::NodeId;
+use crate::error::{EngineError, EngineResult};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Term(pub u64);
@@ -138,6 +139,12 @@ impl ConsensusState {
         }
     }
 
+    pub fn reconfigure_voters(&mut self, voters: BTreeSet<NodeId>) -> EngineResult<()> {
+        validate_voter_set(self.local_node, &voters)?;
+        self.voters = voters;
+        Ok(())
+    }
+
     fn majority(&self) -> usize {
         (self.voters.len() / 2) + 1
     }
@@ -147,4 +154,14 @@ impl ConsensusState {
             .iter()
             .any(|entry| entry.index == index && entry.term == self.current_term)
     }
+}
+
+pub(crate) fn validate_voter_set(
+    local_node: NodeId,
+    voters: &BTreeSet<NodeId>,
+) -> EngineResult<()> {
+    if voters.is_empty() || !voters.contains(&local_node) {
+        return Err(EngineError::InvalidOperation);
+    }
+    Ok(())
 }

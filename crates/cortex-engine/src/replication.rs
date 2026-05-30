@@ -26,8 +26,8 @@ pub use recovery::{
     ReplicationRecoveryPolicy,
 };
 pub use snapshot::{
-    decode_snapshot_chunk, decode_snapshot_segment, encode_snapshot_chunk, encode_snapshot_segment,
-    SnapshotChunk, SnapshotSegment,
+    assemble_snapshot_chunks, decode_snapshot_chunk, decode_snapshot_segment,
+    encode_snapshot_chunk, encode_snapshot_segment, SnapshotChunk, SnapshotSegment,
 };
 pub use tcp::{
     handle_authenticated_replication_frame, handle_replication_frame, TcpReplicationTransport,

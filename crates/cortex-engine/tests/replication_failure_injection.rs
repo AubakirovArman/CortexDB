@@ -1,9 +1,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use cortex_core::{CellId, CommitSeq};
 use cortex_engine::{
-    AppendEntriesRequest, ConsensusState, ElectionRole, ElectionState,
-    InMemoryReplicationTransport, LogIndex, NodeId, ReplicationLog, ReplicationTransport, Term,
+    assemble_snapshot_chunks, decode_snapshot_segment, encode_snapshot_segment,
+    AppendEntriesRequest, ConsensusState, Database, ElectionRole, ElectionState,
+    InMemoryReplicationTransport, LogIndex, NodeId, ReplicationLog, ReplicationTransport,
+    SnapshotChunk, SnapshotSegment, Term,
 };
+use cortex_storage::segment::SegmentCell;
 
 #[test]
 fn minority_partition_cannot_commit_until_majority_heals() {
@@ -108,6 +112,140 @@ fn replication_log_replay_is_idempotent_after_restart() {
     let mut resumed = recovered_once;
     let third = resumed.append_local(b"third".to_vec());
     assert_eq!(third.index, LogIndex(3));
+}
+
+#[test]
+fn chunked_snapshot_resync_installs_follower_and_survives_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut follower = Database::open(dir.path()).unwrap();
+    follower
+        .put_cell(CellId(7), b"stale local state".to_vec())
+        .unwrap();
+
+    let snapshot = SnapshotSegment {
+        checkpoint_seq: CommitSeq(11),
+        cells: vec![SegmentCell {
+            candidate_id: 1,
+            cell_id: 42,
+            created_seq: 11,
+            deleted_seq: None,
+            payload: b"scope=project:investments\nstatus=ready\n\nresynced cell".to_vec(),
+        }],
+    };
+    let encoded = encode_snapshot_segment(&snapshot).unwrap();
+    let split_at = encoded.len() / 2;
+    let chunks = vec![
+        SnapshotChunk {
+            term: Term(3),
+            leader_id: NodeId(1),
+            leader_commit: LogIndex(11),
+            chunk_index: 0,
+            last: false,
+            payload: encoded[..split_at].to_vec(),
+        },
+        SnapshotChunk {
+            term: Term(3),
+            leader_id: NodeId(1),
+            leader_commit: LogIndex(11),
+            chunk_index: 1,
+            last: true,
+            payload: encoded[split_at..].to_vec(),
+        },
+    ];
+
+    let assembled = assemble_snapshot_chunks(&chunks).unwrap();
+    let decoded = decode_snapshot_segment(&assembled).unwrap();
+    let stats = follower.install_snapshot_segment(decoded).unwrap();
+    follower.close().unwrap();
+
+    let follower = Database::open(dir.path()).unwrap();
+    assert_eq!(stats.checkpoint_seq, CommitSeq(11));
+    assert_eq!(
+        follower.get_latest_cell(CellId(42)).unwrap(),
+        snapshot.cells[0].payload
+    );
+    assert!(
+        follower.get_latest_cell(CellId(7)).is_none(),
+        "snapshot install should replace stale follower state"
+    );
+}
+
+#[test]
+fn snapshot_reassembly_rejects_missing_or_mixed_chunks() {
+    let first = SnapshotChunk {
+        term: Term(3),
+        leader_id: NodeId(1),
+        leader_commit: LogIndex(11),
+        chunk_index: 0,
+        last: false,
+        payload: b"first".to_vec(),
+    };
+    let skipped = SnapshotChunk {
+        chunk_index: 2,
+        last: true,
+        payload: b"third".to_vec(),
+        ..first.clone()
+    };
+    let mixed_leader = SnapshotChunk {
+        leader_id: NodeId(2),
+        chunk_index: 1,
+        last: true,
+        payload: b"second".to_vec(),
+        ..first.clone()
+    };
+
+    assert!(assemble_snapshot_chunks(&[first.clone(), skipped]).is_err());
+    assert!(assemble_snapshot_chunks(&[first, mixed_leader]).is_err());
+}
+
+#[test]
+fn membership_reconfiguration_changes_majority_counting() {
+    let mut leader = ConsensusState::new(NodeId(1), voters());
+    let first = leader.append_local(b"first".to_vec());
+
+    let non_voter_only = leader.record_acks(first.index, BTreeSet::from([NodeId(1), NodeId(4)]));
+    assert!(!non_voter_only.committed);
+
+    leader
+        .reconfigure_voters(BTreeSet::from([
+            NodeId(1),
+            NodeId(2),
+            NodeId(3),
+            NodeId(4),
+            NodeId(5),
+        ]))
+        .unwrap();
+    let joined_majority = leader.record_acks(
+        first.index,
+        BTreeSet::from([NodeId(1), NodeId(4), NodeId(5)]),
+    );
+    assert!(joined_majority.committed);
+
+    let second = leader.append_local(b"second".to_vec());
+    leader.reconfigure_voters(voters()).unwrap();
+    let removed_nodes = leader.record_acks(
+        second.index,
+        BTreeSet::from([NodeId(1), NodeId(4), NodeId(5)]),
+    );
+    assert!(!removed_nodes.committed);
+
+    let current_majority = leader.record_acks(second.index, BTreeSet::from([NodeId(1), NodeId(2)]));
+    assert!(current_majority.committed);
+}
+
+#[test]
+fn membership_reconfiguration_rejects_empty_or_local_removal() {
+    let mut leader = ConsensusState::new(NodeId(1), voters());
+    assert!(leader.reconfigure_voters(BTreeSet::new()).is_err());
+    assert!(leader
+        .reconfigure_voters(BTreeSet::from([NodeId(2), NodeId(3)]))
+        .is_err());
+
+    let mut follower = ElectionState::new(NodeId(2), voters());
+    assert!(follower.reconfigure_voters(BTreeSet::new()).is_err());
+    assert!(follower
+        .reconfigure_voters(BTreeSet::from([NodeId(1), NodeId(3)]))
+        .is_err());
 }
 
 fn voters() -> BTreeSet<NodeId> {

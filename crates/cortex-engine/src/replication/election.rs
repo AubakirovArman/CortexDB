@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::distributed::NodeId;
+use crate::error::EngineResult;
 
 use super::{LogIndex, Term};
 
@@ -65,6 +66,16 @@ impl ElectionState {
     pub fn set_last_log(&mut self, index: LogIndex, term: Term) {
         self.last_log_index = index;
         self.last_log_term = term;
+    }
+
+    pub fn reconfigure_voters(&mut self, voters: BTreeSet<NodeId>) -> EngineResult<()> {
+        super::consensus::validate_voter_set(self.local_node, &voters)?;
+        self.voters = voters;
+        self.voted_for = self.voted_for.filter(|node| self.voters.contains(node));
+        self.leader = self.leader.filter(|node| self.voters.contains(node));
+        self.votes_received
+            .retain(|node| self.voters.contains(node));
+        Ok(())
     }
 
     pub fn start_election(&mut self) -> VoteRequest {
