@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::Instant;
 
+use serde::Serialize;
+
 use crate::error::{EngineError, EngineResult};
 
 use super::ann::{evaluate_persisted_ann_with_policy, AnnSearchPolicy, MIN_ANN_RECALL_Q16};
@@ -8,7 +10,7 @@ use super::hnsw::{DistanceMetric, HnswIndex, VectorCollectionConfig};
 
 pub const SYNTHETIC_ANN_CORPUS_V1: &str = "synthetic-ann-corpus-v1";
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct AnnRecallLatencyReport {
     pub corpus: &'static str,
     pub vector_count: usize,
@@ -30,33 +32,8 @@ pub struct AnnRecallLatencyReport {
 
 impl AnnRecallLatencyReport {
     pub fn as_json(&self) -> String {
-        format!(
-            concat!(
-                "{{\"corpus\":\"{}\",\"vector_count\":{},\"dimension\":{},",
-                "\"query_count\":{},\"limit\":{},\"graph_nodes\":{},",
-                "\"graph_edges\":{},\"upper_layers\":{},\"upper_graph_edges\":{},",
-                "\"min_recall_q16\":{},\"min_observed_recall_q16\":{},",
-                "\"mean_recall_q16\":{},\"p50_latency_nanos\":{},",
-                "\"p95_latency_nanos\":{},\"max_latency_nanos\":{},",
-                "\"production_safe\":{}}}"
-            ),
-            self.corpus,
-            self.vector_count,
-            self.dimension,
-            self.query_count,
-            self.limit,
-            self.graph_nodes,
-            self.graph_edges,
-            self.upper_layers,
-            self.upper_graph_edges,
-            self.min_recall_q16,
-            self.min_observed_recall_q16,
-            self.mean_recall_q16,
-            self.p50_latency_nanos,
-            self.p95_latency_nanos,
-            self.max_latency_nanos,
-            self.production_safe
-        )
+        serde_json::to_string(self)
+            .unwrap_or_else(|_| "{\"error\":\"ann_report_serialization_failed\"}".to_owned())
     }
 }
 

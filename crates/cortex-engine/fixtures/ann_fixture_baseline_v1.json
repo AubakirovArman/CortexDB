@@ -1,0 +1,19 @@
+{
+  "baseline_id": "synthetic-ann-corpus-v1-core-gate",
+  "corpus": "synthetic-ann-corpus-v1",
+  "vector_count": 1000,
+  "dimension": 8,
+  "query_count": 32,
+  "limit": 10,
+  "policy_min_recall_q16": 49151,
+  "require_slo": true,
+  "min_observed_recall_q16": 49151,
+  "min_mean_recall_q16": 49151,
+  "min_graph_nodes": 1000,
+  "min_graph_edges": 1000,
+  "min_upper_layers": 1,
+  "min_upper_graph_edges": 1,
+  "max_p95_latency_nanos": 100000000,
+  "max_max_latency_nanos": 250000000,
+  "require_production_safe": true
+}

@@ -49,6 +49,7 @@ To run this complete performance matrix on your own machine:
 
 ```bash
 make alpha-check
+make ann-fixture-check
 # Or directly:
 cargo bench --bench core_baseline
 ```
@@ -62,3 +63,14 @@ ann_repeatable_report_json: {"corpus":"synthetic-ann-corpus-v1", ...}
 The corpus and query set are deterministic. Latency values are intentionally
 machine-dependent, but the report shape is stable and can be archived by CI to
 track recall and p95/p99 drift across commits.
+
+`make ann-fixture-check` is the deterministic ANN gate used before release. It
+runs the synthetic corpus in release mode and compares the observed report
+against `crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json`.
+The gate enforces:
+
+- fixed corpus parameters (`vector_count`, `dimension`, `query_count`, `limit`);
+- minimum observed and mean recall;
+- minimum graph and upper-layer edge counts;
+- release-build p95/max latency ceilings;
+- `production_safe=true`.
