@@ -128,6 +128,7 @@ What landed:
 32. ✅ `package_baseline.py` creates GitHub Release-ready ANN baseline tarballs with SHA-256 file checksums.
 33. ✅ CI now packages ANN release baselines and uploads the tarball as `ann-release-baseline-package`.
 34. ✅ Tag-based Release workflow now attaches the ANN baseline tarball to GitHub Releases as a durable asset.
+35. ✅ GitHub workflows opt into Node.js 24 for JavaScript actions to avoid Node.js 20 deprecation drift.
 
 What remains before broad production tuning:
 
