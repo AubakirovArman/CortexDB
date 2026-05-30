@@ -341,9 +341,20 @@ python3 scripts/ann/publish_baseline.py \
 ```
 
 The bundle contains `baseline_manifest.json`, the selected run manifest,
-`report.json`, `history.json`, and generated ground truth when it exists. Use
-this for release artifacts or for pinning a known-good external corpus report
-before comparing later candidate runs.
+`report.json`, `machine_profile.json`, `history.json`, and generated ground
+truth when it exists. Use this for release artifacts or for pinning a known-good
+external corpus report before comparing later candidate runs.
+
+Package the bundle as a GitHub Release-ready artifact:
+
+```bash
+make ann-package-baseline \
+  ANN_BASELINE_ID=v0.1.0-core-alpha-smoke \
+  ANN_BASELINE_ARCHIVE=target/ann/release-baselines/v0.1.0-core-alpha-smoke.tar.gz
+```
+
+The archive includes `package_manifest.json` with SHA-256 checksums for every
+file inside the bundle.
 
 Run helper self-tests and smoke ground-truth generation with:
 

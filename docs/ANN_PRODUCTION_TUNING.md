@@ -216,6 +216,17 @@ Actions uploads `target/ann/release-baselines/**` with the same
 `ann-regression-reports` artifact, so releases can attach a stable baseline
 package without checking large corpus files into git.
 
+For GitHub Releases, package the selected bundle as a tarball:
+
+```bash
+make ann-package-baseline \
+  ANN_BASELINE_ID=v0.1.0-core-alpha-smoke \
+  ANN_BASELINE_ARCHIVE=target/ann/release-baselines/v0.1.0-core-alpha-smoke.tar.gz
+```
+
+The tarball includes `package_manifest.json` with SHA-256 checksums for each
+included report, manifest, machine profile, and ground-truth file.
+
 Candidate runs can be gated against a published bundle with:
 
 ```bash
