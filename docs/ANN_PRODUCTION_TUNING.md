@@ -330,14 +330,16 @@ The workflow runs the same local targets:
 ```text
 ann-real-embedding-preflight
 ann-real-embedding-benchmark
+ann-real-embedding-history-regression-check
 ann-real-embedding-compare          # when baseline_bundle_url is set
 ann-real-embedding-package-baseline # when publish_baseline is true
 ```
 
 Artifacts include the preflight report, exported fixed-point corpus, ANN run
-directory, and optional baseline package. This is the preferred path for
-production-style evidence because the run is reproducible from a GitHub Actions
-URL and does not expose embedding credentials in command lines.
+directory, explicit `history.json`, and optional baseline package. This is the
+preferred path for production-style evidence because the run is reproducible
+from a GitHub Actions URL and does not expose embedding credentials in command
+lines.
 
 ## Fallback Policy
 
@@ -396,6 +398,12 @@ The Rust GitHub Actions workflow uploads checked-in ANN reports and
 stable toolchain. This keeps `history.json`, per-run manifests, reports, and
 generated smoke ground truth available even when a regression causes the ANN
 report step to fail.
+
+The real-embedding workflow runs `ann-real-embedding-history-regression-check`
+after each benchmark and uploads `target/ann/real-embedding/runs/**`, including
+the explicit real-embedding `history.json`. Use the same target locally when a
+real embedding run directory already exists and you only need to regenerate or
+gate the history summary.
 
 For release checkpoints, publish the selected run into
 `target/ann/release-baselines/<baseline-id>/`:

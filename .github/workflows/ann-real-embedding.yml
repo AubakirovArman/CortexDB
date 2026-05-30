@@ -172,6 +172,12 @@ jobs:
             ANN_REAL_EMBEDDING_LIMIT="$LIMIT" \
             ANN_REAL_EMBEDDING_SLO_PROFILE="$SLO_PROFILE"
 
+      - name: Summarize real embedding history
+        run: |
+          set -euo pipefail
+          make ann-real-embedding-history-regression-check \
+            ANN_REAL_EMBEDDING_RUN_ID="$ANN_REAL_EMBEDDING_RUN_ID"
+
       - name: Compare against baseline bundle
         if: inputs.baseline_bundle_url != ''
         env:
