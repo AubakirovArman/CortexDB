@@ -154,11 +154,11 @@ console.log(results.results[0].payload);
 ### Rust
 
 ```rust
-use cortex_sdk::CortexDBClient;
+use cortex_sdk::CortexDbClient;
 
-let client = CortexDBClient::new("http://127.0.0.1:8181");
-client.put_cell(1, b"scope=finance\n\nBudget is 450M KZT")?;
-let results = client.search("finance", "budget")?;
+let client = CortexDbClient::new("http://127.0.0.1:8181");
+client.put_cell_response(1, "scope=finance\n\nBudget is 450M KZT")?;
+let results = client.search_keyword_response("finance", "budget", 10)?;
 println!("{}", results.results[0].payload);
 ```
 

@@ -34,6 +34,7 @@ If the token is missing or invalid, the server returns:
 
 ```json
 {
+  "code": "unauthorized",
   "error": "unauthorized",
   "message": "missing or invalid authorization"
 }
@@ -54,7 +55,7 @@ from cortexdb_client import CortexDBClient
 
 client = CortexDBClient(
     "http://127.0.0.1:8181",
-    auth_token="my-secret-token"
+    token="my-secret-token"
 )
 ```
 
@@ -63,18 +64,16 @@ client = CortexDBClient(
 ```typescript
 import { CortexDBClient } from "@cortexdb/client";
 
-const client = new CortexDBClient("http://127.0.0.1:8181", {
-  authToken: "my-secret-token"
-});
+const client = new CortexDBClient("http://127.0.0.1:8181", "my-secret-token");
 ```
 
 ### Rust
 
 ```rust
-use cortex_sdk::CortexDBClient;
+use cortex_sdk::CortexDbClient;
 
-let client = CortexDBClient::new("http://127.0.0.1:8181")
-    .with_auth_token("my-secret-token");
+let client = CortexDbClient::new("http://127.0.0.1:8181")
+    .with_token("my-secret-token");
 ```
 
 ## Security Notes
