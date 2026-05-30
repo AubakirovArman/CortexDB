@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 mod access;
 mod analyzer;
 mod ann;
+mod ann_drift;
 mod ann_fixture;
 mod ann_recall_tests;
 mod ann_report;
@@ -20,6 +21,9 @@ pub use analyzer::{mean_reciprocal_rank_q16, Language, TextAnalyzer};
 pub use ann::{
     AnnEvaluationReport, AnnFallbackReason, AnnMetrics, AnnSearchPath, AnnSearchPolicy,
     AnnSearchReport, AnnSloViolation, MIN_ANN_RECALL_Q16,
+};
+pub use ann_drift::{
+    compare_ann_drift_baseline, evaluate_ann_drift_baseline, AnnDriftBaseline, AnnDriftReport,
 };
 pub use ann_fixture::{
     compare_ann_fixture_baseline, evaluate_ann_fixture_baseline, AnnRecallLatencyBaseline,

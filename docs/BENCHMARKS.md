@@ -51,6 +51,8 @@ To run this complete performance matrix on your own machine:
 make alpha-check
 make ann-fixture-check
 make ann-fixture-report
+make ann-drift-check
+make ann-drift-report
 # Or directly:
 cargo bench --bench core_baseline
 ```
@@ -80,3 +82,10 @@ The gate enforces:
 `target/ann/ann_fixture_report.json`. The Rust CI workflow uploads that file as
 the `ann-fixture-report` artifact on the stable toolchain so recall/latency drift
 can be compared between commits.
+
+`make ann-drift-check` compares the current synthetic report against
+`crates/cortex-engine/fixtures/ann_drift_baseline_v1.json`. This is stricter
+than the fixture gate: recall must not drop, multi-layer graph shape must not
+lose edges, and release-mode latency must stay within the configured regression
+budget. `make ann-drift-report` writes `target/ann/ann_drift_report.json`; CI
+uploads it together with the fixture report as `ann-regression-reports`.

@@ -112,6 +112,7 @@ What landed:
 16. ✅ Repeatable `ann_repeatable_report_json` benchmark output records recall, latency, graph edges, and upper-layer counts.
 17. ✅ Release-mode ANN fixture gate compares observed recall/latency and multi-layer graph shape against `ann_fixture_baseline_v1.json`.
 18. ✅ CI uploads `ann_fixture_report.json` so ANN recall/latency drift can be inspected between commits.
+19. ✅ ANN drift baseline gate fails on recall loss, graph-shape loss, or latency regression beyond budget.
 
 What remains before broad production tuning:
 

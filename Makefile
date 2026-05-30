@@ -1,7 +1,9 @@
-.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report smoke-test sdk-smoke-test alpha-check release-check demo
+.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report smoke-test sdk-smoke-test alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
+ANN_DRIFT_BASELINE ?= crates/cortex-engine/fixtures/ann_drift_baseline_v1.json
+ANN_DRIFT_REPORT ?= target/ann/ann_drift_report.json
 
 check:
 	cargo check --workspace
@@ -27,6 +29,12 @@ ann-fixture-check:
 ann-fixture-report:
 	cargo run --release -p cortex-engine --bin ann_fixture_gate -- --baseline $(ANN_FIXTURE_BASELINE) --output $(ANN_FIXTURE_REPORT)
 
+ann-drift-check:
+	cargo run --release -p cortex-engine --bin ann_drift_check -- --baseline $(ANN_DRIFT_BASELINE)
+
+ann-drift-report:
+	cargo run --release -p cortex-engine --bin ann_drift_check -- --baseline $(ANN_DRIFT_BASELINE) --output $(ANN_DRIFT_REPORT)
+
 smoke-test:
 	scripts/smoke_test.sh
 
@@ -43,6 +51,7 @@ alpha-check:
 	$(MAKE) openapi-contract-check
 	$(MAKE) sdk-contract-check
 	$(MAKE) ann-fixture-check
+	$(MAKE) ann-drift-check
 	cargo bench -p cortex-engine --bench core_baseline
 	./examples/demo/investment_projects/run.sh
 

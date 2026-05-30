@@ -1,0 +1,22 @@
+{
+  "baseline_id": "synthetic-ann-corpus-v1-drift-baseline",
+  "corpus": "synthetic-ann-corpus-v1",
+  "vector_count": 1000,
+  "dimension": 8,
+  "query_count": 32,
+  "limit": 10,
+  "policy_min_recall_q16": 49151,
+  "require_slo": true,
+  "reference_min_observed_recall_q16": 65535,
+  "reference_mean_recall_q16": 65535,
+  "reference_graph_nodes": 1000,
+  "reference_graph_edges": 15928,
+  "reference_upper_layers": 3,
+  "reference_upper_graph_edges": 2628,
+  "reference_p95_latency_nanos": 25000000,
+  "reference_max_latency_nanos": 30000000,
+  "allowed_recall_drop_q16": 0,
+  "max_latency_regression_percent": 400,
+  "max_edge_loss_percent": 0,
+  "require_production_safe": true
+}
