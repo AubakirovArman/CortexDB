@@ -232,8 +232,13 @@ Axum/Tokio request
 
 The actor owns the `Database` for a tenant and serializes mutations. Tenant
 realms are directory-backed and path-validated. Authentication is currently
-Bearer-token based. Full RBAC, audit logs, rate limiting, and production tenant
-authorization are future security milestones.
+Bearer-token based. Core Alpha also has opt-in `AgentView` binding for one
+configured token, bounded actor queues with explicit `database_busy`
+backpressure, fixed-window rate limiting, exact-origin CORS allowlisting, and
+route-level audit events with an optional synced JSONL file sink.
+
+Full multi-token RBAC, per-user quotas, tamper-evident audit trails, SIEM
+export, and production tenant authorization remain future security milestones.
 
 ## Public Interfaces
 
@@ -255,6 +260,11 @@ authorization are future security milestones.
 - Best-effort recovery stops at safe offsets.
 - Tenant names are path-validated.
 - HTTP body size is bounded.
+- Actor queues are bounded and expose explicit backpressure.
+- Browser CORS is disabled by default and only supports one exact allowlisted
+  origin when configured.
+- HTTP audit logging is opt-in and records route metadata without request
+  bodies or query strings.
 - Production claims are intentionally limited to experimental Core Alpha.
 
 ## Current Release Gates
@@ -275,6 +285,8 @@ make ann-fixture-check
 make ann-drift-check
 make ann-external-check
 make ann-metric-matrix-check
+make ann-release-evidence-check
+make sdk-contract-check
 ```
 
 `make alpha-check` and `make release-check` compose broader release evidence,
@@ -295,8 +307,9 @@ The next architectural hardening items are:
 
 1. API/error taxonomy freeze.
 2. SDK end-to-end compatibility tests against a local server.
-3. Backup/restore alpha.
-4. Security threat model and tenant authorization policy.
+3. Backup/restore operational hardening and restore drills.
+4. Multi-token auth policy, RBAC, and admin/data route separation.
 5. Crash/fault injection harness.
 6. Search and verification quality datasets.
 7. Migration policy for storage/API format changes.
+8. Tamper-evident audit trail and external log/SIEM export.
