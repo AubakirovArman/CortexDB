@@ -6,6 +6,9 @@ external evidence beyond the small in-repo fixtures.
 These runs are not committed as large corpus files. The durable evidence is the
 GitHub Actions run plus its uploaded artifact, which contains the converted
 JSONL corpus, `report.json`, `history.json`, and an optional baseline package.
+The `siftsmall-public-full-l2` baseline package is also attached to the
+`v0.1.0-core-alpha.4` GitHub Release:
+<https://github.com/AubakirovArman/CortexDB/releases/download/v0.1.0-core-alpha.4/siftsmall-public-full-l2.tar.gz>.
 
 ## siftsmall-public-l2-smoke
 
@@ -100,3 +103,50 @@ Interpretation:
 - Latency gates are intentionally loose enough to tolerate hosted-runner
   variance. Future candidate comparisons should use report-to-report regression
   budgets rather than hard-coding a single machine's p95 as a universal SLO.
+
+## siftsmall-public-full-gated-26685977149
+
+| Field | Value |
+| --- | --- |
+| Actions run | <https://github.com/AubakirovArman/CortexDB/actions/runs/26685977149> |
+| Commit | `9a46a702a9945a34db1c99b35e5f59638bae25b3` |
+| Baseline bundle | <https://github.com/AubakirovArman/CortexDB/releases/download/v0.1.0-core-alpha.4/siftsmall-public-full-l2.tar.gz> |
+| Source | `ftp://ftp.irisa.fr/local/texmex/corpus/siftsmall.tar.gz` |
+| Dataset id | `siftsmall-public-full-gated` |
+| Metric | `l2` |
+| Query sample | all `100` queries |
+| HNSW profile | `max_neighbors=16`, `ef_search=256`, `layer_count=4` |
+| Recall gates | `min_recall_q16=65535`, `min_mean_recall_q16=65535` |
+| Latency gates | `p95<=2500000000ns`, `max<=5000000000ns` |
+| Regression budget | `p95<=+750000000ns`, `max<=+1250000000ns` |
+| Result | `passed=true`, `production_safe=true`, `comparison.passed=true` |
+
+Observed hosted result:
+
+| Metric | Value |
+| --- | --- |
+| Vectors | `10000` |
+| Queries | `100` |
+| Min observed recall | `65535` |
+| Mean recall | `65535` |
+| p50 latency | `222674890ns` |
+| p95 latency | `316390041ns` |
+| Max latency | `362520353ns` |
+
+Baseline comparison:
+
+| Delta | Value |
+| --- | --- |
+| Min recall delta | `0` |
+| Mean recall delta | `0` |
+| p95 latency delta | `-19135770ns` |
+| Max latency delta | `-20217179ns` |
+| Failures | `[]` |
+
+Interpretation:
+
+- The hosted workflow successfully downloaded the release baseline tarball and
+  compared the candidate run against it.
+- This closes the public-corpus regression-gate path: future runs can fail on
+  recall loss, corpus/profile mismatch, production-safety loss, or latency
+  regression beyond the configured budget.
