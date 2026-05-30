@@ -220,3 +220,30 @@ Run helper self-tests and smoke ground-truth generation with:
 ```bash
 make ann-scripts-check
 ```
+
+### One-Command Corpus Runs
+
+`run_external_corpus.sh` ties the full workflow together:
+
+```bash
+scripts/ann/run_external_corpus.sh \
+  --vectors /data/ann/vectors.jsonl \
+  --queries /data/ann/queries.jsonl \
+  --metric cosine \
+  --baseline-report reports/main.json \
+  --output-root target/ann/corpus-runs
+```
+
+The script creates `target/ann/corpus-runs/<run-id>/` and writes:
+
+- `ground_truth.jsonl` if `--ground-truth` was omitted;
+- `manifest.json` with the run id, commit SHA, metric, input paths, and report
+  path;
+- `report.json` from `ann_corpus_check`;
+- `comparison.json` when `--baseline-report` is provided.
+
+Run the built-in smoke workflow with:
+
+```bash
+make ann-corpus-run-smoke
+```

@@ -117,6 +117,7 @@ What landed:
 21. ✅ ANN metric matrix gate verifies dot-product, cosine, and L2 against exact top-k on the same fixture.
 22. ✅ `ann_corpus_check` can evaluate larger external vectors/queries/ground-truth JSONL suites.
 23. ✅ ANN helper scripts generate exact ground truth and compare corpus reports without extra dependencies.
+24. ✅ `run_external_corpus.sh` orchestrates ground-truth generation, ANN evaluation, optional baseline comparison, and run artifact archival.
 
 What remains before broad production tuning:
 

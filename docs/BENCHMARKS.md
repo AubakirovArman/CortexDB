@@ -134,3 +134,7 @@ the resulting JSON reports. The JSONL contract is documented in
 generate exact ground truth and compare two ANN report JSON files. Use
 `make ann-corpus-compare ANN_BASELINE_REPORT=... ANN_CANDIDATE_REPORT=...` to
 gate a candidate report against an archived baseline.
+
+`make ann-corpus-run-smoke` exercises the full external-corpus workflow:
+ground-truth generation, `ann_corpus_check`, run manifest creation, and report
+archival under `target/ann/corpus-runs/<run-id>/`.
