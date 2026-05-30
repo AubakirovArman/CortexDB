@@ -1,6 +1,6 @@
 use axum::{
     extract::{Request, State},
-    http::{header, StatusCode},
+    http::{header, HeaderValue, Method, StatusCode},
     response::{Html, IntoResponse},
     routing::Router,
     Json,
@@ -9,6 +9,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
+use tower_http::cors::CorsLayer;
 use tower_http::limit::RequestBodyLimitLayer;
 
 use responses::{ErrorCode, ErrorResponse, MetricsResponse};
@@ -45,6 +46,11 @@ pub struct ServerOptions {
     pub auth_token: Option<String>,
     /// Capacity of the bounded actor command queue. Default is 1024.
     pub actor_queue_capacity: usize,
+    /// Optional exact browser origin allowed for cross-origin API requests.
+    ///
+    /// CORS is disabled by default. Set this only for deployments that expose
+    /// CortexDB to a browser origin through a trusted reverse proxy.
+    pub cors_allowed_origin: Option<String>,
 }
 
 impl ServerOptions {
@@ -123,6 +129,7 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
         .enable_all()
         .build()?;
     rt.block_on(async {
+        let cors = cors_layer(&options)?;
         let state = AppState {
             root: root.to_owned(),
             dbs: Arc::new(Mutex::new(BTreeMap::new())),
@@ -132,10 +139,13 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             request_duration_ms_total: Arc::new(AtomicU64::new(0)),
         };
 
-        let app = Router::new()
+        let mut app = Router::new()
             .fallback(axum_handler)
             .layer(RequestBodyLimitLayer::new(2 * 1024 * 1024)) // 2MB Limit
             .with_state(state.clone());
+        if let Some(cors) = cors {
+            app = app.layer(cors);
+        }
 
         tokio::spawn(async {
             #[cfg(unix)]
@@ -185,6 +195,24 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
         axum::serve(listener, app).await?;
         Ok(())
     })
+}
+
+fn cors_layer(options: &ServerOptions) -> std::io::Result<Option<CorsLayer>> {
+    let Some(origin) = options.cors_allowed_origin.as_deref() else {
+        return Ok(None);
+    };
+    let origin = HeaderValue::from_str(origin).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("invalid CORS origin: {error}"),
+        )
+    })?;
+    Ok(Some(
+        CorsLayer::new()
+            .allow_origin(origin)
+            .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::OPTIONS])
+            .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]),
+    ))
 }
 
 async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoResponse {

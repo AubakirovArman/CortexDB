@@ -22,6 +22,7 @@ fn main() -> ExitCode {
     let options = cortex_server::ServerOptions {
         auth_token: env::var("CORTEXDB_AUTH_TOKEN").ok(),
         actor_queue_capacity,
+        cors_allowed_origin: env::var("CORTEXDB_CORS_ALLOW_ORIGIN").ok(),
     };
     match cortex_server::serve_with_options(&PathBuf::from(root), addr, options) {
         Ok(()) => ExitCode::SUCCESS,

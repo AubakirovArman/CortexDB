@@ -182,3 +182,41 @@ fn test_tenant_path_traversal_over_http() {
         );
     }
 }
+
+#[test]
+fn cors_preflight_is_only_enabled_for_configured_origin() {
+    let dir = tempfile::tempdir().unwrap();
+    let addr = "127.0.0.1:0";
+    let listener = std::net::TcpListener::bind(addr).unwrap();
+    let local_addr = listener.local_addr().unwrap();
+    drop(listener);
+
+    let root_path = dir.path().to_owned();
+    std::thread::spawn(move || {
+        let options = ServerOptions {
+            cors_allowed_origin: Some("https://app.example".to_owned()),
+            ..Default::default()
+        };
+        let _ = crate::serve_with_options(&root_path, &local_addr.to_string(), options);
+    });
+
+    std::thread::sleep(std::time::Duration::from_millis(100));
+
+    use std::io::{Read, Write};
+    use std::net::TcpStream;
+    let mut stream = TcpStream::connect(local_addr).unwrap();
+    stream
+        .write_all(
+            b"OPTIONS /v1/health HTTP/1.1\r\n\
+              Origin: https://app.example\r\n\
+              Access-Control-Request-Method: GET\r\n\
+              Access-Control-Request-Headers: authorization,content-type\r\n\r\n",
+        )
+        .unwrap();
+    let mut response = [0u8; 2048];
+    let read = stream.read(&mut response).unwrap();
+    let resp_str = String::from_utf8_lossy(&response[..read]).to_ascii_lowercase();
+    assert!(resp_str.contains("access-control-allow-origin: https://app.example"));
+    assert!(resp_str.contains("access-control-allow-methods"));
+    assert!(resp_str.contains("access-control-allow-headers"));
+}

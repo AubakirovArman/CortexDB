@@ -16,6 +16,8 @@ CortexDB exposes a lightweight, ultra-high-performance HTTP JSON API for interac
 * **Backpressure:** each tenant uses a bounded `DatabaseActor` queue. Set
   `CORTEXDB_ACTOR_QUEUE_CAPACITY` to override the default `1024`; full queues
   return `503 database_busy`.
+* **CORS:** disabled by default. Set `CORTEXDB_CORS_ALLOW_ORIGIN` to one exact
+  trusted browser origin when cross-origin browser calls are required.
 
 ---
 

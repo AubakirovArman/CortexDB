@@ -48,6 +48,7 @@ be treated as future work.
 | Stale lock after crash | Manual/CLI unlock and stale lock policy. | Implemented for local operations. |
 | API error drift | Typed `RouterError`, OpenAPI checks, snapshot tests. | Implemented and gated. |
 | SDK contract drift | Python, TypeScript, and Rust live SDK smoke checks. | Implemented and gated. |
+| Browser cross-origin API calls | CORS disabled by default; optional exact-origin allowlist via `CORTEXDB_CORS_ALLOW_ORIGIN`. | Implemented for one trusted origin. |
 
 ## Out Of Scope For Core Alpha
 
@@ -57,7 +58,7 @@ The following are not production security guarantees yet:
 - User identity, sessions, RBAC, org roles, or per-route authorization.
 - Per-agent server auth mapping to persisted AgentViews.
 - Rate limits or per-token quotas.
-- CORS policy and browser-origin security hardening.
+- Multi-origin, wildcard, or per-token CORS policies.
 - Audit logs for reads, writes, AQL, ContextPack, VERIFY, or admin actions.
 - At-rest encryption or envelope key management.
 - Encrypted backups.
@@ -77,6 +78,8 @@ For any non-local deployment:
 6. Back up the database directory only after stopping writes or using a future
    backup command with consistency guarantees.
 7. Treat dashboard access as administrative.
+8. Enable `CORTEXDB_CORS_ALLOW_ORIGIN` only for one trusted browser origin;
+   keep it unset for local CLI/SDK-only deployments.
 
 ## Error Disclosure Policy
 
@@ -116,7 +119,8 @@ Security-sensitive test areas include:
 ## Beta Security Backlog
 
 1. Add rate limiting and request concurrency policy.
-2. Define CORS defaults and browser deployment guidance.
+2. Expand CORS beyond the current single exact-origin allowlist only after
+   adding user/RBAC-aware authorization.
 3. Persist AgentView profiles and map HTTP auth tokens to AgentViews.
 4. Add audit logs for write, retrieve, verify, context, admin, and repair paths.
 5. Add backup/restore with integrity verification.

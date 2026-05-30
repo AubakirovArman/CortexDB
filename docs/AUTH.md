@@ -97,3 +97,19 @@ Use a lower value to fail fast under load, or a higher value to absorb short
 bursts. Invalid or zero values are rejected at startup. When the queue is full,
 the server returns `503 database_busy` instead of silently accepting unlimited
 work.
+
+## Browser CORS
+
+CORS is disabled by default. Same-origin dashboard usage does not need CORS.
+If a browser application on another origin must call the HTTP API, configure one
+exact trusted origin:
+
+```bash
+export CORTEXDB_CORS_ALLOW_ORIGIN="https://app.example"
+cargo run -p cortex-server -- ./data 127.0.0.1:8181
+```
+
+The server then allows `GET`, `POST`, `DELETE`, and `OPTIONS` requests from
+that origin with `Authorization` and `Content-Type` headers. Wildcard browser
+origins are intentionally not supported in Core Alpha because bearer-token API
+access should not be exposed broadly.
