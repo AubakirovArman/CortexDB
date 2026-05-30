@@ -222,6 +222,53 @@ fn snapshot_metrics_response_shape() {
 fn snapshot_error_404_unknown_route_shape() {
     let dir = tempfile::tempdir().unwrap();
     let response = handle_http(dir.path(), "GET /v1/unknown HTTP/1.1\r\n\r\n");
-    assert!(response.contains("400"));
+    assert!(response.contains("404"));
+    assert!(response.contains(r#""code":"not_found""#));
     assert!(response.contains(r#""error":"#));
+}
+
+#[test]
+fn error_taxonomy_invalid_aql_has_stable_code() {
+    let dir = tempfile::tempdir().unwrap();
+    let response = handle_http(
+        dir.path(),
+        concat!(
+            "POST /v1/aql?scope=project:test HTTP/1.1\r\n\r\n",
+            "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN default USING MODE turbo;"
+        ),
+    );
+    assert!(response.contains("400 Bad Request"));
+    assert!(response.contains(r#""code":"invalid_aql""#));
+    assert!(response.contains(r#""error":"invalid_aql""#));
+}
+
+#[test]
+fn error_taxonomy_denied_scope_has_stable_code() {
+    let dir = tempfile::tempdir().unwrap();
+    let response = handle_http(
+        dir.path(),
+        concat!(
+            "POST /v1/aql?scope=project:test HTTP/1.1\r\n\r\n",
+            "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN default ",
+            "WHERE space = tenant:private LIMIT 10 CANDIDATES;"
+        ),
+    );
+    assert!(response.contains("403 Forbidden"));
+    assert!(response.contains(r#""code":"permission_denied""#));
+    assert!(response.contains(r#""error":"permission_denied""#));
+}
+
+#[test]
+fn error_taxonomy_busy_and_corruption_codes_are_stable() {
+    let busy = crate::responses::RouterError::DatabaseBusy("database actor busy".to_owned());
+    assert_eq!(busy.status_code(), 503);
+    assert_eq!(busy.code(), crate::responses::ErrorCode::DatabaseBusy);
+
+    let corruption: crate::responses::RouterError =
+        cortex_engine::error::EngineError::StorageInvariant("manifest mismatch".to_owned()).into();
+    assert_eq!(corruption.status_code(), 500);
+    assert_eq!(
+        corruption.code(),
+        crate::responses::ErrorCode::StorageCorruption
+    );
 }

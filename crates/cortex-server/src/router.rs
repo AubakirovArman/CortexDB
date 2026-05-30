@@ -126,21 +126,11 @@ pub fn route_database(
             };
             Ok(serde_json::to_string(&response)?)
         }
-        ("POST", "/v1/context") => {
-            context::handle_context_shared(db, query, body).map_err(RouterError::BadRequest)
-        }
-        ("POST", "/v1/aql") => {
-            aql::handle_aql_shared(db, query, body).map_err(RouterError::BadRequest)
-        }
-        ("POST", "/v1/search") => {
-            search::handle_search_shared(db, query, body).map_err(RouterError::BadRequest)
-        }
-        ("POST", "/v1/search/explain") => {
-            search::handle_search_explain_shared(db, query, body).map_err(RouterError::BadRequest)
-        }
-        ("POST", "/v1/search/ann-evaluate") => {
-            search::handle_ann_evaluate_shared(db, query, body).map_err(RouterError::BadRequest)
-        }
+        ("POST", "/v1/context") => context::handle_context_shared(db, query, body),
+        ("POST", "/v1/aql") => aql::handle_aql_shared(db, query, body),
+        ("POST", "/v1/search") => search::handle_search_shared(db, query, body),
+        ("POST", "/v1/search/explain") => search::handle_search_explain_shared(db, query, body),
+        ("POST", "/v1/search/ann-evaluate") => search::handle_ann_evaluate_shared(db, query, body),
         ("GET", "/v1/metrics") => {
             let stats = db.storage_stats()?;
             let ann = db.ann_metrics();
@@ -245,9 +235,7 @@ pub fn route_database(
             };
             Ok(serde_json::to_string(&response)?)
         }
-        ("POST", "/v1/remember") => {
-            memory::handle_remember_shared(db, query, body).map_err(RouterError::BadRequest)
-        }
+        ("POST", "/v1/remember") => memory::handle_remember_shared(db, query, body),
         ("POST", "/v1/forget") => {
             let cell_id = cell_id(query)?;
             db.forget_cell(cell_id)?;
@@ -256,9 +244,7 @@ pub fn route_database(
                 cell_id: cell_id.0,
             })?)
         }
-        ("POST", "/v1/verify") => {
-            memory::handle_verify_shared(db, query, body).map_err(RouterError::BadRequest)
-        }
+        ("POST", "/v1/verify") => memory::handle_verify_shared(db, query, body),
         ("POST", "/v1/ingest/text") => {
             let scope = query_param_opt(query, "scope").unwrap_or("default");
             let source = query_param_opt(query, "source").unwrap_or("http_post");
@@ -374,7 +360,7 @@ pub fn route_database(
             let progress = db.retry_ingestion_job(id)?;
             Ok(serde_json::to_string(&progress)?)
         }
-        _ => Err(RouterError::BadRequest("unknown route".to_owned())),
+        _ => Err(RouterError::NotFound("route not found".to_owned())),
     }
 }
 
@@ -385,9 +371,11 @@ pub fn route_shared(
     method: &str,
     target: &str,
     body: &[u8],
-) -> Result<String, String> {
-    let mut db = db.write().map_err(|e| e.to_string())?;
-    route_database(&mut db, method, target, body).map_err(|e| e.to_string())
+) -> Result<String, RouterError> {
+    let mut db = db
+        .write()
+        .map_err(|e| RouterError::Internal(e.to_string()))?;
+    route_database(&mut db, method, target, body)
 }
 
 pub fn query_param_opt<'a>(query: &'a str, key: &str) -> Option<&'a str> {
@@ -484,8 +472,10 @@ pub fn reason(status: u16) -> &'static str {
     match status {
         200 => "OK",
         401 => "Unauthorized",
+        403 => "Forbidden",
         404 => "Not Found",
         413 => "Payload Too Large",
+        503 => "Service Unavailable",
         500 => "Internal Error",
         _ => "Bad Request",
     }

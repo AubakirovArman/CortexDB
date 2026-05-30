@@ -82,12 +82,6 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
     let db = std::sync::RwLock::new(db);
     match route_shared(&db, parts[0], parts[1], body.as_bytes()) {
         Ok(value) => json_response(200, &value),
-        Err(error) => {
-            let status = match error.as_str() {
-                "cell not found" | "job not found" => 404,
-                _ => 400,
-            };
-            json_error(status, ErrorCode::BadRequest, &error)
-        }
+        Err(error) => json_error(error.status_code(), error.code(), &error.to_string()),
     }
 }

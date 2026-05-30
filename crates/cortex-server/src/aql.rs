@@ -1,15 +1,13 @@
 use cortex_engine::Database;
 
 use crate::context::view_for_scope;
-use crate::responses::{AqlCellResponse, AqlResponse};
+use crate::responses::{AqlCellResponse, AqlResponse, RouterError};
 use crate::router::query_param_decoded;
 
-pub fn handle_aql_shared(db: &Database, query: &str, body: &[u8]) -> Result<String, String> {
-    let scope = query_param_decoded(query, "scope")?;
+pub fn handle_aql_shared(db: &Database, query: &str, body: &[u8]) -> Result<String, RouterError> {
+    let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
     let aql = String::from_utf8_lossy(body);
-    let cells = db
-        .retrieve_aql(&aql, &view_for_scope(&scope))
-        .map_err(|error| error.to_string())?;
+    let cells = db.retrieve_aql(&aql, &view_for_scope(&scope))?;
     let response = AqlResponse {
         cells: cells
             .iter()
@@ -19,5 +17,5 @@ pub fn handle_aql_shared(db: &Database, query: &str, body: &[u8]) -> Result<Stri
             })
             .collect(),
     };
-    serde_json::to_string(&response).map_err(|e| e.to_string())
+    Ok(serde_json::to_string(&response)?)
 }

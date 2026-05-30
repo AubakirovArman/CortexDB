@@ -3,20 +3,23 @@ use cortex_engine::{scope_id, ContextPack, ContextPackOptions, Database};
 
 use crate::responses::{
     ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse, ExplainResponse,
-    SourceRefResponse,
+    RouterError, SourceRefResponse,
 };
 
 use crate::router::query_param_decoded;
 
-pub fn handle_context_shared(db: &Database, query: &str, body: &[u8]) -> Result<String, String> {
-    let scope = query_param_decoded(query, "scope")?;
+pub fn handle_context_shared(
+    db: &Database,
+    query: &str,
+    body: &[u8],
+) -> Result<String, RouterError> {
+    let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
     let aql = String::from_utf8_lossy(body);
-    let pack = db
-        .context_pack_from_aql(&aql, &view_for_scope(&scope), ContextPackOptions::default())
-        .map_err(|error| error.to_string())?;
+    let pack =
+        db.context_pack_from_aql(&aql, &view_for_scope(&scope), ContextPackOptions::default())?;
 
     let response = map_context_pack(&pack);
-    serde_json::to_string(&response).map_err(|e| e.to_string())
+    Ok(serde_json::to_string(&response)?)
 }
 
 pub(crate) fn view_for_scope(scope: &str) -> AgentView {

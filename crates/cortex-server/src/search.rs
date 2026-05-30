@@ -4,7 +4,7 @@ use cortex_engine::{
 
 use crate::context::view_for_scope;
 use crate::responses::{
-    AnnEvaluationResponse, AnnSearchReportResponse, SearchExplainItemResponse,
+    AnnEvaluationResponse, AnnSearchReportResponse, RouterError, SearchExplainItemResponse,
     SearchExplainResponse, SearchResponse, SearchResultResponse,
 };
 use crate::router::{query_param_decoded, query_param_opt};
@@ -13,29 +13,33 @@ pub fn handle_search_explain_shared(
     db: &Database,
     query: &str,
     body: &[u8],
-) -> Result<String, String> {
-    let scope = query_param_decoded(query, "scope")?;
+) -> Result<String, RouterError> {
+    let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
     let limit = query_param_decoded(query, "limit")
         .ok()
         .map(|s| parse_limit(&s))
-        .transpose()?
+        .transpose()
+        .map_err(RouterError::BadRequest)?
         .unwrap_or(20);
     let mode = query_param_decoded(query, "mode").unwrap_or_else(|_| "keyword".to_owned());
     let q = query_param_decoded(query, "q")
         .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
 
-    let diagnostics = db.search_diagnostics(&q).map_err(|e| e.to_string())?;
+    let diagnostics = db.search_diagnostics(&q)?;
     let query_terms = extract_terms_from_diagnostics(&diagnostics);
 
     let results = match mode.as_str() {
         "keyword" => db.search_keyword(&q, &view_for_scope(&scope), SearchLimit(limit)),
         "vector" => {
-            let v = parse_vector_literal(&q)?;
+            let v = parse_vector_literal(&q).map_err(RouterError::BadRequest)?;
             db.search_vector(&v, &view_for_scope(&scope), SearchLimit(limit))
         }
-        _ => return Err("mode must be keyword or vector".to_owned()),
-    }
-    .map_err(|e| e.to_string())?;
+        _ => {
+            return Err(RouterError::BadRequest(
+                "mode must be keyword or vector".to_owned(),
+            ))
+        }
+    }?;
 
     let response = SearchExplainResponse {
         query_terms,
@@ -51,7 +55,7 @@ pub fn handle_search_explain_shared(
             })
             .collect(),
     };
-    serde_json::to_string(&response).map_err(|e| e.to_string())
+    Ok(serde_json::to_string(&response)?)
 }
 
 fn extract_terms_from_diagnostics(diagnostics: &str) -> Vec<String> {
@@ -72,16 +76,21 @@ fn truncate_preview(payload: &[u8], max_len: usize) -> String {
     }
 }
 
-pub fn handle_search_shared(db: &Database, query: &str, body: &[u8]) -> Result<String, String> {
-    let scope = query_param_decoded(query, "scope")?;
+pub fn handle_search_shared(
+    db: &Database,
+    query: &str,
+    body: &[u8],
+) -> Result<String, RouterError> {
+    let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
     let limit = query_param_decoded(query, "limit")
         .ok()
         .map(|s| parse_limit(&s))
-        .transpose()?
+        .transpose()
+        .map_err(RouterError::BadRequest)?
         .unwrap_or(20);
     let mode = query_param_decoded(query, "mode").unwrap_or_else(|_| "keyword".to_owned());
     let algorithm = query_param_decoded(query, "algorithm").unwrap_or_else(|_| "ann".to_owned());
-    let ann_policy = parse_ann_policy(query)?;
+    let ann_policy = parse_ann_policy(query).map_err(RouterError::BadRequest)?;
     let view = view_for_scope(&scope);
 
     let (search_mode, results, ann_report) = match mode.as_str() {
@@ -92,36 +101,40 @@ pub fn handle_search_shared(db: &Database, query: &str, body: &[u8]) -> Result<S
                     .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned()),
                 &view,
                 SearchLimit(limit),
-            )
-            .map_err(|error| error.to_string())?,
+            )?,
             None,
         ),
         "vector" => {
             let vector = query_param_decoded(query, "vector")
                 .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
-            let vector = parse_vector_literal(&vector)?;
+            let vector = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
             match algorithm.as_str() {
                 "exact" => (
                     "vector_exact",
-                    db.search_vector_exact(&vector, &view, SearchLimit(limit))
-                        .map_err(|error| error.to_string())?,
+                    db.search_vector_exact(&vector, &view, SearchLimit(limit))?,
                     None,
                 ),
                 "ann" => {
-                    let outcome = db
-                        .search_vector_with_report_with_policy(
-                            &vector,
-                            &view,
-                            SearchLimit(limit),
-                            ann_policy,
-                        )
-                        .map_err(|error| error.to_string())?;
+                    let outcome = db.search_vector_with_report_with_policy(
+                        &vector,
+                        &view,
+                        SearchLimit(limit),
+                        ann_policy,
+                    )?;
                     return encode_response("vector_ann", outcome.results, outcome.ann_report);
                 }
-                _ => return Err("algorithm must be exact or ann".to_owned()),
+                _ => {
+                    return Err(RouterError::BadRequest(
+                        "algorithm must be exact or ann".to_owned(),
+                    ))
+                }
             }
         }
-        _ => return Err("mode must be keyword or vector".to_owned()),
+        _ => {
+            return Err(RouterError::BadRequest(
+                "mode must be keyword or vector".to_owned(),
+            ))
+        }
     };
 
     encode_response(search_mode, results, ann_report)
@@ -131,25 +144,23 @@ pub fn handle_ann_evaluate_shared(
     db: &Database,
     query: &str,
     body: &[u8],
-) -> Result<String, String> {
-    let scope = query_param_decoded(query, "scope")?;
+) -> Result<String, RouterError> {
+    let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
     let limit = query_param_decoded(query, "limit")
         .ok()
         .map(|s| parse_limit(&s))
-        .transpose()?
+        .transpose()
+        .map_err(RouterError::BadRequest)?
         .unwrap_or(20);
     let vector = query_param_decoded(query, "vector")
         .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
-    let vector = parse_vector_literal(&vector)?;
-    let response = match db
-        .evaluate_vector_ann_with_policy(
-            &vector,
-            &view_for_scope(&scope),
-            SearchLimit(limit),
-            parse_ann_policy(query)?,
-        )
-        .map_err(|error| error.to_string())?
-    {
+    let vector = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
+    let response = match db.evaluate_vector_ann_with_policy(
+        &vector,
+        &view_for_scope(&scope),
+        SearchLimit(limit),
+        parse_ann_policy(query).map_err(RouterError::BadRequest)?,
+    )? {
         Some(report) => AnnEvaluationResponse {
             available: true,
             reason: None,
@@ -169,14 +180,14 @@ pub fn handle_ann_evaluate_shared(
             recall_q16: 0,
         },
     };
-    serde_json::to_string(&response).map_err(|e| e.to_string())
+    Ok(serde_json::to_string(&response)?)
 }
 
 fn encode_response(
     search_mode: &str,
     results: Vec<cortex_engine::DatabaseSearchResult>,
     ann_report: Option<AnnSearchReport>,
-) -> Result<String, String> {
+) -> Result<String, RouterError> {
     let response = SearchResponse {
         search_mode: search_mode.to_owned(),
         ann_report: ann_report.map(report_response),
@@ -191,7 +202,7 @@ fn encode_response(
             })
             .collect(),
     };
-    serde_json::to_string(&response).map_err(|e| e.to_string())
+    Ok(serde_json::to_string(&response)?)
 }
 
 fn report_response(report: AnnSearchReport) -> AnnSearchReportResponse {

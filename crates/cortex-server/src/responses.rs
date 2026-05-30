@@ -349,10 +349,14 @@ pub struct AnnMetricsResponse {
 pub enum RouterError {
     NotFound(String),
     BadRequest(String),
+    InvalidAql(String),
+    PermissionDenied(String),
     Unauthorized,
     Forbidden(String),
     PayloadTooLarge,
+    DatabaseBusy(String),
     ServiceUnavailable,
+    StorageCorruption(String),
     Internal(String),
 }
 
@@ -361,10 +365,14 @@ impl RouterError {
         match self {
             Self::NotFound(_) => ErrorCode::NotFound,
             Self::BadRequest(_) => ErrorCode::BadRequest,
+            Self::InvalidAql(_) => ErrorCode::InvalidAql,
+            Self::PermissionDenied(_) => ErrorCode::PermissionDenied,
             Self::Unauthorized => ErrorCode::Unauthorized,
             Self::Forbidden(_) => ErrorCode::Forbidden,
             Self::PayloadTooLarge => ErrorCode::PayloadTooLarge,
+            Self::DatabaseBusy(_) => ErrorCode::DatabaseBusy,
             Self::ServiceUnavailable => ErrorCode::ServiceUnavailable,
+            Self::StorageCorruption(_) => ErrorCode::StorageCorruption,
             Self::Internal(_) => ErrorCode::Internal,
         }
     }
@@ -375,10 +383,14 @@ impl std::fmt::Display for RouterError {
         match self {
             RouterError::NotFound(msg) => write!(f, "{msg}"),
             RouterError::BadRequest(msg) => write!(f, "{msg}"),
+            RouterError::InvalidAql(msg) => write!(f, "{msg}"),
+            RouterError::PermissionDenied(msg) => write!(f, "{msg}"),
             RouterError::Unauthorized => write!(f, "missing or invalid authorization"),
             RouterError::Forbidden(msg) => write!(f, "{msg}"),
             RouterError::PayloadTooLarge => write!(f, "request body exceeds 2MB limit"),
+            RouterError::DatabaseBusy(msg) => write!(f, "{msg}"),
             RouterError::ServiceUnavailable => write!(f, "database actor busy"),
+            RouterError::StorageCorruption(msg) => write!(f, "{msg}"),
             RouterError::Internal(msg) => write!(f, "{msg}"),
         }
     }
@@ -407,17 +419,23 @@ impl From<serde_json::Error> for RouterError {
 
 impl From<cortex_engine::error::EngineError> for RouterError {
     fn from(e: cortex_engine::error::EngineError) -> Self {
+        use cortex_aql::BindError;
         use cortex_engine::error::EngineError;
         let msg = e.to_string();
         match e {
-            EngineError::AqlParse(_) | EngineError::AqlBind(_) => RouterError::BadRequest(msg),
+            EngineError::AqlParse(_) => RouterError::InvalidAql(msg),
+            EngineError::AqlBind(BindError::PolicyDenied(error)) => {
+                RouterError::PermissionDenied(error.safe_message().to_owned())
+            }
+            EngineError::AqlBind(error) => RouterError::InvalidAql(error.safe_message().to_owned()),
             EngineError::InvalidOperation => RouterError::BadRequest(msg),
-            EngineError::DatabaseAlreadyOpen(_) => RouterError::ServiceUnavailable,
+            EngineError::DatabaseAlreadyOpen(_) => RouterError::DatabaseBusy(msg),
+            EngineError::Storage(_) => RouterError::StorageCorruption(msg),
             EngineError::StorageInvariant(_)
             | EngineError::MissingStorageFile(_)
             | EngineError::FatalCellMissingAfterWal(_)
             | EngineError::MissingWalSection(_)
-            | EngineError::MissingCommitSeq => RouterError::Internal(msg),
+            | EngineError::MissingCommitSeq => RouterError::StorageCorruption(msg),
             _ => RouterError::Internal(msg),
         }
     }
@@ -428,10 +446,14 @@ impl RouterError {
         match self {
             RouterError::NotFound(_) => 404,
             RouterError::BadRequest(_) => 400,
+            RouterError::InvalidAql(_) => 400,
+            RouterError::PermissionDenied(_) => 403,
             RouterError::Unauthorized => 401,
             RouterError::Forbidden(_) => 403,
             RouterError::PayloadTooLarge => 413,
+            RouterError::DatabaseBusy(_) => 503,
             RouterError::ServiceUnavailable => 503,
+            RouterError::StorageCorruption(_) => 500,
             RouterError::Internal(_) => 500,
         }
     }

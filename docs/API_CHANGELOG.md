@@ -12,9 +12,11 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 - **`GET /v1/metrics`** — aggregated database metrics (storage + WAL + ANN/HNSW in one response).
 - **`POST /v1/search/explain`** — returns tokenized query terms and per-cell score breakdown for debugging search results.
 - **RouterError taxonomy** — `EngineError` variants now map to proper HTTP status codes:
-  - `AqlParse` / `AqlBind` → `400`
-  - `DatabaseAlreadyOpen` → `503`
-  - `StorageInvariant` / `MissingStorageFile` → `500`
+  - `AqlParse` and non-policy `AqlBind` → `400 invalid_aql`
+  - policy-denied `AqlBind` → `403 permission_denied`
+  - `DatabaseAlreadyOpen` and full actor queues → `503 database_busy`
+  - storage corruption or invariant failures → `500 storage_corruption`
+  - unknown routes and missing jobs → `404 not_found`
 - **New response fields** — `MetricsResponse` with `ann_graph_nodes`, `ann_total_edges`, etc.
 
 ### Changed

@@ -283,7 +283,10 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         Ok(r) => r,
         Err(_) => Err(RouterError::Internal("internal server error".to_owned())),
     };
-    if matches!(res, Err(RouterError::ServiceUnavailable)) {
+    if matches!(
+        res,
+        Err(RouterError::DatabaseBusy(_) | RouterError::ServiceUnavailable)
+    ) {
         state.request_rejected.fetch_add(1, Ordering::Relaxed);
     }
     let duration = start.elapsed();

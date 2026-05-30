@@ -95,7 +95,7 @@ impl DatabaseActor {
             }
             Err(mpsc::TrySendError::Full(_)) => {
                 self.requests_rejected.fetch_add(1, Ordering::Relaxed);
-                return Err(RouterError::ServiceUnavailable);
+                return Err(RouterError::DatabaseBusy("database actor busy".to_owned()));
             }
             Err(mpsc::TrySendError::Disconnected(_)) => {
                 return Err(RouterError::Internal("database actor stopped".to_owned()));
@@ -143,7 +143,7 @@ impl DatabaseActor {
             }
             Err(mpsc::TrySendError::Full(_)) => {
                 self.requests_rejected.fetch_add(1, Ordering::Relaxed);
-                return Err(RouterError::ServiceUnavailable);
+                return Err(RouterError::DatabaseBusy("database actor busy".to_owned()));
             }
             Err(mpsc::TrySendError::Disconnected(_)) => {
                 return Err(RouterError::Internal("database actor stopped".to_owned()));

@@ -4,7 +4,7 @@ use cortex_engine::Database;
 
 use crate::context::view_for_scope;
 use crate::responses::{
-    EvidenceResponse, GuardResponse, NumericConflictResponse, RememberResponse,
+    EvidenceResponse, GuardResponse, NumericConflictResponse, RememberResponse, RouterError,
     VerificationReportResponse,
 };
 use crate::router::query_param_decoded;
@@ -13,33 +13,33 @@ pub fn handle_remember_shared(
     db: &mut Database,
     query: &str,
     body: &[u8],
-) -> Result<String, String> {
-    let scope = query_param_decoded(query, "scope")?;
+) -> Result<String, RouterError> {
+    let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
     let mut view = view_for_scope(&scope);
     view.allow_remember = true;
     view.writable_scopes = std::collections::BTreeSet::from([cortex_engine::scope_id(&scope)]);
     let aql = String::from_utf8_lossy(body);
-    let result = db
-        .remember_aql(&aql, &view)
-        .map_err(|error| error.to_string())?;
+    let result = db.remember_aql(&aql, &view)?;
     let response = RememberResponse {
         seq: result.commit_seq.0,
         cell_id: result.cell_id.0,
         ttl_seconds: result.ttl_seconds,
     };
-    serde_json::to_string(&response).map_err(|e| e.to_string())
+    Ok(serde_json::to_string(&response)?)
 }
 
-pub fn handle_verify_shared(db: &Database, query: &str, body: &[u8]) -> Result<String, String> {
-    let scope = query_param_decoded(query, "scope")?;
+pub fn handle_verify_shared(
+    db: &Database,
+    query: &str,
+    body: &[u8],
+) -> Result<String, RouterError> {
+    let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
     let mut view = view_for_scope(&scope);
     view.allow_verify_fact = true;
     let aql = String::from_utf8_lossy(body);
-    let report = db
-        .verify_fact_aql(&aql, &view)
-        .map_err(|error| error.to_string())?;
+    let report = db.verify_fact_aql(&aql, &view)?;
     let response = map_verification_report(&report, db);
-    serde_json::to_string(&response).map_err(|e| e.to_string())
+    Ok(serde_json::to_string(&response)?)
 }
 
 fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<NumericConflictResponse> {

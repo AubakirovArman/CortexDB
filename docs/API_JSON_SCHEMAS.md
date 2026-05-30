@@ -18,6 +18,7 @@ open errors.
 
 ```json
 {
+  "code": "bad_request",
   "error": "bad_request",
   "message": "missing scope"
 }
@@ -25,8 +26,23 @@ open errors.
 
 Fields:
 
+- `code`: typed stable error enum used by SDKs.
 - `error`: stable short error code.
 - `message`: human-readable safe message.
+
+Stable Core Alpha error codes:
+
+| HTTP status | Code | Meaning |
+| --- | --- | --- |
+| `400` | `bad_request` | Missing parameters or malformed non-AQL request input. |
+| `400` | `invalid_aql` | AQL parse/bind failure that is not a policy denial. |
+| `401` | `unauthorized` | Missing or invalid bearer token. |
+| `403` | `permission_denied` | AgentView, scope, mode, or policy denial. |
+| `404` | `not_found` | Unknown route or missing resource such as an ingestion job. |
+| `413` | `payload_too_large` | Request body exceeds server limit. |
+| `503` | `database_busy` | Database actor queue or database lock is busy. |
+| `500` | `storage_corruption` | Storage checksum, format, or invariant failure. |
+| `500` | `internal` | Unexpected internal error that is not classified above. |
 
 ## Health
 
