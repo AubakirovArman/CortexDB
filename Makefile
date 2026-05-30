@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-package-baseline ann-compare-baseline-bundle smoke-test sdk-smoke-test alpha-check release-check demo
+.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-package-baseline ann-compare-baseline-bundle smoke-test sdk-smoke-test alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -32,6 +32,16 @@ ANN_DEMO_DOMAIN_BASELINE_ID ?= $(ANN_DEMO_DOMAIN_RUN_ID)
 ANN_DEMO_DOMAIN_BASELINE_ROOT ?= target/ann/demo-domain-corpus/release-baselines
 ANN_DEMO_DOMAIN_BASELINE_BUNDLE ?= $(ANN_DEMO_DOMAIN_BASELINE_ROOT)/$(ANN_DEMO_DOMAIN_BASELINE_ID)
 ANN_DEMO_DOMAIN_BASELINE_ARCHIVE ?= $(ANN_DEMO_DOMAIN_BASELINE_ROOT)/$(ANN_DEMO_DOMAIN_BASELINE_ID).tar.gz
+ANN_EMBEDDED_DOMAIN_SOURCE_ROOT ?=
+ANN_EMBEDDED_DOMAIN_QUERIES ?=
+ANN_EMBEDDED_DOMAIN_OUTPUT_DIR ?= target/ann/embedded-domain-corpus/converted
+ANN_EMBEDDED_DOMAIN_RUN_ROOT ?= target/ann/embedded-domain-corpus/runs
+ANN_EMBEDDED_DOMAIN_RUN_ID ?= embedded-domain
+ANN_EMBEDDED_DOMAIN_METRIC ?= dot_product
+ANN_EMBEDDED_DOMAIN_LIMIT ?= 10
+ANN_EMBEDDED_DOMAIN_MAX_NEIGHBORS ?= 16
+ANN_EMBEDDED_DOMAIN_EF_SEARCH ?= 128
+ANN_EMBEDDED_DOMAIN_LAYER_COUNT ?= 4
 ANN_BASELINE_REPORT ?= $(ANN_CORPUS_REPORT)
 ANN_CANDIDATE_REPORT ?= $(ANN_CORPUS_REPORT)
 ANN_REPORT_COMPARISON ?= target/ann/ann_report_comparison.json
@@ -128,8 +138,17 @@ ann-demo-domain-publish-baseline: ann-demo-domain-corpus-run
 ann-demo-domain-package-baseline: ann-demo-domain-publish-baseline
 	python3 scripts/ann/package_baseline.py --baseline-bundle $(ANN_DEMO_DOMAIN_BASELINE_BUNDLE) --package-id $(ANN_DEMO_DOMAIN_BASELINE_ID) --output $(ANN_DEMO_DOMAIN_BASELINE_ARCHIVE)
 
+ann-embedded-domain-corpus-build:
+	@if [ -z "$(ANN_EMBEDDED_DOMAIN_SOURCE_ROOT)" ]; then echo "Set ANN_EMBEDDED_DOMAIN_SOURCE_ROOT to a JSONL payload directory with embedded vectors" >&2; exit 2; fi
+	@if [ -z "$(ANN_EMBEDDED_DOMAIN_QUERIES)" ]; then echo "Set ANN_EMBEDDED_DOMAIN_QUERIES to a JSONL query file with embedded vectors" >&2; exit 2; fi
+	python3 scripts/ann/build_embedded_domain_corpus.py --source-root $(ANN_EMBEDDED_DOMAIN_SOURCE_ROOT) --queries $(ANN_EMBEDDED_DOMAIN_QUERIES) --output-dir $(ANN_EMBEDDED_DOMAIN_OUTPUT_DIR) --limit $(ANN_EMBEDDED_DOMAIN_LIMIT)
+
+ann-embedded-domain-corpus-run: ann-embedded-domain-corpus-build
+	scripts/ann/run_external_corpus.sh --vectors $(ANN_EMBEDDED_DOMAIN_OUTPUT_DIR)/vectors.jsonl --queries $(ANN_EMBEDDED_DOMAIN_OUTPUT_DIR)/queries.jsonl --metric $(ANN_EMBEDDED_DOMAIN_METRIC) --output-root $(ANN_EMBEDDED_DOMAIN_RUN_ROOT) --run-id $(ANN_EMBEDDED_DOMAIN_RUN_ID) --max-neighbors $(ANN_EMBEDDED_DOMAIN_MAX_NEIGHBORS) --ef-search $(ANN_EMBEDDED_DOMAIN_EF_SEARCH) --layer-count $(ANN_EMBEDDED_DOMAIN_LAYER_COUNT)
+
 ann-scripts-check:
 	python3 scripts/ann/build_demo_domain_corpus.py --self-test
+	python3 scripts/ann/build_embedded_domain_corpus.py --self-test
 	python3 scripts/ann/convert_public_corpus.py --self-test
 	python3 scripts/ann/run_public_corpus.py --self-test
 	python3 scripts/ann/exact_ground_truth.py --self-test

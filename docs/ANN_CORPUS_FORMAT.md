@@ -195,6 +195,11 @@ into a release-ready baseline archive. That archive contains the report,
 manifest, machine profile, exact ground truth, and checksum manifest needed for
 future regression comparisons.
 
+For real embedding exports, use `make ann-embedded-domain-corpus-run`. It
+expects JSONL payload rows that already contain vectors and a JSONL query file
+whose queries also contain vectors. Unlike the demo-domain builder, this path
+does not synthesize vectors from text.
+
 ## Recommended Workflow
 
 1. Generate exact top-k ground truth offline for the selected metric.
@@ -270,6 +275,30 @@ embeddings, but it gives the HNSW gate a repeatable product-shaped corpus with
 finance, legal, HR, support, SEC, and world-indicator payloads. The emitted
 `documents.jsonl` maps generated candidate ids back to source files and lines,
 which makes recall failures easier to inspect.
+
+### Build A Real-Embedding Domain Corpus
+
+`build_embedded_domain_corpus.py` is the path for data that already carries
+model-generated embeddings. Payload rows may include either a top-level
+`vector` field or a payload metadata line like `vector=10,0,-3`. Queries are a
+separate JSONL file with `name`, `vector`, and optional `limit`:
+
+```json
+{"name":"budget-query","vector":[120,0,-8],"limit":10}
+```
+
+Run it through Make:
+
+```bash
+make ann-embedded-domain-corpus-run \
+  ANN_EMBEDDED_DOMAIN_SOURCE_ROOT=/data/cortexdb/exported-cells \
+  ANN_EMBEDDED_DOMAIN_QUERIES=/data/cortexdb/query_vectors.jsonl \
+  ANN_EMBEDDED_DOMAIN_METRIC=cosine
+```
+
+This mode fails closed when a document row is missing a vector. Use
+`build_embedded_domain_corpus.py --skip-missing-vectors` only for exploratory
+audits where the skipped count is reviewed in `manifest.json`.
 
 ### Run A Public Corpus End To End
 

@@ -61,6 +61,11 @@ checked-in fixture.
 Release tags package this run as a separate demo-domain baseline archive, so a
 tag carries public benchmark evidence and CortexDB-shaped domain evidence.
 
+For real embedding model output, use `make ann-embedded-domain-corpus-run` with
+payload rows and query rows that already contain fixed-point vectors. This path
+fails closed on missing vectors, which keeps production tuning honest: a real
+embedding baseline should never silently fall back to hashed demo vectors.
+
 For each corpus, preserve:
 
 - vector generation version;
@@ -321,4 +326,6 @@ Warnings, not blockers:
   bundles.
 - Demo-domain corpus generation is available, but no large real customer/domain
   baseline is published yet.
+- Embedded-vector corpus tooling exists, but it still needs a real model export
+  and published baseline bundle.
 - Production SLO profiles per workload are not yet formalized.
