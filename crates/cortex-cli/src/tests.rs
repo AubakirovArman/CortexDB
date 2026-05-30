@@ -198,6 +198,55 @@ fn repair_command_reports_best_effort_cleanup() {
 }
 
 #[test]
+fn backup_and_restore_commands_roundtrip_database() {
+    let root = unique_path("cortexdb-cli-backup-root");
+    let source = root.join("source");
+    let backup = root.join("backup");
+    let target = root.join("target");
+    let source_arg = source.to_string_lossy().into_owned();
+    let backup_arg = backup.to_string_lossy().into_owned();
+    let target_arg = target.to_string_lossy().into_owned();
+
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        source_arg.clone(),
+        "42".to_owned(),
+        "backup payload".to_owned(),
+    ])
+    .unwrap();
+
+    let backup_output = run(vec![
+        "cortexdb".to_owned(),
+        "backup".to_owned(),
+        source_arg,
+        backup_arg.clone(),
+    ])
+    .unwrap();
+    assert!(backup_output.contains("files_copied="));
+
+    let restore_output = run(vec![
+        "cortexdb".to_owned(),
+        "restore".to_owned(),
+        backup_arg,
+        target_arg.clone(),
+    ])
+    .unwrap();
+    assert!(restore_output.contains("restored_wal_records_checked=1"));
+
+    let payload = run(vec![
+        "cortexdb".to_owned(),
+        "get".to_owned(),
+        target_arg,
+        "42".to_owned(),
+    ])
+    .unwrap();
+    assert_eq!(payload, "backup payload");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn gc_retired_command_reports_removed_segments() {
     let path = unique_path("cortexdb-cli-gc-retired");
     let path_arg = path.to_string_lossy().into_owned();

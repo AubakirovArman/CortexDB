@@ -1,4 +1,5 @@
 pub mod agent_views;
+pub mod backup;
 pub mod bundle;
 pub mod checkpoint;
 mod cleanup;
@@ -24,6 +25,7 @@ pub mod typed_body;
 pub mod validation;
 pub mod verification;
 
+pub use backup::{BackupReport, RestoreReport};
 pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use context::{
     estimate_tokens, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell,

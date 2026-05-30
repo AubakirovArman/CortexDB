@@ -71,6 +71,14 @@ enum Command {
     Repair {
         path: String,
     },
+    Backup {
+        path: String,
+        backup_path: String,
+    },
+    Restore {
+        backup_path: String,
+        path: String,
+    },
     GcRetired {
         path: String,
     },
@@ -229,6 +237,12 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             ops::ann_validate(resolved(&path).to_str().unwrap(), cli.json)
         }
         Command::Repair { path } => ops::repair(resolved(&path).to_str().unwrap()),
+        Command::Backup { path, backup_path } => {
+            ops::backup(resolved(&path).to_str().unwrap(), &backup_path)
+        }
+        Command::Restore { backup_path, path } => {
+            ops::restore(&backup_path, resolved(&path).to_str().unwrap())
+        }
         Command::GcRetired { path } => ops::gc_retired(resolved(&path).to_str().unwrap()),
         Command::WalValidate { path } => ops::wal_validate(resolved(&path).to_str().unwrap()),
         Command::WalDump { path } => ops::wal_dump(resolved(&path).to_str().unwrap()),

@@ -87,6 +87,24 @@ Attempt to repair storage inconsistencies.
 cortexdb repair ./db
 ```
 
+#### `backup <path> <backup_path>`
+Create a validated offline-copy backup. The command opens the source database,
+holds the source lock, flushes the WAL writer, validates storage, copies stable
+files, and excludes `db.lock` plus known temporary files.
+
+```bash
+cortexdb backup ./db ./db.backup
+```
+
+#### `restore <backup_path> <path>`
+Restore a backup into a new target directory and validate the restored database.
+The target path must not already exist, which prevents accidental overwrite.
+
+```bash
+cortexdb restore ./db.backup ./db.restored
+cortexdb validate ./db.restored
+```
+
 ### Search
 
 #### `search <path> <scope> <query>`

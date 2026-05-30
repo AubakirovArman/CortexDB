@@ -265,6 +265,30 @@ pub fn repair(path: &str) -> Result<String, String> {
     ))
 }
 
+pub fn backup(path: &str, backup_path: &str) -> Result<String, String> {
+    let report = Database::backup_path(path, backup_path).map_err(fmt_engine_error)?;
+    Ok(format!(
+        "files_copied={} bytes_copied={} source_live_segments_checked={} source_cells_checked={} source_wal_records_checked={}",
+        report.files_copied,
+        report.bytes_copied,
+        report.source_validation.live_segments_checked,
+        report.source_validation.cells_checked,
+        report.source_validation.wal_records_checked
+    ))
+}
+
+pub fn restore(backup_path: &str, path: &str) -> Result<String, String> {
+    let report = Database::restore_from_backup(backup_path, path).map_err(fmt_engine_error)?;
+    Ok(format!(
+        "files_copied={} bytes_copied={} restored_live_segments_checked={} restored_cells_checked={} restored_wal_records_checked={}",
+        report.files_copied,
+        report.bytes_copied,
+        report.restored_validation.live_segments_checked,
+        report.restored_validation.cells_checked,
+        report.restored_validation.wal_records_checked
+    ))
+}
+
 pub fn gc_retired(path: &str) -> Result<String, String> {
     let mut db = Database::open(path).map_err(fmt_engine_error)?;
     let report = db
