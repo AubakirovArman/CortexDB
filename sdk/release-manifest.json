@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "workspace_version_source": "Cargo.toml",
+  "api_version_source": "docs/openapi.yaml",
+  "changelog": "CHANGELOG.md",
+  "packages": [
+    {
+      "language": "rust",
+      "name": "cortex-sdk",
+      "manifest": "crates/cortex-sdk/Cargo.toml",
+      "registry": "crates.io",
+      "publish_command": "cargo publish -p cortex-sdk",
+      "dry_run_command": "cargo publish -p cortex-sdk --dry-run"
+    },
+    {
+      "language": "python",
+      "name": "cortexdb-client",
+      "manifest": "sdk/python/pyproject.toml",
+      "registry": "pypi",
+      "publish_command": "pypa/gh-action-pypi-publish",
+      "dry_run_command": "python -m build sdk/python --wheel"
+    },
+    {
+      "language": "typescript",
+      "name": "@cortexdb/client",
+      "manifest": "sdk/typescript/package.json",
+      "registry": "npm",
+      "publish_command": "npm publish --access public --provenance",
+      "dry_run_command": "npm pack --dry-run"
+    }
+  ],
+  "release_workflow": ".github/workflows/sdk-release.yml",
+  "required_gates": [
+    "make sdk-check",
+    "make sdk-contract-check",
+    "make openapi-contract-check"
+  ],
+  "publish_policy": {
+    "manual_only": true,
+    "requires_tag_ref": true,
+    "tag_prefix": "v",
+    "requires_explicit_publish_input": true
+  }
+}

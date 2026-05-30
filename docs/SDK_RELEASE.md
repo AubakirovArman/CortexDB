@@ -19,13 +19,25 @@ make sdk-check
 
 This invokes `sdk/publish/check.sh`, which verifies:
 
+- SDK release manifest consistency (`sdk/release-manifest.json`).
 - Python bytecode compilation and unit tests.
 - Python wheel build.
 - TypeScript/JavaScript syntax and package dry-run when `npm` is installed.
 - Rust SDK tests and `cargo package`.
 - Cross-SDK version consistency.
+- OpenAPI, changelog, package metadata, and publish workflow alignment.
 - Tenant/realm routing coverage.
 - ANN evaluation contract coverage.
+
+For the metadata-only gate, run:
+
+```bash
+make sdk-release-contract-check
+```
+
+This rejects version drift, missing package metadata, missing changelog anchors,
+unsafe publish workflow changes, and tracked generated artifacts such as wheels,
+`dist/`, or SDK cache directories.
 
 ## GitHub Workflow
 

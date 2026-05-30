@@ -1,0 +1,215 @@
+#!/usr/bin/env python3
+"""Validate SDK release metadata, lifecycle policy, and package hygiene."""
+
+from __future__ import annotations
+
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any
+
+
+FORBIDDEN_TRACKED_PATTERNS = (
+    re.compile(r"^sdk/python/.*\.whl$"),
+    re.compile(r"^sdk/python/dist/"),
+    re.compile(r"^sdk/python/build/"),
+    re.compile(r"^sdk/python/.*\.egg-info/"),
+    re.compile(r"^sdk/python/\.pytest_cache/"),
+    re.compile(r"^sdk/typescript/node_modules/"),
+    re.compile(r"^sdk/typescript/.*\.tgz$"),
+)
+
+
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    value = json.loads(read_text(path))
+    if not isinstance(value, dict):
+        raise ValueError(f"{path}: expected JSON object")
+    return value
+
+
+def parse_root_version(repo: Path) -> str:
+    text = read_text(repo / "Cargo.toml")
+    match = re.search(r"(?m)^version = \"([^\"]+)\"", text)
+    if not match:
+        raise ValueError("Cargo.toml: workspace version not found")
+    return match.group(1)
+
+
+def parse_python_version(repo: Path) -> str:
+    text = read_text(repo / "sdk/python/pyproject.toml")
+    match = re.search(r"(?m)^version = \"([^\"]+)\"", text)
+    if not match:
+        raise ValueError("sdk/python/pyproject.toml: version not found")
+    return match.group(1)
+
+
+def parse_package_name(repo: Path, path: str) -> str:
+    text = read_text(repo / path)
+    match = re.search(r"(?m)^name = \"([^\"]+)\"", text)
+    if not match:
+        raise ValueError(f"{path}: package name not found")
+    return match.group(1)
+
+
+def parse_openapi_version(repo: Path) -> str:
+    text = read_text(repo / "docs/openapi.yaml")
+    match = re.search(r"(?m)^\s*version:\s*([^\s]+)", text)
+    if not match:
+        raise ValueError("docs/openapi.yaml: info.version not found")
+    return match.group(1).strip("'\"")
+
+
+def tracked_files(repo: Path) -> list[str]:
+    result = subprocess.run(
+        ["git", "ls-files"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return [line for line in result.stdout.splitlines() if line]
+
+
+def workflow_contains(workflow: str, needle: str) -> None:
+    if needle not in workflow:
+        raise ValueError(f"sdk-release.yml: missing {needle!r}")
+
+
+def validate_manifest(repo: Path, errors: list[str]) -> dict[str, Any]:
+    path = repo / "sdk/release-manifest.json"
+    try:
+        manifest = load_json(path)
+        if manifest.get("schema_version") != 1:
+            errors.append("sdk/release-manifest.json: schema_version must be 1")
+        packages = manifest.get("packages")
+        if not isinstance(packages, list) or len(packages) != 3:
+            errors.append("sdk/release-manifest.json: expected exactly 3 packages")
+            return manifest
+        required_languages = {"rust", "python", "typescript"}
+        languages = {item.get("language") for item in packages if isinstance(item, dict)}
+        if languages != required_languages:
+            errors.append(f"sdk/release-manifest.json: package languages mismatch: {sorted(languages)}")
+        for item in packages:
+            if not isinstance(item, dict):
+                errors.append("sdk/release-manifest.json: package entry must be object")
+                continue
+            for field in ("language", "name", "manifest", "registry", "publish_command", "dry_run_command"):
+                if not isinstance(item.get(field), str) or not item[field]:
+                    errors.append(f"sdk/release-manifest.json: {item.get('language', '?')}.{field} missing")
+            manifest_path = item.get("manifest")
+            if isinstance(manifest_path, str) and not (repo / manifest_path).exists():
+                errors.append(f"sdk/release-manifest.json: missing package manifest {manifest_path}")
+    except Exception as exc:
+        errors.append(str(exc))
+        return {}
+    return manifest
+
+
+def validate_versions(repo: Path, errors: list[str]) -> str:
+    root_version = parse_root_version(repo)
+    versions = {
+        "python": parse_python_version(repo),
+        "typescript": load_json(repo / "sdk/typescript/package.json").get("version"),
+        "rust": root_version,
+    }
+    for language, version in versions.items():
+        if version != root_version:
+            errors.append(f"{language} SDK version {version!r} != workspace version {root_version!r}")
+    openapi_version = parse_openapi_version(repo)
+    if not openapi_version.startswith(root_version):
+        errors.append(f"OpenAPI version {openapi_version!r} does not start with workspace version {root_version!r}")
+    return root_version
+
+
+def validate_package_metadata(repo: Path, manifest: dict[str, Any], errors: list[str]) -> None:
+    expected_names = {
+        "rust": parse_package_name(repo, "crates/cortex-sdk/Cargo.toml"),
+        "python": parse_package_name(repo, "sdk/python/pyproject.toml"),
+        "typescript": str(load_json(repo / "sdk/typescript/package.json").get("name")),
+    }
+    packages = manifest.get("packages", [])
+    if not isinstance(packages, list):
+        return
+    for item in packages:
+        if not isinstance(item, dict):
+            continue
+        language = item.get("language")
+        if language in expected_names and item.get("name") != expected_names[language]:
+            errors.append(
+                f"sdk/release-manifest.json: {language} package name {item.get('name')!r} "
+                f"!= manifest name {expected_names[language]!r}"
+            )
+    ts = load_json(repo / "sdk/typescript/package.json")
+    for field in ("main", "module", "types", "exports", "files"):
+        if field not in ts:
+            errors.append(f"sdk/typescript/package.json: missing {field}")
+    if "cortexdb-client.cjs" not in ts.get("files", []):
+        errors.append("sdk/typescript/package.json: cjs build missing from files")
+
+
+def validate_workflow(repo: Path, errors: list[str]) -> None:
+    workflow = read_text(repo / ".github/workflows/sdk-release.yml")
+    for needle in (
+        "workflow_dispatch",
+        "inputs.publish",
+        "startsWith(github.ref, 'refs/tags/v')",
+        "cargo publish -p cortex-sdk --dry-run",
+        "python -m build sdk/python --wheel",
+        "npm pack --dry-run",
+        "pypa/gh-action-pypi-publish",
+        "npm publish --access public --provenance",
+        "cargo publish -p cortex-sdk",
+    ):
+        try:
+            workflow_contains(workflow, needle)
+        except ValueError as exc:
+            errors.append(str(exc))
+
+
+def validate_docs(repo: Path, root_version: str, errors: list[str]) -> None:
+    sdk_release = read_text(repo / "docs/SDK_RELEASE.md")
+    for phrase in ("manual-only", "publish=true", "tag beginning with `v`", "version bump"):
+        if phrase not in sdk_release:
+            errors.append(f"docs/SDK_RELEASE.md: missing {phrase!r}")
+    changelog = read_text(repo / "CHANGELOG.md")
+    if "## Unreleased" not in changelog:
+        errors.append("CHANGELOG.md: missing Unreleased section")
+    if f"v{root_version}" not in changelog:
+        errors.append(f"CHANGELOG.md: missing release entry for v{root_version}")
+    if "SDK" not in changelog:
+        errors.append("CHANGELOG.md: missing SDK notes")
+
+
+def validate_tracked_hygiene(repo: Path, errors: list[str]) -> None:
+    for path in tracked_files(repo):
+        for pattern in FORBIDDEN_TRACKED_PATTERNS:
+            if pattern.search(path):
+                errors.append(f"tracked generated SDK artifact is forbidden: {path}")
+
+
+def main() -> int:
+    repo = Path(__file__).resolve().parent.parent
+    errors: list[str] = []
+    manifest = validate_manifest(repo, errors)
+    root_version = validate_versions(repo, errors)
+    validate_package_metadata(repo, manifest, errors)
+    validate_workflow(repo, errors)
+    validate_docs(repo, root_version, errors)
+    validate_tracked_hygiene(repo, errors)
+    if errors:
+        print("SDK RELEASE CONTRACT CHECK FAILED:")
+        for error in errors:
+            print(f"  {error}")
+        return 1
+    print("OK: SDK release contract is consistent.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

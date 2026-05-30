@@ -23,6 +23,9 @@ the same per-tenant database layout exposed by `cortex-server` and `/dashboard`.
 `publish/check.sh` validates Python bytecode/tests/wheel packaging, Rust tests
 and `cargo package`, SDK version consistency, tenant routing, ANN evaluation surface presence,
 and npm package dry-runs when npm is installed.
+`sdk/release-manifest.json` records the package names, registries, dry-run
+commands, and manual tag-gated publish policy. `make sdk-release-contract-check`
+validates that lifecycle contract without building packages.
 
 Use `make sdk-check` for the local gate. The GitHub `SDK Release` workflow runs
 the same preflight on SDK changes and can publish all three packages manually

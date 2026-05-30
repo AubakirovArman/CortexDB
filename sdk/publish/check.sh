@@ -15,6 +15,8 @@ TS_VERSION="$(sed -n 's/.*"version": "\(.*\)".*/\1/p' "$ROOT/typescript/package.
 test "$ROOT_VERSION" = "$PY_VERSION"
 test "$ROOT_VERSION" = "$TS_VERSION"
 
+python3 "$REPO_ROOT/scripts/check_sdk_release_contract.py"
+
 grep -q 'class HealthResponse' "$ROOT/python/cortexdb_client.py"
 grep -q 'def health_response' "$ROOT/python/cortexdb_client.py"
 grep -q 'interface HealthResponse' "$ROOT/typescript/cortexdb-client.d.ts"
