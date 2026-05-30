@@ -155,15 +155,18 @@ Goal: turn the dashboard into a real product UI.
 
 Status: the existing developer console has a frontend source tree under
 `web/dashboard/src`, is built into versioned static assets under
-`/dashboard/assets/v1/`, and has a Playwright smoke path for asset loading,
-tabs, cell put/get, keyword search, search explain, storage validation, cluster
+`/dashboard/assets/v1/`, now also emits a standalone static artifact under
+`web/dashboard/dist`, and has a Playwright smoke path for asset loading, tabs,
+cell put/get, keyword search, search explain, storage validation, cluster
 status, and desktop/mobile screenshot artifacts. It now covers the target views
-inside the static developer console, but it is still not a standalone SPA.
+inside the static developer console, but route-level SPA navigation remains a
+future product step.
 
 Tasks:
 
 1. Choose the frontend stack and repository layout.
 2. ✅ Build a separate frontend source tree instead of growing server raw strings.
+2a. ✅ Add a standalone static build artifact under `web/dashboard/dist`.
 3. ✅ Add Overview view to the current developer console.
 4. ✅ Add Cells view to the current developer console.
 5. ✅ Add AQL Console view to the current developer console.

@@ -43,7 +43,8 @@
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
 - [x] Завести frontend source-of-truth under `web/dashboard/src` plus `make dashboard-build` / `make dashboard-check`.
-- [ ] Вынести dashboard в отдельный frontend-продукт (SPA/static build), независимый от server crate.
+- [x] Завести standalone static build artifact under `web/dashboard/dist`, independent from the server crate asset copy.
+- [ ] Превратить standalone static build в полноценный frontend-продукт с route-level pages и выбранным stack/release pipeline.
 - [x] Наборы views в текущем static dashboard: overview, cells, search/explain, ANN, AQL, context, verify, ingest, storage health, cluster status.
 - [x] Базовый tenant/token control в UI для scoped API calls; полноценный auth UX остаётся будущей standalone UI задачей.
 - [x] Playwright/CI smoke путь для текущего `/dashboard`: asset loading, tabs, cell put/get, keyword search.

@@ -139,8 +139,15 @@ sdk-contract-check:
 dashboard-build:
 	python3 scripts/dashboard_build.py
 
+dashboard-standalone-build: dashboard-build
+
 dashboard-check:
 	python3 scripts/dashboard_build.py --check
+
+dashboard-standalone-check: dashboard-check
+
+dashboard-standalone-smoke: dashboard-standalone-check
+	python3 scripts/dashboard_dist_smoke.py
 
 dashboard-smoke: dashboard-check
 	cargo build -p cortex-server

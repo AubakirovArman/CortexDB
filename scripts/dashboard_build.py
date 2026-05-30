@@ -13,7 +13,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = ROOT / "web" / "dashboard" / "src"
 OUT_DIR = ROOT / "crates" / "cortex-server" / "assets" / "dashboard" / "v1"
+DIST_DIR = ROOT / "web" / "dashboard" / "dist"
+DIST_ASSET_DIR = DIST_DIR / "dashboard" / "assets" / "v1"
 ASSETS = ("index.html", "style.css", "app.js")
+STATIC_ASSETS = ("style.css", "app.js")
 
 
 def parse_args() -> argparse.Namespace:
@@ -41,9 +44,21 @@ def check_assets() -> int:
         source = SRC_DIR / name
         output = OUT_DIR / name
         if not output.is_file():
-            missing.append(name)
+            missing.append(str(output.relative_to(ROOT)))
         elif not filecmp.cmp(source, output, shallow=False):
-            stale.append(name)
+            stale.append(str(output.relative_to(ROOT)))
+    dist_index = DIST_DIR / "index.html"
+    if not dist_index.is_file():
+        missing.append(str(dist_index.relative_to(ROOT)))
+    elif not filecmp.cmp(SRC_DIR / "index.html", dist_index, shallow=False):
+        stale.append(str(dist_index.relative_to(ROOT)))
+    for name in STATIC_ASSETS:
+        source = SRC_DIR / name
+        output = DIST_ASSET_DIR / name
+        if not output.is_file():
+            missing.append(str(output.relative_to(ROOT)))
+        elif not filecmp.cmp(source, output, shallow=False):
+            stale.append(str(output.relative_to(ROOT)))
     if missing or stale:
         if missing:
             print("missing built dashboard assets: " + ", ".join(missing), file=sys.stderr)
@@ -60,7 +75,14 @@ def build_assets() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for name in ASSETS:
         shutil.copyfile(SRC_DIR / name, OUT_DIR / name)
-    print(f"OK: built dashboard assets into {OUT_DIR.relative_to(ROOT)}")
+    DIST_ASSET_DIR.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(SRC_DIR / "index.html", DIST_DIR / "index.html")
+    for name in STATIC_ASSETS:
+        shutil.copyfile(SRC_DIR / name, DIST_ASSET_DIR / name)
+    print(
+        "OK: built dashboard assets into "
+        f"{OUT_DIR.relative_to(ROOT)} and {DIST_DIR.relative_to(ROOT)}"
+    )
     return 0
 
 

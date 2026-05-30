@@ -9,11 +9,23 @@ The Rust server serves the built asset copy from:
 crates/cortex-server/assets/dashboard/v1/
 ```
 
+The standalone static build is written to:
+
+```text
+web/dashboard/dist/
+```
+
+It can be served by any static file server from the `dist` root. The checked
+artifact keeps `/dashboard/assets/v1/` paths so it mirrors the server route
+layout while remaining independent of the Rust crate.
+
 Build and verify:
 
 ```sh
 make dashboard-build
 make dashboard-check
+make dashboard-standalone-check
+make dashboard-standalone-smoke
 make dashboard-smoke
 make dashboard-screenshots
 ```
@@ -22,7 +34,10 @@ Current coverage:
 
 - no framework or bundler dependency;
 - source assets live in `web/dashboard/src`;
+- standalone build output lives in `web/dashboard/dist`;
 - build output is versioned under `/dashboard/assets/v1/`;
+- standalone smoke serves `web/dashboard/dist` over HTTP and verifies the
+  expected route-shaped asset paths;
 - views cover Overview, Cells, Search, ANN, AQL, Context, Verify, Ingest,
   Storage, and Cluster;
 - Search includes both result execution and explain output;
