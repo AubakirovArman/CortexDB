@@ -21,11 +21,11 @@ cargo run -p cortex-cli -- search ./demo-db project:investments "Solar Plant bud
 
 # 3. Retrieve a ContextPack with anomaly reports
 cargo run -p cortex-cli -- context ./demo-db project:investments \
-  "RETRIEVE CONTEXT FOR TASK 'budget' IN BRAIN default LIMIT 10 CANDIDATES;" --json
+  'RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN default LIMIT 10 CANDIDATES;' --json
 
 # 4. Verify a fact for numeric conflicts
 cargo run -p cortex-cli -- verify ./demo-db project:investments \
-  "VERIFY FACT 'Solar Plant budget is 1.2B KZT' IN BRAIN default;" --json
+  'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN default;' --json
 ```
 
 Or run the full demo: `make demo`
@@ -57,6 +57,8 @@ Or run the full demo: `make demo`
 - `crates/cortex-sdk`: Blocking Rust HTTP client for the versioned server API, with `cargo package` preflight coverage.
 - `crates/cortex-cli`: Command `cortexdb` for local operations and loading fixtures.
 - `crates/cortex-server`: Async JSON HTTP API built on Axum and Tokio with per-tenant `DatabaseActor` workers over the local blocking database core.
+
+The current AQL query contract is frozen in [`docs/AQL_V0_4.md`](docs/AQL_V0_4.md).
 
 ---
 

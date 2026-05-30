@@ -1,5 +1,8 @@
 # AQL v0.3
 
+This document is retained for historical reference. The current Core Alpha AQL
+contract is frozen in [`AQL_V0_4.md`](AQL_V0_4.md).
+
 `RETRIEVE CONTEXT` is the implemented end-to-end query path.
 
 ```sql

@@ -52,7 +52,7 @@ cell_id=4 score=1352704 lexical_score=1352704 vector_score=0 payload=...
 
 ```bash
 $ cargo run -q -p cortex-cli -- context ./db project:investments \
-  "RETRIEVE CONTEXT FOR TASK 'budget' IN BRAIN default LIMIT 10 CANDIDATES;"
+  'RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN default LIMIT 10 CANDIDATES;'
 ```
 
 Output:
@@ -68,7 +68,7 @@ Three cells returned, zero anomalies, token budget respected.
 
 ```bash
 $ cargo run -q -p cortex-cli -- context ./db project:investments \
-  "RETRIEVE CONTEXT FOR TASK 'budget' IN BRAIN default LIMIT 10 CANDIDATES;" --json
+  'RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN default LIMIT 10 CANDIDATES;' --json
 ```
 
 Output (abbreviated):
@@ -110,7 +110,7 @@ Output (abbreviated):
 
 ```bash
 $ cargo run -q -p cortex-cli -- verify ./db project:investments \
-  "VERIFY FACT 'Solar Plant budget is 1.2B KZT' IN BRAIN default;"
+  'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN default;'
 ```
 
 Output:
@@ -128,7 +128,7 @@ guard=numeric_mismatch cell_id=2 message=payload numeric claim differs from fact
 
 ```bash
 $ cargo run -q -p cortex-cli -- verify ./db project:investments \
-  "VERIFY FACT 'Solar Plant budget is 1.2B KZT' IN BRAIN default;" --json
+  'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN default;' --json
 ```
 
 Output:

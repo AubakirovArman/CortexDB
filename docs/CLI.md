@@ -142,7 +142,7 @@ Execute an AQL query.
 
 ```bash
 cortexdb aql ./db project:investments \
-  'GET CONTEXT 3 CELLS WHERE scope == "project:investments" IN BRAIN default;'
+  'RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments LIMIT 10 CANDIDATES;'
 ```
 
 #### `context <path> <scope> <aql> [--json]`
@@ -150,7 +150,7 @@ Execute CONTEXT PACK AQL.
 
 ```bash
 cortexdb context ./db project:investments \
-  'GET CONTEXT 3 CELLS WHERE scope == "project:investments" IN BRAIN default;' \
+  'RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments LIMIT 10 CANDIDATES;' \
   --json
 ```
 
