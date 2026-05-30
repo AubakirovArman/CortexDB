@@ -300,6 +300,21 @@ make ann-embedding-domain-corpus-run \
   ANN_EMBEDDING_NORMALIZATION=unit
 ```
 
+The repository also includes a dependency-free OpenAI-compatible command
+wrapper:
+
+```bash
+export CORTEXDB_EMBEDDING_URL='https://embedding-gateway.example/v1/embeddings'
+export CORTEXDB_EMBEDDING_MODEL='text-embedding-model'
+export CORTEXDB_EMBEDDING_API_KEY='...'
+
+make ann-embedding-domain-corpus-run \
+  ANN_EMBEDDING_SOURCE_ROOT=/data/cortexdb/exported-text-cells \
+  ANN_EMBEDDING_QUERIES=/data/cortexdb/query_text.jsonl \
+  ANN_EMBEDDING_COMMAND='python3 scripts/ann/embed_text_command.py --require-model' \
+  ANN_EMBEDDING_METRIC=cosine
+```
+
 The command contract is:
 
 ```text
@@ -308,9 +323,13 @@ stdout: JSON array of numeric vector coordinates
 stderr: diagnostics only
 ```
 
-Use environment variables or a local config file outside the repository for
-provider keys. Do not hardcode API keys in the corpus source or embedding
-command.
+`embed_text_command.py` reads `CORTEXDB_EMBEDDING_URL`,
+`CORTEXDB_EMBEDDING_MODEL`, and `CORTEXDB_EMBEDDING_API_KEY` by default. It
+accepts OpenAI-compatible `{"data":[{"embedding":[...]}]}` responses and also
+simple `{"embedding":[...]}`, `{"vector":[...]}`, or
+`{"embeddings":[[...]]}` responses. Use environment variables or a local config
+file outside the repository for provider keys. Do not hardcode API keys in the
+corpus source or embedding command.
 
 The exported files are written under `ANN_EMBEDDING_OUTPUT_DIR`:
 

@@ -81,8 +81,10 @@ def parse_embedding_json(raw_value: str, label: str) -> list[float]:
         raise ValueError(f"{label}: embedding must be a non-empty array")
     values: list[float] = []
     for item in value:
-        if not isinstance(item, (int, float)):
+        if isinstance(item, bool) or not isinstance(item, (int, float)):
             raise ValueError(f"{label}: embedding values must be numeric")
+        if not math.isfinite(float(item)):
+            raise ValueError(f"{label}: embedding values must be finite")
         values.append(float(item))
     return values
 
@@ -243,6 +245,12 @@ def main(argv: list[str]) -> int:
 
 
 class SelfTests(unittest.TestCase):
+    def test_parse_embedding_rejects_non_finite_values(self) -> None:
+        with self.assertRaises(ValueError):
+            parse_embedding_json("[true]", "test")
+        with self.assertRaises(ValueError):
+            parse_embedding_json("[NaN]", "test")
+
     def test_hash_smoke_export(self) -> None:
         with tempfile.TemporaryDirectory() as raw_dir:
             root = Path(raw_dir)

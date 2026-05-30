@@ -72,6 +72,11 @@ fall back to hashed demo vectors.
 Production reports should record the embedding command identity and model
 version in the run notes or release artifact. The built-in `hash-smoke`
 provider is only a plumbing check; it is not evidence for semantic recall.
+For OpenAI-compatible or local gateway endpoints, the checked-in
+`scripts/ann/embed_text_command.py` can be used as the command wrapper. It reads
+endpoint/model/key settings from environment variables and prints only the
+numeric vector to stdout, which keeps provider secrets out of committed corpus
+artifacts.
 
 For each corpus, preserve:
 

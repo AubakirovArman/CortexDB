@@ -154,7 +154,9 @@ the same exact-ground-truth and HNSW report workflow. Use
 `make ann-embedded-domain-corpus-run` when the corpus already contains
 fixed-point vectors. Missing vectors are treated as an error by default so
 benchmark runs do not accidentally mix real embeddings with synthetic demo
-vectors.
+vectors. `scripts/ann/embed_text_command.py` is the default dependency-free
+HTTP wrapper for OpenAI-compatible embedding gateways; pass it through
+`ANN_EMBEDDING_COMMAND` and keep URL/model/key values in environment variables.
 
 `make ann-scripts-check` validates the dependency-free helper scripts that
 generate exact ground truth and compare two ANN report JSON files. Use

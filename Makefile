@@ -173,6 +173,7 @@ ann-scripts-check:
 	python3 scripts/ann/build_demo_domain_corpus.py --self-test
 	python3 scripts/ann/build_embedded_domain_corpus.py --self-test
 	python3 scripts/ann/export_embedding_domain_corpus.py --self-test
+	python3 scripts/ann/embed_text_command.py --self-test
 	python3 scripts/ann/convert_public_corpus.py --self-test
 	python3 scripts/ann/run_public_corpus.py --self-test
 	python3 scripts/ann/exact_ground_truth.py --self-test
