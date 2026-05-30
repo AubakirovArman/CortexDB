@@ -58,6 +58,9 @@
   recovered from `replication.aclog` using only committed config entries.
 - [x] Joint-consensus membership safety primitive: joint config entries encode
   old/new voter sets and commit only after majorities from both sets.
+- [x] Crash/restart partition matrix seed coverage: partitioned leader restart
+  preserves uncommitted entries without committing them, and committed leader
+  restart catches up healed followers with the recovered commit index.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
@@ -81,9 +84,9 @@
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
-3. Consensus: расширить failure-injection harness до crash/restart partition
-   matrix, durable snapshot install over peer transport, and automated
-   membership rotation on top of the joint-consensus primitive.
+3. Consensus: expand the crash/restart partition matrix beyond the seed cases,
+   add durable snapshot install over peer transport, and automate membership
+   rotation on top of the joint-consensus primitive.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 

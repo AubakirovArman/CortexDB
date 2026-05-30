@@ -1,14 +1,15 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{Read, Write};
 use std::net::TcpListener;
+use std::path::Path;
 use std::thread;
 
 use cortex_core::CommitSeq;
 use cortex_engine::{
     decode_snapshot_segment, encode_snapshot_segment, AppendEntriesRequest, ConsensusState,
-    ElectionRole, ElectionState, InMemoryReplicationTransport, LogIndex, NodeId,
-    ReplicationPeerServer, ReplicationPeerState, ReplicationTransport, SnapshotChunk,
-    SnapshotSegment, TcpReplicationTransport, Term,
+    ElectionRole, ElectionState, InMemoryReplicationTransport, LogIndex, NodeId, ReplicatedEntry,
+    ReplicationLog, ReplicationPeerServer, ReplicationPeerState, ReplicationTransport,
+    SnapshotChunk, SnapshotSegment, TcpReplicationTransport, Term,
 };
 use cortex_storage::segment::SegmentCell;
 
@@ -45,6 +46,95 @@ fn five_node_partition_matrix_blocks_minority_and_commits_after_heal() {
     let healed = leader.record_acks(entry.index, healed_acks);
     assert!(healed.committed);
     assert_eq!(leader.commit_index, entry.index);
+}
+
+#[test]
+fn partitioned_leader_restart_keeps_uncommitted_entry_until_heal() {
+    let voters = five_voters();
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("replication.aclog");
+    let mut leader = ConsensusState::new(NodeId(1), voters.clone());
+    let entry = leader.append_local(b"restart after partition".to_vec());
+    persist_entries(&path, std::slice::from_ref(&entry));
+
+    let mut transport =
+        transport_with_followers(&voters, &[NodeId(2), NodeId(3), NodeId(4), NodeId(5)]);
+    transport.set_partitions(&[
+        BTreeSet::from([NodeId(1), NodeId(2)]),
+        BTreeSet::from([NodeId(3), NodeId(4), NodeId(5)]),
+    ]);
+    let minority_acks = transport
+        .replicate_to_best_effort(
+            [NodeId(2), NodeId(3), NodeId(4), NodeId(5)],
+            append_request(&leader, vec![entry.clone()], LogIndex(0), Term(0)),
+        )
+        .unwrap();
+    assert!(!leader.record_acks(entry.index, minority_acks).committed);
+
+    let mut recovered =
+        ReplicationLog::recover_consensus(&path, NodeId(1), voters.clone(), leader.commit_index)
+            .unwrap();
+    assert_eq!(recovered.commit_index, LogIndex(0));
+    assert_eq!(recovered.entries(), std::slice::from_ref(&entry));
+
+    transport.heal_partitions();
+    let healed_acks = transport
+        .replicate_to_best_effort(
+            [NodeId(2), NodeId(3), NodeId(4), NodeId(5)],
+            append_request(
+                &recovered,
+                recovered.entries().to_vec(),
+                LogIndex(0),
+                Term(0),
+            ),
+        )
+        .unwrap();
+    let healed = recovered.record_acks(entry.index, healed_acks);
+    assert!(healed.committed);
+    assert_eq!(recovered.commit_index, entry.index);
+}
+
+#[test]
+fn committed_leader_restart_catches_up_healed_followers() {
+    let voters = five_voters();
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("replication.aclog");
+    let mut leader = ConsensusState::new(NodeId(1), voters.clone());
+    let entry = leader.append_local(b"committed before restart".to_vec());
+    persist_entries(&path, std::slice::from_ref(&entry));
+
+    let mut transport =
+        transport_with_followers(&voters, &[NodeId(2), NodeId(3), NodeId(4), NodeId(5)]);
+    transport.set_partitions(&[
+        BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)]),
+        BTreeSet::from([NodeId(4), NodeId(5)]),
+    ]);
+    let majority_acks = transport
+        .replicate_to_best_effort(
+            [NodeId(2), NodeId(3), NodeId(4), NodeId(5)],
+            append_request(&leader, vec![entry.clone()], LogIndex(0), Term(0)),
+        )
+        .unwrap();
+    assert!(leader.record_acks(entry.index, majority_acks).committed);
+
+    let recovered =
+        ReplicationLog::recover_consensus(&path, NodeId(1), voters, leader.commit_index).unwrap();
+    assert_eq!(recovered.commit_index, entry.index);
+
+    transport.heal_partitions();
+    let healed_request = append_request(
+        &recovered,
+        recovered.entries().to_vec(),
+        LogIndex(0),
+        Term(0),
+    );
+    let healed_acks = transport
+        .replicate_to_best_effort([NodeId(2), NodeId(3), NodeId(4), NodeId(5)], healed_request)
+        .unwrap();
+    assert!(healed_acks.contains(&NodeId(4)));
+    assert!(healed_acks.contains(&NodeId(5)));
+    assert_eq!(transport.peer_commit(NodeId(4)), Some(entry.index));
+    assert_eq!(transport.peer_commit(NodeId(5)), Some(entry.index));
 }
 
 #[test]
@@ -215,6 +305,14 @@ fn append_request(
         entries,
         leader_commit: leader.commit_index,
     }
+}
+
+fn persist_entries(path: &Path, entries: &[ReplicatedEntry]) {
+    let log = ReplicationLog::open(path).unwrap();
+    for entry in entries {
+        log.append(entry).unwrap();
+    }
+    log.close().unwrap();
 }
 
 fn transport_with_followers(

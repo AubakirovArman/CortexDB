@@ -135,14 +135,17 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
   empty configs or local-node removal.
 - a five-node partition matrix that blocks minority writes, commits after heal,
   elects a majority-side leader, and rejects stale minority-leader appends;
+- restart inside a partition: uncommitted leader entries remain uncommitted
+  after recovery until heal, while committed leader entries resume with the
+  recovered commit index and catch up healed followers;
 - TCP snapshot transport smoke coverage for multi-chunk segment payloads.
 - committed membership rotation surviving replication-log restart.
 - joint-consensus membership entries requiring majorities from both old and new
   voter sets before commit.
 
 This is not a full distributed consensus certification yet. The remaining
-production work is a crash/restart partition matrix, durable snapshot install
-over peer transport, and automated membership rotation.
+production work is broader crash/restart partition coverage, durable snapshot
+install over peer transport, and automated membership rotation.
 
 ## Not Yet
 
