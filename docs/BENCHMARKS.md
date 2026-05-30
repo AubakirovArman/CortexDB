@@ -208,6 +208,11 @@ manifest, report, machine profile, ground truth, and checksum manifest. Future
 candidate runs can use that bundle's `report.json` as
 `ANN_REAL_EMBEDDING_BASELINE_REPORT`.
 
+For hosted runs, use the `ANN Real Embedding` GitHub Actions workflow. It
+downloads a source archive, reads endpoint URL/key from repository secrets,
+runs the same preflight/benchmark/compare/package targets, and uploads the
+fixed-point export plus run reports as artifacts.
+
 `make ann-scripts-check` validates the dependency-free helper scripts that
 generate exact ground truth and compare two ANN report JSON files. Use
 `make ann-corpus-compare ANN_BASELINE_REPORT=... ANN_CANDIDATE_REPORT=...` to

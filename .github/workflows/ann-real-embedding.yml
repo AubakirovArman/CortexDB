@@ -1,0 +1,219 @@
+name: ANN Real Embedding
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_archive_url:
+        description: "Archive URL containing source JSONL files and query JSONL"
+        required: true
+        type: string
+      source_root_in_archive:
+        description: "Directory inside archive containing source JSONL files"
+        required: true
+        default: "."
+        type: string
+      queries_path_in_archive:
+        description: "Query JSONL path inside archive"
+        required: true
+        default: "queries.jsonl"
+        type: string
+      run_id_prefix:
+        description: "Prefix for the archived run id"
+        required: true
+        default: "real-embedding"
+        type: string
+      embedding_model:
+        description: "Embedding model id sent to the configured endpoint"
+        required: true
+        type: string
+      metric:
+        description: "ANN metric"
+        required: true
+        default: "cosine"
+        type: choice
+        options: ["dot_product", "cosine", "l2"]
+      normalization:
+        description: "Embedding vector normalization"
+        required: true
+        default: "unit"
+        type: choice
+        options: ["unit", "max_abs", "none"]
+      scale:
+        description: "Fixed-point conversion scale"
+        required: true
+        default: "32767"
+        type: string
+      limit:
+        description: "Top-k limit"
+        required: true
+        default: "10"
+        type: string
+      slo_profile:
+        description: "ANN/HNSW workload SLO profile"
+        required: true
+        default: "balanced"
+        type: choice
+        options: ["fast", "balanced", "semantic", "audit"]
+      require_api_key:
+        description: "Require CORTEXDB_EMBEDDING_API_KEY secret"
+        required: true
+        default: true
+        type: boolean
+      baseline_bundle_url:
+        description: "Optional .tar.gz baseline bundle URL to compare this run against"
+        required: false
+        type: string
+      max_p95_regression_nanos:
+        description: "Allowed p95 latency regression when baseline_bundle_url is set"
+        required: true
+        default: "500000000"
+        type: string
+      max_max_regression_nanos:
+        description: "Allowed max latency regression when baseline_bundle_url is set"
+        required: true
+        default: "1000000000"
+        type: string
+      publish_baseline:
+        description: "Package this run as a real-embedding baseline artifact"
+        required: true
+        default: false
+        type: boolean
+      baseline_id:
+        description: "Optional baseline id when publish_baseline is true"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  real-embedding:
+    name: Run real embedding ANN benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - name: Download and extract corpus archive
+        env:
+          SOURCE_ARCHIVE_URL: ${{ inputs.source_archive_url }}
+          SOURCE_ROOT_IN_ARCHIVE: ${{ inputs.source_root_in_archive }}
+          QUERIES_PATH_IN_ARCHIVE: ${{ inputs.queries_path_in_archive }}
+        run: |
+          set -euo pipefail
+          mkdir -p target/ann/real-embedding/input/extracted
+          curl -fsSL "$SOURCE_ARCHIVE_URL" -o target/ann/real-embedding/input/source-archive
+          python3 - <<'PY'
+          import os
+          import tarfile
+          import zipfile
+          from pathlib import Path
+
+          archive = Path("target/ann/real-embedding/input/source-archive")
+          output = Path("target/ann/real-embedding/input/extracted")
+          output_resolved = output.resolve()
+
+          def assert_safe(member_name):
+              target = (output / member_name).resolve()
+              if target != output_resolved and output_resolved not in target.parents:
+                  raise SystemExit(f"unsafe archive member path: {member_name}")
+
+          if tarfile.is_tarfile(archive):
+              with tarfile.open(archive) as tar:
+                  for member in tar.getmembers():
+                      assert_safe(member.name)
+                  tar.extractall(output)
+          elif zipfile.is_zipfile(archive):
+              with zipfile.ZipFile(archive) as zip_file:
+                  for member in zip_file.namelist():
+                      assert_safe(member)
+                  zip_file.extractall(output)
+          else:
+              raise SystemExit("source_archive_url must point to a tar or zip archive")
+          PY
+          source_root="target/ann/real-embedding/input/extracted/${SOURCE_ROOT_IN_ARCHIVE}"
+          queries="target/ann/real-embedding/input/extracted/${QUERIES_PATH_IN_ARCHIVE}"
+          test -d "$source_root"
+          test -f "$queries"
+          echo "ANN_REAL_EMBEDDING_SOURCE_ROOT=$source_root" >> "$GITHUB_ENV"
+          echo "ANN_REAL_EMBEDDING_QUERIES=$queries" >> "$GITHUB_ENV"
+
+      - name: Run real embedding benchmark
+        env:
+          CORTEXDB_EMBEDDING_URL: ${{ secrets.CORTEXDB_EMBEDDING_URL }}
+          CORTEXDB_EMBEDDING_API_KEY: ${{ secrets.CORTEXDB_EMBEDDING_API_KEY }}
+          CORTEXDB_EMBEDDING_MODEL: ${{ inputs.embedding_model }}
+          RUN_ID_PREFIX: ${{ inputs.run_id_prefix }}
+          REQUIRE_API_KEY: ${{ inputs.require_api_key }}
+          METRIC: ${{ inputs.metric }}
+          NORMALIZATION: ${{ inputs.normalization }}
+          SCALE: ${{ inputs.scale }}
+          LIMIT: ${{ inputs.limit }}
+          SLO_PROFILE: ${{ inputs.slo_profile }}
+        run: |
+          set -euo pipefail
+          run_id="${RUN_ID_PREFIX}-${GITHUB_RUN_ID}"
+          echo "ANN_REAL_EMBEDDING_RUN_ID=$run_id" >> "$GITHUB_ENV"
+          make ann-real-embedding-benchmark \
+            ANN_REAL_EMBEDDING_SOURCE_ROOT="$ANN_REAL_EMBEDDING_SOURCE_ROOT" \
+            ANN_REAL_EMBEDDING_QUERIES="$ANN_REAL_EMBEDDING_QUERIES" \
+            ANN_REAL_EMBEDDING_RUN_ID="$run_id" \
+            ANN_REAL_EMBEDDING_REQUIRE_API_KEY="$REQUIRE_API_KEY" \
+            ANN_REAL_EMBEDDING_METRIC="$METRIC" \
+            ANN_REAL_EMBEDDING_NORMALIZATION="$NORMALIZATION" \
+            ANN_REAL_EMBEDDING_SCALE="$SCALE" \
+            ANN_REAL_EMBEDDING_LIMIT="$LIMIT" \
+            ANN_REAL_EMBEDDING_SLO_PROFILE="$SLO_PROFILE"
+
+      - name: Compare against baseline bundle
+        if: inputs.baseline_bundle_url != ''
+        env:
+          BASELINE_BUNDLE_URL: ${{ inputs.baseline_bundle_url }}
+          MAX_P95_REGRESSION_NANOS: ${{ inputs.max_p95_regression_nanos }}
+          MAX_MAX_REGRESSION_NANOS: ${{ inputs.max_max_regression_nanos }}
+        run: |
+          set -euo pipefail
+          mkdir -p target/ann/real-embedding/downloaded-baseline/extracted
+          curl -fsSL "$BASELINE_BUNDLE_URL" -o target/ann/real-embedding/downloaded-baseline/baseline.tar.gz
+          tar -xzf target/ann/real-embedding/downloaded-baseline/baseline.tar.gz \
+            -C target/ann/real-embedding/downloaded-baseline/extracted
+          baseline_bundle="$(find target/ann/real-embedding/downloaded-baseline/extracted -mindepth 1 -maxdepth 1 -type d | sort | head -n 1)"
+          if [ -z "$baseline_bundle" ]; then
+            echo "Could not locate extracted baseline bundle directory" >&2
+            exit 2
+          fi
+          make ann-real-embedding-compare \
+            ANN_REAL_EMBEDDING_RUN_ID="$ANN_REAL_EMBEDDING_RUN_ID" \
+            ANN_REAL_EMBEDDING_BASELINE_REPORT="$baseline_bundle/report.json" \
+            ANN_MAX_P95_REGRESSION_NANOS="$MAX_P95_REGRESSION_NANOS" \
+            ANN_MAX_MAX_REGRESSION_NANOS="$MAX_MAX_REGRESSION_NANOS"
+
+      - name: Package baseline bundle
+        if: inputs.publish_baseline
+        env:
+          BASELINE_ID_INPUT: ${{ inputs.baseline_id }}
+        run: |
+          set -euo pipefail
+          baseline_id="${BASELINE_ID_INPUT:-${ANN_REAL_EMBEDDING_RUN_ID}}"
+          echo "ANN_REAL_EMBEDDING_BASELINE_ID=$baseline_id" >> "$GITHUB_ENV"
+          make ann-real-embedding-package-baseline \
+            ANN_REAL_EMBEDDING_RUN_ID="$ANN_REAL_EMBEDDING_RUN_ID" \
+            ANN_REAL_EMBEDDING_BASELINE_ID="$baseline_id"
+
+      - name: Upload real embedding ANN reports
+        uses: actions/upload-artifact@v7
+        with:
+          name: ann-real-embedding-${{ github.run_id }}
+          if-no-files-found: error
+          path: |
+            target/ann/real-embedding/preflight.json
+            target/ann/real-embedding/export/**
+            target/ann/real-embedding/runs/**
+            target/ann/real-embedding/release-baselines/**

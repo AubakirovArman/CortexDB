@@ -284,6 +284,41 @@ regression, corpus-shape changes, HNSW profile changes, production-safety loss,
 or latency regression beyond `max_p95_regression_nanos` and
 `max_max_regression_nanos`.
 
+## GitHub Actions Real Embedding Runs
+
+Use the `ANN Real Embedding` workflow when the benchmark should call a real
+embedding gateway from a hosted runner. Store endpoint credentials as repository
+secrets, not workflow inputs:
+
+- `CORTEXDB_EMBEDDING_URL`
+- `CORTEXDB_EMBEDDING_API_KEY`
+
+Trigger the workflow with:
+
+- `source_archive_url`: `.tar`, `.tar.gz`, or `.zip` containing source JSONL
+  files and query JSONL;
+- `source_root_in_archive`: directory inside the archive containing payload
+  JSONL files;
+- `queries_path_in_archive`: query JSONL path inside the archive;
+- `embedding_model`: model id sent to the configured endpoint;
+- `slo_profile`: `fast`, `balanced`, `semantic`, or `audit`;
+- optional `baseline_bundle_url` for regression gating;
+- optional `publish_baseline=true` to upload a release-ready baseline package.
+
+The workflow runs the same local targets:
+
+```text
+ann-real-embedding-preflight
+ann-real-embedding-benchmark
+ann-real-embedding-compare          # when baseline_bundle_url is set
+ann-real-embedding-package-baseline # when publish_baseline is true
+```
+
+Artifacts include the preflight report, exported fixed-point corpus, ANN run
+directory, and optional baseline package. This is the preferred path for
+production-style evidence because the run is reproducible from a GitHub Actions
+URL and does not expose embedding credentials in command lines.
+
 ## Fallback Policy
 
 Exact fallback is a correctness boundary, not an implementation detail.
@@ -421,4 +456,5 @@ Warnings, not blockers:
 - Embedded-vector and real-embedding corpus tooling exists, including preflight,
   report comparison, and baseline packaging gates, but it still needs a real
   model export and published baseline bundle.
-- Production SLO profiles per workload are not yet formalized.
+- Workload SLO profiles exist, but their thresholds still need calibration on
+  real customer/domain corpora.
