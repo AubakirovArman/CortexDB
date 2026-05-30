@@ -121,6 +121,7 @@ What landed:
 25. ✅ `ANN_PRODUCTION_TUNING.md` defines corpus readiness levels, thresholds, fallback policy, and release blockers.
 26. ✅ `summarize_history.py` writes corpus-run history with adjacent recall, latency, graph-shape, and production-safety regression summaries.
 27. ✅ `publish_baseline.py` packages selected ANN runs as release-ready baseline artifacts.
+28. ✅ `ann-compare-baseline-bundle` gates candidate ANN runs against published baseline bundles.
 
 What remains before broad production tuning:
 

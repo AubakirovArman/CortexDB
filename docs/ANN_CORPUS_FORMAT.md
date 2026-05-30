@@ -294,3 +294,14 @@ You can publish the latest smoke run as a baseline artifact:
 ```bash
 make ann-publish-baseline
 ```
+
+You can compare a candidate run against a published baseline bundle:
+
+```bash
+make ann-compare-baseline-bundle \
+  ANN_BASELINE_BUNDLE=target/ann/release-baselines/smoke \
+  ANN_CANDIDATE_RUN_ID=smoke
+```
+
+The comparison is written to
+`target/ann/corpus-runs/<candidate-run-id>/baseline_comparison.json`.

@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-scripts-check ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline smoke-test sdk-smoke-test alpha-check release-check demo
+.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-scripts-check ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-compare-baseline-bundle smoke-test sdk-smoke-test alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -23,6 +23,10 @@ ANN_HISTORY_REPORT ?= $(ANN_HISTORY_ROOT)/history.json
 ANN_BASELINE_RUN_ID ?= $(ANN_CORPUS_RUN_ID)
 ANN_BASELINE_ID ?= $(ANN_BASELINE_RUN_ID)
 ANN_BASELINE_ROOT ?= target/ann/release-baselines
+ANN_CANDIDATE_RUN_ID ?= $(ANN_CORPUS_RUN_ID)
+ANN_BASELINE_BUNDLE ?= $(ANN_BASELINE_ROOT)/$(ANN_BASELINE_ID)
+ANN_BASELINE_BUNDLE_REPORT ?= $(ANN_BASELINE_BUNDLE)/report.json
+ANN_BASELINE_BUNDLE_COMPARISON ?= $(ANN_HISTORY_ROOT)/$(ANN_CANDIDATE_RUN_ID)/baseline_comparison.json
 
 check:
 	cargo check --workspace
@@ -95,6 +99,9 @@ ann-history-regression-check:
 
 ann-publish-baseline:
 	python3 scripts/ann/publish_baseline.py --run-root $(ANN_HISTORY_ROOT) --run-id $(ANN_BASELINE_RUN_ID) --baseline-id $(ANN_BASELINE_ID) --output-root $(ANN_BASELINE_ROOT)
+
+ann-compare-baseline-bundle:
+	python3 scripts/ann/compare_reports.py --baseline $(ANN_BASELINE_BUNDLE_REPORT) --candidate $(ANN_HISTORY_ROOT)/$(ANN_CANDIDATE_RUN_ID)/report.json --output $(ANN_BASELINE_BUNDLE_COMPARISON)
 
 smoke-test:
 	scripts/smoke_test.sh

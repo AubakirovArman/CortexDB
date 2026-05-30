@@ -212,6 +212,18 @@ Actions uploads `target/ann/release-baselines/**` with the same
 `ann-regression-reports` artifact, so releases can attach a stable baseline
 package without checking large corpus files into git.
 
+Candidate runs can be gated against a published bundle with:
+
+```bash
+make ann-compare-baseline-bundle \
+  ANN_BASELINE_BUNDLE=target/ann/release-baselines/v0.1.0-core-alpha-smoke \
+  ANN_CANDIDATE_RUN_ID=candidate-cosine-100k
+```
+
+This writes `baseline_comparison.json` next to the candidate run and fails on
+recall regression, corpus-shape mismatch, production-safety loss, or latency
+regression beyond the configured budgets.
+
 ## Release Blockers
 
 Block a release when any guarded corpus shows:

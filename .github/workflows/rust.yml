@@ -34,6 +34,7 @@ jobs:
           make ann-corpus-smoke-report
           make ann-corpus-run-smoke
           make ann-publish-baseline
+          make ann-compare-baseline-bundle
       - name: Upload ANN regression reports
         if: matrix.toolchain == 'stable' && always()
         uses: actions/upload-artifact@v4

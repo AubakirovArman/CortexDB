@@ -145,5 +145,9 @@ adjacent recall/latency regressions.
 `target/ann/release-baselines/<baseline-id>/` for release artifacts and future
 candidate comparisons.
 
+`make ann-compare-baseline-bundle` compares a candidate run against one of
+those baseline bundles and emits `baseline_comparison.json` next to the
+candidate run.
+
 For threshold selection, fallback policy, and report-history rules, see
 [`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md).
