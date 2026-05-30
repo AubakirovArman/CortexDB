@@ -38,3 +38,6 @@
 - `Database::close` and `Drop` release the lock after shutting down the writer.
 - If a process dies, stale `db.lock` cleanup is explicit through
   `cortexdb unlock <path> --force` or `StaleLockPolicy::Break`.
+- `make chaos-restart-check` exercises the operator path end-to-end: forced
+  server kill, explicit stale unlock, best-effort repair, restart, validation,
+  and readback through the HTTP API.

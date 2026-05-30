@@ -21,7 +21,9 @@ What is still missing vs Redis at this stage:
   repeatable `make backup-drill-check` evidence artifact, but still needs
   external offsite target automation.
 - crash/fault evidence now has `make crash-fault-check` plus CI artifact
-  upload, while randomized kill/restart loops remain future hardening.
+  upload, and repeatable process-level kill/restart evidence now has
+  `make chaos-restart-check`. Longer randomized soak campaigns remain future
+  hardening.
 
 ## Milestone A — API/SDK Runtime Freeze (next)
 

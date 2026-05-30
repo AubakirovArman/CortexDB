@@ -36,6 +36,17 @@ jobs:
           path: |
             target/crash-fault/report.json
             target/crash-fault/*.log
+      - run: make chaos-restart-check
+        if: matrix.toolchain == 'stable'
+      - name: Upload chaos restart evidence
+        if: matrix.toolchain == 'stable' && always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: chaos-restart-evidence
+          if-no-files-found: warn
+          path: |
+            target/chaos-restart/report.json
+            target/chaos-restart/server.log
       - run: make dashboard-check
         if: matrix.toolchain == 'stable'
       - run: make dashboard-standalone-check

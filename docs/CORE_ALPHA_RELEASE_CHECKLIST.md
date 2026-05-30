@@ -20,6 +20,7 @@ every required row is green on `main`.
 | Backup drill evidence | `make backup-drill-check` writes `target/backup-drill/report.json` after backup, restore, prune, validate, and readback checks. |
 | Restart safety | put, patch, tombstone, checkpoint, compact, and WAL tail tests pass. |
 | Crash matrix | `make crash-fault-check` writes `target/crash-fault/report.json` and targeted test logs for orphan bundles, temp manifests, restart tails, corruption, and repair. |
+| Chaos restart evidence | `make chaos-restart-check` writes `target/chaos-restart/report.json` after repeatable HTTP writes, flushes, compacts, forced server kills, stale unlocks, repair, restart, and readback checks. |
 | Consistency audit | `CORE_CONSISTENCY_AUDIT.md` is current and full-stack consistency tests pass. |
 | Atomic audit | `ATOMIC_WRITE_AUDIT.md` and `STORAGE_FORMATS.md` match the current writers/readers. |
 | Benchmark baseline | `cargo bench -p cortex-engine --bench core_baseline` runs without external services. |
@@ -38,11 +39,12 @@ git push origin v0.1.0-core-alpha
 ```
 
 Pushing a `v*` tag also runs the `Release` workflow. `make release-check`
-invokes `make ann-release-evidence-check`, `make backup-drill-check`, and
-`make crash-fault-check`, which validate ANN baseline archives,
-backup/restore drill evidence, and crash/fault repair evidence before the tag
-should be cut. The workflow attaches the ANN `.tar.gz` baseline package to the
-GitHub Release as a durable release asset.
+invokes `make ann-release-evidence-check`, `make backup-drill-check`,
+`make crash-fault-check`, and `make chaos-restart-check`, which validate ANN
+baseline archives, backup/restore drill evidence, crash/fault repair evidence,
+and process-level kill/restart evidence before the tag should be cut. The
+workflow attaches the ANN `.tar.gz` baseline package to the GitHub Release as a
+durable release asset.
 
 ## Latest Local Gate Evidence
 

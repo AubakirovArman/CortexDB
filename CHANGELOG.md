@@ -16,6 +16,10 @@
 - Added `make crash-fault-check`, which runs targeted crash/restart/corruption
   tests, injects a partial WAL tail plus orphan temp file through the CLI repair
   path, and uploads `target/crash-fault/report.json` in CI.
+- Added `make chaos-restart-check`, which starts the real HTTP server, runs a
+  fixed-seed sequence of writes, flushes, compacts, forced process kills, stale
+  unlocks, repair, restart, and readback checks, then uploads
+  `target/chaos-restart/report.json` in CI.
 - Added static multi-token HTTP auth policies with `admin` and `data` roles,
   optional per-token AgentView binding, and admin/data route separation.
 - Hardened SDK release lifecycle checks: protected `sdk-release` deployment

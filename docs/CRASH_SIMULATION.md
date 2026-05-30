@@ -1,8 +1,8 @@
 # Crash Simulation Matrix
 
 This document tracks the Core Alpha crash/restart/corruption harness. The
-matrix is intentionally deterministic and file-level; it does not require
-process killing or external services.
+matrix combines deterministic file-level tests with a repeatable local server
+kill/restart loop.
 
 ## Covered Scenarios
 
@@ -20,6 +20,7 @@ process killing or external services.
 | Corrupt live `.acb` is reported by validation. | `corruption_matrix.rs` |
 | Corrupt live `.aci` is reported by validation. | `corruption_matrix.rs` |
 | CLI repair removes orphan temp file and truncates a partial WAL tail. | `make crash-fault-check` |
+| HTTP server survives repeatable forced kill/restart cycles after writes, flushes, and compacts. | `make chaos-restart-check` |
 
 ## Release Evidence
 
@@ -40,8 +41,30 @@ target/crash-fault/report.json
 The GitHub `Rust` workflow runs this gate on stable Rust and uploads
 `crash-fault-evidence` with the JSON report and targeted test logs.
 
+Run the repeatable process-level restart gate:
+
+```bash
+make chaos-restart-check
+```
+
+It starts the real `cortex-server` binary, writes cells through the HTTP API,
+randomly mixes puts, flushes, compacts, and forced process kills using a fixed
+seed, explicitly unlocks stale `db.lock`, repairs the database, restarts the
+server, verifies every expected cell after each restart, and writes:
+
+```text
+target/chaos-restart/report.json
+```
+
+The GitHub `Rust` workflow runs this gate on stable Rust and uploads
+`chaos-restart-evidence` with the JSON report and server log.
+
 ## Current Limits
 
-- The harness simulates crash aftermath by writing or corrupting files directly.
+- `crash-fault-check` simulates crash aftermath by writing or corrupting files
+  directly.
+- `chaos-restart-check` kills the server between completed API operations; it
+  does not yet kill exactly between every internal checkpoint/compact step.
 - It does not yet inject failures between every internal checkpoint step.
-- It does not yet run randomized kill/restart loops.
+- The default chaos loop is deterministic for release reproducibility; increase
+  `CHAOS_RESTART_STEPS` or change `CHAOS_RESTART_SEED` for longer local runs.
