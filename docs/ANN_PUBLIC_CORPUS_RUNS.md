@@ -54,3 +54,49 @@ Interpretation:
   larger public/domain corpus and compare later candidates against this style of
   archived report.
 
+## siftsmall-public-full-l2
+
+| Field | Value |
+| --- | --- |
+| Actions run | <https://github.com/AubakirovArman/CortexDB/actions/runs/26685633630> |
+| Commit | `7df5f0a39ce623798e1a0eee585c2bd61dc19eaa` |
+| Source | `ftp://ftp.irisa.fr/local/texmex/corpus/siftsmall.tar.gz` |
+| Dataset id | `siftsmall-public-full` |
+| Baseline id | `siftsmall-public-full-l2` |
+| Format | `fvecs` vectors + `ivecs` ground truth |
+| Metric | `l2` |
+| Normalization | `none` |
+| Scale | `1` |
+| Top-k | `10` |
+| Query sample | all `100` queries |
+| HNSW profile | `max_neighbors=16`, `ef_search=256`, `layer_count=4` |
+| Recall gates | `min_recall_q16=65535`, `min_mean_recall_q16=65535` |
+| Latency gates | `p95<=2500000000ns`, `max<=5000000000ns` |
+| Result | `passed=true`, `production_safe=true` |
+
+Observed hosted result:
+
+| Metric | Value |
+| --- | --- |
+| Vectors | `10000` |
+| Queries | `100` |
+| Dimension | `128` |
+| Graph nodes | `10000` |
+| Graph edges | `319728` |
+| Upper layers | `3` |
+| Upper graph edges | `50200` |
+| Min observed recall | `65535` |
+| Mean recall | `65535` |
+| p50 latency | `234709955ns` |
+| p95 latency | `335525811ns` |
+| Max latency | `382737532ns` |
+
+Interpretation:
+
+- This is the preferred public `siftsmall` baseline for future comparisons
+  because it evaluates the whole query set instead of the 10-query shakedown.
+- The graph achieved exact top-10 recall for every query under the recorded
+  HNSW profile.
+- Latency gates are intentionally loose enough to tolerate hosted-runner
+  variance. Future candidate comparisons should use report-to-report regression
+  budgets rather than hard-coding a single machine's p95 as a universal SLO.
