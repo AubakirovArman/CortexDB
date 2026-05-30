@@ -127,4 +127,5 @@ cargo run --release -p cortex-engine --bin ann_corpus_check -- \
 `make ann-corpus-smoke-check` runs the same code path against a tiny checked-in
 fixture so CI verifies the contract. Real recall quality should be tracked by
 running `ann_corpus_check` against larger sift/glove-style corpora and archiving
-the resulting JSON reports.
+the resulting JSON reports. The JSONL contract is documented in
+[`ANN_CORPUS_FORMAT.md`](ANN_CORPUS_FORMAT.md).
