@@ -11,6 +11,9 @@ pub struct HnswGraphIndex {
     pub dimension: u32,
     pub metric: u8,
     pub upper_layers: BTreeMap<u32, BTreeMap<u32, BTreeSet<u32>>>,
+    pub max_neighbors: u32,
+    pub ef_search: u32,
+    pub layer_count: u32,
 }
 
 impl HnswGraphIndex {
@@ -37,6 +40,15 @@ impl HnswGraphIndex {
                     put_u32(&mut out, *neighbor);
                 }
             }
+        }
+        if self.max_neighbors != 0 || self.ef_search != 0 || self.layer_count != 0 {
+            if self.max_neighbors == 0 || self.ef_search == 0 || self.layer_count == 0 {
+                return Err(StorageError::InvalidHnswGraphFile);
+            }
+            out.extend_from_slice(b"HCFG");
+            put_u32(&mut out, self.max_neighbors);
+            put_u32(&mut out, self.ef_search);
+            put_u32(&mut out, self.layer_count);
         }
         append_crc32c(&mut out);
         write_atomic(path.as_ref(), &out)
@@ -75,6 +87,21 @@ fn decode(bytes: &[u8]) -> StorageResult<HnswGraphIndex> {
     } else {
         BTreeMap::new()
     };
+    let (max_neighbors, ef_search, layer_count) = if bytes.len() > cursor {
+        let magic = read_bytes(bytes, &mut cursor, 4)?;
+        if magic != b"HCFG" {
+            return Err(StorageError::InvalidHnswGraphFile);
+        }
+        let max_neighbors = read_u32(bytes, &mut cursor)?;
+        let ef_search = read_u32(bytes, &mut cursor)?;
+        let layer_count = read_u32(bytes, &mut cursor)?;
+        if max_neighbors == 0 || ef_search == 0 || layer_count == 0 {
+            return Err(StorageError::InvalidHnswGraphFile);
+        }
+        (max_neighbors, ef_search, layer_count)
+    } else {
+        (0, 0, 0)
+    };
     if cursor != bytes.len() {
         return Err(StorageError::InvalidHnswGraphFile);
     }
@@ -83,6 +110,9 @@ fn decode(bytes: &[u8]) -> StorageResult<HnswGraphIndex> {
         dimension,
         metric,
         upper_layers,
+        max_neighbors,
+        ef_search,
+        layer_count,
     })
 }
 

@@ -118,6 +118,11 @@ repeat upper_layer_count:
     neighbor_count u32
     repeat neighbor_count:
       neighbor_candidate_id u32
+optional build_config:
+  magic[4] = "HCFG"
+  max_neighbors u32
+  ef_search u32
+  layer_count u32
 crc32c u32 over all previous bytes
 ```
 
@@ -125,6 +130,8 @@ Candidate id `0` is rejected for both node ids and neighbor ids. Checkpoint and
 compact write one graph file per segment next to `.acs/.acb/.aci/.acv`.
 The upper-layer trailer is optional for compatibility with earlier `ACH0`
 files; missing upper layers are interpreted as a valid single-layer graph.
+The optional `HCFG` trailer records the HNSW build profile used when checkpoint
+or compact wrote the graph. Older files without this trailer remain valid.
 
 ## Manifest `.acm`
 

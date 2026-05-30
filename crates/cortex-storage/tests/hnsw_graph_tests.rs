@@ -31,6 +31,9 @@ fn ach_hnsw_graph_roundtrips_upper_layers() {
         dimension: 2,
         metric: 0,
         upper_layers: BTreeMap::from([(1, BTreeMap::from([(1, BTreeSet::from([2]))]))]),
+        max_neighbors: 16,
+        ef_search: 128,
+        layer_count: 4,
     };
 
     graph.write(&path).unwrap();
@@ -38,6 +41,9 @@ fn ach_hnsw_graph_roundtrips_upper_layers() {
     let decoded = HnswGraphIndex::read(&path).unwrap();
     assert_eq!(decoded, graph);
     assert_eq!(decoded.upper_layers[&1][&1], BTreeSet::from([2]));
+    assert_eq!(decoded.max_neighbors, 16);
+    assert_eq!(decoded.ef_search, 128);
+    assert_eq!(decoded.layer_count, 4);
 }
 
 #[test]

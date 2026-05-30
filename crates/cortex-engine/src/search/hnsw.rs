@@ -300,6 +300,9 @@ impl HnswIndex {
             dimension: self.config.dimension as u32,
             metric: self.config.metric as u8,
             upper_layers: self.upper_links.clone(),
+            max_neighbors: usize_to_u32(self.max_neighbors),
+            ef_search: usize_to_u32(self.ef_search),
+            layer_count: usize_to_u32(self.layer_count),
         }
     }
 
@@ -319,20 +322,27 @@ impl HnswIndex {
             2 => DistanceMetric::L2,
             _ => DistanceMetric::DotProduct,
         };
-        let layer_count = graph
-            .upper_layers
-            .keys()
-            .next_back()
-            .map(|layer| (*layer as usize) + 1)
-            .unwrap_or(1);
+        let graph_max_neighbors = graph.max_neighbors;
+        let graph_ef_search = graph.ef_search;
+        let graph_layer_count = graph.layer_count;
+        let layer_count = if graph_layer_count > 0 {
+            graph_layer_count as usize
+        } else {
+            graph
+                .upper_layers
+                .keys()
+                .next_back()
+                .map(|layer| (*layer as usize) + 1)
+                .unwrap_or(1)
+        };
         Self {
             vectors,
             links: graph.links,
             upper_links: graph.upper_layers,
             deleted: BTreeSet::new(),
             layer_count,
-            max_neighbors: max_neighbors.max(1),
-            ef_search: ef_search.max(1),
+            max_neighbors: graph_value_or(graph_max_neighbors, max_neighbors),
+            ef_search: graph_value_or(graph_ef_search, ef_search),
             config: VectorCollectionConfig { dimension, metric },
             rebuild_count: 0,
         }
@@ -464,6 +474,22 @@ fn deterministic_level_hash(cell_id: u32) -> u64 {
     value = (value ^ (value >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
     value = (value ^ (value >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
     value ^ (value >> 31)
+}
+
+fn graph_value_or(value: u32, fallback: usize) -> usize {
+    if value == 0 {
+        fallback.max(1)
+    } else {
+        value as usize
+    }
+}
+
+fn usize_to_u32(value: usize) -> u32 {
+    if value > u32::MAX as usize {
+        u32::MAX
+    } else {
+        value as u32
+    }
 }
 
 impl Default for HnswIndex {

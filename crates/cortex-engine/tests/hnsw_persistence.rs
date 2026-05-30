@@ -119,6 +119,32 @@ fn database_hnsw_build_config_controls_checkpoint_graph_density() {
 }
 
 #[test]
+fn database_checkpoint_persists_hnsw_build_profile_metadata() {
+    let dir = tempfile::tempdir().unwrap();
+    let config = HnswBuildConfig::for_profile(HnswBuildProfile::Semantic);
+    let mut db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            hnsw_build_config: config,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nvector=10,0\n\nalpha".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+
+    let graph = HnswGraphIndex::read(dir.path().join("segments/segment-1.ach")).unwrap();
+
+    assert_eq!(graph.max_neighbors, config.max_neighbors as u32);
+    assert_eq!(graph.ef_search, config.ef_search as u32);
+    assert_eq!(graph.layer_count, config.layer_count as u32);
+}
+
+#[test]
 fn hnsw_build_profiles_match_documented_slo_shapes() {
     let balanced = HnswBuildConfig::for_profile(HnswBuildProfile::Balanced);
     let audit = HnswBuildConfig::for_profile(HnswBuildProfile::Audit);
