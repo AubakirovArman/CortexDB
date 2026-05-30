@@ -1,0 +1,4 @@
+{"name":"axis-1","vector":[100,0,0,0,0,0,0,0],"limit":2}
+{"name":"axis-2","vector":[0,100,0,0,0,0,0,0],"limit":2}
+{"name":"axis-3","vector":[0,0,100,0,0,0,0,0],"limit":2}
+{"name":"axis-4","vector":[0,0,0,100,0,0,0,0],"limit":2}

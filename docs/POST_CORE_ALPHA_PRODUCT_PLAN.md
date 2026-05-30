@@ -115,11 +115,12 @@ What landed:
 19. ✅ ANN drift baseline gate fails on recall loss, graph-shape loss, or latency regression beyond budget.
 20. ✅ External ANN JSONL fixture gate verifies non-generated vectors and named queries.
 21. ✅ ANN metric matrix gate verifies dot-product, cosine, and L2 against exact top-k on the same fixture.
+22. ✅ `ann_corpus_check` can evaluate larger external vectors/queries/ground-truth JSONL suites.
 
 What remains before broad production tuning:
 
 - Collection-level metadata (not just per-segment `.ach` trailer).
-- Recall fixtures beyond in-repo smoke gates (sift/glove-style golden sets).
+- Checked-in or archived sift/glove-style golden reports generated through `ann_corpus_check`.
 - Benchmark history tracking across commits.
 - Tuned `ef_construction` and larger external-corpus parameter sweeps.
 

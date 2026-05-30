@@ -30,6 +30,8 @@ pub enum EngineError {
     StorageInvariant(String),
     #[error("invalid ANN fixture: {0}")]
     InvalidAnnFixture(String),
+    #[error("invalid ANN corpus: {0}")]
+    InvalidAnnCorpus(String),
     #[error("candidate id overflow")]
     CandidateIdOverflow,
     #[error("vector dimension mismatch: expected {expected}, got {actual}")]

@@ -57,6 +57,8 @@ make ann-external-check
 make ann-external-report
 make ann-metric-matrix-check
 make ann-metric-matrix-report
+make ann-corpus-smoke-check
+make ann-corpus-smoke-report
 # Or directly:
 cargo bench --bench core_baseline
 ```
@@ -108,3 +110,21 @@ that metric, compares ANN results against exact top-k for the same metric, and
 enforces per-metric recall, graph-shape, and latency thresholds from
 `ann_metric_matrix_baseline_v1.json`. `make ann-metric-matrix-report` writes
 `target/ann/ann_metric_matrix_report.json`, also uploaded by CI.
+
+`ann_corpus_check` is the external-corpus harness for larger datasets that
+should not be checked into this repository. It accepts separate JSONL files for
+vectors, queries, and ground-truth top-k:
+
+```bash
+cargo run --release -p cortex-engine --bin ann_corpus_check -- \
+  --vectors /data/ann/vectors.jsonl \
+  --queries /data/ann/queries.jsonl \
+  --ground-truth /data/ann/ground_truth.jsonl \
+  --metric cosine \
+  --output target/ann/large_corpus_report.json
+```
+
+`make ann-corpus-smoke-check` runs the same code path against a tiny checked-in
+fixture so CI verifies the contract. Real recall quality should be tracked by
+running `ann_corpus_check` against larger sift/glove-style corpora and archiving
+the resulting JSON reports.

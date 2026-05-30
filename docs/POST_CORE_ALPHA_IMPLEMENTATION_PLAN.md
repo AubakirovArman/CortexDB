@@ -28,6 +28,7 @@
 - [x] External ANN JSONL fixture gate (`make ann-external-check`) validates explicit vectors and named queries against exact top-k.
 - [x] Deterministic multi-layer graph persisted in `.ach` upper-layer trailer.
 - [x] Metric matrix gate (`make ann-metric-matrix-check`) evaluates dot/cosine/L2 against exact top-k on the fixed JSONL fixture.
+- [x] External-corpus harness (`ann_corpus_check`) accepts vectors, queries, and ground-truth JSONL files for larger recall suites.
 - [x] Наблюдаемость (словарь метрик / отчёт по деградации графа) через расширенный `AnnSearchReport`.
 
 ### 2) Real distributed consensus

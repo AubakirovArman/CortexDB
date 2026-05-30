@@ -31,6 +31,8 @@ jobs:
       - if: matrix.toolchain == 'stable'
         run: make ann-metric-matrix-report
       - if: matrix.toolchain == 'stable'
+        run: make ann-corpus-smoke-report
+      - if: matrix.toolchain == 'stable'
         uses: actions/upload-artifact@v4
         with:
           name: ann-regression-reports
@@ -39,3 +41,4 @@ jobs:
             target/ann/ann_drift_report.json
             target/ann/ann_external_fixture_report.json
             target/ann/ann_metric_matrix_report.json
+            target/ann/ann_corpus_report.json
