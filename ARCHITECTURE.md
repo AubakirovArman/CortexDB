@@ -231,11 +231,14 @@ Axum/Tokio request
 ```
 
 The actor owns the `Database` for a tenant and serializes mutations. Tenant
-realms are directory-backed and path-validated. Authentication is currently
-Bearer-token based. Core Alpha also has opt-in `AgentView` binding for one
-configured token, bounded actor queues with explicit `database_busy`
-backpressure, fixed-window rate limiting, exact-origin CORS allowlisting, and
-route-level audit events with an optional synced JSONL file sink.
+realms are directory-backed and path-validated. Authentication is Bearer-token
+based with a legacy single admin token, static `admin`/`data` token policies,
+and file-backed token rotation through `CORTEXDB_AUTH_TOKENS_FILE`. Token
+policies may bind to persisted `AgentView` records, so data routes can enforce
+the same readable/writable scope rules as AQL. Core Alpha also has bounded actor
+queues with explicit `database_busy` backpressure, fixed-window rate limiting,
+exact-origin CORS allowlisting, and route-level audit events with an optional
+synced JSONL file sink.
 
 Full multi-token RBAC, per-user quotas, tamper-evident audit trails, SIEM
 export, and production tenant authorization remain future security milestones.
@@ -263,6 +266,8 @@ export, and production tenant authorization remain future security milestones.
 - Actor queues are bounded and expose explicit backpressure.
 - Browser CORS is disabled by default and only supports one exact allowlisted
   origin when configured.
+- File-backed HTTP token rotation fails closed if the policy file is missing,
+  empty, or invalid.
 - HTTP audit logging is opt-in and records route metadata without request
   bodies or query strings.
 - Production claims are intentionally limited to experimental Core Alpha.
@@ -286,29 +291,39 @@ make ann-drift-check
 make ann-external-check
 make ann-metric-matrix-check
 make ann-release-evidence-check
+make backup-drill-check
+make backup-offsite-check
+make crash-fault-check
+make chaos-restart-check
 make sdk-contract-check
 ```
 
 `make alpha-check` and `make release-check` compose broader release evidence,
-including demo and ANN report gates.
+including demo, ANN release evidence, backup/restore drills, offsite backup
+staging, crash/fault repair evidence, and process kill/restart evidence.
 
 ## Non-Goals for Core Alpha
 
 - Production-grade distributed consensus.
-- Enterprise RBAC and audit compliance.
+- Enterprise RBAC, external identity providers, and audit compliance.
 - Managed cloud service.
 - Built-in LLM inference.
-- Production-quality HNSW without exact fallback and recall gates.
+- Production-quality HNSW without exact fallback, recall gates, and longer
+  latency history.
 - General-purpose replacement for PostgreSQL, SQLite, or vector databases.
 
 ## Next Architecture Work
 
 The next architectural hardening items are:
 
-1. Backup/restore retention, offsite target policy, and scheduled drill evidence.
-2. Dynamic RBAC policy store, token rotation, and external identity integration.
-3. Crash/fault injection harness.
-4. Search and verification quality datasets.
-5. Migration policy for storage/API format changes.
-6. Tamper-evident audit trail and external log/SIEM export.
-7. Published SDK package lifecycle and registry release evidence.
+1. Real distributed consensus: separate replicated consensus log semantics from
+   the local WAL boundary, harden idempotent replay, and add partition and
+   split-brain integration tests.
+2. Standalone Web UI: promote the dashboard sources into a route-level frontend
+   product with its own release pipeline and E2E smoke suite.
+3. ANN/HNSW production tuning: publish real-embedding baseline bundles and add
+   longer latency-history gates outside fast unit checks.
+4. Dynamic RBAC policy store: move beyond file-backed token rotation into
+   persisted multi-user policy management and external identity integration.
+5. Tamper-evident audit trail and external log/SIEM export.
+6. Migration policy for storage/API format changes.
