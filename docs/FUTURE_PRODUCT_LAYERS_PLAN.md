@@ -20,6 +20,8 @@ What is still missing vs Redis at this stage:
 - backup/restore now has local restore drills, retention pruning, and a
   repeatable `make backup-drill-check` evidence artifact, but still needs
   external offsite target automation.
+- crash/fault evidence now has `make crash-fault-check` plus CI artifact
+  upload, while randomized kill/restart loops remain future hardening.
 
 ## Milestone A — API/SDK Runtime Freeze (next)
 

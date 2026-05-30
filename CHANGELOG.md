@@ -13,6 +13,9 @@
 - Added `make backup-drill-check`, which creates a temporary database, runs
   multiple restore drills, prunes old backups, validates readback, and writes
   `target/backup-drill/report.json` as release/runbook evidence.
+- Added `make crash-fault-check`, which runs targeted crash/restart/corruption
+  tests, injects a partial WAL tail plus orphan temp file through the CLI repair
+  path, and uploads `target/crash-fault/report.json` in CI.
 - Added static multi-token HTTP auth policies with `admin` and `data` roles,
   optional per-token AgentView binding, and admin/data route separation.
 - Hardened SDK release lifecycle checks: protected `sdk-release` deployment

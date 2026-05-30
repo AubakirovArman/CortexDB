@@ -19,7 +19,7 @@ every required row is green on `main`.
 | Repair safety | `Database::repair_best_effort` removes orphan temps and truncates only safe WAL tails. |
 | Backup drill evidence | `make backup-drill-check` writes `target/backup-drill/report.json` after backup, restore, prune, validate, and readback checks. |
 | Restart safety | put, patch, tombstone, checkpoint, compact, and WAL tail tests pass. |
-| Crash matrix | Orphan bundles, temp manifests, restart tails, and corruption matrix tests pass. |
+| Crash matrix | `make crash-fault-check` writes `target/crash-fault/report.json` and targeted test logs for orphan bundles, temp manifests, restart tails, corruption, and repair. |
 | Consistency audit | `CORE_CONSISTENCY_AUDIT.md` is current and full-stack consistency tests pass. |
 | Atomic audit | `ATOMIC_WRITE_AUDIT.md` and `STORAGE_FORMATS.md` match the current writers/readers. |
 | Benchmark baseline | `cargo bench -p cortex-engine --bench core_baseline` runs without external services. |
@@ -38,8 +38,9 @@ git push origin v0.1.0-core-alpha
 ```
 
 Pushing a `v*` tag also runs the `Release` workflow. `make release-check`
-invokes `make ann-release-evidence-check` and `make backup-drill-check`, which
-validate ANN baseline archives and backup/restore drill evidence before the tag
+invokes `make ann-release-evidence-check`, `make backup-drill-check`, and
+`make crash-fault-check`, which validate ANN baseline archives,
+backup/restore drill evidence, and crash/fault repair evidence before the tag
 should be cut. The workflow attaches the ANN `.tar.gz` baseline package to the
 GitHub Release as a durable release asset.
 

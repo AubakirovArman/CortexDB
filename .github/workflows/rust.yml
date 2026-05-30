@@ -25,6 +25,17 @@ jobs:
       - run: cargo test --workspace --all-features
       - run: cargo fmt --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: make crash-fault-check
+        if: matrix.toolchain == 'stable'
+      - name: Upload crash/fault evidence
+        if: matrix.toolchain == 'stable' && always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: crash-fault-evidence
+          if-no-files-found: warn
+          path: |
+            target/crash-fault/report.json
+            target/crash-fault/*.log
       - run: make dashboard-check
         if: matrix.toolchain == 'stable'
       - run: make dashboard-standalone-check

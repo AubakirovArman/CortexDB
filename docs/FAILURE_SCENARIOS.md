@@ -7,6 +7,8 @@
 - Partial WAL tails are truncated before the next writer starts.
 - `Database::repair_best_effort` can truncate a WAL file to its best-effort
   safe offset while holding `db.lock`.
+- `make crash-fault-check` injects a partial WAL tail through the CLI repair
+  path and writes `target/crash-fault/report.json` as reproducible evidence.
 
 ## Checkpoint Files
 

@@ -19,6 +19,26 @@ process killing or external services.
 | Corrupt live `.acm` blocks open. | `corruption_matrix.rs` |
 | Corrupt live `.acb` is reported by validation. | `corruption_matrix.rs` |
 | Corrupt live `.aci` is reported by validation. | `corruption_matrix.rs` |
+| CLI repair removes orphan temp file and truncates a partial WAL tail. | `make crash-fault-check` |
+
+## Release Evidence
+
+Run the deterministic gate:
+
+```bash
+make crash-fault-check
+```
+
+It runs the targeted crash/restart/corruption/repair test files, injects a
+partial WAL tail and orphan temp file through the CLI repair path, validates the
+database, reads the preserved cell payload back, and writes:
+
+```text
+target/crash-fault/report.json
+```
+
+The GitHub `Rust` workflow runs this gate on stable Rust and uploads
+`crash-fault-evidence` with the JSON report and targeted test logs.
 
 ## Current Limits
 
