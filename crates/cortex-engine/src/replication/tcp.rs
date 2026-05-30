@@ -123,6 +123,8 @@ pub fn handle_authenticated_replication_frame(
             }
             if chunk.chunk_index == 0 {
                 snapshot.clear();
+            } else if snapshot.is_empty() {
+                return Ok(format!("SNAPSHOT_RESP {} 0 {}\n", state.current_term.0, 0));
             }
             snapshot.extend_from_slice(&chunk.payload);
             Ok(format!(

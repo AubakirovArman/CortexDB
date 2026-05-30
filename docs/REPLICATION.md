@@ -17,6 +17,12 @@ log and returns a deterministic response frame. `handle_authenticated_replicatio
 adds shared-token authentication. `ReplicationPeerServer::serve_n` is a small
 blocking peer loop used by tests and smoke deployments.
 
+The in-memory transport can also model network partitions by restricting
+source-target links to explicit components. `replicate_to_best_effort` then
+counts only reachable successful followers, which lets the failure-injection
+suite cover minority partitions, healed quorums, and majority-side elections
+without treating a dropped link as a storage error.
+
 AppendEntries now enforces the core Raft log-matching invariant:
 
 - the follower rejects an append if it does not contain `prev_log_index` with
@@ -38,7 +44,9 @@ SNAPSHOT <term> <leader_id> <leader_commit> <chunk_index> <last> <hex_payload>
 ```
 
 The receiver appends chunks into an in-memory snapshot buffer and acknowledges
-the number of received bytes.
+the number of received bytes. A non-zero chunk cannot be accepted as the first
+snapshot chunk, so a peer cannot silently start from the middle of a snapshot
+stream.
 
 `assemble_snapshot_chunks` validates offline chunk reassembly before install:
 chunks must start at index `0`, be contiguous, come from one leader/term/commit
@@ -97,15 +105,18 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
 - a higher-term majority that rejects a stale partitioned leader before the
   follower log is mutated;
 - idempotent replication-log replay after restart, including preservation of
-  the next log index.
+  the next log index;
 - chunked snapshot resync that installs durably on a lagging follower and
   rejects missing or mixed chunks;
 - membership join/leave behavior that changes quorum counting without allowing
   empty configs or local-node removal.
+- a five-node partition matrix that blocks minority writes, commits after heal,
+  elects a majority-side leader, and rejects stale minority-leader appends;
+- TCP snapshot transport smoke coverage for multi-chunk segment payloads.
 
 This is not a full distributed consensus certification yet. The remaining
-production work is a broader network partition matrix, snapshot transfer over
-real peer transport, persisted membership rotation, and joint-consensus safety.
+production work is a crash/restart partition matrix, durable snapshot install
+over peer transport, persisted membership rotation, and joint-consensus safety.
 
 ## Not Yet
 

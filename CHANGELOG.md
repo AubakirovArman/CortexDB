@@ -54,6 +54,8 @@
 - Added replication snapshot-resync and membership lifecycle coverage: chunked
   snapshot assembly rejects missing/mixed chunks before durable install, and
   voter reconfiguration tests prove join/leave quorum behavior.
+- Added partition-aware in-memory replication transport plus a five-node
+  partition matrix and TCP multi-chunk snapshot transport smoke coverage.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

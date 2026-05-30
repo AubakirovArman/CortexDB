@@ -40,6 +40,7 @@ pub struct InMemoryReplicationTransport {
     peers: BTreeMap<NodeId, ElectionState>,
     logs: BTreeMap<NodeId, Vec<ReplicatedEntry>>,
     commits: BTreeMap<NodeId, LogIndex>,
+    allowed_links: Option<BTreeSet<(NodeId, NodeId)>>,
 }
 
 impl InMemoryReplicationTransport {
@@ -57,6 +58,24 @@ impl InMemoryReplicationTransport {
         self.commits.get(&node).copied()
     }
 
+    pub fn set_partitions(&mut self, groups: &[BTreeSet<NodeId>]) {
+        let mut allowed_links = BTreeSet::new();
+        for group in groups {
+            for from in group {
+                for to in group {
+                    if from != to {
+                        allowed_links.insert((*from, *to));
+                    }
+                }
+            }
+        }
+        self.allowed_links = Some(allowed_links);
+    }
+
+    pub fn heal_partitions(&mut self) {
+        self.allowed_links = None;
+    }
+
     pub fn replicate_to(
         &mut self,
         targets: impl IntoIterator<Item = NodeId>,
@@ -70,10 +89,37 @@ impl InMemoryReplicationTransport {
         }
         Ok(acks)
     }
+
+    pub fn replicate_to_best_effort(
+        &mut self,
+        targets: impl IntoIterator<Item = NodeId>,
+        request: AppendEntriesRequest,
+    ) -> EngineResult<BTreeSet<NodeId>> {
+        let mut acks = BTreeSet::from([request.leader_id]);
+        for target in targets {
+            if !self.link_allowed(request.leader_id, target) {
+                continue;
+            }
+            if self.append_entries(target, request.clone())?.success {
+                acks.insert(target);
+            }
+        }
+        Ok(acks)
+    }
+
+    fn link_allowed(&self, from: NodeId, to: NodeId) -> bool {
+        match &self.allowed_links {
+            Some(links) => links.contains(&(from, to)),
+            None => true,
+        }
+    }
 }
 
 impl ReplicationTransport for InMemoryReplicationTransport {
     fn request_vote(&mut self, target: NodeId, request: VoteRequest) -> EngineResult<VoteResponse> {
+        if !self.link_allowed(request.candidate_id, target) {
+            return Err(EngineError::InvalidOperation);
+        }
         let peer = self
             .peers
             .get_mut(&target)
@@ -86,6 +132,9 @@ impl ReplicationTransport for InMemoryReplicationTransport {
         target: NodeId,
         request: AppendEntriesRequest,
     ) -> EngineResult<AppendEntriesResponse> {
+        if !self.link_allowed(request.leader_id, target) {
+            return Err(EngineError::InvalidOperation);
+        }
         let peer = self
             .peers
             .get_mut(&target)
