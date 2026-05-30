@@ -36,7 +36,7 @@ mod sync_handler;
 mod tests;
 
 use crate::responses::RouterError;
-pub use auth::{AuthRole, AuthTokenPolicy};
+pub use auth::{parse_auth_tokens, AuthRole, AuthTokenPolicy};
 pub use router::{
     cell_id, json_error, json_response, query_param, query_param_decoded, query_param_opt,
     query_param_opt_decoded, route_database, route_database_with_agent, route_shared,
@@ -62,6 +62,14 @@ pub struct ServerOptions {
     /// can access data routes and health checks, but not admin/metrics routes.
     /// Each policy may bind to a distinct persisted `AgentView`.
     pub auth_tokens: Vec<AuthTokenPolicy>,
+    /// Optional file containing one bearer token policy per line.
+    ///
+    /// The file uses the same `role:token[:agent_id]` entries as
+    /// `CORTEXDB_AUTH_TOKENS`, supports `#` comments and blank lines, and is
+    /// re-read for every request so operators can rotate tokens without a
+    /// server restart. If the configured file is missing or invalid, auth fails
+    /// closed.
+    pub auth_tokens_file: Option<PathBuf>,
     /// Capacity of the bounded actor command queue. Default is 1024.
     pub actor_queue_capacity: usize,
     /// Optional exact browser origin allowed for cross-origin API requests.

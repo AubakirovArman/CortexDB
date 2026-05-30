@@ -26,6 +26,9 @@
   `target/chaos-restart/report.json` in CI.
 - Added static multi-token HTTP auth policies with `admin` and `data` roles,
   optional per-token AgentView binding, and admin/data route separation.
+- Added file-backed HTTP token rotation through `CORTEXDB_AUTH_TOKENS_FILE`;
+  the server re-reads the local policy file per request and fails closed on
+  missing, empty, or invalid token files.
 - Hardened SDK release lifecycle checks: protected `sdk-release` deployment
   environment, Node.js 24 workflow runtime, and tag/version lock-step
   enforcement before public publish jobs.

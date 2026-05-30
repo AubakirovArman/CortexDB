@@ -121,6 +121,68 @@ fn token_policy_agent_id_applies_agent_view_scope() {
     );
 }
 
+#[test]
+fn token_policy_file_rotates_without_new_options() {
+    let dir = tempfile::tempdir().unwrap();
+    let token_file = dir.path().join("auth.tokens");
+    std::fs::write(&token_file, "data:first\n").unwrap();
+    let options = ServerOptions {
+        auth_tokens_file: Some(token_file.clone()),
+        ..Default::default()
+    };
+
+    let first_allowed = handle_http_with_options(
+        dir.path(),
+        "GET /v1/health HTTP/1.1\r\nAuthorization: Bearer first\r\n\r\n",
+        &options,
+    );
+    assert!(
+        first_allowed.contains("200 OK"),
+        "initial file token should work: {first_allowed}"
+    );
+
+    std::fs::write(&token_file, "data:second\n").unwrap();
+
+    let old_denied = handle_http_with_options(
+        dir.path(),
+        "GET /v1/health HTTP/1.1\r\nAuthorization: Bearer first\r\n\r\n",
+        &options,
+    );
+    assert!(
+        old_denied.contains("401 Unauthorized"),
+        "rotated-out token should fail: {old_denied}"
+    );
+
+    let second_allowed = handle_http_with_options(
+        dir.path(),
+        "GET /v1/health HTTP/1.1\r\nAuthorization: Bearer second\r\n\r\n",
+        &options,
+    );
+    assert!(
+        second_allowed.contains("200 OK"),
+        "rotated-in token should work: {second_allowed}"
+    );
+}
+
+#[test]
+fn token_policy_file_failure_fails_closed() {
+    let dir = tempfile::tempdir().unwrap();
+    let options = ServerOptions {
+        auth_tokens_file: Some(dir.path().join("missing.tokens")),
+        ..Default::default()
+    };
+
+    let denied = handle_http_with_options(
+        dir.path(),
+        "GET /v1/health HTTP/1.1\r\nAuthorization: Bearer anything\r\n\r\n",
+        &options,
+    );
+    assert!(
+        !denied.contains("200 OK"),
+        "missing token file must not allow access: {denied}"
+    );
+}
+
 fn admin_and_data_options() -> ServerOptions {
     ServerOptions {
         auth_tokens: vec![

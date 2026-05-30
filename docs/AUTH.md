@@ -28,6 +28,27 @@ role:token
 role:token:agent_id
 ```
 
+For operational token rotation without restarting the server, point
+`CORTEXDB_AUTH_TOKENS_FILE` at a local policy file:
+
+```bash
+cat > ./auth.tokens <<'EOF'
+# One policy per line; comments and blank lines are ignored.
+admin:root-token
+data:app-token
+data:agent-token:7
+EOF
+
+export CORTEXDB_AUTH_TOKENS_FILE="./auth.tokens"
+cargo run -p cortex-server -- ./data 127.0.0.1:8181
+```
+
+The file uses the same `role:token[:agent_id]` format as
+`CORTEXDB_AUTH_TOKENS` and is re-read for every request. Replacing the file
+therefore rotates tokens without a process restart. If the configured file is
+missing, empty, or invalid, authentication fails closed and no token from that
+file is accepted.
+
 Roles:
 
 - `admin`: can access all authenticated API routes, including stats, validate,
@@ -106,9 +127,10 @@ let client = CortexDbClient::new("http://127.0.0.1:8181")
 - Use a strong, random token in production (e.g. 32+ bytes from `/dev/urandom`).
 - Pass the token via environment variable, never commit it to version control.
 - CortexDB auth is **transport-first**. Core Alpha supports a legacy single
-  admin token plus static multi-token `admin`/`data` policies.
-- Dynamic policy stores, sessions, per-user quotas, and external identity
-  providers are future work.
+  admin token, static multi-token `admin`/`data` policies, and file-backed
+  token rotation through `CORTEXDB_AUTH_TOKENS_FILE`.
+- Dynamic multi-user RBAC policy stores, sessions, per-user quotas, and
+  external identity providers are future work.
 - For multi-user deployments, run separate tenant realms with network-level isolation.
 
 ## Binding Auth To An AgentView

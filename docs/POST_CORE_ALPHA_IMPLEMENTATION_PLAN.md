@@ -12,6 +12,9 @@
 - Search foundation: keyword + vector exact + ANN/HNSW fallback.
 - REST API (v1), OpenAPI, typed response contracts.
 - CLI + SDK (Rust/Python/TypeScript) scaffolds + контракт-тесты.
+- HTTP safety controls: static and file-backed bearer token policies,
+  per-token AgentView binding, bounded actor backpressure, rate limit, and audit
+  sink.
 - Replication + cluster primitives присутствуют на уровне модулей (эпические тесты для лидера/логов/репликации уже покрывают базовую механику).
 
 ## Что осталось по крупным эпикам (большие TODO)
