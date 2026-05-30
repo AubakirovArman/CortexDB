@@ -176,3 +176,47 @@ corpora and archived reports.
    across commits.
 5. Treat recall regressions as correctness issues and latency regressions as SLO
    issues.
+
+## Helper Scripts
+
+The repository includes two standard-library Python helpers under `scripts/ann`.
+They are intentionally dependency-free so they can run in CI and on benchmark
+machines without creating a Python environment.
+
+### Generate Ground Truth
+
+`exact_ground_truth.py` computes exact top-k candidates from `vectors.jsonl` and
+`queries.jsonl` using the same fixed-point metric rules as the Rust engine:
+
+```bash
+python3 scripts/ann/exact_ground_truth.py \
+  --vectors /data/ann/vectors.jsonl \
+  --queries /data/ann/queries.jsonl \
+  --metric cosine \
+  --output /data/ann/ground_truth.jsonl
+```
+
+Use this when preparing a new corpus. The script sorts by descending score and
+then ascending candidate id, matching the engine's deterministic tie-break.
+
+### Compare Reports
+
+`compare_reports.py` compares two `ann_corpus_check` JSON reports:
+
+```bash
+python3 scripts/ann/compare_reports.py \
+  --baseline reports/main.json \
+  --candidate reports/pr.json \
+  --max-p95-regression-nanos 5000000 \
+  --max-max-regression-nanos 10000000 \
+  --output target/ann/ann_report_comparison.json
+```
+
+It fails on recall regressions, corpus-shape changes, production-safety loss, or
+latency regressions beyond the configured budget.
+
+Run helper self-tests and smoke ground-truth generation with:
+
+```bash
+make ann-scripts-check
+```

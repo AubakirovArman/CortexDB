@@ -129,3 +129,8 @@ fixture so CI verifies the contract. Real recall quality should be tracked by
 running `ann_corpus_check` against larger sift/glove-style corpora and archiving
 the resulting JSON reports. The JSONL contract is documented in
 [`ANN_CORPUS_FORMAT.md`](ANN_CORPUS_FORMAT.md).
+
+`make ann-scripts-check` validates the dependency-free helper scripts that
+generate exact ground truth and compare two ANN report JSON files. Use
+`make ann-corpus-compare ANN_BASELINE_REPORT=... ANN_CANDIDATE_REPORT=...` to
+gate a candidate report against an archived baseline.
