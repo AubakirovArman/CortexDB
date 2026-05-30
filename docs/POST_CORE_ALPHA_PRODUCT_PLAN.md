@@ -151,15 +151,15 @@ Exact fallback preserves correctness.
 
 Goal: turn the dashboard into a real product UI.
 
-Status: the existing developer console is now served from versioned static
-assets under `/dashboard/assets/v1/` and has a Playwright smoke path for asset
-loading, tabs, cell put/get, and keyword search. It is still not a standalone
-frontend app.
+Status: the existing developer console has a frontend source tree under
+`web/dashboard/src`, is built into versioned static assets under
+`/dashboard/assets/v1/`, and has a Playwright smoke path for asset loading,
+tabs, cell put/get, and keyword search. It is still not a standalone SPA.
 
 Tasks:
 
 1. Choose the frontend stack and repository layout.
-2. Build a separate frontend app instead of growing server raw strings.
+2. ✅ Build a separate frontend source tree instead of growing server raw strings.
 3. Add Overview page.
 4. Add Cells page.
 5. Add AQL Console page.
