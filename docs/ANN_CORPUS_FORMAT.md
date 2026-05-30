@@ -183,6 +183,46 @@ The repository includes standard-library Python helpers under `scripts/ann`.
 They are intentionally dependency-free so they can run in CI and on benchmark
 machines without creating a Python environment.
 
+### Convert Public Corpora
+
+`convert_public_corpus.py` converts common public ANN benchmark files into the
+CortexDB JSONL contract:
+
+```bash
+python3 scripts/ann/convert_public_corpus.py \
+  --vectors-fvecs /data/sift/sift_base.fvecs \
+  --queries-fvecs /data/sift/sift_query.fvecs \
+  --ground-truth-ivecs /data/sift/sift_groundtruth.ivecs \
+  --output-dir /data/sift/cortexdb-ann \
+  --normalization unit \
+  --limit 10
+```
+
+It writes `vectors.jsonl`, `queries.jsonl`, `ground_truth.jsonl`, and
+`conversion_manifest.json`. The converter also accepts GloVe/word2vec-style
+text rows:
+
+```bash
+python3 scripts/ann/convert_public_corpus.py \
+  --vectors-text /data/glove/vectors.txt \
+  --queries-text /data/glove/queries.txt \
+  --output-dir /data/glove/cortexdb-ann \
+  --normalization unit \
+  --limit 10
+```
+
+Supported input formats:
+
+- `fvecs` float vectors for base/query vectors;
+- `ivecs` integer nearest-neighbor ids for ground truth;
+- whitespace text rows with either `label value...` or `value...`.
+
+The converter quantizes values to signed `i16` because the current ANN corpus
+contract is fixed-point. Use `--normalization unit` for cosine-like public
+embeddings, `--normalization max_abs` for preserving vector shape under large
+coordinate ranges, or `--normalization none` when the source values are already
+scaled.
+
 ### Generate Ground Truth
 
 `exact_ground_truth.py` computes exact top-k candidates from `vectors.jsonl` and

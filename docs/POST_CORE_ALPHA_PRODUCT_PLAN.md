@@ -122,6 +122,7 @@ What landed:
 26. ✅ `summarize_history.py` writes corpus-run history with adjacent recall, latency, graph-shape, and production-safety regression summaries.
 27. ✅ `publish_baseline.py` packages selected ANN runs as release-ready baseline artifacts.
 28. ✅ `ann-compare-baseline-bundle` gates candidate ANN runs against published baseline bundles.
+29. ✅ `convert_public_corpus.py` converts SIFT-style `fvecs/ivecs` and GloVe-style text vectors into ANN JSONL corpora.
 
 What remains before broad production tuning:
 

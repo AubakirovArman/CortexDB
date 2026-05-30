@@ -149,5 +149,9 @@ candidate comparisons.
 those baseline bundles and emits `baseline_comparison.json` next to the
 candidate run.
 
+`scripts/ann/convert_public_corpus.py` converts SIFT-style `fvecs/ivecs` files
+or GloVe/word2vec-style text rows into the JSONL files consumed by
+`ann_corpus_check`.
+
 For threshold selection, fallback policy, and report-history rules, see
 [`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md).

@@ -246,5 +246,6 @@ Warnings, not blockers:
 - No archived large external corpus baseline in the repo.
 - HNSW construction parameters are not yet collection-profile aware.
 - Report history is not stored outside CI artifacts.
-- Public benchmark corpus conversion scripts are not yet included.
+- Public benchmark conversion is available, but no SIFT/GloVe-style converted
+  golden report is checked in or attached to a release yet.
 - Production SLO profiles per workload are not yet formalized.
