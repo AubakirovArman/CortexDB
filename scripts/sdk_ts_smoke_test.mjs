@@ -73,6 +73,22 @@ async function main() {
     }
   }
 
+  async function expectError(label, action, status, code) {
+    try {
+      await action();
+      console.error(`FAIL ${label}: expected CortexDBError`);
+      failed = true;
+    } catch (err) {
+      assertEqual(err.status, status, `${label}.status`);
+      assertEqual(err.code, code, `${label}.code`);
+      if (!err.body) {
+        console.error(`FAIL ${label}.body missing`);
+        failed = true;
+      }
+      console.log(`OK: ${label}`);
+    }
+  }
+
   try {
     // Health
     const health = await client.health();
@@ -152,6 +168,29 @@ async function main() {
       failed = true;
     }
     console.log("OK: ingestText");
+
+    // Error contract
+    await expectError(
+      "invalid_aql_error_contract",
+      () => client.aql(
+        "default",
+        'RETRIEVE CONTEXT FOR TASK "hello" IN BRAIN default USING MODE turbo;',
+      ),
+      400,
+      "invalid_aql",
+    );
+    await expectError(
+      "not_found_error_contract",
+      () => client.ingestionJobResponse(999999),
+      404,
+      "not_found",
+    );
+    await expectError(
+      "invalid_tenant_error_contract",
+      () => client.withTenant("../bad").stats(),
+      400,
+      "invalid_tenant",
+    );
   } catch (err) {
     console.error(`FAIL: ${err.message || err}`);
     failed = true;

@@ -1,6 +1,11 @@
 import unittest
 
-from cortexdb_client import AnnEvaluationResponse, CortexDBClient, SearchResponse
+from cortexdb_client import (
+    AnnEvaluationResponse,
+    CortexDBClient,
+    CortexDBError,
+    SearchResponse,
+)
 
 
 class CortexDBClientPathTests(unittest.TestCase):
@@ -125,6 +130,35 @@ class CortexDBClientPathTests(unittest.TestCase):
         self.assertEqual(response.ann_report.min_recall_q16, 65535)
         self.assertTrue(response.ann_report.require_slo)
         self.assertTrue(response.ann_report.production_safe)
+
+    def test_error_response_decodes_full_core_alpha_taxonomy(self) -> None:
+        codes = (
+            "not_found",
+            "bad_request",
+            "unauthorized",
+            "forbidden",
+            "payload_too_large",
+            "rate_limited",
+            "service_unavailable",
+            "internal",
+            "invalid_aql",
+            "permission_denied",
+            "database_busy",
+            "storage_corruption",
+            "invalid_tenant",
+        )
+
+        for code in codes:
+            error = CortexDBError.from_response(
+                400,
+                f'{{"code":"{code}","error":"{code}","message":"message"}}',
+            )
+            self.assertEqual(error.code, code)
+            self.assertEqual(error.status, 400)
+            self.assertEqual(
+                error.body,
+                f'{{"code":"{code}","error":"{code}","message":"message"}}',
+            )
 
     def test_ingest_path_matches_http_api_contract(self) -> None:
         path = CortexDBClient._path(

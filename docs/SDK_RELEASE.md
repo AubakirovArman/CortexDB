@@ -60,6 +60,13 @@ smoke tests for all three SDKs:
 The scripts set `CORTEXDB_SERVER_BIN` so each SDK talks to the freshly built
 server, not a stale release binary left in `target/release`.
 
+The live compatibility gate validates both successful typed response decoding
+and structured error decoding. At minimum, each SDK must prove it can decode
+`invalid_aql`, `not_found`, and `invalid_tenant` responses from the live server.
+The SDK unit tests also decode the full Core Alpha error taxonomy documented in
+[`API_ERROR_TAXONOMY.md`](API_ERROR_TAXONOMY.md), including `rate_limited` and
+`service_unavailable`.
+
 ## GitHub Workflow
 
 `.github/workflows/sdk-release.yml` runs the same preflight on SDK-relevant

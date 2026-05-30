@@ -89,6 +89,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         other => return Err(format!("expected invalid_aql error, got {other:?}").into()),
     }
 
+    match client.ingestion_job_response(999_999) {
+        Err(SdkError::CortexDb(error)) => {
+            assert_eq!(error.code, ErrorCode::NotFound);
+            println!("OK: not_found_error_contract");
+        }
+        other => return Err(format!("expected not_found error, got {other:?}").into()),
+    }
+
+    match client.clone().with_tenant("../bad").stats_response() {
+        Err(SdkError::CortexDb(error)) => {
+            assert_eq!(error.code, ErrorCode::InvalidTenant);
+            println!("OK: invalid_tenant_error_contract");
+        }
+        other => return Err(format!("expected invalid_tenant error, got {other:?}").into()),
+    }
+
     println!("\nAll Rust SDK live contract checks passed.");
     Ok(())
 }

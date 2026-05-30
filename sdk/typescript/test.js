@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert";
-import { CortexDBClient } from "./cortexdb-client.js";
+import { CortexDBClient, CortexDBError } from "./cortexdb-client.js";
 
 test("CortexDBClient path helper", () => {
   const client = new CortexDBClient();
@@ -61,6 +61,36 @@ test("CortexDBClient decodes mock contract", () => {
   assert.strictEqual(response.ann_report.fallback_reason, "no_persisted_segments");
   assert.strictEqual(response.ann_report.recall_q16, null);
   assert.strictEqual(response.ann_report.production_safe, false);
+});
+
+test("CortexDBError decodes full Core Alpha taxonomy", async () => {
+  const codes = [
+    "not_found",
+    "bad_request",
+    "unauthorized",
+    "forbidden",
+    "payload_too_large",
+    "rate_limited",
+    "service_unavailable",
+    "internal",
+    "invalid_aql",
+    "permission_denied",
+    "database_busy",
+    "storage_corruption",
+    "invalid_tenant",
+  ];
+
+  for (const code of codes) {
+    const error = await CortexDBError.fromResponse(
+      new Response(
+        JSON.stringify({ code, error: code, message: "message" }),
+        { status: 400 },
+      ),
+    );
+    assert.strictEqual(error.code, code);
+    assert.strictEqual(error.status, 400);
+    assert.ok(error.body?.includes(code));
+  }
 });
 
 test("Dashboard console endpoint mapping contract", () => {

@@ -44,6 +44,37 @@ fn vector_algorithm_is_wire_stable() {
 }
 
 #[test]
+fn error_code_decodes_full_core_alpha_taxonomy() {
+    let codes = [
+        ("not_found", ErrorCode::NotFound),
+        ("bad_request", ErrorCode::BadRequest),
+        ("unauthorized", ErrorCode::Unauthorized),
+        ("forbidden", ErrorCode::Forbidden),
+        ("payload_too_large", ErrorCode::PayloadTooLarge),
+        ("rate_limited", ErrorCode::RateLimited),
+        ("service_unavailable", ErrorCode::ServiceUnavailable),
+        ("internal", ErrorCode::Internal),
+        ("invalid_aql", ErrorCode::InvalidAql),
+        ("permission_denied", ErrorCode::PermissionDenied),
+        ("database_busy", ErrorCode::DatabaseBusy),
+        ("storage_corruption", ErrorCode::StorageCorruption),
+        ("invalid_tenant", ErrorCode::InvalidTenant),
+    ];
+
+    for (wire, expected) in codes {
+        let value = serde_json::json!({
+            "code": wire,
+            "error": wire,
+            "message": "message"
+        });
+        let response: ErrorResponse =
+            serde_json::from_value(value).expect("error response should decode");
+        assert_eq!(response.code, expected);
+        assert_eq!(response.error, wire);
+    }
+}
+
+#[test]
 fn ann_evaluation_path_matches_http_api_contract() {
     let value = path(
         "/v1/search/ann-evaluate",

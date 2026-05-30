@@ -12,11 +12,16 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 - **Frozen API error taxonomy** — `docs/API_ERROR_TAXONOMY.md` now defines
   stable Core Alpha error codes, HTTP status mappings, producer rules, and
   compatibility rules.
+- **SDK live error compatibility** — Python, TypeScript, and Rust SDK smoke
+  checks now validate structured live-server error decoding for `invalid_aql`,
+  `not_found`, and `invalid_tenant`.
 
 ### Changed
 - **API docs alignment** — `docs/API.md` and `docs/API_JSON_SCHEMAS.md` now
   list the full error enum already present in `RouterError` and OpenAPI:
   `invalid_tenant`, `forbidden`, and `service_unavailable`.
+- **Rust SDK error enum alignment** — `cortex-sdk` now decodes the full Core
+  Alpha error taxonomy, including `rate_limited`.
 
 ---
 

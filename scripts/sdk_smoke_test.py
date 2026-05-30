@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "sdk/python"))
-from cortexdb_client import CortexDBClient
+from cortexdb_client import CortexDBClient, CortexDBError
 
 
 def wait_for_server(port: int, timeout: float = 10.0) -> bool:
@@ -27,6 +27,18 @@ def wait_for_server(port: int, timeout: float = 10.0) -> bool:
         except OSError:
             time.sleep(0.1)
     return False
+
+
+def expect_error(label: str, func, status: int, code: str) -> None:
+    try:
+        func()
+    except CortexDBError as error:
+        assert error.status == status, f"{label} status: expected {status}, got {error.status}"
+        assert error.code == code, f"{label} code: expected {code}, got {error.code}"
+        assert error.body, f"{label} body should be preserved"
+        print(f"OK: {label}")
+        return
+    raise AssertionError(f"{label}: expected CortexDBError")
 
 
 def main() -> int:
@@ -113,6 +125,29 @@ def main() -> int:
         ingest = client.ingest_text_response("default", "hello world ingestion")
         assert ingest.chunks_ingested >= 1
         print("OK: ingest_text_response")
+
+        # Error contract typed
+        expect_error(
+            "invalid_aql_error_contract",
+            lambda: client.aql_response(
+                "default",
+                'RETRIEVE CONTEXT FOR TASK "hello" IN BRAIN default USING MODE turbo;',
+            ),
+            400,
+            "invalid_aql",
+        )
+        expect_error(
+            "not_found_error_contract",
+            lambda: client.ingestion_job_response(999_999),
+            404,
+            "not_found",
+        )
+        expect_error(
+            "invalid_tenant_error_contract",
+            lambda: client.with_tenant("../bad").stats_response(),
+            400,
+            "invalid_tenant",
+        )
 
         print("\nAll SDK smoke tests passed.")
         return 0

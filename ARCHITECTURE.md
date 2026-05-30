@@ -305,10 +305,10 @@ including demo and ANN report gates.
 
 The next architectural hardening items are:
 
-1. SDK end-to-end compatibility tests against a local server.
-2. Backup/restore operational hardening and restore drills.
-3. Multi-token auth policy, RBAC, and admin/data route separation.
-4. Crash/fault injection harness.
-5. Search and verification quality datasets.
-6. Migration policy for storage/API format changes.
-7. Tamper-evident audit trail and external log/SIEM export.
+1. Backup/restore operational hardening and restore drills.
+2. Multi-token auth policy, RBAC, and admin/data route separation.
+3. Crash/fault injection harness.
+4. Search and verification quality datasets.
+5. Migration policy for storage/API format changes.
+6. Tamper-evident audit trail and external log/SIEM export.
+7. Published SDK package lifecycle and registry release evidence.
