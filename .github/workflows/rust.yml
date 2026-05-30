@@ -36,6 +36,15 @@ jobs:
           path: |
             target/crash-fault/report.json
             target/crash-fault/*.log
+      - run: make backup-offsite-check
+        if: matrix.toolchain == 'stable'
+      - name: Upload backup offsite evidence
+        if: matrix.toolchain == 'stable' && always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backup-offsite-evidence
+          if-no-files-found: warn
+          path: target/backup-offsite/report.json
       - run: make chaos-restart-check
         if: matrix.toolchain == 'stable'
       - name: Upload chaos restart evidence

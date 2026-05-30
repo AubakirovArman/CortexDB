@@ -114,8 +114,19 @@ prefix-based and lexicographic, so use sortable names such as
 cortexdb backup-prune ./backups cortexdb- 7
 ```
 
+#### `backup-offsite-stage <backup_path> <offsite_root> <backup_id>`
+Preflight-restore a local backup, copy it under an offsite staging root,
+validate the staged copy, then atomically publish it as
+`<offsite_root>/<backup_id>`.
+
+```bash
+cortexdb backup-offsite-stage ./db.backup ./offsite cortexdb-20260530T000000Z
+```
+
 Release/runbook automation can use `make backup-drill-check` to create a
 repeatable evidence report at `target/backup-drill/report.json`.
+Use `make backup-offsite-check` to create a staged offsite-copy evidence report
+at `target/backup-offsite/report.json`.
 
 #### `restore <backup_path> <path>`
 Restore a backup into a new target directory and validate the restored database.

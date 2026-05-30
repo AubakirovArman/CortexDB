@@ -172,3 +172,63 @@ fn backup_retention_rejects_unsafe_plan() {
         .to_string();
     assert!(zero_keep.contains("keep_latest must be greater than zero"));
 }
+
+#[test]
+fn offsite_stage_validates_backup_and_publishes_copy() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let backup = root.path().join("backup");
+    let offsite = root.path().join("offsite");
+
+    {
+        let mut db = Database::open(&source).unwrap();
+        db.put_cell(CellId(44), b"offsite payload".to_vec())
+            .unwrap();
+        db.checkpoint().unwrap();
+    }
+    Database::backup_path(&source, &backup).unwrap();
+
+    let report =
+        Database::stage_backup_offsite(&backup, &offsite, "cortexdb-20260530T000000Z").unwrap();
+
+    assert!(report.target_path.exists());
+    assert!(report.files_copied > 0);
+    assert!(report.bytes_copied > 0);
+    assert_eq!(report.drill_restore.restored_validation.cells_checked, 1);
+    assert_eq!(report.staged_validation.cells_checked, 1);
+    assert!(!offsite.join("cortexdb-20260530T000000Z.staging").exists());
+    assert!(!offsite
+        .join("cortexdb-20260530T000000Z.preflight-restore")
+        .exists());
+
+    let restored = Database::open(offsite.join("cortexdb-20260530T000000Z")).unwrap();
+    assert_eq!(
+        restored.get_latest_cell(CellId(44)).unwrap(),
+        b"offsite payload"
+    );
+}
+
+#[test]
+fn offsite_stage_rejects_unsafe_id_and_existing_target() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let backup = root.path().join("backup");
+    let offsite = root.path().join("offsite");
+
+    {
+        let mut db = Database::open(&source).unwrap();
+        db.put_cell(CellId(45), b"payload".to_vec()).unwrap();
+    }
+    Database::backup_path(&source, &backup).unwrap();
+
+    let unsafe_id = Database::stage_backup_offsite(&backup, &offsite, "../bad")
+        .unwrap_err()
+        .to_string();
+    assert!(unsafe_id.contains("offsite backup id"));
+
+    Database::stage_backup_offsite(&backup, &offsite, "backup-a").unwrap();
+    assert!(matches!(
+        Database::stage_backup_offsite(&backup, &offsite, "backup-a").unwrap_err(),
+        EngineError::BackupTargetExists(_)
+    ));
+}

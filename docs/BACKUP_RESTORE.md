@@ -11,7 +11,9 @@ cortexdb restore ./db.backup ./db.restored
 cortexdb validate ./db.restored
 cortexdb backup-drill ./db ./db.backup ./db.drill-restored
 cortexdb backup-prune ./backups cortexdb- 7
+cortexdb backup-offsite-stage ./db.backup ./offsite cortexdb-20260530T000000Z
 make backup-drill-check
+make backup-offsite-check
 ```
 
 ## Safety Rules
@@ -23,6 +25,8 @@ make backup-drill-check
 - Restore only writes to a target path that does not already exist.
 - Restore validates the copied database before reporting success.
 - Backup drills run backup, restore, and restored validation as one operation.
+- Offsite staging first restores the local backup as a preflight drill, then
+  publishes an atomically renamed copy under the offsite root.
 - Retention pruning only removes directories whose names start with an
   explicit non-empty prefix and keeps at least one latest backup.
 
@@ -40,8 +44,12 @@ Symlinks and other non-regular files are rejected.
 
 ## Current Limitations
 
-- This is a local filesystem backup, not an encrypted backup format.
-- There is no incremental backup or remote object-store target yet.
+- This is a local filesystem backup/staging format, not an encrypted backup
+  format.
+- Remote object-store upload is still delegated to external tools, but
+  `backup-offsite-stage` now gives those tools a validated immutable directory
+  to copy.
+- There is no incremental backup yet.
 - There is no built-in scheduler. Run drills and pruning from cron/systemd or
   an external orchestrator.
 - The source database must be opened exclusively by this process.
@@ -73,10 +81,22 @@ cortexdb backup-prune ./backups cortexdb- 7
 ```
 
 Core Alpha does not upload to remote storage itself. The supported offsite
-policy is: create a local validated backup, run a restore drill, then let an
-external tool copy the backup directory to object storage or another host. Keep
-the external copy immutable where possible and run a scheduled drill against a
-freshly restored offsite copy before relying on it.
+policy is: create a local validated backup, run a restore drill, stage the
+validated backup into an external/offsite root, then let an external tool copy
+that staged directory to object storage or another host. Keep the external copy
+immutable where possible and run a scheduled drill against a freshly restored
+offsite copy before relying on it.
+
+```bash
+cortexdb backup-offsite-stage \
+  "./backups/cortexdb-$stamp" \
+  ./offsite-staging \
+  "cortexdb-$stamp"
+```
+
+The command rejects unsafe backup ids, refuses to overwrite an existing staged
+backup, removes its preflight restore directory after validation, and publishes
+the final directory with atomic rename from `<backup_id>.staging`.
 
 The retention command reports:
 
@@ -94,6 +114,14 @@ the latest payload, and writes:
 
 ```text
 target/backup-drill/report.json
+```
+
+`make backup-offsite-check` is the repeatable offsite-staging evidence gate. It
+creates a local backup, runs a restore drill, stages the backup under an offsite
+root, validates the staged copy, reads back the latest payload, and writes:
+
+```text
+target/backup-offsite/report.json
 ```
 
 Override paths in automation when needed:

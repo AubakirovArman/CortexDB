@@ -313,6 +313,26 @@ pub fn backup_prune(backup_root: &str, prefix: &str, keep_latest: usize) -> Resu
     ))
 }
 
+pub fn backup_offsite_stage(
+    backup_path: &str,
+    offsite_root: &str,
+    backup_id: &str,
+) -> Result<String, String> {
+    let report = Database::stage_backup_offsite(backup_path, offsite_root, backup_id)
+        .map_err(fmt_engine_error)?;
+    Ok(format!(
+        "target_path={} files_copied={} bytes_copied={} drill_restored_files_copied={} drill_restored_cells_checked={} staged_live_segments_checked={} staged_cells_checked={} staged_wal_records_checked={}",
+        report.target_path.display(),
+        report.files_copied,
+        report.bytes_copied,
+        report.drill_restore.files_copied,
+        report.drill_restore.restored_validation.cells_checked,
+        report.staged_validation.live_segments_checked,
+        report.staged_validation.cells_checked,
+        report.staged_validation.wal_records_checked
+    ))
+}
+
 pub fn gc_retired(path: &str) -> Result<String, String> {
     let mut db = Database::open(path).map_err(fmt_engine_error)?;
     let report = db

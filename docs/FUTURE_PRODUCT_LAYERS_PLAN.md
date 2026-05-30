@@ -17,9 +17,10 @@ What is still missing vs Redis at this stage:
 - no distributed consensus cluster mode,
 - search and ANN are foundation-grade, not production-tuned,
 - no full web UI.
-- backup/restore now has local restore drills, retention pruning, and a
-  repeatable `make backup-drill-check` evidence artifact, but still needs
-  external offsite target automation.
+- backup/restore now has local restore drills, retention pruning, validated
+  offsite staging, and repeatable `make backup-drill-check` /
+  `make backup-offsite-check` evidence artifacts. Remote object-store upload is
+  still intentionally delegated to external tools.
 - crash/fault evidence now has `make crash-fault-check` plus CI artifact
   upload, and repeatable process-level kill/restart evidence now has
   `make chaos-restart-check`. Longer randomized soak campaigns remain future

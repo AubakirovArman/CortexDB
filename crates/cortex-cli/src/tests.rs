@@ -321,6 +321,59 @@ fn backup_prune_command_removes_old_matching_backups() {
 }
 
 #[test]
+fn backup_offsite_stage_command_validates_and_publishes_copy() {
+    let root = unique_path("cortexdb-cli-backup-offsite-root");
+    let source = root.join("source");
+    let backup = root.join("backup");
+    let offsite = root.join("offsite");
+    let source_arg = source.to_string_lossy().into_owned();
+    let backup_arg = backup.to_string_lossy().into_owned();
+    let offsite_arg = offsite.to_string_lossy().into_owned();
+
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        source_arg.clone(),
+        "44".to_owned(),
+        "offsite cli payload".to_owned(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "backup".to_owned(),
+        source_arg,
+        backup_arg.clone(),
+    ])
+    .unwrap();
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "backup-offsite-stage".to_owned(),
+        backup_arg,
+        offsite_arg.clone(),
+        "cortexdb-20260530T000000Z".to_owned(),
+    ])
+    .unwrap();
+
+    assert!(output.contains("target_path="));
+    assert!(output.contains("staged_cells_checked="));
+
+    let payload = run(vec![
+        "cortexdb".to_owned(),
+        "get".to_owned(),
+        offsite
+            .join("cortexdb-20260530T000000Z")
+            .to_string_lossy()
+            .into_owned(),
+        "44".to_owned(),
+    ])
+    .unwrap();
+    assert_eq!(payload, "offsite cli payload");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn gc_retired_command_reports_removed_segments() {
     let path = unique_path("cortexdb-cli-gc-retired");
     let path_arg = path.to_string_lossy().into_owned();

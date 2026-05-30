@@ -10,6 +10,10 @@
 - Added backup retention pruning through `Database::prune_backup_retention` and
   `cortexdb backup-prune`, keeping the latest sortable backup directories after
   successful restore drills.
+- Added validated offsite backup staging through
+  `Database::stage_backup_offsite`, `cortexdb backup-offsite-stage`, and
+  `make backup-offsite-check`, giving external upload tools an atomically
+  published, preflight-restored backup directory.
 - Added `make backup-drill-check`, which creates a temporary database, runs
   multiple restore drills, prunes old backups, validates readback, and writes
   `target/backup-drill/report.json` as release/runbook evidence.

@@ -26,7 +26,8 @@ pub mod validation;
 pub mod verification;
 
 pub use backup::{
-    BackupDrillReport, BackupReport, BackupRetentionPlan, BackupRetentionReport, RestoreReport,
+    BackupDrillReport, BackupReport, BackupRetentionPlan, BackupRetentionReport,
+    OffsiteBackupStageReport, RestoreReport,
 };
 pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use context::{

@@ -18,6 +18,7 @@ every required row is green on `main`.
 | Lifecycle safety | open, close, Drop, lock, and stale unlock tests pass. |
 | Repair safety | `Database::repair_best_effort` removes orphan temps and truncates only safe WAL tails. |
 | Backup drill evidence | `make backup-drill-check` writes `target/backup-drill/report.json` after backup, restore, prune, validate, and readback checks. |
+| Offsite backup staging | `make backup-offsite-check` writes `target/backup-offsite/report.json` after local drill, validated offsite staging, staged validation, and readback checks. |
 | Restart safety | put, patch, tombstone, checkpoint, compact, and WAL tail tests pass. |
 | Crash matrix | `make crash-fault-check` writes `target/crash-fault/report.json` and targeted test logs for orphan bundles, temp manifests, restart tails, corruption, and repair. |
 | Chaos restart evidence | `make chaos-restart-check` writes `target/chaos-restart/report.json` after repeatable HTTP writes, flushes, compacts, forced server kills, stale unlocks, repair, restart, and readback checks. |
@@ -40,11 +41,12 @@ git push origin v0.1.0-core-alpha
 
 Pushing a `v*` tag also runs the `Release` workflow. `make release-check`
 invokes `make ann-release-evidence-check`, `make backup-drill-check`,
-`make crash-fault-check`, and `make chaos-restart-check`, which validate ANN
-baseline archives, backup/restore drill evidence, crash/fault repair evidence,
-and process-level kill/restart evidence before the tag should be cut. The
-workflow attaches the ANN `.tar.gz` baseline package to the GitHub Release as a
-durable release asset.
+`make backup-offsite-check`, `make crash-fault-check`, and
+`make chaos-restart-check`, which validate ANN baseline archives,
+backup/restore drill evidence, offsite backup staging, crash/fault repair
+evidence, and process-level kill/restart evidence before the tag should be cut.
+The workflow attaches the ANN `.tar.gz` baseline package to the GitHub Release
+as a durable release asset.
 
 ## Latest Local Gate Evidence
 

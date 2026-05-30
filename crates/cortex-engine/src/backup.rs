@@ -8,7 +8,9 @@ use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::validation::StorageValidation;
 
+mod offsite;
 mod retention;
+pub use offsite::OffsiteBackupStageReport;
 pub use retention::{BackupRetentionPlan, BackupRetentionReport};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -32,9 +34,9 @@ pub struct BackupDrillReport {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-struct CopyReport {
-    files_copied: usize,
-    bytes_copied: u64,
+pub(super) struct CopyReport {
+    pub(super) files_copied: usize,
+    pub(super) bytes_copied: u64,
 }
 
 impl Database {
@@ -90,7 +92,7 @@ impl Database {
     }
 }
 
-fn copy_database_dir(source: &Path, target: &Path) -> EngineResult<CopyReport> {
+pub(super) fn copy_database_dir(source: &Path, target: &Path) -> EngineResult<CopyReport> {
     let source = source.canonicalize()?;
     reject_target_inside_source(&source, target)?;
     reject_existing_target(target)?;
@@ -204,7 +206,7 @@ fn copy_file_synced(source: &Path, target: &Path) -> EngineResult<u64> {
     Ok(bytes)
 }
 
-fn sync_dir(path: &Path) -> EngineResult<()> {
+pub(super) fn sync_dir(path: &Path) -> EngineResult<()> {
     File::open(path)?.sync_all()?;
     Ok(())
 }

@@ -85,6 +85,11 @@ enum Command {
         prefix: String,
         keep_latest: usize,
     },
+    BackupOffsiteStage {
+        backup_path: String,
+        offsite_root: String,
+        backup_id: String,
+    },
     Restore {
         backup_path: String,
         path: String,
@@ -264,6 +269,11 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             prefix,
             keep_latest,
         } => ops::backup_prune(&backup_root, &prefix, keep_latest),
+        Command::BackupOffsiteStage {
+            backup_path,
+            offsite_root,
+            backup_id,
+        } => ops::backup_offsite_stage(&backup_path, &offsite_root, &backup_id),
         Command::Restore { backup_path, path } => {
             ops::restore(&backup_path, resolved(&path).to_str().unwrap())
         }
