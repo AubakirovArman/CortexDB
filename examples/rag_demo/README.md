@@ -194,6 +194,27 @@ source=<источник>
 
 ## Тестирование
 
+### Headless smoke без LLM
+
+Для release gate есть воспроизводимая проверка, которая не требует FastAPI или
+vLLM. Она запускает локальный `cortex-server`, загружает demo JSONL, затем
+проверяет весь CortexDB-side loop:
+
+```text
+ingest -> search -> AQL -> ContextPack -> VERIFY FACT -> prompt assembly
+```
+
+Запуск из корня репозитория:
+
+```bash
+make rag-demo-smoke
+```
+
+Эта проверка входит в `make alpha-check`, поэтому demo не может тихо
+рассинхронизироваться с API CortexDB.
+
+### Ручные HTTP-пробы с FastAPI/vLLM
+
 ```bash
 # Finance — бюджеты
 curl -s -X POST http://127.0.0.1:8085/api/chat \
