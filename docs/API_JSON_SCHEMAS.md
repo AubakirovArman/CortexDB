@@ -40,6 +40,7 @@ Stable Core Alpha error codes:
 | `403` | `permission_denied` | AgentView, scope, mode, or policy denial. |
 | `404` | `not_found` | Unknown route or missing resource such as an ingestion job. |
 | `413` | `payload_too_large` | Request body exceeds server limit. |
+| `429` | `rate_limited` | Optional server request-rate limit is exceeded. |
 | `503` | `database_busy` | Database actor queue or database lock is busy. |
 | `500` | `storage_corruption` | Storage checksum, format, or invariant failure. |
 | `500` | `internal` | Unexpected internal error that is not classified above. |

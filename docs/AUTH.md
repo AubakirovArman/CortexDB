@@ -98,6 +98,30 @@ bursts. Invalid or zero values are rejected at startup. When the queue is full,
 the server returns `503 database_busy` instead of silently accepting unlimited
 work.
 
+## Request Rate Limit
+
+Rate limiting is disabled by default. For exposed local deployments, configure a
+coarse process-wide fixed-window limit:
+
+```bash
+export CORTEXDB_RATE_LIMIT_PER_MINUTE=600
+cargo run -p cortex-server -- ./data 127.0.0.1:8181
+```
+
+When the 60-second window is exhausted, the server returns:
+
+```json
+{
+  "code": "rate_limited",
+  "error": "rate_limited",
+  "message": "request rate limit exceeded"
+}
+```
+
+with HTTP status `429 Too Many Requests`. This is a Core Alpha safety guard, not
+a replacement for reverse-proxy quotas, per-user authorization, or API gateway
+controls.
+
 ## Browser CORS
 
 CORS is disabled by default. Same-origin dashboard usage does not need CORS.

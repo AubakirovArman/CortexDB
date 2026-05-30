@@ -19,10 +19,18 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    let request_rate_limit_per_minute = match request_rate_limit_from_env() {
+        Ok(limit) => limit,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
     let options = cortex_server::ServerOptions {
         auth_token: env::var("CORTEXDB_AUTH_TOKEN").ok(),
         actor_queue_capacity,
         cors_allowed_origin: env::var("CORTEXDB_CORS_ALLOW_ORIGIN").ok(),
+        request_rate_limit_per_minute,
     };
     match cortex_server::serve_with_options(&PathBuf::from(root), addr, options) {
         Ok(()) => ExitCode::SUCCESS,
@@ -31,6 +39,24 @@ fn main() -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+fn request_rate_limit_from_env() -> Result<Option<u64>, String> {
+    match env::var("CORTEXDB_RATE_LIMIT_PER_MINUTE") {
+        Ok(raw) => parse_request_rate_limit(&raw).map(Some),
+        Err(env::VarError::NotPresent) => Ok(None),
+        Err(error) => Err(format!("invalid CORTEXDB_RATE_LIMIT_PER_MINUTE: {error}")),
+    }
+}
+
+fn parse_request_rate_limit(raw: &str) -> Result<u64, String> {
+    let limit = raw
+        .parse::<u64>()
+        .map_err(|_| "CORTEXDB_RATE_LIMIT_PER_MINUTE must be a positive integer".to_owned())?;
+    if limit == 0 {
+        return Err("CORTEXDB_RATE_LIMIT_PER_MINUTE must be greater than zero".to_owned());
+    }
+    Ok(limit)
 }
 
 fn actor_queue_capacity_from_env() -> Result<usize, String> {
@@ -53,7 +79,7 @@ fn parse_actor_queue_capacity(raw: &str) -> Result<usize, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_actor_queue_capacity;
+    use super::{parse_actor_queue_capacity, parse_request_rate_limit};
 
     #[test]
     fn parse_actor_queue_capacity_accepts_positive_integer() {
@@ -64,5 +90,16 @@ mod tests {
     fn parse_actor_queue_capacity_rejects_zero_and_invalid_values() {
         assert!(parse_actor_queue_capacity("0").is_err());
         assert!(parse_actor_queue_capacity("abc").is_err());
+    }
+
+    #[test]
+    fn parse_request_rate_limit_accepts_positive_integer() {
+        assert_eq!(parse_request_rate_limit("60").unwrap(), 60);
+    }
+
+    #[test]
+    fn parse_request_rate_limit_rejects_zero_and_invalid_values() {
+        assert!(parse_request_rate_limit("0").is_err());
+        assert!(parse_request_rate_limit("abc").is_err());
     }
 }

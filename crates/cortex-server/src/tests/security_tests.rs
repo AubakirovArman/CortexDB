@@ -220,3 +220,47 @@ fn cors_preflight_is_only_enabled_for_configured_origin() {
     assert!(resp_str.contains("access-control-allow-methods"));
     assert!(resp_str.contains("access-control-allow-headers"));
 }
+
+#[test]
+fn rate_limit_returns_typed_429_when_enabled() {
+    let dir = tempfile::tempdir().unwrap();
+    let addr = "127.0.0.1:0";
+    let listener = std::net::TcpListener::bind(addr).unwrap();
+    let local_addr = listener.local_addr().unwrap();
+    drop(listener);
+
+    let root_path = dir.path().to_owned();
+    std::thread::spawn(move || {
+        let options = ServerOptions {
+            request_rate_limit_per_minute: Some(1),
+            ..Default::default()
+        };
+        let _ = crate::serve_with_options(&root_path, &local_addr.to_string(), options);
+    });
+
+    std::thread::sleep(std::time::Duration::from_millis(100));
+
+    let first = request(local_addr, "GET /v1/health HTTP/1.1\r\n\r\n");
+    assert!(first.contains("200 OK"), "first request failed: {first}");
+
+    let second = request(local_addr, "GET /v1/health HTTP/1.1\r\n\r\n");
+    assert!(
+        second.contains("429 Too Many Requests"),
+        "second request should be rate limited: {second}"
+    );
+    assert!(
+        second.contains("rate_limited"),
+        "rate limit response should use typed error code: {second}"
+    );
+}
+
+fn request(addr: std::net::SocketAddr, request: &str) -> String {
+    use std::io::{Read, Write};
+    use std::net::TcpStream;
+
+    let mut stream = TcpStream::connect(addr).unwrap();
+    stream.write_all(request.as_bytes()).unwrap();
+    let mut response = [0u8; 4096];
+    let read = stream.read(&mut response).unwrap();
+    String::from_utf8_lossy(&response[..read]).to_string()
+}

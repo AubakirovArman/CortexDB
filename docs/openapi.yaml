@@ -1349,6 +1349,7 @@ components:
           - unauthorized
           - forbidden
           - payload_too_large
+          - rate_limited
           - service_unavailable
           - internal
           - invalid_aql

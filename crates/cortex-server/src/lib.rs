@@ -9,6 +9,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 use tower_http::cors::CorsLayer;
 use tower_http::limit::RequestBodyLimitLayer;
 
@@ -40,6 +41,7 @@ pub use router::{
 pub use sync_handler::{handle_http, handle_http_with_options};
 
 pub const DEFAULT_ACTOR_QUEUE_CAPACITY: usize = 1024;
+const RATE_LIMIT_WINDOW: Duration = Duration::from_secs(60);
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ServerOptions {
@@ -51,6 +53,11 @@ pub struct ServerOptions {
     /// CORS is disabled by default. Set this only for deployments that expose
     /// CortexDB to a browser origin through a trusted reverse proxy.
     pub cors_allowed_origin: Option<String>,
+    /// Optional global request limit per 60-second window.
+    ///
+    /// Rate limiting is disabled by default. This is a coarse Core Alpha guard,
+    /// not a replacement for reverse-proxy quotas or user-aware authorization.
+    pub request_rate_limit_per_minute: Option<u64>,
 }
 
 impl ServerOptions {
@@ -88,6 +95,7 @@ pub struct AppState {
     request_count: Arc<AtomicU64>,
     request_rejected: Arc<AtomicU64>,
     request_duration_ms_total: Arc<AtomicU64>,
+    rate_limit: Option<Arc<Mutex<RateLimitState>>>,
 }
 
 impl AppState {
@@ -130,6 +138,11 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
         .build()?;
     rt.block_on(async {
         let cors = cors_layer(&options)?;
+        let rate_limit = options
+            .request_rate_limit_per_minute
+            .map(RateLimitState::new)
+            .map(Mutex::new)
+            .map(Arc::new);
         let state = AppState {
             root: root.to_owned(),
             dbs: Arc::new(Mutex::new(BTreeMap::new())),
@@ -137,6 +150,7 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             request_count: Arc::new(AtomicU64::new(0)),
             request_rejected: Arc::new(AtomicU64::new(0)),
             request_duration_ms_total: Arc::new(AtomicU64::new(0)),
+            rate_limit,
         };
 
         let mut app = Router::new()
@@ -215,6 +229,45 @@ fn cors_layer(options: &ServerOptions) -> std::io::Result<Option<CorsLayer>> {
     ))
 }
 
+#[derive(Debug)]
+struct RateLimitState {
+    limit: u64,
+    window_started: Instant,
+    used: u64,
+}
+
+impl RateLimitState {
+    fn new(limit: u64) -> Self {
+        Self {
+            limit,
+            window_started: Instant::now(),
+            used: 0,
+        }
+    }
+
+    fn allow(&mut self, now: Instant) -> bool {
+        if now.duration_since(self.window_started) >= RATE_LIMIT_WINDOW {
+            self.window_started = now;
+            self.used = 0;
+        }
+        if self.used >= self.limit {
+            return false;
+        }
+        self.used += 1;
+        true
+    }
+}
+
+fn request_allowed_by_rate_limit(state: &AppState) -> bool {
+    let Some(rate_limit) = &state.rate_limit else {
+        return true;
+    };
+    let Ok(mut rate_limit) = rate_limit.lock() else {
+        return false;
+    };
+    rate_limit.allow(Instant::now())
+}
+
 async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoResponse {
     let method = req.method().as_str().to_owned();
     let uri = req.uri().to_owned();
@@ -256,6 +309,18 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
             )
                 .into_response();
         }
+    }
+
+    if !request_allowed_by_rate_limit(&state) {
+        state.request_rejected.fetch_add(1, Ordering::Relaxed);
+        return (
+            StatusCode::TOO_MANY_REQUESTS,
+            Json(error_response(
+                ErrorCode::RateLimited,
+                "request rate limit exceeded",
+            )),
+        )
+            .into_response();
     }
 
     let body_bytes = match axum::body::to_bytes(req.into_body(), 2 * 1024 * 1024).await {
@@ -346,7 +411,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
                          # HELP cortexdb_request_count Total HTTP requests served.\n\
                          # TYPE cortexdb_request_count counter\n\
                          cortexdb_request_count {}\n\
-                         # HELP cortexdb_request_rejected Total HTTP requests rejected due to queue full.\n\
+                         # HELP cortexdb_request_rejected Total HTTP requests rejected due to queue or rate pressure.\n\
                          # TYPE cortexdb_request_rejected counter\n\
                          cortexdb_request_rejected {}\n\
                          # HELP cortexdb_request_duration_ms_total Total HTTP request duration in milliseconds.\n\

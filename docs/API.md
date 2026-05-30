@@ -16,6 +16,9 @@ CortexDB exposes a lightweight, ultra-high-performance HTTP JSON API for interac
 * **Backpressure:** each tenant uses a bounded `DatabaseActor` queue. Set
   `CORTEXDB_ACTOR_QUEUE_CAPACITY` to override the default `1024`; full queues
   return `503 database_busy`.
+* **Rate limiting:** disabled by default. Set
+  `CORTEXDB_RATE_LIMIT_PER_MINUTE` to enable a coarse process-wide fixed-window
+  request limit; exceeded windows return `429 rate_limited`.
 * **CORS:** disabled by default. Set `CORTEXDB_CORS_ALLOW_ORIGIN` to one exact
   trusted browser origin when cross-origin browser calls are required.
 
@@ -243,14 +246,20 @@ If an error occurs, the server responds with a corresponding HTTP status code an
 | Status Code | Code | Cause |
 | --- | --- | --- |
 | **`400 Bad Request`** | `bad_request` | Invalid parameters, AQL parsing syntax failures. |
+| **`400 Bad Request`** | `invalid_aql` | AQL parse/bind failure that is not a policy denial. |
 | **`401 Unauthorized`** | `unauthorized` | Token auth required and missing or invalid. |
+| **`403 Forbidden`** | `permission_denied` | AgentView or scope policy denied the query. |
 | **`404 Not Found`** | `not_found` | Resource or route not found. |
 | **`413 Payload Too Large`** | `payload_too_large` | Body size exceeds 2MB boundary. |
-| **`500 Internal Error`** | `internal_error` | Storage engine IO failures or OS lock issues. |
+| **`429 Too Many Requests`** | `rate_limited` | Optional request-rate limit exceeded. |
+| **`500 Internal Error`** | `storage_corruption` | Storage checksum, format, or invariant failure. |
+| **`500 Internal Error`** | `internal` | Unexpected internal failure. |
+| **`503 Service Unavailable`** | `database_busy` | Database actor queue or database lock is busy. |
 
 * **Error Format:**
   ```json
   {
+    "code": "bad_request",
     "error": "bad_request",
     "message": "Detailed error context"
   }
