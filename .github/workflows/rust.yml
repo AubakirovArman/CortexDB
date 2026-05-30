@@ -33,6 +33,7 @@ jobs:
           make ann-metric-matrix-report
           make ann-corpus-smoke-report
           make ann-corpus-run-smoke
+          make ann-publish-baseline
       - name: Upload ANN regression reports
         if: matrix.toolchain == 'stable' && always()
         uses: actions/upload-artifact@v4
@@ -46,6 +47,7 @@ jobs:
             target/ann/ann_metric_matrix_report.json
             target/ann/ann_corpus_report.json
             target/ann/corpus-runs/**
+            target/ann/release-baselines/**
       - name: Fail on ANN report regression
         if: matrix.toolchain == 'stable' && steps.ann_reports.outcome == 'failure'
         run: exit 1

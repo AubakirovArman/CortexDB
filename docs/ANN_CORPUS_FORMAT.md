@@ -231,6 +231,24 @@ latency, graph-shape fields, and adjacent regressions for each corpus key. Use
 `--fail-on-regression` when you want the history pass to fail on any detected
 recall, latency, graph-shape, or production-safety regression.
 
+### Publish A Baseline Bundle
+
+`publish_baseline.py` copies one archived run into a release-ready baseline
+bundle:
+
+```bash
+python3 scripts/ann/publish_baseline.py \
+  --run-root target/ann/corpus-runs \
+  --run-id smoke \
+  --baseline-id v0.1.0-core-alpha-smoke \
+  --output-root target/ann/release-baselines
+```
+
+The bundle contains `baseline_manifest.json`, the selected run manifest,
+`report.json`, `history.json`, and generated ground truth when it exists. Use
+this for release artifacts or for pinning a known-good external corpus report
+before comparing later candidate runs.
+
 Run helper self-tests and smoke ground-truth generation with:
 
 ```bash
@@ -269,4 +287,10 @@ You can rebuild the history file without rerunning ANN evaluation:
 
 ```bash
 make ann-history-report
+```
+
+You can publish the latest smoke run as a baseline artifact:
+
+```bash
+make ann-publish-baseline
 ```

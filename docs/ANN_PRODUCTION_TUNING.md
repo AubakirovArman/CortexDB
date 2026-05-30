@@ -197,6 +197,21 @@ stable toolchain. This keeps `history.json`, per-run manifests, reports, and
 generated smoke ground truth available even when a regression causes the ANN
 report step to fail.
 
+For release checkpoints, publish the selected run into
+`target/ann/release-baselines/<baseline-id>/`:
+
+```bash
+make ann-publish-baseline \
+  ANN_BASELINE_RUN_ID=smoke \
+  ANN_BASELINE_ID=v0.1.0-core-alpha-smoke
+```
+
+That bundle includes `baseline_manifest.json`, the selected report, the run
+manifest, `history.json`, and generated ground truth when available. GitHub
+Actions uploads `target/ann/release-baselines/**` with the same
+`ann-regression-reports` artifact, so releases can attach a stable baseline
+package without checking large corpus files into git.
+
 ## Release Blockers
 
 Block a release when any guarded corpus shows:

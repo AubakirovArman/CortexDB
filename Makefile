@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-scripts-check ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check smoke-test sdk-smoke-test alpha-check release-check demo
+.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-scripts-check ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline smoke-test sdk-smoke-test alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -20,6 +20,9 @@ ANN_CORPUS_RUN_ID ?= smoke
 ANN_CORPUS_RUN_ROOT ?= target/ann/corpus-runs
 ANN_HISTORY_ROOT ?= $(ANN_CORPUS_RUN_ROOT)
 ANN_HISTORY_REPORT ?= $(ANN_HISTORY_ROOT)/history.json
+ANN_BASELINE_RUN_ID ?= $(ANN_CORPUS_RUN_ID)
+ANN_BASELINE_ID ?= $(ANN_BASELINE_RUN_ID)
+ANN_BASELINE_ROOT ?= target/ann/release-baselines
 
 check:
 	cargo check --workspace
@@ -73,6 +76,7 @@ ann-scripts-check:
 	python3 scripts/ann/exact_ground_truth.py --self-test
 	python3 scripts/ann/compare_reports.py --self-test
 	python3 scripts/ann/summarize_history.py --self-test
+	python3 scripts/ann/publish_baseline.py --self-test
 	mkdir -p target/ann
 	python3 scripts/ann/exact_ground_truth.py --vectors $(ANN_CORPUS_VECTORS) --queries $(ANN_CORPUS_QUERIES) --output $(ANN_CORPUS_GENERATED_GROUND_TRUTH)
 	diff -u $(ANN_CORPUS_GROUND_TRUTH) $(ANN_CORPUS_GENERATED_GROUND_TRUTH)
@@ -88,6 +92,9 @@ ann-history-report:
 
 ann-history-regression-check:
 	python3 scripts/ann/summarize_history.py --run-root $(ANN_HISTORY_ROOT) --output $(ANN_HISTORY_REPORT) --fail-on-regression
+
+ann-publish-baseline:
+	python3 scripts/ann/publish_baseline.py --run-root $(ANN_HISTORY_ROOT) --run-id $(ANN_BASELINE_RUN_ID) --baseline-id $(ANN_BASELINE_ID) --output-root $(ANN_BASELINE_ROOT)
 
 smoke-test:
 	scripts/smoke_test.sh

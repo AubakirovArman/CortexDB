@@ -141,5 +141,9 @@ archival under `target/ann/corpus-runs/<run-id>/`. It also refreshes
 `target/ann/corpus-runs/history.json`, which summarizes archived runs and
 adjacent recall/latency regressions.
 
+`make ann-publish-baseline` packages one archived run into
+`target/ann/release-baselines/<baseline-id>/` for release artifacts and future
+candidate comparisons.
+
 For threshold selection, fallback policy, and report-history rules, see
 [`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md).
