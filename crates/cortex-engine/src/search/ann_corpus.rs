@@ -32,6 +32,9 @@ pub struct AnnCorpusGroundTruth {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct AnnCorpusOptions {
     pub metric: DistanceMetric,
+    pub max_neighbors: usize,
+    pub ef_search: usize,
+    pub layer_count: usize,
     pub min_recall_q16: u16,
     pub min_mean_recall_q16: u16,
     pub max_p95_latency_nanos: u128,
@@ -44,6 +47,9 @@ pub struct AnnCorpusReport {
     pub passed: bool,
     pub failures: Vec<String>,
     pub metric: String,
+    pub hnsw_max_neighbors: usize,
+    pub hnsw_ef_search: usize,
+    pub hnsw_layer_count: usize,
     pub vector_count: usize,
     pub query_count: usize,
     pub dimension: usize,
@@ -75,6 +81,9 @@ impl Default for AnnCorpusOptions {
     fn default() -> Self {
         Self {
             metric: DistanceMetric::DotProduct,
+            max_neighbors: 8,
+            ef_search: 64,
+            layer_count: 4,
             min_recall_q16: 49_151,
             min_mean_recall_q16: 49_151,
             max_p95_latency_nanos: 100_000_000,
@@ -98,7 +107,10 @@ pub fn evaluate_ann_corpus(
     options: AnnCorpusOptions,
 ) -> EngineResult<AnnCorpusReport> {
     let corpus = load_ann_corpus(vectors_jsonl, queries_jsonl, ground_truth_jsonl)?;
-    let mut index = HnswIndex::new_multilayer(8, 64, 4);
+    let max_neighbors = options.max_neighbors.max(1);
+    let ef_search = options.ef_search.max(1);
+    let layer_count = options.layer_count.max(1);
+    let mut index = HnswIndex::new_multilayer(max_neighbors, ef_search, layer_count);
     index.set_config(VectorCollectionConfig {
         dimension: corpus.dimension,
         metric: options.metric,
@@ -107,7 +119,12 @@ pub fn evaluate_ann_corpus(
         index.add_vector(*candidate, vector.clone())?;
     }
     let graph = index.graph_index();
-    let persisted_index = HnswIndex::from_graph(corpus.vectors.clone(), graph.clone(), 8, 64);
+    let persisted_index = HnswIndex::from_graph(
+        corpus.vectors.clone(),
+        graph.clone(),
+        max_neighbors,
+        ef_search,
+    );
     let allowed = corpus.vectors.keys().copied().collect::<BTreeSet<_>>();
     let mut latencies = Vec::with_capacity(corpus.queries.len());
     let mut recalls = Vec::with_capacity(corpus.queries.len());
@@ -149,6 +166,9 @@ pub fn evaluate_ann_corpus(
         passed: false,
         failures: Vec::new(),
         metric: metric_name(options.metric).to_owned(),
+        hnsw_max_neighbors: max_neighbors,
+        hnsw_ef_search: ef_search,
+        hnsw_layer_count: layer_count,
         vector_count: corpus.vectors.len(),
         query_count: corpus.queries.len(),
         dimension: corpus.dimension,

@@ -75,6 +75,15 @@ impl Args {
                     options.metric = parse_ann_metric(&next_value(&mut args, &arg)?)
                         .map_err(|error| error.to_string())?;
                 }
+                "--max-neighbors" => {
+                    options.max_neighbors = parse_usize(&next_value(&mut args, &arg)?, &arg)?;
+                }
+                "--ef-search" => {
+                    options.ef_search = parse_usize(&next_value(&mut args, &arg)?, &arg)?;
+                }
+                "--layer-count" => {
+                    options.layer_count = parse_usize(&next_value(&mut args, &arg)?, &arg)?;
+                }
                 "--min-recall-q16" => {
                     options.min_recall_q16 = parse_u16(&next_value(&mut args, &arg)?, &arg)?;
                 }
@@ -116,6 +125,16 @@ fn parse_u16(value: &str, option: &str) -> Result<u16, String> {
         .map_err(|error| format!("{option} must be u16: {error}"))
 }
 
+fn parse_usize(value: &str, option: &str) -> Result<usize, String> {
+    let parsed = value
+        .parse()
+        .map_err(|error| format!("{option} must be usize: {error}"))?;
+    if parsed == 0 {
+        return Err(format!("{option} must be greater than zero"));
+    }
+    Ok(parsed)
+}
+
 fn parse_u128(value: &str, option: &str) -> Result<u128, String> {
     value
         .parse()
@@ -124,7 +143,8 @@ fn parse_u128(value: &str, option: &str) -> Result<u128, String> {
 
 fn usage() -> String {
     "usage: ann_corpus_check --vectors PATH --queries PATH --ground-truth PATH \
-     [--metric dot_product|cosine|l2] [--output PATH]"
+     [--metric dot_product|cosine|l2] [--max-neighbors N] [--ef-search N] \
+     [--layer-count N] [--output PATH]"
         .to_owned()
 }
 
@@ -163,10 +183,36 @@ mod tests {
             "l2".to_owned(),
             "--min-recall-q16".to_owned(),
             "50000".to_owned(),
+            "--max-neighbors".to_owned(),
+            "16".to_owned(),
+            "--ef-search".to_owned(),
+            "128".to_owned(),
+            "--layer-count".to_owned(),
+            "5".to_owned(),
         ])
         .unwrap();
 
         assert_eq!(args.options.metric, DistanceMetric::L2);
         assert_eq!(args.options.min_recall_q16, 50_000);
+        assert_eq!(args.options.max_neighbors, 16);
+        assert_eq!(args.options.ef_search, 128);
+        assert_eq!(args.options.layer_count, 5);
+    }
+
+    #[test]
+    fn parse_rejects_zero_tuning_knob() {
+        let error = Args::parse([
+            "--vectors".to_owned(),
+            "v".to_owned(),
+            "--queries".to_owned(),
+            "q".to_owned(),
+            "--ground-truth".to_owned(),
+            "g".to_owned(),
+            "--ef-search".to_owned(),
+            "0".to_owned(),
+        ])
+        .unwrap_err();
+
+        assert!(error.contains("greater than zero"));
     }
 }

@@ -121,6 +121,8 @@ scripts/ann/run_external_corpus.sh \
   --queries /data/ann/queries.jsonl \
   --ground-truth /data/ann/ground_truth.jsonl \
   --metric cosine \
+  --max-neighbors 16 \
+  --ef-search 256 \
   --run-id baseline-cosine-100k
 ```
 
@@ -167,6 +169,7 @@ Every external run should keep:
 - `comparison.json` when a baseline exists;
 - `history.json` at the corpus-run root;
 - git commit SHA;
+- HNSW parameters (`max_neighbors`, `ef_search`, `layer_count`);
 - CPU, memory, disk, OS, Rust version;
 - command line used to generate ground truth and run the check.
 

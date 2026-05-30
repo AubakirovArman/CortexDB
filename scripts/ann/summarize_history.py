@@ -28,6 +28,9 @@ def as_int(value: Any, field: str) -> int:
     return value
 
 
+def as_int_default(value: Any, default: int) -> int: return value if isinstance(value, int) else default
+
+
 def as_bool(value: Any, field: str) -> bool:
     if not isinstance(value, bool):
         raise ValueError(f"{field}: expected boolean")
@@ -89,6 +92,9 @@ def load_run(manifest_path: Path) -> dict[str, Any]:
         "vector_count": as_int(report.get("vector_count"), f"{report_path}:vector_count"),
         "query_count": as_int(report.get("query_count"), f"{report_path}:query_count"),
         "dimension": as_int(report.get("dimension"), f"{report_path}:dimension"),
+        "hnsw_max_neighbors": as_int_default(report.get("hnsw_max_neighbors"), 8),
+        "hnsw_ef_search": as_int_default(report.get("hnsw_ef_search"), 64),
+        "hnsw_layer_count": as_int_default(report.get("hnsw_layer_count"), 4),
         "graph_nodes": as_int(report.get("graph_nodes"), f"{report_path}:graph_nodes"),
         "graph_edges": as_int(report.get("graph_edges"), f"{report_path}:graph_edges"),
         "upper_layers": as_int(report.get("upper_layers"), f"{report_path}:upper_layers"),
@@ -135,24 +141,18 @@ def compare_adjacent(previous: dict[str, Any], current: dict[str, Any]) -> list[
         delta = int(current[field]) - int(previous[field])
         if delta < 0:
             regressions.append(regression(kind, field, previous, current, delta))
+    for field in ["hnsw_max_neighbors", "hnsw_ef_search", "hnsw_layer_count"]:
+        delta = int(current[field]) - int(previous[field])
+        if delta != 0: regressions.append(regression("hnsw_config", field, previous, current, delta))
     for field in ["p95_latency_nanos", "max_latency_nanos"]:
         delta = int(current[field]) - int(previous[field])
-        if delta > 0:
-            regressions.append(regression("latency", field, previous, current, delta))
-    if previous["passed"] and not current["passed"]:
-        regressions.append(regression("gate", "passed", previous, current, -1))
-    if previous["production_safe"] and not current["production_safe"]:
-        regressions.append(regression("gate", "production_safe", previous, current, -1))
+        if delta > 0: regressions.append(regression("latency", field, previous, current, delta))
+    if previous["passed"] and not current["passed"]: regressions.append(regression("gate", "passed", previous, current, -1))
+    if previous["production_safe"] and not current["production_safe"]: regressions.append(regression("gate", "production_safe", previous, current, -1))
     return regressions
 
 
-def regression(
-    kind: str,
-    field: str,
-    previous: dict[str, Any],
-    current: dict[str, Any],
-    delta: int,
-) -> dict[str, Any]:
+def regression(kind: str, field: str, previous: dict[str, Any], current: dict[str, Any], delta: int) -> dict[str, Any]:
     return {
         "kind": kind,
         "field": field,
@@ -186,6 +186,9 @@ def summarize_history(run_root: Path) -> dict[str, Any]:
             "vector_count": latest["vector_count"],
             "query_count": latest["query_count"],
             "dimension": latest["dimension"],
+            "hnsw_max_neighbors": latest["hnsw_max_neighbors"],
+            "hnsw_ef_search": latest["hnsw_ef_search"],
+            "hnsw_layer_count": latest["hnsw_layer_count"],
             "latest_min_observed_recall_q16": latest["min_observed_recall_q16"],
             "latest_mean_recall_q16": latest["mean_recall_q16"],
             "latest_p95_latency_nanos": latest["p95_latency_nanos"],

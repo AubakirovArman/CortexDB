@@ -15,6 +15,9 @@ min_recall_q16="49151"
 min_mean_recall_q16="49151"
 max_p95_latency_nanos="100000000"
 max_max_latency_nanos="250000000"
+max_neighbors="8"
+ef_search="64"
+layer_count="4"
 compare_max_p95_regression_nanos="0"
 compare_max_max_regression_nanos="0"
 allow_unsafe=0
@@ -37,6 +40,9 @@ Options:
   --min-mean-recall-q16 VALUE
   --max-p95-latency-nanos VALUE
   --max-max-latency-nanos VALUE
+  --max-neighbors VALUE
+  --ef-search VALUE
+  --layer-count VALUE
   --compare-max-p95-regression-nanos VALUE
   --compare-max-max-regression-nanos VALUE
   --allow-unsafe
@@ -113,6 +119,21 @@ while [[ $# -gt 0 ]]; do
       max_max_latency_nanos="$2"
       shift 2
       ;;
+    --max-neighbors)
+      require_value "$1" "${2:-}"
+      max_neighbors="$2"
+      shift 2
+      ;;
+    --ef-search)
+      require_value "$1" "${2:-}"
+      ef_search="$2"
+      shift 2
+      ;;
+    --layer-count)
+      require_value "$1" "${2:-}"
+      layer_count="$2"
+      shift 2
+      ;;
     --compare-max-p95-regression-nanos)
       require_value "$1" "${2:-}"
       compare_max_p95_regression_nanos="$2"
@@ -172,6 +193,9 @@ cat > "${manifest_path}" <<MANIFEST
   "run_id": "${run_id}",
   "git_sha": "$(git -C "${REPO_ROOT}" rev-parse HEAD 2>/dev/null || echo nogit)",
   "metric": "${metric}",
+  "hnsw_max_neighbors": ${max_neighbors},
+  "hnsw_ef_search": ${ef_search},
+  "hnsw_layer_count": ${layer_count},
   "vectors": "${vectors}",
   "queries": "${queries}",
   "ground_truth": "${ground_truth}",
@@ -189,6 +213,9 @@ ann_args=(
   --min-mean-recall-q16 "${min_mean_recall_q16}"
   --max-p95-latency-nanos "${max_p95_latency_nanos}"
   --max-max-latency-nanos "${max_max_latency_nanos}"
+  --max-neighbors "${max_neighbors}"
+  --ef-search "${ef_search}"
+  --layer-count "${layer_count}"
   --output "${report_path}"
 )
 if [[ "${allow_unsafe}" -eq 1 ]]; then

@@ -61,6 +61,7 @@ def extract_archive(archive_path: Path, target: Path) -> Path:
 
 
 def materialize_source(args: argparse.Namespace, work_dir: Path) -> Path:
+    work_dir.mkdir(parents=True, exist_ok=True)
     if args.source_dir:
         return args.source_dir.resolve()
     archive_path = args.source_archive
@@ -161,6 +162,12 @@ def build_run_command(args: argparse.Namespace, converted_dir: Path) -> list[str
         str(args.max_p95_latency_nanos),
         "--max-max-latency-nanos",
         str(args.max_max_latency_nanos),
+        "--max-neighbors",
+        str(args.max_neighbors),
+        "--ef-search",
+        str(args.ef_search),
+        "--layer-count",
+        str(args.layer_count),
     ]
     truth_path = converted_truth_path(converted_dir)
     if truth_path:
@@ -232,6 +239,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--min-mean-recall-q16", type=int, default=49151)
     parser.add_argument("--max-p95-latency-nanos", type=int, default=100_000_000)
     parser.add_argument("--max-max-latency-nanos", type=int, default=250_000_000)
+    parser.add_argument("--max-neighbors", type=int, default=8)
+    parser.add_argument("--ef-search", type=int, default=64)
+    parser.add_argument("--layer-count", type=int, default=4)
     parser.add_argument("--allow-unsafe", action="store_true")
     parser.add_argument("--clean", action="store_true")
     parser.add_argument("--no-run", action="store_true")

@@ -118,6 +118,9 @@ The output is a single JSON object:
   "passed": true,
   "failures": [],
   "metric": "dot_product",
+  "hnsw_max_neighbors": 8,
+  "hnsw_ef_search": 64,
+  "hnsw_layer_count": 4,
   "vector_count": 12,
   "query_count": 4,
   "dimension": 8,
@@ -233,9 +236,12 @@ python3 scripts/ann/run_public_corpus.py \
   --source-url ftp://ftp.irisa.fr/local/texmex/corpus/siftsmall.tar.gz \
   --dataset-id siftsmall \
   --format fvecs \
-  --metric cosine \
-  --normalization unit \
-  --run-id siftsmall-cosine
+  --metric l2 \
+  --normalization none \
+  --scale 1 \
+  --max-neighbors 16 \
+  --ef-search 256 \
+  --run-id siftsmall-l2
 ```
 
 The source may also be a local archive or an already extracted directory:
@@ -245,8 +251,18 @@ make ann-public-corpus-run \
   ANN_PUBLIC_SOURCE=/data/ann/siftsmall.tar.gz \
   ANN_PUBLIC_DATASET_ID=siftsmall \
   ANN_PUBLIC_FORMAT=fvecs \
-  ANN_PUBLIC_METRIC=cosine
+  ANN_PUBLIC_METRIC=l2 \
+  ANN_PUBLIC_NORMALIZATION=none \
+  ANN_PUBLIC_SCALE=1 \
+  ANN_PUBLIC_MAX_NEIGHBORS=16 \
+  ANN_PUBLIC_EF_SEARCH=256
 ```
+
+Use the metric and scaling that match the source corpus ground truth. For
+SIFT/TEXMEX-style `ivecs` ground truth, that usually means L2 over raw SIFT
+coordinates, so `--metric l2 --normalization none --scale 1` is the safer
+default. Cosine-style embedding corpora usually need `--metric cosine` and
+`--normalization unit`.
 
 The script writes:
 
@@ -258,6 +274,10 @@ The script writes:
 Use `--no-run` when you only want to materialize the converted JSONL contract.
 Use `--max-vectors` and `--max-queries` for a fast sample run before launching a
 full corpus benchmark.
+
+Use `--max-neighbors`, `--ef-search`, and `--layer-count` to tune the graph
+without changing the corpus files. The generated report records these values so
+baseline comparisons do not hide HNSW parameter changes.
 
 ### Generate Ground Truth
 
@@ -381,3 +401,6 @@ make ann-compare-baseline-bundle \
 
 The comparison is written to
 `target/ann/corpus-runs/<candidate-run-id>/baseline_comparison.json`.
+The comparison also fails when `hnsw_max_neighbors`, `hnsw_ef_search`, or
+`hnsw_layer_count` changes, because recall and latency are only comparable under
+the same graph/search profile.

@@ -158,6 +158,8 @@ or GloVe/word2vec-style text rows into the JSONL files consumed by
 target prepares `target/ann/public-corpora/<dataset-id>/converted/`, runs the
 same archived corpus report workflow, and writes a public corpus manifest for
 repeatability.
+Use `ANN_PUBLIC_MAX_NEIGHBORS`, `ANN_PUBLIC_EF_SEARCH`, and
+`ANN_PUBLIC_LAYER_COUNT` to tune the graph while keeping the corpus fixed.
 
 For threshold selection, fallback policy, and report-history rules, see
 [`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md).

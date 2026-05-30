@@ -33,6 +33,12 @@ ANN_PUBLIC_FORMAT ?= fvecs
 ANN_PUBLIC_METRIC ?= cosine
 ANN_PUBLIC_RUN_ID ?= $(ANN_PUBLIC_DATASET_ID)-$(ANN_CORPUS_RUN_ID)
 ANN_PUBLIC_OUTPUT_ROOT ?= target/ann/public-corpora
+ANN_PUBLIC_NORMALIZATION ?= unit
+ANN_PUBLIC_SCALE ?= 32767
+ANN_PUBLIC_LIMIT ?= 10
+ANN_PUBLIC_MAX_NEIGHBORS ?= 8
+ANN_PUBLIC_EF_SEARCH ?= 64
+ANN_PUBLIC_LAYER_COUNT ?= 4
 
 check:
 	cargo check --workspace
@@ -107,6 +113,12 @@ ann-public-corpus-run:
 	  --dataset-id "$(ANN_PUBLIC_DATASET_ID)" \
 	  --format "$(ANN_PUBLIC_FORMAT)" \
 	  --metric "$(ANN_PUBLIC_METRIC)" \
+	  --normalization "$(ANN_PUBLIC_NORMALIZATION)" \
+	  --scale "$(ANN_PUBLIC_SCALE)" \
+	  --limit "$(ANN_PUBLIC_LIMIT)" \
+	  --max-neighbors "$(ANN_PUBLIC_MAX_NEIGHBORS)" \
+	  --ef-search "$(ANN_PUBLIC_EF_SEARCH)" \
+	  --layer-count "$(ANN_PUBLIC_LAYER_COUNT)" \
 	  --output-root "$(ANN_PUBLIC_OUTPUT_ROOT)" \
 	  --run-root "$(ANN_CORPUS_RUN_ROOT)" \
 	  --run-id "$(ANN_PUBLIC_RUN_ID)"

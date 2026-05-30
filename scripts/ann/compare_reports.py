@@ -43,6 +43,9 @@ def compare_reports(
         failures.append("query_count changed")
     if candidate.get("dimension") != baseline.get("dimension"):
         failures.append("dimension changed")
+    for field in ["hnsw_max_neighbors", "hnsw_ef_search", "hnsw_layer_count"]:
+        if field in baseline and field in candidate and candidate.get(field) != baseline.get(field):
+            failures.append(f"{field} changed: {baseline.get(field)} -> {candidate.get(field)}")
     if deltas["min_recall_delta_q16"] < 0:
         failures.append(f"min recall regressed by {abs(deltas['min_recall_delta_q16'])}")
     if deltas["mean_recall_delta_q16"] < 0:
@@ -95,6 +98,9 @@ class SelfTests(unittest.TestCase):
             "vector_count": 2,
             "query_count": 1,
             "dimension": 2,
+            "hnsw_max_neighbors": 8,
+            "hnsw_ef_search": 64,
+            "hnsw_layer_count": 4,
             "min_observed_recall_q16": recall,
             "mean_recall_q16": recall,
             "p95_latency_nanos": p95,
