@@ -353,6 +353,9 @@ followed by `make ann-real-embedding-benchmark`. The preflight layer checks the
 source/query JSONL contract and required environment variables before any
 embedding API calls are made, then the benchmark target delegates to the same
 export and HNSW report pipeline documented here.
+After a real baseline report exists, run `make ann-real-embedding-compare` or
+`make ann-real-embedding-benchmark-and-compare` so release candidates fail on
+recall, graph-shape, production-safety, HNSW parameter, or latency regressions.
 
 `build_embedded_domain_corpus.py` is the path for data that already carries
 model-generated embeddings. Payload rows may include either a top-level

@@ -175,6 +175,20 @@ The preflight target writes a machine-readable report and refuses synthetic
 `hash-smoke` commands, missing corpus/query files, missing endpoint/model env,
 and invalid query limits before the benchmark spends time calling an embedding
 service.
+After a baseline exists, use the real-embedding comparison target to block
+recall, graph-shape, production-safety, and latency regressions:
+
+```bash
+make ann-real-embedding-compare \
+  ANN_REAL_EMBEDDING_RUN_ID=my-domain-cosine-v2 \
+  ANN_REAL_EMBEDDING_BASELINE_REPORT=/baselines/my-domain-cosine-v1/report.json \
+  ANN_MAX_P95_REGRESSION_NANOS=5000000 \
+  ANN_MAX_MAX_REGRESSION_NANOS=10000000
+```
+
+`make ann-real-embedding-benchmark-and-compare` runs the guarded benchmark and
+then the same comparison in one command. Use it for release candidates once a
+real embedding baseline report has been published.
 
 `make ann-scripts-check` validates the dependency-free helper scripts that
 generate exact ground truth and compare two ANN report JSON files. Use

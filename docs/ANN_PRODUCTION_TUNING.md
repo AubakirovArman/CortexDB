@@ -109,6 +109,25 @@ This target uses `ANN_REAL_EMBEDDING_COMMAND`, which defaults to
 normal ANN report and machine profile under
 `target/ann/real-embedding/runs/<run-id>/`.
 
+Once a real embedding baseline has been published, candidate runs should use a
+report comparison gate:
+
+```bash
+make ann-real-embedding-benchmark-and-compare \
+  ANN_REAL_EMBEDDING_SOURCE_ROOT=/data/cortexdb/text-cells \
+  ANN_REAL_EMBEDDING_QUERIES=/data/cortexdb/query_text.jsonl \
+  ANN_REAL_EMBEDDING_REQUIRE_API_KEY=true \
+  ANN_REAL_EMBEDDING_RUN_ID=my-domain-cosine-v2 \
+  ANN_REAL_EMBEDDING_BASELINE_REPORT=/baselines/my-domain-cosine-v1/report.json \
+  ANN_MAX_P95_REGRESSION_NANOS=5000000 \
+  ANN_MAX_MAX_REGRESSION_NANOS=10000000
+```
+
+This fails on recall regression, corpus/profile mismatch, `production_safe`
+loss, HNSW parameter drift, or latency regression beyond the configured budget.
+Use `make ann-real-embedding-compare` when the candidate report already exists
+and only the comparison needs to be rerun.
+
 For each corpus, preserve:
 
 - vector generation version;
@@ -369,6 +388,7 @@ Warnings, not blockers:
   bundles.
 - Demo-domain corpus generation is available, but no large real customer/domain
   baseline is published yet.
-- Embedded-vector corpus tooling exists, but it still needs a real model export
-  and published baseline bundle.
+- Embedded-vector and real-embedding corpus tooling exists, including preflight
+  and report comparison gates, but it still needs a real model export and
+  published baseline bundle.
 - Production SLO profiles per workload are not yet formalized.
