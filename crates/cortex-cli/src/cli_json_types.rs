@@ -43,6 +43,7 @@ pub struct CliAnnValidateResponse {
 pub struct CliAnnSearchReportResponse {
     pub path: String,
     pub fallback_reason: Option<String>,
+    pub fallback_performed: bool,
     pub requested_limit: usize,
     pub allowed_candidates: usize,
     pub graph_nodes: usize,
@@ -51,6 +52,9 @@ pub struct CliAnnSearchReportResponse {
     pub max_visited_candidates: Option<usize>,
     pub recall_q16: Option<u16>,
     pub min_recall_q16: Option<u16>,
+    pub require_slo: bool,
+    pub production_safe: bool,
+    pub slo_violations: Vec<String>,
 }
 
 #[derive(Serialize)]

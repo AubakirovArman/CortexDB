@@ -130,6 +130,8 @@ enum Command {
         min_recall: Option<String>,
         #[arg(long)]
         max_visited_candidates: Option<usize>,
+        #[arg(long)]
+        require_slo: bool,
     },
     SearchVectorExact {
         path: String,
@@ -148,6 +150,8 @@ enum Command {
         min_recall: Option<String>,
         #[arg(long)]
         max_visited_candidates: Option<usize>,
+        #[arg(long)]
+        require_slo: bool,
     },
     SearchExplain {
         path: String,
@@ -259,12 +263,14 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             fallback_scan_cap,
             min_recall,
             max_visited_candidates,
+            require_slo,
         } => {
             let policy = ann::parse_ann_policy(
                 fallback,
                 fallback_scan_cap,
                 min_recall,
                 max_visited_candidates,
+                require_slo,
             )?;
             ops::search_vector(
                 resolved(&path).to_str().unwrap(),
@@ -293,12 +299,14 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             fallback_scan_cap,
             min_recall,
             max_visited_candidates,
+            require_slo,
         } => {
             let policy = ann::parse_ann_policy(
                 fallback,
                 fallback_scan_cap,
                 min_recall,
                 max_visited_candidates,
+                require_slo,
             )?;
             ann::search_vector_eval(
                 resolved(&path).to_str().unwrap(),

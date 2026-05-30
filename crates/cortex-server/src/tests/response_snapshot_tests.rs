@@ -184,6 +184,27 @@ fn snapshot_search_result_response() {
 }
 
 #[test]
+fn snapshot_ann_search_report_response() {
+    let resp = crate::responses::AnnSearchReportResponse {
+        path: "exact_fallback".to_owned(),
+        fallback_reason: Some("visit_budget_exceeded".to_owned()),
+        fallback_performed: true,
+        requested_limit: 10,
+        allowed_candidates: 100,
+        graph_nodes: 100,
+        returned_candidates: 10,
+        visited_candidates: 64,
+        max_visited_candidates: Some(64),
+        recall_q16: Some(49_000),
+        min_recall_q16: Some(49_151),
+        require_slo: true,
+        production_safe: false,
+        slo_violations: vec!["visit_budget_exceeded".to_owned()],
+    };
+    insta::assert_json_snapshot!(resp);
+}
+
+#[test]
 fn snapshot_ingest_response_empty() {
     let resp = IngestResponse {
         rows_ingested: 0,

@@ -17,7 +17,7 @@ pub(crate) mod vector;
 pub use analyzer::{mean_reciprocal_rank_q16, Language, TextAnalyzer};
 pub use ann::{
     AnnEvaluationReport, AnnFallbackReason, AnnMetrics, AnnSearchPath, AnnSearchPolicy,
-    AnnSearchReport, MIN_ANN_RECALL_Q16,
+    AnnSearchReport, AnnSloViolation, MIN_ANN_RECALL_Q16,
 };
 pub use database::{DatabaseSearchOutcome, DatabaseSearchResult, SearchLimit};
 pub use hnsw::{integrity::HnswIntegrityReport, DistanceMetric, HnswIndex, VectorCollectionConfig};

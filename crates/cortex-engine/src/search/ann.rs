@@ -46,6 +46,33 @@ impl AnnFallbackReason {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AnnSloViolation {
+    EmptyGraph,
+    InvalidGraph,
+    InsufficientResults,
+    LowRecall,
+    VisitBudgetExceeded,
+    NoPersistedSegments,
+    UncheckpointedChanges,
+    RecallBelowMinimum,
+}
+
+impl AnnSloViolation {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::EmptyGraph => "empty_graph",
+            Self::InvalidGraph => "invalid_graph",
+            Self::InsufficientResults => "insufficient_results",
+            Self::LowRecall => "low_recall",
+            Self::VisitBudgetExceeded => "visit_budget_exceeded",
+            Self::NoPersistedSegments => "no_persisted_segments",
+            Self::UncheckpointedChanges => "uncheckpointed_changes",
+            Self::RecallBelowMinimum => "recall_below_minimum",
+        }
+    }
+}
+
 /// Minimum acceptable ANN recall threshold.
 /// Q16_ONE = 65_535 represents 100% recall.
 /// Production default is 75% (49_151) to allow approximate results
@@ -58,6 +85,7 @@ pub struct AnnSearchPolicy {
     pub fallback: bool,
     pub fallback_scan_cap: Option<usize>,
     pub max_visited_candidates: Option<usize>,
+    pub require_slo: bool,
 }
 
 impl Default for AnnSearchPolicy {
@@ -67,14 +95,16 @@ impl Default for AnnSearchPolicy {
             fallback: true,
             fallback_scan_cap: None,
             max_visited_candidates: None,
+            require_slo: false,
         }
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AnnSearchReport {
     pub path: AnnSearchPath,
     pub fallback_reason: Option<AnnFallbackReason>,
+    pub fallback_performed: bool,
     pub requested_limit: usize,
     pub allowed_candidates: usize,
     pub graph_nodes: usize,
@@ -83,6 +113,9 @@ pub struct AnnSearchReport {
     pub max_visited_candidates: Option<usize>,
     pub recall_q16: Option<u16>,
     pub min_recall_q16: Option<u16>,
+    pub require_slo: bool,
+    pub production_safe: bool,
+    pub slo_violations: Vec<AnnSloViolation>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -165,7 +198,7 @@ pub fn search_persisted_ann_with_policy(
             available,
             graph_nodes,
             AnnFallbackReason::EmptyGraph,
-            policy.max_visited_candidates,
+            policy,
         );
     }
 
@@ -200,7 +233,7 @@ pub fn search_persisted_ann_with_policy(
                 available,
                 graph_nodes,
                 reason,
-                policy.max_visited_candidates,
+                policy,
             );
         }
     };
@@ -228,7 +261,7 @@ pub fn search_persisted_ann_with_policy(
             available,
             graph_nodes,
             AnnFallbackReason::VisitBudgetExceeded,
-            policy.max_visited_candidates,
+            policy,
         );
     }
 
@@ -254,7 +287,7 @@ pub fn search_persisted_ann_with_policy(
             available,
             graph_nodes,
             AnnFallbackReason::InsufficientResults,
-            policy.max_visited_candidates,
+            policy,
         );
     }
 
@@ -292,26 +325,32 @@ pub fn search_persisted_ann_with_policy(
             graph_nodes,
             AnnFallbackReason::LowRecall,
             Some(recall),
-            policy.min_recall_q16,
-            policy.max_visited_candidates,
+            policy,
         );
     }
 
     let returned_candidates = ann.len();
     AnnSearchOutcome {
         results: ann,
-        report: AnnSearchReport {
-            path: AnnSearchPath::HnswGraph,
-            fallback_reason: None,
-            requested_limit: limit,
-            allowed_candidates: available,
-            graph_nodes,
-            returned_candidates,
-            visited_candidates,
-            max_visited_candidates: policy.max_visited_candidates,
-            recall_q16: Some(recall),
-            min_recall_q16: policy.min_recall_q16,
-        },
+        report: finalize_report(
+            AnnSearchReport {
+                path: AnnSearchPath::HnswGraph,
+                fallback_reason: None,
+                fallback_performed: false,
+                requested_limit: limit,
+                allowed_candidates: available,
+                graph_nodes,
+                returned_candidates,
+                visited_candidates,
+                max_visited_candidates: policy.max_visited_candidates,
+                recall_q16: Some(recall),
+                min_recall_q16: policy.min_recall_q16,
+                require_slo: policy.require_slo,
+                production_safe: true,
+                slo_violations: Vec::new(),
+            },
+            policy,
+        ),
     }
 }
 
@@ -369,8 +408,7 @@ pub fn evaluate_persisted_ann_with_policy(
                     graph_nodes,
                     AnnFallbackReason::VisitBudgetExceeded,
                     None,
-                    policy.min_recall_q16,
-                    policy.max_visited_candidates,
+                    policy,
                 )
             } else {
                 let overlap = results
@@ -381,18 +419,25 @@ pub fn evaluate_persisted_ann_with_policy(
                 let max_visited_candidates = policy.max_visited_candidates;
                 AnnSearchOutcome {
                     results: results.clone(),
-                    report: AnnSearchReport {
-                        path: AnnSearchPath::HnswGraph,
-                        fallback_reason: None,
-                        requested_limit: limit,
-                        allowed_candidates: available,
-                        graph_nodes,
-                        returned_candidates: results.len(),
-                        visited_candidates,
-                        max_visited_candidates,
-                        recall_q16: Some(recall),
-                        min_recall_q16: policy.min_recall_q16,
-                    },
+                    report: finalize_report(
+                        AnnSearchReport {
+                            path: AnnSearchPath::HnswGraph,
+                            fallback_reason: None,
+                            fallback_performed: false,
+                            requested_limit: limit,
+                            allowed_candidates: available,
+                            graph_nodes,
+                            returned_candidates: results.len(),
+                            visited_candidates,
+                            max_visited_candidates,
+                            recall_q16: Some(recall),
+                            min_recall_q16: policy.min_recall_q16,
+                            require_slo: policy.require_slo,
+                            production_safe: true,
+                            slo_violations: Vec::new(),
+                        },
+                        policy,
+                    ),
                 }
             }
         }
@@ -403,8 +448,7 @@ pub fn evaluate_persisted_ann_with_policy(
             graph_nodes,
             reason,
             None,
-            policy.min_recall_q16,
-            policy.max_visited_candidates,
+            policy,
         ),
     };
 
@@ -424,6 +468,7 @@ pub fn evaluate_persisted_ann_with_policy(
     if search.path == AnnSearchPath::HnswGraph {
         search.recall_q16 = Some(recall);
         search.min_recall_q16 = policy.min_recall_q16;
+        search = finalize_report(search, policy);
     }
 
     AnnEvaluationReport {
@@ -480,18 +525,25 @@ fn fallback_disabled_outcome(
     let returned = ann.len();
     AnnSearchOutcome {
         results: ann,
-        report: AnnSearchReport {
-            path: AnnSearchPath::HnswGraph,
-            fallback_reason: Some(reason),
-            requested_limit: limit,
-            allowed_candidates: available,
-            graph_nodes,
-            returned_candidates: returned,
-            visited_candidates,
-            max_visited_candidates: policy.max_visited_candidates,
-            recall_q16: None,
-            min_recall_q16: policy.min_recall_q16,
-        },
+        report: finalize_report(
+            AnnSearchReport {
+                path: AnnSearchPath::HnswGraph,
+                fallback_reason: Some(reason),
+                fallback_performed: false,
+                requested_limit: limit,
+                allowed_candidates: available,
+                graph_nodes,
+                returned_candidates: returned,
+                visited_candidates,
+                max_visited_candidates: policy.max_visited_candidates,
+                recall_q16: None,
+                min_recall_q16: policy.min_recall_q16,
+                require_slo: policy.require_slo,
+                production_safe: true,
+                slo_violations: Vec::new(),
+            },
+            policy,
+        ),
     }
 }
 
@@ -504,20 +556,11 @@ fn exact(
     available: usize,
     graph_nodes: usize,
     reason: AnnFallbackReason,
-    max_visited_candidates: Option<usize>,
+    policy: AnnSearchPolicy,
 ) -> AnnSearchOutcome {
     let results =
         search_persisted_vectors(vectors, query, allowed, limit, &DistanceMetric::default());
-    exact_from_results(
-        results,
-        limit,
-        available,
-        graph_nodes,
-        reason,
-        None,
-        None,
-        max_visited_candidates,
-    )
+    exact_from_results(results, limit, available, graph_nodes, reason, None, policy)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -528,25 +571,63 @@ fn exact_from_results(
     graph_nodes: usize,
     reason: AnnFallbackReason,
     recall_q16: Option<u16>,
-    min_recall_q16: Option<u16>,
-    max_visited_candidates: Option<usize>,
+    policy: AnnSearchPolicy,
 ) -> AnnSearchOutcome {
     let returned = results.len();
     AnnSearchOutcome {
         results,
-        report: AnnSearchReport {
-            path: AnnSearchPath::ExactFallback,
-            fallback_reason: Some(reason),
-            requested_limit: limit,
-            allowed_candidates: available,
-            graph_nodes,
-            returned_candidates: returned,
-            visited_candidates: 0,
-            max_visited_candidates,
-            recall_q16,
-            min_recall_q16,
-        },
+        report: finalize_report(
+            AnnSearchReport {
+                path: AnnSearchPath::ExactFallback,
+                fallback_reason: Some(reason),
+                fallback_performed: true,
+                requested_limit: limit,
+                allowed_candidates: available,
+                graph_nodes,
+                returned_candidates: returned,
+                visited_candidates: 0,
+                max_visited_candidates: policy.max_visited_candidates,
+                recall_q16,
+                min_recall_q16: policy.min_recall_q16,
+                require_slo: policy.require_slo,
+                production_safe: true,
+                slo_violations: Vec::new(),
+            },
+            policy,
+        ),
     }
+}
+
+pub(crate) fn finalize_report(
+    mut report: AnnSearchReport,
+    policy: AnnSearchPolicy,
+) -> AnnSearchReport {
+    report.fallback_performed = report.path == AnnSearchPath::ExactFallback;
+    report.require_slo = policy.require_slo;
+    report.slo_violations = slo_violations(&report, policy);
+    report.production_safe = report.slo_violations.is_empty();
+    report
+}
+
+fn slo_violations(report: &AnnSearchReport, policy: AnnSearchPolicy) -> Vec<AnnSloViolation> {
+    let mut violations = Vec::new();
+    if let Some(reason) = report.fallback_reason {
+        violations.push(match reason {
+            AnnFallbackReason::EmptyGraph => AnnSloViolation::EmptyGraph,
+            AnnFallbackReason::InvalidGraph => AnnSloViolation::InvalidGraph,
+            AnnFallbackReason::InsufficientResults => AnnSloViolation::InsufficientResults,
+            AnnFallbackReason::LowRecall => AnnSloViolation::LowRecall,
+            AnnFallbackReason::VisitBudgetExceeded => AnnSloViolation::VisitBudgetExceeded,
+            AnnFallbackReason::NoPersistedSegments => AnnSloViolation::NoPersistedSegments,
+            AnnFallbackReason::UncheckpointedChanges => AnnSloViolation::UncheckpointedChanges,
+        });
+    }
+    if let (Some(recall), Some(min_recall)) = (report.recall_q16, policy.min_recall_q16) {
+        if recall < min_recall && !violations.contains(&AnnSloViolation::LowRecall) {
+            violations.push(AnnSloViolation::RecallBelowMinimum);
+        }
+    }
+    violations
 }
 
 fn recall_q16(overlap_count: usize, expected_count: usize) -> u16 {

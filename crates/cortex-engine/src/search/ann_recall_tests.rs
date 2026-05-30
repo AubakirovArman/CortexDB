@@ -2,6 +2,7 @@
 
 #[cfg(test)]
 mod tests {
+    use crate::search::{AnnSearchPolicy, SearchLimit, MIN_ANN_RECALL_Q16};
     use crate::Database;
     use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 
@@ -119,5 +120,104 @@ mod tests {
         let metrics_after = db.ann_metrics();
         assert!(metrics_after.has_checkpoint);
         assert_eq!(metrics_after.persisted_segments, 1);
+    }
+
+    #[test]
+    fn ann_fixture_gate_meets_recall_slo_after_checkpoint() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+
+        let vectors: Vec<Vec<i16>> =
+            vec![vec![10, 0], vec![8, 2], vec![0, 10], vec![1, 9], vec![5, 5]];
+        for (i, v) in vectors.iter().enumerate() {
+            db.put_knowledge_cell(CellId((i + 1) as u64), vector_cell((i + 1) as u64, v))
+                .unwrap();
+        }
+        db.checkpoint().unwrap();
+
+        let report = db
+            .evaluate_vector_ann_with_policy(
+                &[10, 0],
+                &test_view(),
+                SearchLimit(2),
+                AnnSearchPolicy {
+                    min_recall_q16: Some(MIN_ANN_RECALL_Q16),
+                    fallback: true,
+                    fallback_scan_cap: None,
+                    max_visited_candidates: None,
+                    require_slo: true,
+                },
+            )
+            .unwrap()
+            .expect("checkpointed ANN evaluation should be available");
+
+        assert!(
+            report.recall_q16 >= MIN_ANN_RECALL_Q16,
+            "ANN recall fixture gate failed: recall_q16={} min={}",
+            report.recall_q16,
+            MIN_ANN_RECALL_Q16
+        );
+        assert!(report.search.production_safe);
+        assert!(report.search.slo_violations.is_empty());
+    }
+
+    #[test]
+    fn ann_slo_gate_reports_budget_violation() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+
+        for (i, v) in [vec![10, 0], vec![0, 10], vec![9, 1]].iter().enumerate() {
+            db.put_knowledge_cell(CellId((i + 1) as u64), vector_cell((i + 1) as u64, v))
+                .unwrap();
+        }
+        db.checkpoint().unwrap();
+
+        let outcome = db
+            .search_vector_with_report_with_policy(
+                &[0, 10],
+                &test_view(),
+                SearchLimit(2),
+                AnnSearchPolicy {
+                    min_recall_q16: Some(MIN_ANN_RECALL_Q16),
+                    fallback: true,
+                    fallback_scan_cap: None,
+                    max_visited_candidates: Some(0),
+                    require_slo: true,
+                },
+            )
+            .unwrap();
+
+        let report = outcome.ann_report.expect("ANN report should be emitted");
+        assert!(report.fallback_performed);
+        assert!(!report.production_safe);
+        assert!(report
+            .slo_violations
+            .iter()
+            .any(|violation| violation.as_str() == "visit_budget_exceeded"));
+    }
+
+    fn test_view() -> cortex_aql::AgentView {
+        cortex_aql::AgentView {
+            agent_id: cortex_aql::AgentId(1),
+            label: Some("test".to_owned()),
+            readable_brains: std::collections::BTreeSet::from([cortex_aql::BrainId(1)]),
+            readable_scopes: std::collections::BTreeSet::from([crate::query::metadata::scope_id(
+                "project:test",
+            )]),
+            writable_scopes: std::collections::BTreeSet::new(),
+            allowed_modes: std::collections::BTreeSet::from([cortex_aql::RetrievalMode::Balanced]),
+            allowed_memory_types: std::collections::BTreeSet::new(),
+            max_context_budget_tokens: 4000,
+            default_context_budget_tokens: 1000,
+            max_candidate_limit: 100,
+            default_candidate_limit: 20,
+            min_required_confidence_q16: cortex_aql::Q16_ZERO,
+            max_ttl_seconds: Some(3600),
+            allow_remember: false,
+            allow_verify_fact: false,
+            allow_audit_mode: false,
+            require_citations_by_default: false,
+            private_scope: None,
+        }
     }
 }

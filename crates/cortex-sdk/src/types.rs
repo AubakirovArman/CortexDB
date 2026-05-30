@@ -43,6 +43,8 @@ impl VectorAlgorithm {
 pub struct AnnSearchReport {
     pub path: String,
     pub fallback_reason: Option<String>,
+    #[serde(default)]
+    pub fallback_performed: bool,
     pub requested_limit: usize,
     pub allowed_candidates: usize,
     pub graph_nodes: usize,
@@ -53,6 +55,16 @@ pub struct AnnSearchReport {
     pub max_visited_candidates: Option<usize>,
     pub recall_q16: Option<u16>,
     pub min_recall_q16: Option<u16>,
+    #[serde(default)]
+    pub require_slo: bool,
+    #[serde(default = "default_production_safe")]
+    pub production_safe: bool,
+    #[serde(default)]
+    pub slo_violations: Vec<String>,
+}
+
+fn default_production_safe() -> bool {
+    true
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]

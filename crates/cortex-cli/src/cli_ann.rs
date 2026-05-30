@@ -54,20 +54,35 @@ pub fn search_vector_eval(
 }
 
 fn format_ann_evaluation(report: &AnnEvaluationReport) -> String {
+    let violations = if report.search.slo_violations.is_empty() {
+        "none".to_owned()
+    } else {
+        report
+            .search
+            .slo_violations
+            .iter()
+            .map(|violation| violation.as_str())
+            .collect::<Vec<_>>()
+            .join(",")
+    };
     format!(
-        "ann_evaluation available=true path={} fallback_reason={} recall_q16={} min_recall_q16={} overlap_count={} exact_top_k={:?} ann_top_k={:?}",
+        "ann_evaluation available=true path={} fallback_reason={} fallback_performed={} recall_q16={} min_recall_q16={} require_slo={} production_safe={} slo_violations={} overlap_count={} exact_top_k={:?} ann_top_k={:?}",
         report.search.path.as_str(),
         report
             .search
             .fallback_reason
             .map(|reason| reason.as_str())
             .unwrap_or("null"),
+        report.search.fallback_performed,
         report.recall_q16,
         report
             .search
             .min_recall_q16
             .map(|value| value.to_string())
             .unwrap_or_else(|| "null".to_owned()),
+        report.search.require_slo,
+        report.search.production_safe,
+        violations,
         report.overlap_count,
         report.exact_top_k,
         report.ann_top_k
@@ -91,6 +106,15 @@ fn to_ann_search_report(
         max_visited_candidates: report.search.max_visited_candidates,
         recall_q16: report.search.recall_q16,
         min_recall_q16: report.search.min_recall_q16,
+        fallback_performed: report.search.fallback_performed,
+        require_slo: report.search.require_slo,
+        production_safe: report.search.production_safe,
+        slo_violations: report
+            .search
+            .slo_violations
+            .iter()
+            .map(|violation| violation.as_str().to_owned())
+            .collect(),
     }
 }
 
@@ -99,9 +123,10 @@ pub(crate) fn parse_ann_policy(
     fallback_scan_cap: Option<usize>,
     min_recall: Option<String>,
     max_visited_candidates: Option<usize>,
+    require_slo: bool,
 ) -> Result<AnnSearchPolicy, String> {
     let default_policy = AnnSearchPolicy::default();
-    let fallback = parse_option_bool(fallback)?.unwrap_or(default_policy.fallback);
+    let fallback = parse_option_bool("fallback", fallback)?.unwrap_or(default_policy.fallback);
     let min_recall_q16 = match min_recall {
         Some(value) => Some(parse_min_recall_q16(&value)?),
         None => default_policy.min_recall_q16,
@@ -111,15 +136,16 @@ pub(crate) fn parse_ann_policy(
         fallback,
         fallback_scan_cap,
         max_visited_candidates,
+        require_slo,
     })
 }
 
-fn parse_option_bool(value: Option<String>) -> Result<Option<bool>, String> {
+fn parse_option_bool(name: &str, value: Option<String>) -> Result<Option<bool>, String> {
     value
         .map(|value| match value.to_ascii_lowercase().as_str() {
             "true" | "1" | "yes" | "on" => Ok(true),
             "false" | "0" | "no" | "off" => Ok(false),
-            _ => Err("fallback must be true/false".to_owned()),
+            _ => Err(format!("{name} must be true/false")),
         })
         .transpose()
 }
@@ -164,9 +190,10 @@ mod tests {
 
     #[test]
     fn parse_ann_policy_default_values() {
-        let policy = parse_ann_policy(None, None, None, None).unwrap();
+        let policy = parse_ann_policy(None, None, None, None, false).unwrap();
         assert!(policy.fallback);
         assert_eq!(policy.min_recall_q16, Some(49_151));
+        assert!(!policy.require_slo);
     }
 
     #[test]
@@ -176,17 +203,19 @@ mod tests {
             Some(123),
             Some("75%".to_owned()),
             Some(100),
+            true,
         )
         .unwrap();
         assert!(!policy.fallback);
         assert_eq!(policy.fallback_scan_cap, Some(123));
         assert_eq!(policy.min_recall_q16, Some(49_151));
         assert_eq!(policy.max_visited_candidates, Some(100));
+        assert!(policy.require_slo);
     }
 
     #[test]
     fn parse_ann_policy_rejects_invalid_bool() {
-        let err = parse_ann_policy(Some("maybe".to_owned()), None, None, None).unwrap_err();
+        let err = parse_ann_policy(Some("maybe".to_owned()), None, None, None, false).unwrap_err();
         assert!(err.contains("fallback must be true/false"));
     }
 }

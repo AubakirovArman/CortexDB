@@ -75,23 +75,34 @@ vector search. For `algorithm=ann`, it records the actual path:
 {
   "path": "exact_fallback",
   "fallback_reason": "no_persisted_segments",
+  "fallback_performed": true,
   "requested_limit": 20,
   "allowed_candidates": 1,
   "graph_nodes": 0,
   "returned_candidates": 1,
   "recall_q16": null,
-  "min_recall_q16": null
+  "min_recall_q16": null,
+  "require_slo": true,
+  "production_safe": false,
+  "slo_violations": ["no_persisted_segments"]
 }
 ```
 
 `path` is either `hnsw_graph` or `exact_fallback`. `fallback_reason` is `null`
 when the persisted HNSW graph is used, or one of `empty_graph`,
 `invalid_graph`, `insufficient_results`, `low_recall`,
-`no_persisted_segments`, or `uncheckpointed_changes` when exact scan is used
-instead. `recall_q16` and `min_recall_q16` are populated when the exact top-k
-recall guard runs. `low_recall` is emitted when HNSW returns enough candidates
-but fails that guard, preserving result correctness while ANN quality is still
-being tuned.
+`visit_budget_exceeded`, `no_persisted_segments`, or `uncheckpointed_changes`
+when exact scan is used instead. `fallback_performed` shows whether exact scan
+actually served the result. `recall_q16` and `min_recall_q16` are populated when
+the exact top-k recall guard runs. `low_recall` is emitted when HNSW returns
+enough candidates but fails that guard, preserving result correctness while ANN
+quality is still being tuned.
+
+Set `require_slo=true` on CLI/HTTP ANN search and ANN evaluation calls to make
+the report explicit about production guardrails. `production_safe=false` and
+`slo_violations` identify graph, fallback, recall, and visit-budget violations.
+The result still returns using the configured fallback policy; callers that need
+hard SLO enforcement should reject responses where `production_safe=false`.
 
 For ANN quality work, `Database::evaluate_vector_ann` compares the persisted
 HNSW path with exact `.acv` vector scan for the same `AgentView`, query vector,
@@ -131,5 +142,5 @@ snapshot precondition is met.
 ### 5. Limitations & Fail-Safes
 - **Static Rebuild Lifecycle:** Graphs are built deterministically during the `checkpoint`/`compact` phase and remain static in `.ach` files. Real-time updates inside the MemTable (WAL tail) bypass HNSW and are merged on-the-fly using exact scan, ensuring 100% freshness and correctness.
 - **Exact fallback guardrails:** If a graph is empty, structurally invalid, returns insufficient candidates, or fails the 75% recall guard, the system automatically degrades to exact scan. Fallback reasons are exposed in `ann_report.path` and `ann_report.fallback_reason`.
-- **Recall benchmark fixtures:** The `core_baseline` benchmark includes an ANN recall section (`ann_recall_q16_1k`, `ann_graph_nodes_1k`, `ann_eval_latency_1k`) for regression tracking.
-- **Not production-grade yet:** HNSW is guarded alpha. It lacks multi-layer construction, large-scale golden recall fixtures, and benchmark history. Exact vector scan remains the reliable default for critical workloads.
+- **Recall benchmark fixtures:** Unit fixture gates assert that checkpointed ANN evaluation meets `MIN_ANN_RECALL_Q16`, and the `core_baseline` benchmark includes an ANN recall section (`ann_recall_q16_1k`, `ann_graph_nodes_1k`, `ann_eval_latency_1k`) for regression tracking.
+- **Guarded production mode:** ANN/HNSW exposes recall, fallback, visit-budget, and graph-validity SLO signals through `ann_report`. Large-scale tuning, multi-layer construction, and long-running benchmark history remain future work. Exact vector scan remains the most predictable default for critical workloads.

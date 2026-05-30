@@ -66,12 +66,16 @@ fn typed_search_response_decodes_ann_report_contract() {
         "ann_report": {
             "path": "exact_fallback",
             "fallback_reason": "no_persisted_segments",
+            "fallback_performed": true,
             "requested_limit": 20,
             "allowed_candidates": 1,
             "graph_nodes": 0,
             "returned_candidates": 1,
             "recall_q16": null,
-            "min_recall_q16": null
+            "min_recall_q16": null,
+            "require_slo": true,
+            "production_safe": false,
+            "slo_violations": ["no_persisted_segments"]
         },
         "results": [{
             "cell_id": 1,
@@ -94,6 +98,10 @@ fn typed_search_response_decodes_ann_report_contract() {
     );
     assert_eq!(report.recall_q16, None);
     assert_eq!(report.min_recall_q16, None);
+    assert!(report.fallback_performed);
+    assert!(report.require_slo);
+    assert!(!report.production_safe);
+    assert_eq!(report.slo_violations, vec!["no_persisted_segments"]);
 }
 
 #[test]
@@ -116,12 +124,16 @@ fn typed_ann_evaluation_response_decodes_contract() {
         "ann_report": {
             "path": "hnsw_graph",
             "fallback_reason": null,
+            "fallback_performed": false,
             "requested_limit": 20,
             "allowed_candidates": 2,
             "graph_nodes": 2,
             "returned_candidates": 2,
             "recall_q16": 65535,
-            "min_recall_q16": 65535
+            "min_recall_q16": 65535,
+            "require_slo": true,
+            "production_safe": true,
+            "slo_violations": []
         },
         "exact_top_k": [2, 1],
         "ann_top_k": [2, 1],
@@ -139,4 +151,7 @@ fn typed_ann_evaluation_response_decodes_contract() {
     assert_eq!(report.path.as_str(), "hnsw_graph");
     assert_eq!(report.recall_q16, Some(65535));
     assert_eq!(report.min_recall_q16, Some(65535));
+    assert!(report.require_slo);
+    assert!(report.production_safe);
+    assert!(report.slo_violations.is_empty());
 }

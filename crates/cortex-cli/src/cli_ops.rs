@@ -438,10 +438,23 @@ fn format_ann_search_report(report: &cortex_engine::AnnSearchReport) -> String {
     let max_visited = report
         .max_visited_candidates
         .map_or_else(|| "none".to_owned(), |value| value.to_string());
+    let violations = if report.slo_violations.is_empty() {
+        "none".to_owned()
+    } else {
+        report
+            .slo_violations
+            .iter()
+            .map(|violation| violation.as_str())
+            .collect::<Vec<_>>()
+            .join(",")
+    };
 
     format!(
-        "ann_path={returned} fallback_reason={fallback_reason} recall_q16={recall} min_recall_q16={min_recall} allowed_candidates={} visited_candidates={visited} max_visited_candidates={max_visited}",
-        report.allowed_candidates
+        "ann_path={returned} fallback_reason={fallback_reason} fallback_performed={} recall_q16={recall} min_recall_q16={min_recall} allowed_candidates={} visited_candidates={visited} max_visited_candidates={max_visited} require_slo={} production_safe={} slo_violations={violations}",
+        report.fallback_performed,
+        report.allowed_candidates,
+        report.require_slo,
+        report.production_safe
     )
 }
 

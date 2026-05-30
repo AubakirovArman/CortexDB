@@ -1,0 +1,22 @@
+---
+source: crates/cortex-server/src/tests/response_snapshot_tests.rs
+expression: resp
+---
+{
+  "path": "exact_fallback",
+  "fallback_reason": "visit_budget_exceeded",
+  "fallback_performed": true,
+  "requested_limit": 10,
+  "allowed_candidates": 100,
+  "graph_nodes": 100,
+  "returned_candidates": 10,
+  "visited_candidates": 64,
+  "max_visited_candidates": 64,
+  "recall_q16": 49000,
+  "min_recall_q16": 49151,
+  "require_slo": true,
+  "production_safe": false,
+  "slo_violations": [
+    "visit_budget_exceeded"
+  ]
+}

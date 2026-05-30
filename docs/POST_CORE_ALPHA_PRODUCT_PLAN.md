@@ -87,7 +87,7 @@ Publishing is tag-driven and repeatable.
 
 Goal: move vector search from experimental to guarded alpha with exact-fallback guardrails.
 
-Status: **Guarded Alpha — not production-grade yet**.
+Status: **Guarded production controls landed; large-scale tuning remains open**.
 
 What landed:
 
@@ -106,11 +106,13 @@ What landed:
     - `graph_nodes` / `total_edges` / `persisted_segments` — existing
 11. ✅ `cortexdb ann validate` CLI command.
 12. ✅ ANN limitations and tuning parameters documented in `SEARCH.md`.
+13. ✅ `require_slo`, `production_safe`, `fallback_performed`, and `slo_violations` are exposed in engine, CLI, HTTP, OpenAPI, and SDK contracts.
+14. ✅ Fast recall fixture gates assert checkpointed ANN evaluation meets `MIN_ANN_RECALL_Q16`.
 
-What remains before "production-grade":
+What remains before broad production tuning:
 
 - Collection-level metadata (not just per-segment `.ach` trailer).
-- Recall fixtures beyond smoke tests (sift/glove-style golden sets).
+- Recall fixtures beyond in-repo smoke gates (sift/glove-style golden sets).
 - Benchmark history tracking across commits.
 - Deterministic multi-layer HNSW with tuned `ef_construction`.
 
@@ -208,4 +210,3 @@ Document/OCR production ingestion
 3. Promote ANN/HNSW from experimental to guarded production mode.
 4. Ship full web UI as an optional management surface.
 5. Start real distributed consensus as the next major engineering track.
-

@@ -41,12 +41,16 @@ class CortexDBError(Exception):
 class AnnSearchReport:
     path: str
     fallback_reason: str | None
+    fallback_performed: bool
     requested_limit: int
     allowed_candidates: int
     graph_nodes: int
     returned_candidates: int
     recall_q16: int | None
     min_recall_q16: int | None
+    require_slo: bool
+    production_safe: bool
+    slo_violations: tuple[str, ...]
 
     @classmethod
     def from_json(cls, value: dict[str, Any]) -> "AnnSearchReport":
@@ -56,12 +60,16 @@ class AnnSearchReport:
         return cls(
             path=str(value["path"]),
             fallback_reason=str(reason) if reason is not None else None,
+            fallback_performed=bool(value.get("fallback_performed", False)),
             requested_limit=int(value["requested_limit"]),
             allowed_candidates=int(value["allowed_candidates"]),
             graph_nodes=int(value["graph_nodes"]),
             returned_candidates=int(value["returned_candidates"]),
             recall_q16=int(recall) if recall is not None else None,
             min_recall_q16=int(minimum) if minimum is not None else None,
+            require_slo=bool(value.get("require_slo", False)),
+            production_safe=bool(value.get("production_safe", True)),
+            slo_violations=tuple(str(item) for item in value.get("slo_violations", [])),
         )
 
 

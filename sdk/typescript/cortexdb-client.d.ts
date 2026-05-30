@@ -15,18 +15,23 @@ export type AnnFallbackReason =
   | "invalid_graph"
   | "insufficient_results"
   | "low_recall"
+  | "visit_budget_exceeded"
   | "no_persisted_segments"
   | "uncheckpointed_changes";
 
 export interface AnnSearchReport {
   path: AnnSearchPath;
   fallback_reason: AnnFallbackReason | null;
+  fallback_performed: boolean;
   requested_limit: number;
   allowed_candidates: number;
   graph_nodes: number;
   returned_candidates: number;
   recall_q16: number | null;
   min_recall_q16: number | null;
+  require_slo: boolean;
+  production_safe: boolean;
+  slo_violations: string[];
 }
 
 export interface SearchResult {

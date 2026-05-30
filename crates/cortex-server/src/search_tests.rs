@@ -9,12 +9,14 @@ fn v1_ann_evaluate_reports_recall_for_checkpointed_vectors() {
     assert!(handle_http(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n")
         .contains(r#""checkpoint_seq":3"#));
 
-    let request = "POST /v1/search/ann-evaluate?scope=project:investments&vector=0,10&limit=2 HTTP/1.1\r\n\r\n";
+    let request = "POST /v1/search/ann-evaluate?scope=project:investments&vector=0,10&limit=2&require_slo=true HTTP/1.1\r\n\r\n";
     let response = handle_http(dir.path(), request);
 
     assert!(response.contains(r#""available":true"#));
     assert!(response.contains(r#""recall_q16":65535"#));
     assert!(response.contains(r#""min_recall_q16":49151"#));
+    assert!(response.contains(r#""require_slo":true"#));
+    assert!(response.contains(r#""production_safe":true"#));
     assert!(response.contains(r#""exact_top_k":[2,1]"#));
     assert!(response.contains(r#""ann_top_k":[2,1]"#));
 }

@@ -46,12 +46,16 @@ class CortexDBClientPathTests(unittest.TestCase):
                 "ann_report": {
                     "path": "exact_fallback",
                     "fallback_reason": "no_persisted_segments",
+                    "fallback_performed": True,
                     "requested_limit": 20,
                     "allowed_candidates": 1,
                     "graph_nodes": 0,
                     "returned_candidates": 1,
                     "recall_q16": None,
                     "min_recall_q16": None,
+                    "require_slo": True,
+                    "production_safe": False,
+                    "slo_violations": ["no_persisted_segments"],
                 },
                 "results": [
                     {
@@ -71,6 +75,9 @@ class CortexDBClientPathTests(unittest.TestCase):
         self.assertEqual(response.ann_report.fallback_reason, "no_persisted_segments")
         self.assertIsNone(response.ann_report.recall_q16)
         self.assertIsNone(response.ann_report.min_recall_q16)
+        self.assertTrue(response.ann_report.fallback_performed)
+        self.assertFalse(response.ann_report.production_safe)
+        self.assertEqual(response.ann_report.slo_violations, ("no_persisted_segments",))
 
     def test_ann_evaluation_path_matches_http_api_contract(self) -> None:
         path = CortexDBClient._path(
@@ -92,12 +99,16 @@ class CortexDBClientPathTests(unittest.TestCase):
                 "ann_report": {
                     "path": "hnsw_graph",
                     "fallback_reason": None,
+                    "fallback_performed": False,
                     "requested_limit": 20,
                     "allowed_candidates": 2,
                     "graph_nodes": 2,
                     "returned_candidates": 2,
                     "recall_q16": 65535,
                     "min_recall_q16": 65535,
+                    "require_slo": True,
+                    "production_safe": True,
+                    "slo_violations": [],
                 },
                 "exact_top_k": [2, 1],
                 "ann_top_k": [2, 1],
@@ -112,6 +123,8 @@ class CortexDBClientPathTests(unittest.TestCase):
         self.assertEqual(response.ann_report.path, "hnsw_graph")
         self.assertEqual(response.ann_report.recall_q16, 65535)
         self.assertEqual(response.ann_report.min_recall_q16, 65535)
+        self.assertTrue(response.ann_report.require_slo)
+        self.assertTrue(response.ann_report.production_safe)
 
     def test_ingest_path_matches_http_api_contract(self) -> None:
         path = CortexDBClient._path(

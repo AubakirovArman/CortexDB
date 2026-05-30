@@ -34,12 +34,16 @@ test("CortexDBClient decodes mock contract", () => {
     ann_report: {
       path: "exact_fallback",
       fallback_reason: "no_persisted_segments",
+      fallback_performed: true,
       requested_limit: 20,
       allowed_candidates: 1,
       graph_nodes: 0,
       returned_candidates: 1,
       recall_q16: null,
       min_recall_q16: null,
+      require_slo: true,
+      production_safe: false,
+      slo_violations: ["no_persisted_segments"],
     },
     results: [
       {
@@ -56,6 +60,7 @@ test("CortexDBClient decodes mock contract", () => {
   assert.strictEqual(response.results[0].cell_id, 1);
   assert.strictEqual(response.ann_report.fallback_reason, "no_persisted_segments");
   assert.strictEqual(response.ann_report.recall_q16, null);
+  assert.strictEqual(response.ann_report.production_safe, false);
 });
 
 test("Dashboard console endpoint mapping contract", () => {

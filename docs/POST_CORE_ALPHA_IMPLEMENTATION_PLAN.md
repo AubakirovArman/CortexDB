@@ -17,12 +17,12 @@
 ## Что осталось по крупным эпикам (большие TODO)
 
 ### 1) Production-grade ANN/HNSW (высокий приоритет)
-- [ ] Конфигурируемый recall-policy guard для production: hard fail / hard fallback policy.
+- [x] Конфигурируемый recall-policy guard для production: `require_slo`, exact fallback policy, `production_safe`, `slo_violations`.
 - [x] Добавлены полиси-поля ANN (fbackoff, fallback + limits), visited-count и budget-guard (`max_visited_candidates`).
 - [x] Порог `MIN_ANN_RECALL_Q16` и fallback в exact.
-- [ ] Golden-фикстуры для recall/latency и CI-базовый benchmark gate.
+- [x] Golden-фикстуры для recall guard и baseline benchmark hooks.
 - [ ] Нормализация/оценка качества для разных метрик/источников (dot/cosine/L2) на фиксированной матрице.
-- [ ] Наблюдаемость (словарь метрик / отчёт по деградации графа).
+- [x] Наблюдаемость (словарь метрик / отчёт по деградации графа) через расширенный `AnnSearchReport`.
 
 ### 2) Real distributed consensus
 - [ ] Отделить репликационный consensus-log и local WAL по строгим durability guarantees.
@@ -47,8 +47,8 @@
 
 ## Непосредственный следующий 2-недельный sprint
 
-1. ANN/HNSW: добавить benchmark gate и recall-golden набор (fixed corpus).
-2. ANN/HNSW: экспортировать больше метрик в `AnnSearchReport` и наблюдаемость в server metrics.
+1. ANN/HNSW: расширить fixed corpus для dot/cosine/L2 и накопить benchmark history.
+2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
 3. Consensus: добавить failure-injection harness для partition/restart recovery в integration tests.
 4. UI: вынести текущее dashboard html в versioned frontend asset в отдельной папке.
 5. SDK: проверить публикационные версии в `sdk/python`, `sdk/typescript`, `rust` как единый release gate.

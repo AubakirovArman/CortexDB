@@ -165,19 +165,25 @@ For `search_mode: "vector_ann"`, `ann_report` is populated:
 {
   "path": "exact_fallback",
   "fallback_reason": "no_persisted_segments",
+  "fallback_performed": true,
   "requested_limit": 20,
   "allowed_candidates": 1,
   "graph_nodes": 0,
   "returned_candidates": 1,
   "recall_q16": null,
-  "min_recall_q16": null
+  "min_recall_q16": null,
+  "require_slo": true,
+  "production_safe": false,
+  "slo_violations": ["no_persisted_segments"]
 }
 ```
 
 `fallback_reason` may also be `low_recall` when the HNSW graph returns enough
 candidates but fails the exact top-k recall guard. In that case `recall_q16`
 contains the observed top-k recall and `min_recall_q16` contains the guard
-threshold.
+threshold. With `require_slo=true`, callers should treat
+`production_safe=false` as an ANN/HNSW guardrail breach even when exact fallback
+returned correct results.
 
 ## ANN Evaluation
 
@@ -190,12 +196,16 @@ threshold.
   "ann_report": {
     "path": "hnsw_graph",
     "fallback_reason": null,
+    "fallback_performed": false,
     "requested_limit": 20,
     "allowed_candidates": 2,
     "graph_nodes": 2,
     "returned_candidates": 2,
     "recall_q16": 65535,
-    "min_recall_q16": 65535
+    "min_recall_q16": 65535,
+    "require_slo": true,
+    "production_safe": true,
+    "slo_violations": []
   },
   "exact_top_k": [2, 1],
   "ann_top_k": [2, 1],

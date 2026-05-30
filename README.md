@@ -44,7 +44,7 @@ Or run the full demo: `make demo`
 
 - **Consensus-Driven Replication (Raft):** Multi-node replication log syncing and leader election (current status: primitive foundations/experimental model).
 - **Consistent Hashing Sharding:** Distributed namespace layout and dynamic query routing (current status: experimental layout primitives).
-- **Guarded HNSW Approximate Search (Alpha):** Fixed-point distance metrics (DotProduct, Cosine, L2) with exact-fallback guardrails. Graphs rebuild during compaction. Not yet production-grade — multi-layer construction, golden recall fixtures, and benchmark history remain future work.
+- **Guarded HNSW Approximate Search:** Fixed-point distance metrics (DotProduct, Cosine, L2) with exact fallback, recall gates, visit-budget limits, SLO reporting, and fixture-backed recall checks. Multi-layer tuning and long-running benchmark history remain future work.
 
 ---
 
@@ -234,7 +234,7 @@ println!("{}", results.results[0].payload);
 ## What Is Not Production-Ready Yet
 
 - **BM25 ranking** is heuristic, not production-tuned.
-- **HNSW** is experimental; exact vector scan is the safe default.
+- **HNSW** has guarded production controls, but exact vector scan is still the most predictable default for critical workloads.
 - **Replication** is a local consensus model, not a real distributed transport.
 - **Ingestion pipelines** are alpha smoke paths, not production document/OCR/API adapters.
 - **No built-in LLM integration** — ContextPack is designed to be consumed by external agents.

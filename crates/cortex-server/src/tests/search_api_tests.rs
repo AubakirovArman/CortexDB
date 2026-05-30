@@ -58,6 +58,8 @@ fn v1_vector_search_can_request_ann_mode() {
     assert!(response.contains(r#""search_mode":"vector_ann""#));
     assert!(response.contains(r#""ann_report":{"path":"exact_fallback""#));
     assert!(response.contains(r#""fallback_reason":"no_persisted_segments""#));
+    assert!(response.contains(r#""fallback_performed":true"#));
+    assert!(response.contains(r#""production_safe":false"#));
     assert!(response.contains(r#""cell_id":1"#));
 }
 
@@ -83,8 +85,9 @@ fn v1_search_ann_policy_is_applied_when_passing_query_params() {
     assert!(handle_http(dir.path(), flush).contains(r#""checkpoint_seq":1"#));
 
     let request =
-        "POST /v1/search?scope=project:investments&mode=vector&algorithm=ann&fallback=false&fallback_scan_cap=0&min_recall=1.0&vector=5,0 HTTP/1.1\r\n\r\n";
+        "POST /v1/search?scope=project:investments&mode=vector&algorithm=ann&fallback=false&fallback_scan_cap=0&min_recall=1.0&require_slo=true&vector=5,0 HTTP/1.1\r\n\r\n";
     let response = handle_http(dir.path(), request);
     assert!(response.contains(r#""search_mode":"vector_ann""#));
     assert!(response.contains(r#""min_recall_q16":65535"#));
+    assert!(response.contains(r#""require_slo":true"#));
 }

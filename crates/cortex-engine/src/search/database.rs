@@ -9,8 +9,8 @@ use crate::query::{scope_id, CellMetadata};
 
 use super::access::allowed_candidates;
 use super::ann::{
-    search_persisted_ann_with_policy, AnnFallbackReason, AnnSearchPath, AnnSearchPolicy,
-    AnnSearchReport,
+    finalize_report, search_persisted_ann_with_policy, AnnFallbackReason, AnnSearchPath,
+    AnnSearchPolicy, AnnSearchReport,
 };
 use super::hnsw::DistanceMetric;
 use super::persisted::{search_persisted_lexical, search_persisted_vectors};
@@ -278,7 +278,13 @@ impl Database {
                 })
             })
             .collect::<Vec<_>>();
-        let ann_report = snapshot_ann_report(self, query, vector_candidates, results.len());
+        let ann_report = snapshot_ann_report(
+            self,
+            query,
+            vector_candidates,
+            results.len(),
+            policy.unwrap_or_default(),
+        );
         Ok(DatabaseSearchOutcome {
             results,
             ann_report,
@@ -300,6 +306,7 @@ fn snapshot_ann_report(
     query: SearchQuery<'_>,
     allowed_candidates: usize,
     returned_candidates: usize,
+    policy: AnnSearchPolicy,
 ) -> Option<AnnSearchReport> {
     if query.mode != SearchMode::Vector {
         return None;
@@ -309,16 +316,23 @@ fn snapshot_ann_report(
     } else {
         AnnFallbackReason::UncheckpointedChanges
     };
-    Some(AnnSearchReport {
-        path: AnnSearchPath::ExactFallback,
-        fallback_reason: Some(reason),
-        requested_limit: query.limit,
-        allowed_candidates,
-        graph_nodes: 0,
-        returned_candidates,
-        visited_candidates: 0,
-        max_visited_candidates: None,
-        recall_q16: None,
-        min_recall_q16: None,
-    })
+    Some(finalize_report(
+        AnnSearchReport {
+            path: AnnSearchPath::ExactFallback,
+            fallback_reason: Some(reason),
+            fallback_performed: true,
+            requested_limit: query.limit,
+            allowed_candidates,
+            graph_nodes: 0,
+            returned_candidates,
+            visited_candidates: 0,
+            max_visited_candidates: policy.max_visited_candidates,
+            recall_q16: None,
+            min_recall_q16: policy.min_recall_q16,
+            require_slo: policy.require_slo,
+            production_safe: true,
+            slo_violations: Vec::new(),
+        },
+        policy,
+    ))
 }

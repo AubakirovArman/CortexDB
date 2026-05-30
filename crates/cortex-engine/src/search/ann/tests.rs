@@ -31,6 +31,7 @@ fn fallback_disabled_uses_scan_cap() {
             fallback: false,
             fallback_scan_cap: Some(0),
             max_visited_candidates: None,
+            require_slo: false,
         },
     );
 
@@ -56,6 +57,7 @@ fn fallback_disabled_without_scan_cap_returns_empty_results() {
             fallback: false,
             fallback_scan_cap: None,
             max_visited_candidates: None,
+            require_slo: false,
         },
     );
 
@@ -150,6 +152,7 @@ fn policy_min_recall_controls_ann_report() {
             fallback: false,
             fallback_scan_cap: None,
             max_visited_candidates: None,
+            require_slo: false,
         },
     );
 
@@ -199,6 +202,7 @@ fn hnsw_budget_exceeded_falls_back_to_exact() {
             fallback: true,
             fallback_scan_cap: None,
             max_visited_candidates: Some(1),
+            require_slo: false,
         },
     );
 
@@ -209,6 +213,60 @@ fn hnsw_budget_exceeded_falls_back_to_exact() {
     );
     assert_eq!(outcome.report.visited_candidates, 0);
     assert_eq!(outcome.report.max_visited_candidates, Some(1));
+}
+
+#[test]
+fn slo_report_flags_fallback_as_not_production_safe() {
+    let outcome = search_persisted_ann_with_policy(
+        &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
+        &HnswGraphIndex::default(),
+        &[0, 5],
+        &BTreeSet::from([1, 2]),
+        1,
+        AnnSearchPolicy {
+            min_recall_q16: Some(MIN_ANN_RECALL_Q16),
+            fallback: true,
+            fallback_scan_cap: None,
+            max_visited_candidates: None,
+            require_slo: true,
+        },
+    );
+
+    assert_eq!(outcome.report.path, AnnSearchPath::ExactFallback);
+    assert!(outcome.report.fallback_performed);
+    assert!(outcome.report.require_slo);
+    assert!(!outcome.report.production_safe);
+    assert!(outcome
+        .report
+        .slo_violations
+        .contains(&AnnSloViolation::EmptyGraph));
+}
+
+#[test]
+fn slo_report_marks_healthy_graph_as_production_safe() {
+    let outcome = search_persisted_ann_with_policy(
+        &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10]), (3, vec![1, 9])]),
+        &HnswGraphIndex {
+            links: BTreeMap::from([(1, BTreeSet::from([2])), (2, BTreeSet::from([3]))]),
+            dimension: 2,
+            metric: 0,
+        },
+        &[0, 10],
+        &BTreeSet::from([1, 2, 3]),
+        2,
+        AnnSearchPolicy {
+            min_recall_q16: Some(MIN_ANN_RECALL_Q16),
+            fallback: true,
+            fallback_scan_cap: None,
+            max_visited_candidates: None,
+            require_slo: true,
+        },
+    );
+
+    assert_eq!(outcome.report.path, AnnSearchPath::HnswGraph);
+    assert!(!outcome.report.fallback_performed);
+    assert!(outcome.report.production_safe);
+    assert!(outcome.report.slo_violations.is_empty());
 }
 
 #[test]

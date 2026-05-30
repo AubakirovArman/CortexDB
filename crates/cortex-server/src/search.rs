@@ -200,6 +200,7 @@ fn report_response(report: AnnSearchReport) -> AnnSearchReportResponse {
         fallback_reason: report
             .fallback_reason
             .map(|reason| reason.as_str().to_owned()),
+        fallback_performed: report.fallback_performed,
         requested_limit: report.requested_limit,
         allowed_candidates: report.allowed_candidates,
         graph_nodes: report.graph_nodes,
@@ -208,13 +209,20 @@ fn report_response(report: AnnSearchReport) -> AnnSearchReportResponse {
         max_visited_candidates: report.max_visited_candidates,
         recall_q16: report.recall_q16,
         min_recall_q16: report.min_recall_q16,
+        require_slo: report.require_slo,
+        production_safe: report.production_safe,
+        slo_violations: report
+            .slo_violations
+            .iter()
+            .map(|violation| violation.as_str().to_owned())
+            .collect(),
     }
 }
 
 fn parse_ann_policy(query: &str) -> Result<AnnSearchPolicy, String> {
     let default_policy = AnnSearchPolicy::default();
     let fallback = query_param_opt(query, "fallback")
-        .map(parse_bool)
+        .map(|value| parse_bool("fallback", value))
         .transpose()?
         .unwrap_or(default_policy.fallback);
     let fallback_scan_cap = query_param_opt(query, "fallback_scan_cap")
@@ -237,19 +245,25 @@ fn parse_ann_policy(query: &str) -> Result<AnnSearchPolicy, String> {
         })
         .transpose()?;
 
+    let require_slo = query_param_opt(query, "require_slo")
+        .map(|value| parse_bool("require_slo", value))
+        .transpose()?
+        .unwrap_or(default_policy.require_slo);
+
     Ok(AnnSearchPolicy {
         min_recall_q16,
         fallback,
         fallback_scan_cap,
         max_visited_candidates,
+        require_slo,
     })
 }
 
-fn parse_bool(value: &str) -> Result<bool, String> {
+fn parse_bool(name: &str, value: &str) -> Result<bool, String> {
     match value.to_ascii_lowercase().as_str() {
         "true" | "1" | "yes" | "on" => Ok(true),
         "false" | "0" | "no" | "off" => Ok(false),
-        _ => Err("fallback must be true/false".to_owned()),
+        _ => Err(format!("{name} must be true/false")),
     }
 }
 
