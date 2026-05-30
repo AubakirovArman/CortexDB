@@ -6,7 +6,7 @@ use std::thread::JoinHandle;
 use cortex_engine::Database;
 
 use crate::responses::RouterError;
-use crate::router::route_database;
+use crate::router::route_database_with_agent;
 use crate::DEFAULT_ACTOR_QUEUE_CAPACITY;
 
 enum ActorCommand {
@@ -14,6 +14,7 @@ enum ActorCommand {
         method: String,
         target: String,
         body: Vec<u8>,
+        auth_agent_id: Option<u64>,
         reply: mpsc::Sender<Result<String, RouterError>>,
     },
     ExpireMemory {
@@ -59,9 +60,16 @@ impl DatabaseActor {
                         method,
                         target,
                         body,
+                        auth_agent_id,
                         reply,
                     } => {
-                        let result = route_database(&mut db, &method, &target, &body);
+                        let result = route_database_with_agent(
+                            &mut db,
+                            &method,
+                            &target,
+                            &body,
+                            auth_agent_id,
+                        );
                         let _ = reply.send(result);
                     }
                     ActorCommand::ExpireMemory {
@@ -128,11 +136,22 @@ impl DatabaseActor {
     }
 
     pub fn route(&self, method: &str, target: &str, body: &[u8]) -> Result<String, RouterError> {
+        self.route_with_agent(method, target, body, None)
+    }
+
+    pub fn route_with_agent(
+        &self,
+        method: &str,
+        target: &str,
+        body: &[u8],
+        auth_agent_id: Option<u64>,
+    ) -> Result<String, RouterError> {
         let (reply_tx, reply_rx) = mpsc::channel();
         self.enqueue(ActorCommand::Route {
             method: method.to_owned(),
             target: target.to_owned(),
             body: body.to_vec(),
+            auth_agent_id,
             reply: reply_tx,
         })?;
         let result = reply_rx

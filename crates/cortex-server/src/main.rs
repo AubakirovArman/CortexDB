@@ -26,8 +26,21 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    let auth_agent_id = match auth_agent_id_from_env() {
+        Ok(agent_id) => agent_id,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let auth_token = env::var("CORTEXDB_AUTH_TOKEN").ok();
+    if auth_agent_id.is_some() && auth_token.is_none() {
+        eprintln!("CORTEXDB_AUTH_AGENT_ID requires CORTEXDB_AUTH_TOKEN");
+        return ExitCode::FAILURE;
+    }
     let options = cortex_server::ServerOptions {
-        auth_token: env::var("CORTEXDB_AUTH_TOKEN").ok(),
+        auth_token,
+        auth_agent_id,
         actor_queue_capacity,
         cors_allowed_origin: env::var("CORTEXDB_CORS_ALLOW_ORIGIN").ok(),
         request_rate_limit_per_minute,
@@ -40,6 +53,24 @@ fn main() -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+fn auth_agent_id_from_env() -> Result<Option<u64>, String> {
+    match env::var("CORTEXDB_AUTH_AGENT_ID") {
+        Ok(raw) => parse_auth_agent_id(&raw).map(Some),
+        Err(env::VarError::NotPresent) => Ok(None),
+        Err(error) => Err(format!("invalid CORTEXDB_AUTH_AGENT_ID: {error}")),
+    }
+}
+
+fn parse_auth_agent_id(raw: &str) -> Result<u64, String> {
+    let id = raw
+        .parse::<u64>()
+        .map_err(|_| "CORTEXDB_AUTH_AGENT_ID must be a positive integer".to_owned())?;
+    if id == 0 {
+        return Err("CORTEXDB_AUTH_AGENT_ID must be greater than zero".to_owned());
+    }
+    Ok(id)
 }
 
 fn audit_log_enabled_from_env() -> bool {
@@ -94,7 +125,9 @@ fn parse_actor_queue_capacity(raw: &str) -> Result<usize, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_actor_queue_capacity, parse_bool_flag, parse_request_rate_limit};
+    use super::{
+        parse_actor_queue_capacity, parse_auth_agent_id, parse_bool_flag, parse_request_rate_limit,
+    };
 
     #[test]
     fn parse_actor_queue_capacity_accepts_positive_integer() {
@@ -116,6 +149,17 @@ mod tests {
     fn parse_request_rate_limit_rejects_zero_and_invalid_values() {
         assert!(parse_request_rate_limit("0").is_err());
         assert!(parse_request_rate_limit("abc").is_err());
+    }
+
+    #[test]
+    fn parse_auth_agent_id_accepts_positive_integer() {
+        assert_eq!(parse_auth_agent_id("7").unwrap(), 7);
+    }
+
+    #[test]
+    fn parse_auth_agent_id_rejects_zero_and_invalid_values() {
+        assert!(parse_auth_agent_id("0").is_err());
+        assert!(parse_auth_agent_id("abc").is_err());
     }
 
     #[test]

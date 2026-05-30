@@ -1,8 +1,9 @@
+use cortex_aql::AgentView;
 use cortex_engine::{
     parse_vector_literal, AnnSearchPolicy, AnnSearchReport, Database, SearchLimit,
 };
 
-use crate::context::view_for_scope;
+use crate::authz;
 use crate::responses::{
     AnnEvaluationResponse, AnnSearchReportResponse, RouterError, SearchExplainItemResponse,
     SearchExplainResponse, SearchResponse, SearchResultResponse,
@@ -13,8 +14,10 @@ pub fn handle_search_explain_shared(
     db: &Database,
     query: &str,
     body: &[u8],
+    authenticated_view: Option<&AgentView>,
 ) -> Result<String, RouterError> {
     let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
+    let view = authz::read_view_for_scope(&scope, authenticated_view)?;
     let limit = query_param_decoded(query, "limit")
         .ok()
         .map(|s| parse_limit(&s))
@@ -29,10 +32,10 @@ pub fn handle_search_explain_shared(
     let query_terms = extract_terms_from_diagnostics(&diagnostics);
 
     let results = match mode.as_str() {
-        "keyword" => db.search_keyword(&q, &view_for_scope(&scope), SearchLimit(limit)),
+        "keyword" => db.search_keyword(&q, &view, SearchLimit(limit)),
         "vector" => {
             let v = parse_vector_literal(&q).map_err(RouterError::BadRequest)?;
-            db.search_vector(&v, &view_for_scope(&scope), SearchLimit(limit))
+            db.search_vector(&v, &view, SearchLimit(limit))
         }
         _ => {
             return Err(RouterError::BadRequest(
@@ -80,8 +83,10 @@ pub fn handle_search_shared(
     db: &Database,
     query: &str,
     body: &[u8],
+    authenticated_view: Option<&AgentView>,
 ) -> Result<String, RouterError> {
     let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
+    let view = authz::read_view_for_scope(&scope, authenticated_view)?;
     let limit = query_param_decoded(query, "limit")
         .ok()
         .map(|s| parse_limit(&s))
@@ -91,8 +96,6 @@ pub fn handle_search_shared(
     let mode = query_param_decoded(query, "mode").unwrap_or_else(|_| "keyword".to_owned());
     let algorithm = query_param_decoded(query, "algorithm").unwrap_or_else(|_| "ann".to_owned());
     let ann_policy = parse_ann_policy(query).map_err(RouterError::BadRequest)?;
-    let view = view_for_scope(&scope);
-
     let (search_mode, results, ann_report) = match mode.as_str() {
         "keyword" => (
             "keyword",
@@ -144,8 +147,10 @@ pub fn handle_ann_evaluate_shared(
     db: &Database,
     query: &str,
     body: &[u8],
+    authenticated_view: Option<&AgentView>,
 ) -> Result<String, RouterError> {
     let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
+    let view = authz::read_view_for_scope(&scope, authenticated_view)?;
     let limit = query_param_decoded(query, "limit")
         .ok()
         .map(|s| parse_limit(&s))
@@ -157,7 +162,7 @@ pub fn handle_ann_evaluate_shared(
     let vector = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
     let response = match db.evaluate_vector_ann_with_policy(
         &vector,
-        &view_for_scope(&scope),
+        &view,
         SearchLimit(limit),
         parse_ann_policy(query).map_err(RouterError::BadRequest)?,
     )? {

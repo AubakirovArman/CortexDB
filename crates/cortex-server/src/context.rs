@@ -1,6 +1,7 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_engine::{scope_id, ContextPack, ContextPackOptions, Database};
 
+use crate::authz;
 use crate::responses::{
     ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse, ExplainResponse,
     RouterError, SourceRefResponse,
@@ -12,11 +13,12 @@ pub fn handle_context_shared(
     db: &Database,
     query: &str,
     body: &[u8],
+    authenticated_view: Option<&AgentView>,
 ) -> Result<String, RouterError> {
     let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
     let aql = String::from_utf8_lossy(body);
-    let pack =
-        db.context_pack_from_aql(&aql, &view_for_scope(&scope), ContextPackOptions::default())?;
+    let view = authz::read_view_for_scope(&scope, authenticated_view)?;
+    let pack = db.context_pack_from_aql(&aql, &view, ContextPackOptions::default())?;
 
     let response = map_context_pack(&pack);
     Ok(serde_json::to_string(&response)?)

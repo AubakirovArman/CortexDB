@@ -18,6 +18,7 @@ use responses::{ErrorCode, ErrorResponse, MetricsResponse};
 mod actor;
 mod aql;
 mod audit;
+mod authz;
 mod context;
 mod dashboard;
 #[cfg(test)]
@@ -36,7 +37,8 @@ mod tests;
 use crate::responses::RouterError;
 pub use router::{
     cell_id, json_error, json_response, query_param, query_param_decoded, query_param_opt,
-    query_param_opt_decoded, route_database, route_shared,
+    query_param_opt_decoded, route_database, route_database_with_agent, route_shared,
+    route_shared_with_agent,
 };
 #[cfg(test)]
 pub use sync_handler::{handle_http, handle_http_with_options};
@@ -47,6 +49,11 @@ const RATE_LIMIT_WINDOW: Duration = Duration::from_secs(60);
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ServerOptions {
     pub auth_token: Option<String>,
+    /// Optional AgentView id bound to the configured bearer token.
+    ///
+    /// When set, successful HTTP auth loads the persisted `AgentView` with this
+    /// id and scope-bound data routes are checked against that view.
+    pub auth_agent_id: Option<u64>,
     /// Capacity of the bounded actor command queue. Default is 1024.
     pub actor_queue_capacity: usize,
     /// Optional exact browser origin allowed for cross-origin API requests.
@@ -140,6 +147,7 @@ pub fn serve(root: &Path, addr: &str) -> std::io::Result<()> {
 }
 
 pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> std::io::Result<()> {
+    validate_server_options(&options)?;
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?;
@@ -216,6 +224,16 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
         axum::serve(listener, app).await?;
         Ok(())
     })
+}
+
+fn validate_server_options(options: &ServerOptions) -> std::io::Result<()> {
+    if options.auth_agent_id.is_some() && options.auth_token.is_none() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "auth_agent_id requires auth_token",
+        ));
+    }
+    Ok(())
 }
 
 fn cors_layer(options: &ServerOptions) -> std::io::Result<Option<CorsLayer>> {
@@ -368,6 +386,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
                 .into_response();
         }
     }
+    let auth_agent_id = state.options.auth_agent_id;
 
     if !request_allowed_by_rate_limit(&state) {
         state.request_rejected.fetch_add(1, Ordering::Relaxed);
@@ -465,7 +484,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
     let body_clone = body_bytes.clone();
 
     let res = match tokio::task::spawn_blocking(move || {
-        actor.route(&method_clone, &target_clone, &body_clone)
+        actor.route_with_agent(&method_clone, &target_clone, &body_clone, auth_agent_id)
     })
     .await
     {

@@ -1,3 +1,8 @@
+use std::collections::BTreeSet;
+
+use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, ScopeId, Q16_ZERO};
+use cortex_engine::{scope_id, Database};
+
 use crate::{handle_http_with_options, ServerOptions};
 
 #[test]
@@ -16,6 +21,95 @@ fn v1_api_requires_bearer_token_when_configured() {
         &options,
     );
     assert!(allowed.contains(r#""status":"ok""#));
+}
+
+#[test]
+fn auth_agent_view_blocks_unreadable_scope_over_http() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let db = Database::open(dir.path()).unwrap();
+        db.save_agent_view(&agent_view(AgentId(7), "finance", true))
+            .unwrap();
+    }
+    let options = ServerOptions {
+        auth_token: Some("secret".to_owned()),
+        auth_agent_id: Some(7),
+        ..Default::default()
+    };
+
+    let denied = handle_http_with_options(
+        dir.path(),
+        "POST /v1/search?scope=secret&q=budget HTTP/1.1\r\nAuthorization: Bearer secret\r\n\r\n",
+        &options,
+    );
+    assert!(
+        denied.contains("403 Forbidden"),
+        "unreadable scope should be denied: {denied}"
+    );
+    assert!(
+        denied.contains("permission_denied"),
+        "denial should use stable permission code: {denied}"
+    );
+
+    let allowed = handle_http_with_options(
+        dir.path(),
+        "POST /v1/search?scope=finance&q=budget HTTP/1.1\r\nAuthorization: Bearer secret\r\n\r\n",
+        &options,
+    );
+    assert!(
+        allowed.contains("200 OK"),
+        "readable scope should be allowed: {allowed}"
+    );
+}
+
+#[test]
+fn auth_agent_view_blocks_unwritable_cell_scope_over_http() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let db = Database::open(dir.path()).unwrap();
+        db.save_agent_view(&agent_view(AgentId(7), "finance", true))
+            .unwrap();
+    }
+    let options = ServerOptions {
+        auth_token: Some("secret".to_owned()),
+        auth_agent_id: Some(7),
+        ..Default::default()
+    };
+
+    let denied = handle_http_with_options(
+        dir.path(),
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\nAuthorization: Bearer secret\r\n\r\nscope=secret\n\nhidden",
+        &options,
+    );
+    assert!(
+        denied.contains("403 Forbidden"),
+        "unwritable payload scope should be denied: {denied}"
+    );
+    assert!(
+        denied.contains("permission_denied"),
+        "denial should use stable permission code: {denied}"
+    );
+
+    let allowed = handle_http_with_options(
+        dir.path(),
+        "POST /v1/cell?cell_id=2 HTTP/1.1\r\nAuthorization: Bearer secret\r\n\r\nscope=finance\n\nvisible",
+        &options,
+    );
+    assert!(
+        allowed.contains("200 OK"),
+        "writable payload scope should be allowed: {allowed}"
+    );
+}
+
+#[test]
+fn auth_agent_id_requires_auth_token_in_server_options() {
+    let dir = tempfile::tempdir().unwrap();
+    let options = ServerOptions {
+        auth_agent_id: Some(7),
+        ..Default::default()
+    };
+    let error = crate::serve_with_options(dir.path(), "127.0.0.1:0", options).unwrap_err();
+    assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
 }
 
 #[test]
@@ -263,4 +357,32 @@ fn request(addr: std::net::SocketAddr, request: &str) -> String {
     let mut response = [0u8; 4096];
     let read = stream.read(&mut response).unwrap();
     String::from_utf8_lossy(&response[..read]).to_string()
+}
+
+fn agent_view(agent_id: AgentId, scope: &str, allow_write: bool) -> AgentView {
+    let scope_id = scope_id(scope);
+    AgentView {
+        agent_id,
+        label: Some("http-test-agent".to_owned()),
+        readable_brains: BTreeSet::from([BrainId(1)]),
+        readable_scopes: BTreeSet::from([scope_id]),
+        writable_scopes: if allow_write {
+            BTreeSet::from([scope_id])
+        } else {
+            BTreeSet::new()
+        },
+        allowed_modes: BTreeSet::from([RetrievalMode::Balanced]),
+        allowed_memory_types: BTreeSet::from([MemoryType::Decision]),
+        max_context_budget_tokens: 4_000,
+        default_context_budget_tokens: 1_000,
+        max_candidate_limit: 100,
+        default_candidate_limit: 20,
+        min_required_confidence_q16: Q16_ZERO,
+        max_ttl_seconds: Some(3_600),
+        allow_remember: allow_write,
+        allow_verify_fact: true,
+        allow_audit_mode: false,
+        require_citations_by_default: false,
+        private_scope: Some(ScopeId(scope_id.0)),
+    }
 }

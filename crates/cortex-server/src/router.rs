@@ -1,8 +1,10 @@
+use cortex_aql::AgentId;
 use cortex_core::CellId;
 use cortex_engine::ClusterConfig;
 use cortex_engine::{Database, IngestionJobId, IngestionProgressTracker};
 
 use crate::aql;
+use crate::authz;
 use crate::context;
 use crate::memory;
 use crate::responses::{
@@ -21,7 +23,22 @@ pub fn route_database(
     target: &str,
     body: &[u8],
 ) -> Result<String, RouterError> {
+    route_database_with_agent(db, method, target, body, None)
+}
+
+pub fn route_database_with_agent(
+    db: &mut Database,
+    method: &str,
+    target: &str,
+    body: &[u8],
+    auth_agent_id: Option<u64>,
+) -> Result<String, RouterError> {
     let (path, query) = target.split_once('?').unwrap_or((target, ""));
+    let authenticated_view = if is_agent_scoped_route(method, path) {
+        authz::load_agent_view(db, auth_agent_id.map(AgentId))?
+    } else {
+        None
+    };
     match (method, path) {
         ("GET", "/v1/health") => serde_json::to_string(&HealthResponse {
             status: "ok".to_owned(),
@@ -84,8 +101,12 @@ pub fn route_database(
         }
         ("GET", "/get") | ("GET", "/v1/cell") => {
             let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
+            let cell = db.get_latest_cell(cell_id);
+            if let Some(payload) = &cell {
+                authz::require_payload_read(authenticated_view.as_ref(), payload)?;
+            }
             let response = CellLookupResponse {
-                cell: db.get_latest_cell(cell_id).map(|payload| CellResponse {
+                cell: cell.map(|payload| CellResponse {
                     cell_id: cell_id.0,
                     payload: String::from_utf8_lossy(&payload).into_owned(),
                 }),
@@ -94,6 +115,7 @@ pub fn route_database(
         }
         ("POST", "/put") | ("POST", "/v1/cell") => {
             let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
+            authz::require_payload_write(authenticated_view.as_ref(), body)?;
             let seq = db.put_cell(cell_id, body.to_vec())?;
             let response = PutCellResponse {
                 seq: seq.0,
@@ -103,6 +125,9 @@ pub fn route_database(
         }
         ("POST", "/tombstone") | ("DELETE", "/v1/cell") => {
             let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
+            if let Some(payload) = db.get_latest_cell(cell_id) {
+                authz::require_payload_write(authenticated_view.as_ref(), &payload)?;
+            }
             let seq = db.tombstone_cell(cell_id)?;
             let response = PutCellResponse {
                 seq: seq.0,
@@ -126,11 +151,19 @@ pub fn route_database(
             };
             Ok(serde_json::to_string(&response)?)
         }
-        ("POST", "/v1/context") => context::handle_context_shared(db, query, body),
-        ("POST", "/v1/aql") => aql::handle_aql_shared(db, query, body),
-        ("POST", "/v1/search") => search::handle_search_shared(db, query, body),
-        ("POST", "/v1/search/explain") => search::handle_search_explain_shared(db, query, body),
-        ("POST", "/v1/search/ann-evaluate") => search::handle_ann_evaluate_shared(db, query, body),
+        ("POST", "/v1/context") => {
+            context::handle_context_shared(db, query, body, authenticated_view.as_ref())
+        }
+        ("POST", "/v1/aql") => aql::handle_aql_shared(db, query, body, authenticated_view.as_ref()),
+        ("POST", "/v1/search") => {
+            search::handle_search_shared(db, query, body, authenticated_view.as_ref())
+        }
+        ("POST", "/v1/search/explain") => {
+            search::handle_search_explain_shared(db, query, body, authenticated_view.as_ref())
+        }
+        ("POST", "/v1/search/ann-evaluate") => {
+            search::handle_ann_evaluate_shared(db, query, body, authenticated_view.as_ref())
+        }
         ("GET", "/v1/metrics") => {
             let stats = db.storage_stats()?;
             let ann = db.ann_metrics();
@@ -235,18 +268,26 @@ pub fn route_database(
             };
             Ok(serde_json::to_string(&response)?)
         }
-        ("POST", "/v1/remember") => memory::handle_remember_shared(db, query, body),
+        ("POST", "/v1/remember") => {
+            memory::handle_remember_shared(db, query, body, authenticated_view.as_ref())
+        }
         ("POST", "/v1/forget") => {
             let cell_id = cell_id(query)?;
+            if let Some(payload) = db.get_latest_cell(cell_id) {
+                authz::require_payload_write(authenticated_view.as_ref(), &payload)?;
+            }
             db.forget_cell(cell_id)?;
             Ok(serde_json::to_string(&PutCellResponse {
                 seq: 0,
                 cell_id: cell_id.0,
             })?)
         }
-        ("POST", "/v1/verify") => memory::handle_verify_shared(db, query, body),
+        ("POST", "/v1/verify") => {
+            memory::handle_verify_shared(db, query, body, authenticated_view.as_ref())
+        }
         ("POST", "/v1/ingest/text") => {
             let scope = query_param_opt(query, "scope").unwrap_or("default");
+            authz::require_write_scope_for_optional_view(authenticated_view.as_ref(), scope)?;
             let source = query_param_opt(query, "source").unwrap_or("http_post");
             let text = String::from_utf8_lossy(body);
             let start_id = db.allocate_cell_id_range(0);
@@ -271,6 +312,7 @@ pub fn route_database(
         }
         ("POST", "/v1/ingest/json") => {
             let scope = query_param_opt(query, "scope").unwrap_or("default");
+            authz::require_write_scope_for_optional_view(authenticated_view.as_ref(), scope)?;
             let source = query_param_opt(query, "source").unwrap_or("http_post");
             let json = String::from_utf8_lossy(body);
             let start_id = db.allocate_cell_id_range(0);
@@ -295,6 +337,7 @@ pub fn route_database(
         }
         ("POST", "/v1/ingest/csv") => {
             let scope = query_param_opt(query, "scope").unwrap_or("default");
+            authz::require_write_scope_for_optional_view(authenticated_view.as_ref(), scope)?;
             let source = query_param_opt(query, "source").unwrap_or("http_post");
             let csv = String::from_utf8_lossy(body);
             let total = csv.lines().count().saturating_sub(1) as u64;
@@ -364,6 +407,29 @@ pub fn route_database(
     }
 }
 
+fn is_agent_scoped_route(method: &str, path: &str) -> bool {
+    matches!(
+        (method, path),
+        ("GET", "/get")
+            | ("GET", "/v1/cell")
+            | ("POST", "/put")
+            | ("POST", "/v1/cell")
+            | ("POST", "/tombstone")
+            | ("DELETE", "/v1/cell")
+            | ("POST", "/v1/context")
+            | ("POST", "/v1/aql")
+            | ("POST", "/v1/search")
+            | ("POST", "/v1/search/explain")
+            | ("POST", "/v1/search/ann-evaluate")
+            | ("POST", "/v1/remember")
+            | ("POST", "/v1/forget")
+            | ("POST", "/v1/verify")
+            | ("POST", "/v1/ingest/text")
+            | ("POST", "/v1/ingest/json")
+            | ("POST", "/v1/ingest/csv")
+    )
+}
+
 /// Legacy/test compatibility wrapper that acquires a write lock and delegates to `route_database`.
 /// Prefer `route_database` in production paths where the caller already owns exclusive access.
 pub fn route_shared(
@@ -372,10 +438,20 @@ pub fn route_shared(
     target: &str,
     body: &[u8],
 ) -> Result<String, RouterError> {
+    route_shared_with_agent(db, method, target, body, None)
+}
+
+pub fn route_shared_with_agent(
+    db: &std::sync::RwLock<Database>,
+    method: &str,
+    target: &str,
+    body: &[u8],
+    auth_agent_id: Option<u64>,
+) -> Result<String, RouterError> {
     let mut db = db
         .write()
         .map_err(|e| RouterError::Internal(e.to_string()))?;
-    route_database(&mut db, method, target, body)
+    route_database_with_agent(&mut db, method, target, body, auth_agent_id)
 }
 
 pub fn query_param_opt<'a>(query: &'a str, key: &str) -> Option<&'a str> {

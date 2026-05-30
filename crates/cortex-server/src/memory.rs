@@ -1,8 +1,9 @@
+use cortex_aql::AgentView;
 use cortex_engine::verification::numeric::{extract_numeric_values, numeric_conflict};
 use cortex_engine::verification::{VerificationReport, VerificationStatus};
 use cortex_engine::Database;
 
-use crate::context::view_for_scope;
+use crate::authz;
 use crate::responses::{
     EvidenceResponse, GuardResponse, NumericConflictResponse, RememberResponse, RouterError,
     VerificationReportResponse,
@@ -13,11 +14,10 @@ pub fn handle_remember_shared(
     db: &mut Database,
     query: &str,
     body: &[u8],
+    authenticated_view: Option<&AgentView>,
 ) -> Result<String, RouterError> {
     let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
-    let mut view = view_for_scope(&scope);
-    view.allow_remember = true;
-    view.writable_scopes = std::collections::BTreeSet::from([cortex_engine::scope_id(&scope)]);
+    let view = authz::remember_view_for_scope(&scope, authenticated_view)?;
     let aql = String::from_utf8_lossy(body);
     let result = db.remember_aql(&aql, &view)?;
     let response = RememberResponse {
@@ -32,10 +32,10 @@ pub fn handle_verify_shared(
     db: &Database,
     query: &str,
     body: &[u8],
+    authenticated_view: Option<&AgentView>,
 ) -> Result<String, RouterError> {
     let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
-    let mut view = view_for_scope(&scope);
-    view.allow_verify_fact = true;
+    let view = authz::verify_view_for_scope(&scope, authenticated_view)?;
     let aql = String::from_utf8_lossy(body);
     let report = db.verify_fact_aql(&aql, &view)?;
     let response = map_verification_report(&report, db);

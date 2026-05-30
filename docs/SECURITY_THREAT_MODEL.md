@@ -37,6 +37,7 @@ be treated as future work.
 | Threat | Current Control | Status |
 | --- | --- | --- |
 | HTTP request without credentials | Optional `CORTEXDB_AUTH_TOKEN` Bearer token check. | Implemented when token is configured. |
+| Authenticated HTTP data request bypasses AgentView scope policy | Optional `CORTEXDB_AUTH_AGENT_ID` maps the configured bearer token to a persisted AgentView for scope-bound data routes. | Implemented for one configured token. |
 | Path traversal through tenant ID | Percent-decoded tenant validation, limited charset and length. | Implemented and tested. |
 | Oversized request body | Axum request body limit. | Implemented and tested. |
 | Concurrent writers corrupting local files | Database lock file with owner metadata. | Implemented and tested. |
@@ -58,7 +59,7 @@ The following are not production security guarantees yet:
 
 - TLS/mTLS and certificate management.
 - User identity, sessions, RBAC, org roles, or per-route authorization.
-- Per-agent server auth mapping to persisted AgentViews.
+- Multi-token or per-user server auth mapping to persisted AgentViews.
 - Per-token quotas or distributed rate limiting.
 - Multi-origin, wildcard, or per-token CORS policies.
 - Durable audit log storage, tamper-evident audit trails, or SIEM export.
@@ -73,18 +74,20 @@ The following are not production security guarantees yet:
 For any non-local deployment:
 
 1. Set `CORTEXDB_AUTH_TOKEN` to a strong random value.
-2. Terminate TLS in a trusted reverse proxy.
-3. Restrict network access to trusted clients.
-4. Run one tenant per isolated realm or process when data separation matters.
-5. Store database files on a trusted local filesystem.
-6. Back up the database directory only after stopping writes or using a future
+2. For scoped API deployments, set `CORTEXDB_AUTH_AGENT_ID` to a persisted
+   AgentView id so data routes enforce readable/writable scope policy.
+3. Terminate TLS in a trusted reverse proxy.
+4. Restrict network access to trusted clients.
+5. Run one tenant per isolated realm or process when data separation matters.
+6. Store database files on a trusted local filesystem.
+7. Back up the database directory only after stopping writes or using a future
    backup command with consistency guarantees.
-7. Treat dashboard access as administrative.
-8. Enable `CORTEXDB_CORS_ALLOW_ORIGIN` only for one trusted browser origin;
+8. Treat dashboard access as administrative.
+9. Enable `CORTEXDB_CORS_ALLOW_ORIGIN` only for one trusted browser origin;
    keep it unset for local CLI/SDK-only deployments.
-9. Set `CORTEXDB_RATE_LIMIT_PER_MINUTE` for exposed local deployments; use an
+10. Set `CORTEXDB_RATE_LIMIT_PER_MINUTE` for exposed local deployments; use an
    API gateway or reverse proxy for user-aware quotas.
-10. Set `CORTEXDB_AUDIT_LOG=true` when route-level access auditing is required;
+11. Set `CORTEXDB_AUDIT_LOG=true` when route-level access auditing is required;
     export `tracing` output to your process supervisor or log pipeline.
 
 ## Error Disclosure Policy
@@ -127,7 +130,8 @@ Security-sensitive test areas include:
 1. Add per-token quotas and user-aware rate limiting.
 2. Expand CORS beyond the current single exact-origin allowlist only after
    adding user/RBAC-aware authorization.
-3. Persist AgentView profiles and map HTTP auth tokens to AgentViews.
+3. Extend single-token `CORTEXDB_AUTH_AGENT_ID` into multi-token AgentView
+   mappings and persisted auth policy.
 4. Add durable audit sinks, tamper-evident audit trails, and SIEM export.
 5. Add backup/restore with integrity verification.
 6. Add documented secret rotation.
