@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-scripts-check ann-convert-public-smoke ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-compare-baseline-bundle smoke-test sdk-smoke-test alpha-check release-check demo
+.PHONY: check test sdk-check openapi-check openapi-contract-check sdk-contract-check ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-compare-baseline-bundle smoke-test sdk-smoke-test alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -27,6 +27,12 @@ ANN_CANDIDATE_RUN_ID ?= $(ANN_CORPUS_RUN_ID)
 ANN_BASELINE_BUNDLE ?= $(ANN_BASELINE_ROOT)/$(ANN_BASELINE_ID)
 ANN_BASELINE_BUNDLE_REPORT ?= $(ANN_BASELINE_BUNDLE)/report.json
 ANN_BASELINE_BUNDLE_COMPARISON ?= $(ANN_HISTORY_ROOT)/$(ANN_CANDIDATE_RUN_ID)/baseline_comparison.json
+ANN_PUBLIC_SOURCE ?=
+ANN_PUBLIC_DATASET_ID ?= public-ann
+ANN_PUBLIC_FORMAT ?= fvecs
+ANN_PUBLIC_METRIC ?= cosine
+ANN_PUBLIC_RUN_ID ?= $(ANN_PUBLIC_DATASET_ID)-$(ANN_CORPUS_RUN_ID)
+ANN_PUBLIC_OUTPUT_ROOT ?= target/ann/public-corpora
 
 check:
 	cargo check --workspace
@@ -78,6 +84,7 @@ ann-corpus-smoke-report:
 
 ann-scripts-check:
 	python3 scripts/ann/convert_public_corpus.py --self-test
+	python3 scripts/ann/run_public_corpus.py --self-test
 	python3 scripts/ann/exact_ground_truth.py --self-test
 	python3 scripts/ann/compare_reports.py --self-test
 	python3 scripts/ann/summarize_history.py --self-test
@@ -88,6 +95,21 @@ ann-scripts-check:
 
 ann-convert-public-smoke:
 	python3 scripts/ann/convert_public_corpus.py --self-test
+
+ann-public-corpus-smoke:
+	python3 scripts/ann/run_public_corpus.py --self-test
+
+ann-public-corpus-run:
+	@if [ -z "$(ANN_PUBLIC_SOURCE)" ]; then echo "Set ANN_PUBLIC_SOURCE to a URL, archive path, or extracted corpus directory" >&2; exit 2; fi
+	@if [ -d "$(ANN_PUBLIC_SOURCE)" ]; then source_arg="--source-dir"; elif [ -f "$(ANN_PUBLIC_SOURCE)" ]; then source_arg="--source-archive"; else source_arg="--source-url"; fi; \
+	python3 scripts/ann/run_public_corpus.py \
+	  "$$source_arg" "$(ANN_PUBLIC_SOURCE)" \
+	  --dataset-id "$(ANN_PUBLIC_DATASET_ID)" \
+	  --format "$(ANN_PUBLIC_FORMAT)" \
+	  --metric "$(ANN_PUBLIC_METRIC)" \
+	  --output-root "$(ANN_PUBLIC_OUTPUT_ROOT)" \
+	  --run-root "$(ANN_CORPUS_RUN_ROOT)" \
+	  --run-id "$(ANN_PUBLIC_RUN_ID)"
 
 ann-corpus-compare:
 	python3 scripts/ann/compare_reports.py --baseline $(ANN_BASELINE_REPORT) --candidate $(ANN_CANDIDATE_REPORT) --output $(ANN_REPORT_COMPARISON)

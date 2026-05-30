@@ -123,6 +123,7 @@ What landed:
 27. ✅ `publish_baseline.py` packages selected ANN runs as release-ready baseline artifacts.
 28. ✅ `ann-compare-baseline-bundle` gates candidate ANN runs against published baseline bundles.
 29. ✅ `convert_public_corpus.py` converts SIFT-style `fvecs/ivecs` and GloVe-style text vectors into ANN JSONL corpora.
+30. ✅ `run_public_corpus.py` prepares URL/archive/directory public corpora, converts them, runs ANN evaluation, and writes reproducible run manifests.
 
 What remains before broad production tuning:
 

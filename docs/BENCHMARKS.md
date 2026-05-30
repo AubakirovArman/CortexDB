@@ -153,5 +153,11 @@ candidate run.
 or GloVe/word2vec-style text rows into the JSONL files consumed by
 `ann_corpus_check`.
 
+`make ann-public-corpus-run` is the one-command public-corpus path. Set
+`ANN_PUBLIC_SOURCE` to a URL, archive path, or extracted corpus directory. The
+target prepares `target/ann/public-corpora/<dataset-id>/converted/`, runs the
+same archived corpus report workflow, and writes a public corpus manifest for
+repeatability.
+
 For threshold selection, fallback policy, and report-history rules, see
 [`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md).

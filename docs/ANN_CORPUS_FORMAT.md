@@ -223,6 +223,42 @@ embeddings, `--normalization max_abs` for preserving vector shape under large
 coordinate ranges, or `--normalization none` when the source values are already
 scaled.
 
+### Run A Public Corpus End To End
+
+`run_public_corpus.py` wraps download/extract, conversion, ANN evaluation, and
+run-manifest writing:
+
+```bash
+python3 scripts/ann/run_public_corpus.py \
+  --source-url ftp://ftp.irisa.fr/local/texmex/corpus/siftsmall.tar.gz \
+  --dataset-id siftsmall \
+  --format fvecs \
+  --metric cosine \
+  --normalization unit \
+  --run-id siftsmall-cosine
+```
+
+The source may also be a local archive or an already extracted directory:
+
+```bash
+make ann-public-corpus-run \
+  ANN_PUBLIC_SOURCE=/data/ann/siftsmall.tar.gz \
+  ANN_PUBLIC_DATASET_ID=siftsmall \
+  ANN_PUBLIC_FORMAT=fvecs \
+  ANN_PUBLIC_METRIC=cosine
+```
+
+The script writes:
+
+- `target/ann/public-corpora/<dataset-id>/converted/*.jsonl`;
+- `target/ann/public-corpora/<dataset-id>/public_corpus_manifest.json`;
+- `target/ann/corpus-runs/<run-id>/report.json`;
+- `target/ann/corpus-runs/history.json`.
+
+Use `--no-run` when you only want to materialize the converted JSONL contract.
+Use `--max-vectors` and `--max-queries` for a fast sample run before launching a
+full corpus benchmark.
+
 ### Generate Ground Truth
 
 `exact_ground_truth.py` computes exact top-k candidates from `vectors.jsonl` and
