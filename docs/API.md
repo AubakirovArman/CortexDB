@@ -250,7 +250,7 @@ If an error occurs, the server responds with a corresponding HTTP status code an
 | **`400 Bad Request`** | `invalid_tenant` | Tenant realm name fails charset, length, or path-safety validation. |
 | **`400 Bad Request`** | `invalid_aql` | AQL parse/bind failure that is not a policy denial. |
 | **`401 Unauthorized`** | `unauthorized` | Token auth required and missing or invalid. |
-| **`403 Forbidden`** | `forbidden` | Reserved for non-AgentView authorization denials. |
+| **`403 Forbidden`** | `forbidden` | Non-AgentView authorization denial, including data-token access to admin/metrics routes. |
 | **`403 Forbidden`** | `permission_denied` | AgentView or scope policy denied the query. |
 | **`404 Not Found`** | `not_found` | Resource or route not found. |
 | **`413 Payload Too Large`** | `payload_too_large` | Body size exceeds 2MB boundary. |

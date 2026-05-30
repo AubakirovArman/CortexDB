@@ -7,6 +7,8 @@
 - Added backup restore-drill support through `Database::backup_restore_drill_path`
   and `cortexdb backup-drill`, proving a backup can be restored, opened,
   replayed, and validated before it is trusted operationally.
+- Added static multi-token HTTP auth policies with `admin` and `data` roles,
+  optional per-token AgentView binding, and admin/data route separation.
 - Hardened SDK release lifecycle checks: protected `sdk-release` deployment
   environment, Node.js 24 workflow runtime, and tag/version lock-step
   enforcement before public publish jobs.

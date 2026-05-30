@@ -15,6 +15,9 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 - **SDK live error compatibility** — Python, TypeScript, and Rust SDK smoke
   checks now validate structured live-server error decoding for `invalid_aql`,
   `not_found`, and `invalid_tenant`.
+- **Static multi-token auth policies** — HTTP server auth now supports
+  `admin` and `data` token roles via `CORTEXDB_AUTH_TOKENS`, with optional
+  per-token `AgentView` binding.
 
 ### Changed
 - **API docs alignment** — `docs/API.md` and `docs/API_JSON_SCHEMAS.md` now
@@ -22,6 +25,8 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
   `invalid_tenant`, `forbidden`, and `service_unavailable`.
 - **Rust SDK error enum alignment** — `cortex-sdk` now decodes the full Core
   Alpha error taxonomy, including `rate_limited`.
+- **Admin/data route separation** — `data` tokens are denied from dashboard,
+  stats, validation, flush, compact, and metrics routes with `403 forbidden`.
 
 ---
 

@@ -306,7 +306,7 @@ including demo and ANN report gates.
 The next architectural hardening items are:
 
 1. Backup/restore retention, offsite target policy, and scheduled drill evidence.
-2. Multi-token auth policy, RBAC, and admin/data route separation.
+2. Dynamic RBAC policy store, token rotation, and external identity integration.
 3. Crash/fault injection harness.
 4. Search and verification quality datasets.
 5. Migration policy for storage/API format changes.

@@ -40,7 +40,7 @@ Stable Core Alpha error codes:
 | `400` | `invalid_tenant` | Tenant realm name fails charset, length, or path-safety validation. |
 | `400` | `invalid_aql` | AQL parse/bind failure that is not a policy denial. |
 | `401` | `unauthorized` | Missing or invalid bearer token. |
-| `403` | `forbidden` | Reserved for non-AgentView authorization denials. |
+| `403` | `forbidden` | Non-AgentView authorization denial, including data-token access to admin/metrics routes. |
 | `403` | `permission_denied` | AgentView, scope, mode, or policy denial. |
 | `404` | `not_found` | Unknown route or missing resource such as an ingestion job. |
 | `413` | `payload_too_large` | Request body exceeds server limit. |

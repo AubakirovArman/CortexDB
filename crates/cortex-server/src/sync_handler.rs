@@ -3,7 +3,7 @@ use std::path::Path;
 use cortex_engine::Database;
 
 use crate::{
-    dashboard, json_error, json_response, route_shared_with_agent, ErrorCode, ServerOptions,
+    auth, dashboard, json_error, json_response, route_shared_with_agent, ErrorCode, ServerOptions,
 };
 
 fn serve_dashboard() -> String {
@@ -54,22 +54,16 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
         return json_error(400, ErrorCode::BadRequest, "bad request");
     }
 
-    // Check Authorization
-    if let Some(ref expected_token) = options.auth_token {
-        let expected_bearer = format!("Bearer {expected_token}");
-        let auth_header = head.lines().skip(1).find_map(|line| {
-            line.strip_prefix("authorization:")
-                .or_else(|| line.strip_prefix("Authorization:"))
-                .map(|val| val.trim())
-        });
-        if auth_header != Some(expected_bearer.as_str()) {
-            return json_error(
-                401,
-                ErrorCode::Unauthorized,
-                "missing or invalid authorization",
-            );
-        }
-    }
+    let path = parts[1].split_once('?').map_or(parts[1], |(path, _)| path);
+    let auth_header = head.lines().skip(1).find_map(|line| {
+        line.strip_prefix("authorization:")
+            .or_else(|| line.strip_prefix("Authorization:"))
+            .map(|val| val.trim())
+    });
+    let auth_decision = match auth::authorize_request(options, auth_header, parts[0], path) {
+        Ok(decision) => decision,
+        Err(error) => return json_error(error.status_code(), error.code(), &error.to_string()),
+    };
 
     if parts[1] == "/dashboard" {
         return serve_dashboard();
@@ -87,7 +81,7 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
         parts[0],
         parts[1],
         body.as_bytes(),
-        options.auth_agent_id,
+        auth_decision.agent_id,
     ) {
         Ok(value) => json_response(200, &value),
         Err(error) => json_error(error.status_code(), error.code(), &error.to_string()),

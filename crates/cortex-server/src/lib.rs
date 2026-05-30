@@ -18,6 +18,7 @@ use responses::{ErrorCode, ErrorResponse, MetricsResponse};
 mod actor;
 mod aql;
 mod audit;
+mod auth;
 mod authz;
 mod context;
 mod dashboard;
@@ -35,6 +36,7 @@ mod sync_handler;
 mod tests;
 
 use crate::responses::RouterError;
+pub use auth::{AuthRole, AuthTokenPolicy};
 pub use router::{
     cell_id, json_error, json_response, query_param, query_param_decoded, query_param_opt,
     query_param_opt_decoded, route_database, route_database_with_agent, route_shared,
@@ -54,6 +56,12 @@ pub struct ServerOptions {
     /// When set, successful HTTP auth loads the persisted `AgentView` with this
     /// id and scope-bound data routes are checked against that view.
     pub auth_agent_id: Option<u64>,
+    /// Additional bearer token policies.
+    ///
+    /// `AuthRole::Admin` can access all authenticated routes. `AuthRole::Data`
+    /// can access data routes and health checks, but not admin/metrics routes.
+    /// Each policy may bind to a distinct persisted `AgentView`.
+    pub auth_tokens: Vec<AuthTokenPolicy>,
     /// Capacity of the bounded actor command queue. Default is 1024.
     pub actor_queue_capacity: usize,
     /// Optional exact browser origin allowed for cross-origin API requests.
@@ -87,6 +95,16 @@ impl ServerOptions {
         } else {
             self.actor_queue_capacity
         }
+    }
+
+    pub(crate) fn effective_auth_tokens(&self) -> Vec<AuthTokenPolicy> {
+        let mut tokens = self.auth_tokens.clone();
+        if let Some(token) = &self.auth_token {
+            let mut policy = AuthTokenPolicy::new(token.clone(), AuthRole::Admin);
+            policy.agent_id = self.auth_agent_id;
+            tokens.push(policy);
+        }
+        tokens
     }
 }
 
@@ -247,6 +265,9 @@ fn validate_server_options(options: &ServerOptions) -> std::io::Result<()> {
             "auth_agent_id requires auth_token",
         ));
     }
+    if let Err(error) = auth::validate_token_policies(options) {
+        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, error));
+    }
     Ok(())
 }
 
@@ -341,6 +362,33 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
     let span = tracing::info_span!("http_request", %method, %path);
     let _enter = span.enter();
 
+    let auth_header = req
+        .headers()
+        .get("authorization")
+        .or_else(|| req.headers().get("Authorization"))
+        .and_then(|h| h.to_str().ok());
+    let auth_decision = match auth::authorize_request(&state.options, auth_header, &method, &path) {
+        Ok(decision) => decision,
+        Err(error) => {
+            let status =
+                StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::UNAUTHORIZED);
+            audit_http_response(
+                &state,
+                &method,
+                &path,
+                &query,
+                status,
+                Some(error.code()),
+                request_started,
+            );
+            return (
+                status,
+                Json(error_response(error.code(), error.to_string())),
+            )
+                .into_response();
+        }
+    };
+
     if method == "GET" && (path == "/" || path == "/dashboard") {
         audit_http_response(
             &state,
@@ -373,35 +421,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         }
     }
 
-    let auth_header = req
-        .headers()
-        .get("authorization")
-        .or_else(|| req.headers().get("Authorization"))
-        .and_then(|h| h.to_str().ok());
-
-    if let Some(ref expected_token) = state.options.auth_token {
-        let expected_bearer = format!("Bearer {expected_token}");
-        if auth_header != Some(expected_bearer.as_str()) {
-            audit_http_response(
-                &state,
-                &method,
-                &path,
-                &query,
-                StatusCode::UNAUTHORIZED,
-                Some(ErrorCode::Unauthorized),
-                request_started,
-            );
-            return (
-                StatusCode::UNAUTHORIZED,
-                Json(error_response(
-                    ErrorCode::Unauthorized,
-                    "missing or invalid authorization",
-                )),
-            )
-                .into_response();
-        }
-    }
-    let auth_agent_id = state.options.auth_agent_id;
+    let auth_agent_id = auth_decision.agent_id;
 
     if !request_allowed_by_rate_limit(&state) {
         state.request_rejected.fetch_add(1, Ordering::Relaxed);

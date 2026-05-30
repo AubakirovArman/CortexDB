@@ -38,6 +38,13 @@ fn main() -> ExitCode {
         eprintln!("CORTEXDB_AUTH_AGENT_ID requires CORTEXDB_AUTH_TOKEN");
         return ExitCode::FAILURE;
     }
+    let auth_tokens = match auth_tokens_from_env() {
+        Ok(tokens) => tokens,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
     let audit_log_path = match audit_log_path_from_env() {
         Ok(path) => path,
         Err(error) => {
@@ -48,6 +55,7 @@ fn main() -> ExitCode {
     let options = cortex_server::ServerOptions {
         auth_token,
         auth_agent_id,
+        auth_tokens,
         actor_queue_capacity,
         cors_allowed_origin: env::var("CORTEXDB_CORS_ALLOW_ORIGIN").ok(),
         request_rate_limit_per_minute,
@@ -61,6 +69,53 @@ fn main() -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+fn auth_tokens_from_env() -> Result<Vec<cortex_server::AuthTokenPolicy>, String> {
+    match env::var("CORTEXDB_AUTH_TOKENS") {
+        Ok(raw) => parse_auth_tokens(&raw),
+        Err(env::VarError::NotPresent) => Ok(Vec::new()),
+        Err(error) => Err(format!("invalid CORTEXDB_AUTH_TOKENS: {error}")),
+    }
+}
+
+fn parse_auth_tokens(raw: &str) -> Result<Vec<cortex_server::AuthTokenPolicy>, String> {
+    let mut tokens = Vec::new();
+    for entry in raw
+        .split(',')
+        .map(str::trim)
+        .filter(|entry| !entry.is_empty())
+    {
+        tokens.push(parse_auth_token_policy(entry)?);
+    }
+    if tokens.is_empty() {
+        return Err("CORTEXDB_AUTH_TOKENS must contain at least one token policy".to_owned());
+    }
+    Ok(tokens)
+}
+
+fn parse_auth_token_policy(raw: &str) -> Result<cortex_server::AuthTokenPolicy, String> {
+    let parts = raw.split(':').collect::<Vec<_>>();
+    if !(2..=3).contains(&parts.len()) {
+        return Err(
+            "CORTEXDB_AUTH_TOKENS entries must use role:token or role:token:agent_id".to_owned(),
+        );
+    }
+    let role = match parts[0].trim().to_ascii_lowercase().as_str() {
+        "admin" => cortex_server::AuthRole::Admin,
+        "data" => cortex_server::AuthRole::Data,
+        _ => return Err("CORTEXDB_AUTH_TOKENS role must be admin or data".to_owned()),
+    };
+    let token = parts[1].trim();
+    if token.is_empty() {
+        return Err("CORTEXDB_AUTH_TOKENS token must not be empty".to_owned());
+    }
+    let mut policy = cortex_server::AuthTokenPolicy::new(token.to_owned(), role);
+    if parts.len() == 3 {
+        let agent_id = parse_positive_u64(parts[2].trim(), "CORTEXDB_AUTH_TOKENS agent_id")?;
+        policy = policy.with_agent_id(agent_id);
+    }
+    Ok(policy)
 }
 
 fn audit_log_path_from_env() -> Result<Option<PathBuf>, String> {
@@ -89,11 +144,15 @@ fn auth_agent_id_from_env() -> Result<Option<u64>, String> {
 }
 
 fn parse_auth_agent_id(raw: &str) -> Result<u64, String> {
+    parse_positive_u64(raw, "CORTEXDB_AUTH_AGENT_ID")
+}
+
+fn parse_positive_u64(raw: &str, name: &str) -> Result<u64, String> {
     let id = raw
         .parse::<u64>()
-        .map_err(|_| "CORTEXDB_AUTH_AGENT_ID must be a positive integer".to_owned())?;
+        .map_err(|_| format!("{name} must be a positive integer"))?;
     if id == 0 {
-        return Err("CORTEXDB_AUTH_AGENT_ID must be greater than zero".to_owned());
+        return Err(format!("{name} must be greater than zero"));
     }
     Ok(id)
 }
@@ -151,8 +210,8 @@ fn parse_actor_queue_capacity(raw: &str) -> Result<usize, String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        parse_actor_queue_capacity, parse_audit_log_path, parse_auth_agent_id, parse_bool_flag,
-        parse_request_rate_limit,
+        parse_actor_queue_capacity, parse_audit_log_path, parse_auth_agent_id, parse_auth_tokens,
+        parse_bool_flag, parse_request_rate_limit,
     };
 
     #[test]
@@ -186,6 +245,27 @@ mod tests {
     fn parse_auth_agent_id_rejects_zero_and_invalid_values() {
         assert!(parse_auth_agent_id("0").is_err());
         assert!(parse_auth_agent_id("abc").is_err());
+    }
+
+    #[test]
+    fn parse_auth_tokens_accepts_role_token_agent_entries() {
+        let tokens = parse_auth_tokens("admin:root,data:worker:7").unwrap();
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens[0].role, cortex_server::AuthRole::Admin);
+        assert_eq!(tokens[0].token, "root");
+        assert_eq!(tokens[0].agent_id, None);
+        assert_eq!(tokens[1].role, cortex_server::AuthRole::Data);
+        assert_eq!(tokens[1].token, "worker");
+        assert_eq!(tokens[1].agent_id, Some(7));
+    }
+
+    #[test]
+    fn parse_auth_tokens_rejects_invalid_entries() {
+        assert!(parse_auth_tokens("").is_err());
+        assert!(parse_auth_tokens("root").is_err());
+        assert!(parse_auth_tokens("admin:").is_err());
+        assert!(parse_auth_tokens("owner:root").is_err());
+        assert!(parse_auth_tokens("data:worker:0").is_err());
     }
 
     #[test]

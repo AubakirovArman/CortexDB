@@ -12,6 +12,31 @@ cargo run -p cortex-server -- ./data 127.0.0.1:8181
 ```
 
 When `CORTEXDB_AUTH_TOKEN` is set, **every** request must include a valid `Authorization` header.
+The legacy token is treated as an admin token for backward compatibility.
+
+For multiple tokens, set `CORTEXDB_AUTH_TOKENS`:
+
+```bash
+export CORTEXDB_AUTH_TOKENS="admin:root-token,data:app-token,data:agent-token:7"
+cargo run -p cortex-server -- ./data 127.0.0.1:8181
+```
+
+Each comma-separated entry is:
+
+```text
+role:token
+role:token:agent_id
+```
+
+Roles:
+
+- `admin`: can access all authenticated API routes, including stats, validate,
+  flush, compact, metrics, and data routes.
+- `data`: can access data routes and health checks, but not admin or metrics
+  routes.
+
+If an `agent_id` is present, that token is also bound to the persisted
+`AgentView` with the same ID, so scope permissions are enforced per token.
 
 ## Sending Requests with Auth
 
@@ -80,16 +105,17 @@ let client = CortexDbClient::new("http://127.0.0.1:8181")
 
 - Use a strong, random token in production (e.g. 32+ bytes from `/dev/urandom`).
 - Pass the token via environment variable, never commit it to version control.
-- CortexDB auth is **transport-first**. Core Alpha supports one configured
-  bearer token and can optionally bind that token to a persisted `AgentView`.
-- Full multi-user RBAC, sessions, and per-token policy stores are future work.
+- CortexDB auth is **transport-first**. Core Alpha supports a legacy single
+  admin token plus static multi-token `admin`/`data` policies.
+- Dynamic policy stores, sessions, per-user quotas, and external identity
+  providers are future work.
 - For multi-user deployments, run separate tenant realms with network-level isolation.
 
 ## Binding Auth To An AgentView
 
-Core Alpha can map the configured bearer token to one persisted `AgentView`.
-This lets scope-bound HTTP data routes reuse the same readable/writable scope
-policy as AQL and ContextPack execution.
+Core Alpha can map bearer tokens to persisted `AgentView` records. This lets
+scope-bound HTTP data routes reuse the same readable/writable scope policy as
+AQL and ContextPack execution.
 
 ```bash
 export CORTEXDB_AUTH_TOKEN="my-secret-token"
@@ -97,7 +123,14 @@ export CORTEXDB_AUTH_AGENT_ID=7
 cargo run -p cortex-server -- ./data 127.0.0.1:8181
 ```
 
-When `CORTEXDB_AUTH_AGENT_ID` is set:
+or:
+
+```bash
+export CORTEXDB_AUTH_TOKENS="data:agent-token:7,admin:root-token"
+cargo run -p cortex-server -- ./data 127.0.0.1:8181
+```
+
+When a token has an agent ID:
 
 - the server loads `agent_views/7.view` from the active tenant database;
 - scope-bound reads such as `/v1/search`, `/v1/context`, `/v1/aql`, and
@@ -105,12 +138,12 @@ When `CORTEXDB_AUTH_AGENT_ID` is set:
 - scope-bound writes such as `/v1/cell`, `/v1/remember`, `/v1/forget`, and
   `/v1/ingest/*` must target a writable scope;
 - denied requests return `403 permission_denied`;
-- admin/health/metrics routes remain guarded by the bearer token, but do not
-  yet use a separate admin-role model.
+- admin and metrics routes require an `admin` token.
 
 If the persisted AgentView is missing, scope-bound data routes return
-`403 permission_denied`. `CORTEXDB_AUTH_AGENT_ID` requires
-`CORTEXDB_AUTH_TOKEN`; the server rejects that configuration at startup.
+`403 permission_denied`. The legacy `CORTEXDB_AUTH_AGENT_ID` setting still
+requires `CORTEXDB_AUTH_TOKEN`; for per-token agent bindings, prefer
+`CORTEXDB_AUTH_TOKENS`.
 
 ## Server Backpressure
 

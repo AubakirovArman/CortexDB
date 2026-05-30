@@ -23,7 +23,7 @@ filesystem internals, private scope names, brain names, or stack traces.
 | `400` | `invalid_tenant` | Tenant realm name fails charset, length, or path-safety validation. | Fix tenant id; do not retry unchanged. |
 | `400` | `invalid_aql` | AQL parse error or non-policy bind error. | Fix the AQL query and retry. |
 | `401` | `unauthorized` | Bearer auth is enabled and the request is missing or has a wrong token. | Authenticate and retry. |
-| `403` | `forbidden` | Reserved for non-AgentView authorization denials. | Treat as a hard deny. |
+| `403` | `forbidden` | Non-AgentView authorization denials, such as a `data` token attempting an admin/metrics route. | Treat as a hard deny. |
 | `403` | `permission_denied` | `AgentView`, scope, mode, or policy denial. | Treat as a hard deny; changing the query must not bypass policy. |
 | `404` | `not_found` | Unknown route or missing resource such as an ingestion job. | Fix the path/id or handle missing resource. |
 | `413` | `payload_too_large` | Request body exceeds the server body boundary. | Reduce body size. |

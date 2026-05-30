@@ -12,7 +12,7 @@ be treated as future work.
 | Cell payloads and metadata | May contain confidential project, agent, or document context. |
 | AgentView policy | Defines which brains, scopes, modes, and memory types an agent can use. |
 | ContextPack output | Can leak evidence, citations, or scoped private data to an agent. |
-| HTTP auth token | Grants access to all enabled server routes for that server instance. |
+| HTTP auth token | Grants route-class access as a static `admin` or `data` token. |
 | Tenant realm paths | Separate local database directories under one server root. |
 | SDK/API contracts | Define what external callers can rely on and what errors reveal. |
 
@@ -21,8 +21,8 @@ be treated as future work.
 1. **Local database files**: trusted only by the process that owns the database
    lock. Other processes must not mutate files concurrently.
 2. **HTTP server boundary**: optional Bearer token auth gates requests when
-   configured. Without `CORTEXDB_AUTH_TOKEN`, the server should be treated as
-   unauthenticated.
+   configured. Without `CORTEXDB_AUTH_TOKEN` or `CORTEXDB_AUTH_TOKENS`, the
+   server should be treated as unauthenticated.
 3. **Tenant realm boundary**: tenant IDs select subdirectories below
    `root/realms/`. This is path isolation, not a full authorization system.
 4. **AgentView boundary**: AQL binding and bitmap execution must only narrow
@@ -36,8 +36,9 @@ be treated as future work.
 
 | Threat | Current Control | Status |
 | --- | --- | --- |
-| HTTP request without credentials | Optional `CORTEXDB_AUTH_TOKEN` Bearer token check. | Implemented when token is configured. |
-| Authenticated HTTP data request bypasses AgentView scope policy | Optional `CORTEXDB_AUTH_AGENT_ID` maps the configured bearer token to a persisted AgentView for scope-bound data routes. | Implemented for one configured token. |
+| HTTP request without credentials | Optional `CORTEXDB_AUTH_TOKEN` or `CORTEXDB_AUTH_TOKENS` Bearer token check. | Implemented when any token is configured. |
+| Data token accesses admin routes | Static `admin`/`data` token roles deny data tokens from dashboard, stats, validation, flush, compact, and metrics routes. | Implemented and tested. |
+| Authenticated HTTP data request bypasses AgentView scope policy | Optional legacy `CORTEXDB_AUTH_AGENT_ID` or per-token `role:token:agent_id` mappings load persisted AgentViews for scope-bound data routes. | Implemented and tested. |
 | Path traversal through tenant ID | Percent-decoded tenant validation, limited charset and length. | Implemented and tested. |
 | Oversized request body | Axum request body limit. | Implemented and tested. |
 | Concurrent writers corrupting local files | Database lock file with owner metadata. | Implemented and tested. |
@@ -58,8 +59,8 @@ be treated as future work.
 The following are not production security guarantees yet:
 
 - TLS/mTLS and certificate management.
-- User identity, sessions, RBAC, org roles, or per-route authorization.
-- Multi-token or per-user server auth mapping to persisted AgentViews.
+- User identity, sessions, dynamic RBAC policy stores, org roles, or external identity providers.
+- Token rotation workflow or persisted auth policy management.
 - Per-token quotas or distributed rate limiting.
 - Multi-origin, wildcard, or per-token CORS policies.
 - Tamper-evident audit trails or SIEM export.
@@ -73,9 +74,11 @@ The following are not production security guarantees yet:
 
 For any non-local deployment:
 
-1. Set `CORTEXDB_AUTH_TOKEN` to a strong random value.
-2. For scoped API deployments, set `CORTEXDB_AUTH_AGENT_ID` to a persisted
-   AgentView id so data routes enforce readable/writable scope policy.
+1. Set `CORTEXDB_AUTH_TOKEN` to a strong random admin value, or configure
+   `CORTEXDB_AUTH_TOKENS` with static `admin`/`data` token roles.
+2. For scoped API deployments, bind data tokens with
+   `CORTEXDB_AUTH_TOKENS="data:token:agent_id"` so data routes enforce
+   readable/writable scope policy.
 3. Terminate TLS in a trusted reverse proxy.
 4. Restrict network access to trusted clients.
 5. Run one tenant per isolated realm or process when data separation matters.
@@ -132,8 +135,8 @@ Security-sensitive test areas include:
 1. Add per-token quotas and user-aware rate limiting.
 2. Expand CORS beyond the current single exact-origin allowlist only after
    adding user/RBAC-aware authorization.
-3. Extend single-token `CORTEXDB_AUTH_AGENT_ID` into multi-token AgentView
-   mappings and persisted auth policy.
+3. Extend static `CORTEXDB_AUTH_TOKENS` into persisted auth policy and rotation
+   workflows.
 4. Extend the JSONL audit sink into tamper-evident audit trails and SIEM export.
 5. Add backup/restore with integrity verification.
 6. Add documented secret rotation.

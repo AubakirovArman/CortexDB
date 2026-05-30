@@ -120,7 +120,9 @@ curl 'http://127.0.0.1:8181/v1/stats'
 curl 'http://127.0.0.1:8181/v1/validate'
 ```
 
-Set `CORTEXDB_AUTH_TOKEN` to require Bearer auth. Set
+Set `CORTEXDB_AUTH_TOKEN` to require one admin Bearer token, or
+`CORTEXDB_AUTH_TOKENS="admin:root-token,data:app-token"` for static
+admin/data route roles. Set
 `CORTEXDB_ACTOR_QUEUE_CAPACITY` to tune the per-tenant bounded database actor
 queue; a full queue returns `503 database_busy` as explicit backpressure.
 

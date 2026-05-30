@@ -1,4 +1,5 @@
 mod api_tests;
+mod auth_policy_tests;
 mod cell_tests;
 mod error_taxonomy_tests;
 mod format_tests;
