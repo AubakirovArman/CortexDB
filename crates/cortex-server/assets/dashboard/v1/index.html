@@ -8,9 +8,13 @@
     <script src="/dashboard/assets/v1/app.js" defer></script>
 </head>
 <body>
+    <a class="skip-link" href="#content">Skip to content</a>
     <header>
         <div class="shell topbar">
-            <h1>CortexDB Console</h1>
+            <div>
+                <h1>CortexDB Console</h1>
+                <p class="subtitle">Core Alpha operations, retrieval, and storage health</p>
+            </div>
             <form id="session-form" class="topbar" action="/dashboard" method="post">
                 <label for="tenant">Tenant</label>
                 <input id="tenant" name="tenant" autocomplete="organization" value="default">
@@ -23,26 +27,28 @@
     <main class="shell" id="content" tabindex="-1">
         <nav aria-label="Console views">
             <div class="tabs" role="tablist" aria-label="CortexDB tools">
-                <button class="tab" type="button" role="tab" aria-selected="true" aria-controls="ops" data-tab="ops">Ops</button>
+                <button id="tab-overview" class="tab" type="button" role="tab" aria-selected="true" aria-controls="overview" data-tab="overview">Overview</button>
                 <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="cells" data-tab="cells">Cells</button>
                 <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="search" data-tab="search">Search</button>
-                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="ann-eval" data-tab="ann-eval">ANN Eval</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="ann-eval" data-tab="ann-eval">ANN</button>
                 <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="aql" data-tab="aql">AQL</button>
                 <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="context" data-tab="context">Context</button>
                 <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="verify" data-tab="verify">Verify</button>
                 <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="ingest" data-tab="ingest">Ingest</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="storage" data-tab="storage">Storage</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="cluster" data-tab="cluster">Cluster</button>
             </div>
         </nav>
-        <section aria-live="polite">
-            <section id="ops" class="panel active" role="tabpanel">
-                <h2>Ops</h2>
+        <section class="workspace" aria-live="polite">
+            <div id="session-status" class="notice" role="status">Tenant: default</div>
+            <section id="overview" class="panel active" role="tabpanel" aria-labelledby="tab-overview">
+                <h2>Overview</h2>
                 <div class="status" id="metrics"></div>
                 <div class="actions">
                     <button type="button" data-action="health">Health</button>
                     <button type="button" data-action="stats">Stats</button>
+                    <button type="button" data-action="metrics">Metrics</button>
                     <button type="button" data-action="validate">Validate</button>
-                    <button type="button" data-action="flush" class="secondary">Flush</button>
-                    <button type="button" data-action="compact" class="secondary">Compact</button>
                 </div>
             </section>
             <section id="cells" class="panel" role="tabpanel">
@@ -71,7 +77,10 @@ Solar budget note</textarea></div>
                         <div class="field"><label for="search-limit">Limit</label><input id="search-limit" name="limit" inputmode="numeric" value="20"></div>
                     </div>
                     <div class="field"><label for="search-query">Query or vector</label><input id="search-query" name="q" value="budget"></div>
-                    <button type="submit">Search</button>
+                    <div class="actions">
+                        <button type="submit">Search</button>
+                        <button type="button" id="search-explain" class="secondary">Explain Search</button>
+                    </div>
                 </form>
             </section>
             <section id="ann-eval" class="panel" role="tabpanel">
@@ -82,7 +91,10 @@ Solar budget note</textarea></div>
                         <div class="field"><label for="ann-vector">Vector</label><input id="ann-vector" name="vector" inputmode="decimal" required value="0,10"></div>
                         <div class="field"><label for="ann-limit">Limit</label><input id="ann-limit" name="limit" inputmode="numeric" value="20"></div>
                     </div>
-                    <button type="submit">Evaluate ANN</button>
+                    <div class="actions">
+                        <button type="submit">Evaluate ANN</button>
+                        <button type="button" data-action="ann-metrics" class="secondary">ANN Metrics</button>
+                    </div>
                 </form>
             </section>
             <section id="aql" class="panel" role="tabpanel">
@@ -125,6 +137,23 @@ Wind Farm status ready.</textarea></div>
                     <div class="field"><label for="ingest-job-id">Job ID</label><input id="ingest-job-id" name="job_id" inputmode="numeric" value="1"></div>
                     <button type="submit" class="secondary">Load Ingest Job</button>
                 </form>
+            </section>
+            <section id="storage" class="panel" role="tabpanel">
+                <h2>Storage Health</h2>
+                <div class="actions">
+                    <button type="button" data-action="stats">Stats</button>
+                    <button type="button" data-action="metrics">Metrics</button>
+                    <button type="button" data-action="validate">Validate</button>
+                    <button type="button" data-action="flush" class="secondary">Flush</button>
+                    <button type="button" data-action="compact" class="secondary">Compact</button>
+                </div>
+            </section>
+            <section id="cluster" class="panel" role="tabpanel">
+                <h2>Cluster Status</h2>
+                <div class="actions">
+                    <button type="button" data-action="cluster-status">Cluster Status</button>
+                    <button type="button" data-action="ann-metrics" class="secondary">ANN Metrics</button>
+                </div>
             </section>
         </section>
         <aside>

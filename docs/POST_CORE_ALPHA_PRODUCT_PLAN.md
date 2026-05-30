@@ -156,25 +156,26 @@ Goal: turn the dashboard into a real product UI.
 Status: the existing developer console has a frontend source tree under
 `web/dashboard/src`, is built into versioned static assets under
 `/dashboard/assets/v1/`, and has a Playwright smoke path for asset loading,
-tabs, cell put/get, keyword search, and desktop/mobile screenshot artifacts.
-It is still not a standalone SPA.
+tabs, cell put/get, keyword search, search explain, storage validation, cluster
+status, and desktop/mobile screenshot artifacts. It now covers the target views
+inside the static developer console, but it is still not a standalone SPA.
 
 Tasks:
 
 1. Choose the frontend stack and repository layout.
 2. ✅ Build a separate frontend source tree instead of growing server raw strings.
-3. Add Overview page.
-4. Add Cells page.
-5. Add AQL Console page.
-6. Add Search page.
-7. Add ContextPack page.
-8. Add Verify page.
-9. Add Ingestion Jobs page.
-10. Add Storage Validation page.
-11. Add ANN Metrics page.
-12. Add Cluster Status page.
-13. Add auth/token handling.
-14. Add request history and JSON inspectors.
+3. ✅ Add Overview view to the current developer console.
+4. ✅ Add Cells view to the current developer console.
+5. ✅ Add AQL Console view to the current developer console.
+6. ✅ Add Search and Search Explain views to the current developer console.
+7. ✅ Add ContextPack view to the current developer console.
+8. ✅ Add Verify view to the current developer console.
+9. ✅ Add Ingestion and Ingestion Job views to the current developer console.
+10. ✅ Add Storage Validation view to the current developer console.
+11. ✅ Add ANN Metrics view to the current developer console.
+12. ✅ Add Cluster Status view to the current developer console.
+13. ✅ Add basic tenant/token handling for scoped API calls.
+14. ✅ Add request history and JSON inspector output.
 15. Add clear error states.
 16. ✅ Add Playwright smoke tests for the current dashboard.
 17. ✅ Add static asset serving path for the current developer console.

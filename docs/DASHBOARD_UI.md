@@ -14,7 +14,8 @@ make dashboard-screenshots
 ```
 
 `dashboard-smoke` starts a local `cortex-server` and drives the console through
-asset loading, tab switching, cell put/get, and keyword search.
+asset loading, tab switching, cell put/get, keyword search, search explain,
+storage validation, and cluster status.
 
 `dashboard-screenshots` starts the same local server and writes review artifacts:
 
@@ -30,6 +31,8 @@ artifact on the stable toolchain job.
 ## Boundary
 
 This is not the final product UI. It is the checked, reviewable bridge between
-the Core Alpha HTTP API and the future standalone frontend product. The next UI
-layer should add separate pages for cells, AQL, search/context, verify, ingest,
-storage health, ANN metrics, and cluster status.
+the Core Alpha HTTP API and the future standalone frontend product. The current
+shell already exposes Overview, Cells, Search, ANN, AQL, Context, Verify,
+Ingest, Storage, and Cluster views from static assets. The next UI layer should
+turn these checked views into an independently built frontend product with
+route-level pages, richer error states, and broader visual regression coverage.

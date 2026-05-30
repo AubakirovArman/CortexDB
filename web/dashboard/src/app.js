@@ -1,6 +1,7 @@
 const output = document.querySelector("#output");
 const metrics = document.querySelector("#metrics");
 const history = document.querySelector("#history");
+const sessionStatus = document.querySelector("#session-status");
 let token = "";
 let tenant = "default";
 
@@ -11,6 +12,15 @@ function headers() {
 function scoped(path) {
     if (!tenant || tenant === "default") return path;
     return `${path}${path.includes("?") ? "&" : "?"}tenant=${encodeURIComponent(tenant)}`;
+}
+
+function on(selector, event, handler) {
+    const node = document.querySelector(selector);
+    if (node) node.addEventListener(event, handler);
+}
+
+function onAll(selector, event, handler) {
+    document.querySelectorAll(selector).forEach(node => node.addEventListener(event, handler));
 }
 
 function addHistory(label, ok) {
@@ -66,19 +76,32 @@ document.querySelector("#session-form").addEventListener("submit", event => {
     const data = new FormData(event.currentTarget);
     token = data.get("token") || "";
     tenant = data.get("tenant") || "default";
+    sessionStatus.textContent = `Tenant: ${tenant}${token ? " · bearer token set" : ""}`;
     show({ auth: token ? "token_applied" : "cleared", tenant });
 });
 
-document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(item => item.setAttribute("aria-selected", String(item === tab)));
-    document.querySelectorAll(".panel").forEach(panel => panel.classList.toggle("active", panel.id === tab.dataset.tab));
-}));
+document.querySelectorAll(".panel").forEach(panel => {
+    if (!panel.classList.contains("active")) panel.hidden = true;
+});
 
-document.querySelector("[data-action='health']").addEventListener("click", () => run("health", () => api("/v1/health")));
-document.querySelector("[data-action='stats']").addEventListener("click", () => run("stats", () => api("/v1/stats")));
-document.querySelector("[data-action='validate']").addEventListener("click", () => run("validate", () => api("/v1/validate")));
-document.querySelector("[data-action='flush']").addEventListener("click", () => run("flush", () => api("/v1/flush", { method: "POST" })));
-document.querySelector("[data-action='compact']").addEventListener("click", () => run("compact", () => api("/v1/compact", { method: "POST" })));
+onAll(".tab", "click", event => {
+    const tab = event.currentTarget;
+    document.querySelectorAll(".tab").forEach(item => item.setAttribute("aria-selected", String(item === tab)));
+    document.querySelectorAll(".panel").forEach(panel => {
+        const active = panel.id === tab.dataset.tab;
+        panel.classList.toggle("active", active);
+        panel.hidden = !active;
+    });
+});
+
+onAll("[data-action='health']", "click", () => run("health", () => api("/v1/health")));
+onAll("[data-action='stats']", "click", () => run("stats", () => api("/v1/stats")));
+onAll("[data-action='metrics']", "click", () => run("metrics", () => api("/v1/metrics")));
+onAll("[data-action='validate']", "click", () => run("validate", () => api("/v1/validate")));
+onAll("[data-action='flush']", "click", () => run("flush", () => api("/v1/flush", { method: "POST" })));
+onAll("[data-action='compact']", "click", () => run("compact", () => api("/v1/compact", { method: "POST" })));
+onAll("[data-action='cluster-status']", "click", () => run("cluster status", () => api("/v1/cluster/status")));
+onAll("[data-action='ann-metrics']", "click", () => run("ann metrics", () => api("/v1/ann/metrics")));
 
 document.querySelector("#cell-form").addEventListener("submit", event => {
     event.preventDefault();
@@ -97,6 +120,13 @@ document.querySelector("#search-form").addEventListener("submit", event => {
     if (data.get("mode") === "vector") params.set("vector", data.get("q") || "");
     else params.set("q", data.get("q") || "");
     run("search", () => api(`/v1/search?${params}`, { method: "POST" }));
+});
+
+on("#search-explain", "click", () => {
+    const data = new FormData(document.querySelector("#search-form"));
+    const params = new URLSearchParams({ scope: data.get("scope"), mode: data.get("mode"), limit: data.get("limit") || "20" });
+    params.set("q", data.get("q") || "");
+    run("search explain", () => api(`/v1/search/explain?${params}`, { method: "POST" }));
 });
 
 document.querySelector("#ann-eval-form").addEventListener("submit", event => {

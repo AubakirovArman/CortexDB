@@ -26,6 +26,19 @@ header { border-block-end: 1px solid var(--line); background: var(--panel); }
 h1 { margin: 0; font-size: 1.25rem; letter-spacing: 0; }
 h2 { margin: 0 0 12px; font-size: 1rem; letter-spacing: 0; }
 label { display: block; margin-block-end: 5px; color: var(--muted); font-weight: 650; }
+.subtitle { margin: 4px 0 0; color: var(--muted); }
+.skip-link {
+    position: absolute;
+    inset-block-start: 8px;
+    inset-inline-start: 8px;
+    transform: translateY(-160%);
+    z-index: 10;
+    border-radius: 6px;
+    padding: 8px 10px;
+    background: var(--code);
+    color: #fff;
+}
+.skip-link:focus { transform: translateY(0); }
 
 input, textarea, select {
     inline-size: 100%;
@@ -65,13 +78,23 @@ button.danger { background: var(--red); }
 button:disabled { opacity: .65; cursor: progress; }
 
 main { display: grid; grid-template-columns: 240px minmax(0, 1fr) minmax(320px, 460px); gap: 18px; align-items: start; }
-nav, section, aside { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+nav, .workspace, aside { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
 nav { position: sticky; inset-block-start: 12px; }
 .tabs { display: grid; gap: 8px; }
 .tab { inline-size: 100%; text-align: start; background: transparent; color: var(--ink); border: 1px solid var(--line); }
 .tab[aria-selected="true"] { background: #e8f1fb; border-color: var(--blue); color: #083b75; }
 .panel { display: none; }
 .panel.active { display: block; }
+[hidden] { display: none !important; }
+.notice {
+    margin-block-end: 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 9px 10px;
+    background: #fbfcfd;
+    color: var(--muted);
+    font-size: .9rem;
+}
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .field { margin-block-end: 12px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-block-start: 10px; }

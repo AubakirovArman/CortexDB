@@ -44,9 +44,10 @@
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
 - [x] Завести frontend source-of-truth under `web/dashboard/src` plus `make dashboard-build` / `make dashboard-check`.
 - [ ] Вынести dashboard в отдельный frontend-продукт (SPA/static build), независимый от server crate.
-- [ ] Наборы страниц: dashboard, cells, AQL, search/context, verify, ingest, health/validation.
-- [ ] Tenant-aware auth в UI и понятный путь ошибок.
+- [x] Наборы views в текущем static dashboard: overview, cells, search/explain, ANN, AQL, context, verify, ingest, storage health, cluster status.
+- [x] Базовый tenant/token control в UI для scoped API calls; полноценный auth UX остаётся будущей standalone UI задачей.
 - [x] Playwright/CI smoke путь для текущего `/dashboard`: asset loading, tabs, cell put/get, keyword search.
+- [x] Playwright smoke дополнен search explain, storage validation, and cluster status.
 - [x] Playwright screenshot artifacts for desktop/mobile dashboard review in CI.
 - [x] Есть минимальный dashboard, static asset routes, and accessibility smoke tests.
 

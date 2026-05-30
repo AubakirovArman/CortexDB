@@ -97,10 +97,25 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await page.getByRole('tab', { name: 'Search' }).click();
     await expect(page.locator('#search')).toBeVisible();
     await page.locator('#search-query').fill('budget');
-    await page.getByRole('button', { name: 'Search' }).click();
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
     await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
 
-    await expect(page.locator('#history li').first()).toContainText('OK search');
+    await page.getByRole('button', { name: 'Explain Search' }).click();
+    await expect(page.locator('#output')).toContainText('query_terms');
+    await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
+
+    await page.getByRole('tab', { name: 'Storage' }).click();
+    await expect(page.locator('#storage')).toBeVisible();
+    await page.getByRole('button', { name: 'Validate' }).click();
+    await expect(page.locator('#output')).toContainText('manifest_ok');
+
+    await page.getByRole('tab', { name: 'Cluster' }).click();
+    await expect(page.locator('#cluster')).toBeVisible();
+    await page.getByRole('button', { name: 'Cluster Status' }).click();
+    await expect(page.locator('#output')).toContainText('distributed_enabled');
+
+    await expect(page.locator('#history')).toContainText('OK search');
+    await expect(page.locator('#history li').first()).toContainText('OK cluster status');
     expect(consoleErrors).toEqual([]);
   } finally {
     server.kill('SIGTERM');
