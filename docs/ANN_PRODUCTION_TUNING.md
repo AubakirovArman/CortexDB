@@ -232,6 +232,11 @@ the `ann-release-baseline-package` artifact. That artifact is the preferred
 input for GitHub Releases because it carries both the benchmark report and the
 checksum manifest in one file.
 
+When a `v*` tag is pushed, the `Release` workflow builds the same package and
+uploads it directly to the GitHub Release. That makes the ANN baseline durable:
+release consumers can download the exact recall/latency evidence used for the
+tag even after normal CI artifacts expire.
+
 Candidate runs can be gated against a published bundle with:
 
 ```bash

@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-ann-baseline:
+    name: Publish ANN release baseline
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - name: Prepare release names
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          safe_tag="$(printf '%s' "$tag" | tr -c 'A-Za-z0-9._-' '-')"
+          baseline_id="${safe_tag}-ann-smoke"
+          echo "RELEASE_TAG=$tag" >> "$GITHUB_ENV"
+          echo "ANN_RELEASE_NOTES=target/release-notes.md" >> "$GITHUB_ENV"
+          echo "ANN_BASELINE_ID=$baseline_id" >> "$GITHUB_ENV"
+          echo "ANN_BASELINE_ARCHIVE=target/ann/release-baselines/${baseline_id}.tar.gz" >> "$GITHUB_ENV"
+
+      - name: Build ANN baseline package
+        run: |
+          make ann-corpus-run-smoke ANN_CORPUS_RUN_ID="$ANN_BASELINE_ID"
+          make ann-publish-baseline ANN_BASELINE_RUN_ID="$ANN_BASELINE_ID" ANN_BASELINE_ID="$ANN_BASELINE_ID"
+          make ann-package-baseline ANN_BASELINE_ID="$ANN_BASELINE_ID" ANN_BASELINE_ARCHIVE="$ANN_BASELINE_ARCHIVE"
+
+      - name: Prepare release notes
+        run: |
+          mkdir -p target
+          notes_path="docs/RELEASE_NOTES_${RELEASE_TAG}.md"
+          if [ -f "$notes_path" ]; then
+            cp "$notes_path" "$ANN_RELEASE_NOTES"
+          else
+            {
+              echo "# CortexDB ${RELEASE_TAG}"
+              echo
+              echo "Automated release for ${RELEASE_TAG}."
+              echo
+              echo "Attached ANN baseline package:"
+              echo
+              echo "- \`${ANN_BASELINE_ARCHIVE##*/}\`"
+            } > "$ANN_RELEASE_NOTES"
+          fi
+
+      - name: Publish GitHub Release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "$ANN_BASELINE_ARCHIVE" --clobber
+          else
+            gh release create "$RELEASE_TAG" "$ANN_BASELINE_ARCHIVE" \
+              --title "$RELEASE_TAG" \
+              --notes-file "$ANN_RELEASE_NOTES"
+          fi
+
+      - name: Upload workflow artifact copy
+        uses: actions/upload-artifact@v4
+        with:
+          name: ann-release-baseline-package
+          path: target/ann/release-baselines/*.tar.gz

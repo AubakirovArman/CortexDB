@@ -172,6 +172,8 @@ alpha-check:
 	./examples/demo/investment_projects/run.sh
 
 release-check: alpha-check
+	$(MAKE) ann-publish-baseline
+	$(MAKE) ann-package-baseline
 	$(MAKE) smoke-test
 	$(MAKE) sdk-smoke-test
 	@echo "=== Release check passed ==="

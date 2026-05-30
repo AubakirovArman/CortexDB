@@ -30,6 +30,8 @@ Core Alpha is the first durable single-node CortexDB prototype.
 - SDK publication preflight builds a Python wheel, checks npm package contents, and verifies Rust `cargo package`.
 - SDK release workflow runs package preflight on SDK changes and supports
   manual tag-gated publishing for PyPI, npm, and crates.io.
+- Release workflow builds the ANN smoke baseline package and attaches its
+  checksum-backed `.tar.gz` to GitHub Releases for `v*` tags.
 - Experimental replication now enforces AppendEntries previous-log matching,
   conflict suffix truncation, and follower commit-index clamping in local
   transport tests.
@@ -87,6 +89,7 @@ which includes:
 - `cargo test --workspace --all-features` with `-D warnings`
 - `cargo fmt --check`
 - `cargo clippy --workspace --all-targets -- -D warnings`
+- ANN baseline release package generation
 - SDK preflight checks
 - OpenAPI coverage and contract validation
 - SDK contract validation (Python + TypeScript smoke tests against live server)
