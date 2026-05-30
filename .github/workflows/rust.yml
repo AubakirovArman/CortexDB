@@ -44,7 +44,7 @@ jobs:
           make ann-compare-baseline-bundle
       - name: Upload ANN regression reports
         if: matrix.toolchain == 'stable' && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ann-regression-reports
           if-no-files-found: warn
@@ -60,7 +60,7 @@ jobs:
             target/ann/release-baselines/**
       - name: Upload ANN release baseline package
         if: matrix.toolchain == 'stable' && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ann-release-baseline-package
           if-no-files-found: warn
