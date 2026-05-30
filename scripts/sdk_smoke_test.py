@@ -5,6 +5,7 @@ Validates typed response models for Python SDK by issuing real requests.
 """
 
 import shutil
+import os
 import subprocess
 import sys
 import tempfile
@@ -32,9 +33,9 @@ def main() -> int:
     repo = Path(__file__).parent.parent
     db_dir = tempfile.mkdtemp()
     port = 18183
-    # Prefer release build; fall back to debug
-    binary = repo / "target/release/cortex-server"
-    if not binary.exists():
+    binary_override = os.environ.get("CORTEXDB_SERVER_BIN")
+    binary = Path(binary_override) if binary_override else repo / "target/release/cortex-server"
+    if not binary_override and not binary.exists():
         binary = repo / "target/debug/cortex-server"
     if not binary.exists():
         print("ERROR: cortex-server binary not found. Run 'cargo build -p cortex-server' first.")

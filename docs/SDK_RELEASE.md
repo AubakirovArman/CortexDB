@@ -44,6 +44,22 @@ It also runs `scripts/check_sdk_deprecation_policy.py`, which rejects
 undocumented OpenAPI deprecations, SDK clients that call deprecated legacy route
 aliases, and missing breaking-change/deprecation policy text.
 
+For live API compatibility, run:
+
+```bash
+make sdk-contract-check
+```
+
+This builds the current `cortex-server` debug binary and runs real request
+smoke tests for all three SDKs:
+
+- Python: `scripts/sdk_smoke_test.py`
+- TypeScript: `scripts/sdk_ts_smoke_test.mjs`
+- Rust: `cargo run -p cortex-sdk --example live_contract`
+
+The scripts set `CORTEXDB_SERVER_BIN` so each SDK talks to the freshly built
+server, not a stale release binary left in `target/release`.
+
 ## GitHub Workflow
 
 `.github/workflows/sdk-release.yml` runs the same preflight on SDK-relevant

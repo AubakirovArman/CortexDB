@@ -5,7 +5,7 @@
  * Validates typed response interfaces by issuing real requests.
  */
 import { spawn } from "child_process";
-import { mkdtempSync, rmSync } from "fs";
+import { existsSync, mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
@@ -23,15 +23,15 @@ const PORT = 18184;
 const dbDir = mkdtempSync(join(tmpdir(), "cortex_ts_smoke_"));
 
 function findBinary() {
+  if (process.env.CORTEXDB_SERVER_BIN) {
+    return process.env.CORTEXDB_SERVER_BIN;
+  }
   const release = join(repoRoot, "target/release/cortex-server");
   const debug = join(repoRoot, "target/debug/cortex-server");
-  try {
-    // eslint-disable-next-line no-sync
-    import("fs").then(({ statSync }) => statSync(release));
+  if (existsSync(release)) {
     return release;
-  } catch {
-    return debug;
   }
+  return debug;
 }
 
 function waitForServer(port, timeoutMs = 10000) {
