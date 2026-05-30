@@ -142,6 +142,10 @@ exact ground truth, runs the same HNSW gate, and archives a run directory under
 tiny CI fixtures and real external corpora: it exercises Russian/Kazakh/English
 finance, legal, HR, support, SEC, and world-indicator payloads without
 committing generated benchmark files.
+`make ann-demo-domain-package-baseline` packages that run as a release-ready
+tarball under `target/ann/demo-domain-corpus/release-baselines/`, so release
+tags can carry both the public ANN baseline and a CortexDB-shaped domain
+baseline.
 
 `make ann-scripts-check` validates the dependency-free helper scripts that
 generate exact ground truth and compare two ANN report JSON files. Use

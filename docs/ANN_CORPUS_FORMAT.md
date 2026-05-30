@@ -190,6 +190,10 @@ generated corpus. Instead, it scans the checked-in example payloads, writes
 `target/ann/demo-domain-corpus/converted/`, generates exact ground truth, then
 archives the report and machine profile under
 `target/ann/demo-domain-corpus/runs/<run-id>/`.
+Use `make ann-demo-domain-package-baseline` to turn the latest demo-domain run
+into a release-ready baseline archive. That archive contains the report,
+manifest, machine profile, exact ground truth, and checksum manifest needed for
+future regression comparisons.
 
 ## Recommended Workflow
 

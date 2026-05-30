@@ -38,6 +38,7 @@ jobs:
           make ann-domain-corpus-report
           make ann-corpus-run-smoke
           make ann-demo-domain-corpus-run
+          make ann-demo-domain-package-baseline
           make ann-publish-baseline
           make ann-package-baseline
           make ann-compare-baseline-bundle

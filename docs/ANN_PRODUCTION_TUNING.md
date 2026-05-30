@@ -58,6 +58,8 @@ building vectors from the checked-in example datasets and RAG demo payloads. It
 is still deterministic and dependency-free, but it covers more realistic
 finance, legal, HR, support, SEC, and world-indicator text than the tiny
 checked-in fixture.
+Release tags package this run as a separate demo-domain baseline archive, so a
+tag carries public benchmark evidence and CortexDB-shaped domain evidence.
 
 For each corpus, preserve:
 
