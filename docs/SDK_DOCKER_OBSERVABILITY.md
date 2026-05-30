@@ -32,7 +32,8 @@ Python unit tests, Python wheel build, Rust SDK tests, `cargo package`, JS
 syntax check, and `npm pack --dry-run` when npm is available.
 `make sdk-check` exposes the same gate locally, and the GitHub `SDK Release`
 workflow runs it on SDK changes. Actual publishing is manual-only from a `v*`
-tag and is documented in [`SDK_RELEASE.md`](SDK_RELEASE.md).
+tag through the protected `sdk-release` environment and is documented in
+[`SDK_RELEASE.md`](SDK_RELEASE.md).
 
 ## Observability
 

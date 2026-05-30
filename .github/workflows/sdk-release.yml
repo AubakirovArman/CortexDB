@@ -45,7 +45,7 @@ jobs:
           python-version: "3.12"
       - uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24"
       - run: python -m pip install --upgrade pip setuptools wheel build
 
       # SDK contract smoke tests
@@ -69,6 +69,7 @@ jobs:
     name: Publish SDK packages
     needs: preflight
     runs-on: ubuntu-latest
+    environment: sdk-release
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish && startsWith(github.ref, 'refs/tags/v') }}
     permissions:
       contents: read
@@ -83,8 +84,9 @@ jobs:
           python-version: "3.12"
       - uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24"
           registry-url: "https://registry.npmjs.org"
+      - run: python3 scripts/check_sdk_release_contract.py --enforce-github-ref
       - name: Verify registry credentials
         run: |
           test -n "${NODE_AUTH_TOKEN}"

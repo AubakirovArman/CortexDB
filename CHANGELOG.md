@@ -4,6 +4,9 @@
 
 ### P1 (Alpha Polish)
 
+- Hardened SDK release lifecycle checks: protected `sdk-release` deployment
+  environment, Node.js 24 workflow runtime, and tag/version lock-step
+  enforcement before public publish jobs.
 - Added `POST /v1/search/explain` endpoint — returns tokenized query terms and per-cell
   score breakdown (total, lexical, vector scores + payload preview).
 - Added `?format=prometheus` to `GET /v1/metrics` — outputs 13 metrics in Prometheus

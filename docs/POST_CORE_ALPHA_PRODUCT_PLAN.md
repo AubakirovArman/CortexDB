@@ -64,16 +64,18 @@ Goal: make SDKs installable and repeatably publishable.
 
 Tasks:
 
-1. Prepare Rust SDK package metadata for crates.io.
-2. Add Rust SDK examples and docs.rs-ready documentation.
-3. Prepare Python SDK wheel metadata and typed response models.
-4. Add PyPI dry-run and tag-gated publish workflow.
-5. Prepare TypeScript SDK package metadata for npm.
-6. Decide and document ESM/CJS support policy.
-7. Add npm dry-run and tag-gated publish workflow.
-8. Align server, OpenAPI, and SDK versions.
-9. Add SDK integration tests against a running server.
-10. Add SDK quickstarts to docs.
+1. ✅ Prepare Rust SDK package metadata for crates.io.
+2. ✅ Add Rust SDK examples and docs.rs-ready documentation.
+3. ✅ Prepare Python SDK wheel metadata and typed response models.
+4. ✅ Add PyPI dry-run and tag-gated publish workflow.
+5. ✅ Prepare TypeScript SDK package metadata for npm.
+6. ✅ Decide and document ESM/CJS support policy.
+7. ✅ Add npm dry-run and tag-gated publish workflow.
+8. ✅ Align server, OpenAPI, and SDK versions.
+9. ✅ Add SDK integration tests against a running server.
+10. ✅ Add SDK quickstarts to docs.
+11. ✅ Add protected `sdk-release` deployment environment and tag/version enforcement.
+12. Add deprecation policy and breaking-change changelog enforcement.
 
 Definition of done:
 

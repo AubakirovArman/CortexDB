@@ -53,7 +53,10 @@ The publish job is skipped unless all of these are true:
 
 - The workflow was started with `workflow_dispatch`.
 - The selected ref is a tag beginning with `v`.
+- The tag version must match the workspace version, for example
+  `v0.1.0` or `v0.1.0-core-alpha` for workspace version `0.1.0`.
 - `publish=true` was explicitly set.
+- The protected `sdk-release` environment approves the deployment.
 - Registry credentials/trusted publishing are configured.
 
 ## Required Registry Configuration

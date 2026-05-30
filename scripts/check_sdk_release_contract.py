@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -81,12 +82,45 @@ def workflow_contains(workflow: str, needle: str) -> None:
         raise ValueError(f"sdk-release.yml: missing {needle!r}")
 
 
+def workflow_count_at_least(workflow: str, needle: str, minimum: int) -> None:
+    count = workflow.count(needle)
+    if count < minimum:
+        raise ValueError(f"sdk-release.yml: expected at least {minimum} occurrences of {needle!r}, found {count}")
+
+
 def validate_manifest(repo: Path, errors: list[str]) -> dict[str, Any]:
     path = repo / "sdk/release-manifest.json"
     try:
         manifest = load_json(path)
         if manifest.get("schema_version") != 1:
             errors.append("sdk/release-manifest.json: schema_version must be 1")
+        version_policy = manifest.get("version_policy")
+        if not isinstance(version_policy, dict):
+            errors.append("sdk/release-manifest.json: version_policy missing")
+        else:
+            for field in (
+                "package_versions_must_match_workspace",
+                "openapi_version_must_start_with_workspace_version",
+                "tag_must_match_workspace_version",
+            ):
+                if version_policy.get(field) is not True:
+                    errors.append(f"sdk/release-manifest.json: version_policy.{field} must be true")
+        publish_policy = manifest.get("publish_policy")
+        if not isinstance(publish_policy, dict):
+            errors.append("sdk/release-manifest.json: publish_policy missing")
+        else:
+            expected_policy = {
+                "manual_only": True,
+                "requires_tag_ref": True,
+                "requires_explicit_publish_input": True,
+            }
+            for field, expected in expected_policy.items():
+                if publish_policy.get(field) is not expected:
+                    errors.append(f"sdk/release-manifest.json: publish_policy.{field} must be {expected}")
+            if publish_policy.get("tag_prefix") != "v":
+                errors.append("sdk/release-manifest.json: publish_policy.tag_prefix must be 'v'")
+            if publish_policy.get("environment") != "sdk-release":
+                errors.append("sdk/release-manifest.json: publish_policy.environment must be 'sdk-release'")
         packages = manifest.get("packages")
         if not isinstance(packages, list) or len(packages) != 3:
             errors.append("sdk/release-manifest.json: expected exactly 3 packages")
@@ -160,8 +194,10 @@ def validate_workflow(repo: Path, errors: list[str]) -> None:
         "inputs.publish",
         "startsWith(github.ref, 'refs/tags/v')",
         "cargo publish -p cortex-sdk --dry-run",
+        "python3 scripts/check_sdk_release_contract.py --enforce-github-ref",
         "python -m build sdk/python --wheel",
         "npm pack --dry-run",
+        "environment: sdk-release",
         "pypa/gh-action-pypi-publish",
         "npm publish --access public --provenance",
         "cargo publish -p cortex-sdk",
@@ -170,11 +206,22 @@ def validate_workflow(repo: Path, errors: list[str]) -> None:
             workflow_contains(workflow, needle)
         except ValueError as exc:
             errors.append(str(exc))
+    try:
+        workflow_count_at_least(workflow, 'node-version: "24"', 2)
+    except ValueError as exc:
+        errors.append(str(exc))
 
 
 def validate_docs(repo: Path, root_version: str, errors: list[str]) -> None:
     sdk_release = read_text(repo / "docs/SDK_RELEASE.md")
-    for phrase in ("manual-only", "publish=true", "tag beginning with `v`", "version bump"):
+    for phrase in (
+        "manual-only",
+        "publish=true",
+        "tag beginning with `v`",
+        "protected `sdk-release` environment",
+        "tag version must match the workspace version",
+        "version bump",
+    ):
         if phrase not in sdk_release:
             errors.append(f"docs/SDK_RELEASE.md: missing {phrase!r}")
     changelog = read_text(repo / "CHANGELOG.md")
@@ -193,7 +240,30 @@ def validate_tracked_hygiene(repo: Path, errors: list[str]) -> None:
                 errors.append(f"tracked generated SDK artifact is forbidden: {path}")
 
 
+def validate_github_ref(repo: Path, root_version: str, errors: list[str]) -> None:
+    ref = subprocess.run(
+        ["git", "describe", "--tags", "--exact-match"],
+        cwd=repo,
+        check=False,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    github_ref = os.environ.get("GITHUB_REF", "").strip()
+    if github_ref:
+        if not github_ref.startswith("refs/tags/"):
+            errors.append(f"GITHUB_REF must be a tag for SDK publish, got {github_ref!r}")
+            return
+        ref = github_ref.removeprefix("refs/tags/")
+    if not ref:
+        errors.append("SDK publish ref check requires an exact git tag or GITHUB_REF=refs/tags/<tag>")
+        return
+    pattern = re.compile(rf"^v{re.escape(root_version)}(?:[-.][A-Za-z0-9][A-Za-z0-9._-]*)?$")
+    if not pattern.match(ref):
+        errors.append(f"SDK publish tag {ref!r} must match workspace version {root_version!r}")
+
+
 def main() -> int:
+    enforce_github_ref = "--enforce-github-ref" in sys.argv[1:]
     repo = Path(__file__).resolve().parent.parent
     errors: list[str] = []
     manifest = validate_manifest(repo, errors)
@@ -202,6 +272,8 @@ def main() -> int:
     validate_workflow(repo, errors)
     validate_docs(repo, root_version, errors)
     validate_tracked_hygiene(repo, errors)
+    if enforce_github_ref:
+        validate_github_ref(repo, root_version, errors)
     if errors:
         print("SDK RELEASE CONTRACT CHECK FAILED:")
         for error in errors:
