@@ -6,4 +6,5 @@ mod response_snapshot_tests;
 mod search_api_tests;
 mod security_tests;
 mod snapshot_api_tests;
+mod snapshot_completion_tests;
 mod snapshot_tests;
