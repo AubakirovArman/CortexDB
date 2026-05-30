@@ -191,6 +191,12 @@ graph-shape, and production-safety regressions. Long-term CI should upload
 these reports to persistent storage so recall and latency drift can be graphed
 across commits.
 
+The Rust GitHub Actions workflow uploads checked-in ANN reports and
+`target/ann/corpus-runs/**` as the `ann-regression-reports` artifact on the
+stable toolchain. This keeps `history.json`, per-run manifests, reports, and
+generated smoke ground truth available even when a regression causes the ANN
+report step to fail.
+
 ## Release Blockers
 
 Block a release when any guarded corpus shows:
