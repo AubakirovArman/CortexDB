@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check openapi-check openapi-contract-check sdk-contract-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
+.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check openapi-check openapi-contract-check sdk-contract-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -97,6 +97,13 @@ ANN_BASELINE_BUNDLE ?= $(ANN_BASELINE_ROOT)/$(ANN_BASELINE_ID)
 ANN_BASELINE_BUNDLE_REPORT ?= $(ANN_BASELINE_BUNDLE)/report.json
 ANN_BASELINE_BUNDLE_COMPARISON ?= $(ANN_HISTORY_ROOT)/$(ANN_CANDIDATE_RUN_ID)/baseline_comparison.json
 ANN_BASELINE_ARCHIVE ?= $(ANN_BASELINE_ROOT)/$(ANN_BASELINE_ID).tar.gz
+ANN_RELEASE_EVIDENCE_ROOT ?= target/ann/release-evidence
+ANN_RELEASE_EVIDENCE_RUN_ROOT ?= $(ANN_RELEASE_EVIDENCE_ROOT)/corpus-runs
+ANN_RELEASE_EVIDENCE_RUN_ID ?= smoke
+ANN_RELEASE_EVIDENCE_BASELINE_ID ?= $(ANN_RELEASE_EVIDENCE_RUN_ID)
+ANN_RELEASE_EVIDENCE_BASELINE_ROOT ?= $(ANN_RELEASE_EVIDENCE_ROOT)/release-baselines
+ANN_RELEASE_EVIDENCE_BASELINE_BUNDLE ?= $(ANN_RELEASE_EVIDENCE_BASELINE_ROOT)/$(ANN_RELEASE_EVIDENCE_BASELINE_ID)
+ANN_RELEASE_EVIDENCE_BASELINE_ARCHIVE ?= $(ANN_RELEASE_EVIDENCE_BASELINE_ROOT)/$(ANN_RELEASE_EVIDENCE_BASELINE_ID).tar.gz
 ANN_MAX_P95_REGRESSION_NANOS ?= 0
 ANN_MAX_MAX_REGRESSION_NANOS ?= 0
 ANN_PUBLIC_SOURCE ?=
@@ -335,6 +342,17 @@ ann-validate-baseline-package:
 ann-compare-baseline-bundle:
 	python3 scripts/ann/compare_reports.py --baseline $(ANN_BASELINE_BUNDLE_REPORT) --candidate $(ANN_HISTORY_ROOT)/$(ANN_CANDIDATE_RUN_ID)/report.json --output $(ANN_BASELINE_BUNDLE_COMPARISON) --max-p95-regression-nanos $(ANN_MAX_P95_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_MAX_MAX_REGRESSION_NANOS)
 
+ann-release-evidence-check:
+	rm -rf $(ANN_RELEASE_EVIDENCE_ROOT)
+	$(MAKE) ann-corpus-run-smoke ANN_CORPUS_RUN_ROOT=$(ANN_RELEASE_EVIDENCE_RUN_ROOT) ANN_CORPUS_RUN_ID=$(ANN_RELEASE_EVIDENCE_RUN_ID)
+	$(MAKE) ann-history-regression-check ANN_HISTORY_ROOT=$(ANN_RELEASE_EVIDENCE_RUN_ROOT) ANN_HISTORY_REPORT=$(ANN_RELEASE_EVIDENCE_RUN_ROOT)/history.json
+	$(MAKE) ann-publish-baseline ANN_HISTORY_ROOT=$(ANN_RELEASE_EVIDENCE_RUN_ROOT) ANN_BASELINE_RUN_ID=$(ANN_RELEASE_EVIDENCE_RUN_ID) ANN_BASELINE_ID=$(ANN_RELEASE_EVIDENCE_BASELINE_ID) ANN_BASELINE_ROOT=$(ANN_RELEASE_EVIDENCE_BASELINE_ROOT)
+	$(MAKE) ann-package-baseline ANN_BASELINE_BUNDLE=$(ANN_RELEASE_EVIDENCE_BASELINE_BUNDLE) ANN_BASELINE_ID=$(ANN_RELEASE_EVIDENCE_BASELINE_ID) ANN_BASELINE_ARCHIVE=$(ANN_RELEASE_EVIDENCE_BASELINE_ARCHIVE)
+	$(MAKE) ann-validate-baseline-package ANN_BASELINE_ARCHIVE=$(ANN_RELEASE_EVIDENCE_BASELINE_ARCHIVE)
+	$(MAKE) ann-demo-domain-package-baseline
+	$(MAKE) ann-demo-domain-validate-baseline-package
+	@echo "=== ANN release evidence check passed ==="
+
 smoke-test:
 	scripts/smoke_test.sh
 
@@ -370,9 +388,7 @@ alpha-check:
 	$(MAKE) rag-demo-smoke
 
 release-check: alpha-check
-	$(MAKE) ann-publish-baseline
-	$(MAKE) ann-package-baseline
-	$(MAKE) ann-demo-domain-package-baseline
+	$(MAKE) ann-release-evidence-check
 	$(MAKE) smoke-test
 	$(MAKE) sdk-smoke-test
 	@echo "=== Release check passed ==="

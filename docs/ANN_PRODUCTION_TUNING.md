@@ -464,6 +464,22 @@ checksum manifest in one file.
 The Rust, public-corpus, real-embedding, and Release workflows all run the
 package validator before uploading or attaching baseline archives.
 
+For local release readiness, use the aggregate gate:
+
+```bash
+make ann-release-evidence-check
+```
+
+It writes under `target/ann/release-evidence/` rather than the normal
+developer `target/ann/corpus-runs/` directory. That keeps release evidence
+isolated from old local experiments, so a stale latency run cannot make a
+candidate fail or pass for the wrong reason. The target runs the smoke corpus,
+fails on report-history regressions, publishes the baseline directory, packages
+the archive, validates the archive contract, then does the same
+package/validation pass for the deterministic demo-domain corpus. `make
+release-check` depends on this target, so release candidates cannot skip the
+ANN baseline package validation step.
+
 When a `v*` tag is pushed, the `Release` workflow builds the same package and
 uploads it directly to the GitHub Release. That makes the ANN baseline durable:
 release consumers can download the exact recall/latency evidence used for the
