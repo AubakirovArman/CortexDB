@@ -163,6 +163,14 @@ upload the converted JSONL files, run report, history, and optional baseline
 tarball as an Actions artifact. Hosted public runs that should be referenced
 later are recorded in [`ANN_PUBLIC_CORPUS_RUNS.md`](ANN_PUBLIC_CORPUS_RUNS.md).
 
+To turn a hosted run into a regression gate, pass `baseline_bundle_url` pointing
+to a previously published baseline `.tar.gz`. The workflow downloads the
+bundle, compares the new `report.json` against the baseline report, and writes
+`baseline_comparison.json` next to the candidate run. It fails on recall
+regression, corpus-shape changes, HNSW profile changes, production-safety loss,
+or latency regression beyond `max_p95_regression_nanos` and
+`max_max_regression_nanos`.
+
 ## Fallback Policy
 
 Exact fallback is a correctness boundary, not an implementation detail.
@@ -262,7 +270,9 @@ Candidate runs can be gated against a published bundle with:
 ```bash
 make ann-compare-baseline-bundle \
   ANN_BASELINE_BUNDLE=target/ann/release-baselines/v0.1.0-core-alpha-smoke \
-  ANN_CANDIDATE_RUN_ID=candidate-cosine-100k
+  ANN_CANDIDATE_RUN_ID=candidate-cosine-100k \
+  ANN_MAX_P95_REGRESSION_NANOS=5000000 \
+  ANN_MAX_MAX_REGRESSION_NANOS=10000000
 ```
 
 This writes `baseline_comparison.json` next to the candidate run and fails on

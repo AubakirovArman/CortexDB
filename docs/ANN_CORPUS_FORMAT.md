@@ -413,7 +413,9 @@ You can compare a candidate run against a published baseline bundle:
 ```bash
 make ann-compare-baseline-bundle \
   ANN_BASELINE_BUNDLE=target/ann/release-baselines/smoke \
-  ANN_CANDIDATE_RUN_ID=smoke
+  ANN_CANDIDATE_RUN_ID=smoke \
+  ANN_MAX_P95_REGRESSION_NANOS=5000000 \
+  ANN_MAX_MAX_REGRESSION_NANOS=10000000
 ```
 
 The comparison is written to

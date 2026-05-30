@@ -92,6 +92,20 @@ on:
         description: "Optional baseline id when publish_baseline is true"
         required: false
         type: string
+      baseline_bundle_url:
+        description: "Optional .tar.gz baseline bundle URL to compare this run against"
+        required: false
+        type: string
+      max_p95_regression_nanos:
+        description: "Allowed p95 latency regression when baseline_bundle_url is set"
+        required: true
+        default: "500000000"
+        type: string
+      max_max_regression_nanos:
+        description: "Allowed max latency regression when baseline_bundle_url is set"
+        required: true
+        default: "1000000000"
+        type: string
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -165,6 +179,27 @@ jobs:
           echo "ANN_PUBLIC_BASELINE_ID=${baseline_id}" >> "$GITHUB_ENV"
           make ann-publish-baseline ANN_BASELINE_RUN_ID="$ANN_PUBLIC_RUN_ID" ANN_BASELINE_ID="$baseline_id"
           make ann-package-baseline ANN_BASELINE_ID="$baseline_id" ANN_BASELINE_ARCHIVE="target/ann/release-baselines/${baseline_id}.tar.gz"
+
+      - name: Compare against baseline bundle
+        if: inputs.baseline_bundle_url != ''
+        env:
+          BASELINE_BUNDLE_URL: ${{ inputs.baseline_bundle_url }}
+          MAX_P95_REGRESSION_NANOS: ${{ inputs.max_p95_regression_nanos }}
+          MAX_MAX_REGRESSION_NANOS: ${{ inputs.max_max_regression_nanos }}
+        run: |
+          mkdir -p target/ann/downloaded-baseline/extracted
+          curl -fsSL "$BASELINE_BUNDLE_URL" -o target/ann/downloaded-baseline/baseline.tar.gz
+          tar -xzf target/ann/downloaded-baseline/baseline.tar.gz -C target/ann/downloaded-baseline/extracted
+          baseline_bundle="$(find target/ann/downloaded-baseline/extracted -mindepth 1 -maxdepth 1 -type d | sort | head -n 1)"
+          if [ -z "$baseline_bundle" ]; then
+            echo "Could not locate extracted baseline bundle directory" >&2
+            exit 2
+          fi
+          make ann-compare-baseline-bundle \
+            ANN_BASELINE_BUNDLE="$baseline_bundle" \
+            ANN_CANDIDATE_RUN_ID="$ANN_PUBLIC_RUN_ID" \
+            ANN_MAX_P95_REGRESSION_NANOS="$MAX_P95_REGRESSION_NANOS" \
+            ANN_MAX_MAX_REGRESSION_NANOS="$MAX_MAX_REGRESSION_NANOS"
 
       - name: Upload public ANN corpus reports
         uses: actions/upload-artifact@v4

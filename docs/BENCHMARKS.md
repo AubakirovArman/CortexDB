@@ -156,6 +156,9 @@ uploads the tarball as the `ann-release-baseline-package` artifact.
 `make ann-compare-baseline-bundle` compares a candidate run against one of
 those baseline bundles and emits `baseline_comparison.json` next to the
 candidate run.
+Set `ANN_MAX_P95_REGRESSION_NANOS` and `ANN_MAX_MAX_REGRESSION_NANOS` when the
+baseline and candidate were produced on comparable but not identical hosted
+runners.
 
 `scripts/ann/convert_public_corpus.py` converts SIFT-style `fvecs/ivecs` files
 or GloVe/word2vec-style text rows into the JSONL files consumed by
