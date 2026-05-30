@@ -61,10 +61,17 @@ checked-in fixture.
 Release tags package this run as a separate demo-domain baseline archive, so a
 tag carries public benchmark evidence and CortexDB-shaped domain evidence.
 
-For real embedding model output, use `make ann-embedded-domain-corpus-run` with
-payload rows and query rows that already contain fixed-point vectors. This path
-fails closed on missing vectors, which keeps production tuning honest: a real
-embedding baseline should never silently fall back to hashed demo vectors.
+For real embedding model output, use `make ann-embedding-domain-corpus-run`
+when the source corpus only has text. It calls an external embedding command,
+exports fixed-point vectors, and then runs the normal embedded-domain gate. Use
+`make ann-embedded-domain-corpus-run` when payload rows and query rows already
+contain fixed-point vectors. Both paths fail closed on missing vectors, which
+keeps production tuning honest: a real embedding baseline should never silently
+fall back to hashed demo vectors.
+
+Production reports should record the embedding command identity and model
+version in the run notes or release artifact. The built-in `hash-smoke`
+provider is only a plumbing check; it is not evidence for semantic recall.
 
 For each corpus, preserve:
 

@@ -195,10 +195,15 @@ into a release-ready baseline archive. That archive contains the report,
 manifest, machine profile, exact ground truth, and checksum manifest needed for
 future regression comparisons.
 
-For real embedding exports, use `make ann-embedded-domain-corpus-run`. It
-expects JSONL payload rows that already contain vectors and a JSONL query file
-whose queries also contain vectors. Unlike the demo-domain builder, this path
-does not synthesize vectors from text.
+For rows that already contain vectors, use
+`make ann-embedded-domain-corpus-run`. It expects JSONL payload rows that
+already contain vectors and a JSONL query file whose queries also contain
+vectors. Unlike the demo-domain builder, this path does not synthesize vectors
+from text.
+
+For rows that only contain payload/query text, use
+`make ann-embedding-domain-corpus-run`. It calls an embedding command, exports
+fixed-point vectors, then runs the same embedded-domain corpus gate.
 
 ## Recommended Workflow
 
@@ -277,6 +282,52 @@ finance, legal, HR, support, SEC, and world-indicator payloads. The emitted
 which makes recall failures easier to inspect.
 
 ### Build A Real-Embedding Domain Corpus
+
+`export_embedding_domain_corpus.py` is the bridge from text rows to a
+real-embedding ANN corpus. The embedding backend is intentionally external: the
+script sends raw UTF-8 text to a command on stdin and expects a JSON numeric
+array on stdout. This keeps model clients, API keys, and vendor-specific code
+out of the repository.
+
+Example:
+
+```bash
+make ann-embedding-domain-corpus-run \
+  ANN_EMBEDDING_SOURCE_ROOT=/data/cortexdb/exported-text-cells \
+  ANN_EMBEDDING_QUERIES=/data/cortexdb/query_text.jsonl \
+  ANN_EMBEDDING_COMMAND='python3 tools/embed_text.py' \
+  ANN_EMBEDDING_METRIC=cosine \
+  ANN_EMBEDDING_NORMALIZATION=unit
+```
+
+The command contract is:
+
+```text
+stdin:  one payload or query text, UTF-8
+stdout: JSON array of numeric vector coordinates
+stderr: diagnostics only
+```
+
+Use environment variables or a local config file outside the repository for
+provider keys. Do not hardcode API keys in the corpus source or embedding
+command.
+
+The exported files are written under `ANN_EMBEDDING_OUTPUT_DIR`:
+
+```text
+payloads/cells.jsonl
+queries.jsonl
+manifest.json
+```
+
+Keep `ANN_EMBEDDING_OUTPUT_DIR` outside the source directory being scanned.
+Generated benchmark output is skipped when it lives under common build folders
+like `target/`, but production runs should keep raw source and generated
+reports separate.
+
+`--provider hash-smoke` exists only for script self-tests and local plumbing
+checks. Production recall/latency reports should use `--provider command` with
+the exact embedding client used by the product path.
 
 `build_embedded_domain_corpus.py` is the path for data that already carries
 model-generated embeddings. Payload rows may include either a top-level

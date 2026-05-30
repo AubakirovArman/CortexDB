@@ -147,11 +147,14 @@ tarball under `target/ann/demo-domain-corpus/release-baselines/`, so release
 tags can carry both the public ANN baseline and a CortexDB-shaped domain
 baseline.
 
-`make ann-embedded-domain-corpus-run` is the handoff point for real embedding
-exports. It consumes JSONL payload rows with embedded fixed-point vectors plus
-JSONL query vectors, then runs the same exact-ground-truth and HNSW report
-workflow. Missing vectors are treated as an error by default so benchmark runs
-do not accidentally mix real embeddings with synthetic demo vectors.
+`make ann-embedding-domain-corpus-run` is the handoff point for text corpora
+that still need embedding. It invokes an external command that reads text on
+stdin and prints a JSON vector, writes a fixed-point corpus export, then runs
+the same exact-ground-truth and HNSW report workflow. Use
+`make ann-embedded-domain-corpus-run` when the corpus already contains
+fixed-point vectors. Missing vectors are treated as an error by default so
+benchmark runs do not accidentally mix real embeddings with synthetic demo
+vectors.
 
 `make ann-scripts-check` validates the dependency-free helper scripts that
 generate exact ground truth and compare two ANN report JSON files. Use
