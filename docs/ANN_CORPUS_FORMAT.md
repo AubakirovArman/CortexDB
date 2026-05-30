@@ -356,6 +356,9 @@ export and HNSW report pipeline documented here.
 After a real baseline report exists, run `make ann-real-embedding-compare` or
 `make ann-real-embedding-benchmark-and-compare` so release candidates fail on
 recall, graph-shape, production-safety, HNSW parameter, or latency regressions.
+Set `ANN_REAL_EMBEDDING_SLO_PROFILE` to `fast`, `balanced`, `semantic`, or
+`audit` to make the selected recall, latency, and HNSW graph policy explicit in
+the run command.
 
 `build_embedded_domain_corpus.py` is the path for data that already carries
 model-generated embeddings. Payload rows may include either a top-level

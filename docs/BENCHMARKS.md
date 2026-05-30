@@ -168,13 +168,17 @@ make ann-real-embedding-preflight \
 make ann-real-embedding-benchmark \
   ANN_REAL_EMBEDDING_SOURCE_ROOT=/data/cortexdb/text-cells \
   ANN_REAL_EMBEDDING_QUERIES=/data/cortexdb/query_text.jsonl \
-  ANN_REAL_EMBEDDING_RUN_ID=my-domain-cosine-v1
+  ANN_REAL_EMBEDDING_RUN_ID=my-domain-cosine-v1 \
+  ANN_REAL_EMBEDDING_SLO_PROFILE=balanced
 ```
 
 The preflight target writes a machine-readable report and refuses synthetic
 `hash-smoke` commands, missing corpus/query files, missing endpoint/model env,
 and invalid query limits before the benchmark spends time calling an embedding
 service.
+Use `ANN_REAL_EMBEDDING_SLO_PROFILE=fast|balanced|semantic|audit` to select the
+recall, latency, and HNSW graph-shape policy for the run. `balanced` is the
+default, while `audit` requires exact recall and uses the widest graph.
 After a baseline exists, use the real-embedding comparison target to block
 recall, graph-shape, production-safety, and latency regressions:
 

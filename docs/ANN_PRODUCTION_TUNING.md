@@ -109,6 +109,22 @@ This target uses `ANN_REAL_EMBEDDING_COMMAND`, which defaults to
 normal ANN report and machine profile under
 `target/ann/real-embedding/runs/<run-id>/`.
 
+Real embedding runs accept named SLO profiles through
+`ANN_REAL_EMBEDDING_SLO_PROFILE`:
+
+| Profile | Intended Use | Recall Policy | Latency Policy | HNSW Shape |
+| --- | --- | --- | --- | --- |
+| `fast` | low-latency interactive search | 75 percent min/mean recall | strict p95/max budget | small graph |
+| `balanced` | default context retrieval | 75 percent min/mean recall | default p95/max budget | balanced graph |
+| `semantic` | higher-quality semantic retrieval | higher min/mean recall | wider latency budget | wider graph |
+| `audit` | release/audit verification runs | exact top-k recall required | widest latency budget | largest graph |
+
+Inspect a profile without running a benchmark:
+
+```bash
+make ann-slo-profile ANN_REAL_EMBEDDING_SLO_PROFILE=semantic
+```
+
 Once a real embedding baseline has been published, candidate runs should use a
 report comparison gate:
 
@@ -118,6 +134,7 @@ make ann-real-embedding-benchmark-and-compare \
   ANN_REAL_EMBEDDING_QUERIES=/data/cortexdb/query_text.jsonl \
   ANN_REAL_EMBEDDING_REQUIRE_API_KEY=true \
   ANN_REAL_EMBEDDING_RUN_ID=my-domain-cosine-v2 \
+  ANN_REAL_EMBEDDING_SLO_PROFILE=semantic \
   ANN_REAL_EMBEDDING_BASELINE_REPORT=/baselines/my-domain-cosine-v1/report.json \
   ANN_MAX_P95_REGRESSION_NANOS=5000000 \
   ANN_MAX_MAX_REGRESSION_NANOS=10000000
