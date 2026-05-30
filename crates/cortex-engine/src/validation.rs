@@ -93,6 +93,7 @@ impl Database {
         let mut live_ids = BTreeSet::new();
         let mut retired_ids = BTreeSet::new();
         let mut candidates = BTreeMap::new();
+        let mut hnsw_build_profile = None;
         for segment in &manifest.live_segments {
             if !live_ids.insert(segment.id) {
                 report
@@ -179,6 +180,19 @@ impl Database {
             match HnswGraphIndex::read(hnsw_path(&self.segments_path, segment.id)) {
                 Ok(graph) => {
                     report.hnsw_graphs_checked += 1;
+                    let profile = hnsw_profile_key(&graph);
+                    if let Some(previous) = hnsw_build_profile {
+                        if previous != profile {
+                            report.errors.push(format!(
+                                "mixed hnsw build profiles across live segments: segment {} has {} but earlier segment has {}",
+                                segment.id,
+                                format_hnsw_profile(profile),
+                                format_hnsw_profile(previous)
+                            ));
+                        }
+                    } else {
+                        hnsw_build_profile = Some(profile);
+                    }
                     if let Some(vector_index) = &vector_index {
                         let index =
                             HnswIndex::from_graph(vector_index.vectors.clone(), graph, 8, 64);
@@ -221,6 +235,18 @@ fn check_wal(path: &std::path::Path, report: &mut StorageValidationReport) {
         }
         Err(error) => report.errors.push(format!("wal: {error}")),
     }
+}
+
+fn hnsw_profile_key(graph: &HnswGraphIndex) -> (u32, u32, u32) {
+    (graph.max_neighbors, graph.ef_search, graph.layer_count)
+}
+
+fn format_hnsw_profile(profile: (u32, u32, u32)) -> String {
+    let (max_neighbors, ef_search, layer_count) = profile;
+    if profile == (0, 0, 0) {
+        return "legacy/unknown".to_owned();
+    }
+    format!("max_neighbors={max_neighbors},ef_search={ef_search},layer_count={layer_count}")
 }
 
 fn file_len_or_zero(path: &std::path::Path) -> EngineResult<u64> {

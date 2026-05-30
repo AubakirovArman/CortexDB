@@ -132,6 +132,9 @@ The upper-layer trailer is optional for compatibility with earlier `ACH0`
 files; missing upper layers are interpreted as a valid single-layer graph.
 The optional `HCFG` trailer records the HNSW build profile used when checkpoint
 or compact wrote the graph. Older files without this trailer remain valid.
+Storage validation treats mixed live-segment `HCFG` profiles as an invariant
+error because ANN recall and latency SLOs cannot be interpreted consistently
+when one live graph was built with a different shape than another.
 
 ## Manifest `.acm`
 

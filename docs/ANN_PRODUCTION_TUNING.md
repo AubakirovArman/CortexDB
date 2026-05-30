@@ -141,6 +141,9 @@ Use a narrower profile for low-latency interactive indexes and a wider profile
 for semantic or audit-heavy collections. Changing the profile affects newly
 written checkpoint/compact segments; existing `.ach` files should be rebuilt by
 compaction if the collection policy changes.
+`Database::validate_storage()` rejects mixed live-segment HNSW profiles, so a
+profile migration should compact the collection before the new graph shape is
+used for production ANN.
 
 Once a real embedding baseline has been published, candidate runs should use a
 report comparison gate:
@@ -466,7 +469,8 @@ Warnings, not blockers:
 - Full hosted `siftsmall` public-corpus baseline is published as a release
   asset and candidate hosted runs can be gated against that baseline bundle.
 - HNSW construction profiles are available for newly written checkpoint/compact
-  graphs, but collection metadata does not yet persist the intended profile.
+  graphs and validation rejects mixed live-segment profiles, but collection
+  metadata does not yet persist the intended profile independently of `.ach`.
 - Report history is not stored outside CI artifacts and release baseline
   bundles.
 - Demo-domain corpus generation is available, but no large real customer/domain

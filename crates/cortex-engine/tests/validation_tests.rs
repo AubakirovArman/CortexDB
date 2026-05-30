@@ -107,6 +107,43 @@ fn hnsw_graph_candidate_without_vector_fails_validation() {
 }
 
 #[test]
+fn mixed_hnsw_build_profiles_fail_validation() {
+    let dir = tempfile::tempdir().unwrap();
+    write_bundle_with_hnsw_profile(dir.path(), 1, 1, 1, CellId(1), (8, 64, 3));
+    write_bundle_with_hnsw_profile(dir.path(), 2, 2, 2, CellId(2), (24, 192, 5));
+    write_manifest(
+        dir.path(),
+        2,
+        vec![manifest_segment(1, 1, 1), manifest_segment(2, 2, 1)],
+        Vec::new(),
+    );
+
+    let db = Database::open(dir.path()).unwrap();
+    let error = db.validate_storage().unwrap_err().to_string();
+
+    assert!(error.contains("mixed hnsw build profiles"));
+    assert!(error.contains("max_neighbors=24"));
+    assert!(error.contains("max_neighbors=8"));
+}
+
+#[test]
+fn consistent_hnsw_build_profiles_pass_validation() {
+    let dir = tempfile::tempdir().unwrap();
+    write_bundle_with_hnsw_profile(dir.path(), 1, 1, 1, CellId(1), (16, 128, 4));
+    write_bundle_with_hnsw_profile(dir.path(), 2, 2, 2, CellId(2), (16, 128, 4));
+    write_manifest(
+        dir.path(),
+        2,
+        vec![manifest_segment(1, 1, 1), manifest_segment(2, 2, 1)],
+        Vec::new(),
+    );
+
+    let db = Database::open(dir.path()).unwrap();
+
+    db.validate_storage().unwrap();
+}
+
+#[test]
 fn vector_index_dimension_mismatch_fails_validation() {
     let dir = tempfile::tempdir().unwrap();
     write_bundle(dir.path(), 1, 1, 1, CellId(1));
@@ -158,6 +195,17 @@ fn validation_report_collects_multiple_errors() {
 }
 
 fn write_bundle(root: &std::path::Path, segment_id: u64, seq: u64, candidate: u32, cell: CellId) {
+    write_bundle_with_hnsw_profile(root, segment_id, seq, candidate, cell, (0, 0, 0));
+}
+
+fn write_bundle_with_hnsw_profile(
+    root: &std::path::Path,
+    segment_id: u64,
+    seq: u64,
+    candidate: u32,
+    cell: CellId,
+    profile: (u32, u32, u32),
+) {
     let segments = root.join("segments");
     std::fs::create_dir_all(&segments).unwrap();
     SegmentWriter::write(
@@ -180,9 +228,14 @@ fn write_bundle(root: &std::path::Path, segment_id: u64, seq: u64, candidate: u3
     VectorIndex::default()
         .write(segments.join(format!("segment-{segment_id}.acv")))
         .unwrap();
-    HnswGraphIndex::default()
-        .write(segments.join(format!("segment-{segment_id}.ach")))
-        .unwrap();
+    HnswGraphIndex {
+        max_neighbors: profile.0,
+        ef_search: profile.1,
+        layer_count: profile.2,
+        ..HnswGraphIndex::default()
+    }
+    .write(segments.join(format!("segment-{segment_id}.ach")))
+    .unwrap();
 }
 
 fn write_manifest(
