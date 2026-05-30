@@ -10,6 +10,7 @@ CortexDB exposes a lightweight, ultra-high-performance HTTP JSON API for interac
 * **Content-Type:** `application/json`
 * **Max Payload Boundary:** 2MB (Requests exceeding 2MB will return `413 Payload Too Large`)
 * **OpenAPI contract:** [`openapi.yaml`](openapi.yaml)
+* **Stable error taxonomy:** [`API_ERROR_TAXONOMY.md`](API_ERROR_TAXONOMY.md)
 * **Tenant routing:** database endpoints accept optional `tenant=<realm>`. Omit
   it or use `tenant=default` for the root database; any other value routes to a
   per-tenant realm under the server data directory.
@@ -245,9 +246,11 @@ If an error occurs, the server responds with a corresponding HTTP status code an
 
 | Status Code | Code | Cause |
 | --- | --- | --- |
-| **`400 Bad Request`** | `bad_request` | Invalid parameters, AQL parsing syntax failures. |
+| **`400 Bad Request`** | `bad_request` | Invalid parameters or malformed non-AQL input. |
+| **`400 Bad Request`** | `invalid_tenant` | Tenant realm name fails charset, length, or path-safety validation. |
 | **`400 Bad Request`** | `invalid_aql` | AQL parse/bind failure that is not a policy denial. |
 | **`401 Unauthorized`** | `unauthorized` | Token auth required and missing or invalid. |
+| **`403 Forbidden`** | `forbidden` | Reserved for non-AgentView authorization denials. |
 | **`403 Forbidden`** | `permission_denied` | AgentView or scope policy denied the query. |
 | **`404 Not Found`** | `not_found` | Resource or route not found. |
 | **`413 Payload Too Large`** | `payload_too_large` | Body size exceeds 2MB boundary. |
@@ -255,6 +258,7 @@ If an error occurs, the server responds with a corresponding HTTP status code an
 | **`500 Internal Error`** | `storage_corruption` | Storage checksum, format, or invariant failure. |
 | **`500 Internal Error`** | `internal` | Unexpected internal failure. |
 | **`503 Service Unavailable`** | `database_busy` | Database actor queue or database lock is busy. |
+| **`503 Service Unavailable`** | `service_unavailable` | Server component unavailable but not classified as queue/lock pressure. |
 
 * **Error Format:**
   ```json

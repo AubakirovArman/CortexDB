@@ -6,6 +6,8 @@ The HTTP API serializes response bodies from typed Rust structs with
 `serde::Serialize`.
 
 The OpenAPI 3.1 contract lives in [`docs/openapi.yaml`](docs/openapi.yaml).
+The stable error taxonomy is frozen in
+[`docs/API_ERROR_TAXONOMY.md`](docs/API_ERROR_TAXONOMY.md).
 
 All database endpoints accept optional query parameter `tenant=<realm>`.
 Omitting it or sending `tenant=default` targets the root database. Other values
@@ -35,13 +37,16 @@ Stable Core Alpha error codes:
 | HTTP status | Code | Meaning |
 | --- | --- | --- |
 | `400` | `bad_request` | Missing parameters or malformed non-AQL request input. |
+| `400` | `invalid_tenant` | Tenant realm name fails charset, length, or path-safety validation. |
 | `400` | `invalid_aql` | AQL parse/bind failure that is not a policy denial. |
 | `401` | `unauthorized` | Missing or invalid bearer token. |
+| `403` | `forbidden` | Reserved for non-AgentView authorization denials. |
 | `403` | `permission_denied` | AgentView, scope, mode, or policy denial. |
 | `404` | `not_found` | Unknown route or missing resource such as an ingestion job. |
 | `413` | `payload_too_large` | Request body exceeds server limit. |
 | `429` | `rate_limited` | Optional server request-rate limit is exceeded. |
 | `503` | `database_busy` | Database actor queue or database lock is busy. |
+| `503` | `service_unavailable` | Server component is unavailable but not classified as queue/lock pressure. |
 | `500` | `storage_corruption` | Storage checksum, format, or invariant failure. |
 | `500` | `internal` | Unexpected internal error that is not classified above. |
 

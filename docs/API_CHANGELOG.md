@@ -6,7 +6,21 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 
 ---
 
-## v0.1.0-core-alpha.3 (current)
+## v0.1.0-core-alpha.4 (current)
+
+### Added
+- **Frozen API error taxonomy** — `docs/API_ERROR_TAXONOMY.md` now defines
+  stable Core Alpha error codes, HTTP status mappings, producer rules, and
+  compatibility rules.
+
+### Changed
+- **API docs alignment** — `docs/API.md` and `docs/API_JSON_SCHEMAS.md` now
+  list the full error enum already present in `RouterError` and OpenAPI:
+  `invalid_tenant`, `forbidden`, and `service_unavailable`.
+
+---
+
+## v0.1.0-core-alpha.3
 
 ### Added
 - **`GET /v1/metrics`** — aggregated database metrics (storage + WAL + ANN/HNSW in one response).

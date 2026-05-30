@@ -1,5 +1,6 @@
 mod api_tests;
 mod cell_tests;
+mod error_taxonomy_tests;
 mod format_tests;
 mod ingest_tests;
 mod response_snapshot_tests;
