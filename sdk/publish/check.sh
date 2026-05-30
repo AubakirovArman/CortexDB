@@ -34,7 +34,7 @@ python3 -m py_compile "$ROOT/python/cortexdb_client.py"
 PYTHONPATH="$ROOT/python" python3 -m unittest discover "$ROOT/python"
 PY_WHEEL_DIR="${TMPDIR:-/tmp}/cortexdb-python-wheel-check"
 rm -rf "$PY_WHEEL_DIR"
-python3 -m pip wheel --no-deps --no-build-isolation --wheel-dir "$PY_WHEEL_DIR" "$ROOT/python" >/dev/null
+python3 -m pip wheel --no-deps --wheel-dir "$PY_WHEEL_DIR" "$ROOT/python" >/dev/null
 rm -rf "$PY_WHEEL_DIR"
 
 cargo test -p cortex-sdk --manifest-path "$REPO_ROOT/Cargo.toml"
