@@ -212,7 +212,8 @@ candidate runs can use that bundle's `report.json` as
 
 For hosted runs, use the `ANN Real Embedding` GitHub Actions workflow. It
 downloads a source archive, reads endpoint URL/key from repository secrets,
-runs the same preflight/benchmark/compare/package targets, and uploads the
+validates downloaded baseline packages before extraction, runs the same
+preflight/benchmark/compare/package targets, and uploads the
 fixed-point export plus run reports as artifacts.
 
 `make ann-scripts-check` validates the dependency-free helper scripts that

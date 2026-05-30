@@ -188,6 +188,8 @@ jobs:
           set -euo pipefail
           mkdir -p target/ann/real-embedding/downloaded-baseline/extracted
           curl -fsSL "$BASELINE_BUNDLE_URL" -o target/ann/real-embedding/downloaded-baseline/baseline.tar.gz
+          make ann-real-embedding-validate-baseline-package \
+            ANN_REAL_EMBEDDING_BASELINE_ARCHIVE=target/ann/real-embedding/downloaded-baseline/baseline.tar.gz
           tar -xzf target/ann/real-embedding/downloaded-baseline/baseline.tar.gz \
             -C target/ann/real-embedding/downloaded-baseline/extracted
           baseline_bundle="$(find target/ann/real-embedding/downloaded-baseline/extracted -mindepth 1 -maxdepth 1 -type d | sort | head -n 1)"

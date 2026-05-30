@@ -311,10 +311,11 @@ later are recorded in [`ANN_PUBLIC_CORPUS_RUNS.md`](ANN_PUBLIC_CORPUS_RUNS.md).
 
 To turn a hosted run into a regression gate, pass `baseline_bundle_url` pointing
 to a previously published baseline `.tar.gz`. The workflow downloads the
-bundle, compares the new `report.json` against the baseline report, and writes
-`baseline_comparison.json` next to the candidate run. It fails on recall
-regression, corpus-shape changes, HNSW profile changes, production-safety loss,
-or latency regression beyond `max_p95_regression_nanos` and
+bundle, validates the archive contract before extraction, compares the new
+`report.json` against the baseline report, and writes `baseline_comparison.json`
+next to the candidate run. It fails on recall regression, corpus-shape changes,
+HNSW profile changes, production-safety loss, or latency regression beyond
+`max_p95_regression_nanos` and
 `max_max_regression_nanos`.
 
 ## GitHub Actions Real Embedding Runs
@@ -346,10 +347,11 @@ ann-real-embedding-benchmark
 ann-real-embedding-history-regression-check
 ann-real-embedding-compare          # when baseline_bundle_url is set
 ann-real-embedding-package-baseline # when publish_baseline is true
+ann-real-embedding-validate-baseline-package
 ```
 
 Artifacts include the preflight report, exported fixed-point corpus, ANN run
-directory, explicit `history.json`, and optional baseline package. This is the
+directory, explicit `history.json`, and optional validated baseline package. This is the
 preferred path for production-style evidence because the run is reproducible
 from a GitHub Actions URL and does not expose embedding credentials in command
 lines.
