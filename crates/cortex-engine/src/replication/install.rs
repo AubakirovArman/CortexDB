@@ -7,6 +7,7 @@ use cortex_storage::segment::{SegmentCell, SegmentWriter};
 use cortex_storage::wal::WalWriter;
 
 use crate::checkpoint::hnsw::hnsw_graph_for_cells_with_config;
+use crate::checkpoint::manifest_hnsw_profile;
 use crate::checkpoint::vector::vector_index_for_cells;
 use crate::checkpoint::{bitmap_path, hnsw_path, lexical_path, segment_path, vector_path};
 use crate::database::{CheckpointStats, Database};
@@ -47,6 +48,7 @@ impl Database {
             checkpoint_seq: snapshot.checkpoint_seq.0,
             cell_count: cell_count(snapshot.cells.len())?,
         });
+        self.manifest.hnsw_profile = Some(manifest_hnsw_profile(self.hnsw_build_config)?);
         self.manifest.store(&self.manifest_path)?;
         crate::database::truncate_wal_tail(&self.wal_path, 0)?;
         self.memtable = memtable_from_snapshot(&snapshot);

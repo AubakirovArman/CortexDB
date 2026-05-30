@@ -469,8 +469,8 @@ Warnings, not blockers:
 - Full hosted `siftsmall` public-corpus baseline is published as a release
   asset and candidate hosted runs can be gated against that baseline bundle.
 - HNSW construction profiles are available for newly written checkpoint/compact
-  graphs and validation rejects mixed live-segment profiles, but collection
-  metadata does not yet persist the intended profile independently of `.ach`.
+  graphs. The manifest also stores the intended profile independently of `.ach`,
+  and validation rejects live graphs that drift from that manifest policy.
 - Report history is not stored outside CI artifacts and release baseline
   bundles.
 - Demo-domain corpus generation is available, but no large real customer/domain

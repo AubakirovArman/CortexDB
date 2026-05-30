@@ -249,6 +249,7 @@ fn write_manifest(
         checkpoint_seq,
         live_segments,
         retired_segments,
+        hnsw_profile: None,
     }
     .store(root.join("manifest.acm"))
     .unwrap();

@@ -154,8 +154,20 @@ repeat retired_segment_count:
   generation u64
   checkpoint_seq u64
   cell_count u32
+optional hnsw_profile:
+  magic[4] = "HNSW"
+  max_neighbors u32
+  ef_search u32
+  layer_count u32
+  metric u32
 crc32c u32 over all previous bytes
 ```
+
+The optional `HNSW` trailer records the intended collection-level HNSW build
+profile independently from individual `.ach` graph files. Storage validation
+compares this manifest policy against every live graph profile so a mixed or
+accidentally rewritten ANN graph cannot be served as if it matched the current
+collection SLO.
 
 The CLI can inspect the manifest without opening a database writer:
 

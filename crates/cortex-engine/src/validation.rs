@@ -6,7 +6,7 @@ use cortex_core::memtable::MemTableStats;
 use cortex_core::CommitSeq;
 use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
-use cortex_storage::manifest::StorageManifest;
+use cortex_storage::manifest::{ManifestHnswProfile, StorageManifest};
 use cortex_storage::segment::SegmentReader;
 use cortex_storage::vectors::VectorIndex;
 use cortex_storage::wal::{WalReader, WalWriterMetrics};
@@ -94,6 +94,7 @@ impl Database {
         let mut retired_ids = BTreeSet::new();
         let mut candidates = BTreeMap::new();
         let mut hnsw_build_profile = None;
+        let manifest_hnsw_profile = manifest.hnsw_profile.map(hnsw_manifest_profile_key);
         for segment in &manifest.live_segments {
             if !live_ids.insert(segment.id) {
                 report
@@ -181,6 +182,16 @@ impl Database {
                 Ok(graph) => {
                     report.hnsw_graphs_checked += 1;
                     let profile = hnsw_profile_key(&graph);
+                    if let Some(expected) = manifest_hnsw_profile {
+                        if profile != expected {
+                            report.errors.push(format!(
+                                "hnsw graph {} profile {} does not match manifest profile {}",
+                                segment.id,
+                                format_hnsw_profile(profile),
+                                format_hnsw_profile(expected)
+                            ));
+                        }
+                    }
                     if let Some(previous) = hnsw_build_profile {
                         if previous != profile {
                             report.errors.push(format!(
@@ -237,16 +248,32 @@ fn check_wal(path: &std::path::Path, report: &mut StorageValidationReport) {
     }
 }
 
-fn hnsw_profile_key(graph: &HnswGraphIndex) -> (u32, u32, u32) {
-    (graph.max_neighbors, graph.ef_search, graph.layer_count)
+fn hnsw_profile_key(graph: &HnswGraphIndex) -> (u32, u32, u32, u32) {
+    (
+        graph.max_neighbors,
+        graph.ef_search,
+        graph.layer_count,
+        u32::from(graph.metric),
+    )
 }
 
-fn format_hnsw_profile(profile: (u32, u32, u32)) -> String {
-    let (max_neighbors, ef_search, layer_count) = profile;
-    if profile == (0, 0, 0) {
+fn hnsw_manifest_profile_key(profile: ManifestHnswProfile) -> (u32, u32, u32, u32) {
+    (
+        profile.max_neighbors,
+        profile.ef_search,
+        profile.layer_count,
+        profile.metric,
+    )
+}
+
+fn format_hnsw_profile(profile: (u32, u32, u32, u32)) -> String {
+    let (max_neighbors, ef_search, layer_count, metric) = profile;
+    if profile == (0, 0, 0, 0) {
         return "legacy/unknown".to_owned();
     }
-    format!("max_neighbors={max_neighbors},ef_search={ef_search},layer_count={layer_count}")
+    format!(
+        "max_neighbors={max_neighbors},ef_search={ef_search},layer_count={layer_count},metric={metric}"
+    )
 }
 
 fn file_len_or_zero(path: &std::path::Path) -> EngineResult<u64> {

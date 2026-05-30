@@ -11,13 +11,14 @@ pub(crate) mod vector;
 use cortex_core::memtable::MemTable;
 use cortex_core::{CellId, CommitSeq};
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
-use cortex_storage::manifest::{ManifestSegment, StorageManifest};
+use cortex_storage::manifest::{ManifestHnswProfile, ManifestSegment, StorageManifest};
 use cortex_storage::segment::{SegmentCell, SegmentReader, SegmentWriter};
 use cortex_storage::wal::WalWriter;
 
 use crate::database::{CheckpointStats, Database};
-use crate::error::EngineResult;
+use crate::error::{EngineError, EngineResult};
 use crate::query::EngineAqlIndex;
+use crate::search::HnswBuildConfig;
 use candidates::{candidate_from_ordinal, segment_cell_count, CandidateAllocator};
 use index_merge::{merge_bitmap_index, merge_lexical_index};
 pub(crate) use paths::{
@@ -72,6 +73,7 @@ impl Database {
             checkpoint_seq: self.current_seq.0,
             cell_count: segment_cell_count(cells.len())?,
         });
+        self.manifest.hnsw_profile = Some(manifest_hnsw_profile(self.hnsw_build_config)?);
         self.manifest.store(&self.manifest_path)?;
         super::database::truncate_wal_tail(&self.wal_path, 0)?;
         self.writer = WalWriter::start(&self.wal_path, self.durability_mode)?;
@@ -117,6 +119,7 @@ impl Database {
             checkpoint_seq: self.current_seq.0,
             cell_count: segment_cell_count(cells.len())?,
         });
+        self.manifest.hnsw_profile = Some(manifest_hnsw_profile(self.hnsw_build_config)?);
         self.manifest.store(&self.manifest_path)?;
         super::database::truncate_wal_tail(&self.wal_path, 0)?;
         self.writer = WalWriter::start(&self.wal_path, self.durability_mode)?;
@@ -233,6 +236,20 @@ impl Database {
             })
             .collect()
     }
+}
+
+pub(crate) fn manifest_hnsw_profile(config: HnswBuildConfig) -> EngineResult<ManifestHnswProfile> {
+    let config = config.normalized();
+    Ok(ManifestHnswProfile {
+        max_neighbors: hnsw_profile_u32("max_neighbors", config.max_neighbors)?,
+        ef_search: hnsw_profile_u32("ef_search", config.ef_search)?,
+        layer_count: hnsw_profile_u32("layer_count", config.layer_count)?,
+        metric: config.metric as u32,
+    })
+}
+
+fn hnsw_profile_u32(field: &'static str, value: usize) -> EngineResult<u32> {
+    u32::try_from(value).map_err(|_| EngineError::HnswBuildConfigOutOfRange { field, value })
 }
 
 fn remove_candidates(

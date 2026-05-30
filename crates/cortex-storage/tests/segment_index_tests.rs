@@ -125,6 +125,7 @@ fn manifest_store_is_atomic_and_ignores_leftover_tmp() {
             cell_count: 4,
         }],
         retired_segments: Vec::new(),
+        hnsw_profile: None,
     };
 
     manifest.store(&path).unwrap();

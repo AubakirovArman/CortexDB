@@ -14,12 +14,21 @@ pub struct ManifestSegment {
     pub cell_count: u32,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ManifestHnswProfile {
+    pub max_neighbors: u32,
+    pub ef_search: u32,
+    pub layer_count: u32,
+    pub metric: u32,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct StorageManifest {
     pub generation: u64,
     pub checkpoint_seq: u64,
     pub live_segments: Vec<ManifestSegment>,
     pub retired_segments: Vec<ManifestSegment>,
+    pub hnsw_profile: Option<ManifestHnswProfile>,
 }
 
 impl StorageManifest {
@@ -57,6 +66,13 @@ fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
     put_u64(&mut out, manifest.checkpoint_seq);
     put_segments(&mut out, &manifest.live_segments);
     put_segments(&mut out, &manifest.retired_segments);
+    if let Some(profile) = manifest.hnsw_profile {
+        out.extend_from_slice(b"HNSW");
+        put_u32(&mut out, profile.max_neighbors);
+        put_u32(&mut out, profile.ef_search);
+        put_u32(&mut out, profile.layer_count);
+        put_u32(&mut out, profile.metric);
+    }
     append_crc32c(&mut out);
     out
 }
@@ -71,6 +87,7 @@ fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
     let checkpoint_seq = read_u64(bytes, &mut cursor)?;
     let live_segments = read_segments(bytes, &mut cursor)?;
     let retired_segments = read_segments(bytes, &mut cursor)?;
+    let hnsw_profile = read_hnsw_profile(bytes, &mut cursor)?;
     if cursor > bytes.len() {
         return Err(StorageError::InvalidManifestFile);
     }
@@ -79,6 +96,7 @@ fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
         checkpoint_seq,
         live_segments,
         retired_segments,
+        hnsw_profile,
     })
 }
 
@@ -104,6 +122,26 @@ fn read_segments(bytes: &[u8], cursor: &mut usize) -> StorageResult<Vec<Manifest
         });
     }
     Ok(segments)
+}
+
+fn read_hnsw_profile(
+    bytes: &[u8],
+    cursor: &mut usize,
+) -> StorageResult<Option<ManifestHnswProfile>> {
+    if bytes.len().saturating_sub(*cursor) < 4 || &bytes[*cursor..*cursor + 4] != b"HNSW" {
+        return Ok(None);
+    }
+    *cursor += 4;
+    let profile = ManifestHnswProfile {
+        max_neighbors: read_u32(bytes, cursor)?,
+        ef_search: read_u32(bytes, cursor)?,
+        layer_count: read_u32(bytes, cursor)?,
+        metric: read_u32(bytes, cursor)?,
+    };
+    if profile.max_neighbors == 0 || profile.ef_search == 0 || profile.layer_count == 0 {
+        return Err(StorageError::InvalidManifestFile);
+    }
+    Ok(Some(profile))
 }
 
 fn put_u32(out: &mut Vec<u8>, value: u32) {

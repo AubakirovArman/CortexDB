@@ -36,6 +36,8 @@ pub enum EngineError {
     CandidateIdOverflow,
     #[error("vector dimension mismatch: expected {expected}, got {actual}")]
     VectorDimensionMismatch { expected: usize, actual: usize },
+    #[error("HNSW build config value out of range: {field}={value}")]
+    HnswBuildConfigOutOfRange { field: &'static str, value: usize },
     #[error("invalid candidate id: {0}")]
     InvalidCandidateId(u32),
     #[error("database is already open: {0}; if this is a stale lock, close the running process or remove db.lock with cortexdb unlock <path> --force")]

@@ -182,6 +182,7 @@ fn tombstone_only_checkpoint_does_not_resurrect_cell() {
             cell_count: 1,
         }],
         retired_segments: Vec::new(),
+        hnsw_profile: None,
     }
     .store(dir.path().join("manifest.acm"))
     .unwrap();
@@ -248,6 +249,7 @@ fn validate_storage_rejects_segment_count_mismatch() {
             cell_count: 2,
         }],
         retired_segments: Vec::new(),
+        hnsw_profile: None,
     }
     .store(dir.path().join("manifest.acm"))
     .unwrap();

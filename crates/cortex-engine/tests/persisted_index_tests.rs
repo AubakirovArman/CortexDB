@@ -167,6 +167,7 @@ fn write_max_candidate_segment(root: &std::path::Path) {
             cell_count: 1,
         }],
         retired_segments: Vec::new(),
+        hnsw_profile: None,
     }
     .store(root.join("manifest.acm"))
     .unwrap();
