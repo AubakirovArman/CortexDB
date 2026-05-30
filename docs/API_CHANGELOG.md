@@ -23,6 +23,11 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 - **Actor shutdown** — `DatabaseActor::drop` uses non-blocking `try_send`.
 - **Actor queue capacity** — configurable via `ServerOptions.actor_queue_capacity` (default 1024).
 
+### Deprecated
+- Legacy compatibility aliases `/get`, `/put`, `/flush`, and `/tombstone` remain
+  available for early local clients but are deprecated. Use the versioned
+  `/v1/*` replacements documented in `SDK_DEPRECATION_POLICY.md`.
+
 ### Security
 - **Legacy sync_handler** is now gated under `#[cfg(test)]` and cannot be used in production builds.
 

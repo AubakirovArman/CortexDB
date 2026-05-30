@@ -29,7 +29,8 @@ integrations and may still receive additive changes.
 
 `sdk/publish/check.sh` runs the current publish preflight: Python bytecode,
 Python unit tests, Python wheel build, Rust SDK tests, `cargo package`, JS
-syntax check, and `npm pack --dry-run` when npm is available.
+syntax check, deprecation policy checks, and `npm pack --dry-run` when npm is
+available.
 `make sdk-check` exposes the same gate locally, and the GitHub `SDK Release`
 workflow runs it on SDK changes. Actual publishing is manual-only from a `v*`
 tag through the protected `sdk-release` environment and is documented in

@@ -53,7 +53,7 @@
 ### 4) Stable published SDK packages
 - [x] Полный release-процедурный lock-step по версиям `server <-> OpenAPI <-> SDK`.
 - [x] Автономные CI-пайплайны для публичных публикаций в crates.io / npm / PyPI (tag-gated, protected environment).
-- [ ] Deprecation policy и changelog для breaking changes в SDK contract.
+- [x] Deprecation policy и changelog для breaking changes в SDK contract.
 - [x] Подготовлены release workflows и базовые contract checks (локально, в repo).
 
 ## Непосредственный следующий 2-недельный sprint
@@ -62,7 +62,7 @@
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
 3. Consensus: добавить failure-injection harness для partition/restart recovery в integration tests.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
-5. SDK: добавить deprecation policy и breaking-change changelog enforcement.
+5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 
 ## Критерий перехода к следующему слою
 

@@ -57,6 +57,18 @@ Version: `v0.1.0-core-alpha`
 - TypeScript: `sdk/typescript/tests/smoke.test.ts` runs against a live server.
 - OpenAPI coverage: `make openapi-check` validates that every router endpoint is documented.
 
+## Deprecated Endpoints
+
+Legacy compatibility aliases are deprecated and kept only for early local
+clients. SDKs must use the versioned replacements.
+
+| Deprecated route | Replacement | Removal target |
+| --- | --- | --- |
+| `/get` | `GET /v1/cell` | no earlier than the first beta minor release |
+| `/put` | `POST /v1/cell` | no earlier than the first beta minor release |
+| `/flush` | `POST /v1/flush` | no earlier than the first beta minor release |
+| `/tombstone` | `DELETE /v1/cell` | no earlier than the first beta minor release |
+
 ## Deprecated Fields
 
 None at this time. When a field is deprecated:

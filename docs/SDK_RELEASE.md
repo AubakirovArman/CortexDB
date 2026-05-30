@@ -26,6 +26,7 @@ This invokes `sdk/publish/check.sh`, which verifies:
 - Rust SDK tests and `cargo package`.
 - Cross-SDK version consistency.
 - OpenAPI, changelog, package metadata, and publish workflow alignment.
+- Deprecation policy and breaking-change changelog coverage.
 - Tenant/realm routing coverage.
 - ANN evaluation contract coverage.
 
@@ -38,6 +39,10 @@ make sdk-release-contract-check
 This rejects version drift, missing package metadata, missing changelog anchors,
 unsafe publish workflow changes, and tracked generated artifacts such as wheels,
 `dist/`, or SDK cache directories.
+
+It also runs `scripts/check_sdk_deprecation_policy.py`, which rejects
+undocumented OpenAPI deprecations, SDK clients that call deprecated legacy route
+aliases, and missing breaking-change/deprecation policy text.
 
 ## GitHub Workflow
 
@@ -71,5 +76,7 @@ The publish job is skipped unless all of these are true:
 ## Release Discipline
 
 The SDKs are Core Alpha contracts. Breaking changes require a version bump and
-release notes. Additive endpoint coverage can ship in patch releases when the
-server API remains backward compatible.
+release notes in both `CHANGELOG.md` and `docs/API_CHANGELOG.md`. Additive
+endpoint coverage can ship in patch releases when the server API remains
+backward compatible. Deprecated route aliases and removal windows are governed
+by [`SDK_DEPRECATION_POLICY.md`](SDK_DEPRECATION_POLICY.md).

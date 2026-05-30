@@ -8,6 +8,12 @@
     "openapi_version_must_start_with_workspace_version": true,
     "tag_must_match_workspace_version": true
   },
+  "deprecation_policy": {
+    "document": "docs/SDK_DEPRECATION_POLICY.md",
+    "deprecated_openapi_entries_must_be_listed": true,
+    "sdk_clients_must_not_use_deprecated_routes": true,
+    "breaking_changes_require_changelog": true
+  },
   "packages": [
     {
       "language": "rust",

@@ -121,6 +121,11 @@ def validate_manifest(repo: Path, errors: list[str]) -> dict[str, Any]:
                 errors.append("sdk/release-manifest.json: publish_policy.tag_prefix must be 'v'")
             if publish_policy.get("environment") != "sdk-release":
                 errors.append("sdk/release-manifest.json: publish_policy.environment must be 'sdk-release'")
+        deprecation_policy = manifest.get("deprecation_policy")
+        if not isinstance(deprecation_policy, dict):
+            errors.append("sdk/release-manifest.json: deprecation_policy missing")
+        elif deprecation_policy.get("document") != "docs/SDK_DEPRECATION_POLICY.md":
+            errors.append("sdk/release-manifest.json: deprecation_policy.document mismatch")
         packages = manifest.get("packages")
         if not isinstance(packages, list) or len(packages) != 3:
             errors.append("sdk/release-manifest.json: expected exactly 3 packages")
@@ -195,6 +200,7 @@ def validate_workflow(repo: Path, errors: list[str]) -> None:
         "startsWith(github.ref, 'refs/tags/v')",
         "cargo publish -p cortex-sdk --dry-run",
         "python3 scripts/check_sdk_release_contract.py --enforce-github-ref",
+        "python3 scripts/check_sdk_deprecation_policy.py",
         "python -m build sdk/python --wheel",
         "npm pack --dry-run",
         "environment: sdk-release",
@@ -231,6 +237,9 @@ def validate_docs(repo: Path, root_version: str, errors: list[str]) -> None:
         errors.append(f"CHANGELOG.md: missing release entry for v{root_version}")
     if "SDK" not in changelog:
         errors.append("CHANGELOG.md: missing SDK notes")
+    result = subprocess.run(["python3", "scripts/check_sdk_deprecation_policy.py"], cwd=repo, check=False)
+    if result.returncode != 0:
+        errors.append("scripts/check_sdk_deprecation_policy.py failed")
 
 
 def validate_tracked_hygiene(repo: Path, errors: list[str]) -> None:

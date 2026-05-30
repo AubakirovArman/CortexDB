@@ -50,6 +50,7 @@ jobs:
 
       # SDK contract smoke tests
       - run: cargo build --release -p cortex-server
+      - run: python3 scripts/check_sdk_deprecation_policy.py
       - run: python3 scripts/check_sdk_release_contract.py
       - run: python3 scripts/check_sdk_contract.py
 

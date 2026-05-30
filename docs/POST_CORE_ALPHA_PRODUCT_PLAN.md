@@ -75,7 +75,7 @@ Tasks:
 9. ✅ Add SDK integration tests against a running server.
 10. ✅ Add SDK quickstarts to docs.
 11. ✅ Add protected `sdk-release` deployment environment and tag/version enforcement.
-12. Add deprecation policy and breaking-change changelog enforcement.
+12. ✅ Add deprecation policy and breaking-change changelog enforcement.
 
 Definition of done:
 
