@@ -17,6 +17,7 @@ use responses::{ErrorCode, ErrorResponse, MetricsResponse};
 
 mod actor;
 mod aql;
+mod audit;
 mod context;
 mod dashboard;
 #[cfg(test)]
@@ -58,6 +59,12 @@ pub struct ServerOptions {
     /// Rate limiting is disabled by default. This is a coarse Core Alpha guard,
     /// not a replacement for reverse-proxy quotas or user-aware authorization.
     pub request_rate_limit_per_minute: Option<u64>,
+    /// Emit structured audit events through `tracing` for HTTP API responses.
+    ///
+    /// Disabled by default. Audit events intentionally record route/action
+    /// metadata, status, tenant, and duration, but not request bodies or query
+    /// strings.
+    pub audit_log_enabled: bool,
 }
 
 impl ServerOptions {
@@ -268,7 +275,31 @@ fn request_allowed_by_rate_limit(state: &AppState) -> bool {
     rate_limit.allow(Instant::now())
 }
 
+fn audit_http_response(
+    state: &AppState,
+    method: &str,
+    path: &str,
+    query: &str,
+    status: StatusCode,
+    error_code: Option<ErrorCode>,
+    started: Instant,
+) {
+    if !state.options.audit_log_enabled {
+        return;
+    }
+    let tenant = query_param_opt_decoded(query, "tenant").unwrap_or_else(|| "default".to_owned());
+    audit::emit_http_response(
+        method,
+        path,
+        &tenant,
+        status.as_u16(),
+        error_code.map(ErrorCode::as_str),
+        started.elapsed().as_millis() as u64,
+    );
+}
+
 async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoResponse {
+    let request_started = Instant::now();
     let method = req.method().as_str().to_owned();
     let uri = req.uri().to_owned();
     let path = uri.path().to_owned();
@@ -278,10 +309,28 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
     let _enter = span.enter();
 
     if method == "GET" && (path == "/" || path == "/dashboard") {
+        audit_http_response(
+            &state,
+            &method,
+            &path,
+            &query,
+            StatusCode::OK,
+            None,
+            request_started,
+        );
         return Html(dashboard::html()).into_response();
     }
     if method == "GET" {
         if let Some(asset) = dashboard::asset(&path) {
+            audit_http_response(
+                &state,
+                &method,
+                &path,
+                &query,
+                StatusCode::OK,
+                None,
+                request_started,
+            );
             return (
                 StatusCode::OK,
                 [(header::CONTENT_TYPE, asset.content_type)],
@@ -300,6 +349,15 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
     if let Some(ref expected_token) = state.options.auth_token {
         let expected_bearer = format!("Bearer {expected_token}");
         if auth_header != Some(expected_bearer.as_str()) {
+            audit_http_response(
+                &state,
+                &method,
+                &path,
+                &query,
+                StatusCode::UNAUTHORIZED,
+                Some(ErrorCode::Unauthorized),
+                request_started,
+            );
             return (
                 StatusCode::UNAUTHORIZED,
                 Json(error_response(
@@ -313,6 +371,15 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
 
     if !request_allowed_by_rate_limit(&state) {
         state.request_rejected.fetch_add(1, Ordering::Relaxed);
+        audit_http_response(
+            &state,
+            &method,
+            &path,
+            &query,
+            StatusCode::TOO_MANY_REQUESTS,
+            Some(ErrorCode::RateLimited),
+            request_started,
+        );
         return (
             StatusCode::TOO_MANY_REQUESTS,
             Json(error_response(
@@ -326,6 +393,15 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
     let body_bytes = match axum::body::to_bytes(req.into_body(), 2 * 1024 * 1024).await {
         Ok(bytes) => bytes.to_vec(),
         Err(_) => {
+            audit_http_response(
+                &state,
+                &method,
+                &path,
+                &query,
+                StatusCode::PAYLOAD_TOO_LARGE,
+                Some(ErrorCode::PayloadTooLarge),
+                request_started,
+            );
             return (
                 StatusCode::PAYLOAD_TOO_LARGE,
                 Json(error_response(
@@ -339,6 +415,15 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
 
     let tenant = query_param_opt_decoded(&query, "tenant").unwrap_or_else(|| "default".to_owned());
     if !validate_tenant_id(&tenant) {
+        audit_http_response(
+            &state,
+            &method,
+            &path,
+            &query,
+            StatusCode::BAD_REQUEST,
+            Some(ErrorCode::InvalidTenant),
+            request_started,
+        );
         return (
             StatusCode::BAD_REQUEST,
             Json(error_response(
@@ -351,6 +436,15 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
     let db = match state.get_db(&tenant) {
         Ok(db) => db,
         Err(e) => {
+            audit_http_response(
+                &state,
+                &method,
+                &path,
+                &query,
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Some(ErrorCode::Internal),
+                request_started,
+            );
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(error_response(ErrorCode::Internal, e.to_string())),
@@ -399,6 +493,15 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
 
     match res {
         Ok(body_str) => {
+            audit_http_response(
+                &state,
+                &method,
+                &path,
+                &query,
+                StatusCode::OK,
+                None,
+                request_started,
+            );
             if method == "GET" && path == "/v1/metrics" {
                 if query.contains("format=prometheus") {
                     let extra = format!(
@@ -446,6 +549,15 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         }
         Err(err) => {
             let status = StatusCode::from_u16(err.status_code()).unwrap_or(StatusCode::BAD_REQUEST);
+            audit_http_response(
+                &state,
+                &method,
+                &path,
+                &query,
+                status,
+                Some(err.code()),
+                request_started,
+            );
             (status, Json(error_response(err.code(), err.to_string()))).into_response()
         }
     }

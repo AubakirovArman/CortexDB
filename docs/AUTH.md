@@ -122,6 +122,22 @@ with HTTP status `429 Too Many Requests`. This is a Core Alpha safety guard, not
 a replacement for reverse-proxy quotas, per-user authorization, or API gateway
 controls.
 
+## Audit Logging
+
+Audit logging is disabled by default. Enable it when you need an operational
+trail for API access:
+
+```bash
+export CORTEXDB_AUDIT_LOG=true
+cargo run -p cortex-server -- ./data 127.0.0.1:8181
+```
+
+Audit events are emitted through `tracing` with target `cortexdb_audit`. They
+include route category, method, path, tenant, status code, stable error code,
+and duration. Request bodies and query strings are intentionally not logged.
+Current route categories include `read`, `write`, `delete`, `aql`, `search`,
+`context`, `verify`, `ingest`, `memory`, `admin`, `metrics`, and `health`.
+
 ## Browser CORS
 
 CORS is disabled by default. Same-origin dashboard usage does not need CORS.

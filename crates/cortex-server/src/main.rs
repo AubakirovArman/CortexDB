@@ -31,6 +31,7 @@ fn main() -> ExitCode {
         actor_queue_capacity,
         cors_allowed_origin: env::var("CORTEXDB_CORS_ALLOW_ORIGIN").ok(),
         request_rate_limit_per_minute,
+        audit_log_enabled: audit_log_enabled_from_env(),
     };
     match cortex_server::serve_with_options(&PathBuf::from(root), addr, options) {
         Ok(()) => ExitCode::SUCCESS,
@@ -39,6 +40,20 @@ fn main() -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+fn audit_log_enabled_from_env() -> bool {
+    match env::var("CORTEXDB_AUDIT_LOG") {
+        Ok(raw) => parse_bool_flag(&raw),
+        Err(_) => false,
+    }
+}
+
+fn parse_bool_flag(raw: &str) -> bool {
+    matches!(
+        raw.trim().to_ascii_lowercase().as_str(),
+        "1" | "true" | "yes" | "on"
+    )
 }
 
 fn request_rate_limit_from_env() -> Result<Option<u64>, String> {
@@ -79,7 +94,7 @@ fn parse_actor_queue_capacity(raw: &str) -> Result<usize, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_actor_queue_capacity, parse_request_rate_limit};
+    use super::{parse_actor_queue_capacity, parse_bool_flag, parse_request_rate_limit};
 
     #[test]
     fn parse_actor_queue_capacity_accepts_positive_integer() {
@@ -101,5 +116,16 @@ mod tests {
     fn parse_request_rate_limit_rejects_zero_and_invalid_values() {
         assert!(parse_request_rate_limit("0").is_err());
         assert!(parse_request_rate_limit("abc").is_err());
+    }
+
+    #[test]
+    fn parse_bool_flag_accepts_common_true_values() {
+        assert!(parse_bool_flag("1"));
+        assert!(parse_bool_flag("true"));
+        assert!(parse_bool_flag("YES"));
+        assert!(parse_bool_flag("on"));
+        assert!(!parse_bool_flag("0"));
+        assert!(!parse_bool_flag("false"));
+        assert!(!parse_bool_flag("anything_else"));
     }
 }
