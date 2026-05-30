@@ -169,6 +169,7 @@ export interface ContextPackAnomalyResponse {
 }
 
 export interface ContextPackResponse {
+  schema_version: string;
   token_budget_tokens: number;
   estimated_tokens: number;
   truncated: boolean;

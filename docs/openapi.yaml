@@ -1028,6 +1028,7 @@ components:
     ContextPackResponse:
       type: object
       required:
+      - schema_version
       - token_budget_tokens
       - estimated_tokens
       - truncated
@@ -1035,10 +1036,16 @@ components:
       - cells
       - anomalies
       properties:
+        schema_version:
+          type: string
+          enum:
+          - context_pack.v1
         token_budget_tokens:
           type: integer
+          minimum: 0
         estimated_tokens:
           type: integer
+          minimum: 0
         truncated:
           type: boolean
         citations_required:
@@ -1046,11 +1053,101 @@ components:
         cells:
           type: array
           items:
-            type: object
+            $ref: '#/components/schemas/ContextPackCellResponse'
         anomalies:
           type: array
           items:
             $ref: '#/components/schemas/ContextPackAnomalyResponse'
+    ContextPackCellResponse:
+      type: object
+      required:
+      - cell_id
+      - estimated_tokens
+      - citation
+      - payload_text
+      - explain
+      - source_ref
+      properties:
+        cell_id:
+          type: integer
+          format: uint64
+        estimated_tokens:
+          type: integer
+          minimum: 0
+        citation:
+          anyOf:
+          - type: string
+          - type: 'null'
+        payload_text:
+          type: string
+        explain:
+          anyOf:
+          - $ref: '#/components/schemas/ContextPackExplainResponse'
+          - type: 'null'
+        source_ref:
+          anyOf:
+          - $ref: '#/components/schemas/SourceRefResponse'
+          - type: 'null'
+    ContextPackExplainResponse:
+      type: object
+      required:
+      - score
+      - matched_terms
+      - why_selected
+      - base_bm25
+      - source_trust_bonus
+      - redundancy_penalty
+      properties:
+        score:
+          type: integer
+          minimum: 0
+        matched_terms:
+          type: array
+          items:
+            type: string
+        why_selected:
+          type: string
+        base_bm25:
+          type: integer
+          minimum: 0
+        source_trust_bonus:
+          type: integer
+          minimum: 0
+        redundancy_penalty:
+          type: integer
+          minimum: 0
+    SourceRefResponse:
+      type: object
+      required:
+      - source_id
+      - document_id
+      - page
+      - cell_range
+      - json_path
+      - confidence_q16
+      properties:
+        source_id:
+          type: string
+        document_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+        page:
+          anyOf:
+          - type: integer
+          - type: 'null'
+        cell_range:
+          anyOf:
+          - type: string
+          - type: 'null'
+        json_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+        confidence_q16:
+          type: integer
+          minimum: 0
+          maximum: 65535
     ContextPackAnomalyResponse:
       type: object
       required:

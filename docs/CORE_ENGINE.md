@@ -13,7 +13,7 @@ It owns:
 - checkpoint and compact publication into segment/index/manifest files
 - AQL retrieve execution over engine bitmap indexes
 - persisted `.aci` keyword search and `.acv` exact vector scan
-- ContextPack v0 construction over retrieved cells
+- ContextPack v1 construction over retrieved cells
 - storage stats, validation, and best-effort repair surfaces
 - ACLOG-backed replication log entry persistence for local consensus-model recovery
 - deterministic in-memory replication transport and leader-election semantics

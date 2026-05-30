@@ -26,7 +26,7 @@ every required row is green on `main`.
 | ANN fixture gate | `make ann-fixture-check`, `make ann-drift-check`, `make ann-external-check`, `make ann-metric-matrix-check`, and `make ann-corpus-smoke-check` pass; CI uploads `target/ann/*report.json`, `target/ann/corpus-runs/**`, and `target/ann/release-baselines/**`. |
 | ANN release package | `make ann-publish-baseline`, `make ann-package-baseline`, `make ann-validate-baseline-package`, and the demo-domain package validation target produce and verify `.tar.gz` release assets with `package_manifest.json`, SHA-256 file checksums, `history.json`, generated ground truth, and `production_safe=true`. |
 | Query safety | AQL retrieve respects AgentView masks and candidate mappings. |
-| ContextPack v0 | AQL-to-ContextPack tests pass for budget and citation anomalies. |
+| ContextPack v1 | AQL-to-ContextPack tests pass for budget, explain details, source refs, and citation anomalies. |
 | Docs | README, Core Alpha docs, invariants, failure scenarios, and task pools are current. |
 
 ## Release Command

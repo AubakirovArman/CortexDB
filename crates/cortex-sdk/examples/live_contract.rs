@@ -56,6 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("OK: aql_response");
 
     let context = client.context_response("default", retrieve)?;
+    assert_eq!(context.schema_version, "context_pack.v1");
     assert!(context.token_budget_tokens > 0);
     println!("OK: context_response");
 

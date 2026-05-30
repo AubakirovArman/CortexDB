@@ -91,6 +91,7 @@ fn map_context_pack(pack: &ContextPack) -> ContextPackResponse {
         .collect();
 
     ContextPackResponse {
+        schema_version: "context_pack.v1",
         token_budget_tokens: pack.token_budget_tokens,
         estimated_tokens: pack.estimated_tokens,
         truncated: pack.truncated,

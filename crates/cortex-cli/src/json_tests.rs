@@ -22,6 +22,7 @@ fn context_json_contains_cells_budget_anomalies() {
         "--json".to_owned(),
     ])
     .unwrap();
+    assert!(output.contains(r#""schema_version":"context_pack.v1""#));
     assert!(output.contains(r#""token_budget_tokens""#));
     assert!(output.contains(r#""cells""#));
     assert!(output.contains(r#""anomalies""#));

@@ -74,6 +74,7 @@ $ cargo run -q -p cortex-cli -- context ./db project:investments \
 Output (abbreviated):
 ```json
 {
+  "schema_version": "context_pack.v1",
   "token_budget_tokens": 1000,
   "estimated_tokens": 163,
   "truncated": false,

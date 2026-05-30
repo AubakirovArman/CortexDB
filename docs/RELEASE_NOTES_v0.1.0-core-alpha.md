@@ -11,7 +11,7 @@ Core Alpha is the first durable single-node CortexDB prototype.
 - `Database::open`, write path, replay, checkpoint, compact, repair, stats, and validation.
 - `.acs`, `.acb`, `.aci`, and `.acm` files with atomic writes and CRC32C footers.
 - Candidate mapping that preserves full `CellId(u64)`.
-- ContextPack v0 with token budget and citation anomaly reporting.
+- ContextPack v1 with stable JSON schema, token budget, source refs, explain details, and citation anomaly reporting.
 - CLI commands for put/get/tombstone/flush/compact/stats/validate/repair/context/AQL/search/verify/remember/ingest/unlock.
 - `clap`-backed CLI parser with structured help/version output.
 - HTTP API for health, put/get/tombstone/flush/compact/stats/validate/AQL/search/context/verify/remember/ingest.

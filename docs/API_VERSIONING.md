@@ -52,14 +52,16 @@ Non-breaking (additive):
 
 ### 4. Response Version Indicator
 
-All JSON responses include an implicit version through the API path. In the future, a `cortexdb_version` field may be added to every response.
+All JSON responses include an implicit version through the API path. Responses
+with independent schema lifecycles may also expose an explicit schema marker;
+for example, `/v1/context` returns `schema_version: "context_pack.v1"`.
 
 ### 5. Planned Versions
 
 | Version | Focus | Tentative |
 |---------|-------|-----------|
-| `/v1/` | Core Alpha — current | Now |
-| `/v2/` | ContextPack v1 + Verification v1 stable contracts | Post-beta |
+| `/v1/` | Core Alpha — current, including ContextPack v1 | Now |
+| `/v2/` | Future breaking API contracts | Post-beta |
 
 ### 6. Client Best Practice
 

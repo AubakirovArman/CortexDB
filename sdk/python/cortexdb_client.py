@@ -343,6 +343,7 @@ class ContextPackAnomalyResponse:
 
 @dataclass(frozen=True)
 class ContextPackResponse:
+    schema_version: str
     token_budget_tokens: int
     estimated_tokens: int
     truncated: bool
@@ -353,6 +354,7 @@ class ContextPackResponse:
     @classmethod
     def from_json(cls, value: dict[str, Any]) -> "ContextPackResponse":
         return cls(
+            schema_version=str(value["schema_version"]),
             token_budget_tokens=int(value["token_budget_tokens"]),
             estimated_tokens=int(value["estimated_tokens"]),
             truncated=bool(value["truncated"]),

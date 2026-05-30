@@ -1,7 +1,8 @@
-# Context Pack v0
+# Context Pack v1
 
 Context Pack is the first agent-ready retrieval surface above raw `Retrieve`.
-It keeps the current core simple:
+The v1 contract keeps the current core deterministic while making the JSON
+surface stable enough for SDK and UI consumers:
 
 ```text
 AQL RETRIEVE CONTEXT
@@ -23,6 +24,24 @@ Implemented in `cortex-engine`:
 - `Database::context_pack_from_aql`
 - `estimate_tokens`
 - Optional sparse redundancy reduction using fixed-point Jaccard.
+
+Public JSON responses include:
+
+```json
+{
+  "schema_version": "context_pack.v1",
+  "token_budget_tokens": 1000,
+  "estimated_tokens": 42,
+  "truncated": false,
+  "citations_required": false,
+  "cells": [],
+  "anomalies": []
+}
+```
+
+`schema_version` is required. Future incompatible ContextPack response changes
+must introduce a new schema version and update OpenAPI, SDKs, snapshots, and
+API changelog entries together.
 
 The CLI exposes:
 
@@ -46,7 +65,7 @@ RETRIEVE CONTEXT ...
 4. Requested budget is clamped by `AgentView::effective_budget`.
 5. Citation requirements produce anomalies instead of silently passing.
 6. Redundancy reduction, when enabled, reports skipped cells as anomalies.
-7. No vector search, HNSW, reranking, or LLM calls run in v0.
+7. No HNSW, reranking, or LLM calls run inside ContextPack v1 itself.
 
 ## Known Limits
 

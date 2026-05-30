@@ -123,6 +123,7 @@ fn snapshot_context_pack_response_shape() {
         "WHERE space = project:investments AND status = \"ready\" LIMIT 10 CANDIDATES;"
     );
     let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""schema_version":"context_pack.v1""#));
     assert!(response.contains(r#""cells":"#));
     assert!(response.contains(r#""token_budget_tokens":"#));
     assert!(response.contains(r#""estimated_tokens":"#));

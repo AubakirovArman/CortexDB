@@ -119,6 +119,7 @@ Executes an AQL query and compiles a budgeted, deduplicated, and scored `Context
 * **Response (200 OK):**
   ```json
   {
+    "schema_version": "context_pack.v1",
     "token_budget_tokens": 1000,
     "estimated_tokens": 126,
     "truncated": false,

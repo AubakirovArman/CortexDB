@@ -171,6 +171,7 @@ fn snapshot_context_response_shape() {
         "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN default LIMIT 10 CANDIDATES;"
     );
     let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""schema_version":"context_pack.v1""#));
     assert!(response.contains(r#""token_budget_tokens":"#));
     assert!(response.contains(r#""cells":"#));
     assert!(response.contains(r#""estimated_tokens":"#));

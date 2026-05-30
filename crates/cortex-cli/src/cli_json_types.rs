@@ -70,6 +70,7 @@ pub struct CliAnnEvaluationResponse {
 
 #[derive(Serialize)]
 pub struct ContextPackResponse {
+    pub schema_version: &'static str,
     pub token_budget_tokens: u32,
     pub estimated_tokens: u32,
     pub truncated: bool,

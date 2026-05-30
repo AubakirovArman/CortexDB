@@ -199,6 +199,7 @@ pub struct ContextPackAnomalyResponse {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct ContextPackResponse {
+    pub schema_version: String,
     pub token_budget_tokens: u32,
     pub estimated_tokens: u32,
     pub truncated: bool,

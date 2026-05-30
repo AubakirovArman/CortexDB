@@ -70,6 +70,7 @@ fn snapshot_checkpoint_response() {
 #[test]
 fn snapshot_context_pack_response() {
     let resp = ContextPackResponse {
+        schema_version: "context_pack.v1",
         token_budget_tokens: 4000,
         estimated_tokens: 2500,
         truncated: false,

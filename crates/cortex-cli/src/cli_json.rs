@@ -201,6 +201,7 @@ fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> ContextPackCellRe
 
 fn context_pack_response(pack: &ContextPack) -> ContextPackResponse {
     ContextPackResponse {
+        schema_version: "context_pack.v1",
         token_budget_tokens: pack.token_budget_tokens,
         estimated_tokens: pack.estimated_tokens,
         truncated: pack.truncated,

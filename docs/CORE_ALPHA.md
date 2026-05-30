@@ -14,7 +14,7 @@ Put/Patch/Tombstone
 -> checkpoint/compact
 -> restart recovery
 -> AQL retrieve
--> ContextPack v0
+-> ContextPack v1
 ```
 
 The release checklist for tagging this scope is
@@ -36,7 +36,8 @@ The release checklist for tagging this scope is
 - `db.lock` owner metadata with process id and creation timestamp.
 - Durable AgentView persistence for local policy objects.
 - Best-effort repair for orphan temp cleanup and safe WAL tail truncation.
-- ContextPack v0 with token budget and citation anomaly reporting.
+- ContextPack v1 with stable JSON schema, token budget, source refs, explain
+  details, and citation anomaly reporting.
 - Persisted `.acv` vector pages for exact vector scan.
 
 ## Excluded

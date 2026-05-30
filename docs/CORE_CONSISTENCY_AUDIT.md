@@ -40,7 +40,7 @@ pass. The remaining gaps are roadmap items, not hidden contradictions:
 
 - BM25, vector, HNSW, ingestion, SDKs, and distributed consensus remain MVP or
   non-goal areas for Core Alpha.
-- ContextPack v0 uses approximate byte-based token estimation.
+- ContextPack v1 uses approximate byte-based token estimation.
 - Storage formats are versioned by magic/version policy but do not yet include
   forward-compatible field negotiation.
 
