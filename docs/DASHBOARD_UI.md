@@ -15,7 +15,7 @@ make dashboard-screenshots
 
 `dashboard-smoke` starts a local `cortex-server` and drives the console through
 asset loading, tab switching, cell put/get, keyword search, search explain,
-storage validation, and cluster status.
+storage validation, cluster status, and visible request error states.
 
 `dashboard-screenshots` starts the same local server and writes review artifacts:
 

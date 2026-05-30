@@ -28,8 +28,10 @@ Current coverage:
 - Search includes both result execution and explain output;
 - Storage and Cluster views expose validation, metrics, flush/compact,
   cluster status, and ANN metrics;
+- request failures are surfaced through a visible status banner plus JSON
+  details;
 - Playwright smoke covers asset loading, tab switching, cell put/get, keyword
-  search, search explain, storage validation, and cluster status.
+  search, search explain, storage validation, cluster status, and error states.
 - Playwright screenshots are written to `target/dashboard/` as CI review
   artifacts for desktop and mobile viewports.
 

@@ -158,7 +158,8 @@ Wind Farm status ready.</textarea></div>
         </section>
         <aside>
             <h2>Response</h2>
-            <pre id="output" tabindex="0" aria-live="polite">{"status":"ready"}</pre>
+            <div id="request-status" class="request-status idle" role="status" aria-live="polite">Ready</div>
+            <pre id="output" tabindex="0" aria-live="polite" aria-describedby="request-status">{"status":"ready"}</pre>
             <h2>History</h2>
             <ol id="history" class="history" aria-label="Request history"></ol>
         </aside>

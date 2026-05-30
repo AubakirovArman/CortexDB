@@ -2,6 +2,7 @@ const output = document.querySelector("#output");
 const metrics = document.querySelector("#metrics");
 const history = document.querySelector("#history");
 const sessionStatus = document.querySelector("#session-status");
+const requestStatus = document.querySelector("#request-status");
 let token = "";
 let tenant = "default";
 
@@ -35,6 +36,19 @@ function show(value, ok = true) {
     output.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
 }
 
+function errorMessage(error) {
+    if (typeof error === "string") return error;
+    if (error?.message) return error.message;
+    if (error?.error) return error.error;
+    if (error?.code) return error.code;
+    return "request failed";
+}
+
+function setRequestStatus(kind, text) {
+    requestStatus.className = `request-status ${kind}`;
+    requestStatus.textContent = text;
+}
+
 async function api(path, init = {}) {
     const response = await fetch(scoped(path), { ...init, headers: { ...headers(), ...(init.headers || {}) } });
     const text = await response.text();
@@ -45,13 +59,16 @@ async function api(path, init = {}) {
 }
 
 async function run(label, task) {
+    setRequestStatus("running", `Running ${label}`);
     show(`${label}...`);
     try {
         const body = await task();
+        setRequestStatus("ok", `OK ${label}`);
         show(body);
         addHistory(label, true);
         if (body.current_seq !== undefined || body.ok !== undefined) renderMetrics(body);
     } catch (error) {
+        setRequestStatus("error", `ERR ${label}: ${errorMessage(error)}`);
         show(error, false);
         addHistory(label, false);
     }
@@ -82,6 +99,18 @@ document.querySelector("#session-form").addEventListener("submit", event => {
 
 document.querySelectorAll(".panel").forEach(panel => {
     if (!panel.classList.contains("active")) panel.hidden = true;
+});
+
+document.addEventListener("blur", event => {
+    if (event.target.matches?.("input, textarea, select")) {
+        event.target.toggleAttribute("aria-invalid", !event.target.checkValidity());
+    }
+}, true);
+
+document.addEventListener("input", event => {
+    if (event.target.matches?.("[aria-invalid='true']") && event.target.checkValidity()) {
+        event.target.removeAttribute("aria-invalid");
+    }
 });
 
 onAll(".tab", "click", event => {

@@ -114,9 +114,17 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await page.getByRole('button', { name: 'Cluster Status' }).click();
     await expect(page.locator('#output')).toContainText('distributed_enabled');
 
+    await page.getByRole('tab', { name: 'Cells' }).click();
+    await page.locator('#cell-op').selectOption('get');
+    await page.locator('#cell-id').fill('not-a-number');
+    await page.getByRole('button', { name: 'Run Cell Operation' }).click();
+    await expect(page.locator('#request-status')).toContainText('ERR get cell');
+    await expect(page.locator('#output')).toContainText('bad_request');
+
     await expect(page.locator('#history')).toContainText('OK search');
-    await expect(page.locator('#history li').first()).toContainText('OK cluster status');
-    expect(consoleErrors).toEqual([]);
+    await expect(page.locator('#history')).toContainText('OK cluster status');
+    await expect(page.locator('#history li').first()).toContainText('ERR get cell');
+    expect(consoleErrors.filter(message => !message.includes('400 (Bad Request)'))).toEqual([]);
   } finally {
     server.kill('SIGTERM');
     rmSync(root, { recursive: true, force: true });

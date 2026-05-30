@@ -176,7 +176,7 @@ Tasks:
 12. ✅ Add Cluster Status view to the current developer console.
 13. ✅ Add basic tenant/token handling for scoped API calls.
 14. ✅ Add request history and JSON inspector output.
-15. Add clear error states.
+15. ✅ Add clear request error states and native form validation feedback.
 16. ✅ Add Playwright smoke tests for the current dashboard.
 17. ✅ Add static asset serving path for the current developer console.
 18. ✅ Add UI screenshots to docs and CI artifacts for the current dashboard.
