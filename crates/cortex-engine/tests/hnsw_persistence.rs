@@ -1,6 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use cortex_engine::{HnswIndex, HnswMaintenancePolicy, HnswRebuildPolicy};
+use cortex_core::CellId;
+use cortex_engine::{
+    Database, DatabaseOptions, DistanceMetric, HnswBuildConfig, HnswBuildProfile, HnswIndex,
+    HnswMaintenancePolicy, HnswRebuildPolicy,
+};
 use cortex_storage::hnsw::HnswGraphIndex;
 
 #[test]
@@ -98,6 +102,35 @@ fn hnsw_multilayer_search_respects_visit_budget() {
 }
 
 #[test]
+fn database_hnsw_build_config_controls_checkpoint_graph_density() {
+    let sparse_edges = checkpoint_edge_count(HnswBuildConfig {
+        max_neighbors: 1,
+        ef_search: 8,
+        layer_count: 1,
+        metric: DistanceMetric::DotProduct,
+    });
+    let semantic_edges =
+        checkpoint_edge_count(HnswBuildConfig::for_profile(HnswBuildProfile::Semantic));
+
+    assert!(
+        semantic_edges > sparse_edges,
+        "semantic profile should persist a denser checkpoint HNSW graph"
+    );
+}
+
+#[test]
+fn hnsw_build_profiles_match_documented_slo_shapes() {
+    let balanced = HnswBuildConfig::for_profile(HnswBuildProfile::Balanced);
+    let audit = HnswBuildConfig::for_profile(HnswBuildProfile::Audit);
+
+    assert_eq!(balanced.max_neighbors, 16);
+    assert_eq!(balanced.ef_search, 128);
+    assert_eq!(balanced.layer_count, 4);
+    assert!(audit.max_neighbors > balanced.max_neighbors);
+    assert!(audit.ef_search > balanced.ef_search);
+}
+
+#[test]
 fn hnsw_maintenance_reports_rebuild_lifecycle() {
     let mut index = HnswIndex::new(2, 8);
     let _ = index.add_vector(1, vec![10, 0]);
@@ -141,4 +174,30 @@ fn hnsw_integrity_report_catches_structural_link_errors() {
     assert_eq!(report.self_links, 1);
     assert_eq!(report.missing_neighbor_links, 1);
     assert!(report.summary().contains("missing_neighbor_links=1"));
+}
+
+fn checkpoint_edge_count(config: HnswBuildConfig) -> usize {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            hnsw_build_config: config,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+    for id in 1..=64 {
+        db.put_cell(
+            CellId(id),
+            format!(
+                "scope=project:investments\nstatus=ready\nvector={},{}\n\ncell {id}",
+                id,
+                64 - id
+            )
+            .into_bytes(),
+        )
+        .unwrap();
+    }
+    db.checkpoint().unwrap();
+    db.ann_metrics().total_edges
 }

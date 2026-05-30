@@ -30,6 +30,7 @@
 - [x] Metric matrix gate (`make ann-metric-matrix-check`) evaluates dot/cosine/L2 against exact top-k on the fixed JSONL fixture.
 - [x] External-corpus harness (`ann_corpus_check`) accepts vectors, queries, and ground-truth JSONL files for larger recall suites.
 - [x] Наблюдаемость (словарь метрик / отчёт по деградации графа) через расширенный `AnnSearchReport`.
+- [x] Profile-aware durable HNSW construction through `DatabaseOptions::hnsw_build_config` for checkpoint/compact `.ach` graphs.
 
 ### 2) Real distributed consensus
 - [ ] Отделить репликационный consensus-log и local WAL по строгим durability guarantees.
@@ -54,7 +55,7 @@
 
 ## Непосредственный следующий 2-недельный sprint
 
-1. ANN/HNSW: расширить fixed corpus для dot/cosine/L2 и накопить benchmark history.
+1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
 3. Consensus: добавить failure-injection harness для partition/restart recovery в integration tests.
 4. UI: вынести текущее dashboard html в versioned frontend asset в отдельной папке.

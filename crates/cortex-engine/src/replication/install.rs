@@ -6,7 +6,7 @@ use cortex_storage::manifest::ManifestSegment;
 use cortex_storage::segment::{SegmentCell, SegmentWriter};
 use cortex_storage::wal::WalWriter;
 
-use crate::checkpoint::hnsw::hnsw_graph_for_cells;
+use crate::checkpoint::hnsw::hnsw_graph_for_cells_with_config;
 use crate::checkpoint::vector::vector_index_for_cells;
 use crate::checkpoint::{bitmap_path, hnsw_path, lexical_path, segment_path, vector_path};
 use crate::database::{CheckpointStats, Database};
@@ -38,7 +38,8 @@ impl Database {
             .write(lexical_path(&self.segments_path, segment_id))?;
         vector_index_for_cells(&snapshot.cells)
             .write(vector_path(&self.segments_path, segment_id))?;
-        hnsw_graph_for_cells(&snapshot.cells)?.write(hnsw_path(&self.segments_path, segment_id))?;
+        hnsw_graph_for_cells_with_config(&snapshot.cells, self.hnsw_build_config)?
+            .write(hnsw_path(&self.segments_path, segment_id))?;
 
         self.manifest.compact_to_segment(ManifestSegment {
             id: segment_id,

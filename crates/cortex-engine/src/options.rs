@@ -1,5 +1,7 @@
 use cortex_storage::wal::DurabilityMode;
 
+use crate::search::HnswBuildConfig;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RecoveryMode {
     Strict,
@@ -17,6 +19,7 @@ pub struct DatabaseOptions {
     pub durability_mode: DurabilityMode,
     pub recovery_mode: RecoveryMode,
     pub stale_lock_policy: StaleLockPolicy,
+    pub hnsw_build_config: HnswBuildConfig,
 }
 
 impl Default for DatabaseOptions {
@@ -25,6 +28,7 @@ impl Default for DatabaseOptions {
             durability_mode: DurabilityMode::Strict,
             recovery_mode: RecoveryMode::Strict,
             stale_lock_policy: StaleLockPolicy::Reject,
+            hnsw_build_config: HnswBuildConfig::default(),
         }
     }
 }

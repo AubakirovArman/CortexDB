@@ -17,6 +17,7 @@ use crate::operation::{
 };
 use crate::options::{DatabaseOptions, RecoveryMode, StaleLockPolicy};
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
+use crate::search::HnswBuildConfig;
 
 pub trait CandidateResolver: BitmapProvider {
     fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId>;
@@ -33,6 +34,7 @@ pub struct Database {
     pub(crate) writer: WalWriterHandle,
     pub(crate) current_seq: CommitSeq,
     pub(crate) durability_mode: DurabilityMode,
+    pub(crate) hnsw_build_config: HnswBuildConfig,
     pub(crate) _lock: DatabaseLock,
     closed: bool,
 }
@@ -122,6 +124,7 @@ impl Database {
             writer,
             current_seq,
             durability_mode: options.durability_mode,
+            hnsw_build_config: options.hnsw_build_config.normalized(),
             _lock: lock,
             closed: false,
         })

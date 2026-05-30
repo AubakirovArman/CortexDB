@@ -125,6 +125,23 @@ Inspect a profile without running a benchmark:
 make ann-slo-profile ANN_REAL_EMBEDDING_SLO_PROFILE=semantic
 ```
 
+The database checkpoint path also has profile-aware HNSW construction knobs via
+`DatabaseOptions::hnsw_build_config`. This matters because `.ach` graph density
+is durable: checkpoint and compact write the graph that persisted ANN search
+will later serve. The built-in Rust profiles mirror the benchmark SLO shapes:
+
+| Profile | `max_neighbors` | `ef_search` | `layer_count` |
+| --- | ---: | ---: | ---: |
+| `Fast` | 8 | 64 | 3 |
+| `Balanced` | 16 | 128 | 4 |
+| `Semantic` | 24 | 192 | 5 |
+| `Audit` | 32 | 256 | 5 |
+
+Use a narrower profile for low-latency interactive indexes and a wider profile
+for semantic or audit-heavy collections. Changing the profile affects newly
+written checkpoint/compact segments; existing `.ach` files should be rebuilt by
+compaction if the collection policy changes.
+
 Once a real embedding baseline has been published, candidate runs should use a
 report comparison gate:
 
@@ -448,7 +465,8 @@ Warnings, not blockers:
 
 - Full hosted `siftsmall` public-corpus baseline is published as a release
   asset and candidate hosted runs can be gated against that baseline bundle.
-- HNSW construction parameters are not yet collection-profile aware.
+- HNSW construction profiles are available for newly written checkpoint/compact
+  graphs, but collection metadata does not yet persist the intended profile.
 - Report history is not stored outside CI artifacts and release baseline
   bundles.
 - Demo-domain corpus generation is available, but no large real customer/domain

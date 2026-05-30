@@ -6,14 +6,17 @@ use cortex_storage::segment::{SegmentCell, SegmentReader};
 use crate::database::Database;
 use crate::error::EngineResult;
 use crate::search::vector::vector_from_payload;
-use crate::search::{AnnMetrics, DistanceMetric, HnswIndex, VectorCollectionConfig};
+use crate::search::{AnnMetrics, HnswBuildConfig, HnswIndex, VectorCollectionConfig};
 
 use super::{hnsw_path, segment_path};
 
-pub(crate) fn hnsw_graph_for_cells(
+pub(crate) fn hnsw_graph_for_cells_with_config(
     cells: &[SegmentCell],
+    config: HnswBuildConfig,
 ) -> crate::error::EngineResult<HnswGraphIndex> {
-    let mut index = HnswIndex::new_multilayer(8, 64, 4);
+    let config = config.normalized();
+    let mut index =
+        HnswIndex::new_multilayer(config.max_neighbors, config.ef_search, config.layer_count);
     let mut dimension = 0usize;
     for cell in cells.iter().filter(|cell| cell.deleted_seq.is_none()) {
         if let Some(vector) = vector_from_payload(&cell.payload) {
@@ -21,7 +24,7 @@ pub(crate) fn hnsw_graph_for_cells(
                 dimension = vector.len();
                 index.set_config(VectorCollectionConfig {
                     dimension,
-                    metric: DistanceMetric::DotProduct,
+                    metric: config.metric,
                 });
             }
             index.add_vector(cell.candidate_id, vector)?;

@@ -49,7 +49,10 @@ pub use ann_report::{
 };
 pub use database::{DatabaseSearchOutcome, DatabaseSearchResult, SearchLimit};
 pub use hnsw::{integrity::HnswIntegrityReport, DistanceMetric, HnswIndex, VectorCollectionConfig};
-pub use hnsw_policy::{HnswMaintenancePolicy, HnswMaintenanceReport, HnswRebuildPolicy};
+pub use hnsw_policy::{
+    HnswBuildConfig, HnswBuildProfile, HnswMaintenancePolicy, HnswMaintenanceReport,
+    HnswRebuildPolicy,
+};
 pub use tokenizer::tokenize;
 pub use vector::parse_vector_literal;
 
