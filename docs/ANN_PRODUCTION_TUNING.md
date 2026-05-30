@@ -45,6 +45,11 @@ Use at least three corpus classes before claiming production ANN behavior:
 | Domain corpus | Real CortexDB payload vectors from target workloads. |
 | Public benchmark corpus | SIFT/GloVe-style reproducible ANN quality reference. |
 
+The checked-in `ann_domain_*_v1.jsonl` fixture is the first lightweight domain
+gate. It is not a replacement for a real customer/domain corpus, but it keeps
+agent-memory and context-shaped vector regressions visible in every normal CI
+run.
+
 For each corpus, preserve:
 
 - vector generation version;

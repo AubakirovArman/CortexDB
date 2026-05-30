@@ -130,6 +130,11 @@ running `ann_corpus_check` against larger sift/glove-style corpora and archiving
 the resulting JSON reports. The JSONL contract is documented in
 [`ANN_CORPUS_FORMAT.md`](ANN_CORPUS_FORMAT.md).
 
+`make ann-domain-corpus-check` runs the same harness against a small domain-like
+fixture shaped around investment-project, legal-risk, operations-error, and
+agent-memory vectors. This keeps a CortexDB-shaped ANN gate in normal CI without
+checking in a large domain corpus.
+
 `make ann-scripts-check` validates the dependency-free helper scripts that
 generate exact ground truth and compare two ANN report JSON files. Use
 `make ann-corpus-compare ANN_BASELINE_REPORT=... ANN_CANDIDATE_REPORT=...` to

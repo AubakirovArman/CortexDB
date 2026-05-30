@@ -159,11 +159,24 @@ The repository includes a tiny contract fixture:
 - `crates/cortex-engine/fixtures/ann_corpus_queries_v1.jsonl`
 - `crates/cortex-engine/fixtures/ann_corpus_ground_truth_v1.jsonl`
 
+It also includes a domain-like CortexDB fixture:
+
+- `crates/cortex-engine/fixtures/ann_domain_vectors_v1.jsonl`
+- `crates/cortex-engine/fixtures/ann_domain_queries_v1.jsonl`
+- `crates/cortex-engine/fixtures/ann_domain_ground_truth_v1.jsonl`
+
+The domain fixture uses `dot_product` vectors shaped like investment-project,
+legal-risk, operations-error, and agent-memory cells. It is still small enough
+for normal CI, but it catches regressions that a purely geometric smoke corpus
+can miss.
+
 Run:
 
 ```bash
 make ann-corpus-smoke-check
 make ann-corpus-smoke-report
+make ann-domain-corpus-check
+make ann-domain-corpus-report
 ```
 
 This smoke corpus verifies the file contract and report shape. It is not a

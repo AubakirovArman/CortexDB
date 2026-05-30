@@ -35,6 +35,7 @@ jobs:
           make ann-external-report
           make ann-metric-matrix-report
           make ann-corpus-smoke-report
+          make ann-domain-corpus-report
           make ann-corpus-run-smoke
           make ann-publish-baseline
           make ann-package-baseline
@@ -51,6 +52,7 @@ jobs:
             target/ann/ann_external_fixture_report.json
             target/ann/ann_metric_matrix_report.json
             target/ann/ann_corpus_report.json
+            target/ann/ann_domain_corpus_report.json
             target/ann/corpus-runs/**
             target/ann/release-baselines/**
       - name: Upload ANN release baseline package

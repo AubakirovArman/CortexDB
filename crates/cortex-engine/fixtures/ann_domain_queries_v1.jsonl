@@ -1,0 +1,4 @@
+{"name":"investment-budget","vector":[100,90,0,100,0,80,0,0],"limit":3}
+{"name":"legal-risk","vector":[0,0,30,0,100,30,0,0],"limit":2}
+{"name":"ops-error","vector":[0,0,100,0,0,0,100,0],"limit":2}
+{"name":"agent-memory","vector":[0,0,0,0,20,0,0,100],"limit":2}
