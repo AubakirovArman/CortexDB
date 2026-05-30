@@ -12,9 +12,16 @@ fn main() -> ExitCode {
         eprintln!("usage: cortex-server <path> <addr>");
         return ExitCode::FAILURE;
     };
+    let actor_queue_capacity = match actor_queue_capacity_from_env() {
+        Ok(capacity) => capacity,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
     let options = cortex_server::ServerOptions {
         auth_token: env::var("CORTEXDB_AUTH_TOKEN").ok(),
-        actor_queue_capacity: 1024,
+        actor_queue_capacity,
     };
     match cortex_server::serve_with_options(&PathBuf::from(root), addr, options) {
         Ok(()) => ExitCode::SUCCESS,
@@ -22,5 +29,39 @@ fn main() -> ExitCode {
             eprintln!("{error}");
             ExitCode::FAILURE
         }
+    }
+}
+
+fn actor_queue_capacity_from_env() -> Result<usize, String> {
+    match env::var("CORTEXDB_ACTOR_QUEUE_CAPACITY") {
+        Ok(raw) => parse_actor_queue_capacity(&raw),
+        Err(env::VarError::NotPresent) => Ok(cortex_server::DEFAULT_ACTOR_QUEUE_CAPACITY),
+        Err(error) => Err(format!("invalid CORTEXDB_ACTOR_QUEUE_CAPACITY: {error}")),
+    }
+}
+
+fn parse_actor_queue_capacity(raw: &str) -> Result<usize, String> {
+    let capacity = raw
+        .parse::<usize>()
+        .map_err(|_| "CORTEXDB_ACTOR_QUEUE_CAPACITY must be a positive integer".to_owned())?;
+    if capacity == 0 {
+        return Err("CORTEXDB_ACTOR_QUEUE_CAPACITY must be greater than zero".to_owned());
+    }
+    Ok(capacity)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_actor_queue_capacity;
+
+    #[test]
+    fn parse_actor_queue_capacity_accepts_positive_integer() {
+        assert_eq!(parse_actor_queue_capacity("64").unwrap(), 64);
+    }
+
+    #[test]
+    fn parse_actor_queue_capacity_rejects_zero_and_invalid_values() {
+        assert!(parse_actor_queue_capacity("0").is_err());
+        assert!(parse_actor_queue_capacity("abc").is_err());
     }
 }

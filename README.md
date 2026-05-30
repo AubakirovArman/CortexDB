@@ -120,6 +120,10 @@ curl 'http://127.0.0.1:8181/v1/stats'
 curl 'http://127.0.0.1:8181/v1/validate'
 ```
 
+Set `CORTEXDB_AUTH_TOKEN` to require Bearer auth. Set
+`CORTEXDB_ACTOR_QUEUE_CAPACITY` to tune the per-tenant bounded database actor
+queue; a full queue returns `503 database_busy` as explicit backpressure.
+
 The HTTP response schema is documented in [`docs/API_JSON_SCHEMAS.md`](docs/API_JSON_SCHEMAS.md)
 and the OpenAPI contract is available at [`docs/openapi.yaml`](docs/openapi.yaml).
 

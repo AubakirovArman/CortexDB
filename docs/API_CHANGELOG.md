@@ -22,8 +22,11 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 ### Changed
 - **Tenant validation** — `:` is no longer allowed in tenant IDs (cross-platform safety).
 - **Query params** — all query parameters are now percent-decoded (`+` → space, `%XX` decoded).
-- **Actor shutdown** — `DatabaseActor::drop` uses non-blocking `try_send`.
-- **Actor queue capacity** — configurable via `ServerOptions.actor_queue_capacity` (default 1024).
+- **Actor shutdown** — `DatabaseActor::drop` now drops the sender before
+  joining the worker, so shutdown cannot hang when the bounded queue is full.
+- **Actor queue capacity** — configurable via
+  `ServerOptions.actor_queue_capacity` and the
+  `CORTEXDB_ACTOR_QUEUE_CAPACITY` environment variable (default 1024).
 
 ### Deprecated
 - Legacy compatibility aliases `/get`, `/put`, `/flush`, and `/tombstone` remain

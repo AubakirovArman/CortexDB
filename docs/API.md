@@ -13,6 +13,9 @@ CortexDB exposes a lightweight, ultra-high-performance HTTP JSON API for interac
 * **Tenant routing:** database endpoints accept optional `tenant=<realm>`. Omit
   it or use `tenant=default` for the root database; any other value routes to a
   per-tenant realm under the server data directory.
+* **Backpressure:** each tenant uses a bounded `DatabaseActor` queue. Set
+  `CORTEXDB_ACTOR_QUEUE_CAPACITY` to override the default `1024`; full queues
+  return `503 database_busy`.
 
 ---
 

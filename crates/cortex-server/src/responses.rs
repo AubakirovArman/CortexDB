@@ -347,6 +347,7 @@ pub struct AnnMetricsResponse {
     pub rebuild_count: u64,
 }
 
+#[derive(Debug)]
 pub enum RouterError {
     NotFound(String),
     BadRequest(String),

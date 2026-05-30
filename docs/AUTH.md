@@ -82,3 +82,18 @@ let client = CortexDbClient::new("http://127.0.0.1:8181")
 - Pass the token via environment variable, never commit it to version control.
 - CortexDB auth is **transport-only**; there is no user model, RBAC, or session management.
 - For multi-user deployments, run separate tenant realms with network-level isolation.
+
+## Server Backpressure
+
+The HTTP server routes database work through a bounded per-tenant
+`DatabaseActor` queue. The default capacity is `1024`. Override it with:
+
+```bash
+export CORTEXDB_ACTOR_QUEUE_CAPACITY=2048
+cargo run -p cortex-server -- ./data 127.0.0.1:8181
+```
+
+Use a lower value to fail fast under load, or a higher value to absorb short
+bursts. Invalid or zero values are rejected at startup. When the queue is full,
+the server returns `503 database_busy` instead of silently accepting unlimited
+work.

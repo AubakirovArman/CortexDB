@@ -38,6 +38,8 @@ pub use router::{
 #[cfg(test)]
 pub use sync_handler::{handle_http, handle_http_with_options};
 
+pub const DEFAULT_ACTOR_QUEUE_CAPACITY: usize = 1024;
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ServerOptions {
     pub auth_token: Option<String>,
@@ -48,7 +50,7 @@ pub struct ServerOptions {
 impl ServerOptions {
     pub fn actor_queue_capacity(&self) -> usize {
         if self.actor_queue_capacity == 0 {
-            1024
+            DEFAULT_ACTOR_QUEUE_CAPACITY
         } else {
             self.actor_queue_capacity
         }
