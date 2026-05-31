@@ -24,7 +24,9 @@ starting `cortex-server`.
 asset loading, tab switching, session controls, cell put/get, keyword search,
 search explain, AQL, ContextPack, Verify, Ingest, ANN evaluation, storage
 validation, cluster status, visible request error states, and client-side
-numeric validation before malformed requests reach the API.
+numeric validation before malformed requests reach the API. ANN evaluation also
+renders a compact report card view for recall, production safety, fallback,
+SLO violations, graph shape, and HNSW tuning knobs.
 
 `dashboard-screenshots` starts the same local server and writes review artifacts:
 
@@ -55,6 +57,8 @@ and validates it alongside the archive manifest and SHA-256 file checksums.
 Form controls use native constraints plus synchronized `aria-invalid` state so
 keyboard and assistive-technology users get the same validation feedback as the
 visual UI.
+ANN report rendering lives in `reporting.js` to keep product-facing report
+formatting separate from request/session control logic.
 
 ## Boundary
 

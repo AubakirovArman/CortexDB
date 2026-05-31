@@ -25,6 +25,7 @@ header { border-block-end: 1px solid var(--line); background: var(--panel); }
 .topbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
 h1 { margin: 0; font-size: 1.25rem; letter-spacing: 0; }
 h2 { margin: 0 0 12px; font-size: 1rem; letter-spacing: 0; }
+h3 { margin: 0 0 10px; font-size: .95rem; letter-spacing: 0; }
 label { display: block; margin-block-end: 5px; color: var(--muted); font-weight: 650; }
 .subtitle { margin: 4px 0 0; color: var(--muted); }
 .skip-link {
@@ -135,8 +136,13 @@ nav { position: sticky; inset-block-start: 12px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-block-start: 10px; }
 .status { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-block-end: 12px; }
 .metric { border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: #fbfcfd; }
+.metric.good { border-color: color-mix(in srgb, var(--green) 35%, var(--line)); background: #f3fbf8; }
+.metric.warn { border-color: #b7791f; background: #fff8eb; }
+.metric.bad { border-color: color-mix(in srgb, var(--red) 45%, var(--line)); background: #fff7f6; }
 .metric span { display: block; color: var(--muted); font-size: .85rem; }
-.metric strong { font-size: 1.2rem; }
+.metric strong { font-size: 1.2rem; overflow-wrap: anywhere; }
+.report-panel { margin-block-start: 14px; }
+.report-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .history { margin: 12px 0 0; padding-inline-start: 20px; max-block-size: 160px; overflow: auto; color: var(--muted); }
 .request-status {
     margin-block-end: 10px;

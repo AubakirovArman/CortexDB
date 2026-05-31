@@ -63,6 +63,11 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     expect(script.headers()['content-type']).toContain('application/javascript');
     expect(await script.text()).toContain('run("stats"');
 
+    const reporting = await request.get(`${baseUrl}/dashboard/assets/v1/reporting.js`);
+    expect(reporting.ok()).toBeTruthy();
+    expect(reporting.headers()['content-type']).toContain('application/javascript');
+    expect(await reporting.text()).toContain('renderAnnEvaluation');
+
     const consoleErrors: string[] = [];
     page.on('console', message => {
       if (message.type() === 'error') consoleErrors.push(message.text());
@@ -165,9 +170,16 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
 
     await page.getByRole('link', { name: 'ANN' }).click();
     await expect(page).toHaveURL(/\/dashboard\/ann-eval$/);
+    await expect(page.locator('#ann-report')).toContainText('Run evaluation');
     await page.getByRole('button', { name: 'Evaluate ANN' }).click();
     await expect(page.locator('#output')).toContainText('"available": true');
     await expect(page.locator('#output')).toContainText('"recall_q16"');
+    await expect(page.locator('#ann-report')).toContainText('Production safe');
+    await expect(page.locator('#ann-report')).toContainText('yes');
+    await expect(page.locator('#ann-report')).toContainText('Recall');
+    await expect(page.locator('#ann-report')).toContainText('100.00%');
+    await expect(page.locator('#ann-report')).toContainText('SLO violations');
+    await expect(page.locator('#ann-report')).toContainText('none');
 
     await page.getByRole('link', { name: 'Cluster' }).click();
     await expect(page).toHaveURL(/\/dashboard\/cluster$/);

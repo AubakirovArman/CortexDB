@@ -60,6 +60,7 @@ fn dashboard_html_exposes_admin_console_surfaces() {
     for marker in [
         "CortexDB Console",
         "/dashboard/assets/v1/style.css",
+        "/dashboard/assets/v1/reporting.js",
         "/dashboard/assets/v1/app.js",
         "href=\"/dashboard/cells\"",
         "href=\"/dashboard/search\"",
@@ -70,6 +71,7 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "id=\"tenant\"",
         "id=\"history\"",
         "id=\"ingest-job-form\"",
+        "id=\"ann-report\"",
     ] {
         assert!(html.contains(marker), "missing dashboard marker: {marker}");
     }
@@ -118,13 +120,20 @@ fn dashboard_static_assets_are_versioned_and_typed() {
         super::dashboard::asset("/dashboard/assets/v1/style.css").expect("dashboard style asset");
     let script =
         super::dashboard::asset("/dashboard/assets/v1/app.js").expect("dashboard script asset");
+    let reporting = super::dashboard::asset("/dashboard/assets/v1/reporting.js")
+        .expect("dashboard reporting asset");
 
     assert_eq!(style.content_type, "text/css; charset=utf-8");
     assert_eq!(script.content_type, "application/javascript; charset=utf-8");
+    assert_eq!(
+        reporting.content_type,
+        "application/javascript; charset=utf-8"
+    );
     assert!(style.body.contains(".tab[aria-current=\"page\"]"));
     assert!(script.body.contains("addEventListener(\"submit\""));
     assert!(script.body.contains("pushState"));
     assert!(script.body.contains("popstate"));
+    assert!(reporting.body.contains("renderAnnEvaluation"));
     assert!(super::dashboard::asset("/dashboard/assets/v2/app.js").is_none());
 }
 

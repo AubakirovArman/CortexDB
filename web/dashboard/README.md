@@ -58,6 +58,8 @@ Current coverage:
 - Search includes both result execution and explain output;
 - Storage and Cluster views expose validation, metrics, flush/compact,
   cluster status, and ANN metrics;
+- ANN evaluation renders a report card view for recall, production safety,
+  fallback, SLO violations, graph shape, and HNSW tuning knobs;
 - request failures are surfaced through a visible status banner plus JSON
   details;
 - numeric form fields use native constraints, visible field errors, and

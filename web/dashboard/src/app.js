@@ -256,6 +256,7 @@ function run(label, task) {
         .then((body) => {
             setRequestStatus("ok", `OK ${label}`);
             show(body);
+            window.CortexDashboardReports?.renderAnnEvaluation?.(body);
             addHistory(label, true);
             if (body?.current_seq !== undefined || body?.ok !== undefined) renderMetrics(body);
         })

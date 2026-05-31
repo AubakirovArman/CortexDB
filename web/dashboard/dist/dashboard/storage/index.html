@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CortexDB Console</title>
     <link rel="stylesheet" href="/dashboard/assets/v1/style.css">
+    <script src="/dashboard/assets/v1/reporting.js" defer></script>
     <script src="/dashboard/assets/v1/app.js" defer></script>
 </head>
 <body>
@@ -110,6 +111,12 @@ Solar budget note</textarea></div>
                     <button type="button" data-action="ann-metrics" class="secondary" data-access="admin">ANN Metrics</button>
                 </div>
             </form>
+                <section class="report-panel" aria-labelledby="ann-report-title">
+                    <h3 id="ann-report-title">ANN report</h3>
+                    <div id="ann-report" class="report-grid" aria-live="polite">
+                        <div class="metric"><span>Status</span><strong>Run evaluation</strong></div>
+                    </div>
+                </section>
             </section>
             <section id="aql" class="panel" data-title="AQL" data-access="data">
                 <h2 id="aql-title">AQL</h2>
