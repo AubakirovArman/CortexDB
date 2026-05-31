@@ -56,7 +56,7 @@ async function stopServer(server) {
 async function seedAndSearch(page, baseUrl, cellId, note) {
   await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'networkidle' });
   await page.locator('#output').waitFor({ state: 'visible' });
-  await page.getByRole('tab', { name: 'Cells' }).click();
+  await page.getByRole('link', { name: 'Cells' }).click();
   await page.locator('#cell-id').fill(String(cellId));
   await page.locator('#cell-payload').fill([
     'scope=project:investments',
@@ -73,7 +73,7 @@ async function seedAndSearch(page, baseUrl, cellId, note) {
     { timeout: 5_000 },
   );
 
-  await page.getByRole('tab', { name: 'Search' }).click();
+  await page.getByRole('link', { name: 'Search' }).click();
   await page.locator('#search-query').fill('budget');
   await page.getByRole('button', { name: /^Search$/ }).click();
   await page.waitForFunction(

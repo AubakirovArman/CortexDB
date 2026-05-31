@@ -70,13 +70,15 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     page.on('pageerror', error => consoleErrors.push(error.message));
 
     await page.goto(`${baseUrl}/dashboard`);
-    await expect(page).toHaveTitle('CortexDB Console');
+    await expect(page).toHaveTitle('Overview | CortexDB Console');
     await expect(page.getByRole('heading', { name: 'CortexDB Console' })).toBeVisible();
     await expect(page.locator('link[href="/dashboard/assets/v1/style.css"]')).toHaveCount(1);
     await expect(page.locator('script[src="/dashboard/assets/v1/app.js"]')).toHaveCount(1);
     await expect(page.locator('#output')).toContainText('current_seq');
 
-    await page.getByRole('tab', { name: 'Cells' }).click();
+    await page.getByRole('link', { name: 'Cells' }).click();
+    await expect(page).toHaveURL(/#\/cells$/);
+    await expect(page).toHaveTitle('Cells | CortexDB Console');
     await expect(page.locator('#cells')).toBeVisible();
     await page.locator('#cell-id').fill('91001');
     await page.locator('#cell-payload').fill([
@@ -94,7 +96,8 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await page.getByRole('button', { name: 'Run Cell Operation' }).click();
     await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
 
-    await page.getByRole('tab', { name: 'Search' }).click();
+    await page.getByRole('link', { name: 'Search' }).click();
+    await expect(page).toHaveURL(/#\/search$/);
     await expect(page.locator('#search')).toBeVisible();
     await page.locator('#search-query').fill('budget');
     await page.getByRole('button', { name: 'Search', exact: true }).click();
@@ -104,17 +107,19 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await expect(page.locator('#output')).toContainText('query_terms');
     await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
 
-    await page.getByRole('tab', { name: 'Storage' }).click();
+    await page.getByRole('link', { name: 'Storage' }).click();
+    await expect(page).toHaveURL(/#\/storage$/);
     await expect(page.locator('#storage')).toBeVisible();
     await page.getByRole('button', { name: 'Validate' }).click();
     await expect(page.locator('#output')).toContainText('manifest_ok');
 
-    await page.getByRole('tab', { name: 'Cluster' }).click();
+    await page.getByRole('link', { name: 'Cluster' }).click();
+    await expect(page).toHaveURL(/#\/cluster$/);
     await expect(page.locator('#cluster')).toBeVisible();
     await page.getByRole('button', { name: 'Cluster Status' }).click();
     await expect(page.locator('#output')).toContainText('distributed_enabled');
 
-    await page.getByRole('tab', { name: 'Cells' }).click();
+    await page.getByRole('link', { name: 'Cells' }).click();
     await page.locator('#cell-op').selectOption('get');
     await page.locator('#cell-id').fill('not-a-number');
     await page.getByRole('button', { name: 'Run Cell Operation' }).click();

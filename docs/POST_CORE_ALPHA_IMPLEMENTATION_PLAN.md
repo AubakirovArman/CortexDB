@@ -139,9 +139,13 @@
 - [x] Завести frontend source-of-truth under `web/dashboard/src` plus `make dashboard-build` / `make dashboard-check`.
 - [x] Завести standalone static build artifact under `web/dashboard/dist`, independent from the server crate asset copy.
 - [ ] Превратить standalone static build в полноценный frontend-продукт с route-level pages и выбранным stack/release pipeline.
+- [x] Начальный route-level shell: dashboard views now deep-link through
+  `#/overview`, `#/cells`, `#/search`, `#/ann-eval`, `#/aql`, `#/context`,
+  `#/verify`, `#/ingest`, `#/storage`, and `#/cluster` with document-title
+  updates and browser back/forward behavior.
 - [x] Наборы views в текущем static dashboard: overview, cells, search/explain, ANN, AQL, context, verify, ingest, storage health, cluster status.
 - [x] Базовый tenant/token control в UI для scoped API calls; полноценный auth UX остаётся будущей standalone UI задачей.
-- [x] Playwright/CI smoke путь для текущего `/dashboard`: asset loading, tabs, cell put/get, keyword search.
+- [x] Playwright/CI smoke путь для текущего `/dashboard`: asset loading, route navigation, cell put/get, keyword search.
 - [x] Playwright smoke дополнен search explain, storage validation, and cluster status.
 - [x] Playwright screenshot artifacts for desktop/mobile dashboard review in CI.
 - [x] Есть минимальный dashboard, static asset routes, and accessibility smoke tests.

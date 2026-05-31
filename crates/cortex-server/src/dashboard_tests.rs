@@ -31,12 +31,12 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "CortexDB Console",
         "/dashboard/assets/v1/style.css",
         "/dashboard/assets/v1/app.js",
-        "data-tab=\"cells\"",
-        "data-tab=\"search\"",
-        "data-tab=\"ann-eval\"",
-        "data-tab=\"context\"",
-        "data-tab=\"verify\"",
-        "data-tab=\"ingest\"",
+        "href=\"#/cells\"",
+        "href=\"#/search\"",
+        "href=\"#/ann-eval\"",
+        "href=\"#/context\"",
+        "href=\"#/verify\"",
+        "href=\"#/ingest\"",
         "id=\"tenant\"",
         "id=\"history\"",
         "id=\"ingest-job-form\"",
@@ -70,8 +70,8 @@ fn dashboard_forms_have_accessible_labels_and_live_output() {
         "label for=\"ingest-job-id\"",
         "label for=\"ingest-type\"",
         "aria-label=\"Request history\"",
-        "role=\"tablist\"",
-        "role=\"tabpanel\"",
+        "aria-label=\"Console pages\"",
+        "aria-current=\"page\"",
         "aria-live=\"polite\"",
         "id=\"output\" tabindex=\"0\"",
     ] {
@@ -91,8 +91,9 @@ fn dashboard_static_assets_are_versioned_and_typed() {
 
     assert_eq!(style.content_type, "text/css; charset=utf-8");
     assert_eq!(script.content_type, "application/javascript; charset=utf-8");
-    assert!(style.body.contains(".tab[aria-selected=\"true\"]"));
+    assert!(style.body.contains(".tab[aria-current=\"page\"]"));
     assert!(script.body.contains("addEventListener(\"submit\""));
+    assert!(script.body.contains("hashchange"));
     assert!(super::dashboard::asset("/dashboard/assets/v2/app.js").is_none());
 }
 

@@ -118,6 +118,9 @@
 - Hardened replication consensus recovery so recovered runtime state now
   rejects non-contiguous log indexes, zero terms, and commit indexes beyond the
   recovered log.
+- Added route-level dashboard navigation: standalone and server-served
+  dashboard views now deep-link through `#/overview`, `#/cells`, `#/search`,
+  and related routes with document-title updates and back/forward support.
 - Split replication consensus-log durability from local WAL durability by adding
   `ConsensusLogOptions` / `ConsensusLogDurability` and mapping consensus logs
   to strict storage WAL fsync internally.

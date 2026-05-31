@@ -3,6 +3,10 @@ const metrics = document.querySelector("#metrics");
 const history = document.querySelector("#history");
 const sessionStatus = document.querySelector("#session-status");
 const requestStatus = document.querySelector("#request-status");
+const content = document.querySelector("#content");
+const routeLinks = Array.from(document.querySelectorAll("[data-route]"));
+const panels = Array.from(document.querySelectorAll(".panel"));
+const routes = new Map(panels.map(panel => [panel.id, panel]));
 let token = "";
 let tenant = "default";
 
@@ -101,6 +105,35 @@ document.querySelectorAll(".panel").forEach(panel => {
     if (!panel.classList.contains("active")) panel.hidden = true;
 });
 
+function routeFromHash() {
+    const value = window.location.hash.replace(/^#\/?/, "");
+    return routes.has(value) ? value : "overview";
+}
+
+function setRoute(route, focusMain = false) {
+    const panel = routes.get(route) || routes.get("overview");
+    const activeRoute = panel.id;
+    panels.forEach(item => {
+        const active = item === panel;
+        item.classList.toggle("active", active);
+        item.hidden = !active;
+    });
+    routeLinks.forEach(link => {
+        if (link.dataset.route === activeRoute) link.setAttribute("aria-current", "page");
+        else link.removeAttribute("aria-current");
+    });
+    document.title = `${panel.dataset.title || "Overview"} | CortexDB Console`;
+    if (focusMain) content.focus({ preventScroll: true });
+}
+
+onAll("[data-route]", "click", event => {
+    const route = event.currentTarget.dataset.route;
+    if (routeFromHash() === route) setRoute(route, true);
+});
+
+window.addEventListener("hashchange", () => setRoute(routeFromHash(), true));
+setRoute(routeFromHash());
+
 document.addEventListener("blur", event => {
     if (event.target.matches?.("input, textarea, select")) {
         event.target.toggleAttribute("aria-invalid", !event.target.checkValidity());
@@ -111,16 +144,6 @@ document.addEventListener("input", event => {
     if (event.target.matches?.("[aria-invalid='true']") && event.target.checkValidity()) {
         event.target.removeAttribute("aria-invalid");
     }
-});
-
-onAll(".tab", "click", event => {
-    const tab = event.currentTarget;
-    document.querySelectorAll(".tab").forEach(item => item.setAttribute("aria-selected", String(item === tab)));
-    document.querySelectorAll(".panel").forEach(panel => {
-        const active = panel.id === tab.dataset.tab;
-        panel.classList.toggle("active", active);
-        panel.hidden = !active;
-    });
 });
 
 onAll("[data-action='health']", "click", () => run("health", () => api("/v1/health")));

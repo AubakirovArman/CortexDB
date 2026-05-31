@@ -38,6 +38,9 @@ Current coverage:
 - build output is versioned under `/dashboard/assets/v1/`;
 - standalone smoke serves `web/dashboard/dist` over HTTP and verifies the
   expected route-shaped asset paths;
+- views are addressable through hash routes such as `#/overview`, `#/cells`,
+  `#/search`, `#/storage`, and `#/cluster`, so browser back/forward and copied
+  dashboard links preserve the selected page;
 - views cover Overview, Cells, Search, ANN, AQL, Context, Verify, Ingest,
   Storage, and Cluster;
 - Search includes both result execution and explain output;
@@ -45,7 +48,7 @@ Current coverage:
   cluster status, and ANN metrics;
 - request failures are surfaced through a visible status banner plus JSON
   details;
-- Playwright smoke covers asset loading, tab switching, cell put/get, keyword
+- Playwright smoke covers asset loading, route switching, cell put/get, keyword
   search, search explain, storage validation, cluster status, and error states.
 - Playwright screenshots are written to `target/dashboard/` as CI review
   artifacts for desktop and mobile viewports.

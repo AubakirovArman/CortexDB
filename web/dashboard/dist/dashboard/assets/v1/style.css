@@ -88,9 +88,21 @@ button:disabled { opacity: .65; cursor: progress; }
 main { display: grid; grid-template-columns: 240px minmax(0, 1fr) minmax(320px, 460px); gap: 18px; align-items: start; }
 nav, .workspace, aside { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
 nav { position: sticky; inset-block-start: 12px; }
-.tabs { display: grid; gap: 8px; }
-.tab { inline-size: 100%; text-align: start; background: transparent; color: var(--ink); border: 1px solid var(--line); }
-.tab[aria-selected="true"] { background: #e8f1fb; border-color: var(--blue); color: #083b75; }
+.tabs { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.tab {
+    display: block;
+    inline-size: 100%;
+    min-block-size: 42px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 9px 13px;
+    background: transparent;
+    color: var(--ink);
+    font-weight: 700;
+    text-align: start;
+    text-decoration: none;
+}
+.tab[aria-current="page"] { background: #e8f1fb; border-color: var(--blue); color: #083b75; }
 .panel { display: none; }
 .panel.active { display: block; }
 [hidden] { display: none !important; }
