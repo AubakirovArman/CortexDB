@@ -67,6 +67,17 @@ jobs:
           path: |
             target/replication-partition/report.json
             target/replication-partition/*.log
+      - run: make replication-lifecycle-check
+        if: matrix.toolchain == 'stable'
+      - name: Upload replication lifecycle evidence
+        if: matrix.toolchain == 'stable' && always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: replication-lifecycle-evidence
+          if-no-files-found: warn
+          path: |
+            target/replication-lifecycle/report.json
+            target/replication-lifecycle/*.log
       - run: make dashboard-check
         if: matrix.toolchain == 'stable'
       - run: make dashboard-standalone-check

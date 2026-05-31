@@ -132,6 +132,9 @@
   conflicts, zero terms, or term regression.
 - Added `make replication-partition-check` and CI evidence upload for explicit
   split-brain, partition matrix, and rejoin-repair regression coverage.
+- Added `make replication-lifecycle-check` and CI evidence upload for snapshot
+  transfer, peer resync, durable repair progress, and membership rotation
+  lifecycle coverage.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

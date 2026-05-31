@@ -40,7 +40,12 @@
 - [x] Идемпотентный replay/apply с корректной синхронизацией term/index
   across crash/restart: duplicate recovered entries are no-ops, while gaps,
   duplicate conflicts, zero terms, and term regression fail closed.
-- [ ] Полный snapshot transfer + peer resync + membership lifecycle (join/leave/rotation).
+- [x] Полный snapshot transfer + peer resync + membership lifecycle
+  (join/leave/rotation): `make replication-lifecycle-check` runs chunked
+  snapshot transfer, durable peer install, snapshot fault handling,
+  database-backed repair snapshots, durable progress reconciliation,
+  topology/runtime startup, and joint/stable membership rotation resume suites
+  with uploaded JSON/log evidence.
 - [x] Split-brain + partition matrix тесты в CI: `make
   replication-partition-check` runs failure injection, five-node partition
   matrix, stale-leader rejection, and rejoin-repair suites with uploaded JSON/log
