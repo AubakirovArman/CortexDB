@@ -12,6 +12,7 @@ make dashboard-build
 make dashboard-check
 make dashboard-standalone-check
 make dashboard-standalone-smoke
+make dashboard-product-check
 make dashboard-smoke
 make dashboard-screenshots
 ```
@@ -28,6 +29,10 @@ issue cards, and client-side numeric validation before malformed requests reach
 the API. ANN evaluation also
 renders a compact report card view for recall, production safety, fallback,
 SLO violations, graph shape, and HNSW tuning knobs.
+The dashboard also has a local read-only mode that blocks mutating actions
+before they reach the API, an operational status panel for visible health and
+incident checks, and a Permissions route that explains the active tenant, role,
+token state, admin/data capabilities, and local write guard state.
 ContextPack responses render a separate report view for token budget usage,
 selected cells, citations, anomalies, and per-cell explain metadata so pack
 quality can be reviewed without reading raw JSON.
@@ -81,6 +86,10 @@ admin access. Request failures are normalized into a visible Request Issue
 report with request label, HTTP status, server code, message, and a
 route-aware operator action while the raw response stays available in the JSON
 output panel.
+The read-only mode is a dashboard-local safety switch. It does not replace
+server authorization; it prevents accidental cell writes, tombstones, ingest,
+flush, and compact actions from being sent while an operator is inspecting the
+database.
 Search, AQL, and Verify success responses also render compact report views for
 result count, top cells, verdict, evidence, contradictions, guards, and numeric
 conflicts.
@@ -93,9 +102,9 @@ cards.
 
 This is not the final product UI. It is the checked, reviewable bridge between
 the Core Alpha HTTP API and the future standalone frontend product. The current
-shell already exposes Overview, Cells, Search, ANN, AQL, Context, Verify,
-Ingest, Storage, and Cluster views from route-level static entrypoints. The
-current standalone artifact is a dependency-free static build under
+shell already exposes Overview, Permissions, Cells, Search, ANN, AQL, Context,
+Verify, Ingest, Storage, and Cluster views from route-level static entrypoints.
+The current standalone artifact is a dependency-free static build under
 `web/dashboard/dist`; the next UI layer should add broader page-specific
 workflow coverage and visual regression coverage.
 
@@ -103,6 +112,7 @@ workflow coverage and visual regression coverage.
 
 For Beta Release Candidate evidence, the dashboard counts as an operational
 view only for local developer/operator workflows: health, metrics, validation,
-storage status, ANN evaluation, ingestion jobs, cluster status, and typed error
-reports. It is not yet an incident-management console, RBAC administration UI,
-or production observability product.
+storage status, ANN evaluation, ingestion jobs, cluster status, permissions
+review, local read-only guard state, and typed error reports. It is not yet a
+full incident-management console, RBAC administration UI, or production
+observability product.

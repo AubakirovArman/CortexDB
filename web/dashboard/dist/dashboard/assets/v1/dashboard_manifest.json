@@ -11,6 +11,7 @@
   "entrypoints": [
     "/dashboard",
     "/dashboard/overview",
+    "/dashboard/permissions",
     "/dashboard/cells",
     "/dashboard/search",
     "/dashboard/ann-eval",
@@ -23,6 +24,7 @@
   ],
   "routes": [
     { "id": "overview", "title": "Overview" },
+    { "id": "permissions", "title": "Permissions" },
     { "id": "cells", "title": "Cells" },
     { "id": "search", "title": "Search" },
     { "id": "ann-eval", "title": "ANN Eval" },

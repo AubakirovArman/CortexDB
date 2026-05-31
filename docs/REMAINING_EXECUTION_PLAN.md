@@ -149,6 +149,11 @@ Core Alpha is operational:
   - writes `target/sdk-e2e-release/report.json`
   - covers Rust/Python/TypeScript live SDK compatibility, release metadata,
     deprecation policy, and quickstart/release docs
+- Run the focused Dashboard Product UI evidence gate:
+  - `make dashboard-product-check`
+  - writes `target/dashboard/product-ui-report.json`
+  - covers read-only mode, operational status, permissions view, standalone
+    packaging, and screenshot artifact wiring
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`

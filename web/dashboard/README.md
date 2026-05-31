@@ -26,6 +26,7 @@ make dashboard-build
 make dashboard-check
 make dashboard-standalone-check
 make dashboard-standalone-smoke
+make dashboard-product-check
 make dashboard-release-check
 make dashboard-smoke
 make dashboard-screenshots
@@ -43,6 +44,12 @@ Current coverage:
   apply; tenant selection is the only persisted session value;
 - session capability detection renders a permission report for limited, data,
   and admin access so hidden role-gated actions are explained in the UI;
+- read-only mode blocks local mutating actions before they reach the API while
+  leaving read/search/verify workflows available;
+- the Permissions route explains tenant, active role, token state, read-only
+  state, and effective capabilities;
+- the Overview route has an operational status panel for health and visible
+  incident checks;
 - standalone smoke serves `web/dashboard/dist` over HTTP and verifies the
   expected route-shaped asset paths plus the frontend manifest;
 - views are addressable through route-level URLs such as `/dashboard/overview`,
@@ -55,8 +62,8 @@ Current coverage:
   `target/dashboard/dashboard-v1.tar.gz` and validates the archive manifest,
   frontend stack, route manifest, file sizes, and SHA-256 checksums before it
   can be uploaded as a release artifact;
-- views cover Overview, Cells, Search, ANN, AQL, Context, Verify, Ingest,
-  Storage, and Cluster;
+- views cover Overview, Permissions, Cells, Search, ANN, AQL, Context, Verify,
+  Ingest, Storage, and Cluster;
 - Search includes both result execution and explain output;
 - Storage and Cluster views expose validation, metrics, flush/compact,
   cluster status, and ANN metrics;

@@ -376,6 +376,8 @@ Evidence:
 
 Goal: move from developer console to product UI.
 
+Status: local dashboard product UI gate added; run `make dashboard-product-check`.
+
 Tasks:
 
 1. Add dashboard read-only mode.
@@ -386,6 +388,11 @@ Tasks:
 Acceptance:
 
 - Dashboard smoke tests and screenshots are included in release artifacts.
+
+Evidence:
+
+- Product UI gate: [`DASHBOARD_PRODUCT_UI_EVIDENCE.md`](DASHBOARD_PRODUCT_UI_EVIDENCE.md).
+- Dashboard contract: [`DASHBOARD_UI.md`](DASHBOARD_UI.md).
 
 ### Epic 17 - Security Hardening
 

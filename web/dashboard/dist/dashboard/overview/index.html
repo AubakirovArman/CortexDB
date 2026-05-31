@@ -24,6 +24,10 @@
                 <input id="tenant" name="tenant" autocomplete="organization" value="default">
                 <label for="token">Bearer token</label>
                 <input id="token" name="token" type="password" autocomplete="current-password">
+                <label class="inline-control" for="read-only-mode">
+                    <input id="read-only-mode" name="read_only" type="checkbox">
+                    Read-only mode
+                </label>
                 <button type="submit">Apply</button>
                 <button id="clear-session" type="button" class="secondary">Clear</button>
             </form>
@@ -33,6 +37,7 @@
         <nav aria-label="Console pages">
             <ul class="tabs" aria-label="CortexDB tools">
                 <li><a id="route-overview" class="tab" href="/dashboard/overview" aria-current="page" data-route="overview" data-access="data">Overview</a></li>
+                <li><a class="tab" href="/dashboard/permissions" data-route="permissions" data-access="public">Permissions</a></li>
                 <li><a class="tab" href="/dashboard/cells" data-route="cells" data-access="data">Cells</a></li>
                 <li><a class="tab" href="/dashboard/search" data-route="search" data-access="data">Search</a></li>
                 <li><a class="tab" href="/dashboard/ann-eval" data-route="ann-eval" data-access="data">ANN</a></li>
@@ -55,9 +60,25 @@
                 <div class="status" id="metrics"></div>
                 <div class="actions">
                     <button type="button" data-action="health" data-access="public">Health</button>
+                    <button type="button" data-action="operational-status" data-access="public">Refresh Status</button>
                     <button type="button" data-action="stats" data-access="admin">Stats</button>
                     <button type="button" data-action="metrics" data-access="admin">Metrics</button>
                     <button type="button" data-action="validate" data-access="admin">Validate</button>
+                </div>
+                <section class="report-panel" aria-labelledby="status-report-title">
+                    <h3 id="status-report-title">Operational status</h3>
+                    <div id="status-report" class="report-stack" aria-live="polite">
+                        <div class="metric"><span>Status</span><strong>Refresh Status</strong></div>
+                    </div>
+                </section>
+            </section>
+            <section id="permissions" class="panel" data-title="Permissions" data-access="public">
+                <h2 id="permissions-title">Permissions</h2>
+                <p class="panel-note">
+                    This view shows the active local session, effective role, and client-side safety guard.
+                </p>
+                <div id="permissions-report" class="report-stack" aria-live="polite">
+                    <div class="metric"><span>Status</span><strong>Detecting session</strong></div>
                 </div>
             </section>
             <section id="cells" class="panel" data-title="Cells" data-access="data">
@@ -188,7 +209,7 @@ Solar budget note</textarea></div>
                     </div>
                     <div class="field"><label for="ingest-document">Document</label><textarea id="ingest-document" name="document">Solar Plant budget approved.
 Wind Farm status ready.</textarea></div>
-                    <button type="submit" data-access="data">Ingest</button>
+                    <button type="submit" data-access="data" data-write="true">Ingest</button>
                 </form>
                 <form id="ingest-job-form" action="/v1/ingest/jobs/1" method="get" data-access="data">
                     <div class="field">
@@ -211,8 +232,8 @@ Wind Farm status ready.</textarea></div>
                     <button type="button" data-action="stats" data-access="admin">Stats</button>
                     <button type="button" data-action="metrics" data-access="admin">Metrics</button>
                     <button type="button" data-action="validate" data-access="admin">Validate</button>
-                    <button type="button" data-action="flush" class="secondary" data-access="admin">Flush</button>
-                    <button type="button" data-action="compact" class="secondary" data-access="admin">Compact</button>
+                    <button type="button" data-action="flush" class="secondary" data-access="admin" data-write="true">Flush</button>
+                    <button type="button" data-action="compact" class="secondary" data-access="admin" data-write="true">Compact</button>
                 </div>
                 <section class="report-panel" aria-labelledby="storage-report-title">
                     <h3 id="storage-report-title">Storage validation report</h3>

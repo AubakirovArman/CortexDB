@@ -93,6 +93,9 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await expect(page.locator('#output')).toContainText('"status": "ready"');
     await expect(page.locator('#permission-report')).toContainText('access');
     await expect(page.locator('#error-report')).toContainText('No request issue');
+    await page.getByRole('button', { name: 'Refresh Status' }).click();
+    await expect(page.locator('#status-report')).toContainText('Incidents');
+    await expect(page.locator('#status-report')).toContainText('No dashboard-visible incidents');
 
     await page.locator('#tenant').fill('dashboard-tenant');
     await page.locator('#token').fill('secret-token-value');
@@ -110,6 +113,17 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await expect(page.locator('#tenant')).toHaveValue('default');
     await expect(page.locator('#session-status')).toContainText('Tenant: default');
 
+    await page.getByRole('link', { name: 'Permissions' }).click();
+    await expect(page).toHaveURL(/\/dashboard\/permissions$/);
+    await expect(page.locator('#permissions-report')).toContainText('Local writes');
+    await expect(page.locator('#permissions-report')).toContainText('Read-only');
+
+    await page.locator('#read-only-mode').check();
+    await expect(page.locator('#session-role')).toContainText('read-only guard active');
+    await page.getByRole('link', { name: 'Storage' }).click();
+    await expect(page.locator('button[data-action="flush"]')).toBeDisabled();
+    await expect(page.locator('button[data-action="compact"]')).toBeDisabled();
+
     await page.getByRole('link', { name: 'Cells' }).click();
     await expect(page).toHaveURL(/\/dashboard\/cells$/);
     await expect(page).toHaveTitle('Cells | CortexDB Console');
@@ -125,6 +139,11 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
       'Solar Plant budget is 1.2B KZT.',
       'Dashboard smoke budget note',
     ].join('\n'));
+    await page.getByRole('button', { name: 'Run Cell Operation' }).click();
+    await expect(page.locator('#request-status')).toContainText('ERR read-only');
+    await expect(page.locator('#error-report')).toContainText('Read-only mode blocks this local write action');
+    await page.locator('#read-only-mode').uncheck();
+    await expect(page.locator('#session-role')).not.toContainText('read-only guard active');
     await page.getByRole('button', { name: 'Run Cell Operation' }).click();
     await expect(page.locator('#output')).toContainText('"seq"');
     await expect(page.locator('#cell-report-title')).toContainText('Cell report');

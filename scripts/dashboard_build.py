@@ -37,6 +37,7 @@ STATIC_ASSETS = (
 )
 ROUTES = (
     "overview",
+    "permissions",
     "cells",
     "search",
     "ann-eval",

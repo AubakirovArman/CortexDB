@@ -4,7 +4,16 @@ pub struct DashboardAsset {
 }
 
 pub const ROUTES: &[&str] = &[
-    "overview", "cells", "search", "ann-eval", "aql", "context", "verify", "ingest", "storage",
+    "overview",
+    "permissions",
+    "cells",
+    "search",
+    "ann-eval",
+    "aql",
+    "context",
+    "verify",
+    "ingest",
+    "storage",
     "cluster",
 ];
 

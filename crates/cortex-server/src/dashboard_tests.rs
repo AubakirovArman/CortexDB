@@ -30,6 +30,7 @@ fn dashboard_route_pages_return_html() {
     std::fs::create_dir_all(&tmp).unwrap();
 
     for route in [
+        "/dashboard/permissions",
         "/dashboard/search",
         "/dashboard/storage",
         "/dashboard/cluster",
@@ -66,13 +67,17 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "/dashboard/assets/v1/reporting.js",
         "/dashboard/assets/v1/app.js",
         "href=\"/dashboard/cells\"",
+        "href=\"/dashboard/permissions\"",
         "href=\"/dashboard/search\"",
         "href=\"/dashboard/ann-eval\"",
         "href=\"/dashboard/context\"",
         "href=\"/dashboard/verify\"",
         "href=\"/dashboard/ingest\"",
         "id=\"tenant\"",
+        "id=\"read-only-mode\"",
         "id=\"permission-report\"",
+        "id=\"permissions-report\"",
+        "id=\"status-report\"",
         "id=\"history\"",
         "id=\"ingest-job-form\"",
         "id=\"error-report\"",
@@ -96,6 +101,8 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "/v1/search/ann-evaluate",
         "/v1/ingest/jobs/",
         "/v1/ingest/${kind}",
+        "dashboard_status.v1",
+        "dashboard_permissions.v1",
     ] {
         assert!(
             script.contains(marker),
@@ -112,6 +119,7 @@ fn dashboard_forms_have_accessible_labels_and_live_output() {
         "label for=\"ann-vector\"",
         "label for=\"ann-limit\"",
         "label for=\"tenant\"",
+        "label class=\"inline-control\" for=\"read-only-mode\"",
         "label for=\"ingest-document\"",
         "label for=\"ingest-job-id\"",
         "label for=\"ingest-type\"",
@@ -172,6 +180,8 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert!(operations.body.contains("renderCellReport"));
     assert!(operations.body.contains("renderClusterReport"));
     assert!(operations.body.contains("renderIngestReport"));
+    assert!(operations.body.contains("renderOperationalStatus"));
+    assert!(operations.body.contains("renderPermissionsView"));
     assert!(operations.body.contains("renderRequestIssue"));
     assert!(operations.body.contains("clearRequestIssue"));
     assert!(operations.body.contains("Use an admin token"));

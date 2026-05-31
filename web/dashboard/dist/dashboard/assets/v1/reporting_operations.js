@@ -216,12 +216,68 @@
         );
     }
 
+    function renderOperationalStatus(body) {
+        const container = document.querySelector("#status-report");
+        if (!container || body?.schema_version !== "dashboard_status.v1") return;
+
+        const results = body.results || [];
+        const incidents = body.incidents || [];
+        const summary = document.createElement("div");
+        const incidentList = document.createElement("ul");
+        summary.className = "report-grid";
+        incidentList.className = "report-list compact";
+
+        summary.replaceChildren(
+            card("Tenant", body.tenant || "default"),
+            card("Access", body.access_level || "limited"),
+            card("Read-only", yesNo(body.read_only), body.read_only ? "warn" : "good"),
+            card("Checks", results.length),
+            card("Incidents", incidents.length, incidents.length ? "bad" : "good"),
+        );
+
+        if (incidents.length) {
+            incidentList.replaceChildren(...incidents.map((item) => textItem(`${item.label}: ${item.message}`)));
+        } else {
+            incidentList.replaceChildren(textItem("No dashboard-visible incidents reported"));
+        }
+        container.replaceChildren(summary, incidentList);
+    }
+
+    function renderPermissionsView(body) {
+        const container = document.querySelector("#permissions-report");
+        if (!container || body?.schema_version !== "dashboard_permissions.v1") return;
+
+        const capabilities = body.capabilities || {};
+        const cards = document.createElement("div");
+        const rules = document.createElement("ul");
+        cards.className = "report-grid";
+        rules.className = "report-list compact";
+        cards.replaceChildren(
+            card("Tenant", body.tenant || "default"),
+            card("Access", body.access_level || "limited"),
+            card("Token active", yesNo(body.token_active)),
+            card("Read-only", yesNo(body.read_only), body.read_only ? "warn" : "good"),
+            card("Data read", yesNo(capabilities.data_read), capabilities.data_read ? "good" : "warn"),
+            card("Admin maintenance", yesNo(capabilities.admin_maintenance), capabilities.admin_maintenance ? "good" : "warn"),
+            card("Local writes", yesNo(capabilities.local_writes), capabilities.local_writes ? "good" : "warn"),
+        );
+        rules.replaceChildren(
+            textItem("Public mode can load health and permissions only."),
+            textItem("Data mode can run cell reads, retrieval, AQL, context, verify, ingest jobs, and cluster status."),
+            textItem("Admin mode can run storage maintenance, validation, metrics, and ANN metrics."),
+            textItem("Read-only mode is a local dashboard guard that blocks mutating actions before they reach the API."),
+        );
+        container.replaceChildren(cards, rules);
+    }
+
     Object.assign(reports, {
         clearRequestIssue,
         renderAnnEvaluation,
         renderCellReport,
         renderClusterReport,
         renderIngestReport,
+        renderOperationalStatus,
+        renderPermissionsView,
         renderRequestIssue,
         renderStorageValidation,
     });

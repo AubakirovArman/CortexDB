@@ -9,7 +9,8 @@ const serverBin = process.env.CORTEX_SERVER_BIN || 'target/debug/cortex-server';
 const outputDir = resolve(process.env.DASHBOARD_SCREENSHOT_DIR || 'target/dashboard');
 
 const DASHBOARD_ROUTE_SCREENSHOTS = [
-  { name: "overview", path: "/dashboard/overview", actions: ["health"] },
+  { name: "overview", path: "/dashboard/overview", actions: ["operational-status"] },
+  { name: "permissions", path: "/dashboard/permissions", actions: [] },
   { name: "cells", path: "/dashboard/cells", actions: [] },
   { name: "search", path: "/dashboard/search", actions: ["search-budget"] },
   { name: "ann-eval", path: "/dashboard/ann-eval", actions: ["ann-eval"] },
@@ -100,6 +101,14 @@ async function runRouteWorkflow(page, routeId, note) {
   switch (routeId) {
     case "health":
       await page.getByRole('button', { name: 'Health' }).click();
+      break;
+    case "operational-status":
+      await page.getByRole('button', { name: 'Refresh Status' }).click();
+      await page.waitForFunction(
+        text => document.querySelector('#status-report')?.textContent?.includes(text),
+        'No dashboard-visible incidents',
+        { timeout: 5_000 },
+      );
       break;
     case "search-budget":
       await page.locator('#search-query').fill('budget');

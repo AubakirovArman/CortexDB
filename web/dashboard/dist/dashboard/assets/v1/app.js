@@ -12,6 +12,7 @@ const routes = new Map(panels.map((panel) => [panel.id, panel]));
 
 const tenantInput = document.querySelector("#tenant");
 const tokenInput = document.querySelector("#token");
+const readOnlyToggle = document.querySelector("#read-only-mode");
 
 const ACCESS_PUBLIC = "public";
 const ACCESS_DATA = "data";
@@ -21,8 +22,10 @@ let token = "";
 let tenant = sessionStorage.getItem("cortexdb-dashboard-tenant") || "default";
 let accessLevel = ACCESS_PUBLIC;
 let accessHint = "no token";
+let readOnlyMode = sessionStorage.getItem("cortexdb-dashboard-read-only") === "true";
 
 tenantInput.value = tenant;
+readOnlyToggle.checked = readOnlyMode;
 
 function accessRank(level) {
     switch (level) {
@@ -56,9 +59,11 @@ function renderSessionStatus() {
     sessionStatus.textContent = `${tenantState} · ${tokenState}`;
 
     const tokenHint = token ? " - token in-memory" : " - no token";
+    const readOnlyHint = readOnlyMode ? " - read-only guard active" : "";
     const hint = accessHint ? ` (${accessHint})` : "";
-    roleStatus.textContent = `Access level: ${accessLabel(accessLevel)}${tokenHint}${hint}`;
+    roleStatus.textContent = `Access level: ${accessLabel(accessLevel)}${tokenHint}${readOnlyHint}${hint}`;
     renderPermissionReport();
+    window.CortexDashboardReports?.renderPermissionsView?.(permissionState());
 }
 
 function renderPermissionReport() {
@@ -75,9 +80,27 @@ function renderPermissionReport() {
     } else if (accessHint) {
         text = `Limited access: ${accessHint}. Apply a bearer token to enable data/admin actions.`;
     }
+    if (readOnlyMode) text += " Read-only mode blocks local write actions.";
 
     permissionReport.dataset.access = tone;
     permissionReport.textContent = text;
+}
+
+function permissionState() {
+    return {
+        schema_version: "dashboard_permissions.v1",
+        tenant,
+        access_level: accessLevel,
+        access_hint: accessHint,
+        token_active: token.trim().length > 0,
+        read_only: readOnlyMode,
+        capabilities: {
+            public_health: canUse(ACCESS_PUBLIC),
+            data_read: canUse(ACCESS_DATA),
+            admin_maintenance: canUse(ACCESS_ADMIN),
+            local_writes: canUse(ACCESS_DATA) && !readOnlyMode,
+        },
+    };
 }
 
 function headers() {
@@ -227,11 +250,16 @@ function refreshAccessVisibility() {
         if (canUse(minAccess)) {
             node.hidden = false;
             node.removeAttribute("aria-hidden");
-            node.disabled = false;
+            if (node instanceof HTMLButtonElement || node instanceof HTMLInputElement) {
+                const writeDisabled = readOnlyMode && node.dataset.write === "true";
+                node.disabled = writeDisabled;
+                if (writeDisabled) node.setAttribute("aria-disabled", "true");
+                else node.removeAttribute("aria-disabled");
+            }
         } else {
             node.hidden = true;
             node.setAttribute("aria-hidden", "true");
-            if (node instanceof HTMLButtonElement) {
+            if (node instanceof HTMLButtonElement || node instanceof HTMLInputElement) {
                 node.disabled = true;
             }
         }
@@ -250,6 +278,7 @@ function refreshAccessVisibility() {
 function firstAllowedRoute() {
     const order = [
         "overview",
+        "permissions",
         "cells",
         "search",
         "ann-eval",
@@ -300,6 +329,8 @@ function run(label, task) {
             window.CortexDashboardReports?.renderClusterReport?.(body);
             window.CortexDashboardReports?.renderContextPack?.(body);
             window.CortexDashboardReports?.renderIngestReport?.(body, label);
+            window.CortexDashboardReports?.renderOperationalStatus?.(body);
+            window.CortexDashboardReports?.renderPermissionsView?.(body);
             window.CortexDashboardReports?.renderSearchReport?.(body);
             window.CortexDashboardReports?.renderStorageValidation?.(body);
             window.CortexDashboardReports?.renderVerificationReport?.(body);
@@ -314,12 +345,62 @@ function run(label, task) {
         });
 }
 
+function guardWriteAllowed(label) {
+    if (!readOnlyMode) return true;
+    const error = {
+        http_status: 0,
+        code: "dashboard_read_only",
+        message: "Read-only mode blocks this local write action.",
+    };
+    setRequestStatus("error", `ERR read-only: ${label}`);
+    show(error, false);
+    window.CortexDashboardReports?.renderRequestIssue?.(error, label);
+    addHistory(label, false);
+    return false;
+}
+
+async function safeStatusCheck(label, path) {
+    try {
+        const body = await api(path);
+        return { label, ok: true, body };
+    } catch (error) {
+        return { label, ok: false, error };
+    }
+}
+
+async function loadOperationalStatus() {
+    const checks = [["health", "/v1/health"]];
+    if (canUse(ACCESS_ADMIN)) {
+        checks.push(["stats", "/v1/stats"], ["validate", "/v1/validate"], ["metrics", "/v1/metrics"]);
+    } else if (canUse(ACCESS_DATA)) {
+        checks.push(["cell read", "/v1/cell?cell_id=0"]);
+    }
+    const results = await Promise.all(checks.map(([label, path]) => safeStatusCheck(label, path)));
+    const incidents = results
+        .filter((result) => !result.ok)
+        .map((result) => ({
+            label: result.label,
+            message: errorMessage(result.error),
+            code: result.error?.code || result.error?.status || "request_error",
+        }));
+    return {
+        schema_version: "dashboard_status.v1",
+        tenant,
+        access_level: accessLevel,
+        read_only: readOnlyMode,
+        results,
+        incidents,
+    };
+}
+
 document.querySelector("#session-form").addEventListener("submit", async (event) => {
     event.preventDefault();
         const data = new FormData(event.currentTarget);
         token = data.get("token") || "";
         tenant = data.get("tenant") || "default";
+        readOnlyMode = data.get("read_only") === "on";
         sessionStorage.setItem("cortexdb-dashboard-tenant", tenant);
+        sessionStorage.setItem("cortexdb-dashboard-read-only", String(readOnlyMode));
 
     setRequestStatus("running", "Detecting capabilities");
     tokenInput.value = "";
@@ -329,16 +410,19 @@ document.querySelector("#session-form").addEventListener("submit", async (event)
         accessHint = detected.hint;
     renderSessionStatus();
     refreshAccessVisibility();
-    show({ auth: token ? "token_applied_memory_only" : "cleared", tenant, access: accessLevel });
+    show({ auth: token ? "token_applied_memory_only" : "cleared", tenant, access: accessLevel, read_only: readOnlyMode });
     setRequestStatus("ok", `Session updated: ${accessLabel(accessLevel)}`);
 });
 
 on("#clear-session", "click", async () => {
     token = "";
     tenant = "default";
+    readOnlyMode = false;
     tenantInput.value = tenant;
     tokenInput.value = "";
+    readOnlyToggle.checked = readOnlyMode;
     sessionStorage.removeItem("cortexdb-dashboard-tenant");
+    sessionStorage.removeItem("cortexdb-dashboard-read-only");
     token = "";
 
     const detected = await detectAccessLevel();
@@ -346,7 +430,15 @@ on("#clear-session", "click", async () => {
     accessHint = detected.hint;
     renderSessionStatus();
     refreshAccessVisibility();
-    show({ auth: "cleared", tenant, access: accessLevel });
+    show({ auth: "cleared", tenant, access: accessLevel, read_only: readOnlyMode });
+});
+
+on("#read-only-mode", "change", (event) => {
+    readOnlyMode = event.currentTarget.checked;
+    sessionStorage.setItem("cortexdb-dashboard-read-only", String(readOnlyMode));
+    renderSessionStatus();
+    refreshAccessVisibility();
+    show({ tenant, access: accessLevel, read_only: readOnlyMode });
 });
 
 for (const panel of panels) {
@@ -422,6 +514,7 @@ document.addEventListener("input", (event) => {
 });
 
 onAll("[data-action='health']", "click", () => run("health", () => api("/v1/health")));
+onAll("[data-action='operational-status']", "click", () => run("operational status", loadOperationalStatus));
 onAll("[data-action='stats']", "click", () => run("stats", () => api("/v1/stats")));
 onAll("[data-action='metrics']", "click", () => run("metrics", () => api("/v1/metrics")));
 onAll("[data-action='validate']", "click", () => run("validate", () => api("/v1/validate")));
@@ -441,6 +534,7 @@ document.querySelector("#cell-form").addEventListener("submit", (event) => {
     const id = encodeURIComponent(data.get("cell_id"));
     const op = data.get("op");
     if (op === "get") return run("get cell", () => api(`/v1/cell?cell_id=${id}`));
+    if (!guardWriteAllowed(`${op === "delete" ? "tombstone" : "put"} cell`)) return;
     if (op === "delete")
         return run("tombstone cell", () => api(`/v1/cell?cell_id=${id}`, { method: "DELETE" }));
     return run("put cell", () => api(`/v1/cell?cell_id=${id}`, { method: "POST", body: data.get("payload") || "" }));
@@ -503,6 +597,7 @@ document.querySelector("#ingest-form").addEventListener("submit", (event) => {
         scope: data.get("scope"),
         source: data.get("source") || "dashboard",
     });
+    if (!guardWriteAllowed("ingest")) return;
     run("ingest", () => api(`/v1/ingest/${kind}?${params}`, { method: "POST", body: data.get("document") || "" }));
 });
 
@@ -519,5 +614,5 @@ document.querySelector("#ingest-job-form").addEventListener("submit", (event) =>
     accessHint = detected.hint;
     renderSessionStatus();
     refreshAccessVisibility();
-    show({ status: "ready", access: accessLevel });
+    show({ status: "ready", access: accessLevel, read_only: readOnlyMode });
 })();

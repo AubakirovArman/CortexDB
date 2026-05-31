@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DIST_DIR = ROOT / "web" / "dashboard" / "dist"
 ROUTES = (
     "overview",
+    "permissions",
     "cells",
     "search",
     "ann-eval",
