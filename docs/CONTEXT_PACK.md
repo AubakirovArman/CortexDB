@@ -89,3 +89,9 @@ The fixture asserts that ContextPack keeps both public numeric variants when
 redundancy reduction is enabled, preserves citations, stays within budget, and
 survives checkpoint/restart. It also asserts the matching VERIFY report returns
 `mixed` evidence with a numeric mismatch guard.
+
+Run the gate directly with:
+
+```bash
+make context-verify-quality-check
+```

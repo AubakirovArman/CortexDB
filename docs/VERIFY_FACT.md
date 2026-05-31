@@ -124,3 +124,9 @@ public evidence set can be packed for an agent and verified deterministically:
 This is still a deterministic alpha fixture, not a measured accuracy benchmark.
 Future Verification v1 work should add larger labelled datasets and metric-aware
 temporal reasoning.
+
+Run the shared ContextPack/VERIFY quality gate directly with:
+
+```bash
+make context-verify-quality-check
+```

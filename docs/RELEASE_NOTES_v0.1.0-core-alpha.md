@@ -104,11 +104,12 @@ Latest local evidence: `make release-check` passed on 2026-05-31, including
 workspace check, all-features tests, formatting, clippy with `-D warnings`, SDK
 preflight, OpenAPI coverage and live contract validation, SDK contract
 validation for Python/TypeScript/Rust clients, migration policy validation,
-load smoke, dashboard smoke/screenshots/package validation, ANN fixture/drift/
-external/metric/corpus/domain/release evidence gates, the core benchmark
-matrix, investment projects demo, RAG demo smoke, backup drill, offsite backup
-staging, crash/fault repair evidence, chaos restart evidence, replication
-partition/lifecycle evidence, server smoke tests, and SDK smoke tests.
+load smoke, ContextPack/VERIFY quality fixture validation, dashboard
+smoke/screenshots/package validation, ANN fixture/drift/external/metric/corpus/
+domain/release evidence gates, the core benchmark matrix, investment projects
+demo, RAG demo smoke, backup drill, offsite backup staging, crash/fault repair
+evidence, chaos restart evidence, replication partition/lifecycle evidence,
+server smoke tests, and SDK smoke tests.
 
 Generated local evidence artifacts include:
 

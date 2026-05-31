@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check openapi-check openapi-contract-check sdk-contract-check migration-policy-check load-smoke-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-history-fixture-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check crash-fault-check chaos-restart-check replication-partition-check replication-lifecycle-check smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
+.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check openapi-check openapi-contract-check sdk-contract-check migration-policy-check load-smoke-check context-verify-quality-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-history-fixture-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check crash-fault-check chaos-restart-check replication-partition-check replication-lifecycle-check smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -179,6 +179,9 @@ migration-policy-check:
 load-smoke-check:
 	cargo build -p cortex-server --bin cortex-server
 	python3 scripts/load_smoke_check.py --server ./target/debug/cortex-server --root "$(LOAD_SMOKE_ROOT)" --report "$(LOAD_SMOKE_REPORT)" --cells "$(LOAD_SMOKE_CELLS)" --reads "$(LOAD_SMOKE_READS)" --searches "$(LOAD_SMOKE_SEARCHES)" --contexts "$(LOAD_SMOKE_CONTEXTS)" --workers "$(LOAD_SMOKE_WORKERS)"
+
+context-verify-quality-check:
+	cargo test -p cortex-engine --test context_verify_quality
 
 dashboard-build:
 	python3 scripts/dashboard_build.py
@@ -463,6 +466,7 @@ alpha-check:
 	$(MAKE) sdk-contract-check
 	$(MAKE) migration-policy-check
 	$(MAKE) load-smoke-check
+	$(MAKE) context-verify-quality-check
 	$(MAKE) dashboard-check
 	$(MAKE) dashboard-smoke
 	$(MAKE) dashboard-screenshots
