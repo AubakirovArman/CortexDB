@@ -168,7 +168,8 @@ pub fn route_database_with_agent(
         ("GET", "/v1/metrics") => {
             let stats = db.storage_stats()?;
             let ann = db.ann_metrics();
-            let format = query_param_opt(query, "format").unwrap_or("json");
+            let format =
+                query_param_opt_decoded(query, "format").unwrap_or_else(|| "json".to_owned());
             if format == "prometheus" {
                 let lines = format!(
                     "# HELP cortexdb_current_seq Current database commit sequence.\n\
@@ -287,9 +288,11 @@ pub fn route_database_with_agent(
             memory::handle_verify_shared(db, query, body, authenticated_view.as_ref())
         }
         ("POST", "/v1/ingest/text") => {
-            let scope = query_param_opt(query, "scope").unwrap_or("default");
-            authz::require_write_scope_for_optional_view(authenticated_view.as_ref(), scope)?;
-            let source = query_param_opt(query, "source").unwrap_or("http_post");
+            let scope =
+                query_param_opt_decoded(query, "scope").unwrap_or_else(|| "default".to_owned());
+            authz::require_write_scope_for_optional_view(authenticated_view.as_ref(), &scope)?;
+            let source =
+                query_param_opt_decoded(query, "source").unwrap_or_else(|| "http_post".to_owned());
             let text = String::from_utf8_lossy(body);
             let start_id = db.allocate_cell_id_range(0);
             let (job_id, results) = track_ingest(db, "ingest_text", None, |db| {
@@ -312,9 +315,11 @@ pub fn route_database_with_agent(
             Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/v1/ingest/json") => {
-            let scope = query_param_opt(query, "scope").unwrap_or("default");
-            authz::require_write_scope_for_optional_view(authenticated_view.as_ref(), scope)?;
-            let source = query_param_opt(query, "source").unwrap_or("http_post");
+            let scope =
+                query_param_opt_decoded(query, "scope").unwrap_or_else(|| "default".to_owned());
+            authz::require_write_scope_for_optional_view(authenticated_view.as_ref(), &scope)?;
+            let source =
+                query_param_opt_decoded(query, "source").unwrap_or_else(|| "http_post".to_owned());
             let json = String::from_utf8_lossy(body);
             let start_id = db.allocate_cell_id_range(0);
             let (job_id, results) = track_ingest(db, "ingest_json", None, |db| {
@@ -337,9 +342,11 @@ pub fn route_database_with_agent(
             Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/v1/ingest/csv") => {
-            let scope = query_param_opt(query, "scope").unwrap_or("default");
-            authz::require_write_scope_for_optional_view(authenticated_view.as_ref(), scope)?;
-            let source = query_param_opt(query, "source").unwrap_or("http_post");
+            let scope =
+                query_param_opt_decoded(query, "scope").unwrap_or_else(|| "default".to_owned());
+            authz::require_write_scope_for_optional_view(authenticated_view.as_ref(), &scope)?;
+            let source =
+                query_param_opt_decoded(query, "source").unwrap_or_else(|| "http_post".to_owned());
             let csv = String::from_utf8_lossy(body);
             let total = csv.lines().count().saturating_sub(1) as u64;
             let start_id = db.allocate_cell_id_range(0);

@@ -241,23 +241,23 @@ fn report_response(report: AnnSearchReport) -> AnnSearchReportResponse {
 
 fn parse_ann_policy(query: &str) -> Result<AnnSearchPolicy, String> {
     let default_policy = AnnSearchPolicy::default();
-    let fallback = query_param_opt(query, "fallback")
-        .map(|value| parse_bool("fallback", value))
+    let fallback = parse_optional_query_param(query, "fallback")?
+        .map(|value| parse_bool("fallback", &value))
         .transpose()?
         .unwrap_or(default_policy.fallback);
-    let fallback_scan_cap = query_param_opt(query, "fallback_scan_cap")
+    let fallback_scan_cap = parse_optional_query_param(query, "fallback_scan_cap")?
         .map(|value| {
             value
                 .parse::<usize>()
                 .map_err(|_| "fallback_scan_cap must be usize".to_owned())
         })
         .transpose()?;
-    let min_recall_q16 = query_param_opt(query, "min_recall")
-        .map(parse_min_recall_q16)
+    let min_recall_q16 = parse_optional_query_param(query, "min_recall")?
+        .map(|value| parse_min_recall_q16(&value))
         .transpose()?
         .or(default_policy.min_recall_q16);
 
-    let max_visited_candidates = query_param_opt(query, "max_visited_candidates")
+    let max_visited_candidates = parse_optional_query_param(query, "max_visited_candidates")?
         .map(|value| {
             value
                 .parse::<usize>()
@@ -265,8 +265,8 @@ fn parse_ann_policy(query: &str) -> Result<AnnSearchPolicy, String> {
         })
         .transpose()?;
 
-    let require_slo = query_param_opt(query, "require_slo")
-        .map(|value| parse_bool("require_slo", value))
+    let require_slo = parse_optional_query_param(query, "require_slo")?
+        .map(|value| parse_bool("require_slo", &value))
         .transpose()?
         .unwrap_or(default_policy.require_slo);
 
@@ -277,6 +277,14 @@ fn parse_ann_policy(query: &str) -> Result<AnnSearchPolicy, String> {
         max_visited_candidates,
         require_slo,
     })
+}
+
+fn parse_optional_query_param(query: &str, key: &str) -> Result<Option<String>, String> {
+    if query_param_opt(query, key).is_some() {
+        query_param_decoded(query, key).map(Some)
+    } else {
+        Ok(None)
+    }
 }
 
 fn parse_bool(name: &str, value: &str) -> Result<bool, String> {

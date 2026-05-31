@@ -1,4 +1,5 @@
 use crate::handle_http;
+use tempfile::tempdir;
 
 #[test]
 fn v1_search_returns_scope_filtered_results() {
@@ -90,4 +91,32 @@ fn v1_search_ann_policy_is_applied_when_passing_query_params() {
     assert!(response.contains(r#""search_mode":"vector_ann""#));
     assert!(response.contains(r#""min_recall_q16":65535"#));
     assert!(response.contains(r#""require_slo":true"#));
+}
+
+#[test]
+fn v1_search_ann_policy_decodes_encoded_recall_percent() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\nvector=1,2\nalpha"
+    );
+    assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+    let flush = "POST /v1/flush HTTP/1.1\r\n\r\n";
+    assert!(handle_http(dir.path(), flush).contains(r#""checkpoint_seq":1"#));
+
+    let request =
+        "POST /v1/search?scope=project%3Ainvestments&mode=vector&algorithm=ann&fallback=true&min_recall=50%25&require_slo=false&vector=1,2 HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""search_mode":"vector_ann""#));
+    assert!(response.contains(r#""require_slo":false"#));
+    assert!(response.contains(r#""fallback_performed":false"#));
+}
+
+#[test]
+fn v1_search_rejects_invalid_encoded_ann_param() {
+    let dir = tempdir().unwrap();
+    let request = "POST /v1/search?scope=project%3Ainvestments&mode=vector&algorithm=ann&min_recall=%ZZ&vector=1,2 HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), request);
+    assert!(response.contains("400 Bad Request"));
+    assert!(response.contains("\"error\":\"bad_request\""));
 }

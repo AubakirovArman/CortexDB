@@ -122,6 +122,49 @@ fn token_policy_agent_id_applies_agent_view_scope() {
 }
 
 #[test]
+fn encoded_scope_in_query_is_decoded_for_agent_scoped_routes() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let db = Database::open(dir.path()).unwrap();
+        db.save_agent_view(&agent_view(AgentId(9), "project:investments"))
+            .unwrap();
+    }
+
+    let options = ServerOptions {
+        auth_tokens: vec![AuthTokenPolicy::new("scoped-data", AuthRole::Data).with_agent_id(9)],
+        ..Default::default()
+    };
+
+    let search = handle_http_with_options(
+        dir.path(),
+        "POST /v1/search?scope=project%3Ainvestments&q=budget HTTP/1.1\r\nAuthorization: Bearer scoped-data\r\n\r\n",
+        &options,
+    );
+    assert!(
+        search.contains("200 OK"),
+        "encoded scope must be decoded for search: {search}"
+    );
+    assert!(
+        search.contains(r#""results":[]"#),
+        "empty-search response should be valid JSON array: {search}"
+    );
+
+    let ingest = handle_http_with_options(
+        dir.path(),
+        "POST /v1/ingest/text?scope=project%3Ainvestments&source=http%20post HTTP/1.1\r\nAuthorization: Bearer scoped-data\r\ncontent-length: 5\r\n\r\nbudget",
+        &options,
+    );
+    assert!(
+        ingest.contains("200 OK"),
+        "encoded scope must be decoded for ingest routes: {ingest}"
+    );
+    assert!(
+        ingest.contains(r#""job_id":"#),
+        "ingest response should include job id: {ingest}"
+    );
+}
+
+#[test]
 fn token_policy_file_rotates_without_new_options() {
     let dir = tempfile::tempdir().unwrap();
     let token_file = dir.path().join("auth.tokens");
