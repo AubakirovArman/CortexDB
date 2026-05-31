@@ -52,10 +52,10 @@ Core Alpha is operational:
 ## Immediate next actions (1–2 недели)
 
 - Run one production evidence sweep:
-  - `make openapi-contract-check`
-  - `make backup-drill-check`
-  - `make ann-release-evidence-check`
-  - `make replication-partition-check`
+  - `make production-evidence-sweep`
+  - writes `target/production-evidence/report.json`
+  - includes OpenAPI contract, backup drill, ANN release evidence, and
+    replication partition evidence logs
 - Publish a short beta delta note:
   - what is stable
   - what is still experimental

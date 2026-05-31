@@ -29,6 +29,9 @@
 - Added first-class HNSW `ef_construction` reporting across engine, HTTP,
   OpenAPI, CLI JSON, SDK contracts, ANN corpus runs, and persisted `.ach/.acm`
   profile metadata.
+- Added `make production-evidence-sweep`, which runs OpenAPI contract, backup
+  drill, ANN release evidence, and replication partition checks with a combined
+  `target/production-evidence/report.json` runbook artifact.
 - Added file-backed HTTP token rotation through `CORTEXDB_AUTH_TOKENS_FILE`;
   the server re-reads the local policy file per request and fails closed on
   missing, empty, or invalid token files.

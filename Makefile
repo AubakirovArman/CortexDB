@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check openapi-check openapi-contract-check sdk-contract-check migration-policy-check load-smoke-check context-verify-quality-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-real-embedding-release-check ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-history-fixture-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check crash-fault-check chaos-restart-check replication-partition-check replication-lifecycle-check smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
+.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check openapi-check openapi-contract-check sdk-contract-check migration-policy-check load-smoke-check context-verify-quality-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-real-embedding-release-check ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-history-fixture-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check crash-fault-check chaos-restart-check replication-partition-check replication-lifecycle-check production-evidence-sweep smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -152,6 +152,8 @@ REPLICATION_PARTITION_ROOT ?= target/replication-partition
 REPLICATION_PARTITION_REPORT ?= $(REPLICATION_PARTITION_ROOT)/report.json
 REPLICATION_LIFECYCLE_ROOT ?= target/replication-lifecycle
 REPLICATION_LIFECYCLE_REPORT ?= $(REPLICATION_LIFECYCLE_ROOT)/report.json
+PRODUCTION_EVIDENCE_ROOT ?= target/production-evidence
+PRODUCTION_EVIDENCE_REPORT ?= $(PRODUCTION_EVIDENCE_ROOT)/report.json
 
 check:
 	cargo check --workspace
@@ -461,6 +463,9 @@ replication-partition-check:
 replication-lifecycle-check:
 	python3 scripts/replication_lifecycle_check.py --root "$(REPLICATION_LIFECYCLE_ROOT)" --report "$(REPLICATION_LIFECYCLE_REPORT)"
 
+production-evidence-sweep:
+	scripts/production_evidence_sweep.sh "$(PRODUCTION_EVIDENCE_ROOT)" "$(PRODUCTION_EVIDENCE_REPORT)"
+
 smoke-test:
 	scripts/smoke_test.sh
 
@@ -500,12 +505,10 @@ alpha-check:
 	$(MAKE) rag-demo-smoke
 
 release-check: alpha-check
-	$(MAKE) ann-release-evidence-check
-	$(MAKE) backup-drill-check
+	$(MAKE) production-evidence-sweep
 	$(MAKE) backup-offsite-check
 	$(MAKE) crash-fault-check
 	$(MAKE) chaos-restart-check
-	$(MAKE) replication-partition-check
 	$(MAKE) replication-lifecycle-check
 	$(MAKE) smoke-test
 	$(MAKE) sdk-smoke-test

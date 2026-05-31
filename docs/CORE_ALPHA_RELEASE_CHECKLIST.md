@@ -17,6 +17,7 @@ every required row is green on `main`.
 | Storage safety | WAL, segment, bitmap, lexical, and manifest corruption tests pass. |
 | Lifecycle safety | open, close, Drop, lock, and stale unlock tests pass. |
 | Repair safety | `Database::repair_best_effort` removes orphan temps and truncates only safe WAL tails. |
+| Production evidence sweep | `make production-evidence-sweep` writes `target/production-evidence/report.json` and per-step logs for OpenAPI contract, backup drill, ANN release evidence, and replication partition checks. |
 | Backup drill evidence | `make backup-drill-check` writes `target/backup-drill/report.json` after backup, restore, prune, validate, and readback checks. |
 | Offsite backup staging | `make backup-offsite-check` writes `target/backup-offsite/report.json` after local drill, validated offsite staging, staged validation, and readback checks. |
 | Restart safety | put, patch, tombstone, checkpoint, compact, and WAL tail tests pass. |
@@ -40,13 +41,15 @@ git push origin v0.1.0-core-alpha
 ```
 
 Pushing a `v*` tag also runs the `Release` workflow. `make release-check`
-invokes `make ann-release-evidence-check`, `make backup-drill-check`,
-`make backup-offsite-check`, `make crash-fault-check`, and
-`make chaos-restart-check`, which validate ANN baseline archives,
-backup/restore drill evidence, offsite backup staging, crash/fault repair
-evidence, and process-level kill/restart evidence before the tag should be cut.
-The workflow attaches the ANN `.tar.gz` baseline package to the GitHub Release
-as a durable release asset.
+invokes `make production-evidence-sweep`, `make backup-offsite-check`,
+`make crash-fault-check`, `make chaos-restart-check`,
+`make replication-lifecycle-check`, `make smoke-test`, and
+`make sdk-smoke-test`. Those gates validate OpenAPI contracts, ANN baseline
+archives, backup/restore drill evidence, replication partition and lifecycle
+evidence, offsite backup staging, crash/fault repair evidence, process-level
+kill/restart evidence, and final CLI/SDK smoke paths before the tag should be
+cut. The workflow attaches the ANN `.tar.gz` baseline package to the GitHub
+Release as a durable release asset.
 
 ## Latest Local Gate Evidence
 

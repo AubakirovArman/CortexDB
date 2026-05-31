@@ -260,6 +260,7 @@ make openapi-contract-check
 make sdk-check
 make dashboard-check
 make dashboard-smoke
+make production-evidence-sweep
 make ann-release-evidence-check
 make backup-drill-check
 make backup-offsite-check
