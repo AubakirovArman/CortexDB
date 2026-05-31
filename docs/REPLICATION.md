@@ -138,6 +138,8 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
   rejects missing or mixed chunks;
 - peer snapshot transport that installs a multi-chunk snapshot durably into a
   follower database and survives reopen;
+- peer snapshot fault handling: partial transfers, stale second chunks, and
+  corrupt final chunks leave the follower's previous durable state intact;
 - membership join/leave behavior that changes quorum counting without allowing
   empty configs or local-node removal.
 - a five-node partition matrix that blocks minority writes, commits after heal,
@@ -151,8 +153,8 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
   voter sets before commit.
 
 This is not a full distributed consensus certification yet. The remaining
-production work is broader crash/restart partition coverage and automated
-membership rotation.
+production work is automated membership rotation and broader rejoin/repair
+coverage after network partitions.
 
 ## Not Yet
 

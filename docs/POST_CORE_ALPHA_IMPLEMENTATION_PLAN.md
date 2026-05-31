@@ -57,6 +57,8 @@
 - [x] Durable peer snapshot install: a `ReplicationPeerServer` can receive TCP
   snapshot chunks and install the decoded `SnapshotSegment` into follower
   database storage, replacing stale local state across restart.
+- [x] Peer snapshot fault coverage now proves partial transfers, stale chunks,
+  and corrupt final chunks do not replace durable follower state.
 - [x] Membership rotation can now be encoded as replicated log entries and
   recovered from `replication.aclog` using only committed config entries.
 - [x] Joint-consensus membership safety primitive: joint config entries encode
@@ -87,8 +89,8 @@
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
-3. Consensus: expand the crash/restart partition matrix beyond the seed cases
-   and automate membership rotation on top of the joint-consensus primitive.
+3. Consensus: automate membership rotation on top of the joint-consensus
+   primitive and keep expanding crash/restart coverage around rejoin/repair.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 
