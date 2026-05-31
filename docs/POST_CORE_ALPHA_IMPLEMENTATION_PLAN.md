@@ -122,6 +122,9 @@
   committed membership from the node-scoped consensus log, reconciles durable
   repair progress with the recovered voter set, and rejects commit indexes
   beyond the recovered log.
+- [x] Consensus recovery shape validation:
+  `recover_consensus*` rejects non-contiguous log indexes, zero terms, and
+  commit indexes beyond the recovered log before publishing recovered state.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.

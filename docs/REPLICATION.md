@@ -143,6 +143,13 @@ let entries = ReplicationLog::recover_entries(path)?;
 let state = ReplicationLog::recover_consensus(path, node, voters, commit_index)?;
 ```
 
+`recover_consensus` and `recover_consensus_with_membership` validate the
+consensus-log shape before publishing a recovered state: recovered entries must
+have non-zero terms, contiguous indexes starting at `1`, and a `commit_index`
+that is not ahead of the recovered log. Raw `recover_entries` remains available
+for diagnostics and WAL inspection, but runtime consensus recovery is
+fail-closed.
+
 ## Commit Rule
 
 `ConsensusState` follows the Raft current-term commit restriction:

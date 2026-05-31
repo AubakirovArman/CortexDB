@@ -119,6 +119,7 @@ impl ReplicationLog {
         commit_index: LogIndex,
     ) -> EngineResult<ConsensusState> {
         let entries = Self::recover_entries(path)?;
+        validate_recovered_consensus(&entries, commit_index)?;
         Ok(ConsensusState::recover(
             local_node,
             voters,
@@ -134,6 +135,7 @@ impl ReplicationLog {
         commit_index: LogIndex,
     ) -> EngineResult<ConsensusState> {
         let entries = Self::recover_entries(path)?;
+        validate_recovered_consensus(&entries, commit_index)?;
         let voters = match recover_voting_config(&entries, voters, commit_index)? {
             VotingConfig::Stable(config) => config.voters,
             VotingConfig::Joint(config) => config.voters_union(),
@@ -207,4 +209,25 @@ fn section(record: &DecodedWalRecord, tag: SectionTag) -> Option<&[u8]> {
         .iter()
         .find(|section| section.tag == Some(tag))
         .map(|section| section.data.as_slice())
+}
+
+fn validate_recovered_consensus(
+    entries: &[ReplicatedEntry],
+    commit_index: LogIndex,
+) -> EngineResult<()> {
+    let mut expected_index = 1_u64;
+    for entry in entries {
+        if entry.term.0 == 0 || entry.index != LogIndex(expected_index) {
+            return Err(EngineError::InvalidOperation);
+        }
+        expected_index = expected_index
+            .checked_add(1)
+            .ok_or(EngineError::InvalidOperation)?;
+    }
+
+    let last_log_index = entries.last().map(|entry| entry.index).unwrap_or_default();
+    if commit_index > last_log_index {
+        return Err(EngineError::InvalidOperation);
+    }
+    Ok(())
 }

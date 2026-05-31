@@ -115,6 +115,9 @@
   recovers committed membership from the node-scoped consensus log, reconciles
   repair progress with current voters, and rejects commit indexes beyond the
   recovered log.
+- Hardened replication consensus recovery so recovered runtime state now
+  rejects non-contiguous log indexes, zero terms, and commit indexes beyond the
+  recovered log.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,
