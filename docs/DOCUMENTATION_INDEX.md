@@ -86,6 +86,7 @@ backlogs, snapshots, or deeper planning notes.
 - [`CORE_ALPHA_RELEASE_CHECKLIST.md`](CORE_ALPHA_RELEASE_CHECKLIST.md) - release checklist.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md) - release notes.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
+- [`PL_IMPLEMENTATION_TASKS.md`](PL_IMPLEMENTATION_TASKS.md) - normalized action list from the external `pl.md` audit.
 - [`PRODUCTION_LAYER_NEXT_ACTIONS.md`](PRODUCTION_LAYER_NEXT_ACTIONS.md) - dated production-layer snapshot.
 - [`POST_CORE_ALPHA_EXECUTION_PLAN.md`](POST_CORE_ALPHA_EXECUTION_PLAN.md) - milestone execution backlog.
 - [`POST_CORE_ALPHA_IMPLEMENTATION_PLAN.md`](POST_CORE_ALPHA_IMPLEMENTATION_PLAN.md) - implementation progress snapshot.

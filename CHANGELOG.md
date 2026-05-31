@@ -13,6 +13,9 @@
   automation described as local/tag-gated until beta.
 - Added source-of-truth notices to roadmap mirror docs so `BETA_DELTA.md` and
   `REMAINING_EXECUTION_PLAN.md` remain the canonical current-status documents.
+- Added `docs/PL_IMPLEMENTATION_TASKS.md`, a normalized actionable task list
+  derived from the external `/mnt/hf_model_weights/arman/3bit/sites/pl.md`
+  audit.
 - Added backup restore-drill support through `Database::backup_restore_drill_path`
   and `cortexdb backup-drill`, proving a backup can be restored, opened,
   replayed, and validated before it is trusted operationally.

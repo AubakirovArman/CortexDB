@@ -52,6 +52,7 @@ The repository now has an explicit Context Pack documentation pair:
 - Current cycle: [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md)
 - Docs map: [`DOCUMENTATION_INDEX.md`](DOCUMENTATION_INDEX.md)
 - Context Pack technology: [`CONTEXT_PACK_TECHNOLOGY.md`](CONTEXT_PACK_TECHNOLOGY.md)
+- Normalized external plan tasks: [`PL_IMPLEMENTATION_TASKS.md`](PL_IMPLEMENTATION_TASKS.md)
 
 ## Known Documentation Debt
 
