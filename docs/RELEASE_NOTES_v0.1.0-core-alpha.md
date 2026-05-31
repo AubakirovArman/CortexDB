@@ -100,19 +100,24 @@ which includes:
 
 and after the GitHub Actions `Rust` workflow is green on stable and beta.
 
-Latest local evidence: `make release-check` passed on 2026-05-29, including
+Latest local evidence: `make release-check` passed on 2026-05-31, including
 workspace check, all-features tests, formatting, clippy with `-D warnings`, SDK
-smoke checks, OpenAPI contract validation, SDK contract validation, the core
-benchmark matrix, CLI smoke tests, server smoke tests, API snapshot tests, and
-the upgraded investment projects demo (search + AQL + ContextPack + Verify with
-numeric conflict detection).
+preflight, OpenAPI coverage and live contract validation, SDK contract
+validation for Python/TypeScript/Rust clients, migration policy validation,
+load smoke, dashboard smoke/screenshots/package validation, ANN fixture/drift/
+external/metric/corpus/domain/release evidence gates, the core benchmark
+matrix, investment projects demo, RAG demo smoke, backup drill, offsite backup
+staging, crash/fault repair evidence, chaos restart evidence, replication
+partition/lifecycle evidence, server smoke tests, and SDK smoke tests.
 
-Additional local contract evidence from 2026-05-31:
+Generated local evidence artifacts include:
 
-- `cargo test --workspace --all-features` passed.
-- `make openapi-contract-check` passed, validating live responses against
-  `docs/openapi.yaml`.
-- `make sdk-contract-check` passed for Python, TypeScript, and Rust clients
-  against the freshly built `cortex-server` binary.
-- `make rag-demo-smoke` passed with search, AQL, ContextPack, VERIFY, prompt,
-  and ingestion smoke coverage.
+- `target/load-smoke/report.json`
+- `target/dashboard/summary.json`
+- `target/ann/demo-domain-corpus/release-baselines/demo-domain.tar.gz`
+- `target/backup-drill/report.json`
+- `target/backup-offsite/report.json`
+- `target/crash-fault/report.json`
+- `target/chaos-restart/report.json`
+- `target/replication-partition/report.json`
+- `target/replication-lifecycle/report.json`
