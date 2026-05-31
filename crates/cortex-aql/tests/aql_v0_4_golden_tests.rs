@@ -79,7 +79,10 @@ impl AqlCatalog for GoldenCatalog {
 fn catalog() -> GoldenCatalog {
     GoldenCatalog {
         brains: BTreeMap::from([("investment_projects".to_owned(), BrainId(7))]),
-        scopes: BTreeMap::from([((BrainId(7), "project:investments".to_owned()), ScopeId(11))]),
+        scopes: BTreeMap::from([
+            ((BrainId(7), "project:investments".to_owned()), ScopeId(11)),
+            ((BrainId(7), "tenant:secret".to_owned()), ScopeId(12)),
+        ]),
         write_scopes: BTreeMap::from([("project:investments".to_owned(), ScopeId(11))]),
     }
 }
@@ -213,6 +216,14 @@ fn aql_v0_4_explain_verify_and_remember_parse_contracts() {
         parse_aql(r#"EXPLAIN RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects;"#)
             .unwrap();
     assert!(matches!(explain, AqlStatement::Explain(_)));
+    let BoundPlan::Retrieve(explain_plan) = Binder::new(&catalog(), &view())
+        .bind_statement(&explain)
+        .unwrap()
+    else {
+        panic!("expected explain retrieve to bind as retrieve");
+    };
+    assert_eq!(explain_plan.brain_id, BrainId(7));
+    assert_eq!(explain_plan.task, "budget");
 
     let verify =
         parse_aql(r#"VERIFY FACT "Solar Plant budget is approved" IN BRAIN investment_projects;"#)
@@ -254,7 +265,7 @@ fn aql_v0_4_diagnostics_and_safe_bind_messages_are_stable() {
     assert!(parse_error.message.contains("line 1, column"));
 
     let statement = parse_aql(
-        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN investment_projects WHERE space = tenant:secret;"#,
+        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN investment_projects WHERE space = tenant:missing;"#,
     )
     .unwrap();
     let error = Binder::new(&catalog(), &view())
@@ -262,6 +273,29 @@ fn aql_v0_4_diagnostics_and_safe_bind_messages_are_stable() {
         .unwrap_err();
     assert_eq!(error.code(), "UnknownScope");
     assert_eq!(error.safe_message(), "requested scope is unavailable");
+
+    let forbidden = parse_aql(
+        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN investment_projects WHERE space = project:investments OR space = tenant:secret;"#,
+    )
+    .unwrap();
+    let forbidden_error = Binder::new(&catalog(), &view())
+        .bind_statement(&forbidden)
+        .unwrap_err();
+    assert_eq!(forbidden_error.code(), "PolicyDenied");
+    assert_eq!(
+        forbidden_error.safe_message(),
+        "requested scope is not readable"
+    );
+
+    let unknown_field = parse_aql(
+        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN investment_projects WHERE owner = "abc";"#,
+    )
+    .unwrap();
+    let field_error = Binder::new(&catalog(), &view())
+        .bind_statement(&unknown_field)
+        .unwrap_err();
+    assert_eq!(field_error.code(), "FieldNotFilterable");
+    assert_eq!(field_error.safe_message(), "field is not filterable");
 }
 
 #[test]

@@ -114,6 +114,11 @@ Core Alpha is operational:
   - writes `target/engine-api/report.json`
   - covers public `cortex-engine` compile checks, doctests, rustdoc build, and
     stable-vs-internal docs
+- Run the focused AQL Compatibility evidence gate:
+  - `make aql-compat-check`
+  - writes `target/aql-compat/report.json`
+  - covers v0.4 golden parser/binder behavior, explain, `LIMIT`, `REQUIRE`,
+    malformed AQL, permission denial, unknown field, and HTTP error classes
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`

@@ -194,6 +194,8 @@ Evidence:
 
 Goal: freeze AQL v0.4 behavior for clients.
 
+Status: focused local evidence gate added; run `make aql-compat-check`.
+
 Tasks:
 
 1. Confirm AQL v0.4 docs match parser behavior.
@@ -214,6 +216,12 @@ Acceptance:
 
 - SDK callers can distinguish invalid syntax, permission denied, and unsupported
   query behavior.
+
+Evidence:
+
+- Boundary: [`AQL_COMPATIBILITY.md`](AQL_COMPATIBILITY.md).
+- Changelog policy: [`AQL_CHANGELOG.md`](AQL_CHANGELOG.md).
+- Focused local gate: [`AQL_COMPATIBILITY_EVIDENCE.md`](AQL_COMPATIBILITY_EVIDENCE.md).
 
 ### Epic 10 - Retrieval Quality And ANN History
 

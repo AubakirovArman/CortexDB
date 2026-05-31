@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 120 project markdown files.
+At the time of this audit, the repository tracks 123 project markdown files.
 
 ## Start Here
 
@@ -36,6 +36,8 @@ At the time of this audit, the repository tracks 120 project markdown files.
 ## AQL And Context
 
 - [`AQL_V0_4.md`](AQL_V0_4.md) - current AQL grammar.
+- [`AQL_COMPATIBILITY.md`](AQL_COMPATIBILITY.md) - AQL v0.4 compatibility boundary.
+- [`AQL_CHANGELOG.md`](AQL_CHANGELOG.md) - AQL grammar and binder changelog.
 - [`AQL_V0_3.md`](AQL_V0_3.md) and [`aql-v0.3.md`](aql-v0.3.md) - historical v0.3 notes.
 - [`CONTEXT_PACK.md`](CONTEXT_PACK.md) - Context Pack v1 contract.
 - [`CONTEXT_PACK_TECHNOLOGY.md`](CONTEXT_PACK_TECHNOLOGY.md) - Context Pack technology overview.
@@ -113,6 +115,9 @@ backlogs, snapshots, or deeper planning notes.
 - [`ENGINE_API.md`](ENGINE_API.md) - stable embedded engine API boundary.
 - [`ENGINE_API_EVIDENCE.md`](ENGINE_API_EVIDENCE.md) - engine API gate evidence.
 - [`MODULE_OWNERSHIP.md`](MODULE_OWNERSHIP.md) - module ownership and stable/internal split.
+- [`AQL_COMPATIBILITY.md`](AQL_COMPATIBILITY.md) - AQL v0.4 client compatibility boundary.
+- [`AQL_COMPATIBILITY_EVIDENCE.md`](AQL_COMPATIBILITY_EVIDENCE.md) - AQL compatibility gate evidence.
+- [`AQL_CHANGELOG.md`](AQL_CHANGELOG.md) - AQL grammar/binder compatibility changelog.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md) - release notes.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - active ordered epic queue.
