@@ -105,6 +105,9 @@
 - Added membership-aware repair progress reconciliation, so durable follower
   progress stores can prune retired voters, seed newly joined voters, and sync
   with stable or joint membership configs before repair planning.
+- Added operator-facing replication path placement through
+  `ClusterConfig::replication_paths`, including node-scoped consensus log,
+  repair progress, and snapshot inbox paths.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

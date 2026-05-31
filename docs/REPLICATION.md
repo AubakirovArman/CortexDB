@@ -120,6 +120,11 @@ repair state to membership lifecycle changes. Reconciliation keeps progress for
 current remote voters, removes retired voters, drops local-node progress, and
 seeds newly joined voters at `0/0` so the next repair sweep explicitly catches
 them up through append repair or snapshot install.
+`ClusterConfig::replication_paths` provides the operator-facing path placement
+for that state. It validates the configured local node, rejects duplicate or
+invalid node identities, and places consensus log, repair progress, and snapshot
+inbox files under `replication/node-<id>.*` paths so multiple node identities do
+not share one repair-progress file by accident.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 
@@ -245,6 +250,6 @@ rejoin/repair handling after network partitions.
 
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS
   terminator for now.
-- Operator-level cluster configuration that chooses and rotates progress-store
-  paths across deployments. The store contents now reconcile with stable and
-  joint membership changes, but there is not yet a full cluster config manager.
+- A full cluster config manager that persists operator topology changes and
+  rotates path roots across deployments. Path placement helpers and membership
+  reconciliation exist, but topology persistence remains future work.

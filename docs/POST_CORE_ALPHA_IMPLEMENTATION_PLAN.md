@@ -110,6 +110,10 @@
   `ReplicationFollowerProgressStore` can now sync its contents with stable,
   joint, or current consensus voter sets, pruning retired peers and seeding
   newly joined voters for explicit repair.
+- [x] Operator-facing replication path placement:
+  `ClusterConfig::replication_paths` validates local node identity and provides
+  node-scoped paths for consensus log, repair progress, and snapshot inbox
+  files.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
@@ -133,9 +137,8 @@
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
-3. Consensus: add operator-level cluster config for progress-store path
-   placement and keep expanding crash/restart coverage around node rejoin
-   repair.
+3. Consensus: persist operator cluster topology config and keep expanding
+   crash/restart coverage around node rejoin repair.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 
