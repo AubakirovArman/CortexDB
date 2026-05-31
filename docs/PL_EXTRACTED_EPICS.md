@@ -452,6 +452,8 @@ Evidence:
 
 Goal: make single-node install/upgrade repeatable.
 
+Status: local deployment/upgrade gate added; run `make deployment-upgrade-check`.
+
 Tasks:
 
 1. Add `docs/INSTALL.md`.
@@ -464,6 +466,13 @@ Acceptance:
 
 - A user can install, run, upgrade, rollback, and validate a single-node
   CortexDB instance from docs.
+
+Evidence:
+
+- Deployment gate: [`DEPLOYMENT_UPGRADE_EVIDENCE.md`](DEPLOYMENT_UPGRADE_EVIDENCE.md).
+- Install guide: [`INSTALL.md`](INSTALL.md).
+- Systemd guide: [`SYSTEMD.md`](SYSTEMD.md).
+- Rollback guide: [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md).
 
 ## First Five Actions From `pl.md`
 

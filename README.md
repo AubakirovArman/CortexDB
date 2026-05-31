@@ -120,6 +120,9 @@ Public product-claim boundaries are documented in
 [`docs/PUBLIC_CLAIMS_POLICY.md`](docs/PUBLIC_CLAIMS_POLICY.md).
 Offline upgrade, rollback, and format migration policy is documented in
 [`docs/UPGRADE_MIGRATION.md`](docs/UPGRADE_MIGRATION.md).
+Install, systemd, and operator rollback guides are documented in
+[`docs/INSTALL.md`](docs/INSTALL.md), [`docs/SYSTEMD.md`](docs/SYSTEMD.md),
+and [`docs/UPGRADE_ROLLBACK.md`](docs/UPGRADE_ROLLBACK.md).
 Use `make load-smoke-check` for a fast live HTTP write/read/search/context load
 gate that writes `target/load-smoke/report.json`.
 Use `make single-node-performance-check` for a repeatable local engine
@@ -295,6 +298,7 @@ Binary tarball packaging for `cortexdb` and `cortex-server` is documented in
 
 ```bash
 make binary-release-check
+make deployment-upgrade-check
 ```
 
 ---

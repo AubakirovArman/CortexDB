@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+"""Validate CortexDB deployment and upgrade documentation coverage."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+
+REQUIRED_DOC_MARKERS = {
+    "docs/INSTALL.md": [
+        "Binary Tarball",
+        "Source Build",
+        "First Database",
+        "Install Verification",
+        "make binary-release-check",
+    ],
+    "docs/SYSTEMD.md": [
+        "[Service]",
+        "ExecStart=/usr/local/bin/cortex-server",
+        "CORTEXDB_AUTH_TOKENS_FILE",
+        "/v1/validate",
+    ],
+    "docs/UPGRADE_ROLLBACK.md": [
+        "Pre-Upgrade Checklist",
+        "backup-drill",
+        "Rollback",
+        "make migration-policy-check",
+        "make binary-release-check",
+    ],
+    "docs/BINARY_RELEASES.md": [
+        "GitHub Release Workflow",
+        "target/release-artifacts",
+        "SHA256SUMS",
+    ],
+}
+
+LINK_MARKERS = {
+    "README.md": ["docs/INSTALL.md", "docs/SYSTEMD.md", "docs/UPGRADE_ROLLBACK.md"],
+    "docs/DOCUMENTATION_INDEX.md": ["INSTALL.md", "SYSTEMD.md", "UPGRADE_ROLLBACK.md"],
+    "docs/PL_EXTRACTED_EPICS.md": ["DEPLOYMENT_UPGRADE_EVIDENCE.md"],
+}
+
+
+def read(path: str) -> str:
+    return Path(path).read_text(encoding="utf-8")
+
+
+def require_contains(path: str, markers: list[str], failures: list[str]) -> None:
+    if not Path(path).is_file():
+        failures.append(f"missing {path}")
+        return
+    text = read(path)
+    for marker in markers:
+        if marker not in text:
+            failures.append(f"{path}: missing marker {marker!r}")
+
+
+def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--report", default="target/deployment-upgrade/report.json")
+    args = parser.parse_args()
+
+    failures: list[str] = []
+    for path, markers in REQUIRED_DOC_MARKERS.items():
+        require_contains(path, markers, failures)
+    for path, markers in LINK_MARKERS.items():
+        require_contains(path, markers, failures)
+
+    release = read(".github/workflows/release.yml")
+    if "gh release upload" not in release:
+        failures.append("release workflow does not upload GitHub release assets")
+    if ".tar.gz" not in release or ".sha256" not in release:
+        failures.append("release workflow does not mention tar.gz and sha256 assets")
+
+    makefile = read("Makefile")
+    for marker in ("deployment-upgrade-check", "binary-release-check", "migration-policy-check"):
+        if marker not in makefile:
+            failures.append(f"Makefile: missing {marker}")
+
+    report = {
+        "schema_version": 1,
+        "status": "failed" if failures else "passed",
+        "docs_checked": sorted(REQUIRED_DOC_MARKERS),
+        "links_checked": sorted(LINK_MARKERS),
+        "release_workflow_checked": True,
+        "failures": failures,
+    }
+    path = Path(args.report)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    if failures:
+        print(f"deployment upgrade check failed: {path}")
+        for failure in failures:
+            print(f"- {failure}")
+        return 1
+    print(f"deployment upgrade check passed: {path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

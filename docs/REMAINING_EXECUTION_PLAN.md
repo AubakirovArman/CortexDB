@@ -87,6 +87,11 @@ Core Alpha is operational:
   - writes `target/beta-rc/report.json`
   - covers backup/restore evidence, offsite staging, security/auth tests,
     ingestion jobs, dashboard release packaging, and operational docs checks
+- Run the focused Deployment And Upgrade evidence gate:
+  - `make deployment-upgrade-check`
+  - writes `target/deployment-upgrade/report.json`
+  - covers install docs, systemd service docs, offline upgrade/rollback docs,
+    binary packaging docs, and tag-gated GitHub release asset upload wiring
 - Run the focused Production Hardening evidence gate:
   - `make production-hardening-check`
   - writes `target/production-hardening/report.json`

@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 134 project markdown files.
+At the time of this audit, the repository tracks 138 project markdown files.
 
 ## Start Here
 
@@ -94,6 +94,9 @@ At the time of this audit, the repository tracks 134 project markdown files.
 - [`DASHBOARD_UI.md`](DASHBOARD_UI.md) - dashboard status and gates.
 - [`DASHBOARD_PRODUCT_UI_EVIDENCE.md`](DASHBOARD_PRODUCT_UI_EVIDENCE.md) - local Epic 16 dashboard product UI evidence gate.
 - [`BINARY_RELEASES.md`](BINARY_RELEASES.md) - binary tarball packaging and install flow.
+- [`INSTALL.md`](INSTALL.md) - local binary/source install and first database checks.
+- [`SYSTEMD.md`](SYSTEMD.md) - single-node systemd service example.
+- [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md) - offline upgrade and restore-based rollback workflow.
 - [`INGESTION.md`](INGESTION.md) - ingestion behavior.
 - [`AGENT_MEMORY.md`](AGENT_MEMORY.md) - local agent memory.
 - [`METRICS.md`](METRICS.md) - metrics endpoint and fields.
@@ -105,6 +108,7 @@ At the time of this audit, the repository tracks 134 project markdown files.
 - [`SECURITY_THREAT_MODEL.md`](SECURITY_THREAT_MODEL.md) - threat model.
 - [`SECURITY_HARDENING_EVIDENCE.md`](SECURITY_HARDENING_EVIDENCE.md) - local Epic 17 security hardening evidence gate.
 - [`SECURITY_RELEASE_CHECKLIST.md`](SECURITY_RELEASE_CHECKLIST.md) - security release checklist and non-goals.
+- [`DEPLOYMENT_UPGRADE_EVIDENCE.md`](DEPLOYMENT_UPGRADE_EVIDENCE.md) - local Epic 19 deployment and upgrade evidence gate.
 
 ## Planning And Release
 
