@@ -130,6 +130,8 @@
 - Added `ConsensusState::apply_replayed_entry`, making crash/restart replay
   idempotent for already-present entries and fail-closed on gaps, duplicate
   conflicts, zero terms, or term regression.
+- Added `make replication-partition-check` and CI evidence upload for explicit
+  split-brain, partition matrix, and rejoin-repair regression coverage.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

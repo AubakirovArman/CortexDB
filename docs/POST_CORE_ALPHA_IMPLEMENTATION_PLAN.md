@@ -41,7 +41,10 @@
   across crash/restart: duplicate recovered entries are no-ops, while gaps,
   duplicate conflicts, zero terms, and term regression fail closed.
 - [ ] Полный snapshot transfer + peer resync + membership lifecycle (join/leave/rotation).
-- [ ] Split-brain + partition matrix тесты в CI (не только unit).
+- [x] Split-brain + partition matrix тесты в CI: `make
+  replication-partition-check` runs failure injection, five-node partition
+  matrix, stale-leader rejection, and rejoin-repair suites with uploaded JSON/log
+  evidence.
 - [x] Базовая документированная модель Raft-like и внутренние модули протокола уже есть.
 - [x] Есть первичные тесты `election/append/log/transport`.
 - [x] Начальный failure-injection integration harness покрывает minority

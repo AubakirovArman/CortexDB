@@ -56,6 +56,17 @@ jobs:
           path: |
             target/chaos-restart/report.json
             target/chaos-restart/server.log
+      - run: make replication-partition-check
+        if: matrix.toolchain == 'stable'
+      - name: Upload replication partition evidence
+        if: matrix.toolchain == 'stable' && always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: replication-partition-evidence
+          if-no-files-found: warn
+          path: |
+            target/replication-partition/report.json
+            target/replication-partition/*.log
       - run: make dashboard-check
         if: matrix.toolchain == 'stable'
       - run: make dashboard-standalone-check
