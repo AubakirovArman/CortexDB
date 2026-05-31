@@ -184,6 +184,24 @@ make ann-real-embedding-validate-baseline-package \
   ANN_REAL_EMBEDDING_BASELINE_ARCHIVE=target/ann/real-embedding/release-baselines/my-domain-cosine-v1.tar.gz
 ```
 
+For a single local release-evidence command after the corpus paths and embedding
+environment are configured, use:
+
+```bash
+make ann-real-embedding-release-check \
+  ANN_REAL_EMBEDDING_SOURCE_ROOT=/data/cortexdb/text-cells \
+  ANN_REAL_EMBEDDING_QUERIES=/data/cortexdb/query_text.jsonl \
+  ANN_REAL_EMBEDDING_REQUIRE_API_KEY=true \
+  ANN_REAL_EMBEDDING_RUN_ID=my-domain-cosine-v1 \
+  ANN_REAL_EMBEDDING_BASELINE_ID=my-domain-cosine-v1 \
+  ANN_REAL_EMBEDDING_SLO_PROFILE=semantic
+```
+
+This runs the real-embedding benchmark, optionally compares against
+`ANN_REAL_EMBEDDING_BASELINE_REPORT` when it is set, gates history, packages the
+baseline, and validates the package with production-safe, history,
+ground-truth, and real-embedding metadata requirements.
+
 The validator opens the tarball without extracting it, rejects unsafe archive
 paths and links, checks every manifest-listed file size and SHA-256 digest, and
 requires `report.json` to be passing and `production_safe=true`. It also
@@ -365,6 +383,7 @@ The workflow runs the same local targets:
 ```text
 ann-real-embedding-preflight
 ann-real-embedding-benchmark
+ann-real-embedding-release-check   # local all-in-one release evidence gate
 ann-real-embedding-history-regression-check
 ann-real-embedding-compare          # when baseline_bundle_url is set
 ann-real-embedding-package-baseline # when publish_baseline is true
