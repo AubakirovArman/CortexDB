@@ -162,6 +162,10 @@
 - [x] Standalone build now emits per-route HTML entrypoints under
   `web/dashboard/dist/dashboard/<route>/index.html`, so copied dashboard links
   work against static hosting as well as the server route.
+- [x] Standalone dashboard release pipeline now packages
+  `web/dashboard/dist` into `target/dashboard/dashboard-v1.tar.gz` with a
+  checked `package_manifest.json`, file sizes, SHA-256 checksums, CI upload,
+  and `make dashboard-release-check`.
 - [x] Наборы views в текущем static dashboard: overview, cells, search/explain, ANN, AQL, context, verify, ingest, storage health, cluster status.
 - [x] Базовый tenant/token control в UI для scoped API calls; полноценный auth UX остаётся будущей standalone UI задачей.
 - [x] Playwright/CI smoke путь для текущего `/dashboard`: asset loading, route navigation, cell put/get, keyword search.

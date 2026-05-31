@@ -84,6 +84,15 @@ jobs:
         if: matrix.toolchain == 'stable'
       - run: make dashboard-standalone-smoke
         if: matrix.toolchain == 'stable'
+      - run: make dashboard-release-check
+        if: matrix.toolchain == 'stable'
+      - name: Upload dashboard release package
+        if: matrix.toolchain == 'stable' && always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dashboard-release-package
+          if-no-files-found: warn
+          path: target/dashboard/*.tar.gz
       - uses: actions/setup-node@v6
         if: matrix.toolchain == 'stable'
         with:

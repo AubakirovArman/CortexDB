@@ -7,6 +7,7 @@
     "dashboard:check": "python3 scripts/dashboard_build.py --check",
     "dashboard:standalone-check": "python3 scripts/dashboard_build.py --check",
     "dashboard:standalone-smoke": "python3 scripts/dashboard_dist_smoke.py",
+    "dashboard:release-check": "python3 scripts/dashboard_release.py --self-test && make dashboard-package dashboard-validate-package",
     "dashboard:smoke": "playwright test e2e/dashboard.spec.ts",
     "dashboard:screenshots": "node e2e/dashboard_screenshots.mjs"
   },

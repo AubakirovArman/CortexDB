@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check openapi-check openapi-contract-check sdk-contract-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check crash-fault-check chaos-restart-check replication-partition-check replication-lifecycle-check smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
+.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check openapi-check openapi-contract-check sdk-contract-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check crash-fault-check chaos-restart-check replication-partition-check replication-lifecycle-check smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -106,6 +106,8 @@ ANN_RELEASE_EVIDENCE_BASELINE_BUNDLE ?= $(ANN_RELEASE_EVIDENCE_BASELINE_ROOT)/$(
 ANN_RELEASE_EVIDENCE_BASELINE_ARCHIVE ?= $(ANN_RELEASE_EVIDENCE_BASELINE_ROOT)/$(ANN_RELEASE_EVIDENCE_BASELINE_ID).tar.gz
 ANN_MAX_P95_REGRESSION_NANOS ?= 0
 ANN_MAX_MAX_REGRESSION_NANOS ?= 0
+DASHBOARD_PACKAGE_ID ?= dashboard-v1
+DASHBOARD_PACKAGE_ARCHIVE ?= target/dashboard/$(DASHBOARD_PACKAGE_ID).tar.gz
 ANN_PUBLIC_SOURCE ?=
 ANN_PUBLIC_DATASET_ID ?= public-ann
 ANN_PUBLIC_FORMAT ?= fvecs
@@ -172,6 +174,17 @@ dashboard-standalone-check: dashboard-check
 
 dashboard-standalone-smoke: dashboard-standalone-check
 	python3 scripts/dashboard_dist_smoke.py
+
+dashboard-package: dashboard-standalone-build
+	python3 scripts/dashboard_release.py --package-id $(DASHBOARD_PACKAGE_ID) --archive $(DASHBOARD_PACKAGE_ARCHIVE)
+
+dashboard-validate-package:
+	python3 scripts/dashboard_release.py --validate --archive $(DASHBOARD_PACKAGE_ARCHIVE)
+
+dashboard-release-check:
+	python3 scripts/dashboard_release.py --self-test
+	$(MAKE) dashboard-package
+	$(MAKE) dashboard-validate-package
 
 dashboard-smoke: dashboard-check
 	cargo build -p cortex-server
@@ -410,6 +423,7 @@ alpha-check:
 	$(MAKE) dashboard-check
 	$(MAKE) dashboard-smoke
 	$(MAKE) dashboard-screenshots
+	$(MAKE) dashboard-release-check
 	$(MAKE) ann-fixture-check
 	$(MAKE) ann-drift-check
 	$(MAKE) ann-external-check

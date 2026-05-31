@@ -26,6 +26,7 @@ make dashboard-build
 make dashboard-check
 make dashboard-standalone-check
 make dashboard-standalone-smoke
+make dashboard-release-check
 make dashboard-smoke
 make dashboard-screenshots
 ```
@@ -44,6 +45,10 @@ Current coverage:
   dashboard links preserve the selected page;
 - the standalone build writes per-route HTML entrypoints under
   `web/dashboard/dist/dashboard/<route>/index.html`;
+- `make dashboard-release-check` packages the standalone build into
+  `target/dashboard/dashboard-v1.tar.gz` and validates the archive manifest,
+  file sizes, and SHA-256 checksums before it can be uploaded as a release
+  artifact;
 - views cover Overview, Cells, Search, ANN, AQL, Context, Verify, Ingest,
   Storage, and Cluster;
 - Search includes both result execution and explain output;
