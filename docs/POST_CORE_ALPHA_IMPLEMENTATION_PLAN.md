@@ -37,7 +37,9 @@
 
 ### 2) Real distributed consensus
 - [x] Отделить репликационный consensus-log и local WAL по строгим durability guarantees.
-- [ ] Идемпотентный реплей с корректной синхронизацией term/index across crash/restart.
+- [x] Идемпотентный replay/apply с корректной синхронизацией term/index
+  across crash/restart: duplicate recovered entries are no-ops, while gaps,
+  duplicate conflicts, zero terms, and term regression fail closed.
 - [ ] Полный snapshot transfer + peer resync + membership lifecycle (join/leave/rotation).
 - [ ] Split-brain + partition matrix тесты в CI (не только unit).
 - [x] Базовая документированная модель Raft-like и внутренние модули протокола уже есть.
@@ -160,8 +162,8 @@
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
-3. Consensus: tighten idempotent term/index replay and keep expanding
-   crash/restart coverage around node rejoin repair.
+3. Consensus: keep expanding crash/restart coverage around node rejoin repair
+   and durable snapshot handoff.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 

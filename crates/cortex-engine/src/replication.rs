@@ -13,7 +13,9 @@ mod snapshot;
 mod tcp;
 mod transport;
 
-pub use consensus::{CommitDecision, ConsensusState, LogIndex, ReplicatedEntry, Term};
+pub use consensus::{
+    CommitDecision, ConsensusReplayApplyResult, ConsensusState, LogIndex, ReplicatedEntry, Term,
+};
 pub use election::{ElectionOutcome, ElectionRole, ElectionState, VoteRequest, VoteResponse};
 pub use log::{ConsensusLogDurability, ConsensusLogOptions, RecoveredConsensusLog, ReplicationLog};
 pub use membership::{

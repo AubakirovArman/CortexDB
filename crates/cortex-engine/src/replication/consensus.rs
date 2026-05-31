@@ -25,6 +25,12 @@ pub struct CommitDecision {
     pub acknowledgements: usize,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ConsensusReplayApplyResult {
+    AlreadyPresent,
+    Appended,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConsensusState {
     pub local_node: NodeId,
@@ -53,6 +59,41 @@ impl ConsensusState {
         };
         self.log.push(entry.clone());
         entry
+    }
+
+    pub fn apply_replayed_entry(
+        &mut self,
+        entry: ReplicatedEntry,
+    ) -> EngineResult<ConsensusReplayApplyResult> {
+        if entry.term == Term(0) {
+            return Err(EngineError::InvalidOperation);
+        }
+        if let Some(existing) = self
+            .log
+            .iter()
+            .find(|existing| existing.index == entry.index)
+        {
+            return if *existing == entry {
+                Ok(ConsensusReplayApplyResult::AlreadyPresent)
+            } else {
+                Err(EngineError::InvalidOperation)
+            };
+        }
+
+        let expected_index = self
+            .last_log_index()
+            .0
+            .checked_add(1)
+            .ok_or(EngineError::InvalidOperation)?;
+        if entry.index != LogIndex(expected_index) || entry.term < self.last_log_term() {
+            return Err(EngineError::InvalidOperation);
+        }
+
+        if entry.term > self.current_term {
+            self.current_term = entry.term;
+        }
+        self.log.push(entry);
+        Ok(ConsensusReplayApplyResult::Appended)
     }
 
     pub fn record_acks(&mut self, index: LogIndex, acks: BTreeSet<NodeId>) -> CommitDecision {

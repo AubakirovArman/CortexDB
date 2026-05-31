@@ -127,6 +127,9 @@
 - Added `RecoveredConsensusLog` / `ReplicationLog::recover_log_state` so
   restart code can use validated term/index replay boundaries and reject term
   regression before appending new replicated entries.
+- Added `ConsensusState::apply_replayed_entry`, making crash/restart replay
+  idempotent for already-present entries and fail-closed on gaps, duplicate
+  conflicts, zero terms, or term regression.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,
