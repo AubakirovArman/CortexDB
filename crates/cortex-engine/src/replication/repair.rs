@@ -19,8 +19,10 @@ mod snapshot_sender;
 mod worker;
 
 pub use background::{
-    spawn_replication_repair_background_task, ReplicationRepairBackgroundHandle,
-    ReplicationRepairBackgroundPolicy, ReplicationRepairBackgroundReport,
+    spawn_replication_repair_background_task,
+    spawn_replication_repair_background_task_with_progress_store,
+    ReplicationRepairBackgroundHandle, ReplicationRepairBackgroundPolicy,
+    ReplicationRepairBackgroundReport,
 };
 pub use cycle::{
     execute_replication_repair_schedule, run_replication_repair_cycle,

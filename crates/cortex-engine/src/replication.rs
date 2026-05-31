@@ -37,6 +37,7 @@ pub use repair::{
     execute_replication_repair_schedule, plan_replication_repair_sweep, repair_lagging_voter,
     repair_lagging_voters, run_replication_repair_cycle, run_replication_repair_worker,
     send_replication_snapshot_request, spawn_replication_repair_background_task,
+    spawn_replication_repair_background_task_with_progress_store,
     ReplicationDatabaseSnapshotSource, ReplicationFollowerProgress,
     ReplicationFollowerProgressStore, ReplicationProgressRecordingTransport,
     ReplicationRepairBackgroundHandle, ReplicationRepairBackgroundPolicy,

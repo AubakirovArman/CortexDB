@@ -1,4 +1,5 @@
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
+use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
@@ -7,6 +8,11 @@ use crate::replication::{
     run_replication_repair_worker, ConsensusState, ReplicationRepairProgressSource,
     ReplicationRepairSnapshotSource, ReplicationRepairWorkerPolicy, ReplicationRepairWorkerReport,
     ReplicationSnapshotTransport, ReplicationTransport,
+};
+
+use super::{
+    ReplicationFollowerProgressStore, ReplicationProgressRecordingTransport,
+    ReplicationStoredProgressSource,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -136,4 +142,26 @@ where
     });
 
     Ok(ReplicationRepairBackgroundHandle { stop_tx, join })
+}
+
+pub fn spawn_replication_repair_background_task_with_progress_store<T, S>(
+    leader: ConsensusState,
+    transport: T,
+    progress_store: Arc<RwLock<ReplicationFollowerProgressStore>>,
+    snapshot_source: S,
+    policy: ReplicationRepairBackgroundPolicy,
+) -> EngineResult<ReplicationRepairBackgroundHandle>
+where
+    T: ReplicationTransport + ReplicationSnapshotTransport + Send + 'static,
+    S: ReplicationRepairSnapshotSource + Send + 'static,
+{
+    let progress_source = ReplicationStoredProgressSource::new(progress_store.clone());
+    let transport = ReplicationProgressRecordingTransport::new(transport, progress_store);
+    spawn_replication_repair_background_task(
+        leader,
+        transport,
+        progress_source,
+        snapshot_source,
+        policy,
+    )
 }

@@ -109,6 +109,11 @@ caller to rebuild all progress from memory.
 and records successful `AppendEntries` ACKs plus final validated snapshot ACKs
 into that same store. This gives the repair loop a direct path from live peer
 ACKs to durable repair-planning progress.
+`spawn_replication_repair_background_task_with_progress_store` is the standard
+runtime helper for that pairing: it builds a `ReplicationStoredProgressSource`
+and wraps the supplied transport in `ReplicationProgressRecordingTransport`, so
+one durable progress store is used for both repair planning input and successful
+peer ACK output.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 
@@ -234,6 +239,5 @@ rejoin/repair handling after network partitions.
 
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS
   terminator for now.
-- Production wiring that installs `ReplicationProgressRecordingTransport` around
-  every real peer transport by default and coordinates that progress store with
-  node lifecycle configuration.
+- Cluster-level lifecycle wiring that coordinates the progress store path with
+  membership changes, removed peers, and operator configuration.

@@ -99,6 +99,9 @@
   from atomically persisted follower progress after restart.
 - Added `ReplicationProgressRecordingTransport`, which persists successful
   AppendEntries and final snapshot ACK progress into the repair progress store.
+- Added `spawn_replication_repair_background_task_with_progress_store`, the
+  default background repair helper that uses one durable progress store for
+  both repair planning input and successful peer ACK output.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,
