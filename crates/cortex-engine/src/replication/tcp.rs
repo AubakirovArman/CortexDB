@@ -109,7 +109,7 @@ pub fn handle_authenticated_replication_frame(
             let success = state.accept_leader(request.term, request.leader_id)
                 && log_matching::append_entries(log, &request).is_some();
             let match_index = log.last().map(|entry| entry.index).unwrap_or_default();
-            Ok(encode_append_response(&AppendEntriesResponse {
+            Ok(append_response(&AppendEntriesResponse {
                 term: state.current_term,
                 follower: state.local_node,
                 success,
@@ -119,25 +119,21 @@ pub fn handle_authenticated_replication_frame(
         ["SNAPSHOT", rest @ ..] => {
             let chunk = decode_snapshot_chunk(rest)?;
             if !state.accept_leader(chunk.term, chunk.leader_id) {
-                return Ok(format!("SNAPSHOT_RESP {} 0 {}\n", state.current_term.0, 0));
+                return Ok(snapshot_response(state.current_term, false, 0));
             }
             if chunk.chunk_index == 0 {
                 snapshot.clear();
             } else if snapshot.is_empty() {
-                return Ok(format!("SNAPSHOT_RESP {} 0 {}\n", state.current_term.0, 0));
+                return Ok(snapshot_response(state.current_term, false, 0));
             }
             snapshot.extend_from_slice(&chunk.payload);
-            Ok(format!(
-                "SNAPSHOT_RESP {} 1 {}\n",
-                state.current_term.0,
-                snapshot.len()
-            ))
+            Ok(snapshot_response(state.current_term, true, snapshot.len()))
         }
         _ => Err(EngineError::InvalidOperation),
     }
 }
 
-fn authenticated_payload<'a>(
+pub(super) fn authenticated_payload<'a>(
     expected_token: Option<&str>,
     frame: &'a str,
 ) -> EngineResult<&'a str> {
@@ -207,11 +203,15 @@ fn encode_append_request(request: &AppendEntriesRequest) -> String {
     out
 }
 
-fn encode_append_response(response: &AppendEntriesResponse) -> String {
+fn append_response(response: &AppendEntriesResponse) -> String {
     format!(
         "APPEND_RESP {} {} {} {}\n",
         response.term.0, response.follower.0, response.success as u8, response.match_index.0
     )
+}
+
+fn snapshot_response(term: Term, success: bool, bytes: usize) -> String {
+    format!("SNAPSHOT_RESP {} {} {}\n", term.0, success as u8, bytes)
 }
 
 fn decode_append_response(frame: &str) -> EngineResult<AppendEntriesResponse> {

@@ -4,12 +4,12 @@ use std::net::TcpListener;
 use std::path::Path;
 use std::thread;
 
-use cortex_core::CommitSeq;
+use cortex_core::{CellId, CommitSeq};
 use cortex_engine::{
     decode_snapshot_segment, encode_snapshot_segment, AppendEntriesRequest, ConsensusState,
-    ElectionRole, ElectionState, InMemoryReplicationTransport, LogIndex, NodeId, ReplicatedEntry,
-    ReplicationLog, ReplicationPeerServer, ReplicationPeerState, ReplicationTransport,
-    SnapshotChunk, SnapshotSegment, TcpReplicationTransport, Term,
+    Database, ElectionRole, ElectionState, InMemoryReplicationTransport, LogIndex, NodeId,
+    ReplicatedEntry, ReplicationLog, ReplicationPeerServer, ReplicationPeerState,
+    ReplicationTransport, SnapshotChunk, SnapshotSegment, TcpReplicationTransport, Term,
 };
 use cortex_storage::segment::SegmentCell;
 
@@ -249,6 +249,95 @@ fn real_peer_transport_streams_chunked_snapshot_payload() {
     assert_eq!(first_len as usize, split_at);
     assert_eq!(full_len as usize, encoded.len());
     assert_eq!(decode_snapshot_segment(&state.snapshot).unwrap(), snapshot);
+}
+
+#[test]
+fn peer_snapshot_transport_installs_durable_follower_snapshot() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut follower = Database::open(dir.path()).unwrap();
+        follower
+            .put_cell(
+                CellId(7),
+                b"scope=old\nstatus=stale\n\nstale follower state".to_vec(),
+            )
+            .unwrap();
+        follower.close().unwrap();
+    }
+
+    let snapshot = SnapshotSegment {
+        checkpoint_seq: CommitSeq(23),
+        cells: vec![SegmentCell {
+            candidate_id: 1,
+            cell_id: 99,
+            created_seq: 23,
+            deleted_seq: None,
+            payload: b"scope=project:investments\nstatus=ready\n\ninstalled over peer".to_vec(),
+        }],
+    };
+    let encoded = encode_snapshot_segment(&snapshot).unwrap();
+    let split_at = encoded.len() / 2;
+    let server = ReplicationPeerServer::bind(
+        "127.0.0.1:0",
+        ReplicationPeerState {
+            election: follower_state(NodeId(2), &three_voters()),
+            log: Vec::new(),
+            snapshot: Vec::new(),
+        },
+        Some("secret".to_owned()),
+    )
+    .unwrap();
+    let addr = server.local_addr().unwrap().to_string();
+    let follower_path = dir.path().to_owned();
+    let handle = thread::spawn(move || {
+        let mut follower = Database::open(&follower_path).unwrap();
+        server
+            .serve_n_with_snapshot_install(2, &mut follower)
+            .unwrap();
+        follower.close().unwrap();
+        server.state().unwrap()
+    });
+    let transport =
+        TcpReplicationTransport::with_token(BTreeMap::from([(NodeId(2), addr)]), "secret".into());
+
+    let first_len = transport
+        .send_snapshot_chunk(
+            NodeId(2),
+            &SnapshotChunk {
+                term: Term(3),
+                leader_id: NodeId(1),
+                leader_commit: LogIndex(23),
+                chunk_index: 0,
+                last: false,
+                payload: encoded[..split_at].to_vec(),
+            },
+        )
+        .unwrap();
+    let full_len = transport
+        .send_snapshot_chunk(
+            NodeId(2),
+            &SnapshotChunk {
+                term: Term(3),
+                leader_id: NodeId(1),
+                leader_commit: LogIndex(23),
+                chunk_index: 1,
+                last: true,
+                payload: encoded[split_at..].to_vec(),
+            },
+        )
+        .unwrap();
+    let state = handle.join().unwrap();
+    let follower = Database::open(dir.path()).unwrap();
+
+    assert_eq!(first_len as usize, split_at);
+    assert_eq!(full_len as usize, encoded.len());
+    assert_eq!(decode_snapshot_segment(&state.snapshot).unwrap(), snapshot);
+    assert_eq!(
+        follower.get_latest_cell(CellId(99)).unwrap(),
+        snapshot.cells[0].payload
+    );
+    assert!(follower.get_latest_cell(CellId(7)).is_none());
+    assert_eq!(follower.manifest().checkpoint_seq, 23);
 }
 
 #[test]

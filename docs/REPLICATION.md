@@ -58,6 +58,11 @@ durably through `Database::install_snapshot_segment`. Install writes a normal
 segment bundle (`.acs/.acb/.aci/.acv/.ach`), publishes the manifest, resets the
 WAL tail, and rebuilds the MemTable from the installed snapshot.
 
+`ReplicationPeerServer::serve_n_with_snapshot_install` connects those two
+surfaces: it accepts TCP `SNAPSHOT` chunks, assembles the stream on the final
+chunk, decodes the `SnapshotSegment`, and installs it into the follower
+database before acknowledging success to the sender.
+
 `plan_replication_recovery` is the first recovery orchestrator. It compares a
 follower commit index with a leader commit index and chooses either append-entry
 catch-up or snapshot install when the lag crosses a configured threshold.
@@ -131,6 +136,8 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
   the next log index;
 - chunked snapshot resync that installs durably on a lagging follower and
   rejects missing or mixed chunks;
+- peer snapshot transport that installs a multi-chunk snapshot durably into a
+  follower database and survives reopen;
 - membership join/leave behavior that changes quorum counting without allowing
   empty configs or local-node removal.
 - a five-node partition matrix that blocks minority writes, commits after heal,
@@ -144,8 +151,8 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
   voter sets before commit.
 
 This is not a full distributed consensus certification yet. The remaining
-production work is broader crash/restart partition coverage, durable snapshot
-install over peer transport, and automated membership rotation.
+production work is broader crash/restart partition coverage and automated
+membership rotation.
 
 ## Not Yet
 

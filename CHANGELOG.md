@@ -56,6 +56,8 @@
   voter reconfiguration tests prove join/leave quorum behavior.
 - Added partition-aware in-memory replication transport plus a five-node
   partition matrix and TCP multi-chunk snapshot transport smoke coverage.
+- Added durable peer snapshot install: TCP snapshot chunks can now be assembled
+  and installed into follower database storage through `ReplicationPeerServer`.
 - Added durable membership rotation primitives in the replication log:
   `MembershipConfig`, `membership_entry`, and committed membership recovery.
 - Added joint-consensus membership safety primitives: joint entries preserve old
