@@ -53,7 +53,7 @@ Current evidence:
 
 ## Epic 2 - API And SDK Contract Proof
 
-Status: partial.
+Status: locally done for Core Alpha.
 
 Goal: make HTTP and SDK contracts reliable for external consumers.
 
@@ -79,6 +79,19 @@ Done when:
 - SDK package/dry-run checks pass.
 - Live SDK smoke covers the main API flows.
 - Version lock-step and changelog policy are enforced.
+
+Current evidence:
+
+- `make openapi-contract-check` passed locally on `2026-05-31`.
+- `make sdk-check` passed locally on `2026-05-31`.
+- `make sdk-smoke-test` passed locally on `2026-05-31` for Python.
+- `make sdk-contract-check` passed locally on `2026-05-31` for Python,
+  TypeScript, and Rust against a freshly built `cortex-server`.
+- Live SDK smoke covers health, put/get, search, stats, validate, AQL, Context
+  Pack, Verify Fact, Remember, ingest text, and structured error contracts.
+- Version lock-step, registry dry-run, changelog, release workflow, and
+  deprecation policy checks are enforced by `make sdk-check` and
+  `make sdk-release-contract-check`.
 
 ## Epic 3 - Context Pack Quality Lock
 

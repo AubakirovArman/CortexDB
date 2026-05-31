@@ -34,7 +34,8 @@ let put = client.put_cell_response(1, "hello world")?;
 let search = client.search_keyword_response("default", "hello", 10)?;
 ```
 
-See `crates/cortex-sdk/examples/basic.rs` for a runnable example.
+See `crates/cortex-sdk/examples/basic.rs` for a runnable example and
+`crates/cortex-sdk/examples/live_contract.rs` for the live API contract smoke.
 
 ## Python
 
@@ -54,6 +55,9 @@ print(f"Server version: {health.server_version}")
 
 put = client.put_cell_response(1, "hello world")
 search = client.search_response("default", "hello", limit=10)
+context = client.context_response("default", 'RETRIEVE CONTEXT FOR TASK "hello" IN BRAIN default LIMIT 10 CANDIDATES;')
+verify = client.verify_response("default", 'VERIFY FACT "hello world" IN BRAIN default;')
+remember = client.remember_response("default", 'REMEMBER "hello" IN SCOPE default AS TYPE decision TTL 3600 SECONDS;')
 ```
 
 ## TypeScript
@@ -72,6 +76,9 @@ console.log(`Server version: ${health.server_version}`);
 
 const put = await client.putCell(1, "hello world");
 const search = await client.search("default", "hello", 10);
+const context = await client.retrieveContext("default", 'RETRIEVE CONTEXT FOR TASK "hello" IN BRAIN default LIMIT 10 CANDIDATES;');
+const verify = await client.verifyFact("default", 'VERIFY FACT "hello world" IN BRAIN default;');
+const remember = await client.remember("default", 'REMEMBER "hello" IN SCOPE default AS TYPE decision TTL 3600 SECONDS;');
 ```
 
 ### ESM / CJS Policy
@@ -100,5 +107,22 @@ Every endpoint has two methods:
 | `client.health_response()` | `client.health()` |
 | `client.put_cell_response(...)` | `client.put_cell(...)` |
 | `client.search_response(...)` | `client.search(...)` |
+| `client.context_response(...)` | `client.context(...)` |
+| `client.verify_response(...)` | `client.verify(...)` |
+| `client.remember_response(...)` | `client.remember(...)` |
 
 Use typed methods for compile-time safety. Use raw methods when experimenting or when the server returns fields not yet modeled in the SDK.
+
+## Live Contract Gate
+
+Before publishing or changing SDK contracts, run:
+
+```bash
+make sdk-contract-check
+```
+
+This builds the current `cortex-server` binary and runs Python, TypeScript, and
+Rust SDK smoke tests against real `/v1/*` responses. The gate covers health,
+put/get, search, stats, validate, AQL, Context Pack, Verify Fact, Remember,
+ingest text, and structured error responses such as `invalid_aql`, `not_found`,
+and `invalid_tenant`.

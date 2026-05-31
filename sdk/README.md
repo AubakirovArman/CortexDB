@@ -26,7 +26,10 @@ and `cargo package`, SDK version consistency, tenant routing, ANN evaluation sur
 and npm package dry-runs when npm is installed.
 `make sdk-contract-check` validates live API compatibility by building the
 current `cortex-server` binary and running Python, TypeScript, and Rust SDK
-smoke tests against real `/v1/*` responses.
+smoke tests against real `/v1/*` responses. The smoke contract covers health,
+put/get, search, stats, validate, AQL, Context Pack, Verify Fact, Remember,
+ingest text, and structured error decoding for `invalid_aql`, `not_found`, and
+`invalid_tenant`.
 `sdk/release-manifest.json` records the package names, registries, dry-run
 commands, deprecation policy, and manual tag-gated publish policy.
 `make sdk-release-contract-check` validates that lifecycle contract without
