@@ -111,6 +111,10 @@
 - Added durable operator cluster topology persistence through
   `ClusterConfig::store/load` using the `CORTEXDB_CLUSTER_CONFIG_V1` text
   format and atomic replacement.
+- Added `open_replication_node_runtime`, which loads durable operator topology,
+  recovers committed membership from the node-scoped consensus log, reconciles
+  repair progress with current voters, and rejects commit indexes beyond the
+  recovered log.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

@@ -117,6 +117,11 @@
 - [x] Durable operator cluster topology config:
   `ClusterConfig::store/load` persist `CORTEXDB_CLUSTER_CONFIG_V1` with
   validated local-node identity, peer addresses, and replication factor.
+- [x] Durable topology startup/reload:
+  `open_replication_node_runtime` loads the operator topology, recovers
+  committed membership from the node-scoped consensus log, reconciles durable
+  repair progress with the recovered voter set, and rejects commit indexes
+  beyond the recovered log.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
@@ -140,8 +145,9 @@
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
-3. Consensus: wire durable operator topology into replication startup/reload and
-   keep expanding crash/restart coverage around node rejoin repair.
+3. Consensus: split consensus-log durability from local WAL semantics, tighten
+   idempotent term/index replay, and keep expanding crash/restart coverage
+   around node rejoin repair.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 

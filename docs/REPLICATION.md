@@ -129,6 +129,12 @@ multiple node identities do not share one repair-progress file by accident.
 topology as `CORTEXDB_CLUSTER_CONFIG_V1` using atomic file replacement, giving
 restart code a durable source of truth for local node identity and peer
 addresses.
+`open_replication_node_runtime` wires that durable topology into startup: it
+loads the node-scoped cluster config, recovers committed membership from the
+consensus log, rejects impossible commit indexes, reconciles durable follower
+progress with the recovered voter set, and then opens the node-scoped
+consensus-log writer. This keeps local startup from accidentally planning
+repairs against stale peers after membership rotation or operator reload.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 

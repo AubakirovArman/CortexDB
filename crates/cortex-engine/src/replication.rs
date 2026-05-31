@@ -17,6 +17,7 @@ mod peer;
 mod recovery;
 mod repair;
 mod rotation;
+mod runtime;
 mod snapshot;
 mod tcp;
 mod transport;
@@ -51,6 +52,10 @@ pub use repair::{
 pub use rotation::{
     resume_joint_membership_rotation, rotate_membership_with_joint_consensus,
     MembershipRotationPhase, MembershipRotationResult, MembershipRotationResumeResult,
+};
+pub use runtime::{
+    open_replication_node_runtime, open_replication_node_runtime_from_config,
+    ReplicationNodeRuntime,
 };
 pub use snapshot::{
     assemble_snapshot_chunks, decode_snapshot_chunk, decode_snapshot_segment,
