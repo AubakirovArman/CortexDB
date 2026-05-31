@@ -135,6 +135,39 @@ impl DatabaseActor {
         }
     }
 
+    pub fn close(&self) -> Result<(), RouterError> {
+        let tx = self
+            .tx
+            .lock()
+            .map_err(|error| RouterError::Internal(error.to_string()))?
+            .take();
+        if tx.is_none() {
+            return Ok(());
+        }
+
+        // Best-effort shutdown command. If the queue is full, we still stop via
+        // sender drop + queue drain, which is sufficient because worker loop exits
+        // when channel disconnects and buffered commands are consumed.
+        if let Some(tx) = tx {
+            if tx.try_send(ActorCommand::Shutdown).is_err() {
+                // keep fallback behavior and let channel-disconnect drive exit.
+            }
+            drop(tx);
+        }
+
+        let mut worker = self
+            .worker
+            .lock()
+            .map_err(|error| RouterError::Internal(error.to_string()))?;
+        if let Some(handle) = worker.take() {
+            handle
+                .join()
+                .map_err(|_| RouterError::Internal("database actor worker panicked".to_owned()))?;
+        }
+        self.queued.store(0, Ordering::Relaxed);
+        Ok(())
+    }
+
     pub fn route(&self, method: &str, target: &str, body: &[u8]) -> Result<String, RouterError> {
         self.route_with_agent(method, target, body, None)
     }
@@ -214,24 +247,14 @@ impl DatabaseActor {
 
 impl Drop for DatabaseActor {
     fn drop(&mut self) {
-        let tx = self.tx.lock().ok().and_then(|mut tx| tx.take());
-        if let Some(tx) = tx {
-            self.queued.fetch_add(1, Ordering::Relaxed);
-            if tx.try_send(ActorCommand::Shutdown).is_err() {
-                self.queued.fetch_sub(1, Ordering::Relaxed);
-            }
-        }
-        if let Ok(mut worker) = self.worker.lock() {
-            if let Some(handle) = worker.take() {
-                let _ = handle.join();
-            }
-        }
+        let _ = self.close();
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::DatabaseActor;
+    use crate::responses::RouterError;
     use std::sync::mpsc;
     use std::time::Duration;
 
@@ -278,5 +301,26 @@ mod tests {
             .recv_timeout(Duration::from_secs(2))
             .expect("actor drop should not hang when shutdown cannot be enqueued");
         dropper.join().unwrap();
+    }
+
+    #[test]
+    fn close_is_idempotent_and_blocks_new_requests() {
+        let dir = tempfile::tempdir().unwrap();
+        let actor = DatabaseActor::open_with_capacity(dir.path(), 8).unwrap();
+
+        let _ = actor
+            .route("GET", "/v1/health", b"")
+            .expect("route should work before close");
+        actor.close().expect("actor close should succeed");
+        actor
+            .close()
+            .expect("closing an already closed actor should stay idempotent");
+
+        assert_eq!(actor.queue_depth(), 0);
+        assert_eq!(actor.requests_completed(), 1);
+        assert!(matches!(
+            actor.route("GET", "/v1/health", b""),
+            Err(RouterError::Internal(_))
+        ));
     }
 }
