@@ -1,8 +1,10 @@
+use crate::responses::AnnMetricsResponse;
 use crate::responses::{
     CheckpointResponse, ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
     ErrorCode, ErrorResponse, EvidenceResponse, ExplainResponse, GuardResponse, HealthResponse,
-    IngestResponse, NumericConflictResponse, PutCellResponse, SearchResultResponse,
-    SourceRefResponse, StatsResponse, ValidationResponse, VerificationReportResponse,
+    IngestResponse, MetricsResponse, NumericConflictResponse, PutCellResponse,
+    SearchResultResponse, SourceRefResponse, StatsResponse, ValidationResponse,
+    VerificationReportResponse,
 };
 
 #[test]
@@ -53,8 +55,50 @@ fn snapshot_validation_response() {
 }
 
 #[test]
+fn snapshot_metrics_response() {
+    let resp = MetricsResponse {
+        current_seq: 42,
+        checkpoint_seq: 30,
+        live_segments: 3,
+        retired_segments: 1,
+        memtable_cells: 12,
+        memtable_versions: 15,
+        wal_size_bytes: 4096,
+        wal_writer_records: 100,
+        wal_writer_bytes: 8192,
+        wal_writer_fsyncs: 10,
+        wal_writer_batches: 5,
+        ann_graph_nodes: 120,
+        ann_total_edges: 540,
+        ann_persisted_segments: 2,
+        ann_has_checkpoint: true,
+        ann_has_uncheckpointed_changes: false,
+        actor_queue_depth: 2,
+        actor_queue_capacity: 16,
+        request_count: 1000,
+        request_rejected: 3,
+        request_duration_ms_total: 120,
+    };
+    insta::assert_json_snapshot!(resp);
+}
+
+#[test]
 fn snapshot_put_cell_response() {
     let resp = PutCellResponse { seq: 7, cell_id: 1 };
+    insta::assert_json_snapshot!(resp);
+}
+
+#[test]
+fn snapshot_ann_metrics_response() {
+    let resp = AnnMetricsResponse {
+        graph_nodes: 100,
+        total_edges: 420,
+        persisted_segments: 2,
+        has_checkpoint: true,
+        has_uncheckpointed_changes: false,
+        deleted_vectors: 4,
+        rebuild_count: 1,
+    };
     insta::assert_json_snapshot!(resp);
 }
 
@@ -198,6 +242,10 @@ fn snapshot_ann_search_report_response() {
         max_visited_candidates: Some(64),
         recall_q16: Some(49_000),
         min_recall_q16: Some(49_151),
+        hnsw_max_neighbors: 0,
+        hnsw_ef_search: 0,
+        hnsw_layer_count: 0,
+        upper_graph_edges: 0,
         require_slo: true,
         production_safe: false,
         slo_violations: vec!["visit_budget_exceeded".to_owned()],
