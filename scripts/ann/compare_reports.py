@@ -10,6 +10,8 @@ import unittest
 from pathlib import Path
 from typing import Any
 
+from report_contract import compare_gate_policy
+
 
 def load_report(path: Path) -> dict[str, Any]:
     try:
@@ -56,6 +58,7 @@ def compare_reports(
         failures.append("max latency regression exceeded budget")
     if baseline.get("production_safe") and not candidate.get("production_safe"):
         failures.append("production_safe changed from true to false")
+    failures.extend(compare_gate_policy(baseline, candidate))
     return not failures, failures, deltas
 
 
@@ -101,6 +104,11 @@ class SelfTests(unittest.TestCase):
             "hnsw_max_neighbors": 8,
             "hnsw_ef_search": 64,
             "hnsw_layer_count": 4,
+            "required_min_recall_q16": 49_151,
+            "required_min_mean_recall_q16": 49_151,
+            "allowed_p95_latency_nanos": 100,
+            "allowed_max_latency_nanos": 100,
+            "require_production_safe": True,
             "min_observed_recall_q16": recall,
             "mean_recall_q16": recall,
             "p95_latency_nanos": p95,
@@ -122,6 +130,13 @@ class SelfTests(unittest.TestCase):
         )
         self.assertTrue(passed, failures)
         self.assertEqual(deltas["p95_latency_delta_nanos"], 5)
+
+    def test_relaxed_gate_policy_fails(self) -> None:
+        candidate = self.report(65535, 10)
+        candidate["required_min_recall_q16"] = 10
+        passed, failures, _ = compare_reports(self.report(65535, 10), candidate, 0, 0)
+        self.assertFalse(passed)
+        self.assertTrue(any("relaxed" in failure for failure in failures))
 
 
 if __name__ == "__main__":

@@ -186,10 +186,16 @@ make ann-real-embedding-validate-baseline-package \
 
 The validator opens the tarball without extracting it, rejects unsafe archive
 paths and links, checks every manifest-listed file size and SHA-256 digest, and
-requires `report.json` to be passing and `production_safe=true`. Real embedding
-release packages also require `history.json` and generated ground truth, so a
-published baseline carries both quality evidence and replayable correctness
-evidence.
+requires `report.json` to be passing and `production_safe=true`. It also
+requires the report to carry the gate policy that produced the result:
+`required_min_recall_q16`, `required_min_mean_recall_q16`,
+`allowed_p95_latency_nanos`, `allowed_max_latency_nanos`, and
+`require_production_safe=true`. The validator replays those thresholds against
+the observed recall/latency fields and rejects single-layer graph evidence
+(`hnsw_layer_count <= 1`, `upper_layers == 0`, or `upper_graph_edges == 0`).
+Real embedding release packages also require `history.json` and generated
+ground truth, so a published baseline carries quality evidence, replayable
+correctness evidence, and the SLO contract used to judge the run.
 
 For each corpus, preserve:
 
@@ -199,6 +205,8 @@ For each corpus, preserve:
 - vector count;
 - query count;
 - top-k limit;
+- recall and latency gate policy;
+- HNSW graph shape (`max_neighbors`, `ef_search`, `layer_count`);
 - machine profile;
 - commit SHA;
 - exact ground-truth generation command.

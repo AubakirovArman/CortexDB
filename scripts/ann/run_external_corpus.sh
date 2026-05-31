@@ -3,7 +3,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-
 vectors=""
 queries=""
 ground_truth=""
@@ -247,6 +246,11 @@ cat > "${manifest_path}" <<MANIFEST
   "run_id": "${run_id}",
   "git_sha": "$(git -C "${REPO_ROOT}" rev-parse HEAD 2>/dev/null || echo nogit)",
   "metric": "${metric}",
+  "min_recall_q16": ${min_recall_q16},
+  "min_mean_recall_q16": ${min_mean_recall_q16},
+  "max_p95_latency_nanos": ${max_p95_latency_nanos},
+  "max_max_latency_nanos": ${max_max_latency_nanos},
+  "require_production_safe": $([[ "${allow_unsafe}" -eq 1 ]] && echo false || echo true),
   "hnsw_max_neighbors": ${max_neighbors},
   "hnsw_ef_search": ${ef_search},
   "hnsw_layer_count": ${layer_count},

@@ -343,6 +343,7 @@ ann-scripts-check:
 	python3 scripts/ann/convert_public_corpus.py --self-test
 	python3 scripts/ann/run_public_corpus.py --self-test
 	python3 scripts/ann/exact_ground_truth.py --self-test
+	python3 scripts/ann/report_contract.py --self-test
 	python3 scripts/ann/compare_reports.py --self-test
 	python3 scripts/ann/summarize_history.py --self-test
 	python3 scripts/ann/history_gate.py --self-test

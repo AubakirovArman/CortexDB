@@ -52,6 +52,11 @@ def run_summary(report: dict[str, Any]) -> dict[str, Any]:
     fields = [
         "passed",
         "metric",
+        "required_min_recall_q16",
+        "required_min_mean_recall_q16",
+        "allowed_p95_latency_nanos",
+        "allowed_max_latency_nanos",
+        "require_production_safe",
         "hnsw_max_neighbors",
         "hnsw_ef_search",
         "hnsw_layer_count",
@@ -189,6 +194,11 @@ class SelfTests(unittest.TestCase):
         report = {
             "passed": True,
             "metric": "dot_product",
+            "required_min_recall_q16": 49_151,
+            "required_min_mean_recall_q16": 49_151,
+            "allowed_p95_latency_nanos": 100,
+            "allowed_max_latency_nanos": 200,
+            "require_production_safe": True,
             "vector_count": 2,
             "query_count": 1,
             "dimension": 2,

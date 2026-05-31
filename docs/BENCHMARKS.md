@@ -91,6 +91,12 @@ ann_repeatable_report_json: {"corpus":"synthetic-ann-corpus-v1", ...}
 The corpus and query set are deterministic. Latency values are intentionally
 machine-dependent, but the report shape is stable and can be archived by CI to
 track recall and p95/p99 drift across commits.
+External-corpus reports also embed their gate policy fields:
+`required_min_recall_q16`, `required_min_mean_recall_q16`,
+`allowed_p95_latency_nanos`, `allowed_max_latency_nanos`, and
+`require_production_safe`. This makes a `production_safe=true` result auditable:
+the artifact records both the observed recall/latency and the thresholds used
+to decide whether the run was safe.
 
 `make ann-fixture-check` is the deterministic ANN gate used before release. It
 runs the synthetic corpus in release mode and compares the observed report
@@ -260,7 +266,8 @@ release workflows upload it.
 The Rust CI workflow runs the same package step on the stable toolchain and
 uploads the tarball as the `ann-release-baseline-package` artifact only after
 the package validator has checked the archive root, manifest checksums,
-history, generated ground truth, and `production_safe=true`.
+history, generated ground truth, multi-layer graph evidence, gate-policy fields,
+and `production_safe=true`.
 
 `make ann-compare-baseline-bundle` compares a candidate run against one of
 those baseline bundles and emits `baseline_comparison.json` next to the
@@ -268,6 +275,8 @@ candidate run.
 Set `ANN_MAX_P95_REGRESSION_NANOS` and `ANN_MAX_MAX_REGRESSION_NANOS` when the
 baseline and candidate were produced on comparable but not identical hosted
 runners.
+The report comparison also fails if the candidate relaxes recall thresholds,
+latency ceilings, or `require_production_safe` relative to the baseline.
 
 `scripts/ann/convert_public_corpus.py` converts SIFT-style `fvecs/ivecs` files
 or GloVe/word2vec-style text rows into the JSONL files consumed by

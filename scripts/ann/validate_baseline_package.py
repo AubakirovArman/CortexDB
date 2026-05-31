@@ -13,6 +13,8 @@ import unittest
 from pathlib import PurePosixPath, Path
 from typing import Any
 
+from report_contract import validate_production_report
+
 
 CORE_REQUIRED_FILES = {
     "baseline_manifest.json",
@@ -101,6 +103,8 @@ def validate_package(
             raise ValueError("report.json: passed must be true")
         if require_production_safe and report.get("production_safe") is not True:
             raise ValueError("report.json: production_safe must be true")
+        if require_production_safe:
+            validate_production_report(report)
         if require_real_embedding_metadata:
             export = load_json_bytes(
                 read_member(tar, f"{root}/embedding_export_manifest.json"),
@@ -191,10 +195,23 @@ class SelfTests(unittest.TestCase):
         bundle.mkdir()
         (bundle / "baseline_manifest.json").write_text('{"baseline_id":"baseline"}\n', encoding="utf-8")
         (bundle / "run_manifest.json").write_text('{"run_id":"smoke"}\n', encoding="utf-8")
-        (bundle / "report.json").write_text(
-            json.dumps({"passed": True, "production_safe": production_safe}) + "\n",
-            encoding="utf-8",
-        )
+        report = {
+            "passed": True,
+            "production_safe": production_safe,
+            "require_production_safe": True,
+            "required_min_recall_q16": 49_151,
+            "required_min_mean_recall_q16": 49_151,
+            "allowed_p95_latency_nanos": 100,
+            "allowed_max_latency_nanos": 200,
+            "hnsw_layer_count": 4,
+            "upper_layers": 2,
+            "upper_graph_edges": 3,
+            "min_observed_recall_q16": 65_535,
+            "mean_recall_q16": 65_535,
+            "p95_latency_nanos": 10,
+            "max_latency_nanos": 20,
+        }
+        (bundle / "report.json").write_text(json.dumps(report) + "\n", encoding="utf-8")
         (bundle / "machine_profile.json").write_text('{"schema_version":1}\n', encoding="utf-8")
         (bundle / "history.json").write_text('{"run_count":1}\n', encoding="utf-8")
         (bundle / "ground_truth.jsonl").write_text('{"name":"q","candidates":[1]}\n', encoding="utf-8")
@@ -225,6 +242,31 @@ class SelfTests(unittest.TestCase):
             archive = self.build_archive(Path(raw_dir), embedding_provider="hash-smoke")
             with self.assertRaises(ValueError):
                 validate_package(archive, True, True, True, True)
+
+    def test_production_package_requires_gate_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_dir:
+            archive = self.build_archive(Path(raw_dir))
+            with tarfile.open(archive, "r:gz") as tar:
+                root = package_root([validate_member_path(member.name) for member in tar.getmembers() if member.isfile()])
+                report = load_json_bytes(read_member(tar, f"{root}/report.json"), "report.json")
+            report.pop("required_min_recall_q16")
+            with tempfile.TemporaryDirectory() as broken_dir:
+                bundle = Path(broken_dir) / "baseline"
+                bundle.mkdir()
+                for name in CORE_REQUIRED_FILES | {"history.json", "ground_truth.jsonl"}:
+                    (bundle / name).write_text("{}\n", encoding="utf-8")
+                (bundle / "baseline_manifest.json").write_text('{"baseline_id":"baseline"}\n', encoding="utf-8")
+                (bundle / "run_manifest.json").write_text('{"run_id":"smoke"}\n', encoding="utf-8")
+                (bundle / "machine_profile.json").write_text('{"schema_version":1}\n', encoding="utf-8")
+                (bundle / "ground_truth.jsonl").write_text('{"name":"q","candidates":[1]}\n', encoding="utf-8")
+                (bundle / "history.json").write_text('{"run_count":1}\n', encoding="utf-8")
+                (bundle / "report.json").write_text(json.dumps(report) + "\n", encoding="utf-8")
+                from package_baseline import package_baseline
+
+                broken_archive = Path(broken_dir) / "broken.tar.gz"
+                package_baseline(bundle, broken_archive, "baseline", "2026-01-01T00:00:00Z")
+                with self.assertRaises(ValueError):
+                    validate_package(broken_archive, True, True, True, False)
 
 
 if __name__ == "__main__":

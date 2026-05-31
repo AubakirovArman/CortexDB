@@ -37,6 +37,9 @@ fn corpus_evaluation_uses_external_ground_truth() {
     assert_eq!(report.vector_count, 4);
     assert_eq!(report.query_count, 2);
     assert_eq!(report.min_observed_recall_q16, 65_535);
+    assert_eq!(report.required_min_recall_q16, 49_151);
+    assert_eq!(report.allowed_p95_latency_nanos, 100_000_000);
+    assert!(report.require_production_safe);
 }
 
 #[test]
