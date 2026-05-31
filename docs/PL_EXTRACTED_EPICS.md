@@ -64,6 +64,8 @@ Evidence:
 
 Goal: stabilize API/SDK and quality evidence.
 
+Status: focused local evidence gate added; run `make beta-rc-check`.
+
 Tasks:
 
 1. Backup/restore beta evidence.
@@ -71,6 +73,10 @@ Tasks:
 3. Security model v1.
 4. Ingestion jobs maturity.
 5. Dashboard operational view.
+
+Evidence:
+
+- Focused local gate: [`BETA_RC_EVIDENCE.md`](BETA_RC_EVIDENCE.md).
 
 ### Epic 4 - Production Hardening
 

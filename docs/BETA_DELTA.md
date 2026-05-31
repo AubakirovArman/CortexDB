@@ -70,6 +70,7 @@ cargo fmt --check
 cargo clippy --workspace --all-targets -- -D warnings
 make openapi-contract-check
 make beta-foundation-check
+make beta-rc-check
 make sdk-check
 make production-evidence-sweep
 make ann-real-embedding-readiness
@@ -84,3 +85,8 @@ state, but not a beta promotion state.
 SDK contract, OpenAPI contract, ContextPack/VERIFY quality fixtures, search
 quality, error taxonomy, metrics contract, and beta boundary checks into
 `target/beta-foundation/report.json`.
+
+`make beta-rc-check` is the focused local Epic 3 gate. It aggregates the beta
+foundation gate, backup/restore drills, offsite staging, security/auth tests,
+ingestion job tests, dashboard release packaging, and operational docs checks
+into `target/beta-rc/report.json`.

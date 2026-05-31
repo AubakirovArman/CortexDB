@@ -82,6 +82,11 @@ Core Alpha is operational:
   - writes `target/beta-foundation/report.json`
   - covers SDK e2e, OpenAPI contract, ContextPack/VERIFY quality, search
     quality, error taxonomy, metrics contract, and beta boundary docs
+- Run the focused Beta Release Candidate evidence gate:
+  - `make beta-rc-check`
+  - writes `target/beta-rc/report.json`
+  - covers backup/restore evidence, offsite staging, security/auth tests,
+    ingestion jobs, dashboard release packaging, and operational docs checks
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`

@@ -15,6 +15,7 @@ REQUIRED_DOC_TERMS = (
     "Blocked Before Beta Promotion",
     "make production-evidence-sweep",
     "make beta-foundation-check",
+    "make beta-rc-check",
     "make ann-real-embedding-readiness",
     "make beta-delta-check",
     "CORTEXDB_EMBEDDING_URL",
@@ -26,8 +27,10 @@ REQUIRED_DOC_TERMS = (
 REQUIRED_MAKEFILE_TERMS = (
     "beta-delta-check:",
     "beta-foundation-check:",
+    "beta-rc-check:",
     "python3 scripts/check_beta_delta.py",
     "python3 scripts/beta_foundation_check.py",
+    "python3 scripts/beta_rc_check.py",
     "$(MAKE) beta-delta-check",
 )
 

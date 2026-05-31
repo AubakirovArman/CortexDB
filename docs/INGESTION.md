@@ -57,6 +57,21 @@ adapter jobs. The first tracked helper is `Database::ingest_csv_with_progress`,
 which records total rows, completed cells, status, and the last written
 `CellId`.
 
+## Ingestion Job Lifecycle
+
+The HTTP API exposes persisted ingestion job records so clients and the
+dashboard can inspect the result of ingestion work after the immediate request:
+
+- list jobs with `GET /v1/ingest/jobs`;
+- read one job with `GET /v1/ingest/jobs/<job_id>`;
+- cancel or delete one job with `DELETE /v1/ingest/jobs/<job_id>`;
+- retry a failed job with `POST /v1/ingest/jobs/<job_id>/retry`.
+
+The current retry and cancel behavior is deliberately small: it is a Core Alpha
+operator surface for deterministic local jobs, not a distributed background job
+system. Empty text, JSON, and CSV ingestion requests return zero cells and a
+`null` first cell id instead of panicking or fabricating a cell.
+
 ## Implemented
 
 - **TTL expiry/decay scanning** — `Database::expired_memory_cells` and

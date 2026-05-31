@@ -21,6 +21,7 @@ anchored around:
 
 2. **Auth and tenant boundary**
    - Optional bearer-token auth is enforced when configured.
+   - Token roles are currently `admin` and `data`.
    - Token policies are role-scoped (`admin`/`data`) and can be rotated from a file.
    - Tenant ID is validated and used for filesystem realm isolation.
    - `make tenant-recovery-check` verifies tenant payload boundaries before
@@ -37,7 +38,10 @@ anchored around:
    - Database lock prevents concurrent local writers.
    - Validation and repair tools run before recovery-critical operations.
 
-## What is intentionally out of scope
+## Not Yet Production Security
+
+This section is intentionally explicit for beta/release checks: these items are
+not production security guarantees yet.
 
 The following are not production guarantees in Core Alpha:
 

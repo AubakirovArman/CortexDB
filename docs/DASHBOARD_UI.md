@@ -98,3 +98,11 @@ Ingest, Storage, and Cluster views from route-level static entrypoints. The
 current standalone artifact is a dependency-free static build under
 `web/dashboard/dist`; the next UI layer should add broader page-specific
 workflow coverage and visual regression coverage.
+
+## Operational View
+
+For Beta Release Candidate evidence, the dashboard counts as an operational
+view only for local developer/operator workflows: health, metrics, validation,
+storage status, ANN evaluation, ingestion jobs, cluster status, and typed error
+reports. It is not yet an incident-management console, RBAC administration UI,
+or production observability product.
