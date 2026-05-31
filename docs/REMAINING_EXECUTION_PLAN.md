@@ -66,6 +66,11 @@ Core Alpha is operational:
   - includes OpenAPI contract, backup drill, single-node performance,
     tenant recovery, ANN release evidence, real-embedding readiness, and
     replication partition evidence logs
+- Latest local evidence: passed on `2026-05-31` at
+  `36f70e8cf1d88293254d1f7c9133793dc057f313`.
+  Covered steps: OpenAPI contract, backup drill, single-node performance,
+  tenant recovery, ANN release evidence, real-embedding readiness, and
+  replication partition evidence.
 - Publish a short beta delta note:
   - what is stable
   - what is still experimental
