@@ -113,9 +113,60 @@ pub struct AnnSearchReport {
     pub max_visited_candidates: Option<usize>,
     pub recall_q16: Option<u16>,
     pub min_recall_q16: Option<u16>,
+    pub hnsw_max_neighbors: usize,
+    pub hnsw_ef_search: usize,
+    pub hnsw_layer_count: usize,
+    pub upper_graph_edges: usize,
     pub require_slo: bool,
     pub production_safe: bool,
     pub slo_violations: Vec<AnnSloViolation>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct HnswRuntimeConfig {
+    max_neighbors: usize,
+    ef_search: usize,
+    layer_count: usize,
+    upper_graph_edges: usize,
+}
+
+const ANN_DEFAULT_MAX_NEIGHBORS: usize = 8;
+const ANN_DEFAULT_EF_SEARCH: usize = 64;
+
+fn hnsw_runtime_config(graph: &HnswGraphIndex) -> HnswRuntimeConfig {
+    let max_neighbors = if graph.max_neighbors == 0 {
+        ANN_DEFAULT_MAX_NEIGHBORS
+    } else {
+        graph.max_neighbors as usize
+    };
+    let ef_search = if graph.ef_search == 0 {
+        ANN_DEFAULT_EF_SEARCH
+    } else {
+        graph.ef_search as usize
+    };
+    let layer_count = if graph.layer_count == 0 {
+        graph
+            .upper_layers
+            .keys()
+            .next_back()
+            .and_then(|layer| layer.checked_add(1))
+            .map(|layer| layer as usize)
+            .unwrap_or(1)
+    } else {
+        graph.layer_count as usize
+    };
+    let upper_graph_edges = graph
+        .upper_layers
+        .values()
+        .flat_map(|links| links.values())
+        .map(|neighbors| neighbors.len())
+        .sum();
+    HnswRuntimeConfig {
+        max_neighbors,
+        ef_search,
+        layer_count,
+        upper_graph_edges,
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -175,6 +226,7 @@ pub fn search_persisted_ann_with_policy(
         .count();
     let expected = limit.min(available);
     let graph_nodes = graph.links.len();
+    let config = hnsw_runtime_config(graph);
 
     if graph.links.is_empty() {
         if !policy.fallback {
@@ -186,6 +238,7 @@ pub fn search_persisted_ann_with_policy(
                 limit,
                 available,
                 graph_nodes,
+                config,
                 policy,
                 0,
             );
@@ -197,6 +250,7 @@ pub fn search_persisted_ann_with_policy(
             limit,
             available,
             graph_nodes,
+            config,
             AnnFallbackReason::EmptyGraph,
             policy,
         );
@@ -208,6 +262,7 @@ pub fn search_persisted_ann_with_policy(
         query,
         allowed,
         limit,
+        config,
         policy.max_visited_candidates,
     ) {
         Ok(value) => value,
@@ -221,6 +276,7 @@ pub fn search_persisted_ann_with_policy(
                     limit,
                     available,
                     graph_nodes,
+                    config,
                     policy,
                     0,
                 );
@@ -232,6 +288,7 @@ pub fn search_persisted_ann_with_policy(
                 limit,
                 available,
                 graph_nodes,
+                config,
                 reason,
                 policy,
             );
@@ -248,6 +305,7 @@ pub fn search_persisted_ann_with_policy(
                 limit,
                 available,
                 graph_nodes,
+                config,
                 policy,
                 visited_candidates,
             );
@@ -260,6 +318,7 @@ pub fn search_persisted_ann_with_policy(
             limit,
             available,
             graph_nodes,
+            config,
             AnnFallbackReason::VisitBudgetExceeded,
             policy,
         );
@@ -275,6 +334,7 @@ pub fn search_persisted_ann_with_policy(
                 limit,
                 available,
                 graph_nodes,
+                config,
                 policy,
                 visited_candidates,
             );
@@ -286,6 +346,7 @@ pub fn search_persisted_ann_with_policy(
             limit,
             available,
             graph_nodes,
+            config,
             AnnFallbackReason::InsufficientResults,
             policy,
         );
@@ -314,6 +375,7 @@ pub fn search_persisted_ann_with_policy(
                 limit,
                 available,
                 graph_nodes,
+                config,
                 policy,
                 visited_candidates,
             );
@@ -323,6 +385,7 @@ pub fn search_persisted_ann_with_policy(
             limit,
             available,
             graph_nodes,
+            config,
             AnnFallbackReason::LowRecall,
             Some(recall),
             policy,
@@ -345,6 +408,10 @@ pub fn search_persisted_ann_with_policy(
                 max_visited_candidates: policy.max_visited_candidates,
                 recall_q16: Some(recall),
                 min_recall_q16: policy.min_recall_q16,
+                hnsw_max_neighbors: config.max_neighbors,
+                hnsw_ef_search: config.ef_search,
+                hnsw_layer_count: config.layer_count,
+                upper_graph_edges: config.upper_graph_edges,
                 require_slo: policy.require_slo,
                 production_safe: true,
                 slo_violations: Vec::new(),
@@ -390,6 +457,7 @@ pub fn evaluate_persisted_ann_with_policy(
         .filter(|(id, vector)| allowed.contains(id) && vector.len() == query.len())
         .count();
     let graph_nodes = graph.links.len();
+    let config = hnsw_runtime_config(graph);
 
     let ann_outcome = match search_hnsw(
         vectors,
@@ -397,6 +465,7 @@ pub fn evaluate_persisted_ann_with_policy(
         query,
         allowed,
         limit,
+        config,
         policy.max_visited_candidates,
     ) {
         Ok((results, visited_candidates, budget_exceeded)) => {
@@ -406,6 +475,7 @@ pub fn evaluate_persisted_ann_with_policy(
                     limit,
                     available,
                     graph_nodes,
+                    config,
                     AnnFallbackReason::VisitBudgetExceeded,
                     None,
                     policy,
@@ -432,6 +502,10 @@ pub fn evaluate_persisted_ann_with_policy(
                             max_visited_candidates,
                             recall_q16: Some(recall),
                             min_recall_q16: policy.min_recall_q16,
+                            hnsw_max_neighbors: config.max_neighbors,
+                            hnsw_ef_search: config.ef_search,
+                            hnsw_layer_count: config.layer_count,
+                            upper_graph_edges: config.upper_graph_edges,
                             require_slo: policy.require_slo,
                             production_safe: true,
                             slo_violations: Vec::new(),
@@ -446,6 +520,7 @@ pub fn evaluate_persisted_ann_with_policy(
             limit,
             available,
             graph_nodes,
+            config,
             reason,
             None,
             policy,
@@ -486,12 +561,18 @@ fn search_hnsw(
     query: &[i16],
     allowed: &BTreeSet<u32>,
     limit: usize,
+    config: HnswRuntimeConfig,
     max_visited_candidates: Option<usize>,
 ) -> Result<(Vec<ScoredCandidate>, usize, bool), AnnFallbackReason> {
     if graph.links.is_empty() {
         return Err(AnnFallbackReason::EmptyGraph);
     }
-    let index = HnswIndex::from_graph(vectors.clone(), graph.clone(), 8, 64);
+    let index = HnswIndex::from_graph(
+        vectors.clone(),
+        graph.clone(),
+        config.max_neighbors,
+        config.ef_search,
+    );
     if !index.verify_hnsw_integrity() {
         return Err(AnnFallbackReason::InvalidGraph);
     }
@@ -509,6 +590,7 @@ fn fallback_disabled_outcome(
     limit: usize,
     available: usize,
     graph_nodes: usize,
+    config: HnswRuntimeConfig,
     policy: AnnSearchPolicy,
     visited_candidates: usize,
 ) -> AnnSearchOutcome {
@@ -538,6 +620,10 @@ fn fallback_disabled_outcome(
                 max_visited_candidates: policy.max_visited_candidates,
                 recall_q16: None,
                 min_recall_q16: policy.min_recall_q16,
+                hnsw_max_neighbors: config.max_neighbors,
+                hnsw_ef_search: config.ef_search,
+                hnsw_layer_count: config.layer_count,
+                upper_graph_edges: config.upper_graph_edges,
                 require_slo: policy.require_slo,
                 production_safe: true,
                 slo_violations: Vec::new(),
@@ -555,12 +641,22 @@ fn exact(
     limit: usize,
     available: usize,
     graph_nodes: usize,
+    config: HnswRuntimeConfig,
     reason: AnnFallbackReason,
     policy: AnnSearchPolicy,
 ) -> AnnSearchOutcome {
     let results =
         search_persisted_vectors(vectors, query, allowed, limit, &DistanceMetric::default());
-    exact_from_results(results, limit, available, graph_nodes, reason, None, policy)
+    exact_from_results(
+        results,
+        limit,
+        available,
+        graph_nodes,
+        config,
+        reason,
+        None,
+        policy,
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -569,6 +665,7 @@ fn exact_from_results(
     limit: usize,
     available: usize,
     graph_nodes: usize,
+    config: HnswRuntimeConfig,
     reason: AnnFallbackReason,
     recall_q16: Option<u16>,
     policy: AnnSearchPolicy,
@@ -589,6 +686,10 @@ fn exact_from_results(
                 max_visited_candidates: policy.max_visited_candidates,
                 recall_q16,
                 min_recall_q16: policy.min_recall_q16,
+                hnsw_max_neighbors: config.max_neighbors,
+                hnsw_ef_search: config.ef_search,
+                hnsw_layer_count: config.layer_count,
+                upper_graph_edges: config.upper_graph_edges,
                 require_slo: policy.require_slo,
                 production_safe: true,
                 slo_violations: Vec::new(),

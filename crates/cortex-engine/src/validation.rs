@@ -205,8 +205,14 @@ impl Database {
                         hnsw_build_profile = Some(profile);
                     }
                     if let Some(vector_index) = &vector_index {
-                        let index =
-                            HnswIndex::from_graph(vector_index.vectors.clone(), graph, 8, 64);
+                        let max_neighbors = graph.max_neighbors as usize;
+                        let ef_search = graph.ef_search as usize;
+                        let index = HnswIndex::from_graph(
+                            vector_index.vectors.clone(),
+                            graph,
+                            max_neighbors,
+                            ef_search,
+                        );
                         let hnsw_report = index.integrity_report();
                         if !hnsw_report.is_valid() {
                             report.errors.push(format!(

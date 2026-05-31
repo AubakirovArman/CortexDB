@@ -225,6 +225,10 @@ fn report_response(report: AnnSearchReport) -> AnnSearchReportResponse {
         max_visited_candidates: report.max_visited_candidates,
         recall_q16: report.recall_q16,
         min_recall_q16: report.min_recall_q16,
+        hnsw_max_neighbors: report.hnsw_max_neighbors,
+        hnsw_ef_search: report.hnsw_ef_search,
+        hnsw_layer_count: report.hnsw_layer_count,
+        upper_graph_edges: report.upper_graph_edges,
         require_slo: report.require_slo,
         production_safe: report.production_safe,
         slo_violations: report

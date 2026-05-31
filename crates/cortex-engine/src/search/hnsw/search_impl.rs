@@ -1,6 +1,9 @@
+use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 
 use super::super::{ranked, ScoredCandidate};
+#[cfg(test)]
+use super::VectorCollectionConfig;
 use super::{DistanceMetric, HnswIndex};
 
 impl HnswIndex {
@@ -48,41 +51,73 @@ impl HnswIndex {
         if budget_exceeded {
             return (Vec::new(), visited_count, true);
         }
+
         let mut visited = BTreeSet::new();
-        let mut frontier = BTreeSet::from([entry]);
+        let mut frontier: BTreeSet<(Reverse<u64>, u32)> = BTreeSet::new();
+        let mut top_scores: BTreeSet<(u64, u32)> = BTreeSet::new();
         let mut scores = BTreeMap::new();
-        while let Some(candidate) =
-            best_frontier(query, &frontier, &self.vectors, &self.config.metric)
-        {
-            frontier.remove(&candidate);
-            if self.deleted.contains(&candidate) || !visited.insert(candidate) {
+
+        if let Some(entry_vector) = self.vectors.get(&entry) {
+            if let Some(entry_score) = self.config.metric.distance(query, entry_vector) {
+                frontier.insert((Reverse(entry_score), entry));
+                top_scores.insert((entry_score, entry));
+                if top_scores.len() > self.ef_search {
+                    pop_worst_score(&mut top_scores);
+                }
+            }
+        }
+
+        while let Some((candidate_score, candidate)) = pop_best_frontier(&mut frontier) {
+            let _ = candidate_score;
+            if !visited.insert(candidate) {
                 continue;
             }
-            if visited_count.saturating_add(visited.len()) > max_visited {
+            visited_count = visited_count.saturating_add(1);
+            if visited_count > max_visited {
                 budget_exceeded = true;
                 break;
             }
-            if visited.len() > self.ef_search {
+
+            let Some(vector) = self.vectors.get(&candidate) else {
                 continue;
-            }
-            if allowed.is_none_or(|values| values.contains(&candidate)) {
-                if let Some(score) = self
-                    .config
-                    .metric
-                    .distance(query, &self.vectors[&candidate])
-                {
+            };
+            let Some(score) = self.config.metric.distance(query, vector) else {
+                continue;
+            };
+
+            let expand = top_scores.len() < self.ef_search
+                || score > top_scores.iter().next().map(|item| item.0).unwrap_or(0);
+
+            if !self.deleted.contains(&candidate) {
+                if allowed.is_none_or(|values| values.contains(&candidate)) {
                     scores.insert(candidate, score);
                 }
+
+                if expand {
+                    top_scores.insert((score, candidate));
+                    if top_scores.len() > self.ef_search {
+                        pop_worst_score(&mut top_scores);
+                    }
+                }
             }
-            if let Some(neighbors) = self.links.get(&candidate) {
-                for neighbor in neighbors {
-                    if !visited.contains(neighbor) {
-                        frontier.insert(*neighbor);
+
+            if expand {
+                if let Some(neighbors) = self.links.get(&candidate) {
+                    for neighbor in neighbors {
+                        push_candidate(
+                            query,
+                            *neighbor,
+                            &self.vectors,
+                            self.config.metric,
+                            &visited,
+                            &self.deleted,
+                            &mut frontier,
+                        );
                     }
                 }
             }
         }
-        visited_count += visited.len();
+
         (ranked(scores, limit), visited_count, budget_exceeded)
     }
 
@@ -92,62 +127,195 @@ impl HnswIndex {
         max_visited: Option<usize>,
     ) -> Option<(u32, usize, bool)> {
         let max_visited = max_visited.unwrap_or(usize::MAX);
-        let mut visited = 0usize;
+        let mut visited_count = 0usize;
+
         let mut current = self
             .upper_links
             .iter()
             .rev()
-            .find_map(|(_, links)| links.keys().next().copied())
-            .or_else(|| self.vectors.keys().next().copied())?;
-        for links in self.upper_links.values().rev() {
-            let mut improved = true;
-            while improved {
-                if visited >= max_visited {
-                    return Some((current, visited, true));
+            .find_map(|(_, layer_links)| first_live_node_in_map(layer_links, &self.deleted))
+            .or_else(|| first_live_node_in_map(&self.links, &self.deleted))
+            .or_else(|| {
+                self.vectors.iter().find_map(|(cell_id, _)| {
+                    if self.deleted.contains(cell_id) {
+                        None
+                    } else {
+                        Some(*cell_id)
+                    }
+                })
+            })?;
+
+        for layer in self.upper_links.keys().rev() {
+            let Some(layer_links) = self.upper_links.get(layer) else {
+                continue;
+            };
+
+            if !self.deleted.contains(&current) && layer_links.contains_key(&current) {
+                // keep
+            } else if let Some(next) = first_live_node_in_map(layer_links, &self.deleted) {
+                current = next;
+            }
+
+            loop {
+                if visited_count >= max_visited {
+                    return Some((current, visited_count, true));
                 }
-                visited += 1;
-                improved = false;
-                let current_score = self
-                    .vectors
-                    .get(&current)
-                    .and_then(|vector| self.config.metric.distance(query, vector))
-                    .unwrap_or(0);
-                if let Some(neighbors) = links.get(&current) {
+                visited_count = visited_count.saturating_add(1);
+
+                let current_vector = self.vectors.get(&current)?;
+                let current_score = self.config.metric.distance(query, current_vector)?;
+
+                let mut improved = false;
+                let mut next = current;
+                let mut next_score = current_score;
+                if let Some(neighbors) = layer_links.get(&current) {
                     for neighbor in neighbors {
-                        let Some(score) = self
-                            .vectors
-                            .get(neighbor)
-                            .and_then(|vector| self.config.metric.distance(query, vector))
+                        if self.deleted.contains(neighbor) {
+                            continue;
+                        }
+                        let Some(neighbor_vector) = self.vectors.get(neighbor) else {
+                            continue;
+                        };
+                        let Some(neighbor_score) =
+                            self.config.metric.distance(query, neighbor_vector)
                         else {
                             continue;
                         };
-                        if score > current_score {
-                            current = *neighbor;
+                        if neighbor_score > next_score
+                            || (neighbor_score == next_score && *neighbor < next)
+                        {
+                            next = *neighbor;
+                            next_score = neighbor_score;
                             improved = true;
-                            break;
                         }
                     }
                 }
+
+                if !improved {
+                    break;
+                }
+                current = next;
             }
         }
-        Some((current, visited, false))
+
+        if visited_count >= max_visited {
+            return Some((current, visited_count, true));
+        }
+        visited_count = visited_count.saturating_add(1);
+        Some((current, visited_count, false))
     }
 }
 
-fn best_frontier(
-    query: &[i16],
-    frontier: &BTreeSet<u32>,
-    vectors: &BTreeMap<u32, Vec<i16>>,
-    metric: &DistanceMetric,
+fn first_live_node_in_map(
+    layer_links: &BTreeMap<u32, BTreeSet<u32>>,
+    deleted: &BTreeSet<u32>,
 ) -> Option<u32> {
-    frontier
-        .iter()
-        .copied()
-        .filter_map(|cell_id| {
-            metric
-                .distance(query, &vectors[&cell_id])
-                .map(|score| (cell_id, score))
-        })
-        .max_by_key(|(_, score)| *score)
-        .map(|(cell_id, _)| cell_id)
+    layer_links.iter().find_map(|(candidate, _)| {
+        if deleted.contains(candidate) {
+            None
+        } else {
+            Some(*candidate)
+        }
+    })
+}
+
+fn pop_worst_score(top_scores: &mut BTreeSet<(u64, u32)>) {
+    if let Some(worst) = top_scores.iter().next().copied() {
+        top_scores.remove(&worst);
+    }
+}
+
+fn pop_best_frontier(frontier: &mut BTreeSet<(Reverse<u64>, u32)>) -> Option<(u64, u32)> {
+    let (score, candidate) = frontier.iter().next().copied()?;
+    frontier.remove(&(score, candidate));
+    Some((score.0, candidate))
+}
+
+fn push_candidate(
+    query: &[i16],
+    candidate: u32,
+    vectors: &BTreeMap<u32, Vec<i16>>,
+    metric: DistanceMetric,
+    visited: &BTreeSet<u32>,
+    deleted: &BTreeSet<u32>,
+    frontier: &mut BTreeSet<(Reverse<u64>, u32)>,
+) {
+    if visited.contains(&candidate) || deleted.contains(&candidate) {
+        return;
+    }
+    let Some(vector) = vectors.get(&candidate) else {
+        return;
+    };
+    let Some(score) = metric.distance(query, vector) else {
+        return;
+    };
+    frontier.insert((Reverse(score), candidate));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::BTreeSet;
+
+    #[test]
+    fn multi_layer_search_is_deterministic_for_same_query() {
+        let mut index = HnswIndex::new_multilayer(4, 4, 3);
+        index.set_config(VectorCollectionConfig {
+            dimension: 2,
+            metric: DistanceMetric::DotProduct,
+        });
+        index.add_vector(1, vec![10, 0]).unwrap();
+        index.add_vector(2, vec![8, 2]).unwrap();
+        index.add_vector(3, vec![0, 10]).unwrap();
+        index.add_vector(4, vec![1, 9]).unwrap();
+
+        let allowed = BTreeSet::from([1, 2, 3, 4]);
+        let first = index.search_allowed(&[10, 0], &allowed, 3);
+        let second = index.search_allowed(&[10, 0], &allowed, 3);
+
+        assert_eq!(first, second);
+        assert!(!first.is_empty());
+    }
+
+    #[test]
+    fn deleted_entry_and_search_nodes_are_skipped() {
+        let mut index = HnswIndex::new_multilayer(4, 4, 2);
+        index.set_config(VectorCollectionConfig {
+            dimension: 2,
+            metric: DistanceMetric::DotProduct,
+        });
+        index.add_vector(1, vec![10, 0]).unwrap();
+        index.add_vector(2, vec![0, 10]).unwrap();
+        index.remove_vector(2);
+
+        let allowed = BTreeSet::from([1, 2]);
+        let results = index.search_allowed(&[9, 1], &allowed, 2);
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].cell_id, 1);
+    }
+
+    #[test]
+    fn visited_budget_counts_entrypoint_and_base_search_candidates() {
+        let mut index = HnswIndex::new_multilayer(8, 64, 3);
+        index.set_config(VectorCollectionConfig {
+            dimension: 2,
+            metric: DistanceMetric::DotProduct,
+        });
+        index.add_vector(1, vec![10, 0]).unwrap();
+        index.add_vector(2, vec![0, 10]).unwrap();
+        index.add_vector(3, vec![9, 1]).unwrap();
+        index.add_vector(4, vec![1, 9]).unwrap();
+        let allowed = BTreeSet::from([1, 2, 3, 4]);
+
+        let (_results_low, visited_low, exceeded_low) =
+            index.search_allowed_with_budget(&[9, 1], &allowed, 2, Some(1));
+        assert!(exceeded_low);
+        assert!(visited_low >= 1);
+
+        let (_results_ok, visited_ok, exceeded_ok) =
+            index.search_allowed_with_budget(&[9, 1], &allowed, 2, Some(5));
+        assert!(!exceeded_ok);
+        assert!(visited_ok > visited_low);
+    }
 }

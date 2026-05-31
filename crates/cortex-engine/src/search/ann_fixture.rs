@@ -242,6 +242,9 @@ mod tests {
             p50_latency_nanos: 1,
             p95_latency_nanos: 1,
             max_latency_nanos: 1,
+            hnsw_max_neighbors: 8,
+            hnsw_ef_search: 64,
+            hnsw_layer_count: 4,
             production_safe: true,
         };
         let mut baseline = AnnRecallLatencyBaseline::synthetic_v1();

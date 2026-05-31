@@ -312,3 +312,44 @@ fn evaluation_treats_empty_exact_set_as_full_recall() {
     assert_eq!(report.overlap_count, 0);
     assert_eq!(report.recall_q16, 65_535);
 }
+
+#[test]
+fn report_includes_hnsw_runtime_config_and_is_repeatable() {
+    let mut index = HnswIndex::new_multilayer(16, 128, 3);
+    index.add_vector(1, vec![10, 0]).unwrap();
+    index.add_vector(2, vec![9, 1]).unwrap();
+    index.add_vector(3, vec![8, 2]).unwrap();
+
+    let graph = index.graph_index();
+    let vectors = BTreeMap::from([(1, vec![10, 0]), (2, vec![9, 1]), (3, vec![8, 2])]);
+    let allowed = BTreeSet::from([1, 2, 3]);
+    let policy = AnnSearchPolicy {
+        min_recall_q16: Some(MIN_ANN_RECALL_Q16),
+        fallback: true,
+        fallback_scan_cap: None,
+        max_visited_candidates: None,
+        require_slo: false,
+    };
+
+    let first = search_persisted_ann_with_policy(&vectors, &graph, &[10, 1], &allowed, 2, policy);
+    let second = search_persisted_ann_with_policy(&vectors, &graph, &[10, 1], &allowed, 2, policy);
+
+    assert_eq!(first.report.path, AnnSearchPath::HnswGraph);
+    assert_eq!(second.report.path, AnnSearchPath::HnswGraph);
+    assert_eq!(first.report.hnsw_max_neighbors, 16);
+    assert_eq!(first.report.hnsw_ef_search, 128);
+    assert_eq!(first.report.hnsw_layer_count, 3);
+    assert_eq!(
+        first.report.upper_graph_edges,
+        second.report.upper_graph_edges
+    );
+    assert_eq!(
+        first.report.hnsw_max_neighbors,
+        second.report.hnsw_max_neighbors
+    );
+    assert_eq!(first.report.hnsw_ef_search, second.report.hnsw_ef_search);
+    assert_eq!(
+        first.report.hnsw_layer_count,
+        second.report.hnsw_layer_count
+    );
+}

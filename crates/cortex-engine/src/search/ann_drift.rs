@@ -21,6 +21,12 @@ pub struct AnnDriftBaseline {
     pub reference_graph_edges: usize,
     pub reference_upper_layers: usize,
     pub reference_upper_graph_edges: usize,
+    #[serde(default)]
+    pub reference_hnsw_max_neighbors: Option<usize>,
+    #[serde(default)]
+    pub reference_hnsw_ef_search: Option<usize>,
+    #[serde(default)]
+    pub reference_hnsw_layer_count: Option<usize>,
     pub reference_p95_latency_nanos: u128,
     pub reference_max_latency_nanos: u128,
     pub allowed_recall_drop_q16: u16,
@@ -137,6 +143,30 @@ pub fn compare_ann_drift_baseline(
             baseline.max_edge_loss_percent,
         ),
     );
+    if let Some(reference_hnsw_max_neighbors) = baseline.reference_hnsw_max_neighbors {
+        check_eq(
+            &mut failures,
+            "reference_hnsw_max_neighbors",
+            reference_hnsw_max_neighbors,
+            observed.hnsw_max_neighbors,
+        );
+    }
+    if let Some(reference_hnsw_ef_search) = baseline.reference_hnsw_ef_search {
+        check_eq(
+            &mut failures,
+            "reference_hnsw_ef_search",
+            reference_hnsw_ef_search,
+            observed.hnsw_ef_search,
+        );
+    }
+    if let Some(reference_hnsw_layer_count) = baseline.reference_hnsw_layer_count {
+        check_eq(
+            &mut failures,
+            "reference_hnsw_layer_count",
+            reference_hnsw_layer_count,
+            observed.hnsw_layer_count,
+        );
+    }
     check_latency(
         &mut failures,
         "p95_latency_nanos",

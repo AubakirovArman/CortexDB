@@ -920,6 +920,10 @@ components:
       - visited_candidates
       - recall_q16
       - min_recall_q16
+      - hnsw_max_neighbors
+      - hnsw_ef_search
+      - hnsw_layer_count
+      - upper_graph_edges
       - require_slo
       - production_safe
       - slo_violations
@@ -971,6 +975,18 @@ components:
             minimum: 0
             maximum: 65535
           - type: 'null'
+        hnsw_max_neighbors:
+          type: integer
+          minimum: 0
+        hnsw_ef_search:
+          type: integer
+          minimum: 0
+        hnsw_layer_count:
+          type: integer
+          minimum: 1
+        upper_graph_edges:
+          type: integer
+          minimum: 0
         require_slo:
           type: boolean
         production_safe:

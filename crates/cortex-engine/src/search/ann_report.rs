@@ -27,6 +27,9 @@ pub struct AnnRecallLatencyReport {
     pub p50_latency_nanos: u128,
     pub p95_latency_nanos: u128,
     pub max_latency_nanos: u128,
+    pub hnsw_max_neighbors: usize,
+    pub hnsw_ef_search: usize,
+    pub hnsw_layer_count: usize,
     pub production_safe: bool,
 }
 
@@ -101,6 +104,26 @@ pub fn synthetic_ann_recall_latency_report(
         p50_latency_nanos: percentile(&latencies, 50),
         p95_latency_nanos: percentile(&latencies, 95),
         max_latency_nanos: *latencies.last().unwrap_or(&0),
+        hnsw_max_neighbors: if graph.max_neighbors == 0 {
+            8
+        } else {
+            graph.max_neighbors as usize
+        },
+        hnsw_ef_search: if graph.ef_search == 0 {
+            64
+        } else {
+            graph.ef_search as usize
+        },
+        hnsw_layer_count: if graph.layer_count == 0 {
+            graph
+                .upper_layers
+                .keys()
+                .next_back()
+                .and_then(|layer| (*layer as usize).checked_add(1))
+                .unwrap_or(1)
+        } else {
+            graph.layer_count as usize
+        },
         production_safe,
     })
 }
@@ -147,5 +170,8 @@ mod tests {
         assert!(report
             .as_json()
             .contains("\"corpus\":\"synthetic-ann-corpus-v1\""));
+        assert_eq!(report.hnsw_max_neighbors, 8);
+        assert_eq!(report.hnsw_ef_search, 64);
+        assert_eq!(report.hnsw_layer_count, 4);
     }
 }
