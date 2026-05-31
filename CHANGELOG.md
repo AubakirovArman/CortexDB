@@ -83,6 +83,9 @@
 - Added `run_replication_repair_cycle`, which executes append-repair decisions
   from a schedule and hands snapshot-required followers to the future snapshot
   sender explicitly.
+- Added `send_replication_snapshot_request`, which chunks snapshot repair
+  handoff requests, verifies cumulative follower ACKs, and covers TCP durable
+  follower install.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

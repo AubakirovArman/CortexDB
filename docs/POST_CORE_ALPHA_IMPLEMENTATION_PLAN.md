@@ -84,6 +84,9 @@
 - [x] One-shot repair cycle execution: `run_replication_repair_cycle` executes
   append-repair decisions and returns snapshot-required followers as explicit
   handoff requests.
+- [x] Snapshot repair sender: `send_replication_snapshot_request` chunks
+  `SnapshotSegment` payloads, requires cumulative follower ACKs, and drives TCP
+  peer durable install.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.

@@ -11,10 +11,15 @@ use super::recovery::{
 use super::transport::{AppendEntriesRequest, ReplicationTransport};
 
 mod cycle;
+mod snapshot_sender;
 
 pub use cycle::{
     execute_replication_repair_schedule, run_replication_repair_cycle,
     ReplicationRepairCycleResult, ReplicationSnapshotRepairRequest,
+};
+pub use snapshot_sender::{
+    send_replication_snapshot_request, ReplicationSnapshotSendPolicy,
+    ReplicationSnapshotSendResult, ReplicationSnapshotTransport,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]

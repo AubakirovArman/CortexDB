@@ -80,6 +80,10 @@ or snapshot-required before any network mutation is attempted.
 leader tick: caught-up voters are reported, append-repair decisions send
 `AppendEntries`, and snapshot-required decisions are returned as explicit
 snapshot requests for the snapshot sender.
+`send_replication_snapshot_request` sends those requests over a snapshot
+transport by encoding a `SnapshotSegment`, chunking it deterministically, and
+requiring cumulative byte acknowledgements from the follower before the sender
+reports success.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 
@@ -193,6 +197,9 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
 - one-shot repair cycle execution: append-repair decisions are sent through the
   transport, while snapshot-required followers are handed off as explicit
   requests instead of being silently ignored.
+- snapshot repair sending: explicit snapshot requests can now be streamed as
+  checked `SnapshotChunk` frames to a follower that durably installs the
+  decoded snapshot segment.
 
 This is not a full distributed consensus certification yet. The remaining
 production work is broader membership rotation crash/restart coverage and
@@ -202,7 +209,6 @@ rejoin/repair handling after network partitions.
 
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS
   terminator for now.
-- Background task execution and network snapshot sending after a node rejoins.
-  The explicit repair sweep, progress-aware schedule, and one-shot repair cycle
-  exist, but a real continuously running repair worker and snapshot sender still
-  need to drive them.
+- Background task execution after a node rejoins. The explicit repair sweep,
+  progress-aware schedule, one-shot repair cycle, and snapshot sender exist,
+  but a real continuously running repair worker still needs to drive them.
