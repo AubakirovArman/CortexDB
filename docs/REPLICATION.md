@@ -124,6 +124,11 @@ entry, requires both old and new majorities, appends the final stable membership
 entry, and only then publishes the new voter set locally. If joint consensus is
 not reached, the stable config is not appended.
 
+`resume_joint_membership_rotation` handles the crash/restart boundary between
+those two phases. After recovery, it requires a committed joint config in the
+replication log before it can append the final stable config. An uncommitted
+joint entry is not enough to publish the new voter set.
+
 This is still not a full Raft membership implementation. CortexDB now has the
 durable entry format, majority-safety primitive, and a two-phase orchestrator;
 removed-node lifecycle handling and distributed rejoin/repair remain
@@ -160,6 +165,8 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
 - automated membership rotation that commits joint and stable entries durably,
   recovers the final voter set after restart, and refuses to publish a stable
   config when the joint quorum is unavailable.
+- rotation resume after restart: committed joint configs can finish the stable
+  phase, while uncommitted joint configs are rejected.
 
 This is not a full distributed consensus certification yet. The remaining
 production work is broader membership rotation crash/restart coverage and

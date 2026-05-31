@@ -66,6 +66,9 @@
 - [x] Automated membership rotation API: catches up voters, appends durable
   joint/stable membership entries, and only publishes the final voter set after
   joint-consensus commit.
+- [x] Membership rotation restart resume: a leader recovered with a committed
+  joint config can finish the stable config phase after restart, while
+  uncommitted joint configs cannot be resumed.
 - [x] Crash/restart partition matrix seed coverage: partitioned leader restart
   preserves uncommitted entries without committing them, and committed leader
   restart catches up healed followers with the recovered commit index.

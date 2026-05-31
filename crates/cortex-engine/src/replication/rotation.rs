@@ -5,7 +5,8 @@ use crate::error::{EngineError, EngineResult};
 
 use super::consensus::{ConsensusState, LogIndex, ReplicatedEntry, Term};
 use super::membership::{
-    joint_membership_entry, membership_entry, JointConsensusDecision, JointMembershipConfig,
+    decode_joint_membership_entry, joint_membership_entry, membership_entry,
+    JointConsensusDecision, JointMembershipConfig,
 };
 use super::transport::{AppendEntriesRequest, ReplicationTransport};
 use super::ReplicationLog;
@@ -24,6 +25,14 @@ pub struct MembershipRotationResult {
     pub stable_entry: Option<ReplicatedEntry>,
     pub joint_decision: JointConsensusDecision,
     pub stable_decision: Option<JointConsensusDecision>,
+    pub final_voters: BTreeSet<NodeId>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MembershipRotationResumeResult {
+    pub phase: MembershipRotationPhase,
+    pub stable_entry: ReplicatedEntry,
+    pub stable_decision: JointConsensusDecision,
     pub final_voters: BTreeSet<NodeId>,
 }
 
@@ -102,6 +111,51 @@ pub fn rotate_membership_with_joint_consensus<T: ReplicationTransport>(
     })
 }
 
+pub fn resume_joint_membership_rotation<T: ReplicationTransport>(
+    leader: &mut ConsensusState,
+    transport: &mut T,
+    replication_log: &ReplicationLog,
+    joint_config: JointMembershipConfig,
+) -> EngineResult<MembershipRotationResumeResult> {
+    validate_committed_joint_entry(leader, &joint_config)?;
+    validate_rotation_inputs(leader, &joint_config.new_voters)?;
+    catch_up_voters(leader, transport, joint_config.voters_union())?;
+    let stable_entry = append_membership_entry(
+        leader,
+        replication_log,
+        membership_entry(
+            leader.current_term,
+            next_log_index(leader)?,
+            joint_config.new_voters.clone(),
+        )?
+        .payload,
+    )?;
+    let stable_acks = replicate_entry(
+        leader,
+        transport,
+        joint_config.voters_union(),
+        &stable_entry,
+    )?;
+    let stable_decision =
+        leader.record_joint_consensus_acks(stable_entry.index, &joint_config, stable_acks);
+    if !stable_decision.committed {
+        return Ok(MembershipRotationResumeResult {
+            phase: MembershipRotationPhase::StableNotCommitted,
+            stable_entry,
+            stable_decision,
+            final_voters: leader.voters.clone(),
+        });
+    }
+
+    leader.reconfigure_voters(joint_config.new_voters.clone())?;
+    Ok(MembershipRotationResumeResult {
+        phase: MembershipRotationPhase::Complete,
+        stable_entry,
+        stable_decision,
+        final_voters: joint_config.new_voters,
+    })
+}
+
 fn validate_rotation_inputs(
     leader: &ConsensusState,
     new_voters: &BTreeSet<NodeId>,
@@ -120,6 +174,28 @@ fn append_membership_entry(
     let entry = leader.append_local(payload);
     replication_log.append(&entry)?;
     Ok(entry)
+}
+
+fn validate_committed_joint_entry(
+    leader: &ConsensusState,
+    joint_config: &JointMembershipConfig,
+) -> EngineResult<()> {
+    let latest_joint = leader
+        .entries()
+        .iter()
+        .filter(|entry| entry.index <= leader.commit_index)
+        .filter_map(|entry| match decode_joint_membership_entry(entry) {
+            Ok(Some(config)) => Some(Ok(config)),
+            Ok(None) => None,
+            Err(error) => Some(Err(error)),
+        })
+        .next_back()
+        .transpose()?;
+    if latest_joint.as_ref() == Some(joint_config) {
+        Ok(())
+    } else {
+        Err(EngineError::InvalidOperation)
+    }
 }
 
 fn replicate_entry<T: ReplicationTransport>(

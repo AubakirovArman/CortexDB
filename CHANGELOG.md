@@ -67,6 +67,8 @@
 - Added automated joint-consensus membership rotation that catches up voters,
   persists joint/stable config entries, recovers the final voter set after
   restart, and refuses stable publication without joint quorum.
+- Added membership rotation restart-resume coverage: a recovered leader can
+  finish the stable phase only after a committed joint config.
 - Added crash/restart partition seed coverage for replicated logs: uncommitted
   partitioned writes stay uncommitted after restart until heal, and committed
   restarted leaders catch up healed followers.

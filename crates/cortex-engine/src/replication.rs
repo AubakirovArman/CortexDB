@@ -33,7 +33,8 @@ pub use recovery::{
     ReplicationRecoveryPolicy,
 };
 pub use rotation::{
-    rotate_membership_with_joint_consensus, MembershipRotationPhase, MembershipRotationResult,
+    resume_joint_membership_rotation, rotate_membership_with_joint_consensus,
+    MembershipRotationPhase, MembershipRotationResult, MembershipRotationResumeResult,
 };
 pub use snapshot::{
     assemble_snapshot_chunks, decode_snapshot_chunk, decode_snapshot_segment,
