@@ -55,6 +55,7 @@ be treated as future work.
 | Browser cross-origin API calls | CORS disabled by default; optional exact-origin allowlist via `CORTEXDB_CORS_ALLOW_ORIGIN`. | Implemented for one trusted origin. |
 | Request floods against the local API | Optional process-wide fixed-window limit via `CORTEXDB_RATE_LIMIT_PER_MINUTE`. | Implemented as a coarse Core Alpha guard. |
 | Missing operational access trail | Optional structured HTTP audit events via `CORTEXDB_AUDIT_LOG`; optional synced JSONL file sink via `CORTEXDB_AUDIT_LOG_FILE`. | Implemented for route-level events. |
+| Unvalidated local backups | `cortexdb backup`, `restore`, `backup-drill`, `backup-prune`, and `backup-offsite-stage` validate source and restored copies. | Implemented for local filesystem/offsite-staging workflows. |
 
 ## Out Of Scope For Core Alpha
 
@@ -67,7 +68,7 @@ The following are not production security guarantees yet:
 - Multi-origin, wildcard, or per-token CORS policies.
 - Tamper-evident audit trails or SIEM export.
 - At-rest encryption or envelope key management.
-- Encrypted backups.
+- Encrypted backups or built-in remote object-store upload.
 - Secret rotation workflow.
 - Side-channel analysis of timing, file sizes, or query result counts.
 - Production-grade distributed consensus security.
@@ -87,8 +88,8 @@ For any non-local deployment:
 4. Restrict network access to trusted clients.
 5. Run one tenant per isolated realm or process when data separation matters.
 6. Store database files on a trusted local filesystem.
-7. Back up the database directory only after stopping writes or using a future
-   backup command with consistency guarantees.
+7. Use `cortexdb backup-drill` or `cortexdb backup` plus `cortexdb restore` and
+   `cortexdb validate`; do not copy live database directories manually.
 8. Treat dashboard access as administrative.
 9. Enable `CORTEXDB_CORS_ALLOW_ORIGIN` only for one trusted browser origin;
    keep it unset for local CLI/SDK-only deployments.
@@ -142,8 +143,8 @@ Security-sensitive test areas include:
 3. Extend file-backed token rotation into a persisted auth policy management
    workflow.
 4. Extend the JSONL audit sink into tamper-evident audit trails and SIEM export.
-5. Add backup/restore with integrity verification.
-6. Add documented secret rotation.
+5. Add encrypted backup support and remote object-store upload adapters.
+6. Add documented secret rotation beyond local token-file replacement.
 7. Add deployment hardening guide for reverse proxy and systemd/container use.
 8. Split operational admin routes from data routes.
 9. Add security-focused release checklist.

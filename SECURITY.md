@@ -21,13 +21,26 @@ Do not open public issues for:
 
 CortexDB Core Alpha currently provides:
 
-- optional HTTP Bearer token authentication with `CORTEXDB_AUTH_TOKEN`;
+- optional HTTP Bearer token authentication with `CORTEXDB_AUTH_TOKEN`,
+  `CORTEXDB_AUTH_TOKENS`, or `CORTEXDB_AUTH_TOKENS_FILE`;
+- static `admin`/`data` route roles and optional AgentView binding per data
+  token;
+- file-backed token rotation that fails closed when the policy file is missing,
+  empty, or invalid;
 - tenant realm path validation after URL percent-decoding;
 - request body size limits on the Axum server;
+- bounded actor queues with explicit `database_busy` backpressure;
+- optional fixed-window request rate limiting;
+- CORS disabled by default with one exact trusted-origin allowlist when
+  configured;
+- optional route-level audit events through `tracing` and a synced local JSONL
+  sink;
 - local database lock files to prevent concurrent writers;
 - permission-safe AQL binding and runtime AgentView masks;
 - checksummed WAL, manifest, segment, bitmap, lexical, vector, and HNSW files;
 - strict and best-effort recovery modes with safe WAL truncate offsets;
+- validated local backup, restore, restore-drill, retention pruning, and
+  offsite-staging commands;
 - typed HTTP error codes that avoid exposing internal scope/brain names for
   policy denials.
 
@@ -44,15 +57,17 @@ See:
 CortexDB Core Alpha does not yet provide:
 
 - TLS termination;
-- user accounts, sessions, RBAC, or fine-grained admin roles;
-- rate limiting;
-- CORS policy management;
-- audit logs;
+- user accounts, sessions, dynamic RBAC policy stores, or external identity
+  providers;
+- per-user or distributed quotas;
+- wildcard, multi-origin, or per-token CORS policy management;
+- tamper-evident audit logs or SIEM export;
 - at-rest encryption;
-- secure secret rotation;
+- encrypted backups;
+- secure secret rotation workflow beyond local token file replacement;
 - production-grade multi-tenant isolation;
 - hardened distributed consensus security;
-- formal backup/restore security guarantees.
+- remote object-store backup upload or full disaster-recovery automation.
 
 Put the HTTP server behind a trusted reverse proxy if exposing it outside a
 local development network. Use network-level isolation for tenant realms and
