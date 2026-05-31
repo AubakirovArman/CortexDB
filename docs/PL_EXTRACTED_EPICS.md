@@ -82,6 +82,8 @@ Evidence:
 
 Goal: harden operational single-node reliability.
 
+Status: focused local evidence gate added; run `make production-hardening-check`.
+
 Tasks:
 
 1. Load tests.
@@ -90,6 +92,11 @@ Tasks:
 4. Audit log hardening.
 5. Quotas and rate limits.
 6. Encrypted backups design.
+
+Evidence:
+
+- Focused local gate: [`PRODUCTION_HARDENING_EVIDENCE.md`](PRODUCTION_HARDENING_EVIDENCE.md).
+- Encrypted backup boundary: [`ENCRYPTED_BACKUPS_DESIGN.md`](ENCRYPTED_BACKUPS_DESIGN.md).
 
 ### Epic 5 - Production Candidate
 

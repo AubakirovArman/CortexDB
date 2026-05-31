@@ -71,6 +71,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 make openapi-contract-check
 make beta-foundation-check
 make beta-rc-check
+make production-hardening-check
 make sdk-check
 make production-evidence-sweep
 make ann-real-embedding-readiness
@@ -90,3 +91,8 @@ quality, error taxonomy, metrics contract, and beta boundary checks into
 foundation gate, backup/restore drills, offsite staging, security/auth tests,
 ingestion job tests, dashboard release packaging, and operational docs checks
 into `target/beta-rc/report.json`.
+
+`make production-hardening-check` is the focused local Epic 4 gate. It
+aggregates load smoke, crash/fault evidence, migration compatibility, audit
+hardening, rate-limit behavior, CLI audit tooling, and encrypted-backup design
+checks into `target/production-hardening/report.json`.

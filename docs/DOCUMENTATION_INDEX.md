@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 108 project markdown files.
+At the time of this audit, the repository tracks 110 project markdown files.
 
 ## Start Here
 
@@ -13,6 +13,7 @@ At the time of this audit, the repository tracks 108 project markdown files.
 - [`BETA_DELTA.md`](BETA_DELTA.md) - what remains before beta promotion.
 - [`BETA_FOUNDATION_EVIDENCE.md`](BETA_FOUNDATION_EVIDENCE.md) - local Epic 2 evidence gate.
 - [`BETA_RC_EVIDENCE.md`](BETA_RC_EVIDENCE.md) - local Epic 3 evidence gate.
+- [`PRODUCTION_HARDENING_EVIDENCE.md`](PRODUCTION_HARDENING_EVIDENCE.md) - local Epic 4 evidence gate.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - ordered epic queue and closing rules.
 - [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md) - current cycle plan.
 - [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md) - wording boundaries.
@@ -44,6 +45,7 @@ At the time of this audit, the repository tracks 108 project markdown files.
 - [`SEGMENT_BUNDLES.md`](SEGMENT_BUNDLES.md) - segment bundle consistency.
 - [`ATOMIC_WRITE_AUDIT.md`](ATOMIC_WRITE_AUDIT.md) - atomic write coverage.
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) - backup/restore operations.
+- [`ENCRYPTED_BACKUPS_DESIGN.md`](ENCRYPTED_BACKUPS_DESIGN.md) - future encrypted backup design.
 - [`CRASH_SIMULATION.md`](CRASH_SIMULATION.md) - crash/fault checks.
 - [`FAILURE_SCENARIOS.md`](FAILURE_SCENARIOS.md) - failure behavior.
 - [`RECOVERY_INVARIANTS.md`](RECOVERY_INVARIANTS.md) - recovery safety.
@@ -93,6 +95,7 @@ backlogs, snapshots, or deeper planning notes.
 - [`RELEASE_EVIDENCE.md`](RELEASE_EVIDENCE.md) - latest local release evidence summary and artifact map.
 - [`BETA_FOUNDATION_EVIDENCE.md`](BETA_FOUNDATION_EVIDENCE.md) - SDK/API/ContextPack/VERIFY/Search beta foundation evidence.
 - [`BETA_RC_EVIDENCE.md`](BETA_RC_EVIDENCE.md) - backup/security/ingestion/dashboard beta RC evidence.
+- [`PRODUCTION_HARDENING_EVIDENCE.md`](PRODUCTION_HARDENING_EVIDENCE.md) - load/crash/migration/audit/rate-limit hardening evidence.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md) - release notes.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - active ordered epic queue.

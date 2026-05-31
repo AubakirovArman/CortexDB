@@ -16,6 +16,7 @@ REQUIRED_DOC_TERMS = (
     "make production-evidence-sweep",
     "make beta-foundation-check",
     "make beta-rc-check",
+    "make production-hardening-check",
     "make ann-real-embedding-readiness",
     "make beta-delta-check",
     "CORTEXDB_EMBEDDING_URL",
@@ -28,9 +29,11 @@ REQUIRED_MAKEFILE_TERMS = (
     "beta-delta-check:",
     "beta-foundation-check:",
     "beta-rc-check:",
+    "production-hardening-check:",
     "python3 scripts/check_beta_delta.py",
     "python3 scripts/beta_foundation_check.py",
     "python3 scripts/beta_rc_check.py",
+    "python3 scripts/production_hardening_check.py",
     "$(MAKE) beta-delta-check",
 )
 

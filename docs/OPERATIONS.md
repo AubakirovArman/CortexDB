@@ -84,6 +84,7 @@ Then reopen and validate.
 Audit review:
 
 ```bash
+cortexdb audit ./audit/http.jsonl --summary --redaction-check
 cargo run -p cortex-cli -- audit ./audit/http.jsonl --summary --redaction-check
 cargo run -p cortex-cli -- audit ./audit/http.jsonl --action write --tenant-filter tenant-alpha
 ```

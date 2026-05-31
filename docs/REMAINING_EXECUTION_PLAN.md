@@ -87,6 +87,12 @@ Core Alpha is operational:
   - writes `target/beta-rc/report.json`
   - covers backup/restore evidence, offsite staging, security/auth tests,
     ingestion jobs, dashboard release packaging, and operational docs checks
+- Run the focused Production Hardening evidence gate:
+  - `make production-hardening-check`
+  - writes `target/production-hardening/report.json`
+  - covers load smoke, crash/fault evidence, migration compatibility, audit
+    hardening, rate-limit behavior, CLI audit tooling, and encrypted-backup
+    design boundary
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`
