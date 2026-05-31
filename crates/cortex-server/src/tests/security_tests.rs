@@ -152,6 +152,75 @@ fn audit_log_file_records_route_metadata_without_query() {
 }
 
 #[test]
+fn audit_log_file_redacts_ingestion_query_and_body() {
+    let dir = tempfile::tempdir().unwrap();
+    let audit_path = dir.path().join("audit").join("http.jsonl");
+    let addr = "127.0.0.1:0";
+    let listener = std::net::TcpListener::bind(addr).unwrap();
+    let local_addr = listener.local_addr().unwrap();
+    drop(listener);
+
+    let root_path = dir.path().join("db");
+    let audit_path_for_server = audit_path.clone();
+    std::thread::spawn(move || {
+        let options = ServerOptions {
+            audit_log_enabled: true,
+            audit_log_path: Some(audit_path_for_server),
+            ..Default::default()
+        };
+        let _ = crate::serve_with_options(&root_path, &local_addr.to_string(), options);
+    });
+
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    let ingest_request = "POST /v1/ingest/text?tenant=alpha&scope=project%3Ainvestments&source=secret-source HTTP/1.1\r\ncontent-length: 20\r\n\r\nsecret payload token";
+    let response = request(local_addr, ingest_request);
+    assert!(response.contains("200 OK"), "ingest failed: {response}");
+
+    let audit = std::fs::read_to_string(audit_path).unwrap();
+    let line = audit.lines().next().unwrap();
+    let value = serde_json::from_str::<serde_json::Value>(line).unwrap();
+    assert_eq!(value["audit_action"], "ingest");
+    assert_eq!(value["path"], "/v1/ingest/text");
+    assert_eq!(value["tenant"], "alpha");
+    assert!(!line.contains("secret-source"));
+    assert!(!line.contains("secret payload token"));
+    assert!(!line.contains("project%3Ainvestments"));
+}
+
+#[test]
+fn malicious_ingestion_scope_bypass_is_denied_by_agent_view() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let db = Database::open(dir.path()).unwrap();
+        db.save_agent_view(&agent_view(AgentId(7), "finance", true))
+            .unwrap();
+    }
+    let options = ServerOptions {
+        auth_token: Some("secret".to_owned()),
+        auth_agent_id: Some(7),
+        ..Default::default()
+    };
+
+    let denied = handle_http_with_options(
+        dir.path(),
+        "POST /v1/ingest/text?scope=..%2F..%2Fsecret&source=attack HTTP/1.1\r\nAuthorization: Bearer secret\r\ncontent-length: 6\r\n\r\nbudget",
+        &options,
+    );
+    assert!(
+        denied.contains("403 Forbidden"),
+        "malicious ingest scope must be denied: {denied}"
+    );
+    assert!(
+        denied.contains("permission_denied"),
+        "denial should use stable permission code: {denied}"
+    );
+    assert!(
+        !denied.contains("budget"),
+        "denial should not echo request body: {denied}"
+    );
+}
+
+#[test]
 fn x_request_id_is_propagated_or_generated() {
     let dir = tempfile::tempdir().unwrap();
     let addr = "127.0.0.1:0";

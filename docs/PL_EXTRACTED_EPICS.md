@@ -398,6 +398,8 @@ Evidence:
 
 Goal: move from Core Alpha token controls toward beta security posture.
 
+Status: local security hardening gate added; run `make security-hardening-check`.
+
 Tasks:
 
 1. Persisted auth policy store.
@@ -415,6 +417,12 @@ Acceptance:
 
 - Security model clearly separates implemented controls from enterprise
   non-goals.
+
+Evidence:
+
+- Security hardening gate: [`SECURITY_HARDENING_EVIDENCE.md`](SECURITY_HARDENING_EVIDENCE.md).
+- Release checklist: [`SECURITY_RELEASE_CHECKLIST.md`](SECURITY_RELEASE_CHECKLIST.md).
+- Threat model: [`SECURITY_THREAT_MODEL.md`](SECURITY_THREAT_MODEL.md).
 
 ### Epic 18 - Observability
 

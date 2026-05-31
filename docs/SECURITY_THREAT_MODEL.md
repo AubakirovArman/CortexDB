@@ -126,6 +126,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 make openapi-check
 make openapi-contract-check
 make sdk-contract-check
+make security-hardening-check
 ```
 
 Security-sensitive test areas include:
@@ -152,3 +153,8 @@ Security-sensitive test areas include:
 8. Split operational admin routes from data routes.
 9. Add security-focused release checklist.
 10. Review replication and dashboard paths before claiming beta readiness.
+
+The release-facing checklist is maintained in
+[`SECURITY_RELEASE_CHECKLIST.md`](SECURITY_RELEASE_CHECKLIST.md), and the latest
+local hardening evidence is summarized in
+[`SECURITY_HARDENING_EVIDENCE.md`](SECURITY_HARDENING_EVIDENCE.md).

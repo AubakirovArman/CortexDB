@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 130 project markdown files.
+At the time of this audit, the repository tracks 132 project markdown files.
 
 ## Start Here
 
@@ -101,6 +101,8 @@ At the time of this audit, the repository tracks 130 project markdown files.
 - [`OPERATIONS.md`](OPERATIONS.md) - operational guidance.
 - [`SECURITY_MODEL.md`](SECURITY_MODEL.md) - security model.
 - [`SECURITY_THREAT_MODEL.md`](SECURITY_THREAT_MODEL.md) - threat model.
+- [`SECURITY_HARDENING_EVIDENCE.md`](SECURITY_HARDENING_EVIDENCE.md) - local Epic 17 security hardening evidence gate.
+- [`SECURITY_RELEASE_CHECKLIST.md`](SECURITY_RELEASE_CHECKLIST.md) - security release checklist and non-goals.
 
 ## Planning And Release
 

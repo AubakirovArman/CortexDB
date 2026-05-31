@@ -154,6 +154,11 @@ Core Alpha is operational:
   - writes `target/dashboard/product-ui-report.json`
   - covers read-only mode, operational status, permissions view, standalone
     packaging, and screenshot artifact wiring
+- Run the focused Security Hardening evidence gate:
+  - `make security-hardening-check`
+  - writes `target/security-hardening/report.json`
+  - covers current auth, rate limit, audit redaction, malicious ingestion
+    denial, encrypted/remote backup boundaries, and security release checklist
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`
