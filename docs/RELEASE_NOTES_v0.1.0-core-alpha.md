@@ -106,3 +106,13 @@ smoke checks, OpenAPI contract validation, SDK contract validation, the core
 benchmark matrix, CLI smoke tests, server smoke tests, API snapshot tests, and
 the upgraded investment projects demo (search + AQL + ContextPack + Verify with
 numeric conflict detection).
+
+Additional local contract evidence from 2026-05-31:
+
+- `cargo test --workspace --all-features` passed.
+- `make openapi-contract-check` passed, validating live responses against
+  `docs/openapi.yaml`.
+- `make sdk-contract-check` passed for Python, TypeScript, and Rust clients
+  against the freshly built `cortex-server` binary.
+- `make rag-demo-smoke` passed with search, AQL, ContextPack, VERIFY, prompt,
+  and ingestion smoke coverage.
