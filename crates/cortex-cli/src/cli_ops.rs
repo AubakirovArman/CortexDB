@@ -252,16 +252,23 @@ pub fn ann_validate(path: &str, json: bool) -> Result<String, String> {
     }
 }
 
-pub fn repair(path: &str) -> Result<String, String> {
-    let report = Database::repair_best_effort(path).map_err(fmt_engine_error)?;
+pub fn repair(path: &str, dry_run: bool) -> Result<String, String> {
+    let report = if dry_run {
+        Database::repair_best_effort_dry_run(path)
+    } else {
+        Database::repair_best_effort(path)
+    }
+    .map_err(fmt_engine_error)?;
     Ok(format!(
-        "orphan_temp_files_removed={} wal_records_preserved={} wal_safe_truncate_offset={} wal_bytes_before={} wal_bytes_after={} wal_truncated={}",
+        "dry_run={} orphan_temp_files_removed={} wal_records_preserved={} wal_safe_truncate_offset={} wal_bytes_before={} wal_bytes_after={} wal_truncated={} wal_truncation_needed={}",
+        report.dry_run,
         report.orphan_temp_files_removed,
         report.wal_records_preserved,
         report.wal_safe_truncate_offset,
         report.wal_bytes_before,
         report.wal_bytes_after,
-        report.wal_truncated
+        report.wal_truncated,
+        report.wal_truncation_needed
     ))
 }
 

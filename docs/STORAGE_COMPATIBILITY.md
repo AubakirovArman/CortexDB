@@ -1,0 +1,156 @@
+# Storage Durability And Compatibility
+
+Status: local Epic 7 evidence gate.
+
+This document defines the storage compatibility boundary for the current
+CortexDB checkout. The boundary is single-node and local: it proves the current
+binary can read, validate, repair, and restore the storage formats that this
+release writes.
+
+## Compatibility Surface
+
+Covered storage files:
+
+| File | Purpose | Format doc |
+| --- | --- | --- |
+| `.aclog` | ACLOG WAL | `ACLOG_FORMAT.md` |
+| `.acs` | segment cells | `STORAGE_FORMATS.md` |
+| `.acb` | bitmap index | `STORAGE_FORMATS.md` |
+| `.aci` | lexical index | `STORAGE_FORMATS.md` |
+| `.acv` | vector index | `STORAGE_FORMATS.md` |
+| `.ach` | HNSW graph | `STORAGE_FORMATS.md` |
+| `.acm` | manifest | `STORAGE_FORMATS.md` |
+
+Machine-readable compatibility is tracked in:
+
+```text
+fixtures/migration/compatibility_matrix_v1.json
+```
+
+The fixture records the current storage markers, compatibility boundaries, and
+offline upgrade/downgrade policy. The gate is:
+
+```bash
+make migration-compatibility-check
+```
+
+## Backup/Restore Compatibility
+
+The current-version backup restored by next-version code workflow is modeled as
+an offline upgrade drill:
+
+```text
+old/current binary writes database
+cortexdb backup-drill creates immutable backup and restored copy
+new/current checkout opens restored copy
+cortexdb validate proves the restored storage is readable
+```
+
+For local development, "next-version code" means the current checkout under
+test. For an actual release, operators should run the same drill with the
+previous release binary producing the backup and the candidate binary restoring
+and validating it.
+
+Evidence gates:
+
+```bash
+make backup-drill-check
+make backup-offsite-check
+```
+
+Reports:
+
+```text
+target/backup-drill/report.json
+target/backup-offsite/report.json
+```
+
+RPO/RTO boundaries remain in `RPO_RTO.md`.
+
+## Corruption Matrix
+
+`make storage-compat-check` requires corruption coverage for the live storage
+bundle, including corruption of `.acs`, `.acb`, `.aci`, `.acv`, and `.ach`.
+
+The deterministic test file is:
+
+```text
+crates/cortex-engine/tests/corruption_matrix.rs
+```
+
+Expected behavior:
+
+- corrupt live `.acs` blocks open;
+- corrupt live `.acm` blocks open;
+- corrupt live `.acb` is reported by validation;
+- corrupt live `.aci` is reported by validation;
+- corrupt live `.acv` is reported by validation;
+- corrupt live `.ach` is reported by validation.
+
+## Checkpoint/Compact Interruption
+
+Checkpoint and compact safety is covered by two layers:
+
+- `crash_matrix.rs` writes interrupted checkpoint/compact aftermath directly;
+- `make chaos-restart-check` kills and restarts the real server around writes,
+  flushes, and compacts.
+
+Current limitation: this does not inject a process kill at every internal byte
+boundary inside checkpoint or compact. It proves that known orphan bundles,
+temporary files, WAL tails, and process-level restart paths are recoverable.
+
+## Strict And Best-Effort Recovery
+
+Strict recovery:
+
+- fails closed on corrupt WAL payloads and invalid storage files;
+- is used by normal `Database::open` where corruption must not be silently
+  hidden.
+
+Best-effort recovery:
+
+- scans WAL to the safe truncate offset;
+- reports preserved records;
+- truncates only unsafe WAL tails during repair apply;
+- removes only known temporary files.
+
+Repair dry-run vs repair apply is part of the storage compatibility gate:
+
+```bash
+cortexdb repair --dry-run ./data
+cortexdb repair ./data
+```
+
+Dry-run reports the same orphan/temp and WAL-tail evidence without mutating the
+database. Apply removes known temporary files and truncates only to the
+best-effort WAL safe offset.
+
+## Evidence Gate
+
+Run:
+
+```bash
+make storage-compat-check
+```
+
+It writes:
+
+```text
+target/storage-compat/report.json
+target/storage-compat/*.log
+```
+
+The gate covers:
+
+- migration compatibility fixture;
+- backup drill;
+- crash/fault/corruption matrix;
+- process kill/restart around flush and compact;
+- repair dry-run vs repair apply.
+
+The gate does not prove:
+
+- online rolling upgrade;
+- in-place downgrade;
+- remote object-store restore;
+- process kill injection at every internal checkpoint byte boundary.

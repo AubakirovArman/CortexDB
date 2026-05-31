@@ -5,27 +5,35 @@ use std::path::{Path, PathBuf};
 use crate::error::{EngineError, EngineResult};
 
 pub(crate) fn cleanup_orphans(root: &Path) -> EngineResult<usize> {
-    Ok(cleanup_dir(root)?
-        + cleanup_dir(&root.join("segments"))?
-        + cleanup_dir(&root.join("agent_views"))?)
+    Ok(cleanup_dir(root, true)?
+        + cleanup_dir(&root.join("segments"), true)?
+        + cleanup_dir(&root.join("agent_views"), true)?)
 }
 
-fn cleanup_dir(path: &Path) -> EngineResult<usize> {
+pub(crate) fn count_orphans(root: &Path) -> EngineResult<usize> {
+    Ok(cleanup_dir(root, false)?
+        + cleanup_dir(&root.join("segments"), false)?
+        + cleanup_dir(&root.join("agent_views"), false)?)
+}
+
+fn cleanup_dir(path: &Path, remove: bool) -> EngineResult<usize> {
     let entries = match fs::read_dir(path) {
         Ok(entries) => entries,
         Err(error) if error.kind() == ErrorKind::NotFound => return Ok(0),
         Err(error) => return Err(error.into()),
     };
-    let mut removed = 0;
+    let mut matched = 0;
     for entry in entries {
         let entry = entry?;
         let file_type = entry.file_type()?;
         if file_type.is_file() && is_known_temp(&entry.path()) {
-            fs::remove_file(entry.path())?;
-            removed += 1;
+            if remove {
+                fs::remove_file(entry.path())?;
+            }
+            matched += 1;
         }
     }
-    Ok(removed)
+    Ok(matched)
 }
 
 fn is_known_temp(path: &Path) -> bool {

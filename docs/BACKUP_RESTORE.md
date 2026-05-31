@@ -70,6 +70,11 @@ The first command proves the backup can be copied, opened, replayed, and
 validated. The second command is optional but useful in runbooks because it
 prints the validation report directly.
 
+For compatibility releases, the current-version backup restored by next-version code workflow is
+offline: create the backup with the released binary, then open, restore, and
+validate it with the candidate checkout. Local development gates model this by
+using the current checkout as the next-version code under test.
+
 ## Retention and Offsite Policy
 
 Use sortable backup names and prune only after a drill succeeds:

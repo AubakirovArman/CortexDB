@@ -19,6 +19,7 @@ kill/restart loop.
 | Corrupt live `.acm` blocks open. | `corruption_matrix.rs` |
 | Corrupt live `.acb` is reported by validation. | `corruption_matrix.rs` |
 | Corrupt live `.aci` is reported by validation. | `corruption_matrix.rs` |
+| corruption of `.acs`, `.acb`, `.aci`, `.acv`, and `.ach` is detected by open or validation. | `corruption_matrix.rs` |
 | CLI repair removes orphan temp file and truncates a partial WAL tail. | `make crash-fault-check` |
 | HTTP server survives repeatable forced kill/restart cycles after writes, flushes, and compacts. | `make chaos-restart-check` |
 

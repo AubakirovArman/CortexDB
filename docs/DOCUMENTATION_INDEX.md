@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 115 project markdown files.
+At the time of this audit, the repository tracks 117 project markdown files.
 
 ## Start Here
 
@@ -48,6 +48,8 @@ At the time of this audit, the repository tracks 115 project markdown files.
 - [`SEGMENT_BUNDLES.md`](SEGMENT_BUNDLES.md) - segment bundle consistency.
 - [`ATOMIC_WRITE_AUDIT.md`](ATOMIC_WRITE_AUDIT.md) - atomic write coverage.
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) - backup/restore operations.
+- [`STORAGE_COMPATIBILITY.md`](STORAGE_COMPATIBILITY.md) - storage compatibility boundary.
+- [`STORAGE_COMPATIBILITY_EVIDENCE.md`](STORAGE_COMPATIBILITY_EVIDENCE.md) - local Epic 7 evidence gate.
 - [`ENCRYPTED_BACKUPS_DESIGN.md`](ENCRYPTED_BACKUPS_DESIGN.md) - future encrypted backup design.
 - [`RPO_RTO.md`](RPO_RTO.md) - single-node RPO/RTO boundaries.
 - [`CRASH_SIMULATION.md`](CRASH_SIMULATION.md) - crash/fault checks.
@@ -104,6 +106,8 @@ backlogs, snapshots, or deeper planning notes.
 - [`PRODUCTION_CANDIDATE_EVIDENCE.md`](PRODUCTION_CANDIDATE_EVIDENCE.md) - RPO/RTO/SLO/compatibility production-candidate evidence.
 - [`PRODUCTION_V1.md`](PRODUCTION_V1.md) - single-node Production v1.0 boundary.
 - [`PRODUCTION_V1_EVIDENCE.md`](PRODUCTION_V1_EVIDENCE.md) - Production v1.0 gate evidence.
+- [`STORAGE_COMPATIBILITY.md`](STORAGE_COMPATIBILITY.md) - storage durability and compatibility boundary.
+- [`STORAGE_COMPATIBILITY_EVIDENCE.md`](STORAGE_COMPATIBILITY_EVIDENCE.md) - storage compatibility gate evidence.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md) - release notes.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - active ordered epic queue.

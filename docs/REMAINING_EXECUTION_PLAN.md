@@ -104,6 +104,11 @@ Core Alpha is operational:
   - writes `target/production-v1/report.json`
   - covers production candidate evidence, full release check, OpenAPI contract,
     SDK lifecycle checks, backup/restore drills, and public-claims guard
+- Run the focused Storage Compatibility evidence gate:
+  - `make storage-compat-check`
+  - writes `target/storage-compat/report.json`
+  - covers migration compatibility, backup drills, crash/fault/corruption
+    matrix, chaos restart, and repair dry-run/apply behavior
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`

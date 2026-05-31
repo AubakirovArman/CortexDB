@@ -80,12 +80,17 @@ Run integrity checks.
 cortexdb validate ./db
 ```
 
-#### `repair <path>`
+#### `repair [--dry-run] <path>`
 Attempt to repair storage inconsistencies.
 
 ```bash
+cortexdb repair --dry-run ./db
 cortexdb repair ./db
 ```
+
+`--dry-run` reports orphan temp files and WAL truncation need without mutating
+the database. The apply form removes known temp files and truncates only to the
+best-effort WAL safe offset.
 
 #### `audit <audit_jsonl_path>`
 Review a persisted server audit JSONL file. The command supports route, status,

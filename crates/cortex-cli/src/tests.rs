@@ -198,6 +198,37 @@ fn repair_command_reports_best_effort_cleanup() {
 }
 
 #[test]
+fn repair_dry_run_reports_without_mutating() {
+    let path = unique_path("cortexdb-cli-repair-dry-run");
+    let path_arg = path.to_string_lossy().into_owned();
+    std::fs::create_dir_all(&path).unwrap();
+    std::fs::write(path.join("db.aclog.tmp"), b"bad").unwrap();
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "repair".to_owned(),
+        "--dry-run".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    assert!(output.contains("dry_run=true"));
+    assert!(output.contains("orphan_temp_files_removed=1"));
+    assert!(path.join("db.aclog.tmp").exists());
+
+    let apply = run(vec![
+        "cortexdb".to_owned(),
+        "repair".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    assert!(apply.contains("dry_run=false"));
+    assert!(apply.contains("orphan_temp_files_removed=1"));
+    assert!(!path.join("db.aclog.tmp").exists());
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
 fn backup_and_restore_commands_roundtrip_database() {
     let root = unique_path("cortexdb-cli-backup-root");
     let source = root.join("source");

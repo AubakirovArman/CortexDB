@@ -70,6 +70,8 @@ enum Command {
     },
     Repair {
         path: String,
+        #[arg(long)]
+        dry_run: bool,
     },
     Backup {
         path: String,
@@ -266,7 +268,9 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         Command::AnnValidate { path } => {
             ops::ann_validate(resolved(&path).to_str().unwrap(), cli.json)
         }
-        Command::Repair { path } => ops::repair(resolved(&path).to_str().unwrap()),
+        Command::Repair { path, dry_run } => {
+            ops::repair(resolved(&path).to_str().unwrap(), dry_run)
+        }
         Command::Backup { path, backup_path } => {
             ops::backup(resolved(&path).to_str().unwrap(), &backup_path)
         }

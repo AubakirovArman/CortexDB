@@ -143,6 +143,8 @@ Evidence:
 Goal: turn the Core Alpha storage layer into a versioned, repeatable reliability
 surface.
 
+Status: focused local evidence gate added; run `make storage-compat-check`.
+
 Tasks:
 
 1. Add `docs/STORAGE_COMPATIBILITY.md`.
@@ -158,6 +160,11 @@ Acceptance:
 
 - Backup and crash/fault reports are versioned release artifacts.
 - Strict and best-effort recovery behavior is documented.
+
+Evidence:
+
+- Boundary: [`STORAGE_COMPATIBILITY.md`](STORAGE_COMPATIBILITY.md).
+- Focused local gate: [`STORAGE_COMPATIBILITY_EVIDENCE.md`](STORAGE_COMPATIBILITY_EVIDENCE.md).
 
 ### Epic 8 - Core Engine API Stability
 
