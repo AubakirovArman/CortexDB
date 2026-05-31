@@ -121,6 +121,9 @@
 - Split replication consensus-log durability from local WAL durability by adding
   `ConsensusLogOptions` / `ConsensusLogDurability` and mapping consensus logs
   to strict storage WAL fsync internally.
+- Added `RecoveredConsensusLog` / `ReplicationLog::recover_log_state` so
+  restart code can use validated term/index replay boundaries and reject term
+  regression before appending new replicated entries.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

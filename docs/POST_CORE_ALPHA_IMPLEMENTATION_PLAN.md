@@ -129,6 +129,10 @@
   `ReplicationLog` now exposes `ConsensusLogOptions` /
   `ConsensusLogDurability` instead of the local WAL durability enum, mapping to
   strict storage WAL fsync internally.
+- [x] Durable term/index replay summary:
+  `recover_log_state` publishes validated `current_term`, `last_log_index`,
+  `last_log_term`, and `next_log_index` boundaries and rejects term regression
+  before restart code can append new entries.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.

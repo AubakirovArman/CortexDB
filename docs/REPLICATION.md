@@ -149,12 +149,15 @@ let log = ReplicationLog::open_with_durability(path, ConsensusLogDurability::Str
 let state = ReplicationLog::recover_consensus(path, node, voters, commit_index)?;
 ```
 
-`recover_consensus` and `recover_consensus_with_membership` validate the
-consensus-log shape before publishing a recovered state: recovered entries must
-have non-zero terms, contiguous indexes starting at `1`, and a `commit_index`
-that is not ahead of the recovered log. Raw `recover_entries` remains available
-for diagnostics and WAL inspection, but runtime consensus recovery is
-fail-closed.
+`recover_log_state`, `recover_consensus`, and
+`recover_consensus_with_membership` validate the consensus-log shape before
+publishing a recovered state: recovered entries must have non-zero,
+non-decreasing terms, contiguous indexes starting at `1`, and a `commit_index`
+that is not ahead of the recovered log. `recover_log_state` also reports the
+recovered `current_term`, `last_log_index`, `last_log_term`, and
+`next_log_index` boundaries that restart code can use before appending new
+entries. Raw `recover_entries` remains available for diagnostics and WAL
+inspection, but runtime consensus recovery is fail-closed.
 
 ## Commit Rule
 
