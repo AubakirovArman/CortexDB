@@ -81,6 +81,9 @@
 - [x] Progress-aware repair scheduling: `plan_replication_repair_sweep`
   classifies voters from durable follower progress, rejects inconsistent
   progress, and separates safe planning from network mutation.
+- [x] One-shot repair cycle execution: `run_replication_repair_cycle` executes
+  append-repair decisions and returns snapshot-required followers as explicit
+  handoff requests.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.

@@ -10,6 +10,13 @@ use super::recovery::{
 };
 use super::transport::{AppendEntriesRequest, ReplicationTransport};
 
+mod cycle;
+
+pub use cycle::{
+    execute_replication_repair_schedule, run_replication_repair_cycle,
+    ReplicationRepairCycleResult, ReplicationSnapshotRepairRequest,
+};
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReplicationRepairResult {
     pub target: NodeId,

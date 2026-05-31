@@ -76,6 +76,10 @@ caught up, repaired by append, or deferred to snapshot install.
 durable follower progress, rejects inconsistent progress, ignores non-voter
 inputs, and classifies every current voter as already caught up, append-repair,
 or snapshot-required before any network mutation is attempted.
+`run_replication_repair_cycle` connects the scheduler to the transport for one
+leader tick: caught-up voters are reported, append-repair decisions send
+`AppendEntries`, and snapshot-required decisions are returned as explicit
+snapshot requests for the snapshot sender.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 
@@ -186,6 +190,9 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
 - progress-aware repair scheduling: durable follower progress is validated
   before the repair loop decides whether to no-op, append entries, or defer to
   snapshot install.
+- one-shot repair cycle execution: append-repair decisions are sent through the
+  transport, while snapshot-required followers are handed off as explicit
+  requests instead of being silently ignored.
 
 This is not a full distributed consensus certification yet. The remaining
 production work is broader membership rotation crash/restart coverage and
@@ -196,6 +203,6 @@ rejoin/repair handling after network partitions.
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS
   terminator for now.
 - Background task execution and network snapshot sending after a node rejoins.
-  The explicit repair sweep and progress-aware schedule exist, but a real
-  continuously running repair worker and snapshot sender still need to drive
-  them.
+  The explicit repair sweep, progress-aware schedule, and one-shot repair cycle
+  exist, but a real continuously running repair worker and snapshot sender still
+  need to drive them.

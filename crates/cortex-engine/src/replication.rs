@@ -34,9 +34,11 @@ pub use recovery::{
     ReplicationRecoveryPolicy,
 };
 pub use repair::{
-    plan_replication_repair_sweep, repair_lagging_voter, repair_lagging_voters,
-    ReplicationFollowerProgress, ReplicationRepairDecision, ReplicationRepairDecisionKind,
+    execute_replication_repair_schedule, plan_replication_repair_sweep, repair_lagging_voter,
+    repair_lagging_voters, run_replication_repair_cycle, ReplicationFollowerProgress,
+    ReplicationRepairCycleResult, ReplicationRepairDecision, ReplicationRepairDecisionKind,
     ReplicationRepairResult, ReplicationRepairSchedule, ReplicationRepairSweepResult,
+    ReplicationSnapshotRepairRequest,
 };
 pub use rotation::{
     resume_joint_membership_rotation, rotate_membership_with_joint_consensus,

@@ -80,6 +80,9 @@
 - Added `plan_replication_repair_sweep`, a progress-aware repair scheduler that
   validates durable follower progress and classifies voters before sending
   append repair or snapshot install work.
+- Added `run_replication_repair_cycle`, which executes append-repair decisions
+  from a schedule and hands snapshot-required followers to the future snapshot
+  sender explicitly.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,
