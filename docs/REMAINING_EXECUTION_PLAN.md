@@ -77,6 +77,11 @@ Core Alpha is operational:
   - what is blocked
   - current note: `docs/BETA_DELTA.md`
   - consistency gate: `make beta-delta-check`
+- Run the focused Beta Foundation evidence gate:
+  - `make beta-foundation-check`
+  - writes `target/beta-foundation/report.json`
+  - covers SDK e2e, OpenAPI contract, ContextPack/VERIFY quality, search
+    quality, error taxonomy, metrics contract, and beta boundary docs
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`

@@ -69,6 +69,7 @@ cargo test --workspace --all-features
 cargo fmt --check
 cargo clippy --workspace --all-targets -- -D warnings
 make openapi-contract-check
+make beta-foundation-check
 make sdk-check
 make production-evidence-sweep
 make ann-real-embedding-readiness
@@ -78,3 +79,8 @@ make beta-delta-check
 `make ann-real-embedding-readiness` may return a blocked readiness report when
 embedding endpoint prerequisites are absent. That is an acceptable Core Alpha
 state, but not a beta promotion state.
+
+`make beta-foundation-check` is the focused local Epic 2 gate. It aggregates
+SDK contract, OpenAPI contract, ContextPack/VERIFY quality fixtures, search
+quality, error taxonomy, metrics contract, and beta boundary checks into
+`target/beta-foundation/report.json`.

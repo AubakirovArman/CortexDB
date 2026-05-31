@@ -37,6 +37,8 @@ Acceptance:
 
 Goal: make CortexDB usable by external developers for real experiments.
 
+Status: focused local evidence gate added and passing.
+
 Tasks:
 
 1. SDK e2e matrix.
@@ -49,9 +51,14 @@ Tasks:
 Release gates:
 
 - `make beta-delta-check`
+- `make beta-foundation-check`
 - `make production-evidence-sweep`
 - SDK e2e
 - OpenAPI contract check
+
+Evidence:
+
+- Focused local gate: [`BETA_FOUNDATION_EVIDENCE.md`](BETA_FOUNDATION_EVIDENCE.md).
 
 ### Epic 3 - Beta Release Candidate
 
