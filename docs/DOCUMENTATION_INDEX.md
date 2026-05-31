@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 124 project markdown files.
+At the time of this audit, the repository tracks 125 project markdown files.
 
 ## Start Here
 
@@ -41,6 +41,7 @@ At the time of this audit, the repository tracks 124 project markdown files.
 - [`AQL_V0_3.md`](AQL_V0_3.md) and [`aql-v0.3.md`](aql-v0.3.md) - historical v0.3 notes.
 - [`CONTEXT_PACK.md`](CONTEXT_PACK.md) - Context Pack v1 contract.
 - [`CONTEXT_PACK_TECHNOLOGY.md`](CONTEXT_PACK_TECHNOLOGY.md) - Context Pack technology overview.
+- [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md) - local Epic 11 evidence gate.
 - [`VERIFY_FACT.md`](VERIFY_FACT.md) - deterministic verification behavior.
 - [`FEEDBACK.md`](FEEDBACK.md) - feedback scoring signal.
 
@@ -120,6 +121,7 @@ backlogs, snapshots, or deeper planning notes.
 - [`AQL_COMPATIBILITY_EVIDENCE.md`](AQL_COMPATIBILITY_EVIDENCE.md) - AQL compatibility gate evidence.
 - [`AQL_CHANGELOG.md`](AQL_CHANGELOG.md) - AQL grammar/binder compatibility changelog.
 - [`RETRIEVAL_QUALITY_EVIDENCE.md`](RETRIEVAL_QUALITY_EVIDENCE.md) - retrieval quality and ANN history gate evidence.
+- [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md) - ContextPack quality gate evidence.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md) - release notes.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - active ordered epic queue.

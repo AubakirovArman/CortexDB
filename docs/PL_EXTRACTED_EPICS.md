@@ -251,6 +251,8 @@ Evidence:
 
 Goal: prove ContextPack is better than raw RAG chunks for the demo domain.
 
+Status: focused local evidence gate added; run `make context-pack-quality-check`.
+
 Tasks:
 
 1. Add `context_pack_quality.jsonl`.
@@ -265,6 +267,12 @@ Acceptance:
 
 - ContextPack improves evidence coverage or reduces irrelevant tokens on the
   demo corpus.
+
+Evidence:
+
+- Contract and gate: [`CONTEXT_PACK.md`](CONTEXT_PACK.md).
+- Focused local gate: [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md).
+- Fixture: `examples/eval/context_pack_quality.jsonl`.
 
 ### Epic 12 - Verification Evaluation
 

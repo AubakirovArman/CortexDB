@@ -110,3 +110,22 @@ Run the gate directly with:
 ```bash
 make context-verify-quality-check
 ```
+
+For the focused ContextPack quality gate, run:
+
+```bash
+make context-pack-quality-check
+```
+
+That gate runs the ContextPack behavior tests, the ContextPack/VERIFY fixture,
+and validates `examples/eval/context_pack_quality.jsonl`. The fixture records
+measured release metrics:
+
+- evidence coverage;
+- token reduction versus raw chunks;
+- citation coverage;
+- duplicate suppression;
+- deterministic ordering.
+
+Latest local evidence is tracked in
+[`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md).

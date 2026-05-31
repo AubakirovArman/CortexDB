@@ -124,6 +124,11 @@ Core Alpha is operational:
   - writes `target/retrieval-quality/report.json`
   - covers real-domain corpus validity, repeated ANN embedding history,
     recall, MRR, nDCG, exact parity, latency, and production-safety status
+- Run the focused ContextPack Quality evidence gate:
+  - `make context-pack-quality-check`
+  - writes `target/context-pack-quality/report.json`
+  - covers budget truncation, required citations, source refs, duplicate
+    suppression, deterministic ordering, evidence coverage, and token reduction
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`
