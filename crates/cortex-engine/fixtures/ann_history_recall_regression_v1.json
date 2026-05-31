@@ -1,0 +1,108 @@
+{
+  "corpora": [
+    {
+      "corpus_key": "dot_product|8|vectors.jsonl|queries.jsonl",
+      "dimension": 8,
+      "hnsw_ef_search": 64,
+      "hnsw_layer_count": 4,
+      "hnsw_max_neighbors": 8,
+      "latest_git_sha": "sha-recall-b",
+      "latest_mean_recall_q16": 49151,
+      "latest_min_observed_recall_q16": 49151,
+      "latest_p95_latency_nanos": 9000,
+      "latest_production_safe": false,
+      "latest_run_id": "recall-b",
+      "metric": "dot_product",
+      "query_count": 4,
+      "regressions": [
+        {
+          "current_run_id": "recall-b",
+          "delta": -16384,
+          "field": "min_observed_recall_q16",
+          "kind": "recall",
+          "previous_run_id": "recall-a"
+        },
+        {
+          "current_run_id": "recall-b",
+          "delta": -1,
+          "field": "production_safe",
+          "kind": "gate",
+          "previous_run_id": "recall-a"
+        }
+      ],
+      "run_count": 2,
+      "vector_count": 12
+    }
+  ],
+  "corpus_count": 1,
+  "latest_run_id": "recall-b",
+  "regression_count": 2,
+  "regressions": [
+    {
+      "current_run_id": "recall-b",
+      "delta": -16384,
+      "field": "min_observed_recall_q16",
+      "kind": "recall",
+      "previous_run_id": "recall-a"
+    },
+    {
+      "current_run_id": "recall-b",
+      "delta": -1,
+      "field": "production_safe",
+      "kind": "gate",
+      "previous_run_id": "recall-a"
+    }
+  ],
+  "run_count": 2,
+  "run_root": "fixtures/ann-history",
+  "runs": [
+    {
+      "corpus_key": "dot_product|8|vectors.jsonl|queries.jsonl",
+      "dimension": 8,
+      "git_sha": "sha-recall-a",
+      "graph_edges": 120,
+      "graph_nodes": 12,
+      "hnsw_ef_search": 64,
+      "hnsw_layer_count": 4,
+      "hnsw_max_neighbors": 8,
+      "max_latency_nanos": 18000,
+      "mean_recall_q16": 65535,
+      "metric": "dot_product",
+      "min_observed_recall_q16": 65535,
+      "p95_latency_nanos": 9000,
+      "passed": true,
+      "production_safe": true,
+      "queries": "queries.jsonl",
+      "query_count": 4,
+      "run_id": "recall-a",
+      "upper_graph_edges": 2,
+      "upper_layers": 3,
+      "vectors": "vectors.jsonl",
+      "vector_count": 12
+    },
+    {
+      "corpus_key": "dot_product|8|vectors.jsonl|queries.jsonl",
+      "dimension": 8,
+      "git_sha": "sha-recall-b",
+      "graph_edges": 120,
+      "graph_nodes": 12,
+      "hnsw_ef_search": 64,
+      "hnsw_layer_count": 4,
+      "hnsw_max_neighbors": 8,
+      "max_latency_nanos": 18000,
+      "mean_recall_q16": 49151,
+      "metric": "dot_product",
+      "min_observed_recall_q16": 49151,
+      "p95_latency_nanos": 9000,
+      "passed": false,
+      "production_safe": false,
+      "queries": "queries.jsonl",
+      "query_count": 4,
+      "run_id": "recall-b",
+      "upper_graph_edges": 2,
+      "upper_layers": 3,
+      "vectors": "vectors.jsonl",
+      "vector_count": 12
+    }
+  ]
+}

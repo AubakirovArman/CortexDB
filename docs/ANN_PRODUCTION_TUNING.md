@@ -201,6 +201,13 @@ evidence. This means a published baseline carries quality evidence, replayable
 correctness evidence, the SLO contract used to judge the run, and the history
 needed to compare later candidates.
 
+The history gate has checked-in fixtures under
+`crates/cortex-engine/fixtures/ann_history_*_v1.json`. Run
+`make ann-history-fixture-check` to prove the clean multi-run history passes,
+the recall-regression history is rejected for recall loss, and the
+latency-regression history is rejected for latency drift. This protects the
+release gate from silently accepting broken history summaries.
+
 For each corpus, preserve:
 
 - vector generation version;
@@ -438,6 +445,12 @@ real embedding run directory already exists and you only need to regenerate or
 gate the history summary. The regression-check targets fail closed when the run
 root has no archived run or corpus group, so an empty directory cannot count as
 production latency evidence.
+
+For local release hygiene, `make ann-scripts-check` also runs
+`history_fixture_check.py --self-test` and `make ann-history-fixture-check`.
+That means script self-tests, generated ground truth checks, report contracts,
+package contracts, and history-fixture contracts all fail before release
+evidence can be packaged.
 
 For release checkpoints, publish the selected run into
 `target/ann/release-baselines/<baseline-id>/`:

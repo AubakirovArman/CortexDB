@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check openapi-check openapi-contract-check sdk-contract-check migration-policy-check load-smoke-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check crash-fault-check chaos-restart-check replication-partition-check replication-lifecycle-check smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
+.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check openapi-check openapi-contract-check sdk-contract-check migration-policy-check load-smoke-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-history-fixture-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check crash-fault-check chaos-restart-check replication-partition-check replication-lifecycle-check smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -90,6 +90,9 @@ ANN_CORPUS_RUN_ID ?= smoke
 ANN_CORPUS_RUN_ROOT ?= target/ann/corpus-runs
 ANN_HISTORY_ROOT ?= $(ANN_CORPUS_RUN_ROOT)
 ANN_HISTORY_REPORT ?= $(ANN_HISTORY_ROOT)/history.json
+ANN_HISTORY_CLEAN_FIXTURE ?= crates/cortex-engine/fixtures/ann_history_clean_v1.json
+ANN_HISTORY_RECALL_REGRESSION_FIXTURE ?= crates/cortex-engine/fixtures/ann_history_recall_regression_v1.json
+ANN_HISTORY_LATENCY_REGRESSION_FIXTURE ?= crates/cortex-engine/fixtures/ann_history_latency_regression_v1.json
 ANN_BASELINE_RUN_ID ?= $(ANN_CORPUS_RUN_ID)
 ANN_BASELINE_ID ?= $(ANN_BASELINE_RUN_ID)
 ANN_BASELINE_ROOT ?= target/ann/release-baselines
@@ -347,10 +350,12 @@ ann-scripts-check:
 	python3 scripts/ann/compare_reports.py --self-test
 	python3 scripts/ann/summarize_history.py --self-test
 	python3 scripts/ann/history_contract.py --self-test
+	python3 scripts/ann/history_fixture_check.py --self-test
 	python3 scripts/ann/history_gate.py --self-test
 	python3 scripts/ann/publish_baseline.py --self-test
 	python3 scripts/ann/package_baseline.py --self-test
 	python3 scripts/ann/validate_baseline_package.py --self-test
+	$(MAKE) ann-history-fixture-check
 	mkdir -p target/ann
 	python3 scripts/ann/exact_ground_truth.py --vectors $(ANN_CORPUS_VECTORS) --queries $(ANN_CORPUS_QUERIES) --output $(ANN_CORPUS_GENERATED_GROUND_TRUTH)
 	diff -u $(ANN_CORPUS_GROUND_TRUTH) $(ANN_CORPUS_GENERATED_GROUND_TRUTH)
@@ -390,6 +395,12 @@ ann-history-report:
 
 ann-history-regression-check:
 	python3 scripts/ann/history_gate.py --run-root $(ANN_HISTORY_ROOT) --output $(ANN_HISTORY_REPORT) --fail-on-regression --min-runs 1 --min-corpora 1
+
+ann-history-fixture-check:
+	python3 scripts/ann/history_fixture_check.py \
+	  --clean $(ANN_HISTORY_CLEAN_FIXTURE) \
+	  --recall-regression $(ANN_HISTORY_RECALL_REGRESSION_FIXTURE) \
+	  --latency-regression $(ANN_HISTORY_LATENCY_REGRESSION_FIXTURE)
 
 ann-publish-baseline:
 	python3 scripts/ann/publish_baseline.py --run-root $(ANN_HISTORY_ROOT) --run-id $(ANN_BASELINE_RUN_ID) --baseline-id $(ANN_BASELINE_ID) --output-root $(ANN_BASELINE_ROOT)

@@ -253,6 +253,10 @@ archival under `target/ann/corpus-runs/<run-id>/`. It also refreshes
 adjacent recall/latency regressions.
 Each run also writes `machine_profile.json` so latency reports can be tied to
 the CPU/OS/Rust environment that produced them.
+`make ann-history-fixture-check` validates checked-in multi-run histories:
+one clean fixture must pass, while recall and latency regression fixtures must
+fail for the expected regression kind. This keeps the history gate itself under
+test before relying on hosted benchmark artifacts.
 
 `make ann-publish-baseline` packages one archived run into
 `target/ann/release-baselines/<baseline-id>/` for release artifacts and future
