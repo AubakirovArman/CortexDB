@@ -72,6 +72,9 @@
 - Added crash/restart partition seed coverage for replicated logs: uncommitted
   partitioned writes stay uncommitted after restart until heal, and committed
   restarted leaders catch up healed followers.
+- Added `repair_lagging_voter` for explicit node rejoin repair: small lag is
+  caught up with missing `AppendEntries`, while lag above policy chooses
+  snapshot install without mutating the follower log.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

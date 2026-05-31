@@ -72,6 +72,9 @@
 - [x] Crash/restart partition matrix seed coverage: partitioned leader restart
   preserves uncommitted entries without committing them, and committed leader
   restart catches up healed followers with the recovered commit index.
+- [x] Node rejoin repair primitive: `repair_lagging_voter` catches up small lag
+  with missing `AppendEntries` and selects snapshot install when lag exceeds
+  the configured threshold.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.

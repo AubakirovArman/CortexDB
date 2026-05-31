@@ -1,0 +1,119 @@
+use std::collections::BTreeSet;
+
+use cortex_engine::{
+    repair_lagging_voter, AppendEntriesRequest, ConsensusState, ElectionState,
+    InMemoryReplicationTransport, LogIndex, NodeId, ReplicationRecoveryAction,
+    ReplicationRecoveryPolicy, ReplicationTransport, Term,
+};
+
+#[test]
+fn rejoined_voter_catches_up_with_missing_entries_after_partition() {
+    let voters = BTreeSet::from([NodeId(1), NodeId(2), NodeId(3), NodeId(4), NodeId(5)]);
+    let mut leader = ConsensusState::new(NodeId(1), voters.clone());
+    let entry1 = leader.append_local(b"before partition".to_vec());
+    let entry2 = leader.append_local(b"committed while follower partitioned".to_vec());
+    let entry3 = leader.append_local(b"second committed while follower partitioned".to_vec());
+    leader.record_acks(
+        entry1.index,
+        BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)]),
+    );
+    leader.record_acks(
+        entry2.index,
+        BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)]),
+    );
+    leader.record_acks(
+        entry3.index,
+        BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)]),
+    );
+
+    let mut transport = transport_with_followers(&voters);
+    transport
+        .append_entries(
+            NodeId(5),
+            AppendEntriesRequest {
+                term: leader.current_term,
+                leader_id: leader.local_node,
+                prev_log_index: LogIndex(0),
+                prev_log_term: Term(0),
+                entries: vec![entry1],
+                leader_commit: LogIndex(1),
+            },
+        )
+        .unwrap();
+
+    let result = repair_lagging_voter(
+        &leader,
+        &mut transport,
+        NodeId(5),
+        LogIndex(1),
+        ReplicationRecoveryPolicy {
+            snapshot_threshold: 10,
+        },
+    )
+    .unwrap();
+
+    assert!(result.success);
+    assert!(result.append_sent);
+    assert_eq!(result.plan.lag, 2);
+    assert_eq!(transport.peer_log(NodeId(5)).unwrap().len(), 3);
+    assert_eq!(transport.peer_commit(NodeId(5)), Some(LogIndex(3)));
+}
+
+#[test]
+fn repair_selects_snapshot_without_append_when_lag_exceeds_threshold() {
+    let voters = BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)]);
+    let mut leader = ConsensusState::new(NodeId(1), voters.clone());
+    for index in 0..4 {
+        let entry = leader.append_local(format!("entry {index}").into_bytes());
+        leader.record_acks(entry.index, BTreeSet::from([NodeId(1), NodeId(2)]));
+    }
+    let mut transport = transport_with_followers(&voters);
+
+    let result = repair_lagging_voter(
+        &leader,
+        &mut transport,
+        NodeId(3),
+        LogIndex(0),
+        ReplicationRecoveryPolicy {
+            snapshot_threshold: 2,
+        },
+    )
+    .unwrap();
+
+    assert!(!result.success);
+    assert!(!result.append_sent);
+    assert_eq!(
+        result.plan.action,
+        ReplicationRecoveryAction::InstallSnapshot {
+            checkpoint: LogIndex(4)
+        }
+    );
+    assert!(transport.peer_log(NodeId(3)).unwrap().is_empty());
+}
+
+#[test]
+fn repair_rejects_non_voter_target() {
+    let voters = BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)]);
+    let leader = ConsensusState::new(NodeId(1), voters.clone());
+    let mut transport = transport_with_followers(&voters);
+
+    let result = repair_lagging_voter(
+        &leader,
+        &mut transport,
+        NodeId(4),
+        LogIndex(0),
+        ReplicationRecoveryPolicy::default(),
+    );
+
+    assert!(result.is_err());
+}
+
+fn transport_with_followers(voters: &BTreeSet<NodeId>) -> InMemoryReplicationTransport {
+    let mut transport = InMemoryReplicationTransport::default();
+    for node in voters.iter().copied().filter(|node| *node != NodeId(1)) {
+        let mut state = ElectionState::new(node, voters.clone());
+        state.current_term = Term(1);
+        transport.register_peer(state);
+    }
+    transport
+}

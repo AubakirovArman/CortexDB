@@ -15,6 +15,7 @@ mod log_matching;
 mod membership;
 mod peer;
 mod recovery;
+mod repair;
 mod rotation;
 mod snapshot;
 mod tcp;
@@ -32,6 +33,7 @@ pub use recovery::{
     plan_replication_recovery, ReplicationRecoveryAction, ReplicationRecoveryPlan,
     ReplicationRecoveryPolicy,
 };
+pub use repair::{repair_lagging_voter, ReplicationRepairResult};
 pub use rotation::{
     resume_joint_membership_rotation, rotate_membership_with_joint_consensus,
     MembershipRotationPhase, MembershipRotationResult, MembershipRotationResumeResult,
