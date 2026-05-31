@@ -94,6 +94,9 @@
 - Added `Database::replication_snapshot_segment` and
   `ReplicationDatabaseSnapshotSource`, so background repair can source
   snapshots from current database storage instead of hand-built fixtures.
+- Added `ReplicationFollowerProgressStore` and
+  `ReplicationStoredProgressSource`, so background repair can resume planning
+  from atomically persisted follower progress after restart.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

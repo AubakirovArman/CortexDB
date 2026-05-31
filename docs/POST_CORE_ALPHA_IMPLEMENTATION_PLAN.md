@@ -96,6 +96,10 @@
 - [x] Database-backed repair snapshots: `Database::replication_snapshot_segment`
   and `ReplicationDatabaseSnapshotSource` let the background repair runtime
   source `SnapshotSegment` payloads from current storage state.
+- [x] Durable follower progress source: `ReplicationFollowerProgressStore`
+  persists follower commit/observed indexes atomically and
+  `ReplicationStoredProgressSource` feeds that state into the repair worker
+  after restart.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
@@ -119,9 +123,9 @@
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
-3. Consensus: connect the background repair task to real peer progress
-   persistence and keep expanding crash/restart coverage around node rejoin
-   repair.
+3. Consensus: wire live AppendEntries/snapshot ACK updates into
+   `ReplicationFollowerProgressStore` and keep expanding crash/restart coverage
+   around node rejoin repair.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 

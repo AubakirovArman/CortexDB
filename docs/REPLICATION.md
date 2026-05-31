@@ -99,6 +99,12 @@ manually stitched together by callers.
 for that runtime: it reads a current `Database::replication_snapshot_segment`
 through `Arc<RwLock<Database>>` and only returns it when the requested repair
 checkpoint matches the database commit sequence.
+`ReplicationFollowerProgressStore` persists follower commit/observed indexes in
+an atomically written local progress file, and `ReplicationStoredProgressSource`
+adapts that file-backed state to the background repair worker. This closes the
+restart gap for repair planning input: after a repair runtime restarts, it can
+resume from the last durable follower progress snapshot instead of requiring a
+caller to rebuild all progress from memory.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 
@@ -224,6 +230,6 @@ rejoin/repair handling after network partitions.
 
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS
   terminator for now.
-- Background task execution after a node rejoins. The explicit repair sweep,
-  progress-aware schedule, one-shot repair cycle, and snapshot sender exist,
-  but a real continuously running repair worker still needs to drive them.
+- Automatic peer-progress updates from live AppendEntries and snapshot ACKs into
+  `ReplicationFollowerProgressStore`. The durable store and background repair
+  source exist, but transports still need to feed fresh ACK progress into it.
