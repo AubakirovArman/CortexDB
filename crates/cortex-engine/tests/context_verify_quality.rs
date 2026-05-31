@@ -1,11 +1,14 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
 use cortex_engine::verification::{VerificationGuardCode, VerificationStatus};
 use cortex_engine::{scope_id, ContextPackAnomalyCode, ContextPackOptions, Database};
+use serde::Deserialize;
 
 const QUALITY_FIXTURE: &str = include_str!("../fixtures/context_verify_quality_v1.cells");
+const REAL_DOMAIN_CHUNKS: &str =
+    include_str!("../../../examples/real_domains/investment_projects/corpus/chunks.jsonl");
 
 #[test]
 fn context_and_verify_quality_fixture_is_stable_before_checkpoint() {
@@ -31,9 +34,71 @@ fn context_and_verify_quality_fixture_survives_checkpoint_restart() {
     assert_verify_quality(&db);
 }
 
+#[test]
+fn context_pack_uses_real_domain_investment_project_chunks() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    seed_real_domain_chunks(
+        &mut db,
+        &[
+            "wb_p008500_c001",
+            "wb_p008500_c002",
+            "wb_p008499_c001",
+            "wb_p008499_c002",
+        ],
+    );
+
+    let pack = db
+        .context_pack_from_aql(
+            r#"RETRIEVE CONTEXT
+FOR TASK "Kazakhstan water infrastructure development project"
+IN BRAIN investment_projects
+WHERE space = project:investments AND status = "ready"
+LIMIT 4 CANDIDATES;"#,
+            &agent_view(true, false),
+            ContextPackOptions {
+                token_budget_tokens: 1_000,
+                require_citations: true,
+                reduce_redundancy: false,
+                ..ContextPackOptions::default()
+            },
+        )
+        .unwrap();
+
+    assert!(pack.cells.len() >= 2);
+    assert!(pack.estimated_tokens <= pack.token_budget_tokens);
+    assert!(pack
+        .anomalies
+        .iter()
+        .all(|anomaly| anomaly.code != ContextPackAnomalyCode::MissingCitation));
+    assert!(pack.cells.iter().all(|cell| cell.citation.is_some()));
+
+    let water_cells = pack
+        .cells
+        .iter()
+        .filter(|cell| {
+            let payload = String::from_utf8_lossy(&cell.payload);
+            payload.contains("doc_id=wb_p008500") && payload.contains("Water Supply")
+        })
+        .count();
+    assert_eq!(water_cells, 2);
+    assert!(pack.cells.iter().all(|cell| cell
+        .explain
+        .as_ref()
+        .is_some_and(|explain| !explain.matched_terms.is_empty())));
+}
+
 fn seed_quality_fixture(db: &mut Database) {
     for (cell_id, payload) in load_quality_fixture() {
         db.put_cell(cell_id, payload.into_bytes()).unwrap();
+    }
+}
+
+fn seed_real_domain_chunks(db: &mut Database, chunk_ids: &[&str]) {
+    for (index, chunk) in load_real_domain_chunks(chunk_ids).into_iter().enumerate() {
+        let cell_id = CellId(1_000 + index as u64);
+        db.put_cell(cell_id, real_domain_payload(&chunk).into_bytes())
+            .unwrap();
     }
 }
 
@@ -53,6 +118,36 @@ fn load_quality_fixture() -> Vec<(CellId, String)> {
             (CellId(id), payload.to_owned())
         })
         .collect()
+}
+
+fn load_real_domain_chunks(chunk_ids: &[&str]) -> Vec<RealDomainChunk> {
+    let wanted = chunk_ids.iter().copied().collect::<BTreeSet<_>>();
+    let chunks_by_id = REAL_DOMAIN_CHUNKS
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| serde_json::from_str::<RealDomainChunk>(line).unwrap())
+        .filter(|chunk| wanted.contains(chunk.chunk_id.as_str()))
+        .map(|chunk| (chunk.chunk_id.clone(), chunk))
+        .collect::<BTreeMap<_, _>>();
+
+    assert_eq!(chunks_by_id.len(), chunk_ids.len());
+    chunk_ids
+        .iter()
+        .map(|chunk_id| chunks_by_id.get(*chunk_id).unwrap().clone())
+        .collect()
+}
+
+fn real_domain_payload(chunk: &RealDomainChunk) -> String {
+    format!(
+        "scope=project:investments\nstatus=ready\ntype=document_block\nsource={}:{}\ndoc_id={}\nchunk_id={}\ntitle={}\nsector={}\n\n{}",
+        chunk.source,
+        chunk.doc_id,
+        chunk.doc_id,
+        chunk.chunk_id,
+        chunk.title,
+        chunk.sector,
+        chunk.text
+    )
 }
 
 fn assert_context_quality(db: &Database) {
@@ -154,4 +249,14 @@ fn agent_view(require_citations: bool, allow_verify: bool) -> AgentView {
         require_citations_by_default: require_citations,
         private_scope: None,
     }
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct RealDomainChunk {
+    chunk_id: String,
+    doc_id: String,
+    source: String,
+    sector: String,
+    title: String,
+    text: String,
 }

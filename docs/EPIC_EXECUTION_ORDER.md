@@ -95,7 +95,7 @@ Current evidence:
 
 ## Epic 3 - Context Pack Quality Lock
 
-Status: partial.
+Status: locally done for Core Alpha.
 
 Goal: keep Context Pack as the main product differentiator with repeatable
 quality evidence.
@@ -121,6 +121,17 @@ Done when:
 - JSON contract stays stable.
 - Context Pack behavior is evaluated on a real-domain corpus, not only trivial
   synthetic cases.
+
+Current evidence:
+
+- `make context-verify-quality-check` passed locally on `2026-05-31`.
+- The quality gate covers the golden ContextPack/VERIFY fixture before
+  checkpoint and after checkpoint/restart.
+- The gate samples checked-in investment-project real-domain chunks from
+  `examples/real_domains/investment_projects/corpus/chunks.jsonl`.
+- Broader ContextPack tests cover budget truncation, missing citation anomalies,
+  sparse and dense redundancy reduction, numeric guard coexistence, feedback
+  ordering, source citations, and explain metadata.
 
 ## Epic 4 - ANN/HNSW Guarded Production Evidence
 

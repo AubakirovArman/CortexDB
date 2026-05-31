@@ -27,6 +27,9 @@ Implemented in `cortex-engine`:
 - `Database::context_pack_from_aql`
 - `estimate_tokens`
 - Optional sparse redundancy reduction using fixed-point Jaccard.
+- Optional dense-vector redundancy reduction when payloads include `vector=`.
+- Numeric guard coexistence: conflicting values for the same
+  `project` + `metric` are kept together instead of deduplicated.
 
 Public JSON responses include:
 
@@ -68,14 +71,18 @@ RETRIEVE CONTEXT ...
 4. Requested budget is clamped by `AgentView::effective_budget`.
 5. Citation requirements produce anomalies instead of silently passing.
 6. Redundancy reduction, when enabled, reports skipped cells as anomalies.
-7. No HNSW, reranking, or LLM calls run inside ContextPack v1 itself.
+7. Numeric guard conflicts are preserved as context, not treated as duplicates.
+8. No HNSW, reranking, or LLM calls run inside ContextPack v1 itself.
 
 ## Known Limits
 
 - Token estimation is byte-based and approximate.
 - Citations are recognized only from `source=` or `citation=` payload lines.
-- Redundancy control is sparse term based; dense semantic scoring and
-  contradiction detection are future milestones.
+- Redundancy control is deterministic and local to the pack. It supports sparse
+  term overlap and exact fixed-point vector similarity from payload vectors, but
+  does not call an external semantic model.
+- Full contradiction detection is handled by VERIFY FACT; ContextPack only keeps
+  numeric guard variants together so an agent can see conflicting values.
 
 ## Quality Gate
 
@@ -92,6 +99,11 @@ The fixture asserts that ContextPack keeps both public numeric variants when
 redundancy reduction is enabled, preserves citations, stays within budget, and
 survives checkpoint/restart. It also asserts the matching VERIFY report returns
 `mixed` evidence with a numeric mismatch guard.
+
+The same gate also samples checked-in real-domain investment-project chunks from
+`examples/real_domains/investment_projects/corpus/chunks.jsonl` to prove that
+ContextPack can build cited, explained packs from the project corpus used by
+the ANN/HNSW embedding baseline work, not only from tiny synthetic cells.
 
 Run the gate directly with:
 
