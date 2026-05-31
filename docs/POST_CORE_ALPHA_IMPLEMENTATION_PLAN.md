@@ -106,6 +106,10 @@
 - [x] Default progress-recording background runtime:
   `spawn_replication_repair_background_task_with_progress_store` wires one
   durable progress store into both repair planning and successful ACK recording.
+- [x] Membership-aware durable repair progress reconciliation:
+  `ReplicationFollowerProgressStore` can now sync its contents with stable,
+  joint, or current consensus voter sets, pruning retired peers and seeding
+  newly joined voters for explicit repair.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
@@ -129,9 +133,9 @@
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
-3. Consensus: coordinate replication progress-store paths with cluster
-   membership lifecycle and keep expanding crash/restart coverage around node
-   rejoin repair.
+3. Consensus: add operator-level cluster config for progress-store path
+   placement and keep expanding crash/restart coverage around node rejoin
+   repair.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 

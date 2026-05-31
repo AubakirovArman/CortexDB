@@ -114,6 +114,12 @@ runtime helper for that pairing: it builds a `ReplicationStoredProgressSource`
 and wraps the supplied transport in `ReplicationProgressRecordingTransport`, so
 one durable progress store is used for both repair planning input and successful
 peer ACK output.
+`ReplicationFollowerProgressStore::reconcile_voters`,
+`reconcile_voting_config`, and `reconcile_consensus_state` connect that durable
+repair state to membership lifecycle changes. Reconciliation keeps progress for
+current remote voters, removes retired voters, drops local-node progress, and
+seeds newly joined voters at `0/0` so the next repair sweep explicitly catches
+them up through append repair or snapshot install.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 
@@ -239,5 +245,6 @@ rejoin/repair handling after network partitions.
 
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS
   terminator for now.
-- Cluster-level lifecycle wiring that coordinates the progress store path with
-  membership changes, removed peers, and operator configuration.
+- Operator-level cluster configuration that chooses and rotates progress-store
+  paths across deployments. The store contents now reconcile with stable and
+  joint membership changes, but there is not yet a full cluster config manager.

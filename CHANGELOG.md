@@ -102,6 +102,9 @@
 - Added `spawn_replication_repair_background_task_with_progress_store`, the
   default background repair helper that uses one durable progress store for
   both repair planning input and successful peer ACK output.
+- Added membership-aware repair progress reconciliation, so durable follower
+  progress stores can prune retired voters, seed newly joined voters, and sync
+  with stable or joint membership configs before repair planning.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

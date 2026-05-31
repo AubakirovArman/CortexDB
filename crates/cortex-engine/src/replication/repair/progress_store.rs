@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -7,7 +7,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::distributed::NodeId;
 use crate::error::{EngineError, EngineResult};
-use crate::replication::{ConsensusState, LogIndex};
+use crate::replication::{ConsensusState, LogIndex, VotingConfig};
 
 use super::worker::ReplicationRepairProgressSource;
 use super::ReplicationFollowerProgress;
@@ -22,6 +22,12 @@ pub struct ReplicationFollowerProgressStore {
 }
 
 impl ReplicationFollowerProgressStore {
+    pub fn default_path(root: impl AsRef<Path>, local_node: NodeId) -> PathBuf {
+        root.as_ref()
+            .join("replication")
+            .join(format!("node-{}.repair-progress", local_node.0))
+    }
+
     pub fn open(path: impl AsRef<Path>) -> EngineResult<Self> {
         let path = path.as_ref().to_owned();
         let progress = if path.exists() {
@@ -57,6 +63,47 @@ impl ReplicationFollowerProgressStore {
 
     pub fn progress(&self) -> &BTreeMap<NodeId, ReplicationFollowerProgress> {
         &self.progress
+    }
+
+    pub fn reconcile_consensus_state(&mut self, leader: &ConsensusState) -> EngineResult<()> {
+        self.reconcile_voters(leader.local_node, &leader.voters)
+    }
+
+    pub fn reconcile_voting_config(
+        &mut self,
+        local_node: NodeId,
+        voting_config: &VotingConfig,
+    ) -> EngineResult<()> {
+        let voters = match voting_config {
+            VotingConfig::Stable(config) => config.voters.clone(),
+            VotingConfig::Joint(config) => config.voters_union(),
+        };
+        self.reconcile_voters(local_node, &voters)
+    }
+
+    pub fn reconcile_voters(
+        &mut self,
+        local_node: NodeId,
+        voters: &BTreeSet<NodeId>,
+    ) -> EngineResult<()> {
+        if voters.is_empty() || !voters.contains(&local_node) {
+            return Err(EngineError::InvalidOperation);
+        }
+
+        let mut next = BTreeMap::new();
+        for voter in voters.iter().copied().filter(|node| *node != local_node) {
+            let progress = self.progress.get(&voter).copied().unwrap_or_else(|| {
+                ReplicationFollowerProgress::new(voter, LogIndex(0), LogIndex(0))
+            });
+            validate_progress(progress)?;
+            next.insert(voter, progress);
+        }
+
+        if next != self.progress {
+            write_progress(&self.path, &next)?;
+            self.progress = next;
+        }
+        Ok(())
     }
 
     pub fn path(&self) -> &Path {
