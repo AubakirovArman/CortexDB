@@ -346,6 +346,7 @@ ann-scripts-check:
 	python3 scripts/ann/report_contract.py --self-test
 	python3 scripts/ann/compare_reports.py --self-test
 	python3 scripts/ann/summarize_history.py --self-test
+	python3 scripts/ann/history_contract.py --self-test
 	python3 scripts/ann/history_gate.py --self-test
 	python3 scripts/ann/publish_baseline.py --self-test
 	python3 scripts/ann/package_baseline.py --self-test

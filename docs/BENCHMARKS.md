@@ -267,7 +267,10 @@ The Rust CI workflow runs the same package step on the stable toolchain and
 uploads the tarball as the `ann-release-baseline-package` artifact only after
 the package validator has checked the archive root, manifest checksums,
 history, generated ground truth, multi-layer graph evidence, gate-policy fields,
-and `production_safe=true`.
+and `production_safe=true`. The history check is now part of package
+validation, not only the pre-package run-root gate: `history.json` must contain
+the packaged `source_run_id`, at least one corpus group, zero regressions, and
+production-safe latest corpus evidence.
 
 `make ann-compare-baseline-bundle` compares a candidate run against one of
 those baseline bundles and emits `baseline_comparison.json` next to the

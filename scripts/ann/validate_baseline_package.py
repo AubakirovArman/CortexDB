@@ -13,6 +13,7 @@ import unittest
 from pathlib import PurePosixPath, Path
 from typing import Any
 
+from history_contract import validate_packaged_history
 from report_contract import validate_production_report
 
 
@@ -98,6 +99,7 @@ def validate_package(
         missing = sorted(required.difference(listed_paths))
         if missing:
             raise ValueError(f"package missing required files: {', '.join(missing)}")
+        baseline = load_json_bytes(read_member(tar, f"{root}/baseline_manifest.json"), "baseline_manifest.json")
         report = load_json_bytes(read_member(tar, f"{root}/report.json"), "report.json")
         if report.get("passed") is not True:
             raise ValueError("report.json: passed must be true")
@@ -105,6 +107,10 @@ def validate_package(
             raise ValueError("report.json: production_safe must be true")
         if require_production_safe:
             validate_production_report(report)
+        if require_history:
+            history = load_json_bytes(read_member(tar, f"{root}/history.json"), "history.json")
+            source_run_id = str(baseline.get("source_run_id", ""))
+            validate_packaged_history(history, source_run_id=source_run_id)
         if require_real_embedding_metadata:
             export = load_json_bytes(
                 read_member(tar, f"{root}/embedding_export_manifest.json"),
@@ -188,12 +194,17 @@ class SelfTests(unittest.TestCase):
         root: Path,
         production_safe: bool = True,
         embedding_provider: str = "command",
+        omit_report_field: str = "",
+        history: dict[str, Any] | None = None,
     ) -> Path:
         from package_baseline import package_baseline
 
         bundle = root / "baseline"
         bundle.mkdir()
-        (bundle / "baseline_manifest.json").write_text('{"baseline_id":"baseline"}\n', encoding="utf-8")
+        (bundle / "baseline_manifest.json").write_text(
+            '{"baseline_id":"baseline","source_run_id":"smoke"}\n',
+            encoding="utf-8",
+        )
         (bundle / "run_manifest.json").write_text('{"run_id":"smoke"}\n', encoding="utf-8")
         report = {
             "passed": True,
@@ -211,9 +222,11 @@ class SelfTests(unittest.TestCase):
             "p95_latency_nanos": 10,
             "max_latency_nanos": 20,
         }
+        if omit_report_field:
+            report.pop(omit_report_field)
         (bundle / "report.json").write_text(json.dumps(report) + "\n", encoding="utf-8")
         (bundle / "machine_profile.json").write_text('{"schema_version":1}\n', encoding="utf-8")
-        (bundle / "history.json").write_text('{"run_count":1}\n', encoding="utf-8")
+        (bundle / "history.json").write_text(json.dumps(history or clean_history()) + "\n", encoding="utf-8")
         (bundle / "ground_truth.jsonl").write_text('{"name":"q","candidates":[1]}\n', encoding="utf-8")
         (bundle / "embedding_preflight.json").write_text('{"embedding_model":"m"}\n', encoding="utf-8")
         (bundle / "embedding_export_manifest.json").write_text(
@@ -245,28 +258,27 @@ class SelfTests(unittest.TestCase):
 
     def test_production_package_requires_gate_policy(self) -> None:
         with tempfile.TemporaryDirectory() as raw_dir:
-            archive = self.build_archive(Path(raw_dir))
-            with tarfile.open(archive, "r:gz") as tar:
-                root = package_root([validate_member_path(member.name) for member in tar.getmembers() if member.isfile()])
-                report = load_json_bytes(read_member(tar, f"{root}/report.json"), "report.json")
-            report.pop("required_min_recall_q16")
-            with tempfile.TemporaryDirectory() as broken_dir:
-                bundle = Path(broken_dir) / "baseline"
-                bundle.mkdir()
-                for name in CORE_REQUIRED_FILES | {"history.json", "ground_truth.jsonl"}:
-                    (bundle / name).write_text("{}\n", encoding="utf-8")
-                (bundle / "baseline_manifest.json").write_text('{"baseline_id":"baseline"}\n', encoding="utf-8")
-                (bundle / "run_manifest.json").write_text('{"run_id":"smoke"}\n', encoding="utf-8")
-                (bundle / "machine_profile.json").write_text('{"schema_version":1}\n', encoding="utf-8")
-                (bundle / "ground_truth.jsonl").write_text('{"name":"q","candidates":[1]}\n', encoding="utf-8")
-                (bundle / "history.json").write_text('{"run_count":1}\n', encoding="utf-8")
-                (bundle / "report.json").write_text(json.dumps(report) + "\n", encoding="utf-8")
-                from package_baseline import package_baseline
+            archive = self.build_archive(Path(raw_dir), omit_report_field="required_min_recall_q16")
+            with self.assertRaises(ValueError):
+                validate_package(archive, True, True, True, False)
 
-                broken_archive = Path(broken_dir) / "broken.tar.gz"
-                package_baseline(bundle, broken_archive, "baseline", "2026-01-01T00:00:00Z")
-                with self.assertRaises(ValueError):
-                    validate_package(broken_archive, True, True, True, False)
+    def test_history_regression_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_dir:
+            bad_history = clean_history()
+            bad_history["regression_count"] = 1
+            archive = self.build_archive(Path(raw_dir), history=bad_history)
+            with self.assertRaises(ValueError):
+                validate_package(archive, True, True, True, False)
+
+
+def clean_history() -> dict[str, Any]:
+    return {
+        "run_count": 1,
+        "corpus_count": 1,
+        "regression_count": 0,
+        "runs": [{"run_id": "smoke", "production_safe": True}],
+        "corpora": [{"run_count": 1, "latest_run_id": "smoke", "latest_production_safe": True}],
+    }
 
 
 if __name__ == "__main__":

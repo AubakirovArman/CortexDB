@@ -194,8 +194,12 @@ requires the report to carry the gate policy that produced the result:
 the observed recall/latency fields and rejects single-layer graph evidence
 (`hnsw_layer_count <= 1`, `upper_layers == 0`, or `upper_graph_edges == 0`).
 Real embedding release packages also require `history.json` and generated
-ground truth, so a published baseline carries quality evidence, replayable
-correctness evidence, and the SLO contract used to judge the run.
+ground truth. The packaged `history.json` must be clean as a standalone
+artifact: at least one run, at least one corpus group, zero adjacent
+regressions, a matching `source_run_id`, and production-safe latest corpus
+evidence. This means a published baseline carries quality evidence, replayable
+correctness evidence, the SLO contract used to judge the run, and the history
+needed to compare later candidates.
 
 For each corpus, preserve:
 
