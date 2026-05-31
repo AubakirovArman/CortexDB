@@ -61,9 +61,12 @@ GitHub Release as durable release assets.
 
 ## Latest Local Gate Evidence
 
-On 2026-05-26, `make alpha-check` passed locally. That covered workspace check,
-all-features tests, formatting, clippy with `-D warnings`, SDK smoke checks, the
-core benchmark matrix, and the investment projects demo script.
+On 2026-05-31, `make release-check` passed locally at commit
+`92ce19846c6a16fc79a4076a2b2378a79985f94a`. That covered the full
+`alpha-check`, binary package validation, production evidence sweep, offsite
+backup staging, crash/fault evidence, chaos restart evidence, replication
+lifecycle evidence, HTTP smoke, and SDK smoke. The summary is recorded in
+[`RELEASE_EVIDENCE.md`](RELEASE_EVIDENCE.md).
 
 ## Explicit Non-Goals For This Tag
 

@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 105 project markdown files.
+At the time of this audit, the repository tracks 106 project markdown files.
 
 ## Start Here
 
@@ -88,6 +88,7 @@ backlogs, snapshots, or deeper planning notes.
 
 - [`CORE_ALPHA.md`](CORE_ALPHA.md) - Core Alpha scope.
 - [`CORE_ALPHA_RELEASE_CHECKLIST.md`](CORE_ALPHA_RELEASE_CHECKLIST.md) - release checklist.
+- [`RELEASE_EVIDENCE.md`](RELEASE_EVIDENCE.md) - latest local release evidence summary and artifact map.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md) - release notes.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - active ordered epic queue.
