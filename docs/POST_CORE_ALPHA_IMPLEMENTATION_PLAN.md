@@ -155,7 +155,9 @@
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
 - [x] Завести frontend source-of-truth under `web/dashboard/src` plus `make dashboard-build` / `make dashboard-check`.
 - [x] Завести standalone static build artifact under `web/dashboard/dist`, independent from the server crate asset copy.
-- [ ] Превратить standalone static build в полноценный frontend-продукт с route-level pages и выбранным stack/release pipeline.
+- [ ] Превратить standalone static build в полноценный frontend-продукт с
+  page-specific workflows, product-grade auth UX, and broader visual regression
+  coverage.
 - [x] Начальный route-level shell: dashboard views now deep-link through
   `/dashboard/overview`, `/dashboard/cells`, `/dashboard/search`,
   `/dashboard/ann-eval`, `/dashboard/aql`, `/dashboard/context`,
@@ -169,6 +171,10 @@
   `web/dashboard/dist` into `target/dashboard/dashboard-v1.tar.gz` with a
   checked `package_manifest.json`, file sizes, SHA-256 checksums, CI upload,
   and `make dashboard-release-check`.
+- [x] Standalone dashboard release now carries
+  `dashboard_manifest.json`, fixing the Core Alpha frontend stack
+  (`dependency-free-static-html-css-js`), release channel, asset root,
+  route IDs, and route entrypoints as a machine-checkable contract.
 - [x] Наборы views в текущем static dashboard: overview, cells, search/explain, ANN, AQL, context, verify, ingest, storage health, cluster status.
 - [x] Базовый tenant/token control в UI для scoped API calls; полноценный auth UX остаётся будущей standalone UI задачей.
 - [x] Playwright/CI smoke путь для текущего `/dashboard`: asset loading, route navigation, cell put/get, keyword search.

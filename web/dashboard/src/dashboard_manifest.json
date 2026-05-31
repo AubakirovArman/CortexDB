@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "app_id": "cortexdb-dashboard-v1",
+  "release_channel": "core-alpha",
+  "stack": "dependency-free-static-html-css-js",
+  "asset_root": "/dashboard/assets/v1",
+  "entrypoints": [
+    "/dashboard",
+    "/dashboard/overview",
+    "/dashboard/cells",
+    "/dashboard/search",
+    "/dashboard/ann-eval",
+    "/dashboard/aql",
+    "/dashboard/context",
+    "/dashboard/verify",
+    "/dashboard/ingest",
+    "/dashboard/storage",
+    "/dashboard/cluster"
+  ],
+  "routes": [
+    { "id": "overview", "title": "Overview" },
+    { "id": "cells", "title": "Cells" },
+    { "id": "search", "title": "Search" },
+    { "id": "ann-eval", "title": "ANN Eval" },
+    { "id": "aql", "title": "AQL" },
+    { "id": "context", "title": "Context" },
+    { "id": "verify", "title": "Verify" },
+    { "id": "ingest", "title": "Ingest" },
+    { "id": "storage", "title": "Storage Health" },
+    { "id": "cluster", "title": "Cluster Status" }
+  ]
+}

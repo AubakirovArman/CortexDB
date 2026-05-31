@@ -35,12 +35,27 @@ target/dashboard/summary.json
 The Rust CI workflow uploads those files as the `dashboard-screenshots`
 artifact on the stable toolchain job.
 
+## Frontend Contract
+
+The dashboard stack is intentionally fixed for Core Alpha:
+
+```text
+dependency-free-static-html-css-js
+```
+
+`web/dashboard/src/dashboard_manifest.json` is the checked source of truth for
+the standalone frontend contract. It declares the release channel, asset root,
+route IDs, and route entrypoints. `make dashboard-build` copies that manifest
+into the server asset tree and standalone dist. `make dashboard-release-check`
+packages and validates it alongside the archive manifest and SHA-256 file
+checksums.
+
 ## Boundary
 
 This is not the final product UI. It is the checked, reviewable bridge between
 the Core Alpha HTTP API and the future standalone frontend product. The current
 shell already exposes Overview, Cells, Search, ANN, AQL, Context, Verify,
-Ingest, Storage, and Cluster views from static assets. The current standalone
-artifact is a dependency-free static build under `web/dashboard/dist`; the next
-UI layer should add route-level pages, a chosen frontend stack if needed, and
-broader visual regression coverage.
+Ingest, Storage, and Cluster views from route-level static entrypoints. The
+current standalone artifact is a dependency-free static build under
+`web/dashboard/dist`; the next UI layer should add broader page-specific
+workflow coverage and visual regression coverage.

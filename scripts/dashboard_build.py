@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import filecmp
 import shutil
 import sys
@@ -15,8 +16,8 @@ SRC_DIR = ROOT / "web" / "dashboard" / "src"
 OUT_DIR = ROOT / "crates" / "cortex-server" / "assets" / "dashboard" / "v1"
 DIST_DIR = ROOT / "web" / "dashboard" / "dist"
 DIST_ASSET_DIR = DIST_DIR / "dashboard" / "assets" / "v1"
-ASSETS = ("index.html", "style.css", "app.js")
-STATIC_ASSETS = ("style.css", "app.js")
+ASSETS = ("index.html", "style.css", "app.js", "dashboard_manifest.json")
+STATIC_ASSETS = ("style.css", "app.js", "dashboard_manifest.json")
 ROUTES = (
     "overview",
     "cells",
@@ -46,6 +47,19 @@ def assert_source_complete() -> None:
     if missing:
         joined = ", ".join(missing)
         raise SystemExit(f"missing dashboard source assets: {joined}")
+    validate_manifest()
+
+
+def validate_manifest() -> None:
+    manifest_path = SRC_DIR / "dashboard_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    routes = tuple(route.get("id") for route in manifest.get("routes", []))
+    if routes != ROUTES:
+        raise SystemExit(
+            "dashboard_manifest.json routes must match dashboard build routes"
+        )
+    if manifest.get("stack") != "dependency-free-static-html-css-js":
+        raise SystemExit("dashboard_manifest.json must declare the dashboard stack")
 
 
 def check_assets() -> int:

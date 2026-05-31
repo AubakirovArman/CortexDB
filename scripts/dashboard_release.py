@@ -34,6 +34,7 @@ REQUIRED_FILES = (
     "index.html",
     "dashboard/index.html",
     "dashboard/assets/v1/app.js",
+    "dashboard/assets/v1/dashboard_manifest.json",
     "dashboard/assets/v1/style.css",
     *(f"dashboard/{route}/index.html" for route in ROUTES),
 )
@@ -70,15 +71,31 @@ def file_entry(dist_dir: Path, path: Path) -> dict[str, Any]:
 
 
 def package_manifest(dist_dir: Path, package_id: str, created_at: str, files: list[Path]) -> dict[str, Any]:
+    dashboard_manifest = read_dashboard_manifest(dist_dir)
     return {
         "schema_version": 1,
         "package_id": package_id,
         "created_at": created_at,
         "source_dist": str(dist_dir),
         "asset_root": "/dashboard/assets/v1",
+        "frontend_stack": dashboard_manifest["stack"],
+        "frontend_manifest": "dashboard/assets/v1/dashboard_manifest.json",
         "entrypoints": ["index.html", "dashboard/index.html", *[f"dashboard/{route}/index.html" for route in ROUTES]],
         "files": [file_entry(dist_dir, path) for path in files],
     }
+
+
+def read_dashboard_manifest(dist_dir: Path) -> dict[str, Any]:
+    path = dist_dir / "dashboard" / "assets" / "v1" / "dashboard_manifest.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    if manifest.get("schema_version") != 1:
+        raise ValueError("dashboard_manifest.json: unsupported schema_version")
+    if manifest.get("stack") != "dependency-free-static-html-css-js":
+        raise ValueError("dashboard_manifest.json: unexpected stack")
+    routes = tuple(route.get("id") for route in manifest.get("routes", []))
+    if routes != ROUTES:
+        raise ValueError("dashboard_manifest.json: route list does not match release routes")
+    return manifest
 
 
 def add_bytes(tar: tarfile.TarFile, arcname: str, data: bytes) -> None:
@@ -146,11 +163,26 @@ def validate_dashboard_package(archive: Path) -> dict[str, Any]:
             raise ValueError("package_manifest.json: unsupported schema_version")
         if manifest.get("package_id") != root:
             raise ValueError("package_manifest.json: package_id does not match archive root")
+        if manifest.get("frontend_stack") != "dependency-free-static-html-css-js":
+            raise ValueError("package_manifest.json: unexpected frontend_stack")
         listed = validate_files(tar, root, manifest.get("files"), names)
         missing = sorted(set(REQUIRED_FILES).difference(listed))
         if missing:
             raise ValueError(f"dashboard package missing required files: {', '.join(missing)}")
+        validate_packaged_dashboard_manifest(tar, root)
         return {"archive": str(archive), "package_id": root, "file_count": len(listed), "passed": True}
+
+
+def validate_packaged_dashboard_manifest(tar: tarfile.TarFile, root: str) -> None:
+    raw = read_member(tar, f"{root}/dashboard/assets/v1/dashboard_manifest.json")
+    manifest = json.loads(raw.decode("utf-8"))
+    if manifest.get("schema_version") != 1:
+        raise ValueError("dashboard_manifest.json: unsupported schema_version")
+    if manifest.get("stack") != "dependency-free-static-html-css-js":
+        raise ValueError("dashboard_manifest.json: unexpected stack")
+    routes = tuple(route.get("id") for route in manifest.get("routes", []))
+    if routes != ROUTES:
+        raise ValueError("dashboard_manifest.json: route list does not match release routes")
 
 
 def validate_files(tar: tarfile.TarFile, root: str, files: Any, names: set[str]) -> set[str]:
@@ -205,6 +237,16 @@ class SelfTests(unittest.TestCase):
         (dist / "index.html").write_text("<title>CortexDB Console</title>", encoding="utf-8")
         (dist / "dashboard" / "index.html").write_text("<title>CortexDB Console</title>", encoding="utf-8")
         (dist / "dashboard" / "assets" / "v1" / "app.js").write_text("console.log('ok')", encoding="utf-8")
+        (dist / "dashboard" / "assets" / "v1" / "dashboard_manifest.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "stack": "dependency-free-static-html-css-js",
+                    "routes": [{"id": route} for route in ROUTES],
+                }
+            ),
+            encoding="utf-8",
+        )
         (dist / "dashboard" / "assets" / "v1" / "style.css").write_text("body{}", encoding="utf-8")
         for route in ROUTES:
             route_dir = dist / "dashboard" / route

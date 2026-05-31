@@ -37,8 +37,10 @@ Current coverage:
 - source assets live in `web/dashboard/src`;
 - standalone build output lives in `web/dashboard/dist`;
 - build output is versioned under `/dashboard/assets/v1/`;
+- `dashboard_manifest.json` declares the frontend contract: stack, release
+  channel, asset root, route IDs, and route entrypoints;
 - standalone smoke serves `web/dashboard/dist` over HTTP and verifies the
-  expected route-shaped asset paths;
+  expected route-shaped asset paths plus the frontend manifest;
 - views are addressable through route-level URLs such as `/dashboard/overview`,
   `/dashboard/cells`, `/dashboard/search`, `/dashboard/storage`, and
   `/dashboard/cluster`, so browser back/forward and copied
@@ -47,8 +49,8 @@ Current coverage:
   `web/dashboard/dist/dashboard/<route>/index.html`;
 - `make dashboard-release-check` packages the standalone build into
   `target/dashboard/dashboard-v1.tar.gz` and validates the archive manifest,
-  file sizes, and SHA-256 checksums before it can be uploaded as a release
-  artifact;
+  frontend stack, route manifest, file sizes, and SHA-256 checksums before it
+  can be uploaded as a release artifact;
 - views cover Overview, Cells, Search, ANN, AQL, Context, Verify, Ingest,
   Storage, and Cluster;
 - Search includes both result execution and explain output;
@@ -61,5 +63,5 @@ Current coverage:
 - Playwright screenshots are written to `target/dashboard/` as CI review
   artifacts for desktop and mobile viewports.
 
-Future work is a full standalone frontend app with separate pages, screenshots,
-and a broader e2e suite.
+Future work is a fuller standalone frontend app with a broader page-specific
+workflow suite and visual regression coverage.
