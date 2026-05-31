@@ -278,7 +278,7 @@ ann-real-embedding-history-report:
 	python3 scripts/ann/summarize_history.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --output $(ANN_REAL_EMBEDDING_HISTORY_REPORT)
 
 ann-real-embedding-history-regression-check:
-	python3 scripts/ann/summarize_history.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --output $(ANN_REAL_EMBEDDING_HISTORY_REPORT) --fail-on-regression
+	python3 scripts/ann/history_gate.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --output $(ANN_REAL_EMBEDDING_HISTORY_REPORT) --fail-on-regression --min-runs 1 --min-corpora 1
 
 ann-real-embedding-publish-baseline:
 	python3 scripts/ann/publish_baseline.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --run-id $(ANN_REAL_EMBEDDING_RUN_ID) --baseline-id $(ANN_REAL_EMBEDDING_BASELINE_ID) --output-root $(ANN_REAL_EMBEDDING_BASELINE_ROOT)
@@ -304,6 +304,7 @@ ann-scripts-check:
 	python3 scripts/ann/exact_ground_truth.py --self-test
 	python3 scripts/ann/compare_reports.py --self-test
 	python3 scripts/ann/summarize_history.py --self-test
+	python3 scripts/ann/history_gate.py --self-test
 	python3 scripts/ann/publish_baseline.py --self-test
 	python3 scripts/ann/package_baseline.py --self-test
 	python3 scripts/ann/validate_baseline_package.py --self-test
@@ -345,7 +346,7 @@ ann-history-report:
 	python3 scripts/ann/summarize_history.py --run-root $(ANN_HISTORY_ROOT) --output $(ANN_HISTORY_REPORT)
 
 ann-history-regression-check:
-	python3 scripts/ann/summarize_history.py --run-root $(ANN_HISTORY_ROOT) --output $(ANN_HISTORY_REPORT) --fail-on-regression
+	python3 scripts/ann/history_gate.py --run-root $(ANN_HISTORY_ROOT) --output $(ANN_HISTORY_REPORT) --fail-on-regression --min-runs 1 --min-corpora 1
 
 ann-publish-baseline:
 	python3 scripts/ann/publish_baseline.py --run-root $(ANN_HISTORY_ROOT) --run-id $(ANN_BASELINE_RUN_ID) --baseline-id $(ANN_BASELINE_ID) --output-root $(ANN_BASELINE_ROOT)

@@ -418,7 +418,9 @@ The real-embedding workflow runs `ann-real-embedding-history-regression-check`
 after each benchmark and uploads `target/ann/real-embedding/runs/**`, including
 the explicit real-embedding `history.json`. Use the same target locally when a
 real embedding run directory already exists and you only need to regenerate or
-gate the history summary.
+gate the history summary. The regression-check targets fail closed when the run
+root has no archived run or corpus group, so an empty directory cannot count as
+production latency evidence.
 
 For release checkpoints, publish the selected run into
 `target/ann/release-baselines/<baseline-id>/`:
@@ -528,7 +530,7 @@ Warnings, not blockers:
 - Demo-domain corpus generation is available, but no large real customer/domain
   baseline is published yet.
 - Embedded-vector and real-embedding corpus tooling exists, including preflight,
-  report comparison, and baseline packaging gates, but it still needs a real
-  model export and published baseline bundle.
+  history gating, report comparison, and baseline packaging gates, but it still
+  needs a real model export and published baseline bundle.
 - Workload SLO profiles exist, but their thresholds still need calibration on
   real customer/domain corpora.
