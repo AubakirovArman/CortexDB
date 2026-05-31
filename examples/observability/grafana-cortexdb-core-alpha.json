@@ -1,0 +1,55 @@
+{
+  "uid": "cortexdb-core-alpha",
+  "title": "CortexDB Core Alpha",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "tags": ["cortexdb", "core-alpha"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Commit vs Checkpoint",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "cortexdb_current_seq", "legendFormat": "current_seq" },
+        { "expr": "cortexdb_checkpoint_seq", "legendFormat": "checkpoint_seq" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "WAL Size",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "cortexdb_wal_size_bytes", "legendFormat": "wal_size_bytes" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "WAL Write Rate",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(cortexdb_wal_writer_records[5m])", "legendFormat": "records/sec" },
+        { "expr": "rate(cortexdb_wal_writer_bytes[5m])", "legendFormat": "bytes/sec" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Segments",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "cortexdb_live_segments", "legendFormat": "live" },
+        { "expr": "cortexdb_retired_segments", "legendFormat": "retired" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "ANN Graph",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "cortexdb_ann_graph_nodes", "legendFormat": "nodes" },
+        { "expr": "cortexdb_ann_total_edges", "legendFormat": "edges" }
+      ]
+    }
+  ]
+}

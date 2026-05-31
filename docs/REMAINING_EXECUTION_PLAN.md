@@ -159,6 +159,11 @@ Core Alpha is operational:
   - writes `target/security-hardening/report.json`
   - covers current auth, rate limit, audit redaction, malicious ingestion
     denial, encrypted/remote backup boundaries, and security release checklist
+- Run the focused Observability evidence gate:
+  - `make observability-check`
+  - writes `target/observability/report.json`
+  - covers metrics field docs, Prometheus scrape config, alert examples, and
+    Grafana dashboard JSON
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`

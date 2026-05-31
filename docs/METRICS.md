@@ -30,6 +30,12 @@ Returns a unified JSON payload with storage, WAL, MemTable, ANN/HNSW, actor,
 and request counters. This is the recommended endpoint for dashboards and SDK
 health probes.
 
+Example:
+
+```bash
+curl -s http://127.0.0.1:18080/v1/metrics | jq .
+```
+
 Important fields:
 
 | Field | Meaning | Operator signal |
@@ -62,6 +68,24 @@ Returns a minimal Prometheus text exposition for the main storage, WAL,
 MemTable, and ANN/HNSW counters. The current Core Alpha exporter is intentionally
 small; JSON remains the richer source for actor and request counters.
 
+Example:
+
+```bash
+curl -s 'http://127.0.0.1:18080/v1/metrics?format=prometheus'
+```
+
+Reference scrape configuration:
+
+```text
+examples/observability/prometheus.yml
+```
+
+The companion alert rules are in:
+
+```text
+examples/observability/alerts.yml
+```
+
 ### `GET /v1/ann/metrics`
 
 Returns ANN/HNSW-specific graph state:
@@ -75,6 +99,23 @@ Returns ANN/HNSW-specific graph state:
 | `has_uncheckpointed_changes` | True when newer WAL data may require exact fallback. |
 | `deleted_vectors` | Vectors removed but not yet rebuilt away. |
 | `rebuild_count` | HNSW rebuild count in the active process/index state. |
+
+Example:
+
+```bash
+curl -s http://127.0.0.1:18080/v1/ann/metrics | jq .
+```
+
+## Dashboard Examples
+
+Grafana example JSON is checked in at:
+
+```text
+examples/observability/grafana-cortexdb-core-alpha.json
+```
+
+It includes panels for commit/checkpoint progress, WAL size, WAL write rate,
+segment counts, and ANN graph shape.
 
 ## CLI Probes
 
@@ -110,6 +151,9 @@ Treat these as Core Alpha operator heuristics, not production SLA guarantees:
   exact vector search remains the correctness path.
 - ANN search responses with `production_safe=false`: do not treat HNSW as the
   reliable default for that query; inspect `slo_violations`.
+
+More detailed alert examples and first-response actions are in
+[`OBSERVABILITY_ALERTS.md`](OBSERVABILITY_ALERTS.md).
 
 ## Release Evidence
 

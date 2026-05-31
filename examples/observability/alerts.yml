@@ -1,0 +1,29 @@
+groups:
+  - name: cortexdb-core-alpha
+    rules:
+      - alert: CortexDbWalCheckpointLag
+        expr: cortexdb_current_seq - cortexdb_checkpoint_seq > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: CortexDB checkpoint lag is growing
+          description: current_seq is more than 1000 commits ahead of checkpoint_seq.
+
+      - alert: CortexDbWalGrowth
+        expr: cortexdb_wal_size_bytes > 1073741824
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: CortexDB WAL is larger than 1GiB
+          description: Check checkpoint and compact health before WAL recovery cost grows.
+
+      - alert: CortexDbAnnGraphUnavailable
+        expr: cortexdb_ann_graph_nodes == 0
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: CortexDB ANN graph has no persisted nodes
+          description: Exact vector fallback remains correct; checkpoint/compact may be needed for ANN evidence.

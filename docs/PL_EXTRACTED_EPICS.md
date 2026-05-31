@@ -428,6 +428,8 @@ Evidence:
 
 Goal: make runtime behavior visible to operators.
 
+Status: local observability gate added; run `make observability-check`.
+
 Tasks:
 
 1. Ensure `docs/METRICS.md` covers all fields and examples.
@@ -439,6 +441,12 @@ Acceptance:
 
 - Operators can inspect health, request, actor, WAL, search, and storage
   signals without source-code reading.
+
+Evidence:
+
+- Observability gate: [`OBSERVABILITY_EVIDENCE.md`](OBSERVABILITY_EVIDENCE.md).
+- Metrics contract: [`METRICS.md`](METRICS.md).
+- Alert examples: [`OBSERVABILITY_ALERTS.md`](OBSERVABILITY_ALERTS.md).
 
 ### Epic 19 - Deployment And Upgrade
 

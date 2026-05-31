@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 132 project markdown files.
+At the time of this audit, the repository tracks 134 project markdown files.
 
 ## Start Here
 
@@ -97,6 +97,8 @@ At the time of this audit, the repository tracks 132 project markdown files.
 - [`INGESTION.md`](INGESTION.md) - ingestion behavior.
 - [`AGENT_MEMORY.md`](AGENT_MEMORY.md) - local agent memory.
 - [`METRICS.md`](METRICS.md) - metrics endpoint and fields.
+- [`OBSERVABILITY_EVIDENCE.md`](OBSERVABILITY_EVIDENCE.md) - local Epic 18 observability evidence gate.
+- [`OBSERVABILITY_ALERTS.md`](OBSERVABILITY_ALERTS.md) - alert rules and operator actions.
 - [`SINGLE_NODE_SLO.md`](SINGLE_NODE_SLO.md) - local single-node SLO boundaries.
 - [`OPERATIONS.md`](OPERATIONS.md) - operational guidance.
 - [`SECURITY_MODEL.md`](SECURITY_MODEL.md) - security model.
