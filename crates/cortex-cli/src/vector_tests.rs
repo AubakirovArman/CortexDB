@@ -154,8 +154,20 @@ fn search_vector_eval_command_reports_recall_after_flush() {
         "0,10".to_owned(),
     ])
     .unwrap();
-    assert!(json.contains(r#""available":true"#));
-    assert!(json.contains(r#""recall_q16":65535"#));
+    let response: serde_json::Value = serde_json::from_str(&json)
+        .unwrap_or_else(|error| panic!("invalid json response: {error}"));
+    assert_eq!(response["available"], true);
+    assert_eq!(response["recall_q16"], 65535);
+    assert!(response["ann_report"]["hnsw_max_neighbors"]
+        .as_u64()
+        .is_some());
+    assert!(response["ann_report"]["hnsw_layer_count"]
+        .as_u64()
+        .is_some());
+    assert!(response["ann_report"]["upper_graph_edges"]
+        .as_u64()
+        .is_some());
+    assert!(response["ann_report"]["hnsw_ef_search"].as_u64().is_some());
 
     let _ = std::fs::remove_dir_all(path);
 }
@@ -200,7 +212,10 @@ fn search_vector_eval_command_applies_min_recall_policy() {
         "0,10".to_owned(),
     ])
     .unwrap();
-    assert!(json.contains(r#""min_recall_q16":32767"#));
+    let response: serde_json::Value = serde_json::from_str(&json)
+        .unwrap_or_else(|error| panic!("invalid json response: {error}"));
+    assert_eq!(response["ann_report"]["min_recall_q16"], 32767);
+    assert!(response["ann_report"]["slo_violations"].is_array());
 
     let _ = std::fs::remove_dir_all(path);
 }
