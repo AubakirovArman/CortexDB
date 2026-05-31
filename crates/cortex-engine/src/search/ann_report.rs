@@ -4,6 +4,7 @@ use std::time::Instant;
 use serde::Serialize;
 
 use crate::error::{EngineError, EngineResult};
+use cortex_storage::hnsw::HnswGraphIndex;
 
 use super::ann::{evaluate_persisted_ann_with_policy, AnnSearchPolicy, MIN_ANN_RECALL_Q16};
 use super::hnsw::{DistanceMetric, HnswIndex, VectorCollectionConfig};
@@ -30,6 +31,7 @@ pub struct AnnRecallLatencyReport {
     pub hnsw_max_neighbors: usize,
     pub hnsw_ef_search: usize,
     pub hnsw_layer_count: usize,
+    pub graph_signature: String,
     pub production_safe: bool,
 }
 
@@ -124,8 +126,58 @@ pub fn synthetic_ann_recall_latency_report(
         } else {
             graph.layer_count as usize
         },
+        graph_signature: graph_signature(&graph),
         production_safe,
     })
+}
+
+fn graph_signature(graph: &HnswGraphIndex) -> String {
+    let mut hash = 0xcbf29ce484222325u64;
+
+    fn absorb_u64(hash: &mut u64, value: u64) {
+        for byte in value.to_le_bytes() {
+            *hash ^= u64::from(byte);
+            *hash = hash.wrapping_mul(0x0000_0100_0000_01B3);
+        }
+    }
+
+    fn absorb_pair(hash: &mut u64, left: u64, right: u64) {
+        absorb_u64(hash, left);
+        absorb_u64(hash, right);
+    }
+
+    absorb_pair(
+        &mut hash,
+        u64::from(graph.dimension),
+        u64::from(graph.metric),
+    );
+    absorb_pair(
+        &mut hash,
+        u64::from(graph.max_neighbors),
+        u64::from(graph.ef_search),
+    );
+    absorb_u64(&mut hash, u64::from(graph.layer_count));
+
+    for (candidate, neighbors) in &graph.links {
+        absorb_u64(&mut hash, u64::from(*candidate));
+        absorb_u64(&mut hash, neighbors.len() as u64);
+        for neighbor in neighbors {
+            absorb_u64(&mut hash, u64::from(*neighbor));
+        }
+    }
+
+    for (layer, links) in &graph.upper_layers {
+        absorb_u64(&mut hash, u64::from(*layer));
+        for (candidate, neighbors) in links {
+            absorb_u64(&mut hash, u64::from(*candidate));
+            absorb_u64(&mut hash, neighbors.len() as u64);
+            for neighbor in neighbors {
+                absorb_u64(&mut hash, u64::from(*neighbor));
+            }
+        }
+    }
+
+    format!("{hash:016x}")
 }
 
 fn synthetic_vector(candidate: u32, dimension: usize) -> Vec<i16> {
@@ -173,5 +225,38 @@ mod tests {
         assert_eq!(report.hnsw_max_neighbors, 8);
         assert_eq!(report.hnsw_ef_search, 64);
         assert_eq!(report.hnsw_layer_count, 4);
+        assert!(!report.graph_signature.is_empty());
+    }
+
+    #[test]
+    fn synthetic_ann_report_is_repeatable_with_same_graph_signature() {
+        let first = synthetic_ann_recall_latency_report(
+            256,
+            16,
+            12,
+            5,
+            AnnSearchPolicy {
+                require_slo: true,
+                ..AnnSearchPolicy::default()
+            },
+        )
+        .unwrap();
+
+        let second = synthetic_ann_recall_latency_report(
+            256,
+            16,
+            12,
+            5,
+            AnnSearchPolicy {
+                require_slo: true,
+                ..AnnSearchPolicy::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(first.graph_signature, second.graph_signature);
+        assert_eq!(first.graph_nodes, second.graph_nodes);
+        assert_eq!(first.upper_graph_edges, second.upper_graph_edges);
+        assert_eq!(first.hnsw_layer_count, second.hnsw_layer_count);
     }
 }

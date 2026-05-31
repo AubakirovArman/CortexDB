@@ -56,6 +56,7 @@ pub enum AnnSloViolation {
     NoPersistedSegments,
     UncheckpointedChanges,
     RecallBelowMinimum,
+    WeakMultiLayerTopology,
 }
 
 impl AnnSloViolation {
@@ -69,6 +70,7 @@ impl AnnSloViolation {
             Self::NoPersistedSegments => "no_persisted_segments",
             Self::UncheckpointedChanges => "uncheckpointed_changes",
             Self::RecallBelowMinimum => "recall_below_minimum",
+            Self::WeakMultiLayerTopology => "weak_multi_layer_topology",
         }
     }
 }
@@ -132,6 +134,7 @@ struct HnswRuntimeConfig {
 
 const ANN_DEFAULT_MAX_NEIGHBORS: usize = 8;
 const ANN_DEFAULT_EF_SEARCH: usize = 64;
+const ANN_MIN_NODES_FOR_SLO_MULTI_LAYER: usize = 4;
 
 fn hnsw_runtime_config(graph: &HnswGraphIndex) -> HnswRuntimeConfig {
     let max_neighbors = if graph.max_neighbors == 0 {
@@ -712,6 +715,12 @@ pub(crate) fn finalize_report(
 
 fn slo_violations(report: &AnnSearchReport, policy: AnnSearchPolicy) -> Vec<AnnSloViolation> {
     let mut violations = Vec::new();
+    if policy.require_slo
+        && report.path == AnnSearchPath::HnswGraph
+        && is_weak_multi_layer_topology(report)
+    {
+        violations.push(AnnSloViolation::WeakMultiLayerTopology);
+    }
     if let Some(reason) = report.fallback_reason {
         violations.push(match reason {
             AnnFallbackReason::EmptyGraph => AnnSloViolation::EmptyGraph,
@@ -729,6 +738,16 @@ fn slo_violations(report: &AnnSearchReport, policy: AnnSearchPolicy) -> Vec<AnnS
         }
     }
     violations
+}
+
+fn is_weak_multi_layer_topology(report: &AnnSearchReport) -> bool {
+    if report.graph_nodes < ANN_MIN_NODES_FOR_SLO_MULTI_LAYER {
+        return false;
+    }
+    if report.hnsw_layer_count <= 1 {
+        return false;
+    }
+    report.upper_graph_edges == 0
 }
 
 fn recall_q16(overlap_count: usize, expected_count: usize) -> u16 {

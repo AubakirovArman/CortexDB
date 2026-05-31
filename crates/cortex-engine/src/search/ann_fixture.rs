@@ -245,6 +245,7 @@ mod tests {
             hnsw_max_neighbors: 8,
             hnsw_ef_search: 64,
             hnsw_layer_count: 4,
+            graph_signature: String::new(),
             production_safe: true,
         };
         let mut baseline = AnnRecallLatencyBaseline::synthetic_v1();

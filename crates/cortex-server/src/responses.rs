@@ -89,6 +89,11 @@ pub struct PutCellResponse {
 }
 
 #[derive(Serialize, Debug, Clone)]
+pub struct DeleteJobResponse {
+    pub deleted: bool,
+}
+
+#[derive(Serialize, Debug, Clone)]
 pub struct CheckpointResponse {
     pub checkpoint_seq: u64,
     pub cells_flushed: usize,

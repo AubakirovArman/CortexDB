@@ -78,7 +78,7 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await expect(page.getByRole('heading', { name: 'CortexDB Console' })).toBeVisible();
     await expect(page.locator('link[href="/dashboard/assets/v1/style.css"]')).toHaveCount(1);
     await expect(page.locator('script[src="/dashboard/assets/v1/app.js"]')).toHaveCount(1);
-    await expect(page.locator('#output')).toContainText('current_seq');
+    await expect(page.locator('#output')).toContainText('"status": "ready"');
 
     await page.locator('#tenant').fill('dashboard-tenant');
     await page.locator('#token').fill('secret-token-value');

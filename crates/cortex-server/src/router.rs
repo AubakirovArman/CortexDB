@@ -9,8 +9,9 @@ use crate::context;
 use crate::memory;
 use crate::responses::{
     AnnMetricsResponse, CellLookupResponse, CellResponse, CheckpointResponse, ClusterNodeResponse,
-    ClusterStatusResponse, ErrorCode, ErrorResponse, HealthResponse, IngestResponse,
-    MetricsResponse, PutCellResponse, RouterError, StatsResponse, ValidationResponse,
+    ClusterStatusResponse, DeleteJobResponse, ErrorCode, ErrorResponse, HealthResponse,
+    IngestResponse, MetricsResponse, PutCellResponse, RouterError, StatsResponse,
+    ValidationResponse,
 };
 use crate::search;
 
@@ -385,7 +386,8 @@ pub fn route_database_with_agent(
                 .map_err(|_| RouterError::BadRequest("invalid job id".to_owned()))?;
             let deleted = db.delete_ingestion_job(id)?;
             if deleted {
-                Ok(r#"{"deleted":true}"#.to_owned())
+                let response = DeleteJobResponse { deleted };
+                Ok(serde_json::to_string(&response)?)
             } else {
                 Err(RouterError::NotFound("job not found".to_owned()))
             }

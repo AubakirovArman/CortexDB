@@ -28,33 +28,34 @@
     <main class="shell" id="content" tabindex="-1">
         <nav aria-label="Console pages">
             <ul class="tabs" aria-label="CortexDB tools">
-                <li><a id="route-overview" class="tab" href="/dashboard/overview" aria-current="page" data-route="overview">Overview</a></li>
-                <li><a class="tab" href="/dashboard/cells" data-route="cells">Cells</a></li>
-                <li><a class="tab" href="/dashboard/search" data-route="search">Search</a></li>
-                <li><a class="tab" href="/dashboard/ann-eval" data-route="ann-eval">ANN</a></li>
-                <li><a class="tab" href="/dashboard/aql" data-route="aql">AQL</a></li>
-                <li><a class="tab" href="/dashboard/context" data-route="context">Context</a></li>
-                <li><a class="tab" href="/dashboard/verify" data-route="verify">Verify</a></li>
-                <li><a class="tab" href="/dashboard/ingest" data-route="ingest">Ingest</a></li>
-                <li><a class="tab" href="/dashboard/storage" data-route="storage">Storage</a></li>
-                <li><a class="tab" href="/dashboard/cluster" data-route="cluster">Cluster</a></li>
+                <li><a id="route-overview" class="tab" href="/dashboard/overview" aria-current="page" data-route="overview" data-access="data">Overview</a></li>
+                <li><a class="tab" href="/dashboard/cells" data-route="cells" data-access="data">Cells</a></li>
+                <li><a class="tab" href="/dashboard/search" data-route="search" data-access="data">Search</a></li>
+                <li><a class="tab" href="/dashboard/ann-eval" data-route="ann-eval" data-access="data">ANN</a></li>
+                <li><a class="tab" href="/dashboard/aql" data-route="aql" data-access="data">AQL</a></li>
+                <li><a class="tab" href="/dashboard/context" data-route="context" data-access="data">Context</a></li>
+                <li><a class="tab" href="/dashboard/verify" data-route="verify" data-access="data">Verify</a></li>
+                <li><a class="tab" href="/dashboard/ingest" data-route="ingest" data-access="data">Ingest</a></li>
+                <li><a class="tab" href="/dashboard/storage" data-route="storage" data-access="admin">Storage</a></li>
+                <li><a class="tab" href="/dashboard/cluster" data-route="cluster" data-access="data">Cluster</a></li>
             </ul>
         </nav>
         <section class="workspace" aria-live="polite">
             <div id="session-status" class="notice" role="status">Tenant: default</div>
+            <div id="session-role" class="notice" role="status">Access level: limited</div>
             <section id="overview" class="panel active" data-title="Overview">
                 <h2 id="overview-title">Overview</h2>
                 <div class="status" id="metrics"></div>
                 <div class="actions">
-                    <button type="button" data-action="health">Health</button>
-                    <button type="button" data-action="stats">Stats</button>
-                    <button type="button" data-action="metrics">Metrics</button>
-                    <button type="button" data-action="validate">Validate</button>
+                    <button type="button" data-action="health" data-access="public">Health</button>
+                    <button type="button" data-action="stats" data-access="admin">Stats</button>
+                    <button type="button" data-action="metrics" data-access="admin">Metrics</button>
+                    <button type="button" data-action="validate" data-access="admin">Validate</button>
                 </div>
             </section>
-            <section id="cells" class="panel" data-title="Cells">
+            <section id="cells" class="panel" data-title="Cells" data-access="data">
                 <h2 id="cells-title">Cells</h2>
-                <form id="cell-form" action="/v1/cell" method="post">
+                <form id="cell-form" action="/v1/cell" method="post" data-access="data">
                     <div class="grid">
                         <div class="field"><label for="cell-id">Cell ID</label><input id="cell-id" name="cell_id" inputmode="numeric" required value="1"></div>
                         <div class="field"><label for="cell-op">Operation</label><select id="cell-op" name="op"><option value="put">Put</option><option value="get">Get</option><option value="delete">Tombstone</option></select></div>
@@ -65,12 +66,12 @@ type=fact
 source=console
 
 Solar budget note</textarea></div>
-                    <button type="submit">Run Cell Operation</button>
+                    <button type="submit" data-access="data">Run Cell Operation</button>
                 </form>
             </section>
-            <section id="search" class="panel" data-title="Search">
+            <section id="search" class="panel" data-title="Search" data-access="data">
                 <h2 id="search-title">Search</h2>
-                <form id="search-form" action="/v1/search" method="get">
+                <form id="search-form" action="/v1/search" method="get" data-access="data">
                     <div class="grid">
                         <div class="field"><label for="search-scope">Scope</label><input id="search-scope" name="scope" required value="project:investments"></div>
                         <div class="field"><label for="search-mode">Mode</label><select id="search-mode" name="mode"><option value="keyword">Keyword</option><option value="vector">Vector</option></select></div>
@@ -79,52 +80,52 @@ Solar budget note</textarea></div>
                     </div>
                     <div class="field"><label for="search-query">Query or vector</label><input id="search-query" name="q" value="budget"></div>
                     <div class="actions">
-                        <button type="submit">Search</button>
-                        <button type="button" id="search-explain" class="secondary">Explain Search</button>
-                    </div>
-                </form>
+                    <button type="submit" data-access="data">Search</button>
+                    <button type="button" id="search-explain" class="secondary" data-access="data">Explain Search</button>
+                </div>
+            </form>
             </section>
-            <section id="ann-eval" class="panel" data-title="ANN Eval">
+            <section id="ann-eval" class="panel" data-title="ANN Eval" data-access="data">
                 <h2 id="ann-eval-title">ANN Eval</h2>
-                <form id="ann-eval-form" action="/v1/search/ann-evaluate" method="get">
+                <form id="ann-eval-form" action="/v1/search/ann-evaluate" method="get" data-access="data">
                     <div class="grid">
                         <div class="field"><label for="ann-scope">Scope</label><input id="ann-scope" name="scope" required value="project:investments"></div>
                         <div class="field"><label for="ann-vector">Vector</label><input id="ann-vector" name="vector" inputmode="decimal" required value="0,10"></div>
                         <div class="field"><label for="ann-limit">Limit</label><input id="ann-limit" name="limit" inputmode="numeric" value="20"></div>
                     </div>
                     <div class="actions">
-                        <button type="submit">Evaluate ANN</button>
-                        <button type="button" data-action="ann-metrics" class="secondary">ANN Metrics</button>
-                    </div>
-                </form>
+                    <button type="submit" data-access="data">Evaluate ANN</button>
+                    <button type="button" data-action="ann-metrics" class="secondary" data-access="admin">ANN Metrics</button>
+                </div>
+            </form>
             </section>
-            <section id="aql" class="panel" data-title="AQL">
+            <section id="aql" class="panel" data-title="AQL" data-access="data">
                 <h2 id="aql-title">AQL</h2>
-                <form id="aql-form" action="/v1/aql" method="post">
+                <form id="aql-form" action="/v1/aql" method="post" data-access="data">
                     <div class="field"><label for="aql-scope">Scope</label><input id="aql-scope" name="scope" required value="project:investments"></div>
                     <div class="field"><label for="aql-query">Statement</label><textarea id="aql-query" name="query">RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;</textarea></div>
-                    <button type="submit">Run AQL</button>
+                    <button type="submit" data-access="data">Run AQL</button>
                 </form>
             </section>
-            <section id="context" class="panel" data-title="Context">
+            <section id="context" class="panel" data-title="Context" data-access="data">
                 <h2 id="context-title">Context</h2>
-                <form id="context-form" action="/v1/context" method="post">
+                <form id="context-form" action="/v1/context" method="post" data-access="data">
                     <div class="field"><label for="context-scope">Scope</label><input id="context-scope" name="scope" required value="project:investments"></div>
                     <div class="field"><label for="context-query">Statement</label><textarea id="context-query" name="query">RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;</textarea></div>
-                    <button type="submit">Build Context Pack</button>
+                    <button type="submit" data-access="data">Build Context Pack</button>
                 </form>
             </section>
-            <section id="verify" class="panel" data-title="Verify">
+            <section id="verify" class="panel" data-title="Verify" data-access="data">
                 <h2 id="verify-title">Verify</h2>
-                <form id="verify-form" action="/v1/verify" method="post">
+                <form id="verify-form" action="/v1/verify" method="post" data-access="data">
                     <div class="field"><label for="verify-scope">Scope</label><input id="verify-scope" name="scope" required value="project:investments"></div>
                     <div class="field"><label for="verify-query">Statement</label><textarea id="verify-query" name="query">VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;</textarea></div>
-                    <button type="submit">Verify Fact</button>
+                    <button type="submit" data-access="data">Verify Fact</button>
                 </form>
             </section>
-            <section id="ingest" class="panel" data-title="Ingest">
+            <section id="ingest" class="panel" data-title="Ingest" data-access="data">
                 <h2 id="ingest-title">Ingest</h2>
-                <form id="ingest-form" action="/v1/ingest/text" method="post">
+                <form id="ingest-form" action="/v1/ingest/text" method="post" data-access="data">
                     <div class="grid">
                         <div class="field"><label for="ingest-scope">Scope</label><input id="ingest-scope" name="scope" required value="project:investments"></div>
                         <div class="field"><label for="ingest-source">Source</label><input id="ingest-source" name="source" value="dashboard"></div>
@@ -132,28 +133,28 @@ Solar budget note</textarea></div>
                     </div>
                     <div class="field"><label for="ingest-document">Document</label><textarea id="ingest-document" name="document">Solar Plant budget approved.
 Wind Farm status ready.</textarea></div>
-                    <button type="submit">Ingest</button>
+                    <button type="submit" data-access="data">Ingest</button>
                 </form>
-                <form id="ingest-job-form" action="/v1/ingest/jobs/1" method="get">
+                <form id="ingest-job-form" action="/v1/ingest/jobs/1" method="get" data-access="data">
                     <div class="field"><label for="ingest-job-id">Job ID</label><input id="ingest-job-id" name="job_id" inputmode="numeric" value="1"></div>
-                    <button type="submit" class="secondary">Load Ingest Job</button>
+                    <button type="submit" class="secondary" data-access="data">Load Ingest Job</button>
                 </form>
             </section>
-            <section id="storage" class="panel" data-title="Storage Health">
+            <section id="storage" class="panel" data-title="Storage Health" data-access="admin">
                 <h2 id="storage-title">Storage Health</h2>
                 <div class="actions">
-                    <button type="button" data-action="stats">Stats</button>
-                    <button type="button" data-action="metrics">Metrics</button>
-                    <button type="button" data-action="validate">Validate</button>
-                    <button type="button" data-action="flush" class="secondary">Flush</button>
-                    <button type="button" data-action="compact" class="secondary">Compact</button>
+                    <button type="button" data-action="stats" data-access="admin">Stats</button>
+                    <button type="button" data-action="metrics" data-access="admin">Metrics</button>
+                    <button type="button" data-action="validate" data-access="admin">Validate</button>
+                    <button type="button" data-action="flush" class="secondary" data-access="admin">Flush</button>
+                    <button type="button" data-action="compact" class="secondary" data-access="admin">Compact</button>
                 </div>
             </section>
-            <section id="cluster" class="panel" data-title="Cluster Status">
+            <section id="cluster" class="panel" data-title="Cluster Status" data-access="data">
                 <h2 id="cluster-title">Cluster Status</h2>
                 <div class="actions">
-                    <button type="button" data-action="cluster-status">Cluster Status</button>
-                    <button type="button" data-action="ann-metrics" class="secondary">ANN Metrics</button>
+                    <button type="button" data-action="cluster-status" data-access="data">Cluster Status</button>
+                    <button type="button" data-action="ann-metrics" class="secondary" data-access="admin">ANN Metrics</button>
                 </div>
             </section>
         </section>

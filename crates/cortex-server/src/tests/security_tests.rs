@@ -161,12 +161,7 @@ fn test_server_concurrency_and_size_limit() {
         let _ = crate::serve(&root_path, &local_addr.to_string());
     });
 
-    std::thread::sleep(std::time::Duration::from_millis(100));
-
     {
-        use std::io::{Read, Write};
-        use std::net::TcpStream;
-        let mut stream = TcpStream::connect(local_addr).unwrap();
         let huge_size = 2100 * 1024;
         let mut huge_request = Vec::with_capacity(huge_size + 100);
         huge_request.extend_from_slice(b"POST /put?cell_id=1 HTTP/1.1\r\nContent-Length: ");
@@ -174,28 +169,15 @@ fn test_server_concurrency_and_size_limit() {
         huge_request.extend_from_slice(b"\r\n\r\n");
         huge_request.resize(huge_request.len() + huge_size, b'A');
 
-        let _ = stream.write_all(&huge_request);
-
-        let mut response = [0u8; 1024];
-        let read = stream.read(&mut response).unwrap();
-        let resp_str = String::from_utf8_lossy(&response[..read]);
+        let resp_str = request_bytes(local_addr, &huge_request);
         assert!(resp_str.contains("413 Payload Too Large"));
     }
 
     {
-        use std::io::{Read, Write};
-        use std::net::TcpStream;
-
         let mut threads = vec![];
         for _ in 0..5 {
             threads.push(std::thread::spawn(move || {
-                let mut stream = TcpStream::connect(local_addr).unwrap();
-                stream
-                    .write_all(b"GET /v1/health HTTP/1.1\r\n\r\n")
-                    .unwrap();
-                let mut resp = [0u8; 1024];
-                let read = stream.read(&mut resp).unwrap();
-                let resp_str = String::from_utf8_lossy(&resp[..read]);
+                let resp_str = request(local_addr, "GET /v1/health HTTP/1.1\r\n\r\n");
                 assert!(resp_str.contains(r#""status":"ok""#));
             }));
         }
@@ -276,8 +258,6 @@ fn test_tenant_path_traversal_over_http() {
         let _ = crate::serve(&root_path, &local_addr.to_string());
     });
 
-    std::thread::sleep(std::time::Duration::from_millis(100));
-
     let bad_tenants = [
         "../../escape",
         "..%2f..%2fescape",
@@ -289,15 +269,8 @@ fn test_tenant_path_traversal_over_http() {
     ];
 
     for tenant in &bad_tenants {
-        use std::io::{Read, Write};
-        use std::net::TcpStream;
-        let mut stream = TcpStream::connect(local_addr).unwrap();
         let req = format!("GET /v1/health?tenant={} HTTP/1.1\r\n\r\n", tenant);
-        stream.write_all(req.as_bytes()).unwrap();
-
-        let mut response = [0u8; 1024];
-        let read = stream.read(&mut response).unwrap();
-        let resp_str = String::from_utf8_lossy(&response[..read]);
+        let resp_str = request(local_addr, &req);
         assert!(
             resp_str.contains("400 Bad Request"),
             "tenant='{}' should be rejected with 400, got: {}",
@@ -330,25 +303,52 @@ fn cors_preflight_is_only_enabled_for_configured_origin() {
         let _ = crate::serve_with_options(&root_path, &local_addr.to_string(), options);
     });
 
-    std::thread::sleep(std::time::Duration::from_millis(100));
-
-    use std::io::{Read, Write};
-    use std::net::TcpStream;
-    let mut stream = TcpStream::connect(local_addr).unwrap();
-    stream
-        .write_all(
-            b"OPTIONS /v1/health HTTP/1.1\r\n\
-              Origin: https://app.example\r\n\
-              Access-Control-Request-Method: GET\r\n\
-              Access-Control-Request-Headers: authorization,content-type\r\n\r\n",
-        )
-        .unwrap();
-    let mut response = [0u8; 2048];
-    let read = stream.read(&mut response).unwrap();
-    let resp_str = String::from_utf8_lossy(&response[..read]).to_ascii_lowercase();
+    let response = request(
+        local_addr,
+        "OPTIONS /v1/health HTTP/1.1\r\n\
+         Origin: https://app.example\r\n\
+         Access-Control-Request-Method: GET\r\n\
+         Access-Control-Request-Headers: authorization,content-type\r\n\r\n",
+    );
+    let resp_str = response.to_ascii_lowercase();
     assert!(resp_str.contains("access-control-allow-origin: https://app.example"));
     assert!(resp_str.contains("access-control-allow-methods"));
     assert!(resp_str.contains("access-control-allow-headers"));
+}
+
+fn request_bytes(addr: std::net::SocketAddr, request: &[u8]) -> String {
+    use std::io::{Read, Write};
+    use std::net::TcpStream;
+    use std::time::Duration;
+
+    let mut last_err = None;
+    for _ in 0..20 {
+        match TcpStream::connect(addr) {
+            Ok(mut stream) => {
+                if let Err(err) = stream.write_all(request) {
+                    last_err = Some(err);
+                    std::thread::sleep(Duration::from_millis(50));
+                    continue;
+                }
+                let mut response = [0u8; 4096];
+                let read = match stream.read(&mut response) {
+                    Ok(read) => read,
+                    Err(err) => {
+                        last_err = Some(err);
+                        std::thread::sleep(Duration::from_millis(50));
+                        continue;
+                    }
+                };
+                return String::from_utf8_lossy(&response[..read]).to_string();
+            }
+            Err(err) => {
+                last_err = Some(err);
+                std::thread::sleep(Duration::from_millis(50));
+            }
+        }
+    }
+
+    panic!("failed to perform request after retries: {:?}", last_err);
 }
 
 #[test]
@@ -385,14 +385,7 @@ fn rate_limit_returns_typed_429_when_enabled() {
 }
 
 fn request(addr: std::net::SocketAddr, request: &str) -> String {
-    use std::io::{Read, Write};
-    use std::net::TcpStream;
-
-    let mut stream = TcpStream::connect(addr).unwrap();
-    stream.write_all(request.as_bytes()).unwrap();
-    let mut response = [0u8; 4096];
-    let read = stream.read(&mut response).unwrap();
-    String::from_utf8_lossy(&response[..read]).to_string()
+    request_bytes(addr, request.as_bytes())
 }
 
 fn agent_view(agent_id: AgentId, scope: &str, allow_write: bool) -> AgentView {

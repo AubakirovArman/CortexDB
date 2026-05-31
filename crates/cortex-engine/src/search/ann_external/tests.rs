@@ -16,7 +16,7 @@ fn baseline() -> AnnExternalFixtureBaseline {
         min_upper_graph_edges: 0,
         max_p95_latency_nanos: 500_000_000,
         max_max_latency_nanos: 500_000_000,
-        require_production_safe: true,
+        require_production_safe: false,
     }
 }
 
@@ -37,6 +37,20 @@ fn external_fixture_evaluates_jsonl() {
     assert_eq!(report.vector_count, 4);
     assert_eq!(report.query_count, 2);
     assert_eq!(report.dimension, 4);
+}
+
+#[test]
+fn external_fixture_file_baseline_is_production_safe() {
+    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+    let fixture_path = format!("{manifest_dir}/fixtures/ann_external_fixture_v1.jsonl");
+    let baseline_path = format!("{manifest_dir}/fixtures/ann_external_baseline_v1.json");
+    let fixture = std::fs::read_to_string(fixture_path).unwrap();
+    let baseline: AnnExternalFixtureBaseline =
+        serde_json::from_str(&std::fs::read_to_string(baseline_path).unwrap()).unwrap();
+    let report = evaluate_ann_external_fixture(&baseline, &fixture).unwrap();
+
+    assert!(report.passed, "{:?}", report.failures);
+    assert!(report.production_safe);
 }
 
 #[test]

@@ -19,6 +19,7 @@ fn observed_from_baseline(baseline: &AnnDriftBaseline) -> AnnRecallLatencyReport
         hnsw_max_neighbors: baseline.reference_hnsw_max_neighbors.unwrap_or(8),
         hnsw_ef_search: baseline.reference_hnsw_ef_search.unwrap_or(64),
         hnsw_layer_count: baseline.reference_hnsw_layer_count.unwrap_or(4),
+        graph_signature: String::new(),
         min_recall_q16: baseline.policy_min_recall_q16,
         min_observed_recall_q16: baseline.reference_min_observed_recall_q16,
         mean_recall_q16: baseline.reference_mean_recall_q16,

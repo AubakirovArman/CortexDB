@@ -1,4 +1,5 @@
 use super::*;
+use cortex_storage::hnsw::HnswGraphIndex;
 
 #[test]
 fn empty_graph_falls_back_to_exact() {
@@ -352,4 +353,111 @@ fn report_includes_hnsw_runtime_config_and_is_repeatable() {
         first.report.hnsw_layer_count,
         second.report.hnsw_layer_count
     );
+}
+
+#[test]
+fn slo_report_flags_weak_multi_layer_topology() {
+    let vectors = BTreeMap::from([
+        (1u32, vec![10, 0]),
+        (2u32, vec![9, 1]),
+        (3u32, vec![8, 2]),
+        (4u32, vec![7, 3]),
+    ]);
+    let allowed = BTreeSet::from([1u32, 2, 3, 4]);
+    let graph = HnswGraphIndex {
+        links: BTreeMap::from([
+            (1u32, BTreeSet::from([2u32, 3])),
+            (2u32, BTreeSet::from([1u32, 3])),
+            (3u32, BTreeSet::from([2u32, 4])),
+            (4u32, BTreeSet::from([3u32])),
+        ]),
+        dimension: 2,
+        metric: DistanceMetric::DotProduct as u8,
+        upper_layers: BTreeMap::from([(1u32, BTreeMap::new())]),
+        max_neighbors: 8,
+        ef_search: 64,
+        layer_count: 2,
+    };
+
+    let outcome = search_persisted_ann_with_policy(
+        &vectors,
+        &graph,
+        &[10, 0],
+        &allowed,
+        1,
+        AnnSearchPolicy {
+            min_recall_q16: Some(0),
+            fallback: true,
+            fallback_scan_cap: None,
+            max_visited_candidates: None,
+            require_slo: true,
+        },
+    );
+
+    assert_eq!(outcome.report.path, AnnSearchPath::HnswGraph);
+    assert!(outcome.report.upper_graph_edges == 0);
+    assert!(outcome.report.hnsw_layer_count >= 2);
+    assert_eq!(outcome.report.graph_nodes, 4);
+    assert_eq!(outcome.report.hnsw_layer_count, 2);
+    assert!(!outcome.report.production_safe);
+    assert!(outcome
+        .report
+        .slo_violations
+        .contains(&AnnSloViolation::WeakMultiLayerTopology));
+    assert!(outcome.report.require_slo);
+}
+
+#[test]
+fn slo_report_keeps_healthy_multi_layer_graph_safe_when_upper_edges_exist() {
+    let vectors = BTreeMap::from([
+        (1u32, vec![10, 0]),
+        (2u32, vec![9, 1]),
+        (3u32, vec![8, 2]),
+        (4u32, vec![7, 3]),
+        (5u32, vec![6, 4]),
+    ]);
+    let allowed = BTreeSet::from([1u32, 2, 3, 4, 5]);
+    let mut graph = HnswGraphIndex {
+        links: BTreeMap::from([
+            (1u32, BTreeSet::from([2u32, 5u32])),
+            (2u32, BTreeSet::from([1u32, 3u32])),
+            (3u32, BTreeSet::from([2u32, 4u32])),
+            (4u32, BTreeSet::from([3u32, 5u32])),
+            (5u32, BTreeSet::from([4u32])),
+        ]),
+        dimension: 2,
+        metric: DistanceMetric::DotProduct as u8,
+        upper_layers: BTreeMap::new(),
+        max_neighbors: 8,
+        ef_search: 64,
+        layer_count: 2,
+    };
+    // Add explicit upper-layer edge to avoid weak topology violation in SLO.
+    graph
+        .upper_layers
+        .insert(2, BTreeMap::from([(3u32, BTreeSet::from([5u32]))]));
+
+    let outcome = search_persisted_ann_with_policy(
+        &vectors,
+        &graph,
+        &[10, 0],
+        &allowed,
+        1,
+        AnnSearchPolicy {
+            min_recall_q16: Some(0),
+            fallback: true,
+            fallback_scan_cap: None,
+            max_visited_candidates: None,
+            require_slo: true,
+        },
+    );
+
+    assert_eq!(outcome.report.path, AnnSearchPath::HnswGraph);
+    assert!(outcome.report.upper_graph_edges > 0);
+    assert!(outcome.report.production_safe);
+    assert!(!outcome
+        .report
+        .slo_violations
+        .contains(&AnnSloViolation::WeakMultiLayerTopology));
+    assert!(outcome.report.require_slo);
 }
