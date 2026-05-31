@@ -82,6 +82,11 @@ vector search. For `algorithm=ann`, it records the actual path:
   "returned_candidates": 1,
   "recall_q16": null,
   "min_recall_q16": null,
+  "hnsw_max_neighbors": 0,
+  "hnsw_ef_search": 0,
+  "hnsw_ef_construction": 0,
+  "hnsw_layer_count": 1,
+  "upper_graph_edges": 0,
   "require_slo": true,
   "production_safe": false,
   "slo_violations": ["no_persisted_segments"]
@@ -128,6 +133,7 @@ snapshot precondition is met.
 ### 3. Tuning Parameters
 - **`max_neighbors` (M):** The maximum number of bidirectional connection links per node in the HNSW graph (default: 8). Higher values improve search quality (recall) on high-dimensional vectors but increase graph build time and memory usage during compaction.
 - **`ef_search` (EF):** The size of the dynamic candidate list kept during the graph traversal phase (default: 64). Increasing `ef_search` improves recall but adds a linear search latency cost.
+- **`ef_construction`:** The build-time candidate beam used while selecting graph neighbors during checkpoint/compact (default profile-dependent; balanced is 128). Increasing it can improve graph quality at checkpoint/compact cost.
 - **`deleted_fraction_q16`:** HNSW rebuild threshold (default: `16,384`, representing 25% deletion pressure). When deleted vectors exceed this fraction, `HnswIndex::apply_maintenance` triggers a graph rebuild and increments `rebuild_count`.
 - **`MIN_ANN_RECALL_Q16`:** Production recall guard (default: `49_151`, representing 75%). If HNSW traversal recall falls below this threshold, the engine falls back to exact vector scan to preserve correctness.
 

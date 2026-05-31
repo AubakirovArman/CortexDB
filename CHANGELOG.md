@@ -26,6 +26,9 @@
   `target/chaos-restart/report.json` in CI.
 - Added static multi-token HTTP auth policies with `admin` and `data` roles,
   optional per-token AgentView binding, and admin/data route separation.
+- Added first-class HNSW `ef_construction` reporting across engine, HTTP,
+  OpenAPI, CLI JSON, SDK contracts, ANN corpus runs, and persisted `.ach/.acm`
+  profile metadata.
 - Added file-backed HTTP token rotation through `CORTEXDB_AUTH_TOKENS_FILE`;
   the server re-reads the local policy file per request and fails closed on
   missing, empty, or invalid token files.

@@ -256,6 +256,7 @@ pub(crate) fn manifest_hnsw_profile(config: HnswBuildConfig) -> EngineResult<Man
         ef_search: hnsw_profile_u32("ef_search", config.ef_search)?,
         layer_count: hnsw_profile_u32("layer_count", config.layer_count)?,
         metric: config.metric as u32,
+        ef_construction: hnsw_profile_u32("ef_construction", config.ef_construction)?,
     })
 }
 

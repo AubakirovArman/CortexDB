@@ -14,6 +14,7 @@ impl HnswIndex {
             max_neighbors: usize_to_u32(self.max_neighbors),
             ef_search: usize_to_u32(self.ef_search),
             layer_count: usize_to_u32(self.layer_count),
+            ef_construction: usize_to_u32(self.ef_construction),
         }
     }
 
@@ -36,6 +37,7 @@ impl HnswIndex {
         let graph_max_neighbors = graph.max_neighbors;
         let graph_ef_search = graph.ef_search;
         let graph_layer_count = graph.layer_count;
+        let graph_ef_construction = graph.ef_construction;
         let layer_count = if graph_layer_count > 0 {
             graph_layer_count as usize
         } else {
@@ -54,6 +56,10 @@ impl HnswIndex {
             layer_count,
             max_neighbors: graph_value_or(graph_max_neighbors, max_neighbors),
             ef_search: graph_value_or(graph_ef_search, ef_search),
+            ef_construction: graph_value_or(
+                graph_ef_construction,
+                graph_value_or(graph_ef_search, ef_search),
+            ),
             config: VectorCollectionConfig { dimension, metric },
             rebuild_count: 0,
         }

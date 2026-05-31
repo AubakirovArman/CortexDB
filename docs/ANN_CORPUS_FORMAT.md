@@ -120,6 +120,7 @@ The output is a single JSON object:
   "metric": "dot_product",
   "hnsw_max_neighbors": 8,
   "hnsw_ef_search": 64,
+  "hnsw_ef_construction": 64,
   "hnsw_layer_count": 4,
   "vector_count": 12,
   "query_count": 4,
@@ -589,9 +590,9 @@ make ann-compare-baseline-bundle \
 
 The comparison is written to
 `target/ann/corpus-runs/<candidate-run-id>/baseline_comparison.json`.
-The comparison also fails when `hnsw_max_neighbors`, `hnsw_ef_search`, or
-`hnsw_layer_count` changes, because recall and latency are only comparable under
-the same graph/search profile.
+The comparison also fails when `hnsw_max_neighbors`, `hnsw_ef_search`,
+`hnsw_ef_construction`, or `hnsw_layer_count` changes, because recall and
+latency are only comparable under the same graph/search profile.
 Latency baselines should also be interpreted with `machine_profile.json`; p95
 from different CPU/OS/Rust environments is useful as signal, but not as a strict
 apples-to-apples regression unless the machine profile matches.

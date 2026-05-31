@@ -35,6 +35,7 @@ pub struct AnnCorpusOptions {
     pub max_neighbors: usize,
     pub ef_search: usize,
     pub layer_count: usize,
+    pub ef_construction: usize,
     pub min_recall_q16: u16,
     pub min_mean_recall_q16: u16,
     pub max_p95_latency_nanos: u128,
@@ -55,6 +56,7 @@ pub struct AnnCorpusReport {
     pub hnsw_max_neighbors: usize,
     pub hnsw_ef_search: usize,
     pub hnsw_layer_count: usize,
+    pub hnsw_ef_construction: usize,
     pub vector_count: usize,
     pub query_count: usize,
     pub dimension: usize,
@@ -89,6 +91,7 @@ impl Default for AnnCorpusOptions {
             max_neighbors: 8,
             ef_search: 64,
             layer_count: 4,
+            ef_construction: 64,
             min_recall_q16: 49_151,
             min_mean_recall_q16: 49_151,
             max_p95_latency_nanos: 100_000_000,
@@ -115,7 +118,9 @@ pub fn evaluate_ann_corpus(
     let max_neighbors = options.max_neighbors.max(1);
     let ef_search = options.ef_search.max(1);
     let layer_count = options.layer_count.max(1);
+    let ef_construction = options.ef_construction.max(max_neighbors).max(1);
     let mut index = HnswIndex::new_multilayer(max_neighbors, ef_search, layer_count);
+    index.set_ef_construction(ef_construction);
     index.set_config(VectorCollectionConfig {
         dimension: corpus.dimension,
         metric: options.metric,
@@ -179,6 +184,7 @@ pub fn evaluate_ann_corpus(
         hnsw_max_neighbors: max_neighbors,
         hnsw_ef_search: ef_search,
         hnsw_layer_count: layer_count,
+        hnsw_ef_construction: ef_construction,
         vector_count: corpus.vectors.len(),
         query_count: corpus.queries.len(),
         dimension: corpus.dimension,

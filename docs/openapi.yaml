@@ -922,6 +922,7 @@ components:
       - min_recall_q16
       - hnsw_max_neighbors
       - hnsw_ef_search
+      - hnsw_ef_construction
       - hnsw_layer_count
       - upper_graph_edges
       - require_slo
@@ -981,6 +982,10 @@ components:
         hnsw_ef_search:
           type: integer
           minimum: 0
+        hnsw_ef_construction:
+          type: integer
+          minimum: 0
+          description: HNSW construction beam used when the persisted graph was built.
         hnsw_layer_count:
           type: integer
           minimum: 1

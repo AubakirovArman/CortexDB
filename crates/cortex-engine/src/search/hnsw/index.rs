@@ -15,6 +15,7 @@ impl HnswIndex {
             layer_count: 1,
             max_neighbors: max_neighbors.max(1),
             ef_search: ef_search.max(1),
+            ef_construction: ef_search.max(max_neighbors).max(1),
             config: VectorCollectionConfig::default(),
             rebuild_count: 0,
         }
@@ -42,6 +43,10 @@ impl HnswIndex {
         self.config = config;
     }
 
+    pub fn set_ef_construction(&mut self, ef_construction: usize) {
+        self.ef_construction = ef_construction.max(self.max_neighbors).max(1);
+    }
+
     pub fn add_vector(&mut self, cell_id: u32, vector: Vec<i16>) -> Result<(), EngineError> {
         if self.config.dimension > 0 && vector.len() != self.config.dimension {
             return Err(EngineError::VectorDimensionMismatch {
@@ -50,7 +55,8 @@ impl HnswIndex {
             });
         }
         self.deleted.remove(&cell_id);
-        let neighbors = self.nearest_existing(&vector, self.max_neighbors);
+        let mut neighbors = self.nearest_existing(&vector, self.ef_construction);
+        neighbors.truncate(self.max_neighbors);
         for neighbor in &neighbors {
             self.links.entry(*neighbor).or_default().insert(cell_id);
         }
@@ -98,6 +104,10 @@ impl HnswIndex {
 
     pub fn layer_count(&self) -> usize {
         self.layer_count
+    }
+
+    pub fn ef_construction(&self) -> usize {
+        self.ef_construction
     }
 
     fn nearest_existing(&self, vector: &[i16], limit: usize) -> Vec<u32> {

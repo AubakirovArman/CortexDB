@@ -16,6 +16,7 @@ expression: resp
   "min_recall_q16": 49151,
   "hnsw_max_neighbors": 0,
   "hnsw_ef_search": 0,
+  "hnsw_ef_construction": 0,
   "hnsw_layer_count": 0,
   "upper_graph_edges": 0,
   "require_slo": true,

@@ -9,6 +9,9 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 ## v0.1.0-core-alpha.4 (current)
 
 ### Added
+- **ANN/HNSW construction profile field** — `AnnSearchReport` now includes
+  `hnsw_ef_construction` in HTTP, OpenAPI, CLI JSON, and SDK contracts so
+  recall/latency reports can be compared against the exact graph build profile.
 - **Frozen API error taxonomy** — `docs/API_ERROR_TAXONOMY.md` now defines
   stable Core Alpha error codes, HTTP status mappings, producer rules, and
   compatibility rules.

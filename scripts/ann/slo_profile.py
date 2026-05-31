@@ -19,6 +19,7 @@ class SloProfile:
     max_max_latency_nanos: int
     max_neighbors: int
     ef_search: int
+    ef_construction: int
     layer_count: int
 
 
@@ -31,6 +32,7 @@ PROFILES = {
         max_max_latency_nanos=100_000_000,
         max_neighbors=8,
         ef_search=64,
+        ef_construction=64,
         layer_count=3,
     ),
     "balanced": SloProfile(
@@ -41,6 +43,7 @@ PROFILES = {
         max_max_latency_nanos=250_000_000,
         max_neighbors=16,
         ef_search=128,
+        ef_construction=128,
         layer_count=4,
     ),
     "semantic": SloProfile(
@@ -51,6 +54,7 @@ PROFILES = {
         max_max_latency_nanos=500_000_000,
         max_neighbors=24,
         ef_search=192,
+        ef_construction=256,
         layer_count=5,
     ),
     "audit": SloProfile(
@@ -61,6 +65,7 @@ PROFILES = {
         max_max_latency_nanos=2_000_000_000,
         max_neighbors=32,
         ef_search=256,
+        ef_construction=384,
         layer_count=5,
     ),
 }
@@ -88,6 +93,8 @@ def run_external_args(profile: SloProfile) -> list[str]:
         str(profile.max_neighbors),
         "--ef-search",
         str(profile.ef_search),
+        "--ef-construction",
+        str(profile.ef_construction),
         "--layer-count",
         str(profile.layer_count),
     ]
@@ -125,6 +132,7 @@ class SelfTests(unittest.TestCase):
         self.assertEqual(profile.max_p95_latency_nanos, 100_000_000)
         self.assertEqual(profile.max_neighbors, 16)
         self.assertEqual(profile.ef_search, 128)
+        self.assertEqual(profile.ef_construction, 128)
         self.assertEqual(profile.layer_count, 4)
 
     def test_audit_is_high_recall(self) -> None:
@@ -138,6 +146,7 @@ class SelfTests(unittest.TestCase):
         self.assertIn("--min-recall-q16 60000", rendered)
         self.assertIn("--max-neighbors 24", rendered)
         self.assertIn("--ef-search 192", rendered)
+        self.assertIn("--ef-construction 256", rendered)
 
 
 if __name__ == "__main__":

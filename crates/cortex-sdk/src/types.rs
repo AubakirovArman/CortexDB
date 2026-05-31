@@ -57,6 +57,8 @@ pub struct AnnSearchReport {
     pub recall_q16: Option<u16>,
     pub min_recall_q16: Option<u16>,
     #[serde(default)]
+    pub hnsw_ef_construction: usize,
+    #[serde(default)]
     pub require_slo: bool,
     #[serde(default = "default_production_safe")]
     pub production_safe: bool,

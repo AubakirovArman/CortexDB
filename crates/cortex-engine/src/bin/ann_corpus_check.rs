@@ -81,6 +81,9 @@ impl Args {
                 "--ef-search" => {
                     options.ef_search = parse_usize(&next_value(&mut args, &arg)?, &arg)?;
                 }
+                "--ef-construction" => {
+                    options.ef_construction = parse_usize(&next_value(&mut args, &arg)?, &arg)?;
+                }
                 "--layer-count" => {
                     options.layer_count = parse_usize(&next_value(&mut args, &arg)?, &arg)?;
                 }
@@ -144,7 +147,7 @@ fn parse_u128(value: &str, option: &str) -> Result<u128, String> {
 fn usage() -> String {
     "usage: ann_corpus_check --vectors PATH --queries PATH --ground-truth PATH \
      [--metric dot_product|cosine|l2] [--max-neighbors N] [--ef-search N] \
-     [--layer-count N] [--output PATH]"
+     [--ef-construction N] [--layer-count N] [--output PATH]"
         .to_owned()
 }
 
@@ -187,6 +190,8 @@ mod tests {
             "16".to_owned(),
             "--ef-search".to_owned(),
             "128".to_owned(),
+            "--ef-construction".to_owned(),
+            "256".to_owned(),
             "--layer-count".to_owned(),
             "5".to_owned(),
         ])
@@ -196,6 +201,7 @@ mod tests {
         assert_eq!(args.options.min_recall_q16, 50_000);
         assert_eq!(args.options.max_neighbors, 16);
         assert_eq!(args.options.ef_search, 128);
+        assert_eq!(args.options.ef_construction, 256);
         assert_eq!(args.options.layer_count, 5);
     }
 

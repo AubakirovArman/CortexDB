@@ -34,6 +34,7 @@ fn ach_hnsw_graph_roundtrips_upper_layers() {
         max_neighbors: 16,
         ef_search: 128,
         layer_count: 4,
+        ef_construction: 256,
     };
 
     graph.write(&path).unwrap();
@@ -44,6 +45,7 @@ fn ach_hnsw_graph_roundtrips_upper_layers() {
     assert_eq!(decoded.max_neighbors, 16);
     assert_eq!(decoded.ef_search, 128);
     assert_eq!(decoded.layer_count, 4);
+    assert_eq!(decoded.ef_construction, 256);
 }
 
 #[test]

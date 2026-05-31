@@ -44,6 +44,8 @@
 - [x] Collection-level vector metadata is persisted in the manifest as
   `vector_profile` (`dimension`, `metric`) and validation rejects live `.acv`
   / `.ach` bundles that drift from that collection profile.
+- [x] `ef_construction` is now persisted and reported as a first-class HNSW
+  build/profile knob for checkpoint/compact graphs and ANN corpus runs.
 
 ### 2) Real distributed consensus
 - [x] Отделить репликационный consensus-log и local WAL по строгим durability guarantees.

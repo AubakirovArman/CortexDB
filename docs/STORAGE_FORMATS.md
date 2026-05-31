@@ -127,6 +127,7 @@ optional build_config:
   max_neighbors u32
   ef_search u32
   layer_count u32
+  ef_construction u32
 crc32c u32 over all previous bytes
 ```
 
@@ -135,7 +136,9 @@ compact write one graph file per segment next to `.acs/.acb/.aci/.acv`.
 The upper-layer trailer is optional for compatibility with earlier `ACH0`
 files; missing upper layers are interpreted as a valid single-layer graph.
 The optional `HCFG` trailer records the HNSW build profile used when checkpoint
-or compact wrote the graph. Older files without this trailer remain valid.
+or compact wrote the graph. Older files without this trailer remain valid, and
+older `HCFG` trailers without `ef_construction` are interpreted as
+`ef_construction = ef_search`.
 Storage validation treats mixed live-segment `HCFG` profiles as an invariant
 error because ANN recall and latency SLOs cannot be interpreted consistently
 when one live graph was built with a different shape than another.
@@ -164,6 +167,7 @@ optional hnsw_profile:
   ef_search u32
   layer_count u32
   metric u32
+  ef_construction u32
 optional vector_profile:
   magic[4] = "VECM"
   dimension u32
@@ -175,7 +179,8 @@ The optional `HNSW` trailer records the intended collection-level HNSW build
 profile independently from individual `.ach` graph files. Storage validation
 compares this manifest policy against every live graph profile so a mixed or
 accidentally rewritten ANN graph cannot be served as if it matched the current
-collection SLO.
+collection SLO. Older manifest `HNSW` trailers without `ef_construction` are
+loaded as `ef_construction = ef_search`.
 
 The optional `VECM` trailer records the collection-level vector profile:
 dimension and distance metric. Checkpoint preserves the existing profile for

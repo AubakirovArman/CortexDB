@@ -31,6 +31,7 @@ pub struct AnnRecallLatencyReport {
     pub hnsw_max_neighbors: usize,
     pub hnsw_ef_search: usize,
     pub hnsw_layer_count: usize,
+    pub hnsw_ef_construction: usize,
     pub graph_signature: String,
     pub production_safe: bool,
 }
@@ -126,6 +127,11 @@ pub fn synthetic_ann_recall_latency_report(
         } else {
             graph.layer_count as usize
         },
+        hnsw_ef_construction: if graph.ef_construction == 0 {
+            graph.ef_search.max(64) as usize
+        } else {
+            graph.ef_construction as usize
+        },
         graph_signature: graph_signature(&graph),
         production_safe,
     })
@@ -155,6 +161,10 @@ fn graph_signature(graph: &HnswGraphIndex) -> String {
         &mut hash,
         u64::from(graph.max_neighbors),
         u64::from(graph.ef_search),
+    );
+    absorb_u64(
+        &mut hash,
+        u64::from(graph.ef_construction.max(graph.ef_search)),
     );
     absorb_u64(&mut hash, u64::from(graph.layer_count));
 

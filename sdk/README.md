@@ -15,9 +15,10 @@ Search clients expose a typed response shape with `search_mode`, `ann_report`,
 and ranked `results` so ANN fallback behavior is visible to callers.
 ANN evaluation clients expose the `/v1/search/ann-evaluate` contract as a typed
 response with exact top-k, ANN top-k, overlap, and fixed-point `recall_q16`.
-`ann_report` also exposes `recall_q16`, `min_recall_q16`, `production_safe`,
-`fallback_performed`, and `slo_violations` so clients can enforce ANN/HNSW
-recall, fallback, and visit-budget guardrails.
+`ann_report` also exposes `recall_q16`, `min_recall_q16`,
+`hnsw_ef_construction`, `production_safe`, `fallback_performed`, and
+`slo_violations` so clients can enforce ANN/HNSW recall, fallback, graph-shape,
+and visit-budget guardrails.
 All clients support additive tenant/realm scoping so package users can target
 the same per-tenant database layout exposed by `cortex-server` and `/dashboard`.
 `publish/check.sh` validates Python bytecode/tests/wheel packaging, Rust tests

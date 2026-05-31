@@ -10,6 +10,7 @@ fn manifest_hnsw_profile_roundtrips() {
             ef_search: 192,
             layer_count: 5,
             metric: 1,
+            ef_construction: 256,
         }),
         ..StorageManifest::default()
     };

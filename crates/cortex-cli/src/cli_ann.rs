@@ -108,6 +108,7 @@ fn to_ann_search_report(
         min_recall_q16: report.search.min_recall_q16,
         hnsw_max_neighbors: report.search.hnsw_max_neighbors,
         hnsw_ef_search: report.search.hnsw_ef_search,
+        hnsw_ef_construction: report.search.hnsw_ef_construction,
         hnsw_layer_count: report.search.hnsw_layer_count,
         upper_graph_edges: report.search.upper_graph_edges,
         fallback_performed: report.search.fallback_performed,

@@ -20,6 +20,7 @@ pub struct ManifestHnswProfile {
     pub ef_search: u32,
     pub layer_count: u32,
     pub metric: u32,
+    pub ef_construction: u32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -79,6 +80,7 @@ fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
         put_u32(&mut out, profile.ef_search);
         put_u32(&mut out, profile.layer_count);
         put_u32(&mut out, profile.metric);
+        put_u32(&mut out, profile.ef_construction.max(profile.ef_search));
     }
     if let Some(profile) = manifest.vector_profile {
         out.extend_from_slice(b"VECM");
@@ -151,11 +153,25 @@ fn read_hnsw_profile(
         ef_search: read_u32(bytes, cursor)?,
         layer_count: read_u32(bytes, cursor)?,
         metric: read_u32(bytes, cursor)?,
+        ef_construction: 0,
     };
     if profile.max_neighbors == 0 || profile.ef_search == 0 || profile.layer_count == 0 {
         return Err(StorageError::InvalidManifestFile);
     }
-    Ok(Some(profile))
+    let ef_construction =
+        if bytes.len().saturating_sub(*cursor) >= 4 && &bytes[*cursor..*cursor + 4] != b"VECM" {
+            let value = read_u32(bytes, cursor)?;
+            if value == 0 {
+                return Err(StorageError::InvalidManifestFile);
+            }
+            value
+        } else {
+            profile.ef_search
+        };
+    Ok(Some(ManifestHnswProfile {
+        ef_construction,
+        ..profile
+    }))
 }
 
 fn read_vector_profile(

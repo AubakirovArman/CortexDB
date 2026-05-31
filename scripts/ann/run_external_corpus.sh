@@ -16,6 +16,7 @@ max_p95_latency_nanos="100000000"
 max_max_latency_nanos="250000000"
 max_neighbors="8"
 ef_search="64"
+ef_construction="64"
 layer_count="4"
 compare_max_p95_regression_nanos="0"
 compare_max_max_regression_nanos="0"
@@ -41,6 +42,7 @@ Options:
   --max-max-latency-nanos VALUE
   --max-neighbors VALUE
   --ef-search VALUE
+  --ef-construction VALUE
   --layer-count VALUE
   --compare-max-p95-regression-nanos VALUE
   --compare-max-max-regression-nanos VALUE
@@ -126,6 +128,11 @@ while [[ $# -gt 0 ]]; do
     --ef-search)
       require_value "$1" "${2:-}"
       ef_search="$2"
+      shift 2
+      ;;
+    --ef-construction)
+      require_value "$1" "${2:-}"
+      ef_construction="$2"
       shift 2
       ;;
     --layer-count)
@@ -253,6 +260,7 @@ cat > "${manifest_path}" <<MANIFEST
   "require_production_safe": $([[ "${allow_unsafe}" -eq 1 ]] && echo false || echo true),
   "hnsw_max_neighbors": ${max_neighbors},
   "hnsw_ef_search": ${ef_search},
+  "hnsw_ef_construction": ${ef_construction},
   "hnsw_layer_count": ${layer_count},
   "vectors": "${vectors}",
   "queries": "${queries}",
@@ -274,6 +282,7 @@ ann_args=(
   --max-max-latency-nanos "${max_max_latency_nanos}"
   --max-neighbors "${max_neighbors}"
   --ef-search "${ef_search}"
+  --ef-construction "${ef_construction}"
   --layer-count "${layer_count}"
   --output "${report_path}"
 )

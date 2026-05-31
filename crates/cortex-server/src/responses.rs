@@ -207,6 +207,7 @@ pub struct AnnSearchReportResponse {
     pub min_recall_q16: Option<u16>,
     pub hnsw_max_neighbors: usize,
     pub hnsw_ef_search: usize,
+    pub hnsw_ef_construction: usize,
     pub hnsw_layer_count: usize,
     pub upper_graph_edges: usize,
     pub require_slo: bool,

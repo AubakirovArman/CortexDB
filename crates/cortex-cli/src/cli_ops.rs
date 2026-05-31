@@ -518,9 +518,10 @@ fn format_ann_search_report(report: &cortex_engine::AnnSearchReport) -> String {
     };
 
     format!(
-        "ann_path={returned} fallback_reason={fallback_reason} fallback_performed={} recall_q16={recall} min_recall_q16={min_recall} allowed_candidates={} visited_candidates={visited} max_visited_candidates={max_visited} require_slo={} production_safe={} slo_violations={violations}",
+        "ann_path={returned} fallback_reason={fallback_reason} fallback_performed={} recall_q16={recall} min_recall_q16={min_recall} allowed_candidates={} visited_candidates={visited} max_visited_candidates={max_visited} hnsw_ef_construction={} require_slo={} production_safe={} slo_violations={violations}",
         report.fallback_performed,
         report.allowed_candidates,
+        report.hnsw_ef_construction,
         report.require_slo,
         report.production_safe
     )

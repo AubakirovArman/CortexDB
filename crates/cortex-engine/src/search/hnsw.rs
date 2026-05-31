@@ -18,6 +18,7 @@ pub struct HnswIndex {
     layer_count: usize,
     max_neighbors: usize,
     ef_search: usize,
+    ef_construction: usize,
     config: VectorCollectionConfig,
     pub rebuild_count: u64,
 }

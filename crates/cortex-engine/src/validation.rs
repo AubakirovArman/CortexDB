@@ -286,21 +286,23 @@ fn check_wal(path: &std::path::Path, report: &mut StorageValidationReport) {
     }
 }
 
-fn hnsw_profile_key(graph: &HnswGraphIndex) -> (u32, u32, u32, u32) {
+fn hnsw_profile_key(graph: &HnswGraphIndex) -> (u32, u32, u32, u32, u32) {
     (
         graph.max_neighbors,
         graph.ef_search,
         graph.layer_count,
         u32::from(graph.metric),
+        graph.ef_construction.max(graph.ef_search),
     )
 }
 
-fn hnsw_manifest_profile_key(profile: ManifestHnswProfile) -> (u32, u32, u32, u32) {
+fn hnsw_manifest_profile_key(profile: ManifestHnswProfile) -> (u32, u32, u32, u32, u32) {
     (
         profile.max_neighbors,
         profile.ef_search,
         profile.layer_count,
         profile.metric,
+        profile.ef_construction.max(profile.ef_search),
     )
 }
 
@@ -315,13 +317,13 @@ fn vector_profile_key(index: &VectorIndex, graph: &HnswGraphIndex) -> Option<(u3
     Some((dimension, u32::from(graph.metric)))
 }
 
-fn format_hnsw_profile(profile: (u32, u32, u32, u32)) -> String {
-    let (max_neighbors, ef_search, layer_count, metric) = profile;
-    if profile == (0, 0, 0, 0) {
+fn format_hnsw_profile(profile: (u32, u32, u32, u32, u32)) -> String {
+    let (max_neighbors, ef_search, layer_count, metric, ef_construction) = profile;
+    if profile == (0, 0, 0, 0, 0) {
         return "legacy/unknown".to_owned();
     }
     format!(
-        "max_neighbors={max_neighbors},ef_search={ef_search},layer_count={layer_count},metric={metric}"
+        "max_neighbors={max_neighbors},ef_search={ef_search},layer_count={layer_count},metric={metric},ef_construction={ef_construction}"
     )
 }
 

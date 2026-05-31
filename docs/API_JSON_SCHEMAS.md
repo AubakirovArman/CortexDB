@@ -194,6 +194,11 @@ For `search_mode: "vector_ann"`, `ann_report` is populated:
   "returned_candidates": 1,
   "recall_q16": null,
   "min_recall_q16": null,
+  "hnsw_max_neighbors": 0,
+  "hnsw_ef_search": 0,
+  "hnsw_ef_construction": 0,
+  "hnsw_layer_count": 1,
+  "upper_graph_edges": 0,
   "require_slo": true,
   "production_safe": false,
   "slo_violations": ["no_persisted_segments"]
@@ -206,6 +211,9 @@ contains the observed top-k recall and `min_recall_q16` contains the guard
 threshold. With `require_slo=true`, callers should treat
 `production_safe=false` as an ANN/HNSW guardrail breach even when exact fallback
 returned correct results.
+The HNSW profile fields (`hnsw_max_neighbors`, `hnsw_ef_search`,
+`hnsw_ef_construction`, `hnsw_layer_count`) identify the persisted graph shape
+used for recall and latency comparisons.
 
 ## ANN Evaluation
 

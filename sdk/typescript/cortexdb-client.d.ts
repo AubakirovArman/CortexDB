@@ -29,6 +29,7 @@ export interface AnnSearchReport {
   returned_candidates: number;
   recall_q16: number | null;
   min_recall_q16: number | null;
+  hnsw_ef_construction: number;
   require_slo: boolean;
   production_safe: boolean;
   slo_violations: string[];

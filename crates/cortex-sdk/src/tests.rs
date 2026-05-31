@@ -104,6 +104,7 @@ fn typed_search_response_decodes_ann_report_contract() {
             "returned_candidates": 1,
             "recall_q16": null,
             "min_recall_q16": null,
+            "hnsw_ef_construction": 64,
             "require_slo": true,
             "production_safe": false,
             "slo_violations": ["no_persisted_segments"]
@@ -129,6 +130,7 @@ fn typed_search_response_decodes_ann_report_contract() {
     );
     assert_eq!(report.recall_q16, None);
     assert_eq!(report.min_recall_q16, None);
+    assert_eq!(report.hnsw_ef_construction, 64);
     assert!(report.fallback_performed);
     assert!(report.require_slo);
     assert!(!report.production_safe);
@@ -162,6 +164,7 @@ fn typed_ann_evaluation_response_decodes_contract() {
             "returned_candidates": 2,
             "recall_q16": 65535,
             "min_recall_q16": 65535,
+            "hnsw_ef_construction": 128,
             "require_slo": true,
             "production_safe": true,
             "slo_violations": []
@@ -182,6 +185,7 @@ fn typed_ann_evaluation_response_decodes_contract() {
     assert_eq!(report.path.as_str(), "hnsw_graph");
     assert_eq!(report.recall_q16, Some(65535));
     assert_eq!(report.min_recall_q16, Some(65535));
+    assert_eq!(report.hnsw_ef_construction, 128);
     assert!(report.require_slo);
     assert!(report.production_safe);
     assert!(report.slo_violations.is_empty());

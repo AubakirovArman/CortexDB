@@ -14,6 +14,7 @@ pub struct HnswGraphIndex {
     pub max_neighbors: u32,
     pub ef_search: u32,
     pub layer_count: u32,
+    pub ef_construction: u32,
 }
 
 impl HnswGraphIndex {
@@ -49,6 +50,7 @@ impl HnswGraphIndex {
             put_u32(&mut out, self.max_neighbors);
             put_u32(&mut out, self.ef_search);
             put_u32(&mut out, self.layer_count);
+            put_u32(&mut out, self.ef_construction.max(self.ef_search));
         }
         append_crc32c(&mut out);
         write_atomic(path.as_ref(), &out)
@@ -87,7 +89,7 @@ fn decode(bytes: &[u8]) -> StorageResult<HnswGraphIndex> {
     } else {
         BTreeMap::new()
     };
-    let (max_neighbors, ef_search, layer_count) = if bytes.len() > cursor {
+    let (max_neighbors, ef_search, layer_count, ef_construction) = if bytes.len() > cursor {
         let magic = read_bytes(bytes, &mut cursor, 4)?;
         if magic != b"HCFG" {
             return Err(StorageError::InvalidHnswGraphFile);
@@ -95,12 +97,20 @@ fn decode(bytes: &[u8]) -> StorageResult<HnswGraphIndex> {
         let max_neighbors = read_u32(bytes, &mut cursor)?;
         let ef_search = read_u32(bytes, &mut cursor)?;
         let layer_count = read_u32(bytes, &mut cursor)?;
+        let ef_construction = if bytes.len() > cursor {
+            read_u32(bytes, &mut cursor)?
+        } else {
+            ef_search
+        };
         if max_neighbors == 0 || ef_search == 0 || layer_count == 0 {
             return Err(StorageError::InvalidHnswGraphFile);
         }
-        (max_neighbors, ef_search, layer_count)
+        if ef_construction == 0 {
+            return Err(StorageError::InvalidHnswGraphFile);
+        }
+        (max_neighbors, ef_search, layer_count, ef_construction)
     } else {
-        (0, 0, 0)
+        (0, 0, 0, 0)
     };
     if cursor != bytes.len() {
         return Err(StorageError::InvalidHnswGraphFile);
@@ -113,6 +123,7 @@ fn decode(bytes: &[u8]) -> StorageResult<HnswGraphIndex> {
         max_neighbors,
         ef_search,
         layer_count,
+        ef_construction,
     })
 }
 

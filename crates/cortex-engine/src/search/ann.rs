@@ -118,6 +118,7 @@ pub struct AnnSearchReport {
     pub hnsw_max_neighbors: usize,
     pub hnsw_ef_search: usize,
     pub hnsw_layer_count: usize,
+    pub hnsw_ef_construction: usize,
     pub upper_graph_edges: usize,
     pub require_slo: bool,
     pub production_safe: bool,
@@ -131,6 +132,7 @@ struct HnswRuntimeConfig {
     layer_count: usize,
     upper_graph_edges: usize,
     metric: DistanceMetric,
+    ef_construction: usize,
 }
 
 const ANN_DEFAULT_MAX_NEIGHBORS: usize = 8;
@@ -171,6 +173,11 @@ fn hnsw_runtime_config(graph: &HnswGraphIndex) -> HnswRuntimeConfig {
         layer_count,
         upper_graph_edges,
         metric: metric_from_graph(graph),
+        ef_construction: if graph.ef_construction == 0 {
+            ef_search
+        } else {
+            graph.ef_construction as usize
+        },
     }
 }
 
@@ -415,6 +422,7 @@ pub fn search_persisted_ann_with_policy(
                 hnsw_max_neighbors: config.max_neighbors,
                 hnsw_ef_search: config.ef_search,
                 hnsw_layer_count: config.layer_count,
+                hnsw_ef_construction: config.ef_construction,
                 upper_graph_edges: config.upper_graph_edges,
                 require_slo: policy.require_slo,
                 production_safe: true,
@@ -509,6 +517,7 @@ pub fn evaluate_persisted_ann_with_policy(
                             hnsw_max_neighbors: config.max_neighbors,
                             hnsw_ef_search: config.ef_search,
                             hnsw_layer_count: config.layer_count,
+                            hnsw_ef_construction: config.ef_construction,
                             upper_graph_edges: config.upper_graph_edges,
                             require_slo: policy.require_slo,
                             production_safe: true,
@@ -627,6 +636,7 @@ fn fallback_disabled_outcome(
                 hnsw_max_neighbors: config.max_neighbors,
                 hnsw_ef_search: config.ef_search,
                 hnsw_layer_count: config.layer_count,
+                hnsw_ef_construction: config.ef_construction,
                 upper_graph_edges: config.upper_graph_edges,
                 require_slo: policy.require_slo,
                 production_safe: true,
@@ -700,6 +710,7 @@ fn exact_from_results(
                 hnsw_max_neighbors: config.max_neighbors,
                 hnsw_ef_search: config.ef_search,
                 hnsw_layer_count: config.layer_count,
+                hnsw_ef_construction: config.ef_construction,
                 upper_graph_edges: config.upper_graph_edges,
                 require_slo: policy.require_slo,
                 production_safe: true,

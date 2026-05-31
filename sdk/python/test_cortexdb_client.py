@@ -58,6 +58,7 @@ class CortexDBClientPathTests(unittest.TestCase):
                     "returned_candidates": 1,
                     "recall_q16": None,
                     "min_recall_q16": None,
+                    "hnsw_ef_construction": 64,
                     "require_slo": True,
                     "production_safe": False,
                     "slo_violations": ["no_persisted_segments"],
@@ -80,6 +81,7 @@ class CortexDBClientPathTests(unittest.TestCase):
         self.assertEqual(response.ann_report.fallback_reason, "no_persisted_segments")
         self.assertIsNone(response.ann_report.recall_q16)
         self.assertIsNone(response.ann_report.min_recall_q16)
+        self.assertEqual(response.ann_report.hnsw_ef_construction, 64)
         self.assertTrue(response.ann_report.fallback_performed)
         self.assertFalse(response.ann_report.production_safe)
         self.assertEqual(response.ann_report.slo_violations, ("no_persisted_segments",))
@@ -111,6 +113,7 @@ class CortexDBClientPathTests(unittest.TestCase):
                     "returned_candidates": 2,
                     "recall_q16": 65535,
                     "min_recall_q16": 65535,
+                    "hnsw_ef_construction": 128,
                     "require_slo": True,
                     "production_safe": True,
                     "slo_violations": [],
@@ -128,6 +131,7 @@ class CortexDBClientPathTests(unittest.TestCase):
         self.assertEqual(response.ann_report.path, "hnsw_graph")
         self.assertEqual(response.ann_report.recall_q16, 65535)
         self.assertEqual(response.ann_report.min_recall_q16, 65535)
+        self.assertEqual(response.ann_report.hnsw_ef_construction, 128)
         self.assertTrue(response.ann_report.require_slo)
         self.assertTrue(response.ann_report.production_safe)
 

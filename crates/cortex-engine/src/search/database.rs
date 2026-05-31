@@ -339,6 +339,7 @@ fn snapshot_ann_report(
             hnsw_max_neighbors: 0,
             hnsw_ef_search: 0,
             hnsw_layer_count: 0,
+            hnsw_ef_construction: 0,
             upper_graph_edges: 0,
             require_slo: policy.require_slo,
             production_safe: true,

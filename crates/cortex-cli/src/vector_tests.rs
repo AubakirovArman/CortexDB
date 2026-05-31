@@ -168,6 +168,9 @@ fn search_vector_eval_command_reports_recall_after_flush() {
         .as_u64()
         .is_some());
     assert!(response["ann_report"]["hnsw_ef_search"].as_u64().is_some());
+    assert!(response["ann_report"]["hnsw_ef_construction"]
+        .as_u64()
+        .is_some());
 
     let _ = std::fs::remove_dir_all(path);
 }

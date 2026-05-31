@@ -48,6 +48,7 @@ class AnnSearchReport:
     returned_candidates: int
     recall_q16: int | None
     min_recall_q16: int | None
+    hnsw_ef_construction: int
     require_slo: bool
     production_safe: bool
     slo_violations: tuple[str, ...]
@@ -67,6 +68,7 @@ class AnnSearchReport:
             returned_candidates=int(value["returned_candidates"]),
             recall_q16=int(recall) if recall is not None else None,
             min_recall_q16=int(minimum) if minimum is not None else None,
+            hnsw_ef_construction=int(value.get("hnsw_ef_construction", 0)),
             require_slo=bool(value.get("require_slo", False)),
             production_safe=bool(value.get("production_safe", True)),
             slo_violations=tuple(str(item) for item in value.get("slo_violations", [])),

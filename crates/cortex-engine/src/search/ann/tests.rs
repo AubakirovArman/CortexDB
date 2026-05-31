@@ -377,6 +377,7 @@ fn slo_report_flags_weak_multi_layer_topology() {
         max_neighbors: 8,
         ef_search: 64,
         layer_count: 2,
+        ef_construction: 64,
     };
 
     let outcome = search_persisted_ann_with_policy(
@@ -431,6 +432,7 @@ fn slo_report_keeps_healthy_multi_layer_graph_safe_when_upper_edges_exist() {
         max_neighbors: 8,
         ef_search: 64,
         layer_count: 2,
+        ef_construction: 64,
     };
     // Add explicit upper-layer edge to avoid weak topology violation in SLO.
     graph

@@ -107,6 +107,7 @@ fn database_hnsw_build_config_controls_checkpoint_graph_density() {
         max_neighbors: 1,
         ef_search: 8,
         layer_count: 1,
+        ef_construction: 8,
         metric: DistanceMetric::DotProduct,
     });
     let semantic_edges =
@@ -142,6 +143,7 @@ fn database_checkpoint_persists_hnsw_build_profile_metadata() {
     assert_eq!(graph.max_neighbors, config.max_neighbors as u32);
     assert_eq!(graph.ef_search, config.ef_search as u32);
     assert_eq!(graph.layer_count, config.layer_count as u32);
+    assert_eq!(graph.ef_construction, config.ef_construction as u32);
 }
 
 #[test]
@@ -151,9 +153,11 @@ fn hnsw_build_profiles_match_documented_slo_shapes() {
 
     assert_eq!(balanced.max_neighbors, 16);
     assert_eq!(balanced.ef_search, 128);
+    assert_eq!(balanced.ef_construction, 128);
     assert_eq!(balanced.layer_count, 4);
     assert!(audit.max_neighbors > balanced.max_neighbors);
     assert!(audit.ef_search > balanced.ef_search);
+    assert!(audit.ef_construction > balanced.ef_construction);
 }
 
 #[test]

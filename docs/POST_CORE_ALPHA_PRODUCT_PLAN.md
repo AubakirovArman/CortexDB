@@ -135,12 +135,15 @@ What landed:
 37. ✅ Collection-level vector metadata is now stored in the manifest as
     `vector_profile` (`dimension`, `metric`) and validated against live `.acv`
     vector dimensions plus `.ach` graph metadata.
+38. ✅ `ef_construction` is now an explicit HNSW build/profile/report knob for
+    checkpoint/compact graphs and external corpus tuning runs.
 
 What remains before broad production tuning:
 
 - Checked-in or archived sift/glove-style golden reports generated through `ann_corpus_check`.
 - Benchmark history tracking across commits.
-- Tuned `ef_construction` and larger external-corpus parameter sweeps.
+- Larger external-corpus parameter sweeps with calibrated `ef_construction`
+  values.
 
 Definition of done:
 

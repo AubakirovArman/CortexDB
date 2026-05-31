@@ -271,14 +271,13 @@ Current engine knobs:
 | --- | --- |
 | `max_neighbors` | Higher values increase graph density and memory, often improving recall. |
 | `ef_search` | Higher values visit more candidates, improving recall at latency cost. |
+| `ef_construction` | Higher values expand the build-time neighbor candidate beam, improving graph quality at checkpoint/compact cost. |
 | `layer_count` | More layers can reduce traversal cost but require graph-shape validation. |
 | `max_visited_candidates` | SLO guard; too low causes visit-budget fallback. |
 | `min_recall_q16` | Recall guard; below threshold should trigger exact fallback. |
 
 Future construction knobs:
 
-- `ef_construction`;
-- collection-level metric metadata;
 - corpus-size-specific graph presets;
 - background rebuild budget;
 - per-tenant SLO profile.
@@ -577,6 +576,9 @@ Warnings, not blockers:
 - Vector collection metadata is stored in the manifest as `vector_profile`
   (`dimension`, `metric`) and validation rejects live `.acv` / `.ach` bundles
   that drift from that collection profile.
+- `ef_construction` is now part of HNSW build profiles, `.ach` graph metadata,
+  manifest `hnsw_profile`, and ANN corpus/run manifests, so baseline sweeps can
+  compare build-time graph quality knobs explicitly.
 - Report history is not stored outside CI artifacts and release baseline
   bundles.
 - Demo-domain corpus generation is available, but no large real customer/domain
