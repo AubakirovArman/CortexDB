@@ -258,6 +258,7 @@ function run(label, task) {
             show(body);
             window.CortexDashboardReports?.renderAnnEvaluation?.(body);
             window.CortexDashboardReports?.renderContextPack?.(body);
+            window.CortexDashboardReports?.renderStorageValidation?.(body);
             addHistory(label, true);
             if (body?.current_seq !== undefined || body?.ok !== undefined) renderMetrics(body);
         })

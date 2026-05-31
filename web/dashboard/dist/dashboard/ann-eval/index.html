@@ -178,6 +178,12 @@ Wind Farm status ready.</textarea></div>
                     <button type="button" data-action="flush" class="secondary" data-access="admin">Flush</button>
                     <button type="button" data-action="compact" class="secondary" data-access="admin">Compact</button>
                 </div>
+                <section class="report-panel" aria-labelledby="storage-report-title">
+                    <h3 id="storage-report-title">Storage validation report</h3>
+                    <div id="storage-report" class="report-stack" aria-live="polite">
+                        <div class="metric"><span>Status</span><strong>Run Validate</strong></div>
+                    </div>
+                </section>
             </section>
             <section id="cluster" class="panel" data-title="Cluster Status" data-access="data">
                 <h2 id="cluster-title">Cluster Status</h2>

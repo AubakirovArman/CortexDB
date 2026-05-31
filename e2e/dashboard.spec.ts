@@ -169,10 +169,16 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await page.getByRole('link', { name: 'Storage' }).click();
     await expect(page).toHaveURL(/\/dashboard\/storage$/);
     await expect(page.locator('#storage')).toBeVisible();
+    await expect(page.locator('#storage-report')).toContainText('Run Validate');
     await page.getByRole('button', { name: 'Flush' }).click();
     await expect(page.locator('#output')).toContainText('"checkpoint_seq"');
     await page.getByRole('button', { name: 'Validate' }).click();
     await expect(page.locator('#output')).toContainText('manifest_ok');
+    await expect(page.locator('#storage-report-title')).toContainText('Storage validation report');
+    await expect(page.locator('#storage-report')).toContainText('Storage');
+    await expect(page.locator('#storage-report')).toContainText('Manifest');
+    await expect(page.locator('#storage-report')).toContainText('WAL');
+    await expect(page.locator('#storage-report')).toContainText('No validation errors reported');
 
     await page.getByRole('link', { name: 'ANN' }).click();
     await expect(page).toHaveURL(/\/dashboard\/ann-eval$/);

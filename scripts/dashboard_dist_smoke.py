@@ -67,6 +67,7 @@ def main() -> int:
         ("stats bootstrap", 'run("stats"' in script),
         ("ann report renderer", "renderAnnEvaluation" in reporting),
         ("context report renderer", "renderContextPack" in reporting),
+        ("storage report renderer", "renderStorageValidation" in reporting),
         ("history router", "pushState" in script),
         ("frontend stack manifest", "dependency-free-static-html-css-js" in manifest),
         ("memory-only token policy", '"token_persistence": "memory-only"' in manifest),

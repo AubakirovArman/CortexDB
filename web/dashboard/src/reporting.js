@@ -68,6 +68,46 @@
         return item;
     }
 
+    function textItem(text) {
+        const item = document.createElement("li");
+        item.textContent = text;
+        return item;
+    }
+
+    function renderStorageValidation(body) {
+        const container = document.querySelector("#storage-report");
+        if (!container || body?.manifest_ok === undefined || body?.wal_ok === undefined) return;
+
+        const errors = body.errors || [];
+        const indexesChecked = [
+            body.bitmap_indexes_checked || 0,
+            body.lexical_indexes_checked || 0,
+            body.vector_indexes_checked || 0,
+            body.hnsw_graphs_checked || 0,
+        ].reduce((total, value) => total + value, 0);
+        const summary = document.createElement("div");
+        const errorList = document.createElement("ul");
+        summary.className = "report-grid";
+        errorList.className = "report-list compact";
+
+        summary.replaceChildren(
+            card("Storage", body.ok ? "ok" : "attention", body.ok ? "good" : "bad"),
+            card("Manifest", yesNo(body.manifest_ok), body.manifest_ok ? "good" : "bad"),
+            card("WAL", yesNo(body.wal_ok), body.wal_ok ? "good" : "bad"),
+            card("Live segments", body.live_segments_checked ?? 0),
+            card("Cells", body.cells_checked ?? 0),
+            card("Indexes", indexesChecked),
+            card("WAL records", body.wal_records_checked ?? 0),
+            card("Safe truncate", body.wal_safe_truncate_offset ?? 0),
+            card("Errors", errors.length, errors.length ? "bad" : "good"),
+        );
+
+        if (errors.length) errorList.replaceChildren(...errors.map(textItem));
+        else errorList.replaceChildren(textItem("No validation errors reported"));
+
+        container.replaceChildren(summary, errorList);
+    }
+
     function renderContextPack(body) {
         const container = document.querySelector("#context-report");
         if (!container || body?.schema_version !== "context_pack.v1") return;
@@ -138,5 +178,5 @@
         );
     }
 
-    window.CortexDashboardReports = { renderAnnEvaluation, renderContextPack };
+    window.CortexDashboardReports = { renderAnnEvaluation, renderContextPack, renderStorageValidation };
 })();

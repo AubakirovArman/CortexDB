@@ -30,6 +30,9 @@ SLO violations, graph shape, and HNSW tuning knobs.
 ContextPack responses render a separate report view for token budget usage,
 selected cells, citations, anomalies, and per-cell explain metadata so pack
 quality can be reviewed without reading raw JSON.
+Storage validation responses render health cards for manifest/WAL status,
+checked segments, checked cells, index coverage, safe WAL truncate offset, and
+validation errors.
 
 `dashboard-screenshots` starts the same local server and writes review artifacts:
 
@@ -63,7 +66,8 @@ visual UI.
 ANN report rendering lives in `reporting.js` to keep product-facing report
 formatting separate from request/session control logic. ContextPack report
 rendering uses the same file and only reacts to `schema_version:
-"context_pack.v1"` responses.
+"context_pack.v1"` responses. Storage validation report rendering reacts to
+the typed `/v1/validate` response shape.
 
 ## Boundary
 

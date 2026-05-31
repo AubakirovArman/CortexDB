@@ -73,6 +73,7 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "id=\"ingest-job-form\"",
         "id=\"ann-report\"",
         "id=\"context-report\"",
+        "id=\"storage-report\"",
     ] {
         assert!(html.contains(marker), "missing dashboard marker: {marker}");
     }
@@ -136,6 +137,7 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert!(script.body.contains("popstate"));
     assert!(reporting.body.contains("renderAnnEvaluation"));
     assert!(reporting.body.contains("renderContextPack"));
+    assert!(reporting.body.contains("renderStorageValidation"));
     assert!(super::dashboard::asset("/dashboard/assets/v2/app.js").is_none());
 }
 

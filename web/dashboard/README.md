@@ -62,6 +62,8 @@ Current coverage:
   fallback, SLO violations, graph shape, and HNSW tuning knobs;
 - ContextPack renders a report view for token budget usage, selected cells,
   citations, anomalies, and per-cell explain metadata;
+- Storage validation renders a report view for manifest/WAL health, checked
+  segments, checked cells, index coverage, safe WAL truncate offset, and errors;
 - request failures are surfaced through a visible status banner plus JSON
   details;
 - numeric form fields use native constraints, visible field errors, and
