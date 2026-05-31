@@ -105,3 +105,20 @@ The `metric=budget` and `value=1200000000` lines help VERIFY FACT produce precis
 - Metric-aware comparison (budget vs revenue vs cost).
 - Source trust scoring and evidence ranking.
 - Contradiction index output.
+
+## Quality Gate
+
+`crates/cortex-engine/tests/context_verify_quality.rs` is the shared
+ContextPack/VERIFY regression fixture. It proves that the same public evidence
+set can be packed for an agent and verified deterministically:
+
+- `1.2B KZT` supporting evidence is returned as supporting evidence;
+- `1.4B KZT` evidence for the same project/metric is returned as
+  contradicting evidence;
+- the report status is `mixed`;
+- the numeric mismatch guard is emitted for the conflicting cell;
+- private-scope evidence is excluded by the AgentView.
+
+This is still a deterministic alpha fixture, not a measured accuracy benchmark.
+Future Verification v1 work should add larger labelled datasets and metric-aware
+temporal reasoning.

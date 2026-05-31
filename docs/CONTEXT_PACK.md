@@ -73,3 +73,18 @@ RETRIEVE CONTEXT ...
 - Citations are recognized only from `source=` or `citation=` payload lines.
 - Redundancy control is sparse term based; dense semantic scoring and
   contradiction detection are future milestones.
+
+## Quality Gate
+
+`crates/cortex-engine/tests/context_verify_quality.rs` is the Core Alpha
+ContextPack/VERIFY golden fixture. It seeds a small investment-project corpus
+with:
+
+- supporting evidence for `Solar Plant budget is 1.2B KZT for 2025`;
+- conflicting evidence for `1.4B KZT`;
+- a private-scope distractor that must not leak into public retrieval.
+
+The fixture asserts that ContextPack keeps both public numeric variants when
+redundancy reduction is enabled, preserves citations, stays within budget, and
+survives checkpoint/restart. It also asserts the matching VERIFY report returns
+`mixed` evidence with a numeric mismatch guard.
