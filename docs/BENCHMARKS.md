@@ -335,3 +335,36 @@ The first hosted public run is recorded in
 
 For threshold selection, fallback policy, and report-history rules, see
 [`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md).
+
+## Real-Domain Embedding Baseline: Investment Projects
+
+The first local real-domain corpus is:
+
+```text
+examples/real_domains/investment_projects/
+```
+
+It contains Kazakhstan / Central Asia investment-project documents, chunks, 40
+analyst-style queries, and ground truth. Validate the corpus locally:
+
+```bash
+cd examples/real_domains/investment_projects
+python3 scripts/validate_corpus.py
+python3 scripts/validate_ground_truth.py
+```
+
+Run the readiness gate from the repository root when an embedding endpoint is
+configured:
+
+```bash
+CORTEXDB_EMBEDDING_URL=http://127.0.0.1:11434/v1/embeddings \
+CORTEXDB_EMBEDDING_MODEL=bge-m3 \
+make ann-real-embedding-readiness \
+  ANN_REAL_EMBEDDING_SOURCE_ROOT=examples/real_domains/investment_projects/corpus \
+  ANN_REAL_EMBEDDING_QUERIES=examples/real_domains/investment_projects/queries/queries.jsonl \
+  ANN_REAL_EMBEDDING_READINESS_REPORT=target/ann/real-embedding/investment_projects_readiness.json
+```
+
+This proves corpus/query/ground-truth readiness. A final release baseline still
+requires running `make ann-real-embedding-benchmark` against a real embedding
+endpoint and packaging the resulting baseline.

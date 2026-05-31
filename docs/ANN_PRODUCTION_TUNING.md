@@ -119,6 +119,45 @@ Real embedding runs accept named SLO profiles through
 | `semantic` | higher-quality semantic retrieval | higher min/mean recall | wider latency budget | wider graph |
 | `audit` | release/audit verification runs | exact top-k recall required | widest latency budget | largest graph |
 
+## Local Real-Domain Corpus
+
+The first checked-in real-domain corpus lives at:
+
+```text
+examples/real_domains/investment_projects/
+```
+
+It covers Kazakhstan / Central Asia investment-project retrieval using public
+MDB project metadata and short generated benchmark notes. The corpus includes:
+
+- `corpus/documents.jsonl`
+- `corpus/chunks.jsonl`
+- `queries/queries.jsonl`
+- `queries/ground_truth.jsonl`
+- source registry and validators
+
+Validate it from the corpus directory:
+
+```bash
+python3 scripts/validate_corpus.py
+python3 scripts/validate_ground_truth.py
+```
+
+Then run the readiness gate from the repository root:
+
+```bash
+CORTEXDB_EMBEDDING_URL=http://127.0.0.1:11434/v1/embeddings \
+CORTEXDB_EMBEDDING_MODEL=bge-m3 \
+make ann-real-embedding-readiness \
+  ANN_REAL_EMBEDDING_SOURCE_ROOT=examples/real_domains/investment_projects/corpus \
+  ANN_REAL_EMBEDDING_QUERIES=examples/real_domains/investment_projects/queries/queries.jsonl \
+  ANN_REAL_EMBEDDING_READINESS_REPORT=target/ann/real-embedding/investment_projects_readiness.json
+```
+
+This closes the local corpus/query/ground-truth side of real-domain promotion.
+The remaining promotion step is an endpoint-backed benchmark and packaged
+baseline for the same corpus.
+
 Inspect a profile without running a benchmark:
 
 ```bash

@@ -17,8 +17,11 @@ Core Alpha is operational:
   - ANN recall/latency gates, history tracking, drift checks, external corpus checks, exact fallback and graph trailer persistence
   - baseline publishing + history regression gates
   - machine-readable real-embedding readiness report for missing corpus/env/archive prerequisites
+  - local `investment_projects` real-domain corpus with documents, chunks,
+    40 queries, ground truth, validators, and readiness wiring
 - **Открыто:**
-  - финальный baseline на доменном реальном embedding
+  - endpoint-backed benchmark and packaged baseline for the
+    `investment_projects` corpus
   - долгоживущие observability и SLA-регрессионные пороги для production traffic
 
 ### 2) Real distributed consensus readiness

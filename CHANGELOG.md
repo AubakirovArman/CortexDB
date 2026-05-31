@@ -47,6 +47,10 @@
 - Added `make tenant-recovery-check`, a real HTTP tenant isolation plus
   backup/restore gate that verifies tenant payload boundaries before and after
   restoring the server root.
+- Added the `examples/real_domains/investment_projects` corpus with 56
+  Kazakhstan/Central Asia investment-project documents, 165 chunks, 40
+  analyst-style queries, ground truth, validators, and real-embedding
+  readiness wiring.
 - Added file-backed HTTP token rotation through `CORTEXDB_AUTH_TOKENS_FILE`;
   the server re-reads the local policy file per request and fails closed on
   missing, empty, or invalid token files.

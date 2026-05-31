@@ -16,7 +16,8 @@ operational limits are documented.
 - Backup/restore drill evidence, offsite staging checks, crash/fault checks,
   and process-level chaos restart evidence.
 - Production evidence sweep via `make production-evidence-sweep`, which records
-  OpenAPI, backup, ANN release evidence, and replication partition evidence in
+  OpenAPI, backup, single-node performance, tenant recovery, ANN release
+  evidence, real-embedding readiness, and replication partition evidence in
   `target/production-evidence/report.json`.
 
 ## Experimental Or Guarded
@@ -38,11 +39,14 @@ operational limits are documented.
 
 ## Blocked Before Beta Promotion
 
-- Real-domain ANN/HNSW baseline requires a domain corpus, query set, embedding
-  endpoint, and model configuration. The readiness gate is
-  `make ann-real-embedding-readiness`; required environment variables are
-  `CORTEXDB_EMBEDDING_URL` and `CORTEXDB_EMBEDDING_MODEL`, with
-  `CORTEXDB_EMBEDDING_API_KEY` required only when that deployment needs it.
+- Real-domain ANN/HNSW baseline now has a local `investment_projects` corpus,
+  query set, and ground truth under
+  `examples/real_domains/investment_projects/`. Beta promotion still requires
+  an embedding endpoint, model configuration, benchmark run, and packaged
+  baseline. The readiness gate is `make ann-real-embedding-readiness`; required
+  environment variables are `CORTEXDB_EMBEDDING_URL` and
+  `CORTEXDB_EMBEDDING_MODEL`, with `CORTEXDB_EMBEDDING_API_KEY` required only
+  when that deployment needs it.
 - SDK publication needs a regular release train, package registry credentials,
   version lock-step, and changelog/deprecation policy enforcement on every
   public release.
@@ -68,5 +72,5 @@ make beta-delta-check
 ```
 
 `make ann-real-embedding-readiness` may return a blocked readiness report when
-external corpus or embedding endpoint prerequisites are absent. That is an
-acceptable Core Alpha state, but not a beta promotion state.
+embedding endpoint prerequisites are absent. That is an acceptable Core Alpha
+state, but not a beta promotion state.

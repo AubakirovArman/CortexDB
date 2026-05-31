@@ -1,0 +1,30 @@
+{
+  "domain_id": "investment_projects",
+  "region": "Kazakhstan / Central Asia",
+  "sources": [
+    {
+      "source": "world_bank",
+      "type": "project_metadata_api",
+      "base_url": "https://search.worldbank.org/api/v2/projects",
+      "license_note": "Public project metadata API; corpus stores structured metadata-derived benchmark notes."
+    },
+    {
+      "source": "edb",
+      "type": "project_disclosure",
+      "base_url": "https://eabr.org/en/projects/",
+      "license_note": "Public project pages; corpus stores metadata and short generated benchmark notes, not full page copies."
+    },
+    {
+      "source": "ebrd",
+      "type": "project_and_impact_disclosure",
+      "base_url": "https://www.ebrd.com/",
+      "license_note": "Public project and impact pages; corpus stores metadata and short generated benchmark notes."
+    },
+    {
+      "source": "reuters_reference",
+      "type": "news_reference_metadata",
+      "base_url": "https://www.reuters.com/",
+      "license_note": "Reference metadata only; article bodies are not copied into this corpus."
+    }
+  ]
+}

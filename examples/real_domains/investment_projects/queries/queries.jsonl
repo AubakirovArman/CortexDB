@@ -1,0 +1,40 @@
+{"intent": "find_project_by_sector_country", "limit": 5, "name": "q001", "query": "Kazakhstan airport infrastructure financing project", "query_id": "q001", "text": "Kazakhstan airport infrastructure financing project"}
+{"intent": "find_project_by_sector", "limit": 5, "name": "q002", "query": "Kazakhstan renewable energy investment project", "query_id": "q002", "text": "Kazakhstan renewable energy investment project"}
+{"intent": "find_project_by_sector", "limit": 5, "name": "q003", "query": "Kazakhstan transport corridor project", "query_id": "q003", "text": "Kazakhstan transport corridor project"}
+{"intent": "find_project_by_sector", "limit": 5, "name": "q004", "query": "Kazakhstan water infrastructure development project", "query_id": "q004", "text": "Kazakhstan water infrastructure development project"}
+{"intent": "find_project_by_sector", "limit": 5, "name": "q005", "query": "Kazakhstan manufacturing investment project", "query_id": "q005", "text": "Kazakhstan manufacturing investment project"}
+{"intent": "find_project_by_sector", "limit": 5, "name": "q006", "query": "Kazakhstan agriculture investment project", "query_id": "q006", "text": "Kazakhstan agriculture investment project"}
+{"intent": "find_project_by_impact", "limit": 5, "name": "q007", "query": "Kazakhstan green energy financing", "query_id": "q007", "text": "Kazakhstan green energy financing"}
+{"intent": "find_project_by_sector", "limit": 5, "name": "q008", "query": "Kazakhstan logistics infrastructure project", "query_id": "q008", "text": "Kazakhstan logistics infrastructure project"}
+{"intent": "find_project_by_name", "limit": 5, "name": "q009", "query": "Almaty airport reconstruction financing", "query_id": "q009", "text": "Almaty airport reconstruction financing"}
+{"intent": "find_project_by_name", "limit": 5, "name": "q010", "query": "Big Almaty Ring Road project", "query_id": "q010", "text": "Big Almaty Ring Road project"}
+{"intent": "find_project_by_name", "limit": 5, "name": "q011", "query": "Tengiz oilfield expansion investment", "query_id": "q011", "text": "Tengiz oilfield expansion investment"}
+{"intent": "find_project_by_name", "limit": 5, "name": "q012", "query": "Mirny wind farm Kazakhstan investment", "query_id": "q012", "text": "Mirny wind farm Kazakhstan investment"}
+{"intent": "find_project_by_sector", "limit": 5, "name": "q013", "query": "Solar power project Kazakhstan financing", "query_id": "q013", "text": "Solar power project Kazakhstan financing"}
+{"intent": "find_project_by_region", "limit": 5, "name": "q014", "query": "transport infrastructure project in Almaty", "query_id": "q014", "text": "transport infrastructure project in Almaty"}
+{"intent": "find_project_by_asset", "limit": 5, "name": "q015", "query": "Kazakhstan airport terminal project", "query_id": "q015", "text": "Kazakhstan airport terminal project"}
+{"intent": "find_project_by_finance_model", "limit": 5, "name": "q016", "query": "Kazakhstan road construction PPP project", "query_id": "q016", "text": "Kazakhstan road construction PPP project"}
+{"intent": "find_project_by_amount", "limit": 5, "name": "q017", "query": "project with investment over one billion dollars in Kazakhstan", "query_id": "q017", "text": "project with investment over one billion dollars in Kazakhstan"}
+{"intent": "find_project_by_financier", "limit": 5, "name": "q018", "query": "Kazakhstan project financed by international development bank", "query_id": "q018", "text": "Kazakhstan project financed by international development bank"}
+{"intent": "find_project_by_financier", "limit": 5, "name": "q019", "query": "infrastructure project with external financing", "query_id": "q019", "text": "infrastructure project with external financing"}
+{"intent": "find_project_by_asset", "limit": 5, "name": "q020", "query": "renewable energy project with battery storage", "query_id": "q020", "text": "renewable energy project with battery storage"}
+{"intent": "find_project_by_sector", "limit": 5, "name": "q021", "query": "large oilfield expansion Kazakhstan", "query_id": "q021", "text": "large oilfield expansion Kazakhstan"}
+{"intent": "find_project_by_finance_model", "limit": 5, "name": "q022", "query": "public private partnership Kazakhstan transport", "query_id": "q022", "text": "public private partnership Kazakhstan transport"}
+{"intent": "find_project_by_company", "limit": 5, "name": "q023", "query": "TotalEnergies Kazakhstan wind farm project", "query_id": "q023", "text": "TotalEnergies Kazakhstan wind farm project"}
+{"intent": "find_project_by_company", "limit": 5, "name": "q024", "query": "Chevron Tengiz expansion project", "query_id": "q024", "text": "Chevron Tengiz expansion project"}
+{"intent": "find_project_by_company", "limit": 5, "name": "q025", "query": "KazMunayGas renewable energy partnership", "query_id": "q025", "text": "KazMunayGas renewable energy partnership"}
+{"intent": "find_project_by_company", "limit": 5, "name": "q026", "query": "Samruk Energy wind project", "query_id": "q026", "text": "Samruk Energy wind project"}
+{"intent": "find_project_by_financier", "limit": 5, "name": "q027", "query": "EDB Kazakhstan infrastructure project", "query_id": "q027", "text": "EDB Kazakhstan infrastructure project"}
+{"intent": "find_project_by_financier", "limit": 5, "name": "q028", "query": "IFC Kazakhstan private sector project", "query_id": "q028", "text": "IFC Kazakhstan private sector project"}
+{"intent": "verify_project_amount", "limit": 5, "name": "q029", "query": "project budget 1.2 billion Kazakhstan", "query_id": "q029", "text": "project budget 1.2 billion Kazakhstan"}
+{"intent": "verify_project_amount", "limit": 5, "name": "q030", "query": "project budget 1.4 billion Kazakhstan", "query_id": "q030", "text": "project budget 1.4 billion Kazakhstan"}
+{"intent": "verify_project_date", "limit": 5, "name": "q031", "query": "project expected completion 2029 Kazakhstan", "query_id": "q031", "text": "project expected completion 2029 Kazakhstan"}
+{"intent": "verify_project_asset", "limit": 5, "name": "q032", "query": "project with 600 MWh battery system", "query_id": "q032", "text": "project with 600 MWh battery system"}
+{"intent": "find_project_by_impact", "limit": 5, "name": "q033", "query": "Kazakhstan project increasing renewable energy share", "query_id": "q033", "text": "Kazakhstan project increasing renewable energy share"}
+{"intent": "find_project_by_impact", "limit": 5, "name": "q034", "query": "project expected to increase oil production", "query_id": "q034", "text": "project expected to increase oil production"}
+{"intent": "semantic_green_transition", "limit": 5, "name": "q035", "query": "which projects support Kazakhstan green transition", "query_id": "q035", "text": "which projects support Kazakhstan green transition"}
+{"intent": "semantic_transport", "limit": 5, "name": "q036", "query": "which investment projects improve transport infrastructure", "query_id": "q036", "text": "which investment projects improve transport infrastructure"}
+{"intent": "semantic_airport", "limit": 5, "name": "q037", "query": "projects related to airport modernization in Kazakhstan", "query_id": "q037", "text": "projects related to airport modernization in Kazakhstan"}
+{"intent": "semantic_company", "limit": 5, "name": "q038", "query": "investment projects involving state-owned Kazakh companies", "query_id": "q038", "text": "investment projects involving state-owned Kazakh companies"}
+{"intent": "semantic_esg", "limit": 5, "name": "q039", "query": "projects with environmental and social disclosure", "query_id": "q039", "text": "projects with environmental and social disclosure"}
+{"intent": "semantic_financier", "limit": 5, "name": "q040", "query": "projects financed by multilateral development banks", "query_id": "q040", "text": "projects financed by multilateral development banks"}
