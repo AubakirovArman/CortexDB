@@ -52,6 +52,9 @@ def main() -> int:
         index = fetch_text(f"{base}/")
         route_index = fetch_text(f"{base}/dashboard/search/")
         style = fetch_text(f"{base}/dashboard/assets/v1/style.css")
+        reporting_common = fetch_text(f"{base}/dashboard/assets/v1/reporting_common.js")
+        reporting_retrieval = fetch_text(f"{base}/dashboard/assets/v1/reporting_retrieval.js")
+        reporting_operations = fetch_text(f"{base}/dashboard/assets/v1/reporting_operations.js")
         reporting = fetch_text(f"{base}/dashboard/assets/v1/reporting.js")
         script = fetch_text(f"{base}/dashboard/assets/v1/app.js")
         manifest = fetch_text(f"{base}/dashboard/assets/v1/dashboard_manifest.json")
@@ -59,6 +62,9 @@ def main() -> int:
         ("index title", "CortexDB Console" in index),
         ("stylesheet link", "/dashboard/assets/v1/style.css" in index),
         ("script link", "/dashboard/assets/v1/app.js" in index),
+        ("reporting common script link", "/dashboard/assets/v1/reporting_common.js" in index),
+        ("reporting retrieval script link", "/dashboard/assets/v1/reporting_retrieval.js" in index),
+        ("reporting operations script link", "/dashboard/assets/v1/reporting_operations.js" in index),
         ("reporting script link", "/dashboard/assets/v1/reporting.js" in index),
         ("route link", 'href="/dashboard/search"' in index),
         ("route page", "CortexDB Console" in route_index),
@@ -67,16 +73,24 @@ def main() -> int:
         ("stats bootstrap", 'run("stats"' in script),
         ("permission report", "permission-report" in index),
         ("request issue report", "error-report" in index),
+        ("cell report", "cell-report" in index),
         ("search report", "search-report" in index),
         ("aql report", "aql-report" in index),
         ("verify report", "verify-report" in index),
-        ("ann report renderer", "renderAnnEvaluation" in reporting),
-        ("aql report renderer", "renderAqlReport" in reporting),
-        ("context report renderer", "renderContextPack" in reporting),
-        ("request issue renderer", "renderRequestIssue" in reporting),
-        ("search report renderer", "renderSearchReport" in reporting),
-        ("storage report renderer", "renderStorageValidation" in reporting),
-        ("verification report renderer", "renderVerificationReport" in reporting),
+        ("ingest report", "ingest-report" in index),
+        ("cluster report", "cluster-report" in index),
+        ("report common helpers", "dashboard-reports.v1" in reporting_common),
+        ("aql report renderer", "renderAqlReport" in reporting_retrieval),
+        ("context report renderer", "renderContextPack" in reporting_retrieval),
+        ("search report renderer", "renderSearchReport" in reporting_retrieval),
+        ("verification report renderer", "renderVerificationReport" in reporting_retrieval),
+        ("ann report renderer", "renderAnnEvaluation" in reporting_operations),
+        ("cell report renderer", "renderCellReport" in reporting_operations),
+        ("cluster report renderer", "renderClusterReport" in reporting_operations),
+        ("ingest report renderer", "renderIngestReport" in reporting_operations),
+        ("request issue renderer", "renderRequestIssue" in reporting_operations),
+        ("storage report renderer", "renderStorageValidation" in reporting_operations),
+        ("reporting facade", "facadeLoaded" in reporting),
         ("history router", "pushState" in script),
         ("frontend stack manifest", "dependency-free-static-html-css-js" in manifest),
         ("memory-only token policy", '"token_persistence": "memory-only"' in manifest),

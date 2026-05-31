@@ -296,7 +296,10 @@ function run(label, task) {
             window.CortexDashboardReports?.clearRequestIssue?.();
             window.CortexDashboardReports?.renderAnnEvaluation?.(body);
             window.CortexDashboardReports?.renderAqlReport?.(body);
+            window.CortexDashboardReports?.renderCellReport?.(body, label);
+            window.CortexDashboardReports?.renderClusterReport?.(body);
             window.CortexDashboardReports?.renderContextPack?.(body);
+            window.CortexDashboardReports?.renderIngestReport?.(body, label);
             window.CortexDashboardReports?.renderSearchReport?.(body);
             window.CortexDashboardReports?.renderStorageValidation?.(body);
             window.CortexDashboardReports?.renderVerificationReport?.(body);

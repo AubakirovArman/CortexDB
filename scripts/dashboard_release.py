@@ -35,6 +35,9 @@ REQUIRED_FILES = (
     "dashboard/index.html",
     "dashboard/assets/v1/app.js",
     "dashboard/assets/v1/dashboard_manifest.json",
+    "dashboard/assets/v1/reporting_common.js",
+    "dashboard/assets/v1/reporting_retrieval.js",
+    "dashboard/assets/v1/reporting_operations.js",
     "dashboard/assets/v1/reporting.js",
     "dashboard/assets/v1/style.css",
     *(f"dashboard/{route}/index.html" for route in ROUTES),
@@ -242,6 +245,18 @@ class SelfTests(unittest.TestCase):
         (dist / "index.html").write_text("<title>CortexDB Console</title>", encoding="utf-8")
         (dist / "dashboard" / "index.html").write_text("<title>CortexDB Console</title>", encoding="utf-8")
         (dist / "dashboard" / "assets" / "v1" / "app.js").write_text("console.log('ok')", encoding="utf-8")
+        (dist / "dashboard" / "assets" / "v1" / "reporting_common.js").write_text(
+            "window.CortexDashboardReports={helpers:{}}",
+            encoding="utf-8",
+        )
+        (dist / "dashboard" / "assets" / "v1" / "reporting_retrieval.js").write_text(
+            "window.CortexDashboardReports.renderSearchReport=()=>{}",
+            encoding="utf-8",
+        )
+        (dist / "dashboard" / "assets" / "v1" / "reporting_operations.js").write_text(
+            "window.CortexDashboardReports.renderCellReport=()=>{}",
+            encoding="utf-8",
+        )
         (dist / "dashboard" / "assets" / "v1" / "reporting.js").write_text(
             "window.CortexDashboardReports={}",
             encoding="utf-8",

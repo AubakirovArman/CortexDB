@@ -16,8 +16,25 @@ SRC_DIR = ROOT / "web" / "dashboard" / "src"
 OUT_DIR = ROOT / "crates" / "cortex-server" / "assets" / "dashboard" / "v1"
 DIST_DIR = ROOT / "web" / "dashboard" / "dist"
 DIST_ASSET_DIR = DIST_DIR / "dashboard" / "assets" / "v1"
-ASSETS = ("index.html", "style.css", "reporting.js", "app.js", "dashboard_manifest.json")
-STATIC_ASSETS = ("style.css", "reporting.js", "app.js", "dashboard_manifest.json")
+ASSETS = (
+    "index.html",
+    "style.css",
+    "reporting_common.js",
+    "reporting_retrieval.js",
+    "reporting_operations.js",
+    "reporting.js",
+    "app.js",
+    "dashboard_manifest.json",
+)
+STATIC_ASSETS = (
+    "style.css",
+    "reporting_common.js",
+    "reporting_retrieval.js",
+    "reporting_operations.js",
+    "reporting.js",
+    "app.js",
+    "dashboard_manifest.json",
+)
 ROUTES = (
     "overview",
     "cells",

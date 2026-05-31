@@ -28,6 +28,18 @@ pub fn asset(path: &str) -> Option<DashboardAsset> {
             content_type: "text/css; charset=utf-8",
             body: include_str!("../assets/dashboard/v1/style.css"),
         }),
+        "/dashboard/assets/v1/reporting_common.js" => Some(DashboardAsset {
+            content_type: "application/javascript; charset=utf-8",
+            body: include_str!("../assets/dashboard/v1/reporting_common.js"),
+        }),
+        "/dashboard/assets/v1/reporting_retrieval.js" => Some(DashboardAsset {
+            content_type: "application/javascript; charset=utf-8",
+            body: include_str!("../assets/dashboard/v1/reporting_retrieval.js"),
+        }),
+        "/dashboard/assets/v1/reporting_operations.js" => Some(DashboardAsset {
+            content_type: "application/javascript; charset=utf-8",
+            body: include_str!("../assets/dashboard/v1/reporting_operations.js"),
+        }),
         "/dashboard/assets/v1/app.js" => Some(DashboardAsset {
             content_type: "application/javascript; charset=utf-8",
             body: include_str!("../assets/dashboard/v1/app.js"),

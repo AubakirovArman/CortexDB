@@ -34,6 +34,18 @@ quality can be reviewed without reading raw JSON.
 Storage validation responses render health cards for manifest/WAL status,
 checked segments, checked cells, index coverage, safe WAL truncate offset, and
 validation errors.
+Cell, Ingest, and Cluster responses render their own report views for sequence
+numbers, lookup payload previews, ingest counts, job state, distributed mode,
+replication factor, and node list, so operators can review normal operations
+without scanning raw JSON.
+Report rendering is split by responsibility:
+
+```text
+reporting_common.js      shared DOM helpers
+reporting_retrieval.js   Search, AQL, Verify, ContextPack
+reporting_operations.js  Cell, Ingest, Cluster, Storage, ANN, errors
+reporting.js             compatibility facade
+```
 
 `dashboard-screenshots` starts the same local server and writes review artifacts:
 
@@ -72,10 +84,10 @@ output panel.
 Search, AQL, and Verify success responses also render compact report views for
 result count, top cells, verdict, evidence, contradictions, guards, and numeric
 conflicts.
-ANN report rendering lives in `reporting.js` to keep product-facing report
-formatting separate from request/session control logic. Search/AQL/Verify,
-ContextPack, request issue, and storage validation report rendering use the
-same file and react only to their typed response shapes.
+Report rendering lives outside `app.js` to keep product-facing formatting
+separate from request/session control logic. Each renderer reacts only to its
+typed response shape, so unrelated responses do not overwrite route-specific
+cards.
 
 ## Boundary
 

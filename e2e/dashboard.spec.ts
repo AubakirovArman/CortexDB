@@ -63,10 +63,17 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     expect(script.headers()['content-type']).toContain('application/javascript');
     expect(await script.text()).toContain('run("stats"');
 
-    const reporting = await request.get(`${baseUrl}/dashboard/assets/v1/reporting.js`);
-    expect(reporting.ok()).toBeTruthy();
-    expect(reporting.headers()['content-type']).toContain('application/javascript');
-    expect(await reporting.text()).toContain('renderAnnEvaluation');
+    for (const [asset, marker] of [
+      ['reporting_common.js', 'dashboard-reports.v1'],
+      ['reporting_retrieval.js', 'renderSearchReport'],
+      ['reporting_operations.js', 'renderAnnEvaluation'],
+      ['reporting.js', 'facadeLoaded'],
+    ]) {
+      const response = await request.get(`${baseUrl}/dashboard/assets/v1/${asset}`);
+      expect(response.ok()).toBeTruthy();
+      expect(response.headers()['content-type']).toContain('application/javascript');
+      expect(await response.text()).toContain(marker);
+    }
 
     const consoleErrors: string[] = [];
     page.on('console', message => {
@@ -120,10 +127,17 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     ].join('\n'));
     await page.getByRole('button', { name: 'Run Cell Operation' }).click();
     await expect(page.locator('#output')).toContainText('"seq"');
+    await expect(page.locator('#cell-report-title')).toContainText('Cell report');
+    await expect(page.locator('#cell-report')).toContainText('Operation');
+    await expect(page.locator('#cell-report')).toContainText('put cell');
+    await expect(page.locator('#cell-report')).toContainText('Seq');
 
     await page.locator('#cell-op').selectOption('get');
     await page.getByRole('button', { name: 'Run Cell Operation' }).click();
     await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
+    await expect(page.locator('#cell-report')).toContainText('Lookup');
+    await expect(page.locator('#cell-report')).toContainText('found');
+    await expect(page.locator('#cell-report')).toContainText('Dashboard smoke budget note');
 
     await page.getByRole('link', { name: 'Search' }).click();
     await expect(page).toHaveURL(/\/dashboard\/search$/);
@@ -187,8 +201,13 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await page.getByRole('button', { name: 'Ingest', exact: true }).click();
     await expect(page.locator('#output')).toContainText('"chunks_ingested"');
     await expect(page.locator('#output')).toContainText('"job_id"');
+    await expect(page.locator('#ingest-report-title')).toContainText('Ingest report');
+    await expect(page.locator('#ingest-report')).toContainText('Chunks');
+    await expect(page.locator('#ingest-report')).toContainText('Job');
     await page.getByRole('button', { name: 'Load Ingest Job' }).click();
     await expect(page.locator('#output')).toContainText('"label": "ingest_text"');
+    await expect(page.locator('#ingest-report')).toContainText('ingest_text');
+    await expect(page.locator('#ingest-report')).toContainText('completed');
 
     await page.getByRole('link', { name: 'Storage' }).click();
     await expect(page).toHaveURL(/\/dashboard\/storage$/);
@@ -222,6 +241,9 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await expect(page.locator('#cluster')).toBeVisible();
     await page.getByRole('button', { name: 'Cluster Status' }).click();
     await expect(page.locator('#output')).toContainText('distributed_enabled');
+    await expect(page.locator('#cluster-report-title')).toContainText('Cluster report');
+    await expect(page.locator('#cluster-report')).toContainText('Distributed');
+    await expect(page.locator('#cluster-report')).toContainText('Replication');
 
     await page.getByRole('link', { name: 'Cells' }).click();
     await page.locator('#cell-op').selectOption('get');

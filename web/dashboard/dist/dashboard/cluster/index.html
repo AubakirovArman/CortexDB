@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CortexDB Console</title>
     <link rel="stylesheet" href="/dashboard/assets/v1/style.css">
+    <script src="/dashboard/assets/v1/reporting_common.js" defer></script>
+    <script src="/dashboard/assets/v1/reporting_retrieval.js" defer></script>
+    <script src="/dashboard/assets/v1/reporting_operations.js" defer></script>
     <script src="/dashboard/assets/v1/reporting.js" defer></script>
     <script src="/dashboard/assets/v1/app.js" defer></script>
 </head>
@@ -76,6 +79,12 @@ source=console
 Solar budget note</textarea></div>
                     <button type="submit" data-access="data">Run Cell Operation</button>
                 </form>
+                <section class="report-panel" aria-labelledby="cell-report-title">
+                    <h3 id="cell-report-title">Cell report</h3>
+                    <div id="cell-report" class="report-stack" aria-live="polite">
+                        <div class="metric"><span>Status</span><strong>Run Cell Operation</strong></div>
+                    </div>
+                </section>
             </section>
             <section id="search" class="panel" data-title="Search" data-access="data">
                 <h2 id="search-title">Search</h2>
@@ -189,6 +198,12 @@ Wind Farm status ready.</textarea></div>
                     </div>
                     <button type="submit" class="secondary" data-access="data">Load Ingest Job</button>
                 </form>
+                <section class="report-panel" aria-labelledby="ingest-report-title">
+                    <h3 id="ingest-report-title">Ingest report</h3>
+                    <div id="ingest-report" class="report-grid" aria-live="polite">
+                        <div class="metric"><span>Status</span><strong>Run Ingest</strong></div>
+                    </div>
+                </section>
             </section>
             <section id="storage" class="panel" data-title="Storage Health" data-access="admin">
                 <h2 id="storage-title">Storage Health</h2>
@@ -212,6 +227,12 @@ Wind Farm status ready.</textarea></div>
                     <button type="button" data-action="cluster-status" data-access="data">Cluster Status</button>
                     <button type="button" data-action="ann-metrics" class="secondary" data-access="admin">ANN Metrics</button>
                 </div>
+                <section class="report-panel" aria-labelledby="cluster-report-title">
+                    <h3 id="cluster-report-title">Cluster report</h3>
+                    <div id="cluster-report" class="report-stack" aria-live="polite">
+                        <div class="metric"><span>Status</span><strong>Load Cluster Status</strong></div>
+                    </div>
+                </section>
             </section>
         </section>
         <aside>

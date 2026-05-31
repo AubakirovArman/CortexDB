@@ -68,8 +68,15 @@ Current coverage:
   citations, anomalies, and per-cell explain metadata;
 - Storage validation renders a report view for manifest/WAL health, checked
   segments, checked cells, index coverage, safe WAL truncate offset, and errors;
+- Cells, Ingest, and Cluster render page-specific success report views for
+  cell operation sequence numbers, lookup previews, ingest counts/job status,
+  and distributed cluster topology;
 - request failures are surfaced through a visible status banner, a typed
   Request Issue report with route-aware operator action, and raw JSON details;
+- report rendering is split into `reporting_common.js`,
+  `reporting_retrieval.js`, `reporting_operations.js`, and a small
+  `reporting.js` facade so typed API views can evolve without growing one
+  monolithic script;
 - numeric form fields use native constraints, visible field errors, and
   synchronized `aria-invalid` state before malformed requests reach the API;
 - Playwright smoke covers asset loading, route switching, session controls,
