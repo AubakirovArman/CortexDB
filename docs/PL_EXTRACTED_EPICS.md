@@ -121,6 +121,8 @@ Evidence:
 
 Goal: stable Linux/macOS single-node production release.
 
+Status: focused local evidence gate added; run `make production-v1-check`.
+
 Tasks:
 
 1. Single-node production claim only.
@@ -128,6 +130,11 @@ Tasks:
 3. Supported backup/restore.
 4. Complete operational docs.
 5. Keep distributed production out of scope until separately proven.
+
+Evidence:
+
+- Boundary: [`PRODUCTION_V1.md`](PRODUCTION_V1.md).
+- Focused local gate: [`PRODUCTION_V1_EVIDENCE.md`](PRODUCTION_V1_EVIDENCE.md).
 
 ## Workstream Epics
 

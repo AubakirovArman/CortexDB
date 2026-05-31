@@ -73,6 +73,7 @@ make beta-foundation-check
 make beta-rc-check
 make production-hardening-check
 make production-candidate-check
+make production-v1-check
 make sdk-check
 make production-evidence-sweep
 make ann-real-embedding-readiness
@@ -102,3 +103,9 @@ checks into `target/production-hardening/report.json`.
 aggregates production hardening, backup/RPO-RTO drill, single-node SLO evidence,
 OpenAPI and SDK compatibility, migration policy/compatibility, and binary
 release packaging into `target/production-candidate/report.json`.
+
+`make production-v1-check` is the focused local Epic 6 gate. It aggregates the
+production candidate gate, full release check, OpenAPI contract, SDK lifecycle
+checks, backup/restore drills, and public-claims guard into
+`target/production-v1/report.json`. This gate proves the local single-node
+Production v1.0 boundary only; distributed production remains out of scope.

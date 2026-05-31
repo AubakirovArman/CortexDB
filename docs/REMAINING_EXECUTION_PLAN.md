@@ -99,6 +99,11 @@ Core Alpha is operational:
   - covers production hardening, backup/RPO-RTO drill, single-node SLO evidence,
     OpenAPI and SDK compatibility, migration policy/compatibility, and binary
     release packaging
+- Run the focused Production v1.0 evidence gate:
+  - `make production-v1-check`
+  - writes `target/production-v1/report.json`
+  - covers production candidate evidence, full release check, OpenAPI contract,
+    SDK lifecycle checks, backup/restore drills, and public-claims guard
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`

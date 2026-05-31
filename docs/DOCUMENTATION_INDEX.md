@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 113 project markdown files.
+At the time of this audit, the repository tracks 115 project markdown files.
 
 ## Start Here
 
@@ -15,6 +15,8 @@ At the time of this audit, the repository tracks 113 project markdown files.
 - [`BETA_RC_EVIDENCE.md`](BETA_RC_EVIDENCE.md) - local Epic 3 evidence gate.
 - [`PRODUCTION_HARDENING_EVIDENCE.md`](PRODUCTION_HARDENING_EVIDENCE.md) - local Epic 4 evidence gate.
 - [`PRODUCTION_CANDIDATE_EVIDENCE.md`](PRODUCTION_CANDIDATE_EVIDENCE.md) - local Epic 5 evidence gate.
+- [`PRODUCTION_V1.md`](PRODUCTION_V1.md) - local single-node Production v1.0 boundary.
+- [`PRODUCTION_V1_EVIDENCE.md`](PRODUCTION_V1_EVIDENCE.md) - local Epic 6 evidence gate.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - ordered epic queue and closing rules.
 - [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md) - current cycle plan.
 - [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md) - wording boundaries.
@@ -100,6 +102,8 @@ backlogs, snapshots, or deeper planning notes.
 - [`BETA_RC_EVIDENCE.md`](BETA_RC_EVIDENCE.md) - backup/security/ingestion/dashboard beta RC evidence.
 - [`PRODUCTION_HARDENING_EVIDENCE.md`](PRODUCTION_HARDENING_EVIDENCE.md) - load/crash/migration/audit/rate-limit hardening evidence.
 - [`PRODUCTION_CANDIDATE_EVIDENCE.md`](PRODUCTION_CANDIDATE_EVIDENCE.md) - RPO/RTO/SLO/compatibility production-candidate evidence.
+- [`PRODUCTION_V1.md`](PRODUCTION_V1.md) - single-node Production v1.0 boundary.
+- [`PRODUCTION_V1_EVIDENCE.md`](PRODUCTION_V1_EVIDENCE.md) - Production v1.0 gate evidence.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md) - release notes.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - active ordered epic queue.

@@ -34,6 +34,12 @@ cargo run -p cortex-cli -- manifest-validate ./data
 cargo run -p cortex-cli -- ann-validate ./data
 ```
 
+For installed release binaries, the equivalent validation entrypoint is:
+
+```bash
+cortexdb validate ./data
+```
+
 Optional typed checks and smoke paths:
 
 ```bash
@@ -41,6 +47,8 @@ make openapi-contract-check
 make sdk-contract-check
 make sdk-smoke-test
 make dashboard-smoke
+make production-candidate-check
+make production-v1-check
 ```
 
 ## 4) Backup and recovery
@@ -98,6 +106,8 @@ and confirm the audit sink did not persist query strings or body-like fields.
 - Load and metrics smoke: `make load-smoke-check`
 - ANN/recall drift: `make ann-history-regression-check`, `make ann-drift-check`
 - Recovery/fault: `make crash-fault-check`, `make chaos-restart-check`
+- Production boundary: `make production-candidate-check`,
+  `make production-v1-check`
 
 ## 7) Known operational limits
 

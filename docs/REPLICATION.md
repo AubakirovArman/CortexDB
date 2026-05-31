@@ -1,5 +1,7 @@
 # Replication v0
 
+Status: experimental and not production.
+
 CortexDB has a deterministic consensus-model layer and two transport surfaces:
 
 - `InMemoryReplicationTransport` for unit tests and local simulation.
