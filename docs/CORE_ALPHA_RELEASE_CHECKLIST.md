@@ -30,6 +30,7 @@ every required row is green on `main`.
 | ANN fixture gate | `make ann-fixture-check`, `make ann-drift-check`, `make ann-external-check`, `make ann-metric-matrix-check`, and `make ann-corpus-smoke-check` pass; CI uploads `target/ann/*report.json`, `target/ann/corpus-runs/**`, and `target/ann/release-baselines/**`. |
 | ANN release package | `make ann-release-evidence-check` produces and validates `.tar.gz` release assets for the smoke corpus and demo-domain corpus, with `package_manifest.json`, SHA-256 file checksums, `history.json`, generated ground truth, and `production_safe=true`. |
 | Real embedding readiness | `make ann-real-embedding-readiness` writes `target/ann/real-embedding/readiness.json` with `ready=true` or explicit blocker codes for corpus/query/env/source-archive prerequisites. |
+| Beta delta consistency | `make beta-delta-check` verifies `docs/BETA_DELTA.md` separates stable, experimental, and blocked product layers and references the required release gates. |
 | Query safety | AQL retrieve respects AgentView masks and candidate mappings. |
 | ContextPack v1 | AQL-to-ContextPack tests pass for budget, explain details, source refs, and citation anomalies. |
 | Docs | README, Core Alpha docs, invariants, failure scenarios, and task pools are current. |

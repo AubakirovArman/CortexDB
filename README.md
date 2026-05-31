@@ -109,6 +109,8 @@ cargo run -p cortex-cli -- load-fixture examples/datasets/legal_policies ./data
 
 Backup and restore behavior is documented in
 [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
+The current Core Alpha vs beta-readiness delta is documented in
+[`docs/BETA_DELTA.md`](docs/BETA_DELTA.md).
 Offline upgrade, rollback, and format migration policy is documented in
 [`docs/UPGRADE_MIGRATION.md`](docs/UPGRADE_MIGRATION.md).
 Use `make load-smoke-check` for a fast live HTTP write/read/search/context load

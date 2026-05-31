@@ -35,6 +35,9 @@
 - Added `make ann-real-embedding-readiness`, a non-secret readiness report for
   real-domain ANN/HNSW baseline prerequisites before endpoint-backed embedding
   runs.
+- Added `docs/BETA_DELTA.md` and `make beta-delta-check` to keep the public
+  Core Alpha vs beta-readiness statement aligned with production evidence,
+  ANN real-embedding readiness, SDK publication, UI, and consensus blockers.
 - Added file-backed HTTP token rotation through `CORTEXDB_AUTH_TOKENS_FILE`;
   the server re-reads the local policy file per request and fails closed on
   missing, empty, or invalid token files.

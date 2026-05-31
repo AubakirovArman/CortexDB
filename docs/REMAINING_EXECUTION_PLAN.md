@@ -61,6 +61,8 @@ Core Alpha is operational:
   - what is stable
   - what is still experimental
   - what is blocked
+  - current note: `docs/BETA_DELTA.md`
+  - consistency gate: `make beta-delta-check`
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
 
 ## Gate definition
