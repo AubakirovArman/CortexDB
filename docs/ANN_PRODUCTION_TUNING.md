@@ -574,6 +574,9 @@ Warnings, not blockers:
 - HNSW construction profiles are available for newly written checkpoint/compact
   graphs. The manifest also stores the intended profile independently of `.ach`,
   and validation rejects live graphs that drift from that manifest policy.
+- Vector collection metadata is stored in the manifest as `vector_profile`
+  (`dimension`, `metric`) and validation rejects live `.acv` / `.ach` bundles
+  that drift from that collection profile.
 - Report history is not stored outside CI artifacts and release baseline
   bundles.
 - Demo-domain corpus generation is available, but no large real customer/domain

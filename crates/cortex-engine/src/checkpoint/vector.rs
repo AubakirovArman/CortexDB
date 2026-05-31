@@ -1,11 +1,13 @@
 use std::collections::BTreeSet;
 
+use cortex_storage::manifest::ManifestVectorProfile;
 use cortex_storage::segment::{SegmentCell, SegmentReader};
 use cortex_storage::vectors::VectorIndex;
 
 use crate::database::Database;
-use crate::error::EngineResult;
+use crate::error::{EngineError, EngineResult};
 use crate::search::vector::vector_from_payload;
+use crate::search::HnswBuildConfig;
 
 use super::{segment_path, vector_path};
 
@@ -18,6 +20,39 @@ pub(crate) fn vector_index_for_cells(cells: &[SegmentCell]) -> VectorIndex {
         })
         .collect();
     VectorIndex { vectors }
+}
+
+pub(crate) fn vector_profile_for_cells(
+    cells: &[SegmentCell],
+    config: HnswBuildConfig,
+) -> EngineResult<Option<ManifestVectorProfile>> {
+    let mut dimension = None;
+    for cell in cells.iter().filter(|cell| cell.deleted_seq.is_none()) {
+        let Some(vector) = vector_from_payload(&cell.payload) else {
+            continue;
+        };
+        match dimension {
+            Some(expected) if expected != vector.len() => {
+                return Err(EngineError::VectorDimensionMismatch {
+                    expected,
+                    actual: vector.len(),
+                });
+            }
+            Some(_) => {}
+            None => dimension = Some(vector.len()),
+        }
+    }
+    let Some(dimension) = dimension else {
+        return Ok(None);
+    };
+    Ok(Some(ManifestVectorProfile {
+        dimension: u32::try_from(dimension).map_err(|_| {
+            EngineError::StorageInvariant(format!(
+                "vector dimension {dimension} exceeds manifest profile range"
+            ))
+        })?,
+        metric: config.normalized().metric as u32,
+    }))
 }
 
 impl Database {

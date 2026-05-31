@@ -41,6 +41,9 @@
 - [x] Real-embedding baseline packages now include embedding preflight/export
   provenance, reject synthetic `hash-smoke` metadata, and require hosted
   source-archive SHA-256 when publishing a baseline from GitHub Actions.
+- [x] Collection-level vector metadata is persisted in the manifest as
+  `vector_profile` (`dimension`, `metric`) and validation rejects live `.acv`
+  / `.ach` bundles that drift from that collection profile.
 
 ### 2) Real distributed consensus
 - [x] Отделить репликационный consensus-log и local WAL по строгим durability guarantees.

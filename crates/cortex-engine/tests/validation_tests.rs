@@ -250,6 +250,7 @@ fn write_manifest(
         live_segments,
         retired_segments,
         hnsw_profile: None,
+        vector_profile: None,
     }
     .store(root.join("manifest.acm"))
     .unwrap();

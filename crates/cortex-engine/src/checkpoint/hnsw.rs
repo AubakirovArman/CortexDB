@@ -17,6 +17,10 @@ pub(crate) fn hnsw_graph_for_cells_with_config(
     let config = config.normalized();
     let mut index =
         HnswIndex::new_multilayer(config.max_neighbors, config.ef_search, config.layer_count);
+    index.set_config(VectorCollectionConfig {
+        dimension: 0,
+        metric: config.metric,
+    });
     let mut dimension = 0usize;
     for cell in cells.iter().filter(|cell| cell.deleted_seq.is_none()) {
         if let Some(vector) = vector_from_payload(&cell.payload) {

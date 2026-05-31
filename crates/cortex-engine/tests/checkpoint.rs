@@ -183,6 +183,7 @@ fn tombstone_only_checkpoint_does_not_resurrect_cell() {
         }],
         retired_segments: Vec::new(),
         hnsw_profile: None,
+        vector_profile: None,
     }
     .store(dir.path().join("manifest.acm"))
     .unwrap();
@@ -250,6 +251,7 @@ fn validate_storage_rejects_segment_count_mismatch() {
         }],
         retired_segments: Vec::new(),
         hnsw_profile: None,
+        vector_profile: None,
     }
     .store(dir.path().join("manifest.acm"))
     .unwrap();

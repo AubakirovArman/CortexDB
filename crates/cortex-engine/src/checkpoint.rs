@@ -11,7 +11,9 @@ pub(crate) mod vector;
 use cortex_core::memtable::MemTable;
 use cortex_core::{CellId, CommitSeq};
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
-use cortex_storage::manifest::{ManifestHnswProfile, ManifestSegment, StorageManifest};
+use cortex_storage::manifest::{
+    ManifestHnswProfile, ManifestSegment, ManifestVectorProfile, StorageManifest,
+};
 use cortex_storage::segment::{SegmentCell, SegmentReader, SegmentWriter};
 use cortex_storage::wal::WalWriter;
 
@@ -48,6 +50,9 @@ impl Database {
                 checkpoint_seq: self.current_seq,
             });
         }
+        let hnsw_profile = manifest_hnsw_profile(self.hnsw_build_config)?;
+        let vector_profile = vector::vector_profile_for_cells(&cells, self.hnsw_build_config)?;
+        ensure_checkpoint_profiles(&self.manifest, hnsw_profile, vector_profile)?;
 
         self.writer.shutdown()?;
         fs::create_dir_all(&self.segments_path)?;
@@ -73,7 +78,10 @@ impl Database {
             checkpoint_seq: self.current_seq.0,
             cell_count: segment_cell_count(cells.len())?,
         });
-        self.manifest.hnsw_profile = Some(manifest_hnsw_profile(self.hnsw_build_config)?);
+        self.manifest.hnsw_profile = Some(hnsw_profile);
+        if let Some(profile) = vector_profile {
+            self.manifest.vector_profile = Some(profile);
+        }
         self.manifest.store(&self.manifest_path)?;
         super::database::truncate_wal_tail(&self.wal_path, 0)?;
         self.writer = WalWriter::start(&self.wal_path, self.durability_mode)?;
@@ -87,6 +95,8 @@ impl Database {
 
     pub fn compact(&mut self) -> EngineResult<CheckpointStats> {
         let cells = self.full_snapshot_cells()?;
+        let hnsw_profile = manifest_hnsw_profile(self.hnsw_build_config)?;
+        let vector_profile = vector::vector_profile_for_cells(&cells, self.hnsw_build_config)?;
         if cells.is_empty() {
             return Ok(CheckpointStats {
                 segment_id: None,
@@ -119,7 +129,8 @@ impl Database {
             checkpoint_seq: self.current_seq.0,
             cell_count: segment_cell_count(cells.len())?,
         });
-        self.manifest.hnsw_profile = Some(manifest_hnsw_profile(self.hnsw_build_config)?);
+        self.manifest.hnsw_profile = Some(hnsw_profile);
+        self.manifest.vector_profile = vector_profile;
         self.manifest.store(&self.manifest_path)?;
         super::database::truncate_wal_tail(&self.wal_path, 0)?;
         self.writer = WalWriter::start(&self.wal_path, self.durability_mode)?;
@@ -246,6 +257,33 @@ pub(crate) fn manifest_hnsw_profile(config: HnswBuildConfig) -> EngineResult<Man
         layer_count: hnsw_profile_u32("layer_count", config.layer_count)?,
         metric: config.metric as u32,
     })
+}
+
+fn ensure_checkpoint_profiles(
+    manifest: &StorageManifest,
+    hnsw_profile: ManifestHnswProfile,
+    vector_profile: Option<ManifestVectorProfile>,
+) -> EngineResult<()> {
+    if manifest.live_segments.is_empty() {
+        return Ok(());
+    }
+    if let Some(existing) = manifest.hnsw_profile {
+        if existing != hnsw_profile {
+            return Err(EngineError::StorageInvariant(format!(
+                "checkpoint hnsw profile {:?} does not match existing manifest profile {:?}; run compact with the new HNSW build config first",
+                hnsw_profile, existing
+            )));
+        }
+    }
+    if let (Some(existing), Some(next)) = (manifest.vector_profile, vector_profile) {
+        if existing != next {
+            return Err(EngineError::StorageInvariant(format!(
+                "checkpoint vector profile {:?} does not match existing manifest profile {:?}; run compact with a consistent vector collection profile first",
+                next, existing
+            )));
+        }
+    }
+    Ok(())
 }
 
 fn hnsw_profile_u32(field: &'static str, value: usize) -> EngineResult<u32> {

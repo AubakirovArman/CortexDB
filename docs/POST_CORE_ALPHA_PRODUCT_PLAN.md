@@ -132,10 +132,12 @@ What landed:
 34. ✅ Tag-based Release workflow now attaches the ANN baseline tarball to GitHub Releases as a durable asset.
 35. ✅ GitHub workflows opt into Node.js 24 for JavaScript actions to avoid Node.js 20 deprecation drift.
 36. ✅ Manual `ANN Public Corpus` workflow runs hosted public-corpus recall/latency gates with HNSW tuning inputs.
+37. ✅ Collection-level vector metadata is now stored in the manifest as
+    `vector_profile` (`dimension`, `metric`) and validated against live `.acv`
+    vector dimensions plus `.ach` graph metadata.
 
 What remains before broad production tuning:
 
-- Collection-level metadata (not just per-segment `.ach` trailer).
 - Checked-in or archived sift/glove-style golden reports generated through `ann_corpus_check`.
 - Benchmark history tracking across commits.
 - Tuned `ef_construction` and larger external-corpus parameter sweeps.

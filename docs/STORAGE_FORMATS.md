@@ -164,6 +164,10 @@ optional hnsw_profile:
   ef_search u32
   layer_count u32
   metric u32
+optional vector_profile:
+  magic[4] = "VECM"
+  dimension u32
+  metric u32
 crc32c u32 over all previous bytes
 ```
 
@@ -172,6 +176,13 @@ profile independently from individual `.ach` graph files. Storage validation
 compares this manifest policy against every live graph profile so a mixed or
 accidentally rewritten ANN graph cannot be served as if it matched the current
 collection SLO.
+
+The optional `VECM` trailer records the collection-level vector profile:
+dimension and distance metric. Checkpoint preserves the existing profile for
+incremental segment writes, while compact can republish the full collection
+profile from the visible snapshot. Storage validation compares `VECM` against
+the live `.acv` vector dimensions and `.ach` graph metric/dimension metadata,
+so mixed vector collections cannot silently share one ANN/search policy.
 
 The CLI can inspect the manifest without opening a database writer:
 

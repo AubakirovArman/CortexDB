@@ -6,7 +6,7 @@ use cortex_core::memtable::MemTableStats;
 use cortex_core::CommitSeq;
 use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
-use cortex_storage::manifest::{ManifestHnswProfile, StorageManifest};
+use cortex_storage::manifest::{ManifestHnswProfile, ManifestVectorProfile, StorageManifest};
 use cortex_storage::segment::SegmentReader;
 use cortex_storage::vectors::VectorIndex;
 use cortex_storage::wal::{WalReader, WalWriterMetrics};
@@ -94,7 +94,9 @@ impl Database {
         let mut retired_ids = BTreeSet::new();
         let mut candidates = BTreeMap::new();
         let mut hnsw_build_profile = None;
+        let mut vector_collection_profile = None;
         let manifest_hnsw_profile = manifest.hnsw_profile.map(hnsw_manifest_profile_key);
+        let manifest_vector_profile = manifest.vector_profile.map(vector_manifest_profile_key);
         for segment in &manifest.live_segments {
             if !live_ids.insert(segment.id) {
                 report
@@ -205,6 +207,36 @@ impl Database {
                         hnsw_build_profile = Some(profile);
                     }
                     if let Some(vector_index) = &vector_index {
+                        if let Some(actual) = vector_profile_key(vector_index, &graph) {
+                            if let Some(expected) = manifest_vector_profile {
+                                if actual != expected {
+                                    report.errors.push(format!(
+                                        "vector collection {} profile {} does not match manifest profile {}",
+                                        segment.id,
+                                        format_vector_profile(actual),
+                                        format_vector_profile(expected)
+                                    ));
+                                }
+                            }
+                            if let Some(previous) = vector_collection_profile {
+                                if previous != actual {
+                                    report.errors.push(format!(
+                                        "mixed vector collection profiles across live segments: segment {} has {} but earlier segment has {}",
+                                        segment.id,
+                                        format_vector_profile(actual),
+                                        format_vector_profile(previous)
+                                    ));
+                                }
+                            } else {
+                                vector_collection_profile = Some(actual);
+                            }
+                            if graph.dimension != 0 && graph.dimension != actual.0 {
+                                report.errors.push(format!(
+                                    "hnsw graph {} dimension {} does not match vector index dimension {}",
+                                    segment.id, graph.dimension, actual.0
+                                ));
+                            }
+                        }
                         let max_neighbors = graph.max_neighbors as usize;
                         let ef_search = graph.ef_search as usize;
                         let index = HnswIndex::from_graph(
@@ -272,6 +304,17 @@ fn hnsw_manifest_profile_key(profile: ManifestHnswProfile) -> (u32, u32, u32, u3
     )
 }
 
+fn vector_manifest_profile_key(profile: ManifestVectorProfile) -> (u32, u32) {
+    (profile.dimension, profile.metric)
+}
+
+fn vector_profile_key(index: &VectorIndex, graph: &HnswGraphIndex) -> Option<(u32, u32)> {
+    let report = index.dimension_report();
+    let dimension = report.expected_dimension?;
+    let dimension = u32::try_from(dimension).ok()?;
+    Some((dimension, u32::from(graph.metric)))
+}
+
 fn format_hnsw_profile(profile: (u32, u32, u32, u32)) -> String {
     let (max_neighbors, ef_search, layer_count, metric) = profile;
     if profile == (0, 0, 0, 0) {
@@ -280,6 +323,11 @@ fn format_hnsw_profile(profile: (u32, u32, u32, u32)) -> String {
     format!(
         "max_neighbors={max_neighbors},ef_search={ef_search},layer_count={layer_count},metric={metric}"
     )
+}
+
+fn format_vector_profile(profile: (u32, u32)) -> String {
+    let (dimension, metric) = profile;
+    format!("dimension={dimension},metric={metric}")
 }
 
 fn file_len_or_zero(path: &std::path::Path) -> EngineResult<u64> {

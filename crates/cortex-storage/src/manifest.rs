@@ -22,6 +22,12 @@ pub struct ManifestHnswProfile {
     pub metric: u32,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ManifestVectorProfile {
+    pub dimension: u32,
+    pub metric: u32,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct StorageManifest {
     pub generation: u64,
@@ -29,6 +35,7 @@ pub struct StorageManifest {
     pub live_segments: Vec<ManifestSegment>,
     pub retired_segments: Vec<ManifestSegment>,
     pub hnsw_profile: Option<ManifestHnswProfile>,
+    pub vector_profile: Option<ManifestVectorProfile>,
 }
 
 impl StorageManifest {
@@ -73,6 +80,11 @@ fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
         put_u32(&mut out, profile.layer_count);
         put_u32(&mut out, profile.metric);
     }
+    if let Some(profile) = manifest.vector_profile {
+        out.extend_from_slice(b"VECM");
+        put_u32(&mut out, profile.dimension);
+        put_u32(&mut out, profile.metric);
+    }
     append_crc32c(&mut out);
     out
 }
@@ -88,6 +100,7 @@ fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
     let live_segments = read_segments(bytes, &mut cursor)?;
     let retired_segments = read_segments(bytes, &mut cursor)?;
     let hnsw_profile = read_hnsw_profile(bytes, &mut cursor)?;
+    let vector_profile = read_vector_profile(bytes, &mut cursor)?;
     if cursor > bytes.len() {
         return Err(StorageError::InvalidManifestFile);
     }
@@ -97,6 +110,7 @@ fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
         live_segments,
         retired_segments,
         hnsw_profile,
+        vector_profile,
     })
 }
 
@@ -139,6 +153,24 @@ fn read_hnsw_profile(
         metric: read_u32(bytes, cursor)?,
     };
     if profile.max_neighbors == 0 || profile.ef_search == 0 || profile.layer_count == 0 {
+        return Err(StorageError::InvalidManifestFile);
+    }
+    Ok(Some(profile))
+}
+
+fn read_vector_profile(
+    bytes: &[u8],
+    cursor: &mut usize,
+) -> StorageResult<Option<ManifestVectorProfile>> {
+    if bytes.len().saturating_sub(*cursor) < 4 || &bytes[*cursor..*cursor + 4] != b"VECM" {
+        return Ok(None);
+    }
+    *cursor += 4;
+    let profile = ManifestVectorProfile {
+        dimension: read_u32(bytes, cursor)?,
+        metric: read_u32(bytes, cursor)?,
+    };
+    if profile.dimension == 0 {
         return Err(StorageError::InvalidManifestFile);
     }
     Ok(Some(profile))

@@ -130,6 +130,7 @@ struct HnswRuntimeConfig {
     ef_search: usize,
     layer_count: usize,
     upper_graph_edges: usize,
+    metric: DistanceMetric,
 }
 
 const ANN_DEFAULT_MAX_NEIGHBORS: usize = 8;
@@ -169,6 +170,7 @@ fn hnsw_runtime_config(graph: &HnswGraphIndex) -> HnswRuntimeConfig {
         ef_search,
         layer_count,
         upper_graph_edges,
+        metric: metric_from_graph(graph),
     }
 }
 
@@ -355,8 +357,7 @@ pub fn search_persisted_ann_with_policy(
         );
     }
 
-    let exact_results =
-        search_persisted_vectors(vectors, query, allowed, limit, &DistanceMetric::default());
+    let exact_results = search_persisted_vectors(vectors, query, allowed, limit, &config.metric);
     let exact_set = exact_results
         .iter()
         .map(|candidate| candidate.cell_id)
@@ -450,7 +451,7 @@ pub fn evaluate_persisted_ann_with_policy(
     policy: AnnSearchPolicy,
 ) -> AnnEvaluationReport {
     let exact_results =
-        search_persisted_vectors(vectors, query, allowed, limit, &DistanceMetric::default());
+        search_persisted_vectors(vectors, query, allowed, limit, &metric_from_graph(graph));
     let exact_top_k = exact_results
         .iter()
         .map(|candidate| candidate.cell_id)
@@ -605,7 +606,7 @@ fn fallback_disabled_outcome(
     let ann = if cap == 0 {
         Vec::new()
     } else {
-        search_persisted_vectors(vectors, query, allowed, cap, &DistanceMetric::default())
+        search_persisted_vectors(vectors, query, allowed, cap, &config.metric)
     };
     let returned = ann.len();
     AnnSearchOutcome {
@@ -648,8 +649,7 @@ fn exact(
     reason: AnnFallbackReason,
     policy: AnnSearchPolicy,
 ) -> AnnSearchOutcome {
-    let results =
-        search_persisted_vectors(vectors, query, allowed, limit, &DistanceMetric::default());
+    let results = search_persisted_vectors(vectors, query, allowed, limit, &config.metric);
     exact_from_results(
         results,
         limit,
@@ -660,6 +660,14 @@ fn exact(
         None,
         policy,
     )
+}
+
+fn metric_from_graph(graph: &HnswGraphIndex) -> DistanceMetric {
+    match graph.metric {
+        1 => DistanceMetric::Cosine,
+        2 => DistanceMetric::L2,
+        _ => DistanceMetric::DotProduct,
+    }
 }
 
 #[allow(clippy::too_many_arguments)]

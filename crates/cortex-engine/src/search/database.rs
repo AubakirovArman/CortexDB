@@ -181,13 +181,12 @@ impl Database {
                     }));
                 };
                 let index = self.persisted_vector_index()?;
-                search_persisted_vectors(
-                    &index.vectors,
-                    vector,
-                    &allowed,
-                    query.limit,
-                    &DistanceMetric::default(),
-                )
+                let metric = self
+                    .manifest()
+                    .vector_profile
+                    .map(|profile| distance_metric_from_manifest(profile.metric))
+                    .unwrap_or_default();
+                search_persisted_vectors(&index.vectors, vector, &allowed, query.limit, &metric)
             }
             SearchMode::Hybrid => return Ok(None),
         };
@@ -298,6 +297,14 @@ impl Database {
             terms.len(),
             terms.join(", ")
         ))
+    }
+}
+
+fn distance_metric_from_manifest(value: u32) -> DistanceMetric {
+    match value {
+        1 => DistanceMetric::Cosine,
+        2 => DistanceMetric::L2,
+        _ => DistanceMetric::DotProduct,
     }
 }
 
