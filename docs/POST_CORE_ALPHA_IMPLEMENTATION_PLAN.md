@@ -36,7 +36,7 @@
 - [x] Profile-aware durable HNSW construction through `DatabaseOptions::hnsw_build_config` for checkpoint/compact `.ach` graphs.
 
 ### 2) Real distributed consensus
-- [ ] Отделить репликационный consensus-log и local WAL по строгим durability guarantees.
+- [x] Отделить репликационный consensus-log и local WAL по строгим durability guarantees.
 - [ ] Идемпотентный реплей с корректной синхронизацией term/index across crash/restart.
 - [ ] Полный snapshot transfer + peer resync + membership lifecycle (join/leave/rotation).
 - [ ] Split-brain + partition matrix тесты в CI (не только unit).
@@ -125,6 +125,10 @@
 - [x] Consensus recovery shape validation:
   `recover_consensus*` rejects non-contiguous log indexes, zero terms, and
   commit indexes beyond the recovered log before publishing recovered state.
+- [x] Consensus durability API split:
+  `ReplicationLog` now exposes `ConsensusLogOptions` /
+  `ConsensusLogDurability` instead of the local WAL durability enum, mapping to
+  strict storage WAL fsync internally.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
@@ -148,9 +152,8 @@
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
-3. Consensus: split consensus-log durability from local WAL semantics, tighten
-   idempotent term/index replay, and keep expanding crash/restart coverage
-   around node rejoin repair.
+3. Consensus: tighten idempotent term/index replay and keep expanding
+   crash/restart coverage around node rejoin repair.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 

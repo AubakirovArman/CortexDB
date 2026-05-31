@@ -5,7 +5,7 @@ use crate::distributed::NodeId;
 use crate::error::{EngineError, EngineResult};
 use cortex_storage::wal::{
     CommitAck, DecodedWalRecord, DurabilityMode, SectionTag, WalReader, WalRecord, WalRecordType,
-    WalSection, WalWriter, WalWriterHandle,
+    WalSection, WalWriter, WalWriterHandle, WalWriterOptions,
 };
 
 mod consensus;
@@ -74,20 +74,55 @@ pub struct ReplicationLog {
     writer: WalWriterHandle,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ConsensusLogDurability {
+    Strict,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ConsensusLogOptions {
+    pub durability: ConsensusLogDurability,
+    pub queue_capacity: Option<usize>,
+    pub max_log_size: Option<u64>,
+}
+
+impl Default for ConsensusLogOptions {
+    fn default() -> Self {
+        Self {
+            durability: ConsensusLogDurability::Strict,
+            queue_capacity: None,
+            max_log_size: None,
+        }
+    }
+}
+
 impl ReplicationLog {
     pub fn open(path: impl AsRef<Path>) -> EngineResult<Self> {
-        Self::open_with_durability(path, DurabilityMode::Strict)
+        Self::open_with_options(path, ConsensusLogOptions::default())
     }
 
     pub fn open_with_durability(
         path: impl AsRef<Path>,
-        durability: DurabilityMode,
+        durability: ConsensusLogDurability,
+    ) -> EngineResult<Self> {
+        Self::open_with_options(
+            path,
+            ConsensusLogOptions {
+                durability,
+                ..ConsensusLogOptions::default()
+            },
+        )
+    }
+
+    pub fn open_with_options(
+        path: impl AsRef<Path>,
+        options: ConsensusLogOptions,
     ) -> EngineResult<Self> {
         let path = path.as_ref().to_owned();
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        let writer = WalWriter::start(&path, durability)?;
+        let writer = WalWriter::start_with_options(&path, options.to_wal_writer_options())?;
         Ok(Self { path, writer })
     }
 
@@ -150,6 +185,18 @@ impl ReplicationLog {
 
     pub fn path(&self) -> &Path {
         &self.path
+    }
+}
+
+impl ConsensusLogOptions {
+    fn to_wal_writer_options(self) -> WalWriterOptions {
+        WalWriterOptions {
+            durability_mode: match self.durability {
+                ConsensusLogDurability::Strict => DurabilityMode::Strict,
+            },
+            queue_capacity: self.queue_capacity,
+            max_wal_size: self.max_log_size,
+        }
     }
 }
 

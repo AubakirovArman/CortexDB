@@ -118,6 +118,9 @@
 - Hardened replication consensus recovery so recovered runtime state now
   rejects non-contiguous log indexes, zero terms, and commit indexes beyond the
   recovered log.
+- Split replication consensus-log durability from local WAL durability by adding
+  `ConsensusLogOptions` / `ConsensusLogDurability` and mapping consensus logs
+  to strict storage WAL fsync internally.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

@@ -136,10 +136,16 @@ progress with the recovered voter set, and then opens the node-scoped
 consensus-log writer. This keeps local startup from accidentally planning
 repairs against stale peers after membership rotation or operator reload.
 
-Durable recovery is still ACLOG-backed through `ReplicationLog`:
+Durable recovery is still ACLOG-backed through `ReplicationLog`, but the
+replication surface no longer exposes the local database WAL durability enum.
+Callers configure consensus logs through `ConsensusLogOptions` and
+`ConsensusLogDurability`; the replication module maps those options to the
+storage WAL internally. Today the only supported consensus durability policy is
+strict per-append durability, which keeps leader commit decisions from depending
+on the local database WAL's balanced/group-commit semantics.
 
 ```rust
-let entries = ReplicationLog::recover_entries(path)?;
+let log = ReplicationLog::open_with_durability(path, ConsensusLogDurability::Strict)?;
 let state = ReplicationLog::recover_consensus(path, node, voters, commit_index)?;
 ```
 

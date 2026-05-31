@@ -1,7 +1,8 @@
 use std::collections::BTreeSet;
 
 use cortex_engine::{
-    ConsensusState, EngineError, LogIndex, NodeId, ReplicatedEntry, ReplicationLog, Term,
+    ConsensusLogDurability, ConsensusLogOptions, ConsensusState, EngineError, LogIndex, NodeId,
+    ReplicatedEntry, ReplicationLog, Term,
 };
 
 #[test]
@@ -42,6 +43,31 @@ fn replication_log_recovers_consensus_state() {
             .unwrap();
     assert_eq!(recovered.current_term, Term(1));
     assert_eq!(recovered.committed_entries(), vec![entry]);
+}
+
+#[test]
+fn replication_log_opens_with_consensus_durability_options() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("replication.aclog");
+    let entry = ReplicatedEntry {
+        term: Term(1),
+        index: LogIndex(1),
+        payload: b"strict consensus entry".to_vec(),
+    };
+
+    let log = ReplicationLog::open_with_options(
+        &path,
+        ConsensusLogOptions {
+            durability: ConsensusLogDurability::Strict,
+            queue_capacity: Some(4),
+            max_log_size: None,
+        },
+    )
+    .unwrap();
+    log.append(&entry).unwrap();
+    log.close().unwrap();
+
+    assert_eq!(ReplicationLog::recover_entries(&path).unwrap(), vec![entry]);
 }
 
 #[test]
