@@ -93,6 +93,12 @@ Core Alpha is operational:
   - covers load smoke, crash/fault evidence, migration compatibility, audit
     hardening, rate-limit behavior, CLI audit tooling, and encrypted-backup
     design boundary
+- Run the focused Production Candidate evidence gate:
+  - `make production-candidate-check`
+  - writes `target/production-candidate/report.json`
+  - covers production hardening, backup/RPO-RTO drill, single-node SLO evidence,
+    OpenAPI and SDK compatibility, migration policy/compatibility, and binary
+    release packaging
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`

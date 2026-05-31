@@ -72,6 +72,7 @@ make openapi-contract-check
 make beta-foundation-check
 make beta-rc-check
 make production-hardening-check
+make production-candidate-check
 make sdk-check
 make production-evidence-sweep
 make ann-real-embedding-readiness
@@ -96,3 +97,8 @@ into `target/beta-rc/report.json`.
 aggregates load smoke, crash/fault evidence, migration compatibility, audit
 hardening, rate-limit behavior, CLI audit tooling, and encrypted-backup design
 checks into `target/production-hardening/report.json`.
+
+`make production-candidate-check` is the focused local Epic 5 gate. It
+aggregates production hardening, backup/RPO-RTO drill, single-node SLO evidence,
+OpenAPI and SDK compatibility, migration policy/compatibility, and binary
+release packaging into `target/production-candidate/report.json`.

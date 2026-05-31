@@ -102,12 +102,20 @@ Evidence:
 
 Goal: prepare production-like single-node deployment.
 
+Status: focused local evidence gate added; run `make production-candidate-check`.
+
 Tasks:
 
 1. RPO/RTO docs.
 2. SDK/API compatibility evidence.
 3. SLO docs.
 4. Upgrade and rollback flow.
+
+Evidence:
+
+- Focused local gate: [`PRODUCTION_CANDIDATE_EVIDENCE.md`](PRODUCTION_CANDIDATE_EVIDENCE.md).
+- RPO/RTO boundary: [`RPO_RTO.md`](RPO_RTO.md).
+- Single-node SLO boundary: [`SINGLE_NODE_SLO.md`](SINGLE_NODE_SLO.md).
 
 ### Epic 6 - Production v1.0
 

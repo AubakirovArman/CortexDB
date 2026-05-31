@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 110 project markdown files.
+At the time of this audit, the repository tracks 113 project markdown files.
 
 ## Start Here
 
@@ -14,6 +14,7 @@ At the time of this audit, the repository tracks 110 project markdown files.
 - [`BETA_FOUNDATION_EVIDENCE.md`](BETA_FOUNDATION_EVIDENCE.md) - local Epic 2 evidence gate.
 - [`BETA_RC_EVIDENCE.md`](BETA_RC_EVIDENCE.md) - local Epic 3 evidence gate.
 - [`PRODUCTION_HARDENING_EVIDENCE.md`](PRODUCTION_HARDENING_EVIDENCE.md) - local Epic 4 evidence gate.
+- [`PRODUCTION_CANDIDATE_EVIDENCE.md`](PRODUCTION_CANDIDATE_EVIDENCE.md) - local Epic 5 evidence gate.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - ordered epic queue and closing rules.
 - [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md) - current cycle plan.
 - [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md) - wording boundaries.
@@ -46,6 +47,7 @@ At the time of this audit, the repository tracks 110 project markdown files.
 - [`ATOMIC_WRITE_AUDIT.md`](ATOMIC_WRITE_AUDIT.md) - atomic write coverage.
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) - backup/restore operations.
 - [`ENCRYPTED_BACKUPS_DESIGN.md`](ENCRYPTED_BACKUPS_DESIGN.md) - future encrypted backup design.
+- [`RPO_RTO.md`](RPO_RTO.md) - single-node RPO/RTO boundaries.
 - [`CRASH_SIMULATION.md`](CRASH_SIMULATION.md) - crash/fault checks.
 - [`FAILURE_SCENARIOS.md`](FAILURE_SCENARIOS.md) - failure behavior.
 - [`RECOVERY_INVARIANTS.md`](RECOVERY_INVARIANTS.md) - recovery safety.
@@ -80,6 +82,7 @@ At the time of this audit, the repository tracks 110 project markdown files.
 - [`INGESTION.md`](INGESTION.md) - ingestion behavior.
 - [`AGENT_MEMORY.md`](AGENT_MEMORY.md) - local agent memory.
 - [`METRICS.md`](METRICS.md) - metrics endpoint and fields.
+- [`SINGLE_NODE_SLO.md`](SINGLE_NODE_SLO.md) - local single-node SLO boundaries.
 - [`OPERATIONS.md`](OPERATIONS.md) - operational guidance.
 - [`SECURITY_MODEL.md`](SECURITY_MODEL.md) - security model.
 - [`SECURITY_THREAT_MODEL.md`](SECURITY_THREAT_MODEL.md) - threat model.
@@ -96,6 +99,7 @@ backlogs, snapshots, or deeper planning notes.
 - [`BETA_FOUNDATION_EVIDENCE.md`](BETA_FOUNDATION_EVIDENCE.md) - SDK/API/ContextPack/VERIFY/Search beta foundation evidence.
 - [`BETA_RC_EVIDENCE.md`](BETA_RC_EVIDENCE.md) - backup/security/ingestion/dashboard beta RC evidence.
 - [`PRODUCTION_HARDENING_EVIDENCE.md`](PRODUCTION_HARDENING_EVIDENCE.md) - load/crash/migration/audit/rate-limit hardening evidence.
+- [`PRODUCTION_CANDIDATE_EVIDENCE.md`](PRODUCTION_CANDIDATE_EVIDENCE.md) - RPO/RTO/SLO/compatibility production-candidate evidence.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md) - release notes.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - active ordered epic queue.
