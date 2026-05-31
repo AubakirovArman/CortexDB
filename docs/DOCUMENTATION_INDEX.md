@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 123 project markdown files.
+At the time of this audit, the repository tracks 124 project markdown files.
 
 ## Start Here
 
@@ -82,6 +82,7 @@ At the time of this audit, the repository tracks 123 project markdown files.
 - [`ANN_CORPUS_FORMAT.md`](ANN_CORPUS_FORMAT.md) - ANN corpus format.
 - [`ANN_PUBLIC_CORPUS_RUNS.md`](ANN_PUBLIC_CORPUS_RUNS.md) - public corpus run policy.
 - [`BENCHMARKS.md`](BENCHMARKS.md) - benchmark gates and reports.
+- [`RETRIEVAL_QUALITY_EVIDENCE.md`](RETRIEVAL_QUALITY_EVIDENCE.md) - local Epic 10 evidence gate.
 
 ## Product Surfaces
 
@@ -118,6 +119,7 @@ backlogs, snapshots, or deeper planning notes.
 - [`AQL_COMPATIBILITY.md`](AQL_COMPATIBILITY.md) - AQL v0.4 client compatibility boundary.
 - [`AQL_COMPATIBILITY_EVIDENCE.md`](AQL_COMPATIBILITY_EVIDENCE.md) - AQL compatibility gate evidence.
 - [`AQL_CHANGELOG.md`](AQL_CHANGELOG.md) - AQL grammar/binder compatibility changelog.
+- [`RETRIEVAL_QUALITY_EVIDENCE.md`](RETRIEVAL_QUALITY_EVIDENCE.md) - retrieval quality and ANN history gate evidence.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md) - release notes.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - active ordered epic queue.

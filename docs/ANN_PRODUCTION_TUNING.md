@@ -181,6 +181,18 @@ p95_latency_nanos: 5,280,660
 production_safe: true
 ```
 
+The cached follow-up run `investment-projects-v2-metrics` reuses the same
+real-embedding export and records ranking/parity metrics for history tracking:
+
+```text
+mean_recall_q16: 65535
+mean_mrr_q16: 65535
+mean_ndcg_q16: 65535
+exact_parity_q16: 65535
+p95_latency_nanos: 5,271,976
+production_safe: true
+```
+
 The package validation command is:
 
 ```bash
@@ -198,9 +210,11 @@ make ann-real-embedding-history-regression-check \
   ANN_REAL_EMBEDDING_HISTORY_REPORT=target/ann/real-embedding/runs/history.json
 ```
 
-The latest local history has two runs, `regression_count=0`,
-`latest_mean_recall_q16=65535`, and `latest_production_safe=true`. Before beta,
-repeat this on stable infrastructure and publish the selected baseline package.
+The latest local history has three runs, `regression_count=0`,
+`latest_mean_recall_q16=65535`, `latest_mean_mrr_q16=65535`,
+`latest_mean_ndcg_q16=65535`, `latest_exact_parity_q16=65535`, and
+`latest_production_safe=true`. Before beta, repeat this on stable
+infrastructure and publish the selected baseline package.
 
 ## Local Real-Domain Gate
 

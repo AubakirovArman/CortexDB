@@ -158,7 +158,8 @@ enforces per-metric recall, graph-shape, and latency thresholds from
 
 `ann_corpus_check` is the external-corpus harness for larger datasets that
 should not be checked into this repository. It accepts separate JSONL files for
-vectors, queries, and ground-truth top-k:
+vectors, queries, and ground-truth top-k. Reports track recall, ranking quality,
+exact fallback parity, latency, graph shape, and production-safety fields:
 
 ```bash
 cargo run --release -p cortex-engine --bin ann_corpus_check -- \
@@ -167,6 +168,19 @@ cargo run --release -p cortex-engine --bin ann_corpus_check -- \
   --ground-truth /data/ann/ground_truth.jsonl \
   --metric cosine \
   --output target/ann/large_corpus_report.json
+```
+
+Key quality fields:
+
+```text
+min_observed_recall_q16
+mean_recall_q16
+mean_mrr_q16
+mean_ndcg_q16
+exact_parity_q16
+p95_latency_nanos
+max_latency_nanos
+production_safe
 ```
 
 `make ann-corpus-smoke-check` runs the same code path against a tiny checked-in
@@ -391,6 +405,33 @@ p95_latency_nanos: 5,280,660
 max_latency_nanos: 5,371,215
 production_safe: true
 ```
+
+A cached follow-up run using the same real embedding export verifies repeated
+history and the expanded ranking metrics:
+
+```text
+run_id: investment-projects-v2-metrics
+vectors: 221
+queries: 40
+min_recall_q16: 65535
+mean_recall_q16: 65535
+mean_mrr_q16: 65535
+mean_ndcg_q16: 65535
+exact_parity_q16: 65535
+p95_latency_nanos: 5,271,976
+max_latency_nanos: 5,476,919
+production_safe: true
+```
+
+The local repeated-run history is checked with:
+
+```bash
+make retrieval-quality-check
+```
+
+It validates corpus/query/ground-truth files, requires at least two local
+real-embedding history runs, and fails on recall, ranking, exact-parity,
+production-safety, or latency regressions.
 
 The local baseline bundle was published and packaged at:
 

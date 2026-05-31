@@ -9,6 +9,7 @@ use super::hnsw::{DistanceMetric, HnswIndex, VectorCollectionConfig};
 
 use self::compare::compare_corpus_report;
 use self::loader::load_ann_corpus;
+use self::metrics::ranking_metrics_q16;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct AnnCorpusVector {
@@ -66,6 +67,10 @@ pub struct AnnCorpusReport {
     pub upper_graph_edges: usize,
     pub min_observed_recall_q16: u16,
     pub mean_recall_q16: u16,
+    pub mean_mrr_q16: u16,
+    pub mean_ndcg_q16: u16,
+    pub exact_parity_q16: u16,
+    pub exact_parity_count: usize,
     pub p50_latency_nanos: u128,
     pub p95_latency_nanos: u128,
     pub max_latency_nanos: u128,
@@ -80,6 +85,9 @@ pub struct AnnCorpusQueryReport {
     pub truth_count: usize,
     pub returned_count: usize,
     pub recall_q16: u16,
+    pub reciprocal_rank_q16: u16,
+    pub ndcg_q16: u16,
+    pub exact_parity: bool,
     pub latency_nanos: u128,
     pub production_safe: bool,
 }
@@ -138,6 +146,9 @@ pub fn evaluate_ann_corpus(
     let allowed = corpus.vectors.keys().copied().collect::<BTreeSet<_>>();
     let mut latencies = Vec::with_capacity(corpus.queries.len());
     let mut recalls = Vec::with_capacity(corpus.queries.len());
+    let mut reciprocal_ranks = Vec::with_capacity(corpus.queries.len());
+    let mut ndcgs = Vec::with_capacity(corpus.queries.len());
+    let mut exact_parity_count = 0usize;
     let mut query_reports = Vec::with_capacity(corpus.queries.len());
     let mut production_safe = persisted_index.verify_hnsw_integrity();
     for query in &corpus.queries {
@@ -154,16 +165,32 @@ pub fn evaluate_ann_corpus(
             truth,
             query.limit,
         );
+        let metrics = ranking_metrics_q16(
+            &results
+                .iter()
+                .map(|candidate| candidate.cell_id)
+                .collect::<Vec<_>>(),
+            truth,
+            query.limit,
+        );
         let query_safe = !budget_exceeded && recall >= options.min_recall_q16;
         production_safe &= query_safe;
         latencies.push(latency);
         recalls.push(recall);
+        reciprocal_ranks.push(metrics.reciprocal_rank_q16);
+        ndcgs.push(metrics.ndcg_q16);
+        if metrics.exact_parity {
+            exact_parity_count += 1;
+        }
         query_reports.push(AnnCorpusQueryReport {
             name: query.name.clone(),
             limit: query.limit,
             truth_count: truth.len(),
             returned_count: results.len(),
             recall_q16: recall,
+            reciprocal_rank_q16: metrics.reciprocal_rank_q16,
+            ndcg_q16: metrics.ndcg_q16,
+            exact_parity: metrics.exact_parity,
             latency_nanos: latency,
             production_safe: query_safe,
         });
@@ -172,6 +199,10 @@ pub fn evaluate_ann_corpus(
     recalls.sort_unstable();
     let mean_recall_q16 =
         (recalls.iter().copied().map(u64::from).sum::<u64>() / recalls.len() as u64) as u16;
+    let mean_mrr_q16 = mean_q16(&reciprocal_ranks);
+    let mean_ndcg_q16 = mean_q16(&ndcgs);
+    let exact_parity_q16 =
+        ((exact_parity_count as u64 * 65_535) / corpus.queries.len() as u64) as u16;
     let mut report = AnnCorpusReport {
         passed: false,
         failures: Vec::new(),
@@ -199,6 +230,10 @@ pub fn evaluate_ann_corpus(
             .sum(),
         min_observed_recall_q16: recalls[0],
         mean_recall_q16,
+        mean_mrr_q16,
+        mean_ndcg_q16,
+        exact_parity_q16,
+        exact_parity_count,
         p50_latency_nanos: percentile(&latencies, 50),
         p95_latency_nanos: percentile(&latencies, 95),
         max_latency_nanos: *latencies.last().unwrap_or(&0),
@@ -250,8 +285,16 @@ fn percentile(values: &[u128], percentile: usize) -> u128 {
     values[((values.len() - 1) * percentile.min(100)) / 100]
 }
 
+fn mean_q16(values: &[u16]) -> u16 {
+    if values.is_empty() {
+        return 0;
+    }
+    (values.iter().copied().map(u64::from).sum::<u64>() / values.len() as u64) as u16
+}
+
 mod compare;
 mod loader;
+mod metrics;
 
 #[cfg(test)]
 mod tests;

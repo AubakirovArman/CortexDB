@@ -131,6 +131,10 @@ The output is a single JSON object:
   "upper_graph_edges": 2,
   "min_observed_recall_q16": 65535,
   "mean_recall_q16": 65535,
+  "mean_mrr_q16": 65535,
+  "mean_ndcg_q16": 65535,
+  "exact_parity_q16": 65535,
+  "exact_parity_count": 4,
   "p50_latency_nanos": 8548,
   "p95_latency_nanos": 10628,
   "max_latency_nanos": 17382,
@@ -142,6 +146,9 @@ The output is a single JSON object:
       "truth_count": 2,
       "returned_count": 2,
       "recall_q16": 65535,
+      "reciprocal_rank_q16": 65535,
+      "ndcg_q16": 65535,
+      "exact_parity": true,
       "latency_nanos": 17382,
       "production_safe": true
     }

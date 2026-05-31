@@ -227,6 +227,8 @@ Evidence:
 
 Goal: promote retrieval from feature presence to measured quality.
 
+Status: focused local evidence gate added; run `make retrieval-quality-check`.
+
 Tasks:
 
 1. Promote `investment_projects` real-domain embedding baseline into repeated
@@ -238,6 +240,12 @@ Tasks:
 Acceptance:
 
 - Release includes corpus, queries, ground truth, model, and metrics.
+
+Evidence:
+
+- Benchmark contract: [`BENCHMARKS.md`](BENCHMARKS.md).
+- Focused local gate: [`RETRIEVAL_QUALITY_EVIDENCE.md`](RETRIEVAL_QUALITY_EVIDENCE.md).
+- Gate command: `make retrieval-quality-check`.
 
 ### Epic 11 - ContextPack Quality
 

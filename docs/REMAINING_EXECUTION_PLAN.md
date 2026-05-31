@@ -119,6 +119,11 @@ Core Alpha is operational:
   - writes `target/aql-compat/report.json`
   - covers v0.4 golden parser/binder behavior, explain, `LIMIT`, `REQUIRE`,
     malformed AQL, permission denial, unknown field, and HTTP error classes
+- Run the focused Retrieval Quality evidence gate:
+  - `make retrieval-quality-check`
+  - writes `target/retrieval-quality/report.json`
+  - covers real-domain corpus validity, repeated ANN embedding history,
+    recall, MRR, nDCG, exact parity, latency, and production-safety status
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`
