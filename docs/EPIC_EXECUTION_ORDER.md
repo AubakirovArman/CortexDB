@@ -301,9 +301,9 @@ Done when:
 
 ## Current Next Epic
 
-Epic 2 is next if Epic 1 remains accepted as locally done. If the next work is
-implementation-heavy, start with API/SDK live smoke and version lock-step checks
-before moving to Context Pack, ANN, security, UI, or consensus work.
+Epic 7 is next. Start with existing replication gates, then add focused
+split-brain/rejoin, follower repair, snapshot handoff, membership rotation, and
+operator topology lifecycle evidence before making stronger consensus claims.
 
 ## Minimum Verification
 
