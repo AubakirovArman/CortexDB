@@ -72,6 +72,10 @@ partition: small lag is repaired by sending the missing contiguous
 trying an unsafe oversized append batch. `repair_lagging_voters` runs the same
 logic across the current voter set and reports how many followers were already
 caught up, repaired by append, or deferred to snapshot install.
+`plan_replication_repair_sweep` is the scheduling half of that flow: it reads
+durable follower progress, rejects inconsistent progress, ignores non-voter
+inputs, and classifies every current voter as already caught up, append-repair,
+or snapshot-required before any network mutation is attempted.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 
@@ -179,6 +183,9 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
 - voter-set repair sweep: caught-up, append-repair, and snapshot-required
   followers are handled in one deterministic pass while non-voter progress
   inputs are ignored.
+- progress-aware repair scheduling: durable follower progress is validated
+  before the repair loop decides whether to no-op, append entries, or defer to
+  snapshot install.
 
 This is not a full distributed consensus certification yet. The remaining
 production work is broader membership rotation crash/restart coverage and
@@ -188,6 +195,7 @@ rejoin/repair handling after network partitions.
 
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS
   terminator for now.
-- Background scheduling and network snapshot sending after a node rejoins. The
-  explicit repair sweep exists, but a real scheduler and snapshot sender still
-  need to drive it continuously.
+- Background task execution and network snapshot sending after a node rejoins.
+  The explicit repair sweep and progress-aware schedule exist, but a real
+  continuously running repair worker and snapshot sender still need to drive
+  them.

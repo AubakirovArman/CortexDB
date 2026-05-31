@@ -78,6 +78,9 @@
 - [x] Node rejoin repair sweep: `repair_lagging_voters` walks current voters,
   reports caught-up/repaired/snapshot-required followers, and ignores non-voter
   progress inputs.
+- [x] Progress-aware repair scheduling: `plan_replication_repair_sweep`
+  classifies voters from durable follower progress, rejects inconsistent
+  progress, and separates safe planning from network mutation.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.

@@ -77,6 +77,9 @@
   snapshot install without mutating the follower log.
 - Added `repair_lagging_voters` sweep reporting, so a leader can process
   caught-up, append-repair, and snapshot-required voters in one pass.
+- Added `plan_replication_repair_sweep`, a progress-aware repair scheduler that
+  validates durable follower progress and classifies voters before sending
+  append repair or snapshot install work.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

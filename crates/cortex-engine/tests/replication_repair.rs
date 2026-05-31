@@ -1,9 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_engine::{
-    repair_lagging_voter, repair_lagging_voters, AppendEntriesRequest, ConsensusState,
-    ElectionState, InMemoryReplicationTransport, LogIndex, NodeId, ReplicationRecoveryAction,
-    ReplicationRecoveryPolicy, ReplicationTransport, Term,
+    plan_replication_repair_sweep, repair_lagging_voter, repair_lagging_voters,
+    AppendEntriesRequest, ConsensusState, ElectionState, InMemoryReplicationTransport, LogIndex,
+    NodeId, ReplicationFollowerProgress, ReplicationRecoveryAction, ReplicationRecoveryPolicy,
+    ReplicationRepairDecisionKind, ReplicationTransport, Term,
 };
 
 #[test]
@@ -154,6 +155,91 @@ fn repair_sweep_handles_caught_up_lagging_and_snapshot_voters() {
     assert_eq!(transport.peer_commit(NodeId(2)), Some(LogIndex(5)));
     assert_eq!(transport.peer_commit(NodeId(3)), Some(LogIndex(5)));
     assert!(transport.peer_log(NodeId(4)).unwrap().is_empty());
+}
+
+#[test]
+fn repair_schedule_classifies_voters_from_progress() {
+    let voters = BTreeSet::from([NodeId(1), NodeId(2), NodeId(3), NodeId(4)]);
+    let mut leader = ConsensusState::new(NodeId(1), voters);
+    for index in 0..5 {
+        let entry = leader.append_local(format!("entry {index}").into_bytes());
+        leader.record_acks(
+            entry.index,
+            BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)]),
+        );
+    }
+
+    let schedule = plan_replication_repair_sweep(
+        &leader,
+        &BTreeMap::from([
+            (
+                NodeId(2),
+                ReplicationFollowerProgress::new(NodeId(2), LogIndex(5), LogIndex(5)),
+            ),
+            (
+                NodeId(3),
+                ReplicationFollowerProgress::new(NodeId(3), LogIndex(3), LogIndex(3)),
+            ),
+            (
+                NodeId(4),
+                ReplicationFollowerProgress::new(NodeId(4), LogIndex(0), LogIndex(0)),
+            ),
+            (
+                NodeId(99),
+                ReplicationFollowerProgress::new(NodeId(99), LogIndex(5), LogIndex(5)),
+            ),
+        ]),
+        ReplicationRecoveryPolicy {
+            snapshot_threshold: 3,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(schedule.decisions.len(), 3);
+    assert_eq!(schedule.already_caught_up_count(), 1);
+    assert_eq!(schedule.append_entries_count(), 1);
+    assert_eq!(schedule.snapshot_required_count(), 1);
+    assert_eq!(
+        schedule
+            .decisions
+            .iter()
+            .map(|decision| decision.target)
+            .collect::<Vec<_>>(),
+        vec![NodeId(2), NodeId(3), NodeId(4)]
+    );
+    assert_eq!(
+        schedule.decisions[0].kind,
+        ReplicationRepairDecisionKind::AlreadyCaughtUp
+    );
+    assert_eq!(
+        schedule.decisions[1].kind,
+        ReplicationRepairDecisionKind::AppendEntries
+    );
+    assert_eq!(
+        schedule.decisions[2].kind,
+        ReplicationRepairDecisionKind::InstallSnapshot
+    );
+}
+
+#[test]
+fn repair_schedule_rejects_inconsistent_progress() {
+    let voters = BTreeSet::from([NodeId(1), NodeId(2)]);
+    let mut leader = ConsensusState::new(NodeId(1), voters);
+    let entry = leader.append_local(b"entry".to_vec());
+    leader.record_acks(entry.index, BTreeSet::from([NodeId(1), NodeId(2)]));
+
+    for invalid_progress in [
+        ReplicationFollowerProgress::new(NodeId(99), LogIndex(1), LogIndex(1)),
+        ReplicationFollowerProgress::new(NodeId(2), LogIndex(2), LogIndex(2)),
+        ReplicationFollowerProgress::new(NodeId(2), LogIndex(1), LogIndex(0)),
+    ] {
+        let result = plan_replication_repair_sweep(
+            &leader,
+            &BTreeMap::from([(NodeId(2), invalid_progress)]),
+            ReplicationRecoveryPolicy::default(),
+        );
+        assert!(result.is_err());
+    }
 }
 
 fn transport_with_followers(voters: &BTreeSet<NodeId>) -> InMemoryReplicationTransport {

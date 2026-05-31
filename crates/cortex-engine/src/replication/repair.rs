@@ -18,6 +18,69 @@ pub struct ReplicationRepairResult {
     pub success: bool,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ReplicationFollowerProgress {
+    pub node: NodeId,
+    pub commit_index: LogIndex,
+    pub last_observed_index: LogIndex,
+}
+
+impl ReplicationFollowerProgress {
+    pub fn new(node: NodeId, commit_index: LogIndex, last_observed_index: LogIndex) -> Self {
+        Self {
+            node,
+            commit_index,
+            last_observed_index,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReplicationRepairDecisionKind {
+    AlreadyCaughtUp,
+    AppendEntries,
+    InstallSnapshot,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReplicationRepairDecision {
+    pub target: NodeId,
+    pub plan: ReplicationRecoveryPlan,
+    pub kind: ReplicationRepairDecisionKind,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ReplicationRepairSchedule {
+    pub decisions: Vec<ReplicationRepairDecision>,
+}
+
+impl ReplicationRepairSchedule {
+    pub fn append_entries_count(&self) -> usize {
+        self.decisions
+            .iter()
+            .filter(|decision| decision.kind == ReplicationRepairDecisionKind::AppendEntries)
+            .count()
+    }
+
+    pub fn snapshot_required_count(&self) -> usize {
+        self.decisions
+            .iter()
+            .filter(|decision| decision.kind == ReplicationRepairDecisionKind::InstallSnapshot)
+            .count()
+    }
+
+    pub fn already_caught_up_count(&self) -> usize {
+        self.decisions
+            .iter()
+            .filter(|decision| decision.kind == ReplicationRepairDecisionKind::AlreadyCaughtUp)
+            .count()
+    }
+
+    pub fn is_idle(&self) -> bool {
+        self.append_entries_count() == 0 && self.snapshot_required_count() == 0
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ReplicationRepairSweepResult {
     pub results: Vec<ReplicationRepairResult>,
@@ -54,6 +117,33 @@ impl ReplicationRepairSweepResult {
             })
             .count()
     }
+}
+
+pub fn plan_replication_repair_sweep(
+    leader: &ConsensusState,
+    follower_progress: &BTreeMap<NodeId, ReplicationFollowerProgress>,
+    policy: ReplicationRecoveryPolicy,
+) -> EngineResult<ReplicationRepairSchedule> {
+    let mut decisions = Vec::new();
+    for target in leader
+        .voters
+        .iter()
+        .copied()
+        .filter(|node| *node != leader.local_node)
+    {
+        let progress = follower_progress
+            .get(&target)
+            .copied()
+            .unwrap_or_else(|| ReplicationFollowerProgress::new(target, LogIndex(0), LogIndex(0)));
+        validate_progress(target, progress, leader.commit_index)?;
+        let plan = plan_replication_recovery(progress.commit_index, leader.commit_index, policy);
+        decisions.push(ReplicationRepairDecision {
+            target,
+            plan,
+            kind: repair_decision_kind(plan.action),
+        });
+    }
+    Ok(ReplicationRepairSchedule { decisions })
 }
 
 pub fn repair_lagging_voters<T: ReplicationTransport>(
@@ -158,4 +248,32 @@ fn previous_log_term(entries: &[ReplicatedEntry], index: LogIndex) -> EngineResu
         .find(|entry| entry.index == index)
         .map(|entry| entry.term)
         .ok_or(EngineError::InvalidOperation)
+}
+
+fn validate_progress(
+    target: NodeId,
+    progress: ReplicationFollowerProgress,
+    leader_commit: LogIndex,
+) -> EngineResult<()> {
+    if progress.node != target
+        || progress.commit_index > leader_commit
+        || progress.last_observed_index < progress.commit_index
+    {
+        return Err(EngineError::InvalidOperation);
+    }
+    Ok(())
+}
+
+fn repair_decision_kind(action: ReplicationRecoveryAction) -> ReplicationRepairDecisionKind {
+    match action {
+        ReplicationRecoveryAction::AlreadyCaughtUp => {
+            ReplicationRepairDecisionKind::AlreadyCaughtUp
+        }
+        ReplicationRecoveryAction::AppendEntries { .. } => {
+            ReplicationRepairDecisionKind::AppendEntries
+        }
+        ReplicationRecoveryAction::InstallSnapshot { .. } => {
+            ReplicationRepairDecisionKind::InstallSnapshot
+        }
+    }
 }
