@@ -111,6 +111,7 @@ test('dashboard role-aware auth gating', async ({ page, request }) => {
     await page.goto(`${baseUrl}/dashboard`);
     clearTraces();
     await expect(page.locator('#session-role')).toContainText('Access level: admin');
+    await expect(page.locator('#permission-report')).toContainText('Admin access');
     await expect(page.locator('a[data-route="storage"]')).toBeVisible();
     expect(consoleErrors).toEqual([]);
     expect(unexpectedAuthFailures()).toEqual([]);
@@ -125,6 +126,8 @@ test('dashboard role-aware auth gating', async ({ page, request }) => {
     await page.getByRole('button', { name: 'Apply' }).click();
 
     await expect(page.locator('#session-role')).toContainText('Access level: data');
+    await expect(page.locator('#permission-report')).toContainText('Data access');
+    await expect(page.locator('#permission-report')).toContainText('Storage maintenance is hidden');
     await expect(page.locator('a[data-route="storage"]')).toBeHidden();
     await expect(page.locator('button[data-action="compact"]')).toBeHidden();
     await expect(page.locator('#ann-eval button[data-action="ann-metrics"]')).toBeHidden();
@@ -140,6 +143,7 @@ test('dashboard role-aware auth gating', async ({ page, request }) => {
     await page.waitForTimeout(300);
 
     await expect(page.locator('#session-role')).toContainText('Access level: admin');
+    await expect(page.locator('#permission-report')).toContainText('Admin access');
     await expect(page.locator('a[data-route="storage"]')).toBeVisible();
     expect(unexpectedAuthFailures()).toEqual([]);
     clearTraces();

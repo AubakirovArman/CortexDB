@@ -74,6 +74,40 @@
         return item;
     }
 
+    function requestIssueAction(status, code) {
+        if (status === 401) return "Apply a valid bearer token, then retry the request.";
+        if (status === 403) return "Use a token with the required data/admin role or switch to an allowed tenant/scope.";
+        if (status === 400) return "Check the request fields, tenant, scope, and statement format.";
+        if (status === 404) return "Check that the route or cell id exists.";
+        if (status === 429) return "Wait for the rate limit window to reset, then retry.";
+        if (code === "invalid_tenant") return "Check the tenant name and allowed token scope.";
+        return "Review the response payload and retry after fixing the request.";
+    }
+
+    function renderRequestIssue(error) {
+        const container = document.querySelector("#error-report");
+        if (!container) return;
+
+        const status = Number(error?.http_status || 0);
+        const code = error?.code || error?.status || "request_error";
+        const message = error?.message || error?.error || String(error || "request failed");
+        const statusLabel = status ? `HTTP ${status}` : "client-side";
+        const tone = status === 401 || status === 403 ? "warn" : "bad";
+
+        container.replaceChildren(
+            card("Status", statusLabel, tone),
+            card("Code", code, tone),
+            card("Issue", message, tone),
+            card("Action", requestIssueAction(status, code), "warn"),
+        );
+    }
+
+    function clearRequestIssue() {
+        const container = document.querySelector("#error-report");
+        if (!container) return;
+        container.replaceChildren(card("Status", "No request issue", "good"));
+    }
+
     function renderStorageValidation(body) {
         const container = document.querySelector("#storage-report");
         if (!container || body?.manifest_ok === undefined || body?.wal_ok === undefined) return;
@@ -178,5 +212,11 @@
         );
     }
 
-    window.CortexDashboardReports = { renderAnnEvaluation, renderContextPack, renderStorageValidation };
+    window.CortexDashboardReports = {
+        clearRequestIssue,
+        renderAnnEvaluation,
+        renderContextPack,
+        renderRequestIssue,
+        renderStorageValidation,
+    };
 })();

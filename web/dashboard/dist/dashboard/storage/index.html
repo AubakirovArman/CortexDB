@@ -44,6 +44,9 @@
         <section class="workspace" aria-live="polite">
             <div id="session-status" class="notice" role="status">Tenant: default</div>
             <div id="session-role" class="notice" role="status">Access level: limited</div>
+            <div id="permission-report" class="notice permission-report" role="status">
+                Limited access: public health only. Apply a bearer token to enable data/admin actions.
+            </div>
             <section id="overview" class="panel active" data-title="Overview">
                 <h2 id="overview-title">Overview</h2>
                 <div class="status" id="metrics"></div>
@@ -196,6 +199,12 @@ Wind Farm status ready.</textarea></div>
         <aside>
             <h2>Response</h2>
             <div id="request-status" class="request-status idle" role="status" aria-live="polite">Ready</div>
+            <section class="report-panel request-issue-panel" aria-labelledby="request-issue-title">
+                <h3 id="request-issue-title">Request issue</h3>
+                <div id="error-report" class="report-grid" aria-live="polite">
+                    <div class="metric good"><span>Status</span><strong>No request issue</strong></div>
+                </div>
+            </section>
             <pre id="output" tabindex="0" aria-live="polite" aria-describedby="request-status">{"status":"ready"}</pre>
             <h2>History</h2>
             <ol id="history" class="history" aria-label="Request history"></ol>

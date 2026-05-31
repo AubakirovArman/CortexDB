@@ -23,8 +23,9 @@ starting `cortex-server`.
 `dashboard-smoke` starts a local `cortex-server` and drives the console through
 asset loading, tab switching, session controls, cell put/get, keyword search,
 search explain, AQL, ContextPack, Verify, Ingest, ANN evaluation, storage
-validation, cluster status, visible request error states, and client-side
-numeric validation before malformed requests reach the API. ANN evaluation also
+validation, cluster status, role-aware permission messaging, visible request
+issue cards, and client-side numeric validation before malformed requests reach
+the API. ANN evaluation also
 renders a compact report card view for recall, production safety, fallback,
 SLO violations, graph shape, and HNSW tuning knobs.
 ContextPack responses render a separate report view for token budget usage,
@@ -63,6 +64,10 @@ and validates it alongside the archive manifest and SHA-256 file checksums.
 Form controls use native constraints plus synchronized `aria-invalid` state so
 keyboard and assistive-technology users get the same validation feedback as the
 visual UI.
+Session capability detection renders a permission report for limited, data, and
+admin access. Request failures are normalized into a visible Request Issue
+report with HTTP status, server code, message, and an operator action while the
+raw response stays available in the JSON output panel.
 ANN report rendering lives in `reporting.js` to keep product-facing report
 formatting separate from request/session control logic. ContextPack report
 rendering uses the same file and only reacts to `schema_version:

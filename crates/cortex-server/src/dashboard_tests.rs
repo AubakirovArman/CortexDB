@@ -69,8 +69,11 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "href=\"/dashboard/verify\"",
         "href=\"/dashboard/ingest\"",
         "id=\"tenant\"",
+        "id=\"permission-report\"",
         "id=\"history\"",
         "id=\"ingest-job-form\"",
+        "id=\"error-report\"",
+        "Request issue",
         "id=\"ann-report\"",
         "id=\"context-report\"",
         "id=\"storage-report\"",
@@ -137,6 +140,8 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert!(script.body.contains("popstate"));
     assert!(reporting.body.contains("renderAnnEvaluation"));
     assert!(reporting.body.contains("renderContextPack"));
+    assert!(reporting.body.contains("renderRequestIssue"));
+    assert!(reporting.body.contains("clearRequestIssue"));
     assert!(reporting.body.contains("renderStorageValidation"));
     assert!(super::dashboard::asset("/dashboard/assets/v2/app.js").is_none());
 }

@@ -41,6 +41,8 @@ Current coverage:
   channel, asset root, route IDs, route entrypoints, and session policy;
 - bearer tokens are memory-only and cleared from the password field after
   apply; tenant selection is the only persisted session value;
+- session capability detection renders a permission report for limited, data,
+  and admin access so hidden role-gated actions are explained in the UI;
 - standalone smoke serves `web/dashboard/dist` over HTTP and verifies the
   expected route-shaped asset paths plus the frontend manifest;
 - views are addressable through route-level URLs such as `/dashboard/overview`,
@@ -64,8 +66,8 @@ Current coverage:
   citations, anomalies, and per-cell explain metadata;
 - Storage validation renders a report view for manifest/WAL health, checked
   segments, checked cells, index coverage, safe WAL truncate offset, and errors;
-- request failures are surfaced through a visible status banner plus JSON
-  details;
+- request failures are surfaced through a visible status banner, a typed
+  Request Issue report with suggested operator action, and raw JSON details;
 - numeric form fields use native constraints, visible field errors, and
   synchronized `aria-invalid` state before malformed requests reach the API;
 - Playwright smoke covers asset loading, route switching, session controls,

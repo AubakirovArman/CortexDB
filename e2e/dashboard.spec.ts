@@ -84,6 +84,8 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await expect(page.locator('link[href="/dashboard/assets/v1/style.css"]')).toHaveCount(1);
     await expect(page.locator('script[src="/dashboard/assets/v1/app.js"]')).toHaveCount(1);
     await expect(page.locator('#output')).toContainText('"status": "ready"');
+    await expect(page.locator('#permission-report')).toContainText('access');
+    await expect(page.locator('#error-report')).toContainText('No request issue');
 
     await page.locator('#tenant').fill('dashboard-tenant');
     await page.locator('#token').fill('secret-token-value');
@@ -139,6 +141,14 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await page.getByRole('button', { name: 'Run AQL' }).click();
     await expect(page.locator('#output')).toContainText('"cells"');
     await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
+    await expect(page.locator('#error-report')).toContainText('No request issue');
+
+    await page.locator('#aql-query').fill('BROKEN;');
+    await page.getByRole('button', { name: 'Run AQL' }).click();
+    await expect(page.locator('#request-status')).toContainText('ERR aql');
+    await expect(page.locator('#error-report')).toContainText('HTTP 400');
+    await expect(page.locator('#error-report')).toContainText('Action');
+    await page.locator('#aql-query').fill('RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;');
 
     await page.getByRole('link', { name: 'Context' }).click();
     await expect(page).toHaveURL(/\/dashboard\/context$/);

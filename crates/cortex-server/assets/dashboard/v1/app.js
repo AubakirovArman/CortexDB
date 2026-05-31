@@ -3,6 +3,7 @@ const metrics = document.querySelector("#metrics");
 const history = document.querySelector("#history");
 const sessionStatus = document.querySelector("#session-status");
 const roleStatus = document.querySelector("#session-role");
+const permissionReport = document.querySelector("#permission-report");
 const requestStatus = document.querySelector("#request-status");
 const content = document.querySelector("#content");
 const routeLinks = Array.from(document.querySelectorAll("[data-route]"));
@@ -57,6 +58,26 @@ function renderSessionStatus() {
     const tokenHint = token ? " - token in-memory" : " - no token";
     const hint = accessHint ? ` (${accessHint})` : "";
     roleStatus.textContent = `Access level: ${accessLabel(accessLevel)}${tokenHint}${hint}`;
+    renderPermissionReport();
+}
+
+function renderPermissionReport() {
+    if (!permissionReport) return;
+
+    let text = "Limited access: public health only. Apply a bearer token to enable data/admin actions.";
+    let tone = "limited";
+    if (accessLevel === ACCESS_ADMIN) {
+        text = "Admin access: data and storage maintenance actions are available.";
+        tone = "admin";
+    } else if (accessLevel === ACCESS_DATA) {
+        text = "Data access: cell, search, AQL, context, verify, ingest, and cluster actions are available. Storage maintenance is hidden.";
+        tone = "data";
+    } else if (accessHint) {
+        text = `Limited access: ${accessHint}. Apply a bearer token to enable data/admin actions.`;
+    }
+
+    permissionReport.dataset.access = tone;
+    permissionReport.textContent = text;
 }
 
 function headers() {
@@ -91,6 +112,7 @@ function show(value, ok = true) {
 
 function errorMessage(error) {
     if (typeof error === "string") return error;
+    if (error?.http_status) return `HTTP ${error.http_status}`;
     if (error?.message) return error.message;
     if (error?.error) return error.error;
     if (error?.code) return error.code;
@@ -149,8 +171,23 @@ async function api(path, init = {}) {
         ...init,
         headers: { ...headers(), ...(init.headers || {}) },
     });
-    if (!response.ok) throw body;
+    if (!response.ok) throw requestError(response, body);
     return body;
+}
+
+function requestError(response, body) {
+    if (body && typeof body === "object" && !Array.isArray(body)) {
+        return {
+            ...body,
+            http_status: response.status,
+            http_status_text: response.statusText || "",
+        };
+    }
+    return {
+        http_status: response.status,
+        http_status_text: response.statusText || "",
+        message: String(body || response.statusText || "request failed"),
+    };
 }
 
 async function detectAccessLevel() {
@@ -256,6 +293,7 @@ function run(label, task) {
         .then((body) => {
             setRequestStatus("ok", `OK ${label}`);
             show(body);
+            window.CortexDashboardReports?.clearRequestIssue?.();
             window.CortexDashboardReports?.renderAnnEvaluation?.(body);
             window.CortexDashboardReports?.renderContextPack?.(body);
             window.CortexDashboardReports?.renderStorageValidation?.(body);
@@ -265,6 +303,7 @@ function run(label, task) {
         .catch((error) => {
             setRequestStatus("error", `ERR ${label}: ${errorMessage(error)}`);
             show(error, false);
+            window.CortexDashboardReports?.renderRequestIssue?.(error);
             addHistory(label, false);
         });
 }

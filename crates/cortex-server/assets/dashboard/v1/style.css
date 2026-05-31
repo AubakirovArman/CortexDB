@@ -131,6 +131,21 @@ nav { position: sticky; inset-block-start: 12px; }
     color: var(--muted);
     font-size: .9rem;
 }
+.permission-report[data-access="admin"] {
+    border-color: color-mix(in srgb, var(--green) 35%, var(--line));
+    background: #f3fbf8;
+    color: var(--green);
+}
+.permission-report[data-access="data"] {
+    border-color: color-mix(in srgb, var(--blue) 35%, var(--line));
+    background: #f3f8fd;
+    color: #083b75;
+}
+.permission-report[data-access="limited"] {
+    border-color: #b7791f;
+    background: #fff8eb;
+    color: #744210;
+}
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .field { margin-block-end: 12px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-block-start: 10px; }
@@ -142,6 +157,7 @@ nav { position: sticky; inset-block-start: 12px; }
 .metric span { display: block; color: var(--muted); font-size: .85rem; }
 .metric strong { font-size: 1.2rem; overflow-wrap: anywhere; }
 .report-panel { margin-block-start: 14px; }
+.request-issue-panel { margin-block: 10px 12px; }
 .report-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .report-stack { display: grid; gap: 10px; }
 .report-list { display: grid; gap: 8px; margin: 0; padding: 0; }
