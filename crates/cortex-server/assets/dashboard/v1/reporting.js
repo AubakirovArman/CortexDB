@@ -74,8 +74,18 @@
         return item;
     }
 
-    function requestIssueAction(status, code) {
+    function requestIssueAction(status, code, requestLabel = "") {
+        const label = String(requestLabel).toLowerCase();
+        const adminRequest = ["stats", "metrics", "validate", "flush", "compact", "ann metrics"]
+            .some((value) => label.includes(value));
+        const retrievalRequest = ["search", "aql", "context", "verify", "ann evaluate"]
+            .some((value) => label.includes(value));
+        const cellRequest = ["cell", "ingest", "remember", "forget"].some((value) => label.includes(value));
+
         if (status === 401) return "Apply a valid bearer token, then retry the request.";
+        if (status === 403 && adminRequest) return "Use an admin token; this storage or metrics action is hidden for data tokens.";
+        if (status === 403 && retrievalRequest) return "Use a token whose AgentView can read this tenant and scope.";
+        if (status === 403 && cellRequest) return "Use a token whose AgentView can write or read this cell scope.";
         if (status === 403) return "Use a token with the required data/admin role or switch to an allowed tenant/scope.";
         if (status === 400) return "Check the request fields, tenant, scope, and statement format.";
         if (status === 404) return "Check that the route or cell id exists.";
@@ -84,7 +94,7 @@
         return "Review the response payload and retry after fixing the request.";
     }
 
-    function renderRequestIssue(error) {
+    function renderRequestIssue(error, requestLabel = "") {
         const container = document.querySelector("#error-report");
         if (!container) return;
 
@@ -93,12 +103,14 @@
         const message = error?.message || error?.error || String(error || "request failed");
         const statusLabel = status ? `HTTP ${status}` : "client-side";
         const tone = status === 401 || status === 403 ? "warn" : "bad";
+        const request = requestLabel || "current request";
 
         container.replaceChildren(
+            card("Request", request, tone),
             card("Status", statusLabel, tone),
             card("Code", code, tone),
             card("Issue", message, tone),
-            card("Action", requestIssueAction(status, code), "warn"),
+            card("Action", requestIssueAction(status, code, requestLabel), "warn"),
         );
     }
 

@@ -66,8 +66,9 @@ keyboard and assistive-technology users get the same validation feedback as the
 visual UI.
 Session capability detection renders a permission report for limited, data, and
 admin access. Request failures are normalized into a visible Request Issue
-report with HTTP status, server code, message, and an operator action while the
-raw response stays available in the JSON output panel.
+report with request label, HTTP status, server code, message, and a
+route-aware operator action while the raw response stays available in the JSON
+output panel.
 ANN report rendering lives in `reporting.js` to keep product-facing report
 formatting separate from request/session control logic. ContextPack report
 rendering uses the same file and only reacts to `schema_version:

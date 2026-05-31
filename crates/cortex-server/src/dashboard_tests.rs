@@ -142,6 +142,8 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert!(reporting.body.contains("renderContextPack"));
     assert!(reporting.body.contains("renderRequestIssue"));
     assert!(reporting.body.contains("clearRequestIssue"));
+    assert!(reporting.body.contains("Use an admin token"));
+    assert!(reporting.body.contains("AgentView can read"));
     assert!(reporting.body.contains("renderStorageValidation"));
     assert!(super::dashboard::asset("/dashboard/assets/v2/app.js").is_none());
 }

@@ -303,7 +303,7 @@ function run(label, task) {
         .catch((error) => {
             setRequestStatus("error", `ERR ${label}: ${errorMessage(error)}`);
             show(error, false);
-            window.CortexDashboardReports?.renderRequestIssue?.(error);
+            window.CortexDashboardReports?.renderRequestIssue?.(error, label);
             addHistory(label, false);
         });
 }

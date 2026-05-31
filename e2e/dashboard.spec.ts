@@ -146,6 +146,8 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await page.locator('#aql-query').fill('BROKEN;');
     await page.getByRole('button', { name: 'Run AQL' }).click();
     await expect(page.locator('#request-status')).toContainText('ERR aql');
+    await expect(page.locator('#error-report')).toContainText('Request');
+    await expect(page.locator('#error-report')).toContainText('aql');
     await expect(page.locator('#error-report')).toContainText('HTTP 400');
     await expect(page.locator('#error-report')).toContainText('Action');
     await page.locator('#aql-query').fill('RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;');

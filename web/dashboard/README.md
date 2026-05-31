@@ -67,7 +67,7 @@ Current coverage:
 - Storage validation renders a report view for manifest/WAL health, checked
   segments, checked cells, index coverage, safe WAL truncate offset, and errors;
 - request failures are surfaced through a visible status banner, a typed
-  Request Issue report with suggested operator action, and raw JSON details;
+  Request Issue report with route-aware operator action, and raw JSON details;
 - numeric form fields use native constraints, visible field errors, and
   synchronized `aria-invalid` state before malformed requests reach the API;
 - Playwright smoke covers asset loading, route switching, session controls,

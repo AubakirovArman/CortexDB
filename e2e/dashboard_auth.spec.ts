@@ -136,6 +136,20 @@ test('dashboard role-aware auth gating', async ({ page, request }) => {
     expect(unexpectedAuthFailures()).toEqual([]);
     clearTraces();
 
+    await page.evaluate(async () => {
+      const response = await fetch('/v1/stats', { headers: { Authorization: 'Bearer data-token' } });
+      const body = await response.json();
+      (window as any).CortexDashboardReports.renderRequestIssue({
+        ...body,
+        http_status: response.status,
+      }, 'stats');
+    });
+    await expect(page.locator('#error-report')).toContainText('Request');
+    await expect(page.locator('#error-report')).toContainText('stats');
+    await expect(page.locator('#error-report')).toContainText('HTTP 403');
+    await expect(page.locator('#error-report')).toContainText('Use an admin token');
+    failedAuthChecks.length = 0;
+
     await page.getByRole('button', { name: 'Clear' }).click();
     setRequestAuthToken('adm');
     await page.locator('#token').fill('adm');
