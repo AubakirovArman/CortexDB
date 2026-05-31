@@ -21,6 +21,36 @@ fn dashboard_endpoint_returns_html() {
 }
 
 #[test]
+fn dashboard_route_pages_return_html() {
+    let tmp = std::env::temp_dir().join(format!(
+        "cortex-dashboard-route-test-{}",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_dir_all(&tmp);
+    std::fs::create_dir_all(&tmp).unwrap();
+
+    for route in [
+        "/dashboard/search",
+        "/dashboard/storage",
+        "/dashboard/cluster",
+    ] {
+        let request = format!("GET {route} HTTP/1.1\r\n\r\n");
+        let response = super::handle_http(&tmp, &request);
+        assert!(
+            response.starts_with("HTTP/1.1 200 OK"),
+            "expected 200 for {route}, got: {response}"
+        );
+        assert!(
+            response.contains("Content-Type: text/html"),
+            "expected html content type for {route}"
+        );
+        assert!(response.contains("CortexDB Console"));
+    }
+
+    let _ = std::fs::remove_dir_all(&tmp);
+}
+
+#[test]
 fn dashboard_html_exposes_admin_console_surfaces() {
     let html = super::dashboard::html();
     let script = super::dashboard::asset("/dashboard/assets/v1/app.js")
@@ -31,12 +61,12 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "CortexDB Console",
         "/dashboard/assets/v1/style.css",
         "/dashboard/assets/v1/app.js",
-        "href=\"#/cells\"",
-        "href=\"#/search\"",
-        "href=\"#/ann-eval\"",
-        "href=\"#/context\"",
-        "href=\"#/verify\"",
-        "href=\"#/ingest\"",
+        "href=\"/dashboard/cells\"",
+        "href=\"/dashboard/search\"",
+        "href=\"/dashboard/ann-eval\"",
+        "href=\"/dashboard/context\"",
+        "href=\"/dashboard/verify\"",
+        "href=\"/dashboard/ingest\"",
         "id=\"tenant\"",
         "id=\"history\"",
         "id=\"ingest-job-form\"",
@@ -93,7 +123,8 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert_eq!(script.content_type, "application/javascript; charset=utf-8");
     assert!(style.body.contains(".tab[aria-current=\"page\"]"));
     assert!(script.body.contains("addEventListener(\"submit\""));
-    assert!(script.body.contains("hashchange"));
+    assert!(script.body.contains("pushState"));
+    assert!(script.body.contains("popstate"));
     assert!(super::dashboard::asset("/dashboard/assets/v2/app.js").is_none());
 }
 

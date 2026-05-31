@@ -17,6 +17,18 @@ DIST_DIR = ROOT / "web" / "dashboard" / "dist"
 DIST_ASSET_DIR = DIST_DIR / "dashboard" / "assets" / "v1"
 ASSETS = ("index.html", "style.css", "app.js")
 STATIC_ASSETS = ("style.css", "app.js")
+ROUTES = (
+    "overview",
+    "cells",
+    "search",
+    "ann-eval",
+    "aql",
+    "context",
+    "verify",
+    "ingest",
+    "storage",
+    "cluster",
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -52,6 +64,17 @@ def check_assets() -> int:
         missing.append(str(dist_index.relative_to(ROOT)))
     elif not filecmp.cmp(SRC_DIR / "index.html", dist_index, shallow=False):
         stale.append(str(dist_index.relative_to(ROOT)))
+    dashboard_index = DIST_DIR / "dashboard" / "index.html"
+    if not dashboard_index.is_file():
+        missing.append(str(dashboard_index.relative_to(ROOT)))
+    elif not filecmp.cmp(SRC_DIR / "index.html", dashboard_index, shallow=False):
+        stale.append(str(dashboard_index.relative_to(ROOT)))
+    for route in ROUTES:
+        route_index = DIST_DIR / "dashboard" / route / "index.html"
+        if not route_index.is_file():
+            missing.append(str(route_index.relative_to(ROOT)))
+        elif not filecmp.cmp(SRC_DIR / "index.html", route_index, shallow=False):
+            stale.append(str(route_index.relative_to(ROOT)))
     for name in STATIC_ASSETS:
         source = SRC_DIR / name
         output = DIST_ASSET_DIR / name
@@ -77,6 +100,11 @@ def build_assets() -> int:
         shutil.copyfile(SRC_DIR / name, OUT_DIR / name)
     DIST_ASSET_DIR.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(SRC_DIR / "index.html", DIST_DIR / "index.html")
+    shutil.copyfile(SRC_DIR / "index.html", DIST_DIR / "dashboard" / "index.html")
+    for route in ROUTES:
+        route_dir = DIST_DIR / "dashboard" / route
+        route_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(SRC_DIR / "index.html", route_dir / "index.html")
     for name in STATIC_ASSETS:
         shutil.copyfile(SRC_DIR / name, DIST_ASSET_DIR / name)
     print(

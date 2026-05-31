@@ -69,6 +69,10 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     });
     page.on('pageerror', error => consoleErrors.push(error.message));
 
+    await page.goto(`${baseUrl}/dashboard/search`);
+    await expect(page).toHaveTitle('Search | CortexDB Console');
+    await expect(page.locator('#search')).toBeVisible();
+
     await page.goto(`${baseUrl}/dashboard`);
     await expect(page).toHaveTitle('Overview | CortexDB Console');
     await expect(page.getByRole('heading', { name: 'CortexDB Console' })).toBeVisible();
@@ -77,7 +81,7 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await expect(page.locator('#output')).toContainText('current_seq');
 
     await page.getByRole('link', { name: 'Cells' }).click();
-    await expect(page).toHaveURL(/#\/cells$/);
+    await expect(page).toHaveURL(/\/dashboard\/cells$/);
     await expect(page).toHaveTitle('Cells | CortexDB Console');
     await expect(page.locator('#cells')).toBeVisible();
     await page.locator('#cell-id').fill('91001');
@@ -97,7 +101,7 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
 
     await page.getByRole('link', { name: 'Search' }).click();
-    await expect(page).toHaveURL(/#\/search$/);
+    await expect(page).toHaveURL(/\/dashboard\/search$/);
     await expect(page.locator('#search')).toBeVisible();
     await page.locator('#search-query').fill('budget');
     await page.getByRole('button', { name: 'Search', exact: true }).click();
@@ -108,13 +112,13 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
 
     await page.getByRole('link', { name: 'Storage' }).click();
-    await expect(page).toHaveURL(/#\/storage$/);
+    await expect(page).toHaveURL(/\/dashboard\/storage$/);
     await expect(page.locator('#storage')).toBeVisible();
     await page.getByRole('button', { name: 'Validate' }).click();
     await expect(page.locator('#output')).toContainText('manifest_ok');
 
     await page.getByRole('link', { name: 'Cluster' }).click();
-    await expect(page).toHaveURL(/#\/cluster$/);
+    await expect(page).toHaveURL(/\/dashboard\/cluster$/);
     await expect(page.locator('#cluster')).toBeVisible();
     await page.getByRole('button', { name: 'Cluster Status' }).click();
     await expect(page.locator('#output')).toContainText('distributed_enabled');

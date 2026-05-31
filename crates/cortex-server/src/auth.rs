@@ -1,4 +1,5 @@
 use crate::audit::{self, AuditAction};
+use crate::dashboard;
 use crate::responses::RouterError;
 use crate::ServerOptions;
 use std::path::Path;
@@ -178,7 +179,7 @@ enum RouteClass {
 }
 
 fn route_class(method: &str, path: &str) -> RouteClass {
-    if path == "/" || path == "/dashboard" || path.starts_with("/dashboard/assets/") {
+    if dashboard::is_page(path) || path.starts_with("/dashboard/assets/") {
         return RouteClass::Admin;
     }
     match audit::classify(method, path) {

@@ -50,17 +50,19 @@ def main() -> int:
         raise SystemExit("missing web/dashboard/dist/index.html; run make dashboard-build")
     with static_server() as base:
         index = fetch_text(f"{base}/")
+        route_index = fetch_text(f"{base}/dashboard/search/")
         style = fetch_text(f"{base}/dashboard/assets/v1/style.css")
         script = fetch_text(f"{base}/dashboard/assets/v1/app.js")
     required = [
         ("index title", "CortexDB Console" in index),
         ("stylesheet link", "/dashboard/assets/v1/style.css" in index),
         ("script link", "/dashboard/assets/v1/app.js" in index),
-        ("route link", 'href="#/search"' in index),
+        ("route link", 'href="/dashboard/search"' in index),
+        ("route page", "CortexDB Console" in route_index),
         ("panel css", ".panel.active" in style),
         ("route css", '.tab[aria-current="page"]' in style),
         ("stats bootstrap", 'run("stats"' in script),
-        ("hash router", "hashchange" in script),
+        ("history router", "pushState" in script),
     ]
     failed = [name for name, ok in required if not ok]
     if failed:

@@ -105,9 +105,12 @@ document.querySelectorAll(".panel").forEach(panel => {
     if (!panel.classList.contains("active")) panel.hidden = true;
 });
 
-function routeFromHash() {
+function routeFromLocation() {
     const value = window.location.hash.replace(/^#\/?/, "");
-    return routes.has(value) ? value : "overview";
+    if (routes.has(value)) return value;
+    const match = window.location.pathname.match(/^\/dashboard\/([^/?#]+)\/?$/);
+    if (match && routes.has(match[1])) return match[1];
+    return "overview";
 }
 
 function setRoute(route, focusMain = false) {
@@ -127,12 +130,16 @@ function setRoute(route, focusMain = false) {
 }
 
 onAll("[data-route]", "click", event => {
+    event.preventDefault();
     const route = event.currentTarget.dataset.route;
-    if (routeFromHash() === route) setRoute(route, true);
+    const target = `/dashboard/${route}`;
+    if (window.location.pathname !== target) window.history.pushState({ route }, "", target);
+    setRoute(route, true);
 });
 
-window.addEventListener("hashchange", () => setRoute(routeFromHash(), true));
-setRoute(routeFromHash());
+window.addEventListener("popstate", () => setRoute(routeFromLocation(), true));
+window.addEventListener("hashchange", () => setRoute(routeFromLocation(), true));
+setRoute(routeFromLocation());
 
 document.addEventListener("blur", event => {
     if (event.target.matches?.("input, textarea, select")) {

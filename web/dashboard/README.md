@@ -38,9 +38,12 @@ Current coverage:
 - build output is versioned under `/dashboard/assets/v1/`;
 - standalone smoke serves `web/dashboard/dist` over HTTP and verifies the
   expected route-shaped asset paths;
-- views are addressable through hash routes such as `#/overview`, `#/cells`,
-  `#/search`, `#/storage`, and `#/cluster`, so browser back/forward and copied
+- views are addressable through route-level URLs such as `/dashboard/overview`,
+  `/dashboard/cells`, `/dashboard/search`, `/dashboard/storage`, and
+  `/dashboard/cluster`, so browser back/forward and copied
   dashboard links preserve the selected page;
+- the standalone build writes per-route HTML entrypoints under
+  `web/dashboard/dist/dashboard/<route>/index.html`;
 - views cover Overview, Cells, Search, ANN, AQL, Context, Verify, Ingest,
   Storage, and Cluster;
 - Search includes both result execution and explain output;

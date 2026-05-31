@@ -65,7 +65,7 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
         Err(error) => return json_error(error.status_code(), error.code(), &error.to_string()),
     };
 
-    if parts[1] == "/dashboard" {
+    if dashboard::is_page(parts[1]) {
         return serve_dashboard();
     }
     if let Some(response) = serve_dashboard_asset(parts[1]) {

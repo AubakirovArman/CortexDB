@@ -3,8 +3,23 @@ pub struct DashboardAsset {
     pub body: &'static str,
 }
 
+pub const ROUTES: &[&str] = &[
+    "overview", "cells", "search", "ann-eval", "aql", "context", "verify", "ingest", "storage",
+    "cluster",
+];
+
 pub fn html() -> &'static str {
     include_str!("../assets/dashboard/v1/index.html")
+}
+
+pub fn is_page(path: &str) -> bool {
+    if matches!(path, "/" | "/dashboard" | "/dashboard/") {
+        return true;
+    }
+    let Some(route) = path.strip_prefix("/dashboard/") else {
+        return false;
+    };
+    ROUTES.contains(&route.trim_end_matches('/'))
 }
 
 pub fn asset(path: &str) -> Option<DashboardAsset> {

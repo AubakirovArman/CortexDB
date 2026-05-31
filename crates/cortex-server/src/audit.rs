@@ -6,6 +6,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 
+use crate::dashboard;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum AuditAction {
     Admin,
@@ -45,7 +47,7 @@ impl AuditAction {
 
 pub(crate) fn classify(method: &str, path: &str) -> AuditAction {
     match path {
-        "/" | "/dashboard" => AuditAction::Admin,
+        _ if dashboard::is_page(path) => AuditAction::Admin,
         "/v1/health" => AuditAction::Health,
         "/v1/stats" | "/v1/validate" | "/v1/flush" | "/v1/compact" => AuditAction::Admin,
         "/v1/metrics" | "/v1/ann/metrics" => AuditAction::Metrics,

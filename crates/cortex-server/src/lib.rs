@@ -397,7 +397,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> impl IntoR
         }
     };
 
-    if method == "GET" && (path == "/" || path == "/dashboard") {
+    if method == "GET" && dashboard::is_page(&path) {
         audit_http_response(
             &state,
             &method,
