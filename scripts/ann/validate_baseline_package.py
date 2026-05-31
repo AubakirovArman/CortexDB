@@ -60,6 +60,7 @@ def validate_package(
     require_production_safe: bool,
     require_history: bool,
     require_ground_truth: bool,
+    require_real_embedding_metadata: bool,
 ) -> dict[str, Any]:
     with tarfile.open(archive, "r:gz") as tar:
         members = tar.getmembers()
@@ -87,6 +88,11 @@ def validate_package(
             required.add("history.json")
         if require_ground_truth:
             required.add("ground_truth.jsonl")
+        if require_real_embedding_metadata:
+            required.update({
+                "embedding_preflight.json",
+                "embedding_export_manifest.json",
+            })
         missing = sorted(required.difference(listed_paths))
         if missing:
             raise ValueError(f"package missing required files: {', '.join(missing)}")
@@ -95,6 +101,13 @@ def validate_package(
             raise ValueError("report.json: passed must be true")
         if require_production_safe and report.get("production_safe") is not True:
             raise ValueError("report.json: production_safe must be true")
+        if require_real_embedding_metadata:
+            export = load_json_bytes(
+                read_member(tar, f"{root}/embedding_export_manifest.json"),
+                "embedding_export_manifest.json",
+            )
+            if export.get("provider") == "hash-smoke":
+                raise ValueError("embedding_export_manifest.json: hash-smoke is not real embedding evidence")
         return {
             "archive": str(archive),
             "package_id": root,
@@ -144,6 +157,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--require-production-safe", action="store_true")
     parser.add_argument("--require-history", action="store_true")
     parser.add_argument("--require-ground-truth", action="store_true")
+    parser.add_argument("--require-real-embedding-metadata", action="store_true")
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args(argv)
 
@@ -158,13 +172,19 @@ def main(argv: list[str]) -> int:
         args.require_production_safe,
         args.require_history,
         args.require_ground_truth,
+        args.require_real_embedding_metadata,
     )
     print(json.dumps(summary, separators=(",", ":")))
     return 0
 
 
 class SelfTests(unittest.TestCase):
-    def build_archive(self, root: Path, production_safe: bool = True) -> Path:
+    def build_archive(
+        self,
+        root: Path,
+        production_safe: bool = True,
+        embedding_provider: str = "command",
+    ) -> Path:
         from package_baseline import package_baseline
 
         bundle = root / "baseline"
@@ -178,6 +198,11 @@ class SelfTests(unittest.TestCase):
         (bundle / "machine_profile.json").write_text('{"schema_version":1}\n', encoding="utf-8")
         (bundle / "history.json").write_text('{"run_count":1}\n', encoding="utf-8")
         (bundle / "ground_truth.jsonl").write_text('{"name":"q","candidates":[1]}\n', encoding="utf-8")
+        (bundle / "embedding_preflight.json").write_text('{"embedding_model":"m"}\n', encoding="utf-8")
+        (bundle / "embedding_export_manifest.json").write_text(
+            json.dumps({"provider": embedding_provider}) + "\n",
+            encoding="utf-8",
+        )
         archive = root / "baseline.tar.gz"
         package_baseline(bundle, archive, "baseline", "2026-01-01T00:00:00Z")
         return archive
@@ -185,7 +210,7 @@ class SelfTests(unittest.TestCase):
     def test_valid_package_passes_contract(self) -> None:
         with tempfile.TemporaryDirectory() as raw_dir:
             archive = self.build_archive(Path(raw_dir))
-            summary = validate_package(archive, True, True, True)
+            summary = validate_package(archive, True, True, True, True)
         self.assertEqual(summary["package_id"], "baseline")
         self.assertTrue(summary["production_safe"])
 
@@ -193,7 +218,13 @@ class SelfTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as raw_dir:
             archive = self.build_archive(Path(raw_dir), production_safe=False)
             with self.assertRaises(ValueError):
-                validate_package(archive, True, True, True)
+                validate_package(archive, True, True, True, True)
+
+    def test_real_embedding_metadata_rejects_hash_smoke(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_dir:
+            archive = self.build_archive(Path(raw_dir), embedding_provider="hash-smoke")
+            with self.assertRaises(ValueError):
+                validate_package(archive, True, True, True, True)
 
 
 if __name__ == "__main__":

@@ -7,6 +7,10 @@ on:
         description: "Archive URL containing source JSONL files and query JSONL"
         required: true
         type: string
+      source_archive_sha256:
+        description: "Expected SHA-256 digest for source_archive_url"
+        required: false
+        type: string
       source_root_in_archive:
         description: "Directory inside archive containing source JSONL files"
         required: true
@@ -104,12 +108,21 @@ jobs:
       - name: Download and extract corpus archive
         env:
           SOURCE_ARCHIVE_URL: ${{ inputs.source_archive_url }}
+          SOURCE_ARCHIVE_SHA256: ${{ inputs.source_archive_sha256 }}
           SOURCE_ROOT_IN_ARCHIVE: ${{ inputs.source_root_in_archive }}
           QUERIES_PATH_IN_ARCHIVE: ${{ inputs.queries_path_in_archive }}
+          PUBLISH_BASELINE: ${{ inputs.publish_baseline }}
         run: |
           set -euo pipefail
           mkdir -p target/ann/real-embedding/input/extracted
           curl -fsSL "$SOURCE_ARCHIVE_URL" -o target/ann/real-embedding/input/source-archive
+          actual_sha="$(sha256sum target/ann/real-embedding/input/source-archive | awk '{print $1}')"
+          if [ -n "$SOURCE_ARCHIVE_SHA256" ]; then
+            echo "${SOURCE_ARCHIVE_SHA256}  target/ann/real-embedding/input/source-archive" | sha256sum -c -
+          elif [ "$PUBLISH_BASELINE" = "true" ]; then
+            echo "source_archive_sha256 is required when publish_baseline=true" >&2
+            exit 2
+          fi
           python3 - <<'PY'
           import os
           import tarfile
@@ -142,8 +155,23 @@ jobs:
           queries="target/ann/real-embedding/input/extracted/${QUERIES_PATH_IN_ARCHIVE}"
           test -d "$source_root"
           test -f "$queries"
+          SOURCE_ARCHIVE_ACTUAL_SHA="$actual_sha" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = {
+              "schema_version": 1,
+              "source_archive_sha256": os.environ["SOURCE_ARCHIVE_ACTUAL_SHA"],
+              "source_root_in_archive": os.environ["SOURCE_ROOT_IN_ARCHIVE"],
+              "queries_path_in_archive": os.environ["QUERIES_PATH_IN_ARCHIVE"],
+          }
+          path = Path("target/ann/real-embedding/source_archive_manifest.json")
+          path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
+          PY
           echo "ANN_REAL_EMBEDDING_SOURCE_ROOT=$source_root" >> "$GITHUB_ENV"
           echo "ANN_REAL_EMBEDDING_QUERIES=$queries" >> "$GITHUB_ENV"
+          echo "ANN_REAL_EMBEDDING_SOURCE_ARCHIVE_MANIFEST=target/ann/real-embedding/source_archive_manifest.json" >> "$GITHUB_ENV"
 
       - name: Run real embedding benchmark
         env:
@@ -170,7 +198,8 @@ jobs:
             ANN_REAL_EMBEDDING_NORMALIZATION="$NORMALIZATION" \
             ANN_REAL_EMBEDDING_SCALE="$SCALE" \
             ANN_REAL_EMBEDDING_LIMIT="$LIMIT" \
-            ANN_REAL_EMBEDDING_SLO_PROFILE="$SLO_PROFILE"
+            ANN_REAL_EMBEDDING_SLO_PROFILE="$SLO_PROFILE" \
+            ANN_REAL_EMBEDDING_SOURCE_ARCHIVE_MANIFEST="$ANN_REAL_EMBEDDING_SOURCE_ARCHIVE_MANIFEST"
 
       - name: Summarize real embedding history
         run: |

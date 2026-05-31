@@ -65,6 +65,7 @@ ANN_REAL_EMBEDDING_OUTPUT_DIR ?= target/ann/real-embedding/export
 ANN_REAL_EMBEDDING_RUN_ROOT ?= target/ann/real-embedding/runs
 ANN_REAL_EMBEDDING_RUN_ID ?= real-embedding
 ANN_REAL_EMBEDDING_PREFLIGHT_REPORT ?= target/ann/real-embedding/preflight.json
+ANN_REAL_EMBEDDING_SOURCE_ARCHIVE_MANIFEST ?=
 ANN_REAL_EMBEDDING_REQUIRE_API_KEY ?= false
 ANN_REAL_EMBEDDING_NORMALIZATION ?= unit
 ANN_REAL_EMBEDDING_SCALE ?= 32767
@@ -280,6 +281,18 @@ ann-real-embedding-preflight:
 
 ann-real-embedding-benchmark: ann-real-embedding-preflight
 	$(MAKE) ann-embedding-domain-corpus-run ANN_EMBEDDING_SOURCE_ROOT=$(ANN_REAL_EMBEDDING_SOURCE_ROOT) ANN_EMBEDDING_QUERIES=$(ANN_REAL_EMBEDDING_QUERIES) ANN_EMBEDDING_OUTPUT_DIR=$(ANN_REAL_EMBEDDING_OUTPUT_DIR) ANN_EMBEDDING_RUN_ROOT=$(ANN_REAL_EMBEDDING_RUN_ROOT) ANN_EMBEDDING_RUN_ID=$(ANN_REAL_EMBEDDING_RUN_ID) ANN_EMBEDDING_PROVIDER=command ANN_EMBEDDING_COMMAND="$(ANN_REAL_EMBEDDING_COMMAND)" ANN_EMBEDDING_NORMALIZATION=$(ANN_REAL_EMBEDDING_NORMALIZATION) ANN_EMBEDDING_SCALE=$(ANN_REAL_EMBEDDING_SCALE) ANN_EMBEDDING_METRIC=$(ANN_REAL_EMBEDDING_METRIC) ANN_EMBEDDING_LIMIT=$(ANN_REAL_EMBEDDING_LIMIT) ANN_EMBEDDING_SLO_PROFILE=$(ANN_REAL_EMBEDDING_SLO_PROFILE) ANN_EMBEDDING_MAX_NEIGHBORS=$(ANN_REAL_EMBEDDING_MAX_NEIGHBORS) ANN_EMBEDDING_EF_SEARCH=$(ANN_REAL_EMBEDDING_EF_SEARCH) ANN_EMBEDDING_LAYER_COUNT=$(ANN_REAL_EMBEDDING_LAYER_COUNT)
+	@if [ -n "$(ANN_REAL_EMBEDDING_SOURCE_ARCHIVE_MANIFEST)" ]; then \
+	  python3 scripts/ann/attach_real_embedding_metadata.py \
+	    --run-dir "$(ANN_REAL_EMBEDDING_RUN_ROOT)/$(ANN_REAL_EMBEDDING_RUN_ID)" \
+	    --preflight "$(ANN_REAL_EMBEDDING_PREFLIGHT_REPORT)" \
+	    --export-manifest "$(ANN_REAL_EMBEDDING_OUTPUT_DIR)/manifest.json" \
+	    --source-archive-manifest "$(ANN_REAL_EMBEDDING_SOURCE_ARCHIVE_MANIFEST)"; \
+	else \
+	  python3 scripts/ann/attach_real_embedding_metadata.py \
+	    --run-dir "$(ANN_REAL_EMBEDDING_RUN_ROOT)/$(ANN_REAL_EMBEDDING_RUN_ID)" \
+	    --preflight "$(ANN_REAL_EMBEDDING_PREFLIGHT_REPORT)" \
+	    --export-manifest "$(ANN_REAL_EMBEDDING_OUTPUT_DIR)/manifest.json"; \
+	fi
 
 ann-real-embedding-compare:
 	@if [ -z "$(ANN_REAL_EMBEDDING_BASELINE_REPORT)" ]; then echo "Set ANN_REAL_EMBEDDING_BASELINE_REPORT to a real embedding baseline report.json" >&2; exit 2; fi
@@ -300,7 +313,7 @@ ann-real-embedding-package-baseline: ann-real-embedding-publish-baseline
 	python3 scripts/ann/package_baseline.py --baseline-bundle $(ANN_REAL_EMBEDDING_BASELINE_BUNDLE) --package-id $(ANN_REAL_EMBEDDING_BASELINE_ID) --output $(ANN_REAL_EMBEDDING_BASELINE_ARCHIVE)
 
 ann-real-embedding-validate-baseline-package:
-	python3 scripts/ann/validate_baseline_package.py --archive $(ANN_REAL_EMBEDDING_BASELINE_ARCHIVE) --require-production-safe --require-history --require-ground-truth
+	python3 scripts/ann/validate_baseline_package.py --archive $(ANN_REAL_EMBEDDING_BASELINE_ARCHIVE) --require-production-safe --require-history --require-ground-truth --require-real-embedding-metadata
 
 ann-slo-profile:
 	python3 scripts/ann/slo_profile.py --profile $(ANN_REAL_EMBEDDING_SLO_PROFILE) --format json
@@ -311,6 +324,7 @@ ann-scripts-check:
 	python3 scripts/ann/export_embedding_domain_corpus.py --self-test
 	python3 scripts/ann/embed_text_command.py --self-test
 	python3 scripts/ann/preflight_real_embedding_benchmark.py --self-test
+	python3 scripts/ann/attach_real_embedding_metadata.py --self-test
 	python3 scripts/ann/slo_profile.py --self-test
 	python3 scripts/ann/convert_public_corpus.py --self-test
 	python3 scripts/ann/run_public_corpus.py --self-test

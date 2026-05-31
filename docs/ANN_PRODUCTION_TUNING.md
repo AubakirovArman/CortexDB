@@ -331,6 +331,8 @@ Trigger the workflow with:
 
 - `source_archive_url`: `.tar`, `.tar.gz`, or `.zip` containing source JSONL
   files and query JSONL;
+- `source_archive_sha256`: expected SHA-256 for the downloaded source archive;
+  it is required whenever `publish_baseline=true`;
 - `source_root_in_archive`: directory inside the archive containing payload
   JSONL files;
 - `queries_path_in_archive`: query JSONL path inside the archive;
@@ -351,10 +353,13 @@ ann-real-embedding-validate-baseline-package
 ```
 
 Artifacts include the preflight report, exported fixed-point corpus, ANN run
-directory, explicit `history.json`, and optional validated baseline package. This is the
+directory, explicit `history.json`, and optional validated baseline package.
+The real-embedding baseline package requires `embedding_preflight.json` and
+`embedding_export_manifest.json`; hosted published baselines also carry a
+`source_archive_manifest.json` with the downloaded archive SHA-256. This is the
 preferred path for production-style evidence because the run is reproducible
-from a GitHub Actions URL and does not expose embedding credentials in command
-lines.
+from a GitHub Actions URL, records model/provider provenance, and does not
+expose embedding credentials in command lines.
 
 ## Fallback Policy
 
@@ -530,7 +535,8 @@ Warnings, not blockers:
 - Demo-domain corpus generation is available, but no large real customer/domain
   baseline is published yet.
 - Embedded-vector and real-embedding corpus tooling exists, including preflight,
-  history gating, report comparison, and baseline packaging gates, but it still
-  needs a real model export and published baseline bundle.
+  history gating, report comparison, provenance capture, source-archive
+  integrity checks, and baseline packaging gates, but it still needs a real
+  model export and published baseline bundle.
 - Workload SLO profiles exist, but their thresholds still need calibration on
   real customer/domain corpora.

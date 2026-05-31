@@ -38,6 +38,9 @@
   exists and fail on recall, graph-shape, latency, or production-safety
   regression (`make ann-history-regression-check`,
   `make ann-real-embedding-history-regression-check`).
+- [x] Real-embedding baseline packages now include embedding preflight/export
+  provenance, reject synthetic `hash-smoke` metadata, and require hosted
+  source-archive SHA-256 when publishing a baseline from GitHub Actions.
 
 ### 2) Real distributed consensus
 - [x] Отделить репликационный consensus-log и local WAL по строгим durability guarantees.
@@ -182,7 +185,9 @@
 ## Непосредственный следующий 2-недельный sprint
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса
-   с настоящим embedding backend и приложить artifact к release.
+   с настоящим embedding backend и приложить artifact к release. Tooling now
+   enforces provenance and source-archive integrity, but the actual model run
+   still needs real endpoint/corpus credentials.
 2. ANN/HNSW: откалибровать SLO thresholds на опубликованном real-domain
    baseline после первого настоящего прогона.
 3. Consensus: keep expanding crash/restart coverage around node rejoin repair

@@ -100,6 +100,21 @@ def publish_baseline(
     copy_file(run_dir / "comparison.json", output_dir / "comparison.json", files)
     copy_file(resolve_path(run_dir, manifest.get("ground_truth")), output_dir / "ground_truth.jsonl", files)
     copy_file(resolve_path(run_dir, manifest.get("machine_profile")), output_dir / "machine_profile.json", files)
+    copy_file(
+        resolve_path(run_dir, manifest.get("embedding_preflight")),
+        output_dir / "embedding_preflight.json",
+        files,
+    )
+    copy_file(
+        resolve_path(run_dir, manifest.get("embedding_export_manifest")),
+        output_dir / "embedding_export_manifest.json",
+        files,
+    )
+    copy_file(
+        resolve_path(run_dir, manifest.get("source_archive_manifest")),
+        output_dir / "source_archive_manifest.json",
+        files,
+    )
     baseline_manifest = {
         "baseline_id": baseline_id,
         "created_at": created_at,
@@ -111,6 +126,12 @@ def publish_baseline(
         "ground_truth": manifest.get("ground_truth", ""),
         "machine_profile": manifest.get("machine_profile", ""),
         "baseline_report": manifest.get("baseline_report", ""),
+        "embedding_preflight": manifest.get("embedding_preflight", ""),
+        "embedding_export_manifest": manifest.get("embedding_export_manifest", ""),
+        "source_archive_manifest": manifest.get("source_archive_manifest", ""),
+        "embedding_model": manifest.get("embedding_model", ""),
+        "embedding_provider": manifest.get("embedding_provider", ""),
+        "embedding_dimension": manifest.get("embedding_dimension", 0),
         "summary": run_summary(report),
         "files": files,
     }
@@ -158,6 +179,12 @@ class SelfTests(unittest.TestCase):
             "baseline_report": "",
             "machine_profile": str(run_dir / "machine_profile.json"),
             "report": str(run_dir / "report.json"),
+            "embedding_preflight": str(run_dir / "embedding_preflight.json"),
+            "embedding_export_manifest": str(run_dir / "embedding_export_manifest.json"),
+            "source_archive_manifest": str(run_dir / "source_archive_manifest.json"),
+            "embedding_model": "model-a",
+            "embedding_provider": "command",
+            "embedding_dimension": 2,
         }
         report = {
             "passed": True,
@@ -184,6 +211,9 @@ class SelfTests(unittest.TestCase):
         (run_dir / "report.json").write_text(json.dumps(report), encoding="utf-8")
         (run_dir / "machine_profile.json").write_text('{"schema_version":1}\n', encoding="utf-8")
         (run_dir / "ground_truth.jsonl").write_text('{"name":"q","candidates":[1]}\n', encoding="utf-8")
+        (run_dir / "embedding_preflight.json").write_text('{"embedding_model":"model-a"}\n', encoding="utf-8")
+        (run_dir / "embedding_export_manifest.json").write_text('{"provider":"command"}\n', encoding="utf-8")
+        (run_dir / "source_archive_manifest.json").write_text('{"sha256":"abc"}\n', encoding="utf-8")
         (root / "history.json").write_text(json.dumps({"run_count": 1}), encoding="utf-8")
 
     def test_publish_baseline_copies_release_files(self) -> None:
@@ -200,6 +230,10 @@ class SelfTests(unittest.TestCase):
             self.assertTrue((bundle / "history.json").exists())
             self.assertTrue((bundle / "ground_truth.jsonl").exists())
             self.assertTrue((bundle / "machine_profile.json").exists())
+            self.assertTrue((bundle / "embedding_preflight.json").exists())
+            self.assertTrue((bundle / "embedding_export_manifest.json").exists())
+            self.assertTrue((bundle / "source_archive_manifest.json").exists())
+            self.assertEqual(manifest["embedding_model"], "model-a")
 
     def test_invalid_baseline_id_is_rejected(self) -> None:
         with self.assertRaises(ValueError):

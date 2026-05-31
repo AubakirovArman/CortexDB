@@ -11,6 +11,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Iterable
+from urllib.parse import urlparse
 
 
 SKIP_DIRS = {"venv", ".venv", "__pycache__", ".git", "target", "cortex_db", "cortex_data"}
@@ -104,6 +105,15 @@ def validate_env(required: list[str]) -> None:
         raise ValueError("missing required environment variables: " + ", ".join(missing))
 
 
+def endpoint_origin(raw_url: str | None) -> str:
+    if not raw_url:
+        return ""
+    parsed = urlparse(raw_url)
+    if not parsed.scheme or not parsed.netloc:
+        return ""
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
 def preflight(args: argparse.Namespace) -> dict:
     if args.metric not in METRICS:
         raise ValueError(f"unsupported metric: {args.metric}")
@@ -130,6 +140,8 @@ def preflight(args: argparse.Namespace) -> dict:
         "limit": args.limit,
         "required_env": sorted(args.require_env),
         "command": args.embedding_command,
+        "embedding_model": os.environ.get("CORTEXDB_EMBEDDING_MODEL", ""),
+        "embedding_endpoint_origin": endpoint_origin(os.environ.get("CORTEXDB_EMBEDDING_URL")),
     }
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
