@@ -142,9 +142,15 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
 
     await page.getByRole('link', { name: 'Context' }).click();
     await expect(page).toHaveURL(/\/dashboard\/context$/);
+    await expect(page.locator('#context-report')).toContainText('Build Context Pack');
     await page.getByRole('button', { name: 'Build Context Pack' }).click();
     await expect(page.locator('#output')).toContainText('"schema_version": "context_pack.v1"');
     await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
+    await expect(page.locator('#context-report-title')).toContainText('Context Pack report');
+    await expect(page.locator('#context-report')).toContainText('Cells');
+    await expect(page.locator('#context-report')).toContainText('Citations');
+    await expect(page.locator('#context-report')).toContainText('Anomalies');
+    await expect(page.locator('#context-report')).toContainText('Dashboard smoke budget note');
 
     await page.getByRole('link', { name: 'Verify' }).click();
     await expect(page).toHaveURL(/\/dashboard\/verify$/);

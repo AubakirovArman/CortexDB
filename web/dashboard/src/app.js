@@ -257,6 +257,7 @@ function run(label, task) {
             setRequestStatus("ok", `OK ${label}`);
             show(body);
             window.CortexDashboardReports?.renderAnnEvaluation?.(body);
+            window.CortexDashboardReports?.renderContextPack?.(body);
             addHistory(label, true);
             if (body?.current_seq !== undefined || body?.ok !== undefined) renderMetrics(body);
         })

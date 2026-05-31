@@ -21,6 +21,93 @@
         return node;
     }
 
+    function sourceLabel(sourceRef) {
+        if (!sourceRef) return "";
+        const parts = [sourceRef.source_id, sourceRef.document_id].filter(Boolean);
+        if (sourceRef.page !== null && sourceRef.page !== undefined) parts.push(`page ${sourceRef.page}`);
+        if (sourceRef.json_path) parts.push(sourceRef.json_path);
+        return parts.join(" · ");
+    }
+
+    function preview(text) {
+        if (!text) return "no payload preview";
+        const compact = String(text).replace(/\s+/g, " ").trim();
+        return compact.length > 180 ? `${compact.slice(0, 177)}...` : compact;
+    }
+
+    function cellItem(cell) {
+        const item = document.createElement("article");
+        const title = document.createElement("h4");
+        const meta = document.createElement("p");
+        const explain = document.createElement("p");
+        const body = document.createElement("p");
+        const terms = cell.explain?.matched_terms?.join(", ") || "none";
+        const reason = cell.explain?.why_selected || "selected by retrieval plan";
+        const source = sourceLabel(cell.source_ref);
+
+        item.className = "report-item";
+        title.textContent = `Cell ${cell.cell_id}`;
+        meta.className = "report-meta";
+        meta.textContent = [
+            `${cell.estimated_tokens ?? 0} tokens`,
+            cell.citation ? `citation: ${cell.citation}` : "citation: missing",
+            source ? `source: ${source}` : "",
+        ].filter(Boolean).join(" · ");
+        explain.className = "report-meta";
+        explain.textContent = `matched terms: ${terms} · ${reason}`;
+        body.textContent = preview(cell.payload_text);
+        item.append(title, meta, explain, body);
+        return item;
+    }
+
+    function anomalyItem(anomaly) {
+        const item = document.createElement("li");
+        item.textContent = anomaly.cell_id
+            ? `Cell ${anomaly.cell_id}: ${anomaly.code} - ${anomaly.message}`
+            : `${anomaly.code} - ${anomaly.message}`;
+        return item;
+    }
+
+    function renderContextPack(body) {
+        const container = document.querySelector("#context-report");
+        if (!container || body?.schema_version !== "context_pack.v1") return;
+
+        const cells = body.cells || [];
+        const anomalies = body.anomalies || [];
+        const citations = cells.filter((cell) => cell.citation).length;
+        const budget = body.token_budget_tokens || 0;
+        const estimated = body.estimated_tokens || 0;
+        const used = budget > 0 ? `${Math.min(100, (estimated * 100) / budget).toFixed(1)}%` : "n/a";
+        const anomalyTone = anomalies.length ? "bad" : "good";
+        const citationTone = !body.citations_required || citations === cells.length ? "good" : "warn";
+
+        const summary = document.createElement("div");
+        const cellList = document.createElement("div");
+        const anomalyList = document.createElement("ul");
+        summary.className = "report-grid";
+        cellList.className = "report-list";
+        anomalyList.className = "report-list compact";
+
+        summary.replaceChildren(
+            card("Cells", cells.length),
+            card("Budget", budget),
+            card("Estimated", estimated),
+            card("Used", used),
+            card("Citations", `${citations}/${cells.length}`, citationTone),
+            card("Required", yesNo(body.citations_required)),
+            card("Truncated", yesNo(body.truncated), body.truncated ? "warn" : "good"),
+            card("Anomalies", anomalies.length, anomalyTone),
+        );
+
+        if (cells.length) cellList.replaceChildren(...cells.slice(0, 5).map(cellItem));
+        else cellList.replaceChildren(card("Cells", "none"));
+
+        if (anomalies.length) anomalyList.replaceChildren(...anomalies.map(anomalyItem));
+        else anomalyList.replaceChildren(anomalyItem({ code: "none", message: "No anomalies reported" }));
+
+        container.replaceChildren(summary, cellList, anomalyList);
+    }
+
     function renderAnnEvaluation(body) {
         const container = document.querySelector("#ann-report");
         if (!container || body?.available === undefined) return;
@@ -51,5 +138,5 @@
         );
     }
 
-    window.CortexDashboardReports = { renderAnnEvaluation };
+    window.CortexDashboardReports = { renderAnnEvaluation, renderContextPack };
 })();

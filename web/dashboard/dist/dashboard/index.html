@@ -133,6 +133,12 @@ Solar budget note</textarea></div>
                     <div class="field"><label for="context-query">Statement</label><textarea id="context-query" name="query">RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;</textarea></div>
                     <button type="submit" data-access="data">Build Context Pack</button>
                 </form>
+                <section class="report-panel" aria-labelledby="context-report-title">
+                    <h3 id="context-report-title">Context Pack report</h3>
+                    <div id="context-report" class="report-stack" aria-live="polite">
+                        <div class="metric"><span>Status</span><strong>Build Context Pack</strong></div>
+                    </div>
+                </section>
             </section>
             <section id="verify" class="panel" data-title="Verify" data-access="data">
                 <h2 id="verify-title">Verify</h2>

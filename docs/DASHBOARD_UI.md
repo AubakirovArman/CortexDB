@@ -27,6 +27,9 @@ validation, cluster status, visible request error states, and client-side
 numeric validation before malformed requests reach the API. ANN evaluation also
 renders a compact report card view for recall, production safety, fallback,
 SLO violations, graph shape, and HNSW tuning knobs.
+ContextPack responses render a separate report view for token budget usage,
+selected cells, citations, anomalies, and per-cell explain metadata so pack
+quality can be reviewed without reading raw JSON.
 
 `dashboard-screenshots` starts the same local server and writes review artifacts:
 
@@ -58,7 +61,9 @@ Form controls use native constraints plus synchronized `aria-invalid` state so
 keyboard and assistive-technology users get the same validation feedback as the
 visual UI.
 ANN report rendering lives in `reporting.js` to keep product-facing report
-formatting separate from request/session control logic.
+formatting separate from request/session control logic. ContextPack report
+rendering uses the same file and only reacts to `schema_version:
+"context_pack.v1"` responses.
 
 ## Boundary
 

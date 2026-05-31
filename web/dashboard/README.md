@@ -60,6 +60,8 @@ Current coverage:
   cluster status, and ANN metrics;
 - ANN evaluation renders a report card view for recall, production safety,
   fallback, SLO violations, graph shape, and HNSW tuning knobs;
+- ContextPack renders a report view for token budget usage, selected cells,
+  citations, anomalies, and per-cell explain metadata;
 - request failures are surfaced through a visible status banner plus JSON
   details;
 - numeric form fields use native constraints, visible field errors, and
