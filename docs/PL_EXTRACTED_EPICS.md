@@ -278,6 +278,8 @@ Evidence:
 
 Goal: measure deterministic `VERIFY FACT` behavior.
 
+Status: focused local evidence gate added; run `make verification-quality-check`.
+
 Tasks:
 
 1. Add `examples/eval/verification_cases.jsonl`.
@@ -289,6 +291,12 @@ Tasks:
 Acceptance:
 
 - Verification report includes accuracy metrics for the release corpus.
+
+Evidence:
+
+- Contract and gate: [`VERIFY_FACT.md`](VERIFY_FACT.md).
+- Focused local gate: [`VERIFICATION_QUALITY_EVIDENCE.md`](VERIFICATION_QUALITY_EVIDENCE.md).
+- Fixture: `examples/eval/verification_cases.jsonl`.
 
 ### Epic 13 - HTTP Server Contract And Operations
 
@@ -523,7 +531,7 @@ make sdk-smoke-test
 make ann-real-embedding-readiness
 make beta-delta-check
 make context-pack-quality-check
-make verify-quality-check
+make verification-quality-check
 ```
 
 Production candidate gate:

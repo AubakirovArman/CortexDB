@@ -130,3 +130,14 @@ Run the shared ContextPack/VERIFY quality gate directly with:
 ```bash
 make context-verify-quality-check
 ```
+
+Run the focused labelled verification evaluation gate with:
+
+```bash
+make verification-quality-check
+```
+
+That gate executes `examples/eval/verification_cases.jsonl` through the engine
+and writes a confusion-matrix report to `target/verification-quality/report.json`.
+Latest local evidence is tracked in
+[`VERIFICATION_QUALITY_EVIDENCE.md`](VERIFICATION_QUALITY_EVIDENCE.md).

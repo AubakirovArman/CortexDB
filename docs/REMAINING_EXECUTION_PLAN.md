@@ -129,6 +129,11 @@ Core Alpha is operational:
   - writes `target/context-pack-quality/report.json`
   - covers budget truncation, required citations, source refs, duplicate
     suppression, deterministic ordering, evidence coverage, and token reduction
+- Run the focused Verification Quality evidence gate:
+  - `make verification-quality-check`
+  - writes `target/verification-quality/report.json`
+  - covers labelled supported, contradicted, mixed, insufficient, numeric
+    conflict, missing citation, ambiguity, and no-evidence cases
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`
