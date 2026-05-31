@@ -74,6 +74,9 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "id=\"ingest-job-form\"",
         "id=\"error-report\"",
         "Request issue",
+        "id=\"search-report\"",
+        "id=\"aql-report\"",
+        "id=\"verify-report\"",
         "id=\"ann-report\"",
         "id=\"context-report\"",
         "id=\"storage-report\"",
@@ -139,12 +142,15 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert!(script.body.contains("pushState"));
     assert!(script.body.contains("popstate"));
     assert!(reporting.body.contains("renderAnnEvaluation"));
+    assert!(reporting.body.contains("renderAqlReport"));
     assert!(reporting.body.contains("renderContextPack"));
     assert!(reporting.body.contains("renderRequestIssue"));
+    assert!(reporting.body.contains("renderSearchReport"));
     assert!(reporting.body.contains("clearRequestIssue"));
     assert!(reporting.body.contains("Use an admin token"));
     assert!(reporting.body.contains("AgentView can read"));
     assert!(reporting.body.contains("renderStorageValidation"));
+    assert!(reporting.body.contains("renderVerificationReport"));
     assert!(super::dashboard::asset("/dashboard/assets/v2/app.js").is_none());
 }
 

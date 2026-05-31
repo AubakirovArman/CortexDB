@@ -91,11 +91,17 @@ Solar budget note</textarea></div>
                         </div>
                     </div>
                     <div class="field"><label for="search-query">Query or vector</label><input id="search-query" name="q" value="budget"></div>
-                    <div class="actions">
+                <div class="actions">
                     <button type="submit" data-access="data">Search</button>
                     <button type="button" id="search-explain" class="secondary" data-access="data">Explain Search</button>
                 </div>
             </form>
+                <section class="report-panel" aria-labelledby="search-report-title">
+                    <h3 id="search-report-title">Search report</h3>
+                    <div id="search-report" class="report-stack" aria-live="polite">
+                        <div class="metric"><span>Status</span><strong>Run Search</strong></div>
+                    </div>
+                </section>
             </section>
             <section id="ann-eval" class="panel" data-title="ANN Eval" data-access="data">
                 <h2 id="ann-eval-title">ANN Eval</h2>
@@ -128,6 +134,12 @@ Solar budget note</textarea></div>
                     <div class="field"><label for="aql-query">Statement</label><textarea id="aql-query" name="query">RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;</textarea></div>
                     <button type="submit" data-access="data">Run AQL</button>
                 </form>
+                <section class="report-panel" aria-labelledby="aql-report-title">
+                    <h3 id="aql-report-title">AQL report</h3>
+                    <div id="aql-report" class="report-stack" aria-live="polite">
+                        <div class="metric"><span>Status</span><strong>Run AQL</strong></div>
+                    </div>
+                </section>
             </section>
             <section id="context" class="panel" data-title="Context" data-access="data">
                 <h2 id="context-title">Context</h2>
@@ -150,6 +162,12 @@ Solar budget note</textarea></div>
                     <div class="field"><label for="verify-query">Statement</label><textarea id="verify-query" name="query">VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;</textarea></div>
                     <button type="submit" data-access="data">Verify Fact</button>
                 </form>
+                <section class="report-panel" aria-labelledby="verify-report-title">
+                    <h3 id="verify-report-title">Verification report</h3>
+                    <div id="verify-report" class="report-stack" aria-live="polite">
+                        <div class="metric"><span>Status</span><strong>Verify Fact</strong></div>
+                    </div>
+                </section>
             </section>
             <section id="ingest" class="panel" data-title="Ingest" data-access="data">
                 <h2 id="ingest-title">Ingest</h2>

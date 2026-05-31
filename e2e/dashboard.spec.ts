@@ -131,16 +131,24 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await page.locator('#search-query').fill('budget');
     await page.getByRole('button', { name: 'Search', exact: true }).click();
     await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
+    await expect(page.locator('#search-report-title')).toContainText('Search report');
+    await expect(page.locator('#search-report')).toContainText('Mode');
+    await expect(page.locator('#search-report')).toContainText('Results');
+    await expect(page.locator('#search-report')).toContainText('Dashboard smoke budget note');
 
     await page.getByRole('button', { name: 'Explain Search' }).click();
     await expect(page.locator('#output')).toContainText('query_terms');
     await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
+    await expect(page.locator('#search-report')).toContainText('keyword');
 
     await page.getByRole('link', { name: 'AQL' }).click();
     await expect(page).toHaveURL(/\/dashboard\/aql$/);
     await page.getByRole('button', { name: 'Run AQL' }).click();
     await expect(page.locator('#output')).toContainText('"cells"');
     await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
+    await expect(page.locator('#aql-report-title')).toContainText('AQL report');
+    await expect(page.locator('#aql-report')).toContainText('Cells');
+    await expect(page.locator('#aql-report')).toContainText('Dashboard smoke budget note');
     await expect(page.locator('#error-report')).toContainText('No request issue');
 
     await page.locator('#aql-query').fill('BROKEN;');
@@ -169,6 +177,10 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await page.getByRole('button', { name: 'Verify Fact' }).click();
     await expect(page.locator('#output')).toContainText('"verdict": "supported"');
     await expect(page.locator('#output')).toContainText('Solar Plant budget is 1.2B KZT');
+    await expect(page.locator('#verify-report-title')).toContainText('Verification report');
+    await expect(page.locator('#verify-report')).toContainText('Verdict');
+    await expect(page.locator('#verify-report')).toContainText('supported');
+    await expect(page.locator('#verify-report')).toContainText('Solar Plant budget is 1.2B KZT');
 
     await page.getByRole('link', { name: 'Ingest' }).click();
     await expect(page).toHaveURL(/\/dashboard\/ingest$/);

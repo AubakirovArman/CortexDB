@@ -74,6 +74,137 @@
         return item;
     }
 
+    function searchItem(result) {
+        const item = document.createElement("article");
+        const title = document.createElement("h4");
+        const meta = document.createElement("p");
+        const body = document.createElement("p");
+        item.className = "report-item";
+        title.textContent = `Cell ${result.cell_id}`;
+        meta.className = "report-meta";
+        meta.textContent = [
+            `score: ${result.score ?? 0}`,
+            `lexical: ${result.lexical_score ?? 0}`,
+            `vector: ${result.vector_score ?? 0}`,
+        ].join(" · ");
+        body.textContent = preview(result.payload || result.payload_preview);
+        item.append(title, meta, body);
+        return item;
+    }
+
+    function aqlItem(cell) {
+        const item = document.createElement("article");
+        const title = document.createElement("h4");
+        const body = document.createElement("p");
+        item.className = "report-item";
+        title.textContent = `Cell ${cell.cell_id}`;
+        body.textContent = preview(cell.payload);
+        item.append(title, body);
+        return item;
+    }
+
+    function evidenceItem(evidence) {
+        const item = document.createElement("article");
+        const title = document.createElement("h4");
+        const meta = document.createElement("p");
+        const body = document.createElement("p");
+        item.className = "report-item";
+        title.textContent = `Cell ${evidence.cell_id}`;
+        meta.className = "report-meta";
+        meta.textContent = [
+            `matched terms: ${evidence.matched_terms ?? 0}`,
+            evidence.citation ? `citation: ${evidence.citation}` : "citation: missing",
+            `source trust: ${q16Percent(evidence.source_trust_q16)}`,
+        ].join(" · ");
+        body.textContent = preview(evidence.payload_text);
+        item.append(title, meta, body);
+        return item;
+    }
+
+    function renderSearchReport(body) {
+        const container = document.querySelector("#search-report");
+        if (!container || !body?.search_mode || !Array.isArray(body.results)) return;
+
+        const results = body.results;
+        const ann = body.ann_report;
+        const topScore = results.length ? Math.max(...results.map((result) => Number(result.score || 0))) : 0;
+        const summary = document.createElement("div");
+        const list = document.createElement("div");
+        summary.className = "report-grid";
+        list.className = "report-list";
+
+        summary.replaceChildren(
+            card("Mode", body.search_mode),
+            card("Results", results.length, results.length ? "good" : "warn"),
+            card("Top score", topScore),
+            card("ANN path", ann?.path || "n/a"),
+            card("Production safe", ann ? yesNo(ann.production_safe) : "n/a", !ann || ann.production_safe ? "good" : "bad"),
+            card("Fallback", ann ? yesNo(ann.fallback_performed) : "n/a", ann?.fallback_performed ? "warn" : "good"),
+        );
+
+        if (results.length) list.replaceChildren(...results.slice(0, 5).map(searchItem));
+        else list.replaceChildren(card("Results", "none", "warn"));
+
+        container.replaceChildren(summary, list);
+    }
+
+    function renderAqlReport(body) {
+        const container = document.querySelector("#aql-report");
+        if (!container || body?.schema_version || !Array.isArray(body?.cells)) return;
+        if (body.cells.some((cell) => cell.payload === undefined)) return;
+
+        const cells = body.cells;
+        const summary = document.createElement("div");
+        const list = document.createElement("div");
+        summary.className = "report-grid";
+        list.className = "report-list";
+
+        summary.replaceChildren(
+            card("Cells", cells.length, cells.length ? "good" : "warn"),
+            card("First cell", cells[0]?.cell_id ?? "none"),
+            card("Displayed", Math.min(cells.length, 5)),
+        );
+
+        if (cells.length) list.replaceChildren(...cells.slice(0, 5).map(aqlItem));
+        else list.replaceChildren(card("Cells", "none", "warn"));
+
+        container.replaceChildren(summary, list);
+    }
+
+    function renderVerificationReport(body) {
+        const container = document.querySelector("#verify-report");
+        if (!container || !body?.fact || !body?.verdict) return;
+
+        const evidence = body.evidence || body.supporting || [];
+        const contradicting = body.contradicting_evidence || body.contradicting || [];
+        const guards = body.guards || [];
+        const numericConflicts = body.numeric_conflicts || [];
+        const verdictTone = body.verdict === "supported" ? "good" : body.verdict === "mixed_evidence" ? "warn" : "bad";
+        const summary = document.createElement("div");
+        const evidenceList = document.createElement("div");
+        const guardList = document.createElement("ul");
+        summary.className = "report-grid";
+        evidenceList.className = "report-list";
+        guardList.className = "report-list compact";
+
+        summary.replaceChildren(
+            card("Verdict", body.verdict, verdictTone),
+            card("Status", body.status || body.verdict, verdictTone),
+            card("Evidence", evidence.length),
+            card("Contradicting", contradicting.length, contradicting.length ? "bad" : "good"),
+            card("Guards", guards.length, guards.length ? "warn" : "good"),
+            card("Numeric conflicts", numericConflicts.length, numericConflicts.length ? "bad" : "good"),
+        );
+
+        if (evidence.length) evidenceList.replaceChildren(...evidence.slice(0, 3).map(evidenceItem));
+        else evidenceList.replaceChildren(card("Evidence", "none", "warn"));
+
+        if (guards.length) guardList.replaceChildren(...guards.map((guard) => textItem(`${guard.code}: ${guard.message}`)));
+        else guardList.replaceChildren(textItem("No guards reported"));
+
+        container.replaceChildren(summary, card("Fact", body.fact), evidenceList, guardList);
+    }
+
     function requestIssueAction(status, code, requestLabel = "") {
         const label = String(requestLabel).toLowerCase();
         const adminRequest = ["stats", "metrics", "validate", "flush", "compact", "ann metrics"]
@@ -227,8 +358,11 @@
     window.CortexDashboardReports = {
         clearRequestIssue,
         renderAnnEvaluation,
+        renderAqlReport,
         renderContextPack,
         renderRequestIssue,
+        renderSearchReport,
         renderStorageValidation,
+        renderVerificationReport,
     };
 })();

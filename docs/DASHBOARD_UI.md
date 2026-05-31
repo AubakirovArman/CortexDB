@@ -69,11 +69,13 @@ admin access. Request failures are normalized into a visible Request Issue
 report with request label, HTTP status, server code, message, and a
 route-aware operator action while the raw response stays available in the JSON
 output panel.
+Search, AQL, and Verify success responses also render compact report views for
+result count, top cells, verdict, evidence, contradictions, guards, and numeric
+conflicts.
 ANN report rendering lives in `reporting.js` to keep product-facing report
-formatting separate from request/session control logic. ContextPack report
-rendering uses the same file and only reacts to `schema_version:
-"context_pack.v1"` responses. Storage validation report rendering reacts to
-the typed `/v1/validate` response shape.
+formatting separate from request/session control logic. Search/AQL/Verify,
+ContextPack, request issue, and storage validation report rendering use the
+same file and react only to their typed response shapes.
 
 ## Boundary
 

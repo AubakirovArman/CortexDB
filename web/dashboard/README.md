@@ -60,6 +60,8 @@ Current coverage:
 - Search includes both result execution and explain output;
 - Storage and Cluster views expose validation, metrics, flush/compact,
   cluster status, and ANN metrics;
+- Search, AQL, and Verify render success report views for result counts,
+  selected cells, verdicts, evidence, and guard status;
 - ANN evaluation renders a report card view for recall, production safety,
   fallback, SLO violations, graph shape, and HNSW tuning knobs;
 - ContextPack renders a report view for token budget usage, selected cells,

@@ -295,8 +295,11 @@ function run(label, task) {
             show(body);
             window.CortexDashboardReports?.clearRequestIssue?.();
             window.CortexDashboardReports?.renderAnnEvaluation?.(body);
+            window.CortexDashboardReports?.renderAqlReport?.(body);
             window.CortexDashboardReports?.renderContextPack?.(body);
+            window.CortexDashboardReports?.renderSearchReport?.(body);
             window.CortexDashboardReports?.renderStorageValidation?.(body);
+            window.CortexDashboardReports?.renderVerificationReport?.(body);
             addHistory(label, true);
             if (body?.current_seq !== undefined || body?.ok !== undefined) renderMetrics(body);
         })
