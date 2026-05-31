@@ -2,6 +2,10 @@
 
 `cortex-engine` is the first facade over the lower layers.
 
+The stable embedded entrypoints are documented in `ENGINE_API.md`; the common
+single-node loop starts with `Database::open`, applies `PutCell` operations
+through the WAL, then serves reads from the MVCC snapshot.
+
 It owns:
 
 - database directory creation

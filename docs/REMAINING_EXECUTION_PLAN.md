@@ -109,6 +109,11 @@ Core Alpha is operational:
   - writes `target/storage-compat/report.json`
   - covers migration compatibility, backup drills, crash/fault/corruption
     matrix, chaos restart, and repair dry-run/apply behavior
+- Run the focused Engine API evidence gate:
+  - `make engine-api-check`
+  - writes `target/engine-api/report.json`
+  - covers public `cortex-engine` compile checks, doctests, rustdoc build, and
+    stable-vs-internal docs
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`

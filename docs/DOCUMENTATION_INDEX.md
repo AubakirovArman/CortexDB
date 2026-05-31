@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 117 project markdown files.
+At the time of this audit, the repository tracks 120 project markdown files.
 
 ## Start Here
 
@@ -25,6 +25,8 @@ At the time of this audit, the repository tracks 117 project markdown files.
 
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) - crate and subsystem map.
 - [`CORE_ENGINE.md`](CORE_ENGINE.md) - engine facade and single-node loop.
+- [`ENGINE_API.md`](ENGINE_API.md) - stable embedded engine API boundary.
+- [`MODULE_OWNERSHIP.md`](MODULE_OWNERSHIP.md) - crate/module ownership map.
 - [`CORE_INVARIANTS.md`](CORE_INVARIANTS.md) - safety invariants.
 - [`CORE_CONSISTENCY_AUDIT.md`](CORE_CONSISTENCY_AUDIT.md) - consistency checks.
 - [`CONSENSUS_SLO.md`](CONSENSUS_SLO.md) - consensus hardening gates and beta SLO targets.
@@ -108,6 +110,9 @@ backlogs, snapshots, or deeper planning notes.
 - [`PRODUCTION_V1_EVIDENCE.md`](PRODUCTION_V1_EVIDENCE.md) - Production v1.0 gate evidence.
 - [`STORAGE_COMPATIBILITY.md`](STORAGE_COMPATIBILITY.md) - storage durability and compatibility boundary.
 - [`STORAGE_COMPATIBILITY_EVIDENCE.md`](STORAGE_COMPATIBILITY_EVIDENCE.md) - storage compatibility gate evidence.
+- [`ENGINE_API.md`](ENGINE_API.md) - stable embedded engine API boundary.
+- [`ENGINE_API_EVIDENCE.md`](ENGINE_API_EVIDENCE.md) - engine API gate evidence.
+- [`MODULE_OWNERSHIP.md`](MODULE_OWNERSHIP.md) - module ownership and stable/internal split.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md) - release notes.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - active ordered epic queue.

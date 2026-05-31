@@ -170,6 +170,8 @@ Evidence:
 
 Goal: separate stable embedded Rust API from internal engine APIs.
 
+Status: focused local evidence gate added; run `make engine-api-check`.
+
 Tasks:
 
 1. Add `docs/ENGINE_API.md`.
@@ -181,6 +183,12 @@ Tasks:
 Acceptance:
 
 - External Rust users know which APIs are stable.
+
+Evidence:
+
+- Boundary: [`ENGINE_API.md`](ENGINE_API.md).
+- Module map: [`MODULE_OWNERSHIP.md`](MODULE_OWNERSHIP.md).
+- Focused local gate: [`ENGINE_API_EVIDENCE.md`](ENGINE_API_EVIDENCE.md).
 
 ### Epic 9 - AQL Query Compatibility
 
