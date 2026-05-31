@@ -25,6 +25,8 @@ jobs:
       - run: cargo test --workspace --all-features
       - run: cargo fmt --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: make migration-policy-check
+        if: matrix.toolchain == 'stable'
       - run: make crash-fault-check
         if: matrix.toolchain == 'stable'
       - name: Upload crash/fault evidence

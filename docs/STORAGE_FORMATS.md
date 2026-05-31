@@ -3,6 +3,10 @@
 CortexDB Core Alpha uses small binary formats with explicit magic values,
 little-endian integer fields, and CRC32C validation.
 
+Upgrade, rollback, and migration rules are defined in
+[`UPGRADE_MIGRATION.md`](UPGRADE_MIGRATION.md). Any breaking storage format
+change requires a migration note there and in the target release notes.
+
 ## Version Policy
 
 | Format | File | Magic | Version state | Compatibility rule |
