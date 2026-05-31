@@ -42,7 +42,7 @@ Or run the full demo: `make demo`
 
 ## Long-Term Vision (Experimental/Under Active Development)
 
-- **Consensus-Driven Replication (Raft):** Multi-node replication log syncing and leader election (current status: primitive foundations/experimental model).
+- **Consensus-Driven Replication (Raft-like):** Multi-node replication log syncing and leader election (current status: experimental model with local partition/rejoin hardening and documented beta SLO gates).
 - **Consistent Hashing Sharding:** Distributed namespace layout and dynamic query routing (current status: experimental layout primitives).
 - **Guarded HNSW Approximate Search:** Fixed-point distance metrics (DotProduct, Cosine, L2) with deterministic multi-layer graphs, exact fallback, recall gates, visit-budget limits, SLO reporting, repeatable recall/latency reports, release-mode synthetic/drift/external/metric-matrix fixture gates, an external-corpus harness, gate-policy validation for release packages, and CI report artifacts. Long-running benchmark history remains future work.
 

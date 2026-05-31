@@ -31,9 +31,9 @@ operational limits are documented.
   metadata, and `ef_construction` reporting. It is not yet promoted to
   unrestricted production search.
 - Real distributed consensus has Raft-like primitives, replicated log recovery,
-  partition tests, snapshot transfer, membership rotation, and repair workers.
-  It still needs long-running failover and rejoin hardening before production
-  rollout.
+  partition tests, snapshot transfer, membership rotation, repair workers,
+  repeatable local hardening gates, and documented SLO targets. It still needs
+  sustained multi-process failover/rejoin evidence before production rollout.
 - The web UI is a developer dashboard with build, smoke, package, and
   screenshot gates. It is not yet a full product UI for incidents, permissions,
   or operational workflows.
@@ -55,8 +55,9 @@ operational limits are documented.
   public release.
 - Product UI beta needs role-aware flows, stable error presentation, incident
   visibility, and broader browser/e2e regression evidence.
-- Consensus beta needs sustained partition/failover/rejoin evidence with clear
-  SLO thresholds for leader failover, replay, and repair completion.
+- Consensus beta needs sustained partition/failover/rejoin evidence that meets
+  the SLO thresholds in `docs/CONSENSUS_SLO.md` for leader failover, replay,
+  repair completion, snapshot handoff, and topology reload.
 
 ## Required Gates
 

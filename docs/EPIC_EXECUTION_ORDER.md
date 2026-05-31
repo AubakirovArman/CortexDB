@@ -278,7 +278,7 @@ Closed evidence:
 
 ## Epic 7 - Consensus Hardening
 
-Status: partial, not production-ready.
+Status: done for Core Alpha; still not production consensus.
 
 Goal: continue from Raft-like primitives toward operational consensus.
 
@@ -299,11 +299,25 @@ Done when:
 - Failover and repair SLOs are documented.
 - Operational lifecycle is documented and test-covered.
 
+Closed evidence:
+
+- `make replication-partition-check` includes failure injection, partition
+  matrix, repair, repair-cycle, repair-worker, and consensus-hardening suites.
+- `make replication-lifecycle-check` covers snapshot sender/install behavior,
+  repair progress, membership rotation resume, topology config loading, and
+  runtime progress reconciliation.
+- `crates/cortex-engine/tests/replication_consensus_hardening.rs` covers
+  repeatable split-brain/rejoin repair soak, follower-lag repair classification,
+  and membership rotation resume into a second rotation.
+- `docs/CONSENSUS_SLO.md` defines the failover, replay, repair, snapshot, and
+  topology reload SLO gates required before beta promotion.
+- Public docs keep consensus experimental until sustained multi-process
+  failover/rejoin evidence exists.
+
 ## Current Next Epic
 
-Epic 7 is next. Start with existing replication gates, then add focused
-split-brain/rejoin, follower repair, snapshot handoff, membership rotation, and
-operator topology lifecycle evidence before making stronger consensus claims.
+No active epic remains in this execution-order file. Define the next ordered
+epic before starting unrelated implementation work.
 
 ## Minimum Verification
 

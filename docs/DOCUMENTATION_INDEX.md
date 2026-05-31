@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 103 project markdown files.
+At the time of this audit, the repository tracks 104 project markdown files.
 
 ## Start Here
 
@@ -21,6 +21,7 @@ At the time of this audit, the repository tracks 103 project markdown files.
 - [`CORE_ENGINE.md`](CORE_ENGINE.md) - engine facade and single-node loop.
 - [`CORE_INVARIANTS.md`](CORE_INVARIANTS.md) - safety invariants.
 - [`CORE_CONSISTENCY_AUDIT.md`](CORE_CONSISTENCY_AUDIT.md) - consistency checks.
+- [`CONSENSUS_SLO.md`](CONSENSUS_SLO.md) - consensus hardening gates and beta SLO targets.
 - [`WHY_CORTEXDB.md`](WHY_CORTEXDB.md) - positioning and rationale.
 - [`WHY_AGENT_NATIVE_DB.md`](WHY_AGENT_NATIVE_DB.md) - agent-native database concept.
 

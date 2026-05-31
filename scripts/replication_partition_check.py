@@ -55,6 +55,15 @@ TEST_SUITES = [
             "durable progress-driven repair planning",
         ],
     },
+    {
+        "name": "consensus_hardening",
+        "test": "replication_consensus_hardening",
+        "coverage": [
+            "repeatable split-brain/rejoin repair soak",
+            "follower lag repair snapshot threshold then idle",
+            "membership rotation resume can continue to next rotation",
+        ],
+    },
 ]
 
 

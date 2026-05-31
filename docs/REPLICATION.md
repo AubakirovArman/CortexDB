@@ -221,8 +221,9 @@ post-Core Alpha work.
 
 ## Failure-Injection Coverage
 
-The first post-Core Alpha consensus failure harness is an integration test suite
-under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
+The post-Core Alpha consensus failure harness is a set of integration suites
+under `crates/cortex-engine/tests/` and is grouped by
+`make replication-partition-check`. It covers:
 
 - a minority partition that cannot advance `commit_index` until a majority
   heals;
@@ -267,15 +268,19 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
 - snapshot repair sending: explicit snapshot requests can now be streamed as
   checked `SnapshotChunk` frames to a follower that durably installs the
   decoded snapshot segment.
+- consensus hardening soak: a repeatable suite exercises split-brain/rejoin
+  repair, follower-lag snapshot escalation, and membership-rotation resume.
 
-This is not a full distributed consensus certification yet. The remaining
-production work is broader membership rotation crash/restart coverage and
-rejoin/repair handling after network partitions.
+This is not a full distributed consensus certification yet. The local gates now
+cover deterministic failure modes, but beta/production work still requires
+long-running multi-process failover/rejoin evidence and operator lifecycle SLOs.
+Those thresholds are tracked in [`CONSENSUS_SLO.md`](CONSENSUS_SLO.md).
 
 ## Not Yet
 
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS
   terminator for now.
 - A full cluster config manager that coordinates topology changes with live
-  replication tasks. The operator topology file is durable, but automatic
-  online reload/rotation remains future work.
+  replication tasks. The operator topology file is durable and startup
+  reconciliation is tested, but automatic online reload/rotation remains future
+  work.

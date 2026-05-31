@@ -163,6 +163,13 @@
   `recover_log_state` publishes validated `current_term`, `last_log_index`,
   `last_log_term`, and `next_log_index` boundaries and rejects term regression
   before restart code can append new entries.
+- [x] Consensus hardening suite:
+  `replication_consensus_hardening` adds repeatable split-brain/rejoin repair
+  soak, follower-lag snapshot escalation, and membership-rotation resume into a
+  second rotation.
+- [x] Consensus SLO gate documentation:
+  `docs/CONSENSUS_SLO.md` defines Core Alpha gates plus beta thresholds for
+  failover, replay, repair, snapshot handoff, and topology reload evidence.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
@@ -215,8 +222,8 @@
    beta to avoid provider-secret and scheduled-spend risk.
 2. ANN/HNSW: откалибровать SLO thresholds на повторных real-domain baseline
    прогонах в стабильной среде.
-3. Consensus: keep expanding crash/restart coverage around node rejoin repair
-   and durable snapshot handoff.
+3. Consensus: move from local deterministic gates to sustained multi-process
+   failover/rejoin evidence before any production-consensus claim.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 

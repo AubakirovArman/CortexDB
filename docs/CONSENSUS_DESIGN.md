@@ -4,7 +4,12 @@ This document defines the consensus model, architecture, safety invariants, and 
 
 ## Consensus Model: Raft-like Active Replication
 
-CortexDB implements a strong-leader, active-replication consensus model derived from Raft. It ensures that committed entries survive node failures, network partitions, and cluster restarts.
+CortexDB models a strong-leader, active-replication consensus layer derived
+from Raft. In Core Alpha this is a deterministic local hardening surface with
+replicated log recovery, partition tests, snapshot transfer, repair planning,
+and membership lifecycle primitives. It is not yet production-certified
+distributed consensus; beta promotion depends on the SLO gates in
+[`CONSENSUS_SLO.md`](CONSENSUS_SLO.md).
 
 ### Roles and States
 1. **Leader**: Coordinates all database mutations, appends entries to its local log, and replicates them to Follower nodes.
