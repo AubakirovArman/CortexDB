@@ -179,39 +179,32 @@ This closes the local corpus/query/ground-truth and first endpoint-backed
 baseline side of real-domain promotion. The remaining promotion step is
 repeatable SLO history on stable infrastructure.
 
-## Scheduled Real-Domain Gate
+## Local Real-Domain Gate
 
-The checked-in `investment_projects` corpus has a dedicated GitHub Actions
-workflow:
+Real-domain embedding benchmarks are intentionally local-only until beta. This
+avoids spending embedding quota on every repository run and keeps provider keys
+out of GitHub Actions while the corpus and SLOs are still being tuned.
 
-```text
-.github/workflows/ann-investment-projects-real-embedding.yml
-```
-
-It runs weekly and can also be started manually from GitHub Actions. The
-workflow validates the corpus, runs readiness, executes the endpoint-backed
-benchmark, packages the baseline, validates the package, and uploads the full
-evidence bundle as a workflow artifact.
-
-Required repository secrets:
+Local environment:
 
 ```text
 CORTEXDB_EMBEDDING_URL
 CORTEXDB_EMBEDDING_API_KEY
+CORTEXDB_EMBEDDING_MODEL
 ```
 
-Manual dispatch inputs:
+Local gate:
 
-```text
-run_id_prefix: investment-projects
-embedding_model: BAAI/bge-m3
-slo_profile: balanced
+```bash
+make ann-real-embedding-benchmark \
+  ANN_REAL_EMBEDDING_SOURCE_ROOT=examples/real_domains/investment_projects/corpus \
+  ANN_REAL_EMBEDDING_QUERIES=examples/real_domains/investment_projects/queries/queries.jsonl \
+  ANN_REAL_EMBEDDING_RUN_ID=investment-projects-v1
 ```
 
-Use this workflow to build repeatable SLO history. A single
-`production_safe=true` report proves the configured gate passed for one run;
-the scheduled history proves whether recall and latency stay stable across
-commits, runner environments, and embedding endpoint changes.
+GitHub Actions promotion for this gate is deferred to beta. At that point the
+workflow should be reintroduced with repository secrets, artifact retention, and
+explicit budget controls.
 
 Inspect a profile without running a benchmark:
 

@@ -406,19 +406,15 @@ make ann-real-embedding-validate-baseline-package \
   ANN_REAL_EMBEDDING_BASELINE_ARCHIVE=target/ann/real-embedding/release-baselines/investment-projects-v1.tar.gz
 ```
 
-The repeatable gate for this corpus is:
-
-```text
-.github/workflows/ann-investment-projects-real-embedding.yml
-```
-
-Configure these repository secrets before enabling the scheduled run:
+For Core Alpha, this gate is local-only. Export the embedding endpoint
+configuration locally:
 
 ```text
 CORTEXDB_EMBEDDING_URL
 CORTEXDB_EMBEDDING_API_KEY
+CORTEXDB_EMBEDDING_MODEL
 ```
 
-The workflow runs weekly and can be dispatched manually with a model and SLO
-profile. Its artifact contains readiness, preflight, converted vectors, report
-history, and the packaged baseline archive for that run.
+GitHub Actions execution is deferred to beta, when quota, artifact retention,
+and release cadence are stable enough to justify scheduled endpoint-backed
+embedding runs.

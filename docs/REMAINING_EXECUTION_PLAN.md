@@ -21,10 +21,9 @@ Core Alpha is operational:
     40 queries, ground truth, validators, and readiness wiring
   - endpoint-backed `investment-projects-v1` benchmark using `BAAI/bge-m3`
     embeddings, with packaged local baseline and `production_safe=true`
-  - scheduled/manual GitHub Actions gate for repeating the same real-domain
-    embedding benchmark and uploading evidence artifacts
 - **Открыто:**
   - долгоживущие observability и SLA-регрессионные пороги для production traffic
+  - beta-stage GitHub Actions promotion for real embedding benchmark history
 
 ### 2) Real distributed consensus readiness
 - **Status:** активно развивается (не production-ready).

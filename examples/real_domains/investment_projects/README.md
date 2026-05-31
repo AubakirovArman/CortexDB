@@ -116,14 +116,15 @@ production_safe: true
 archive: target/ann/real-embedding/release-baselines/investment-projects-v1.tar.gz
 ```
 
-Scheduled evidence:
+Automation policy:
 
 ```text
-.github/workflows/ann-investment-projects-real-embedding.yml
+Core Alpha: local-only benchmark runs.
+Beta: consider GitHub Actions promotion after quota and release cadence are stable.
 ```
 
-The workflow needs repository secrets `CORTEXDB_EMBEDDING_URL` and
-`CORTEXDB_EMBEDDING_API_KEY`. It runs weekly and can be dispatched manually.
+Do not commit provider keys. Pass `CORTEXDB_EMBEDDING_API_KEY` only through the
+local shell environment.
 
 ## Regenerate
 
