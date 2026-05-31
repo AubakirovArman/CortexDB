@@ -17,6 +17,13 @@ use crate::query::EngineAqlIndex;
 use super::SnapshotSegment;
 
 impl Database {
+    pub fn replication_snapshot_segment(&self) -> EngineResult<SnapshotSegment> {
+        Ok(SnapshotSegment {
+            checkpoint_seq: self.current_seq,
+            cells: self.full_snapshot_cells()?,
+        })
+    }
+
     pub fn install_snapshot_segment(
         &mut self,
         snapshot: SnapshotSegment,

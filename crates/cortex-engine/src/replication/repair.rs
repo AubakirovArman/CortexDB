@@ -12,6 +12,7 @@ use super::transport::{AppendEntriesRequest, ReplicationTransport};
 
 mod background;
 mod cycle;
+mod database_snapshot;
 mod snapshot_sender;
 mod worker;
 
@@ -23,6 +24,7 @@ pub use cycle::{
     execute_replication_repair_schedule, run_replication_repair_cycle,
     ReplicationRepairCycleResult, ReplicationSnapshotRepairRequest,
 };
+pub use database_snapshot::ReplicationDatabaseSnapshotSource;
 pub use snapshot_sender::{
     send_replication_snapshot_request, ReplicationSnapshotSendPolicy,
     ReplicationSnapshotSendResult, ReplicationSnapshotTransport,

@@ -95,6 +95,10 @@ progress source, and snapshot source in a bounded OS-thread loop. It supports a
 deterministic stop handle plus finite-run policies for tests and smoke
 deployments, so node-rejoin repair can run as a runtime task instead of being
 manually stitched together by callers.
+`ReplicationDatabaseSnapshotSource` provides the database-backed snapshot source
+for that runtime: it reads a current `Database::replication_snapshot_segment`
+through `Arc<RwLock<Database>>` and only returns it when the requested repair
+checkpoint matches the database commit sequence.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 

@@ -221,7 +221,7 @@ impl Database {
         Ok(cells)
     }
 
-    fn full_snapshot_cells(&self) -> EngineResult<Vec<SegmentCell>> {
+    pub(crate) fn full_snapshot_cells(&self) -> EngineResult<Vec<SegmentCell>> {
         self.snapshot_versions()
             .into_iter()
             .enumerate()

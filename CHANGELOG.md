@@ -91,6 +91,9 @@
   and returns pending snapshot handoffs without spinning.
 - Added `spawn_replication_repair_background_task`, giving the repair loop a
   stoppable OS-thread runtime boundary with deterministic finite-run tests.
+- Added `Database::replication_snapshot_segment` and
+  `ReplicationDatabaseSnapshotSource`, so background repair can source
+  snapshots from current database storage instead of hand-built fixtures.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,
