@@ -114,6 +114,9 @@
   `ClusterConfig::replication_paths` validates local node identity and provides
   node-scoped paths for consensus log, repair progress, and snapshot inbox
   files.
+- [x] Durable operator cluster topology config:
+  `ClusterConfig::store/load` persist `CORTEXDB_CLUSTER_CONFIG_V1` with
+  validated local-node identity, peer addresses, and replication factor.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
@@ -137,8 +140,8 @@
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
-3. Consensus: persist operator cluster topology config and keep expanding
-   crash/restart coverage around node rejoin repair.
+3. Consensus: wire durable operator topology into replication startup/reload and
+   keep expanding crash/restart coverage around node rejoin repair.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 

@@ -1,6 +1,12 @@
+use std::fs::{self, File, OpenOptions};
+use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::error::{EngineError, EngineResult};
+
+const CLUSTER_CONFIG_MAGIC: &str = "CORTEXDB_CLUSTER_CONFIG_V1";
+static TEMP_COUNTER: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct NodeId(pub u64);
@@ -82,6 +88,15 @@ impl ClusterConfig {
         self.validate_replication_config()?;
         ReplicationPathConfig::new(root, self.local_node)
     }
+
+    pub fn store(&self, path: impl AsRef<Path>) -> EngineResult<()> {
+        self.validate_replication_config()?;
+        write_atomic(path.as_ref(), encode_cluster_config(self).as_bytes())
+    }
+
+    pub fn load(path: impl AsRef<Path>) -> EngineResult<Self> {
+        decode_cluster_config(&fs::read_to_string(path)?)
+    }
 }
 
 impl ReplicationPathConfig {
@@ -105,6 +120,11 @@ impl ReplicationPathConfig {
         self.root.join("replication")
     }
 
+    pub fn cluster_config_path(&self) -> PathBuf {
+        self.replication_dir()
+            .join(format!("node-{}.cluster.conf", self.local_node.0))
+    }
+
     pub fn consensus_log_path(&self) -> PathBuf {
         self.replication_dir()
             .join(format!("node-{}.consensus.aclog", self.local_node.0))
@@ -119,4 +139,98 @@ impl ReplicationPathConfig {
         self.replication_dir()
             .join(format!("node-{}.snapshots", self.local_node.0))
     }
+}
+
+fn encode_cluster_config(config: &ClusterConfig) -> String {
+    let mut out = format!(
+        "{CLUSTER_CONFIG_MAGIC}\nlocal_node {}\nreplication_factor {}\n",
+        config.local_node.0, config.replication_factor
+    );
+    for node in &config.nodes {
+        out.push_str(&format!("node {} {}\n", node.id.0, node.address));
+    }
+    out
+}
+
+fn decode_cluster_config(input: &str) -> EngineResult<ClusterConfig> {
+    let mut lines = input.lines();
+    if lines.next() != Some(CLUSTER_CONFIG_MAGIC) {
+        return Err(EngineError::InvalidOperation);
+    }
+
+    let local_node = parse_prefixed_u64(lines.next(), "local_node ")?;
+    let replication_factor = parse_prefixed_u64(lines.next(), "replication_factor ")? as usize;
+    let mut nodes = Vec::new();
+    for line in lines {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let body = line
+            .strip_prefix("node ")
+            .ok_or(EngineError::InvalidOperation)?;
+        let (id, address) = body.split_once(' ').ok_or(EngineError::InvalidOperation)?;
+        if address.trim() != address || address.is_empty() {
+            return Err(EngineError::InvalidOperation);
+        }
+        nodes.push(ClusterNode {
+            id: NodeId(parse_u64(id)?),
+            address: address.to_owned(),
+        });
+    }
+
+    let config = ClusterConfig {
+        local_node: NodeId(local_node),
+        nodes,
+        replication_factor,
+    };
+    config.validate_replication_config()?;
+    Ok(config)
+}
+
+fn parse_prefixed_u64(line: Option<&str>, prefix: &str) -> EngineResult<u64> {
+    parse_u64(
+        line.ok_or(EngineError::InvalidOperation)?
+            .strip_prefix(prefix)
+            .ok_or(EngineError::InvalidOperation)?,
+    )
+}
+
+fn parse_u64(value: &str) -> EngineResult<u64> {
+    value.parse().map_err(|_| EngineError::InvalidOperation)
+}
+
+fn write_atomic(path: &Path, bytes: &[u8]) -> EngineResult<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        fs::create_dir_all(parent)?;
+    }
+    let tmp = temp_path(path);
+    {
+        let mut file = File::create(&tmp)?;
+        file.write_all(bytes)?;
+        file.sync_all()?;
+    }
+    fs::rename(&tmp, path)?;
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        OpenOptions::new().read(true).open(parent)?.sync_all()?;
+    }
+    Ok(())
+}
+
+fn temp_path(path: &Path) -> PathBuf {
+    let counter = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let file_name = path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or("cluster");
+    path.with_file_name(format!(
+        "{file_name}.tmp.{}.{}",
+        std::process::id(),
+        counter
+    ))
 }

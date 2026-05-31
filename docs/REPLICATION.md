@@ -122,9 +122,13 @@ seeds newly joined voters at `0/0` so the next repair sweep explicitly catches
 them up through append repair or snapshot install.
 `ClusterConfig::replication_paths` provides the operator-facing path placement
 for that state. It validates the configured local node, rejects duplicate or
-invalid node identities, and places consensus log, repair progress, and snapshot
-inbox files under `replication/node-<id>.*` paths so multiple node identities do
-not share one repair-progress file by accident.
+invalid node identities, and places cluster config, consensus log, repair
+progress, and snapshot inbox files under `replication/node-<id>.*` paths so
+multiple node identities do not share one repair-progress file by accident.
+`ClusterConfig::store` and `ClusterConfig::load` persist the local operator
+topology as `CORTEXDB_CLUSTER_CONFIG_V1` using atomic file replacement, giving
+restart code a durable source of truth for local node identity and peer
+addresses.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 
@@ -250,6 +254,6 @@ rejoin/repair handling after network partitions.
 
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS
   terminator for now.
-- A full cluster config manager that persists operator topology changes and
-  rotates path roots across deployments. Path placement helpers and membership
-  reconciliation exist, but topology persistence remains future work.
+- A full cluster config manager that coordinates topology changes with live
+  replication tasks. The operator topology file is durable, but automatic
+  online reload/rotation remains future work.
