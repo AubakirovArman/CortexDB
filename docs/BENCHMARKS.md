@@ -63,6 +63,25 @@ make ann-corpus-smoke-report
 cargo bench --bench core_baseline
 ```
 
+For a fast live HTTP load smoke gate:
+
+```bash
+make load-smoke-check
+```
+
+This starts a real `cortex-server`, performs concurrent `/v1/cell` writes and
+reads, runs keyword search and ContextPack requests, validates storage, and
+writes:
+
+```text
+target/load-smoke/report.json
+```
+
+The gate fails on request errors, failed validation, missing search/context
+results, or an overall runtime above the configured budget. It is not a
+production stress test; it is a release smoke check that proves the actor-backed
+HTTP surface remains usable under a small burst of real requests.
+
 The ANN section also emits a stable JSON line:
 
 ```text
