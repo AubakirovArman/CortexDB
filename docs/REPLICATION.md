@@ -90,6 +90,11 @@ available snapshot repairs, and stops when the cluster is idle or when a
 snapshot is still pending from the caller-provided snapshot source. This keeps
 the background-task boundary explicit while making the node-rejoin repair path
 testable without a long-running thread.
+`spawn_replication_repair_background_task` owns the leader snapshot, transport,
+progress source, and snapshot source in a bounded OS-thread loop. It supports a
+deterministic stop handle plus finite-run policies for tests and smoke
+deployments, so node-rejoin repair can run as a runtime task instead of being
+manually stitched together by callers.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 

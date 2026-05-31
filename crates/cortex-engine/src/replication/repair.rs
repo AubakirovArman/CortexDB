@@ -10,10 +10,15 @@ use super::recovery::{
 };
 use super::transport::{AppendEntriesRequest, ReplicationTransport};
 
+mod background;
 mod cycle;
 mod snapshot_sender;
 mod worker;
 
+pub use background::{
+    spawn_replication_repair_background_task, ReplicationRepairBackgroundHandle,
+    ReplicationRepairBackgroundPolicy, ReplicationRepairBackgroundReport,
+};
 pub use cycle::{
     execute_replication_repair_schedule, run_replication_repair_cycle,
     ReplicationRepairCycleResult, ReplicationSnapshotRepairRequest,

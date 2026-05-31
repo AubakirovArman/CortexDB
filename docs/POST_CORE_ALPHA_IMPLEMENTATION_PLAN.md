@@ -90,6 +90,9 @@
 - [x] Repair worker loop: `run_replication_repair_worker` ties durable follower
   progress, append repair, snapshot repair sends, and pending-snapshot handoff
   into bounded ticks suitable for a future background task.
+- [x] Background repair task: `spawn_replication_repair_background_task` owns
+  transport/progress/snapshot sources in a stoppable OS-thread loop with
+  finite-run policies for deterministic CI coverage.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
@@ -113,8 +116,8 @@
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
-3. Consensus: move the bounded repair worker behind a real cluster background
-   task and keep expanding crash/restart coverage around node rejoin repair.
+3. Consensus: connect the background repair task to a real multi-node cluster
+   runtime and keep expanding crash/restart coverage around node rejoin repair.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 
