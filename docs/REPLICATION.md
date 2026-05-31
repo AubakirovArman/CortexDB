@@ -69,7 +69,9 @@ catch-up or snapshot install when the lag crosses a configured threshold.
 `repair_lagging_voter` applies that plan for a voter that rejoined after a
 partition: small lag is repaired by sending the missing contiguous
 `AppendEntries`, while large lag returns an `InstallSnapshot` plan instead of
-trying an unsafe oversized append batch.
+trying an unsafe oversized append batch. `repair_lagging_voters` runs the same
+logic across the current voter set and reports how many followers were already
+caught up, repaired by append, or deferred to snapshot install.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 
@@ -174,6 +176,9 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
 - node rejoin repair planning: a lagging voter that rejoins with small lag is
   caught up by missing `AppendEntries`, while lag beyond the configured
   threshold selects snapshot install without mutating the follower log.
+- voter-set repair sweep: caught-up, append-repair, and snapshot-required
+  followers are handled in one deterministic pass while non-voter progress
+  inputs are ignored.
 
 This is not a full distributed consensus certification yet. The remaining
 production work is broader membership rotation crash/restart coverage and
@@ -183,6 +188,6 @@ rejoin/repair handling after network partitions.
 
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS
   terminator for now.
-- Automatic background distributed repair after a node rejoins. The explicit
-  repair primitive exists, but a real scheduler and snapshot sender still need
-  to drive it.
+- Background scheduling and network snapshot sending after a node rejoins. The
+  explicit repair sweep exists, but a real scheduler and snapshot sender still
+  need to drive it continuously.

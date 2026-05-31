@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use crate::distributed::NodeId;
 use crate::error::{EngineError, EngineResult};
 
@@ -14,6 +16,69 @@ pub struct ReplicationRepairResult {
     pub plan: ReplicationRecoveryPlan,
     pub append_sent: bool,
     pub success: bool,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ReplicationRepairSweepResult {
+    pub results: Vec<ReplicationRepairResult>,
+}
+
+impl ReplicationRepairSweepResult {
+    pub fn repaired_count(&self) -> usize {
+        self.results
+            .iter()
+            .filter(|result| result.append_sent && result.success)
+            .count()
+    }
+
+    pub fn snapshot_required_count(&self) -> usize {
+        self.results
+            .iter()
+            .filter(|result| {
+                matches!(
+                    result.plan.action,
+                    ReplicationRecoveryAction::InstallSnapshot { .. }
+                )
+            })
+            .count()
+    }
+
+    pub fn already_caught_up_count(&self) -> usize {
+        self.results
+            .iter()
+            .filter(|result| {
+                matches!(
+                    result.plan.action,
+                    ReplicationRecoveryAction::AlreadyCaughtUp
+                )
+            })
+            .count()
+    }
+}
+
+pub fn repair_lagging_voters<T: ReplicationTransport>(
+    leader: &ConsensusState,
+    transport: &mut T,
+    follower_commits: &BTreeMap<NodeId, LogIndex>,
+    policy: ReplicationRecoveryPolicy,
+) -> EngineResult<ReplicationRepairSweepResult> {
+    let mut results = Vec::new();
+    for target in leader
+        .voters
+        .iter()
+        .copied()
+        .filter(|node| *node != leader.local_node)
+    {
+        let follower_commit = follower_commits.get(&target).copied().unwrap_or_default();
+        results.push(repair_lagging_voter(
+            leader,
+            transport,
+            target,
+            follower_commit,
+            policy,
+        )?);
+    }
+    Ok(ReplicationRepairSweepResult { results })
 }
 
 pub fn repair_lagging_voter<T: ReplicationTransport>(

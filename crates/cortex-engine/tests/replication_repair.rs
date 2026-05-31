@@ -1,8 +1,8 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_engine::{
-    repair_lagging_voter, AppendEntriesRequest, ConsensusState, ElectionState,
-    InMemoryReplicationTransport, LogIndex, NodeId, ReplicationRecoveryAction,
+    repair_lagging_voter, repair_lagging_voters, AppendEntriesRequest, ConsensusState,
+    ElectionState, InMemoryReplicationTransport, LogIndex, NodeId, ReplicationRecoveryAction,
     ReplicationRecoveryPolicy, ReplicationTransport, Term,
 };
 
@@ -108,6 +108,54 @@ fn repair_rejects_non_voter_target() {
     assert!(result.is_err());
 }
 
+#[test]
+fn repair_sweep_handles_caught_up_lagging_and_snapshot_voters() {
+    let voters = BTreeSet::from([NodeId(1), NodeId(2), NodeId(3), NodeId(4)]);
+    let mut leader = ConsensusState::new(NodeId(1), voters.clone());
+    let mut entries = Vec::new();
+    for index in 0..5 {
+        let entry = leader.append_local(format!("entry {index}").into_bytes());
+        leader.record_acks(
+            entry.index,
+            BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)]),
+        );
+        entries.push(entry);
+    }
+    let mut transport = transport_with_followers(&voters);
+    seed_follower(&mut transport, &leader, NodeId(2), &entries, LogIndex(5), 5);
+    seed_follower(
+        &mut transport,
+        &leader,
+        NodeId(3),
+        &entries[..3],
+        LogIndex(3),
+        3,
+    );
+
+    let result = repair_lagging_voters(
+        &leader,
+        &mut transport,
+        &BTreeMap::from([
+            (NodeId(2), LogIndex(5)),
+            (NodeId(3), LogIndex(3)),
+            (NodeId(4), LogIndex(0)),
+            (NodeId(99), LogIndex(5)),
+        ]),
+        ReplicationRecoveryPolicy {
+            snapshot_threshold: 3,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(result.results.len(), 3);
+    assert_eq!(result.already_caught_up_count(), 1);
+    assert_eq!(result.repaired_count(), 1);
+    assert_eq!(result.snapshot_required_count(), 1);
+    assert_eq!(transport.peer_commit(NodeId(2)), Some(LogIndex(5)));
+    assert_eq!(transport.peer_commit(NodeId(3)), Some(LogIndex(5)));
+    assert!(transport.peer_log(NodeId(4)).unwrap().is_empty());
+}
+
 fn transport_with_followers(voters: &BTreeSet<NodeId>) -> InMemoryReplicationTransport {
     let mut transport = InMemoryReplicationTransport::default();
     for node in voters.iter().copied().filter(|node| *node != NodeId(1)) {
@@ -116,4 +164,28 @@ fn transport_with_followers(voters: &BTreeSet<NodeId>) -> InMemoryReplicationTra
         transport.register_peer(state);
     }
     transport
+}
+
+fn seed_follower(
+    transport: &mut InMemoryReplicationTransport,
+    leader: &ConsensusState,
+    target: NodeId,
+    entries: &[cortex_engine::ReplicatedEntry],
+    leader_commit: LogIndex,
+    expected_len: usize,
+) {
+    transport
+        .append_entries(
+            target,
+            AppendEntriesRequest {
+                term: leader.current_term,
+                leader_id: leader.local_node,
+                prev_log_index: LogIndex(0),
+                prev_log_term: Term(0),
+                entries: entries.to_vec(),
+                leader_commit,
+            },
+        )
+        .unwrap();
+    assert_eq!(transport.peer_log(target).unwrap().len(), expected_len);
 }

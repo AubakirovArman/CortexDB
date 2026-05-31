@@ -75,6 +75,9 @@
 - [x] Node rejoin repair primitive: `repair_lagging_voter` catches up small lag
   with missing `AppendEntries` and selects snapshot install when lag exceeds
   the configured threshold.
+- [x] Node rejoin repair sweep: `repair_lagging_voters` walks current voters,
+  reports caught-up/repaired/snapshot-required followers, and ignores non-voter
+  progress inputs.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.

@@ -75,6 +75,8 @@
 - Added `repair_lagging_voter` for explicit node rejoin repair: small lag is
   caught up with missing `AppendEntries`, while lag above policy chooses
   snapshot install without mutating the follower log.
+- Added `repair_lagging_voters` sweep reporting, so a leader can process
+  caught-up, append-repair, and snapshot-required voters in one pass.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

@@ -33,7 +33,10 @@ pub use recovery::{
     plan_replication_recovery, ReplicationRecoveryAction, ReplicationRecoveryPlan,
     ReplicationRecoveryPolicy,
 };
-pub use repair::{repair_lagging_voter, ReplicationRepairResult};
+pub use repair::{
+    repair_lagging_voter, repair_lagging_voters, ReplicationRepairResult,
+    ReplicationRepairSweepResult,
+};
 pub use rotation::{
     resume_joint_membership_rotation, rotate_membership_with_joint_consensus,
     MembershipRotationPhase, MembershipRotationResult, MembershipRotationResumeResult,
