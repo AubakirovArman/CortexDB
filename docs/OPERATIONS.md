@@ -8,6 +8,8 @@ Use one runtime process per database root.
 - `cortex-server` provides HTTP access (`/v1/*`).
 - `cortex-cli` provides local one-shot operations.
 - backups, metrics, recovery scripts, and release gates are in `Makefile`.
+- metrics fields, endpoints, and alert heuristics are documented in
+  [`METRICS.md`](METRICS.md).
 
 ## 2) Start server
 
@@ -82,6 +84,7 @@ Then reopen and validate.
 ## 6) Performance/reliability smoke
 
 - CLI/HTTP smoke: `scripts/smoke_test.sh`
+- Load and metrics smoke: `make load-smoke-check`
 - ANN/recall drift: `make ann-history-regression-check`, `make ann-drift-check`
 - Recovery/fault: `make crash-fault-check`, `make chaos-restart-check`
 

@@ -113,6 +113,8 @@ Offline upgrade, rollback, and format migration policy is documented in
 [`docs/UPGRADE_MIGRATION.md`](docs/UPGRADE_MIGRATION.md).
 Use `make load-smoke-check` for a fast live HTTP write/read/search/context load
 gate that writes `target/load-smoke/report.json`.
+Metrics endpoints, fields, and basic alert heuristics are documented in
+[`docs/METRICS.md`](docs/METRICS.md).
 
 ---
 
