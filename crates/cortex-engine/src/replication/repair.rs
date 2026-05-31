@@ -12,6 +12,7 @@ use super::transport::{AppendEntriesRequest, ReplicationTransport};
 
 mod cycle;
 mod snapshot_sender;
+mod worker;
 
 pub use cycle::{
     execute_replication_repair_schedule, run_replication_repair_cycle,
@@ -20,6 +21,11 @@ pub use cycle::{
 pub use snapshot_sender::{
     send_replication_snapshot_request, ReplicationSnapshotSendPolicy,
     ReplicationSnapshotSendResult, ReplicationSnapshotTransport,
+};
+pub use worker::{
+    run_replication_repair_worker, ReplicationRepairProgressSource,
+    ReplicationRepairSnapshotSource, ReplicationRepairWorkerPolicy, ReplicationRepairWorkerReport,
+    ReplicationRepairWorkerTick,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]

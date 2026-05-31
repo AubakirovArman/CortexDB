@@ -35,10 +35,12 @@ pub use recovery::{
 };
 pub use repair::{
     execute_replication_repair_schedule, plan_replication_repair_sweep, repair_lagging_voter,
-    repair_lagging_voters, run_replication_repair_cycle, send_replication_snapshot_request,
-    ReplicationFollowerProgress, ReplicationRepairCycleResult, ReplicationRepairDecision,
-    ReplicationRepairDecisionKind, ReplicationRepairResult, ReplicationRepairSchedule,
-    ReplicationRepairSweepResult, ReplicationSnapshotRepairRequest, ReplicationSnapshotSendPolicy,
+    repair_lagging_voters, run_replication_repair_cycle, run_replication_repair_worker,
+    send_replication_snapshot_request, ReplicationFollowerProgress, ReplicationRepairCycleResult,
+    ReplicationRepairDecision, ReplicationRepairDecisionKind, ReplicationRepairProgressSource,
+    ReplicationRepairResult, ReplicationRepairSchedule, ReplicationRepairSnapshotSource,
+    ReplicationRepairSweepResult, ReplicationRepairWorkerPolicy, ReplicationRepairWorkerReport,
+    ReplicationRepairWorkerTick, ReplicationSnapshotRepairRequest, ReplicationSnapshotSendPolicy,
     ReplicationSnapshotSendResult, ReplicationSnapshotTransport,
 };
 pub use rotation::{

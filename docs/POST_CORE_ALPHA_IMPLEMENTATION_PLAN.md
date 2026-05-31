@@ -87,6 +87,9 @@
 - [x] Snapshot repair sender: `send_replication_snapshot_request` chunks
   `SnapshotSegment` payloads, requires cumulative follower ACKs, and drives TCP
   peer durable install.
+- [x] Repair worker loop: `run_replication_repair_worker` ties durable follower
+  progress, append repair, snapshot repair sends, and pending-snapshot handoff
+  into bounded ticks suitable for a future background task.
 
 ### 3) Full web UI (не embedded HTML only)
 - [x] Вынести dashboard из Rust string modules в versioned static assets under `crates/cortex-server/assets/dashboard/v1`.
@@ -110,8 +113,8 @@
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
-3. Consensus: keep expanding crash/restart coverage around membership rotation,
-   node rejoin, and distributed repair.
+3. Consensus: move the bounded repair worker behind a real cluster background
+   task and keep expanding crash/restart coverage around node rejoin repair.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 

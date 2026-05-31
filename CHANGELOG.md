@@ -86,6 +86,9 @@
 - Added `send_replication_snapshot_request`, which chunks snapshot repair
   handoff requests, verifies cumulative follower ACKs, and covers TCP durable
   follower install.
+- Added `run_replication_repair_worker`, a bounded repair loop that reads
+  follower progress, performs append repair, sends available snapshot repairs,
+  and returns pending snapshot handoffs without spinning.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,

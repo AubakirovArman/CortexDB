@@ -84,6 +84,12 @@ snapshot requests for the snapshot sender.
 transport by encoding a `SnapshotSegment`, chunking it deterministically, and
 requiring cumulative byte acknowledgements from the follower before the sender
 reports success.
+`run_replication_repair_worker` ties the pieces into a repeatable repair loop:
+each tick reads durable follower progress, executes append repair, sends
+available snapshot repairs, and stops when the cluster is idle or when a
+snapshot is still pending from the caller-provided snapshot source. This keeps
+the background-task boundary explicit while making the node-rejoin repair path
+testable without a long-running thread.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 
