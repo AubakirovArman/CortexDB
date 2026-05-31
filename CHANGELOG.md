@@ -35,6 +35,9 @@
 - Added `make ann-real-embedding-readiness`, a non-secret readiness report for
   real-domain ANN/HNSW baseline prerequisites before endpoint-backed embedding
   runs.
+- Added the first endpoint-backed `investment-projects-v1` real-domain
+  embedding baseline evidence with `BAAI/bge-m3`, 221 vectors, 40 queries, and
+  a validated local baseline package.
 - Added `docs/BETA_DELTA.md` and `make beta-delta-check` to keep the public
   Core Alpha vs beta-readiness statement aligned with production evidence,
   ANN real-embedding readiness, SDK publication, UI, and consensus blockers.

@@ -104,6 +104,18 @@ make ann-real-embedding-package-baseline \
   ANN_REAL_EMBEDDING_RUN_ID=investment-projects-v1
 ```
 
+Current local baseline:
+
+```text
+run_id: investment-projects-v1
+model: BAAI/bge-m3
+dimension: 1024
+vectors: 221
+queries: 40
+production_safe: true
+archive: target/ann/real-embedding/release-baselines/investment-projects-v1.tar.gz
+```
+
 ## Regenerate
 
 `build_corpus.py` fetches current Kazakhstan project metadata from the World

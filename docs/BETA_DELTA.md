@@ -19,6 +19,9 @@ operational limits are documented.
   OpenAPI, backup, single-node performance, tenant recovery, ANN release
   evidence, real-embedding readiness, and replication partition evidence in
   `target/production-evidence/report.json`.
+- Real-domain embedding evidence for `investment_projects` has an endpoint-
+  backed `BAAI/bge-m3` run with a packaged local baseline and
+  `production_safe=true`.
 
 ## Experimental Or Guarded
 
@@ -40,13 +43,12 @@ operational limits are documented.
 ## Blocked Before Beta Promotion
 
 - Real-domain ANN/HNSW baseline now has a local `investment_projects` corpus,
-  query set, and ground truth under
-  `examples/real_domains/investment_projects/`. Beta promotion still requires
-  an embedding endpoint, model configuration, benchmark run, and packaged
-  baseline. The readiness gate is `make ann-real-embedding-readiness`; required
-  environment variables are `CORTEXDB_EMBEDDING_URL` and
-  `CORTEXDB_EMBEDDING_MODEL`, with `CORTEXDB_EMBEDDING_API_KEY` required only
-  when that deployment needs it.
+  query set, ground truth, endpoint-backed benchmark run, and packaged baseline.
+  Beta promotion still requires repeated runs across stable environments and
+  real traffic SLO history. The readiness gate is
+  `make ann-real-embedding-readiness`; required environment variables are
+  `CORTEXDB_EMBEDDING_URL` and `CORTEXDB_EMBEDDING_MODEL`, with
+  `CORTEXDB_EMBEDDING_API_KEY` required only when that deployment needs it.
 - SDK publication needs a regular release train, package registry credentials,
   version lock-step, and changelog/deprecation policy enforcement on every
   public release.

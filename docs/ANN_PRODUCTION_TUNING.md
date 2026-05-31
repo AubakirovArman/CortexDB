@@ -154,9 +154,30 @@ make ann-real-embedding-readiness \
   ANN_REAL_EMBEDDING_READINESS_REPORT=target/ann/real-embedding/investment_projects_readiness.json
 ```
 
-This closes the local corpus/query/ground-truth side of real-domain promotion.
-The remaining promotion step is an endpoint-backed benchmark and packaged
-baseline for the same corpus.
+The first endpoint-backed run for this corpus is `investment-projects-v1` with
+`BAAI/bge-m3` embeddings:
+
+```text
+vectors: 221
+queries: 40
+dimension: 1024
+metric: cosine
+min_recall_q16: 65535
+mean_recall_q16: 65535
+p95_latency_nanos: 5,280,660
+production_safe: true
+```
+
+The package validation command is:
+
+```bash
+make ann-real-embedding-validate-baseline-package \
+  ANN_REAL_EMBEDDING_BASELINE_ARCHIVE=target/ann/real-embedding/release-baselines/investment-projects-v1.tar.gz
+```
+
+This closes the local corpus/query/ground-truth and first endpoint-backed
+baseline side of real-domain promotion. The remaining promotion step is
+repeatable SLO history on stable infrastructure.
 
 Inspect a profile without running a benchmark:
 

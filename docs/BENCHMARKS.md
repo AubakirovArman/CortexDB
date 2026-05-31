@@ -365,6 +365,43 @@ make ann-real-embedding-readiness \
   ANN_REAL_EMBEDDING_READINESS_REPORT=target/ann/real-embedding/investment_projects_readiness.json
 ```
 
-This proves corpus/query/ground-truth readiness. A final release baseline still
-requires running `make ann-real-embedding-benchmark` against a real embedding
-endpoint and packaging the resulting baseline.
+The first endpoint-backed baseline was run as:
+
+```bash
+CORTEXDB_EMBEDDING_URL=https://litellm-cloud.sk-ai.kz/v1/embeddings \
+CORTEXDB_EMBEDDING_MODEL=BAAI/bge-m3 \
+make ann-real-embedding-benchmark \
+  ANN_REAL_EMBEDDING_SOURCE_ROOT=examples/real_domains/investment_projects/corpus \
+  ANN_REAL_EMBEDDING_QUERIES=examples/real_domains/investment_projects/queries/queries.jsonl \
+  ANN_REAL_EMBEDDING_RUN_ID=investment-projects-v1
+```
+
+Result summary:
+
+```text
+run_id: investment-projects-v1
+embedding_model: BAAI/bge-m3
+embedding_dimension: 1024
+vectors: 221
+queries: 40
+metric: cosine
+min_recall_q16: 65535
+mean_recall_q16: 65535
+p95_latency_nanos: 5,280,660
+max_latency_nanos: 5,371,215
+production_safe: true
+```
+
+The local baseline bundle was published and packaged at:
+
+```text
+target/ann/real-embedding/release-baselines/investment-projects-v1/
+target/ann/real-embedding/release-baselines/investment-projects-v1.tar.gz
+```
+
+Validate the package with:
+
+```bash
+make ann-real-embedding-validate-baseline-package \
+  ANN_REAL_EMBEDDING_BASELINE_ARCHIVE=target/ann/real-embedding/release-baselines/investment-projects-v1.tar.gz
+```

@@ -19,9 +19,9 @@ Core Alpha is operational:
   - machine-readable real-embedding readiness report for missing corpus/env/archive prerequisites
   - local `investment_projects` real-domain corpus with documents, chunks,
     40 queries, ground truth, validators, and readiness wiring
+  - endpoint-backed `investment-projects-v1` benchmark using `BAAI/bge-m3`
+    embeddings, with packaged local baseline and `production_safe=true`
 - **Открыто:**
-  - endpoint-backed benchmark and packaged baseline for the
-    `investment_projects` corpus
   - долгоживущие observability и SLA-регрессионные пороги для production traffic
 
 ### 2) Real distributed consensus readiness
