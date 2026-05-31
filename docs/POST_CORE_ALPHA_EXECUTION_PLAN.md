@@ -1,5 +1,9 @@
 # Post-Core Alpha Execution Plan (CortexDB)
 
+> Status note: this is a milestone planning document. For current public status,
+> beta blockers, and what is stable now, use [`BETA_DELTA.md`](BETA_DELTA.md)
+> and [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md).
+
 Current state: Core Alpha data+query path is stable and test-green. Next work should stay roadmap-first, not feature-first.
 
 ## Milestone X — Production-Grade ANN/HNSW

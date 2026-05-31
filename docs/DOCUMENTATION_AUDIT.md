@@ -41,6 +41,8 @@ The repository now has an explicit Context Pack documentation pair:
   memory layer.
 - README and architecture docs now link to the dedicated Context Pack docs and
   this documentation index.
+- Roadmap mirror docs now state that `BETA_DELTA.md` and
+  `REMAINING_EXECUTION_PLAN.md` are the current status sources.
 
 ## Current Source-Of-Truth Docs
 
@@ -55,8 +57,9 @@ The repository now has an explicit Context Pack documentation pair:
 
 - `AQL_V0_3.md` and `aql-v0.3.md` are historical v0.3 references while
   `AQL_V0_4.md` is current.
-- Several roadmap files intentionally overlap. `BETA_DELTA.md` and
-  `REMAINING_EXECUTION_PLAN.md` should be treated as the current public status.
+- Several roadmap files intentionally overlap, but now carry status-source
+  notices. `BETA_DELTA.md` and `REMAINING_EXECUTION_PLAN.md` should be treated
+  as the current public status.
 - Public SDK publishing docs describe the procedure, but real registry
   publication remains beta-stage and credential-dependent.
 - Long-running ANN/HNSW production traffic history remains future work; current

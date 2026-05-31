@@ -1,5 +1,10 @@
 # CortexDB Epic Task Pools
 
+> Status note: this is a backlog taxonomy for the large roadmap. It is not the
+> canonical status page. Use [`BETA_DELTA.md`](BETA_DELTA.md) and
+> [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md) for current
+> stable/experimental/blocked status.
+
 This backlog converts the 200 roadmap epics into execution pools. Each epic
 must move through the same gates before it is considered done:
 

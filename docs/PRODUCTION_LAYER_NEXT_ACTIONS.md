@@ -1,5 +1,10 @@
 # Production Layer Execution Plan (post-Core Alpha)
 
+> Status note: this is an execution snapshot, not the canonical public status.
+> Use [`BETA_DELTA.md`](BETA_DELTA.md) for stable/experimental/beta-blocked
+> classification and [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md)
+> for the active cycle.
+
 ## Цель
 Сделать следующий слой системы production-oriented и при этом не ломать уже закрытый Core Alpha.
 
@@ -51,7 +56,8 @@
    - финальный роутинг и state handling
    - error UX + admin/tenant flows
    - расширенный e2e/visual regression
-2. Развернуть real-embedding ANN baseline run с external corpus и зафиксировать baseline + history.
+2. Повторять local-only real-embedding ANN baseline runs, фиксировать history,
+   and keep GitHub-hosted promotion deferred until beta.
 3. Ускорить distributed consensus hardening:
    - долгоживущие partition/rejoin сценарии
    - операторские diagnostics и restart-safe observability.

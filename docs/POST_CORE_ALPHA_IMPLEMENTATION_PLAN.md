@@ -1,5 +1,9 @@
 # Post-Core Alpha Implementation Plan — Current Status
 
+> Status note: this file records implementation progress by major layer. For
+> current public status and beta blockers, use [`BETA_DELTA.md`](BETA_DELTA.md)
+> and [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md).
+
 Дата фиксации: 2026-05-31
 
 Цель: не просто добавить фичи, а стабильно довести четыре крупных слоя после Core Alpha.

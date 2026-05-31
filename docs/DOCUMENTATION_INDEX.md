@@ -78,14 +78,18 @@ At the time of this audit, the repository tracks 95 project markdown files.
 
 ## Planning And Release
 
+Current status should be read from `BETA_DELTA.md` and
+`REMAINING_EXECUTION_PLAN.md` first. The other roadmap files are useful
+backlogs, snapshots, or deeper planning notes.
+
 - [`CORE_ALPHA.md`](CORE_ALPHA.md) - Core Alpha scope.
 - [`CORE_ALPHA_RELEASE_CHECKLIST.md`](CORE_ALPHA_RELEASE_CHECKLIST.md) - release checklist.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md) - release notes.
-- [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product layers.
-- [`PRODUCTION_LAYER_NEXT_ACTIONS.md`](PRODUCTION_LAYER_NEXT_ACTIONS.md) - next production-layer actions.
-- [`POST_CORE_ALPHA_EXECUTION_PLAN.md`](POST_CORE_ALPHA_EXECUTION_PLAN.md) - execution plan.
-- [`POST_CORE_ALPHA_IMPLEMENTATION_PLAN.md`](POST_CORE_ALPHA_IMPLEMENTATION_PLAN.md) - implementation status.
-- [`POST_CORE_ALPHA_PRODUCT_PLAN.md`](POST_CORE_ALPHA_PRODUCT_PLAN.md) - product plan.
+- [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
+- [`PRODUCTION_LAYER_NEXT_ACTIONS.md`](PRODUCTION_LAYER_NEXT_ACTIONS.md) - dated production-layer snapshot.
+- [`POST_CORE_ALPHA_EXECUTION_PLAN.md`](POST_CORE_ALPHA_EXECUTION_PLAN.md) - milestone execution backlog.
+- [`POST_CORE_ALPHA_IMPLEMENTATION_PLAN.md`](POST_CORE_ALPHA_IMPLEMENTATION_PLAN.md) - implementation progress snapshot.
+- [`POST_CORE_ALPHA_PRODUCT_PLAN.md`](POST_CORE_ALPHA_PRODUCT_PLAN.md) - product backlog.
 
 ## Audit Notes
 

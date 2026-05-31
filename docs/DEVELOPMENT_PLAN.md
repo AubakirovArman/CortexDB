@@ -1,5 +1,9 @@
 # Development Plan
 
+> Status note: this file is a compact engineering plan. The current public
+> status source is [`BETA_DELTA.md`](BETA_DELTA.md); the active work queue is
+> [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md).
+
 Current status (2026-05-31):
 
 ```text

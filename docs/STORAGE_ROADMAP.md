@@ -1,5 +1,10 @@
 # Storage Roadmap
 
+> Status note: this roadmap tracks storage evolution and implementation history.
+> Use [`BETA_DELTA.md`](BETA_DELTA.md) and
+> [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md) for current
+> product status and beta blockers.
+
 ## Implemented
 
 - ACLOG WAL v0 binary codec.

@@ -1,5 +1,11 @@
 # Post-Core Alpha Product Plan
 
+> Status note: this is a product roadmap/backlog. For current status, use
+> [`BETA_DELTA.md`](BETA_DELTA.md) and
+> [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md). Public SDK
+> registry publication remains beta-stage unless a release record says
+> otherwise.
+
 Core Alpha is treated as closed and published. This plan starts after the
 durable single-node core and focuses only on the next product layer.
 
@@ -67,10 +73,10 @@ Tasks:
 1. ✅ Prepare Rust SDK package metadata for crates.io.
 2. ✅ Add Rust SDK examples and docs.rs-ready documentation.
 3. ✅ Prepare Python SDK wheel metadata and typed response models.
-4. ✅ Add PyPI dry-run and tag-gated publish workflow.
+4. ✅ Add PyPI dry-run and tag-gated publish workflow scaffolding.
 5. ✅ Prepare TypeScript SDK package metadata for npm.
 6. ✅ Decide and document ESM/CJS support policy.
-7. ✅ Add npm dry-run and tag-gated publish workflow.
+7. ✅ Add npm dry-run and tag-gated publish workflow scaffolding.
 8. ✅ Align server, OpenAPI, and SDK versions.
 9. ✅ Add SDK integration tests against a running server.
 10. ✅ Add SDK quickstarts to docs.

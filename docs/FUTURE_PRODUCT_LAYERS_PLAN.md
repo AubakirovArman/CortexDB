@@ -1,5 +1,9 @@
 # CortexDB Future Product Plan (Post-Core Alpha)
 
+> Status note: this is a future-product planning document. For current status
+> and beta blockers, use [`BETA_DELTA.md`](BETA_DELTA.md) and
+> [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md).
+
 Status: Core Alpha is stabilized and published. The following are the next execution layers.
 
 ## Current Production Parity Position
@@ -14,8 +18,8 @@ Compared with a classic Redis-like product, CortexDB currently offers:
 
 What is still missing vs Redis at this stage:
 
-- no distributed consensus cluster mode,
-- search and ANN are foundation-grade, not production-tuned,
+- no production-ready distributed consensus cluster mode,
+- search and ANN are guarded, but not promoted to unrestricted production search,
 - no full web UI.
 - backup/restore now has local restore drills, retention pruning, validated
   offsite staging, and repeatable `make backup-drill-check` /
@@ -34,7 +38,9 @@ Goal: make API and SDKs stable enough for external consumers.
 - Add semantic versioned OpenAPI + changelog policy.
 - Keep `openapi.yaml` as source of truth, run sync checks in CI.
 - Expand SDK contract tests against live server.
-- Publish all SDKs through repeatable release pipeline.
+- Keep SDK package dry-runs and tag-gated checks repeatable; public registry
+  publication stays beta-stage until registry credentials and release ownership
+  are in place.
 
 ## Milestone B — Production-Grade ANN/HNSW
 

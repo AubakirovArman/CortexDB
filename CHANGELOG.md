@@ -11,6 +11,8 @@
 - Refreshed public-facing docs to remove stale Core Alpha "candidate" wording,
   avoid production-ready overclaims, and keep SDK publication / real-embedding
   automation described as local/tag-gated until beta.
+- Added source-of-truth notices to roadmap mirror docs so `BETA_DELTA.md` and
+  `REMAINING_EXECUTION_PLAN.md` remain the canonical current-status documents.
 - Added backup restore-drill support through `Database::backup_restore_drill_path`
   and `cortexdb backup-drill`, proving a backup can be restored, opened,
   replayed, and validated before it is trusted operationally.
