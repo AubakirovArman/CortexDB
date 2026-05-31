@@ -144,6 +144,11 @@ Core Alpha is operational:
   - writes `target/cli-product/report.json`
   - covers help/version, doctor, completions, common command docs, and CLI
     golden output markers
+- Run the focused SDK E2E Release evidence gate:
+  - `make sdk-e2e-release-check`
+  - writes `target/sdk-e2e-release/report.json`
+  - covers Rust/Python/TypeScript live SDK compatibility, release metadata,
+    deprecation policy, and quickstart/release docs
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`

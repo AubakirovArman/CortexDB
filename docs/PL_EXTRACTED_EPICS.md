@@ -350,6 +350,8 @@ Evidence:
 
 Goal: prove Rust/Python/TypeScript SDKs against a live local server.
 
+Status: local SDK e2e release gate added; run `make sdk-e2e-release-check`.
+
 Tasks:
 
 1. Add or keep SDK e2e for put/get.
@@ -363,6 +365,12 @@ Acceptance:
 
 - Python, TypeScript, and Rust SDKs pass the same main flows against a local
   server.
+
+Evidence:
+
+- Release process: [`SDK_RELEASE.md`](SDK_RELEASE.md).
+- Quickstart: [`SDK_QUICKSTART.md`](SDK_QUICKSTART.md).
+- Local gate: [`SDK_E2E_RELEASE_EVIDENCE.md`](SDK_E2E_RELEASE_EVIDENCE.md).
 
 ### Epic 16 - Dashboard Product UI
 

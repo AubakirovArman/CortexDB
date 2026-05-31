@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 128 project markdown files.
+At the time of this audit, the repository tracks 129 project markdown files.
 
 ## Start Here
 
@@ -78,6 +78,7 @@ At the time of this audit, the repository tracks 128 project markdown files.
 - [`SDK_QUICKSTART.md`](SDK_QUICKSTART.md) - SDK usage.
 - [`SDK_RELEASE.md`](SDK_RELEASE.md) - package release procedure.
 - [`SDK_DEPRECATION_POLICY.md`](SDK_DEPRECATION_POLICY.md) - SDK deprecation rules.
+- [`SDK_E2E_RELEASE_EVIDENCE.md`](SDK_E2E_RELEASE_EVIDENCE.md) - local Epic 15 evidence gate.
 
 ## Search, ANN, And Benchmarks
 
