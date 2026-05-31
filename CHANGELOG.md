@@ -44,6 +44,9 @@
 - Added `single_node_performance_check` and `make single-node-performance-check`
   to emit a Strict/Balanced single-node engine performance matrix covering
   put/get/search/context/checkpoint/compact/restart lifecycle phases.
+- Added `make tenant-recovery-check`, a real HTTP tenant isolation plus
+  backup/restore gate that verifies tenant payload boundaries before and after
+  restoring the server root.
 - Added file-backed HTTP token rotation through `CORTEXDB_AUTH_TOKENS_FILE`;
   the server re-reads the local policy file per request and fails closed on
   missing, empty, or invalid token files.

@@ -51,13 +51,16 @@ Core Alpha is operational:
    - current gate: `make single-node-performance-check`
    - report: `target/single-node-performance/report.json`
 4. Tighten recovery evidence for production restore drills and tenant isolation incidents.
+   - current gate: `make tenant-recovery-check`
+   - report: `target/tenant-recovery/report.json`
 
 ## Immediate next actions (1–2 недели)
 
 - Run one production evidence sweep:
   - `make production-evidence-sweep`
   - writes `target/production-evidence/report.json`
-  - includes OpenAPI contract, backup drill, ANN release evidence, and
+  - includes OpenAPI contract, backup drill, single-node performance,
+    tenant recovery, ANN release evidence, real-embedding readiness, and
     replication partition evidence logs
 - Publish a short beta delta note:
   - what is stable

@@ -119,6 +119,8 @@ Use `make load-smoke-check` for a fast live HTTP write/read/search/context load
 gate that writes `target/load-smoke/report.json`.
 Use `make single-node-performance-check` for a repeatable local engine
 performance matrix that writes `target/single-node-performance/report.json`.
+Use `make tenant-recovery-check` for a real HTTP tenant isolation plus
+backup/restore recovery gate that writes `target/tenant-recovery/report.json`.
 Metrics endpoints, fields, and basic alert heuristics are documented in
 [`docs/METRICS.md`](docs/METRICS.md).
 

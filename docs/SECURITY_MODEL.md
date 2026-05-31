@@ -23,6 +23,8 @@ anchored around:
    - Optional bearer-token auth is enforced when configured.
    - Token policies are role-scoped (`admin`/`data`) and can be rotated from a file.
    - Tenant ID is validated and used for filesystem realm isolation.
+   - `make tenant-recovery-check` verifies tenant payload boundaries before
+     and after backup/restore using a real HTTP server.
 
 3. **Authorization in query execution**
    - AQL policies and runtime `AgentAllowed` masks prevent scope privilege expansion.
@@ -55,6 +57,25 @@ For non-local deployments, treat Core Alpha as **alpha quality** and:
 - enable audit logging if route-level traceability is needed,
 - gate exposed endpoints with reverse-proxy hardening and rate limiting,
 - run `cortexdb validate`, `cortexdb backup`, and `cortexdb restore` in change control.
+- run `make tenant-recovery-check` before releases that modify tenant routing,
+  backup/restore, or server actor lifecycle.
+
+## Tenant Recovery Evidence
+
+`make tenant-recovery-check` starts a real `cortex-server`, writes the same
+`cell_id` into the `default`, `tenant-alpha`, and `tenant-beta` realms, flushes
+and validates each tenant, verifies invalid tenant IDs fail closed, backs up the
+server root, restores it to a new root, restarts the server, and verifies the
+tenant payloads remain isolated after restore.
+
+The report is written to:
+
+```text
+target/tenant-recovery/report.json
+```
+
+This is still a Core Alpha local tenant boundary, not a zero-trust
+multi-process isolation guarantee.
 
 ## Relation to threat model
 

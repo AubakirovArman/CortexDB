@@ -261,6 +261,7 @@ make sdk-check
 make dashboard-check
 make dashboard-smoke
 make single-node-performance-check
+make tenant-recovery-check
 make production-evidence-sweep
 make ann-release-evidence-check
 make backup-drill-check

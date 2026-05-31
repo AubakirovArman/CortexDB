@@ -48,6 +48,18 @@ fn validate_tenant_id(tenant: &str) -> bool {
 
 Invalid tenants receive HTTP `400 Bad Request` with code `invalid_tenant`.
 
+## Recovery Gate
+
+Run:
+
+```bash
+make tenant-recovery-check
+```
+
+The gate writes `target/tenant-recovery/report.json` and verifies that
+`default`, `tenant-alpha`, and `tenant-beta` remain isolated across
+flush/validate, backup, restore, and server restart.
+
 ## Examples
 
 | Tenant ID | Valid | Directory |
