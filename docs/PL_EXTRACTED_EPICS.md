@@ -328,6 +328,8 @@ Evidence:
 
 Goal: make local diagnosis and operations easier.
 
+Status: local CLI product gate added; run `make cli-product-check`.
+
 Tasks:
 
 1. Add `cortexdb doctor`.
@@ -338,6 +340,11 @@ Tasks:
 Acceptance:
 
 - New users can diagnose install, data, and server problems from CLI.
+
+Evidence:
+
+- CLI contract: [`CLI.md`](CLI.md).
+- Local gate: [`CLI_PRODUCT_EVIDENCE.md`](CLI_PRODUCT_EVIDENCE.md).
 
 ### Epic 15 - SDK E2E And Release Train
 

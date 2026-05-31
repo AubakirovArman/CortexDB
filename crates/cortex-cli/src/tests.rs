@@ -12,6 +12,64 @@ fn help_and_version_commands_work() {
     let help = run(vec!["cortexdb".to_owned(), "--help".to_owned()]).unwrap();
     assert!(help.contains("Usage: cortexdb"));
     assert!(help.contains("ingest-json"));
+    assert!(help.contains("doctor"));
+    assert!(help.contains("completions"));
+
+    let version = run(vec!["cortexdb".to_owned(), "version".to_owned()]).unwrap();
+    assert!(version.starts_with("cortexdb "));
+}
+
+#[test]
+fn doctor_and_completions_commands_work() {
+    let path = unique_path("cortexdb-cli-doctor");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nhealth payload".to_owned(),
+    ])
+    .unwrap();
+
+    let doctor = run(vec![
+        "cortexdb".to_owned(),
+        "doctor".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    assert!(doctor.contains("CortexDB Doctor Report"));
+    assert!(doctor.contains("open: database opened successfully"));
+    assert!(doctor.contains("All checks passed"));
+
+    let bash = run(vec![
+        "cortexdb".to_owned(),
+        "completions".to_owned(),
+        "bash".to_owned(),
+    ])
+    .unwrap();
+    assert!(bash.contains("_cortexdb"));
+    assert!(bash.contains("doctor"));
+    assert!(bash.contains("completions"));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
+fn cli_golden_outputs_are_stable() {
+    let help = run(vec!["cortexdb".to_owned(), "--help".to_owned()]).unwrap();
+    for marker in [
+        "Usage: cortexdb",
+        "Commands:",
+        "doctor",
+        "stats",
+        "validate",
+        "context",
+        "verify",
+        "search-vector-eval",
+    ] {
+        assert!(help.contains(marker), "missing help marker: {marker}");
+    }
 
     let version = run(vec!["cortexdb".to_owned(), "version".to_owned()]).unwrap();
     assert!(version.starts_with("cortexdb "));

@@ -139,6 +139,11 @@ Core Alpha is operational:
   - writes `target/http-contract-ops/report.json`
   - covers auth roles, typed errors, OpenAPI contract, request IDs, rate limit,
     CORS, and audit redaction
+- Run the focused CLI Product evidence gate:
+  - `make cli-product-check`
+  - writes `target/cli-product/report.json`
+  - covers help/version, doctor, completions, common command docs, and CLI
+    golden output markers
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`

@@ -246,8 +246,9 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         Command::Completions { shell } => {
             let mut cmd = <Cli as clap::CommandFactory>::command();
             let name = cmd.get_name().to_owned();
-            clap_complete::generate(shell, &mut cmd, name, &mut std::io::stdout());
-            Ok("".to_owned())
+            let mut output = Vec::new();
+            clap_complete::generate(shell, &mut cmd, name, &mut output);
+            String::from_utf8(output).map_err(|error| error.to_string())
         }
         Command::Version => Ok(format!("cortexdb {}", env!("CARGO_PKG_VERSION"))),
         Command::Put {
