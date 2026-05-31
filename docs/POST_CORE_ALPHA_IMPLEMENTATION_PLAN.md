@@ -1,17 +1,17 @@
 # Post-Core Alpha Implementation Plan — Current Status
 
-Дата фиксации: 2026-05-29
+Дата фиксации: 2026-05-31
 
 Цель: не просто добавить фичи, а стабильно довести четыре крупных слоя после Core Alpha.
 
-## Что уже закрыто (в production-ready sense)
+## Что уже закрыто (в Core Alpha readiness sense)
 
 - Core Alpha pipeline: WAL + MVCC + checkpoint/compact + restart + validation.
 - AQL compiler и Runtime retrieval (bitmap + persisted индексы).
 - ContextPack v1.
 - Search foundation: keyword + vector exact + ANN/HNSW fallback.
 - REST API (v1), OpenAPI, typed response contracts.
-- CLI + SDK (Rust/Python/TypeScript) scaffolds + контракт-тесты.
+- CLI + SDK (Rust/Python/TypeScript) contracts, dry-runs, and smoke checks.
 - HTTP safety controls: static and file-backed bearer token policies,
   per-token AgentView binding, bounded actor backpressure, rate limit, and audit
   sink.
@@ -197,21 +197,20 @@
 - [x] Playwright screenshot artifacts for desktop/mobile dashboard review in CI.
 - [x] Есть минимальный dashboard, static asset routes, and accessibility smoke tests.
 
-### 4) Stable published SDK packages
+### 4) Stable SDK package lifecycle
 - [x] Полный release-процедурный lock-step по версиям `server <-> OpenAPI <-> SDK`.
-- [x] Автономные CI-пайплайны для публичных публикаций в crates.io / npm / PyPI (tag-gated, protected environment).
+- [x] Локальные и tag-gated package preflight checks for crates.io / npm / PyPI artifacts.
+- [ ] Публичная публикация в crates.io / npm / PyPI remains beta-stage and depends on registry credentials plus release-train ownership.
 - [x] Deprecation policy и changelog для breaking changes в SDK contract.
 - [x] Подготовлены release workflows и базовые contract checks (локально, в repo).
 
 ## Непосредственный следующий 2-недельный sprint
 
-1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса
-   с настоящим embedding backend и приложить artifact к release. Tooling now
-   enforces provenance, source-archive integrity, and machine-readable
-   readiness reporting, but the actual model run still needs real
-   endpoint/corpus credentials.
-2. ANN/HNSW: откалибровать SLO thresholds на опубликованном real-domain
-   baseline после первого настоящего прогона.
+1. ANN/HNSW: keep the endpoint-backed `investment-projects-v1` real-domain
+   baseline local-only for Core Alpha; GitHub-hosted promotion is deferred until
+   beta to avoid provider-secret and scheduled-spend risk.
+2. ANN/HNSW: откалибровать SLO thresholds на повторных real-domain baseline
+   прогонах в стабильной среде.
 3. Consensus: keep expanding crash/restart coverage around node rejoin repair
    and durable snapshot handoff.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.

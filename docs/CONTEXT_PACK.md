@@ -4,6 +4,9 @@ Context Pack is the first agent-ready retrieval surface above raw `Retrieve`.
 The v1 contract keeps the current core deterministic while making the JSON
 surface stable enough for SDK and UI consumers:
 
+For the broader technology overview, see
+[`CONTEXT_PACK_TECHNOLOGY.md`](CONTEXT_PACK_TECHNOLOGY.md).
+
 ```text
 AQL RETRIEVE CONTEXT
 -> Engine AQL retrieve

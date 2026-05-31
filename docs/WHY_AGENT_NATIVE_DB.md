@@ -22,4 +22,6 @@ CortexDB does not just return nearest neighbors. It compiles a **Context Pack**:
 3. **Redundancy-Safe:** Uses fixed-point/lexical cosine and Jaccard deduplication to strip out duplicate semantic content.
 4. **Citations First:** Every factual claim is bound to a verifiable provenance marker (`source=file.pdf#page=3`).
 
-This is the foundational memory layer for production AI agents.
+This is the foundational memory layer for agent workflows that need bounded,
+auditable, source-grounded context. The detailed technology overview is in
+[`CONTEXT_PACK_TECHNOLOGY.md`](CONTEXT_PACK_TECHNOLOGY.md).

@@ -4,6 +4,13 @@
 
 ### P1 (Alpha Polish)
 
+- Added `docs/DOCUMENTATION_INDEX.md`,
+  `docs/DOCUMENTATION_AUDIT.md`, and
+  `docs/CONTEXT_PACK_TECHNOLOGY.md` so project markdown has an explicit source
+  map and Context Pack has both a contract doc and a technology overview.
+- Refreshed public-facing docs to remove stale Core Alpha "candidate" wording,
+  avoid production-ready overclaims, and keep SDK publication / real-embedding
+  automation described as local/tag-gated until beta.
 - Added backup restore-drill support through `Database::backup_restore_drill_path`
   and `cortexdb backup-drill`, proving a backup can be restored, opened,
   replayed, and validated before it is trusted operationally.

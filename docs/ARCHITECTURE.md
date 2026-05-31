@@ -207,6 +207,10 @@ candidate cells
 ContextPack prepares source-grounded context for an external agent or model. It
 does not call an LLM inside the database core.
 
+The contract is documented in [`CONTEXT_PACK.md`](CONTEXT_PACK.md), and the
+technology overview is documented in
+[`CONTEXT_PACK_TECHNOLOGY.md`](CONTEXT_PACK_TECHNOLOGY.md).
+
 ## VERIFY FACT
 
 `VERIFY FACT` is deterministic and heuristic. It compares retrieved evidence,

@@ -59,6 +59,11 @@ Or run the full demo: `make demo`
 - `crates/cortex-server`: Async JSON HTTP API built on Axum and Tokio with per-tenant `DatabaseActor` workers over the local blocking database core.
 
 The current AQL query contract is frozen in [`docs/AQL_V0_4.md`](docs/AQL_V0_4.md).
+Context Pack behavior is documented in [`docs/CONTEXT_PACK.md`](docs/CONTEXT_PACK.md),
+with the technology overview in
+[`docs/CONTEXT_PACK_TECHNOLOGY.md`](docs/CONTEXT_PACK_TECHNOLOGY.md).
+The full documentation map is maintained in
+[`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md).
 
 ---
 
