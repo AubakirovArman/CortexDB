@@ -97,20 +97,22 @@ The `metric=budget` and `value=1200000000` lines help VERIFY FACT produce precis
 - **Magnitude parsing** relies on explicit `B`/`M`/`K` suffixes or raw integers.
 - **Currency** must be explicit in the fact or in cell metadata.
 - **No temporal reasoning** — "budget was 1.2B in Q1" and "budget is 1.4B in Q2" are treated as a conflict, not as a timeline update.
-- **No source trust scoring** — all sources are treated equally in alpha.
+- **Source trust is a ranking hint** — `source_trust=` can order otherwise
+  comparable evidence, but it is not a full trust/provenance model.
 
 ## Future (Verification v1)
 
 - `NumericValue` struct with normalized unit representation.
 - Metric-aware comparison (budget vs revenue vs cost).
-- Source trust scoring and evidence ranking.
+- Richer source trust scoring and evidence ranking.
 - Contradiction index output.
 
 ## Quality Gate
 
-`crates/cortex-engine/tests/context_verify_quality.rs` is the shared
-ContextPack/VERIFY regression fixture. It proves that the same public evidence
-set can be packed for an agent and verified deterministically:
+`crates/cortex-engine/fixtures/context_verify_quality_v1.cells` is the shared
+ContextPack/VERIFY regression dataset. The gate in
+`crates/cortex-engine/tests/context_verify_quality.rs` proves that the same
+public evidence set can be packed for an agent and verified deterministically:
 
 - `1.2B KZT` supporting evidence is returned as supporting evidence;
 - `1.4B KZT` evidence for the same project/metric is returned as

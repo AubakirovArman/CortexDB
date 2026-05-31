@@ -1,0 +1,33 @@
+cell_id=1
+scope=project:investments
+status=ready
+type=fact
+source=report-q1.pdf#page=3
+source_trust=0.95
+project=Solar Plant
+metric=budget
+value=1200000000
+currency=KZT
+
+Solar Plant budget is 1.2B KZT for 2025.
+---
+cell_id=2
+scope=project:investments
+status=ready
+type=fact
+source=report-q2.pdf#page=5
+source_trust=0.90
+project=Solar Plant
+metric=budget
+value=1400000000
+currency=KZT
+
+Solar Plant budget is 1.4B KZT for 2025.
+---
+cell_id=3
+scope=tenant:private
+status=ready
+type=fact
+source=private.pdf#page=1
+
+Solar Plant budget is 2.0B KZT for 2025.

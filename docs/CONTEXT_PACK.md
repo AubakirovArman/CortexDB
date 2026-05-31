@@ -76,9 +76,10 @@ RETRIEVE CONTEXT ...
 
 ## Quality Gate
 
-`crates/cortex-engine/tests/context_verify_quality.rs` is the Core Alpha
-ContextPack/VERIFY golden fixture. It seeds a small investment-project corpus
-with:
+`crates/cortex-engine/fixtures/context_verify_quality_v1.cells` is the Core
+Alpha ContextPack/VERIFY golden dataset. The test gate in
+`crates/cortex-engine/tests/context_verify_quality.rs` loads this fixture and
+seeds a small investment-project corpus with:
 
 - supporting evidence for `Solar Plant budget is 1.2B KZT for 2025`;
 - conflicting evidence for `1.4B KZT`;

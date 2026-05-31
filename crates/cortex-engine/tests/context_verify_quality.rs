@@ -5,6 +5,8 @@ use cortex_core::CellId;
 use cortex_engine::verification::{VerificationGuardCode, VerificationStatus};
 use cortex_engine::{scope_id, ContextPackAnomalyCode, ContextPackOptions, Database};
 
+const QUALITY_FIXTURE: &str = include_str!("../fixtures/context_verify_quality_v1.cells");
+
 #[test]
 fn context_and_verify_quality_fixture_is_stable_before_checkpoint() {
     let dir = tempfile::tempdir().unwrap();
@@ -30,49 +32,27 @@ fn context_and_verify_quality_fixture_survives_checkpoint_restart() {
 }
 
 fn seed_quality_fixture(db: &mut Database) {
-    db.put_cell(
-        CellId(1),
-        br#"scope=project:investments
-status=ready
-type=fact
-source=report-q1.pdf#page=3
-source_trust=0.95
-project=Solar Plant
-metric=budget
-value=1200000000
-currency=KZT
+    for (cell_id, payload) in load_quality_fixture() {
+        db.put_cell(cell_id, payload.into_bytes()).unwrap();
+    }
+}
 
-Solar Plant budget is 1.2B KZT for 2025."#
-            .to_vec(),
-    )
-    .unwrap();
-    db.put_cell(
-        CellId(2),
-        br#"scope=project:investments
-status=ready
-type=fact
-source=report-q2.pdf#page=5
-source_trust=0.90
-project=Solar Plant
-metric=budget
-value=1400000000
-currency=KZT
-
-Solar Plant budget is 1.4B KZT for 2025."#
-            .to_vec(),
-    )
-    .unwrap();
-    db.put_cell(
-        CellId(3),
-        br#"scope=tenant:private
-status=ready
-type=fact
-source=private.pdf#page=1
-
-Solar Plant budget is 2.0B KZT for 2025."#
-            .to_vec(),
-    )
-    .unwrap();
+fn load_quality_fixture() -> Vec<(CellId, String)> {
+    QUALITY_FIXTURE
+        .trim()
+        .split("\n---\n")
+        .map(|record| {
+            let (header, payload) = record
+                .split_once('\n')
+                .expect("quality fixture records must include payload");
+            let id = header
+                .strip_prefix("cell_id=")
+                .expect("quality fixture records must start with cell_id=")
+                .parse::<u64>()
+                .expect("quality fixture cell_id must be u64");
+            (CellId(id), payload.to_owned())
+        })
+        .collect()
 }
 
 fn assert_context_quality(db: &Database) {
