@@ -179,6 +179,40 @@ This closes the local corpus/query/ground-truth and first endpoint-backed
 baseline side of real-domain promotion. The remaining promotion step is
 repeatable SLO history on stable infrastructure.
 
+## Scheduled Real-Domain Gate
+
+The checked-in `investment_projects` corpus has a dedicated GitHub Actions
+workflow:
+
+```text
+.github/workflows/ann-investment-projects-real-embedding.yml
+```
+
+It runs weekly and can also be started manually from GitHub Actions. The
+workflow validates the corpus, runs readiness, executes the endpoint-backed
+benchmark, packages the baseline, validates the package, and uploads the full
+evidence bundle as a workflow artifact.
+
+Required repository secrets:
+
+```text
+CORTEXDB_EMBEDDING_URL
+CORTEXDB_EMBEDDING_API_KEY
+```
+
+Manual dispatch inputs:
+
+```text
+run_id_prefix: investment-projects
+embedding_model: BAAI/bge-m3
+slo_profile: balanced
+```
+
+Use this workflow to build repeatable SLO history. A single
+`production_safe=true` report proves the configured gate passed for one run;
+the scheduled history proves whether recall and latency stay stable across
+commits, runner environments, and embedding endpoint changes.
+
 Inspect a profile without running a benchmark:
 
 ```bash

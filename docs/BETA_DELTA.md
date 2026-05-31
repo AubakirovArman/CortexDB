@@ -21,7 +21,8 @@ operational limits are documented.
   `target/production-evidence/report.json`.
 - Real-domain embedding evidence for `investment_projects` has an endpoint-
   backed `BAAI/bge-m3` run with a packaged local baseline and
-  `production_safe=true`.
+  `production_safe=true`. A dedicated scheduled/manual GitHub Actions workflow
+  now repeats the same corpus gate and uploads evidence artifacts.
 
 ## Experimental Or Guarded
 
@@ -45,10 +46,10 @@ operational limits are documented.
 - Real-domain ANN/HNSW baseline now has a local `investment_projects` corpus,
   query set, ground truth, endpoint-backed benchmark run, and packaged baseline.
   Beta promotion still requires repeated runs across stable environments and
-  real traffic SLO history. The readiness gate is
-  `make ann-real-embedding-readiness`; required environment variables are
-  `CORTEXDB_EMBEDDING_URL` and `CORTEXDB_EMBEDDING_MODEL`, with
-  `CORTEXDB_EMBEDDING_API_KEY` required only when that deployment needs it.
+  real traffic SLO history. The repeatable gate is
+  `.github/workflows/ann-investment-projects-real-embedding.yml`; required
+  secrets are `CORTEXDB_EMBEDDING_URL` and `CORTEXDB_EMBEDDING_API_KEY`, and the
+  embedding model is passed as `CORTEXDB_EMBEDDING_MODEL` by workflow input.
 - SDK publication needs a regular release train, package registry credentials,
   version lock-step, and changelog/deprecation policy enforcement on every
   public release.

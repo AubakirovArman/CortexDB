@@ -38,6 +38,9 @@
 - Added the first endpoint-backed `investment-projects-v1` real-domain
   embedding baseline evidence with `BAAI/bge-m3`, 221 vectors, 40 queries, and
   a validated local baseline package.
+- Added a scheduled/manual GitHub Actions gate that reruns the checked-in
+  `investment_projects` real-domain embedding benchmark and uploads packaged
+  ANN/HNSW evidence artifacts.
 - Added `docs/BETA_DELTA.md` and `make beta-delta-check` to keep the public
   Core Alpha vs beta-readiness statement aligned with production evidence,
   ANN real-embedding readiness, SDK publication, UI, and consensus blockers.

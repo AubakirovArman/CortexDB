@@ -116,6 +116,15 @@ production_safe: true
 archive: target/ann/real-embedding/release-baselines/investment-projects-v1.tar.gz
 ```
 
+Scheduled evidence:
+
+```text
+.github/workflows/ann-investment-projects-real-embedding.yml
+```
+
+The workflow needs repository secrets `CORTEXDB_EMBEDDING_URL` and
+`CORTEXDB_EMBEDDING_API_KEY`. It runs weekly and can be dispatched manually.
+
 ## Regenerate
 
 `build_corpus.py` fetches current Kazakhstan project metadata from the World
