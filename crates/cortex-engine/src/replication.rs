@@ -15,6 +15,7 @@ mod log_matching;
 mod membership;
 mod peer;
 mod recovery;
+mod rotation;
 mod snapshot;
 mod tcp;
 mod transport;
@@ -30,6 +31,9 @@ pub use peer::{ReplicationPeerServer, ReplicationPeerState};
 pub use recovery::{
     plan_replication_recovery, ReplicationRecoveryAction, ReplicationRecoveryPlan,
     ReplicationRecoveryPolicy,
+};
+pub use rotation::{
+    rotate_membership_with_joint_consensus, MembershipRotationPhase, MembershipRotationResult,
 };
 pub use snapshot::{
     assemble_snapshot_chunks, decode_snapshot_chunk, decode_snapshot_segment,

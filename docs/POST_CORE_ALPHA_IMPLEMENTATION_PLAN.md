@@ -63,6 +63,9 @@
   recovered from `replication.aclog` using only committed config entries.
 - [x] Joint-consensus membership safety primitive: joint config entries encode
   old/new voter sets and commit only after majorities from both sets.
+- [x] Automated membership rotation API: catches up voters, appends durable
+  joint/stable membership entries, and only publishes the final voter set after
+  joint-consensus commit.
 - [x] Crash/restart partition matrix seed coverage: partitioned leader restart
   preserves uncommitted entries without committing them, and committed leader
   restart catches up healed followers with the recovered commit index.
@@ -89,8 +92,8 @@
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса.
 2. ANN/HNSW: добавить долгий latency history gate вне быстрых unit тестов.
-3. Consensus: automate membership rotation on top of the joint-consensus
-   primitive and keep expanding crash/restart coverage around rejoin/repair.
+3. Consensus: keep expanding crash/restart coverage around membership rotation,
+   node rejoin, and distributed repair.
 4. UI: начать multi-page standalone app после текущих dashboard screenshot artifacts.
 5. SDK: перейти к следующему продуктному слою после закрытия release/deprecation gates.
 

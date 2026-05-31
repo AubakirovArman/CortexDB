@@ -64,6 +64,9 @@
   `MembershipConfig`, `membership_entry`, and committed membership recovery.
 - Added joint-consensus membership safety primitives: joint entries preserve old
   and new voter sets, and commit requires majorities from both sets.
+- Added automated joint-consensus membership rotation that catches up voters,
+  persists joint/stable config entries, recovers the final voter set after
+  restart, and refuses stable publication without joint quorum.
 - Added crash/restart partition seed coverage for replicated logs: uncommitted
   partitioned writes stay uncommitted after restart until heal, and committed
   restarted leaders catch up healed followers.

@@ -118,10 +118,16 @@ a joint entry committed after both the old voter set and the new voter set have
 their own majorities. This prevents a change from being accepted by only one
 side of a split reconfiguration.
 
-This is still not a full automated Raft membership implementation. CortexDB now
-has the durable entry format and the majority-safety primitive; automated
-rotation orchestration and removed-node lifecycle handling remain post-Core
-Alpha work.
+`rotate_membership_with_joint_consensus` is the first automated rotation
+orchestrator. It catches up old/new voters, appends a durable joint membership
+entry, requires both old and new majorities, appends the final stable membership
+entry, and only then publishes the new voter set locally. If joint consensus is
+not reached, the stable config is not appended.
+
+This is still not a full Raft membership implementation. CortexDB now has the
+durable entry format, majority-safety primitive, and a two-phase orchestrator;
+removed-node lifecycle handling and distributed rejoin/repair remain
+post-Core Alpha work.
 
 ## Failure-Injection Coverage
 
@@ -151,10 +157,13 @@ under `crates/cortex-engine/tests/replication_failure_injection.rs`. It covers:
 - committed membership rotation surviving replication-log restart.
 - joint-consensus membership entries requiring majorities from both old and new
   voter sets before commit.
+- automated membership rotation that commits joint and stable entries durably,
+  recovers the final voter set after restart, and refuses to publish a stable
+  config when the joint quorum is unavailable.
 
 This is not a full distributed consensus certification yet. The remaining
-production work is automated membership rotation and broader rejoin/repair
-coverage after network partitions.
+production work is broader membership rotation crash/restart coverage and
+rejoin/repair handling after network partitions.
 
 ## Not Yet
 

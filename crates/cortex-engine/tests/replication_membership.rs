@@ -2,8 +2,10 @@ use std::collections::BTreeSet;
 
 use cortex_engine::{
     decode_joint_membership_entry, decode_membership_entry, joint_membership_entry,
-    membership_entry, recover_membership_config, recover_voting_config, ConsensusState, LogIndex,
-    MembershipConfig, NodeId, ReplicatedEntry, ReplicationLog, Term, VotingConfig,
+    membership_entry, recover_membership_config, recover_voting_config,
+    rotate_membership_with_joint_consensus, ConsensusState, ElectionState,
+    InMemoryReplicationTransport, LogIndex, MembershipConfig, MembershipRotationPhase, NodeId,
+    ReplicatedEntry, ReplicationLog, Term, VotingConfig,
 };
 
 #[test]
@@ -197,4 +199,96 @@ fn recover_consensus_with_committed_joint_config_uses_union_voters() {
         recovered.voters,
         BTreeSet::from([NodeId(1), NodeId(2), NodeId(3), NodeId(4), NodeId(5)])
     );
+}
+
+#[test]
+fn automated_membership_rotation_commits_joint_then_stable_config() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("replication.aclog");
+    let initial = BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)]);
+    let rotated = BTreeSet::from([NodeId(1), NodeId(3), NodeId(4), NodeId(5)]);
+    let mut leader = ConsensusState::new(NodeId(1), initial.clone());
+    let mut transport = transport_with_peers(&BTreeSet::from([
+        NodeId(1),
+        NodeId(2),
+        NodeId(3),
+        NodeId(4),
+        NodeId(5),
+    ]));
+    let log = ReplicationLog::open(&path).unwrap();
+    let seed = leader.append_local(b"existing committed entry".to_vec());
+    log.append(&seed).unwrap();
+    assert!(
+        leader
+            .record_acks(seed.index, BTreeSet::from([NodeId(1), NodeId(2)]))
+            .committed
+    );
+
+    let result =
+        rotate_membership_with_joint_consensus(&mut leader, &mut transport, &log, rotated.clone())
+            .unwrap();
+    log.close().unwrap();
+    let recovered =
+        ReplicationLog::recover_consensus_with_membership(&path, NodeId(1), initial, LogIndex(3))
+            .unwrap();
+
+    assert_eq!(result.phase, MembershipRotationPhase::Complete);
+    assert_eq!(result.joint_entry.index, LogIndex(2));
+    assert_eq!(result.stable_entry.unwrap().index, LogIndex(3));
+    assert_eq!(result.final_voters, rotated);
+    assert_eq!(leader.voters, result.final_voters);
+    assert_eq!(leader.commit_index, LogIndex(3));
+    assert_eq!(recovered.voters, leader.voters);
+    assert_eq!(transport.peer_commit(NodeId(4)), Some(LogIndex(2)));
+    assert_eq!(transport.peer_log(NodeId(4)).unwrap().len(), 3);
+}
+
+#[test]
+fn automated_membership_rotation_does_not_publish_stable_config_without_joint_quorum() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("replication.aclog");
+    let initial = BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)]);
+    let rotated = BTreeSet::from([NodeId(1), NodeId(4), NodeId(5)]);
+    let mut leader = ConsensusState::new(NodeId(1), initial.clone());
+    let mut transport = transport_with_peers(&BTreeSet::from([
+        NodeId(1),
+        NodeId(2),
+        NodeId(3),
+        NodeId(4),
+        NodeId(5),
+    ]));
+    transport.set_partitions(&[
+        BTreeSet::from([NodeId(1), NodeId(2)]),
+        BTreeSet::from([NodeId(3), NodeId(4), NodeId(5)]),
+    ]);
+    let log = ReplicationLog::open(&path).unwrap();
+
+    let result =
+        rotate_membership_with_joint_consensus(&mut leader, &mut transport, &log, rotated).unwrap();
+    log.close().unwrap();
+    let entries = ReplicationLog::recover_entries(&path).unwrap();
+    let recovered =
+        ReplicationLog::recover_consensus_with_membership(&path, NodeId(1), initial, LogIndex(0))
+            .unwrap();
+
+    assert_eq!(result.phase, MembershipRotationPhase::JointNotCommitted);
+    assert!(result.stable_entry.is_none());
+    assert_eq!(result.joint_decision.old_acknowledgements, 2);
+    assert_eq!(result.joint_decision.new_acknowledgements, 1);
+    assert_eq!(leader.commit_index, LogIndex(0));
+    assert_eq!(entries.len(), 1);
+    assert_eq!(
+        recovered.voters,
+        BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)])
+    );
+}
+
+fn transport_with_peers(nodes: &BTreeSet<NodeId>) -> InMemoryReplicationTransport {
+    let mut transport = InMemoryReplicationTransport::default();
+    for node in nodes {
+        let mut state = ElectionState::new(*node, nodes.clone());
+        state.current_term = Term(1);
+        transport.register_peer(state);
+    }
+    transport
 }
