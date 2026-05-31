@@ -41,6 +41,9 @@
 - Added `docs/PUBLIC_CLAIMS_POLICY.md` and `make public-claims-check` to keep
   README/API/status wording aligned with the current Core Alpha, experimental,
   blocked, and non-production boundaries.
+- Added `single_node_performance_check` and `make single-node-performance-check`
+  to emit a Strict/Balanced single-node engine performance matrix covering
+  put/get/search/context/checkpoint/compact/restart lifecycle phases.
 - Added file-backed HTTP token rotation through `CORTEXDB_AUTH_TOKENS_FILE`;
   the server re-reads the local policy file per request and fails closed on
   missing, empty, or invalid token files.

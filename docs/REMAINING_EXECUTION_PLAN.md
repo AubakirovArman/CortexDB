@@ -48,6 +48,8 @@ Core Alpha is operational:
 1. Finalize production-style error taxonomy and security model docs tied to API/CLI behavior.
 2. Close remaining self-inconsistent docs (`pl.md` и roadmap mirrors) на уровне статуса: done/partial/blocked.
 3. Finish load/performance matrix for single-node (before consensus expansion).
+   - current gate: `make single-node-performance-check`
+   - report: `target/single-node-performance/report.json`
 4. Tighten recovery evidence for production restore drills and tenant isolation incidents.
 
 ## Immediate next actions (1–2 недели)

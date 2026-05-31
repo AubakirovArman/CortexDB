@@ -82,6 +82,26 @@ results, or an overall runtime above the configured budget. It is not a
 production stress test; it is a release smoke check that proves the actor-backed
 HTTP surface remains usable under a small burst of real requests.
 
+For a repeatable single-node engine performance matrix:
+
+```bash
+make single-node-performance-check
+```
+
+This runs the `single_node_performance_check` harness in release mode against a
+temporary local database and writes:
+
+```text
+target/single-node-performance/report.json
+```
+
+The report includes Strict and Balanced durability profiles and measures the
+same core lifecycle phases: open, batch put, latest reads, keyword search,
+ContextPack, checkpoint, compact, close, restart open, and validation. This is
+not a production SLA benchmark; it is a release artifact that proves the local
+single-node engine path still has a complete machine-readable performance
+matrix before consensus or distributed rollout work expands the runtime.
+
 The ANN section also emits a stable JSON line:
 
 ```text
