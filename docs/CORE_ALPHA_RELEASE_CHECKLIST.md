@@ -29,6 +29,8 @@ every required row is green on `main`.
 | Atomic audit | `ATOMIC_WRITE_AUDIT.md` and `STORAGE_FORMATS.md` match the current writers/readers. |
 | Benchmark baseline | `cargo bench -p cortex-engine --bench core_baseline` runs without external services. |
 | Dashboard smoke | `make dashboard-check`, `make dashboard-smoke`, and `make dashboard-screenshots` pass; CI uploads desktop/mobile dashboard artifacts. |
+| Binary release package | `make binary-release-check` builds release `cortexdb` and `cortex-server` binaries, packages them into a `.tar.gz`, validates `package_manifest.json`, and writes a `.sha256` checksum file. |
+| Migration compatibility fixture | `make migration-compatibility-check` validates `fixtures/migration/compatibility_matrix_v1.json` for storage/API/SDK boundaries, old-format markers, and upgrade/downgrade proof files. |
 | ANN fixture gate | `make ann-fixture-check`, `make ann-drift-check`, `make ann-external-check`, `make ann-metric-matrix-check`, and `make ann-corpus-smoke-check` pass; CI uploads `target/ann/*report.json`, `target/ann/corpus-runs/**`, and `target/ann/release-baselines/**`. |
 | ANN release package | `make ann-release-evidence-check` produces and validates `.tar.gz` release assets for the smoke corpus and demo-domain corpus, with `package_manifest.json`, SHA-256 file checksums, `history.json`, generated ground truth, and `production_safe=true`. |
 | Real embedding readiness | `make ann-real-embedding-readiness` writes `target/ann/real-embedding/readiness.json` with `ready=true` or explicit blocker codes for corpus/query/env/source-archive prerequisites. |
@@ -48,13 +50,14 @@ git push origin v0.1.0-core-alpha
 Pushing a `v*` tag also runs the `Release` workflow. `make release-check`
 invokes `make production-evidence-sweep`, `make backup-offsite-check`,
 `make crash-fault-check`, `make chaos-restart-check`,
-`make replication-lifecycle-check`, `make smoke-test`, and
+`make replication-lifecycle-check`, `make binary-release-check`, `make smoke-test`, and
 `make sdk-smoke-test`. Those gates validate OpenAPI contracts, ANN baseline
 archives, backup/restore drill evidence, replication partition and lifecycle
-evidence, offsite backup staging, crash/fault repair evidence, process-level
-kill/restart evidence, and final CLI/SDK smoke paths before the tag should be
-cut. The workflow attaches the ANN `.tar.gz` baseline package to the GitHub
-Release as a durable release asset.
+evidence, binary tarball packaging/checksums, offsite backup staging,
+crash/fault repair evidence, process-level kill/restart evidence, and final
+CLI/SDK smoke paths before the tag should be cut. The workflow attaches the ANN
+`.tar.gz` baseline package and Linux/macOS binary `.tar.gz` packages to the
+GitHub Release as durable release assets.
 
 ## Latest Local Gate Evidence
 

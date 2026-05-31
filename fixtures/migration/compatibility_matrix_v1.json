@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "release": "v0.1.0-core-alpha",
+  "storage_formats": [
+    {
+      "marker": "ACLOGv0",
+      "file": ".aclog",
+      "compatibility": "current",
+      "proof": ["crates/cortex-storage/tests/wal_tests.rs"]
+    },
+    {
+      "marker": "ACS1",
+      "file": ".acs",
+      "compatibility": "current",
+      "proof": ["crates/cortex-storage/tests/segment_index_tests.rs"]
+    },
+    {
+      "marker": "ACB0",
+      "file": ".acb",
+      "compatibility": "current",
+      "proof": ["crates/cortex-storage/tests/segment_index_tests.rs"]
+    },
+    {
+      "marker": "ACI2",
+      "file": ".aci",
+      "compatibility": "current",
+      "proof": ["crates/cortex-storage/tests/lexical_index_tests.rs"]
+    },
+    {
+      "marker": "ACI0",
+      "file": ".aci",
+      "compatibility": "read-only compatible",
+      "proof": ["crates/cortex-storage/tests/lexical_index_tests.rs"]
+    },
+    {
+      "marker": "ACI1",
+      "file": ".aci",
+      "compatibility": "read-only compatible",
+      "proof": ["crates/cortex-storage/tests/lexical_index_tests.rs"]
+    },
+    {
+      "marker": "ACV0",
+      "file": ".acv",
+      "compatibility": "current",
+      "proof": ["crates/cortex-storage/tests/vector_index_tests.rs"]
+    },
+    {
+      "marker": "ACH0",
+      "file": ".ach",
+      "compatibility": "current",
+      "proof": ["crates/cortex-storage/tests/hnsw_graph_tests.rs"]
+    },
+    {
+      "marker": "ACM0",
+      "file": ".acm",
+      "compatibility": "current",
+      "proof": ["crates/cortex-storage/tests/segment_index_tests.rs"]
+    }
+  ],
+  "compatibility_boundaries": [
+    {
+      "boundary": "storage",
+      "gate": "cargo test -p cortex-storage",
+      "proof": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+    },
+    {
+      "boundary": "api",
+      "gate": "make openapi-contract-check",
+      "proof": ["docs/openapi.yaml", "docs/API_COMPATIBILITY.md"]
+    },
+    {
+      "boundary": "sdk",
+      "gate": "make sdk-contract-check",
+      "proof": ["docs/SDK_RELEASE.md", "scripts/check_sdk_contract.py"]
+    }
+  ],
+  "upgrade_matrix": [
+    {
+      "from": "v0.1.0-core-alpha",
+      "to": "current",
+      "mode": "offline backup-drill, install new binary, validate, smoke",
+      "downgrade": "restore immutable pre-upgrade backup; no in-place downgrade",
+      "proof": ["docs/UPGRADE_MIGRATION.md"]
+    }
+  ],
+  "migration_notes": [
+    {
+      "change_type": "storage",
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"],
+      "required_gates": ["make migration-policy-check", "make migration-compatibility-check"]
+    },
+    {
+      "change_type": "api_or_sdk",
+      "required_docs": ["docs/API_CHANGELOG.md", "docs/API_COMPATIBILITY.md"],
+      "required_gates": ["make openapi-contract-check", "make sdk-contract-check"]
+    }
+  ]
+}

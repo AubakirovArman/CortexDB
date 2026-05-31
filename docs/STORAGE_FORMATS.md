@@ -6,6 +6,9 @@ little-endian integer fields, and CRC32C validation.
 Upgrade, rollback, and migration rules are defined in
 [`UPGRADE_MIGRATION.md`](UPGRADE_MIGRATION.md). Any breaking storage format
 change requires a migration note there and in the target release notes.
+Machine-readable release compatibility is tracked in
+`fixtures/migration/compatibility_matrix_v1.json` and checked by
+`make migration-compatibility-check`.
 
 ## Version Policy
 

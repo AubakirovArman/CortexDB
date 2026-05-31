@@ -290,6 +290,13 @@ make sdk-check
 Manual tag-gated package publishing is documented in
 [`docs/SDK_RELEASE.md`](docs/SDK_RELEASE.md).
 
+Binary tarball packaging for `cortexdb` and `cortex-server` is documented in
+[`docs/BINARY_RELEASES.md`](docs/BINARY_RELEASES.md):
+
+```bash
+make binary-release-check
+```
+
 ---
 
 ## Quality & Release Verification Gates

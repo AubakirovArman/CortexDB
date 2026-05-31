@@ -32,6 +32,12 @@ Core Alpha is the first durable single-node CortexDB prototype.
   manual tag-gated publishing for PyPI, npm, and crates.io.
 - Release workflow builds the ANN smoke baseline package and attaches its
   checksum-backed `.tar.gz` to GitHub Releases for `v*` tags.
+- Release workflow also builds Linux/macOS `cortexdb` and `cortex-server`
+  binary tarballs with `package_manifest.json`, `SHA256SUMS`, install notes,
+  and external `.sha256` checksum files.
+- Migration compatibility is tracked by
+  `fixtures/migration/compatibility_matrix_v1.json` and gated by
+  `make migration-compatibility-check`.
 - Experimental replication now enforces AppendEntries previous-log matching,
   conflict suffix truncation, and follower commit-index clamping in local
   transport tests.

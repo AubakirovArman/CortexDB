@@ -16,6 +16,7 @@ REQUIRED_POLICY_TERMS = (
     "migration note",
     "read-only compatible",
     "make migration-policy-check",
+    "make migration-compatibility-check",
     "ACLOGv0",
     "ACS1",
     "ACB0",
@@ -58,6 +59,8 @@ def main() -> int:
 
     if "migration-policy-check:" not in makefile:
         errors.append("Makefile: missing migration-policy-check target")
+    if "migration-compatibility-check:" not in makefile:
+        errors.append("Makefile: missing migration-compatibility-check target")
     if "$(MAKE) migration-policy-check" not in makefile:
         errors.append("Makefile: release/alpha gates must run migration-policy-check")
     if "make migration-policy-check" not in workflow:

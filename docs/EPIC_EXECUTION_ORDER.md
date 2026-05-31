@@ -227,7 +227,7 @@ Closed evidence:
 
 ## Epic 6 - Product UI And Release Surface Hardening
 
-Status: partial.
+Status: done.
 
 Goal: harden the user-facing release surface before deeper production claims.
 
@@ -262,6 +262,19 @@ Done when:
 - Dashboard release gates pass.
 - Binary artifacts are generated and checksummed.
 - Migration compatibility tests exist for storage/API/SDK boundaries.
+
+Closed evidence:
+
+- `make dashboard-check`, `make dashboard-release-check`, `make
+  dashboard-smoke`, and `make dashboard-screenshots` passed locally.
+- `make binary-release-check` builds `cortexdb` and `cortex-server` release
+  binaries, packages `target/release-artifacts/*.tar.gz`, writes a `.sha256`
+  file, and validates the archive manifest/checksums.
+- `.github/workflows/release.yml` uploads Linux/macOS binary tarballs and
+  checksum files for `v*` tags.
+- `make migration-compatibility-check` validates
+  `fixtures/migration/compatibility_matrix_v1.json` for storage/API/SDK
+  compatibility boundaries, legacy format markers, and upgrade/downgrade proof.
 
 ## Epic 7 - Consensus Hardening
 

@@ -86,3 +86,51 @@ jobs:
           path: |
             target/ann/release-baselines/*.tar.gz
             target/ann/demo-domain-corpus/release-baselines/*.tar.gz
+
+  release-binaries:
+    name: Publish binary release artifacts
+    needs: release-ann-baseline
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - name: Build and validate binary archive
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          safe_tag="$(printf '%s' "$tag" | tr -c 'A-Za-z0-9._-' '-')"
+          os_name="$(uname -s | tr '[:upper:]' '[:lower:]')"
+          if [ "$os_name" = "darwin" ]; then os_name="macos"; fi
+          platform="${os_name}-$(uname -m)"
+          package_id="cortexdb-${safe_tag}-${platform}"
+          archive="target/release-artifacts/${package_id}.tar.gz"
+          echo "RELEASE_TAG=$tag" >> "$GITHUB_ENV"
+          echo "BINARY_RELEASE_ARCHIVE=$archive" >> "$GITHUB_ENV"
+          make binary-release-check \
+            BINARY_RELEASE_ID="$package_id" \
+            BINARY_RELEASE_PLATFORM="$platform" \
+            BINARY_RELEASE_VERSION="$tag" \
+            BINARY_RELEASE_ARCHIVE="$archive"
+
+      - name: Publish GitHub Release binary asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$RELEASE_TAG" "$BINARY_RELEASE_ARCHIVE" "${BINARY_RELEASE_ARCHIVE}.sha256" --clobber
+
+      - name: Upload workflow artifact copy
+        uses: actions/upload-artifact@v7
+        with:
+          name: cortexdb-binaries-${{ matrix.os }}
+          path: |
+            target/release-artifacts/*.tar.gz
+            target/release-artifacts/*.sha256

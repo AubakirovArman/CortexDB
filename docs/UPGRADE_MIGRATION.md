@@ -63,6 +63,7 @@ For Core Alpha, upgrades are offline and single-node:
    make openapi-contract-check
    make sdk-contract-check
    make migration-policy-check
+   make migration-compatibility-check
    ```
 
 ## Rollback Workflow
@@ -120,6 +121,19 @@ make migration-policy-check
 
 It verifies that this policy exists, names the current storage markers, includes
 backup/restore/rollback instructions, and remains wired into the release check.
+
+The compatibility fixture gate is:
+
+```bash
+make migration-compatibility-check
+```
+
+It validates `fixtures/migration/compatibility_matrix_v1.json`, including:
+
+- storage/API/SDK compatibility boundaries;
+- current and old read-only format markers;
+- an offline upgrade/downgrade matrix;
+- proof files that back each compatibility claim.
 
 Core Alpha release candidates should pass:
 

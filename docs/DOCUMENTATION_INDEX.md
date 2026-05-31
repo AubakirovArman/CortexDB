@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 101 project markdown files.
+At the time of this audit, the repository tracks 103 project markdown files.
 
 ## Start Here
 
@@ -71,6 +71,7 @@ At the time of this audit, the repository tracks 101 project markdown files.
 ## Product Surfaces
 
 - [`DASHBOARD_UI.md`](DASHBOARD_UI.md) - dashboard status and gates.
+- [`BINARY_RELEASES.md`](BINARY_RELEASES.md) - binary tarball packaging and install flow.
 - [`INGESTION.md`](INGESTION.md) - ingestion behavior.
 - [`AGENT_MEMORY.md`](AGENT_MEMORY.md) - local agent memory.
 - [`METRICS.md`](METRICS.md) - metrics endpoint and fields.
