@@ -54,7 +54,7 @@ be treated as future work.
 | SDK contract drift | Python, TypeScript, and Rust live SDK smoke checks. | Implemented and gated. |
 | Browser cross-origin API calls | CORS disabled by default; optional exact-origin allowlist via `CORTEXDB_CORS_ALLOW_ORIGIN`. | Implemented for one trusted origin. |
 | Request floods against the local API | Optional process-wide fixed-window limit via `CORTEXDB_RATE_LIMIT_PER_MINUTE`. | Implemented as a coarse Core Alpha guard. |
-| Missing operational access trail | Optional structured HTTP audit events via `CORTEXDB_AUDIT_LOG`; optional synced JSONL file sink via `CORTEXDB_AUDIT_LOG_FILE`. | Implemented for route-level events. |
+| Missing operational access trail | Optional structured HTTP audit events via `CORTEXDB_AUDIT_LOG`; optional synced JSONL file sink via `CORTEXDB_AUDIT_LOG_FILE`; `cortexdb audit` reviews JSONL files with route/status/action/tenant filters and redaction checks. | Implemented for route-level events. |
 | Unvalidated local backups | `cortexdb backup`, `restore`, `backup-drill`, `backup-prune`, and `backup-offsite-stage` validate source and restored copies. | Implemented for local filesystem/offsite-staging workflows. |
 
 ## Out Of Scope For Core Alpha
@@ -99,6 +99,8 @@ For any non-local deployment:
     export `tracing` output to your process supervisor or log pipeline.
 12. Set `CORTEXDB_AUDIT_LOG_FILE` when route-level audit events should also be
     persisted to a local JSONL file.
+13. Use `cortexdb audit <audit.jsonl> --summary --redaction-check` during
+    incident review or release validation.
 
 ## Error Disclosure Policy
 
@@ -141,7 +143,8 @@ Security-sensitive test areas include:
 2. Expand CORS beyond the current single exact-origin allowlist only after
    adding user/RBAC-aware authorization.
 3. Extend file-backed token rotation into a persisted auth policy management
-   workflow.
+   workflow. The current target design is in
+   [`RBAC_POLICY_STORE_DESIGN.md`](RBAC_POLICY_STORE_DESIGN.md).
 4. Extend the JSONL audit sink into tamper-evident audit trails and SIEM export.
 5. Add encrypted backup support and remote object-store upload adapters.
 6. Add documented secret rotation beyond local token-file replacement.

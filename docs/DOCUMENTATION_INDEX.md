@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 95 project markdown files.
+At the time of this audit, the repository tracks 101 project markdown files.
 
 ## Start Here
 
@@ -54,6 +54,7 @@ At the time of this audit, the repository tracks 95 project markdown files.
 - [`API_COMPATIBILITY.md`](API_COMPATIBILITY.md) - compatibility rules.
 - [`API_ERROR_TAXONOMY.md`](API_ERROR_TAXONOMY.md) - stable error classes.
 - [`AUTH.md`](AUTH.md) - authentication and token policy.
+- [`RBAC_POLICY_STORE_DESIGN.md`](RBAC_POLICY_STORE_DESIGN.md) - future dynamic RBAC policy-store design.
 - [`CLI.md`](CLI.md) - CLI command reference.
 - [`SDK_QUICKSTART.md`](SDK_QUICKSTART.md) - SDK usage.
 - [`SDK_RELEASE.md`](SDK_RELEASE.md) - package release procedure.

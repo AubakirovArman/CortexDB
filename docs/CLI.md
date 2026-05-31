@@ -6,7 +6,7 @@ The `cortexdb` binary is a local command-line tool that operates directly on the
 
 | Flag | Description |
 |------|-------------|
-| `--json` | Print machine-readable JSON when supported. Applies to `stats`, `validate`, `ann-validate`, `context`, `verify`, and `search-vector-eval`. |
+| `--json` | Print machine-readable JSON when supported. Applies to `stats`, `validate`, `ann-validate`, `audit`, `context`, `verify`, and `search-vector-eval`. |
 | `--help` | Show help for any subcommand. |
 | `--version` | Print version. |
 
@@ -85,6 +85,17 @@ Attempt to repair storage inconsistencies.
 
 ```bash
 cortexdb repair ./db
+```
+
+#### `audit <audit_jsonl_path>`
+Review a persisted server audit JSONL file. The command supports route, status,
+action, and tenant filters plus an automated redaction check.
+
+```bash
+cortexdb audit ./audit/http.jsonl --summary --redaction-check
+cortexdb audit ./audit/http.jsonl --route /v1/cell --status 403
+cortexdb audit ./audit/http.jsonl --action write --tenant-filter tenant-alpha
+cortexdb --json audit ./audit/http.jsonl --summary --redaction-check
 ```
 
 #### `backup <path> <backup_path>`

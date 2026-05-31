@@ -81,6 +81,16 @@ cargo run -p cortex-cli -- wal-truncate ./data
 
 Then reopen and validate.
 
+Audit review:
+
+```bash
+cargo run -p cortex-cli -- audit ./audit/http.jsonl --summary --redaction-check
+cargo run -p cortex-cli -- audit ./audit/http.jsonl --action write --tenant-filter tenant-alpha
+```
+
+Use this during incident review to count route activity by action/status/tenant
+and confirm the audit sink did not persist query strings or body-like fields.
+
 ## 6) Performance/reliability smoke
 
 - CLI/HTTP smoke: `scripts/smoke_test.sh`

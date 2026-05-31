@@ -235,6 +235,27 @@ and calls `sync_data()` after each event. File sink failures after startup are
 reported through `tracing` target `cortexdb_audit` as `sink_error` events; they
 do not include request bodies or query strings.
 
+Review a persisted audit file with the CLI instead of hand-parsing JSONL:
+
+```bash
+cortexdb audit ./audit/http.jsonl --summary --redaction-check
+cortexdb audit ./audit/http.jsonl --route /v1/cell --status 403
+cortexdb audit ./audit/http.jsonl --action write --tenant-filter tenant-alpha
+cortexdb --json audit ./audit/http.jsonl --summary --redaction-check
+```
+
+The audit viewer supports filters by route, status, action, and tenant. The
+summary output includes counts by action, status, tenant, and route. The
+`--redaction-check` flag fails if records contain query strings or body-like
+fields, which keeps route-level audit review separate from request payloads.
+
+## RBAC Roadmap
+
+Core Alpha keeps route authorization intentionally small: static `admin` and
+`data` roles plus optional AgentView binding. A future dynamic policy store is
+designed in [`RBAC_POLICY_STORE_DESIGN.md`](RBAC_POLICY_STORE_DESIGN.md). Until
+that layer exists, do not treat CortexDB as a full multi-user RBAC system.
+
 ## Browser CORS
 
 CORS is disabled by default. Same-origin dashboard usage does not need CORS.

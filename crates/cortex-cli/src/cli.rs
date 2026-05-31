@@ -1,6 +1,6 @@
 use clap::{error::ErrorKind, Parser, Subcommand};
 
-use crate::{cli_ann as ann, cli_ingest as ingest, cli_ops as ops};
+use crate::{cli_ann as ann, cli_audit as audit, cli_ingest as ingest, cli_ops as ops};
 
 #[derive(Parser, Debug)]
 #[command(name = "cortexdb", version, about = "CortexDB local CLI")]
@@ -89,6 +89,21 @@ enum Command {
         backup_path: String,
         offsite_root: String,
         backup_id: String,
+    },
+    Audit {
+        path: String,
+        #[arg(long)]
+        route: Option<String>,
+        #[arg(long)]
+        status: Option<u16>,
+        #[arg(long)]
+        action: Option<String>,
+        #[arg(long = "tenant-filter")]
+        tenant_filter: Option<String>,
+        #[arg(long)]
+        summary: bool,
+        #[arg(long = "redaction-check")]
+        redaction_check: bool,
     },
     Restore {
         backup_path: String,
@@ -274,6 +289,24 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             offsite_root,
             backup_id,
         } => ops::backup_offsite_stage(&backup_path, &offsite_root, &backup_id),
+        Command::Audit {
+            path,
+            route,
+            status,
+            action,
+            tenant_filter,
+            summary,
+            redaction_check,
+        } => audit::review(audit::AuditReviewOptions {
+            path: &path,
+            route: route.as_deref(),
+            status,
+            action: action.as_deref(),
+            tenant: tenant_filter.as_deref(),
+            summary_only: summary,
+            redaction_check,
+            json: cli.json,
+        }),
         Command::Restore { backup_path, path } => {
             ops::restore(&backup_path, resolved(&path).to_str().unwrap())
         }

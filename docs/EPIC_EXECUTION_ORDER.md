@@ -181,7 +181,7 @@ Current evidence:
 
 ## Epic 5 - Security And Operations Baseline
 
-Status: partial.
+Status: done.
 
 Goal: make the local/Core Alpha deployment safer without claiming production
 security.
@@ -213,6 +213,17 @@ Done when:
 - Security/ops gates pass.
 - Audit logs can be reviewed without hand-parsing JSONL.
 - RBAC limitations and next steps are explicit.
+
+Closed evidence:
+
+- `make tenant-recovery-check` -> `target/tenant-recovery/report.json`.
+- `make backup-drill-check` -> `target/backup-drill/report.json`.
+- `make crash-fault-check` -> `target/crash-fault/report.json`.
+- `make chaos-restart-check` -> `target/chaos-restart/report.json`.
+- `cortexdb audit` reviews JSONL audit sinks with route/status/action/tenant
+  filters, summary counts, and a redaction gate.
+- `docs/RBAC_POLICY_STORE_DESIGN.md` defines the dynamic policy-store target
+  and Core Alpha non-goals.
 
 ## Epic 6 - Product UI And Release Surface Hardening
 
