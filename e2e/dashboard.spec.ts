@@ -106,7 +106,9 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
       'status=ready',
       'type=fact',
       'source=dashboard-smoke',
+      'vector=0,10',
       '',
+      'Solar Plant budget is 1.2B KZT.',
       'Dashboard smoke budget note',
     ].join('\n'));
     await page.getByRole('button', { name: 'Run Cell Operation' }).click();
@@ -127,11 +129,45 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await expect(page.locator('#output')).toContainText('query_terms');
     await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
 
+    await page.getByRole('link', { name: 'AQL' }).click();
+    await expect(page).toHaveURL(/\/dashboard\/aql$/);
+    await page.getByRole('button', { name: 'Run AQL' }).click();
+    await expect(page.locator('#output')).toContainText('"cells"');
+    await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
+
+    await page.getByRole('link', { name: 'Context' }).click();
+    await expect(page).toHaveURL(/\/dashboard\/context$/);
+    await page.getByRole('button', { name: 'Build Context Pack' }).click();
+    await expect(page.locator('#output')).toContainText('"schema_version": "context_pack.v1"');
+    await expect(page.locator('#output')).toContainText('Dashboard smoke budget note');
+
+    await page.getByRole('link', { name: 'Verify' }).click();
+    await expect(page).toHaveURL(/\/dashboard\/verify$/);
+    await page.getByRole('button', { name: 'Verify Fact' }).click();
+    await expect(page.locator('#output')).toContainText('"verdict": "supported"');
+    await expect(page.locator('#output')).toContainText('Solar Plant budget is 1.2B KZT');
+
+    await page.getByRole('link', { name: 'Ingest' }).click();
+    await expect(page).toHaveURL(/\/dashboard\/ingest$/);
+    await page.getByRole('button', { name: 'Ingest', exact: true }).click();
+    await expect(page.locator('#output')).toContainText('"chunks_ingested"');
+    await expect(page.locator('#output')).toContainText('"job_id"');
+    await page.getByRole('button', { name: 'Load Ingest Job' }).click();
+    await expect(page.locator('#output')).toContainText('"label": "ingest_text"');
+
     await page.getByRole('link', { name: 'Storage' }).click();
     await expect(page).toHaveURL(/\/dashboard\/storage$/);
     await expect(page.locator('#storage')).toBeVisible();
+    await page.getByRole('button', { name: 'Flush' }).click();
+    await expect(page.locator('#output')).toContainText('"checkpoint_seq"');
     await page.getByRole('button', { name: 'Validate' }).click();
     await expect(page.locator('#output')).toContainText('manifest_ok');
+
+    await page.getByRole('link', { name: 'ANN' }).click();
+    await expect(page).toHaveURL(/\/dashboard\/ann-eval$/);
+    await page.getByRole('button', { name: 'Evaluate ANN' }).click();
+    await expect(page.locator('#output')).toContainText('"available": true');
+    await expect(page.locator('#output')).toContainText('"recall_q16"');
 
     await page.getByRole('link', { name: 'Cluster' }).click();
     await expect(page).toHaveURL(/\/dashboard\/cluster$/);
@@ -146,7 +182,7 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await expect(page.locator('#request-status')).toContainText('ERR get cell');
     await expect(page.locator('#output')).toContainText('bad_request');
 
-    await expect(page.locator('#history')).toContainText('OK search');
+    await expect(page.locator('#history')).toContainText('OK ann evaluate');
     await expect(page.locator('#history')).toContainText('OK cluster status');
     await expect(page.locator('#history li').first()).toContainText('ERR get cell');
     expect(consoleErrors.filter(message => !message.includes('400 (Bad Request)'))).toEqual([]);

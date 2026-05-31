@@ -178,6 +178,9 @@
 - [x] Dashboard session UX now has a checked memory-only bearer token policy,
   tenant-only `sessionStorage` persistence, and a clear-session control covered
   by Playwright smoke.
+- [x] Dashboard Playwright smoke now exercises page-specific workflows for AQL,
+  ContextPack, Verify, Ingest, and ANN evaluation in addition to Cells, Search,
+  Storage, and Cluster.
 - [x] Наборы views в текущем static dashboard: overview, cells, search/explain, ANN, AQL, context, verify, ingest, storage health, cluster status.
 - [x] Базовый tenant/token control в UI для scoped API calls; полноценный auth UX остаётся будущей standalone UI задачей.
 - [x] Playwright/CI smoke путь для текущего `/dashboard`: asset loading, route navigation, cell put/get, keyword search.

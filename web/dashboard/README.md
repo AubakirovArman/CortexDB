@@ -60,8 +60,9 @@ Current coverage:
   cluster status, and ANN metrics;
 - request failures are surfaced through a visible status banner plus JSON
   details;
-- Playwright smoke covers asset loading, route switching, cell put/get, keyword
-  search, search explain, storage validation, cluster status, and error states.
+- Playwright smoke covers asset loading, route switching, session controls,
+  cell put/get, keyword search, search explain, AQL, ContextPack, Verify,
+  Ingest, ANN evaluation, storage validation, cluster status, and error states.
 - Playwright screenshots are written to `target/dashboard/` as CI review
   artifacts for desktop and mobile viewports.
 
