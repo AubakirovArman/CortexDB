@@ -119,6 +119,19 @@ Real embedding runs accept named SLO profiles through
 | `semantic` | higher-quality semantic retrieval | higher min/mean recall | wider latency budget | wider graph |
 | `audit` | release/audit verification runs | exact top-k recall required | widest latency budget | largest graph |
 
+History gates keep recall, graph shape, HNSW config, and `production_safe`
+strict. Real embedding latency is noisier because it depends on the local host
+and embedding endpoint path, so `ann-real-embedding-history-regression-check`
+uses explicit latency SLO budgets:
+
+```text
+ANN_REAL_EMBEDDING_MAX_P95_REGRESSION_NANOS=1000000
+ANN_REAL_EMBEDDING_MAX_MAX_REGRESSION_NANOS=5000000
+```
+
+Set these to `0` for a strict lab run. Increase them only when the release note
+documents the machine/endpoint reason.
+
 ## Local Real-Domain Corpus
 
 The first checked-in real-domain corpus lives at:
@@ -176,8 +189,18 @@ make ann-real-embedding-validate-baseline-package \
 ```
 
 This closes the local corpus/query/ground-truth and first endpoint-backed
-baseline side of real-domain promotion. The remaining promotion step is
-repeatable SLO history on stable infrastructure.
+baseline side of real-domain promotion. The current local history gate for this
+run root passes with the explicit p95/max latency budgets above:
+
+```bash
+make ann-real-embedding-history-regression-check \
+  ANN_REAL_EMBEDDING_RUN_ROOT=target/ann/real-embedding/runs \
+  ANN_REAL_EMBEDDING_HISTORY_REPORT=target/ann/real-embedding/runs/history.json
+```
+
+The latest local history has two runs, `regression_count=0`,
+`latest_mean_recall_q16=65535`, and `latest_production_safe=true`. Before beta,
+repeat this on stable infrastructure and publish the selected baseline package.
 
 ## Local Real-Domain Gate
 

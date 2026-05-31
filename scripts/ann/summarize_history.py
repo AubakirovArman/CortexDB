@@ -128,7 +128,13 @@ def load_run(manifest_path: Path) -> dict[str, Any]:
     return run
 
 
-def compare_adjacent(previous: dict[str, Any], current: dict[str, Any]) -> list[dict[str, Any]]:
+def compare_adjacent(
+    previous: dict[str, Any],
+    current: dict[str, Any],
+    *,
+    max_p95_regression_nanos: int = 0,
+    max_max_regression_nanos: int = 0,
+) -> list[dict[str, Any]]:
     checks = [
         ("min_observed_recall_q16", "recall"),
         ("mean_recall_q16", "recall"),
@@ -145,9 +151,14 @@ def compare_adjacent(previous: dict[str, Any], current: dict[str, Any]) -> list[
     for field in ["hnsw_max_neighbors", "hnsw_ef_search", "hnsw_layer_count"]:
         delta = int(current[field]) - int(previous[field])
         if delta != 0: regressions.append(regression("hnsw_config", field, previous, current, delta))
-    for field in ["p95_latency_nanos", "max_latency_nanos"]:
+    latency_limits = {
+        "p95_latency_nanos": max_p95_regression_nanos,
+        "max_latency_nanos": max_max_regression_nanos,
+    }
+    for field, allowed_delta in latency_limits.items():
         delta = int(current[field]) - int(previous[field])
-        if delta > 0: regressions.append(regression("latency", field, previous, current, delta))
+        if delta > allowed_delta:
+            regressions.append(regression("latency", field, previous, current, delta))
     if previous["passed"] and not current["passed"]: regressions.append(regression("gate", "passed", previous, current, -1))
     if previous["production_safe"] and not current["production_safe"]: regressions.append(regression("gate", "production_safe", previous, current, -1))
     return regressions
@@ -163,7 +174,12 @@ def regression(kind: str, field: str, previous: dict[str, Any], current: dict[st
     }
 
 
-def summarize_history(run_root: Path) -> dict[str, Any]:
+def summarize_history(
+    run_root: Path,
+    *,
+    max_p95_regression_nanos: int = 0,
+    max_max_regression_nanos: int = 0,
+) -> dict[str, Any]:
     manifests = sorted(run_root.glob("*/manifest.json"))
     runs = [load_run(path) for path in manifests]
     runs.sort(key=lambda run: (run["corpus_key"], run["run_id"]))
@@ -175,7 +191,14 @@ def summarize_history(run_root: Path) -> dict[str, Any]:
     for key, group_runs in sorted(groups.items()):
         regressions: list[dict[str, Any]] = []
         for previous, current in zip(group_runs, group_runs[1:]):
-            regressions.extend(compare_adjacent(previous, current))
+            regressions.extend(
+                compare_adjacent(
+                    previous,
+                    current,
+                    max_p95_regression_nanos=max_p95_regression_nanos,
+                    max_max_regression_nanos=max_max_regression_nanos,
+                )
+            )
         all_regressions.extend(regressions)
         latest = group_runs[-1]
         corpora.append({
@@ -199,6 +222,8 @@ def summarize_history(run_root: Path) -> dict[str, Any]:
     latest_run_id = runs[-1]["run_id"] if runs else ""
     return {
         "run_root": str(run_root),
+        "max_p95_regression_nanos": max_p95_regression_nanos,
+        "max_max_regression_nanos": max_max_regression_nanos,
         "run_count": len(runs),
         "corpus_count": len(corpora),
         "latest_run_id": latest_run_id,
@@ -223,6 +248,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--run-root", type=Path, default=Path("target/ann/corpus-runs"))
     parser.add_argument("--output", type=Path)
     parser.add_argument("--fail-on-regression", action="store_true")
+    parser.add_argument("--max-p95-regression-nanos", type=int, default=0)
+    parser.add_argument("--max-max-regression-nanos", type=int, default=0)
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args(argv)
 
@@ -232,7 +259,11 @@ def main(argv: list[str]) -> int:
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(SelfTests)
         return 0 if unittest.TextTestRunner().run(suite).wasSuccessful() else 1
     args = parse_args(argv)
-    summary = summarize_history(args.run_root)
+    summary = summarize_history(
+        args.run_root,
+        max_p95_regression_nanos=args.max_p95_regression_nanos,
+        max_max_regression_nanos=args.max_max_regression_nanos,
+    )
     write_summary(summary, args.output)
     if args.fail_on_regression and summary["regression_count"] > 0:
         return 1
@@ -293,6 +324,20 @@ class SelfTests(unittest.TestCase):
             summary = summarize_history(Path(raw_dir))
         self.assertEqual(summary["run_count"], 0)
         self.assertEqual(summary["regression_count"], 0)
+
+    def test_latency_regression_tolerance(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_dir:
+            root = Path(raw_dir)
+            self.write_run(root, "20260101T000000Z-a", 65535, 10, True)
+            self.write_run(root, "20260102T000000Z-b", 65535, 20, True)
+            summary = summarize_history(
+                root,
+                max_p95_regression_nanos=10,
+                max_max_regression_nanos=10,
+            )
+
+        self.assertEqual(summary["regression_count"], 0)
+        self.assertEqual(summary["max_p95_regression_nanos"], 10)
 
 
 if __name__ == "__main__":

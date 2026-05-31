@@ -135,7 +135,7 @@ Current evidence:
 
 ## Epic 4 - ANN/HNSW Guarded Production Evidence
 
-Status: partial, guarded by exact fallback.
+Status: locally done for Core Alpha, guarded by exact fallback.
 
 Goal: keep ANN/HNSW measurable and safe from silent recall regressions.
 
@@ -159,6 +159,25 @@ Done when:
 - Local reports show `production_safe=true`.
 - Exact fallback stays enabled for critical workloads.
 - Real-domain baseline history is repeatable across stable environments.
+
+Current evidence:
+
+- `make ann-fixture-check` passed locally on `2026-05-31` with
+  `production_safe=true`.
+- `make ann-drift-check` passed locally on `2026-05-31` with no recall or
+  graph regressions.
+- `make ann-external-check` passed locally on `2026-05-31` with
+  `production_safe=true`.
+- `make ann-metric-matrix-check` passed locally on `2026-05-31` for
+  `dot_product`, `cosine`, and `l2`, all `production_safe=true`.
+- `make ann-real-embedding-readiness` passed locally on `2026-05-31` for the
+  checked-in `investment_projects` corpus using environment-only embedding
+  configuration.
+- `make ann-real-embedding-history-regression-check` passed locally on
+  `2026-05-31` for `target/ann/real-embedding/runs` with explicit latency SLO
+  budgets and `regression_count=0`.
+- Hosted embedding secrets and scheduled real-embedding runs remain excluded
+  from GitHub Actions until beta.
 
 ## Epic 5 - Security And Operations Baseline
 

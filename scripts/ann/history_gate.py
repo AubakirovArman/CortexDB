@@ -32,7 +32,11 @@ def validate_history(
 
 
 def run_gate(args: argparse.Namespace) -> int:
-    summary = summarize_history(args.run_root)
+    summary = summarize_history(
+        args.run_root,
+        max_p95_regression_nanos=args.max_p95_regression_nanos,
+        max_max_regression_nanos=args.max_max_regression_nanos,
+    )
     write_summary(summary, args.output)
     errors = validate_history(
         summary,
@@ -54,6 +58,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--fail-on-regression", action="store_true")
     parser.add_argument("--min-runs", type=int, default=1)
     parser.add_argument("--min-corpora", type=int, default=1)
+    parser.add_argument("--max-p95-regression-nanos", type=int, default=0)
+    parser.add_argument("--max-max-regression-nanos", type=int, default=0)
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args(argv)
 
@@ -120,6 +126,19 @@ class SelfTests(unittest.TestCase):
             summary = summarize_history(root)
         errors = validate_history(summary, min_runs=2, min_corpora=1, fail_on_regression=True)
         self.assertTrue(any("regression" in error for error in errors))
+
+    def test_gate_accepts_latency_within_tolerance(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_dir:
+            root = Path(raw_dir)
+            self.write_run(root, "run-a", 65535, 10)
+            self.write_run(root, "run-b", 65535, 20)
+            summary = summarize_history(
+                root,
+                max_p95_regression_nanos=10,
+                max_max_regression_nanos=10,
+            )
+        errors = validate_history(summary, min_runs=2, min_corpora=1, fail_on_regression=True)
+        self.assertEqual(errors, [])
 
 
 if __name__ == "__main__":

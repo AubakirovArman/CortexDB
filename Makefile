@@ -89,6 +89,8 @@ ANN_REAL_EMBEDDING_BASELINE_ROOT ?= target/ann/real-embedding/release-baselines
 ANN_REAL_EMBEDDING_BASELINE_BUNDLE ?= $(ANN_REAL_EMBEDDING_BASELINE_ROOT)/$(ANN_REAL_EMBEDDING_BASELINE_ID)
 ANN_REAL_EMBEDDING_BASELINE_ARCHIVE ?= $(ANN_REAL_EMBEDDING_BASELINE_ROOT)/$(ANN_REAL_EMBEDDING_BASELINE_ID).tar.gz
 ANN_REAL_EMBEDDING_REQUIRE_SOURCE_ARCHIVE ?= false
+ANN_REAL_EMBEDDING_MAX_P95_REGRESSION_NANOS ?= 1000000
+ANN_REAL_EMBEDDING_MAX_MAX_REGRESSION_NANOS ?= 5000000
 ANN_BASELINE_REPORT ?= $(ANN_CORPUS_REPORT)
 ANN_CANDIDATE_REPORT ?= $(ANN_CORPUS_REPORT)
 ANN_REPORT_COMPARISON ?= target/ann/ann_report_comparison.json
@@ -362,10 +364,10 @@ ann-real-embedding-compare:
 ann-real-embedding-benchmark-and-compare: ann-real-embedding-benchmark ann-real-embedding-compare
 
 ann-real-embedding-history-report:
-	python3 scripts/ann/summarize_history.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --output $(ANN_REAL_EMBEDDING_HISTORY_REPORT)
+	python3 scripts/ann/summarize_history.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --output $(ANN_REAL_EMBEDDING_HISTORY_REPORT) --max-p95-regression-nanos $(ANN_REAL_EMBEDDING_MAX_P95_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_REAL_EMBEDDING_MAX_MAX_REGRESSION_NANOS)
 
 ann-real-embedding-history-regression-check:
-	python3 scripts/ann/history_gate.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --output $(ANN_REAL_EMBEDDING_HISTORY_REPORT) --fail-on-regression --min-runs 1 --min-corpora 1
+	python3 scripts/ann/history_gate.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --output $(ANN_REAL_EMBEDDING_HISTORY_REPORT) --fail-on-regression --min-runs 1 --min-corpora 1 --max-p95-regression-nanos $(ANN_REAL_EMBEDDING_MAX_P95_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_REAL_EMBEDDING_MAX_MAX_REGRESSION_NANOS)
 
 ann-real-embedding-publish-baseline:
 	python3 scripts/ann/publish_baseline.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --run-id $(ANN_REAL_EMBEDDING_RUN_ID) --baseline-id $(ANN_REAL_EMBEDDING_BASELINE_ID) --output-root $(ANN_REAL_EMBEDDING_BASELINE_ROOT)
@@ -446,10 +448,10 @@ ann-corpus-run-smoke:
 	scripts/ann/run_external_corpus.sh --vectors $(ANN_CORPUS_VECTORS) --queries $(ANN_CORPUS_QUERIES) --output-root $(ANN_CORPUS_RUN_ROOT) --run-id $(ANN_CORPUS_RUN_ID)
 
 ann-history-report:
-	python3 scripts/ann/summarize_history.py --run-root $(ANN_HISTORY_ROOT) --output $(ANN_HISTORY_REPORT)
+	python3 scripts/ann/summarize_history.py --run-root $(ANN_HISTORY_ROOT) --output $(ANN_HISTORY_REPORT) --max-p95-regression-nanos $(ANN_MAX_P95_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_MAX_MAX_REGRESSION_NANOS)
 
 ann-history-regression-check:
-	python3 scripts/ann/history_gate.py --run-root $(ANN_HISTORY_ROOT) --output $(ANN_HISTORY_REPORT) --fail-on-regression --min-runs 1 --min-corpora 1
+	python3 scripts/ann/history_gate.py --run-root $(ANN_HISTORY_ROOT) --output $(ANN_HISTORY_REPORT) --fail-on-regression --min-runs 1 --min-corpora 1 --max-p95-regression-nanos $(ANN_MAX_P95_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_MAX_MAX_REGRESSION_NANOS)
 
 ann-history-fixture-check:
 	python3 scripts/ann/history_fixture_check.py \
