@@ -179,12 +179,15 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await page.locator('#cell-op').selectOption('get');
     await page.locator('#cell-id').fill('not-a-number');
     await page.getByRole('button', { name: 'Run Cell Operation' }).click();
-    await expect(page.locator('#request-status')).toContainText('ERR get cell');
-    await expect(page.locator('#output')).toContainText('bad_request');
+    await expect(page.locator('#request-status')).toContainText('ERR form validation');
+    await expect(page.locator('#request-status')).toContainText('Cell ID has an invalid format');
+    await expect(page.locator('#cell-id')).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('#cell-id-error')).toBeVisible();
+    await expect(page.locator('#output')).not.toContainText('bad_request');
 
     await expect(page.locator('#history')).toContainText('OK ann evaluate');
     await expect(page.locator('#history')).toContainText('OK cluster status');
-    await expect(page.locator('#history li').first()).toContainText('ERR get cell');
+    await expect(page.locator('#history li').first()).toContainText('OK cluster status');
     expect(consoleErrors.filter(message => !message.includes('400 (Bad Request)'))).toEqual([]);
   } finally {
     server.kill('SIGTERM');

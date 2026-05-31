@@ -23,7 +23,8 @@ starting `cortex-server`.
 `dashboard-smoke` starts a local `cortex-server` and drives the console through
 asset loading, tab switching, session controls, cell put/get, keyword search,
 search explain, AQL, ContextPack, Verify, Ingest, ANN evaluation, storage
-validation, cluster status, and visible request error states.
+validation, cluster status, visible request error states, and client-side
+numeric validation before malformed requests reach the API.
 
 `dashboard-screenshots` starts the same local server and writes review artifacts:
 
@@ -51,6 +52,9 @@ persisted in `sessionStorage`; bearer tokens are memory-only and cleared from
 the input after apply. `make dashboard-build` copies that manifest into the
 server asset tree and standalone dist. `make dashboard-release-check` packages
 and validates it alongside the archive manifest and SHA-256 file checksums.
+Form controls use native constraints plus synchronized `aria-invalid` state so
+keyboard and assistive-technology users get the same validation feedback as the
+visual UI.
 
 ## Boundary
 

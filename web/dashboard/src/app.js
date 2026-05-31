@@ -103,6 +103,35 @@ function setRequestStatus(kind, text) {
     requestStatus.textContent = text;
 }
 
+function fieldLabel(input) {
+    const id = input.getAttribute("id");
+    if (!id) return input.getAttribute("name") || "Field";
+    return document.querySelector(`label[for="${id}"]`)?.textContent || input.getAttribute("name") || "Field";
+}
+
+function validityMessage(input) {
+    if (input.validity?.valueMissing) return "is required";
+    if (input.validity?.patternMismatch) return "has an invalid format";
+    return input.validationMessage || "is invalid";
+}
+
+function markInvalid(input) {
+    input.setAttribute("aria-invalid", "true");
+    setRequestStatus("error", `ERR form validation: ${fieldLabel(input)} ${validityMessage(input)}`);
+}
+
+function clearInvalid(input) {
+    input.removeAttribute("aria-invalid");
+}
+
+function guardForm(form) {
+    if (form.checkValidity()) return true;
+    const firstInvalid = form.querySelector("input:invalid, textarea:invalid, select:invalid");
+    if (firstInvalid) markInvalid(firstInvalid);
+    form.reportValidity();
+    return false;
+}
+
 async function fetchJsonLike(url, init = {}) {
     const response = await fetch(url, { ...init, headers: { ...headers(), ...(init.headers || {}) } });
     const text = await response.text();
@@ -327,13 +356,20 @@ setRoute(routeFromLocation());
 
 document.addEventListener("blur", (event) => {
     if (event.target.matches?.("input, textarea, select")) {
-        event.target.toggleAttribute("aria-invalid", !event.target.checkValidity());
+        if (event.target.checkValidity()) clearInvalid(event.target);
+        else markInvalid(event.target);
+    }
+}, true);
+
+document.addEventListener("invalid", (event) => {
+    if (event.target.matches?.("input, textarea, select")) {
+        markInvalid(event.target);
     }
 }, true);
 
 document.addEventListener("input", (event) => {
     if (event.target.matches?.("[aria-invalid='true']") && event.target.checkValidity()) {
-        event.target.removeAttribute("aria-invalid");
+        clearInvalid(event.target);
     }
 });
 
@@ -352,6 +388,7 @@ onAll(
 
 document.querySelector("#cell-form").addEventListener("submit", (event) => {
     event.preventDefault();
+    if (!guardForm(event.currentTarget)) return;
     const data = new FormData(event.currentTarget);
     const id = encodeURIComponent(data.get("cell_id"));
     const op = data.get("op");
@@ -363,6 +400,7 @@ document.querySelector("#cell-form").addEventListener("submit", (event) => {
 
 document.querySelector("#search-form").addEventListener("submit", (event) => {
     event.preventDefault();
+    if (!guardForm(event.currentTarget)) return;
     const data = new FormData(event.currentTarget);
     const params = new URLSearchParams({
         scope: data.get("scope"),
@@ -388,6 +426,7 @@ on("#search-explain", "click", () => {
 
 document.querySelector("#ann-eval-form").addEventListener("submit", (event) => {
     event.preventDefault();
+    if (!guardForm(event.currentTarget)) return;
     const data = new FormData(event.currentTarget);
     const params = new URLSearchParams({
         scope: data.get("scope"),
@@ -400,6 +439,7 @@ document.querySelector("#ann-eval-form").addEventListener("submit", (event) => {
 for (const id of ["aql", "context", "verify"]) {
     document.querySelector(`#${id}-form`).addEventListener("submit", (event) => {
         event.preventDefault();
+        if (!guardForm(event.currentTarget)) return;
         const data = new FormData(event.currentTarget);
         const params = new URLSearchParams({ scope: data.get("scope") });
         run(id, () => api(`/v1/${id}?${params}`, { method: "POST", body: data.get("query") || "" }));
@@ -408,6 +448,7 @@ for (const id of ["aql", "context", "verify"]) {
 
 document.querySelector("#ingest-form").addEventListener("submit", (event) => {
     event.preventDefault();
+    if (!guardForm(event.currentTarget)) return;
     const data = new FormData(event.currentTarget);
     const kind = data.get("type") || "text";
     const params = new URLSearchParams({
@@ -419,6 +460,7 @@ document.querySelector("#ingest-form").addEventListener("submit", (event) => {
 
 document.querySelector("#ingest-job-form").addEventListener("submit", (event) => {
     event.preventDefault();
+    if (!guardForm(event.currentTarget)) return;
     const id = encodeURIComponent(new FormData(event.currentTarget).get("job_id") || "");
     run("ingest job", () => api(`/v1/ingest/jobs/${id}`));
 });

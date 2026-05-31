@@ -60,6 +60,8 @@ Current coverage:
   cluster status, and ANN metrics;
 - request failures are surfaced through a visible status banner plus JSON
   details;
+- numeric form fields use native constraints, visible field errors, and
+  synchronized `aria-invalid` state before malformed requests reach the API;
 - Playwright smoke covers asset loading, route switching, session controls,
   cell put/get, keyword search, search explain, AQL, ContextPack, Verify,
   Ingest, ANN evaluation, storage validation, cluster status, and error states.

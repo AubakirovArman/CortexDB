@@ -57,7 +57,11 @@
                 <h2 id="cells-title">Cells</h2>
                 <form id="cell-form" action="/v1/cell" method="post" data-access="data">
                     <div class="grid">
-                        <div class="field"><label for="cell-id">Cell ID</label><input id="cell-id" name="cell_id" inputmode="numeric" required value="1"></div>
+                        <div class="field">
+                            <label for="cell-id">Cell ID</label>
+                            <input id="cell-id" name="cell_id" inputmode="numeric" pattern="[0-9]+" required value="1" aria-errormessage="cell-id-error">
+                            <span id="cell-id-error" class="field-error">Use digits only.</span>
+                        </div>
                         <div class="field"><label for="cell-op">Operation</label><select id="cell-op" name="op"><option value="put">Put</option><option value="get">Get</option><option value="delete">Tombstone</option></select></div>
                     </div>
                     <div class="field"><label for="cell-payload">Payload</label><textarea id="cell-payload" name="payload">scope=project:investments
@@ -76,7 +80,11 @@ Solar budget note</textarea></div>
                         <div class="field"><label for="search-scope">Scope</label><input id="search-scope" name="scope" required value="project:investments"></div>
                         <div class="field"><label for="search-mode">Mode</label><select id="search-mode" name="mode"><option value="keyword">Keyword</option><option value="vector">Vector</option></select></div>
                         <div class="field"><label for="search-algorithm">Vector algorithm</label><select id="search-algorithm" name="algorithm"><option value="ann">ANN</option><option value="exact">Exact</option></select></div>
-                        <div class="field"><label for="search-limit">Limit</label><input id="search-limit" name="limit" inputmode="numeric" value="20"></div>
+                        <div class="field">
+                            <label for="search-limit">Limit</label>
+                            <input id="search-limit" name="limit" inputmode="numeric" pattern="[0-9]+" value="20" aria-errormessage="search-limit-error">
+                            <span id="search-limit-error" class="field-error">Use digits only.</span>
+                        </div>
                     </div>
                     <div class="field"><label for="search-query">Query or vector</label><input id="search-query" name="q" value="budget"></div>
                     <div class="actions">
@@ -91,7 +99,11 @@ Solar budget note</textarea></div>
                     <div class="grid">
                         <div class="field"><label for="ann-scope">Scope</label><input id="ann-scope" name="scope" required value="project:investments"></div>
                         <div class="field"><label for="ann-vector">Vector</label><input id="ann-vector" name="vector" inputmode="decimal" required value="0,10"></div>
-                        <div class="field"><label for="ann-limit">Limit</label><input id="ann-limit" name="limit" inputmode="numeric" value="20"></div>
+                        <div class="field">
+                            <label for="ann-limit">Limit</label>
+                            <input id="ann-limit" name="limit" inputmode="numeric" pattern="[0-9]+" value="20" aria-errormessage="ann-limit-error">
+                            <span id="ann-limit-error" class="field-error">Use digits only.</span>
+                        </div>
                     </div>
                     <div class="actions">
                     <button type="submit" data-access="data">Evaluate ANN</button>
@@ -136,7 +148,11 @@ Wind Farm status ready.</textarea></div>
                     <button type="submit" data-access="data">Ingest</button>
                 </form>
                 <form id="ingest-job-form" action="/v1/ingest/jobs/1" method="get" data-access="data">
-                    <div class="field"><label for="ingest-job-id">Job ID</label><input id="ingest-job-id" name="job_id" inputmode="numeric" value="1"></div>
+                    <div class="field">
+                        <label for="ingest-job-id">Job ID</label>
+                        <input id="ingest-job-id" name="job_id" inputmode="numeric" pattern="[0-9]+" value="1" aria-errormessage="ingest-job-id-error">
+                        <span id="ingest-job-id-error" class="field-error">Use digits only.</span>
+                    </div>
                     <button type="submit" class="secondary" data-access="data">Load Ingest Job</button>
                 </form>
             </section>
