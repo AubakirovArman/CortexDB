@@ -16,6 +16,7 @@ Core Alpha is operational:
 - **Сделано:**
   - ANN recall/latency gates, history tracking, drift checks, external corpus checks, exact fallback and graph trailer persistence
   - baseline publishing + history regression gates
+  - machine-readable real-embedding readiness report for missing corpus/env/archive prerequisites
 - **Открыто:**
   - финальный baseline на доменном реальном embedding
   - долгоживущие observability и SLA-регрессионные пороги для production traffic

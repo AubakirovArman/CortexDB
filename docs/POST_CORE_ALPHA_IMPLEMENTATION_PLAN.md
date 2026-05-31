@@ -46,6 +46,10 @@
   / `.ach` bundles that drift from that collection profile.
 - [x] `ef_construction` is now persisted and reported as a first-class HNSW
   build/profile knob for checkpoint/compact graphs and ANN corpus runs.
+- [x] Real-embedding readiness now has a machine-readable non-secret report
+  (`make ann-real-embedding-readiness`) that records whether corpus, queries,
+  endpoint/model env, optional API key, and source archive metadata are present
+  before a real-domain baseline run.
 
 ### 2) Real distributed consensus
 - [x] Отделить репликационный consensus-log и local WAL по строгим durability guarantees.
@@ -203,8 +207,9 @@
 
 1. ANN/HNSW: опубликовать real-embedding baseline bundle для доменного корпуса
    с настоящим embedding backend и приложить artifact к release. Tooling now
-   enforces provenance and source-archive integrity, but the actual model run
-   still needs real endpoint/corpus credentials.
+   enforces provenance, source-archive integrity, and machine-readable
+   readiness reporting, but the actual model run still needs real
+   endpoint/corpus credentials.
 2. ANN/HNSW: откалибровать SLO thresholds на опубликованном real-domain
    baseline после первого настоящего прогона.
 3. Consensus: keep expanding crash/restart coverage around node rejoin repair

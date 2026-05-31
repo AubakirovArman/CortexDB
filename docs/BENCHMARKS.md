@@ -188,6 +188,8 @@ HTTP wrapper for OpenAI-compatible embedding gateways; pass it through
 For the full real-embedding workflow, prefer the guarded targets:
 
 ```bash
+make ann-real-embedding-readiness
+
 make ann-real-embedding-preflight \
   ANN_REAL_EMBEDDING_SOURCE_ROOT=/data/cortexdb/text-cells \
   ANN_REAL_EMBEDDING_QUERIES=/data/cortexdb/query_text.jsonl
@@ -198,6 +200,13 @@ make ann-real-embedding-benchmark \
   ANN_REAL_EMBEDDING_RUN_ID=my-domain-cosine-v1 \
   ANN_REAL_EMBEDDING_SLO_PROFILE=balanced
 ```
+
+The readiness target is safe to run before secrets or corpora exist. It writes
+`target/ann/real-embedding/readiness.json` with `status=ready` or
+`status=blocked` plus explicit blocker codes such as `missing_source_root`,
+`missing_queries`, or `missing_env`. The production evidence sweep includes
+this report so release artifacts can distinguish "tooling not ready" from
+"real-domain corpus/endpoint not supplied".
 
 The preflight target writes a machine-readable report and refuses synthetic
 `hash-smoke` commands, missing corpus/query files, missing endpoint/model env,

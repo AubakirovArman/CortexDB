@@ -32,6 +32,9 @@
 - Added `make production-evidence-sweep`, which runs OpenAPI contract, backup
   drill, ANN release evidence, and replication partition checks with a combined
   `target/production-evidence/report.json` runbook artifact.
+- Added `make ann-real-embedding-readiness`, a non-secret readiness report for
+  real-domain ANN/HNSW baseline prerequisites before endpoint-backed embedding
+  runs.
 - Added file-backed HTTP token rotation through `CORTEXDB_AUTH_TOKENS_FILE`;
   the server re-reads the local policy file per request and fails closed on
   missing, empty, or invalid token files.
