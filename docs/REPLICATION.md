@@ -105,6 +105,10 @@ adapts that file-backed state to the background repair worker. This closes the
 restart gap for repair planning input: after a repair runtime restarts, it can
 resume from the last durable follower progress snapshot instead of requiring a
 caller to rebuild all progress from memory.
+`ReplicationProgressRecordingTransport` wraps any replication/snapshot transport
+and records successful `AppendEntries` ACKs plus final validated snapshot ACKs
+into that same store. This gives the repair loop a direct path from live peer
+ACKs to durable repair-planning progress.
 
 Durable recovery is still ACLOG-backed through `ReplicationLog`:
 
@@ -230,6 +234,6 @@ rejoin/repair handling after network partitions.
 
 - Native TLS. Put the current token-authenticated frame protocol behind a TLS
   terminator for now.
-- Automatic peer-progress updates from live AppendEntries and snapshot ACKs into
-  `ReplicationFollowerProgressStore`. The durable store and background repair
-  source exist, but transports still need to feed fresh ACK progress into it.
+- Production wiring that installs `ReplicationProgressRecordingTransport` around
+  every real peer transport by default and coordinates that progress store with
+  node lifecycle configuration.

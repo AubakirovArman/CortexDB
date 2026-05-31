@@ -14,6 +14,7 @@ mod background;
 mod cycle;
 mod database_snapshot;
 mod progress_store;
+mod progress_transport;
 mod snapshot_sender;
 mod worker;
 
@@ -27,6 +28,7 @@ pub use cycle::{
 };
 pub use database_snapshot::ReplicationDatabaseSnapshotSource;
 pub use progress_store::{ReplicationFollowerProgressStore, ReplicationStoredProgressSource};
+pub use progress_transport::ReplicationProgressRecordingTransport;
 pub use snapshot_sender::{
     send_replication_snapshot_request, ReplicationSnapshotSendPolicy,
     ReplicationSnapshotSendResult, ReplicationSnapshotTransport,

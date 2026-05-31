@@ -97,6 +97,8 @@
 - Added `ReplicationFollowerProgressStore` and
   `ReplicationStoredProgressSource`, so background repair can resume planning
   from atomically persisted follower progress after restart.
+- Added `ReplicationProgressRecordingTransport`, which persists successful
+  AppendEntries and final snapshot ACK progress into the repair progress store.
 - Added field weights tests: `title_field_weights_six_times_body`,
   `source_field_weights_same_as_body`.
 - Added RRF (Reciprocal Rank Fusion) tests: overlap boost, empty lexical/vector fallback,
