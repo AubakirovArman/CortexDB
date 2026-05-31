@@ -302,6 +302,8 @@ Evidence:
 
 Goal: make HTTP behavior reproducible and operator-friendly.
 
+Status: local contract/ops gate added; run `make http-contract-ops-check`.
+
 Tasks:
 
 1. Verify route-level error-code coverage.
@@ -315,6 +317,12 @@ Tasks:
 Acceptance:
 
 - HTTP security behavior is reproducible from a single gate.
+
+Evidence:
+
+- Contract gate: [`HTTP_SERVER_CONTRACT_EVIDENCE.md`](HTTP_SERVER_CONTRACT_EVIDENCE.md).
+- API contract: [`API.md`](API.md), [`openapi.yaml`](openapi.yaml).
+- Auth and audit docs: [`AUTH.md`](AUTH.md).
 
 ### Epic 14 - CLI Productization
 

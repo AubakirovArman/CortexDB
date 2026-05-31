@@ -75,6 +75,7 @@ struct AuditRecord<'a> {
     method: &'a str,
     path: &'a str,
     tenant: &'a str,
+    request_id: &'a str,
     status: u16,
     error_code: &'a str,
     duration_ms: u64,
@@ -109,17 +110,19 @@ impl AuditSink {
     }
 }
 
-pub(crate) fn emit_http_response(
-    method: &str,
-    path: &str,
-    tenant: &str,
-    status: u16,
-    error_code: Option<&str>,
-    duration_ms: u64,
-    sink: Option<&AuditSink>,
-) {
-    let action = classify(method, path).as_str();
-    let error_code = error_code.unwrap_or("");
+pub(crate) struct HttpResponseAudit<'a> {
+    pub(crate) method: &'a str,
+    pub(crate) path: &'a str,
+    pub(crate) tenant: &'a str,
+    pub(crate) request_id: &'a str,
+    pub(crate) status: u16,
+    pub(crate) error_code: Option<&'a str>,
+    pub(crate) duration_ms: u64,
+}
+
+pub(crate) fn emit_http_response(event: HttpResponseAudit<'_>, sink: Option<&AuditSink>) {
+    let action = classify(event.method, event.path).as_str();
+    let error_code = event.error_code.unwrap_or("");
     let unix_time_ms = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_millis())
@@ -128,24 +131,26 @@ pub(crate) fn emit_http_response(
         schema_version: "cortexdb.audit.v1",
         audit_event: "http_response",
         audit_action: action,
-        method,
-        path,
-        tenant,
-        status,
+        method: event.method,
+        path: event.path,
+        tenant: event.tenant,
+        request_id: event.request_id,
+        status: event.status,
         error_code,
-        duration_ms,
+        duration_ms: event.duration_ms,
         unix_time_ms,
     };
     tracing::info!(
         target: "cortexdb_audit",
         audit_event = "http_response",
         audit_action = action,
-        method = method,
-        path = path,
-        tenant = tenant,
-        status = status,
+        method = event.method,
+        path = event.path,
+        tenant = event.tenant,
+        request_id = event.request_id,
+        status = event.status,
         error_code = error_code,
-        duration_ms = duration_ms,
+        duration_ms = event.duration_ms,
     );
     if let Some(sink) = sink {
         if let Err(error) = sink.append(&record) {
@@ -160,7 +165,7 @@ pub(crate) fn emit_http_response(
 
 #[cfg(test)]
 mod tests {
-    use super::{classify, emit_http_response, AuditAction, AuditSink};
+    use super::{classify, emit_http_response, AuditAction, AuditSink, HttpResponseAudit};
 
     #[test]
     fn classify_core_api_actions() {
@@ -184,12 +189,15 @@ mod tests {
         let sink = AuditSink::open(&path).unwrap();
 
         emit_http_response(
-            "POST",
-            "/v1/cell",
-            "tenant-a",
-            403,
-            Some("permission_denied"),
-            12,
+            HttpResponseAudit {
+                method: "POST",
+                path: "/v1/cell",
+                tenant: "tenant-a",
+                request_id: "req-123",
+                status: 403,
+                error_code: Some("permission_denied"),
+                duration_ms: 12,
+            },
             Some(&sink),
         );
 
@@ -201,6 +209,7 @@ mod tests {
         assert_eq!(value["method"], "POST");
         assert_eq!(value["path"], "/v1/cell");
         assert_eq!(value["tenant"], "tenant-a");
+        assert_eq!(value["request_id"], "req-123");
         assert_eq!(value["status"], 403);
         assert_eq!(value["error_code"], "permission_denied");
         assert!(!line.contains("secret_payload"));

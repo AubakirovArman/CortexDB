@@ -24,6 +24,9 @@ by schema checks, but it is not a production SLA.
   request limit; exceeded windows return `429 rate_limited`.
 * **CORS:** disabled by default. Set `CORTEXDB_CORS_ALLOW_ORIGIN` to one exact
   trusted browser origin when cross-origin browser calls are required.
+* **Request IDs:** responses include `x-request-id`. If the request provides a
+  safe `x-request-id` header, the server echoes it; otherwise it generates a
+  `cortexdb-<n>` id for log and audit correlation.
 
 ---
 

@@ -217,10 +217,15 @@ cargo run -p cortex-server -- ./data 127.0.0.1:8181
 ```
 
 Audit events are emitted through `tracing` with target `cortexdb_audit`. They
-include route category, method, path, tenant, status code, stable error code,
-and duration. Request bodies and query strings are intentionally not logged.
-Current route categories include `read`, `write`, `delete`, `aql`, `search`,
-`context`, `verify`, `ingest`, `memory`, `admin`, `metrics`, and `health`.
+include route category, method, path, tenant, `request_id`, status code, stable
+error code, and duration. Request bodies and query strings are intentionally
+not logged. Current route categories include `read`, `write`, `delete`, `aql`,
+`search`, `context`, `verify`, `ingest`, `memory`, `admin`, `metrics`, and
+`health`.
+
+Every HTTP response includes `x-request-id`. Clients may supply a safe
+`x-request-id` header to correlate their logs with CortexDB audit records. If
+they omit it, the server generates a `cortexdb-<n>` request id.
 
 To persist route-level audit events to a local JSONL file, set:
 

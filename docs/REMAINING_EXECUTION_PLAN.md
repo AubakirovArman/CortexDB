@@ -134,6 +134,11 @@ Core Alpha is operational:
   - writes `target/verification-quality/report.json`
   - covers labelled supported, contradicted, mixed, insufficient, numeric
     conflict, missing citation, ambiguity, and no-evidence cases
+- Run the focused HTTP Server Contract evidence gate:
+  - `make http-contract-ops-check`
+  - writes `target/http-contract-ops/report.json`
+  - covers auth roles, typed errors, OpenAPI contract, request IDs, rate limit,
+    CORS, and audit redaction
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
   - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
   - consistency gate: `make public-claims-check`

@@ -144,8 +144,35 @@ fn audit_log_file_records_route_metadata_without_query() {
     assert_eq!(value["method"], "GET");
     assert_eq!(value["path"], "/v1/health");
     assert_eq!(value["tenant"], "alpha");
+    assert!(value["request_id"]
+        .as_str()
+        .is_some_and(|request_id| request_id.starts_with("cortexdb-")));
     assert_eq!(value["status"], 200);
     assert!(!line.contains("tenant=alpha"));
+}
+
+#[test]
+fn x_request_id_is_propagated_or_generated() {
+    let dir = tempfile::tempdir().unwrap();
+    let addr = "127.0.0.1:0";
+    let listener = std::net::TcpListener::bind(addr).unwrap();
+    let local_addr = listener.local_addr().unwrap();
+    drop(listener);
+
+    let root_path = dir.path().to_owned();
+    std::thread::spawn(move || {
+        let _ = crate::serve(&root_path, &local_addr.to_string());
+    });
+
+    let propagated = request(
+        local_addr,
+        "GET /v1/health HTTP/1.1\r\nx-request-id: req-test-123\r\n\r\n",
+    )
+    .to_ascii_lowercase();
+    assert!(propagated.contains("x-request-id: req-test-123"));
+
+    let generated = request(local_addr, "GET /v1/health HTTP/1.1\r\n\r\n").to_ascii_lowercase();
+    assert!(generated.contains("x-request-id: cortexdb-"));
 }
 
 #[test]
