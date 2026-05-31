@@ -4,7 +4,7 @@ CortexDB has successfully transitioned from an early database loop prototype int
 
 ---
 
-## 1. What is Fully Completed & Stable (v0.1.0-core-alpha)
+## 1. What is Stable Within Core Alpha (v0.1.0-core-alpha)
 
 - **Durable Single-Node Storage:** Strict Write-Ahead Log (WAL) with group commits, MVCC MemTable, and incremental compaction.
 - **Asynchronous Network Surface:** Async HTTP server built on Axum and Tokio. Blocking DB transactions run through per-tenant `DatabaseActor` workers behind `tokio::task::spawn_blocking`; the database core itself remains local and blocking.

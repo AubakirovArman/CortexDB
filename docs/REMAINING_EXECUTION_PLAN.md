@@ -64,6 +64,8 @@ Core Alpha is operational:
   - current note: `docs/BETA_DELTA.md`
   - consistency gate: `make beta-delta-check`
 - Lock the external-facing statement in README/API docs to avoid overclaiming.
+  - current policy: `docs/PUBLIC_CLAIMS_POLICY.md`
+  - consistency gate: `make public-claims-check`
 
 ## Gate definition
 

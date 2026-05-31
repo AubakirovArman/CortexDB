@@ -1,6 +1,8 @@
 # CortexDB HTTP API Contract Specification (v0.1.0-core-alpha candidate)
 
-CortexDB exposes a lightweight, ultra-high-performance HTTP JSON API for interacting with Agent Memory, Retrieving Context, and Verifying Facts.
+CortexDB exposes a lightweight Core Alpha HTTP JSON API for interacting with
+Agent Memory, Retrieving Context, and Verifying Facts. This contract is covered
+by schema checks, but it is not a production SLA.
 
 ---
 

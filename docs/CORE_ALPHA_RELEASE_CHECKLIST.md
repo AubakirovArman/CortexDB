@@ -31,6 +31,7 @@ every required row is green on `main`.
 | ANN release package | `make ann-release-evidence-check` produces and validates `.tar.gz` release assets for the smoke corpus and demo-domain corpus, with `package_manifest.json`, SHA-256 file checksums, `history.json`, generated ground truth, and `production_safe=true`. |
 | Real embedding readiness | `make ann-real-embedding-readiness` writes `target/ann/real-embedding/readiness.json` with `ready=true` or explicit blocker codes for corpus/query/env/source-archive prerequisites. |
 | Beta delta consistency | `make beta-delta-check` verifies `docs/BETA_DELTA.md` separates stable, experimental, and blocked product layers and references the required release gates. |
+| Public claims consistency | `make public-claims-check` verifies public README/API/status docs keep Core Alpha, experimental, blocked, and non-production qualifiers. |
 | Query safety | AQL retrieve respects AgentView masks and candidate mappings. |
 | ContextPack v1 | AQL-to-ContextPack tests pass for budget, explain details, source refs, and citation anomalies. |
 | Docs | README, Core Alpha docs, invariants, failure scenarios, and task pools are current. |
