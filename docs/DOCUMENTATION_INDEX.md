@@ -11,6 +11,7 @@ At the time of this audit, the repository tracks 95 project markdown files.
 - [`README.md`](../README.md) - project overview, quickstart, current status.
 - [`PROJECT_STATUS.md`](PROJECT_STATUS.md) - honest Core Alpha status.
 - [`BETA_DELTA.md`](BETA_DELTA.md) - what remains before beta promotion.
+- [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - ordered epic queue and closing rules.
 - [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md) - current cycle plan.
 - [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md) - wording boundaries.
 
@@ -86,6 +87,7 @@ backlogs, snapshots, or deeper planning notes.
 - [`CORE_ALPHA_RELEASE_CHECKLIST.md`](CORE_ALPHA_RELEASE_CHECKLIST.md) - release checklist.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md) - release notes.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
+- [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - active ordered epic queue.
 - [`PL_IMPLEMENTATION_TASKS.md`](PL_IMPLEMENTATION_TASKS.md) - normalized action list from the external `pl.md` audit.
 - [`PRODUCTION_LAYER_NEXT_ACTIONS.md`](PRODUCTION_LAYER_NEXT_ACTIONS.md) - dated production-layer snapshot.
 - [`POST_CORE_ALPHA_EXECUTION_PLAN.md`](POST_CORE_ALPHA_EXECUTION_PLAN.md) - milestone execution backlog.
