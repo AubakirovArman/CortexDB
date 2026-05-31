@@ -7,8 +7,16 @@ const content = document.querySelector("#content");
 const routeLinks = Array.from(document.querySelectorAll("[data-route]"));
 const panels = Array.from(document.querySelectorAll(".panel"));
 const routes = new Map(panels.map(panel => [panel.id, panel]));
+const tenantInput = document.querySelector("#tenant");
+const tokenInput = document.querySelector("#token");
 let token = "";
-let tenant = "default";
+let tenant = sessionStorage.getItem("cortexdb-dashboard-tenant") || "default";
+
+tenantInput.value = tenant;
+
+function renderSessionStatus() {
+    sessionStatus.textContent = `Tenant: ${tenant}${token ? " · bearer active for tab" : ""}`;
+}
 
 function headers() {
     return token ? { authorization: `Bearer ${token}` } : {};
@@ -97,9 +105,23 @@ document.querySelector("#session-form").addEventListener("submit", event => {
     const data = new FormData(event.currentTarget);
     token = data.get("token") || "";
     tenant = data.get("tenant") || "default";
-    sessionStatus.textContent = `Tenant: ${tenant}${token ? " · bearer token set" : ""}`;
-    show({ auth: token ? "token_applied" : "cleared", tenant });
+    sessionStorage.setItem("cortexdb-dashboard-tenant", tenant);
+    tokenInput.value = "";
+    renderSessionStatus();
+    show({ auth: token ? "token_applied_memory_only" : "cleared", tenant });
 });
+
+on("#clear-session", "click", () => {
+    token = "";
+    tenant = "default";
+    tenantInput.value = tenant;
+    tokenInput.value = "";
+    sessionStorage.removeItem("cortexdb-dashboard-tenant");
+    renderSessionStatus();
+    show({ auth: "cleared", tenant });
+});
+
+renderSessionStatus();
 
 document.querySelectorAll(".panel").forEach(panel => {
     if (!panel.classList.contains("active")) panel.hidden = true;

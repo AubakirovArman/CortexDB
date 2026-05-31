@@ -92,6 +92,8 @@ def read_dashboard_manifest(dist_dir: Path) -> dict[str, Any]:
         raise ValueError("dashboard_manifest.json: unsupported schema_version")
     if manifest.get("stack") != "dependency-free-static-html-css-js":
         raise ValueError("dashboard_manifest.json: unexpected stack")
+    if manifest.get("session_policy", {}).get("token_persistence") != "memory-only":
+        raise ValueError("dashboard_manifest.json: token persistence must be memory-only")
     routes = tuple(route.get("id") for route in manifest.get("routes", []))
     if routes != ROUTES:
         raise ValueError("dashboard_manifest.json: route list does not match release routes")
@@ -180,6 +182,8 @@ def validate_packaged_dashboard_manifest(tar: tarfile.TarFile, root: str) -> Non
         raise ValueError("dashboard_manifest.json: unsupported schema_version")
     if manifest.get("stack") != "dependency-free-static-html-css-js":
         raise ValueError("dashboard_manifest.json: unexpected stack")
+    if manifest.get("session_policy", {}).get("token_persistence") != "memory-only":
+        raise ValueError("dashboard_manifest.json: token persistence must be memory-only")
     routes = tuple(route.get("id") for route in manifest.get("routes", []))
     if routes != ROUTES:
         raise ValueError("dashboard_manifest.json: route list does not match release routes")
@@ -242,6 +246,7 @@ class SelfTests(unittest.TestCase):
                 {
                     "schema_version": 1,
                     "stack": "dependency-free-static-html-css-js",
+                    "session_policy": {"token_persistence": "memory-only"},
                     "routes": [{"id": route} for route in ROUTES],
                 }
             ),

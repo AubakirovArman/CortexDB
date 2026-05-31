@@ -38,7 +38,9 @@ Current coverage:
 - standalone build output lives in `web/dashboard/dist`;
 - build output is versioned under `/dashboard/assets/v1/`;
 - `dashboard_manifest.json` declares the frontend contract: stack, release
-  channel, asset root, route IDs, and route entrypoints;
+  channel, asset root, route IDs, route entrypoints, and session policy;
+- bearer tokens are memory-only and cleared from the password field after
+  apply; tenant selection is the only persisted session value;
 - standalone smoke serves `web/dashboard/dist` over HTTP and verifies the
   expected route-shaped asset paths plus the frontend manifest;
 - views are addressable through route-level URLs such as `/dashboard/overview`,

@@ -4,6 +4,10 @@
   "release_channel": "core-alpha",
   "stack": "dependency-free-static-html-css-js",
   "asset_root": "/dashboard/assets/v1",
+  "session_policy": {
+    "tenant_persistence": "sessionStorage",
+    "token_persistence": "memory-only"
+  },
   "entrypoints": [
     "/dashboard",
     "/dashboard/overview",

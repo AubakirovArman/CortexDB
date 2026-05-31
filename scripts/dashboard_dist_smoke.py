@@ -65,6 +65,7 @@ def main() -> int:
         ("stats bootstrap", 'run("stats"' in script),
         ("history router", "pushState" in script),
         ("frontend stack manifest", "dependency-free-static-html-css-js" in manifest),
+        ("memory-only token policy", '"token_persistence": "memory-only"' in manifest),
         ("route manifest", '"ann-eval"' in manifest),
     ]
     failed = [name for name, ok in required if not ok]

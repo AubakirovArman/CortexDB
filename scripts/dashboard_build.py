@@ -60,6 +60,9 @@ def validate_manifest() -> None:
         )
     if manifest.get("stack") != "dependency-free-static-html-css-js":
         raise SystemExit("dashboard_manifest.json must declare the dashboard stack")
+    session_policy = manifest.get("session_policy", {})
+    if session_policy.get("token_persistence") != "memory-only":
+        raise SystemExit("dashboard tokens must remain memory-only")
 
 
 def check_assets() -> int:

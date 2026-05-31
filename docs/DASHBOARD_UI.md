@@ -45,10 +45,11 @@ dependency-free-static-html-css-js
 
 `web/dashboard/src/dashboard_manifest.json` is the checked source of truth for
 the standalone frontend contract. It declares the release channel, asset root,
-route IDs, and route entrypoints. `make dashboard-build` copies that manifest
-into the server asset tree and standalone dist. `make dashboard-release-check`
-packages and validates it alongside the archive manifest and SHA-256 file
-checksums.
+route IDs, route entrypoints, and the session policy. Tenant selection is
+persisted in `sessionStorage`; bearer tokens are memory-only and cleared from
+the input after apply. `make dashboard-build` copies that manifest into the
+server asset tree and standalone dist. `make dashboard-release-check` packages
+and validates it alongside the archive manifest and SHA-256 file checksums.
 
 ## Boundary
 

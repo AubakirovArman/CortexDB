@@ -175,6 +175,9 @@
   `dashboard_manifest.json`, fixing the Core Alpha frontend stack
   (`dependency-free-static-html-css-js`), release channel, asset root,
   route IDs, and route entrypoints as a machine-checkable contract.
+- [x] Dashboard session UX now has a checked memory-only bearer token policy,
+  tenant-only `sessionStorage` persistence, and a clear-session control covered
+  by Playwright smoke.
 - [x] Наборы views в текущем static dashboard: overview, cells, search/explain, ANN, AQL, context, verify, ingest, storage health, cluster status.
 - [x] Базовый tenant/token control в UI для scoped API calls; полноценный auth UX остаётся будущей standalone UI задачей.
 - [x] Playwright/CI smoke путь для текущего `/dashboard`: asset loading, route navigation, cell put/get, keyword search.

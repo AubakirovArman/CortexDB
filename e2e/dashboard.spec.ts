@@ -80,6 +80,22 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     await expect(page.locator('script[src="/dashboard/assets/v1/app.js"]')).toHaveCount(1);
     await expect(page.locator('#output')).toContainText('current_seq');
 
+    await page.locator('#tenant').fill('dashboard-tenant');
+    await page.locator('#token').fill('secret-token-value');
+    await page.getByRole('button', { name: 'Apply' }).click();
+    await expect(page.locator('#session-status')).toContainText('Tenant: dashboard-tenant');
+    await expect(page.locator('#session-status')).toContainText('bearer active for tab');
+    await expect(page.locator('#token')).toHaveValue('');
+    await expect(page.locator('#output')).not.toContainText('secret-token-value');
+
+    await page.reload();
+    await expect(page.locator('#tenant')).toHaveValue('dashboard-tenant');
+    await expect(page.locator('#session-status')).toContainText('Tenant: dashboard-tenant');
+    await expect(page.locator('#session-status')).not.toContainText('bearer active');
+    await page.getByRole('button', { name: 'Clear' }).click();
+    await expect(page.locator('#tenant')).toHaveValue('default');
+    await expect(page.locator('#session-status')).toContainText('Tenant: default');
+
     await page.getByRole('link', { name: 'Cells' }).click();
     await expect(page).toHaveURL(/\/dashboard\/cells$/);
     await expect(page).toHaveTitle('Cells | CortexDB Console');
