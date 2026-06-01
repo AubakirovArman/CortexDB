@@ -59,6 +59,8 @@
 - Added `docs/PUBLIC_CLAIMS_POLICY.md` and `make public-claims-check` to keep
   README/API/status wording aligned with the current Core Alpha, experimental,
   blocked, and non-production boundaries.
+- Added `docs/PUBLIC_CLAIMS_FREEZE.md` and a JSON public-claims report so
+  risky distributed/cloud/enterprise/HNSW wording is checked before release.
 - Added `single_node_performance_check` and `make single-node-performance-check`
   to emit a Strict/Balanced single-node engine performance matrix covering
   put/get/search/context/checkpoint/compact/restart lifecycle phases.

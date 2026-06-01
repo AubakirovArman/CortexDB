@@ -35,4 +35,6 @@ Public docs that describe product status must include the relevant qualifier:
 - `experimental`, `guarded`, `future`, or `blocked` for ANN/HNSW, consensus,
   product UI, and SDK publication lifecycle claims.
 
-The release gate is `make public-claims-check`.
+The release gate is `make public-claims-check`. It writes
+`target/public-claims/report.json` and is paired with the release-facing freeze
+checklist in [`PUBLIC_CLAIMS_FREEZE.md`](PUBLIC_CLAIMS_FREEZE.md).

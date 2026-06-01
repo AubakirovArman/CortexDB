@@ -826,6 +826,17 @@ Acceptance:
 
 ### Epic 5.3 - Public Claims Freeze
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- Added `docs/PUBLIC_CLAIMS_FREEZE.md`, the release-facing wording boundary for
+  local single-node production claims.
+- `make public-claims-check` now writes `target/public-claims/report.json`.
+- The public claims scanner checks required boundary docs and scans tracked
+  project markdown for risky distributed/cloud/enterprise/legal/HNSW wording
+  that lacks explicit future, blocked, unsupported, or out-of-scope context.
+
 Tasks:
 
 1. Audit README and docs for overclaims.

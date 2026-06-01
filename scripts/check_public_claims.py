@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -40,6 +42,24 @@ PUBLIC_DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "Disallowed Claims",
         "Required Qualifiers",
     ),
+    "docs/PUBLIC_CLAIMS_FREEZE.md": (
+        "local single-node only",
+        "Forbidden Public Claims",
+        "Release Gate",
+    ),
+    "docs/PRODUCTION_V1.md": (
+        "local single-node",
+        "Distributed Production Is Out Of Scope",
+        "not a public SLA",
+    ),
+    "docs/BINARY_PLATFORM_MATRIX.md": (
+        "Windows is unsupported",
+        "Clean Install Smoke",
+    ),
+    "docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md": (
+        "Release-blocking rule",
+        "Forbidden wording",
+    ),
 }
 
 FORBIDDEN_PHRASES = (
@@ -52,6 +72,67 @@ FORBIDDEN_PHRASES = (
     "production-ready database",
     "SLA-backed",
 )
+
+RISKY_CLAIMS = (
+    "production distributed",
+    "managed cloud",
+    "enterprise compliance",
+    "enterprise RBAC",
+    "legal-grade",
+    "production HNSW",
+    "production-ready",
+    "tamper-evident audit",
+)
+
+SAFE_CONTEXT_MARKERS = (
+    "not",
+    "no ",
+    "do not",
+    "out of scope",
+    "future",
+    "blocked",
+    "checklist",
+    "design",
+    "defer",
+    "deferred",
+    "experimental",
+    "future work",
+    "gap",
+    "gaps",
+    "missing",
+    "need",
+    "needs",
+    "non-goals",
+    "not included",
+    "not ready",
+    "next",
+    "out of core",
+    "p2",
+    "unsupported",
+    "disallowed",
+    "forbidden",
+    "explicitly out",
+    "excluded",
+    "backlog",
+    "does not prove",
+    "not prove",
+    "out of public wording",
+    "without exact fallback",
+    "until",
+    "target model",
+    "открыто",
+    "remains",
+    "defer",
+)
+
+SCAN_EXCLUDED_PARTS = {
+    ".git",
+    "target",
+    "node_modules",
+    ".venv",
+    "venv",
+    "__pycache__",
+}
 
 
 def read(path: Path) -> str:
@@ -74,6 +155,41 @@ def forbidden_terms(label: str, text: str) -> list[str]:
     ]
 
 
+def tracked_markdown(repo: Path) -> list[Path]:
+    result = subprocess.run(
+        ["git", "ls-files", "*.md"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return []
+    paths: list[Path] = []
+    for line in result.stdout.splitlines():
+        path = Path(line)
+        if any(part in SCAN_EXCLUDED_PARTS for part in path.parts):
+            continue
+        paths.append(repo / path)
+    return paths
+
+
+def risky_claim_errors(repo: Path) -> list[str]:
+    errors: list[str] = []
+    for path in tracked_markdown(repo):
+        label = path.relative_to(repo).as_posix()
+        lines = read(path).splitlines()
+        for index, line in enumerate(lines):
+            lowered = line.lower()
+            for term in RISKY_CLAIMS:
+                if term.lower() not in lowered:
+                    continue
+                window = "\n".join(lines[max(0, index - 12) : index + 13]).lower()
+                if not any(marker in window for marker in SAFE_CONTEXT_MARKERS):
+                    errors.append(f"{label}:{index + 1}: risky claim {term!r} lacks boundary wording")
+    return errors
+
+
 def validate(repo: Path) -> list[str]:
     errors: list[str] = []
     for relative, terms in PUBLIC_DOC_REQUIREMENTS.items():
@@ -81,6 +197,7 @@ def validate(repo: Path) -> list[str]:
         errors.extend(missing_terms(relative, text, terms))
         if relative != "docs/PUBLIC_CLAIMS_POLICY.md":
             errors.extend(forbidden_terms(relative, text))
+    errors.extend(risky_claim_errors(repo))
 
     makefile = read(repo / "Makefile")
     if "public-claims-check:" not in makefile:
@@ -102,6 +219,8 @@ def self_test() -> int:
             "alpha-check:\n\t$(MAKE) public-claims-check\n",
             encoding="utf-8",
         )
+        subprocess.run(["git", "init"], cwd=repo, capture_output=True, check=True)
+        subprocess.run(["git", "add", "."], cwd=repo, capture_output=True, check=True)
         clean_errors = validate(repo)
         if clean_errors:
             print("public claims self-test failed on clean fixture")
@@ -123,6 +242,7 @@ def self_test() -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--report", default="target/public-claims/report.json")
     args = parser.parse_args()
     if args.self_test:
         return self_test()
@@ -136,9 +256,23 @@ def main() -> int:
         print("PUBLIC CLAIMS CHECK FAILED:")
         for error in errors:
             print(f"  {error}")
+        write_report(repo / args.report, "failed", errors)
         return 1
+    write_report(repo / args.report, "passed", [])
     print("public claims check passed")
     return 0
+
+
+def write_report(path: Path, status: str, errors: list[str]) -> None:
+    report = {
+        "schema_version": 1,
+        "status": status,
+        "docs_checked": sorted(PUBLIC_DOC_REQUIREMENTS),
+        "risky_claims": list(RISKY_CLAIMS),
+        "failures": errors,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

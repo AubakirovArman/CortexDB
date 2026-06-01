@@ -49,6 +49,10 @@ pub fn asset(path: &str) -> Option<DashboardAsset> {
             content_type: "application/javascript; charset=utf-8",
             body: include_str!("../assets/dashboard/v1/reporting_operations.js"),
         }),
+        "/dashboard/assets/v1/reporting_audit.js" => Some(DashboardAsset {
+            content_type: "application/javascript; charset=utf-8",
+            body: include_str!("../assets/dashboard/v1/reporting_audit.js"),
+        }),
         "/dashboard/assets/v1/app.js" => Some(DashboardAsset {
             content_type: "application/javascript; charset=utf-8",
             body: include_str!("../assets/dashboard/v1/app.js"),

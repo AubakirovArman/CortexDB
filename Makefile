@@ -209,6 +209,7 @@ PRODUCTION_CANDIDATE_ROOT ?= target/production-candidate
 PRODUCTION_CANDIDATE_REPORT ?= $(PRODUCTION_CANDIDATE_ROOT)/report.json
 PRODUCTION_V1_ROOT ?= target/production-v1
 PRODUCTION_V1_REPORT ?= $(PRODUCTION_V1_ROOT)/report.json
+PUBLIC_CLAIMS_REPORT ?= target/public-claims/report.json
 STORAGE_COMPAT_ROOT ?= target/storage-compat
 STORAGE_COMPAT_REPORT ?= $(STORAGE_COMPAT_ROOT)/report.json
 MIGRATION_HISTORICAL_RESTORE_ROOT ?= target/migration-historical-restore
@@ -346,7 +347,7 @@ production-v1-check:
 	python3 scripts/production_v1_check.py --root "$(PRODUCTION_V1_ROOT)" --report "$(PRODUCTION_V1_REPORT)"
 
 public-claims-check:
-	python3 scripts/check_public_claims.py
+	python3 scripts/check_public_claims.py --report "$(PUBLIC_CLAIMS_REPORT)"
 
 load-smoke-check:
 	cargo build -p cortex-server --bin cortex-server

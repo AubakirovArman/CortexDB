@@ -4,7 +4,7 @@ Last audited: 2026-06-01.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 162 project markdown files.
+At the time of this audit, the repository tracks 163 project markdown files.
 
 ## Start Here
 
@@ -17,6 +17,7 @@ At the time of this audit, the repository tracks 162 project markdown files.
 - [`PRODUCTION_CANDIDATE_EVIDENCE.md`](PRODUCTION_CANDIDATE_EVIDENCE.md) - local Epic 5 evidence gate.
 - [`PRODUCTION_V1.md`](PRODUCTION_V1.md) - local single-node Production v1.0 boundary.
 - [`PRODUCTION_V1_EVIDENCE.md`](PRODUCTION_V1_EVIDENCE.md) - local Epic 6 evidence gate.
+- [`PUBLIC_CLAIMS_FREEZE.md`](PUBLIC_CLAIMS_FREEZE.md) - public wording freeze for local single-node claims.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - ordered epic queue and closing rules.
 - [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md) - current cycle plan.
 - [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md) - wording boundaries.

@@ -117,7 +117,8 @@ Backup and restore behavior is documented in
 The current Core Alpha vs beta-readiness delta is documented in
 [`docs/BETA_DELTA.md`](docs/BETA_DELTA.md).
 Public product-claim boundaries are documented in
-[`docs/PUBLIC_CLAIMS_POLICY.md`](docs/PUBLIC_CLAIMS_POLICY.md).
+[`docs/PUBLIC_CLAIMS_POLICY.md`](docs/PUBLIC_CLAIMS_POLICY.md) and
+[`docs/PUBLIC_CLAIMS_FREEZE.md`](docs/PUBLIC_CLAIMS_FREEZE.md).
 Offline upgrade, rollback, and format migration policy is documented in
 [`docs/UPGRADE_MIGRATION.md`](docs/UPGRADE_MIGRATION.md).
 Install, systemd, and operator rollback guides are documented in
