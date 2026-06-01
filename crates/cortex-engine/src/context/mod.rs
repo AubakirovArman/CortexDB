@@ -18,6 +18,7 @@ use explain::{extract_query_terms, generate_selection_reason};
 pub use export::ContextPackExportFormat;
 
 pub const DEFAULT_REDUNDANCY_THRESHOLD_Q16: u16 = 32_768;
+pub const DEFAULT_CITATION_OVERHEAD_TOKENS: u32 = 8;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ContextPackOptions {
@@ -25,6 +26,7 @@ pub struct ContextPackOptions {
     pub require_citations: bool,
     pub reduce_redundancy: bool,
     pub redundancy_threshold_q16: u16,
+    pub citation_overhead_tokens: u32,
 }
 
 impl Default for ContextPackOptions {
@@ -34,6 +36,7 @@ impl Default for ContextPackOptions {
             require_citations: false,
             reduce_redundancy: false,
             redundancy_threshold_q16: DEFAULT_REDUNDANCY_THRESHOLD_Q16,
+            citation_overhead_tokens: DEFAULT_CITATION_OVERHEAD_TOKENS,
         }
     }
 }
@@ -193,26 +196,12 @@ impl ContextPack {
         let mut anomalies = Vec::new();
 
         for cell in cells {
-            let cell_tokens = estimate_tokens(&cell.payload);
-            let would_exceed = !pack_cells.is_empty()
-                && estimated_tokens.saturating_add(cell_tokens) > token_budget_tokens;
-            if would_exceed {
-                truncated = true;
-                anomalies.push(ContextPackAnomaly {
-                    cell_id: Some(cell.cell_id),
-                    code: ContextPackAnomalyCode::TokenOverload,
-                    message: "candidate would exceed the remaining token budget".to_owned(),
-                    why_excluded: Some(
-                        "excluded because estimated_tokens would exceed token_budget_tokens"
-                            .to_owned(),
-                    ),
-                });
-                break;
-            }
-            if pack_cells.is_empty() && cell_tokens > token_budget_tokens {
-                truncated = true;
-            }
-
+            let citation = extract_citation(&cell.payload);
+            let query_terms = extract_query_terms(query);
+            let metadata = CellMetadata::from_payload(&cell.payload);
+            let cell_body_terms = tokenize(&metadata.body_text)
+                .into_iter()
+                .collect::<BTreeSet<_>>();
             if options.reduce_redundancy
                 && is_redundant(
                     &cell.payload,
@@ -232,7 +221,31 @@ impl ContextPack {
                 continue;
             }
 
-            let citation = extract_citation(&cell.payload);
+            let cell_tokens = estimate_cell_tokens(
+                &cell.payload,
+                citation.as_deref(),
+                citations_required,
+                options,
+            );
+            let would_exceed = !pack_cells.is_empty()
+                && estimated_tokens.saturating_add(cell_tokens) > token_budget_tokens;
+            if would_exceed {
+                truncated = true;
+                anomalies.push(ContextPackAnomaly {
+                    cell_id: Some(cell.cell_id),
+                    code: ContextPackAnomalyCode::TokenOverload,
+                    message: "candidate would exceed the remaining token budget".to_owned(),
+                    why_excluded: Some(
+                        "excluded because estimated_tokens would exceed token_budget_tokens; skipped so later smaller candidates can still fit"
+                            .to_owned(),
+                    ),
+                });
+                continue;
+            }
+            if pack_cells.is_empty() && cell_tokens > token_budget_tokens {
+                truncated = true;
+            }
+
             if citations_required && citation.is_none() {
                 anomalies.push(ContextPackAnomaly {
                     cell_id: Some(cell.cell_id),
@@ -242,11 +255,6 @@ impl ContextPack {
                 });
             }
 
-            let query_terms = extract_query_terms(query);
-            let metadata = CellMetadata::from_payload(&cell.payload);
-            let cell_body_terms = tokenize(&metadata.body_text)
-                .into_iter()
-                .collect::<BTreeSet<_>>();
             let matched: Vec<String> = query_terms
                 .iter()
                 .filter(|term| cell_body_terms.contains(*term))
@@ -356,6 +364,20 @@ pub fn estimate_tokens(payload: &[u8]) -> u32 {
         Err(_) => return u32::MAX,
     };
     bytes.saturating_add(3) / 4
+}
+
+fn estimate_cell_tokens(
+    payload: &[u8],
+    citation: Option<&str>,
+    citations_required: bool,
+    options: &ContextPackOptions,
+) -> u32 {
+    let citation_overhead = if citations_required && citation.is_some() {
+        options.citation_overhead_tokens
+    } else {
+        0
+    };
+    estimate_tokens(payload).saturating_add(citation_overhead)
 }
 
 fn effective_budget(view: &AgentView, requested: u32) -> u32 {

@@ -30,6 +30,12 @@ Implemented in `cortex-engine`:
 - Optional dense-vector redundancy reduction when payloads include `vector=`.
 - Numeric guard coexistence: conflicting values for the same
   `project` + `metric` are kept together instead of deduplicated.
+- Citation-aware token accounting: when citations are required and a selected
+  cell has a citation/source, the deterministic estimate includes fixed
+  citation overhead.
+- Dedup-aware budget packing: redundant candidates are filtered before budget
+  overload checks, and oversized middle candidates are skipped so smaller later
+  candidates can still fit.
 
 Public JSON responses include:
 
@@ -93,10 +99,12 @@ existing compact summary default unless `--json` or `--format` is passed.
 
 1. Context packing never bypasses AQL policy, binder, bitmap VM, or AgentView.
 2. Ordering follows the retrieve candidate order.
-3. Token estimates are deterministic integer estimates.
+3. Token estimates are deterministic integer estimates and include citation
+   overhead when citations are required.
 4. Requested budget is clamped by `AgentView::effective_budget`.
 5. Citation requirements produce anomalies instead of silently passing.
-6. Redundancy reduction, when enabled, reports skipped cells as anomalies.
+6. Redundancy reduction, when enabled, reports skipped cells as anomalies before
+   budget overload checks.
 7. Numeric guard conflicts are preserved as context, not treated as duplicates.
 8. No HNSW, reranking, or LLM calls run inside ContextPack v1 itself.
 

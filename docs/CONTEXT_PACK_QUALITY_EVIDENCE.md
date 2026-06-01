@@ -71,3 +71,12 @@ Stable ContextPack prompt and Markdown export modes are covered by:
 - `cargo test -p cortex-server v1_context_returns_prompt_and_markdown_exports`;
 - `make openapi-contract-check`, which keeps `/v1/context?format=...` documented
   alongside the typed JSON contract.
+
+## Budget Optimizer Evidence
+
+ContextPack budget optimization is covered by
+`cargo test -p cortex-engine --test context_pack` cases for:
+
+- required-citation overhead in `estimated_tokens`;
+- skipping an oversized middle candidate while keeping later smaller cells;
+- applying redundancy reduction before budget overload checks.

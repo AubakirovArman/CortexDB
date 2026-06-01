@@ -160,6 +160,7 @@ fn assert_context_quality(db: &Database) {
                 require_citations: true,
                 reduce_redundancy: true,
                 redundancy_threshold_q16: 10,
+                citation_overhead_tokens: cortex_engine::context::DEFAULT_CITATION_OVERHEAD_TOKENS,
             },
         )
         .unwrap();

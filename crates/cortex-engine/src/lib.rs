@@ -34,6 +34,7 @@ pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use context::{
     estimate_tokens, ContextExplain, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode,
     ContextPackCell, ContextPackExportFormat, ContextPackOptions, ContextScoreComponent,
+    DEFAULT_CITATION_OVERHEAD_TOKENS,
 };
 pub use database::{CandidateResolver, CheckpointStats, Database, RetrievedCell};
 pub use distributed::*;

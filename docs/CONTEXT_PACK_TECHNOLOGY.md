@@ -40,8 +40,8 @@ AQL string
 -> bitmap VM retrieval
 -> candidate cells
 -> feedback/scoring order
--> token budget packing
 -> redundancy checks
+-> token budget packing
 -> citation/anomaly checks
 -> ContextPack JSON
 ```
@@ -73,8 +73,15 @@ Core Alpha uses deterministic integer token estimates. The estimate is
 approximate, but stable: the same payload and options produce the same budget
 decision.
 
-When a candidate would exceed the requested budget, the pack marks truncation
-or emits an anomaly instead of silently overflowing the pack.
+When citations are required and a selected cell has a source/citation, the
+estimate includes fixed citation overhead so the reported budget accounts for
+evidence markers, not only payload text.
+
+When a middle candidate would exceed the requested budget, the pack marks
+truncation, emits a `token_overload` anomaly, and continues scanning later
+smaller candidates. The first candidate can still be included even when it is
+larger than the requested budget, preserving the old "return at least one
+candidate" behavior.
 
 ## Citations
 
@@ -92,7 +99,8 @@ If citations are required and a selected cell has none, the pack emits a
 ## Redundancy Control
 
 When redundancy reduction is enabled, Context Pack skips near-duplicate cells
-and emits `redundant_cell` anomalies for visibility.
+before budget overload checks and emits `redundant_cell` anomalies for
+visibility. This prevents a large duplicate from prematurely stopping the pack.
 
 Core Alpha supports sparse term redundancy checks and vector-aware comparison
 when vector payloads are available. Numeric guards prevent distinct numeric
