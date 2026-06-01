@@ -42,12 +42,17 @@ EPIC_MARKERS: dict[str, dict[str, object]] = {
                 "Tenant Lifecycle",
                 "Billing And Quotas",
                 "Support And Break-glass",
+                "Current Evidence Boundary",
                 "Required Gates",
                 "Non-goals",
             ],
             "docs/FUTURE_NON_GOAL_EPICS.md": [
                 "Managed Cloud",
                 "make managed-cloud-design-check",
+            ],
+            "scripts/managed_cloud_gate_check.py": [
+                "managed_cloud_ready",
+                "local single-node managed-cloud prerequisites only",
             ],
         },
     },

@@ -14,7 +14,7 @@ Total future epics: 7.
 | # | Epic | Status | Design gate | Promotion boundary |
 |---|---|---|---|---|
 | 1 | Production Distributed Consensus | future-phase-1-started | `make distributed-consensus-design-check` | Multi-node replicated log, leader failover, split-brain prevention, and sustained rejoin evidence |
-| 2 | Managed Cloud | future-design-ready | `make managed-cloud-design-check` | Hosted control plane, tenant isolation, billing/quotas, cloud operations, and support lifecycle |
+| 2 | Managed Cloud | future-phase-1-started | `make managed-cloud-design-check` | Hosted control plane, tenant isolation, billing/quotas, cloud operations, and support lifecycle |
 | 3 | Enterprise RBAC And Compliance | future-phase-1-started | `make enterprise-rbac-design-check` | Durable policy store, auditable permissions, compliance controls, and admin lifecycle |
 | 4 | Full Production HNSW Without Fallback | future-design-ready | `make hnsw-no-fallback-design-check` | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
 | 5 | Built-in LLM Inference | future-design-ready | `make llm-inference-design-check` | Model runtime, resource isolation, prompt safety, provider compatibility, and operational cost controls |
@@ -124,6 +124,20 @@ Why this is future:
 - Current product is a local single-node database.
 - Managed cloud needs operational, support, security, billing, and isolation
   systems that do not exist yet.
+
+Current implementation slice:
+
+- `make cloud-tenant-lifecycle-check` binds local tenant isolation,
+  tenant restore, HTTP contract, and observability evidence into a
+  machine-readable managed-cloud prerequisite report.
+- `make cloud-backup-restore-check` binds local backup drill, local offsite
+  staging, and tenant recovery evidence into a managed-cloud backup prerequisite
+  report.
+- `make cloud-upgrade-check` binds local deployment/upgrade and migration
+  compatibility gates into a managed-cloud upgrade prerequisite report.
+- All managed-cloud reports are written under `target/managed-cloud/` and carry
+  `managed_cloud_ready=false`; they prove local prerequisites only, not a
+  hosted service.
 
 Task pool:
 

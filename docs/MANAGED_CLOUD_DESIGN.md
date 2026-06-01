@@ -1,6 +1,6 @@
 # Managed Cloud Design
 
-Status: future design gate, not implemented.
+Status: future phase 1 local prerequisite gates started, not a hosted service.
 
 ## Goal
 
@@ -51,6 +51,23 @@ redacted logs. Break-glass access must be opt-in and must create audit events.
 3. `make cloud-backup-restore-check`
 4. `make cloud-upgrade-check`
 5. `make public-claims-check`
+
+## Current Evidence Boundary
+
+The current cloud gates validate local prerequisites only. They do not prove
+that CortexDB is a managed hosted service, and their reports carry
+`managed_cloud_ready=false`.
+
+| Gate | Evidence |
+| --- | --- |
+| `make cloud-tenant-lifecycle-check` | local tenant routing, invalid-tenant fail-closed behavior, tenant restore isolation, HTTP contract controls, and observability docs |
+| `make cloud-backup-restore-check` | local backup drills, local offsite staging, restored validation, and tenant isolation after restore |
+| `make cloud-upgrade-check` | install, offline upgrade, rollback, release artifact, and migration compatibility documentation gates |
+
+Promotion beyond this boundary requires a real staging control plane, tenant
+provisioning/deletion automation, cloud backup storage, support access
+workflows, quota/billing events, and upgrade/rollback drills against managed
+instances.
 
 ## Acceptance
 
