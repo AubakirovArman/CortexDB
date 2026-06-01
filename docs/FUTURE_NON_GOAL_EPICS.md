@@ -11,15 +11,15 @@ evidence.
 
 Total future epics: 7.
 
-| # | Epic | Status | Promotion boundary |
-|---|---|---|---|
-| 1 | Production Distributed Consensus | future | Multi-node replicated log, leader failover, split-brain prevention, and sustained rejoin evidence |
-| 2 | Managed Cloud | future | Hosted control plane, tenant isolation, billing/quotas, cloud operations, and support lifecycle |
-| 3 | Enterprise RBAC And Compliance | future | Durable policy store, auditable permissions, compliance controls, and admin lifecycle |
-| 4 | Full Production HNSW Without Fallback | future | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
-| 5 | Built-in LLM Inference | future | Model runtime, resource isolation, prompt safety, provider compatibility, and operational cost controls |
-| 6 | External Identity Providers | future | OIDC/SAML or equivalent identity integration with role/scope mapping and rotation |
-| 7 | Legal-grade Verification | future | Legal-domain evidence model, citations, review workflow, liability boundaries, and evaluation by domain experts |
+| # | Epic | Status | Design gate | Promotion boundary |
+|---|---|---|---|---|
+| 1 | Production Distributed Consensus | future-design-ready | `make distributed-consensus-design-check` | Multi-node replicated log, leader failover, split-brain prevention, and sustained rejoin evidence |
+| 2 | Managed Cloud | future-design-ready | `make managed-cloud-design-check` | Hosted control plane, tenant isolation, billing/quotas, cloud operations, and support lifecycle |
+| 3 | Enterprise RBAC And Compliance | future-design-ready | `make enterprise-rbac-design-check` | Durable policy store, auditable permissions, compliance controls, and admin lifecycle |
+| 4 | Full Production HNSW Without Fallback | future-design-ready | `make hnsw-no-fallback-design-check` | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
+| 5 | Built-in LLM Inference | future-design-ready | `make llm-inference-design-check` | Model runtime, resource isolation, prompt safety, provider compatibility, and operational cost controls |
+| 6 | External Identity Providers | future-design-ready | `make external-identity-design-check` | OIDC/SAML or equivalent identity integration with role/scope mapping and rotation |
+| 7 | Legal-grade Verification | future-design-ready | `make legal-verification-design-check` | Legal-domain evidence model, citations, review workflow, liability boundaries, and evaluation by domain experts |
 
 ## Promotion Rules
 
@@ -31,6 +31,30 @@ Total future epics: 7.
 4. Public docs must continue to say these are not implemented until the relevant
    gate passes.
 5. No future epic can weaken the current local single-node guarantees.
+
+## Phase 0 Design Gates
+
+The current repository now tracks design-level gates for all seven future
+epics. These gates prove that each epic has a scoped design, promotion boundary,
+and public-claim guard. They do not prove implementation readiness.
+
+Run all design gates:
+
+```bash
+make future-epic-design-check
+```
+
+Run individual design gates:
+
+```bash
+make distributed-consensus-design-check
+make managed-cloud-design-check
+make enterprise-rbac-design-check
+make hnsw-no-fallback-design-check
+make llm-inference-design-check
+make external-identity-design-check
+make legal-verification-design-check
+```
 
 ## Epic 1 - Production Distributed Consensus
 

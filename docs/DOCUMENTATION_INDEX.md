@@ -31,6 +31,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`CORE_INVARIANTS.md`](CORE_INVARIANTS.md) - safety invariants.
 - [`CORE_CONSISTENCY_AUDIT.md`](CORE_CONSISTENCY_AUDIT.md) - consistency checks.
 - [`CONSENSUS_SLO.md`](CONSENSUS_SLO.md) - consensus hardening gates and beta SLO targets.
+- [`DISTRIBUTED_CONSENSUS_DESIGN.md`](DISTRIBUTED_CONSENSUS_DESIGN.md) - future production distributed consensus design.
 - [`WHY_CORTEXDB.md`](WHY_CORTEXDB.md) - positioning and rationale.
 - [`WHY_AGENT_NATIVE_DB.md`](WHY_AGENT_NATIVE_DB.md) - agent-native database concept.
 
@@ -75,6 +76,8 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`HTTP_SERVER_CONTRACT_EVIDENCE.md`](HTTP_SERVER_CONTRACT_EVIDENCE.md) - local Epic 13 evidence gate.
 - [`AUTH.md`](AUTH.md) - authentication and token policy.
 - [`RBAC_POLICY_STORE_DESIGN.md`](RBAC_POLICY_STORE_DESIGN.md) - future dynamic RBAC policy-store design.
+- [`ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md`](ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md) - future enterprise RBAC and compliance design.
+- [`EXTERNAL_IDENTITY_DESIGN.md`](EXTERNAL_IDENTITY_DESIGN.md) - future external identity provider design.
 - [`CLI.md`](CLI.md) - CLI command reference.
 - [`CLI_PRODUCT_EVIDENCE.md`](CLI_PRODUCT_EVIDENCE.md) - local Epic 14 evidence gate.
 - [`SDK_QUICKSTART.md`](SDK_QUICKSTART.md) - SDK usage.
@@ -86,6 +89,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 
 - [`SEARCH.md`](SEARCH.md) - lexical/vector/search foundations.
 - [`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md) - ANN guardrails and tuning.
+- [`HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md`](HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md) - future fallback-free HNSW production design.
 - [`ANN_CORPUS_FORMAT.md`](ANN_CORPUS_FORMAT.md) - ANN corpus format.
 - [`ANN_PUBLIC_CORPUS_RUNS.md`](ANN_PUBLIC_CORPUS_RUNS.md) - public corpus run policy.
 - [`BENCHMARKS.md`](BENCHMARKS.md) - benchmark gates and reports.
@@ -115,6 +119,9 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`SECURITY_RELEASE_CHECKLIST.md`](SECURITY_RELEASE_CHECKLIST.md) - security release checklist and non-goals.
 - [`SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md`](SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md) - release-blocking security claim decisions.
 - [`DEPLOYMENT_UPGRADE_EVIDENCE.md`](DEPLOYMENT_UPGRADE_EVIDENCE.md) - local Epic 19 deployment and upgrade evidence gate.
+- [`MANAGED_CLOUD_DESIGN.md`](MANAGED_CLOUD_DESIGN.md) - future managed cloud design.
+- [`LLM_INFERENCE_DESIGN.md`](LLM_INFERENCE_DESIGN.md) - future built-in LLM inference design.
+- [`LEGAL_VERIFICATION_BOUNDARY.md`](LEGAL_VERIFICATION_BOUNDARY.md) - future legal-grade verification boundary.
 
 ## Planning And Release
 
