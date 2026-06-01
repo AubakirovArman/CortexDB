@@ -1,7 +1,7 @@
 # External Identity Design
 
-Status: future phase 1 local evidence gates started, no live OIDC or SAML
-provider integration implemented.
+Status: future phase 2 local claim-mapping verifier started, no live OIDC or
+SAML provider integration implemented.
 
 ## Goal
 
@@ -39,6 +39,11 @@ Identity claims must map to explicit CortexDB roles, tenants, scopes, and
 AgentViews. Missing mappings fail closed. Group names from the identity provider
 must not be trusted as CortexDB scopes without a configured mapping.
 
+The local `verify_oidc_claims` verifier currently accepts already-validated OIDC
+claims and enforces issuer, audience, expiration, not-before, explicit group
+mapping, role, tenant, scope, and AgentView constraints. It is intentionally not
+a JWT signature verifier and does not fetch JWKS.
+
 ## Mapping Fixture
 
 The local policy-mapping fixture models the future mapping contract:
@@ -70,13 +75,14 @@ The current gates prove local prerequisites only:
 | Gate | Evidence |
 | --- | --- |
 | `make oidc-auth-contract-check` | OpenAPI/server routes do not expose external identity login/callback endpoints yet, and the design keeps OIDC as the first protocol target. |
-| `make identity-policy-mapping-check` | A fixture validates explicit group-to-role/tenant/scope/AgentView mapping and rejects direct group-as-scope trust. |
+| `make identity-policy-mapping-check` | A fixture and Rust verifier validate explicit group-to-role/tenant/scope/AgentView mapping and reject direct group-as-scope trust. |
 | `make auth-rotation-check` | A fixture validates JWKS rotation and provider-outage fail-closed policy. |
 | `make security-hardening-check` | Existing auth, AgentView, audit, quota, and local policy-store evidence remains green. |
 
 Reports are written under `target/external-identity/` and keep
-`external_identity_ready=false`. They do not claim live OIDC, SAML, session,
-or external provider integration.
+`external_identity_ready=false`. They prove local claim-mapping behavior only
+and do not claim live OIDC, SAML, session, JWT signature verification, JWKS
+fetching, or external provider integration.
 
 ## Required Gates
 

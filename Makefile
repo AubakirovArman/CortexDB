@@ -447,9 +447,11 @@ oidc-auth-contract-check: openapi-contract-check
 	python3 scripts/external_identity_gate_check.py --gate oidc-contract --report "$(OIDC_AUTH_CONTRACT_REPORT)"
 
 identity-policy-mapping-check:
+	cargo test -p cortex-server external_identity
 	python3 scripts/external_identity_gate_check.py --gate policy-mapping --report "$(IDENTITY_POLICY_MAPPING_REPORT)"
 
 auth-rotation-check:
+	cargo test -p cortex-server external_identity
 	python3 scripts/external_identity_gate_check.py --gate rotation --report "$(AUTH_ROTATION_REPORT)"
 
 legal-verification-dataset-check:

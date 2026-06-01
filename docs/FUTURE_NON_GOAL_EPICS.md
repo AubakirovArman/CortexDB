@@ -18,7 +18,7 @@ Total future epics: 7.
 | 3 | Enterprise RBAC And Compliance | future-phase-1-started | `make enterprise-rbac-design-check` | Durable policy store, auditable permissions, compliance controls, and admin lifecycle |
 | 4 | Full Production HNSW Without Fallback | future-phase-1-started | `make hnsw-no-fallback-design-check` | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
 | 5 | Built-in LLM Inference | future-phase-2-contract-started | `make llm-inference-design-check` | Model runtime, resource isolation, prompt safety, provider compatibility, and operational cost controls |
-| 6 | External Identity Providers | future-phase-1-started | `make external-identity-design-check` | OIDC/SAML or equivalent identity integration with role/scope mapping and rotation |
+| 6 | External Identity Providers | future-phase-2-mapping-started | `make external-identity-design-check` | OIDC/SAML or equivalent identity integration with role/scope mapping and rotation |
 | 7 | Legal-grade Verification | future-phase-1-started | `make legal-verification-design-check` | Legal-domain evidence model, citations, review workflow, liability boundaries, and evaluation by domain experts |
 
 ## Promotion Rules
@@ -380,11 +380,15 @@ Current implementation slice:
   protocol target.
 - `make identity-policy-mapping-check` validates an explicit mapping fixture
   from provider group to CortexDB role, tenant, scope list, and AgentView id.
+- The local `verify_oidc_claims` verifier enforces issuer, audience,
+  expiration, not-before, explicit group mapping, role, tenant, scope, and
+  AgentView constraints for already-validated OIDC claims.
 - `make auth-rotation-check` validates a JWKS rotation/outage fixture with
   fail-closed behavior for unknown keys and missing mappings.
 - All new reports are written under `target/external-identity/` and carry
-  `external_identity_ready=false`; they prove local prerequisites only, not a
-  live OIDC, SAML, or session provider.
+  `external_identity_ready=false`; they prove local prerequisites and claim
+  mapping only, not a live OIDC, SAML, session provider, JWT signature verifier,
+  or JWKS fetcher.
 
 Task pool:
 
@@ -396,7 +400,9 @@ Task pool:
 6. Add fail-closed behavior for identity provider outages.
 7. Add admin docs for provider configuration and rotation.
 8. Add security tests for invalid issuer, invalid audience, expired tokens,
-   revoked keys, and missing scope mapping.
+   revoked keys, and missing scope mapping. Issuer, audience, expiration,
+   not-before, and missing mapping tests now exist for already-validated claims;
+   revoked-key tests remain tied to future JWKS signature verification.
 9. Add audit events for authenticated identity and policy decisions.
 10. Add migration path from static tokens.
 

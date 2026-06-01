@@ -119,6 +119,25 @@ def validate_mapping_fixture(path: Path) -> list[str]:
     return failures
 
 
+def validate_local_claim_verifier() -> list[str]:
+    failures: list[str] = []
+    source = read(Path("crates/cortex-server/src/external_identity.rs"))
+    markers = [
+        "verify_oidc_claims",
+        "InvalidIssuer",
+        "InvalidAudience",
+        "ExpiredToken",
+        "TokenNotYetValid",
+        "MissingMapping",
+        "InvalidMapping",
+        "project:investments",
+    ]
+    for marker in markers:
+        if marker not in source:
+            failures.append(f"external_identity.rs missing verifier marker {marker!r}")
+    return failures
+
+
 def validate_rotation_fixture(path: Path) -> list[str]:
     failures: list[str] = []
     value = load_json(path)
@@ -147,6 +166,7 @@ def validate(gate: str) -> dict[str, Any]:
         "no_external_identity_routes": True,
         "mapping_fixture": True,
         "rotation_fixture": True,
+        "local_claim_verifier": True,
     }
 
     if gate == "oidc-contract":
@@ -155,8 +175,10 @@ def validate(gate: str) -> dict[str, Any]:
         checks["no_external_identity_routes"] = not endpoint_failures
     elif gate == "policy-mapping":
         mapping_failures = validate_mapping_fixture(Path(spec["fixture"]))  # type: ignore[arg-type]
+        mapping_failures.extend(validate_local_claim_verifier())
         failures.extend(mapping_failures)
         checks["mapping_fixture"] = not mapping_failures
+        checks["local_claim_verifier"] = not mapping_failures
     elif gate == "rotation":
         rotation_failures = validate_rotation_fixture(Path(spec["fixture"]))  # type: ignore[arg-type]
         failures.extend(rotation_failures)

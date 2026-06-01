@@ -29,6 +29,7 @@ mod context;
 mod dashboard;
 #[cfg(test)]
 mod dashboard_tests;
+pub mod external_identity;
 mod llm;
 mod memory;
 mod rate_limit;
