@@ -160,6 +160,8 @@ def build_run_command(args: argparse.Namespace, converted_dir: Path) -> list[str
         str(args.min_mean_recall_q16),
         "--max-p95-latency-nanos",
         str(args.max_p95_latency_nanos),
+        "--max-p99-latency-nanos",
+        str(args.max_p99_latency_nanos),
         "--max-max-latency-nanos",
         str(args.max_max_latency_nanos),
         "--max-neighbors",
@@ -238,6 +240,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--min-recall-q16", type=int, default=49151)
     parser.add_argument("--min-mean-recall-q16", type=int, default=49151)
     parser.add_argument("--max-p95-latency-nanos", type=int, default=100_000_000)
+    parser.add_argument("--max-p99-latency-nanos", type=int, default=200_000_000)
     parser.add_argument("--max-max-latency-nanos", type=int, default=250_000_000)
     parser.add_argument("--max-neighbors", type=int, default=8)
     parser.add_argument("--ef-search", type=int, default=64)

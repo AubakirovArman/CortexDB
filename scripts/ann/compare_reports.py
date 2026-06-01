@@ -24,6 +24,7 @@ def compare_reports(
     baseline: dict[str, Any],
     candidate: dict[str, Any],
     max_p95_regression_nanos: int,
+    max_p99_regression_nanos: int,
     max_max_regression_nanos: int,
 ) -> tuple[bool, list[str], dict[str, Any]]:
     failures: list[str] = []
@@ -34,6 +35,10 @@ def compare_reports(
         - int(baseline["mean_recall_q16"]),
         "p95_latency_delta_nanos": int(candidate["p95_latency_nanos"])
         - int(baseline["p95_latency_nanos"]),
+        "p99_latency_delta_nanos": int(
+            candidate.get("p99_latency_nanos", candidate["max_latency_nanos"])
+        )
+        - int(baseline.get("p99_latency_nanos", baseline["max_latency_nanos"])),
         "max_latency_delta_nanos": int(candidate["max_latency_nanos"])
         - int(baseline["max_latency_nanos"]),
     }
@@ -54,6 +59,8 @@ def compare_reports(
         failures.append(f"mean recall regressed by {abs(deltas['mean_recall_delta_q16'])}")
     if deltas["p95_latency_delta_nanos"] > max_p95_regression_nanos:
         failures.append("p95 latency regression exceeded budget")
+    if deltas["p99_latency_delta_nanos"] > max_p99_regression_nanos:
+        failures.append("p99 latency regression exceeded budget")
     if deltas["max_latency_delta_nanos"] > max_max_regression_nanos:
         failures.append("max latency regression exceeded budget")
     if baseline.get("production_safe") and not candidate.get("production_safe"):
@@ -68,6 +75,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--max-p95-regression-nanos", type=int, default=0)
+    parser.add_argument("--max-p99-regression-nanos", type=int, default=0)
     parser.add_argument("--max-max-regression-nanos", type=int, default=0)
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args(argv)
@@ -82,6 +90,7 @@ def main(argv: list[str]) -> int:
         load_report(args.baseline),
         load_report(args.candidate),
         args.max_p95_regression_nanos,
+        args.max_p99_regression_nanos,
         args.max_max_regression_nanos,
     )
     result = {"passed": passed, "failures": failures, "deltas": deltas}
@@ -107,17 +116,19 @@ class SelfTests(unittest.TestCase):
             "required_min_recall_q16": 49_151,
             "required_min_mean_recall_q16": 49_151,
             "allowed_p95_latency_nanos": 100,
+            "allowed_p99_latency_nanos": 100,
             "allowed_max_latency_nanos": 100,
             "require_production_safe": True,
             "min_observed_recall_q16": recall,
             "mean_recall_q16": recall,
             "p95_latency_nanos": p95,
+            "p99_latency_nanos": p95,
             "max_latency_nanos": p95,
             "production_safe": safe,
         }
 
     def test_recall_regression_fails(self) -> None:
-        passed, failures, _ = compare_reports(self.report(65535, 10), self.report(49151, 10), 0, 0)
+        passed, failures, _ = compare_reports(self.report(65535, 10), self.report(49151, 10), 0, 0, 0)
         self.assertFalse(passed)
         self.assertTrue(any("recall" in failure for failure in failures))
 
@@ -127,6 +138,7 @@ class SelfTests(unittest.TestCase):
             self.report(65535, 15),
             5,
             5,
+            5,
         )
         self.assertTrue(passed, failures)
         self.assertEqual(deltas["p95_latency_delta_nanos"], 5)
@@ -134,7 +146,7 @@ class SelfTests(unittest.TestCase):
     def test_relaxed_gate_policy_fails(self) -> None:
         candidate = self.report(65535, 10)
         candidate["required_min_recall_q16"] = 10
-        passed, failures, _ = compare_reports(self.report(65535, 10), candidate, 0, 0)
+        passed, failures, _ = compare_reports(self.report(65535, 10), candidate, 0, 0, 0)
         self.assertFalse(passed)
         self.assertTrue(any("relaxed" in failure for failure in failures))
 

@@ -78,6 +78,13 @@ fn compare_metric(
     check_max(
         failures,
         &baseline.metric,
+        "p99_latency_nanos",
+        report.p99_latency_nanos,
+        baseline.max_p99_latency_nanos,
+    );
+    check_max(
+        failures,
+        &baseline.metric,
         "max_latency_nanos",
         report.max_latency_nanos,
         baseline.max_max_latency_nanos,

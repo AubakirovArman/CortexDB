@@ -13,6 +13,7 @@ MIN_POLICY_FIELDS = [
     "required_min_recall_q16",
     "required_min_mean_recall_q16",
     "allowed_p95_latency_nanos",
+    "allowed_p99_latency_nanos",
     "allowed_max_latency_nanos",
 ]
 
@@ -61,6 +62,10 @@ def production_report_failures(report: dict[str, Any]) -> list[str]:
             failures.append("report.json:mean_recall_q16 below required minimum")
         if int_field(report, "p95_latency_nanos") > int_field(report, "allowed_p95_latency_nanos"):
             failures.append("report.json:p95_latency_nanos exceeds allowed maximum")
+        if int_field(report, "p99_latency_nanos") > int_field(
+            report, "allowed_p99_latency_nanos"
+        ):
+            failures.append("report.json:p99_latency_nanos exceeds allowed maximum")
         if int_field(report, "max_latency_nanos") > int_field(report, "allowed_max_latency_nanos"):
             failures.append("report.json:max_latency_nanos exceeds allowed maximum")
     except ValueError as error:
@@ -75,7 +80,11 @@ def compare_gate_policy(baseline: dict[str, Any], candidate: dict[str, Any]) -> 
             failures.append(f"{field} missing from candidate report")
         elif field in baseline and int(candidate[field]) < int(baseline[field]):
             failures.append(f"{field} relaxed: {baseline[field]} -> {candidate[field]}")
-    for field in ["allowed_p95_latency_nanos", "allowed_max_latency_nanos"]:
+    for field in [
+        "allowed_p95_latency_nanos",
+        "allowed_p99_latency_nanos",
+        "allowed_max_latency_nanos",
+    ]:
         if field in baseline and field not in candidate:
             failures.append(f"{field} missing from candidate report")
         elif field in baseline and int(candidate[field]) > int(baseline[field]):
@@ -108,6 +117,7 @@ class SelfTests(unittest.TestCase):
             "required_min_recall_q16": 49_151,
             "required_min_mean_recall_q16": 49_151,
             "allowed_p95_latency_nanos": 100,
+            "allowed_p99_latency_nanos": 150,
             "allowed_max_latency_nanos": 200,
             "hnsw_layer_count": 4,
             "upper_layers": 2,
@@ -115,6 +125,7 @@ class SelfTests(unittest.TestCase):
             "min_observed_recall_q16": 65_535,
             "mean_recall_q16": 65_535,
             "p95_latency_nanos": 50,
+            "p99_latency_nanos": 60,
             "max_latency_nanos": 75,
         }
 

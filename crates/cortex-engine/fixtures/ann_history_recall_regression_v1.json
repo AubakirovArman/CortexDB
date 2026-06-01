@@ -10,6 +10,7 @@
       "latest_mean_recall_q16": 49151,
       "latest_min_observed_recall_q16": 49151,
       "latest_p95_latency_nanos": 9000,
+      "latest_p99_latency_nanos": 9000,
       "latest_production_safe": false,
       "latest_run_id": "recall-b",
       "metric": "dot_product",
@@ -70,6 +71,7 @@
       "metric": "dot_product",
       "min_observed_recall_q16": 65535,
       "p95_latency_nanos": 9000,
+      "p99_latency_nanos": 9000,
       "passed": true,
       "production_safe": true,
       "queries": "queries.jsonl",
@@ -77,8 +79,8 @@
       "run_id": "recall-a",
       "upper_graph_edges": 2,
       "upper_layers": 3,
-      "vectors": "vectors.jsonl",
-      "vector_count": 12
+      "vector_count": 12,
+      "vectors": "vectors.jsonl"
     },
     {
       "corpus_key": "dot_product|8|vectors.jsonl|queries.jsonl",
@@ -94,6 +96,7 @@
       "metric": "dot_product",
       "min_observed_recall_q16": 49151,
       "p95_latency_nanos": 9000,
+      "p99_latency_nanos": 9000,
       "passed": false,
       "production_safe": false,
       "queries": "queries.jsonl",
@@ -101,8 +104,8 @@
       "run_id": "recall-b",
       "upper_graph_edges": 2,
       "upper_layers": 3,
-      "vectors": "vectors.jsonl",
-      "vector_count": 12
+      "vector_count": 12,
+      "vectors": "vectors.jsonl"
     }
   ]
 }

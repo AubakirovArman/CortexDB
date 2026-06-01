@@ -25,7 +25,7 @@ DEFAULT_LATENCY_REGRESSION = Path(
     "crates/cortex-engine/fixtures/ann_history_latency_regression_v1.json"
 )
 RECALL_FIELDS = {"min_observed_recall_q16", "mean_recall_q16"}
-LATENCY_FIELDS = {"p95_latency_nanos", "max_latency_nanos"}
+LATENCY_FIELDS = {"p95_latency_nanos", "p99_latency_nanos", "max_latency_nanos"}
 
 
 def load_json(path: Path) -> dict[str, Any]:

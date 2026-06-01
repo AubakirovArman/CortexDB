@@ -24,6 +24,7 @@ pub struct AnnRecallLatencyBaseline {
     pub min_upper_layers: usize,
     pub min_upper_graph_edges: usize,
     pub max_p95_latency_nanos: u128,
+    pub max_p99_latency_nanos: u128,
     pub max_max_latency_nanos: u128,
     pub require_production_safe: bool,
 }
@@ -54,6 +55,7 @@ impl AnnRecallLatencyBaseline {
             min_upper_layers: 1,
             min_upper_graph_edges: 1,
             max_p95_latency_nanos: 100_000_000,
+            max_p99_latency_nanos: 200_000_000,
             max_max_latency_nanos: 250_000_000,
             require_production_safe: true,
         }
@@ -165,6 +167,12 @@ pub fn compare_ann_fixture_baseline(
     );
     check_max(
         &mut failures,
+        "p99_latency_nanos",
+        observed.p99_latency_nanos,
+        baseline.max_p99_latency_nanos,
+    );
+    check_max(
+        &mut failures,
         "max_latency_nanos",
         observed.max_latency_nanos,
         baseline.max_max_latency_nanos,
@@ -241,6 +249,7 @@ mod tests {
             mean_recall_q16: MIN_ANN_RECALL_Q16,
             p50_latency_nanos: 1,
             p95_latency_nanos: 1,
+            p99_latency_nanos: 1,
             max_latency_nanos: 1,
             hnsw_max_neighbors: 8,
             hnsw_ef_search: 64,

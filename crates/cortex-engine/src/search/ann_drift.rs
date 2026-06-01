@@ -28,6 +28,8 @@ pub struct AnnDriftBaseline {
     #[serde(default)]
     pub reference_hnsw_layer_count: Option<usize>,
     pub reference_p95_latency_nanos: u128,
+    #[serde(default)]
+    pub reference_p99_latency_nanos: Option<u128>,
     pub reference_max_latency_nanos: u128,
     pub allowed_recall_drop_q16: u16,
     pub max_latency_regression_percent: u32,
@@ -44,6 +46,7 @@ pub struct AnnDriftReport {
     pub min_recall_delta_q16: i32,
     pub mean_recall_delta_q16: i32,
     pub p95_latency_delta_nanos: i128,
+    pub p99_latency_delta_nanos: i128,
     pub max_latency_delta_nanos: i128,
 }
 
@@ -77,6 +80,10 @@ pub fn evaluate_ann_drift_baseline(baseline: &AnnDriftBaseline) -> EngineResult<
         p95_latency_delta_nanos: saturating_delta(
             observed.p95_latency_nanos,
             baseline.reference_p95_latency_nanos,
+        ),
+        p99_latency_delta_nanos: saturating_delta(
+            observed.p99_latency_nanos,
+            baseline.reference_p99_latency_nanos(),
         ),
         max_latency_delta_nanos: saturating_delta(
             observed.max_latency_nanos,
@@ -176,6 +183,13 @@ pub fn compare_ann_drift_baseline(
     );
     check_latency(
         &mut failures,
+        "p99_latency_nanos",
+        observed.p99_latency_nanos,
+        baseline.reference_p99_latency_nanos(),
+        baseline.max_latency_regression_percent,
+    );
+    check_latency(
+        &mut failures,
         "max_latency_nanos",
         observed.max_latency_nanos,
         baseline.reference_max_latency_nanos,
@@ -185,6 +199,13 @@ pub fn compare_ann_drift_baseline(
         failures.push("production_safe: expected true, observed false".to_owned());
     }
     failures
+}
+
+impl AnnDriftBaseline {
+    pub fn reference_p99_latency_nanos(&self) -> u128 {
+        self.reference_p99_latency_nanos
+            .unwrap_or(self.reference_max_latency_nanos)
+    }
 }
 
 fn check_identity(

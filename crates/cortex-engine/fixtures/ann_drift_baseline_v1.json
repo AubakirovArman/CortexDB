@@ -17,6 +17,7 @@
   "reference_hnsw_ef_search": 64,
   "reference_hnsw_layer_count": 4,
   "reference_p95_latency_nanos": 25000000,
+  "reference_p99_latency_nanos": 28000000,
   "reference_max_latency_nanos": 30000000,
   "allowed_recall_drop_q16": 0,
   "max_latency_regression_percent": 400,

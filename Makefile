@@ -90,6 +90,7 @@ ANN_REAL_EMBEDDING_BASELINE_BUNDLE ?= $(ANN_REAL_EMBEDDING_BASELINE_ROOT)/$(ANN_
 ANN_REAL_EMBEDDING_BASELINE_ARCHIVE ?= $(ANN_REAL_EMBEDDING_BASELINE_ROOT)/$(ANN_REAL_EMBEDDING_BASELINE_ID).tar.gz
 ANN_REAL_EMBEDDING_REQUIRE_SOURCE_ARCHIVE ?= false
 ANN_REAL_EMBEDDING_MAX_P95_REGRESSION_NANOS ?= 1000000
+ANN_REAL_EMBEDDING_MAX_P99_REGRESSION_NANOS ?= 2500000
 ANN_REAL_EMBEDDING_MAX_MAX_REGRESSION_NANOS ?= 5000000
 ANN_REAL_EMBEDDING_MIN_HISTORY_RUNS ?= 3
 RETRIEVAL_QUALITY_SOURCE_ROOT ?= examples/real_domains/investment_projects/corpus
@@ -168,6 +169,7 @@ ANN_RELEASE_EVIDENCE_BASELINE_ROOT ?= $(ANN_RELEASE_EVIDENCE_ROOT)/release-basel
 ANN_RELEASE_EVIDENCE_BASELINE_BUNDLE ?= $(ANN_RELEASE_EVIDENCE_BASELINE_ROOT)/$(ANN_RELEASE_EVIDENCE_BASELINE_ID)
 ANN_RELEASE_EVIDENCE_BASELINE_ARCHIVE ?= $(ANN_RELEASE_EVIDENCE_BASELINE_ROOT)/$(ANN_RELEASE_EVIDENCE_BASELINE_ID).tar.gz
 ANN_MAX_P95_REGRESSION_NANOS ?= 0
+ANN_MAX_P99_REGRESSION_NANOS ?= 0
 ANN_MAX_MAX_REGRESSION_NANOS ?= 0
 DASHBOARD_PACKAGE_ID ?= dashboard-v1
 DASHBOARD_PACKAGE_ARCHIVE ?= target/dashboard/$(DASHBOARD_PACKAGE_ID).tar.gz
@@ -189,6 +191,7 @@ ANN_PUBLIC_LIMIT ?= 10
 ANN_PUBLIC_MAX_NEIGHBORS ?= 8
 ANN_PUBLIC_EF_SEARCH ?= 64
 ANN_PUBLIC_LAYER_COUNT ?= 4
+ANN_PUBLIC_MAX_P99_LATENCY_NANOS ?= 200000000
 BACKUP_DRILL_ROOT ?= target/backup-drill
 BACKUP_DRILL_REPORT ?= $(BACKUP_DRILL_ROOT)/report.json
 BACKUP_DRILL_KEEP_LATEST ?= 2
@@ -673,15 +676,15 @@ ann-real-embedding-benchmark: ann-real-embedding-preflight
 
 ann-real-embedding-compare:
 	@if [ -z "$(ANN_REAL_EMBEDDING_BASELINE_REPORT)" ]; then echo "Set ANN_REAL_EMBEDDING_BASELINE_REPORT to a real embedding baseline report.json" >&2; exit 2; fi
-	python3 scripts/ann/compare_reports.py --baseline $(ANN_REAL_EMBEDDING_BASELINE_REPORT) --candidate $(ANN_REAL_EMBEDDING_CANDIDATE_REPORT) --output $(ANN_REAL_EMBEDDING_COMPARISON) --max-p95-regression-nanos $(ANN_MAX_P95_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_MAX_MAX_REGRESSION_NANOS)
+	python3 scripts/ann/compare_reports.py --baseline $(ANN_REAL_EMBEDDING_BASELINE_REPORT) --candidate $(ANN_REAL_EMBEDDING_CANDIDATE_REPORT) --output $(ANN_REAL_EMBEDDING_COMPARISON) --max-p95-regression-nanos $(ANN_MAX_P95_REGRESSION_NANOS) --max-p99-regression-nanos $(ANN_MAX_P99_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_MAX_MAX_REGRESSION_NANOS)
 
 ann-real-embedding-benchmark-and-compare: ann-real-embedding-benchmark ann-real-embedding-compare
 
 ann-real-embedding-history-report:
-	python3 scripts/ann/summarize_history.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --output $(ANN_REAL_EMBEDDING_HISTORY_REPORT) --max-p95-regression-nanos $(ANN_REAL_EMBEDDING_MAX_P95_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_REAL_EMBEDDING_MAX_MAX_REGRESSION_NANOS)
+	python3 scripts/ann/summarize_history.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --output $(ANN_REAL_EMBEDDING_HISTORY_REPORT) --max-p95-regression-nanos $(ANN_REAL_EMBEDDING_MAX_P95_REGRESSION_NANOS) --max-p99-regression-nanos $(ANN_REAL_EMBEDDING_MAX_P99_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_REAL_EMBEDDING_MAX_MAX_REGRESSION_NANOS)
 
 ann-real-embedding-history-regression-check:
-	python3 scripts/ann/history_gate.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --output $(ANN_REAL_EMBEDDING_HISTORY_REPORT) --fail-on-regression --min-runs $(ANN_REAL_EMBEDDING_MIN_HISTORY_RUNS) --min-corpora 1 --max-p95-regression-nanos $(ANN_REAL_EMBEDDING_MAX_P95_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_REAL_EMBEDDING_MAX_MAX_REGRESSION_NANOS)
+	python3 scripts/ann/history_gate.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --output $(ANN_REAL_EMBEDDING_HISTORY_REPORT) --fail-on-regression --min-runs $(ANN_REAL_EMBEDDING_MIN_HISTORY_RUNS) --min-corpora 1 --max-p95-regression-nanos $(ANN_REAL_EMBEDDING_MAX_P95_REGRESSION_NANOS) --max-p99-regression-nanos $(ANN_REAL_EMBEDDING_MAX_P99_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_REAL_EMBEDDING_MAX_MAX_REGRESSION_NANOS)
 
 ann-real-embedding-publish-baseline:
 	python3 scripts/ann/publish_baseline.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --run-id $(ANN_REAL_EMBEDDING_RUN_ID) --baseline-id $(ANN_REAL_EMBEDDING_BASELINE_ID) --output-root $(ANN_REAL_EMBEDDING_BASELINE_ROOT)
@@ -751,6 +754,7 @@ ann-public-corpus-run:
 	  --max-neighbors "$(ANN_PUBLIC_MAX_NEIGHBORS)" \
 	  --ef-search "$(ANN_PUBLIC_EF_SEARCH)" \
 	  --layer-count "$(ANN_PUBLIC_LAYER_COUNT)" \
+	  --max-p99-latency-nanos "$(ANN_PUBLIC_MAX_P99_LATENCY_NANOS)" \
 	  --output-root "$(ANN_PUBLIC_OUTPUT_ROOT)" \
 	  --run-root "$(ANN_CORPUS_RUN_ROOT)" \
 	  --run-id "$(ANN_PUBLIC_RUN_ID)"
@@ -762,10 +766,10 @@ ann-corpus-run-smoke:
 	scripts/ann/run_external_corpus.sh --vectors $(ANN_CORPUS_VECTORS) --queries $(ANN_CORPUS_QUERIES) --output-root $(ANN_CORPUS_RUN_ROOT) --run-id $(ANN_CORPUS_RUN_ID)
 
 ann-history-report:
-	python3 scripts/ann/summarize_history.py --run-root $(ANN_HISTORY_ROOT) --output $(ANN_HISTORY_REPORT) --max-p95-regression-nanos $(ANN_MAX_P95_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_MAX_MAX_REGRESSION_NANOS)
+	python3 scripts/ann/summarize_history.py --run-root $(ANN_HISTORY_ROOT) --output $(ANN_HISTORY_REPORT) --max-p95-regression-nanos $(ANN_MAX_P95_REGRESSION_NANOS) --max-p99-regression-nanos $(ANN_MAX_P99_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_MAX_MAX_REGRESSION_NANOS)
 
 ann-history-regression-check:
-	python3 scripts/ann/history_gate.py --run-root $(ANN_HISTORY_ROOT) --output $(ANN_HISTORY_REPORT) --fail-on-regression --min-runs 1 --min-corpora 1 --max-p95-regression-nanos $(ANN_MAX_P95_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_MAX_MAX_REGRESSION_NANOS)
+	python3 scripts/ann/history_gate.py --run-root $(ANN_HISTORY_ROOT) --output $(ANN_HISTORY_REPORT) --fail-on-regression --min-runs 1 --min-corpora 1 --max-p95-regression-nanos $(ANN_MAX_P95_REGRESSION_NANOS) --max-p99-regression-nanos $(ANN_MAX_P99_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_MAX_MAX_REGRESSION_NANOS)
 
 ann-history-fixture-check:
 	python3 scripts/ann/history_fixture_check.py \
@@ -783,7 +787,7 @@ ann-validate-baseline-package:
 	python3 scripts/ann/validate_baseline_package.py --archive $(ANN_BASELINE_ARCHIVE) --require-production-safe --require-history --require-ground-truth
 
 ann-compare-baseline-bundle:
-	python3 scripts/ann/compare_reports.py --baseline $(ANN_BASELINE_BUNDLE_REPORT) --candidate $(ANN_HISTORY_ROOT)/$(ANN_CANDIDATE_RUN_ID)/report.json --output $(ANN_BASELINE_BUNDLE_COMPARISON) --max-p95-regression-nanos $(ANN_MAX_P95_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_MAX_MAX_REGRESSION_NANOS)
+	python3 scripts/ann/compare_reports.py --baseline $(ANN_BASELINE_BUNDLE_REPORT) --candidate $(ANN_HISTORY_ROOT)/$(ANN_CANDIDATE_RUN_ID)/report.json --output $(ANN_BASELINE_BUNDLE_COMPARISON) --max-p95-regression-nanos $(ANN_MAX_P95_REGRESSION_NANOS) --max-p99-regression-nanos $(ANN_MAX_P99_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_MAX_MAX_REGRESSION_NANOS)
 
 ann-release-evidence-check:
 	rm -rf $(ANN_RELEASE_EVIDENCE_ROOT)

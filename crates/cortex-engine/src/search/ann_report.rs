@@ -27,6 +27,7 @@ pub struct AnnRecallLatencyReport {
     pub mean_recall_q16: u16,
     pub p50_latency_nanos: u128,
     pub p95_latency_nanos: u128,
+    pub p99_latency_nanos: u128,
     pub max_latency_nanos: u128,
     pub hnsw_max_neighbors: usize,
     pub hnsw_ef_search: usize,
@@ -106,6 +107,7 @@ pub fn synthetic_ann_recall_latency_report(
         mean_recall_q16,
         p50_latency_nanos: percentile(&latencies, 50),
         p95_latency_nanos: percentile(&latencies, 95),
+        p99_latency_nanos: percentile(&latencies, 99),
         max_latency_nanos: *latencies.last().unwrap_or(&0),
         hnsw_max_neighbors: if graph.max_neighbors == 0 {
             8
@@ -229,6 +231,8 @@ mod tests {
         assert!(report.graph_nodes > 0);
         assert!(report.upper_layers > 0);
         assert!(report.max_latency_nanos >= report.p50_latency_nanos);
+        assert!(report.p99_latency_nanos >= report.p95_latency_nanos);
+        assert!(report.max_latency_nanos >= report.p99_latency_nanos);
         assert!(report
             .as_json()
             .contains("\"corpus\":\"synthetic-ann-corpus-v1\""));

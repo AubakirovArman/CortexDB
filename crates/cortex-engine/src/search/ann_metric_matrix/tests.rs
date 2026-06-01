@@ -18,6 +18,7 @@ fn baseline() -> AnnMetricMatrixBaseline {
                 min_upper_layers: 0,
                 min_upper_graph_edges: 0,
                 max_p95_latency_nanos: 500_000_000,
+                max_p99_latency_nanos: 500_000_000,
                 max_max_latency_nanos: 500_000_000,
                 require_production_safe: true,
             })

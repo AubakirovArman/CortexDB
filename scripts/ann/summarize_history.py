@@ -123,6 +123,10 @@ def load_run(manifest_path: Path) -> dict[str, Any]:
             report.get("p95_latency_nanos"),
             f"{report_path}:p95_latency_nanos",
         ),
+        "p99_latency_nanos": as_int_default(
+            report.get("p99_latency_nanos"),
+            as_int(report.get("max_latency_nanos"), f"{report_path}:max_latency_nanos"),
+        ),
         "max_latency_nanos": as_int(
             report.get("max_latency_nanos"),
             f"{report_path}:max_latency_nanos",
@@ -137,6 +141,7 @@ def compare_adjacent(
     current: dict[str, Any],
     *,
     max_p95_regression_nanos: int = 0,
+    max_p99_regression_nanos: int = 0,
     max_max_regression_nanos: int = 0,
 ) -> list[dict[str, Any]]:
     checks = [
@@ -160,6 +165,7 @@ def compare_adjacent(
         if delta != 0: regressions.append(regression("hnsw_config", field, previous, current, delta))
     latency_limits = {
         "p95_latency_nanos": max_p95_regression_nanos,
+        "p99_latency_nanos": max_p99_regression_nanos,
         "max_latency_nanos": max_max_regression_nanos,
     }
     for field, allowed_delta in latency_limits.items():
@@ -185,6 +191,7 @@ def summarize_history(
     run_root: Path,
     *,
     max_p95_regression_nanos: int = 0,
+    max_p99_regression_nanos: int = 0,
     max_max_regression_nanos: int = 0,
 ) -> dict[str, Any]:
     manifests = sorted(run_root.glob("*/manifest.json"))
@@ -203,6 +210,7 @@ def summarize_history(
                     previous,
                     current,
                     max_p95_regression_nanos=max_p95_regression_nanos,
+                    max_p99_regression_nanos=max_p99_regression_nanos,
                     max_max_regression_nanos=max_max_regression_nanos,
                 )
             )
@@ -226,6 +234,7 @@ def summarize_history(
             "latest_mean_ndcg_q16": latest["mean_ndcg_q16"],
             "latest_exact_parity_q16": latest["exact_parity_q16"],
             "latest_p95_latency_nanos": latest["p95_latency_nanos"],
+            "latest_p99_latency_nanos": latest["p99_latency_nanos"],
             "latest_production_safe": latest["production_safe"],
             "regressions": regressions,
         })
@@ -233,6 +242,7 @@ def summarize_history(
     return {
         "run_root": str(run_root),
         "max_p95_regression_nanos": max_p95_regression_nanos,
+        "max_p99_regression_nanos": max_p99_regression_nanos,
         "max_max_regression_nanos": max_max_regression_nanos,
         "run_count": len(runs),
         "corpus_count": len(corpora),
@@ -259,6 +269,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--fail-on-regression", action="store_true")
     parser.add_argument("--max-p95-regression-nanos", type=int, default=0)
+    parser.add_argument("--max-p99-regression-nanos", type=int, default=0)
     parser.add_argument("--max-max-regression-nanos", type=int, default=0)
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args(argv)
@@ -272,6 +283,7 @@ def main(argv: list[str]) -> int:
     summary = summarize_history(
         args.run_root,
         max_p95_regression_nanos=args.max_p95_regression_nanos,
+        max_p99_regression_nanos=args.max_p99_regression_nanos,
         max_max_regression_nanos=args.max_max_regression_nanos,
     )
     write_summary(summary, args.output)
@@ -313,6 +325,7 @@ class SelfTests(unittest.TestCase):
             "exact_parity_count": 1,
             "p50_latency_nanos": p95,
             "p95_latency_nanos": p95,
+            "p99_latency_nanos": p95,
             "max_latency_nanos": p95,
             "production_safe": safe,
             "queries": [],
@@ -347,11 +360,13 @@ class SelfTests(unittest.TestCase):
             summary = summarize_history(
                 root,
                 max_p95_regression_nanos=10,
+                max_p99_regression_nanos=10,
                 max_max_regression_nanos=10,
             )
 
         self.assertEqual(summary["regression_count"], 0)
         self.assertEqual(summary["max_p95_regression_nanos"], 10)
+        self.assertEqual(summary["max_p99_regression_nanos"], 10)
 
 
 if __name__ == "__main__":

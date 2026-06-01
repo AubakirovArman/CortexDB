@@ -83,6 +83,10 @@ The response includes `no_fallback_decision.allowed` and stable reason strings.
 Absence of the rollout flag or profile selector means CortexDB keeps the normal
 guarded ANN mode.
 
+ANN evidence reports and corpus-history gates now include p99 latency alongside
+p50, p95, and max latency. This catches rarer slow-tail regressions that p95 can
+hide on small or medium query sets.
+
 Operational counters are exposed through `/v1/metrics` and Prometheus:
 `ann_no_fallback_requests`, `ann_no_fallback_allowed`, and
 `ann_no_fallback_blocked`. These counters are profile-rollout evidence only;

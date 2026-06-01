@@ -288,6 +288,9 @@ Current implementation slice:
 - `/v1/metrics` and Prometheus now expose no-fallback rollout counters for
   attempted, allowed, and blocked decisions, so operators can monitor guardrail
   behavior during profile rollout.
+- ANN fixture, external, metric-matrix, domain-corpus, drift, and history
+  reports now carry p99 latency evidence and p99 regression budgets in addition
+  to p50/p95/max latency.
 - All new reports are written under `target/hnsw-no-fallback/` and keep
   `fallback_free_general_ready=false`; they do not remove exact fallback
   globally.
@@ -303,8 +306,9 @@ Task pool:
 7. Add degraded-index detection and serving guardrails.
 8. Add operational metrics for graph health, rebuild count, stale graph count,
    recall probes, p95/p99 latency, and fallback-disabled requests.
-   No-fallback rollout decision counters are implemented; latency histograms
-   and long-running recall probes remain future work.
+   No-fallback rollout decision counters and p99 report/history gates are
+   implemented; runtime latency histograms and long-running recall probes
+   remain future work.
 9. Persist operator-managed no-fallback profiles instead of passing the rollout
    decision only per request. A local manifest-backed active profile is now
    implemented; richer named profile sets remain future work.

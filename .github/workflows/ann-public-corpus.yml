@@ -78,6 +78,11 @@ on:
         required: true
         default: "250000000"
         type: string
+      max_p99_latency_nanos:
+        description: "Maximum p99 latency in nanoseconds"
+        required: true
+        default: "400000000"
+        type: string
       max_max_latency_nanos:
         description: "Maximum worst-query latency in nanoseconds"
         required: true
@@ -100,6 +105,11 @@ on:
         description: "Allowed p95 latency regression when baseline_bundle_url is set"
         required: true
         default: "500000000"
+        type: string
+      max_p99_regression_nanos:
+        description: "Allowed p99 latency regression when baseline_bundle_url is set"
+        required: true
+        default: "750000000"
         type: string
       max_max_regression_nanos:
         description: "Allowed max latency regression when baseline_bundle_url is set"
@@ -139,6 +149,7 @@ jobs:
           MIN_RECALL_Q16: ${{ inputs.min_recall_q16 }}
           MIN_MEAN_RECALL_Q16: ${{ inputs.min_mean_recall_q16 }}
           MAX_P95_LATENCY_NANOS: ${{ inputs.max_p95_latency_nanos }}
+          MAX_P99_LATENCY_NANOS: ${{ inputs.max_p99_latency_nanos }}
           MAX_MAX_LATENCY_NANOS: ${{ inputs.max_max_latency_nanos }}
         run: |
           run_id="${DATASET_ID}-${GITHUB_RUN_ID}"
@@ -158,6 +169,7 @@ jobs:
             --min-recall-q16 "$MIN_RECALL_Q16"
             --min-mean-recall-q16 "$MIN_MEAN_RECALL_Q16"
             --max-p95-latency-nanos "$MAX_P95_LATENCY_NANOS"
+            --max-p99-latency-nanos "$MAX_P99_LATENCY_NANOS"
             --max-max-latency-nanos "$MAX_MAX_LATENCY_NANOS"
             --run-id "$run_id"
             --clean
@@ -186,6 +198,7 @@ jobs:
         env:
           BASELINE_BUNDLE_URL: ${{ inputs.baseline_bundle_url }}
           MAX_P95_REGRESSION_NANOS: ${{ inputs.max_p95_regression_nanos }}
+          MAX_P99_REGRESSION_NANOS: ${{ inputs.max_p99_regression_nanos }}
           MAX_MAX_REGRESSION_NANOS: ${{ inputs.max_max_regression_nanos }}
         run: |
           mkdir -p target/ann/downloaded-baseline/extracted
@@ -201,6 +214,7 @@ jobs:
             ANN_BASELINE_BUNDLE="$baseline_bundle" \
             ANN_CANDIDATE_RUN_ID="$ANN_PUBLIC_RUN_ID" \
             ANN_MAX_P95_REGRESSION_NANOS="$MAX_P95_REGRESSION_NANOS" \
+            ANN_MAX_P99_REGRESSION_NANOS="$MAX_P99_REGRESSION_NANOS" \
             ANN_MAX_MAX_REGRESSION_NANOS="$MAX_MAX_REGRESSION_NANOS"
 
       - name: Upload public ANN corpus reports

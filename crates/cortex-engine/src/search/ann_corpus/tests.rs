@@ -43,6 +43,8 @@ fn corpus_evaluation_uses_external_ground_truth() {
     assert_eq!(report.exact_parity_count, 2);
     assert_eq!(report.required_min_recall_q16, 49_151);
     assert_eq!(report.allowed_p95_latency_nanos, 100_000_000);
+    assert_eq!(report.allowed_p99_latency_nanos, 200_000_000);
+    assert!(report.p99_latency_nanos >= report.p95_latency_nanos);
     assert!(report.require_production_safe);
     assert!(report.queries.iter().all(|query| query.exact_parity));
 }

@@ -32,6 +32,7 @@ pub struct AnnMetricBaseline {
     pub min_upper_layers: usize,
     pub min_upper_graph_edges: usize,
     pub max_p95_latency_nanos: u128,
+    pub max_p99_latency_nanos: u128,
     pub max_max_latency_nanos: u128,
     pub require_production_safe: bool,
 }
@@ -59,6 +60,7 @@ pub struct AnnMetricReport {
     pub mean_recall_q16: u16,
     pub p50_latency_nanos: u128,
     pub p95_latency_nanos: u128,
+    pub p99_latency_nanos: u128,
     pub max_latency_nanos: u128,
     pub production_safe: bool,
 }
@@ -172,6 +174,7 @@ fn metric_report(
         mean_recall_q16,
         p50_latency_nanos: percentile(&latencies, 50),
         p95_latency_nanos: percentile(&latencies, 95),
+        p99_latency_nanos: percentile(&latencies, 99),
         max_latency_nanos: *latencies.last().unwrap_or(&0),
         production_safe,
     }

@@ -213,6 +213,7 @@ class SelfTests(unittest.TestCase):
             "required_min_recall_q16": 49_151,
             "required_min_mean_recall_q16": 49_151,
             "allowed_p95_latency_nanos": 100,
+            "allowed_p99_latency_nanos": 150,
             "allowed_max_latency_nanos": 200,
             "hnsw_layer_count": 4,
             "upper_layers": 2,
@@ -220,6 +221,7 @@ class SelfTests(unittest.TestCase):
             "min_observed_recall_q16": 65_535,
             "mean_recall_q16": 65_535,
             "p95_latency_nanos": 10,
+            "p99_latency_nanos": 15,
             "max_latency_nanos": 20,
         }
         if omit_report_field:

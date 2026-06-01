@@ -21,7 +21,9 @@ GATES: dict[str, dict[str, object]] = {
             ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "Serving Guardrails"),
             ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "Runtime Rollout Policy"),
             ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "ann_no_fallback_blocked"),
+            ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "p99 latency"),
             ("docs/SEARCH.md", "Guarded production mode"),
+            ("docs/SEARCH.md", "p99 tail-latency"),
             ("docs/OBSERVABILITY_ALERTS.md", "CortexDbAnnNoFallbackBlocked"),
             ("examples/observability/alerts.yml", "cortexdb_ann_no_fallback_blocked"),
             ("crates/cortex-server/src/lib.rs", "cortexdb_ann_no_fallback_blocked"),
@@ -141,15 +143,21 @@ def report_failures(label: str, report: dict[str, Any]) -> list[str]:
     if mean_recall is None or mean_recall < MIN_RECALL_Q16:
         failures.append(f"{label}: mean_recall_q16 below local threshold")
     p95 = int_value(value, "p95_latency_nanos")
+    p99 = int_value(value, "p99_latency_nanos")
     max_latency = int_value(value, "max_latency_nanos")
     if p95 is None or p95 <= 0:
         failures.append(f"{label}: p95_latency_nanos must be positive")
+    if p99 is None or p99 <= 0:
+        failures.append(f"{label}: p99_latency_nanos must be positive")
     if max_latency is None or max_latency <= 0:
         failures.append(f"{label}: max_latency_nanos must be positive")
     allowed_p95 = int_value(value, "allowed_p95_latency_nanos")
+    allowed_p99 = int_value(value, "allowed_p99_latency_nanos")
     allowed_max = int_value(value, "allowed_max_latency_nanos")
     if allowed_p95 is not None and p95 is not None and p95 > allowed_p95:
         failures.append(f"{label}: p95 latency exceeds gate policy")
+    if allowed_p99 is not None and p99 is not None and p99 > allowed_p99:
+        failures.append(f"{label}: p99 latency exceeds gate policy")
     if allowed_max is not None and max_latency is not None and max_latency > allowed_max:
         failures.append(f"{label}: max latency exceeds gate policy")
     return failures

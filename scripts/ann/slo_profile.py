@@ -16,6 +16,7 @@ class SloProfile:
     min_recall_q16: int
     min_mean_recall_q16: int
     max_p95_latency_nanos: int
+    max_p99_latency_nanos: int
     max_max_latency_nanos: int
     max_neighbors: int
     ef_search: int
@@ -29,6 +30,7 @@ PROFILES = {
         min_recall_q16=49_151,
         min_mean_recall_q16=49_151,
         max_p95_latency_nanos=50_000_000,
+        max_p99_latency_nanos=80_000_000,
         max_max_latency_nanos=100_000_000,
         max_neighbors=8,
         ef_search=64,
@@ -40,6 +42,7 @@ PROFILES = {
         min_recall_q16=49_151,
         min_mean_recall_q16=49_151,
         max_p95_latency_nanos=100_000_000,
+        max_p99_latency_nanos=200_000_000,
         max_max_latency_nanos=250_000_000,
         max_neighbors=16,
         ef_search=128,
@@ -51,6 +54,7 @@ PROFILES = {
         min_recall_q16=60_000,
         min_mean_recall_q16=62_000,
         max_p95_latency_nanos=250_000_000,
+        max_p99_latency_nanos=400_000_000,
         max_max_latency_nanos=500_000_000,
         max_neighbors=24,
         ef_search=192,
@@ -62,6 +66,7 @@ PROFILES = {
         min_recall_q16=65_535,
         min_mean_recall_q16=65_535,
         max_p95_latency_nanos=1_000_000_000,
+        max_p99_latency_nanos=1_500_000_000,
         max_max_latency_nanos=2_000_000_000,
         max_neighbors=32,
         ef_search=256,
@@ -87,6 +92,8 @@ def run_external_args(profile: SloProfile) -> list[str]:
         str(profile.min_mean_recall_q16),
         "--max-p95-latency-nanos",
         str(profile.max_p95_latency_nanos),
+        "--max-p99-latency-nanos",
+        str(profile.max_p99_latency_nanos),
         "--max-max-latency-nanos",
         str(profile.max_max_latency_nanos),
         "--max-neighbors",
@@ -130,6 +137,7 @@ class SelfTests(unittest.TestCase):
         profile = profile_for("balanced")
         self.assertEqual(profile.min_recall_q16, 49_151)
         self.assertEqual(profile.max_p95_latency_nanos, 100_000_000)
+        self.assertEqual(profile.max_p99_latency_nanos, 200_000_000)
         self.assertEqual(profile.max_neighbors, 16)
         self.assertEqual(profile.ef_search, 128)
         self.assertEqual(profile.ef_construction, 128)
@@ -144,6 +152,7 @@ class SelfTests(unittest.TestCase):
     def test_run_external_args_include_thresholds_and_graph_knobs(self) -> None:
         rendered = render(profile_for("semantic"), "run-external-args")
         self.assertIn("--min-recall-q16 60000", rendered)
+        self.assertIn("--max-p99-latency-nanos 400000000", rendered)
         self.assertIn("--max-neighbors 24", rendered)
         self.assertIn("--ef-search 192", rendered)
         self.assertIn("--ef-construction 256", rendered)

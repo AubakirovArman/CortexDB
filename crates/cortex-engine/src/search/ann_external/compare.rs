@@ -49,6 +49,12 @@ pub(super) fn compare_external_baseline(
     );
     check_max(
         &mut failures,
+        "p99_latency_nanos",
+        report.p99_latency_nanos,
+        baseline.max_p99_latency_nanos,
+    );
+    check_max(
+        &mut failures,
         "max_latency_nanos",
         report.max_latency_nanos,
         baseline.max_max_latency_nanos,

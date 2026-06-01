@@ -13,12 +13,14 @@ run_id=""
 min_recall_q16="49151"
 min_mean_recall_q16="49151"
 max_p95_latency_nanos="100000000"
+max_p99_latency_nanos="200000000"
 max_max_latency_nanos="250000000"
 max_neighbors="8"
 ef_search="64"
 ef_construction="64"
 layer_count="4"
 compare_max_p95_regression_nanos="0"
+compare_max_p99_regression_nanos="0"
 compare_max_max_regression_nanos="0"
 allow_unsafe=0
 
@@ -39,12 +41,14 @@ Options:
   --min-recall-q16 VALUE
   --min-mean-recall-q16 VALUE
   --max-p95-latency-nanos VALUE
+  --max-p99-latency-nanos VALUE
   --max-max-latency-nanos VALUE
   --max-neighbors VALUE
   --ef-search VALUE
   --ef-construction VALUE
   --layer-count VALUE
   --compare-max-p95-regression-nanos VALUE
+  --compare-max-p99-regression-nanos VALUE
   --compare-max-max-regression-nanos VALUE
   --allow-unsafe
 
@@ -115,6 +119,11 @@ while [[ $# -gt 0 ]]; do
       max_p95_latency_nanos="$2"
       shift 2
       ;;
+    --max-p99-latency-nanos)
+      require_value "$1" "${2:-}"
+      max_p99_latency_nanos="$2"
+      shift 2
+      ;;
     --max-max-latency-nanos)
       require_value "$1" "${2:-}"
       max_max_latency_nanos="$2"
@@ -143,6 +152,11 @@ while [[ $# -gt 0 ]]; do
     --compare-max-p95-regression-nanos)
       require_value "$1" "${2:-}"
       compare_max_p95_regression_nanos="$2"
+      shift 2
+      ;;
+    --compare-max-p99-regression-nanos)
+      require_value "$1" "${2:-}"
+      compare_max_p99_regression_nanos="$2"
       shift 2
       ;;
     --compare-max-max-regression-nanos)
@@ -256,6 +270,7 @@ cat > "${manifest_path}" <<MANIFEST
   "min_recall_q16": ${min_recall_q16},
   "min_mean_recall_q16": ${min_mean_recall_q16},
   "max_p95_latency_nanos": ${max_p95_latency_nanos},
+  "max_p99_latency_nanos": ${max_p99_latency_nanos},
   "max_max_latency_nanos": ${max_max_latency_nanos},
   "require_production_safe": $([[ "${allow_unsafe}" -eq 1 ]] && echo false || echo true),
   "hnsw_max_neighbors": ${max_neighbors},
@@ -279,6 +294,7 @@ ann_args=(
   --min-recall-q16 "${min_recall_q16}"
   --min-mean-recall-q16 "${min_mean_recall_q16}"
   --max-p95-latency-nanos "${max_p95_latency_nanos}"
+  --max-p99-latency-nanos "${max_p99_latency_nanos}"
   --max-max-latency-nanos "${max_max_latency_nanos}"
   --max-neighbors "${max_neighbors}"
   --ef-search "${ef_search}"
@@ -297,6 +313,7 @@ if [[ -n "${baseline_report}" ]]; then
     --baseline "${baseline_report}" \
     --candidate "${report_path}" \
     --max-p95-regression-nanos "${compare_max_p95_regression_nanos}" \
+    --max-p99-regression-nanos "${compare_max_p99_regression_nanos}" \
     --max-max-regression-nanos "${compare_max_max_regression_nanos}" \
     --output "${comparison_path}"
 fi

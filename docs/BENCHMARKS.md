@@ -39,7 +39,7 @@ Below are the benchmark timings recorded using `cargo bench --bench core_baselin
 | **`aql_retrieve_10k`** | AQL query execution (10K database) | ~51.70 ms | Fully scales with larger candidate spaces |
 | **`context_pack_1k`** | Context Pack Compiler (1K database) | ~8.66 ms | Limits candidates, token budgets, checks citations |
 | **`context_pack_10k`** | Context Pack Compiler (10K database) | ~51.47 ms | Compiles packs out of large query matches under budget |
-| **`ann_repeatable_report_json`** | Deterministic synthetic ANN corpus | machine-specific | Emits JSON with recall, p50/p95/max latency, graph edges, and upper-layer counts |
+| **`ann_repeatable_report_json`** | Deterministic synthetic ANN corpus | machine-specific | Emits JSON with recall, p50/p95/p99/max latency, graph edges, and upper-layer counts |
 
 ---
 
@@ -135,7 +135,8 @@ machine-dependent, but the report shape is stable and can be archived by CI to
 track recall and p95/p99 drift across commits.
 External-corpus reports also embed their gate policy fields:
 `required_min_recall_q16`, `required_min_mean_recall_q16`,
-`allowed_p95_latency_nanos`, `allowed_max_latency_nanos`, and
+`allowed_p95_latency_nanos`, `allowed_p99_latency_nanos`,
+`allowed_max_latency_nanos`, and
 `require_production_safe`. This makes a `production_safe=true` result auditable:
 the artifact records both the observed recall/latency and the thresholds used
 to decide whether the run was safe.
@@ -201,6 +202,7 @@ mean_mrr_q16
 mean_ndcg_q16
 exact_parity_q16
 p95_latency_nanos
+p99_latency_nanos
 max_latency_nanos
 production_safe
 ```

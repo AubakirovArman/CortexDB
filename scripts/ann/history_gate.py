@@ -35,6 +35,7 @@ def run_gate(args: argparse.Namespace) -> int:
     summary = summarize_history(
         args.run_root,
         max_p95_regression_nanos=args.max_p95_regression_nanos,
+        max_p99_regression_nanos=args.max_p99_regression_nanos,
         max_max_regression_nanos=args.max_max_regression_nanos,
     )
     write_summary(summary, args.output)
@@ -59,6 +60,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--min-runs", type=int, default=1)
     parser.add_argument("--min-corpora", type=int, default=1)
     parser.add_argument("--max-p95-regression-nanos", type=int, default=0)
+    parser.add_argument("--max-p99-regression-nanos", type=int, default=0)
     parser.add_argument("--max-max-regression-nanos", type=int, default=0)
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args(argv)
@@ -100,6 +102,7 @@ class SelfTests(unittest.TestCase):
             "mean_recall_q16": recall,
             "p50_latency_nanos": p95,
             "p95_latency_nanos": p95,
+            "p99_latency_nanos": p95,
             "max_latency_nanos": p95,
         }
         (run_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
@@ -135,6 +138,7 @@ class SelfTests(unittest.TestCase):
             summary = summarize_history(
                 root,
                 max_p95_regression_nanos=10,
+                max_p99_regression_nanos=10,
                 max_max_regression_nanos=10,
             )
         errors = validate_history(summary, min_runs=2, min_corpora=1, fail_on_regression=True)

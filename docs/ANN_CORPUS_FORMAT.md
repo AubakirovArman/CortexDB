@@ -103,6 +103,7 @@ Supported gates:
 --min-recall-q16 49151
 --min-mean-recall-q16 49151
 --max-p95-latency-nanos 100000000
+--max-p99-latency-nanos 200000000
 --max-max-latency-nanos 250000000
 ```
 
@@ -137,6 +138,7 @@ The output is a single JSON object:
   "exact_parity_count": 4,
   "p50_latency_nanos": 8548,
   "p95_latency_nanos": 10628,
+  "p99_latency_nanos": 15000,
   "max_latency_nanos": 17382,
   "production_safe": true,
   "queries": [
@@ -474,6 +476,7 @@ python3 scripts/ann/compare_reports.py \
   --baseline reports/main.json \
   --candidate reports/pr.json \
   --max-p95-regression-nanos 5000000 \
+  --max-p99-regression-nanos 8000000 \
   --max-max-regression-nanos 10000000 \
   --output target/ann/ann_report_comparison.json
 ```
@@ -601,5 +604,5 @@ The comparison also fails when `hnsw_max_neighbors`, `hnsw_ef_search`,
 `hnsw_ef_construction`, or `hnsw_layer_count` changes, because recall and
 latency are only comparable under the same graph/search profile.
 Latency baselines should also be interpreted with `machine_profile.json`; p95
-from different CPU/OS/Rust environments is useful as signal, but not as a strict
-apples-to-apples regression unless the machine profile matches.
+and p99 from different CPU/OS/Rust environments are useful as signal, but not
+as strict apples-to-apples regressions unless the machine profile matches.

@@ -14,6 +14,7 @@
   "min_upper_layers": 1,
   "min_upper_graph_edges": 1,
   "max_p95_latency_nanos": 100000000,
+  "max_p99_latency_nanos": 200000000,
   "max_max_latency_nanos": 250000000,
   "require_production_safe": true
 }

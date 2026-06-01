@@ -97,6 +97,10 @@ impl Args {
                     options.max_p95_latency_nanos =
                         parse_u128(&next_value(&mut args, &arg)?, &arg)?;
                 }
+                "--max-p99-latency-nanos" => {
+                    options.max_p99_latency_nanos =
+                        parse_u128(&next_value(&mut args, &arg)?, &arg)?;
+                }
                 "--max-max-latency-nanos" => {
                     options.max_max_latency_nanos =
                         parse_u128(&next_value(&mut args, &arg)?, &arg)?;
@@ -147,7 +151,7 @@ fn parse_u128(value: &str, option: &str) -> Result<u128, String> {
 fn usage() -> String {
     "usage: ann_corpus_check --vectors PATH --queries PATH --ground-truth PATH \
      [--metric dot_product|cosine|l2] [--max-neighbors N] [--ef-search N] \
-     [--ef-construction N] [--layer-count N] [--output PATH]"
+     [--ef-construction N] [--layer-count N] [--max-p99-latency-nanos N] [--output PATH]"
         .to_owned()
 }
 
@@ -186,6 +190,8 @@ mod tests {
             "l2".to_owned(),
             "--min-recall-q16".to_owned(),
             "50000".to_owned(),
+            "--max-p99-latency-nanos".to_owned(),
+            "200000000".to_owned(),
             "--max-neighbors".to_owned(),
             "16".to_owned(),
             "--ef-search".to_owned(),
@@ -199,6 +205,7 @@ mod tests {
 
         assert_eq!(args.options.metric, DistanceMetric::L2);
         assert_eq!(args.options.min_recall_q16, 50_000);
+        assert_eq!(args.options.max_p99_latency_nanos, 200_000_000);
         assert_eq!(args.options.max_neighbors, 16);
         assert_eq!(args.options.ef_search, 128);
         assert_eq!(args.options.ef_construction, 256);

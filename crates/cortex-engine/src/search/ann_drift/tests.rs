@@ -26,6 +26,7 @@ fn observed_from_baseline(baseline: &AnnDriftBaseline) -> AnnRecallLatencyReport
         mean_recall_q16: baseline.reference_mean_recall_q16,
         p50_latency_nanos: baseline.reference_p95_latency_nanos,
         p95_latency_nanos: baseline.reference_p95_latency_nanos,
+        p99_latency_nanos: baseline.reference_p99_latency_nanos(),
         max_latency_nanos: baseline.reference_max_latency_nanos,
         production_safe: true,
     }
@@ -47,6 +48,7 @@ fn drift_baseline_rejects_recall_and_latency_regression() {
     let mut observed = observed_from_baseline(&baseline);
     observed.min_observed_recall_q16 = 1;
     observed.p95_latency_nanos = baseline.reference_p95_latency_nanos * 10;
+    observed.p99_latency_nanos = baseline.reference_p99_latency_nanos() * 10;
 
     let failures = compare_ann_drift_baseline(&baseline, &observed);
 
@@ -56,4 +58,7 @@ fn drift_baseline_rejects_recall_and_latency_regression() {
     assert!(failures
         .iter()
         .any(|value| value.contains("p95_latency_nanos")));
+    assert!(failures
+        .iter()
+        .any(|value| value.contains("p99_latency_nanos")));
 }

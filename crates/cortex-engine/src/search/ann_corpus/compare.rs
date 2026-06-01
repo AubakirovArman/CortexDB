@@ -25,6 +25,12 @@ pub(super) fn compare_corpus_report(
     );
     check_max(
         &mut failures,
+        "p99_latency_nanos",
+        report.p99_latency_nanos,
+        options.max_p99_latency_nanos,
+    );
+    check_max(
+        &mut failures,
         "max_latency_nanos",
         report.max_latency_nanos,
         options.max_max_latency_nanos,

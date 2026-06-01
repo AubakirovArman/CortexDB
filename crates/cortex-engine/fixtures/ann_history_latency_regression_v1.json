@@ -10,6 +10,7 @@
       "latest_mean_recall_q16": 65535,
       "latest_min_observed_recall_q16": 65535,
       "latest_p95_latency_nanos": 20000,
+      "latest_p99_latency_nanos": 20000,
       "latest_production_safe": true,
       "latest_run_id": "latency-b",
       "metric": "dot_product",
@@ -19,6 +20,13 @@
           "current_run_id": "latency-b",
           "delta": 11000,
           "field": "p95_latency_nanos",
+          "kind": "latency",
+          "previous_run_id": "latency-a"
+        },
+        {
+          "current_run_id": "latency-b",
+          "delta": 11000,
+          "field": "p99_latency_nanos",
           "kind": "latency",
           "previous_run_id": "latency-a"
         },
@@ -36,12 +44,19 @@
   ],
   "corpus_count": 1,
   "latest_run_id": "latency-b",
-  "regression_count": 2,
+  "regression_count": 3,
   "regressions": [
     {
       "current_run_id": "latency-b",
       "delta": 11000,
       "field": "p95_latency_nanos",
+      "kind": "latency",
+      "previous_run_id": "latency-a"
+    },
+    {
+      "current_run_id": "latency-b",
+      "delta": 11000,
+      "field": "p99_latency_nanos",
       "kind": "latency",
       "previous_run_id": "latency-a"
     },
@@ -70,6 +85,7 @@
       "metric": "dot_product",
       "min_observed_recall_q16": 65535,
       "p95_latency_nanos": 9000,
+      "p99_latency_nanos": 9000,
       "passed": true,
       "production_safe": true,
       "queries": "queries.jsonl",
@@ -77,8 +93,8 @@
       "run_id": "latency-a",
       "upper_graph_edges": 2,
       "upper_layers": 3,
-      "vectors": "vectors.jsonl",
-      "vector_count": 12
+      "vector_count": 12,
+      "vectors": "vectors.jsonl"
     },
     {
       "corpus_key": "dot_product|8|vectors.jsonl|queries.jsonl",
@@ -94,6 +110,7 @@
       "metric": "dot_product",
       "min_observed_recall_q16": 65535,
       "p95_latency_nanos": 20000,
+      "p99_latency_nanos": 20000,
       "passed": true,
       "production_safe": true,
       "queries": "queries.jsonl",
@@ -101,8 +118,8 @@
       "run_id": "latency-b",
       "upper_graph_edges": 2,
       "upper_layers": 3,
-      "vectors": "vectors.jsonl",
-      "vector_count": 12
+      "vector_count": 12,
+      "vectors": "vectors.jsonl"
     }
   ]
 }
