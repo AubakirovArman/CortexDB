@@ -24,6 +24,11 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "SDK",
         "compatibility",
     ),
+    "docs/BINARY_PLATFORM_MATRIX.md": (
+        "Clean Install Smoke",
+        "Windows is unsupported",
+        "launchd",
+    ),
     "docs/SDK_RELEASE.md": (
         "sdk-release-contract-check",
         "sdk-release-artifacts-check",
@@ -56,6 +61,11 @@ SUITES: tuple[dict[str, Any], ...] = (
         "name": "release_check",
         "command": ["make", "release-check"],
         "covers": ["full alpha/release matrix", "binary package", "backup/fault evidence"],
+    },
+    {
+        "name": "binary_platform_matrix",
+        "command": ["make", "binary-platform-matrix-check"],
+        "covers": ["binary clean install smoke", "platform support boundary"],
     },
     {
         "name": "openapi_contract",

@@ -81,6 +81,20 @@ cortexdb stats ./db
 pushes. The workflow validates each tarball before uploading it to the GitHub
 Release and also uploads workflow artifact copies.
 
+## Binary Platform Matrix
+
+The supported local single-node matrix is documented in
+[`BINARY_PLATFORM_MATRIX.md`](BINARY_PLATFORM_MATRIX.md). Linux and macOS are
+the release artifact targets. Windows is explicitly unsupported until native
+path, service, packaging, and clean-install smoke gates exist.
+
+`make binary-release-check` now validates:
+
+```text
+package -> archive validation -> clean install -> fixture load -> query
+-> backup -> restore -> server health/query
+```
+
 ## Limits
 
 - No Windows binary artifact is produced yet.

@@ -29,6 +29,7 @@ Latest local status: passed.
 | SDK e2e release | Confirms live SDK compatibility and SDK examples release artifact packaging. |
 | backup/restore support | Confirms the local backup drill. |
 | backup offsite support | Confirms local offsite staging. |
+| binary platform matrix | Confirms binary tarball clean-install smoke and platform support boundaries. |
 | public claims | Confirms public wording does not overclaim the product boundary. |
 
 ## Boundary

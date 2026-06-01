@@ -792,6 +792,20 @@ Acceptance:
 
 ### Epic 5.2 - Binary Platform Matrix
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- Added `docs/BINARY_PLATFORM_MATRIX.md` for Linux/macOS support, Windows
+  non-support, macOS launchd placement, and clean-install smoke expectations.
+- `make binary-release-check` now runs `make binary-platform-matrix-check` after
+  package creation and archive validation.
+- `target/binary-platform-matrix/report.json` passed with a clean install flow:
+  version, fixture load, validate, search, backup, restore, server health, and
+  server query.
+- `make deployment-upgrade-check` validates the platform matrix docs and macOS
+  launchd example.
+
 Tasks:
 
 1. Keep Linux and macOS binary release artifacts.

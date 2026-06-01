@@ -4,7 +4,7 @@ Last audited: 2026-06-01.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 161 project markdown files.
+At the time of this audit, the repository tracks 162 project markdown files.
 
 ## Start Here
 
@@ -96,6 +96,7 @@ At the time of this audit, the repository tracks 161 project markdown files.
 - [`DASHBOARD_UI.md`](DASHBOARD_UI.md) - dashboard status and gates.
 - [`DASHBOARD_PRODUCT_UI_EVIDENCE.md`](DASHBOARD_PRODUCT_UI_EVIDENCE.md) - local Epic 16 dashboard product UI evidence gate.
 - [`BINARY_RELEASES.md`](BINARY_RELEASES.md) - binary tarball packaging and install flow.
+- [`BINARY_PLATFORM_MATRIX.md`](BINARY_PLATFORM_MATRIX.md) - supported binary platforms and clean-install smoke.
 - [`INSTALL.md`](INSTALL.md) - local binary/source install and first database checks.
 - [`SYSTEMD.md`](SYSTEMD.md) - single-node systemd service example.
 - [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md) - offline upgrade and restore-based rollback workflow.

@@ -62,6 +62,9 @@
 - Added `single_node_performance_check` and `make single-node-performance-check`
   to emit a Strict/Balanced single-node engine performance matrix covering
   put/get/search/context/checkpoint/compact/restart lifecycle phases.
+- Added `docs/BINARY_PLATFORM_MATRIX.md` and `make binary-platform-matrix-check`
+  so binary releases prove a clean install through fixture load, query,
+  backup/restore, and HTTP server health/query.
 - Added `make tenant-recovery-check`, a real HTTP tenant isolation plus
   backup/restore gate that verifies tenant payload boundaries before and after
   restoring the server root.

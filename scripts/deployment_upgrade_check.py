@@ -14,6 +14,7 @@ REQUIRED_DOC_MARKERS = {
         "First Database",
         "Install Verification",
         "make binary-release-check",
+        "BINARY_PLATFORM_MATRIX.md",
     ],
     "docs/SYSTEMD.md": [
         "[Service]",
@@ -42,14 +43,24 @@ REQUIRED_DOC_MARKERS = {
     ],
     "docs/BINARY_RELEASES.md": [
         "GitHub Release Workflow",
+        "Binary Platform Matrix",
         "target/release-artifacts",
         "SHA256SUMS",
+    ],
+    "docs/BINARY_PLATFORM_MATRIX.md": [
+        "Windows is unsupported",
+        "Clean Install Smoke",
+        "launchd",
+    ],
+    "docs/deployment/com.cortexdb.server.plist": [
+        "/usr/local/bin/cortex-server",
+        "KeepAlive",
     ],
 }
 
 LINK_MARKERS = {
     "README.md": ["docs/INSTALL.md", "docs/SYSTEMD.md", "docs/UPGRADE_ROLLBACK.md"],
-    "docs/DOCUMENTATION_INDEX.md": ["INSTALL.md", "SYSTEMD.md", "UPGRADE_ROLLBACK.md"],
+    "docs/DOCUMENTATION_INDEX.md": ["INSTALL.md", "SYSTEMD.md", "UPGRADE_ROLLBACK.md", "BINARY_PLATFORM_MATRIX.md"],
     "docs/PL_EXTRACTED_EPICS.md": ["DEPLOYMENT_UPGRADE_EVIDENCE.md"],
 }
 

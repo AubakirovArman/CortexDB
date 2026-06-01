@@ -82,6 +82,12 @@ make binary-release-check
 make deployment-upgrade-check
 ```
 
+`make binary-release-check` also runs the binary platform matrix smoke:
+
+```text
+clean install -> load fixture -> query -> backup/restore -> server health
+```
+
 For an installed binary, validate the target database with:
 
 ```bash
@@ -92,6 +98,7 @@ cortexdb stats ./data
 ## Related Docs
 
 - Binary package format: [`BINARY_RELEASES.md`](BINARY_RELEASES.md).
+- Binary platform matrix: [`BINARY_PLATFORM_MATRIX.md`](BINARY_PLATFORM_MATRIX.md).
 - Systemd service example: [`SYSTEMD.md`](SYSTEMD.md).
 - Upgrade and rollback: [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md).
 - Storage migration policy: [`UPGRADE_MIGRATION.md`](UPGRADE_MIGRATION.md).
