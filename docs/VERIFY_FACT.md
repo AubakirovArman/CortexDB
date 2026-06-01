@@ -100,6 +100,25 @@ The `metric=budget` line helps VERIFY FACT label precise
 typed `NumericValue` pairs extracted from the fact and evidence body text, so
 CLI/server responses do not re-parse payloads independently.
 
+## Report Exports
+
+`VerificationReport` has engine-level stable exports:
+
+```bash
+cortexdb verify ./db project:investments '<VERIFY AQL>' --format markdown
+cortexdb verify ./db project:investments '<VERIFY AQL>' --format audit
+```
+
+HTTP uses the same formats:
+
+```http
+POST /v1/verify?scope=project:investments&format=markdown
+POST /v1/verify?scope=project:investments&format=audit
+```
+
+Markdown is intended for human review. Audit text is deterministic line-based
+output for diffing, archiving, or attaching to external review tooling.
+
 ## Limitations (Alpha)
 
 - **Unit parsing** is heuristic, not a full SI unit converter.

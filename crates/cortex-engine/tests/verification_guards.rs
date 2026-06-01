@@ -1,6 +1,8 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
-use cortex_engine::verification::{VerificationGuardCode, VerificationStatus};
+use cortex_engine::verification::{
+    VerificationGuardCode, VerificationReportExportFormat, VerificationStatus,
+};
 use cortex_engine::{scope_id, Database};
 use std::collections::BTreeSet;
 
@@ -156,6 +158,35 @@ fn verification_report_does_not_infer_billions_from_decimal_percent() {
     assert_eq!(report.numeric_conflicts[0].left, "1.2 %");
     assert_eq!(report.numeric_conflicts[0].right, "2 %");
     assert!(!report.numeric_conflicts[0].left.contains("1.2B"));
+}
+
+#[test]
+fn verification_report_exports_markdown_and_audit_text() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(7),
+        b"scope=project:investments\nstatus=verified\ntype=fact\nsource=annual-report\nsource_trust_q16=60000\nmetric=budget\n\nSolar Plant budget increased to 1.4B KZT.".to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;"#,
+            &view(),
+        )
+        .unwrap();
+    let markdown = report.export(VerificationReportExportFormat::Markdown);
+    let audit = report.export(VerificationReportExportFormat::Audit);
+
+    assert!(markdown.starts_with("# CortexDB Verification Report"));
+    assert!(markdown.contains("## Numeric Conflicts"));
+    assert!(markdown.contains("metric=`budget`"));
+    assert!(markdown.contains("source_trust=`official` (`60000`)"));
+    assert!(audit.starts_with("CortexDB Verification Audit v1"));
+    assert!(audit.contains("status=contradicted"));
+    assert!(audit.contains("numeric_conflict.0.metric=budget"));
+    assert!(audit.contains("contradicting.0.source_trust_category=official"));
 }
 
 fn fact_cell(source: Option<&str>, body: &str) -> KnowledgeCell {

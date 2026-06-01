@@ -232,13 +232,17 @@ cortexdb remember ./db project:investments \
   'REMEMBER "investment summary" AS CELLS WHERE scope == "project:investments" IN BRAIN default;'
 ```
 
-#### `verify <path> <scope> <aql> [--json]`
+#### `verify <path> <scope> <aql> [--json] [--format summary|json|markdown|audit]`
 Run VERIFY FACT.
 
 ```bash
 cortexdb verify ./db project:investments \
   'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN default;' \
   --json
+
+cortexdb verify ./db project:investments \
+  'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN default;' \
+  --format markdown
 ```
 
 ### Ingestion

@@ -8,12 +8,14 @@ use crate::search::tokenize;
 use crate::source_trust::{SourceTrust, SourceTrustCategory};
 
 mod contradiction;
+pub mod export;
 mod guards;
 pub mod numeric;
 
 use contradiction::{
     contradiction_facts, contradiction_match, contradiction_text_matches, tokenize_support_text,
 };
+pub use export::VerificationReportExportFormat;
 use guards::{citation_guard, numeric_mismatch, numeric_mismatch_conflict, numeric_mismatch_guard};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -22,6 +24,17 @@ pub enum VerificationStatus {
     Insufficient,
     Contradicted,
     Mixed,
+}
+
+impl VerificationStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Supported => "supported",
+            Self::Insufficient => "insufficient",
+            Self::Contradicted => "contradicted",
+            Self::Mixed => "mixed_evidence",
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -64,3 +64,4 @@ pub use search::*;
 pub use source_trust::{SourceTrust, SourceTrustCategory, DEFAULT_SOURCE_TRUST_Q16};
 pub use typed_body::{EntityBody, FactBody, RelationBody};
 pub use validation::{StorageStats, StorageValidation, StorageValidationReport};
+pub use verification::VerificationReportExportFormat;

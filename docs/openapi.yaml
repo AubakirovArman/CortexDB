@@ -499,6 +499,16 @@ paths:
       parameters:
       - $ref: '#/components/parameters/Tenant'
       - $ref: '#/components/parameters/Scope'
+      - name: format
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - json
+          - markdown
+          - audit
+          default: json
       requestBody:
         required: true
         content:
@@ -602,6 +612,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VerificationReportResponse'
+            text/markdown:
+              schema:
+                type: string
+            text/plain:
+              schema:
+                type: string
         '400': *id001
         '500': *id002
   /v1/ingest/text:

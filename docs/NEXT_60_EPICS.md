@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 23 |
-| partial | 29 |
+| closed | 24 |
+| partial | 28 |
 | not started | 6 |
 | research | 2 |
 | total | 60 |
@@ -61,7 +61,7 @@ The plan recommends this first execution batch:
 | 17 | NumericValue Engine Integration | closed | `VerificationReport.numeric_conflicts` now carries engine-level structured numeric conflicts with `cell_id`, metric, display values, and typed `NumericValue` pairs; CLI/server only serialize the report. | Keep future unit/currency expansion inside engine structs before exposing new API fields. |
 | 18 | Source Trust Model v1 | closed | Engine now has first-class `SourceTrust`/`SourceTrustCategory`; ContextPack explain and VERIFY evidence expose deterministic q16/category contribution across CLI/server/SDK surfaces. | Add richer policy inputs later without changing q16 category semantics silently. |
 | 19 | Contradiction Index v1 | not started | Verification detects conflicts dynamically. | Add persisted contradiction relation cells and conflict index. |
-| 20 | Verification Report Export | partial | Typed JSON reports and numeric conflicts exist. | Add stable Markdown/audit export from CLI/server. |
+| 20 | Verification Report Export | closed | `VerificationReport` now has engine-level Markdown and deterministic audit-text exporters, wired through CLI `verify --format markdown|audit` and HTTP `/v1/verify?format=markdown|audit`. | Keep export wording stable unless a new report export version is introduced. |
 | 21 | Real-domain Corpus Expansion | closed | `make retrieval-quality-check` now validates investment projects, support tickets, legal policies, and technical docs corpora with ground truth. | Add larger public/private corpora later as separate quality expansions. |
 | 22 | Retrieval Quality Dashboard | closed | `make retrieval-quality-check` now writes `target/retrieval-quality/dashboard.html` with guarded ANN and per-domain recall/MRR/nDCG/p95/exact-parity tables. | Keep the dashboard in the beta evidence bundle and extend it as more domains are added. |
 | 23 | HNSW Production SLO History | partial | ANN guardrails and real-domain report gates exist. | Build sustained 10+ run history and SLO regression tracking. |
@@ -118,5 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 20: stable Markdown/audit export for verification reports.
-2. Advance Epic 19: persisted contradiction relation cells and conflict index.
+1. Advance Epic 19: persisted contradiction relation cells and conflict index.
+2. Advance Epic 24: fuller search explain contribution details and SDK coverage.

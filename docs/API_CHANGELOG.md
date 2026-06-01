@@ -93,6 +93,8 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 - **Source trust explain metadata** — ContextPack explain and VERIFY evidence
   now include deterministic `source_trust_category` alongside
   `source_trust_q16`.
+- **VERIFY exports** — `/v1/verify` and `cortexdb verify` now support stable
+  Markdown and deterministic audit-text report exports.
 
 ---
 

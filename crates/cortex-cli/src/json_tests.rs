@@ -180,6 +180,48 @@ fn verify_json_insufficient_evidence() {
     let _ = std::fs::remove_dir_all(path);
 }
 
+#[test]
+fn verify_exports_markdown_and_audit_formats() {
+    let path = unique_path("cortexdb-cli-verify-export");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\ntype=fact\nsource=report.pdf\nsource_trust_q16=60000\nmetric=budget\n\nSolar Plant budget changed to 1.4B KZT.".to_owned(),
+    ])
+    .unwrap();
+
+    let markdown = run(vec![
+        "cortexdb".to_owned(),
+        "verify".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        r#"VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;"#.to_owned(),
+        "--format".to_owned(),
+        "markdown".to_owned(),
+    ])
+    .unwrap();
+    assert!(markdown.starts_with("# CortexDB Verification Report"));
+    assert!(markdown.contains("## Numeric Conflicts"));
+
+    let audit = run(vec![
+        "cortexdb".to_owned(),
+        "verify".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        r#"VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;"#.to_owned(),
+        "--format".to_owned(),
+        "audit".to_owned(),
+    ])
+    .unwrap();
+    assert!(audit.starts_with("CortexDB Verification Audit v1"));
+    assert!(audit.contains("numeric_conflict.0.metric=budget"));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
 fn unique_path(prefix: &str) -> std::path::PathBuf {
     std::env::temp_dir().join(format!(
         "{prefix}-{}",

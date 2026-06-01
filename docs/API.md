@@ -205,11 +205,12 @@ Executes an AQL query and compiles a budgeted, deduplicated, and scored `Context
 
 ---
 
-### 2.8. POST `/v1/verify?scope=<scope>`
+### 2.8. POST `/v1/verify?scope=<scope>[&format=json|markdown|audit]`
 Verifies a specific factual claim against the available database knowledge using AQL.
 
 * **Request Body:** Raw AQL query string.
-* **Response (200 OK):**
+* **Response (200 OK):** JSON by default, or stable Markdown/audit text when
+  `format=markdown` or `format=audit` is supplied.
   ```json
   {
     "fact": "Solar Plant budget is 1.2B KZT",

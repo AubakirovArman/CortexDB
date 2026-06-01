@@ -2,7 +2,7 @@ use cortex_core::CellId;
 use cortex_engine::{
     evaluate_hnsw_no_fallback_rollout, parse_vector_literal, AnnSearchPath, AnnSearchPolicy,
     ContextPackExportFormat, ContextPackOptions, Database, EngineError,
-    HnswNoFallbackRolloutPolicy, SearchLimit,
+    HnswNoFallbackRolloutPolicy, SearchLimit, VerificationReportExportFormat,
 };
 
 use crate::cli_json::{
@@ -405,15 +405,25 @@ pub fn remember(path: &str, scope: &str, aql: &str, json: bool) -> Result<String
     }
 }
 
-pub fn verify(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, String> {
+pub fn verify(
+    path: &str,
+    scope: &str,
+    aql: &str,
+    json: bool,
+    format: &str,
+) -> Result<String, String> {
     let db = Database::open(path).map_err(fmt_engine_error)?;
     let report = db
         .verify_fact_aql(aql, &verify_view_for_scope(scope))
         .map_err(fmt_engine_error)?;
-    if json {
-        Ok(verification_report_to_json(&report, &db))
-    } else {
-        Ok(format_verification_report(&report))
+    match if json { "json" } else { format } {
+        "summary" => Ok(format_verification_report(&report)),
+        "json" => Ok(verification_report_to_json(&report, &db)),
+        "markdown" => Ok(report.export(VerificationReportExportFormat::Markdown)),
+        "audit" => Ok(report.export(VerificationReportExportFormat::Audit)),
+        other => Err(format!(
+            "unsupported verify format '{other}' (expected summary, json, markdown, or audit)"
+        )),
     }
 }
 

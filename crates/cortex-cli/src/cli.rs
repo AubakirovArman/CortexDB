@@ -185,6 +185,8 @@ enum Command {
         path: String,
         scope: String,
         aql: String,
+        #[arg(long, value_enum, default_value_t = VerificationOutputFormat::Summary)]
+        format: VerificationOutputFormat,
     },
     Aql {
         path: String,
@@ -310,6 +312,25 @@ impl ContextOutputFormat {
             Self::Json => "json",
             Self::Prompt => "prompt",
             Self::Markdown => "markdown",
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, ValueEnum)]
+enum VerificationOutputFormat {
+    Summary,
+    Json,
+    Markdown,
+    Audit,
+}
+
+impl VerificationOutputFormat {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Summary => "summary",
+            Self::Json => "json",
+            Self::Markdown => "markdown",
+            Self::Audit => "audit",
         }
     }
 }
@@ -468,9 +489,18 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         Command::Forget { path, cell_id } => {
             ops::forget(resolved(&path).to_str().unwrap(), &cell_id, cli.json)
         }
-        Command::Verify { path, scope, aql } => {
-            ops::verify(resolved(&path).to_str().unwrap(), &scope, &aql, cli.json)
-        }
+        Command::Verify {
+            path,
+            scope,
+            aql,
+            format,
+        } => ops::verify(
+            resolved(&path).to_str().unwrap(),
+            &scope,
+            &aql,
+            cli.json,
+            format.as_str(),
+        ),
         Command::Aql { path, scope, aql } => {
             ops::aql(resolved(&path).to_str().unwrap(), &scope, &aql, cli.json)
         }

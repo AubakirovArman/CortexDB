@@ -1,5 +1,7 @@
 use cortex_aql::AgentView;
-use cortex_engine::verification::{VerificationReport, VerificationStatus};
+use cortex_engine::verification::{
+    VerificationReport, VerificationReportExportFormat, VerificationStatus,
+};
 use cortex_engine::Database;
 
 use crate::authz;
@@ -7,7 +9,7 @@ use crate::responses::{
     EvidenceResponse, GuardResponse, NumericConflictResponse, RememberResponse, RouterError,
     VerificationReportResponse,
 };
-use crate::router::query_param_decoded;
+use crate::router::{query_param_decoded, query_param_opt_decoded};
 
 pub fn handle_remember_shared(
     db: &mut Database,
@@ -37,8 +39,24 @@ pub fn handle_verify_shared(
     let view = authz::verify_view_for_scope(&scope, authenticated_view)?;
     let aql = String::from_utf8_lossy(body);
     let report = db.verify_fact_aql(&aql, &view)?;
-    let response = map_verification_report(&report, db);
-    Ok(serde_json::to_string(&response)?)
+    match verify_output_format(query).as_str() {
+        "json" => {
+            let response = map_verification_report(&report, db);
+            Ok(serde_json::to_string(&response)?)
+        }
+        "markdown" => Ok(report.export(VerificationReportExportFormat::Markdown)),
+        "audit" => Ok(report.export(VerificationReportExportFormat::Audit)),
+        other => Err(RouterError::BadRequest(format!(
+            "unsupported verify format '{other}' (expected json, markdown, or audit)"
+        ))),
+    }
+}
+
+fn verify_output_format(query: &str) -> String {
+    query_param_opt_decoded(query, "format")
+        .unwrap_or_else(|| "json".to_owned())
+        .trim()
+        .to_ascii_lowercase()
 }
 
 fn map_verification_report(
