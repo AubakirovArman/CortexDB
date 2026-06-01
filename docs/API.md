@@ -191,6 +191,7 @@ Executes an AQL query and compiles a budgeted, deduplicated, and scored `Context
         },
         "source_ref": {
           "source_id": "report_q1.pdf#page=3",
+          "source_url": "https://example.test/report_q1.pdf",
           "document_id": null,
           "page": null,
           "cell_range": null,

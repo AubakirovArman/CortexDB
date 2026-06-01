@@ -1618,6 +1618,10 @@ components:
       properties:
         source_id:
           type: string
+        source_url:
+          anyOf:
+          - type: string
+          - type: 'null'
         document_id:
           anyOf:
           - type: string

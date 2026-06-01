@@ -12,6 +12,7 @@ const MEMORY_NS: u64 = 0x4000_0000_0000_0000;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceRef {
     pub source_id: String,
+    pub source_url: Option<String>,
     pub document_id: Option<String>,
     pub page: Option<u32>,
     pub cell_range: Option<String>,
@@ -53,6 +54,7 @@ impl CellMetadata {
         let mut in_header = true;
 
         let mut source_id_val = None;
+        let mut source_url = None;
         let mut document_id = None;
         let mut page = None;
         let mut cell_range = None;
@@ -98,13 +100,25 @@ impl CellMetadata {
                 } else if let Some(value) = line.strip_prefix("source_id=") {
                     source_id_val = non_empty(value);
                     continue;
+                } else if let Some(value) = line.strip_prefix("source_url=") {
+                    source_url = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("url=") {
+                    source_url = non_empty(value);
+                    continue;
                 } else if let Some(value) = line.strip_prefix("document_id=") {
+                    document_id = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("doc_id=") {
                     document_id = non_empty(value);
                     continue;
                 } else if let Some(value) = line.strip_prefix("page=") {
                     page = value.trim().parse().ok();
                     continue;
                 } else if let Some(value) = line.strip_prefix("cell_range=") {
+                    cell_range = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("chunk_id=") {
                     cell_range = non_empty(value);
                     continue;
                 } else if let Some(value) = line.strip_prefix("json_path=") {
@@ -126,6 +140,7 @@ impl CellMetadata {
             .or_else(|| citation.clone());
         let source_ref = final_source_id.map(|id| SourceRef {
             source_id: id,
+            source_url,
             document_id,
             page,
             cell_range,
@@ -151,7 +166,14 @@ impl CellMetadata {
     }
 
     pub fn citation(&self) -> Option<&str> {
-        self.citation.as_deref().or(self.source.as_deref())
+        self.citation
+            .as_deref()
+            .or(self.source.as_deref())
+            .or_else(|| {
+                self.source_ref
+                    .as_ref()
+                    .map(|source_ref| source_ref.source_id.as_str())
+            })
     }
 
     pub fn weighted_lexical_terms(&self) -> BTreeMap<String, u32> {

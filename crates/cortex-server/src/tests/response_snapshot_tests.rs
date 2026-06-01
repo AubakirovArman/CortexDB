@@ -172,6 +172,7 @@ fn snapshot_context_pack_response() {
             }),
             source_ref: Some(SourceRefResponse {
                 source_id: "report_q1.pdf".to_owned(),
+                source_url: None,
                 document_id: Some("doc-1".to_owned()),
                 page: Some(3),
                 cell_range: None,

@@ -487,6 +487,7 @@ stable Markdown export.
       },
       "source_ref": {
         "source_id": "doc-a",
+        "source_url": "https://example.test/doc-a",
         "document_id": null,
         "page": null,
         "cell_range": null,

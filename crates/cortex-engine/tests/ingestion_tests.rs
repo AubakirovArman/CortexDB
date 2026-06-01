@@ -102,6 +102,33 @@ fn cell_metadata_parses_header_and_body_separately() {
 }
 
 #[test]
+fn cell_metadata_parses_source_ref_aliases_and_url() {
+    let payload = concat!(
+        "scope=project:investments\n",
+        "status=ready\n",
+        "source_id=ifc:project-1\n",
+        "source_url=https://example.test/projects/1\n",
+        "doc_id=doc-1\n",
+        "chunk_id=chunk-7\n",
+        "page=4\n",
+        "confidence_q16=60000\n",
+        "\n",
+        "body"
+    );
+    let metadata = CellMetadata::from_payload(payload.as_bytes());
+    let source_ref = metadata.source_ref.unwrap();
+    assert_eq!(source_ref.source_id, "ifc:project-1");
+    assert_eq!(
+        source_ref.source_url.as_deref(),
+        Some("https://example.test/projects/1")
+    );
+    assert_eq!(source_ref.document_id.as_deref(), Some("doc-1"));
+    assert_eq!(source_ref.cell_range.as_deref(), Some("chunk-7"));
+    assert_eq!(source_ref.page, Some(4));
+    assert_eq!(source_ref.confidence_q16, 60_000);
+}
+
+#[test]
 fn remember_aql_writes_policy_checked_memory_cell() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();

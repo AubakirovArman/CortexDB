@@ -114,7 +114,10 @@ existing compact summary default unless `--json` or `--format` is passed.
 ## Known Limits
 
 - Token estimation is byte-based and approximate.
-- Citations are recognized only from `source=` or `citation=` payload lines.
+- Citations are recognized from `citation=`, `source=`, or structured
+  `source_id=` SourceRef metadata. When `REQUIRE confidence >= ...` is present
+  in AQL, ContextPack retrieval filters candidates by `confidence_q16` or the
+  SourceRef confidence derived from `source_trust_q16`.
 - Redundancy control is deterministic and local to the pack. It supports sparse
   term overlap and exact fixed-point vector similarity from payload vectors, but
   does not call an external semantic model.

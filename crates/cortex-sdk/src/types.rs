@@ -257,6 +257,8 @@ pub struct ScoreComponentResponse {
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct SourceRefResponse {
     pub source_id: String,
+    #[serde(default)]
+    pub source_url: Option<String>,
     pub document_id: Option<String>,
     pub page: Option<u32>,
     pub cell_range: Option<String>,

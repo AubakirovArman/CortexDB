@@ -78,6 +78,7 @@ impl CellMetadata {
         let mut has_separator = false;
 
         let mut source_id_val = None;
+        let mut source_url = None;
         let mut document_id = None;
         let mut page = None;
         let mut cell_range = None;
@@ -118,11 +119,19 @@ impl CellMetadata {
                     title = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("source_id=") {
                     source_id_val = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("source_url=") {
+                    source_url = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("url=") {
+                    source_url = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("document_id=") {
+                    document_id = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("doc_id=") {
                     document_id = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("page=") {
                     page = value.trim().parse().ok();
                 } else if let Some(value) = line.strip_prefix("cell_range=") {
+                    cell_range = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("chunk_id=") {
                     cell_range = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("json_path=") {
                     json_path = non_empty(value);
@@ -170,6 +179,7 @@ impl CellMetadata {
             .or_else(|| citation.clone());
         let source_ref = final_source_id.map(|id| crate::query::metadata::SourceRef {
             source_id: id,
+            source_url,
             document_id,
             page,
             cell_range,

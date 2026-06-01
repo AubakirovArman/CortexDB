@@ -208,6 +208,9 @@ fn push_markdown_anomaly(out: &mut String, anomaly: &ContextPackAnomaly) {
 
 fn source_ref_inline(source_ref: &SourceRef) -> String {
     let mut parts = vec![format!("source_id={}", source_ref.source_id)];
+    if let Some(source_url) = &source_ref.source_url {
+        parts.push(format!("source_url={source_url}"));
+    }
     if let Some(document_id) = &source_ref.document_id {
         parts.push(format!("document_id={document_id}"));
     }

@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 28 |
-| partial | 25 |
+| closed | 29 |
+| partial | 24 |
 | not started | 5 |
 | research | 2 |
 | total | 60 |
@@ -68,7 +68,7 @@ The plan recommends this first execution batch:
 | 24 | Search Explain API | closed | `/v1/search/explain` now exposes rank, matched terms, term contribution details, lexical/vector q16 shares, hybrid fusion rank score, typed SDK decoding, CLI hybrid explain support, and OpenAPI/docs coverage. | Keep explain fields additive and deterministic as ranking internals evolve. |
 | 25 | Query Routing: Lexical vs Vector vs Hybrid | closed | Engine-level `route_search_query` now selects keyword/vector_ann/vector_exact/hybrid, `/v1/search` and `cortexdb search` support `mode=auto`, and HTTP/CLI/SDK responses expose `routing.selected_strategy` plus `routing.reason` with tests/docs/OpenAPI coverage. | Keep routing deterministic until a measured planner is introduced. |
 | 26 | Ingestion Jobs v2 | closed | Ingestion endpoints/CLI now expose durable local job records; job state is atomically written, progress tracks completed cells and last cell id, retry/cancel/delete are available, and restart requeues stale `running` jobs as `queued`. | Keep this as a local synchronous job lifecycle until a real background ingestion executor is introduced. |
-| 27 | SourceRef Model v1 | partial | `SourceRef` structs include document/page/row/json path/source URL fields. | Finish extraction confidence and end-to-end SourceRef enforcement. |
+| 27 | SourceRef Model v1 | closed | `SourceRef` now carries source id, optional source URL, document/page/range/json-path fields, parser aliases for `doc_id` and `chunk_id`, confidence q16, ContextPack citation enforcement, HTTP/CLI/SDK JSON propagation, OpenAPI/docs coverage, and AQL `REQUIRE confidence` runtime filtering. | Keep future provenance fields additive and preserve SourceRef as the structured citation source. |
 | 28 | Document Chunking Policies | partial | Chunking exists in example/real-domain scripts and ingestion docs. | Make engine-level chunk id stability and policy tests first-class. |
 | 29 | PDF/Text Extraction Adapter Boundary | partial | Ingestion docs and adapter-boundary direction exist. | Add explicit digital PDF/external OCR adapter contracts. |
 | 30 | Ingestion Validation Report | partial | Typed ingest responses exist. | Add richer warnings, skipped chunks, invalid metadata, and source-ref reports. |
@@ -118,5 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 27: SourceRef extraction confidence and end-to-end enforcement.
-2. Advance Epic 28: engine-level chunk id stability and policy tests.
+1. Advance Epic 28: engine-level chunk id stability and policy tests.
+2. Advance Epic 29: explicit digital PDF and external OCR adapter contracts.

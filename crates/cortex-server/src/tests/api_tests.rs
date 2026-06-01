@@ -5,7 +5,9 @@ fn v1_context_returns_context_pack() {
     let dir = tempfile::tempdir().unwrap();
     let put = concat!(
         "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
-        "scope=project:investments\nstatus=ready\nsource=doc-a\nalpha budget"
+        "scope=project:investments\nstatus=ready\n",
+        "source_id=doc-a\nsource_url=https://example.test/doc-a\n",
+        "document_id=doc-1\nconfidence_q16=60000\nalpha budget"
     );
     assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
 
@@ -17,6 +19,7 @@ fn v1_context_returns_context_pack() {
     let response = handle_http(dir.path(), request);
     assert!(response.contains(r#""cells":[{"cell_id":1"#));
     assert!(response.contains(r#""citation":"doc-a""#));
+    assert!(response.contains(r#""source_url":"https://example.test/doc-a""#));
 }
 
 #[test]

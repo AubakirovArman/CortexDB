@@ -68,6 +68,7 @@ fn map_context_pack(pack: &ContextPack) -> ContextPackResponse {
             let metadata = cortex_engine::query::CellMetadata::from_payload(&cell.payload);
             let source_ref = metadata.source_ref.as_ref().map(|sr| SourceRefResponse {
                 source_id: sr.source_id.clone(),
+                source_url: sr.source_url.clone(),
                 document_id: sr.document_id.clone(),
                 page: sr.page,
                 cell_range: sr.cell_range.clone(),

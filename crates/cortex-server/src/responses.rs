@@ -123,6 +123,8 @@ pub struct ExplainResponse {
 #[derive(Serialize, Debug, Clone)]
 pub struct SourceRefResponse {
     pub source_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_url: Option<String>,
     pub document_id: Option<String>,
     pub page: Option<u32>,
     pub cell_range: Option<String>,

@@ -75,6 +75,46 @@ fn context_export_paths_are_wire_stable() {
 }
 
 #[test]
+fn typed_context_response_decodes_source_ref_url() {
+    let value = serde_json::json!({
+        "schema_version": "context_pack.v1",
+        "token_budget_tokens": 100,
+        "estimated_tokens": 10,
+        "truncated": false,
+        "citations_required": true,
+        "cells": [{
+            "cell_id": 1,
+            "estimated_tokens": 10,
+            "citation": "ifc:project-1",
+            "payload_text": "scope=project:investments\nstatus=ready\nsource_id=ifc:project-1\nbody",
+            "explain": null,
+            "source_ref": {
+                "source_id": "ifc:project-1",
+                "source_url": "https://example.test/projects/1",
+                "document_id": "doc-1",
+                "page": 3,
+                "cell_range": "chunk-1",
+                "json_path": null,
+                "confidence_q16": 60000
+            }
+        }],
+        "anomalies": []
+    });
+
+    let response: ContextPackResponse =
+        serde_json::from_value(value).expect("context response should decode");
+    let source_ref = response.cells[0]
+        .source_ref
+        .as_ref()
+        .expect("source ref should decode");
+    assert_eq!(
+        source_ref.source_url.as_deref(),
+        Some("https://example.test/projects/1")
+    );
+    assert_eq!(source_ref.confidence_q16, 60_000);
+}
+
+#[test]
 fn tenant_query_param_is_appended_to_existing_queries() {
     let value = append_query_param("/v1/stats?limit=10", "tenant", "tenant:alpha");
     assert_eq!(value, "/v1/stats?limit=10&tenant=tenant%3Aalpha");

@@ -91,10 +91,19 @@ metadata, currently from lines such as:
 ```text
 source=report_q1.pdf#page=3
 citation=report_q1.pdf#page=3
+source_id=ifc:project-1
+source_url=https://example.test/projects/1
+doc_id=doc-1
+chunk_id=chunk-7
+confidence_q16=60000
 ```
 
 If citations are required and a selected cell has none, the pack emits a
-`missing_citation` anomaly. It does not invent provenance.
+`missing_citation` anomaly. Structured SourceRef metadata is treated as valid
+provenance; `doc_id` is normalized to `document_id`, `chunk_id` is normalized to
+`cell_range`, and `source_url`/`url` is preserved for API consumers. AQL
+`REQUIRE confidence >= ...` filters retrieval candidates by SourceRef
+`confidence_q16` before packing. ContextPack does not invent provenance.
 
 ## Redundancy Control
 

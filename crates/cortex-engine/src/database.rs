@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use cortex_aql::{eval_bitmap_program, BitmapProvider, BoundRetrievePlan};
+use cortex_aql::{eval_bitmap_program, BitmapProvider, BoundRetrievePlan, QualityThresholds};
 use cortex_core::memtable::{CellVersion, MemTable, ReadTxn};
 use cortex_core::{CellId, CommitSeq};
 use cortex_storage::manifest::StorageManifest;
@@ -16,6 +16,7 @@ use crate::operation::{
     wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq, DbOperation,
 };
 use crate::options::{DatabaseOptions, RecoveryMode, StaleLockPolicy};
+use crate::query::CellMetadata;
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
 use crate::search::HnswBuildConfig;
 
@@ -236,6 +237,7 @@ impl Database {
                 self.get_cell(txn, cell_id)
                     .map(|payload| RetrievedCell { cell_id, payload })
             })
+            .filter(|cell| cell_meets_quality_thresholds(&cell.payload, &plan.quality_thresholds))
             .take(plan.context_policy.candidate_limit as usize)
             .collect())
     }
@@ -357,6 +359,42 @@ impl Database {
             .read(self.read_txn(), cell_id)
             .map(|_| ())
             .ok_or_else(|| cortex_core::CoreError::CellNotFound(cell_id).into())
+    }
+}
+
+fn cell_meets_quality_thresholds(payload: &[u8], thresholds: &QualityThresholds) -> bool {
+    let metadata = CellMetadata::from_payload(payload);
+    let confidence_q16 = metadata
+        .source_ref
+        .as_ref()
+        .map(|source_ref| source_ref.confidence_q16)
+        .or(metadata.source_trust_q16)
+        .unwrap_or(0);
+    if confidence_q16 < thresholds.min_confidence_q16 {
+        return false;
+    }
+
+    if metadata.source_trust_q16.unwrap_or(0) < thresholds.min_source_trust_q16 {
+        return false;
+    }
+
+    if let Some(max_freshness_seconds) = thresholds.max_freshness_seconds {
+        let Some(created) = metadata.created_unix_seconds else {
+            return false;
+        };
+        let age = unix_now_seconds().saturating_sub(created);
+        if age > max_freshness_seconds {
+            return false;
+        }
+    }
+
+    true
+}
+
+fn unix_now_seconds() -> u64 {
+    match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
+        Ok(duration) => duration.as_secs(),
+        Err(_) => 0,
     }
 }
 
