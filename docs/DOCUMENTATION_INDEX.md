@@ -2,9 +2,8 @@
 
 Last audited: 2026-06-01.
 
-This index covers project-owned markdown tracked by git. Dependency,
-generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 163 project markdown files.
+This index covers project-owned markdown. Dependency, generated, virtualenv,
+`node_modules`, and `target` markdown files are excluded.
 
 ## Start Here
 
@@ -19,6 +18,7 @@ At the time of this audit, the repository tracks 163 project markdown files.
 - [`PRODUCTION_V1_EVIDENCE.md`](PRODUCTION_V1_EVIDENCE.md) - local Epic 6 evidence gate.
 - [`PUBLIC_CLAIMS_FREEZE.md`](PUBLIC_CLAIMS_FREEZE.md) - public wording freeze for local single-node claims.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - ordered epic queue and closing rules.
+- [`FUTURE_NON_GOAL_EPICS.md`](FUTURE_NON_GOAL_EPICS.md) - future epics extracted from current non-goals.
 - [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md) - current cycle plan.
 - [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md) - wording boundaries.
 
@@ -145,6 +145,7 @@ backlogs, snapshots, or deeper planning notes.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md) - base Core Alpha release notes.
 - [`RELEASE_NOTES_v0.1.0-core-alpha.5.md`](RELEASE_NOTES_v0.1.0-core-alpha.5.md) - audited public Core Alpha prerelease notes.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
+- [`FUTURE_NON_GOAL_EPICS.md`](FUTURE_NON_GOAL_EPICS.md) - future non-goal epics and promotion gates.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - active ordered epic queue.
 - [`PL_IMPLEMENTATION_TASKS.md`](PL_IMPLEMENTATION_TASKS.md) - normalized action list from the external `pl.md` audit.
 - [`PL_EXTRACTED_EPICS.md`](PL_EXTRACTED_EPICS.md) - full epic/task extraction from the external `pl.md` audit.

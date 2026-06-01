@@ -464,6 +464,9 @@ local single-node evidence:
 6. External identity providers.
 7. Legal-grade verification.
 
+These future items are tracked as separate promotion epics in
+[`FUTURE_NON_GOAL_EPICS.md`](FUTURE_NON_GOAL_EPICS.md).
+
 ## Immediate Operating Rule
 
 The current plan is locally evidence-backed, but release claims should remain
