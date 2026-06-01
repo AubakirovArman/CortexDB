@@ -335,6 +335,66 @@ fn auth_policy_store_invalid_json_fails_closed() {
 }
 
 #[test]
+fn auth_policy_store_v0_tokens_migrate_and_authenticate() {
+    let dir = tempfile::tempdir().unwrap();
+    let policy_store = dir.path().join("auth-policy.json");
+    std::fs::write(
+        &policy_store,
+        r#"{
+          "schema_version": "cortexdb.auth_policy.v0",
+          "tokens": [
+            {"principal_id":"legacy-data","token":"legacy-secret","role":"data"}
+          ]
+        }"#,
+    )
+    .unwrap();
+    let options = ServerOptions {
+        auth_policy_store_file: Some(policy_store),
+        ..Default::default()
+    };
+
+    let allowed = handle_http_with_options(
+        dir.path(),
+        "GET /v1/health HTTP/1.1\r\nAuthorization: Bearer legacy-secret\r\n\r\n",
+        &options,
+    );
+    assert!(
+        allowed.contains("200 OK"),
+        "legacy v0 policy-store token should migrate in memory: {allowed}"
+    );
+}
+
+#[test]
+fn auth_policy_store_unknown_schema_fails_closed() {
+    let dir = tempfile::tempdir().unwrap();
+    let policy_store = dir.path().join("auth-policy.json");
+    std::fs::write(
+        &policy_store,
+        r#"{
+          "schema_version": "cortexdb.auth_policy.v9",
+          "principals": [
+            {"principal_id":"future-data","token":"future-secret","role":"data"}
+          ]
+        }"#,
+    )
+    .unwrap();
+    let options = ServerOptions {
+        auth_policy_store_file: Some(policy_store),
+        ..Default::default()
+    };
+
+    let denied = handle_http_with_options(
+        dir.path(),
+        "GET /v1/health HTTP/1.1\r\nAuthorization: Bearer future-secret\r\n\r\n",
+        &options,
+    );
+    assert!(
+        !denied.contains("200 OK"),
+        "unknown policy-store schema must fail closed: {denied}"
+    );
+}
+
+#[test]
 fn admin_can_upsert_policy_store_principal() {
     let dir = tempfile::tempdir().unwrap();
     let policy_store = dir.path().join("auth-policy.json");

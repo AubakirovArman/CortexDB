@@ -15,12 +15,16 @@ Implemented today:
 - `role:token:agent_id` binds a token to a persisted `AgentView`.
 - AgentView-bound data routes enforce readable/writable scope checks.
 - Token files are re-read per request and fail closed on invalid content.
+- `CORTEXDB_AUTH_POLICY_STORE_FILE` reads canonical
+  `cortexdb.auth_policy.v1` stores and migrates the explicit legacy
+  `cortexdb.auth_policy.v0` token-list shape into v1 in memory.
 
 Not implemented in Core Alpha:
 
 - user accounts, sessions, groups, organizations, or external identity provider
   mapping;
-- persisted dynamic policy updates through HTTP;
+- persisted dynamic policy updates through HTTP beyond the local admin
+  upsert/disable/rollback endpoints;
 - per-token quotas, expiry, or revocation events beyond token-file replacement;
 - tamper-evident audit trails or SIEM export.
 
@@ -106,7 +110,10 @@ AgentViews and let the existing AgentView validator enforce scopes.
 3. Add durable policy records in a new system scope.
 4. Add policy-store read path behind a feature flag.
 5. Add write APIs only after audit review tooling and rollback behavior are
-   stable.
+   stable. The local v1 admin mutation endpoints are implemented and always
+   write the canonical v1 shape.
+6. Keep legacy read migrations fail-closed: unsupported schema versions must
+   not authenticate.
 
 ## Required Tests
 

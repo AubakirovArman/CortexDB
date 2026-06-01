@@ -136,9 +136,7 @@ fn audit_log_file_records_route_metadata_without_query() {
     let response = request(local_addr, "GET /v1/health?tenant=alpha HTTP/1.1\r\n\r\n");
     assert!(response.contains("200 OK"), "health failed: {response}");
 
-    let audit = std::fs::read_to_string(audit_path).unwrap();
-    let line = audit.lines().next().unwrap();
-    let value = serde_json::from_str::<serde_json::Value>(line).unwrap();
+    let (line, value) = read_audit_event(&audit_path, "health", "/v1/health");
     assert_eq!(value["audit_event"], "http_response");
     assert_eq!(value["audit_action"], "health");
     assert_eq!(value["method"], "GET");
@@ -176,9 +174,7 @@ fn audit_log_file_redacts_ingestion_query_and_body() {
     let response = request(local_addr, ingest_request);
     assert!(response.contains("200 OK"), "ingest failed: {response}");
 
-    let audit = std::fs::read_to_string(audit_path).unwrap();
-    let line = audit.lines().next().unwrap();
-    let value = serde_json::from_str::<serde_json::Value>(line).unwrap();
+    let (line, value) = read_audit_event(&audit_path, "ingest", "/v1/ingest/text");
     assert_eq!(value["audit_action"], "ingest");
     assert_eq!(value["path"], "/v1/ingest/text");
     assert_eq!(value["tenant"], "alpha");
@@ -229,9 +225,7 @@ fn audit_log_file_records_policy_store_principal_without_token() {
         "policy-store principal should access health: {response}"
     );
 
-    let audit = std::fs::read_to_string(audit_path).unwrap();
-    let line = audit.lines().next().unwrap();
-    let value = serde_json::from_str::<serde_json::Value>(line).unwrap();
+    let (line, value) = read_audit_event(&audit_path, "health", "/v1/health");
     assert_eq!(value["audit_event"], "http_response");
     assert_eq!(value["audit_action"], "health");
     assert_eq!(value["principal_id"], "finance-agent");
@@ -535,6 +529,34 @@ fn rate_limit_returns_typed_429_when_enabled() {
 
 fn request(addr: std::net::SocketAddr, request: &str) -> String {
     request_bytes(addr, request.as_bytes())
+}
+
+fn read_audit_event(
+    path: &std::path::Path,
+    action: &str,
+    route_path: &str,
+) -> (String, serde_json::Value) {
+    use std::time::{Duration, Instant};
+
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let mut last_audit = String::new();
+    while Instant::now() < deadline {
+        if let Ok(audit) = std::fs::read_to_string(path) {
+            last_audit = audit.clone();
+            for line in audit.lines() {
+                let Ok(value) = serde_json::from_str::<serde_json::Value>(line) else {
+                    continue;
+                };
+                if value["audit_action"] == action && value["path"] == route_path {
+                    return (line.to_owned(), value);
+                }
+            }
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    panic!(
+        "audit event action={action:?} path={route_path:?} not found in audit log:\n{last_audit}"
+    );
 }
 
 fn agent_view(agent_id: AgentId, scope: &str, allow_write: bool) -> AgentView {

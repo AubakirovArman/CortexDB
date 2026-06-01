@@ -24,6 +24,8 @@ Current implementation slice:
   optional `disabled`, plus optional `request_quota_per_minute`.
 - Disabled principals are ignored.
 - Invalid policy-store files fail closed.
+- Explicit `cortexdb.auth_policy.v0` token-list stores are migrated into v1 in
+  memory; unknown schema versions fail closed.
 - `cortexdb auth-review` reports local policy-store/token-file state without
   printing bearer tokens.
 - `cortexdb audit-export-siem` exports normalized local audit JSONL.

@@ -209,6 +209,9 @@ Current implementation slice:
 - Admin-only local policy-store mutation routes now support principal upsert,
   principal disablement, and rollback of the previous local policy-store
   snapshot.
+- The policy-store read path now migrates explicit
+  `cortexdb.auth_policy.v0` token-list stores into canonical v1 principals in
+  memory, while unsupported schemas fail closed.
 
 Task pool:
 
@@ -228,8 +231,8 @@ Task pool:
 9. Add dashboard admin views for policy mutation, policy review, and audit
    review.
 10. Add migration and rollback for policy-store format changes.
-    Last-mutation rollback snapshot is implemented; format migration remains
-    future work.
+    Last-mutation rollback snapshot and v0 read migration are implemented;
+    future schema versions still need formal migration tooling.
 
 Required gates:
 

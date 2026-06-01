@@ -73,6 +73,11 @@ invalid JSON or invalid policy entries fail closed, and active entries use the
 same `admin`/`data` role plus optional `agent_id` behavior as token-file
 policies.
 
+The canonical policy-store schema is `cortexdb.auth_policy.v1`. A legacy
+`cortexdb.auth_policy.v0` file with a top-level `tokens` array is accepted only
+as an in-memory read migration into v1 principals. Unknown schema versions fail
+closed and do not authenticate.
+
 Policy-store principals may also set `request_quota_per_minute`. This is a
 local fixed-window quota keyed by `principal_id`, so one principal exhausting
 its quota does not block another principal. The quota value must be greater

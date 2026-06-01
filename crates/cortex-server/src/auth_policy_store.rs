@@ -9,6 +9,7 @@ use std::fs;
 use std::path::Path;
 
 const SCHEMA_VERSION: &str = "cortexdb.auth_policy.v1";
+const LEGACY_SCHEMA_VERSION_V0: &str = "cortexdb.auth_policy.v0";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 struct AuthPolicyStoreFile {
@@ -27,6 +28,21 @@ struct AuthPolicyPrincipal {
     disabled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     request_quota_per_minute: Option<u64>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct AuthPolicyStoreFileV0 {
+    schema_version: String,
+    tokens: Vec<AuthPolicyPrincipalV0>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct AuthPolicyPrincipalV0 {
+    principal_id: String,
+    token: String,
+    role: String,
+    #[serde(default)]
+    agent_id: Option<u64>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -217,9 +233,53 @@ fn read_store_or_empty(path: &Path) -> Result<AuthPolicyStoreFile, RouterError> 
 fn read_store(path: &Path) -> Result<AuthPolicyStoreFile, String> {
     let raw = fs::read_to_string(path)
         .map_err(|error| format!("auth policy store could not be read: {error}"))?;
-    let store = serde_json::from_str::<AuthPolicyStoreFile>(&raw)
+    let value = serde_json::from_str::<serde_json::Value>(&raw)
         .map_err(|error| format!("auth policy store is invalid JSON: {error}"))?;
-    validate_store(store)
+    decode_store_value(value)
+}
+
+fn decode_store_value(value: serde_json::Value) -> Result<AuthPolicyStoreFile, String> {
+    let schema_version = value
+        .get("schema_version")
+        .and_then(|value| value.as_str())
+        .ok_or_else(|| "auth policy store schema_version is required".to_owned())?;
+    match schema_version {
+        SCHEMA_VERSION => {
+            let store = serde_json::from_value::<AuthPolicyStoreFile>(value)
+                .map_err(|error| format!("auth policy store v1 is invalid: {error}"))?;
+            validate_store(store)
+        }
+        LEGACY_SCHEMA_VERSION_V0 => {
+            let legacy = serde_json::from_value::<AuthPolicyStoreFileV0>(value)
+                .map_err(|error| format!("auth policy store v0 is invalid: {error}"))?;
+            validate_store(migrate_v0_store(legacy)?)
+        }
+        _ => Err(
+            "auth policy store schema_version must be cortexdb.auth_policy.v1 or cortexdb.auth_policy.v0"
+                .to_owned(),
+        ),
+    }
+}
+
+fn migrate_v0_store(legacy: AuthPolicyStoreFileV0) -> Result<AuthPolicyStoreFile, String> {
+    if legacy.schema_version != LEGACY_SCHEMA_VERSION_V0 {
+        return Err("auth policy store v0 schema_version is invalid".to_owned());
+    }
+    Ok(AuthPolicyStoreFile {
+        schema_version: SCHEMA_VERSION.to_owned(),
+        principals: legacy
+            .tokens
+            .into_iter()
+            .map(|token| AuthPolicyPrincipal {
+                principal_id: token.principal_id,
+                token: token.token,
+                role: token.role,
+                agent_id: token.agent_id,
+                disabled: false,
+                request_quota_per_minute: None,
+            })
+            .collect(),
+    })
 }
 
 fn validate_store(store: AuthPolicyStoreFile) -> Result<AuthPolicyStoreFile, String> {
@@ -287,4 +347,40 @@ fn atomic_write_json(path: &Path, store: &AuthPolicyStoreFile) -> Result<(), Str
 
 fn is_false(value: &bool) -> bool {
     !*value
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn legacy_v0_policy_store_migrates_to_v1_principals() {
+        let value = serde_json::json!({
+            "schema_version": "cortexdb.auth_policy.v0",
+            "tokens": [
+                {"principal_id": "data-a", "token": "secret", "role": "data", "agent_id": 7}
+            ]
+        });
+
+        let store = decode_store_value(value).expect("legacy store should migrate");
+
+        assert_eq!(store.schema_version, SCHEMA_VERSION);
+        assert_eq!(store.principals.len(), 1);
+        assert_eq!(store.principals[0].principal_id, "data-a");
+        assert_eq!(store.principals[0].agent_id, Some(7));
+        assert!(!store.principals[0].disabled);
+    }
+
+    #[test]
+    fn unsupported_policy_store_schema_fails_closed() {
+        let value = serde_json::json!({
+            "schema_version": "cortexdb.auth_policy.v9",
+            "principals": []
+        });
+
+        let error = decode_store_value(value).unwrap_err();
+
+        assert!(error
+            .contains("schema_version must be cortexdb.auth_policy.v1 or cortexdb.auth_policy.v0"));
+    }
 }

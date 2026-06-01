@@ -26,6 +26,14 @@ GATE_MARKERS = {
                 "auth_policy_store_invalid_json_fails_closed",
             ),
             (
+                "crates/cortex-server/src/tests/auth_policy_tests.rs",
+                "auth_policy_store_v0_tokens_migrate_and_authenticate",
+            ),
+            (
+                "crates/cortex-server/src/tests/auth_policy_tests.rs",
+                "auth_policy_store_unknown_schema_fails_closed",
+            ),
+            (
                 "crates/cortex-cli/src/cli_auth_review_tests.rs",
                 "auth_review_redacts_policy_store_tokens",
             ),
