@@ -12,6 +12,15 @@ pub enum AuthRole {
     Data,
 }
 
+impl AuthRole {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Admin => "admin",
+            Self::Data => "data",
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AuthTokenPolicy {
     pub token: String,
@@ -41,9 +50,11 @@ impl AuthTokenPolicy {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct AuthDecision {
     pub agent_id: Option<u64>,
+    pub role: Option<AuthRole>,
+    pub principal_id: Option<String>,
 }
 
 pub(crate) fn authorize_request(
@@ -56,7 +67,11 @@ pub(crate) fn authorize_request(
         if has_auth(options) {
             return Err(RouterError::Unauthorized);
         }
-        return Ok(AuthDecision { agent_id: None });
+        return Ok(AuthDecision {
+            agent_id: None,
+            role: None,
+            principal_id: None,
+        });
     };
 
     if !role_can_access(policy.role, method, path) {
@@ -66,6 +81,8 @@ pub(crate) fn authorize_request(
     }
     Ok(AuthDecision {
         agent_id: policy.agent_id,
+        role: Some(policy.role),
+        principal_id: policy.principal_id,
     })
 }
 

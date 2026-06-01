@@ -188,6 +188,59 @@ fn audit_log_file_redacts_ingestion_query_and_body() {
 }
 
 #[test]
+fn audit_log_file_records_policy_store_principal_without_token() {
+    let dir = tempfile::tempdir().unwrap();
+    let audit_path = dir.path().join("audit").join("http.jsonl");
+    let policy_store = dir.path().join("auth-policy.json");
+    std::fs::write(
+        &policy_store,
+        r#"{
+          "schema_version": "cortexdb.auth_policy.v1",
+          "principals": [
+            {"principal_id":"finance-agent","token":"finance-token","role":"data","agent_id":11}
+          ]
+        }"#,
+    )
+    .unwrap();
+    let addr = "127.0.0.1:0";
+    let listener = std::net::TcpListener::bind(addr).unwrap();
+    let local_addr = listener.local_addr().unwrap();
+    drop(listener);
+
+    let root_path = dir.path().join("db");
+    let audit_path_for_server = audit_path.clone();
+    std::thread::spawn(move || {
+        let options = ServerOptions {
+            auth_policy_store_file: Some(policy_store),
+            audit_log_enabled: true,
+            audit_log_path: Some(audit_path_for_server),
+            ..Default::default()
+        };
+        let _ = crate::serve_with_options(&root_path, &local_addr.to_string(), options);
+    });
+
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    let response = request(
+        local_addr,
+        "GET /v1/health?tenant=alpha HTTP/1.1\r\nAuthorization: Bearer finance-token\r\n\r\n",
+    );
+    assert!(
+        response.contains("200 OK"),
+        "policy-store principal should access health: {response}"
+    );
+
+    let audit = std::fs::read_to_string(audit_path).unwrap();
+    let line = audit.lines().next().unwrap();
+    let value = serde_json::from_str::<serde_json::Value>(line).unwrap();
+    assert_eq!(value["audit_event"], "http_response");
+    assert_eq!(value["audit_action"], "health");
+    assert_eq!(value["principal_id"], "finance-agent");
+    assert_eq!(value["auth_role"], "data");
+    assert_eq!(value["auth_agent_id"], 11);
+    assert!(!line.contains("finance-token"));
+}
+
+#[test]
 fn malicious_ingestion_scope_bypass_is_denied_by_agent_view() {
     let dir = tempfile::tempdir().unwrap();
     {

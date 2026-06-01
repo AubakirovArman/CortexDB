@@ -72,6 +72,9 @@ struct AuditRecord<'a> {
     schema_version: &'static str,
     audit_event: &'static str,
     audit_action: &'static str,
+    principal_id: &'a str,
+    auth_role: &'a str,
+    auth_agent_id: Option<u64>,
     method: &'a str,
     path: &'a str,
     tenant: &'a str,
@@ -115,6 +118,9 @@ pub(crate) struct HttpResponseAudit<'a> {
     pub(crate) path: &'a str,
     pub(crate) tenant: &'a str,
     pub(crate) request_id: &'a str,
+    pub(crate) principal_id: Option<&'a str>,
+    pub(crate) auth_role: Option<&'a str>,
+    pub(crate) auth_agent_id: Option<u64>,
     pub(crate) status: u16,
     pub(crate) error_code: Option<&'a str>,
     pub(crate) duration_ms: u64,
@@ -131,6 +137,9 @@ pub(crate) fn emit_http_response(event: HttpResponseAudit<'_>, sink: Option<&Aud
         schema_version: "cortexdb.audit.v1",
         audit_event: "http_response",
         audit_action: action,
+        principal_id: event.principal_id.unwrap_or(""),
+        auth_role: event.auth_role.unwrap_or(""),
+        auth_agent_id: event.auth_agent_id,
         method: event.method,
         path: event.path,
         tenant: event.tenant,
@@ -144,6 +153,9 @@ pub(crate) fn emit_http_response(event: HttpResponseAudit<'_>, sink: Option<&Aud
         target: "cortexdb_audit",
         audit_event = "http_response",
         audit_action = action,
+        principal_id = event.principal_id.unwrap_or(""),
+        auth_role = event.auth_role.unwrap_or(""),
+        auth_agent_id = event.auth_agent_id,
         method = event.method,
         path = event.path,
         tenant = event.tenant,
@@ -194,6 +206,9 @@ mod tests {
                 path: "/v1/cell",
                 tenant: "tenant-a",
                 request_id: "req-123",
+                principal_id: Some("principal-a"),
+                auth_role: Some("data"),
+                auth_agent_id: Some(7),
                 status: 403,
                 error_code: Some("permission_denied"),
                 duration_ms: 12,
@@ -206,6 +221,9 @@ mod tests {
         assert_eq!(value["schema_version"], "cortexdb.audit.v1");
         assert_eq!(value["audit_event"], "http_response");
         assert_eq!(value["audit_action"], "write");
+        assert_eq!(value["principal_id"], "principal-a");
+        assert_eq!(value["auth_role"], "data");
+        assert_eq!(value["auth_agent_id"], 7);
         assert_eq!(value["method"], "POST");
         assert_eq!(value["path"], "/v1/cell");
         assert_eq!(value["tenant"], "tenant-a");

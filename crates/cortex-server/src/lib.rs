@@ -367,6 +367,9 @@ fn audit_http_response(
             path: event.path,
             tenant: &tenant,
             request_id: event.request_id,
+            principal_id: event.principal_id.as_deref(),
+            auth_role: event.auth_role,
+            auth_agent_id: event.auth_agent_id,
             status: status.as_u16(),
             error_code: error_code.map(ErrorCode::as_str),
             duration_ms: event.started.elapsed().as_millis() as u64,
@@ -381,6 +384,9 @@ struct RequestAudit<'a> {
     query: &'a str,
     request_id: &'a str,
     started: Instant,
+    principal_id: Option<String>,
+    auth_role: Option<&'static str>,
+    auth_agent_id: Option<u64>,
 }
 
 async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
@@ -390,12 +396,15 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
     let path = uri.path().to_owned();
     let query = uri.query().unwrap_or("").to_owned();
     let request_id = request_id_from_headers(req.headers());
-    let audit_event = RequestAudit {
+    let mut audit_event = RequestAudit {
         method: &method,
         path: &path,
         query: &query,
         request_id: &request_id,
         started: request_started,
+        principal_id: None,
+        auth_role: None,
+        auth_agent_id: None,
     };
 
     let span = tracing::info_span!("http_request", %method, %path, %request_id);
@@ -422,6 +431,10 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
             );
         }
     };
+
+    audit_event.principal_id = auth_decision.principal_id.clone();
+    audit_event.auth_role = auth_decision.role.map(auth::AuthRole::as_str);
+    audit_event.auth_agent_id = auth_decision.agent_id;
 
     if method == "GET" && dashboard::is_page(&path) {
         audit_http_response(&state, &audit_event, StatusCode::OK, None);

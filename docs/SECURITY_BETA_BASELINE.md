@@ -13,7 +13,7 @@ design-only, so release gates can block overclaims.
 | AgentView scoping | Token-bound AgentViews restrict readable/writable scopes on data routes. |
 | Tenant path safety | Tenant IDs are percent-decoded, length-limited, and path-traversal checked. |
 | Request limits | A process-wide fixed-window request limit can return typed `rate_limited` errors. |
-| Audit redaction | HTTP audit events store route metadata, status, tenant, request id, and duration, not query strings or request bodies. |
+| Audit redaction | HTTP audit events store route metadata, status, tenant, request id, duration, and authenticated principal metadata, not query strings, request bodies, or bearer tokens. |
 | Dashboard gate | `/dashboard` is an admin route; data tokens are denied. |
 | Backup validation | Local backup, restore, offsite staging, and restore drills validate storage before trust. |
 

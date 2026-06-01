@@ -22,6 +22,11 @@ REQUIRED_MARKERS = {
         ("docs/SECURITY_THREAT_MODEL.md", "Per-token quotas"),
         ("crates/cortex-server/src/tests/security_tests.rs", "rate_limit_returns_typed_429_when_enabled"),
     ],
+    "audit_principal_metadata": [
+        ("docs/AUTH.md", "principal_id`, `auth_role`, and `auth_agent_id`"),
+        ("docs/SECURITY_HARDENING_EVIDENCE.md", "Principal-aware audit metadata"),
+        ("crates/cortex-server/src/tests/security_tests.rs", "audit_log_file_records_policy_store_principal_without_token"),
+    ],
     "audit_redaction": [
         ("crates/cortex-server/src/tests/security_tests.rs", "audit_log_file_redacts_ingestion_query_and_body"),
         ("crates/cortex-cli/src/cli_audit_tests.rs", "redaction_ok=true"),

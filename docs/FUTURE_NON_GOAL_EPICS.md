@@ -158,6 +158,8 @@ Current implementation slice:
 - Disabled principals fail closed.
 - Optional `agent_id` binds a policy-store principal to a persisted AgentView.
 - Invalid policy-store JSON or invalid entries fail closed.
+- HTTP audit events now include `principal_id`, `auth_role`, and
+  `auth_agent_id` for authenticated requests without logging bearer tokens.
 
 Task pool:
 
