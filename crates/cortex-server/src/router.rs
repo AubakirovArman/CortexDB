@@ -264,6 +264,12 @@ pub fn route_database_with_agent(
                     request_rejected: 0,
                     request_duration_ms_total: 0,
                     validation_failures: 0,
+                    principal_quota_requests_allowed: 0,
+                    principal_quota_requests_rejected: 0,
+                    principal_quota_body_bytes_allowed: 0,
+                    principal_quota_body_bytes_rejected: 0,
+                    principal_quota_queue_acquired: 0,
+                    principal_quota_queue_rejected: 0,
                 };
                 Ok(serde_json::to_string(&response)?)
             }

@@ -444,6 +444,12 @@ pub struct MetricsResponse {
     pub request_rejected: u64,
     pub request_duration_ms_total: u64,
     pub validation_failures: u64,
+    pub principal_quota_requests_allowed: u64,
+    pub principal_quota_requests_rejected: u64,
+    pub principal_quota_body_bytes_allowed: u64,
+    pub principal_quota_body_bytes_rejected: u64,
+    pub principal_quota_queue_acquired: u64,
+    pub principal_quota_queue_rejected: u64,
 }
 
 /// Typed router error taxonomy for consistent HTTP status mapping.

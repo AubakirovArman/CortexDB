@@ -47,7 +47,7 @@ mod sync_handler;
 #[cfg(test)]
 mod tests;
 
-use crate::rate_limit::{GlobalRateLimit, PrincipalRateLimits};
+use crate::rate_limit::{GlobalRateLimit, PrincipalQueuePermit, PrincipalRateLimits};
 use crate::responses::RouterError;
 pub use auth::{parse_auth_tokens, AuthRole, AuthTokenPolicy};
 pub use router::{
@@ -174,6 +174,12 @@ pub struct AppState {
     ann_no_fallback_blocked: Arc<AtomicU64>,
     ann_search_latency_ms: metrics::LatencyHistogram,
     validation_failures: Arc<AtomicU64>,
+    principal_quota_requests_allowed: Arc<AtomicU64>,
+    principal_quota_requests_rejected: Arc<AtomicU64>,
+    principal_quota_body_bytes_allowed: Arc<AtomicU64>,
+    principal_quota_body_bytes_rejected: Arc<AtomicU64>,
+    principal_quota_queue_acquired: Arc<AtomicU64>,
+    principal_quota_queue_rejected: Arc<AtomicU64>,
     rate_limit: Option<GlobalRateLimit>,
     principal_rate_limits: PrincipalRateLimits,
 }
@@ -243,6 +249,12 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             ann_no_fallback_blocked: Arc::new(AtomicU64::new(0)),
             ann_search_latency_ms: metrics::LatencyHistogram::new(),
             validation_failures: Arc::new(AtomicU64::new(0)),
+            principal_quota_requests_allowed: Arc::new(AtomicU64::new(0)),
+            principal_quota_requests_rejected: Arc::new(AtomicU64::new(0)),
+            principal_quota_body_bytes_allowed: Arc::new(AtomicU64::new(0)),
+            principal_quota_body_bytes_rejected: Arc::new(AtomicU64::new(0)),
+            principal_quota_queue_acquired: Arc::new(AtomicU64::new(0)),
+            principal_quota_queue_rejected: Arc::new(AtomicU64::new(0)),
             rate_limit,
             principal_rate_limits: PrincipalRateLimits::default(),
         };
@@ -347,10 +359,71 @@ fn request_allowed_by_principal_quota(state: &AppState, decision: &auth::AuthDec
     let Some(limit) = decision.request_quota_per_minute else {
         return true;
     };
-    let Some(principal_id) = decision.principal_id.as_deref() else {
+    let Some(quota_key) = decision.quota_key.as_deref() else {
         return true;
     };
-    state.principal_rate_limits.allow(principal_id, limit)
+    let allowed = state.principal_rate_limits.allow(quota_key, limit);
+    if allowed {
+        state
+            .principal_quota_requests_allowed
+            .fetch_add(1, Ordering::Relaxed);
+    } else {
+        state
+            .principal_quota_requests_rejected
+            .fetch_add(1, Ordering::Relaxed);
+    }
+    allowed
+}
+
+fn request_body_allowed_by_principal_quota(
+    state: &AppState,
+    decision: &auth::AuthDecision,
+    body_len: usize,
+) -> bool {
+    let Some(limit) = decision.body_quota_bytes_per_minute else {
+        return true;
+    };
+    let Some(quota_key) = decision.quota_key.as_deref() else {
+        return true;
+    };
+    let allowed = state
+        .principal_rate_limits
+        .allow_body_bytes(quota_key, limit, body_len as u64);
+    if allowed {
+        state
+            .principal_quota_body_bytes_allowed
+            .fetch_add(body_len as u64, Ordering::Relaxed);
+    } else {
+        state
+            .principal_quota_body_bytes_rejected
+            .fetch_add(body_len as u64, Ordering::Relaxed);
+    }
+    allowed
+}
+
+fn acquire_principal_queue_permit(
+    state: &AppState,
+    decision: &auth::AuthDecision,
+) -> Result<Option<PrincipalQueuePermit>, RouterError> {
+    let Some(limit) = decision.queue_quota else {
+        return Ok(None);
+    };
+    let Some(quota_key) = decision.quota_key.as_deref() else {
+        return Ok(None);
+    };
+    let permit = state
+        .principal_rate_limits
+        .acquire_queue(quota_key, limit)
+        .ok_or_else(|| {
+            state
+                .principal_quota_queue_rejected
+                .fetch_add(1, Ordering::Relaxed);
+            RouterError::RateLimited
+        })?;
+    state
+        .principal_quota_queue_acquired
+        .fetch_add(1, Ordering::Relaxed);
+    Ok(Some(permit))
 }
 
 fn audit_http_response(
@@ -559,6 +632,27 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
         }
     };
 
+    if !request_body_allowed_by_principal_quota(&state, &auth_decision, body_bytes.len()) {
+        state.request_rejected.fetch_add(1, Ordering::Relaxed);
+        audit_http_response(
+            &state,
+            &audit_event,
+            StatusCode::TOO_MANY_REQUESTS,
+            Some(ErrorCode::RateLimited),
+        );
+        return with_request_id(
+            (
+                StatusCode::TOO_MANY_REQUESTS,
+                Json(error_response(
+                    ErrorCode::RateLimited,
+                    "principal request body quota exceeded",
+                )),
+            )
+                .into_response(),
+            &request_id,
+        );
+    }
+
     match auth_policy_store::handle_admin_request(
         &state.options,
         &method,
@@ -587,6 +681,26 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                 }
             };
             let store_json = admin_response.policy_store_json;
+            let _queue_permit = match acquire_principal_queue_permit(&state, &auth_decision) {
+                Ok(permit) => permit,
+                Err(error) => {
+                    state.request_rejected.fetch_add(1, Ordering::Relaxed);
+                    let status = StatusCode::from_u16(error.status_code())
+                        .unwrap_or(StatusCode::TOO_MANY_REQUESTS);
+                    audit_http_response(&state, &audit_event, status, Some(error.code()));
+                    return with_request_id(
+                        (
+                            status,
+                            Json(error_response(
+                                error.code(),
+                                "principal queue quota exceeded",
+                            )),
+                        )
+                            .into_response(),
+                        &request_id,
+                    );
+                }
+            };
             let sync_result =
                 tokio::task::spawn_blocking(move || db.sync_auth_policy_store(&store_json)).await;
             match sync_result {
@@ -736,6 +850,26 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
     } else {
         format!("{path}?{query}")
     };
+    let _queue_permit = match acquire_principal_queue_permit(&state, &auth_decision) {
+        Ok(permit) => permit,
+        Err(error) => {
+            state.request_rejected.fetch_add(1, Ordering::Relaxed);
+            let status =
+                StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::TOO_MANY_REQUESTS);
+            audit_http_response(&state, &audit_event, status, Some(error.code()));
+            return with_request_id(
+                (
+                    status,
+                    Json(error_response(
+                        error.code(),
+                        "principal queue quota exceeded",
+                    )),
+                )
+                    .into_response(),
+                &request_id,
+            );
+        }
+    };
     let start = std::time::Instant::now();
     let actor = db.clone();
     let method_clone = method.clone();
@@ -828,7 +962,25 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                          cortexdb_ann_search_latency_ms_sum {}\n\
                          # HELP cortexdb_validation_failures Total validation responses that reported errors.\n\
                          # TYPE cortexdb_validation_failures counter\n\
-                         cortexdb_validation_failures {}\n",
+                         cortexdb_validation_failures {}\n\
+                         # HELP cortexdb_principal_quota_requests_allowed Total per-principal request quota checks allowed.\n\
+                         # TYPE cortexdb_principal_quota_requests_allowed counter\n\
+                         cortexdb_principal_quota_requests_allowed {}\n\
+                         # HELP cortexdb_principal_quota_requests_rejected Total per-principal request quota checks rejected.\n\
+                         # TYPE cortexdb_principal_quota_requests_rejected counter\n\
+                         cortexdb_principal_quota_requests_rejected {}\n\
+                         # HELP cortexdb_principal_quota_body_bytes_allowed Total request body bytes allowed by per-principal body quotas.\n\
+                         # TYPE cortexdb_principal_quota_body_bytes_allowed counter\n\
+                         cortexdb_principal_quota_body_bytes_allowed {}\n\
+                         # HELP cortexdb_principal_quota_body_bytes_rejected Total request body bytes rejected by per-principal body quotas.\n\
+                         # TYPE cortexdb_principal_quota_body_bytes_rejected counter\n\
+                         cortexdb_principal_quota_body_bytes_rejected {}\n\
+                         # HELP cortexdb_principal_quota_queue_acquired Total per-principal actor queue permits acquired.\n\
+                         # TYPE cortexdb_principal_quota_queue_acquired counter\n\
+                         cortexdb_principal_quota_queue_acquired {}\n\
+                         # HELP cortexdb_principal_quota_queue_rejected Total per-principal actor queue permits rejected.\n\
+                         # TYPE cortexdb_principal_quota_queue_rejected counter\n\
+                         cortexdb_principal_quota_queue_rejected {}\n",
                         db.queue_depth(),
                         db.queue_capacity(),
                         state.request_count.load(Ordering::Relaxed),
@@ -848,6 +1000,24 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                         ann_latency.count,
                         ann_latency.sum_ms,
                         state.validation_failures.load(Ordering::Relaxed),
+                        state
+                            .principal_quota_requests_allowed
+                            .load(Ordering::Relaxed),
+                        state
+                            .principal_quota_requests_rejected
+                            .load(Ordering::Relaxed),
+                        state
+                            .principal_quota_body_bytes_allowed
+                            .load(Ordering::Relaxed),
+                        state
+                            .principal_quota_body_bytes_rejected
+                            .load(Ordering::Relaxed),
+                        state
+                            .principal_quota_queue_acquired
+                            .load(Ordering::Relaxed),
+                        state
+                            .principal_quota_queue_rejected
+                            .load(Ordering::Relaxed),
                     );
                     return with_request_id(
                         (StatusCode::OK, body_str + &extra).into_response(),
@@ -871,6 +1041,22 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                         state.ann_no_fallback_blocked.load(Ordering::Relaxed);
                     metrics.ann_search_latency_ms = state.ann_search_latency_ms.snapshot();
                     metrics.validation_failures = state.validation_failures.load(Ordering::Relaxed);
+                    metrics.principal_quota_requests_allowed = state
+                        .principal_quota_requests_allowed
+                        .load(Ordering::Relaxed);
+                    metrics.principal_quota_requests_rejected = state
+                        .principal_quota_requests_rejected
+                        .load(Ordering::Relaxed);
+                    metrics.principal_quota_body_bytes_allowed = state
+                        .principal_quota_body_bytes_allowed
+                        .load(Ordering::Relaxed);
+                    metrics.principal_quota_body_bytes_rejected = state
+                        .principal_quota_body_bytes_rejected
+                        .load(Ordering::Relaxed);
+                    metrics.principal_quota_queue_acquired =
+                        state.principal_quota_queue_acquired.load(Ordering::Relaxed);
+                    metrics.principal_quota_queue_rejected =
+                        state.principal_quota_queue_rejected.load(Ordering::Relaxed);
                     return with_request_id(
                         (StatusCode::OK, Json(metrics)).into_response(),
                         &request_id,
@@ -1011,6 +1197,12 @@ mod metrics_tests {
             ann_no_fallback_blocked: Arc::new(AtomicU64::new(0)),
             ann_search_latency_ms: metrics::LatencyHistogram::new(),
             validation_failures: Arc::new(AtomicU64::new(0)),
+            principal_quota_requests_allowed: Arc::new(AtomicU64::new(0)),
+            principal_quota_requests_rejected: Arc::new(AtomicU64::new(0)),
+            principal_quota_body_bytes_allowed: Arc::new(AtomicU64::new(0)),
+            principal_quota_body_bytes_rejected: Arc::new(AtomicU64::new(0)),
+            principal_quota_queue_acquired: Arc::new(AtomicU64::new(0)),
+            principal_quota_queue_rejected: Arc::new(AtomicU64::new(0)),
             rate_limit: None,
             principal_rate_limits: PrincipalRateLimits::default(),
         }

@@ -30,6 +30,10 @@ pub(crate) struct AuthPolicyPrincipal {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) request_quota_per_minute: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) body_quota_bytes_per_minute: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) queue_quota: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) capabilities: Option<Vec<String>>,
 }
 
@@ -59,6 +63,10 @@ pub(crate) struct AuthPolicyMutationRequest {
     pub disabled: bool,
     #[serde(default)]
     pub request_quota_per_minute: Option<u64>,
+    #[serde(default)]
+    pub body_quota_bytes_per_minute: Option<u64>,
+    #[serde(default)]
+    pub queue_quota: Option<u64>,
     #[serde(default)]
     pub capabilities: Option<Vec<String>>,
 }
@@ -96,6 +104,12 @@ pub(crate) fn load_token_policies_from_store(
         }
         if let Some(quota) = principal.request_quota_per_minute {
             policy = policy.with_request_quota_per_minute(quota);
+        }
+        if let Some(quota) = principal.body_quota_bytes_per_minute {
+            policy = policy.with_body_quota_bytes_per_minute(quota);
+        }
+        if let Some(quota) = principal.queue_quota {
+            policy = policy.with_queue_quota(quota);
         }
         if let Some(capabilities) = principal.capabilities {
             policy = policy.with_capabilities(parse_capabilities(&capabilities)?);
@@ -153,6 +167,8 @@ fn upsert_principal(
         agent_id: request.agent_id,
         disabled: request.disabled,
         request_quota_per_minute: request.request_quota_per_minute,
+        body_quota_bytes_per_minute: request.body_quota_bytes_per_minute,
+        queue_quota: request.queue_quota,
         capabilities: request.capabilities,
     };
     validate_principal(&principal).map_err(RouterError::BadRequest)?;
@@ -306,6 +322,8 @@ fn migrate_v0_store(legacy: AuthPolicyStoreFileV0) -> Result<AuthPolicyStoreFile
                 agent_id: token.agent_id,
                 disabled: false,
                 request_quota_per_minute: None,
+                body_quota_bytes_per_minute: None,
+                queue_quota: None,
                 capabilities: None,
             })
             .collect(),
@@ -350,6 +368,12 @@ fn validate_principal(principal: &AuthPolicyPrincipal) -> Result<(), String> {
     }
     if matches!(principal.request_quota_per_minute, Some(0)) {
         return Err("has invalid request_quota_per_minute".to_owned());
+    }
+    if matches!(principal.body_quota_bytes_per_minute, Some(0)) {
+        return Err("has invalid body_quota_bytes_per_minute".to_owned());
+    }
+    if matches!(principal.queue_quota, Some(0)) {
+        return Err("has invalid queue_quota".to_owned());
     }
     if let Some(capabilities) = &principal.capabilities {
         parse_capabilities(capabilities)?;

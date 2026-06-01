@@ -55,26 +55,32 @@ Beta gate:
 
 ### 2. Per-Principal Quotas
 
-Goal: continue from the implemented local per-principal fixed-window guard
-toward route-aware and distributed quota accounting.
+Goal: continue from the implemented local per-principal/per-token fixed-window
+guards toward route-aware and distributed quota accounting.
 
 Plan:
 
-1. Keep `request_quota_per_minute` on policy-store principals as the local
-   fixed-window quota entry point.
+1. Keep `request_quota_per_minute`, `body_quota_bytes_per_minute`, and
+   `queue_quota` on policy-store principals as the local fixed-window quota
+   entry points.
 2. Keep raw tokens out of quota keys, metrics, audit records, logs, and
    reports.
-3. Add route-class and tenant dimensions after the local principal counter is
+3. Keep `/v1/metrics` aggregate-only: expose quota allowed/rejected counts and
+   byte totals without principal IDs or raw token material.
+4. Add route-class and tenant dimensions after the local principal counters are
    stable.
-4. Support fixed-window limits for beta; reserve sliding-window or
+5. Support fixed-window limits for beta; reserve sliding-window or
    token-bucket behavior for production tuning.
-5. Return the existing typed `rate_limited` response on quota exhaustion.
-6. Document that distributed quotas remain out of scope until real replicated
+6. Return the existing typed `rate_limited` response on quota exhaustion.
+7. Document that distributed quotas remain out of scope until real replicated
    state exists.
 
 Beta gate:
 
 - one principal exhausting quota does not block another principal;
+- body-byte and actor-queue quota exhaustion returns the typed `rate_limited`
+  response;
+- `/v1/metrics` reports aggregate quota counters;
 - denied quota responses do not expose raw token material;
 - data and admin route classes can be configured independently.
 

@@ -1014,6 +1014,14 @@ components:
           type: integer
           format: uint64
           minimum: 1
+        body_quota_bytes_per_minute:
+          type: integer
+          format: uint64
+          minimum: 1
+        queue_quota:
+          type: integer
+          format: uint64
+          minimum: 1
         capabilities:
           type: array
           items:
@@ -2095,6 +2103,12 @@ components:
       - request_rejected
       - request_duration_ms_total
       - validation_failures
+      - principal_quota_requests_allowed
+      - principal_quota_requests_rejected
+      - principal_quota_body_bytes_allowed
+      - principal_quota_body_bytes_rejected
+      - principal_quota_queue_acquired
+      - principal_quota_queue_rejected
       properties:
         current_seq:
           type: integer
@@ -2166,6 +2180,24 @@ components:
           type: integer
           format: uint64
         validation_failures:
+          type: integer
+          format: uint64
+        principal_quota_requests_allowed:
+          type: integer
+          format: uint64
+        principal_quota_requests_rejected:
+          type: integer
+          format: uint64
+        principal_quota_body_bytes_allowed:
+          type: integer
+          format: uint64
+        principal_quota_body_bytes_rejected:
+          type: integer
+          format: uint64
+        principal_quota_queue_acquired:
+          type: integer
+          format: uint64
+        principal_quota_queue_rejected:
           type: integer
           format: uint64
     LatencyHistogramResponse:

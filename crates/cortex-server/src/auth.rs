@@ -28,6 +28,8 @@ pub struct AuthTokenPolicy {
     pub agent_id: Option<u64>,
     pub principal_id: Option<String>,
     pub request_quota_per_minute: Option<u64>,
+    pub body_quota_bytes_per_minute: Option<u64>,
+    pub queue_quota: Option<u64>,
 }
 
 impl AuthTokenPolicy {
@@ -38,6 +40,8 @@ impl AuthTokenPolicy {
             agent_id: None,
             principal_id: None,
             request_quota_per_minute: None,
+            body_quota_bytes_per_minute: None,
+            queue_quota: None,
         }
     }
 
@@ -55,6 +59,16 @@ impl AuthTokenPolicy {
         self.request_quota_per_minute = Some(quota);
         self
     }
+
+    pub fn with_body_quota_bytes_per_minute(mut self, quota: u64) -> Self {
+        self.body_quota_bytes_per_minute = Some(quota);
+        self
+    }
+
+    pub fn with_queue_quota(mut self, quota: u64) -> Self {
+        self.queue_quota = Some(quota);
+        self
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -62,7 +76,10 @@ pub(crate) struct AuthDecision {
     pub agent_id: Option<u64>,
     pub role: Option<AuthRole>,
     pub principal_id: Option<String>,
+    pub quota_key: Option<String>,
     pub request_quota_per_minute: Option<u64>,
+    pub body_quota_bytes_per_minute: Option<u64>,
+    pub queue_quota: Option<u64>,
 }
 
 pub(crate) fn authorize_request(
@@ -79,7 +96,10 @@ pub(crate) fn authorize_request(
             agent_id: None,
             role: None,
             principal_id: None,
+            quota_key: None,
             request_quota_per_minute: None,
+            body_quota_bytes_per_minute: None,
+            queue_quota: None,
         });
     };
 
@@ -96,8 +116,11 @@ pub(crate) fn authorize_request(
     Ok(AuthDecision {
         agent_id: policy.agent_id,
         role: Some(policy.role),
-        principal_id: policy.principal_id,
+        principal_id: policy.principal_id.clone(),
+        quota_key: Some(policy.quota_key()),
         request_quota_per_minute: policy.request_quota_per_minute,
+        body_quota_bytes_per_minute: policy.body_quota_bytes_per_minute,
+        queue_quota: policy.queue_quota,
     })
 }
 
@@ -116,6 +139,15 @@ pub(crate) fn validate_token_policies(options: &ServerOptions) -> Result<(), Str
             return Err(
                 "auth token policy request_quota_per_minute must be greater than zero".to_owned(),
             );
+        }
+        if matches!(policy.body_quota_bytes_per_minute, Some(0)) {
+            return Err(
+                "auth token policy body_quota_bytes_per_minute must be greater than zero"
+                    .to_owned(),
+            );
+        }
+        if matches!(policy.queue_quota, Some(0)) {
+            return Err("auth token policy queue_quota must be greater than zero".to_owned());
         }
     }
     Ok(())
@@ -371,6 +403,36 @@ mod tests {
               "schema_version": "cortexdb.auth_policy.v1",
               "principals": [
                 {"principal_id":"a","token":"worker","role":"data","request_quota_per_minute":0}
+              ]
+            }"#,
+        )
+        .unwrap();
+        assert!(load_auth_policy_store(&path).is_err());
+    }
+
+    #[test]
+    fn auth_policy_store_rejects_zero_body_and_queue_quota() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("auth-policy.json");
+
+        std::fs::write(
+            &path,
+            r#"{
+              "schema_version": "cortexdb.auth_policy.v1",
+              "principals": [
+                {"principal_id":"a","token":"worker","role":"data","body_quota_bytes_per_minute":0}
+              ]
+            }"#,
+        )
+        .unwrap();
+        assert!(load_auth_policy_store(&path).is_err());
+
+        std::fs::write(
+            &path,
+            r#"{
+              "schema_version": "cortexdb.auth_policy.v1",
+              "principals": [
+                {"principal_id":"a","token":"worker","role":"data","queue_quota":0}
               ]
             }"#,
         )

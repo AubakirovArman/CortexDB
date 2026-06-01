@@ -111,13 +111,18 @@ token.
   "role": "data",
   "agent_id": 7,
   "request_quota_per_minute": 600,
+  "body_quota_bytes_per_minute": 1048576,
+  "queue_quota": 2,
   "capabilities": ["search", "read"]
 }
 ```
 
 If `capabilities` is present, the principal is further restricted to those API
 action classes. Omitting the field preserves the default behavior for the
-principal role.
+principal role. Quota fields are optional fixed-window local guards:
+`request_quota_per_minute` counts requests, `body_quota_bytes_per_minute`
+counts accepted request body bytes, and `queue_quota` limits concurrent actor
+commands for the token/principal.
 
 `DELETE /v1/admin/auth/principal?principal_id=agent-a`
 
@@ -230,7 +235,13 @@ Response:
   "request_count": 10,
   "request_rejected": 0,
   "request_duration_ms_total": 42,
-  "validation_failures": 0
+  "validation_failures": 0,
+  "principal_quota_requests_allowed": 10,
+  "principal_quota_requests_rejected": 0,
+  "principal_quota_body_bytes_allowed": 512,
+  "principal_quota_body_bytes_rejected": 0,
+  "principal_quota_queue_acquired": 8,
+  "principal_quota_queue_rejected": 0
 }
 ```
 

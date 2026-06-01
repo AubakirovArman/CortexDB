@@ -95,6 +95,12 @@ fn snapshot_metrics_response() {
         request_rejected: 3,
         request_duration_ms_total: 120,
         validation_failures: 1,
+        principal_quota_requests_allowed: 80,
+        principal_quota_requests_rejected: 4,
+        principal_quota_body_bytes_allowed: 4096,
+        principal_quota_body_bytes_rejected: 512,
+        principal_quota_queue_acquired: 70,
+        principal_quota_queue_rejected: 2,
     };
     insta::assert_json_snapshot!(resp);
 }

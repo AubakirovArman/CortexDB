@@ -81,6 +81,8 @@ pub(crate) struct EffectiveAuthPolicy {
     pub agent_id: Option<u64>,
     pub principal_id: Option<String>,
     pub request_quota_per_minute: Option<u64>,
+    pub body_quota_bytes_per_minute: Option<u64>,
+    pub queue_quota: Option<u64>,
     pub capabilities: Option<BTreeSet<AuthCapability>>,
 }
 
@@ -92,6 +94,8 @@ impl EffectiveAuthPolicy {
             agent_id: policy.agent_id,
             principal_id: policy.principal_id,
             request_quota_per_minute: policy.request_quota_per_minute,
+            body_quota_bytes_per_minute: policy.body_quota_bytes_per_minute,
+            queue_quota: policy.queue_quota,
             capabilities: None,
         }
     }
@@ -106,8 +110,33 @@ impl EffectiveAuthPolicy {
         self
     }
 
+    pub(crate) fn with_body_quota_bytes_per_minute(mut self, quota: u64) -> Self {
+        self.body_quota_bytes_per_minute = Some(quota);
+        self
+    }
+
+    pub(crate) fn with_queue_quota(mut self, quota: u64) -> Self {
+        self.queue_quota = Some(quota);
+        self
+    }
+
     pub(crate) fn with_capabilities(mut self, capabilities: BTreeSet<AuthCapability>) -> Self {
         self.capabilities = Some(capabilities);
         self
     }
+
+    pub(crate) fn quota_key(&self) -> String {
+        self.principal_id
+            .clone()
+            .unwrap_or_else(|| token_fingerprint(&self.token))
+    }
+}
+
+fn token_fingerprint(token: &str) -> String {
+    let mut hash = 0xcbf2_9ce4_8422_2325u64;
+    for byte in token.as_bytes() {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    format!("token:{hash:016x}")
 }

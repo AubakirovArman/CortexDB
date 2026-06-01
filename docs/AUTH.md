@@ -78,10 +78,17 @@ The canonical policy-store schema is `cortexdb.auth_policy.v1`. A legacy
 as an in-memory read migration into v1 principals. Unknown schema versions fail
 closed and do not authenticate.
 
-Policy-store principals may also set `request_quota_per_minute`. This is a
-local fixed-window quota keyed by `principal_id`, so one principal exhausting
-its quota does not block another principal. The quota value must be greater
-than zero. Raw bearer tokens are not used as quota keys.
+Policy-store principals may also set local fixed-window quota fields:
+
+- `request_quota_per_minute`: request count per 60-second window;
+- `body_quota_bytes_per_minute`: accepted request body bytes per 60-second
+  window;
+- `queue_quota`: concurrent actor queue/in-flight command permits for that
+  token/principal.
+
+Quota values must be greater than zero. Raw bearer tokens are not exposed as
+quota keys; principals use `principal_id`, while static token policies use an
+internal token fingerprint.
 
 Policy-store principals may also set `capabilities` to restrict an otherwise
 valid role to selected API action classes. Supported values are `admin`, `aql`,
@@ -108,8 +115,8 @@ cortexdb --json auth-review --policy-store ./auth-policy.json --tokens-file ./au
 ```
 
 The review output includes source, principal ID, role, active/disabled state,
-optional `agent_id`, optional `request_quota_per_minute`, and optional
-`capabilities`. It intentionally does not print token values.
+optional `agent_id`, optional quota fields, and optional `capabilities`. It
+intentionally does not print token values.
 
 Admin tokens can mutate the local JSON policy store when
 `CORTEXDB_AUTH_POLICY_STORE_FILE` is configured. These routes are admin-only and
@@ -121,7 +128,7 @@ curl -X POST \
   -H "Authorization: Bearer root-token" \
   -H "Content-Type: application/json" \
   http://127.0.0.1:8181/v1/admin/auth/principal \
-  -d '{"principal_id":"agent-b","token":"agent-b-token","role":"data","agent_id":8,"request_quota_per_minute":600,"capabilities":["search","read"]}'
+  -d '{"principal_id":"agent-b","token":"agent-b-token","role":"data","agent_id":8,"request_quota_per_minute":600,"body_quota_bytes_per_minute":1048576,"queue_quota":2,"capabilities":["search","read"]}'
 
 curl -X DELETE \
   -H "Authorization: Bearer root-token" \
@@ -294,21 +301,25 @@ with HTTP status `429 Too Many Requests`. This is a Core Alpha safety guard, not
 a replacement for reverse-proxy quotas, distributed quota state, or API gateway
 controls.
 
-When `CORTEXDB_AUTH_POLICY_STORE_FILE` is used, each active principal may set a
-local per-principal quota:
+When `CORTEXDB_AUTH_POLICY_STORE_FILE` is used, each active principal may set
+local per-principal/per-token quotas:
 
 ```json
 {
   "principal_id": "agent-a",
   "token": "agent-token",
   "role": "data",
-  "request_quota_per_minute": 600
+  "request_quota_per_minute": 600,
+  "body_quota_bytes_per_minute": 1048576,
+  "queue_quota": 2
 }
 ```
 
-If that principal exhausts its quota, the server returns the same typed
-`rate_limited` response. Other principals continue using their own independent
-quota windows.
+If that principal exhausts any configured quota, the server returns the same
+typed `rate_limited` response. Other principals continue using their own
+independent quota windows. `/v1/metrics` exposes aggregate quota counters for
+allowed/rejected request checks, body bytes, and queue permits, but not raw
+tokens or principal IDs.
 
 ## Audit Logging
 

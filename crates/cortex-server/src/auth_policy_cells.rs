@@ -26,6 +26,8 @@ pub(crate) struct AuthPolicyCellRecord {
     pub agent_id: Option<u64>,
     pub disabled: bool,
     pub request_quota_per_minute: Option<u64>,
+    pub body_quota_bytes_per_minute: Option<u64>,
+    pub queue_quota: Option<u64>,
     pub capabilities: Vec<String>,
     pub token_fingerprint: String,
 }
@@ -112,6 +114,8 @@ pub(crate) fn effective_policy_mapping_from_cells(
             agent_id: record.agent_id,
             principal_id: Some(record.principal_id),
             request_quota_per_minute: record.request_quota_per_minute,
+            body_quota_bytes_per_minute: record.body_quota_bytes_per_minute,
+            queue_quota: record.queue_quota,
             capabilities: None,
         };
         if !record.capabilities.is_empty() {
@@ -140,6 +144,8 @@ fn record_from_principal(
         agent_id: principal.agent_id,
         disabled: principal.disabled,
         request_quota_per_minute: principal.request_quota_per_minute,
+        body_quota_bytes_per_minute: principal.body_quota_bytes_per_minute,
+        queue_quota: principal.queue_quota,
         capabilities,
         token_fingerprint: token_fingerprint(&principal.token),
     })

@@ -528,7 +528,7 @@ fn admin_upsert_syncs_redacted_policy_cells() {
 
     let response = handle_http_with_options(
         dir.path(),
-        "POST /v1/admin/auth/principal HTTP/1.1\r\nAuthorization: Bearer admin-secret\r\ncontent-length: 151\r\n\r\n{\"principal_id\":\"data-a\",\"token\":\"data-secret\",\"role\":\"data\",\"agent_id\":7,\"request_quota_per_minute\":600,\"capabilities\":[\"search\",\"read\"]}",
+        "POST /v1/admin/auth/principal HTTP/1.1\r\nAuthorization: Bearer admin-secret\r\ncontent-length: 217\r\n\r\n{\"principal_id\":\"data-a\",\"token\":\"data-secret\",\"role\":\"data\",\"agent_id\":7,\"request_quota_per_minute\":600,\"body_quota_bytes_per_minute\":2048,\"queue_quota\":2,\"capabilities\":[\"search\",\"read\"]}",
         &options,
     );
     assert!(
@@ -543,6 +543,8 @@ fn admin_upsert_syncs_redacted_policy_cells() {
     assert_eq!(records[0].role, "data");
     assert_eq!(records[0].agent_id, Some(7));
     assert_eq!(records[0].request_quota_per_minute, Some(600));
+    assert_eq!(records[0].body_quota_bytes_per_minute, Some(2048));
+    assert_eq!(records[0].queue_quota, Some(2));
     assert_eq!(records[0].capabilities, vec!["read", "search"]);
     assert!(records[0].token_fingerprint.starts_with("fnv64:"));
     assert!(!serde_json::to_string(&records)
@@ -555,6 +557,8 @@ fn admin_upsert_syncs_redacted_policy_cells() {
     assert_eq!(effective[0].role, AuthRole::Data);
     assert_eq!(effective[0].agent_id, Some(7));
     assert_eq!(effective[0].request_quota_per_minute, Some(600));
+    assert_eq!(effective[0].body_quota_bytes_per_minute, Some(2048));
+    assert_eq!(effective[0].queue_quota, Some(2));
     assert!(effective[0].token.starts_with("fnv64:"));
 }
 

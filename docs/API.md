@@ -145,7 +145,9 @@ CortexDB cells. The cell mirror never stores the raw bearer token.
     "token": "agent-token",
     "role": "data",
     "agent_id": 7,
-    "request_quota_per_minute": 600
+    "request_quota_per_minute": 600,
+    "body_quota_bytes_per_minute": 1048576,
+    "queue_quota": 2
   }
   ```
 
