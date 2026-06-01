@@ -4,14 +4,32 @@ use std::fs;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::cli_audit_chain;
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct AuditRecord {
     pub schema_version: String,
     pub audit_event: String,
     pub audit_action: String,
+    #[serde(default)]
+    pub chain_id: Option<String>,
+    #[serde(default)]
+    pub sequence: Option<u64>,
+    #[serde(default)]
+    pub prev_hash: Option<String>,
+    #[serde(default)]
+    pub event_hash: Option<String>,
+    #[serde(default)]
+    pub principal_id: Option<String>,
+    #[serde(default)]
+    pub auth_role: Option<String>,
+    #[serde(default)]
+    pub auth_agent_id: Option<u64>,
     pub method: String,
     pub path: String,
     pub tenant: String,
+    #[serde(default)]
+    pub request_id: Option<String>,
     pub status: u16,
     pub error_code: String,
     pub duration_ms: u64,
@@ -24,6 +42,8 @@ struct AuditReviewResponse {
     matched_records: usize,
     redaction_ok: bool,
     redaction_violations: usize,
+    chain_ok: bool,
+    chain_violations: usize,
     filters: AuditReviewFilters,
     summary: AuditReviewSummary,
     records: Vec<AuditRecord>,
@@ -54,6 +74,7 @@ pub struct AuditReviewOptions<'a> {
     pub tenant: Option<&'a str>,
     pub summary_only: bool,
     pub redaction_check: bool,
+    pub verify_chain: bool,
     pub json: bool,
 }
 
@@ -63,6 +84,9 @@ pub fn review(options: AuditReviewOptions<'_>) -> Result<String, String> {
     let mut records = Vec::new();
     let mut total_records = 0usize;
     let mut redaction_violations = 0usize;
+    let mut chain_violations = 0usize;
+    let mut previous_hash = cli_audit_chain::AUDIT_CHAIN_ZERO_HASH.to_owned();
+    let mut expected_sequence = 1u64;
 
     for (index, line) in input.lines().enumerate() {
         let trimmed = line.trim();
@@ -75,14 +99,22 @@ pub fn review(options: AuditReviewOptions<'_>) -> Result<String, String> {
         if has_redaction_violation(&value) {
             redaction_violations += 1;
         }
-        records.push(
-            serde_json::from_value::<AuditRecord>(value).map_err(|error| {
-                format!(
-                    "audit log line {} does not match cortexdb.audit.v1: {error}",
-                    index + 1
-                )
-            })?,
-        );
+        let record = serde_json::from_value::<AuditRecord>(value).map_err(|error| {
+            format!(
+                "audit log line {} does not match cortexdb.audit.v1: {error}",
+                index + 1
+            )
+        })?;
+        if !cli_audit_chain::verify_record(&record, expected_sequence, &previous_hash) {
+            chain_violations += 1;
+        }
+        if let Some(hash) = &record.event_hash {
+            previous_hash = hash.clone();
+        }
+        expected_sequence = expected_sequence
+            .checked_add(1)
+            .ok_or_else(|| "audit chain sequence overflow".to_owned())?;
+        records.push(record);
     }
 
     let matched = records
@@ -97,12 +129,20 @@ pub fn review(options: AuditReviewOptions<'_>) -> Result<String, String> {
             "audit redaction check failed: redaction_violations={redaction_violations}"
         ));
     }
+    let chain_ok = chain_violations == 0;
+    if options.verify_chain && !chain_ok {
+        return Err(format!(
+            "audit chain verification failed: chain_violations={chain_violations}"
+        ));
+    }
 
     let response = AuditReviewResponse {
         total_records,
         matched_records: matched.len(),
         redaction_ok,
         redaction_violations,
+        chain_ok,
+        chain_violations,
         filters: AuditReviewFilters {
             route: options.route.map(str::to_owned),
             status: options.status,
@@ -163,11 +203,13 @@ fn has_redaction_violation(value: &Value) -> bool {
 
 fn format_plain(response: &AuditReviewResponse, summary_only: bool) -> String {
     let mut lines = vec![format!(
-        "audit_records={} matched_records={} redaction_ok={} redaction_violations={}",
+        "audit_records={} matched_records={} redaction_ok={} redaction_violations={} chain_ok={} chain_violations={}",
         response.total_records,
         response.matched_records,
         response.redaction_ok,
-        response.redaction_violations
+        response.redaction_violations,
+        response.chain_ok,
+        response.chain_violations
     )];
     lines.push(format_counts("by_action", &response.summary.by_action));
     lines.push(format_counts("by_status", &response.summary.by_status));
@@ -211,65 +253,5 @@ fn empty_as_dash(value: &str) -> &str {
         "-"
     } else {
         value
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{review, AuditReviewOptions};
-
-    #[test]
-    fn filters_and_summarizes_audit_records() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("audit.jsonl");
-        std::fs::write(
-            &path,
-            r#"{"schema_version":"cortexdb.audit.v1","audit_event":"http_response","audit_action":"read","method":"GET","path":"/v1/cell","tenant":"default","status":200,"error_code":"","duration_ms":3,"unix_time_ms":1}
-{"schema_version":"cortexdb.audit.v1","audit_event":"http_response","audit_action":"write","method":"POST","path":"/v1/cell","tenant":"tenant-a","status":403,"error_code":"permission_denied","duration_ms":7,"unix_time_ms":2}
-"#,
-        )
-        .unwrap();
-
-        let output = review(AuditReviewOptions {
-            path: path.to_str().unwrap(),
-            route: Some("/v1/cell"),
-            status: Some(403),
-            action: Some("write"),
-            tenant: Some("tenant-a"),
-            summary_only: false,
-            redaction_check: true,
-            json: false,
-        })
-        .unwrap();
-        assert!(output.contains("audit_records=2 matched_records=1 redaction_ok=true"));
-        assert!(output.contains("by_action=write:1"));
-        assert!(output.contains("by_status=403:1"));
-        assert!(output.contains("by_tenant=tenant-a:1"));
-        assert!(output.contains("record method=POST path=/v1/cell"));
-    }
-
-    #[test]
-    fn redaction_check_rejects_query_or_body_fields() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("audit.jsonl");
-        std::fs::write(
-            &path,
-            r#"{"schema_version":"cortexdb.audit.v1","audit_event":"http_response","audit_action":"read","method":"GET","path":"/v1/cell?cell_id=1","tenant":"default","status":200,"error_code":"","duration_ms":3,"unix_time_ms":1}
-"#,
-        )
-        .unwrap();
-
-        let error = review(AuditReviewOptions {
-            path: path.to_str().unwrap(),
-            route: None,
-            status: None,
-            action: None,
-            tenant: None,
-            summary_only: true,
-            redaction_check: true,
-            json: false,
-        })
-        .unwrap_err();
-        assert!(error.contains("redaction_violations=1"));
     }
 }

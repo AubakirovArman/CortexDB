@@ -6,6 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 
+use crate::audit_chain::{self, AUDIT_CHAIN_ID, AUDIT_CHAIN_ZERO_HASH};
 use crate::dashboard;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -72,6 +73,10 @@ struct AuditRecord<'a> {
     schema_version: &'static str,
     audit_event: &'static str,
     audit_action: &'static str,
+    chain_id: &'static str,
+    sequence: u64,
+    prev_hash: String,
+    event_hash: String,
     principal_id: &'a str,
     auth_role: &'a str,
     auth_agent_id: Option<u64>,
@@ -86,7 +91,13 @@ struct AuditRecord<'a> {
 }
 
 pub(crate) struct AuditSink {
-    file: Mutex<File>,
+    state: Mutex<AuditSinkState>,
+}
+
+struct AuditSinkState {
+    file: File,
+    next_sequence: u64,
+    prev_hash: String,
 }
 
 impl AuditSink {
@@ -94,21 +105,34 @@ impl AuditSink {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
+        let (next_sequence, prev_hash) = audit_chain::tail(path)?;
         let file = OpenOptions::new().create(true).append(true).open(path)?;
         Ok(Self {
-            file: Mutex::new(file),
+            state: Mutex::new(AuditSinkState {
+                file,
+                next_sequence,
+                prev_hash,
+            }),
         })
     }
 
-    fn append(&self, record: &AuditRecord<'_>) -> io::Result<()> {
-        let mut file = self
-            .file
+    fn append(&self, record: &mut AuditRecord<'_>) -> io::Result<()> {
+        let mut state = self
+            .state
             .lock()
             .map_err(|e| io::Error::other(e.to_string()))?;
-        serde_json::to_writer(&mut *file, record).map_err(io::Error::other)?;
-        file.write_all(b"\n")?;
-        file.flush()?;
-        file.sync_data()?;
+        record.sequence = state.next_sequence;
+        record.prev_hash = state.prev_hash.clone();
+        record.event_hash = audit_event_hash(record);
+        serde_json::to_writer(&mut state.file, record).map_err(io::Error::other)?;
+        state.file.write_all(b"\n")?;
+        state.file.flush()?;
+        state.file.sync_data()?;
+        state.next_sequence = state
+            .next_sequence
+            .checked_add(1)
+            .ok_or_else(|| io::Error::other("audit chain sequence overflow"))?;
+        state.prev_hash = record.event_hash.clone();
         Ok(())
     }
 }
@@ -133,10 +157,14 @@ pub(crate) fn emit_http_response(event: HttpResponseAudit<'_>, sink: Option<&Aud
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_millis())
         .unwrap_or_default();
-    let record = AuditRecord {
+    let mut record = AuditRecord {
         schema_version: "cortexdb.audit.v1",
         audit_event: "http_response",
         audit_action: action,
+        chain_id: AUDIT_CHAIN_ID,
+        sequence: 0,
+        prev_hash: AUDIT_CHAIN_ZERO_HASH.to_owned(),
+        event_hash: String::new(),
         principal_id: event.principal_id.unwrap_or(""),
         auth_role: event.auth_role.unwrap_or(""),
         auth_agent_id: event.auth_agent_id,
@@ -165,7 +193,7 @@ pub(crate) fn emit_http_response(event: HttpResponseAudit<'_>, sink: Option<&Aud
         duration_ms = event.duration_ms,
     );
     if let Some(sink) = sink {
-        if let Err(error) = sink.append(&record) {
+        if let Err(error) = sink.append(&mut record) {
             tracing::error!(
                 target: "cortexdb_audit",
                 audit_event = "sink_error",
@@ -175,62 +203,30 @@ pub(crate) fn emit_http_response(event: HttpResponseAudit<'_>, sink: Option<&Aud
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{classify, emit_http_response, AuditAction, AuditSink, HttpResponseAudit};
-
-    #[test]
-    fn classify_core_api_actions() {
-        assert_eq!(classify("GET", "/v1/cell"), AuditAction::Read);
-        assert_eq!(classify("POST", "/v1/cell"), AuditAction::Write);
-        assert_eq!(classify("DELETE", "/v1/cell"), AuditAction::Delete);
-        assert_eq!(classify("POST", "/v1/aql"), AuditAction::Aql);
-        assert_eq!(classify("POST", "/v1/context"), AuditAction::Context);
-        assert_eq!(classify("POST", "/v1/verify"), AuditAction::Verify);
-        assert_eq!(classify("POST", "/v1/search"), AuditAction::Search);
-        assert_eq!(classify("POST", "/v1/ingest/text"), AuditAction::Ingest);
-        assert_eq!(classify("POST", "/v1/remember"), AuditAction::Memory);
-        assert_eq!(classify("POST", "/v1/compact"), AuditAction::Admin);
-        assert_eq!(classify("GET", "/v1/metrics"), AuditAction::Metrics);
-    }
-
-    #[test]
-    fn audit_sink_writes_jsonl_without_body_or_query() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("audit").join("http.jsonl");
-        let sink = AuditSink::open(&path).unwrap();
-
-        emit_http_response(
-            HttpResponseAudit {
-                method: "POST",
-                path: "/v1/cell",
-                tenant: "tenant-a",
-                request_id: "req-123",
-                principal_id: Some("principal-a"),
-                auth_role: Some("data"),
-                auth_agent_id: Some(7),
-                status: 403,
-                error_code: Some("permission_denied"),
-                duration_ms: 12,
-            },
-            Some(&sink),
-        );
-
-        let line = std::fs::read_to_string(path).unwrap();
-        let value = serde_json::from_str::<serde_json::Value>(line.trim()).unwrap();
-        assert_eq!(value["schema_version"], "cortexdb.audit.v1");
-        assert_eq!(value["audit_event"], "http_response");
-        assert_eq!(value["audit_action"], "write");
-        assert_eq!(value["principal_id"], "principal-a");
-        assert_eq!(value["auth_role"], "data");
-        assert_eq!(value["auth_agent_id"], 7);
-        assert_eq!(value["method"], "POST");
-        assert_eq!(value["path"], "/v1/cell");
-        assert_eq!(value["tenant"], "tenant-a");
-        assert_eq!(value["request_id"], "req-123");
-        assert_eq!(value["status"], 403);
-        assert_eq!(value["error_code"], "permission_denied");
-        assert!(!line.contains("secret_payload"));
-        assert!(!line.contains('?'));
-    }
+fn audit_event_hash(record: &AuditRecord<'_>) -> String {
+    audit_chain::event_hash(&[
+        ("chain_id", record.chain_id.to_owned()),
+        ("sequence", record.sequence.to_string()),
+        ("prev_hash", record.prev_hash.clone()),
+        ("schema_version", record.schema_version.to_owned()),
+        ("audit_event", record.audit_event.to_owned()),
+        ("audit_action", record.audit_action.to_owned()),
+        ("principal_id", record.principal_id.to_owned()),
+        ("auth_role", record.auth_role.to_owned()),
+        (
+            "auth_agent_id",
+            record
+                .auth_agent_id
+                .map(|value| value.to_string())
+                .unwrap_or_default(),
+        ),
+        ("method", record.method.to_owned()),
+        ("path", record.path.to_owned()),
+        ("tenant", record.tenant.to_owned()),
+        ("request_id", record.request_id.to_owned()),
+        ("status", record.status.to_string()),
+        ("error_code", record.error_code.to_owned()),
+        ("duration_ms", record.duration_ms.to_string()),
+        ("unix_time_ms", record.unix_time_ms.to_string()),
+    ])
 }

@@ -14,6 +14,7 @@ design-only, so release gates can block overclaims.
 | Tenant path safety | Tenant IDs are percent-decoded, length-limited, and path-traversal checked. |
 | Request limits | A process-wide fixed-window request limit can return typed `rate_limited` errors. |
 | Audit redaction | HTTP audit events store route metadata, status, tenant, request id, duration, and authenticated principal metadata, not query strings, request bodies, or bearer tokens. |
+| Audit chain foundation | File-backed audit records include `chain_id`, `sequence`, `prev_hash`, and `event_hash`; `cortexdb audit --verify-chain` checks local continuity. |
 | Dashboard gate | `/dashboard` is an admin route; data tokens are denied. |
 | Backup validation | Local backup, restore, offsite staging, and restore drills validate storage before trust. |
 
@@ -75,13 +76,15 @@ Goal: extend JSONL route audit into a locally verifiable hash chain.
 
 Plan:
 
-1. Add `prev_hash`, `event_hash`, `chain_id`, and `sequence` fields to audit
-   records.
-2. Hash canonical route metadata only; do not hash or persist request bodies,
-   full query strings, bearer tokens, or secrets.
-3. Add `cortexdb audit --verify-chain` to validate sequence continuity and hash
+1. Keep `prev_hash`, `event_hash`, `chain_id`, and `sequence` fields on
+   file-backed audit records.
+2. Keep hashing canonical route metadata only; do not hash or persist request
+   bodies, full query strings, bearer tokens, or secrets.
+3. Keep `cortexdb audit --verify-chain` validating sequence continuity and hash
    integrity.
-4. Keep SIEM export as a follow-up adapter after local chain verification is
+4. Upgrade hash and export policy only with a documented compatibility plan if
+   a compliance-grade audit ledger is promoted.
+5. Keep SIEM export as a follow-up adapter after local chain verification is
    stable.
 
 Beta gate:

@@ -3,6 +3,7 @@ use std::process::ExitCode;
 mod cli;
 mod cli_ann;
 mod cli_audit;
+mod cli_audit_chain;
 #[cfg(test)]
 mod cli_audit_tests;
 mod cli_ingest;

@@ -160,6 +160,8 @@ Current implementation slice:
 - Invalid policy-store JSON or invalid entries fail closed.
 - HTTP audit events now include `principal_id`, `auth_role`, and
   `auth_agent_id` for authenticated requests without logging bearer tokens.
+- File-backed audit records now include local chain metadata and can be checked
+  with `cortexdb audit --verify-chain`.
 
 Task pool:
 

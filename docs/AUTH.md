@@ -246,10 +246,12 @@ cargo run -p cortex-server -- ./data 127.0.0.1:8181
 Audit events are emitted through `tracing` with target `cortexdb_audit`. They
 include route category, method, path, tenant, `request_id`, status code, stable
 error code, duration, and authenticated principal metadata when available:
-`principal_id`, `auth_role`, and `auth_agent_id`. Request bodies, query strings,
-and bearer tokens are intentionally not logged. Current route categories include
-`read`, `write`, `delete`, `aql`, `search`, `context`, `verify`, `ingest`,
-`memory`, `admin`, `metrics`, and `health`.
+`principal_id`, `auth_role`, and `auth_agent_id`. File-backed audit records also
+include local chain metadata: `chain_id`, `sequence`, `prev_hash`, and
+`event_hash`. Request bodies, query strings, and bearer tokens are intentionally
+not logged. Current route categories include `read`, `write`, `delete`, `aql`,
+`search`, `context`, `verify`, `ingest`, `memory`, `admin`, `metrics`, and
+`health`.
 
 Every HTTP response includes `x-request-id`. Clients may supply a safe
 `x-request-id` header to correlate their logs with CortexDB audit records. If
@@ -272,6 +274,7 @@ Review a persisted audit file with the CLI instead of hand-parsing JSONL:
 
 ```bash
 cortexdb audit ./audit/http.jsonl --summary --redaction-check
+cortexdb audit ./audit/http.jsonl --summary --redaction-check --verify-chain
 cortexdb audit ./audit/http.jsonl --route /v1/cell --status 403
 cortexdb audit ./audit/http.jsonl --action write --tenant-filter tenant-alpha
 cortexdb --json audit ./audit/http.jsonl --summary --redaction-check
@@ -281,6 +284,12 @@ The audit viewer supports filters by route, status, action, and tenant. The
 summary output includes counts by action, status, tenant, and route. The
 `--redaction-check` flag fails if records contain query strings or body-like
 fields, which keeps route-level audit review separate from request payloads.
+The `--verify-chain` flag validates local sequence continuity and chained event
+hashes, detecting line deletion, reordering, and edited route metadata in
+chain-v1 audit files. This is a local tamper-evidence foundation, not a
+compliance-certified audit ledger or SIEM export. If the configured file sink
+ends with a malformed chained record, server startup fails instead of silently
+resetting the chain; rotate or repair the audit file explicitly.
 
 ## RBAC Roadmap
 

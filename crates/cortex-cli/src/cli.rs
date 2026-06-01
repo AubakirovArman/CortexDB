@@ -106,6 +106,8 @@ enum Command {
         summary: bool,
         #[arg(long = "redaction-check")]
         redaction_check: bool,
+        #[arg(long = "verify-chain")]
+        verify_chain: bool,
     },
     Restore {
         backup_path: String,
@@ -321,6 +323,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             tenant_filter,
             summary,
             redaction_check,
+            verify_chain,
         } => audit::review(audit::AuditReviewOptions {
             path: &path,
             route: route.as_deref(),
@@ -329,6 +332,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             tenant: tenant_filter.as_deref(),
             summary_only: summary,
             redaction_check,
+            verify_chain,
             json: cli.json,
         }),
         Command::Restore { backup_path, path } => {

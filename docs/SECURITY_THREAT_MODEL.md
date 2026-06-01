@@ -54,7 +54,7 @@ be treated as future work.
 | SDK contract drift | Python, TypeScript, and Rust live SDK smoke checks. | Implemented and gated. |
 | Browser cross-origin API calls | CORS disabled by default; optional exact-origin allowlist via `CORTEXDB_CORS_ALLOW_ORIGIN`. | Implemented for one trusted origin. |
 | Request floods against the local API | Optional process-wide fixed-window limit via `CORTEXDB_RATE_LIMIT_PER_MINUTE`. | Implemented as a coarse Core Alpha guard. |
-| Missing operational access trail | Optional structured HTTP audit events via `CORTEXDB_AUDIT_LOG`; optional synced JSONL file sink via `CORTEXDB_AUDIT_LOG_FILE`; `cortexdb audit` reviews JSONL files with route/status/action/tenant filters and redaction checks. | Implemented for route-level events. |
+| Missing operational access trail | Optional structured HTTP audit events via `CORTEXDB_AUDIT_LOG`; optional synced JSONL file sink via `CORTEXDB_AUDIT_LOG_FILE`; `cortexdb audit` reviews JSONL files with route/status/action/tenant filters, redaction checks, and local chain verification. | Implemented for route-level events. |
 | Unvalidated local backups | `cortexdb backup`, `restore`, `backup-drill`, `backup-prune`, and `backup-offsite-stage` validate source and restored copies. | Implemented for local filesystem/offsite-staging workflows. |
 
 ## Out Of Scope For Core Alpha
@@ -66,7 +66,8 @@ The following are not production security guarantees yet:
 - Persisted auth policy management beyond local file-backed token rotation.
 - Per-token quotas or distributed rate limiting.
 - Multi-origin, wildcard, or per-token CORS policies.
-- Tamper-evident audit trails or SIEM export.
+- Compliance-grade audit trails or SIEM export beyond the local audit-chain
+  verification foundation.
 - At-rest encryption or envelope key management.
 - Encrypted backups or built-in remote object-store upload.
 - Secret rotation workflow.

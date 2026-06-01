@@ -27,14 +27,21 @@ REQUIRED_MARKERS = {
         ("docs/SECURITY_HARDENING_EVIDENCE.md", "Principal-aware audit metadata"),
         ("crates/cortex-server/src/tests/security_tests.rs", "audit_log_file_records_policy_store_principal_without_token"),
     ],
+    "audit_chain_foundation": [
+        ("docs/AUTH.md", "cortexdb audit ./audit/http.jsonl --summary --redaction-check --verify-chain"),
+        ("docs/SECURITY_HARDENING_EVIDENCE.md", "audit_chain_foundation: true"),
+        ("crates/cortex-server/src/audit_tests.rs", "audit_sink_continues_chain_when_reopened"),
+        ("crates/cortex-cli/src/cli_audit_tests.rs", "audit_review_verify_chain_accepts_valid_sequence_and_rejects_tampering"),
+        ("crates/cortex-cli/src/cli_audit_tests.rs", "audit_command_can_verify_chain"),
+    ],
     "audit_redaction": [
         ("crates/cortex-server/src/tests/security_tests.rs", "audit_log_file_redacts_ingestion_query_and_body"),
         ("crates/cortex-cli/src/cli_audit_tests.rs", "redaction_ok=true"),
     ],
     "tamper_evident_audit_boundary": [
         ("docs/SECURITY_BETA_BASELINE.md", "Tamper-Evident Audit Chain"),
-        ("docs/SECURITY_THREAT_MODEL.md", "Tamper-evident audit trails"),
-        ("docs/SECURITY_HARDENING_EVIDENCE.md", "tamper-evident chain/SIEM export remains beta work"),
+        ("docs/SECURITY_THREAT_MODEL.md", "Compliance-grade audit trails or SIEM export"),
+        ("docs/SECURITY_HARDENING_EVIDENCE.md", "compliance-grade ledger/SIEM export remains future work"),
     ],
     "encrypted_backup_boundary": [
         ("docs/SECURITY_BETA_BASELINE.md", "encrypted backup restore drill succeeds"),

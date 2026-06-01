@@ -21,7 +21,7 @@ target/security-hardening/report.json
 | Persisted auth policy store | File-backed token rotation and JSON principal policy store are implemented through `CORTEXDB_AUTH_TOKENS_FILE` and `CORTEXDB_AUTH_POLICY_STORE_FILE`; full enterprise RBAC administration remains future work. |
 | Per-token quotas | Process-wide rate limit is implemented; user/token-aware quotas remain beta work. |
 | Principal-aware audit metadata | Authenticated route-level JSONL audit records include `principal_id`, `auth_role`, and `auth_agent_id` without storing bearer tokens. |
-| Tamper-evident audit chain | Route-level JSONL audit plus redaction checks are implemented; tamper-evident chain/SIEM export remains beta work. |
+| Tamper-evident audit chain | File-backed route audit records include local chain metadata and `cortexdb audit --verify-chain` detects local deletion, reordering, and metadata edits; compliance-grade ledger/SIEM export remains future work. |
 | Encrypted backup support | Design exists in `ENCRYPTED_BACKUPS_DESIGN.md`; current backup/restore/offsite staging are local and unencrypted. |
 | Remote object-store backup | Local offsite staging exists; provider-backed object-store upload remains future work. |
 | Secret rotation docs | Token-file rotation is documented in `AUTH.md` and `SECURITY_THREAT_MODEL.md`. |
@@ -45,6 +45,7 @@ tamper-evident audit compliance.
 persisted_auth_policy_store: true
 per_token_quota_boundary: true
 audit_principal_metadata: true
+audit_chain_foundation: true
 audit_redaction: true
 tamper_evident_audit_boundary: true
 encrypted_backup_boundary: true

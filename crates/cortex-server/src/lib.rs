@@ -18,6 +18,9 @@ use responses::{ErrorCode, ErrorResponse, MetricsResponse};
 mod actor;
 mod aql;
 mod audit;
+mod audit_chain;
+#[cfg(test)]
+mod audit_tests;
 mod auth;
 mod authz;
 mod context;
