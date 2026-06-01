@@ -75,6 +75,25 @@ local clean worktree; not an independent hosted CI or clean-container rerun
 | `target/release-artifacts/cortexdb-dev-linux-x86_64.tar.gz` | passed | Binary package generated and validated with checksum `9bd5b82a0026ce98dd9f347286e2c01457a14fc2fdc605b6265ce0f53a7da48e`. |
 | `target/dashboard/dashboard-v1.tar.gz` | passed | Dashboard package generated and validated. |
 
+## Public Release Artifact Audit
+
+The public artifact audit target is `v0.1.0-core-alpha.5`. It supersedes the
+older `v0.1.0-core-alpha` draft and the earlier `v0.1.0-core-alpha.4` public
+page for release-readiness evidence.
+
+The required public assets are:
+
+1. `cortexdb-v0.1.0-core-alpha.5-linux-x86_64.tar.gz`
+2. `cortexdb-v0.1.0-core-alpha.5-linux-x86_64.tar.gz.sha256`
+3. `dashboard-v1.tar.gz`
+4. `v0.1.0-core-alpha.5-ann-smoke.tar.gz`
+5. `v0.1.0-core-alpha.5-ann-demo-domain.tar.gz`
+
+The release notes for this target are maintained in
+[`RELEASE_NOTES_v0.1.0-core-alpha.5.md`](RELEASE_NOTES_v0.1.0-core-alpha.5.md).
+Do not treat a GitHub release as current Core Alpha evidence unless those assets
+are present and the notes preserve the explicit non-production limits.
+
 ## Important Boundary
 
 `target/ann/real-embedding/readiness.json` was generated during the production

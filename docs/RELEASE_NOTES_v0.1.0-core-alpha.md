@@ -106,7 +106,7 @@ which includes:
 
 and after the GitHub Actions `Rust` workflow is green on stable and beta.
 
-Latest local evidence: `make release-check` passed on 2026-05-31, including
+Latest local evidence: `make release-check` passed on 2026-06-01, including
 workspace check, all-features tests, formatting, clippy with `-D warnings`, SDK
 preflight, OpenAPI coverage and live contract validation, SDK contract
 validation for Python/TypeScript/Rust clients, migration policy validation,
@@ -128,3 +128,11 @@ Generated local evidence artifacts include:
 - `target/chaos-restart/report.json`
 - `target/replication-partition/report.json`
 - `target/replication-lifecycle/report.json`
+
+## Public Artifact Boundary
+
+The `v0.1.0-core-alpha` draft release was superseded for public artifact
+verification by the audited `v0.1.0-core-alpha.5` prerelease target. Public
+release assets must include a binary package with an external `.sha256`, the
+dashboard package, and ANN baseline archives. Treat older alpha release pages as
+historical unless their asset list and notes point at current release evidence.
