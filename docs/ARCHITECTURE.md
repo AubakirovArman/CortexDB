@@ -217,6 +217,9 @@ technology overview is documented in
 citations, normalized terms, contradiction markers, and numeric conflicts. It
 can report supported, contradicted, mixed, or insufficient evidence. It is not
 a legal proof engine or production-grade factual certification layer.
+Structured numeric conflicts are produced by the engine in
+`VerificationReport.numeric_conflicts`; CLI, SDK, and HTTP layers serialize that
+report rather than recomputing numeric semantics.
 
 ## HTTP Server
 

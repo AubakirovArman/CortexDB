@@ -93,7 +93,10 @@ currency=KZT
 Solar Plant budget is 1.2B KZT in Q1.
 ```
 
-The `metric=budget` and `value=1200000000` lines help VERIFY FACT produce precise `numeric_conflicts`.
+The `metric=budget` line helps VERIFY FACT label precise
+`numeric_conflicts`. Numeric comparison itself is computed in the engine from
+typed `NumericValue` pairs extracted from the fact and evidence body text, so
+CLI/server responses do not re-parse payloads independently.
 
 ## Limitations (Alpha)
 
@@ -106,7 +109,6 @@ The `metric=budget` and `value=1200000000` lines help VERIFY FACT produce precis
 
 ## Future (Verification v1)
 
-- `NumericValue` struct with normalized unit representation.
 - Metric-aware comparison (budget vs revenue vs cost).
 - Richer source trust scoring and evidence ranking.
 - Contradiction index output.

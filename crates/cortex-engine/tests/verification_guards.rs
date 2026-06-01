@@ -50,6 +50,11 @@ fn verify_fact_reports_numeric_mismatch_guard_as_contradiction() {
         report.guards[0].code,
         VerificationGuardCode::NumericMismatch
     );
+    assert_eq!(report.numeric_conflicts.len(), 1);
+    assert_eq!(report.numeric_conflicts[0].cell_id, CellId(1));
+    assert_eq!(report.numeric_conflicts[0].metric, "metric");
+    assert_eq!(report.numeric_conflicts[0].left, "12000");
+    assert_eq!(report.numeric_conflicts[0].right, "13000");
 }
 
 #[test]
@@ -98,6 +103,59 @@ fn verify_fact_reports_numeric_mismatch_even_with_shared_year() {
         report.guards[0].code,
         VerificationGuardCode::NumericMismatch
     );
+}
+
+#[test]
+fn verification_report_contains_structured_numeric_conflict() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(7),
+        b"scope=project:investments\nstatus=verified\ntype=fact\nsource=annual-report\nmetric=budget\n\nSolar Plant budget increased to 1.4B KZT.".to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;"#,
+            &view(),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Contradicted);
+    assert_eq!(report.numeric_conflicts.len(), 1);
+    let conflict = &report.numeric_conflicts[0];
+    assert_eq!(conflict.cell_id, CellId(7));
+    assert_eq!(conflict.metric, "budget");
+    assert_eq!(conflict.left, "1.2B KZT");
+    assert_eq!(conflict.right, "1.4B KZT");
+    assert_eq!(conflict.fact_value.scaled_value, 1_200_000_000);
+    assert_eq!(conflict.evidence_value.scaled_value, 1_400_000_000);
+}
+
+#[test]
+fn verification_report_does_not_infer_billions_from_decimal_percent() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(9),
+        b"scope=project:investments\nstatus=verified\ntype=fact\nsource=risk-report\nmetric=risk\n\nProject risk changed to 2%.".to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "Project risk is 1.2%" IN BRAIN investment_projects;"#,
+            &view(),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Contradicted);
+    assert_eq!(report.numeric_conflicts.len(), 1);
+    assert_eq!(report.numeric_conflicts[0].metric, "risk");
+    assert_eq!(report.numeric_conflicts[0].left, "1.2 %");
+    assert_eq!(report.numeric_conflicts[0].right, "2 %");
+    assert!(!report.numeric_conflicts[0].left.contains("1.2B"));
 }
 
 fn fact_cell(source: Option<&str>, body: &str) -> KnowledgeCell {

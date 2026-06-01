@@ -1,5 +1,4 @@
 use cortex_aql::AgentView;
-use cortex_engine::verification::numeric::{extract_numeric_values, numeric_conflict};
 use cortex_engine::verification::{VerificationReport, VerificationStatus};
 use cortex_engine::Database;
 
@@ -40,57 +39,6 @@ pub fn handle_verify_shared(
     let report = db.verify_fact_aql(&aql, &view)?;
     let response = map_verification_report(&report, db);
     Ok(serde_json::to_string(&response)?)
-}
-
-fn extract_numeric_conflict(fact: &str, payload: &[u8]) -> Option<NumericConflictResponse> {
-    let text = String::from_utf8_lossy(payload);
-    let mut metric = "metric".to_owned();
-    let mut currency: Option<String> = None;
-    let mut value_str: Option<&str> = None;
-
-    // First pass: collect metric, currency and raw value
-    for line in text.lines() {
-        if let Some(val) = line.strip_prefix("metric=") {
-            metric = val.trim().to_owned();
-        } else if let Some(val) = line.strip_prefix("currency=") {
-            currency = Some(val.trim().to_ascii_uppercase().to_owned());
-        } else if let Some(val) = line.strip_prefix("value=") {
-            value_str = Some(val.trim());
-        }
-    }
-
-    // Parse the numeric value after currency is known
-    let payload_value = value_str.and_then(|val_str| {
-        let candidate = format!("{val_str} {}", currency.as_deref().unwrap_or(""));
-        extract_numeric_values(&candidate).into_iter().next()
-    });
-
-    let fact_values = extract_numeric_values(fact);
-    if fact_values.is_empty() {
-        return None;
-    }
-
-    let fact_value = &fact_values[0];
-    let payload_value = payload_value.as_ref()?;
-
-    if !numeric_conflict(fact_value, payload_value) {
-        return None;
-    }
-
-    let left = format_display(
-        &fact_value.raw,
-        fact_value.currency.as_deref().or(currency.as_deref()),
-    );
-    let right = format_display(
-        &payload_value.raw,
-        payload_value.currency.as_deref().or(currency.as_deref()),
-    );
-
-    Some(NumericConflictResponse {
-        metric,
-        left,
-        right,
-    })
 }
 
 fn map_verification_report(
@@ -144,18 +92,15 @@ fn map_verification_report(
         })
         .collect();
 
-    let mut numeric_conflicts = Vec::new();
-    for guard in &report.guards {
-        if guard.code == cortex_engine::verification::VerificationGuardCode::NumericMismatch {
-            if let Some(cell_id) = guard.cell_id {
-                if let Some(payload) = db.get_latest_cell(cell_id) {
-                    if let Some(conflict) = extract_numeric_conflict(&report.fact, &payload) {
-                        numeric_conflicts.push(conflict);
-                    }
-                }
-            }
-        }
-    }
+    let numeric_conflicts = report
+        .numeric_conflicts
+        .iter()
+        .map(|conflict| NumericConflictResponse {
+            metric: conflict.metric.clone(),
+            left: conflict.left.clone(),
+            right: conflict.right.clone(),
+        })
+        .collect();
 
     VerificationReportResponse {
         fact: report.fact.clone(),
@@ -168,14 +113,4 @@ fn map_verification_report(
         contradicting: contradicting_evidence,
         numeric_conflicts,
     }
-}
-
-fn format_display(raw: &str, currency: Option<&str>) -> String {
-    if let Some(c) = currency {
-        if raw.ends_with(c) || raw.to_ascii_uppercase().ends_with(c) {
-            return raw.to_owned();
-        }
-        return format!("{} {}", raw, c);
-    }
-    raw.to_owned()
 }

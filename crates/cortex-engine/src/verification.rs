@@ -13,7 +13,7 @@ pub mod numeric;
 use contradiction::{
     contradiction_facts, contradiction_match, contradiction_text_matches, tokenize_support_text,
 };
-use guards::{citation_guard, numeric_mismatch, numeric_mismatch_guard};
+use guards::{citation_guard, numeric_mismatch, numeric_mismatch_conflict, numeric_mismatch_guard};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VerificationStatus {
@@ -38,6 +38,7 @@ pub struct VerificationReport {
     pub evidence: Vec<VerificationEvidence>,
     pub contradicting_evidence: Vec<VerificationEvidence>,
     pub guards: Vec<VerificationGuard>,
+    pub numeric_conflicts: Vec<VerificationNumericConflict>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -60,6 +61,16 @@ pub struct VerificationGuard {
     pub cell_id: Option<CellId>,
     pub code: VerificationGuardCode,
     pub message: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VerificationNumericConflict {
+    pub cell_id: CellId,
+    pub metric: String,
+    pub left: String,
+    pub right: String,
+    pub fact_value: numeric::NumericValue,
+    pub evidence_value: numeric::NumericValue,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -114,6 +125,7 @@ impl Database {
         let mut evidence = Vec::new();
         let mut contradicting_evidence = Vec::new();
         let mut guards = Vec::new();
+        let mut numeric_conflicts = Vec::new();
         for version in self.snapshot_versions() {
             if let Some(item) =
                 evidence_for_version(version.cell_id, &version.payload, view, &plan.fact)
@@ -129,6 +141,11 @@ impl Database {
                 if let Some(guard) = numeric_mismatch_guard(&plan.fact, &version.payload, &item) {
                     guards.push(guard);
                 }
+                if let Some(conflict) =
+                    numeric_mismatch_conflict(&plan.fact, &version.payload, item.cell_id)
+                {
+                    numeric_conflicts.push(conflict);
+                }
                 contradicting_evidence.push(item);
             }
         }
@@ -143,6 +160,7 @@ impl Database {
             evidence,
             contradicting_evidence,
             guards,
+            numeric_conflicts,
         })
     }
 

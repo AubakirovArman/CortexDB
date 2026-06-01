@@ -1,8 +1,10 @@
 use crate::query::CellMetadata;
 use crate::search::tokenize;
+use cortex_core::CellId;
+
 use crate::verification::numeric::{extract_numeric_values, numeric_conflict};
 
-use super::{VerificationEvidence, VerificationGuard};
+use super::{VerificationEvidence, VerificationGuard, VerificationNumericConflict};
 
 pub(super) fn citation_guard(evidence: &VerificationEvidence) -> Option<VerificationGuard> {
     evidence.citation.is_none().then(|| VerificationGuard {
@@ -25,6 +27,34 @@ pub(super) fn numeric_mismatch_guard(
 }
 
 pub(super) fn numeric_mismatch(fact: &str, payload: &[u8]) -> Option<u32> {
+    numeric_mismatch_details(fact, payload).map(|details| details.matched_terms)
+}
+
+pub(super) fn numeric_mismatch_conflict(
+    fact: &str,
+    payload: &[u8],
+    cell_id: CellId,
+) -> Option<VerificationNumericConflict> {
+    let details = numeric_mismatch_details(fact, payload)?;
+    let left = numeric_display(&details.fact_value);
+    let right = numeric_display(&details.evidence_value);
+    Some(VerificationNumericConflict {
+        cell_id,
+        metric: metric_name(payload),
+        left,
+        right,
+        fact_value: details.fact_value,
+        evidence_value: details.evidence_value,
+    })
+}
+
+struct NumericMismatchDetails {
+    matched_terms: u32,
+    fact_value: crate::verification::numeric::NumericValue,
+    evidence_value: crate::verification::numeric::NumericValue,
+}
+
+fn numeric_mismatch_details(fact: &str, payload: &[u8]) -> Option<NumericMismatchDetails> {
     let fact_values = extract_numeric_values(fact);
     if fact_values.is_empty() {
         return None;
@@ -35,13 +65,12 @@ pub(super) fn numeric_mismatch(fact: &str, payload: &[u8]) -> Option<u32> {
         return None;
     }
 
-    // Check if any numeric pair conflicts
-    let has_conflict = fact_values
-        .iter()
-        .any(|fv| payload_values.iter().any(|pv| numeric_conflict(fv, pv)));
-    if !has_conflict {
-        return None;
-    }
+    let (fact_value, evidence_value) = fact_values.iter().find_map(|fact_value| {
+        payload_values
+            .iter()
+            .find(|payload_value| numeric_conflict(fact_value, payload_value))
+            .map(|payload_value| (fact_value.clone(), payload_value.clone()))
+    })?;
 
     let fact_terms = non_numeric_terms(fact);
     let payload_terms = non_numeric_terms(&metadata.body_text);
@@ -49,7 +78,11 @@ pub(super) fn numeric_mismatch(fact: &str, payload: &[u8]) -> Option<u32> {
         .iter()
         .filter(|term| payload_terms.contains(term))
         .count();
-    (matched > 0).then_some(matched as u32)
+    (matched > 0).then_some(NumericMismatchDetails {
+        matched_terms: matched as u32,
+        fact_value,
+        evidence_value,
+    })
 }
 
 fn non_numeric_terms(text: &str) -> Vec<String> {
@@ -57,4 +90,34 @@ fn non_numeric_terms(text: &str) -> Vec<String> {
         .into_iter()
         .filter(|term| extract_numeric_values(term).is_empty())
         .collect()
+}
+
+fn metric_name(payload: &[u8]) -> String {
+    let text = String::from_utf8_lossy(payload);
+    text.lines()
+        .find_map(|line| line.strip_prefix("metric=").map(str::trim))
+        .filter(|value| !value.is_empty())
+        .unwrap_or("metric")
+        .to_owned()
+}
+
+fn numeric_display(value: &crate::verification::numeric::NumericValue) -> String {
+    let context = value.currency.as_deref().or(value.unit.as_deref());
+    let raw = if context == Some("%") {
+        value.raw.trim_end_matches(['%', '.', ','])
+    } else {
+        value.raw.trim_end_matches(['.', ','])
+    };
+    match context {
+        Some("%") => format!("{raw} %"),
+        Some(context)
+            if raw == context
+                || raw.ends_with(context)
+                || raw.to_ascii_uppercase().ends_with(context) =>
+        {
+            raw.to_owned()
+        }
+        Some(context) => format!("{raw} {context}"),
+        None => raw.to_owned(),
+    }
 }

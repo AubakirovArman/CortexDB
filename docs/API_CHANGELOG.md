@@ -87,6 +87,9 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 ### Changed
 - **`ContextPackAnomalyResponse.cell_id`** — changed from `u64` to `Option<u64>`.
 - **`format_scale_currency`** — pure-integer formatter, no `f64` division.
+- **VERIFY numeric conflicts** — numeric conflict semantics now live in
+  engine-level `VerificationReport.numeric_conflicts`; CLI/server JSON surfaces
+  serialize that report instead of re-parsing payloads.
 
 ---
 
