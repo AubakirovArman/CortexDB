@@ -27,3 +27,39 @@ groups:
         annotations:
           summary: CortexDB ANN graph has no persisted nodes
           description: Exact vector fallback remains correct; checkpoint/compact may be needed for ANN evidence.
+
+      - alert: CortexDbActorQueuePressure
+        expr: cortexdb_actor_queue_capacity > 0 and (cortexdb_actor_queue_depth / cortexdb_actor_queue_capacity) > 0.8
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: CortexDB actor queue is near capacity
+          description: Actor queue saturation is above 80%; callers may soon receive database_busy responses.
+
+      - alert: CortexDbDatabaseBusy
+        expr: increase(cortexdb_request_rejected[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: CortexDB rejected requests due to pressure
+          description: database_busy/rate-limit rejections were observed in the last five minutes.
+
+      - alert: CortexDbAnnFallbackRate
+        expr: increase(cortexdb_ann_search_requests[5m]) > 0 and (increase(cortexdb_ann_fallbacks[5m]) / increase(cortexdb_ann_search_requests[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: CortexDB ANN fallback rate is elevated
+          description: More than 10% of ANN-capable searches reported exact/fallback behavior.
+
+      - alert: CortexDbValidationFailures
+        expr: increase(cortexdb_validation_failures[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: CortexDB validation reported storage errors
+          description: At least one /v1/validate probe returned errors; inspect validation output before continuing writes.

@@ -682,6 +682,22 @@ Acceptance:
 
 ### Epic 4.4 - Observability Runbooks And SLO Dashboards
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- `/v1/metrics` now exposes ANN search/fallback counters and validation
+  failure counters in addition to actor/request pressure fields.
+- `examples/observability/alerts.yml` includes thresholds for WAL growth,
+  checkpoint lag, actor queue pressure, `database_busy`, ANN fallback rate, and
+  validation failures.
+- `examples/observability/grafana-cortexdb-core-alpha.json` includes panels for
+  actor queue pressure, ANN fallback rate, and validation failures.
+- `docs/OBSERVABILITY_ALERTS.md` now contains operator playbooks for WAL lag,
+  actor pressure, ANN fallback, and validation failures.
+- `make observability-check` validates the expanded metrics, alert, docs, and
+  Grafana coverage.
+
 Tasks:
 
 1. Convert metric docs into operator playbooks.

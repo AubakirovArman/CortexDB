@@ -340,11 +340,14 @@ pub struct MetricsResponse {
     pub ann_persisted_segments: usize,
     pub ann_has_checkpoint: bool,
     pub ann_has_uncheckpointed_changes: bool,
+    pub ann_search_requests: u64,
+    pub ann_fallbacks: u64,
     pub actor_queue_depth: usize,
     pub actor_queue_capacity: usize,
     pub request_count: u64,
     pub request_rejected: u64,
     pub request_duration_ms_total: u64,
+    pub validation_failures: u64,
 }
 
 /// Typed router error taxonomy for consistent HTTP status mapping.

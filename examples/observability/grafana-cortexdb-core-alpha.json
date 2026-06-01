@@ -50,6 +50,34 @@
         { "expr": "cortexdb_ann_graph_nodes", "legendFormat": "nodes" },
         { "expr": "cortexdb_ann_total_edges", "legendFormat": "edges" }
       ]
+    },
+    {
+      "id": 6,
+      "title": "Actor Queue Pressure",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "cortexdb_actor_queue_depth", "legendFormat": "queue_depth" },
+        { "expr": "cortexdb_actor_queue_capacity", "legendFormat": "queue_capacity" }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "ANN Fallback Rate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "increase(cortexdb_ann_fallbacks[5m]) / clamp_min(increase(cortexdb_ann_search_requests[5m]), 1)",
+          "legendFormat": "fallback_rate"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Validation Failures",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "increase(cortexdb_validation_failures[5m])", "legendFormat": "validation_failures" }
+      ]
     }
   ]
 }

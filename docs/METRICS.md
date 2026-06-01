@@ -56,17 +56,21 @@ Important fields:
 | `ann_persisted_segments` | Segments with persisted ANN data. | ANN coverage across live storage. |
 | `ann_has_checkpoint` | Whether ANN has checkpointed graph evidence. | False forces exact/fallback behavior. |
 | `ann_has_uncheckpointed_changes` | Whether WAL tail is newer than ANN graph. | True can disable evaluation evidence. |
+| `ann_search_requests` | ANN-capable search responses observed by the HTTP surface. | Use with `ann_fallbacks` for fallback rate. |
+| `ann_fallbacks` | ANN-capable searches that reported exact/fallback behavior. | Sustained growth means ANN is not meeting its runtime guardrails. |
 | `actor_queue_depth` | Current per-tenant actor queue depth. | Sustained high values show backpressure. |
 | `actor_queue_capacity` | Configured actor queue capacity. | Used with depth to compute saturation. |
 | `request_count` | Requests handled by the process. | Traffic counter. |
 | `request_rejected` | Requests rejected by limits/backpressure. | Alert if nonzero under normal traffic. |
 | `request_duration_ms_total` | Sum of request durations in ms. | Use with request count for rough mean latency. |
+| `validation_failures` | `/v1/validate` responses that reported storage errors. | Any increase requires operator review. |
 
 ### `GET /v1/metrics?format=prometheus`
 
 Returns a minimal Prometheus text exposition for the main storage, WAL,
-MemTable, and ANN/HNSW counters. The current Core Alpha exporter is intentionally
-small; JSON remains the richer source for actor and request counters.
+MemTable, ANN/HNSW, actor pressure, request rejection, ANN fallback, and
+validation-failure counters. JSON remains the richer source for full typed
+metrics.
 
 Example:
 
@@ -115,7 +119,8 @@ examples/observability/grafana-cortexdb-core-alpha.json
 ```
 
 It includes panels for commit/checkpoint progress, WAL size, WAL write rate,
-segment counts, and ANN graph shape.
+segment counts, ANN graph shape, actor queue pressure, ANN fallback rate, and
+validation failures.
 
 ## CLI Probes
 
@@ -147,6 +152,10 @@ Treat these as Core Alpha operator heuristics, not production SLA guarantees:
 - `wal_size_bytes` grows while `checkpoint_seq` does not advance: checkpoint is
   lagging or failing.
 - `live_segments` keeps growing: compaction is not keeping up.
+- `ann_fallbacks / ann_search_requests > 0.10` over five minutes: ANN is
+  frequently falling back; inspect SLO violations and graph freshness.
+- `validation_failures` increases: stop promotion and inspect `/v1/validate`
+  output before continuing writes.
 - `ann_has_uncheckpointed_changes = true`: ANN evaluation can be unavailable;
   exact vector search remains the correctness path.
 - ANN search responses with `production_safe=false`: do not treat HNSW as the

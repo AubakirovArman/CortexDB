@@ -1432,11 +1432,14 @@ components:
       - ann_persisted_segments
       - ann_has_checkpoint
       - ann_has_uncheckpointed_changes
+      - ann_search_requests
+      - ann_fallbacks
       - actor_queue_depth
       - actor_queue_capacity
       - request_count
       - request_rejected
       - request_duration_ms_total
+      - validation_failures
       properties:
         current_seq:
           type: integer
@@ -1477,6 +1480,12 @@ components:
           type: boolean
         ann_has_uncheckpointed_changes:
           type: boolean
+        ann_search_requests:
+          type: integer
+          format: uint64
+        ann_fallbacks:
+          type: integer
+          format: uint64
         actor_queue_depth:
           type: integer
         actor_queue_capacity:
@@ -1488,6 +1497,9 @@ components:
           type: integer
           format: uint64
         request_duration_ms_total:
+          type: integer
+          format: uint64
+        validation_failures:
           type: integer
           format: uint64
     AnnMetricsResponse:

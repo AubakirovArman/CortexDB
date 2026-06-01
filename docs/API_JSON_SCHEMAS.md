@@ -145,6 +145,39 @@ Missing cells return:
 }
 ```
 
+## Metrics
+
+`GET /v1/metrics`
+
+```json
+{
+  "current_seq": 7,
+  "checkpoint_seq": 7,
+  "live_segments": 1,
+  "retired_segments": 0,
+  "memtable_cells": 3,
+  "memtable_versions": 3,
+  "wal_size_bytes": 128,
+  "wal_writer_records": 3,
+  "wal_writer_bytes": 512,
+  "wal_writer_fsyncs": 3,
+  "wal_writer_batches": 3,
+  "ann_graph_nodes": 0,
+  "ann_total_edges": 0,
+  "ann_persisted_segments": 0,
+  "ann_has_checkpoint": false,
+  "ann_has_uncheckpointed_changes": false,
+  "ann_search_requests": 0,
+  "ann_fallbacks": 0,
+  "actor_queue_depth": 0,
+  "actor_queue_capacity": 1024,
+  "request_count": 10,
+  "request_rejected": 0,
+  "request_duration_ms_total": 42,
+  "validation_failures": 0
+}
+```
+
 ## AQL Retrieve
 
 `POST /v1/aql?scope=<scope>` with an AQL body.

@@ -248,11 +248,14 @@ pub fn route_database_with_agent(
                     ann_persisted_segments: ann.persisted_segments,
                     ann_has_checkpoint: ann.has_checkpoint,
                     ann_has_uncheckpointed_changes: ann.has_uncheckpointed_changes,
+                    ann_search_requests: 0,
+                    ann_fallbacks: 0,
                     actor_queue_depth: 0,
                     actor_queue_capacity: 0,
                     request_count: 0,
                     request_rejected: 0,
                     request_duration_ms_total: 0,
+                    validation_failures: 0,
                 };
                 Ok(serde_json::to_string(&response)?)
             }

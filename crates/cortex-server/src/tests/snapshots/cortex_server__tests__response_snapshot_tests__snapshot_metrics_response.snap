@@ -19,9 +19,12 @@ expression: resp
   "ann_persisted_segments": 2,
   "ann_has_checkpoint": true,
   "ann_has_uncheckpointed_changes": false,
+  "ann_search_requests": 11,
+  "ann_fallbacks": 2,
   "actor_queue_depth": 2,
   "actor_queue_capacity": 16,
   "request_count": 1000,
   "request_rejected": 3,
-  "request_duration_ms_total": 120
+  "request_duration_ms_total": 120,
+  "validation_failures": 1
 }

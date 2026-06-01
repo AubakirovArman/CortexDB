@@ -26,11 +26,14 @@ METRICS_FIELDS = [
     "ann_persisted_segments",
     "ann_has_checkpoint",
     "ann_has_uncheckpointed_changes",
+    "ann_search_requests",
+    "ann_fallbacks",
     "actor_queue_depth",
     "actor_queue_capacity",
     "request_count",
     "request_rejected",
     "request_duration_ms_total",
+    "validation_failures",
 ]
 
 ANN_FIELDS = [
@@ -51,7 +54,11 @@ REQUIRED_MARKERS = {
     "alerts": [
         ("examples/observability/alerts.yml", "CortexDbWalCheckpointLag"),
         ("examples/observability/alerts.yml", "CortexDbWalGrowth"),
+        ("examples/observability/alerts.yml", "CortexDbActorQueuePressure"),
+        ("examples/observability/alerts.yml", "CortexDbDatabaseBusy"),
         ("examples/observability/alerts.yml", "CortexDbAnnGraphUnavailable"),
+        ("examples/observability/alerts.yml", "CortexDbAnnFallbackRate"),
+        ("examples/observability/alerts.yml", "CortexDbValidationFailures"),
         ("docs/OBSERVABILITY_ALERTS.md", "Suggested Actions"),
     ],
     "docs": [
@@ -82,6 +89,9 @@ def validate_grafana() -> list[str]:
         "cortexdb_checkpoint_seq",
         "cortexdb_wal_size_bytes",
         "cortexdb_ann_graph_nodes",
+        "cortexdb_actor_queue_depth",
+        "cortexdb_ann_fallbacks",
+        "cortexdb_validation_failures",
     ]:
         if marker not in text:
             failures.append(f"{path}: missing metric {marker}")

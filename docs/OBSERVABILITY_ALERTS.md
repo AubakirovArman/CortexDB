@@ -15,7 +15,12 @@ They cover:
 
 - checkpoint lag: `cortexdb_current_seq - cortexdb_checkpoint_seq`;
 - large WAL size: `cortexdb_wal_size_bytes`;
-- missing persisted ANN graph: `cortexdb_ann_graph_nodes == 0`.
+- actor queue pressure: `cortexdb_actor_queue_depth / cortexdb_actor_queue_capacity`;
+- database busy/rejected requests: `cortexdb_request_rejected`;
+- missing persisted ANN graph: `cortexdb_ann_graph_nodes == 0`;
+- ANN fallback rate:
+  `increase(cortexdb_ann_fallbacks[5m]) / increase(cortexdb_ann_search_requests[5m])`;
+- validation failures: `cortexdb_validation_failures`.
 
 ## Suggested Actions
 
@@ -23,7 +28,44 @@ They cover:
 | --- | --- |
 | `CortexDbWalCheckpointLag` | Run `cortexdb validate`, inspect server logs, then checkpoint/compact during a maintenance window. |
 | `CortexDbWalGrowth` | Check whether checkpoint is stuck and confirm free disk before restart. |
+| `CortexDbActorQueuePressure` | Reduce client concurrency or raise `--actor-queue-capacity` only after checking disk/WAL latency. |
+| `CortexDbDatabaseBusy` | Inspect rate limits and actor saturation; retry with backoff rather than tight loops. |
 | `CortexDbAnnGraphUnavailable` | Use exact vector search as the correctness path; checkpoint/compact to rebuild ANN evidence. |
+| `CortexDbAnnFallbackRate` | Inspect ANN search reports for SLO violations, graph freshness, and visit-budget fallback reasons. |
+| `CortexDbValidationFailures` | Stop release promotion, save `/v1/validate` output, and run `cortexdb validate` plus backup/restore checks. |
+
+## Operator Playbooks
+
+### WAL Checkpoint Lag
+
+1. Run `cortexdb validate <db-path>` and save the output.
+2. Check free disk and WAL size.
+3. Run `cortexdb flush <db-path>` during a quiet window.
+4. If lag returns immediately, run `make storage-soak-check` locally before
+   release promotion.
+
+### Actor Queue Pressure
+
+1. Compare `actor_queue_depth` with `actor_queue_capacity`.
+2. Check `request_rejected` and application retry behavior.
+3. Reduce client concurrency or add backoff.
+4. Increase queue capacity only when disk/WAL latency is healthy.
+
+### ANN Fallback Rate
+
+1. Inspect `/v1/search` ANN reports for `fallback_reason` and SLO violations.
+2. Check `ann_has_uncheckpointed_changes` and checkpoint if graph evidence is
+   stale.
+3. Use exact vector search for correctness while graph tuning is investigated.
+4. Re-run ANN release evidence before promoting a release.
+
+### Validation Failures
+
+1. Treat any validation failure as release-blocking.
+2. Save `/v1/validate` and `cortexdb validate` output.
+3. Run backup/restore drill against the latest validated backup.
+4. Do not continue writes on suspected corruption until the failure mode is
+   understood.
 
 ## Boundary
 

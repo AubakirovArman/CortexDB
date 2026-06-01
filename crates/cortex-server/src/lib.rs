@@ -143,6 +143,9 @@ pub struct AppState {
     request_count: Arc<AtomicU64>,
     request_rejected: Arc<AtomicU64>,
     request_duration_ms_total: Arc<AtomicU64>,
+    ann_search_requests: Arc<AtomicU64>,
+    ann_fallbacks: Arc<AtomicU64>,
+    validation_failures: Arc<AtomicU64>,
     rate_limit: Option<Arc<Mutex<RateLimitState>>>,
 }
 
@@ -206,6 +209,9 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             request_count: Arc::new(AtomicU64::new(0)),
             request_rejected: Arc::new(AtomicU64::new(0)),
             request_duration_ms_total: Arc::new(AtomicU64::new(0)),
+            ann_search_requests: Arc::new(AtomicU64::new(0)),
+            ann_fallbacks: Arc::new(AtomicU64::new(0)),
+            validation_failures: Arc::new(AtomicU64::new(0)),
             rate_limit,
         };
 
@@ -553,6 +559,12 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
     match res {
         Ok(body_str) => {
             audit_http_response(&state, &audit_event, StatusCode::OK, None);
+            if method == "POST" && path == "/v1/search" {
+                record_ann_search_metrics(&state, &body_str);
+            }
+            if method == "GET" && path == "/v1/validate" {
+                record_validation_metrics(&state, &body_str);
+            }
             if method == "GET" && path == "/v1/metrics" {
                 if query.contains("format=prometheus") {
                     let extra = format!(
@@ -570,12 +582,24 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                          cortexdb_request_rejected {}\n\
                          # HELP cortexdb_request_duration_ms_total Total HTTP request duration in milliseconds.\n\
                          # TYPE cortexdb_request_duration_ms_total counter\n\
-                         cortexdb_request_duration_ms_total {}\n",
+                         cortexdb_request_duration_ms_total {}\n\
+                         # HELP cortexdb_ann_search_requests Total ANN-capable search responses observed.\n\
+                         # TYPE cortexdb_ann_search_requests counter\n\
+                         cortexdb_ann_search_requests {}\n\
+                         # HELP cortexdb_ann_fallbacks Total ANN searches that reported fallback.\n\
+                         # TYPE cortexdb_ann_fallbacks counter\n\
+                         cortexdb_ann_fallbacks {}\n\
+                         # HELP cortexdb_validation_failures Total validation responses that reported errors.\n\
+                         # TYPE cortexdb_validation_failures counter\n\
+                         cortexdb_validation_failures {}\n",
                         db.queue_depth(),
                         db.queue_capacity(),
                         state.request_count.load(Ordering::Relaxed),
                         state.request_rejected.load(Ordering::Relaxed),
                         state.request_duration_ms_total.load(Ordering::Relaxed),
+                        state.ann_search_requests.load(Ordering::Relaxed),
+                        state.ann_fallbacks.load(Ordering::Relaxed),
+                        state.validation_failures.load(Ordering::Relaxed),
                     );
                     return with_request_id(
                         (StatusCode::OK, body_str + &extra).into_response(),
@@ -589,6 +613,9 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                     metrics.request_rejected = state.request_rejected.load(Ordering::Relaxed);
                     metrics.request_duration_ms_total =
                         state.request_duration_ms_total.load(Ordering::Relaxed);
+                    metrics.ann_search_requests = state.ann_search_requests.load(Ordering::Relaxed);
+                    metrics.ann_fallbacks = state.ann_fallbacks.load(Ordering::Relaxed);
+                    metrics.validation_failures = state.validation_failures.load(Ordering::Relaxed);
                     return with_request_id(
                         (StatusCode::OK, Json(metrics)).into_response(),
                         &request_id,
@@ -617,6 +644,35 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                 &request_id,
             )
         }
+    }
+}
+
+fn record_ann_search_metrics(state: &AppState, body: &str) {
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(body) else {
+        return;
+    };
+    let Some(report) = value.get("ann_report") else {
+        return;
+    };
+    if report.is_null() {
+        return;
+    }
+    state.ann_search_requests.fetch_add(1, Ordering::Relaxed);
+    if report
+        .get("fallback_performed")
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false)
+    {
+        state.ann_fallbacks.fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+fn record_validation_metrics(state: &AppState, body: &str) {
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(body) else {
+        return;
+    };
+    if value.get("ok").and_then(|value| value.as_bool()) == Some(false) {
+        state.validation_failures.fetch_add(1, Ordering::Relaxed);
     }
 }
 
