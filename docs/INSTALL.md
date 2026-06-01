@@ -38,6 +38,20 @@ install -m 0755 bin/cortexdb ~/.local/bin/cortexdb
 install -m 0755 bin/cortex-server ~/.local/bin/cortex-server
 ```
 
+Or use the checksum-verifying install script from a checkout:
+
+```bash
+scripts/install.sh cortexdb-<version>-<platform>.tar.gz --prefix "$HOME/.local"
+```
+
+The script verifies the external `.sha256` file, extracts the tarball, verifies
+the internal `SHA256SUMS`, checks both binaries, and then installs them into
+`<prefix>/bin`. Use `--dry-run` to verify without installing:
+
+```bash
+scripts/install.sh cortexdb-<version>-<platform>.tar.gz --dry-run
+```
+
 Confirm the commands are available:
 
 ```bash

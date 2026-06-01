@@ -54,6 +54,7 @@ KNOWN_ARTIFACTS = (
     "target/tenant-recovery/report.json",
     "target/backup-drill/report.json",
     "target/binary-platform-matrix/report.json",
+    "target/install-script/report.json",
     "target/release-artifacts/cortexdb-v0.2.0-beta.1-local.tar.gz",
     "target/release-artifacts/cortexdb-v0.2.0-beta.1-local.tar.gz.sha256",
     "target/public-claims/report.json",

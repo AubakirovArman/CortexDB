@@ -61,6 +61,26 @@ install -m 0755 bin/cortexdb ~/.local/bin/cortexdb
 install -m 0755 bin/cortex-server ~/.local/bin/cortex-server
 ```
 
+From a checkout, the same flow can be run with checksum verification:
+
+```bash
+scripts/install.sh cortexdb-<version>-<platform>.tar.gz --prefix "$HOME/.local"
+```
+
+`scripts/install.sh` verifies the external `.tar.gz.sha256` file, the
+package-internal `SHA256SUMS`, and the executable bits for `bin/cortexdb` and
+`bin/cortex-server` before it installs anything. The release gate runs:
+
+```bash
+make install-script-check
+```
+
+and writes:
+
+```text
+target/install-script/report.json
+```
+
 Before replacing a binary that touches existing data:
 
 ```bash

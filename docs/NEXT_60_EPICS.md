@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 16 |
-| partial | 36 |
+| closed | 17 |
+| partial | 35 |
 | not started | 6 |
 | research | 2 |
 | total | 60 |
@@ -88,7 +88,7 @@ The plan recommends this first execution batch:
 | 44 | Dashboard Permissions View | partial | Security/RBAC docs and dashboard foundations exist. | Add read-only token/role/scope/AgentView UI. |
 | 45 | Dashboard Incident View | partial | Audit/metrics foundations exist. | Add operational incident timeline for audit/rate/storage/backup events. |
 | 46 | Linux/macOS Binary Release Pipeline | closed | `.github/workflows/release.yml` now has an explicit four-platform matrix for `linux-x86_64`, `linux-aarch64`, `macos-arm64`, and `macos-x86_64`; `make binary-platform-matrix-check` validates docs/workflow markers and clean-install smoke for the local archive. | Keep release tag runs attached with all matrix artifacts before each public release. |
-| 47 | Install Script | partial | Install docs exist. | Add checksum-verifying `scripts/install.sh`. |
+| 47 | Install Script | closed | `scripts/install.sh` verifies external `.sha256`, internal `SHA256SUMS`, executable bits, and installs CLI/server binaries; `make install-script-check` validates dry-run, install, and corrupt-checksum rejection. | Keep the script compatible with Linux `sha256sum` and macOS `shasum`. |
 | 48 | Systemd and launchd Support | partial | Systemd docs exist. | Add launchd docs/examples and smoke validation. |
 | 49 | Release Artifact Manifest | partial | Release artifacts/checksums/evidence exist. | Add formal release manifest validator with binary/evidence/SDK/OpenAPI/git metadata. |
 | 50 | Version and Compatibility Dashboard | not started | Compatibility docs exist. | Expose API/SDK/storage/migration versions in dashboard/API. |
@@ -118,5 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 47: checksum-verifying install script.
-2. Advance Epic 49: formal release artifact manifest validator.
+1. Advance Epic 49: formal release artifact manifest validator.
+2. Advance Epic 12: complete ContextPack `why_excluded` explanations.
