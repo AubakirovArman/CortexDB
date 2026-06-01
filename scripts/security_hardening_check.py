@@ -40,14 +40,20 @@ REQUIRED_MARKERS = {
         ("crates/cortex-cli/src/cli_audit_tests.rs", "audit_review_verify_chain_accepts_valid_sequence_and_rejects_tampering"),
         ("crates/cortex-cli/src/cli_audit_tests.rs", "audit_command_can_verify_chain"),
     ],
+    "siem_audit_export": [
+        ("docs/AUTH.md", "audit-export-siem"),
+        ("docs/SECURITY_HARDENING_EVIDENCE.md", "siem_audit_export: true"),
+        ("crates/cortex-cli/src/cli_audit_siem.rs", "cortexdb.siem.audit.v1"),
+        ("crates/cortex-cli/src/cli_audit_siem_tests.rs", "audit_export_siem_writes_normalized_jsonl"),
+    ],
     "audit_redaction": [
         ("crates/cortex-server/src/tests/security_tests.rs", "audit_log_file_redacts_ingestion_query_and_body"),
         ("crates/cortex-cli/src/cli_audit_tests.rs", "redaction_ok=true"),
     ],
     "tamper_evident_audit_boundary": [
         ("docs/SECURITY_BETA_BASELINE.md", "Tamper-Evident Audit Chain"),
-        ("docs/SECURITY_THREAT_MODEL.md", "Compliance-grade audit trails or SIEM export"),
-        ("docs/SECURITY_HARDENING_EVIDENCE.md", "compliance-grade ledger/SIEM export remains future work"),
+        ("docs/SECURITY_THREAT_MODEL.md", "Compliance-grade audit trails or vendor-managed SIEM delivery"),
+        ("docs/SECURITY_HARDENING_EVIDENCE.md", "compliance-grade ledger and vendor-managed SIEM delivery remain future work"),
     ],
     "encrypted_backup_boundary": [
         ("docs/SECURITY_BETA_BASELINE.md", "encrypted backup restore drill succeeds"),

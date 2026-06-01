@@ -14,7 +14,7 @@ design-only, so release gates can block overclaims.
 | Tenant path safety | Tenant IDs are percent-decoded, length-limited, and path-traversal checked. |
 | Request limits | Process-wide and policy-store per-principal fixed-window request limits can return typed `rate_limited` errors. |
 | Audit redaction | HTTP audit events store route metadata, status, tenant, request id, duration, and authenticated principal metadata, not query strings, request bodies, or bearer tokens. |
-| Audit chain foundation | File-backed audit records include `chain_id`, `sequence`, `prev_hash`, and `event_hash`; `cortexdb audit --verify-chain` checks local continuity. |
+| Audit chain foundation | File-backed audit records include `chain_id`, `sequence`, `prev_hash`, and `event_hash`; `cortexdb audit --verify-chain` checks local continuity; `cortexdb audit-export-siem` exports normalized JSONL for downstream SIEM ingestion. |
 | Dashboard gate | `/dashboard` is an admin route; data tokens are denied. |
 | Backup validation | Local backup, restore, offsite staging, and restore drills validate storage before trust. |
 
@@ -88,13 +88,15 @@ Plan:
    integrity.
 4. Upgrade hash and export policy only with a documented compatibility plan if
    a compliance-grade audit ledger is promoted.
-5. Keep SIEM export as a follow-up adapter after local chain verification is
-   stable.
+5. Keep `cortexdb audit-export-siem` as the local normalized JSONL adapter and
+   add vendor-specific SIEM adapters only after schema review.
 
 Beta gate:
 
 - deleting, reordering, or editing a JSONL audit event is detected;
 - chain verification can run offline;
+- normalized SIEM export preserves principal and chain metadata without adding
+  bodies, query strings, or tokens;
 - redaction checks still pass for malicious ingestion failures.
 
 ### 4. Encrypted Backups

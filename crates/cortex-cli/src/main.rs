@@ -4,6 +4,9 @@ mod cli;
 mod cli_ann;
 mod cli_audit;
 mod cli_audit_chain;
+mod cli_audit_siem;
+#[cfg(test)]
+mod cli_audit_siem_tests;
 #[cfg(test)]
 mod cli_audit_tests;
 mod cli_ingest;

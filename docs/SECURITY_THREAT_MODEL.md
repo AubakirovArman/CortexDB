@@ -54,7 +54,7 @@ be treated as future work.
 | SDK contract drift | Python, TypeScript, and Rust live SDK smoke checks. | Implemented and gated. |
 | Browser cross-origin API calls | CORS disabled by default; optional exact-origin allowlist via `CORTEXDB_CORS_ALLOW_ORIGIN`. | Implemented for one trusted origin. |
 | Request floods against the local API | Optional process-wide fixed-window limit via `CORTEXDB_RATE_LIMIT_PER_MINUTE`; optional policy-store `request_quota_per_minute` limits per principal. | Implemented as local Core Alpha guards. |
-| Missing operational access trail | Optional structured HTTP audit events via `CORTEXDB_AUDIT_LOG`; optional synced JSONL file sink via `CORTEXDB_AUDIT_LOG_FILE`; `cortexdb audit` reviews JSONL files with route/status/action/tenant filters, redaction checks, and local chain verification. | Implemented for route-level events. |
+| Missing operational access trail | Optional structured HTTP audit events via `CORTEXDB_AUDIT_LOG`; optional synced JSONL file sink via `CORTEXDB_AUDIT_LOG_FILE`; `cortexdb audit` reviews JSONL files with route/status/action/tenant filters, redaction checks, and local chain verification; `cortexdb audit-export-siem` writes normalized local JSONL for SIEM pipelines. | Implemented for route-level events. |
 | Unvalidated local backups | `cortexdb backup`, `restore`, `backup-drill`, `backup-prune`, and `backup-offsite-stage` validate source and restored copies. | Implemented for local filesystem/offsite-staging workflows. |
 
 ## Out Of Scope For Core Alpha
@@ -66,8 +66,8 @@ The following are not production security guarantees yet:
 - Persisted auth policy management beyond local file-backed token rotation.
 - Per-token quotas by route class or distributed rate limiting.
 - Multi-origin, wildcard, or per-token CORS policies.
-- Compliance-grade audit trails or SIEM export beyond the local audit-chain
-  verification foundation.
+- Compliance-grade audit trails or vendor-managed SIEM delivery beyond the
+  local audit-chain verification and normalized JSONL export foundation.
 - At-rest encryption or envelope key management.
 - Encrypted backups or built-in remote object-store upload.
 - Secret rotation workflow.

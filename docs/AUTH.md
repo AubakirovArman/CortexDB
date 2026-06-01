@@ -299,6 +299,7 @@ cortexdb audit ./audit/http.jsonl --summary --redaction-check --verify-chain
 cortexdb audit ./audit/http.jsonl --route /v1/cell --status 403
 cortexdb audit ./audit/http.jsonl --action write --tenant-filter tenant-alpha
 cortexdb --json audit ./audit/http.jsonl --summary --redaction-check
+cortexdb audit-export-siem ./audit/http.jsonl ./audit/siem.jsonl --redaction-check --verify-chain
 ```
 
 The audit viewer supports filters by route, status, action, and tenant. The
@@ -308,9 +309,15 @@ fields, which keeps route-level audit review separate from request payloads.
 The `--verify-chain` flag validates local sequence continuity and chained event
 hashes, detecting line deletion, reordering, and edited route metadata in
 chain-v1 audit files. This is a local tamper-evidence foundation, not a
-compliance-certified audit ledger or SIEM export. If the configured file sink
-ends with a malformed chained record, server startup fails instead of silently
-resetting the chain; rotate or repair the audit file explicitly.
+compliance-certified audit ledger. If the configured file sink ends with a
+malformed chained record, server startup fails instead of silently resetting the
+chain; rotate or repair the audit file explicitly.
+
+`audit-export-siem` writes normalized JSONL records with schema
+`cortexdb.siem.audit.v1`. It preserves route metadata, principal metadata,
+request IDs, status, duration, and audit-chain fields, but does not add request
+bodies, query strings, or bearer tokens. Use `--redaction-check` and
+`--verify-chain` before exporting to fail closed on unsafe local audit input.
 
 ## RBAC Roadmap
 

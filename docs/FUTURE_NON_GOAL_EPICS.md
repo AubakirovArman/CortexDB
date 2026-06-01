@@ -165,6 +165,8 @@ Current implementation slice:
 - Policy-store principals can set local fixed-window
   `request_quota_per_minute`; one principal exhausting quota does not block
   another principal.
+- `cortexdb audit-export-siem` exports normalized local JSONL with principal
+  and audit-chain metadata after optional redaction and chain checks.
 
 Task pool:
 
@@ -175,7 +177,7 @@ Task pool:
 4. Add disabled-principal and token revocation lifecycle.
 5. Add per-token and per-principal quota accounting.
 6. Add tamper-evident audit chain with sequence continuity checks.
-7. Add audit export for SIEM-oriented pipelines.
+7. Add vendor-specific SIEM delivery adapters and operational export schedules.
 8. Add compliance-control mapping docs for the intended target framework.
 9. Add dashboard admin views for policy review and audit review.
 10. Add migration and rollback for policy-store format changes.

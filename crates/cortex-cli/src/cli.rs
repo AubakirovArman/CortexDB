@@ -1,6 +1,9 @@
 use clap::{error::ErrorKind, Parser, Subcommand};
 
-use crate::{cli_ann as ann, cli_audit as audit, cli_ingest as ingest, cli_ops as ops};
+use crate::{
+    cli_ann as ann, cli_audit as audit, cli_audit_siem as audit_siem, cli_ingest as ingest,
+    cli_ops as ops,
+};
 
 #[derive(Parser, Debug)]
 #[command(name = "cortexdb", version, about = "CortexDB local CLI")]
@@ -104,6 +107,14 @@ enum Command {
         tenant_filter: Option<String>,
         #[arg(long)]
         summary: bool,
+        #[arg(long = "redaction-check")]
+        redaction_check: bool,
+        #[arg(long = "verify-chain")]
+        verify_chain: bool,
+    },
+    AuditExportSiem {
+        input_path: String,
+        output_path: String,
         #[arg(long = "redaction-check")]
         redaction_check: bool,
         #[arg(long = "verify-chain")]
@@ -335,6 +346,18 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             verify_chain,
             json: cli.json,
         }),
+        Command::AuditExportSiem {
+            input_path,
+            output_path,
+            redaction_check,
+            verify_chain,
+        } => audit_siem::export_jsonl(
+            &input_path,
+            &output_path,
+            redaction_check,
+            verify_chain,
+            cli.json,
+        ),
         Command::Restore { backup_path, path } => {
             ops::restore(&backup_path, resolved(&path).to_str().unwrap())
         }
