@@ -255,7 +255,40 @@ Verifies a specific factual claim against the available database knowledge using
 
 ---
 
-### 2.9. POST `/v1/search/explain?scope=<scope>&q=<query>`
+### 2.9. POST `/v1/search?scope=<scope>&q=<query>`
+Runs keyword, vector, ANN, or hybrid search.
+
+* **Modes:** `keyword`, `vector`, `hybrid`, or `auto`.
+* **Auto routing:** `mode=auto` selects `hybrid` when both text and vector are
+  present, selected vector strategy when only vector is present, and `keyword`
+  otherwise.
+* **Response (200 OK):**
+  ```json
+  {
+    "search_mode": "hybrid",
+    "routing": {
+      "requested_mode": "auto",
+      "selected_strategy": "hybrid",
+      "reason": "auto_text_and_vector_available",
+      "text_available": true,
+      "vector_available": true
+    },
+    "ann_report": null,
+    "results": [
+      {
+        "cell_id": 1,
+        "score": 32786,
+        "lexical_score": 42,
+        "vector_score": 100,
+        "payload": "scope=project:investments\nstatus=ready\n..."
+      }
+    ]
+  }
+  ```
+
+---
+
+### 2.10. POST `/v1/search/explain?scope=<scope>&q=<query>`
 Explains why search results ranked where they did.
 
 * **Modes:** `keyword`, `vector`, or `hybrid`.

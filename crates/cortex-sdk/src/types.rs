@@ -110,10 +110,21 @@ pub struct SearchResult {
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct SearchResponse {
     pub search_mode: String,
+    #[serde(default)]
+    pub routing: Option<SearchRoutingDecision>,
     pub ann_report: Option<AnnSearchReport>,
     #[serde(default)]
     pub no_fallback_decision: Option<AnnNoFallbackDecision>,
     pub results: Vec<SearchResult>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct SearchRoutingDecision {
+    pub requested_mode: String,
+    pub selected_strategy: String,
+    pub reason: String,
+    pub text_available: bool,
+    pub vector_available: bool,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]

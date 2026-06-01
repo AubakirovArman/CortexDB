@@ -234,6 +234,39 @@ fn search_command_returns_scope_filtered_results() {
 }
 
 #[test]
+fn search_command_auto_mode_reports_routing_json() {
+    let path = unique_path("cortexdb-cli-search-routing");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nvector=5,0\nalpha budget".to_owned(),
+    ])
+    .unwrap();
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "--json".to_owned(),
+        "search".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        "budget".to_owned(),
+        "--mode".to_owned(),
+        "auto".to_owned(),
+        "--vector".to_owned(),
+        "5,0".to_owned(),
+    ])
+    .unwrap();
+    assert!(output.contains(r#""search_mode":"hybrid""#));
+    assert!(output.contains(r#""selected_strategy":"hybrid""#));
+    assert!(output.contains(r#""reason":"auto_text_and_vector_available""#));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
 fn search_explain_command_reports_contribution_details() {
     let path = unique_path("cortexdb-cli-search-explain");
     let path_arg = path.to_string_lossy().into_owned();

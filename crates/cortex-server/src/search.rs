@@ -1,8 +1,9 @@
 use cortex_aql::AgentView;
 use cortex_engine::{
-    evaluate_hnsw_no_fallback_rollout, parse_vector_literal, tokenize, AnnSearchPolicy,
-    AnnSearchReport, Database, DatabaseSearchResult, HnswNoFallbackDecision,
-    HnswNoFallbackRolloutPolicy, SearchLimit, SearchMode, SearchQuery,
+    evaluate_hnsw_no_fallback_rollout, parse_vector_literal, route_search_query, tokenize,
+    AnnSearchPolicy, AnnSearchReport, Database, DatabaseSearchResult, HnswNoFallbackDecision,
+    HnswNoFallbackRolloutPolicy, SearchLimit, SearchMode, SearchQuery, SearchRouteDecision,
+    SearchRouteInput, SearchRouteStrategy,
 };
 use std::collections::BTreeMap;
 
@@ -10,9 +11,9 @@ use crate::authz;
 use crate::responses::{
     AnnEvaluationResponse, AnnNoFallbackDecisionResponse, AnnSearchReportResponse, RouterError,
     SearchExplainItemResponse, SearchExplainResponse, SearchExplainTermContributionResponse,
-    SearchResponse, SearchResultResponse,
+    SearchResponse, SearchResultResponse, SearchRoutingDecisionResponse,
 };
-use crate::router::{query_param_decoded, query_param_opt};
+use crate::router::{query_param_decoded, query_param_opt, query_param_opt_decoded};
 
 pub fn handle_search_explain_shared(
     db: &Database,
@@ -194,62 +195,80 @@ pub fn handle_search_shared(
     let ann_policy = parse_ann_policy(query).map_err(RouterError::BadRequest)?;
     let rollout_policy =
         resolve_no_fallback_rollout_policy(db, query).map_err(RouterError::BadRequest)?;
-    let (search_mode, results, ann_report, no_fallback_decision) = match mode.as_str() {
-        "keyword" => (
-            "keyword",
-            db.search_keyword(
-                &query_param_decoded(query, "q")
-                    .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned()),
-                &view,
-                SearchLimit(limit),
-            )?,
+    let q = query_param_opt_decoded(query, "q")
+        .unwrap_or_else(|| String::from_utf8_lossy(body).into_owned());
+    let vector_literal = query_param_opt_decoded(query, "vector");
+    let decision = route_search_query(SearchRouteInput {
+        requested_mode: &mode,
+        algorithm: &algorithm,
+        text_available: !q.trim().is_empty(),
+        vector_available: vector_literal
+            .as_deref()
+            .map(|value| !value.trim().is_empty())
+            .unwrap_or(false),
+    })
+    .map_err(RouterError::BadRequest)?;
+
+    let (results, ann_report, no_fallback_decision) = match decision.selected_strategy {
+        SearchRouteStrategy::Keyword => (
+            db.search_keyword(&q, &view, SearchLimit(limit))?,
             None,
             None,
         ),
-        "vector" => {
-            let vector = query_param_decoded(query, "vector")
-                .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
+        SearchRouteStrategy::VectorExact => {
+            let vector =
+                vector_literal.unwrap_or_else(|| String::from_utf8_lossy(body).into_owned());
             let vector = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
-            match algorithm.as_str() {
-                "exact" => (
-                    "vector_exact",
-                    db.search_vector_exact(&vector, &view, SearchLimit(limit))?,
-                    None,
-                    None,
-                ),
-                "ann" => {
-                    let outcome = db.search_vector_with_report_with_policy(
-                        &vector,
-                        &view,
-                        SearchLimit(limit),
-                        ann_policy,
-                    )?;
-                    let no_fallback_decision = outcome
-                        .ann_report
-                        .as_ref()
-                        .and_then(|report| rollout_decision(rollout_policy, ann_policy, report));
-                    return encode_response(
-                        "vector_ann",
-                        outcome.results,
-                        outcome.ann_report,
-                        no_fallback_decision,
-                    );
-                }
-                _ => {
-                    return Err(RouterError::BadRequest(
-                        "algorithm must be exact or ann".to_owned(),
-                    ))
-                }
-            }
+            (
+                db.search_vector_exact(&vector, &view, SearchLimit(limit))?,
+                None,
+                None,
+            )
         }
-        _ => {
-            return Err(RouterError::BadRequest(
-                "mode must be keyword or vector".to_owned(),
-            ))
+        SearchRouteStrategy::VectorAnn => {
+            let vector =
+                vector_literal.unwrap_or_else(|| String::from_utf8_lossy(body).into_owned());
+            let vector = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
+            let outcome = db.search_vector_with_report_with_policy(
+                &vector,
+                &view,
+                SearchLimit(limit),
+                ann_policy,
+            )?;
+            let no_fallback_decision = outcome
+                .ann_report
+                .as_ref()
+                .and_then(|report| rollout_decision(rollout_policy, ann_policy, report));
+            (outcome.results, outcome.ann_report, no_fallback_decision)
+        }
+        SearchRouteStrategy::Hybrid => {
+            let vector = vector_literal.as_deref().ok_or_else(|| {
+                RouterError::BadRequest("mode=hybrid requires vector=<i16,...>".to_owned())
+            })?;
+            let vector = parse_vector_literal(vector).map_err(RouterError::BadRequest)?;
+            (
+                db.search_cells(
+                    SearchQuery {
+                        text: &q,
+                        vector: Some(&vector),
+                        limit,
+                        mode: SearchMode::Hybrid,
+                    },
+                    &view,
+                )?,
+                None,
+                None,
+            )
         }
     };
 
-    encode_response(search_mode, results, ann_report, no_fallback_decision)
+    encode_response(
+        decision.search_mode(),
+        Some(decision),
+        results,
+        ann_report,
+        no_fallback_decision,
+    )
 }
 
 pub fn handle_ann_evaluate_shared(
@@ -304,12 +323,14 @@ pub fn handle_ann_evaluate_shared(
 
 fn encode_response(
     search_mode: &str,
+    routing: Option<SearchRouteDecision>,
     results: Vec<cortex_engine::DatabaseSearchResult>,
     ann_report: Option<AnnSearchReport>,
     no_fallback_decision: Option<AnnNoFallbackDecisionResponse>,
 ) -> Result<String, RouterError> {
     let response = SearchResponse {
         search_mode: search_mode.to_owned(),
+        routing: routing.map(routing_response),
         ann_report: ann_report.map(report_response),
         no_fallback_decision,
         results: results
@@ -324,6 +345,16 @@ fn encode_response(
             .collect(),
     };
     Ok(serde_json::to_string(&response)?)
+}
+
+fn routing_response(decision: SearchRouteDecision) -> SearchRoutingDecisionResponse {
+    SearchRoutingDecisionResponse {
+        requested_mode: decision.requested_mode,
+        selected_strategy: decision.selected_strategy.as_str().to_owned(),
+        reason: decision.reason.to_owned(),
+        text_available: decision.text_available,
+        vector_available: decision.vector_available,
+    }
 }
 
 fn report_response(report: AnnSearchReport) -> AnnSearchReportResponse {

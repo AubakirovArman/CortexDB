@@ -299,6 +299,8 @@ paths:
           enum:
           - keyword
           - vector
+          - hybrid
+          - auto
       - name: algorithm
         in: query
         description: Vector search algorithm. `ann` may fall back to exact scan when
@@ -1242,6 +1244,33 @@ components:
           - keyword
           - vector_exact
           - vector_ann
+          - hybrid
+        routing:
+          anyOf:
+          - type: object
+            required:
+            - requested_mode
+            - selected_strategy
+            - reason
+            - text_available
+            - vector_available
+            properties:
+              requested_mode:
+                type: string
+              selected_strategy:
+                type: string
+                enum:
+                - keyword
+                - vector_exact
+                - vector_ann
+                - hybrid
+              reason:
+                type: string
+              text_available:
+                type: boolean
+              vector_available:
+                type: boolean
+          - type: 'null'
         ann_report:
           anyOf:
           - $ref: '#/components/schemas/AnnSearchReport'

@@ -169,12 +169,17 @@ distributed background-job system.
 
 ### Search
 
-#### `search <path> <scope> <query>`
-Keyword search (BM25).
+#### `search <path> <scope> <query> [--mode keyword|vector|hybrid|auto] [--vector <i16,...>] [--algorithm ann|exact]`
+Search with explicit or automatic routing. Default mode is `keyword`.
 
 ```bash
 cortexdb search ./db project:investments "budget solar"
+cortexdb --json search ./db project:investments "budget solar" \
+  --mode auto --vector "1,2,3"
 ```
+
+Human output starts with the selected routing strategy. JSON output includes a
+`routing` object with `selected_strategy` and `reason`.
 
 #### `search-vector <path> <scope> <vector>`
 Approximate nearest neighbor search.

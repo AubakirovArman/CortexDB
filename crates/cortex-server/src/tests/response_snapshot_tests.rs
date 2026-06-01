@@ -262,6 +262,7 @@ fn snapshot_verification_report_response() {
 fn snapshot_search_result_response() {
     let resp = crate::responses::SearchResponse {
         search_mode: "keyword".to_owned(),
+        routing: None,
         ann_report: None,
         no_fallback_decision: None,
         results: vec![SearchResultResponse {

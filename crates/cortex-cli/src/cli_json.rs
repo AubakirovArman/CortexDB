@@ -1,5 +1,5 @@
 use cortex_engine::verification::{VerificationReport, VerificationStatus};
-use cortex_engine::{ContextPack, Database};
+use cortex_engine::{ContextPack, Database, SearchRouteDecision};
 use serde_json::to_string;
 
 use crate::cli_json_types::{
@@ -7,8 +7,8 @@ use crate::cli_json_types::{
     CliAnnSearchReportResponse, CliAnnValidateResponse, CliStatsResponse, CliValidateResponse,
     ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackExplainResponse,
     ContextPackResponse, ContextPackScoreComponentResponse, NumericConflictResponse,
-    RememberResponse, SearchResponse, SearchResultResponse, SourceRefResponse,
-    VerificationEvidenceResponse, VerificationResponse,
+    RememberResponse, SearchResponse, SearchResultResponse, SearchRoutingDecisionResponse,
+    SourceRefResponse, VerificationEvidenceResponse, VerificationResponse,
 };
 
 fn serialize_or_error<T: serde::Serialize>(value: &T) -> String {
@@ -80,9 +80,17 @@ pub(crate) fn aql_to_json(cells: &[cortex_engine::RetrievedCell]) -> String {
 pub(crate) fn search_to_json(
     results: &[cortex_engine::search::DatabaseSearchResult],
     search_mode: &str,
+    routing: Option<&SearchRouteDecision>,
 ) -> String {
     serialize_or_error(&SearchResponse {
         search_mode: search_mode.to_owned(),
+        routing: routing.map(|decision| SearchRoutingDecisionResponse {
+            requested_mode: decision.requested_mode.clone(),
+            selected_strategy: decision.selected_strategy.as_str().to_owned(),
+            reason: decision.reason.to_owned(),
+            text_available: decision.text_available,
+            vector_available: decision.vector_available,
+        }),
         results: results
             .iter()
             .map(|r| SearchResultResponse {

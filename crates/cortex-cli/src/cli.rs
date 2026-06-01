@@ -197,6 +197,12 @@ enum Command {
         path: String,
         scope: String,
         query: String,
+        #[arg(long, default_value = "keyword")]
+        mode: String,
+        #[arg(long)]
+        vector: Option<String>,
+        #[arg(long, default_value = "ann")]
+        algorithm: String,
     },
     SearchVector {
         path: String,
@@ -506,9 +512,22 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         Command::Aql { path, scope, aql } => {
             ops::aql(resolved(&path).to_str().unwrap(), &scope, &aql, cli.json)
         }
-        Command::Search { path, scope, query } => {
-            ops::search(resolved(&path).to_str().unwrap(), &scope, &query, cli.json)
-        }
+        Command::Search {
+            path,
+            scope,
+            query,
+            mode,
+            vector,
+            algorithm,
+        } => ops::search(
+            resolved(&path).to_str().unwrap(),
+            &scope,
+            &query,
+            cli.json,
+            &mode,
+            vector.as_deref(),
+            &algorithm,
+        ),
         Command::SearchVector {
             path,
             scope,

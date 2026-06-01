@@ -1,9 +1,9 @@
 use cortex_core::CellId;
 use cortex_engine::{
-    evaluate_hnsw_no_fallback_rollout, parse_vector_literal, AnnSearchPath, AnnSearchPolicy,
-    ContextPackExportFormat, ContextPackOptions, Database, DatabaseSearchResult, EngineError,
-    HnswNoFallbackRolloutPolicy, SearchLimit, SearchMode, SearchQuery,
-    VerificationReportExportFormat,
+    evaluate_hnsw_no_fallback_rollout, parse_vector_literal, route_search_query, AnnSearchPath,
+    AnnSearchPolicy, ContextPackExportFormat, ContextPackOptions, Database, DatabaseSearchResult,
+    EngineError, HnswNoFallbackRolloutPolicy, SearchLimit, SearchMode, SearchQuery,
+    SearchRouteInput, SearchRouteStrategy, VerificationReportExportFormat,
 };
 
 use crate::cli_json::{
@@ -440,15 +440,64 @@ pub fn aql(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, Str
     }
 }
 
-pub fn search(path: &str, scope: &str, query: &str, json: bool) -> Result<String, String> {
+pub fn search(
+    path: &str,
+    scope: &str,
+    query: &str,
+    json: bool,
+    mode: &str,
+    vector: Option<&str>,
+    algorithm: &str,
+) -> Result<String, String> {
     let db = Database::open(path).map_err(fmt_engine_error)?;
-    let results = db
-        .search_keyword(query, &view_for_scope(scope), SearchLimit(20))
-        .map_err(fmt_engine_error)?;
+    let route = route_search_query(SearchRouteInput {
+        requested_mode: mode,
+        algorithm,
+        text_available: !query.trim().is_empty(),
+        vector_available: vector
+            .map(|value| !value.trim().is_empty())
+            .unwrap_or(false),
+    })?;
+    let view = view_for_scope(scope);
+    let results = match route.selected_strategy {
+        SearchRouteStrategy::Keyword => db.search_keyword(query, &view, SearchLimit(20)),
+        SearchRouteStrategy::VectorExact => {
+            let vector = parse_vector_literal(vector.unwrap_or(query))?;
+            db.search_vector_exact(&vector, &view, SearchLimit(20))
+        }
+        SearchRouteStrategy::VectorAnn => {
+            let vector = parse_vector_literal(vector.unwrap_or(query))?;
+            db.search_vector(&vector, &view, SearchLimit(20))
+        }
+        SearchRouteStrategy::Hybrid => {
+            let vector = vector.ok_or_else(|| "mode=hybrid requires --vector".to_owned())?;
+            let vector = parse_vector_literal(vector)?;
+            db.search_cells(
+                SearchQuery {
+                    text: query,
+                    vector: Some(&vector),
+                    limit: 20,
+                    mode: SearchMode::Hybrid,
+                },
+                &view,
+            )
+        }
+    }
+    .map_err(fmt_engine_error)?;
     if json {
-        Ok(crate::cli_json::search_to_json(&results, "keyword"))
+        Ok(crate::cli_json::search_to_json(
+            &results,
+            route.search_mode(),
+            Some(&route),
+        ))
     } else {
-        Ok(format_search_results(&results))
+        Ok(format!(
+            "routing requested_mode={} selected_strategy={} reason={}\n{}",
+            route.requested_mode,
+            route.selected_strategy.as_str(),
+            route.reason,
+            format_search_results(&results)
+        ))
     }
 }
 

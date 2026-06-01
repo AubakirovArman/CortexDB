@@ -18,6 +18,7 @@ mod hnsw_no_fallback;
 mod hnsw_policy;
 mod persisted;
 mod quality_tests;
+mod routing;
 mod tokenizer;
 pub(crate) mod vector;
 
@@ -58,6 +59,7 @@ pub use hnsw_policy::{
     HnswBuildConfig, HnswBuildProfile, HnswMaintenancePolicy, HnswMaintenanceReport,
     HnswRebuildPolicy,
 };
+pub use routing::{route_search_query, SearchRouteDecision, SearchRouteInput, SearchRouteStrategy};
 pub use tokenizer::tokenize;
 pub use vector::parse_vector_literal;
 

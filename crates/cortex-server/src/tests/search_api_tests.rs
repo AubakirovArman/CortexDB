@@ -23,6 +23,29 @@ fn v1_search_returns_scope_filtered_results() {
 }
 
 #[test]
+fn v1_search_auto_reports_selected_routing_strategy() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\nvector=5,0\nalpha budget"
+    );
+    assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+
+    let hybrid =
+        "POST /v1/search?scope=project:investments&mode=auto&q=budget&vector=5,0 HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), hybrid);
+    assert!(response.contains(r#""search_mode":"hybrid""#));
+    assert!(response.contains(r#""selected_strategy":"hybrid""#));
+    assert!(response.contains(r#""reason":"auto_text_and_vector_available""#));
+
+    let keyword = "POST /v1/search?scope=project:investments&mode=auto&q=budget HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), keyword);
+    assert!(response.contains(r#""search_mode":"keyword""#));
+    assert!(response.contains(r#""selected_strategy":"keyword""#));
+    assert!(response.contains(r#""reason":"auto_text_only_or_default""#));
+}
+
+#[test]
 fn v1_search_explain_reports_term_and_fusion_contributions() {
     let dir = tempfile::tempdir().unwrap();
     let put = concat!(

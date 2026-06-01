@@ -30,8 +30,9 @@ pub use types::{
     ExplainResponse, GuardResponse, HealthResponse, HnswNoFallbackProfileResponse, IngestResponse,
     IngestionJobResponse, IngestionJobStatus, NumericConflictResponse, PutCellResponse,
     RememberResponse, ScoreComponentResponse, SearchExplainItem, SearchExplainResponse,
-    SearchExplainTermContribution, SearchResponse, SearchResult, SourceRefResponse, StatsResponse,
-    ValidationResponse, VectorAlgorithm, VerificationReportResponse,
+    SearchExplainTermContribution, SearchResponse, SearchResult, SearchRoutingDecision,
+    SourceRefResponse, StatsResponse, ValidationResponse, VectorAlgorithm,
+    VerificationReportResponse,
 };
 
 #[cfg(test)]
@@ -190,6 +191,36 @@ impl CortexDbClient {
         limit: usize,
     ) -> SdkResult<SearchResponse> {
         decode_value(self.search_keyword(scope, query, limit)?)
+    }
+
+    pub fn search_auto(
+        &self,
+        scope: &str,
+        query: &str,
+        vector: Option<&str>,
+        limit: usize,
+    ) -> SdkResult<serde_json::Value> {
+        let limit = limit.to_string();
+        let mut params = vec![
+            ("scope", scope),
+            ("mode", "auto"),
+            ("q", query),
+            ("limit", limit.as_str()),
+        ];
+        if let Some(vector) = vector {
+            params.push(("vector", vector));
+        }
+        self.post(&path("/v1/search", &params), "")
+    }
+
+    pub fn search_auto_response(
+        &self,
+        scope: &str,
+        query: &str,
+        vector: Option<&str>,
+        limit: usize,
+    ) -> SdkResult<SearchResponse> {
+        decode_value(self.search_auto(scope, query, vector, limit)?)
     }
 
     pub fn search_explain(

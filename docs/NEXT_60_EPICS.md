@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 26 |
-| partial | 27 |
+| closed | 27 |
+| partial | 26 |
 | not started | 5 |
 | research | 2 |
 | total | 60 |
@@ -66,7 +66,7 @@ The plan recommends this first execution batch:
 | 22 | Retrieval Quality Dashboard | closed | `make retrieval-quality-check` now writes `target/retrieval-quality/dashboard.html` with guarded ANN and per-domain recall/MRR/nDCG/p95/exact-parity tables. | Keep the dashboard in the beta evidence bundle and extend it as more domains are added. |
 | 23 | HNSW Production SLO History | partial | ANN guardrails and real-domain report gates exist. | Build sustained 10+ run history and SLO regression tracking. |
 | 24 | Search Explain API | closed | `/v1/search/explain` now exposes rank, matched terms, term contribution details, lexical/vector q16 shares, hybrid fusion rank score, typed SDK decoding, CLI hybrid explain support, and OpenAPI/docs coverage. | Keep explain fields additive and deterministic as ranking internals evolve. |
-| 25 | Query Routing: Lexical vs Vector vs Hybrid | partial | Multiple search modes and hybrid foundations exist. | Add explicit query intent routing and expose selected strategy/reason. |
+| 25 | Query Routing: Lexical vs Vector vs Hybrid | closed | Engine-level `route_search_query` now selects keyword/vector_ann/vector_exact/hybrid, `/v1/search` and `cortexdb search` support `mode=auto`, and HTTP/CLI/SDK responses expose `routing.selected_strategy` plus `routing.reason` with tests/docs/OpenAPI coverage. | Keep routing deterministic until a measured planner is introduced. |
 | 26 | Ingestion Jobs v2 | partial | Ingestion endpoints/CLI and responses exist. | Add durable jobs, retry/cancel/progress, and restart resume. |
 | 27 | SourceRef Model v1 | partial | `SourceRef` structs include document/page/row/json path/source URL fields. | Finish extraction confidence and end-to-end SourceRef enforcement. |
 | 28 | Document Chunking Policies | partial | Chunking exists in example/real-domain scripts and ingestion docs. | Make engine-level chunk id stability and policy tests first-class. |
@@ -118,5 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 25: explicit query intent routing and selected strategy/reason.
-2. Advance Epic 26: durable ingestion jobs with retry/cancel/progress and restart resume.
+1. Advance Epic 26: durable ingestion jobs with retry/cancel/progress and restart resume.
+2. Advance Epic 27: SourceRef extraction confidence and end-to-end enforcement.

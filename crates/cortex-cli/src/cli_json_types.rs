@@ -204,7 +204,18 @@ pub struct SearchResultResponse {
 #[derive(Serialize)]
 pub struct SearchResponse {
     pub search_mode: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub routing: Option<SearchRoutingDecisionResponse>,
     pub results: Vec<SearchResultResponse>,
+}
+
+#[derive(Serialize)]
+pub struct SearchRoutingDecisionResponse {
+    pub requested_mode: String,
+    pub selected_strategy: String,
+    pub reason: String,
+    pub text_available: bool,
+    pub vector_available: bool,
 }
 
 #[derive(Serialize)]

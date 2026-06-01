@@ -19,6 +19,24 @@ fn path_encodes_search_query_contract() {
 }
 
 #[test]
+fn path_encodes_auto_search_routing_contract() {
+    let value = path(
+        "/v1/search",
+        &[
+            ("scope", "project:investments"),
+            ("mode", "auto"),
+            ("q", "solar budget"),
+            ("vector", "1,2,3"),
+            ("limit", "10"),
+        ],
+    );
+    assert_eq!(
+        value,
+        "/v1/search?scope=project%3Ainvestments&mode=auto&q=solar+budget&vector=1%2C2%2C3&limit=10"
+    );
+}
+
+#[test]
 fn search_explain_path_encodes_hybrid_contract() {
     let value = path(
         "/v1/search/explain",
@@ -132,6 +150,13 @@ fn ann_evaluation_path_matches_http_api_contract() {
 fn typed_search_response_decodes_ann_report_contract() {
     let value = serde_json::json!({
         "search_mode": "vector_ann",
+        "routing": {
+            "requested_mode": "auto",
+            "selected_strategy": "vector_ann",
+            "reason": "auto_vector_available_without_text",
+            "text_available": false,
+            "vector_available": true
+        },
         "ann_report": {
             "path": "exact_fallback",
             "fallback_reason": "no_persisted_segments",
@@ -168,6 +193,10 @@ fn typed_search_response_decodes_ann_report_contract() {
         .expect("no-fallback decision should decode");
 
     assert_eq!(response.search_mode, "vector_ann");
+    let routing = response.routing.expect("routing should decode");
+    assert_eq!(routing.requested_mode, "auto");
+    assert_eq!(routing.selected_strategy, "vector_ann");
+    assert_eq!(routing.reason, "auto_vector_available_without_text");
     assert_eq!(response.results[0].cell_id, 1);
     assert_eq!(
         report.fallback_reason.as_deref(),

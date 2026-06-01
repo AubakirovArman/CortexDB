@@ -251,9 +251,23 @@ Response:
 `POST /v1/search?scope=<scope>&q=<term>` or
 `POST /v1/search?scope=<scope>&mode=vector&algorithm=exact&vector=1,2,3`
 
+Use `mode=auto` to let CortexDB choose keyword, vector, or hybrid routing from
+the available query text and vector:
+
+```text
+POST /v1/search?scope=<scope>&mode=auto&q=solar+budget&vector=1,2,3
+```
+
 ```json
 {
   "search_mode": "keyword",
+  "routing": {
+    "requested_mode": "auto",
+    "selected_strategy": "keyword",
+    "reason": "auto_text_only_or_default",
+    "text_available": true,
+    "vector_available": false
+  },
   "ann_report": null,
   "results": [
     {
@@ -266,6 +280,10 @@ Response:
   ]
 }
 ```
+
+`routing.selected_strategy` is the strategy the engine actually used:
+`keyword`, `vector_exact`, `vector_ann`, or `hybrid`. `routing.reason` explains
+whether the route was explicit or chosen by `mode=auto`.
 
 For `search_mode: "vector_ann"`, `ann_report` is populated:
 
