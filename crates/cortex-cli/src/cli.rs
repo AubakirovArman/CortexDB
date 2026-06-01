@@ -251,6 +251,8 @@ enum Command {
         query: String,
         #[arg(long, default_value = "keyword")]
         mode: String,
+        #[arg(long)]
+        vector: Option<String>,
     },
     Unlock {
         path: String,
@@ -589,7 +591,14 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             scope,
             query,
             mode,
-        } => ops::search_explain(resolved(&path).to_str().unwrap(), &scope, &query, &mode),
+            vector,
+        } => ops::search_explain(
+            resolved(&path).to_str().unwrap(),
+            &scope,
+            &query,
+            &mode,
+            vector.as_deref(),
+        ),
         Command::Unlock { path, force } => ops::unlock(resolved(&path).to_str().unwrap(), force),
         Command::LoadFixture { path, fixture_path } => {
             ingest::load_fixture(resolved(&path).to_str().unwrap(), &fixture_path)

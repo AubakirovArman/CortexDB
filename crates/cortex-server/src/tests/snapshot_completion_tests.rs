@@ -45,6 +45,10 @@ fn snapshot_search_explain_response_shape() {
     assert!(response.contains("200 OK"));
     assert!(response.contains(r#""query_terms":"#));
     assert!(response.contains(r#""search_mode":"keyword""#));
+    assert!(response.contains(r#""rank":"#));
+    assert!(response.contains(r#""matched_terms":"#));
+    assert!(response.contains(r#""term_contributions":"#));
+    assert!(response.contains(r#""contribution_summary":"#));
     assert!(response.contains(r#""payload_preview":"#));
 }
 

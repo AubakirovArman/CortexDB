@@ -234,6 +234,50 @@ fn search_command_returns_scope_filtered_results() {
 }
 
 #[test]
+fn search_explain_command_reports_contribution_details() {
+    let path = unique_path("cortexdb-cli-search-explain");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nvector=5,0\nalpha budget budget".to_owned(),
+    ])
+    .unwrap();
+
+    let keyword = run(vec![
+        "cortexdb".to_owned(),
+        "search-explain".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        "budget".to_owned(),
+    ])
+    .unwrap();
+    assert!(keyword.contains("query_terms_count=1"));
+    assert!(keyword.contains("rank=1"));
+    assert!(keyword.contains("lexical_q16=65535"));
+    assert!(keyword.contains("fusion=false"));
+
+    let hybrid = run(vec![
+        "cortexdb".to_owned(),
+        "search-explain".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        "budget".to_owned(),
+        "--mode".to_owned(),
+        "hybrid".to_owned(),
+        "--vector".to_owned(),
+        "5,0".to_owned(),
+    ])
+    .unwrap();
+    assert!(hybrid.contains("rank=1"));
+    assert!(hybrid.contains("fusion=true"));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
 fn remember_and_verify_commands_work() {
     let path = unique_path("cortexdb-cli-memory");
     let path_arg = path.to_string_lossy().into_owned();

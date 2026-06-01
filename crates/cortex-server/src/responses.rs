@@ -252,11 +252,25 @@ pub struct SearchResponse {
 }
 
 #[derive(Serialize, Debug, Clone)]
+pub struct SearchExplainTermContributionResponse {
+    pub term: String,
+    pub term_frequency: u32,
+    pub score: u64,
+}
+
+#[derive(Serialize, Debug, Clone)]
 pub struct SearchExplainItemResponse {
     pub cell_id: u64,
+    pub rank: usize,
     pub score: u64,
     pub lexical_score: u64,
     pub vector_score: u64,
+    pub lexical_contribution_q16: u16,
+    pub vector_contribution_q16: u16,
+    pub fusion_rank_score: u64,
+    pub matched_terms: Vec<String>,
+    pub term_contributions: Vec<SearchExplainTermContributionResponse>,
+    pub contribution_summary: String,
     pub payload_preview: String,
 }
 

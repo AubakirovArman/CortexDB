@@ -304,6 +304,47 @@ but it does not remove exact fallback globally.
 }
 ```
 
+## Search Explain
+
+`POST /v1/search/explain?scope=<scope>&q=<query>&mode=keyword`
+
+For hybrid inspection, pass both query text and vector:
+
+`POST /v1/search/explain?scope=<scope>&mode=hybrid&q=<query>&vector=1,2,3`
+
+```json
+{
+  "query_terms": ["budget"],
+  "search_mode": "hybrid",
+  "results": [
+    {
+      "cell_id": 1,
+      "rank": 1,
+      "score": 32786,
+      "lexical_score": 42,
+      "vector_score": 100,
+      "lexical_contribution_q16": 19383,
+      "vector_contribution_q16": 46152,
+      "fusion_rank_score": 32786,
+      "matched_terms": ["budget"],
+      "term_contributions": [
+        {
+          "term": "budget",
+          "term_frequency": 2,
+          "score": 42
+        }
+      ],
+      "contribution_summary": "hybrid rrf_score=32786 lexical_score=42 vector_score=100",
+      "payload_preview": "scope=project:investments\nstatus=ready\n..."
+    }
+  ]
+}
+```
+
+`term_contributions` explains lexical matches. `vector_score` is the raw vector
+similarity score. `fusion_rank_score` is non-zero when a result has both lexical
+and vector evidence in hybrid mode.
+
 ## HNSW No-fallback Profile
 
 The admin profile endpoint persists the local operator rollout policy used when

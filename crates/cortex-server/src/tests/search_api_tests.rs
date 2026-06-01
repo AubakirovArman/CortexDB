@@ -23,6 +23,32 @@ fn v1_search_returns_scope_filtered_results() {
 }
 
 #[test]
+fn v1_search_explain_reports_term_and_fusion_contributions() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\nvector=5,0\nalpha budget budget"
+    );
+    assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+
+    let keyword =
+        "POST /v1/search/explain?scope=project:investments&q=budget&limit=5 HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), keyword);
+    assert!(response.contains(r#""search_mode":"keyword""#));
+    assert!(response.contains(r#""rank":1"#));
+    assert!(response.contains(r#""matched_terms":["budget"]"#));
+    assert!(response.contains(r#""term_contributions":"#));
+    assert!(response.contains(r#""term_frequency":2"#));
+    assert!(response.contains(r#""contribution_summary":"keyword lexical_score="#));
+
+    let hybrid = "POST /v1/search/explain?scope=project:investments&mode=hybrid&q=budget&vector=5,0&limit=5 HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), hybrid);
+    assert!(response.contains(r#""search_mode":"hybrid""#));
+    assert!(response.contains(r#""fusion_rank_score":"#));
+    assert!(response.contains(r#""contribution_summary":"hybrid rrf_score="#));
+}
+
+#[test]
 fn v1_vector_search_accepts_query_vector() {
     let dir = tempfile::tempdir().unwrap();
     let put_a = concat!(

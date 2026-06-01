@@ -1,13 +1,16 @@
 use cortex_aql::AgentView;
 use cortex_engine::{
-    evaluate_hnsw_no_fallback_rollout, parse_vector_literal, AnnSearchPolicy, AnnSearchReport,
-    Database, HnswNoFallbackDecision, HnswNoFallbackRolloutPolicy, SearchLimit,
+    evaluate_hnsw_no_fallback_rollout, parse_vector_literal, tokenize, AnnSearchPolicy,
+    AnnSearchReport, Database, DatabaseSearchResult, HnswNoFallbackDecision,
+    HnswNoFallbackRolloutPolicy, SearchLimit, SearchMode, SearchQuery,
 };
+use std::collections::BTreeMap;
 
 use crate::authz;
 use crate::responses::{
     AnnEvaluationResponse, AnnNoFallbackDecisionResponse, AnnSearchReportResponse, RouterError,
-    SearchExplainItemResponse, SearchExplainResponse, SearchResponse, SearchResultResponse,
+    SearchExplainItemResponse, SearchExplainResponse, SearchExplainTermContributionResponse,
+    SearchResponse, SearchResultResponse,
 };
 use crate::router::{query_param_decoded, query_param_opt};
 
@@ -29,46 +32,138 @@ pub fn handle_search_explain_shared(
     let q = query_param_decoded(query, "q")
         .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
 
-    let diagnostics = db.search_diagnostics(&q)?;
-    let query_terms = extract_terms_from_diagnostics(&diagnostics);
+    let query_terms = tokenize(&q);
 
     let results = match mode.as_str() {
         "keyword" => db.search_keyword(&q, &view, SearchLimit(limit)),
         "vector" => {
-            let v = parse_vector_literal(&q).map_err(RouterError::BadRequest)?;
+            let vector = query_param_decoded(query, "vector").unwrap_or_else(|_| q.clone());
+            let v = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
             db.search_vector(&v, &view, SearchLimit(limit))
+        }
+        "hybrid" => {
+            let vector = query_param_decoded(query, "vector").map_err(|_| {
+                RouterError::BadRequest("mode=hybrid requires vector=<i16,...>".to_owned())
+            })?;
+            let v = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
+            db.search_cells(
+                SearchQuery {
+                    text: &q,
+                    vector: Some(&v),
+                    limit,
+                    mode: SearchMode::Hybrid,
+                },
+                &view,
+            )
         }
         _ => {
             return Err(RouterError::BadRequest(
-                "mode must be keyword or vector".to_owned(),
+                "mode must be keyword, vector, or hybrid".to_owned(),
             ))
         }
     }?;
 
+    let explain_results = results
+        .iter()
+        .enumerate()
+        .map(|(index, result)| explain_item(index + 1, result, &query_terms, &mode))
+        .collect();
     let response = SearchExplainResponse {
         query_terms,
         search_mode: mode,
-        results: results
-            .iter()
-            .map(|r| SearchExplainItemResponse {
-                cell_id: r.cell_id.0,
-                score: r.score,
-                lexical_score: r.lexical_score,
-                vector_score: r.vector_score,
-                payload_preview: truncate_preview(&r.payload, 200),
-            })
-            .collect(),
+        results: explain_results,
     };
     Ok(serde_json::to_string(&response)?)
 }
 
-fn extract_terms_from_diagnostics(diagnostics: &str) -> Vec<String> {
-    diagnostics
-        .split("terms=[")
-        .nth(1)
-        .and_then(|s| s.strip_suffix(']'))
-        .map(|terms| terms.split(", ").map(|t| t.to_owned()).collect())
-        .unwrap_or_default()
+fn explain_item(
+    rank: usize,
+    result: &DatabaseSearchResult,
+    query_terms: &[String],
+    mode: &str,
+) -> SearchExplainItemResponse {
+    let payload_terms = term_frequencies(&String::from_utf8_lossy(&result.payload));
+    let matched_terms = query_terms
+        .iter()
+        .filter(|term| payload_terms.contains_key(term.as_str()))
+        .cloned()
+        .collect::<Vec<_>>();
+    let term_contributions = term_contributions(&matched_terms, &payload_terms, result);
+    SearchExplainItemResponse {
+        cell_id: result.cell_id.0,
+        rank,
+        score: result.score,
+        lexical_score: result.lexical_score,
+        vector_score: result.vector_score,
+        lexical_contribution_q16: contribution_q16(result.lexical_score, result),
+        vector_contribution_q16: contribution_q16(result.vector_score, result),
+        fusion_rank_score: fusion_rank_score(result),
+        matched_terms,
+        term_contributions,
+        contribution_summary: contribution_summary(mode, result),
+        payload_preview: truncate_preview(&result.payload, 200),
+    }
+}
+
+fn term_frequencies(text: &str) -> BTreeMap<String, u32> {
+    let mut terms = BTreeMap::new();
+    for term in tokenize(text) {
+        *terms.entry(term).or_default() += 1;
+    }
+    terms
+}
+
+fn term_contributions(
+    matched_terms: &[String],
+    payload_terms: &BTreeMap<String, u32>,
+    result: &DatabaseSearchResult,
+) -> Vec<SearchExplainTermContributionResponse> {
+    let total = matched_terms
+        .iter()
+        .filter_map(|term| payload_terms.get(term))
+        .copied()
+        .sum::<u32>()
+        .max(1);
+    matched_terms
+        .iter()
+        .map(|term| {
+            let frequency = *payload_terms.get(term).unwrap_or(&0);
+            SearchExplainTermContributionResponse {
+                term: term.clone(),
+                term_frequency: frequency,
+                score: result.lexical_score * u64::from(frequency) / u64::from(total),
+            }
+        })
+        .collect()
+}
+
+fn contribution_q16(component: u64, result: &DatabaseSearchResult) -> u16 {
+    let total = result.lexical_score.saturating_add(result.vector_score);
+    component
+        .saturating_mul(65_535)
+        .checked_div(total)
+        .unwrap_or(0)
+        .min(65_535) as u16
+}
+
+fn fusion_rank_score(result: &DatabaseSearchResult) -> u64 {
+    if result.lexical_score > 0 && result.vector_score > 0 {
+        result.score
+    } else {
+        0
+    }
+}
+
+fn contribution_summary(mode: &str, result: &DatabaseSearchResult) -> String {
+    match mode {
+        "keyword" => format!("keyword lexical_score={}", result.lexical_score),
+        "vector" => format!("vector similarity_score={}", result.vector_score),
+        "hybrid" => format!(
+            "hybrid rrf_score={} lexical_score={} vector_score={}",
+            result.score, result.lexical_score, result.vector_score
+        ),
+        _ => format!("score={}", result.score),
+    }
 }
 
 fn truncate_preview(payload: &[u8], max_len: usize) -> String {

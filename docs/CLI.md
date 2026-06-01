@@ -197,6 +197,16 @@ Compare ANN vs exact search recall.
 cortexdb search-vector-eval ./db project:investments "[0.1, 0.2, ...]"
 ```
 
+#### `search-explain <path> <scope> <query> [--mode keyword|vector|hybrid] [--vector <i16,...>]`
+Explain lexical, vector, and hybrid contribution details for ranked search
+results.
+
+```bash
+cortexdb search-explain ./db project:investments "solar budget"
+cortexdb search-explain ./db project:investments "solar budget" \
+  --mode hybrid --vector "1,2,3"
+```
+
 ### AQL
 
 #### `aql <path> <scope> <aql>`

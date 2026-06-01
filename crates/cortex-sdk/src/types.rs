@@ -117,6 +117,43 @@ pub struct SearchResponse {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct SearchExplainTermContribution {
+    pub term: String,
+    pub term_frequency: u32,
+    pub score: u64,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct SearchExplainItem {
+    pub cell_id: u64,
+    #[serde(default)]
+    pub rank: usize,
+    pub score: u64,
+    pub lexical_score: u64,
+    pub vector_score: u64,
+    #[serde(default)]
+    pub lexical_contribution_q16: u16,
+    #[serde(default)]
+    pub vector_contribution_q16: u16,
+    #[serde(default)]
+    pub fusion_rank_score: u64,
+    #[serde(default)]
+    pub matched_terms: Vec<String>,
+    #[serde(default)]
+    pub term_contributions: Vec<SearchExplainTermContribution>,
+    #[serde(default)]
+    pub contribution_summary: String,
+    pub payload_preview: String,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct SearchExplainResponse {
+    pub query_terms: Vec<String>,
+    pub search_mode: String,
+    pub results: Vec<SearchExplainItem>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct HealthResponse {
     pub status: String,
     pub version: String,

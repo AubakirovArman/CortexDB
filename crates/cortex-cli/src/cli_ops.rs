@@ -1,8 +1,9 @@
 use cortex_core::CellId;
 use cortex_engine::{
     evaluate_hnsw_no_fallback_rollout, parse_vector_literal, AnnSearchPath, AnnSearchPolicy,
-    ContextPackExportFormat, ContextPackOptions, Database, EngineError,
-    HnswNoFallbackRolloutPolicy, SearchLimit, VerificationReportExportFormat,
+    ContextPackExportFormat, ContextPackOptions, Database, DatabaseSearchResult, EngineError,
+    HnswNoFallbackRolloutPolicy, SearchLimit, SearchMode, SearchQuery,
+    VerificationReportExportFormat,
 };
 
 use crate::cli_json::{
@@ -451,33 +452,72 @@ pub fn search(path: &str, scope: &str, query: &str, json: bool) -> Result<String
     }
 }
 
-pub fn search_explain(path: &str, scope: &str, query: &str, mode: &str) -> Result<String, String> {
+pub fn search_explain(
+    path: &str,
+    scope: &str,
+    query: &str,
+    mode: &str,
+    vector: Option<&str>,
+) -> Result<String, String> {
     let db = Database::open(path).map_err(fmt_engine_error)?;
     let diagnostics = db.search_diagnostics(query).map_err(fmt_engine_error)?;
     let results = match mode {
         "keyword" => db.search_keyword(query, &view_for_scope(scope), SearchLimit(20)),
         "vector" => {
-            let v = parse_vector_literal(query)?;
+            let v = parse_vector_literal(vector.unwrap_or(query))?;
             db.search_vector(&v, &view_for_scope(scope), SearchLimit(20))
         }
-        _ => return Err("mode must be keyword or vector".to_owned()),
+        "hybrid" => {
+            let vector = vector.ok_or_else(|| "mode=hybrid requires --vector".to_owned())?;
+            let vector = parse_vector_literal(vector)?;
+            db.search_cells(
+                SearchQuery {
+                    text: query,
+                    vector: Some(&vector),
+                    limit: 20,
+                    mode: SearchMode::Hybrid,
+                },
+                &view_for_scope(scope),
+            )
+        }
+        _ => return Err("mode must be keyword, vector, or hybrid".to_owned()),
     }
     .map_err(fmt_engine_error)?;
     let mut lines = vec![diagnostics];
-    for r in &results {
-        lines.push(format!(
-            "cell_id={} score={} lexical={} vector={} preview={}",
-            r.cell_id.0,
-            r.score,
-            r.lexical_score,
-            r.vector_score,
-            String::from_utf8_lossy(&r.payload)
-                .chars()
-                .take(80)
-                .collect::<String>()
-        ));
+    for (rank, result) in results.iter().enumerate() {
+        lines.push(format_search_explain_line(rank + 1, result));
     }
     Ok(lines.join("\n"))
+}
+
+fn format_search_explain_line(rank: usize, result: &DatabaseSearchResult) -> String {
+    let total = result.lexical_score.saturating_add(result.vector_score);
+    let lexical_q16 = result
+        .lexical_score
+        .saturating_mul(65_535)
+        .checked_div(total)
+        .unwrap_or(0);
+    let vector_q16 = result
+        .vector_score
+        .saturating_mul(65_535)
+        .checked_div(total)
+        .unwrap_or(0);
+    let preview = String::from_utf8_lossy(&result.payload)
+        .chars()
+        .take(80)
+        .collect::<String>();
+    format!(
+        "rank={} cell_id={} score={} lexical={} vector={} lexical_q16={} vector_q16={} fusion={} preview={}",
+        rank,
+        result.cell_id.0,
+        result.score,
+        result.lexical_score,
+        result.vector_score,
+        lexical_q16,
+        vector_q16,
+        result.lexical_score > 0 && result.vector_score > 0,
+        preview
+    )
 }
 
 pub fn search_vector(

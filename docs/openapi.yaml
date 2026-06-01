@@ -392,8 +392,14 @@ paths:
           enum:
           - keyword
           - vector
+          - hybrid
       - name: q
         in: query
+        schema:
+          type: string
+      - name: vector
+        in: query
+        description: Required for mode=hybrid; optional alternative to q for mode=vector.
         schema:
           type: string
       - name: limit
@@ -2119,12 +2125,22 @@ components:
             type: object
             required:
             - cell_id
+            - rank
             - score
             - lexical_score
             - vector_score
+            - lexical_contribution_q16
+            - vector_contribution_q16
+            - fusion_rank_score
+            - matched_terms
+            - term_contributions
+            - contribution_summary
             - payload_preview
             properties:
               cell_id:
+                type: integer
+                format: uint64
+              rank:
                 type: integer
                 format: uint64
               score:
@@ -2136,6 +2152,38 @@ components:
               vector_score:
                 type: integer
                 format: uint64
+              lexical_contribution_q16:
+                type: integer
+                format: uint32
+              vector_contribution_q16:
+                type: integer
+                format: uint32
+              fusion_rank_score:
+                type: integer
+                format: uint64
+              matched_terms:
+                type: array
+                items:
+                  type: string
+              term_contributions:
+                type: array
+                items:
+                  type: object
+                  required:
+                  - term
+                  - term_frequency
+                  - score
+                  properties:
+                    term:
+                      type: string
+                    term_frequency:
+                      type: integer
+                      format: uint32
+                    score:
+                      type: integer
+                      format: uint64
+              contribution_summary:
+                type: string
               payload_preview:
                 type: string
   responses:

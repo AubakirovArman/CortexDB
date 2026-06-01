@@ -19,6 +19,24 @@ fn path_encodes_search_query_contract() {
 }
 
 #[test]
+fn search_explain_path_encodes_hybrid_contract() {
+    let value = path(
+        "/v1/search/explain",
+        &[
+            ("scope", "project:investments"),
+            ("mode", "hybrid"),
+            ("q", "solar budget"),
+            ("vector", "1,2,3"),
+            ("limit", "10"),
+        ],
+    );
+    assert_eq!(
+        value,
+        "/v1/search/explain?scope=project%3Ainvestments&mode=hybrid&q=solar+budget&vector=1%2C2%2C3&limit=10"
+    );
+}
+
+#[test]
 fn context_export_paths_are_wire_stable() {
     let prompt = path(
         "/v1/context",
@@ -164,6 +182,44 @@ fn typed_search_response_decodes_ann_report_contract() {
     assert_eq!(report.slo_violations, vec!["no_persisted_segments"]);
     assert!(!decision.allowed);
     assert_eq!(decision.reasons[0], "not_hnsw_graph_path");
+}
+
+#[test]
+fn typed_search_explain_response_decodes_contribution_contract() {
+    let value = serde_json::json!({
+        "query_terms": ["budget"],
+        "search_mode": "hybrid",
+        "results": [{
+            "cell_id": 1,
+            "rank": 1,
+            "score": 32786,
+            "lexical_score": 42,
+            "vector_score": 100,
+            "lexical_contribution_q16": 19383,
+            "vector_contribution_q16": 46152,
+            "fusion_rank_score": 32786,
+            "matched_terms": ["budget"],
+            "term_contributions": [{
+                "term": "budget",
+                "term_frequency": 2,
+                "score": 42
+            }],
+            "contribution_summary": "hybrid rrf_score=32786 lexical_score=42 vector_score=100",
+            "payload_preview": "scope=default\nstatus=ready\nbudget"
+        }]
+    });
+
+    let response: SearchExplainResponse =
+        serde_json::from_value(value).expect("search explain response should decode");
+
+    assert_eq!(response.search_mode, "hybrid");
+    assert_eq!(response.query_terms, vec!["budget"]);
+    let item = &response.results[0];
+    assert_eq!(item.rank, 1);
+    assert_eq!(item.matched_terms, vec!["budget"]);
+    assert_eq!(item.term_contributions[0].term_frequency, 2);
+    assert_eq!(item.fusion_rank_score, 32786);
+    assert!(item.contribution_summary.contains("hybrid rrf_score="));
 }
 
 #[test]

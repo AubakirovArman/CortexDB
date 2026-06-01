@@ -255,6 +255,43 @@ Verifies a specific factual claim against the available database knowledge using
 
 ---
 
+### 2.9. POST `/v1/search/explain?scope=<scope>&q=<query>`
+Explains why search results ranked where they did.
+
+* **Modes:** `keyword`, `vector`, or `hybrid`.
+* **Hybrid:** pass `mode=hybrid&q=<query>&vector=<i16,...>`.
+* **Response (200 OK):**
+  ```json
+  {
+    "query_terms": ["budget"],
+    "search_mode": "hybrid",
+    "results": [
+      {
+        "cell_id": 1,
+        "rank": 1,
+        "score": 32786,
+        "lexical_score": 42,
+        "vector_score": 100,
+        "lexical_contribution_q16": 19383,
+        "vector_contribution_q16": 46152,
+        "fusion_rank_score": 32786,
+        "matched_terms": ["budget"],
+        "term_contributions": [
+          {
+            "term": "budget",
+            "term_frequency": 2,
+            "score": 42
+          }
+        ],
+        "contribution_summary": "hybrid rrf_score=32786 lexical_score=42 vector_score=100",
+        "payload_preview": "scope=project:investments\nstatus=ready\n..."
+      }
+    ]
+  }
+  ```
+
+---
+
 ### 2.9. POST `/v1/ingest/json?scope=<scope>&source=<source_id>`
 Ingests a structured JSON payload recursively flattening keys into multiple fact cells.
 

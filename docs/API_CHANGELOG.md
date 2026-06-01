@@ -13,6 +13,10 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
   `Database::persist_contradiction_relation` to write durable Relation cells
   with `predicate=contradicts`; `conflict_index` and `conflicts_for_fact` read
   both inline `contradicts=` markers and persisted relation cells.
+- **Search Explain contribution details** — `/v1/search/explain`, `cortexdb
+  search-explain`, and the Rust SDK now expose rank, matched terms, term
+  contribution details, lexical/vector q16 shares, and hybrid fusion rank
+  scores.
 
 ### Changed
 - **Error taxonomy contract guard** — `make openapi-contract-check` now also
