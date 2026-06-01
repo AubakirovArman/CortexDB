@@ -18,15 +18,25 @@ Implemented today:
 - `CORTEXDB_AUTH_POLICY_STORE_FILE` reads canonical
   `cortexdb.auth_policy.v1` stores and migrates the explicit legacy
   `cortexdb.auth_policy.v0` token-list shape into v1 in memory.
+- v1 policy-store principals may set `request_quota_per_minute` for a local
+  per-principal fixed-window quota.
+- v1 policy-store principals may set `capabilities` to restrict a valid role to
+  specific API action classes such as `search`, `read`, `write`, `ingest`,
+  `verify`, `metrics`, or `admin`. Invalid, duplicate, or empty capability
+  lists fail closed.
+- Admin-only local endpoints can upsert principals, disable principals, and
+  roll back the last local policy-store mutation.
+- Local audit JSONL records include chain metadata and can be verified by CLI.
 
 Not implemented in Core Alpha:
 
 - user accounts, sessions, groups, organizations, or external identity provider
   mapping;
-- persisted dynamic policy updates through HTTP beyond the local admin
-  upsert/disable/rollback endpoints;
-- per-token quotas, expiry, or revocation events beyond token-file replacement;
-- tamper-evident audit trails or SIEM export.
+- richer role/capability objects beyond the current action-class capability
+  allowlist;
+- expiry or revocation events beyond token-file replacement and disabled
+  policy-store principals;
+- compliance-grade ledger storage or vendor-managed SIEM delivery.
 
 ## Target Model
 
@@ -39,6 +49,7 @@ Principal
 -> AgentView binding
 -> Scope permissions
 -> Route class permissions
+-> Action capability restrictions
 ```
 
 Suggested records:
@@ -83,6 +94,9 @@ Keep the Core Alpha route classes as the base:
 
 Future roles should be additive and explicit. For example, `auditor` can read
 audit summaries and validation reports but cannot write cells or compact.
+The current local `capabilities` field is a narrower action-class restriction
+layer on top of the existing `admin` and `data` roles, not a full replacement
+for richer beta roles.
 
 ## AgentView-Backed Scope Management
 
@@ -102,6 +116,7 @@ AgentViews and let the existing AgentView validator enforce scopes.
 - No distributed policy replication.
 - No dynamic admin UI for policy mutation.
 - No claims that tenant realms are zero-trust isolation boundaries.
+- No external compliance certification.
 
 ## Migration Path
 
@@ -121,5 +136,8 @@ AgentViews and let the existing AgentView validator enforce scopes.
 - file-backed token rotation still fails closed;
 - policy-store disabled principal cannot authenticate;
 - AgentView-bound principal cannot read or write forbidden scopes;
+- capability-restricted principal can access allowed action classes but gets
+  `403` for disallowed action classes;
+- invalid or duplicate policy-store capabilities fail closed;
 - auditor role can review audit summaries but cannot mutate data;
 - policy-store corruption fails closed.

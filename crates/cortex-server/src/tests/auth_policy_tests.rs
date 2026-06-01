@@ -314,6 +314,76 @@ fn auth_policy_store_agent_scope_is_enforced() {
 }
 
 #[test]
+fn auth_policy_store_capabilities_restrict_data_routes() {
+    let dir = tempfile::tempdir().unwrap();
+    let policy_store = dir.path().join("auth-policy.json");
+    std::fs::write(
+        &policy_store,
+        r#"{
+          "schema_version": "cortexdb.auth_policy.v1",
+          "principals": [
+            {"principal_id":"search-only","token":"search-token","role":"data","capabilities":["search"]}
+          ]
+        }"#,
+    )
+    .unwrap();
+    let options = ServerOptions {
+        auth_policy_store_file: Some(policy_store),
+        ..Default::default()
+    };
+
+    let allowed = handle_http_with_options(
+        dir.path(),
+        "POST /v1/search?scope=finance&q=budget HTTP/1.1\r\nAuthorization: Bearer search-token\r\n\r\n",
+        &options,
+    );
+    assert!(
+        allowed.contains("200 OK"),
+        "search capability should allow search route: {allowed}"
+    );
+
+    let denied = handle_http_with_options(
+        dir.path(),
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\nAuthorization: Bearer search-token\r\ncontent-length: 0\r\n\r\n",
+        &options,
+    );
+    assert!(
+        denied.contains("403 Forbidden"),
+        "search-only principal must not write cells: {denied}"
+    );
+}
+
+#[test]
+fn auth_policy_store_invalid_capability_fails_closed() {
+    let dir = tempfile::tempdir().unwrap();
+    let policy_store = dir.path().join("auth-policy.json");
+    std::fs::write(
+        &policy_store,
+        r#"{
+          "schema_version": "cortexdb.auth_policy.v1",
+          "principals": [
+            {"principal_id":"bad","token":"bad-token","role":"data","capabilities":["unknown"]}
+          ]
+        }"#,
+    )
+    .unwrap();
+    let options = ServerOptions {
+        auth_policy_store_file: Some(policy_store),
+        ..Default::default()
+    };
+
+    let denied = handle_http_with_options(
+        dir.path(),
+        "GET /v1/health HTTP/1.1\r\nAuthorization: Bearer bad-token\r\n\r\n",
+        &options,
+    );
+    assert!(
+        !denied.contains("200 OK"),
+        "invalid capability store must fail closed: {denied}"
+    );
+}
+
+#[test]
 fn auth_policy_store_invalid_json_fails_closed() {
     let dir = tempfile::tempdir().unwrap();
     let policy_store = dir.path().join("auth-policy.json");

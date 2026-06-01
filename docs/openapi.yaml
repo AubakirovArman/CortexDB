@@ -969,6 +969,24 @@ components:
           type: integer
           format: uint64
           minimum: 1
+        capabilities:
+          type: array
+          items:
+            type: string
+            enum:
+            - admin
+            - aql
+            - context
+            - delete
+            - ingest
+            - inference
+            - memory
+            - metrics
+            - read
+            - search
+            - verify
+            - write
+          minimum: 1
     AuthPolicyMutationResponse:
       type: object
       additionalProperties: false

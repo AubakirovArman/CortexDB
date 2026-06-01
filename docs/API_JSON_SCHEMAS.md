@@ -107,9 +107,14 @@ responses.
   "token": "agent-token",
   "role": "data",
   "agent_id": 7,
-  "request_quota_per_minute": 600
+  "request_quota_per_minute": 600,
+  "capabilities": ["search", "read"]
 }
 ```
+
+If `capabilities` is present, the principal is further restricted to those API
+action classes. Omitting the field preserves the default behavior for the
+principal role.
 
 `DELETE /v1/admin/auth/principal?principal_id=agent-a`
 

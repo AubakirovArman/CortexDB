@@ -21,9 +21,12 @@ Current implementation slice:
 - `CORTEXDB_AUTH_POLICY_STORE_FILE` loads a local JSON policy store with
   `schema_version = cortexdb.auth_policy.v1`.
 - Entries contain `principal_id`, `token`, `role`, optional `agent_id`, and
-  optional `disabled`, plus optional `request_quota_per_minute`.
+  optional `disabled`, plus optional `request_quota_per_minute` and
+  optional `capabilities`.
 - Disabled principals are ignored.
 - Invalid policy-store files fail closed.
+- Optional `capabilities` restrict a valid role to explicit API action classes;
+  empty, duplicate, or unknown capability lists fail closed.
 - Explicit `cortexdb.auth_policy.v0` token-list stores are migrated into v1 in
   memory; unknown schema versions fail closed.
 - `cortexdb auth-review` reports local policy-store/token-file state without
@@ -47,10 +50,11 @@ The lifecycle must support:
 1. create principal;
 2. bind credentials or external identity;
 3. assign roles and scopes;
-4. rotate or revoke credentials;
-5. disable principal;
-6. audit all changes;
-7. migrate policies across format versions.
+4. assign action capabilities;
+5. rotate or revoke credentials;
+6. disable principal;
+7. audit all changes;
+8. migrate policies across format versions.
 
 ## Quota Model
 

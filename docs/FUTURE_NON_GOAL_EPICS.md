@@ -209,6 +209,10 @@ Current implementation slice:
 - Admin-only local policy-store mutation routes now support principal upsert,
   principal disablement, and rollback of the previous local policy-store
   snapshot.
+- Policy-store principals can now set local `capabilities` to restrict a valid
+  role to explicit API action classes such as `search`, `read`, `write`,
+  `ingest`, `verify`, `metrics`, or `admin`; invalid capability lists fail
+  closed.
 - The policy-store read path now migrates explicit
   `cortexdb.auth_policy.v0` token-list stores into canonical v1 principals in
   memory, while unsupported schemas fail closed.
@@ -217,7 +221,9 @@ Task pool:
 
 1. Promote `docs/RBAC_POLICY_STORE_DESIGN.md` into an implementation spec.
 2. Implement a durable local policy store for principals, roles, scopes, and
-   capabilities.
+   capabilities. Local role plus action-class capability restrictions are now
+   implemented for file-backed policy-store principals; richer role/capability
+   objects remain future work.
 3. Add policy mutation APIs with admin-only access and full audit events.
    Local file-backed upsert, disable, and rollback are implemented; dashboard
    UX and richer role/capability objects remain future work.

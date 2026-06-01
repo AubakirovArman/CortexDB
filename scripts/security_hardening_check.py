@@ -21,6 +21,9 @@ REQUIRED_MARKERS = {
         ("crates/cortex-server/src/tests/auth_policy_tests.rs", "auth_policy_store_invalid_json_fails_closed"),
         ("crates/cortex-server/src/tests/auth_policy_tests.rs", "admin_can_upsert_policy_store_principal"),
         ("crates/cortex-server/src/tests/auth_policy_tests.rs", "admin_can_disable_policy_store_principal_and_rollback"),
+        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "auth_policy_store_capabilities_restrict_data_routes"),
+        ("crates/cortex-cli/src/cli_auth_review_tests.rs", "auth_review_rejects_invalid_capability"),
+        ("docs/RBAC_POLICY_STORE_DESIGN.md", "Action capability restrictions"),
     ],
     "auth_policy_review": [
         ("docs/AUTH.md", "cortexdb auth-review --policy-store"),

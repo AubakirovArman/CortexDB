@@ -1,4 +1,5 @@
 use crate::audit::{self, AuditAction};
+use crate::auth_capability::EffectiveAuthPolicy;
 use crate::auth_policy_store;
 use crate::dashboard;
 use crate::responses::RouterError;
@@ -87,6 +88,11 @@ pub(crate) fn authorize_request(
             "token role is not allowed to access this route".to_owned(),
         ));
     }
+    if !capabilities_can_access(&policy, method, path) {
+        return Err(RouterError::Forbidden(
+            "token capability is not allowed to access this route".to_owned(),
+        ));
+    }
     Ok(AuthDecision {
         agent_id: policy.agent_id,
         role: Some(policy.role),
@@ -96,7 +102,7 @@ pub(crate) fn authorize_request(
 }
 
 pub(crate) fn validate_token_policies(options: &ServerOptions) -> Result<(), String> {
-    for policy in effective_auth_tokens(options)? {
+    for policy in effective_auth_policies(options)? {
         if policy.token.trim().is_empty() {
             return Err("auth token policy contains an empty token".to_owned());
         }
@@ -176,14 +182,22 @@ fn load_auth_tokens_file(path: &Path) -> Result<Vec<AuthTokenPolicy>, String> {
     Ok(tokens)
 }
 
-fn load_auth_policy_store(path: &Path) -> Result<Vec<AuthTokenPolicy>, String> {
+fn load_auth_policy_store(path: &Path) -> Result<Vec<EffectiveAuthPolicy>, String> {
     auth_policy_store::load_token_policies_from_store(path)
 }
 
-fn effective_auth_tokens(options: &ServerOptions) -> Result<Vec<AuthTokenPolicy>, String> {
-    let mut tokens = options.effective_auth_tokens();
+fn effective_auth_policies(options: &ServerOptions) -> Result<Vec<EffectiveAuthPolicy>, String> {
+    let mut tokens = options
+        .effective_auth_tokens()
+        .into_iter()
+        .map(EffectiveAuthPolicy::from_token_policy)
+        .collect::<Vec<_>>();
     if let Some(path) = &options.auth_tokens_file {
-        tokens.extend(load_auth_tokens_file(path)?);
+        tokens.extend(
+            load_auth_tokens_file(path)?
+                .into_iter()
+                .map(EffectiveAuthPolicy::from_token_policy),
+        );
     }
     if let Some(path) = &options.auth_policy_store_file {
         tokens.extend(load_auth_policy_store(path)?);
@@ -194,11 +208,11 @@ fn effective_auth_tokens(options: &ServerOptions) -> Result<Vec<AuthTokenPolicy>
 fn matching_policy(
     options: &ServerOptions,
     auth_header: Option<&str>,
-) -> Result<Option<AuthTokenPolicy>, RouterError> {
+) -> Result<Option<EffectiveAuthPolicy>, RouterError> {
     let Some(bearer) = auth_header.and_then(|value| value.strip_prefix("Bearer ")) else {
         return Ok(None);
     };
-    let tokens = effective_auth_tokens(options).map_err(|_| {
+    let tokens = effective_auth_policies(options).map_err(|_| {
         RouterError::Internal("auth token policy file could not be read".to_owned())
     })?;
     Ok(tokens.into_iter().find(|policy| policy.token == bearer))
@@ -216,6 +230,19 @@ fn role_can_access(role: AuthRole, method: &str, path: &str) -> bool {
         AuthRole::Admin => true,
         AuthRole::Data => !matches!(route_class(method, path), RouteClass::Admin),
     }
+}
+
+fn capabilities_can_access(policy: &EffectiveAuthPolicy, method: &str, path: &str) -> bool {
+    if matches!(route_class(method, path), RouteClass::Public) {
+        return true;
+    }
+    let Some(capabilities) = &policy.capabilities else {
+        return true;
+    };
+    let action = audit::classify(method, path);
+    capabilities
+        .iter()
+        .any(|capability| capability.allows(action))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

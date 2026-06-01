@@ -83,6 +83,12 @@ local fixed-window quota keyed by `principal_id`, so one principal exhausting
 its quota does not block another principal. The quota value must be greater
 than zero. Raw bearer tokens are not used as quota keys.
 
+Policy-store principals may also set `capabilities` to restrict an otherwise
+valid role to selected API action classes. Supported values are `admin`, `aql`,
+`context`, `delete`, `ingest`, `inference`, `memory`, `metrics`, `read`,
+`search`, `verify`, and `write`. Omitting `capabilities` preserves the default
+role behavior. An empty, duplicate, or unknown capability fails closed.
+
 Roles:
 
 - `admin`: can access all authenticated API routes, including stats, validate,
@@ -102,8 +108,8 @@ cortexdb --json auth-review --policy-store ./auth-policy.json --tokens-file ./au
 ```
 
 The review output includes source, principal ID, role, active/disabled state,
-optional `agent_id`, and optional `request_quota_per_minute`. It intentionally
-does not print token values.
+optional `agent_id`, optional `request_quota_per_minute`, and optional
+`capabilities`. It intentionally does not print token values.
 
 Admin tokens can mutate the local JSON policy store when
 `CORTEXDB_AUTH_POLICY_STORE_FILE` is configured. These routes are admin-only and
@@ -115,7 +121,7 @@ curl -X POST \
   -H "Authorization: Bearer root-token" \
   -H "Content-Type: application/json" \
   http://127.0.0.1:8181/v1/admin/auth/principal \
-  -d '{"principal_id":"agent-b","token":"agent-b-token","role":"data","agent_id":8,"request_quota_per_minute":600}'
+  -d '{"principal_id":"agent-b","token":"agent-b-token","role":"data","agent_id":8,"request_quota_per_minute":600,"capabilities":["search","read"]}'
 
 curl -X DELETE \
   -H "Authorization: Bearer root-token" \

@@ -22,6 +22,7 @@ mod audit_chain;
 #[cfg(test)]
 mod audit_tests;
 mod auth;
+mod auth_capability;
 mod auth_policy_io;
 mod auth_policy_store;
 mod authz;

@@ -1,4 +1,5 @@
 use crate::auth::{AuthRole, AuthTokenPolicy};
+use crate::auth_capability::{AuthCapability, EffectiveAuthPolicy};
 use crate::auth_policy_io::{atomic_write_text, rollback_path};
 use crate::responses::RouterError;
 use crate::router::query_param_decoded;
@@ -28,6 +29,8 @@ struct AuthPolicyPrincipal {
     disabled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     request_quota_per_minute: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    capabilities: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -56,6 +59,8 @@ pub(crate) struct AuthPolicyMutationRequest {
     pub disabled: bool,
     #[serde(default)]
     pub request_quota_per_minute: Option<u64>,
+    #[serde(default)]
+    pub capabilities: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -68,7 +73,9 @@ pub(crate) struct AuthPolicyMutationResponse {
     pub rollback_available: bool,
 }
 
-pub(crate) fn load_token_policies_from_store(path: &Path) -> Result<Vec<AuthTokenPolicy>, String> {
+pub(crate) fn load_token_policies_from_store(
+    path: &Path,
+) -> Result<Vec<EffectiveAuthPolicy>, String> {
     let store = read_store(path)?;
     let mut policies = Vec::new();
     for principal in validate_store(store)?.principals {
@@ -76,13 +83,17 @@ pub(crate) fn load_token_policies_from_store(path: &Path) -> Result<Vec<AuthToke
             continue;
         }
         let role = parse_role(&principal.role)?;
-        let mut policy =
-            AuthTokenPolicy::new(principal.token, role).with_principal_id(principal.principal_id);
+        let mut policy = EffectiveAuthPolicy::from_token_policy(
+            AuthTokenPolicy::new(principal.token, role).with_principal_id(principal.principal_id),
+        );
         if let Some(agent_id) = principal.agent_id {
             policy = policy.with_agent_id(agent_id);
         }
         if let Some(quota) = principal.request_quota_per_minute {
             policy = policy.with_request_quota_per_minute(quota);
+        }
+        if let Some(capabilities) = principal.capabilities {
+            policy = policy.with_capabilities(parse_capabilities(&capabilities)?);
         }
         policies.push(policy);
     }
@@ -129,6 +140,7 @@ fn upsert_principal(
         agent_id: request.agent_id,
         disabled: request.disabled,
         request_quota_per_minute: request.request_quota_per_minute,
+        capabilities: request.capabilities,
     };
     validate_principal(&principal).map_err(RouterError::BadRequest)?;
     if let Some(existing) = store
@@ -277,6 +289,7 @@ fn migrate_v0_store(legacy: AuthPolicyStoreFileV0) -> Result<AuthPolicyStoreFile
                 agent_id: token.agent_id,
                 disabled: false,
                 request_quota_per_minute: None,
+                capabilities: None,
             })
             .collect(),
     })
@@ -321,7 +334,24 @@ fn validate_principal(principal: &AuthPolicyPrincipal) -> Result<(), String> {
     if matches!(principal.request_quota_per_minute, Some(0)) {
         return Err("has invalid request_quota_per_minute".to_owned());
     }
+    if let Some(capabilities) = &principal.capabilities {
+        parse_capabilities(capabilities)?;
+    }
     Ok(())
+}
+
+fn parse_capabilities(raw: &[String]) -> Result<BTreeSet<AuthCapability>, String> {
+    if raw.is_empty() {
+        return Err("has empty capabilities".to_owned());
+    }
+    let mut capabilities = BTreeSet::new();
+    for value in raw {
+        let capability = AuthCapability::parse(value)?;
+        if !capabilities.insert(capability) {
+            return Err("has duplicate capability".to_owned());
+        }
+    }
+    Ok(capabilities)
 }
 
 fn parse_role(raw: &str) -> Result<AuthRole, String> {
