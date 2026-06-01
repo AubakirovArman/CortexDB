@@ -137,7 +137,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--min-docs", type=int, default=50)
     parser.add_argument("--min-chunks", type=int, default=150)
     parser.add_argument("--min-queries", type=int, default=40)
-    parser.add_argument("--min-history-runs", type=int, default=2)
+    parser.add_argument("--min-history-runs", type=int, default=3)
     return parser.parse_args(argv)
 
 

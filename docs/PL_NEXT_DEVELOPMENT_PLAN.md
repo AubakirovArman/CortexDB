@@ -295,6 +295,23 @@ Acceptance:
 
 ### Epic 2.5 - Real-Domain Embedding Repeated History
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- `make ann-real-embedding-readiness` passed with local `.env` values for
+  `CORTEXDB_EMBEDDING_URL`, `CORTEXDB_EMBEDDING_MODEL=BAAI/bge-m3`, and
+  `CORTEXDB_EMBEDDING_API_KEY` without printing the key.
+- Readiness report:
+  `target/ann/real-embedding/investment_projects_readiness_epic25.json`.
+- `make ann-real-embedding-history-regression-check` passed with
+  `ANN_REAL_EMBEDDING_MIN_HISTORY_RUNS=3`.
+- `target/ann/real-embedding/runs/history.json` contains three
+  `investment_projects` runs for the same corpus group with `run_count: 3`,
+  `regression_count: 0`, `mean_recall_q16: 65535`, `mean_mrr_q16: 65535`,
+  `mean_ndcg_q16: 65535`, `exact_parity_q16: 65535`, and
+  `latest_production_safe: true`.
+
 Tasks:
 
 1. Run at least 3 repeated `investment_projects` real-embedding benchmarks in a

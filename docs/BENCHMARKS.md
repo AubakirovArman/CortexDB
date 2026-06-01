@@ -429,7 +429,7 @@ The local repeated-run history is checked with:
 make retrieval-quality-check
 ```
 
-It validates corpus/query/ground-truth files, requires at least two local
+It validates corpus/query/ground-truth files, requires at least three local
 real-embedding history runs, and fails on recall, ranking, exact-parity,
 production-safety, or latency regressions.
 
