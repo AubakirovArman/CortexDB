@@ -56,6 +56,12 @@ decision. Empty issuer or audience values, empty mapping lists, duplicate
 provider groups, empty scopes, invalid roles, and invalid AgentView ids fail
 closed.
 
+The local `ExternalIdentityAuditRecord` contract records the outcome of that
+mapping decision without tokens or raw claim payloads. Successful decisions
+record the derived principal id, role, tenant, scopes, and optional AgentView
+id. Failed decisions record only the failure class and keep identity payload
+fields empty.
+
 ## Mapping Fixture
 
 The local policy-mapping fixture models the future mapping contract:
@@ -79,6 +85,13 @@ The rotation fixture models expected JWKS behavior without a live provider:
   denied;
 - provider outage fails closed for new tokens;
 - audit metadata may identify the principal but must not log raw bearer tokens.
+
+## Migration From Static Tokens
+
+Static-token deployments must continue to work while external identity is
+introduced. Operators should be able to run both modes during migration and
+revoke either mode independently. The current local fixtures keep
+`static_tokens_supported=true` to make that compatibility rule explicit.
 
 ## Current Evidence Boundary
 

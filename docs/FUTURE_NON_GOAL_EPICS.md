@@ -427,6 +427,8 @@ Current implementation slice:
 - The local `validate_oidc_provider_config` helper validates OIDC provider
   configuration shape before token acceptance: HTTPS JWKS URL, safe asymmetric
   algorithms, bounded cache/timeout values, and `fail_open=false`.
+- The local `ExternalIdentityAuditRecord` contract records external identity
+  mapping decisions without bearer tokens or raw claim payloads.
 - All new reports are written under `target/external-identity/` and carry
   `external_identity_ready=false`; they prove local prerequisites and claim
   mapping only, not a live OIDC, SAML, session provider, JWT signature verifier,
@@ -453,7 +455,12 @@ Task pool:
    not-before, and missing mapping tests now exist for already-validated claims;
    revoked-key tests remain tied to future JWKS signature verification.
 9. Add audit events for authenticated identity and policy decisions.
+   A local typed audit-record contract for external identity mapping decisions
+   is implemented; wiring it into a live provider request path remains future
+   work.
 10. Add migration path from static tokens.
+    Static-token compatibility is enforced in the mapping fixture; live
+    migration tooling remains future work.
 
 Required gates:
 

@@ -3,7 +3,12 @@ use std::collections::BTreeSet;
 
 use crate::auth::AuthRole;
 
+mod audit;
 mod provider;
+pub use audit::{
+    external_identity_decision_audit_record, external_identity_failure_audit_record,
+    ExternalIdentityAuditOutcome, ExternalIdentityAuditRecord,
+};
 pub use provider::{validate_oidc_provider_config, OidcProviderConfig, OidcProviderConfigFailure};
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]

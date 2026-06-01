@@ -190,6 +190,22 @@ def validate_provider_config_marker() -> list[str]:
     ]
 
 
+def validate_audit_contract_marker() -> list[str]:
+    source = read(Path("crates/cortex-server/src/external_identity/audit.rs"))
+    markers = [
+        "ExternalIdentityAuditRecord",
+        "external_identity_decision_audit_record",
+        "external_identity_failure_audit_record",
+        "token_logged: false",
+        "claims_logged: false",
+    ]
+    return [
+        f"external_identity/audit.rs missing audit marker {marker!r}"
+        for marker in markers
+        if marker not in source
+    ]
+
+
 def validate(gate: str) -> dict[str, Any]:
     spec = GATES[gate]
     failures = validate_markers(spec["markers"])  # type: ignore[arg-type]
@@ -208,6 +224,7 @@ def validate(gate: str) -> dict[str, Any]:
     elif gate == "policy-mapping":
         mapping_failures = validate_mapping_fixture(Path(spec["fixture"]))  # type: ignore[arg-type]
         mapping_failures.extend(validate_local_claim_verifier())
+        mapping_failures.extend(validate_audit_contract_marker())
         failures.extend(mapping_failures)
         checks["mapping_fixture"] = not mapping_failures
         checks["local_claim_verifier"] = not mapping_failures
