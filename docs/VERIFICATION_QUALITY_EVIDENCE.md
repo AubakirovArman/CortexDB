@@ -1,6 +1,6 @@
 # Verification Quality Evidence
 
-Last local verification quality run: 2026-05-31, passed.
+Last local verification quality run: 2026-06-01, passed.
 
 Run:
 
@@ -23,6 +23,7 @@ The release fixture covers:
 - contradiction markers;
 - mixed supporting and contradicting evidence;
 - numeric mismatch guards;
+- currency mismatch guards;
 - missing citation guards;
 - equal numeric values;
 - ambiguous evidence;
@@ -31,15 +32,17 @@ The release fixture covers:
 ## Latest Local Metrics
 
 ```text
-case_count: 8
+case_count: 9
 accuracy_q16: 65535
 supported: 3 / 3
-contradicted: 2 / 2
+contradicted: 3 / 3
 mixed: 1 / 1
 insufficient: 2 / 2
-guard_cases: 2
-numeric_guard_cases: 1
+guard_cases: 3
+numeric_guard_cases: 2
 citation_guard_cases: 1
+false_positive_count: 0
+false_negative_count: 0
 ```
 
 ## Boundary

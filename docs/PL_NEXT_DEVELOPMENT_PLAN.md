@@ -222,6 +222,19 @@ Acceptance:
 
 ### Epic 2.3 - Verification Evaluation v2
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- `make verification-quality-check` passed.
+- Labeled fixture now has 9 cases across supported, contradicted, mixed, and
+  insufficient outcomes.
+- Scenario coverage includes numeric equality, numeric conflict, currency
+  mismatch, missing citation, contradiction markers, ambiguity, and no
+  evidence.
+- Report includes explicit `false_positive_count: 0` and
+  `false_negative_count: 0`.
+
 Tasks:
 
 1. Expand labeled VERIFY FACT dataset.

@@ -115,6 +115,7 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "contradiction_marker",
         "mixed",
         "numeric_conflict",
+        "currency_mismatch",
         "missing_citation",
         "equal_values",
         "ambiguous",
@@ -123,6 +124,14 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
     missing_scenarios = sorted(required_scenarios.difference(scenario_counts))
     if missing_scenarios:
         failures.append(f"missing required scenarios: {', '.join(missing_scenarios)}")
+
+    positive_statuses = tuple(status for status in STATUSES if status != "insufficient")
+    false_positive_count = sum(confusion["insufficient"][status] for status in positive_statuses)
+    false_negative_count = sum(confusion[status]["insufficient"] for status in positive_statuses)
+    if false_positive_count:
+        failures.append(f"false positives detected: {false_positive_count}")
+    if false_negative_count:
+        failures.append(f"false negatives detected: {false_negative_count}")
 
     report = {
         "schema_version": 1,
@@ -135,6 +144,8 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "guard_cases": guard_cases,
         "citation_guard_cases": citation_guard_cases,
         "numeric_guard_cases": numeric_guard_cases,
+        "false_positive_count": false_positive_count,
+        "false_negative_count": false_negative_count,
     }
     return report
 

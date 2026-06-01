@@ -255,19 +255,21 @@ fn is_unit(word: &str) -> bool {
 }
 
 /// Detect if two numeric values contradict each other.
-/// They contradict if they have the same currency/unit context but different scaled values.
+/// They contradict if currency differs, or if the same currency/unit context has
+/// different scaled values.
 pub fn numeric_conflict(left: &NumericValue, right: &NumericValue) -> bool {
+    match (&left.currency, &right.currency) {
+        (Some(l), Some(r)) => return l != r || left.scaled_value != right.scaled_value,
+        (Some(_), None) | (None, Some(_)) => return false,
+        (None, None) => {}
+    }
     if left.scaled_value == right.scaled_value {
         return false;
     }
-    // Same currency or same unit or both plain numbers
-    match (&left.currency, &right.currency) {
+
+    match (&left.unit, &right.unit) {
         (Some(l), Some(r)) => l == r,
-        (None, None) => match (&left.unit, &right.unit) {
-            (Some(l), Some(r)) => l == r,
-            (None, None) => true,
-            _ => false,
-        },
+        (None, None) => true,
         _ => false,
     }
 }
@@ -386,6 +388,25 @@ mod tests {
             magnitude: None,
         };
         assert!(!numeric_conflict(&a, &b));
+    }
+
+    #[test]
+    fn detect_conflict_different_currency() {
+        let a = NumericValue {
+            raw: "12000".to_owned(),
+            scaled_value: 12_000,
+            currency: Some("USD".to_owned()),
+            unit: None,
+            magnitude: None,
+        };
+        let b = NumericValue {
+            raw: "12000".to_owned(),
+            scaled_value: 12_000,
+            currency: Some("KZT".to_owned()),
+            unit: None,
+            magnitude: None,
+        };
+        assert!(numeric_conflict(&a, &b));
     }
 
     #[test]
