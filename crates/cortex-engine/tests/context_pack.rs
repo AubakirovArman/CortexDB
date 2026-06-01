@@ -38,6 +38,15 @@ fn context_pack_from_aql_respects_budget() {
     assert_eq!(pack.cells[0].cell_id, CellId(1));
     assert!(pack.truncated);
     assert!(pack.estimated_tokens <= pack.token_budget_tokens);
+    assert_eq!(
+        pack.anomalies[0].code,
+        ContextPackAnomalyCode::TokenOverload
+    );
+    assert!(pack.anomalies[0]
+        .why_excluded
+        .as_deref()
+        .unwrap_or_default()
+        .contains("token_budget_tokens"));
 }
 
 #[test]
@@ -61,6 +70,7 @@ fn context_pack_reports_missing_citations_when_required() {
         ContextPackAnomalyCode::MissingCitation
     );
     assert_eq!(pack.anomalies[0].cell_id, Some(CellId(1)));
+    assert_eq!(pack.anomalies[0].why_excluded, None);
 }
 
 #[test]
@@ -142,6 +152,11 @@ fn context_pack_can_reduce_sparse_redundancy() {
         ContextPackAnomalyCode::RedundantCell
     );
     assert_eq!(pack.anomalies[0].cell_id, Some(CellId(2)));
+    assert!(pack.anomalies[0]
+        .why_excluded
+        .as_deref()
+        .unwrap_or_default()
+        .contains("reduce_redundancy"));
 }
 
 #[test]
@@ -175,6 +190,11 @@ fn context_pack_can_reduce_dense_vector_redundancy() {
         ContextPackAnomalyCode::RedundantCell
     );
     assert_eq!(pack.anomalies[0].cell_id, Some(CellId(2)));
+    assert!(pack.anomalies[0]
+        .why_excluded
+        .as_deref()
+        .unwrap_or_default()
+        .contains("reduce_redundancy"));
 }
 
 #[test]
@@ -285,4 +305,18 @@ fn test_context_pack_scoring_and_explain() {
     assert_eq!(exp.base_bm25, 10_000);
     assert!(exp.score > 0);
     assert!(!exp.why_selected.is_empty());
+    assert_eq!(exp.score_components.len(), 3);
+    let component_names = exp
+        .score_components
+        .iter()
+        .map(|component| component.name.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        component_names,
+        vec!["base_bm25", "source_trust_bonus", "redundancy_penalty"]
+    );
+    assert!(exp
+        .score_components
+        .iter()
+        .any(|component| component.name == "redundancy_penalty" && component.contribution <= 0));
 }

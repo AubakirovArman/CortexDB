@@ -100,10 +100,19 @@ pub struct CheckpointResponse {
 }
 
 #[derive(Serialize, Debug, Clone)]
+pub struct ScoreComponentResponse {
+    pub name: String,
+    pub value: u32,
+    pub contribution: i32,
+    pub reason: String,
+}
+
+#[derive(Serialize, Debug, Clone)]
 pub struct ExplainResponse {
     pub score: u32,
     pub matched_terms: Vec<String>,
     pub why_selected: String,
+    pub score_components: Vec<ScoreComponentResponse>,
     pub base_bm25: u32,
     pub source_trust_bonus: u32,
     pub redundancy_penalty: u32,
@@ -134,6 +143,7 @@ pub struct ContextPackAnomalyResponse {
     pub cell_id: Option<u64>,
     pub code: String,
     pub message: String,
+    pub why_excluded: Option<String>,
 }
 
 #[derive(Serialize, Debug, Clone)]

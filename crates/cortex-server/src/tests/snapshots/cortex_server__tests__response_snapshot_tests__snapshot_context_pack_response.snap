@@ -21,6 +21,26 @@ expression: resp
           "solar"
         ],
         "why_selected": "high lexical match",
+        "score_components": [
+          {
+            "name": "base_bm25",
+            "value": 80,
+            "contribution": 80,
+            "reason": "lexical relevance before bonuses and penalties"
+          },
+          {
+            "name": "source_trust_bonus",
+            "value": 10,
+            "contribution": 10,
+            "reason": "trusted source metadata increased the score"
+          },
+          {
+            "name": "redundancy_penalty",
+            "value": 0,
+            "contribution": 0,
+            "reason": "no redundancy penalty was applied"
+          }
+        ],
         "base_bm25": 80,
         "source_trust_bonus": 10,
         "redundancy_penalty": 0
@@ -39,12 +59,14 @@ expression: resp
     {
       "cell_id": 1,
       "code": "token_overload",
-      "message": "Cell exceeds token budget"
+      "message": "Cell exceeds token budget",
+      "why_excluded": "excluded because estimated_tokens would exceed token_budget_tokens"
     },
     {
       "cell_id": null,
       "code": "scope_mismatch",
-      "message": "Anomaly without cell association"
+      "message": "Anomaly without cell association",
+      "why_excluded": null
     }
   ]
 }

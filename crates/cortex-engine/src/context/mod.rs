@@ -13,7 +13,7 @@ pub mod dedup;
 pub mod explain;
 
 use dedup::{effective_redundancy_threshold, is_redundant, term_set, weighted_jaccard_q16};
-use explain::extract_query_terms;
+use explain::{extract_query_terms, generate_selection_reason};
 
 pub const DEFAULT_REDUNDANCY_THRESHOLD_Q16: u16 = 32_768;
 
@@ -37,10 +37,19 @@ impl Default for ContextPackOptions {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ContextScoreComponent {
+    pub name: String,
+    pub value: u32,
+    pub contribution: i32,
+    pub reason: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ContextExplain {
     pub score: u32,
     pub matched_terms: Vec<String>,
     pub why_selected: String,
+    pub score_components: Vec<ContextScoreComponent>,
     pub base_bm25: u32,
     pub source_trust_bonus: u32,
     pub redundancy_penalty: u32,
@@ -89,6 +98,7 @@ pub struct ContextPackAnomaly {
     pub cell_id: Option<CellId>,
     pub code: ContextPackAnomalyCode,
     pub message: String,
+    pub why_excluded: Option<String>,
 }
 
 impl Database {
@@ -186,6 +196,15 @@ impl ContextPack {
                 && estimated_tokens.saturating_add(cell_tokens) > token_budget_tokens;
             if would_exceed {
                 truncated = true;
+                anomalies.push(ContextPackAnomaly {
+                    cell_id: Some(cell.cell_id),
+                    code: ContextPackAnomalyCode::TokenOverload,
+                    message: "candidate would exceed the remaining token budget".to_owned(),
+                    why_excluded: Some(
+                        "excluded because estimated_tokens would exceed token_budget_tokens"
+                            .to_owned(),
+                    ),
+                });
                 break;
             }
             if pack_cells.is_empty() && cell_tokens > token_budget_tokens {
@@ -203,6 +222,10 @@ impl ContextPack {
                     cell_id: Some(cell.cell_id),
                     code: ContextPackAnomalyCode::RedundantCell,
                     message: "selected cell is redundant with an earlier packed cell".to_owned(),
+                    why_excluded: Some(
+                        "excluded because reduce_redundancy is enabled and similarity exceeds the configured threshold"
+                            .to_owned(),
+                    ),
                 });
                 continue;
             }
@@ -213,6 +236,7 @@ impl ContextPack {
                     cell_id: Some(cell.cell_id),
                     code: ContextPackAnomalyCode::MissingCitation,
                     message: "selected cell does not include source= or citation=".to_owned(),
+                    why_excluded: None,
                 });
             }
 
@@ -244,18 +268,16 @@ impl ContextPack {
                 .saturating_add(source_trust_bonus)
                 .saturating_sub(redundancy_penalty);
 
-            let why_selected = if redundancy_penalty > 5000 {
-                "contains relevant terms but heavily penalised for semantic redundancy".to_owned()
-            } else if source_trust_bonus > 40000 {
-                "highest semantic relevance and highly trusted source provenance".to_owned()
-            } else {
-                "contains relevant matched terms with standard provenance trust".to_owned()
-            };
+            let why_selected =
+                generate_selection_reason(score, base_bm25, source_trust_bonus, redundancy_penalty);
+            let score_components =
+                score_components(base_bm25, source_trust_bonus, redundancy_penalty);
 
             let explain = Some(ContextExplain {
                 score,
                 matched_terms: matched,
                 why_selected,
+                score_components,
                 base_bm25,
                 source_trust_bonus,
                 redundancy_penalty,
@@ -280,6 +302,33 @@ impl ContextPack {
             anomalies,
         }
     }
+}
+
+fn score_components(
+    base_bm25: u32,
+    source_trust_bonus: u32,
+    redundancy_penalty: u32,
+) -> Vec<ContextScoreComponent> {
+    vec![
+        ContextScoreComponent {
+            name: "base_bm25".to_owned(),
+            value: base_bm25,
+            contribution: i32::try_from(base_bm25).unwrap_or(i32::MAX),
+            reason: "keyword overlap between query terms and cell body".to_owned(),
+        },
+        ContextScoreComponent {
+            name: "source_trust_bonus".to_owned(),
+            value: source_trust_bonus,
+            contribution: i32::try_from(source_trust_bonus).unwrap_or(i32::MAX),
+            reason: "source_trust_q16 metadata or default provenance trust".to_owned(),
+        },
+        ContextScoreComponent {
+            name: "redundancy_penalty".to_owned(),
+            value: redundancy_penalty,
+            contribution: -i32::try_from(redundancy_penalty).unwrap_or(i32::MAX),
+            reason: "weighted Jaccard overlap with already packed cells".to_owned(),
+        },
+    ]
 }
 
 fn order_by_feedback(

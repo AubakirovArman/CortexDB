@@ -6,8 +6,9 @@ use crate::cli_json_types::{
     AqlCellResponse, AqlResponse, CellResponse, CliAnnEvaluationResponse,
     CliAnnSearchReportResponse, CliAnnValidateResponse, CliStatsResponse, CliValidateResponse,
     ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackExplainResponse,
-    ContextPackResponse, NumericConflictResponse, RememberResponse, SearchResponse,
-    SearchResultResponse, SourceRefResponse, VerificationEvidenceResponse, VerificationResponse,
+    ContextPackResponse, ContextPackScoreComponentResponse, NumericConflictResponse,
+    RememberResponse, SearchResponse, SearchResultResponse, SourceRefResponse,
+    VerificationEvidenceResponse, VerificationResponse,
 };
 
 fn serialize_or_error<T: serde::Serialize>(value: &T) -> String {
@@ -200,6 +201,16 @@ fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> ContextPackCellRe
         score: exp.score,
         matched_terms: exp.matched_terms.clone(),
         why_selected: exp.why_selected.clone(),
+        score_components: exp
+            .score_components
+            .iter()
+            .map(|component| ContextPackScoreComponentResponse {
+                name: component.name.clone(),
+                value: component.value,
+                contribution: component.contribution,
+                reason: component.reason.clone(),
+            })
+            .collect(),
         base_bm25: exp.base_bm25,
         source_trust_bonus: exp.source_trust_bonus,
         redundancy_penalty: exp.redundancy_penalty,
@@ -238,6 +249,7 @@ fn context_pack_response(pack: &ContextPack) -> ContextPackResponse {
                 cell_id: anomaly.cell_id.map(|id| id.0),
                 code: anomaly.code.as_str().to_owned(),
                 message: anomaly.message.clone(),
+                why_excluded: anomaly.why_excluded.clone(),
             })
             .collect(),
     }

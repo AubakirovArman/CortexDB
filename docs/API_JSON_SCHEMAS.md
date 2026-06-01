@@ -398,6 +398,26 @@ changes exist, `available` is `false` and `reason` is
         "score": 65535,
         "matched_terms": ["budget"],
         "why_selected": "matched query terms",
+        "score_components": [
+          {
+            "name": "base_bm25",
+            "value": 65535,
+            "contribution": 65535,
+            "reason": "keyword overlap between query terms and cell body"
+          },
+          {
+            "name": "source_trust_bonus",
+            "value": 0,
+            "contribution": 0,
+            "reason": "source_trust_q16 metadata or default provenance trust"
+          },
+          {
+            "name": "redundancy_penalty",
+            "value": 0,
+            "contribution": 0,
+            "reason": "weighted Jaccard overlap with already packed cells"
+          }
+        ],
         "base_bm25": 65535,
         "source_trust_bonus": 0,
         "redundancy_penalty": 0

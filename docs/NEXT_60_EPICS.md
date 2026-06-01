@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 18 |
-| partial | 34 |
+| closed | 19 |
+| partial | 33 |
 | not started | 6 |
 | research | 2 |
 | total | 60 |
@@ -53,7 +53,7 @@ The plan recommends this first execution batch:
 | 9 | Rust SDK Productization | partial | `crates/cortex-sdk` exists with typed client/examples. | Finish crate publication readiness and docs.rs-quality docs. |
 | 10 | SDK Compatibility Contract | closed | `make sdk-contract-check` and OpenAPI/SDK checks exist. | Keep blocking drift on every release. |
 | 11 | ContextPack Quality v2 | closed | `make context-pack-quality-check` now validates 25 cases across 5 domains and writes aggregate plus per-domain metrics. | Keep adding private/customer-domain evidence later without weakening deterministic gates. |
-| 12 | ContextPack Explain v2 | partial | `why_selected`, source refs, snapshots, and response fields exist. | Add complete `why_excluded` and richer score component explanations. |
+| 12 | ContextPack Explain v2 | closed | ContextPack explain now exposes `why_selected`, structured `score_components`, source refs, and `why_excluded` for excluded candidates/token overload across engine, CLI, SDK, server JSON, snapshots, and OpenAPI. | Keep explanations stable as new scoring components are added. |
 | 13 | ContextPack vs Classic RAG Benchmark | closed | RAG demo smoke and expected output contract exist. | Keep demo evidence updated for each release. |
 | 14 | ContextPack Agent Prompt Export | partial | ContextPack JSON/CLI/server paths exist. | Add stable prompt and Markdown export modes. |
 | 15 | ContextPack Budget Optimizer | partial | Token budgeting/truncation behavior exists. | Improve estimator, citation overhead accounting, and dedup-aware packing. |
@@ -118,5 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 12: complete ContextPack `why_excluded` explanations.
-2. Advance Epic 14: stable ContextPack prompt/Markdown export modes.
+1. Advance Epic 14: stable ContextPack prompt/Markdown export modes.
+2. Advance Epic 15: citation-overhead/dedup-aware budget optimizer.

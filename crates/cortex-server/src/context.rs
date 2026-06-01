@@ -4,7 +4,7 @@ use cortex_engine::{scope_id, ContextPack, ContextPackOptions, Database};
 use crate::authz;
 use crate::responses::{
     ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse, ExplainResponse,
-    RouterError, SourceRefResponse,
+    RouterError, ScoreComponentResponse, SourceRefResponse,
 };
 
 use crate::router::query_param_decoded;
@@ -66,6 +66,16 @@ fn map_context_pack(pack: &ContextPack) -> ContextPackResponse {
                 score: exp.score,
                 matched_terms: exp.matched_terms.clone(),
                 why_selected: exp.why_selected.clone(),
+                score_components: exp
+                    .score_components
+                    .iter()
+                    .map(|component| ScoreComponentResponse {
+                        name: component.name.clone(),
+                        value: component.value,
+                        contribution: component.contribution,
+                        reason: component.reason.clone(),
+                    })
+                    .collect(),
                 base_bm25: exp.base_bm25,
                 source_trust_bonus: exp.source_trust_bonus,
                 redundancy_penalty: exp.redundancy_penalty,
@@ -89,6 +99,7 @@ fn map_context_pack(pack: &ContextPack) -> ContextPackResponse {
             cell_id: anom.cell_id.map(|cid| cid.0),
             code: anom.code.as_str().to_owned(),
             message: anom.message.clone(),
+            why_excluded: anom.why_excluded.clone(),
         })
         .collect();
 

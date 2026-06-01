@@ -3,8 +3,8 @@ use crate::responses::{
     CheckpointResponse, ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
     ErrorCode, ErrorResponse, EvidenceResponse, ExplainResponse, GuardResponse, HealthResponse,
     IngestResponse, LatencyHistogramResponse, MetricsResponse, NumericConflictResponse,
-    PutCellResponse, SearchResultResponse, SourceRefResponse, StatsResponse, ValidationResponse,
-    VerificationReportResponse,
+    PutCellResponse, ScoreComponentResponse, SearchResultResponse, SourceRefResponse,
+    StatsResponse, ValidationResponse, VerificationReportResponse,
 };
 
 #[test]
@@ -144,6 +144,26 @@ fn snapshot_context_pack_response() {
                 score: 95,
                 matched_terms: vec!["budget".to_owned(), "solar".to_owned()],
                 why_selected: "high lexical match".to_owned(),
+                score_components: vec![
+                    ScoreComponentResponse {
+                        name: "base_bm25".to_owned(),
+                        value: 80,
+                        contribution: 80,
+                        reason: "lexical relevance before bonuses and penalties".to_owned(),
+                    },
+                    ScoreComponentResponse {
+                        name: "source_trust_bonus".to_owned(),
+                        value: 10,
+                        contribution: 10,
+                        reason: "trusted source metadata increased the score".to_owned(),
+                    },
+                    ScoreComponentResponse {
+                        name: "redundancy_penalty".to_owned(),
+                        value: 0,
+                        contribution: 0,
+                        reason: "no redundancy penalty was applied".to_owned(),
+                    },
+                ],
                 base_bm25: 80,
                 source_trust_bonus: 10,
                 redundancy_penalty: 0,
@@ -162,11 +182,15 @@ fn snapshot_context_pack_response() {
                 cell_id: Some(1),
                 code: "token_overload".to_owned(),
                 message: "Cell exceeds token budget".to_owned(),
+                why_excluded: Some(
+                    "excluded because estimated_tokens would exceed token_budget_tokens".to_owned(),
+                ),
             },
             ContextPackAnomalyResponse {
                 cell_id: None,
                 code: "scope_mismatch".to_owned(),
                 message: "Anomaly without cell association".to_owned(),
+                why_excluded: None,
             },
         ],
     };

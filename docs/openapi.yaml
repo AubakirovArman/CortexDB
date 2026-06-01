@@ -1476,6 +1476,7 @@ components:
       - score
       - matched_terms
       - why_selected
+      - score_components
       - base_bm25
       - source_trust_bonus
       - redundancy_penalty
@@ -1489,6 +1490,10 @@ components:
             type: string
         why_selected:
           type: string
+        score_components:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContextPackScoreComponentResponse'
         base_bm25:
           type: integer
           minimum: 0
@@ -1498,6 +1503,23 @@ components:
         redundancy_penalty:
           type: integer
           minimum: 0
+    ContextPackScoreComponentResponse:
+      type: object
+      required:
+      - name
+      - value
+      - contribution
+      - reason
+      properties:
+        name:
+          type: string
+        value:
+          type: integer
+          minimum: 0
+        contribution:
+          type: integer
+        reason:
+          type: string
     SourceRefResponse:
       type: object
       required:
@@ -1535,6 +1557,7 @@ components:
       required:
       - code
       - message
+      - why_excluded
       properties:
         cell_id:
           anyOf:
@@ -1550,6 +1573,10 @@ components:
           - scope_mismatch
         message:
           type: string
+        why_excluded:
+          anyOf:
+          - type: string
+          - type: 'null'
     LlmInferenceRequest:
       type: object
       additionalProperties: true

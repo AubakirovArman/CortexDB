@@ -29,8 +29,8 @@ pub use types::{
     ContextPackResponse, DeleteJobResponse, ErrorCode, ErrorResponse, EvidenceResponse,
     ExplainResponse, GuardResponse, HealthResponse, HnswNoFallbackProfileResponse, IngestResponse,
     IngestionJobResponse, IngestionJobStatus, NumericConflictResponse, PutCellResponse,
-    RememberResponse, SearchResponse, SearchResult, SourceRefResponse, StatsResponse,
-    ValidationResponse, VectorAlgorithm, VerificationReportResponse,
+    RememberResponse, ScoreComponentResponse, SearchResponse, SearchResult, SourceRefResponse,
+    StatsResponse, ValidationResponse, VectorAlgorithm, VerificationReportResponse,
 };
 
 #[cfg(test)]

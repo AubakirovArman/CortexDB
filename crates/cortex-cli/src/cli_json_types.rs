@@ -115,9 +115,18 @@ pub struct ContextPackExplainResponse {
     pub score: u32,
     pub matched_terms: Vec<String>,
     pub why_selected: String,
+    pub score_components: Vec<ContextPackScoreComponentResponse>,
     pub base_bm25: u32,
     pub source_trust_bonus: u32,
     pub redundancy_penalty: u32,
+}
+
+#[derive(Serialize)]
+pub struct ContextPackScoreComponentResponse {
+    pub name: String,
+    pub value: u32,
+    pub contribution: i32,
+    pub reason: String,
 }
 
 #[derive(Serialize)]
@@ -135,6 +144,7 @@ pub struct ContextPackAnomalyResponse {
     pub cell_id: Option<u64>,
     pub code: String,
     pub message: String,
+    pub why_excluded: Option<String>,
 }
 
 #[derive(Serialize)]
