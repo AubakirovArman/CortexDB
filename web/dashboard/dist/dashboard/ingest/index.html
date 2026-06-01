@@ -8,6 +8,7 @@
     <script src="/dashboard/assets/v1/reporting_common.js" defer></script>
     <script src="/dashboard/assets/v1/reporting_retrieval.js" defer></script>
     <script src="/dashboard/assets/v1/reporting_operations.js" defer></script>
+    <script src="/dashboard/assets/v1/reporting_audit.js" defer></script>
     <script src="/dashboard/assets/v1/reporting.js" defer></script>
     <script src="/dashboard/assets/v1/app.js" defer></script>
 </head>
@@ -63,12 +64,19 @@
                     <button type="button" data-action="operational-status" data-access="public">Refresh Status</button>
                     <button type="button" data-action="stats" data-access="admin">Stats</button>
                     <button type="button" data-action="metrics" data-access="admin">Metrics</button>
+                    <button type="button" data-action="audit-readiness" data-access="admin">Audit</button>
                     <button type="button" data-action="validate" data-access="admin">Validate</button>
                 </div>
                 <section class="report-panel" aria-labelledby="status-report-title">
                     <h3 id="status-report-title">Operational status</h3>
                     <div id="status-report" class="report-stack" aria-live="polite">
                         <div class="metric"><span>Status</span><strong>Refresh Status</strong></div>
+                    </div>
+                </section>
+                <section class="report-panel" aria-labelledby="audit-report-title">
+                    <h3 id="audit-report-title">Audit readiness</h3>
+                    <div id="audit-report" class="report-stack" aria-live="polite">
+                        <div class="metric"><span>Status</span><strong>Audit</strong></div>
                     </div>
                 </section>
             </section>

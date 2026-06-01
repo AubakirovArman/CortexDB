@@ -20,6 +20,13 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/app.js", "dashboard_status.v1"),
         ("web/dashboard/src/reporting_operations.js", "renderOperationalStatus"),
     ],
+    "audit_readiness": [
+        ("web/dashboard/src/index.html", "id=\"audit-report\""),
+        ("web/dashboard/src/index.html", "data-action=\"audit-readiness\""),
+        ("web/dashboard/src/reporting_audit.js", "dashboard_audit_readiness.v1"),
+        ("web/dashboard/src/reporting_audit.js", "renderAuditReadiness"),
+        ("docs/DASHBOARD_UI.md", "Audit readiness"),
+    ],
     "permissions_view": [
         ("web/dashboard/src/index.html", "href=\"/dashboard/permissions\""),
         ("web/dashboard/src/dashboard_manifest.json", "\"permissions\""),

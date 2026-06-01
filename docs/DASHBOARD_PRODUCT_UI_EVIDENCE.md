@@ -1,6 +1,6 @@
 # Dashboard Product UI Evidence
 
-Last local dashboard product UI run: 2026-05-31, passed.
+Last local dashboard product UI run: 2026-06-01, passed.
 
 Run:
 
@@ -28,6 +28,8 @@ This gate covers:
   the API;
 - an operational status panel for health, stats, validation, metrics, and
   visible incidents;
+- an audit readiness panel that keeps raw audit events out of the browser and
+  points operators to file-backed CLI redaction checks;
 - a permissions view for tenant, active role, token state, admin/data
   capabilities, and local write guard state;
 - dashboard release packaging and screenshot artifact wiring.
@@ -37,6 +39,7 @@ This gate covers:
 ```text
 read_only_mode: true
 operational_status: true
+audit_readiness: true
 permissions_view: true
 release_artifacts: true
 standalone_package: target/dashboard/dashboard-v1.tar.gz

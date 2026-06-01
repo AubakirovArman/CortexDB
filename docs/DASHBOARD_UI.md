@@ -33,6 +33,10 @@ The dashboard also has a local read-only mode that blocks mutating actions
 before they reach the API, an operational status panel for visible health and
 incident checks, and a Permissions route that explains the active tenant, role,
 token state, admin/data capabilities, and local write guard state.
+The Overview route includes an Audit readiness panel that keeps incident review
+operators on the safe path: audit logs remain file-backed, raw audit events are
+not rendered in the browser, and the panel points operators to the CLI
+redaction-check workflow.
 ContextPack responses render a separate report view for token budget usage,
 selected cells, citations, anomalies, and per-cell explain metadata so pack
 quality can be reviewed without reading raw JSON.
@@ -113,6 +117,6 @@ workflow coverage and visual regression coverage.
 For Beta Release Candidate evidence, the dashboard counts as an operational
 view only for local developer/operator workflows: health, metrics, validation,
 storage status, ANN evaluation, ingestion jobs, cluster status, permissions
-review, local read-only guard state, and typed error reports. It is not yet a
-full incident-management console, RBAC administration UI, or production
-observability product.
+review, audit readiness, local read-only guard state, and typed error reports.
+It is not yet a full incident-management console, RBAC administration UI, audit
+log browser, or production observability product.

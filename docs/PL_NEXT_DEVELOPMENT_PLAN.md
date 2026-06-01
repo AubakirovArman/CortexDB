@@ -528,6 +528,21 @@ Acceptance:
 
 ### Epic 3.5 - Dashboard Operational Views
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- Dashboard source adds an Audit readiness panel alongside operational status,
+  metrics, validation, and permissions review.
+- `scripts/dashboard_product_check.py` gates read-only mode, operational
+  status, audit readiness, permissions, and release artifact wiring.
+- `target/dashboard/product-ui-report.json` passed with all dashboard product
+  checks true.
+- `make dashboard-screenshots` regenerated desktop/mobile release screenshot
+  artifacts.
+- Built dashboard assets are synchronized into `web/dashboard/dist` and
+  `crates/cortex-server/assets/dashboard/v1`.
+
 Tasks:
 
 1. Improve incident/status views.
