@@ -40,11 +40,13 @@ query_level_rows: 40
 ## Latest Beta Multi-Domain Fixture Report
 
 ```text
-domain_count: 2
-domains: investment_projects, support_tickets
+domain_count: 4
+domains: investment_projects, legal_policies, support_tickets, technical_docs
 repeat_runs_per_domain: 5
 investment_projects_latest_mean_recall_q16: 62258
+legal_policies_latest_mean_recall_q16: 65535
 support_tickets_latest_mean_recall_q16: 65535
+technical_docs_latest_mean_recall_q16: 65535
 regression_count: 0
 production_safe: true
 ```
@@ -67,6 +69,10 @@ This gate proves:
   structurally valid;
 - the checked-in `support_tickets` corpus, queries, and ground truth are
   structurally valid;
+- the checked-in `legal_policies` corpus, queries, and ground truth are
+  structurally valid;
+- the checked-in `technical_docs` corpus, queries, and ground truth are
+  structurally valid;
 - deterministic multi-domain retrieval repeats five times per domain with no
   local regression;
 - real-domain embedding readiness passed with `BAAI/bge-m3` against the local
@@ -85,5 +91,5 @@ This gate does not prove:
 - hosted GitHub Actions embedding execution, which is deferred to beta;
 - quality on private customer corpora;
 - hosted endpoint-backed embedding history for every checked-in domain;
-- production relevance judgments beyond the checked-in investment-project
-  and support-ticket ground truth.
+- production relevance judgments beyond the checked-in investment-project,
+  support-ticket, legal-policy, and technical-doc ground truth.

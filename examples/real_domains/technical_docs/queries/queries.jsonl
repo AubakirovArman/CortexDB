@@ -1,0 +1,5 @@
+{"query_id":"tech_q001","name":"search explain score fields","query":"What scores does the search explain endpoint return?","intent":"api_contract"}
+{"query_id":"tech_q002","name":"storage validation checks","query":"Which storage files are checked by validation?","intent":"operations"}
+{"query_id":"tech_q003","name":"sdk release gate requirements","query":"What does the SDK release gate require before publication?","intent":"release_process"}
+{"query_id":"tech_q004","name":"server security config","query":"Which security controls are included in server configuration?","intent":"security_config"}
+{"query_id":"tech_q005","name":"query routing strategy","query":"How does query routing choose lexical vector or hybrid retrieval?","intent":"retrieval_strategy"}

@@ -1,0 +1,9 @@
+{
+  "sources": [
+    {
+      "source": "synthetic_policy_fixture",
+      "type": "synthetic_domain_fixture",
+      "license_note": "Synthetic policy text for local retrieval-quality gates; not legal advice."
+    }
+  ]
+}

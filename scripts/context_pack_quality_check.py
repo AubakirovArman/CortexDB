@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 Q16_ONE = 65_535
-MIN_BETA_CASES = 20
+MIN_BETA_CASES = 25
 MIN_BETA_DOMAINS = 3
 MIN_BETA_COVERAGE_Q16 = 60_000
 
@@ -74,6 +74,7 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
     classic_rag_duplicates = classic_rag_anomalies = 0
     classic_rag_cited_chunks = 0
     domains: set[str] = set()
+    per_domain: dict[str, dict[str, int]] = {}
 
     for case in cases:
         case_id = case.get("case_id")
@@ -85,7 +86,30 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         case_ids.add(case_id)
         if not isinstance(case.get("scenario"), str) or not case["scenario"]:
             failures.append(f"{case_id}:scenario must be a non-empty string")
-        domains.add(str_field(case, "domain"))
+        domain = str_field(case, "domain")
+        domains.add(domain)
+        domain_totals = per_domain.setdefault(
+            domain,
+            {
+                "case_count": 0,
+                "required_evidence": 0,
+                "covered_evidence": 0,
+                "raw_tokens": 0,
+                "pack_tokens": 0,
+                "classic_rag_tokens": 0,
+                "classic_rag_chunks": 0,
+                "pack_cells": 0,
+                "classic_rag_duplicate_chunks": 0,
+                "required_citation_cells": 0,
+                "cited_cells": 0,
+                "redundant_candidates": 0,
+                "suppressed_redundant": 0,
+                "expected_anomalies": 0,
+                "reported_anomalies": 0,
+                "deterministic_order_cases": 0,
+            },
+        )
+        domain_totals["case_count"] += 1
 
         required_evidence += int_field(case, "required_evidence")
         covered_evidence += int_field(case, "covered_evidence")
@@ -105,6 +129,23 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         if bool_field(case, "citations_required"):
             required_citation_cells += int_field(case, "pack_cells")
             cited_cells += int_field(case, "cited_cells")
+            domain_totals["required_citation_cells"] += int_field(case, "pack_cells")
+            domain_totals["cited_cells"] += int_field(case, "cited_cells")
+
+        domain_totals["required_evidence"] += int_field(case, "required_evidence")
+        domain_totals["covered_evidence"] += int_field(case, "covered_evidence")
+        domain_totals["raw_tokens"] += int_field(case, "raw_tokens")
+        domain_totals["pack_tokens"] += int_field(case, "pack_tokens")
+        domain_totals["classic_rag_tokens"] += int_field(case, "classic_rag_tokens")
+        domain_totals["classic_rag_chunks"] += int_field(case, "classic_rag_chunks")
+        domain_totals["pack_cells"] += int_field(case, "pack_cells")
+        domain_totals["classic_rag_duplicate_chunks"] += int_field(case, "classic_rag_duplicate_chunks")
+        domain_totals["redundant_candidates"] += int_field(case, "redundant_candidates")
+        domain_totals["suppressed_redundant"] += int_field(case, "suppressed_redundant")
+        domain_totals["expected_anomalies"] += int_field(case, "expected_anomalies")
+        domain_totals["reported_anomalies"] += int_field(case, "reported_anomalies")
+        if bool_field(case, "deterministic_order"):
+            domain_totals["deterministic_order_cases"] += 1
 
         if int_field(case, "pack_tokens") > int_field(case, "raw_tokens"):
             failures.append(f"{case_id}: pack_tokens exceeds raw_tokens")
@@ -143,6 +184,45 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "anomaly_coverage_q16": q16(reported_anomalies, expected_anomalies),
         "deterministic_order_q16": q16(deterministic_order_cases, len(cases)),
     }
+    domain_metrics = {
+        domain: {
+            **totals,
+            "evidence_coverage_q16": q16(totals["covered_evidence"], totals["required_evidence"]),
+            "token_reduction_q16": q16(
+                totals["raw_tokens"] - totals["pack_tokens"],
+                totals["raw_tokens"],
+            ),
+            "context_pack_token_savings_vs_classic_q16": q16(
+                totals["classic_rag_tokens"] - totals["pack_tokens"],
+                totals["classic_rag_tokens"],
+            ),
+            "context_pack_cell_reduction_vs_classic_q16": q16(
+                totals["classic_rag_chunks"] - totals["pack_cells"],
+                totals["classic_rag_chunks"],
+            ),
+            "classic_rag_duplicate_rate_q16": q16(
+                totals["classic_rag_duplicate_chunks"],
+                totals["classic_rag_chunks"],
+            ),
+            "citation_coverage_q16": q16(
+                totals["cited_cells"],
+                totals["required_citation_cells"],
+            ),
+            "redundancy_reduction_q16": q16(
+                totals["suppressed_redundant"],
+                totals["redundant_candidates"],
+            ),
+            "anomaly_coverage_q16": q16(
+                totals["reported_anomalies"],
+                totals["expected_anomalies"],
+            ),
+            "deterministic_order_q16": q16(
+                totals["deterministic_order_cases"],
+                totals["case_count"],
+            ),
+        }
+        for domain, totals in sorted(per_domain.items())
+    }
     if len(cases) < MIN_BETA_CASES:
         failures.append(f"expected at least {MIN_BETA_CASES} ContextPack quality cases")
     if metrics["domain_count"] < MIN_BETA_DOMAINS:
@@ -174,6 +254,7 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "raw_tokens": raw_tokens,
         "pack_tokens": pack_tokens,
         **metrics,
+        "per_domain_metrics": domain_metrics,
     }
 
 

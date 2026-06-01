@@ -1,0 +1,5 @@
+{"query_id":"tech_q001","relevant_doc_ids":["tech_doc_001"],"relevant_chunk_ids":["tech_doc_001_c001"]}
+{"query_id":"tech_q002","relevant_doc_ids":["tech_doc_002"],"relevant_chunk_ids":["tech_doc_002_c001"]}
+{"query_id":"tech_q003","relevant_doc_ids":["tech_doc_003"],"relevant_chunk_ids":["tech_doc_003_c001"]}
+{"query_id":"tech_q004","relevant_doc_ids":["tech_doc_004"],"relevant_chunk_ids":["tech_doc_004_c001"]}
+{"query_id":"tech_q005","relevant_doc_ids":["tech_doc_005"],"relevant_chunk_ids":["tech_doc_005_c001"]}

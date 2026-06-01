@@ -35,19 +35,24 @@ The release fixture covers:
 - ambiguous evidence;
 - unreadable-scope evidence;
 - no-evidence insufficient verdicts.
+- support-ticket operational facts;
+- legal-policy approval/effective-date facts;
+- technical-doc API/SDK/security facts;
+- world-indicator numeric and currency facts.
 
 ## Latest Local Metrics
 
 ```text
-case_count: 30
+case_count: 50
 accuracy_q16: 65535
-supported: 8 / 8
-contradicted: 13 / 13
-mixed: 4 / 4
-insufficient: 5 / 5
-guard_cases: 13
-numeric_guard_cases: 11
-citation_guard_cases: 2
+supported: 14 / 14
+contradicted: 20 / 20
+mixed: 8 / 8
+insufficient: 8 / 8
+domain_counts: investment_projects=30, legal_policies=5, support_tickets=5, technical_docs=5, world_indicators=5
+guard_cases: 20
+numeric_guard_cases: 16
+citation_guard_cases: 4
 false_positive_count: 0
 false_negative_count: 0
 ```

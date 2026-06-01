@@ -1,0 +1,5 @@
+{"query_id":"legal_q001","name":"confidential data export approval","query":"Does confidential data export require manager approval?","intent":"policy_requirement"}
+{"query_id":"legal_q002","name":"vendor production tenant review","query":"When does vendor access require legal review for production tenants?","intent":"policy_requirement"}
+{"query_id":"legal_q003","name":"support record retention","query":"How long are customer support records retained?","intent":"retention_lookup"}
+{"query_id":"legal_q004","name":"incident notification review timing","query":"What notification review timing applies to regulated customer data incidents?","intent":"incident_policy"}
+{"query_id":"legal_q005","name":"cross border restricted data transfer","query":"What approval is needed for cross-border transfer of restricted customer data?","intent":"privacy_policy"}

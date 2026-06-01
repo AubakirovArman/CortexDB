@@ -1,0 +1,9 @@
+{
+  "sources": [
+    {
+      "source": "synthetic_technical_fixture",
+      "type": "synthetic_domain_fixture",
+      "license_note": "Synthetic developer documentation text for local retrieval-quality gates."
+    }
+  ]
+}

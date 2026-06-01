@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 11 |
-| partial | 41 |
+| closed | 14 |
+| partial | 38 |
 | not started | 6 |
 | research | 2 |
 | total | 60 |
@@ -52,17 +52,17 @@ The plan recommends this first execution batch:
 | 8 | TypeScript SDK Productization | partial | TypeScript SDK, generated types, examples, package metadata exist. | Harden ESM/CJS packaging, typed errors, and public npm workflow. |
 | 9 | Rust SDK Productization | partial | `crates/cortex-sdk` exists with typed client/examples. | Finish crate publication readiness and docs.rs-quality docs. |
 | 10 | SDK Compatibility Contract | closed | `make sdk-contract-check` and OpenAPI/SDK checks exist. | Keep blocking drift on every release. |
-| 11 | ContextPack Quality v2 | partial | Quality gate and evidence docs exist. | Expand to the full beta target dataset and per-domain quality history. |
+| 11 | ContextPack Quality v2 | closed | `make context-pack-quality-check` now validates 25 cases across 5 domains and writes aggregate plus per-domain metrics. | Keep adding private/customer-domain evidence later without weakening deterministic gates. |
 | 12 | ContextPack Explain v2 | partial | `why_selected`, source refs, snapshots, and response fields exist. | Add complete `why_excluded` and richer score component explanations. |
 | 13 | ContextPack vs Classic RAG Benchmark | closed | RAG demo smoke and expected output contract exist. | Keep demo evidence updated for each release. |
 | 14 | ContextPack Agent Prompt Export | partial | ContextPack JSON/CLI/server paths exist. | Add stable prompt and Markdown export modes. |
 | 15 | ContextPack Budget Optimizer | partial | Token budgeting/truncation behavior exists. | Improve estimator, citation overhead accounting, and dedup-aware packing. |
-| 16 | Verification Dataset v2 | partial | Verification quality gate and expanded deterministic cases exist. | Reach the full v2 target across 50+ cases and 5 domains. |
+| 16 | Verification Dataset v2 | closed | `make verification-quality-check` now executes and reports 50 deterministic cases across 5 domains with all verdict classes and guard coverage. | Add real customer/legal review fixtures later without weakening deterministic gates. |
 | 17 | NumericValue Engine Integration | partial | `NumericValue`, numeric extraction, and conflict reporting exist. | Move all numeric conflict semantics fully into engine-level report structs. |
 | 18 | Source Trust Model v1 | partial | Source metadata/source refs exist. | Add first-class trust categories, scoring, and ContextPack/Verify contribution. |
 | 19 | Contradiction Index v1 | not started | Verification detects conflicts dynamically. | Add persisted contradiction relation cells and conflict index. |
 | 20 | Verification Report Export | partial | Typed JSON reports and numeric conflicts exist. | Add stable Markdown/audit export from CLI/server. |
-| 21 | Real-domain Corpus Expansion | partial | Investment projects and support tickets corpora exist. | Add legal policies and technical docs with validators/ground truth. |
+| 21 | Real-domain Corpus Expansion | closed | `make retrieval-quality-check` now validates investment projects, support tickets, legal policies, and technical docs corpora with ground truth. | Add larger public/private corpora later as separate quality expansions. |
 | 22 | Retrieval Quality Dashboard | partial | Retrieval reports and dashboard foundations exist. | Add full dashboard table for recall/MRR/nDCG/p95/exact parity. |
 | 23 | HNSW Production SLO History | partial | ANN guardrails and real-domain report gates exist. | Build sustained 10+ run history and SLO regression tracking. |
 | 24 | Search Explain API | partial | `/v1/search/explain` exists and is in OpenAPI/dashboard. | Add fuller term/vector/fusion contribution details and SDK coverage. |
@@ -118,8 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Finish Epic 11: ContextPack quality dataset expansion.
-2. Finish Epic 16: Verification dataset v2 expansion.
-3. Finish Epic 21: legal/technical real-domain corpora.
-4. Advance Epic 22: retrieval quality dashboard report view.
-5. Advance Epic 46: complete binary platform matrix.
+1. Advance Epic 22: retrieval quality dashboard report view.
+2. Advance Epic 46: complete binary platform matrix.

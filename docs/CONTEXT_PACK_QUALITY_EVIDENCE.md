@@ -18,16 +18,16 @@ target/context-pack-quality/report.json
 ## Latest Local Metrics
 
 ```text
-case_count: 20
-domain_count: 4
-domains: investment_projects, legal_policies, support_tickets, world_indicators
+case_count: 25
+domain_count: 5
+domains: investment_projects, legal_policies, support_tickets, technical_docs, world_indicators
 evidence_coverage_q16: 65535
-token_reduction_q16: 36899
-context_pack_token_savings_vs_classic_q16: 36899
-context_pack_cell_reduction_vs_classic_q16: 31637
-classic_rag_chunks: 116
-classic_rag_duplicate_chunks: 35
-classic_rag_duplicate_rate_q16: 19773
+token_reduction_q16: 36915
+context_pack_token_savings_vs_classic_q16: 36915
+context_pack_cell_reduction_vs_classic_q16: 31881
+classic_rag_chunks: 148
+classic_rag_duplicate_chunks: 45
+classic_rag_duplicate_rate_q16: 19926
 citation_coverage_q16: 65535
 redundancy_reduction_q16: 65535
 anomaly_coverage_q16: 65535
@@ -44,8 +44,11 @@ This gate proves:
 - the real-domain investment-project fixture produces cited selected cells;
 - support-ticket, legal-policy, and world-indicator fixtures prove the metric
   gate is no longer limited to one domain;
+- the technical-docs domain covers API contracts, storage runbooks, versioned
+  docs, SDK quickstarts, and security configuration context;
 - ContextPack output is measured against classic raw chunk retrieval for token
   savings, cell reduction, duplicate pressure, and anomaly coverage;
+- the report includes per-domain metrics under `per_domain_metrics`;
 - the quality fixture records measurable evidence coverage, token reduction,
   citation coverage, redundancy reduction, anomaly coverage, and deterministic
   ordering.

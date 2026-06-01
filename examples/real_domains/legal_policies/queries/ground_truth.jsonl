@@ -1,0 +1,5 @@
+{"query_id":"legal_q001","relevant_doc_ids":["legal_policy_001"],"relevant_chunk_ids":["legal_policy_001_c001"]}
+{"query_id":"legal_q002","relevant_doc_ids":["legal_policy_002"],"relevant_chunk_ids":["legal_policy_002_c001"]}
+{"query_id":"legal_q003","relevant_doc_ids":["legal_policy_003"],"relevant_chunk_ids":["legal_policy_003_c001"]}
+{"query_id":"legal_q004","relevant_doc_ids":["legal_policy_004"],"relevant_chunk_ids":["legal_policy_004_c001"]}
+{"query_id":"legal_q005","relevant_doc_ids":["legal_policy_005"],"relevant_chunk_ids":["legal_policy_005_c001"]}

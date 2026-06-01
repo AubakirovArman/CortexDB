@@ -11,7 +11,8 @@ from typing import Any
 
 Q16_ONE = 65_535
 STATUSES = ("supported", "contradicted", "mixed", "insufficient")
-MIN_BETA_CASES = 30
+MIN_BETA_CASES = 50
+MIN_BETA_DOMAINS = 5
 
 
 def load_cases(path: Path) -> list[dict[str, Any]]:
@@ -57,6 +58,13 @@ def list_field(case: dict[str, Any], field: str) -> list[Any]:
     return value
 
 
+def domain_for_case(case: dict[str, Any]) -> str:
+    value = case.get("domain")
+    if isinstance(value, str) and value:
+        return value
+    return "investment_projects"
+
+
 def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
     if not cases:
         raise ValueError("expected at least one verification case")
@@ -68,6 +76,8 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
     guard_cases = 0
     citation_guard_cases = 0
     numeric_guard_cases = 0
+    domain_counts: dict[str, int] = {}
+    per_domain_status_counts: dict[str, dict[str, int]] = {}
 
     for case in cases:
         case_id = str_field(case, "case_id")
@@ -77,10 +87,17 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
 
         scenario = str_field(case, "scenario")
         scenario_counts[scenario] = scenario_counts.get(scenario, 0) + 1
+        domain = domain_for_case(case)
+        domain_counts[domain] = domain_counts.get(domain, 0) + 1
         expected = str_field(case, "expected_status")
         if expected not in STATUSES:
             failures.append(f"{case_id}: unknown expected_status {expected}")
             continue
+        domain_status_counts = per_domain_status_counts.setdefault(
+            domain,
+            {status: 0 for status in STATUSES},
+        )
+        domain_status_counts[expected] += 1
 
         # The companion Rust integration test executes the same fixture through
         # Database::verify_fact_aql and proves observed == expected. This script
@@ -113,6 +130,8 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
 
     if len(cases) < MIN_BETA_CASES:
         failures.append(f"expected at least {MIN_BETA_CASES} beta verification cases")
+    if len(domain_counts) < MIN_BETA_DOMAINS:
+        failures.append(f"expected at least {MIN_BETA_DOMAINS} verification domains")
 
     required_scenarios = {
         "supported",
@@ -158,6 +177,8 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "accuracy_q16": q16(len(cases) - len(failures), len(cases)),
         "confusion_matrix": confusion,
         "scenario_counts": scenario_counts,
+        "domain_counts": domain_counts,
+        "per_domain_status_counts": per_domain_status_counts,
         "guard_cases": guard_cases,
         "citation_guard_cases": citation_guard_cases,
         "numeric_guard_cases": numeric_guard_cases,
