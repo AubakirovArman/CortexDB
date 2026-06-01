@@ -18,11 +18,11 @@ target/security-hardening/report.json
 
 | Area | Current status |
 | --- | --- |
-| Persisted auth policy store | File-backed token rotation and JSON principal policy store are implemented through `CORTEXDB_AUTH_TOKENS_FILE` and `CORTEXDB_AUTH_POLICY_STORE_FILE`; full enterprise RBAC administration remains future work. |
+| Persisted auth policy store | File-backed token rotation and JSON principal policy store are implemented through `CORTEXDB_AUTH_TOKENS_FILE` and `CORTEXDB_AUTH_POLICY_STORE_FILE`; `make rbac-policy-store-check` verifies the local evidence gate; full enterprise RBAC administration remains future work. |
 | Auth policy review | `cortexdb auth-review` shows local policy-store/token-file principals, roles, AgentView bindings, quotas, and disabled state while redacting token values. |
-| Per-principal quotas | Process-wide rate limit and policy-store `request_quota_per_minute` are implemented; route-class and distributed quotas remain future work. |
+| Per-principal quotas | Process-wide rate limit and policy-store `request_quota_per_minute` are implemented; `make quota-policy-check` verifies the local evidence gate; route-class and distributed quotas remain future work. |
 | Principal-aware audit metadata | Authenticated route-level JSONL audit records include `principal_id`, `auth_role`, and `auth_agent_id` without storing bearer tokens. |
-| Tamper-evident audit chain | File-backed route audit records include local chain metadata and `cortexdb audit --verify-chain` detects local deletion, reordering, and metadata edits; compliance-grade ledger and vendor-managed SIEM delivery remain future work. |
+| Tamper-evident audit chain | File-backed route audit records include local chain metadata and `cortexdb audit --verify-chain` detects local deletion, reordering, and metadata edits; `make audit-chain-check` verifies the local evidence gate; compliance-grade ledger and vendor-managed SIEM delivery remain future work. |
 | SIEM audit export | `cortexdb audit-export-siem` exports normalized local JSONL with principal and audit-chain metadata after optional redaction and chain checks; vendor-managed SIEM delivery remains future work. |
 | Compliance boundary mapping | `COMPLIANCE_BOUNDARY_MAPPING.md` and `make compliance-boundary-check` document local evidence controls and explicitly state that no external compliance framework is currently certified. |
 | Encrypted backup support | Design exists in `ENCRYPTED_BACKUPS_DESIGN.md`; current backup/restore/offsite staging are local and unencrypted. |
@@ -47,11 +47,14 @@ GDPR, legal-grade verification, or other external compliance certification.
 
 ```text
 persisted_auth_policy_store: true
+rbac_policy_store_gate: true
 auth_policy_review: true
 per_token_quota_boundary: true
 per_principal_quota: true
+quota_policy_gate: true
 audit_principal_metadata: true
 audit_chain_foundation: true
+audit_chain_gate: true
 siem_audit_export: true
 compliance_boundary_mapping: true
 audit_redaction: true

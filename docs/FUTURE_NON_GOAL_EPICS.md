@@ -173,6 +173,9 @@ Current implementation slice:
 - `docs/COMPLIANCE_BOUNDARY_MAPPING.md` and `make compliance-boundary-check`
   define the local evidence boundary and explicitly state that no external
   compliance framework is currently certified.
+- `make rbac-policy-store-check`, `make quota-policy-check`, and
+  `make audit-chain-check` now exist as local evidence gates that bind the
+  Epic 3 required checks to current tests and marker reports.
 
 Task pool:
 

@@ -1,4 +1,4 @@
-.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check sdk-release-artifacts-check openapi-check openapi-contract-check sdk-contract-check sdk-e2e-release-check migration-policy-check migration-compatibility-check storage-compat-check engine-api-check aql-compat-check retrieval-quality-check context-pack-quality-check verification-quality-check security-check security-hardening-check compliance-boundary-check observability-check deployment-upgrade-check http-contract-ops-check cli-product-check future-epic-design-check distributed-consensus-design-check managed-cloud-design-check enterprise-rbac-design-check hnsw-no-fallback-design-check llm-inference-design-check external-identity-design-check legal-verification-design-check binary-release-package binary-release-validate binary-platform-matrix-check binary-release-check beta-delta-check beta-foundation-check beta-rc-check production-hardening-check production-candidate-check production-v1-check public-claims-check load-smoke-check single-node-performance-check performance-trend-check tenant-recovery-check context-verify-quality-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-product-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-readiness ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-real-embedding-release-check ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-history-fixture-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check crash-fault-check chaos-restart-check storage-soak-check replication-partition-check replication-lifecycle-check production-evidence-sweep smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
+.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check sdk-release-artifacts-check openapi-check openapi-contract-check sdk-contract-check sdk-e2e-release-check migration-policy-check migration-compatibility-check storage-compat-check engine-api-check aql-compat-check retrieval-quality-check context-pack-quality-check verification-quality-check security-check rbac-policy-store-check quota-policy-check audit-chain-check security-hardening-check compliance-boundary-check observability-check deployment-upgrade-check http-contract-ops-check cli-product-check future-epic-design-check distributed-consensus-design-check managed-cloud-design-check enterprise-rbac-design-check hnsw-no-fallback-design-check llm-inference-design-check external-identity-design-check legal-verification-design-check binary-release-package binary-release-validate binary-platform-matrix-check binary-release-check beta-delta-check beta-foundation-check beta-rc-check production-hardening-check production-candidate-check production-v1-check public-claims-check load-smoke-check single-node-performance-check performance-trend-check tenant-recovery-check context-verify-quality-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-product-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-readiness ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-real-embedding-release-check ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-history-fixture-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check crash-fault-check chaos-restart-check storage-soak-check replication-partition-check replication-lifecycle-check production-evidence-sweep smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -110,6 +110,9 @@ SDK_RELEASE_ARTIFACT_ROOT ?= target/sdk-release-artifacts
 SDK_RELEASE_ARTIFACT_REPORT ?= $(SDK_RELEASE_ARTIFACT_ROOT)/report.json
 SECURITY_HARDENING_REPORT ?= target/security-hardening/report.json
 COMPLIANCE_BOUNDARY_REPORT ?= target/compliance-boundary/report.json
+RBAC_POLICY_STORE_REPORT ?= target/enterprise-rbac/rbac-policy-store.json
+QUOTA_POLICY_REPORT ?= target/enterprise-rbac/quota-policy.json
+AUDIT_CHAIN_REPORT ?= target/enterprise-rbac/audit-chain.json
 OBSERVABILITY_REPORT ?= target/observability/report.json
 DEPLOYMENT_UPGRADE_REPORT ?= target/deployment-upgrade/report.json
 ANN_BASELINE_REPORT ?= $(ANN_CORPUS_REPORT)
@@ -296,7 +299,24 @@ security-check:
 	cargo test -p cortex-server error_taxonomy_tests
 	$(MAKE) openapi-contract-check
 
-security-hardening-check: security-check
+rbac-policy-store-check:
+	cargo test -p cortex-server auth_policy_tests
+	cargo test -p cortex-cli auth_review
+	python3 scripts/enterprise_rbac_gate_check.py --gate rbac-policy-store --report "$(RBAC_POLICY_STORE_REPORT)"
+
+quota-policy-check:
+	cargo test -p cortex-server security_quota_tests
+	cargo test -p cortex-server rate_limit_returns_typed_429_when_enabled
+	cargo test -p cortex-cli auth_review_rejects_zero_quota
+	python3 scripts/enterprise_rbac_gate_check.py --gate quota-policy --report "$(QUOTA_POLICY_REPORT)"
+
+audit-chain-check:
+	cargo test -p cortex-server audit_tests
+	cargo test -p cortex-cli audit_command_can_verify_chain
+	cargo test -p cortex-cli audit_review_verify_chain_accepts_valid_sequence_and_rejects_tampering
+	python3 scripts/enterprise_rbac_gate_check.py --gate audit-chain --report "$(AUDIT_CHAIN_REPORT)"
+
+security-hardening-check: security-check rbac-policy-store-check quota-policy-check audit-chain-check
 	python3 scripts/security_hardening_check.py --report "$(SECURITY_HARDENING_REPORT)"
 
 compliance-boundary-check:

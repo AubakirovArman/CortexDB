@@ -29,6 +29,9 @@ Current implementation slice:
 - `cortexdb audit-export-siem` exports normalized local audit JSONL.
 - `docs/COMPLIANCE_BOUNDARY_MAPPING.md` states that no external compliance
   framework is currently certified or supported as a product claim.
+- `make rbac-policy-store-check`, `make quota-policy-check`, and
+  `make audit-chain-check` bind the required local gates to current tests and
+  marker reports.
 - This slice is a local principal policy store and evidence boundary, not the
   full admin mutation API or compliance control layer.
 

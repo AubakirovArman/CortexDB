@@ -148,7 +148,9 @@ Beta gate:
 
 ## Release Blocking Rule
 
-`make security-hardening-check` must fail if the repository loses evidence for:
+`make rbac-policy-store-check`, `make quota-policy-check`,
+`make audit-chain-check`, and `make security-hardening-check` must fail if the
+repository loses evidence for:
 
 - auth role tests;
 - tenant validation tests;
@@ -157,7 +159,8 @@ Beta gate:
 - malicious ingestion denial tests;
 - dashboard admin-only tests;
 - documented boundaries for RBAC, per-token quotas, audit-chain, and encrypted
-  backups.
+  backups;
+- local reports for the RBAC policy store, quota policy, and audit-chain gates.
 
 Passing this gate means the beta security baseline is documented and locally
 reproducible. It does not mean CortexDB has external security certification,
