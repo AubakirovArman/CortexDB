@@ -4,7 +4,7 @@ Last audited: 2026-05-31.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 138 project markdown files.
+At the time of this audit, the repository tracks 139 project markdown files.
 
 ## Start Here
 
@@ -141,6 +141,7 @@ backlogs, snapshots, or deeper planning notes.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - active ordered epic queue.
 - [`PL_IMPLEMENTATION_TASKS.md`](PL_IMPLEMENTATION_TASKS.md) - normalized action list from the external `pl.md` audit.
 - [`PL_EXTRACTED_EPICS.md`](PL_EXTRACTED_EPICS.md) - full epic/task extraction from the external `pl.md` audit.
+- [`PL_NEXT_DEVELOPMENT_PLAN.md`](PL_NEXT_DEVELOPMENT_PLAN.md) - normalized next-stage plan from the latest external `pl.md` audit.
 - [`PRODUCTION_LAYER_NEXT_ACTIONS.md`](PRODUCTION_LAYER_NEXT_ACTIONS.md) - dated production-layer snapshot.
 - [`POST_CORE_ALPHA_EXECUTION_PLAN.md`](POST_CORE_ALPHA_EXECUTION_PLAN.md) - milestone execution backlog.
 - [`POST_CORE_ALPHA_IMPLEMENTATION_PLAN.md`](POST_CORE_ALPHA_IMPLEMENTATION_PLAN.md) - implementation progress snapshot.
