@@ -1,0 +1,26 @@
+{
+  "schema_version": "cortexdb.llm_inference.smoke_request.v1",
+  "enabled": true,
+  "provider": "test_double",
+  "model": "deterministic-echo-v1",
+  "principal_id": "agent-alpha",
+  "tenant": "default",
+  "agent_view_scopes": [
+    "project:investments"
+  ],
+  "prompt": "Summarize the budget risk using only the supplied ContextPack.",
+  "context_pack": {
+    "schema_version": "cortexdb.context_pack.v1",
+    "token_budget": 256,
+    "estimated_tokens": 42,
+    "citations_required": true,
+    "cells": [
+      {
+        "cell_id": 101,
+        "scope": "project:investments",
+        "source_ref": "doc://investment-risk#p1",
+        "text": "Project Alpha has a documented budget variance risk and a cited mitigation plan."
+      }
+    ]
+  }
+}

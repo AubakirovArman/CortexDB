@@ -355,6 +355,16 @@ changes exist, `available` is `false` and `reason` is
 }
 ```
 
+## No Built-in LLM Inference Endpoint
+
+Core Alpha intentionally has no `/v1/inference`, `/v1/llm`, or `/v1/chat`
+endpoint. CortexDB produces ContextPacks for external agents and model
+runtimes; it does not host model inference inside the database process.
+
+Any future built-in LLM endpoint must first pass the LLM inference contract,
+safety, smoke, and secrets gates, then update this document and
+[`docs/openapi.yaml`](openapi.yaml) with typed request and response schemas.
+
 ## Remember
 
 `POST /v1/remember?scope=<scope>` with a `REMEMBER` AQL body.

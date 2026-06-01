@@ -113,12 +113,17 @@ EPIC_MARKERS: dict[str, dict[str, object]] = {
                 "ContextPack Boundary",
                 "Resource Limits",
                 "Safety And Audit",
+                "Current Evidence Boundary",
                 "Required Gates",
                 "Non-goals",
             ],
             "docs/FUTURE_NON_GOAL_EPICS.md": [
                 "Built-in LLM Inference",
-                "make llm-inference-design-check",
+                "make llm-inference-contract-check",
+            ],
+            "scripts/llm_inference_gate_check.py": [
+                "built_in_llm_ready",
+                "no model runtime or inference endpoint claim",
             ],
         },
     },

@@ -1,0 +1,17 @@
+{
+  "schema_version": "cortexdb.llm_inference.smoke_response.v1",
+  "provider": "test_double",
+  "model": "deterministic-echo-v1",
+  "output": "Project Alpha has a budget variance risk with a cited mitigation plan.",
+  "used_context_cell_ids": [
+    101
+  ],
+  "citations": [
+    "doc://investment-risk#p1"
+  ],
+  "audit": {
+    "context_pack_only": true,
+    "prompt_body_logged": false,
+    "secrets_logged": false
+  }
+}
