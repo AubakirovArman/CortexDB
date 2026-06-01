@@ -121,6 +121,12 @@ the latest payload, and writes:
 target/backup-drill/report.json
 ```
 
+The report is a release artifact. Keep it with release evidence when promoting
+a build, because it contains the local git SHA, the backup prefix, the retained
+backup policy, readback output, and a `restore_drill_trend` array. The trend is
+local-current by default; release automation should archive each report so the
+restore drill trend across releases can be compared before beta promotion.
+
 `make backup-offsite-check` is the repeatable offsite-staging evidence gate. It
 creates a local backup, runs a restore drill, stages the backup under an offsite
 root, validates the staged copy, reads back the latest payload, and writes:
@@ -137,3 +143,28 @@ make backup-drill-check \
   BACKUP_DRILL_REPORT=/var/tmp/cortexdb-backup-drill/report.json \
   BACKUP_DRILL_KEEP_LATEST=7
 ```
+
+## Backup Archive Corruption Evidence
+
+Backup restore must reject corrupted archives instead of reporting a successful
+restore. The current regression tests corrupt checkpointed backup files before
+restore:
+
+```bash
+cargo test -p cortex-engine --test backup_restore corrupt_backup
+```
+
+These backup archive corruption tests cover:
+
+- corrupted `.acs` segment file inside a backup directory;
+- corrupted `manifest.acm` inside a backup directory.
+
+## Encrypted Backup Decision
+
+Encrypted backup remains a production-candidate requirement, not a beta blocker.
+The beta-supported backup path is validated local filesystem backup plus local
+offsite staging. The encrypted-backup design is documented in
+[`ENCRYPTED_BACKUPS_DESIGN.md`](ENCRYPTED_BACKUPS_DESIGN.md); implementation
+requires authenticated encryption, explicit key-provider behavior, restore
+drills for encrypted bundles, and key-material redaction tests before any public
+claim.

@@ -1,5 +1,6 @@
 use cortex_core::CellId;
 use cortex_engine::{Database, EngineError};
+use std::path::{Path, PathBuf};
 
 #[test]
 fn backup_restore_preserves_wal_tail_without_checkpoint() {
@@ -231,4 +232,81 @@ fn offsite_stage_rejects_unsafe_id_and_existing_target() {
         Database::stage_backup_offsite(&backup, &offsite, "backup-a").unwrap_err(),
         EngineError::BackupTargetExists(_)
     ));
+}
+
+#[test]
+fn corrupt_backup_segment_archive_is_rejected_on_restore() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let backup = root.path().join("backup");
+    let target = root.path().join("target");
+
+    {
+        let mut db = Database::open(&source).unwrap();
+        db.put_cell(
+            CellId(81),
+            b"scope=ops\nstatus=ready\ncorruption test".to_vec(),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+    }
+    Database::backup_path(&source, &backup).unwrap();
+
+    corrupt_first_byte(&find_file_with_extension(&backup, "acs"));
+
+    assert!(
+        Database::restore_from_backup(&backup, &target).is_err(),
+        "restore must reject backup archive with corrupted segment file"
+    );
+}
+
+#[test]
+fn corrupt_backup_manifest_archive_is_rejected_on_restore() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let backup = root.path().join("backup");
+    let target = root.path().join("target");
+
+    {
+        let mut db = Database::open(&source).unwrap();
+        db.put_cell(
+            CellId(82),
+            b"scope=ops\nstatus=ready\nmanifest corruption test".to_vec(),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+    }
+    Database::backup_path(&source, &backup).unwrap();
+
+    corrupt_first_byte(&backup.join("manifest.acm"));
+
+    assert!(
+        Database::restore_from_backup(&backup, &target).is_err(),
+        "restore must reject backup archive with corrupted manifest"
+    );
+}
+
+fn find_file_with_extension(root: &Path, extension: &str) -> PathBuf {
+    for entry in std::fs::read_dir(root).unwrap() {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        if path.is_dir() {
+            let found = find_file_with_extension(&path, extension);
+            if found.exists() {
+                return found;
+            }
+        } else if path
+            .extension()
+            .is_some_and(|value| value == std::ffi::OsStr::new(extension))
+        {
+            return path;
+        }
+    }
+    root.join(format!("missing.{extension}"))
+}
+
+fn corrupt_first_byte(path: &Path) {
+    let mut bytes = std::fs::read(path).unwrap();
+    bytes[0] ^= 0xFF;
+    std::fs::write(path, bytes).unwrap();
 }

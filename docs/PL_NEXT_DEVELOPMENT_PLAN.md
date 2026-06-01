@@ -451,6 +451,22 @@ Acceptance:
 
 ### Epic 3.3 - Backup/Restore Beta Support
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- `make backup-drill-check` writes release-artifact evidence to
+  `target/backup-drill/report.json`, including git SHA and
+  `restore_drill_trend`.
+- `make backup-offsite-check` writes validated offsite-staging evidence to
+  `target/backup-offsite/report.json`.
+- `backup_restore::corrupt_backup_*` tests reject corrupted backup segment and
+  manifest archives during restore.
+- `docs/BACKUP_RESTORE.md` records RPO/RTO boundaries, restore drill trend
+  expectations, corruption evidence, and the beta decision that encrypted
+  backup remains production-candidate work.
+- `make storage-compat-check` includes backup archive corruption tests.
+
 Tasks:
 
 1. Keep backup/restore drills as release artifacts.

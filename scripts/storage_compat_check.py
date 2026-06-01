@@ -23,6 +23,9 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "make backup-drill-check",
         "target/backup-drill/report.json",
         "current-version backup restored by next-version code",
+        "backup archive corruption tests",
+        "restore drill trend across releases",
+        "Encrypted backup remains a production-candidate requirement",
     ),
     "docs/RPO_RTO.md": (
         "Strict",
@@ -51,6 +54,11 @@ SUITES: tuple[dict[str, Any], ...] = (
         "name": "backup_drill",
         "command": ["make", "backup-drill-check"],
         "covers": ["current-version backup restore drill", "validate restored copy"],
+    },
+    {
+        "name": "backup_archive_corruption",
+        "command": ["cargo", "test", "-p", "cortex-engine", "--test", "backup_restore", "corrupt_backup"],
+        "covers": ["corrupted backup segment rejection", "corrupted backup manifest rejection"],
     },
     {
         "name": "crash_fault",
@@ -161,7 +169,13 @@ def self_test() -> int:
     if len(names) != len(set(names)):
         print("storage compatibility self-test failed: duplicate suite names")
         return 1
-    required = {"migration_compatibility", "backup_drill", "crash_fault", "repair_dry_run"}
+    required = {
+        "migration_compatibility",
+        "backup_drill",
+        "backup_archive_corruption",
+        "crash_fault",
+        "repair_dry_run",
+    }
     missing = sorted(required.difference(names))
     if missing:
         print(f"storage compatibility self-test failed: missing suites {missing}")
@@ -211,6 +225,7 @@ def main() -> int:
             "proves": [
                 "storage compatibility evidence is repeatable locally",
                 "current checkout can restore and validate current-version backups",
+                "corrupted backup archives are rejected during restore",
                 "known storage file corruption is detected",
                 "interrupted checkpoint/compact aftermath is covered by tests",
                 "repair dry-run and apply behavior are both covered",
@@ -219,6 +234,7 @@ def main() -> int:
                 "online rolling upgrade",
                 "in-place downgrade",
                 "remote object-store restore",
+                "encrypted backup restore",
                 "kill injection at every internal checkpoint byte boundary",
             ],
         },

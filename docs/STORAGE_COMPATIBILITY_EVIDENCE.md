@@ -1,6 +1,6 @@
 # Storage Compatibility Evidence
 
-Last local storage compatibility run: 2026-05-31.
+Last local storage compatibility run: 2026-06-01.
 
 Run:
 
@@ -26,6 +26,7 @@ Latest local status: passed.
 | --- | --- |
 | migration compatibility | Checks the machine-readable storage/API/SDK compatibility fixture. |
 | backup drill | Proves a current-version backup can be restored and validated by the checkout under test. |
+| backup archive corruption | Proves corrupted backup segment and manifest archives are rejected on restore. |
 | crash/fault | Runs interrupted checkpoint/compact, restart tail, corruption, and repair tests. |
 | chaos restart | Kills/restarts the real server around writes, flushes, and compacts. |
 | repair dry-run | Proves repair dry-run reports planned cleanup without mutating files. |
@@ -37,6 +38,7 @@ The local gate proves:
 
 - storage compatibility evidence is repeatable locally;
 - current checkout can restore and validate current-version backups;
+- corrupted backup archives are rejected during restore;
 - known storage file corruption is detected;
 - interrupted checkpoint/compact aftermath is covered by tests;
 - repair dry-run and apply behavior are both covered.
@@ -46,4 +48,5 @@ The gate does not prove:
 - online rolling upgrade;
 - in-place downgrade;
 - remote object-store restore;
+- encrypted backup restore;
 - kill injection at every internal checkpoint byte boundary.

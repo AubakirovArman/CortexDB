@@ -52,6 +52,7 @@ DRILL_3="$(run_drill 20260530T000003Z)"
 PRUNE_OUTPUT="$(run_cli backup-prune "$BACKUPS" "$PREFIX" "$KEEP_LATEST")"
 LATEST_VALIDATE="$(run_cli validate "$DRILLS/${PREFIX}20260530T000003Z")"
 LATEST_PAYLOAD="$(run_cli get "$DRILLS/${PREFIX}20260530T000003Z" 3)"
+GIT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 
 OLDEST_BACKUP_PRUNED=false
 if [ ! -d "$BACKUPS/${PREFIX}20260530T000001Z" ]; then
@@ -80,7 +81,7 @@ fi
 
 export ROOT REPORT KEEP_LATEST PREFIX
 export DRILL_1 DRILL_2 DRILL_3 PRUNE_OUTPUT LATEST_VALIDATE LATEST_PAYLOAD
-export OLDEST_BACKUP_PRUNED
+export OLDEST_BACKUP_PRUNED GIT_SHA
 
 python3 - <<'PY'
 import json
@@ -89,12 +90,38 @@ import os
 report = {
     "status": "ok",
     "root": os.environ["ROOT"],
+    "git_sha": os.environ["GIT_SHA"],
     "backup_prefix": os.environ["PREFIX"],
     "keep_latest": int(os.environ["KEEP_LATEST"]),
+    "release_artifacts": [
+        os.environ["REPORT"],
+        os.environ["ROOT"] + "/backups",
+        os.environ["ROOT"] + "/drills",
+    ],
     "drills": [
         os.environ["DRILL_1"],
         os.environ["DRILL_2"],
         os.environ["DRILL_3"],
+    ],
+    "restore_drill_trend": [
+        {
+            "release": "local-current",
+            "git_sha": os.environ["GIT_SHA"],
+            "drill_id": "20260530T000001Z",
+            "validated": True,
+        },
+        {
+            "release": "local-current",
+            "git_sha": os.environ["GIT_SHA"],
+            "drill_id": "20260530T000002Z",
+            "validated": True,
+        },
+        {
+            "release": "local-current",
+            "git_sha": os.environ["GIT_SHA"],
+            "drill_id": "20260530T000003Z",
+            "validated": True,
+        },
     ],
     "prune": os.environ["PRUNE_OUTPUT"],
     "latest_validate": os.environ["LATEST_VALIDATE"],
