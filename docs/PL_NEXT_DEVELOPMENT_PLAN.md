@@ -337,6 +337,18 @@ Acceptance:
 
 ### Epic 2.6 - Search Quality Report
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- `make retrieval-quality-check` passed.
+- The report now tracks lexical, vector, hybrid, and guarded ANN modes
+  separately.
+- `target/retrieval-quality/report.json` includes 40 query-level guarded ANN
+  rows with recall, MRR, nDCG, exact parity, latency, and `production_safe`.
+- `docs/BENCHMARKS.md` documents exact vector fallback and the guarded ANN
+  boundary.
+
 Tasks:
 
 1. Publish a retrieval quality report for real-domain corpus.

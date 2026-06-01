@@ -56,6 +56,90 @@ def int_field(value: dict[str, Any], field: str) -> int:
     return raw
 
 
+def marker_present(path: Path, marker: str) -> bool:
+    return marker in path.read_text(encoding="utf-8")
+
+
+def latest_run_report(history: dict[str, Any], latest: dict[str, Any]) -> dict[str, Any]:
+    latest_run_id = latest.get("latest_run_id")
+    runs = history.get("runs")
+    if not isinstance(runs, list) or not latest_run_id:
+        return {}
+    for run in runs:
+        if not isinstance(run, dict) or run.get("run_id") != latest_run_id:
+            continue
+        report_path = run.get("report")
+        if isinstance(report_path, str) and report_path:
+            path = Path(report_path)
+            if path.is_file():
+                return load_json(path)
+    return {}
+
+
+def query_level_rows(report: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = report.get("queries")
+    if not isinstance(rows, list):
+        return []
+    output = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        output.append(
+            {
+                "name": row.get("name", ""),
+                "recall_q16": row.get("recall_q16"),
+                "mrr_q16": row.get("reciprocal_rank_q16"),
+                "ndcg_q16": row.get("ndcg_q16"),
+                "exact_parity": row.get("exact_parity"),
+                "latency_nanos": row.get("latency_nanos"),
+                "production_safe": row.get("production_safe"),
+            }
+        )
+    return output
+
+
+def mode_report(latest: dict[str, Any], latest_report: dict[str, Any]) -> dict[str, Any]:
+    search_quality_tests = Path("crates/cortex-engine/tests/search_quality.rs")
+    query_search_tests = Path("crates/cortex-engine/tests/query_search.rs")
+    return {
+        "lexical": {
+            "status": "covered",
+            "evidence": str(search_quality_tests),
+            "gate": "cargo test -p cortex-engine --test search_quality",
+            "bm25_golden": marker_present(
+                search_quality_tests,
+                "bm25_quality_fixture_has_perfect_mrr_for_golden_queries",
+            ),
+        },
+        "vector": {
+            "status": "covered",
+            "evidence": str(query_search_tests),
+            "gate": "cargo test -p cortex-engine --test query_search",
+            "exact_vector_mode": marker_present(
+                query_search_tests,
+                "search_api_supports_keyword_and_vector_modes",
+            ),
+        },
+        "hybrid": {
+            "status": "covered",
+            "evidence": str(query_search_tests),
+            "gate": "cargo test -p cortex-engine --test query_search",
+            "rrf_fusion": marker_present(query_search_tests, "hybrid_search_fuses_keyword"),
+        },
+        "guarded_ann": {
+            "status": "measured",
+            "run_id": latest.get("latest_run_id"),
+            "mean_recall_q16": latest.get("latest_mean_recall_q16"),
+            "mean_mrr_q16": latest.get("latest_mean_mrr_q16"),
+            "mean_ndcg_q16": latest.get("latest_mean_ndcg_q16"),
+            "exact_parity_q16": latest.get("latest_exact_parity_q16"),
+            "p95_latency_nanos": latest.get("latest_p95_latency_nanos"),
+            "production_safe": latest.get("latest_production_safe"),
+            "query_level_rows": len(query_level_rows(latest_report)),
+        },
+    }
+
+
 def validate(args: argparse.Namespace) -> dict[str, Any]:
     source_root = Path(args.source_root)
     docs_count = count_jsonl(source_root / "documents.jsonl")
@@ -64,6 +148,9 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
     ground_truth_count = count_jsonl(Path(args.ground_truth))
     history = load_json(Path(args.history))
     latest = latest_corpus(history)
+    ann_report = latest_run_report(history, latest)
+    query_rows = query_level_rows(ann_report)
+    modes = mode_report(latest, ann_report)
 
     failures: list[str] = []
     if docs_count < args.min_docs:
@@ -90,6 +177,17 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
     ]:
         if int_field(latest, field) <= 0:
             failures.append(f"latest corpus {field} must be > 0")
+    for mode, report in modes.items():
+        if report.get("status") not in {"covered", "measured"}:
+            failures.append(f"{mode} mode is not covered")
+    if not modes["lexical"].get("bm25_golden"):
+        failures.append("lexical mode lacks BM25 golden evidence")
+    if not modes["vector"].get("exact_vector_mode"):
+        failures.append("vector mode lacks exact vector evidence")
+    if not modes["hybrid"].get("rrf_fusion"):
+        failures.append("hybrid mode lacks RRF fusion evidence")
+    if not query_rows:
+        failures.append("latest guarded ANN report lacks query-level rows")
     failures.extend(
         require_terms(
             Path(args.benchmarks),
@@ -99,6 +197,10 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
                 "mean_mrr_q16",
                 "mean_ndcg_q16",
                 "exact_parity_q16",
+                "lexical",
+                "vector",
+                "hybrid",
+                "guarded ANN",
             ],
         )
     )
@@ -123,6 +225,8 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
             "latest_p95_latency_nanos": latest.get("latest_p95_latency_nanos"),
             "latest_production_safe": latest.get("latest_production_safe"),
         },
+        "modes": modes,
+        "query_level": query_rows,
     }
 
 

@@ -433,6 +433,19 @@ It validates corpus/query/ground-truth files, requires at least three local
 real-embedding history runs, and fails on recall, ranking, exact-parity,
 production-safety, or latency regressions.
 
+The report separates the search modes that matter for beta review:
+
+- `lexical`: BM25-like golden query behavior from the checked-in search quality
+  fixture;
+- `vector`: exact vector behavior that remains the correctness fallback;
+- `hybrid`: RRF fusion behavior across lexical and vector results;
+- `guarded ANN`: HNSW/ANN behavior with exact-parity, recall, MRR, nDCG,
+  latency, and `production_safe` evidence.
+
+The same report also carries per-query guarded ANN rows so reviewers can inspect
+which queries contributed to recall, ranking, exact parity, latency, or safety
+results instead of relying only on aggregate numbers.
+
 The local baseline bundle was published and packaged at:
 
 ```text

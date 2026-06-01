@@ -32,6 +32,8 @@ mean_ndcg_q16: 65535
 exact_parity_q16: 65535
 p95_latency_nanos: 5271976
 production_safe: true
+modes: lexical, vector, hybrid, guarded_ann
+query_level_rows: 40
 ```
 
 ## Boundary
@@ -46,6 +48,8 @@ This gate proves:
   group;
 - recall, MRR, nDCG, exact parity, graph shape, latency, and
   `production_safe=true` remain visible in machine-readable reports;
+- lexical, vector, hybrid, and guarded ANN evidence are tracked separately;
+- query-level guarded ANN rows are available for review;
 - the local history has no adjacent regression under the configured latency
   tolerance.
 
