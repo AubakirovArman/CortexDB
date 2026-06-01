@@ -28,6 +28,18 @@ REQUIRED_DOC_MARKERS = {
         "make migration-policy-check",
         "make binary-release-check",
     ],
+    "docs/OPERATIONS.md": [
+        "First 10 Minutes",
+        "Operational Runbooks",
+        "Stale lock or `database_busy`",
+        "Corrupt WAL or partial WAL tail",
+        "Corrupt segment or index bundle",
+        "Failed authentication",
+        "Tenant errors",
+        "make deployment-upgrade-check",
+        "make observability-check",
+        "make public-claims-check",
+    ],
     "docs/BINARY_RELEASES.md": [
         "GitHub Release Workflow",
         "target/release-artifacts",

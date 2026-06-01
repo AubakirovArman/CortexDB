@@ -372,6 +372,18 @@ Goal: stable external API/SDK plus operational docs for early external users.
 
 ### Epic 3.1 - Operations Runbook And Reader Path
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- `docs/OPERATIONS.md` now includes a first-10-minutes reader path.
+- `docs/OPERATIONS.md` consolidates install, validate, backup, restore, repair,
+  metrics, upgrade, and rollback entrypoints.
+- Troubleshooting covers stale locks / `database_busy`, corrupt WAL, corrupt
+  segment or index bundles, failed authentication, and tenant errors.
+- `make deployment-upgrade-check`, `make observability-check`, and
+  `make public-claims-check` passed.
+
 Tasks:
 
 1. Add a "first 10 minutes" reader path.

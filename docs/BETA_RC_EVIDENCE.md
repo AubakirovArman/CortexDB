@@ -1,6 +1,6 @@
 # Beta Release Candidate Evidence
 
-Last local beta RC run: 2026-05-31.
+Last local beta RC run: 2026-06-01.
 
 This document records the Epic 3 evidence gate from
 [`PL_EXTRACTED_EPICS.md`](PL_EXTRACTED_EPICS.md). It focuses on whether the
@@ -45,6 +45,10 @@ This gate proves:
 
 - backup and restore evidence is locally repeatable;
 - operations/security/ingestion/dashboard docs are present;
+- the operations guide has a first-10-minutes path, consolidated install /
+  validate / backup / restore / repair / metrics / upgrade / rollback runbook
+  links, and troubleshooting for stale locks, corrupt WAL, corrupt segment,
+  busy actor queue, failed auth, and tenant errors;
 - security and auth policy tests pass;
 - ingestion job lifecycle tests pass;
 - dashboard release packaging is repeatable.
