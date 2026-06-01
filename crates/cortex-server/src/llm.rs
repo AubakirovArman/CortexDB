@@ -1,8 +1,10 @@
 use serde::Deserialize;
 
 use crate::responses::{LlmInferenceAuditResponse, LlmInferenceResponse, RouterError};
+pub(crate) use audit::{LlmInferenceDecisionAudit, LlmInferenceRejection, LlmInferenceResult};
 use safety::{validate_llm_runtime_safety_config, LlmRuntimeSafetyConfig};
 
+mod audit;
 mod safety;
 
 const REQUEST_SCHEMA_VERSION: &str = "cortexdb.llm_inference.smoke_request.v1";
@@ -43,35 +45,75 @@ struct LlmContextCellRequest {
 pub(crate) fn handle_inference_test_double(
     body: &[u8],
     enabled: bool,
-) -> Result<String, RouterError> {
+) -> Result<LlmInferenceResult, LlmInferenceRejection> {
     if !enabled {
-        return Err(RouterError::Forbidden(
-            "LLM inference test-double endpoint is disabled".to_owned(),
+        return Err(rejection(
+            RouterError::Forbidden("LLM inference test-double endpoint is disabled".to_owned()),
+            LlmInferenceDecisionAudit::denied("test_double_disabled"),
         ));
     }
     validate_llm_runtime_safety_config(&test_double_runtime_safety_config(enabled)).map_err(
-        |failure| RouterError::Internal(format!("unsafe LLM runtime safety config: {failure:?}")),
+        |failure| {
+            rejection(
+                RouterError::Internal(format!("unsafe LLM runtime safety config: {failure:?}")),
+                LlmInferenceDecisionAudit::denied("unsafe_runtime_config"),
+            )
+        },
     )?;
-    let request = serde_json::from_slice::<LlmInferenceRequest>(body)
-        .map_err(|error| RouterError::BadRequest(format!("invalid inference JSON: {error}")))?;
+    let request = serde_json::from_slice::<LlmInferenceRequest>(body).map_err(|error| {
+        rejection(
+            RouterError::BadRequest(format!("invalid inference JSON: {error}")),
+            LlmInferenceDecisionAudit::denied("invalid_json"),
+        )
+    })?;
     if request.schema_version != REQUEST_SCHEMA_VERSION {
-        return Err(RouterError::BadRequest(
-            "unsupported inference request schema_version".to_owned(),
+        return Err(rejection(
+            RouterError::BadRequest("unsupported inference request schema_version".to_owned()),
+            LlmInferenceDecisionAudit::denied_for_request(
+                "unsupported_schema",
+                request.context_pack.cells.len() as u64,
+                citation_count(&request) as u64,
+                request_has_api_key(&request),
+            ),
         ));
     }
     if !request.enabled {
-        return Err(RouterError::BadRequest(
-            "request enabled must be true for the deterministic test-double".to_owned(),
+        return Err(rejection(
+            RouterError::BadRequest(
+                "request enabled must be true for the deterministic test-double".to_owned(),
+            ),
+            LlmInferenceDecisionAudit::denied_for_request(
+                "request_disabled",
+                request.context_pack.cells.len() as u64,
+                citation_count(&request) as u64,
+                request_has_api_key(&request),
+            ),
         ));
     }
     if request.provider != TEST_DOUBLE_PROVIDER {
-        return Err(RouterError::BadRequest(
-            "only provider=test_double is supported by this local endpoint".to_owned(),
+        return Err(rejection(
+            RouterError::BadRequest(
+                "only provider=test_double is supported by this local endpoint".to_owned(),
+            ),
+            LlmInferenceDecisionAudit::denied_for_request(
+                "unsupported_provider",
+                request.context_pack.cells.len() as u64,
+                citation_count(&request) as u64,
+                request_has_api_key(&request),
+            ),
         ));
     }
     if request.model.as_deref().unwrap_or(TEST_DOUBLE_MODEL) != TEST_DOUBLE_MODEL {
-        return Err(RouterError::BadRequest(
-            "only model=deterministic-echo-v1 is supported by this local endpoint".to_owned(),
+        return Err(rejection(
+            RouterError::BadRequest(
+                "only model=deterministic-echo-v1 is supported by this local endpoint".to_owned(),
+            ),
+            LlmInferenceDecisionAudit::denied_for_request(
+                "unsupported_model",
+                request.context_pack.cells.len() as u64,
+                citation_count(&request) as u64,
+                request_has_api_key(&request),
+            ),
         ));
     }
     if request
@@ -79,18 +121,33 @@ pub(crate) fn handle_inference_test_double(
         .as_deref()
         .is_some_and(|value| !value.trim().is_empty())
     {
-        return Err(RouterError::BadRequest(
-            "api_key must not be sent to the local deterministic test-double".to_owned(),
+        return Err(rejection(
+            RouterError::BadRequest(
+                "api_key must not be sent to the local deterministic test-double".to_owned(),
+            ),
+            LlmInferenceDecisionAudit::denied_for_request(
+                "request_api_key_present",
+                request.context_pack.cells.len() as u64,
+                citation_count(&request) as u64,
+                true,
+            ),
         ));
     }
     if request.prompt.trim().is_empty() {
-        return Err(RouterError::BadRequest(
-            "prompt must not be empty".to_owned(),
+        return Err(rejection(
+            RouterError::BadRequest("prompt must not be empty".to_owned()),
+            LlmInferenceDecisionAudit::denied_for_request(
+                "empty_prompt",
+                request.context_pack.cells.len() as u64,
+                citation_count(&request) as u64,
+                false,
+            ),
         ));
     }
     if request.context_pack.cells.is_empty() {
-        return Err(RouterError::BadRequest(
-            "context_pack.cells must not be empty".to_owned(),
+        return Err(rejection(
+            RouterError::BadRequest("context_pack.cells must not be empty".to_owned()),
+            LlmInferenceDecisionAudit::denied_for_request("empty_context_pack", 0, 0, false),
         ));
     }
 
@@ -100,12 +157,8 @@ pub(crate) fn handle_inference_test_double(
         .iter()
         .map(|cell| cell.cell_id)
         .collect::<Vec<_>>();
-    let citations = request
-        .context_pack
-        .cells
-        .iter()
-        .filter_map(|cell| cell.citation.clone().or_else(|| cell.source_ref.clone()))
-        .collect::<Vec<_>>();
+    let citations = citations(&request);
+    let citation_count = citations.len() as u64;
     let first_text = request
         .context_pack
         .cells
@@ -133,7 +186,48 @@ pub(crate) fn handle_inference_test_double(
             secrets_logged: false,
         },
     };
-    Ok(serde_json::to_string(&response)?)
+    let body = serde_json::to_string(&response).map_err(|error| {
+        rejection(
+            RouterError::from(error),
+            LlmInferenceDecisionAudit::denied("response_serialization_failed"),
+        )
+    })?;
+    Ok(LlmInferenceResult {
+        body,
+        audit: LlmInferenceDecisionAudit::allowed(
+            request.context_pack.cells.len() as u64,
+            citation_count,
+        ),
+    })
+}
+
+fn rejection(error: RouterError, audit: LlmInferenceDecisionAudit) -> LlmInferenceRejection {
+    LlmInferenceRejection::new(error, audit)
+}
+
+fn request_has_api_key(request: &LlmInferenceRequest) -> bool {
+    request
+        .api_key
+        .as_deref()
+        .is_some_and(|value| !value.trim().is_empty())
+}
+
+fn citations(request: &LlmInferenceRequest) -> Vec<String> {
+    request
+        .context_pack
+        .cells
+        .iter()
+        .filter_map(|cell| cell.citation.clone().or_else(|| cell.source_ref.clone()))
+        .collect()
+}
+
+fn citation_count(request: &LlmInferenceRequest) -> usize {
+    request
+        .context_pack
+        .cells
+        .iter()
+        .filter(|cell| cell.citation.is_some() || cell.source_ref.is_some())
+        .count()
 }
 
 fn summarize_from_context(text: &str) -> String {
@@ -158,52 +252,4 @@ fn test_double_runtime_safety_config(enabled: bool) -> LlmRuntimeSafetyConfig {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::handle_inference_test_double;
-    use crate::responses::RouterError;
-
-    const REQUEST: &[u8] = br#"{
-      "schema_version":"cortexdb.llm_inference.smoke_request.v1",
-      "enabled":true,
-      "provider":"test_double",
-      "model":"deterministic-echo-v1",
-      "prompt":"Summarize only the supplied context.",
-      "context_pack":{
-        "cells":[
-          {"cell_id":7,"citation":"doc://alpha#p1","text":"Alpha budget has a cited risk."}
-        ]
-      }
-    }"#;
-
-    #[test]
-    fn test_double_requires_explicit_enablement() {
-        let error = handle_inference_test_double(REQUEST, false).unwrap_err();
-        assert!(matches!(error, RouterError::Forbidden(_)));
-    }
-
-    #[test]
-    fn test_double_uses_context_pack_only() {
-        let response = handle_inference_test_double(REQUEST, true).unwrap();
-        assert!(response.contains(r#""schema_version":"cortexdb.llm_inference.smoke_response.v1""#));
-        assert!(response.contains(r#""provider":"test_double""#));
-        assert!(response.contains(r#""used_context_cell_ids":[7]"#));
-        assert!(response.contains(r#""context_pack_only":true"#));
-        assert!(response.contains(r#""prompt_body_logged":false"#));
-        assert!(response.contains(r#""secrets_logged":false"#));
-    }
-
-    #[test]
-    fn test_double_rejects_request_api_key() {
-        let request = br#"{
-          "schema_version":"cortexdb.llm_inference.smoke_request.v1",
-          "enabled":true,
-          "provider":"test_double",
-          "model":"deterministic-echo-v1",
-          "api_key":"not-allowed",
-          "prompt":"Summarize only the supplied context.",
-          "context_pack":{"cells":[{"cell_id":7,"text":"alpha"}]}
-        }"#;
-        let error = handle_inference_test_double(request, true).unwrap_err();
-        assert!(matches!(error, RouterError::BadRequest(_)));
-    }
-}
+mod tests;

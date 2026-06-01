@@ -1,3 +1,7 @@
+use std::io::{Read, Write};
+use std::net::{SocketAddr, TcpStream};
+use std::time::Duration;
+
 use serde_json::Value;
 
 use crate::{handle_http_with_options, ServerOptions};
@@ -103,7 +107,133 @@ fn inference_test_double_rejects_non_test_provider() {
     assert!(response.contains("only provider=test_double"), "{response}");
 }
 
+#[test]
+fn inference_audit_log_records_decisions_without_prompt_or_secret() {
+    let dir = tempfile::tempdir().unwrap();
+    let root_path = dir.path().join("db");
+    let audit_path = dir.path().join("audit").join("http.jsonl");
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let local_addr = listener.local_addr().unwrap();
+    drop(listener);
+
+    let audit_path_for_server = audit_path.clone();
+    std::thread::spawn(move || {
+        let options = ServerOptions {
+            audit_log_enabled: true,
+            audit_log_path: Some(audit_path_for_server),
+            llm_test_double_enabled: true,
+            ..Default::default()
+        };
+        let _ = crate::serve_with_options(&root_path, &local_addr.to_string(), options);
+    });
+
+    let response = request_http(local_addr, &post_inference_request(REQUEST));
+    assert!(response.contains("200 OK"), "{response}");
+
+    let rejected = REQUEST.replace(
+        r#""provider":"test_double","#,
+        r#""provider":"test_double","api_key":"not-allowed-secret","#,
+    );
+    let response = request_http(local_addr, &post_inference_request(&rejected));
+    assert!(response.contains("400 Bad Request"), "{response}");
+
+    let values = read_decision_audit_events(&audit_path);
+    let allowed = values
+        .iter()
+        .find(|value| value["llm"]["outcome"] == "allowed")
+        .expect("allowed LLM audit decision");
+    assert_eq!(allowed["audit_event"], "llm_inference_decision");
+    assert_eq!(allowed["audit_action"], "inference");
+    assert_eq!(allowed["path"], "/v1/inference");
+    assert_eq!(allowed["tenant"], "alpha");
+    assert_eq!(allowed["llm"]["reason"], "test_double_completed");
+    assert_eq!(allowed["llm"]["provider"], "test_double");
+    assert_eq!(allowed["llm"]["model"], "deterministic-echo-v1");
+    assert_eq!(allowed["llm"]["context_cell_count"], 1);
+    assert_eq!(allowed["llm"]["citation_count"], 1);
+    assert_eq!(allowed["llm"]["prompt_body_logged"], false);
+    assert_eq!(allowed["llm"]["secrets_logged"], false);
+
+    let denied = values
+        .iter()
+        .find(|value| value["llm"]["reason"] == "request_api_key_present")
+        .expect("denied LLM audit decision");
+    assert_eq!(denied["status"], 400);
+    assert_eq!(denied["error_code"], "bad_request");
+    assert_eq!(denied["llm"]["request_api_key_present"], true);
+
+    let audit_raw = std::fs::read_to_string(audit_path).unwrap();
+    for leaked in [
+        "Summarize only the supplied context",
+        "Project Alpha has a documented budget variance risk",
+        "doc://investment-risk#p1",
+        "not-allowed-secret",
+    ] {
+        assert!(
+            !audit_raw.contains(leaked),
+            "LLM audit leaked sensitive request data {leaked:?}: {audit_raw}"
+        );
+    }
+}
+
 fn body_json(response: &str) -> Value {
     let (_, body) = response.split_once("\r\n\r\n").unwrap();
     serde_json::from_str(body).unwrap()
+}
+
+fn post_inference_request(body: &str) -> String {
+    format!(
+        "POST /v1/inference?tenant=alpha HTTP/1.1\r\ncontent-length: {}\r\n\r\n{}",
+        body.len(),
+        body
+    )
+}
+
+fn request_http(addr: SocketAddr, request: &str) -> String {
+    let mut last_err = None;
+    for _ in 0..20 {
+        match TcpStream::connect(addr) {
+            Ok(mut stream) => {
+                if let Err(err) = stream.write_all(request.as_bytes()) {
+                    last_err = Some(err);
+                    std::thread::sleep(Duration::from_millis(50));
+                    continue;
+                }
+                let mut response = [0u8; 8192];
+                let read = match stream.read(&mut response) {
+                    Ok(read) => read,
+                    Err(err) => {
+                        last_err = Some(err);
+                        std::thread::sleep(Duration::from_millis(50));
+                        continue;
+                    }
+                };
+                return String::from_utf8_lossy(&response[..read]).to_string();
+            }
+            Err(err) => {
+                last_err = Some(err);
+                std::thread::sleep(Duration::from_millis(50));
+            }
+        }
+    }
+    panic!("failed to perform request after retries: {:?}", last_err);
+}
+
+fn read_decision_audit_events(path: &std::path::Path) -> Vec<Value> {
+    let mut last_audit = String::new();
+    for _ in 0..20 {
+        if let Ok(audit) = std::fs::read_to_string(path) {
+            last_audit = audit.clone();
+            let values = audit
+                .lines()
+                .filter_map(|line| serde_json::from_str::<Value>(line).ok())
+                .filter(|value| value["audit_event"] == "llm_inference_decision")
+                .collect::<Vec<_>>();
+            if values.len() >= 2 {
+                return values;
+            }
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    panic!("LLM decision audit events not found in audit log:\n{last_audit}");
 }

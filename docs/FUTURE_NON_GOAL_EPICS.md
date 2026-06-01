@@ -365,6 +365,10 @@ Current implementation slice:
 - The local `LlmRuntimeSafetyConfig` helper and fixture validate bounded prompt,
   context, output, timeout, queue, and concurrency limits while rejecting
   request-body API keys and default prompt-body logging.
+- The `/v1/inference` test-double emits local `llm_inference_decision` audit
+  records with outcome, reason, provider/model ids, ContextPack/citation
+  counts, and request-key presence while omitting prompt text, ContextPack text,
+  citation strings, and secret values.
 - `make llm-inference-smoke-check` validates deterministic test-double request
   and response fixtures plus the local server path without calling a real model.
 - `make secrets-check` scans tracked repository files for provider-secret-like
@@ -384,8 +388,9 @@ Task pool:
    cancellation remains future work.
 5. Define safety and audit logging for model calls.
    Local runtime safety config validation now rejects request-body API keys and
-   default prompt-body logging. Live model-call audit integration remains future
-   work.
+   default prompt-body logging. The deterministic test-double now emits
+   redacted decision audit records; real model runtime audit integration remains
+   future work.
 6. Define cost and quota controls.
    Local bounded output and concurrency limits are implemented as prerequisites;
    provider billing integration and per-principal inference quotas remain future

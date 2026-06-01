@@ -85,8 +85,12 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
             body.as_bytes(),
             options.llm_test_double_enabled,
         ) {
-            Ok(value) => json_response(200, &value),
-            Err(error) => json_error(error.status_code(), error.code(), &error.to_string()),
+            Ok(value) => json_response(200, &value.body),
+            Err(error) => json_error(
+                error.error.status_code(),
+                error.error.code(),
+                &error.error.to_string(),
+            ),
         };
     }
 

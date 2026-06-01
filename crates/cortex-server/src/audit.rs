@@ -9,6 +9,9 @@ use serde::Serialize;
 use crate::audit_chain::{self, AUDIT_CHAIN_ID, AUDIT_CHAIN_ZERO_HASH};
 use crate::dashboard;
 
+mod llm;
+pub(crate) use llm::{emit_llm_inference_decision, LlmInferenceDecisionAudit};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum AuditAction {
     Admin,
@@ -92,6 +95,8 @@ struct AuditRecord<'a> {
     error_code: &'a str,
     duration_ms: u64,
     unix_time_ms: u128,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    llm: Option<llm::LlmInferenceAuditFields<'a>>,
 }
 
 pub(crate) struct AuditSink {
@@ -180,6 +185,7 @@ pub(crate) fn emit_http_response(event: HttpResponseAudit<'_>, sink: Option<&Aud
         error_code,
         duration_ms: event.duration_ms,
         unix_time_ms,
+        llm: None,
     };
     tracing::info!(
         target: "cortexdb_audit",
@@ -232,5 +238,6 @@ fn audit_event_hash(record: &AuditRecord<'_>) -> String {
         ("error_code", record.error_code.to_owned()),
         ("duration_ms", record.duration_ms.to_string()),
         ("unix_time_ms", record.unix_time_ms.to_string()),
+        ("llm", record.llm.map(llm::hash_value).unwrap_or_default()),
     ])
 }

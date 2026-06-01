@@ -62,6 +62,13 @@ Model calls must be auditable without logging secrets or full sensitive prompt
 bodies by default. Safety policy must define prompt visibility, response
 storage, redaction, and failure behavior.
 
+The current `/v1/inference` test-double emits local
+`llm_inference_decision` audit records when route-level audit logging is
+enabled. These records contain outcome, rejection reason, tenant, principal
+metadata, status, provider/model ids, ContextPack cell count, citation count,
+and whether a request-body API key was present. They intentionally do not store
+the prompt body, ContextPack text, citation strings, or secret values.
+
 ## Prompt Visibility
 
 The runtime must not log full prompt bodies by default. Audit records may include
@@ -93,7 +100,7 @@ The current gates prove local prerequisites only:
 | Gate | Evidence |
 | --- | --- |
 | `make llm-inference-contract-check` | OpenAPI and server routes expose only the disabled-by-default `/v1/inference` test-double contract; `/v1/llm` and `/v1/chat` remain absent. |
-| `make llm-inference-safety-check` | The design and local runtime safety fixture contain ContextPack, AgentView, prompt-visibility, resource-limit, timeout, queue-backpressure, no-request-key, and no-prompt-logging rules. |
+| `make llm-inference-safety-check` | The design and local runtime safety fixture contain ContextPack, AgentView, prompt-visibility, resource-limit, timeout, queue-backpressure, no-request-key, no-prompt-logging, and decision-audit rules. |
 | `make llm-inference-smoke-check` | Deterministic request/response fixtures and server tests prove the test-double path without real provider calls. |
 | `make secrets-check` | Tracked repository files are scanned for provider-secret-like literals. |
 

@@ -38,6 +38,7 @@ GATES: dict[str, dict[str, object]] = {
             ("docs/LLM_INFERENCE_DESIGN.md", "Resource Limits"),
             ("docs/LLM_INFERENCE_DESIGN.md", "Runtime Safety Config"),
             ("docs/LLM_INFERENCE_DESIGN.md", "Safety And Audit"),
+            ("crates/cortex-server/src/audit.rs", "emit_llm_inference_decision"),
             ("docs/FUTURE_NON_GOAL_EPICS.md", "make llm-inference-safety-check"),
             ("Makefile", "llm-inference-safety-check"),
         ],
@@ -232,6 +233,7 @@ def validate(gate: str) -> dict[str, Any]:
             "request size limits",
             "timeouts",
             "queue backpressure",
+            "llm_inference_decision",
         ]
         missing = [item for item in required if item not in text]
         failures.extend(f"docs/LLM_INFERENCE_DESIGN.md missing safety rule {item!r}" for item in missing)
