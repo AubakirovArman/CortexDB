@@ -429,6 +429,9 @@ Current implementation slice:
   algorithms, bounded cache/timeout values, and `fail_open=false`.
 - The local `ExternalIdentityAuditRecord` contract records external identity
   mapping decisions without bearer tokens or raw claim payloads.
+- `docs/EXTERNAL_IDENTITY_ADMIN_RUNBOOK.md` defines the current operator
+  checklist for provider configuration, key rotation, static-token migration,
+  audit expectations, and incident response.
 - All new reports are written under `target/external-identity/` and carry
   `external_identity_ready=false`; they prove local prerequisites and claim
   mapping only, not a live OIDC, SAML, session provider, JWT signature verifier,
@@ -450,6 +453,8 @@ Task pool:
    The rotation fixture and provider config validation now require fail-closed
    outage semantics; live provider outage handling remains future work.
 7. Add admin docs for provider configuration and rotation.
+   `docs/EXTERNAL_IDENTITY_ADMIN_RUNBOOK.md` now covers the local operator
+   checklist; live provider runbooks remain future work.
 8. Add security tests for invalid issuer, invalid audience, expired tokens,
    revoked keys, and missing scope mapping. Issuer, audience, expiration,
    not-before, and missing mapping tests now exist for already-validated claims;

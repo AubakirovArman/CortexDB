@@ -86,6 +86,9 @@ The rotation fixture models expected JWKS behavior without a live provider:
 - provider outage fails closed for new tokens;
 - audit metadata may identify the principal but must not log raw bearer tokens.
 
+Operator-facing rotation and provider configuration steps are tracked in
+[`EXTERNAL_IDENTITY_ADMIN_RUNBOOK.md`](EXTERNAL_IDENTITY_ADMIN_RUNBOOK.md).
+
 ## Migration From Static Tokens
 
 Static-token deployments must continue to work while external identity is

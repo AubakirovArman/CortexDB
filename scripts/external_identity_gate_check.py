@@ -28,6 +28,7 @@ GATES: dict[str, dict[str, object]] = {
         "markers": [
             ("docs/EXTERNAL_IDENTITY_DESIGN.md", "Role And Scope Mapping"),
             ("docs/EXTERNAL_IDENTITY_DESIGN.md", "Mapping Fixture"),
+            ("docs/EXTERNAL_IDENTITY_ADMIN_RUNBOOK.md", "Static Token Migration"),
             ("docs/AUTH.md", "AgentView binding"),
             ("docs/FUTURE_NON_GOAL_EPICS.md", "make identity-policy-mapping-check"),
             ("Makefile", "identity-policy-mapping-check"),
@@ -39,6 +40,7 @@ GATES: dict[str, dict[str, object]] = {
         "markers": [
             ("docs/EXTERNAL_IDENTITY_DESIGN.md", "JWKS And Rotation"),
             ("docs/EXTERNAL_IDENTITY_DESIGN.md", "Rotation Fixture"),
+            ("docs/EXTERNAL_IDENTITY_ADMIN_RUNBOOK.md", "Rotation Procedure"),
             ("docs/FUTURE_NON_GOAL_EPICS.md", "make auth-rotation-check"),
             ("Makefile", "auth-rotation-check"),
         ],

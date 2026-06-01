@@ -78,6 +78,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`RBAC_POLICY_STORE_DESIGN.md`](RBAC_POLICY_STORE_DESIGN.md) - future dynamic RBAC policy-store design.
 - [`ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md`](ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md) - future enterprise RBAC and compliance design.
 - [`EXTERNAL_IDENTITY_DESIGN.md`](EXTERNAL_IDENTITY_DESIGN.md) - future external identity provider design.
+- [`EXTERNAL_IDENTITY_ADMIN_RUNBOOK.md`](EXTERNAL_IDENTITY_ADMIN_RUNBOOK.md) - future external identity operator checklist.
 - [`CLI.md`](CLI.md) - CLI command reference.
 - [`CLI_PRODUCT_EVIDENCE.md`](CLI_PRODUCT_EVIDENCE.md) - local Epic 14 evidence gate.
 - [`SDK_QUICKSTART.md`](SDK_QUICKSTART.md) - SDK usage.
