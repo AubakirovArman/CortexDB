@@ -23,6 +23,7 @@ mod audit_chain;
 mod audit_tests;
 mod auth;
 mod auth_capability;
+mod auth_policy_cells;
 mod auth_policy_io;
 mod auth_policy_store;
 mod authz;
@@ -565,8 +566,66 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
         &query,
         &body_bytes,
     ) {
-        Ok(Some(body_str)) => {
+        Ok(Some(admin_response)) => {
+            let db = match state.get_db("default") {
+                Ok(db) => db,
+                Err(error) => {
+                    audit_http_response(
+                        &state,
+                        &audit_event,
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Some(ErrorCode::Internal),
+                    );
+                    return with_request_id(
+                        (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(error_response(ErrorCode::Internal, error.to_string())),
+                        )
+                            .into_response(),
+                        &request_id,
+                    );
+                }
+            };
+            let store_json = admin_response.policy_store_json;
+            let sync_result =
+                tokio::task::spawn_blocking(move || db.sync_auth_policy_store(&store_json)).await;
+            match sync_result {
+                Ok(Ok(_)) => {}
+                Ok(Err(error)) => {
+                    let status = StatusCode::from_u16(error.status_code())
+                        .unwrap_or(StatusCode::BAD_REQUEST);
+                    audit_http_response(&state, &audit_event, status, Some(error.code()));
+                    return with_request_id(
+                        (
+                            status,
+                            Json(error_response(error.code(), error.to_string())),
+                        )
+                            .into_response(),
+                        &request_id,
+                    );
+                }
+                Err(_) => {
+                    audit_http_response(
+                        &state,
+                        &audit_event,
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Some(ErrorCode::Internal),
+                    );
+                    return with_request_id(
+                        (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(error_response(
+                                ErrorCode::Internal,
+                                "auth policy cell sync task failed",
+                            )),
+                        )
+                            .into_response(),
+                        &request_id,
+                    );
+                }
+            }
             audit_http_response(&state, &audit_event, StatusCode::OK, None);
+            let body_str = admin_response.body;
             let response =
                 if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_str) {
                     (StatusCode::OK, Json(json_val)).into_response()

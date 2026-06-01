@@ -137,6 +137,13 @@ the action, affected principal, active/disabled principal counts, and whether a
 rollback snapshot exists. This is still a local file-backed admin lifecycle, not
 external identity or enterprise compliance certification.
 
+After a successful mutation, the server also mirrors the effective policy
+metadata into durable redacted CortexDB cells under `_system:auth_policy`. The
+mirror is written through the database actor and records principal ID, role,
+AgentView binding, disabled state, quota, capabilities, and a token fingerprint.
+It intentionally does not store the raw bearer token in the cell payload; the
+JSON policy store remains the credential source of truth.
+
 ## Sending Requests with Auth
 
 Include the `Authorization: Bearer <token>` header in every request:

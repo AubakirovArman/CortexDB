@@ -20,6 +20,23 @@ pub(crate) enum AuthCapability {
 }
 
 impl AuthCapability {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Admin => "admin",
+            Self::Aql => "aql",
+            Self::Context => "context",
+            Self::Delete => "delete",
+            Self::Ingest => "ingest",
+            Self::Inference => "inference",
+            Self::Memory => "memory",
+            Self::Metrics => "metrics",
+            Self::Read => "read",
+            Self::Search => "search",
+            Self::Verify => "verify",
+            Self::Write => "write",
+        }
+    }
+
     pub(crate) fn parse(raw: &str) -> Result<Self, String> {
         match raw.trim().to_ascii_lowercase().as_str() {
             "admin" => Ok(Self::Admin),

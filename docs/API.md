@@ -130,7 +130,9 @@ Writes or overwrites a single knowledge cell payload.
 
 These routes require an `admin` token and a configured
 `CORTEXDB_AUTH_POLICY_STORE_FILE`. They mutate only the local JSON policy-store
-file and create a rollback snapshot before publishing the new policy.
+file, create a rollback snapshot before publishing the new policy, and mirror
+the effective redacted policy metadata into durable `_system:auth_policy`
+CortexDB cells. The cell mirror never stores the raw bearer token.
 
 * `POST /v1/admin/auth/principal`
 * `DELETE /v1/admin/auth/principal?principal_id=<principal_id>`

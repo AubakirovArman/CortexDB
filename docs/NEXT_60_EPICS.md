@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 32 |
-| partial | 21 |
+| closed | 33 |
+| partial | 20 |
 | not started | 5 |
 | research | 2 |
 | total | 60 |
@@ -72,7 +72,7 @@ The plan recommends this first execution batch:
 | 28 | Document Chunking Policies | closed | Engine-level `TextChunkPolicy`, deterministic `split_text_chunks`, stable `chunk_id` generation, chunk SourceRef payload metadata, and regression tests now exist. | Keep future chunking changes policy-driven and backwards-compatible with stable chunk ids. |
 | 29 | PDF/Text Extraction Adapter Boundary | closed | `DigitalPdfTextExtractor`, `NativeDigitalPdfTextExtractor`, `ExternalOcrAdapter`, request/output structs, fail-closed disabled OCR adapter, tests, and `PDF_TEXT_EXTRACTION.md` now define the digital-PDF vs external-OCR boundary. | Keep OCR as an explicit external integration until a production OCR adapter is separately built and gated. |
 | 30 | Ingestion Validation Report | closed | Engine-level `IngestionValidationReport` now reports warnings, skipped items, and per-cell SourceRef summaries; HTTP ingest responses include it with OpenAPI/docs/snapshot coverage. | Extend warning codes only additively as new ingestion adapters are added. |
-| 31 | Dynamic RBAC Policy Store | partial | RBAC design/security docs exist. | Implement persisted user/role/policy cells and runtime policy mapping. |
+| 31 | Dynamic RBAC Policy Store | closed | JSON policy-store principals now sync through `DatabaseActor` into redacted durable `_system:auth_policy` cells; tests cover policy-cell sync, disabled mapping, and no raw-token exposure. | Keep full enterprise RBAC, external identity, and session management out of beta claims until their own gates exist. |
 | 32 | Per-token Quotas | partial | Security/rate-limit gates exist. | Add complete per-token body, queue, and metrics budgets. |
 | 33 | Tamper-evident Audit Log | partial | Audit paths and security checks exist. | Add hash-chain audit log and `cortexdb audit verify`. |
 | 34 | Encrypted Backup Design to MVP | partial | Encrypted backup design doc exists. | Implement passphrase encrypted archive and restore validation. |
@@ -118,5 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 28: engine-level chunk id stability and policy tests.
-2. Advance Epic 29: explicit digital PDF and external OCR adapter contracts.
+1. Advance Epic 32: complete per-token body, queue, and metrics budgets.
+2. Advance Epic 33: hash-chain audit log and `cortexdb audit verify`.

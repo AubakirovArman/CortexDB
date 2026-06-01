@@ -97,7 +97,10 @@ Missing cells return:
 
 Admin-only local policy-store lifecycle routes. They require
 `CORTEXDB_AUTH_POLICY_STORE_FILE` and do not expose bearer token values in
-responses.
+responses. Successful mutations also sync a redacted durable policy-cell mirror
+under the local `_system:auth_policy` scope; the mirror stores role, AgentView
+binding, quota, capabilities, disabled state, and token fingerprint, not the raw
+token.
 
 `POST /v1/admin/auth/principal`
 

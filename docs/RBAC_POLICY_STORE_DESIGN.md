@@ -26,12 +26,20 @@ Implemented today:
   lists fail closed.
 - Admin-only local endpoints can upsert principals, disable principals, and
   roll back the last local policy-store mutation.
+- Every successful admin policy-store mutation is mirrored through the
+  tenant-local `DatabaseActor` into redacted durable `_system:auth_policy`
+  cells. These cells store principal ID, role, AgentView binding, disabled
+  state, quota, capabilities, and a token fingerprint, but never the raw bearer
+  token.
 - Local audit JSONL records include chain metadata and can be verified by CLI.
 
 Not implemented in Core Alpha:
 
 - user accounts, sessions, groups, organizations, or external identity provider
   mapping;
+- database-backed raw credential authentication; the JSON policy store remains
+  the credential source of truth, while policy cells are a durable redacted
+  runtime/audit mirror;
 - richer role/capability objects beyond the current action-class capability
   allowlist;
 - expiry or revocation events beyond token-file replacement and disabled
@@ -122,11 +130,14 @@ AgentViews and let the existing AgentView validator enforce scopes.
 
 1. Keep existing `CORTEXDB_AUTH_TOKENS` and token-file formats.
 2. Add a read-only policy-store preview command that prints effective roles.
-3. Add durable policy records in a new system scope.
-4. Add policy-store read path behind a feature flag.
+3. Add durable policy records in a new system scope. Implemented as
+   `_system:auth_policy` redacted policy cells written through `DatabaseActor`.
+4. Add policy-store read path behind a feature flag. The current beta path reads
+   the JSON policy store for credentials and exposes test-covered runtime
+   mapping from the redacted policy cells.
 5. Add write APIs only after audit review tooling and rollback behavior are
    stable. The local v1 admin mutation endpoints are implemented and always
-   write the canonical v1 shape.
+   write the canonical v1 shape plus the durable redacted cell mirror.
 6. Keep legacy read migrations fail-closed: unsupported schema versions must
    not authenticate.
 
@@ -139,5 +150,7 @@ AgentViews and let the existing AgentView validator enforce scopes.
 - capability-restricted principal can access allowed action classes but gets
   `403` for disallowed action classes;
 - invalid or duplicate policy-store capabilities fail closed;
+- admin policy-store mutations sync durable redacted policy cells;
+- durable policy cells do not expose raw bearer tokens;
 - auditor role can review audit summaries but cannot mutate data;
 - policy-store corruption fails closed.

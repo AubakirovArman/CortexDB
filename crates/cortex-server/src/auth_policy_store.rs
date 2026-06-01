@@ -13,24 +13,24 @@ const SCHEMA_VERSION: &str = "cortexdb.auth_policy.v1";
 const LEGACY_SCHEMA_VERSION_V0: &str = "cortexdb.auth_policy.v0";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct AuthPolicyStoreFile {
-    schema_version: String,
-    principals: Vec<AuthPolicyPrincipal>,
+pub(crate) struct AuthPolicyStoreFile {
+    pub(crate) schema_version: String,
+    pub(crate) principals: Vec<AuthPolicyPrincipal>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct AuthPolicyPrincipal {
-    principal_id: String,
-    token: String,
-    role: String,
+pub(crate) struct AuthPolicyPrincipal {
+    pub(crate) principal_id: String,
+    pub(crate) token: String,
+    pub(crate) role: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    agent_id: Option<u64>,
+    pub(crate) agent_id: Option<u64>,
     #[serde(default, skip_serializing_if = "is_false")]
-    disabled: bool,
+    pub(crate) disabled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    request_quota_per_minute: Option<u64>,
+    pub(crate) request_quota_per_minute: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    capabilities: Option<Vec<String>>,
+    pub(crate) capabilities: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -73,6 +73,11 @@ pub(crate) struct AuthPolicyMutationResponse {
     pub rollback_available: bool,
 }
 
+pub(crate) struct AuthPolicyAdminResponse {
+    pub body: String,
+    pub policy_store_json: String,
+}
+
 pub(crate) fn load_token_policies_from_store(
     path: &Path,
 ) -> Result<Vec<EffectiveAuthPolicy>, String> {
@@ -106,7 +111,7 @@ pub(crate) fn handle_admin_request(
     path: &str,
     query: &str,
     body: &[u8],
-) -> Result<Option<String>, RouterError> {
+) -> Result<Option<AuthPolicyAdminResponse>, RouterError> {
     let response = match (method, path) {
         ("POST", "/v1/admin/auth/principal") => {
             let request =
@@ -124,7 +129,15 @@ pub(crate) fn handle_admin_request(
         _ => None,
     };
     response
-        .map(|value| serde_json::to_string(&value).map_err(Into::into))
+        .map(|value| {
+            let body = serde_json::to_string(&value)?;
+            let store = read_store(policy_path(options)?).map_err(RouterError::BadRequest)?;
+            let policy_store_json = encode_store_json(&store).map_err(RouterError::Internal)?;
+            Ok(AuthPolicyAdminResponse {
+                body,
+                policy_store_json,
+            })
+        })
         .transpose()
 }
 
@@ -245,7 +258,11 @@ fn read_store_or_empty(path: &Path) -> Result<AuthPolicyStoreFile, RouterError> 
 fn read_store(path: &Path) -> Result<AuthPolicyStoreFile, String> {
     let raw = fs::read_to_string(path)
         .map_err(|error| format!("auth policy store could not be read: {error}"))?;
-    let value = serde_json::from_str::<serde_json::Value>(&raw)
+    decode_store_str(&raw)
+}
+
+pub(crate) fn decode_store_str(raw: &str) -> Result<AuthPolicyStoreFile, String> {
+    let value = serde_json::from_str::<serde_json::Value>(raw)
         .map_err(|error| format!("auth policy store is invalid JSON: {error}"))?;
     decode_store_value(value)
 }
@@ -340,7 +357,7 @@ fn validate_principal(principal: &AuthPolicyPrincipal) -> Result<(), String> {
     Ok(())
 }
 
-fn parse_capabilities(raw: &[String]) -> Result<BTreeSet<AuthCapability>, String> {
+pub(crate) fn parse_capabilities(raw: &[String]) -> Result<BTreeSet<AuthCapability>, String> {
     if raw.is_empty() {
         return Err("has empty capabilities".to_owned());
     }
@@ -370,9 +387,13 @@ fn empty_store() -> AuthPolicyStoreFile {
 }
 
 fn atomic_write_json(path: &Path, store: &AuthPolicyStoreFile) -> Result<(), String> {
-    let text = serde_json::to_string_pretty(store)
-        .map_err(|error| format!("failed to encode auth policy store: {error}"))?;
+    let text = encode_store_json(store)?;
     atomic_write_text(path, &(text + "\n"))
+}
+
+fn encode_store_json(store: &AuthPolicyStoreFile) -> Result<String, String> {
+    serde_json::to_string_pretty(store)
+        .map_err(|error| format!("failed to encode auth policy store: {error}"))
 }
 
 fn is_false(value: &bool) -> bool {

@@ -5,6 +5,7 @@ use std::thread::JoinHandle;
 
 use cortex_engine::Database;
 
+use crate::auth_policy_cells::{self, AuthPolicyCellSyncReport};
 use crate::responses::RouterError;
 use crate::router::route_database_with_agent;
 use crate::DEFAULT_ACTOR_QUEUE_CAPACITY;
@@ -20,6 +21,10 @@ enum ActorCommand {
     ExpireMemory {
         now_unix_seconds: u64,
         reply: mpsc::Sender<Result<Vec<cortex_engine::memory::ExpiredMemoryCell>, RouterError>>,
+    },
+    SyncAuthPolicyStore {
+        store_json: String,
+        reply: mpsc::Sender<Result<AuthPolicyCellSyncReport, RouterError>>,
     },
     #[cfg(test)]
     TestBlock {
@@ -79,6 +84,11 @@ impl DatabaseActor {
                         let result = db
                             .expire_memory_cells(now_unix_seconds)
                             .map_err(|e| RouterError::Internal(e.to_string()));
+                        let _ = reply.send(result);
+                    }
+                    ActorCommand::SyncAuthPolicyStore { store_json, reply } => {
+                        let result =
+                            auth_policy_cells::sync_store_json_to_database(&mut db, &store_json);
                         let _ = reply.send(result);
                     }
                     #[cfg(test)]
@@ -221,6 +231,22 @@ impl DatabaseActor {
         let (reply_tx, reply_rx) = mpsc::channel();
         self.enqueue(ActorCommand::ExpireMemory {
             now_unix_seconds,
+            reply: reply_tx,
+        })?;
+        let result = reply_rx
+            .recv()
+            .map_err(|_| RouterError::Internal("database actor stopped".to_owned()))?;
+        self.requests_completed.fetch_add(1, Ordering::Relaxed);
+        result
+    }
+
+    pub(crate) fn sync_auth_policy_store(
+        &self,
+        store_json: &str,
+    ) -> Result<AuthPolicyCellSyncReport, RouterError> {
+        let (reply_tx, reply_rx) = mpsc::channel();
+        self.enqueue(ActorCommand::SyncAuthPolicyStore {
+            store_json: store_json.to_owned(),
             reply: reply_tx,
         })?;
         let result = reply_rx
