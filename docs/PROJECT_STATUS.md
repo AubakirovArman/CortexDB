@@ -20,7 +20,7 @@ CortexDB has successfully transitioned from an early database loop prototype int
 
 - **Consensus-Driven Replication (Raft-like):** Multi-node log syncing and election states (current status: experimental model with vote freshness checks, AppendEntries log matching, conflict truncation, snapshot transfer smoke paths, local split-brain/rejoin hardening, membership rotation resume, and documented SLO gates).
 - **Consistent Hashing Sharding:** Distributed namespace layout and routing (current status: early layout primitives).
-- **Guarded HNSW Approximate Search:** High-dimensional vector indexing with deterministic multi-layer graph links and exact-fallback guardrails. `DistanceMetric` supports fixed-point DotProduct, Cosine, and L2. Repeatable in-repo recall/latency reports plus release-mode synthetic, drift, external JSONL, and metric-matrix fixture gates exist. `ann_corpus_check` can evaluate larger external vectors/queries/ground-truth files; long-running benchmark history remains future tuning work.
+- **Guarded HNSW Approximate Search:** High-dimensional vector indexing with deterministic multi-layer graph links and exact-fallback guardrails. `DistanceMetric` supports fixed-point DotProduct, Cosine, and L2. Repeatable in-repo recall/latency reports plus release-mode synthetic, drift, external JSONL, metric-matrix, and repeated recall-probe fixture gates exist. `ann_corpus_check` can evaluate larger external vectors/queries/ground-truth files; real production traffic history remains future tuning work.
 
 ---
 

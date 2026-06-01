@@ -190,8 +190,8 @@ Current documented release evidence is summarized in
 Post-Core Alpha observability should add:
 
 - structured tracing spans for request, WAL, checkpoint, compact, and search;
-- latency histograms instead of duration totals only;
-- Prometheus coverage for actor/request counters;
+- broader route-specific latency histograms beyond ANN search;
+- broader Prometheus coverage for maintenance counters;
 - configurable alert profiles;
-- long-running ANN recall/latency history;
+- production-traffic ANN recall/latency history;
 - production failover and recovery SLO reports.

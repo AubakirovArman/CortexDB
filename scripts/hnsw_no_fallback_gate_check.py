@@ -9,20 +9,19 @@ import sys
 from pathlib import Path
 from typing import Any
 
-
 MIN_RECALL_Q16 = 49_151
-
 
 GATES: dict[str, dict[str, object]] = {
     "production-no-fallback": {
         "schema": "cortexdb.hnsw_no_fallback.production_gate.v1",
-        "required_evidence": ["fixture", "external", "metric_matrix", "domain"],
+        "required_evidence": ["fixture", "external", "metric_matrix", "domain", "recall_probe"],
         "markers": [
             ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "Serving Guardrails"),
             ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "Runtime Rollout Policy"),
             ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "ann_no_fallback_blocked"),
             ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "p99 latency"),
             ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "cortexdb_ann_search_latency_ms_bucket"),
+            ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "long-running recall probes"),
             ("docs/SEARCH.md", "Guarded production mode"),
             ("docs/SEARCH.md", "p99 tail-latency"),
             ("docs/SEARCH.md", "ann_search_latency_ms"),
@@ -30,12 +29,14 @@ GATES: dict[str, dict[str, object]] = {
             ("examples/observability/alerts.yml", "cortexdb_ann_no_fallback_blocked"),
             ("crates/cortex-server/src/lib.rs", "cortexdb_ann_search_latency_ms_bucket"),
             ("crates/cortex-server/src/lib.rs", "cortexdb_ann_no_fallback_blocked"),
+            ("scripts/ann/recall_probe.py", "cortexdb.ann_recall_probe.v1"),
             ("crates/cortex-engine/src/search/hnsw_no_fallback.rs", "HnswNoFallbackRolloutPolicy"),
             ("crates/cortex-engine/src/search/hnsw_no_fallback.rs", "RolloutDisabled"),
             ("crates/cortex-engine/src/search/hnsw_no_fallback.rs", "FallbackEnabled"),
             ("crates/cortex-engine/src/search/hnsw_no_fallback.rs", "RecallBelowMinimum"),
             ("crates/cortex-engine/src/search/hnsw_no_fallback.rs", "ReportNotProductionSafe"),
             ("Makefile", "ann-production-no-fallback-check"),
+            ("Makefile", "ann-recall-probe-report"),
         ],
     },
     "real-domain-history": {
@@ -71,13 +72,11 @@ GATES: dict[str, dict[str, object]] = {
     },
 }
 
-
 def read(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
     except OSError as error:
         raise RuntimeError(f"failed to read {path}: {error}") from error
-
 
 def load_json(path: Path) -> dict[str, Any]:
     try:
@@ -90,7 +89,6 @@ def load_json(path: Path) -> dict[str, Any]:
         raise RuntimeError(f"evidence report {path} must be a JSON object")
     return value
 
-
 def parse_evidence(values: list[str]) -> dict[str, Path]:
     result: dict[str, Path] = {}
     for value in values:
@@ -102,7 +100,6 @@ def parse_evidence(values: list[str]) -> dict[str, Path]:
         result[label] = Path(path)
     return result
 
-
 def validate_markers(markers: list[tuple[str, str]]) -> list[str]:
     failures: list[str] = []
     for file_name, marker in markers:
@@ -110,21 +107,17 @@ def validate_markers(markers: list[tuple[str, str]]) -> list[str]:
             failures.append(f"marker {marker!r} missing from {file_name}")
     return failures
 
-
 def int_value(report: dict[str, Any], field: str) -> int | None:
     value = report.get(field)
     return value if isinstance(value, int) else None
-
 
 def bool_value(report: dict[str, Any], field: str) -> bool | None:
     value = report.get(field)
     return value if isinstance(value, bool) else None
 
-
 def observed(report: dict[str, Any]) -> dict[str, Any]:
     nested = report.get("observed")
     return nested if isinstance(nested, dict) else report
-
 
 def report_failures(label: str, report: dict[str, Any]) -> list[str]:
     failures: list[str] = []
@@ -165,7 +158,6 @@ def report_failures(label: str, report: dict[str, Any]) -> list[str]:
         failures.append(f"{label}: max latency exceeds gate policy")
     return failures
 
-
 def metric_matrix_failures(report: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     if bool_value(report, "passed") is not True:
@@ -187,6 +179,26 @@ def metric_matrix_failures(report: dict[str, Any]) -> list[str]:
         failures.append(f"metric_matrix: missing metrics {', '.join(sorted(missing))}")
     return failures
 
+def recall_probe_failures(report: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    if report.get("schema_version") != "cortexdb.ann_recall_probe.v1":
+        failures.append("recall_probe: invalid schema_version")
+    if bool_value(report, "passed") is not True:
+        failures.append("recall_probe: passed must be true")
+    if bool_value(report, "production_safe") is not True:
+        failures.append("recall_probe: production_safe must be true")
+    if (int_value(report, "iterations") or 0) < 3:
+        failures.append("recall_probe: expected at least three iterations")
+    if (int_value(report, "min_observed_recall_q16_min") or 0) < MIN_RECALL_Q16:
+        failures.append("recall_probe: min recall below local threshold")
+    if (int_value(report, "mean_recall_q16_min") or 0) < MIN_RECALL_Q16:
+        failures.append("recall_probe: mean recall below local threshold")
+    if (int_value(report, "p99_latency_nanos_max") or 0) <= 0:
+        failures.append("recall_probe: p99 latency must be positive")
+    shape = report.get("graph_shape")
+    if not isinstance(shape, dict) or not shape:
+        failures.append("recall_probe: graph_shape must be present")
+    return failures
 
 def history_failures(history: dict[str, Any], *, min_runs: int) -> list[str]:
     failures: list[str] = []
@@ -202,7 +214,6 @@ def history_failures(history: dict[str, Any], *, min_runs: int) -> list[str]:
     elif not all(isinstance(item, dict) and item.get("latest_production_safe") is True for item in corpora):
         failures.append("history: every latest corpus run must be production_safe")
     return failures
-
 
 def validate(gate: str, evidence: dict[str, Path], history_path: Path | None) -> dict[str, Any]:
     spec = GATES[gate]
@@ -223,6 +234,8 @@ def validate(gate: str, evidence: dict[str, Path], history_path: Path | None) ->
                 failures.extend(report_failures(label, reports[label]))
         if "metric_matrix" in reports:
             failures.extend(metric_matrix_failures(reports["metric_matrix"]))
+        if "recall_probe" in reports:
+            failures.extend(recall_probe_failures(reports["recall_probe"]))
     elif gate == "real-domain-history":
         if "domain" in reports:
             failures.extend(report_failures("domain", reports["domain"]))
@@ -254,7 +267,6 @@ def validate(gate: str, evidence: dict[str, Path], history_path: Path | None) ->
         "failures": failures,
     }
 
-
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gate", required=True, choices=sorted(GATES))
@@ -262,7 +274,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--history", type=Path)
     parser.add_argument("--report", required=True)
     return parser.parse_args(argv)
-
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
@@ -280,7 +291,6 @@ def main(argv: list[str]) -> int:
         return 1
     print(f"HNSW no-fallback {args.gate} check passed: {output}")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))

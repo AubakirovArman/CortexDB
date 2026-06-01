@@ -291,6 +291,9 @@ Current implementation slice:
 - `/v1/metrics` and Prometheus now expose runtime ANN search latency buckets,
   so operators can watch live latency drift while no-fallback profiles are
   evaluated.
+- `make ann-recall-probe-report` repeatedly probes the local domain corpus and
+  feeds `make ann-production-no-fallback-check`, so no-fallback evidence now
+  includes repeated recall and graph-shape stability checks.
 - ANN fixture, external, metric-matrix, domain-corpus, drift, and history
   reports now carry p99 latency evidence and p99 regression budgets in addition
   to p50/p95/max latency.
@@ -309,9 +312,9 @@ Task pool:
 7. Add degraded-index detection and serving guardrails.
 8. Add operational metrics for graph health, rebuild count, stale graph count,
    recall probes, p95/p99 latency, and fallback-disabled requests.
-   No-fallback rollout decision counters, runtime latency histograms, and p99
-   report/history gates are implemented; long-running recall probes remain
-   future work.
+   No-fallback rollout decision counters, runtime latency histograms, repeated
+   recall probes, and p99 report/history gates are implemented; production
+   traffic recall probe scheduling remains future work.
 9. Persist operator-managed no-fallback profiles instead of passing the rollout
    decision only per request. A local manifest-backed active profile is now
    implemented; richer named profile sets remain future work.

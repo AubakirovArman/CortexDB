@@ -115,7 +115,7 @@ corpora.
 
 | Gate | Evidence |
 | --- | --- |
-| `make ann-production-no-fallback-check` | synthetic, explicit external fixture, metric matrix, local domain reports with recall, latency, graph shape, `production_safe=true`, and runtime rollout policy tests |
+| `make ann-production-no-fallback-check` | synthetic, explicit external fixture, metric matrix, local domain reports, repeated recall probe, latency, graph shape, `production_safe=true`, and runtime rollout policy tests |
 | `make ann-real-domain-history-check` | local domain corpus report plus clean multi-run history fixture with no recall or latency regression |
 | `make ann-public-corpus-history-check` | public-corpus harness self-test plus clean history fixture; real external public corpus source is still required before promotion |
 | `make ann-graph-freshness-check` | HNSW persistence, maintenance, manifest profile, validation, stale/change, and corrupt graph guard tests |
@@ -123,6 +123,13 @@ corpora.
 Reports are written under `target/hnsw-no-fallback/`. They keep
 `fallback_free_general_ready=false`; only selected local profiles can be marked
 ready by their own evidence.
+
+The repeated recall probe is written to `target/ann/ann_recall_probe_report.json`
+by `make ann-recall-probe-report`. It runs the selected local domain corpus
+multiple times and fails if any iteration loses production-safety, recall,
+positive p99 latency evidence, or stable graph-shape evidence. These local
+long-running recall probes are not a substitute for real production traffic
+history.
 
 ## Acceptance
 

@@ -16,6 +16,7 @@ not prove production quality. Production tuning needs:
 - a representative external corpus;
 - exact top-k ground truth for each metric;
 - repeatable recall and latency reports;
+- repeated recall probes for the same profile/corpus;
 - explicit thresholds;
 - archived report history across commits;
 - a fallback policy when ANN violates a guard.
@@ -33,7 +34,10 @@ construction or search behavior has an objective before/after report.
 | L3 | Regression gate | candidate reports are compared against archived baseline reports. |
 | L4 | Production tuning | corpus suite covers size, metric, tenant/domain, and latency classes. |
 
-Core Alpha currently targets L1 plus the tooling for L2/L3.
+Core Alpha currently targets L1 plus the tooling for L2/L3. The
+`ann-recall-probe-report` target repeats the local domain corpus gate and
+records recall, p99 latency, and graph-shape stability as local no-fallback
+prerequisite evidence.
 The public `siftsmall` full-run baseline attached to the Core Alpha release is
 the first L2 evidence package; the hosted workflow can now compare candidate
 runs against that published bundle.
