@@ -1,6 +1,6 @@
 # Beta Foundation Evidence
 
-Last local beta foundation run: 2026-05-31.
+Last local beta foundation run: 2026-06-01.
 
 This document records the Epic 2 evidence gate from
 [`PL_EXTRACTED_EPICS.md`](PL_EXTRACTED_EPICS.md). It is a developer-facing beta
@@ -33,7 +33,7 @@ target/beta-foundation/*.log
 | `openapi_contract` | OpenAPI contract and typed response compatibility. |
 | `context_verify_quality` | ContextPack and VERIFY FACT deterministic quality fixture. |
 | `search_quality` | BM25, field weighting, stopword, and multilingual analyzer checks. |
-| `error_taxonomy` | Stable HTTP error code and status taxonomy. |
+| `error_taxonomy` | Stable HTTP error code/status taxonomy aligned across docs, OpenAPI, server snapshots, and SDK decoders. |
 | `metrics_contract` | Metrics and ANN metrics response-shape checks. |
 | `beta_delta` | Beta boundary docs and gate wiring. |
 

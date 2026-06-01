@@ -1,0 +1,71 @@
+---
+source: crates/cortex-server/src/tests/error_response_snapshot_tests.rs
+expression: responses
+---
+[
+  {
+    "code": "bad_request",
+    "error": "bad_request",
+    "message": "bad_request message"
+  },
+  {
+    "code": "invalid_tenant",
+    "error": "invalid_tenant",
+    "message": "invalid_tenant message"
+  },
+  {
+    "code": "invalid_aql",
+    "error": "invalid_aql",
+    "message": "invalid_aql message"
+  },
+  {
+    "code": "unauthorized",
+    "error": "unauthorized",
+    "message": "unauthorized message"
+  },
+  {
+    "code": "forbidden",
+    "error": "forbidden",
+    "message": "forbidden message"
+  },
+  {
+    "code": "permission_denied",
+    "error": "permission_denied",
+    "message": "permission_denied message"
+  },
+  {
+    "code": "not_found",
+    "error": "not_found",
+    "message": "not_found message"
+  },
+  {
+    "code": "payload_too_large",
+    "error": "payload_too_large",
+    "message": "payload_too_large message"
+  },
+  {
+    "code": "rate_limited",
+    "error": "rate_limited",
+    "message": "rate_limited message"
+  },
+  {
+    "code": "storage_corruption",
+    "error": "storage_corruption",
+    "message": "storage_corruption message"
+  },
+  {
+    "code": "internal",
+    "error": "internal",
+    "message": "internal message"
+  },
+  {
+    "code": "database_busy",
+    "error": "database_busy",
+    "message": "database_busy message"
+  },
+  {
+    "code": "service_unavailable",
+    "error": "service_unavailable",
+    "message": "service_unavailable message"
+  }
+]

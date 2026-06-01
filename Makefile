@@ -224,6 +224,7 @@ openapi-check:
 
 openapi-contract-check:
 	python3 scripts/check_openapi_contract.py
+	python3 scripts/check_error_taxonomy_contract.py
 
 sdk-contract-check:
 	python3 scripts/check_sdk_contract.py

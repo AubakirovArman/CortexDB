@@ -256,6 +256,19 @@ Acceptance:
 
 ### Epic 2.4 - Error Taxonomy And API Snapshot Enforcement
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- `make openapi-contract-check` now runs live OpenAPI validation and
+  `scripts/check_error_taxonomy_contract.py`.
+- The taxonomy guard compares stable error codes across
+  `docs/API_ERROR_TAXONOMY.md`, `docs/API_JSON_SCHEMAS.md`, `docs/API.md`,
+  `docs/openapi.yaml`, server `ErrorCode::as_str`, server taxonomy tests,
+  SDK decoder tests, and the full SDK-visible error snapshot.
+- `crates/cortex-server/src/tests/error_response_snapshot_tests.rs` snapshots
+  every stable SDK-visible `ErrorResponse` code.
+
 Tasks:
 
 1. Ensure every stable error code appears in:

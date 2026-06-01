@@ -6,6 +6,17 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 
 ---
 
+## Unreleased
+
+### Changed
+- **Error taxonomy contract guard** — `make openapi-contract-check` now also
+  verifies the stable error-code list across `API_ERROR_TAXONOMY.md`,
+  `API_JSON_SCHEMAS.md`, `API.md`, OpenAPI, server mappings, server snapshots,
+  and Rust SDK decoder tests. Adding or changing an SDK-visible error code now
+  requires updating every contract surface together.
+
+---
+
 ## v0.1.0-core-alpha.4 (current)
 
 ### Added
