@@ -455,12 +455,14 @@ auth-rotation-check:
 	python3 scripts/external_identity_gate_check.py --gate rotation --report "$(AUTH_ROTATION_REPORT)"
 
 legal-verification-dataset-check:
+	cargo test -p cortex-engine legal
 	python3 scripts/legal_verification_gate_check.py --gate dataset --report "$(LEGAL_VERIFICATION_DATASET_REPORT)"
 
 legal-verification-quality-check: verification-quality-check
 	python3 scripts/legal_verification_gate_check.py --gate quality --evidence "$(VERIFICATION_QUALITY_REPORT)" --report "$(LEGAL_VERIFICATION_QUALITY_REPORT)"
 
 legal-citation-policy-check:
+	cargo test -p cortex-engine legal
 	python3 scripts/legal_verification_gate_check.py --gate citation-policy --report "$(LEGAL_CITATION_POLICY_REPORT)"
 
 binary-release-package:

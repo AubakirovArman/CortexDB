@@ -11,6 +11,7 @@ pub mod error;
 pub mod feedback;
 pub mod graph;
 pub mod ingestion;
+pub mod legal;
 mod lock;
 pub mod memory;
 pub use memory::{ExpiredMemoryCell, MemoryDecayScore};
@@ -42,6 +43,10 @@ pub use ingestion::{
     extract_pdf_text, CsvIngestOptions, EntityIngestOptions, IngestedCell, IngestionJobId,
     IngestionJobStatus, IngestionProgress, IngestionProgressTracker, JsonIngestOptions,
     PdfExtractionStats, PdfIngestOptions, RelationIngestOptions, TextIngestOptions,
+};
+pub use legal::{
+    evaluate_legal_verification_boundary, LegalOutputBoundary, LegalRefusalReason,
+    LegalVerificationPolicy, LegalVerificationRequest, LegalVerificationReview,
 };
 pub use operation::*;
 pub use options::{DatabaseOptions, RecoveryMode, StaleLockPolicy};

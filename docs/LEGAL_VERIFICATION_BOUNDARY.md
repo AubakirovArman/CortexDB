@@ -1,7 +1,7 @@
 # Legal Verification Boundary
 
-Status: future phase 1 local evidence gates started, no legal-grade product
-claim implemented.
+Status: future phase 2 local review-boundary evaluator started, no legal-grade
+product claim implemented.
 
 ## Goal
 
@@ -31,6 +31,13 @@ admissible evidence.
 Legal-grade reports require human review, reviewer identity, approval status,
 review timestamp, and a retention policy. Automated verification alone is not
 legal-grade.
+
+The local `evaluate_legal_verification_boundary` helper checks whether a
+candidate legal verification report satisfies the current prerequisite policy:
+specific domain and jurisdiction, non-empty claim, source refs, reviewer
+identity, reviewer approval, and output limited to evidence summaries rather
+than legal advice. It always keeps `legal_grade_ready=false` until external
+domain review exists.
 
 ## Citation Policy
 
@@ -62,9 +69,9 @@ The current gates prove local prerequisites only:
 
 | Gate | Evidence |
 | --- | --- |
-| `make legal-verification-dataset-check` | A domain-specific dataset contract fixture exists, requires expert review, and keeps `legal_grade_ready=false`. |
+| `make legal-verification-dataset-check` | A domain-specific dataset contract fixture exists, requires expert review, and the local review-boundary evaluator keeps `legal_grade_ready=false`. |
 | `make legal-verification-quality-check` | The deterministic verification quality report passes and includes citation and numeric guard coverage. |
-| `make legal-citation-policy-check` | A citation policy fixture refuses uncited output, requires source refs, and requires reviewer approval. |
+| `make legal-citation-policy-check` | A citation policy fixture and local evaluator refuse uncited output, require source refs, and require reviewer approval. |
 | `make public-claims-check` | Public docs continue to block legal-grade overclaims. |
 
 Reports are written under `target/legal-verification/` and keep

@@ -19,7 +19,7 @@ Total future epics: 7.
 | 4 | Full Production HNSW Without Fallback | future-phase-1-started | `make hnsw-no-fallback-design-check` | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
 | 5 | Built-in LLM Inference | future-phase-2-contract-started | `make llm-inference-design-check` | Model runtime, resource isolation, prompt safety, provider compatibility, and operational cost controls |
 | 6 | External Identity Providers | future-phase-2-mapping-started | `make external-identity-design-check` | OIDC/SAML or equivalent identity integration with role/scope mapping and rotation |
-| 7 | Legal-grade Verification | future-phase-1-started | `make legal-verification-design-check` | Legal-domain evidence model, citations, review workflow, liability boundaries, and evaluation by domain experts |
+| 7 | Legal-grade Verification | future-phase-2-review-boundary-started | `make legal-verification-design-check` | Legal-domain evidence model, citations, review workflow, liability boundaries, and evaluation by domain experts |
 
 ## Promotion Rules
 
@@ -444,6 +444,9 @@ Current implementation slice:
 - `make legal-citation-policy-check` validates a citation policy fixture that
   requires source refs, reviewer approval, and refusal of unsupported
   conclusions.
+- The local `evaluate_legal_verification_boundary` helper checks selected
+  domain, jurisdiction, source refs, reviewer identity, reviewer approval, and
+  evidence-summary output boundaries while keeping `legal_grade_ready=false`.
 - All new reports are written under `target/legal-verification/` and carry
   `legal_verification_ready=false`; they prove local prerequisites only, not
   legal advice, certification, admissibility, or legal-grade verification.
@@ -454,10 +457,14 @@ Task pool:
 2. Define the first supported legal domain and jurisdiction, if any.
 3. Define admissible source types and citation requirements.
 4. Define provenance and chain-of-custody metadata.
-5. Define reviewer workflow and human approval requirements.
+5. Define reviewer workflow and human approval requirements. A local
+   review-boundary evaluator now enforces reviewer identity and approval for
+   candidate reviewed output; real legal reviewer workflow remains future work.
 6. Define contradiction, uncertainty, and insufficiency policy.
 7. Add legal-domain labeled evaluation datasets with expert review.
-8. Add legal-specific output schema that avoids unsupported legal advice.
+8. Add legal-specific output schema that avoids unsupported legal advice. The
+   local evaluator currently refuses legal-advice output when policy disallows
+   it; public API schemas remain future work.
 9. Add audit and retention policy for verification reports.
 10. Add public disclaimers and user-facing limitations.
 

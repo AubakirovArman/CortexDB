@@ -103,6 +103,23 @@ def validate_dataset(path: Path) -> list[str]:
     return failures
 
 
+def validate_local_review_boundary() -> list[str]:
+    failures: list[str] = []
+    source = read(Path("crates/cortex-engine/src/legal.rs"))
+    markers = [
+        "evaluate_legal_verification_boundary",
+        "LegalVerificationPolicy",
+        "MissingSourceRefs",
+        "MissingReviewerApproval",
+        "LegalAdviceOutputNotAllowed",
+        "legal_grade_ready: false",
+    ]
+    for marker in markers:
+        if marker not in source:
+            failures.append(f"legal.rs missing review-boundary marker {marker!r}")
+    return failures
+
+
 def validate_quality(report_path: Path | None) -> list[str]:
     failures: list[str] = []
     if report_path is None:
@@ -155,19 +172,24 @@ def validate(gate: str, evidence: Path | None) -> dict[str, Any]:
         "dataset_fixture": True,
         "quality_report": True,
         "citation_policy": True,
+        "local_review_boundary": True,
     }
     if gate == "dataset":
         dataset_failures = validate_dataset(Path(spec["fixture"]))  # type: ignore[arg-type]
+        dataset_failures.extend(validate_local_review_boundary())
         failures.extend(dataset_failures)
         checks["dataset_fixture"] = not dataset_failures
+        checks["local_review_boundary"] = not dataset_failures
     elif gate == "quality":
         quality_failures = validate_quality(evidence)
         failures.extend(quality_failures)
         checks["quality_report"] = not quality_failures
     elif gate == "citation-policy":
         policy_failures = validate_citation_policy(Path(spec["fixture"]))  # type: ignore[arg-type]
+        policy_failures.extend(validate_local_review_boundary())
         failures.extend(policy_failures)
         checks["citation_policy"] = not policy_failures
+        checks["local_review_boundary"] = not policy_failures
 
     return {
         "schema_version": spec["schema"],
