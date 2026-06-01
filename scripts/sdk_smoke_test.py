@@ -15,6 +15,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "sdk/python"))
 from cortexdb_client import CortexDBClient, CortexDBError
 
+AUTH_TOKEN = "sdk-smoke-secret"
+
 
 def wait_for_server(port: int, timeout: float = 10.0) -> bool:
     import socket
@@ -57,6 +59,7 @@ def main() -> int:
         [str(binary), db_dir, f"127.0.0.1:{port}"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
+        env={**os.environ, "CORTEXDB_AUTH_TOKEN": AUTH_TOKEN},
     )
 
     if not wait_for_server(port):
@@ -65,7 +68,15 @@ def main() -> int:
         return 1
 
     try:
-        client = CortexDBClient(f"http://127.0.0.1:{port}")
+        base_url = f"http://127.0.0.1:{port}"
+        client = CortexDBClient(base_url, token=AUTH_TOKEN)
+
+        expect_error(
+            "missing_auth_error_contract",
+            lambda: CortexDBClient(base_url).health_response(),
+            401,
+            "unauthorized",
+        )
 
         # Health typed
         health = client.health_response()

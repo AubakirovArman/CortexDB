@@ -21,6 +21,7 @@ const { CortexDBClient } = await import(
 
 const PORT = 18184;
 const dbDir = mkdtempSync(join(tmpdir(), "cortex_ts_smoke_"));
+const AUTH_TOKEN = "sdk-smoke-secret";
 
 function findBinary() {
   if (process.env.CORTEXDB_SERVER_BIN) {
@@ -53,7 +54,7 @@ async function main() {
   const binary = findBinary();
   const server = spawn(binary, [dbDir, `127.0.0.1:${PORT}`], {
     stdio: "ignore",
-    env: { ...process.env, RUST_LOG: "error" },
+    env: { ...process.env, RUST_LOG: "error", CORTEXDB_AUTH_TOKEN: AUTH_TOKEN },
   });
 
   const ready = await waitForServer(PORT);
@@ -63,7 +64,8 @@ async function main() {
     process.exit(1);
   }
 
-  const client = new CortexDBClient(`http://127.0.0.1:${PORT}`);
+  const baseUrl = `http://127.0.0.1:${PORT}`;
+  const client = new CortexDBClient(baseUrl, AUTH_TOKEN);
   let failed = false;
 
   function assertEqual(actual, expected, label) {
@@ -90,6 +92,13 @@ async function main() {
   }
 
   try {
+    await expectError(
+      "missing_auth_error_contract",
+      () => new CortexDBClient(baseUrl).health(),
+      401,
+      "unauthorized",
+    );
+
     // Health
     const health = await client.health();
     assertEqual(health.status, "ok", "health.status");

@@ -28,6 +28,9 @@ REQUIRED_MARKERS = {
         ("scripts/check_sdk_contract.py", "Python SDK smoke test"),
         ("scripts/check_sdk_contract.py", "TypeScript SDK smoke test"),
         ("scripts/check_sdk_contract.py", "Rust SDK smoke test"),
+        ("scripts/sdk_smoke_test.py", "missing_auth_error_contract"),
+        ("scripts/sdk_ts_smoke_test.mjs", "missing_auth_error_contract"),
+        ("crates/cortex-sdk/examples/live_contract.rs", "missing_auth_error_contract"),
     ],
     "release_contract": [
         ("scripts/check_sdk_release_contract.py", "requires_explicit_publish_input"),

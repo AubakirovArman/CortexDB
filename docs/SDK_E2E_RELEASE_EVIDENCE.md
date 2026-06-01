@@ -1,6 +1,6 @@
 # SDK E2E Release Evidence
 
-Last local SDK e2e release run: 2026-05-31, passed.
+Last local SDK e2e release run: 2026-06-01, passed.
 
 Run:
 
@@ -20,6 +20,8 @@ This gate covers:
 
 - Rust, Python, and TypeScript SDK package metadata;
 - live local server smoke through all three SDKs;
+- Bearer auth success and structured `401 unauthorized` failures through all
+  three SDKs;
 - SDK release manifest and manual publish controls;
 - SDK deprecation policy;
 - quickstart and release documentation.
@@ -33,6 +35,11 @@ deprecation_policy: true
 quickstart: true
 packages: rust, python, typescript
 ```
+
+The live contract smoke covers health, put/get, search, stats, validate, AQL,
+ContextPack, VERIFY FACT, REMEMBER, ingest text, tenant routing, Bearer auth,
+and structured errors (`unauthorized`, `invalid_aql`, `not_found`,
+`invalid_tenant`) for Rust, Python, and TypeScript SDKs.
 
 ## Boundary
 

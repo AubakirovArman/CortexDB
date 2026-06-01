@@ -133,6 +133,20 @@ measured quality.
 
 ### Epic 2.1 - SDK E2E Matrix Strengthening
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- `make sdk-smoke-test` passed with Python live server coverage.
+- `make sdk-contract-check` passed with Python, TypeScript, and Rust SDK live
+  server coverage.
+- `make sdk-e2e-release-check` passed and wrote
+  `target/sdk-e2e-release/report.json`.
+- The live smoke matrix covers health, put/get, search, AQL, ContextPack,
+  VERIFY FACT, tenant routing, Bearer auth, and structured errors.
+- Public registry publishing remains blocked behind explicit credentials,
+  ownership, and manual release controls.
+
 Tasks:
 
 1. Run live SDK smoke against a local `cortex-server`.

@@ -124,5 +124,5 @@ make sdk-contract-check
 This builds the current `cortex-server` binary and runs Python, TypeScript, and
 Rust SDK smoke tests against real `/v1/*` responses. The gate covers health,
 put/get, search, stats, validate, AQL, Context Pack, Verify Fact, Remember,
-ingest text, and structured error responses such as `invalid_aql`, `not_found`,
-and `invalid_tenant`.
+ingest text, tenant routing, Bearer auth, and structured error responses such
+as `unauthorized`, `invalid_aql`, `not_found`, and `invalid_tenant`.

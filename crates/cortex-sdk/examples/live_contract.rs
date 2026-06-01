@@ -15,9 +15,25 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use cortex_sdk::{CortexDbClient, ErrorCode, SdkError};
 
+const SDK_AUTH_TOKEN: &str = "sdk-smoke-secret";
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let server = ServerGuard::start_if_needed()?;
-    let client = CortexDbClient::new(server.url());
+    let client = if let Some(token) = server.auth_token() {
+        CortexDbClient::new(server.url()).with_token(token)
+    } else {
+        CortexDbClient::new(server.url())
+    };
+
+    if server.auth_token().is_some() {
+        match CortexDbClient::new(server.url()).health_response() {
+            Err(SdkError::CortexDb(error)) => {
+                assert_eq!(error.code, ErrorCode::Unauthorized);
+                println!("OK: missing_auth_error_contract");
+            }
+            other => return Err(format!("expected unauthorized error, got {other:?}").into()),
+        }
+    }
 
     let health = client.health_response()?;
     assert_eq!(health.status, "ok");
@@ -113,6 +129,7 @@ struct ServerGuard {
     url: String,
     child: Option<Child>,
     db_dir: Option<PathBuf>,
+    auth_token: Option<String>,
 }
 
 impl ServerGuard {
@@ -122,6 +139,7 @@ impl ServerGuard {
                 url,
                 child: None,
                 db_dir: None,
+                auth_token: env::var("CORTEXDB_AUTH_TOKEN").ok(),
             });
         }
 
@@ -134,6 +152,7 @@ impl ServerGuard {
         let child = Command::new(binary)
             .arg(&db_dir)
             .arg(format!("127.0.0.1:{port}"))
+            .env("CORTEXDB_AUTH_TOKEN", SDK_AUTH_TOKEN)
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()?;
@@ -144,11 +163,16 @@ impl ServerGuard {
             url: format!("http://127.0.0.1:{port}"),
             child: Some(child),
             db_dir: Some(db_dir),
+            auth_token: Some(SDK_AUTH_TOKEN.to_owned()),
         })
     }
 
     fn url(&self) -> &str {
         &self.url
+    }
+
+    fn auth_token(&self) -> Option<&str> {
+        self.auth_token.as_deref()
     }
 }
 
