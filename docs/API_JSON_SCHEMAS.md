@@ -273,15 +273,42 @@ For `search_mode: "vector_ann"`, `ann_report` is populated:
 }
 ```
 
-If callers explicitly pass `no_fallback_rollout=true`, responses also include a
-`no_fallback_decision` object. This is an operator-facing guardrail: it reports
-whether the current ANN result is allowed for fallback-free serving, but it does
-not remove exact fallback globally.
+If callers explicitly pass `no_fallback_rollout=true`, or opt into the
+persisted operator profile with `no_fallback_profile=active`, responses also
+include a `no_fallback_decision` object. This is an operator-facing guardrail:
+it reports whether the current ANN result is allowed for fallback-free serving,
+but it does not remove exact fallback globally.
 
 ```json
 {
   "allowed": false,
   "reasons": ["fallback_enabled", "slo_not_required"]
+}
+```
+
+## HNSW No-fallback Profile
+
+The admin profile endpoint persists the local operator rollout policy used when
+ANN calls pass `no_fallback_profile=active`.
+
+```json
+{
+  "configured": true,
+  "rollout_enabled": true,
+  "min_recall_q16": 65535,
+  "require_upper_layers": true
+}
+```
+
+An unconfigured or cleared profile returns the same shape with nullable profile
+fields:
+
+```json
+{
+  "configured": false,
+  "rollout_enabled": null,
+  "min_recall_q16": null,
+  "require_upper_layers": null
 }
 ```
 

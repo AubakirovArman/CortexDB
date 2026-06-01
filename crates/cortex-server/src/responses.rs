@@ -222,6 +222,14 @@ pub struct AnnNoFallbackDecisionResponse {
 }
 
 #[derive(Serialize, Debug, Clone)]
+pub struct HnswNoFallbackProfileResponse {
+    pub configured: bool,
+    pub rollout_enabled: Option<bool>,
+    pub min_recall_q16: Option<u16>,
+    pub require_upper_layers: Option<bool>,
+}
+
+#[derive(Serialize, Debug, Clone)]
 pub struct SearchResponse {
     pub search_mode: String,
     pub ann_report: Option<AnnSearchReportResponse>,

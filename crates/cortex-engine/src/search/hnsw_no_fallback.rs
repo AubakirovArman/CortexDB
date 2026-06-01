@@ -1,4 +1,5 @@
 use super::ann::{AnnSearchPath, AnnSearchPolicy, AnnSearchReport, MIN_ANN_RECALL_Q16};
+use cortex_storage::manifest::ManifestHnswNoFallbackProfile;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct HnswNoFallbackRolloutPolicy {
@@ -37,6 +38,22 @@ impl HnswNoFallbackRolloutPolicy {
         Self {
             rollout_enabled: true,
             ..Self::default()
+        }
+    }
+
+    pub fn from_manifest(profile: ManifestHnswNoFallbackProfile) -> Self {
+        Self {
+            rollout_enabled: profile.rollout_enabled,
+            min_recall_q16: profile.min_recall_q16,
+            require_upper_layers: profile.require_upper_layers,
+        }
+    }
+
+    pub fn to_manifest(self) -> ManifestHnswNoFallbackProfile {
+        ManifestHnswNoFallbackProfile {
+            rollout_enabled: self.rollout_enabled,
+            min_recall_q16: self.min_recall_q16,
+            require_upper_layers: self.require_upper_layers,
         }
     }
 }

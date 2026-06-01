@@ -71,6 +71,21 @@ enum Command {
     AnnValidate {
         path: String,
     },
+    HnswNoFallbackProfileShow {
+        path: String,
+    },
+    HnswNoFallbackProfileSet {
+        path: String,
+        #[arg(long, default_value = "true")]
+        enabled: String,
+        #[arg(long)]
+        min_recall: Option<String>,
+        #[arg(long, default_value = "true")]
+        require_upper_layers: String,
+    },
+    HnswNoFallbackProfileClear {
+        path: String,
+    },
     Repair {
         path: String,
         #[arg(long)]
@@ -197,6 +212,8 @@ enum Command {
         no_fallback_rollout: bool,
         #[arg(long)]
         no_fallback_min_recall: Option<String>,
+        #[arg(long)]
+        use_no_fallback_profile: bool,
     },
     SearchVectorExact {
         path: String,
@@ -221,6 +238,8 @@ enum Command {
         no_fallback_rollout: bool,
         #[arg(long)]
         no_fallback_min_recall: Option<String>,
+        #[arg(long)]
+        use_no_fallback_profile: bool,
     },
     SearchExplain {
         path: String,
@@ -316,6 +335,21 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         Command::Validate { path } => ops::validate(resolved(&path).to_str().unwrap(), cli.json),
         Command::AnnValidate { path } => {
             ops::ann_validate(resolved(&path).to_str().unwrap(), cli.json)
+        }
+        Command::HnswNoFallbackProfileShow { path } => {
+            ops::hnsw_no_fallback_profile_show(resolved(&path).to_str().unwrap(), cli.json)
+        }
+        Command::HnswNoFallbackProfileSet {
+            path,
+            enabled,
+            min_recall,
+            require_upper_layers,
+        } => {
+            let policy = ann::parse_no_fallback_profile(enabled, min_recall, require_upper_layers)?;
+            ops::hnsw_no_fallback_profile_set(resolved(&path).to_str().unwrap(), policy, cli.json)
+        }
+        Command::HnswNoFallbackProfileClear { path } => {
+            ops::hnsw_no_fallback_profile_clear(resolved(&path).to_str().unwrap(), cli.json)
         }
         Command::Repair { path, dry_run } => {
             ops::repair(resolved(&path).to_str().unwrap(), dry_run)
@@ -424,6 +458,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             require_slo,
             no_fallback_rollout,
             no_fallback_min_recall,
+            use_no_fallback_profile,
         } => {
             let policy = ann::parse_ann_policy(
                 fallback,
@@ -441,6 +476,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
                 false,
                 Some(policy),
                 rollout_policy,
+                use_no_fallback_profile,
             )
         }
         Command::SearchVectorExact {
@@ -454,6 +490,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             true,
             None,
             None,
+            false,
         ),
         Command::SearchVectorEval {
             path,
@@ -466,6 +503,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             require_slo,
             no_fallback_rollout,
             no_fallback_min_recall,
+            use_no_fallback_profile,
         } => {
             let policy = ann::parse_ann_policy(
                 fallback,
@@ -483,6 +521,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
                 cli.json,
                 Some(policy),
                 rollout_policy,
+                use_no_fallback_profile,
             )
         }
         Command::SearchExplain {

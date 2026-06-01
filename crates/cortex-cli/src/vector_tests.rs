@@ -101,6 +101,69 @@ fn search_vector_command_respects_ann_policy_flags() {
 }
 
 #[test]
+fn hnsw_no_fallback_profile_commands_persist_and_drive_search() {
+    let path = unique_path("cortexdb-cli-no-fallback-profile");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nvector=5,0\nalpha".to_owned(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "flush".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+
+    let json = run(vec![
+        "cortexdb".to_owned(),
+        "--json".to_owned(),
+        "hnsw-no-fallback-profile-set".to_owned(),
+        "--min-recall".to_owned(),
+        "50%".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    let profile: serde_json::Value = serde_json::from_str(&json).unwrap();
+    assert_eq!(profile["configured"], true);
+    assert_eq!(profile["min_recall_q16"], 32767);
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "search-vector".to_owned(),
+        "--fallback".to_owned(),
+        "false".to_owned(),
+        "--fallback-scan-cap".to_owned(),
+        "0".to_owned(),
+        "--min-recall".to_owned(),
+        "50%".to_owned(),
+        "--require-slo".to_owned(),
+        "--use-no-fallback-profile".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        "5,0".to_owned(),
+    ])
+    .unwrap();
+    assert!(output.contains("no_fallback_allowed=true"));
+
+    let cleared = run(vec![
+        "cortexdb".to_owned(),
+        "--json".to_owned(),
+        "hnsw-no-fallback-profile-clear".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    let profile: serde_json::Value = serde_json::from_str(&cleared).unwrap();
+    assert_eq!(profile["configured"], false);
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
 fn search_vector_eval_command_reports_recall_after_flush() {
     let path = unique_path("cortexdb-cli-vector-eval");
     let path_arg = path.to_string_lossy().into_owned();

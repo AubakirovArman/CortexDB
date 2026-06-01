@@ -251,6 +251,7 @@ fn write_manifest(
         retired_segments,
         hnsw_profile: None,
         vector_profile: None,
+        hnsw_no_fallback_profile: None,
     }
     .store(root.join("manifest.acm"))
     .unwrap();

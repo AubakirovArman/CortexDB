@@ -95,6 +95,39 @@ fn v1_search_ann_policy_is_applied_when_passing_query_params() {
 }
 
 #[test]
+fn v1_hnsw_no_fallback_profile_persists_and_drives_ann_decision() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\nvector=5,0\nalpha"
+    );
+    assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+    assert!(handle_http(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n")
+        .contains(r#""checkpoint_seq":1"#));
+
+    let profile = concat!(
+        "PUT /v1/admin/search/hnsw/no-fallback-profile HTTP/1.1\r\n\r\n",
+        r#"{"rollout_enabled":true,"min_recall_q16":32767,"require_upper_layers":true}"#
+    );
+    let response = handle_http(dir.path(), profile);
+    assert!(response.contains(r#""configured":true"#));
+    assert!(response.contains(r#""min_recall_q16":32767"#));
+
+    let get = "GET /v1/admin/search/hnsw/no-fallback-profile HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), get);
+    assert!(response.contains(r#""configured":true"#));
+
+    let request =
+        "POST /v1/search?scope=project:investments&mode=vector&algorithm=ann&fallback=false&fallback_scan_cap=0&min_recall=50%25&require_slo=true&no_fallback_profile=active&vector=5,0 HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""no_fallback_decision":{"allowed":true,"reasons":[]}"#));
+
+    let delete = "DELETE /v1/admin/search/hnsw/no-fallback-profile HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), delete);
+    assert!(response.contains(r#""configured":false"#));
+}
+
+#[test]
 fn v1_search_ann_policy_decodes_encoded_recall_percent() {
     let dir = tempfile::tempdir().unwrap();
     let put = concat!(

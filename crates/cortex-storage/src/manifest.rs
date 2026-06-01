@@ -29,6 +29,13 @@ pub struct ManifestVectorProfile {
     pub metric: u32,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ManifestHnswNoFallbackProfile {
+    pub rollout_enabled: bool,
+    pub min_recall_q16: u16,
+    pub require_upper_layers: bool,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct StorageManifest {
     pub generation: u64,
@@ -37,6 +44,7 @@ pub struct StorageManifest {
     pub retired_segments: Vec<ManifestSegment>,
     pub hnsw_profile: Option<ManifestHnswProfile>,
     pub vector_profile: Option<ManifestVectorProfile>,
+    pub hnsw_no_fallback_profile: Option<ManifestHnswNoFallbackProfile>,
 }
 
 impl StorageManifest {
@@ -87,6 +95,12 @@ fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
         put_u32(&mut out, profile.dimension);
         put_u32(&mut out, profile.metric);
     }
+    if let Some(profile) = manifest.hnsw_no_fallback_profile {
+        out.extend_from_slice(b"NOFB");
+        put_u32(&mut out, bool_to_u32(profile.rollout_enabled));
+        put_u32(&mut out, u32::from(profile.min_recall_q16));
+        put_u32(&mut out, bool_to_u32(profile.require_upper_layers));
+    }
     append_crc32c(&mut out);
     out
 }
@@ -103,6 +117,7 @@ fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
     let retired_segments = read_segments(bytes, &mut cursor)?;
     let hnsw_profile = read_hnsw_profile(bytes, &mut cursor)?;
     let vector_profile = read_vector_profile(bytes, &mut cursor)?;
+    let hnsw_no_fallback_profile = read_hnsw_no_fallback_profile(bytes, &mut cursor)?;
     if cursor > bytes.len() {
         return Err(StorageError::InvalidManifestFile);
     }
@@ -113,6 +128,7 @@ fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
         retired_segments,
         hnsw_profile,
         vector_profile,
+        hnsw_no_fallback_profile,
     })
 }
 
@@ -190,6 +206,42 @@ fn read_vector_profile(
         return Err(StorageError::InvalidManifestFile);
     }
     Ok(Some(profile))
+}
+
+fn read_hnsw_no_fallback_profile(
+    bytes: &[u8],
+    cursor: &mut usize,
+) -> StorageResult<Option<ManifestHnswNoFallbackProfile>> {
+    if bytes.len().saturating_sub(*cursor) < 4 || &bytes[*cursor..*cursor + 4] != b"NOFB" {
+        return Ok(None);
+    }
+    *cursor += 4;
+    let rollout_enabled = read_bool(bytes, cursor)?;
+    let min_recall_raw = read_u32(bytes, cursor)?;
+    let require_upper_layers = read_bool(bytes, cursor)?;
+    let min_recall_q16 =
+        u16::try_from(min_recall_raw).map_err(|_| StorageError::InvalidManifestFile)?;
+    Ok(Some(ManifestHnswNoFallbackProfile {
+        rollout_enabled,
+        min_recall_q16,
+        require_upper_layers,
+    }))
+}
+
+fn bool_to_u32(value: bool) -> u32 {
+    if value {
+        1
+    } else {
+        0
+    }
+}
+
+fn read_bool(bytes: &[u8], cursor: &mut usize) -> StorageResult<bool> {
+    match read_u32(bytes, cursor)? {
+        0 => Ok(false),
+        1 => Ok(true),
+        _ => Err(StorageError::InvalidManifestFile),
+    }
 }
 
 fn put_u32(out: &mut Vec<u8>, value: u32) {

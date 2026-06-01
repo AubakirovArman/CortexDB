@@ -1,5 +1,8 @@
 use cortex_core::CellId;
-use cortex_engine::{Database, DatabaseOptions, DistanceMetric, HnswBuildConfig, HnswBuildProfile};
+use cortex_engine::{
+    Database, DatabaseOptions, DistanceMetric, HnswBuildConfig, HnswBuildProfile,
+    HnswNoFallbackRolloutPolicy,
+};
 use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::manifest::StorageManifest;
 
@@ -52,6 +55,41 @@ fn checkpoint_manifest_persists_vector_collection_profile() {
 
     assert_eq!(profile.dimension, 2);
     assert_eq!(profile.metric, DistanceMetric::Cosine as u32);
+}
+
+#[test]
+fn hnsw_no_fallback_rollout_profile_persists_in_manifest() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let policy = HnswNoFallbackRolloutPolicy {
+        rollout_enabled: true,
+        min_recall_q16: 65_535,
+        require_upper_layers: true,
+    };
+
+    db.set_hnsw_no_fallback_rollout_policy(policy).unwrap();
+    drop(db);
+
+    let db = Database::open(dir.path()).unwrap();
+    assert_eq!(db.hnsw_no_fallback_rollout_policy(), Some(policy));
+    let manifest = StorageManifest::load(dir.path().join("manifest.acm")).unwrap();
+    assert_eq!(
+        manifest.hnsw_no_fallback_profile.unwrap().min_recall_q16,
+        65_535
+    );
+}
+
+#[test]
+fn hnsw_no_fallback_rollout_profile_can_be_cleared() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.set_hnsw_no_fallback_rollout_policy(HnswNoFallbackRolloutPolicy::enabled())
+        .unwrap();
+    db.clear_hnsw_no_fallback_rollout_policy().unwrap();
+    drop(db);
+
+    let db = Database::open(dir.path()).unwrap();
+    assert_eq!(db.hnsw_no_fallback_rollout_policy(), None);
 }
 
 #[test]

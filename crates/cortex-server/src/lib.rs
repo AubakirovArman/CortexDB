@@ -30,6 +30,7 @@ mod dashboard;
 #[cfg(test)]
 mod dashboard_tests;
 pub mod external_identity;
+mod hnsw_profile;
 mod llm;
 mod memory;
 mod rate_limit;

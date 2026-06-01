@@ -204,3 +204,20 @@ fn typed_ann_evaluation_response_decodes_contract() {
     assert!(report.slo_violations.is_empty());
     assert!(response.no_fallback_decision.expect("decision").allowed);
 }
+
+#[test]
+fn typed_hnsw_no_fallback_profile_response_decodes_contract() {
+    let value = serde_json::json!({
+        "configured": true,
+        "rollout_enabled": true,
+        "min_recall_q16": 65535,
+        "require_upper_layers": true
+    });
+
+    let response: HnswNoFallbackProfileResponse =
+        serde_json::from_value(value).expect("profile response should decode");
+
+    assert!(response.configured);
+    assert_eq!(response.min_recall_q16, Some(65535));
+    assert_eq!(response.require_upper_layers, Some(true));
+}

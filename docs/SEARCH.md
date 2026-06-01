@@ -109,10 +109,11 @@ the report explicit about production guardrails. `production_safe=false` and
 The result still returns using the configured fallback policy; callers that need
 hard SLO enforcement should reject responses where `production_safe=false`.
 
-When an operator explicitly passes `no_fallback_rollout=true`, vector ANN
-responses include `no_fallback_decision`. This does not remove exact fallback
-globally. It only reports whether the current request, ANN policy, and
-`ann_report` satisfy the selected fallback-free rollout guard:
+When an operator explicitly passes `no_fallback_rollout=true`, or uses the
+persisted profile with `no_fallback_profile=active`, vector ANN responses
+include `no_fallback_decision`. This does not remove exact fallback globally.
+It only reports whether the current request, ANN policy, and `ann_report`
+satisfy the selected fallback-free rollout guard:
 
 ```json
 {
@@ -121,6 +122,19 @@ globally. It only reports whether the current request, ANN policy, and
     "reasons": ["fallback_enabled", "slo_not_required"]
   }
 }
+```
+
+Operators can persist the local profile through CLI or the admin HTTP endpoint:
+
+```bash
+cortexdb hnsw-no-fallback-profile-set --min-recall 100% ./data
+cortexdb search-vector-eval --fallback false --require-slo \
+  --use-no-fallback-profile ./data project:investments "0.1,0.2"
+```
+
+```http
+PUT /v1/admin/search/hnsw/no-fallback-profile
+{"rollout_enabled":true,"min_recall_q16":65535,"require_upper_layers":true}
 ```
 
 For ANN quality work, `Database::evaluate_vector_ann` compares the persisted

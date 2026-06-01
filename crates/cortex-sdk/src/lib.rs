@@ -27,10 +27,10 @@ pub use types::{
     AnnEvaluationResponse, AnnNoFallbackDecision, AnnSearchReport, AqlCellResponse, AqlResponse,
     CellLookupResponse, CellResponse, ContextPackAnomalyResponse, ContextPackCellResponse,
     ContextPackResponse, DeleteJobResponse, ErrorCode, ErrorResponse, EvidenceResponse,
-    ExplainResponse, GuardResponse, HealthResponse, IngestResponse, IngestionJobResponse,
-    IngestionJobStatus, NumericConflictResponse, PutCellResponse, RememberResponse, SearchResponse,
-    SearchResult, SourceRefResponse, StatsResponse, ValidationResponse, VectorAlgorithm,
-    VerificationReportResponse,
+    ExplainResponse, GuardResponse, HealthResponse, HnswNoFallbackProfileResponse, IngestResponse,
+    IngestionJobResponse, IngestionJobStatus, NumericConflictResponse, PutCellResponse,
+    RememberResponse, SearchResponse, SearchResult, SourceRefResponse, StatsResponse,
+    ValidationResponse, VectorAlgorithm, VerificationReportResponse,
 };
 
 #[cfg(test)]

@@ -13,9 +13,12 @@ pub fn search_vector_eval(
     json: bool,
     policy: Option<AnnSearchPolicy>,
     rollout_policy: Option<HnswNoFallbackRolloutPolicy>,
+    use_no_fallback_profile: bool,
 ) -> Result<String, String> {
     let vector = parse_vector_literal(vector)?;
     let db = Database::open(path).map_err(|error| error.to_string())?;
+    let rollout_policy =
+        crate::cli_ops::resolve_no_fallback_profile(&db, rollout_policy, use_no_fallback_profile)?;
     let search_policy = policy.unwrap_or_default();
     let report = db
         .evaluate_vector_ann_with_policy(
@@ -169,6 +172,22 @@ pub(crate) fn parse_no_fallback_rollout_policy(
     Ok(Some(policy))
 }
 
+pub(crate) fn parse_no_fallback_profile(
+    enabled: String,
+    min_recall: Option<String>,
+    require_upper_layers: String,
+) -> Result<HnswNoFallbackRolloutPolicy, String> {
+    let enabled_policy = HnswNoFallbackRolloutPolicy::enabled();
+    Ok(HnswNoFallbackRolloutPolicy {
+        rollout_enabled: parse_bool_value("enabled", &enabled)?,
+        min_recall_q16: match min_recall {
+            Some(value) => parse_min_recall_q16(&value)?,
+            None => enabled_policy.min_recall_q16,
+        },
+        require_upper_layers: parse_bool_value("require_upper_layers", &require_upper_layers)?,
+    })
+}
+
 pub(crate) fn parse_ann_policy(
     fallback: Option<String>,
     fallback_scan_cap: Option<usize>,
@@ -223,12 +242,16 @@ pub(crate) fn no_fallback_decision_to_json(
 
 fn parse_option_bool(name: &str, value: Option<String>) -> Result<Option<bool>, String> {
     value
-        .map(|value| match value.to_ascii_lowercase().as_str() {
-            "true" | "1" | "yes" | "on" => Ok(true),
-            "false" | "0" | "no" | "off" => Ok(false),
-            _ => Err(format!("{name} must be true/false")),
-        })
+        .map(|value| parse_bool_value(name, &value))
         .transpose()
+}
+
+pub(crate) fn parse_bool_value(name: &str, value: &str) -> Result<bool, String> {
+    match value.to_ascii_lowercase().as_str() {
+        "true" | "1" | "yes" | "on" => Ok(true),
+        "false" | "0" | "no" | "off" => Ok(false),
+        _ => Err(format!("{name} must be true/false")),
+    }
 }
 
 fn parse_min_recall_q16(value: &str) -> Result<u16, String> {
@@ -268,6 +291,7 @@ fn parse_percent_without_unit(value: &str) -> Result<f64, String> {
 #[cfg(test)]
 mod tests {
     use super::parse_ann_policy;
+    use super::parse_no_fallback_profile;
     use super::parse_no_fallback_rollout_policy;
 
     #[test]
@@ -317,5 +341,18 @@ mod tests {
             .unwrap();
         assert!(policy.rollout_enabled);
         assert_eq!(policy.min_recall_q16, 65_535);
+    }
+
+    #[test]
+    fn parse_no_fallback_profile_accepts_bool_and_threshold() {
+        let policy = parse_no_fallback_profile(
+            "true".to_owned(),
+            Some("100%".to_owned()),
+            "false".to_owned(),
+        )
+        .unwrap();
+        assert!(policy.rollout_enabled);
+        assert_eq!(policy.min_recall_q16, 65_535);
+        assert!(!policy.require_upper_layers);
     }
 }

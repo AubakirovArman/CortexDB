@@ -5,8 +5,8 @@ use cortex_engine::{
 };
 
 use crate::cli_json::{
-    ann_validate_to_json, context_pack_to_json, stats_to_json, validation_to_json,
-    verification_report_to_json,
+    ann_validate_to_json, context_pack_to_json, no_fallback_profile_to_json, stats_to_json,
+    validation_to_json, verification_report_to_json,
 };
 use crate::context::{
     format_context_pack, format_retrieved_cells, format_search_results, format_verification_report,
@@ -466,9 +466,11 @@ pub fn search_vector(
     exact: bool,
     policy: Option<AnnSearchPolicy>,
     rollout_policy: Option<HnswNoFallbackRolloutPolicy>,
+    use_no_fallback_profile: bool,
 ) -> Result<String, String> {
     let vector = parse_vector_literal(vector)?;
     let db = Database::open(path).map_err(fmt_engine_error)?;
+    let rollout_policy = resolve_no_fallback_profile(&db, rollout_policy, use_no_fallback_profile)?;
     let view = view_for_scope(scope);
     if exact {
         let results = db
@@ -491,6 +493,68 @@ pub fn search_vector(
             lines.push(format_ann_search_report(&report));
         }
         Ok(lines.join("\n"))
+    }
+}
+
+pub fn hnsw_no_fallback_profile_show(path: &str, json: bool) -> Result<String, String> {
+    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let policy = db.hnsw_no_fallback_rollout_policy();
+    if json {
+        return Ok(no_fallback_profile_to_json(policy));
+    }
+    Ok(format_no_fallback_profile(policy))
+}
+
+pub fn hnsw_no_fallback_profile_set(
+    path: &str,
+    policy: HnswNoFallbackRolloutPolicy,
+    json: bool,
+) -> Result<String, String> {
+    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+    db.set_hnsw_no_fallback_rollout_policy(policy)
+        .map_err(fmt_engine_error)?;
+    if json {
+        return Ok(no_fallback_profile_to_json(Some(policy)));
+    }
+    Ok(format!(
+        "hnsw_no_fallback_profile set\n{}",
+        format_no_fallback_profile(Some(policy))
+    ))
+}
+
+pub fn hnsw_no_fallback_profile_clear(path: &str, json: bool) -> Result<String, String> {
+    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+    db.clear_hnsw_no_fallback_rollout_policy()
+        .map_err(fmt_engine_error)?;
+    if json {
+        return Ok(no_fallback_profile_to_json(None));
+    }
+    Ok("hnsw_no_fallback_profile cleared".to_owned())
+}
+
+pub(crate) fn resolve_no_fallback_profile(
+    db: &Database,
+    explicit: Option<HnswNoFallbackRolloutPolicy>,
+    use_profile: bool,
+) -> Result<Option<HnswNoFallbackRolloutPolicy>, String> {
+    if explicit.is_some() && use_profile {
+        return Err("use either --no-fallback-rollout or --use-no-fallback-profile".to_owned());
+    }
+    if !use_profile {
+        return Ok(explicit);
+    }
+    db.hnsw_no_fallback_rollout_policy()
+        .map(Some)
+        .ok_or_else(|| "no persisted HNSW no-fallback profile is configured".to_owned())
+}
+
+fn format_no_fallback_profile(policy: Option<HnswNoFallbackRolloutPolicy>) -> String {
+    match policy {
+        Some(policy) => format!(
+            "hnsw_no_fallback_profile configured=true rollout_enabled={} min_recall_q16={} require_upper_layers={}",
+            policy.rollout_enabled, policy.min_recall_q16, policy.require_upper_layers
+        ),
+        None => "hnsw_no_fallback_profile configured=false".to_owned(),
     }
 }
 

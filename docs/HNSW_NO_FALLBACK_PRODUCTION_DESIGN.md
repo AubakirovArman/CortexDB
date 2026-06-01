@@ -1,6 +1,6 @@
 # HNSW No-fallback Production Design
 
-Status: future phase 2 operator rollout policy started, not globally production-ready.
+Status: future phase 2 persistent operator profile started, not globally production-ready.
 
 ## Goal
 
@@ -61,17 +61,27 @@ This runtime policy is a local guardrail. It does not promote HNSW to a general
 fallback-free production engine for unknown corpora.
 
 Operators can request the decision through CLI and HTTP by passing an explicit
-rollout flag:
+rollout flag or by storing a local operator profile and selecting it per
+request:
 
 ```text
 cortexdb search-vector-eval --fallback false --require-slo \
   --no-fallback-rollout --no-fallback-min-recall 1.0 <path> <scope> <vector>
 
+cortexdb hnsw-no-fallback-profile-set --min-recall 1.0 <path>
+cortexdb search-vector-eval --fallback false --require-slo \
+  --use-no-fallback-profile <path> <scope> <vector>
+
+PUT /v1/admin/search/hnsw/no-fallback-profile
+{"rollout_enabled":true,"min_recall_q16":65535,"require_upper_layers":true}
+
 POST /v1/search/ann-evaluate?...&fallback=false&require_slo=true&no_fallback_rollout=true
+POST /v1/search/ann-evaluate?...&fallback=false&require_slo=true&no_fallback_profile=active
 ```
 
 The response includes `no_fallback_decision.allowed` and stable reason strings.
-Absence of the rollout flag means CortexDB keeps the normal guarded ANN mode.
+Absence of the rollout flag or profile selector means CortexDB keeps the normal
+guarded ANN mode.
 
 ## Required Gates
 

@@ -91,6 +91,14 @@ pub struct AnnNoFallbackDecision {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct HnswNoFallbackProfileResponse {
+    pub configured: bool,
+    pub rollout_enabled: Option<bool>,
+    pub min_recall_q16: Option<u16>,
+    pub require_upper_layers: Option<bool>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct SearchResult {
     pub cell_id: u64,
     pub score: u64,

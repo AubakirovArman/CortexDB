@@ -6,6 +6,7 @@ use cortex_engine::{Database, IngestionJobId, IngestionProgressTracker};
 use crate::aql;
 use crate::authz;
 use crate::context;
+use crate::hnsw_profile;
 use crate::memory;
 use crate::responses::{
     AnnMetricsResponse, CellLookupResponse, CellResponse, CheckpointResponse, ClusterNodeResponse,
@@ -165,6 +166,9 @@ pub fn route_database_with_agent(
         ("POST", "/v1/search/ann-evaluate") => {
             search::handle_ann_evaluate_shared(db, query, body, authenticated_view.as_ref())
         }
+        ("GET", "/v1/admin/search/hnsw/no-fallback-profile") => hnsw_profile::handle_get(db),
+        ("PUT", "/v1/admin/search/hnsw/no-fallback-profile") => hnsw_profile::handle_put(db, body),
+        ("DELETE", "/v1/admin/search/hnsw/no-fallback-profile") => hnsw_profile::handle_delete(db),
         ("GET", "/v1/metrics") => {
             let stats = db.storage_stats()?;
             let ann = db.ann_metrics();

@@ -262,6 +262,35 @@ impl Database {
         &self.manifest
     }
 
+    pub fn hnsw_no_fallback_rollout_policy(
+        &self,
+    ) -> Option<crate::search::HnswNoFallbackRolloutPolicy> {
+        self.manifest
+            .hnsw_no_fallback_profile
+            .map(crate::search::HnswNoFallbackRolloutPolicy::from_manifest)
+    }
+
+    pub fn set_hnsw_no_fallback_rollout_policy(
+        &mut self,
+        policy: crate::search::HnswNoFallbackRolloutPolicy,
+    ) -> EngineResult<()> {
+        let mut manifest = self.manifest.clone();
+        manifest.generation += 1;
+        manifest.hnsw_no_fallback_profile = Some(policy.to_manifest());
+        manifest.store(&self.manifest_path)?;
+        self.manifest = manifest;
+        Ok(())
+    }
+
+    pub fn clear_hnsw_no_fallback_rollout_policy(&mut self) -> EngineResult<()> {
+        let mut manifest = self.manifest.clone();
+        manifest.generation += 1;
+        manifest.hnsw_no_fallback_profile = None;
+        manifest.store(&self.manifest_path)?;
+        self.manifest = manifest;
+        Ok(())
+    }
+
     /// Gracefully shut down the database, flushing WAL and releasing the lock.
     ///
     /// # Example

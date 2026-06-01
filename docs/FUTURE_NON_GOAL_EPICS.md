@@ -16,7 +16,7 @@ Total future epics: 7.
 | 1 | Production Distributed Consensus | future-phase-1-started | `make distributed-consensus-design-check` | Multi-node replicated log, leader failover, split-brain prevention, and sustained rejoin evidence |
 | 2 | Managed Cloud | future-phase-1-started | `make managed-cloud-design-check` | Hosted control plane, tenant isolation, billing/quotas, cloud operations, and support lifecycle |
 | 3 | Enterprise RBAC And Compliance | future-phase-1-started | `make enterprise-rbac-design-check` | Durable policy store, auditable permissions, compliance controls, and admin lifecycle |
-| 4 | Full Production HNSW Without Fallback | future-phase-2-operator-rollout-started | `make hnsw-no-fallback-design-check` | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
+| 4 | Full Production HNSW Without Fallback | future-phase-2-persistent-profile-started | `make hnsw-no-fallback-design-check` | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
 | 5 | Built-in LLM Inference | future-phase-2-contract-started | `make llm-inference-design-check` | Model runtime, resource isolation, prompt safety, provider compatibility, and operational cost controls |
 | 6 | External Identity Providers | future-phase-2-mapping-started | `make external-identity-design-check` | OIDC/SAML or equivalent identity integration with role/scope mapping and rotation |
 | 7 | Legal-grade Verification | future-phase-2-review-boundary-started | `make legal-verification-design-check` | Legal-domain evidence model, citations, review workflow, liability boundaries, and evaluation by domain experts |
@@ -279,6 +279,9 @@ Current implementation slice:
 - CLI and HTTP ANN evaluation/search paths can now emit
   `no_fallback_decision` only when an operator explicitly requests
   `no_fallback_rollout`.
+- A local operator-managed HNSW no-fallback profile can now be persisted in the
+  database manifest and selected with `--use-no-fallback-profile` or
+  `no_fallback_profile=active`.
 - All new reports are written under `target/hnsw-no-fallback/` and keep
   `fallback_free_general_ready=false`; they do not remove exact fallback
   globally.
@@ -295,7 +298,8 @@ Task pool:
 8. Add operational metrics for graph health, rebuild count, stale graph count,
    recall probes, p95/p99 latency, and fallback-disabled requests.
 9. Persist operator-managed no-fallback profiles instead of passing the rollout
-   decision only per request.
+   decision only per request. A local manifest-backed active profile is now
+   implemented; richer named profile sets remain future work.
 10. Add incident playbook for recall regression.
 
 Required gates:

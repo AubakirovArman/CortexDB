@@ -69,6 +69,14 @@ pub struct CliNoFallbackDecisionResponse {
 }
 
 #[derive(Serialize)]
+pub struct CliNoFallbackProfileResponse {
+    pub configured: bool,
+    pub rollout_enabled: Option<bool>,
+    pub min_recall_q16: Option<u16>,
+    pub require_upper_layers: Option<bool>,
+}
+
+#[derive(Serialize)]
 pub struct CliAnnEvaluationResponse {
     pub available: bool,
     pub reason: Option<String>,

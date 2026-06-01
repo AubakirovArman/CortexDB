@@ -1,4 +1,6 @@
-use cortex_storage::manifest::{ManifestHnswProfile, ManifestVectorProfile, StorageManifest};
+use cortex_storage::manifest::{
+    ManifestHnswNoFallbackProfile, ManifestHnswProfile, ManifestVectorProfile, StorageManifest,
+};
 
 #[test]
 fn manifest_hnsw_profile_roundtrips() {
@@ -28,6 +30,24 @@ fn manifest_vector_profile_roundtrips() {
         vector_profile: Some(ManifestVectorProfile {
             dimension: 384,
             metric: 1,
+        }),
+        ..StorageManifest::default()
+    };
+
+    manifest.store(&path).unwrap();
+
+    assert_eq!(StorageManifest::load(&path).unwrap(), manifest);
+}
+
+#[test]
+fn manifest_hnsw_no_fallback_profile_roundtrips() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("manifest.acm");
+    let manifest = StorageManifest {
+        hnsw_no_fallback_profile: Some(ManifestHnswNoFallbackProfile {
+            rollout_enabled: true,
+            min_recall_q16: 65_535,
+            require_upper_layers: true,
         }),
         ..StorageManifest::default()
     };

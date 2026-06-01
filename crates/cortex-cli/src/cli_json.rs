@@ -150,6 +150,26 @@ pub(crate) fn ann_validate_to_json(
     })
 }
 
+pub(crate) fn no_fallback_profile_to_json(
+    policy: Option<cortex_engine::HnswNoFallbackRolloutPolicy>,
+) -> String {
+    let response = match policy {
+        Some(policy) => crate::cli_json_types::CliNoFallbackProfileResponse {
+            configured: true,
+            rollout_enabled: Some(policy.rollout_enabled),
+            min_recall_q16: Some(policy.min_recall_q16),
+            require_upper_layers: Some(policy.require_upper_layers),
+        },
+        None => crate::cli_json_types::CliNoFallbackProfileResponse {
+            configured: false,
+            rollout_enabled: None,
+            min_recall_q16: None,
+            require_upper_layers: None,
+        },
+    };
+    serialize_or_error(&response)
+}
+
 pub(crate) struct CliAnnEvaluationJsonInput {
     pub(crate) available: bool,
     pub(crate) reason: Option<String>,

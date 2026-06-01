@@ -178,6 +178,38 @@ def main() -> int:
         )
         check("/v1/admin/auth/policy/rollback", "POST", auth_rollback_resp)
 
+        profile_put_resp = request(
+            "PUT",
+            f"{base}/v1/admin/search/hnsw/no-fallback-profile",
+            b'{"rollout_enabled":true,"min_recall_q16":65535,"require_upper_layers":true}',
+            content_type="application/json",
+        )
+        check(
+            "/v1/admin/search/hnsw/no-fallback-profile",
+            "PUT",
+            profile_put_resp,
+        )
+
+        profile_get_resp = request(
+            "GET",
+            f"{base}/v1/admin/search/hnsw/no-fallback-profile",
+        )
+        check(
+            "/v1/admin/search/hnsw/no-fallback-profile",
+            "GET",
+            profile_get_resp,
+        )
+
+        profile_delete_resp = request(
+            "DELETE",
+            f"{base}/v1/admin/search/hnsw/no-fallback-profile",
+        )
+        check(
+            "/v1/admin/search/hnsw/no-fallback-profile",
+            "DELETE",
+            profile_delete_resp,
+        )
+
         # Search
         search_resp = request(
             "POST",

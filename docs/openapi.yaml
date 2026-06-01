@@ -179,6 +179,52 @@ paths:
         '403': *id005
         '404': *id003
         '500': *id002
+  /v1/admin/search/hnsw/no-fallback-profile:
+    get:
+      summary: Read the persisted HNSW no-fallback rollout profile
+      description: Admin-only operator profile. It is disabled unless configured and does not remove exact fallback globally.
+      responses:
+        '200':
+          description: Current no-fallback profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HnswNoFallbackProfileResponse'
+        '401': *id004
+        '403': *id005
+        '500': *id002
+    put:
+      summary: Store the HNSW no-fallback rollout profile
+      description: Admin-only operator profile used when requests opt into no_fallback_profile=active.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HnswNoFallbackProfileRequest'
+      responses:
+        '200':
+          description: Stored no-fallback profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HnswNoFallbackProfileResponse'
+        '400': *id001
+        '401': *id004
+        '403': *id005
+        '500': *id002
+    delete:
+      summary: Clear the HNSW no-fallback rollout profile
+      responses:
+        '200':
+          description: Cleared no-fallback profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HnswNoFallbackProfileResponse'
+        '401': *id004
+        '403': *id005
+        '500': *id002
   /v1/flush:
     post:
       summary: Checkpoint current changes
@@ -301,6 +347,15 @@ paths:
         description: Optional fallback-free rollout recall threshold. Requires no_fallback_rollout=true.
         schema:
           type: string
+      - name: no_fallback_profile
+        in: query
+        description: Use the persisted operator-managed rollout profile when set to active or true. Cannot be combined with no_fallback_rollout.
+        schema:
+          type: string
+          enum:
+          - active
+          - 'true'
+          - 'false'
       responses:
         '200':
           description: Search results
@@ -396,6 +451,15 @@ paths:
         description: Optional fallback-free rollout recall threshold. Requires no_fallback_rollout=true.
         schema:
           type: string
+      - name: no_fallback_profile
+        in: query
+        description: Use the persisted operator-managed rollout profile when set to active or true. Cannot be combined with no_fallback_rollout.
+        schema:
+          type: string
+          enum:
+          - active
+          - 'true'
+          - 'false'
       responses:
         '200':
           description: ANN recall evaluation
@@ -936,6 +1000,45 @@ components:
           type: integer
         rollback_available:
           type: boolean
+    HnswNoFallbackProfileRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - rollout_enabled
+      properties:
+        rollout_enabled:
+          type: boolean
+        min_recall_q16:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        require_upper_layers:
+          type: boolean
+    HnswNoFallbackProfileResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - configured
+      - rollout_enabled
+      - min_recall_q16
+      - require_upper_layers
+      properties:
+        configured:
+          type: boolean
+        rollout_enabled:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+        min_recall_q16:
+          anyOf:
+          - type: integer
+            minimum: 0
+            maximum: 65535
+          - type: 'null'
+        require_upper_layers:
+          anyOf:
+          - type: boolean
+          - type: 'null'
     CheckpointResponse:
       type: object
       required:

@@ -98,7 +98,7 @@ pub fn handle_search_shared(
     let algorithm = query_param_decoded(query, "algorithm").unwrap_or_else(|_| "ann".to_owned());
     let ann_policy = parse_ann_policy(query).map_err(RouterError::BadRequest)?;
     let rollout_policy =
-        parse_no_fallback_rollout_policy(query).map_err(RouterError::BadRequest)?;
+        resolve_no_fallback_rollout_policy(db, query).map_err(RouterError::BadRequest)?;
     let (search_mode, results, ann_report, no_fallback_decision) = match mode.as_str() {
         "keyword" => (
             "keyword",
@@ -176,7 +176,7 @@ pub fn handle_ann_evaluate_shared(
     let vector = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
     let ann_policy = parse_ann_policy(query).map_err(RouterError::BadRequest)?;
     let rollout_policy =
-        parse_no_fallback_rollout_policy(query).map_err(RouterError::BadRequest)?;
+        resolve_no_fallback_rollout_policy(db, query).map_err(RouterError::BadRequest)?;
     let response =
         match db.evaluate_vector_ann_with_policy(&vector, &view, SearchLimit(limit), ann_policy)? {
             Some(report) => {
@@ -326,15 +326,29 @@ fn parse_ann_policy(query: &str) -> Result<AnnSearchPolicy, String> {
     })
 }
 
-fn parse_no_fallback_rollout_policy(
+fn resolve_no_fallback_rollout_policy(
+    db: &Database,
     query: &str,
 ) -> Result<Option<HnswNoFallbackRolloutPolicy>, String> {
+    let use_profile = parse_optional_query_param(query, "no_fallback_profile")?
+        .map(|value| parse_profile_selector(&value))
+        .transpose()?
+        .unwrap_or(false);
     let rollout = parse_optional_query_param(query, "no_fallback_rollout")?
         .map(|value| parse_bool("no_fallback_rollout", &value))
         .transpose()?;
     let min_recall = parse_optional_query_param(query, "no_fallback_min_recall")?
         .map(|value| parse_min_recall_q16(&value))
         .transpose()?;
+    if use_profile && (rollout.is_some() || min_recall.is_some()) {
+        return Err("no_fallback_profile cannot be combined with no_fallback_rollout or no_fallback_min_recall".to_owned());
+    }
+    if use_profile {
+        return db
+            .hnsw_no_fallback_rollout_policy()
+            .map(Some)
+            .ok_or_else(|| "no persisted HNSW no-fallback profile is configured".to_owned());
+    }
     if rollout.is_none() && min_recall.is_none() {
         return Ok(None);
     }
@@ -348,6 +362,14 @@ fn parse_no_fallback_rollout_policy(
         require_upper_layers: default_policy.require_upper_layers,
     };
     Ok(Some(policy))
+}
+
+fn parse_profile_selector(value: &str) -> Result<bool, String> {
+    match value.to_ascii_lowercase().as_str() {
+        "active" | "true" | "1" | "yes" | "on" => Ok(true),
+        "false" | "0" | "no" | "off" => Ok(false),
+        _ => Err("no_fallback_profile must be active or true/false".to_owned()),
+    }
 }
 
 fn parse_optional_query_param(query: &str, key: &str) -> Result<Option<String>, String> {
