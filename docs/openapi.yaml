@@ -419,6 +419,31 @@ paths:
                 $ref: '#/components/schemas/ContextPackResponse'
         '400': *id001
         '500': *id002
+  /v1/inference:
+    post:
+      summary: Run deterministic LLM inference test-double
+      description: |
+        Opt-in contract endpoint for future built-in LLM inference work. It is
+        disabled by default unless `CORTEXDB_LLM_TEST_DOUBLE=true` is set,
+        accepts only provider `test_double` with model `deterministic-echo-v1`,
+        consumes explicit ContextPack input, and never calls an external model
+        provider.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LlmInferenceRequest'
+      responses:
+        '200':
+          description: Deterministic test-double inference response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LlmInferenceResponse'
+        '400': *id001
+        '403': *id005
+        '500': *id002
   /v1/remember:
     post:
       summary: Execute AQL REMEMBER
@@ -1346,6 +1371,121 @@ components:
           - scope_mismatch
         message:
           type: string
+    LlmInferenceRequest:
+      type: object
+      additionalProperties: true
+      required:
+      - schema_version
+      - enabled
+      - provider
+      - model
+      - prompt
+      - context_pack
+      properties:
+        schema_version:
+          type: string
+          enum:
+          - cortexdb.llm_inference.smoke_request.v1
+        enabled:
+          type: boolean
+        provider:
+          type: string
+          enum:
+          - test_double
+        model:
+          type: string
+          enum:
+          - deterministic-echo-v1
+        prompt:
+          type: string
+        context_pack:
+          type: object
+          required:
+          - cells
+          properties:
+            schema_version:
+              type: string
+            token_budget:
+              type: integer
+            estimated_tokens:
+              type: integer
+            citations_required:
+              type: boolean
+            cells:
+              type: array
+              minItems: 1
+              items:
+                type: object
+                required:
+                - cell_id
+                properties:
+                  cell_id:
+                    type: integer
+                    format: uint64
+                  scope:
+                    type: string
+                  source_ref:
+                    type: string
+                  citation:
+                    type: string
+                  text:
+                    type: string
+                  payload_text:
+                    type: string
+        api_key:
+          description: Must be omitted or empty; provider secrets are never accepted in request bodies.
+          anyOf:
+          - type: string
+          - type: 'null'
+    LlmInferenceAuditResponse:
+      type: object
+      required:
+      - context_pack_only
+      - prompt_body_logged
+      - secrets_logged
+      properties:
+        context_pack_only:
+          type: boolean
+        prompt_body_logged:
+          type: boolean
+        secrets_logged:
+          type: boolean
+    LlmInferenceResponse:
+      type: object
+      required:
+      - schema_version
+      - provider
+      - model
+      - output
+      - used_context_cell_ids
+      - citations
+      - audit
+      properties:
+        schema_version:
+          type: string
+          enum:
+          - cortexdb.llm_inference.smoke_response.v1
+        provider:
+          type: string
+          enum:
+          - test_double
+        model:
+          type: string
+          enum:
+          - deterministic-echo-v1
+        output:
+          type: string
+        used_context_cell_ids:
+          type: array
+          items:
+            type: integer
+            format: uint64
+        citations:
+          type: array
+          items:
+            type: string
+        audit:
+          $ref: '#/components/schemas/LlmInferenceAuditResponse'
     GuardResponse:
       type: object
       required:

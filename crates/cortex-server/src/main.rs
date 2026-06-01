@@ -77,6 +77,7 @@ fn main() -> ExitCode {
         request_rate_limit_per_minute,
         audit_log_enabled: audit_log_enabled_from_env() || audit_log_path.is_some(),
         audit_log_path,
+        llm_test_double_enabled: llm_test_double_enabled_from_env(),
     };
     match cortex_server::serve_with_options(&PathBuf::from(root), addr, options) {
         Ok(()) => ExitCode::SUCCESS,
@@ -175,6 +176,13 @@ fn parse_positive_u64(raw: &str, name: &str) -> Result<u64, String> {
 
 fn audit_log_enabled_from_env() -> bool {
     match env::var("CORTEXDB_AUDIT_LOG") {
+        Ok(raw) => parse_bool_flag(&raw),
+        Err(_) => false,
+    }
+}
+
+fn llm_test_double_enabled_from_env() -> bool {
+    match env::var("CORTEXDB_LLM_TEST_DOUBLE") {
         Ok(raw) => parse_bool_flag(&raw),
         Err(_) => false,
     }

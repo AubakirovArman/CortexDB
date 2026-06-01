@@ -1,7 +1,9 @@
 # LLM Inference Design
 
-Status: future phase 1 local evidence gates started, no model runtime or
-inference endpoint implemented.
+Status: future phase 2 local contract started. A deterministic test-double
+endpoint exists for contract and SDK proof, but there is still no production
+model runtime, GPU scheduler, remote provider integration, or built-in LLM
+readiness claim.
 
 ## Goal
 
@@ -27,14 +29,15 @@ tenant routing, AQL policy, or source citation requirements.
 
 ## API Contract Boundary
 
-Core Alpha exposes retrieval, ContextPack, verification, search, ingestion, and
-storage administration APIs. It does not expose `/v1/inference`, `/v1/llm`, or
-`/v1/chat`.
+Core Alpha exposes retrieval, ContextPack, verification, search, ingestion,
+storage administration APIs, and an opt-in `/v1/inference` deterministic
+test-double endpoint. The endpoint is disabled by default and only accepts
+explicit ContextPack input. It does not call a model provider and does not
+retrieve context internally.
 
-Any future inference endpoint must be opt-in, disabled by default, documented in
-the OpenAPI contract before implementation, and backed by typed request and
-response structs. Until then, ContextPack remains the product boundary for LLM
-consumers.
+`/v1/llm` and `/v1/chat` remain intentionally unimplemented. Any production LLM
+runtime must pass the future contract, safety, smoke, secrets, resource, and
+operations gates before public readiness claims.
 
 ## Resource Limits
 
@@ -61,9 +64,16 @@ repository files.
 
 ## Deterministic Test Double
 
-The first implementation must include a deterministic test-double provider for
-CI. This provider returns fixture-backed responses from explicit ContextPack
-input and never calls an external model or requires provider credentials.
+The first implementation includes a deterministic test-double provider for
+contract and SDK proof. Enable it explicitly with:
+
+```bash
+CORTEXDB_LLM_TEST_DOUBLE=true
+```
+
+The provider accepts `provider=test_double` and `model=deterministic-echo-v1`.
+It returns deterministic responses from explicit ContextPack input and never
+calls an external model or requires provider credentials.
 
 ## Current Evidence Boundary
 
@@ -71,14 +81,14 @@ The current gates prove local prerequisites only:
 
 | Gate | Evidence |
 | --- | --- |
-| `make llm-inference-contract-check` | OpenAPI and server routes do not expose future inference endpoints, and API docs keep the no-endpoint boundary explicit. |
+| `make llm-inference-contract-check` | OpenAPI and server routes expose only the disabled-by-default `/v1/inference` test-double contract; `/v1/llm` and `/v1/chat` remain absent. |
 | `make llm-inference-safety-check` | The design contains ContextPack, AgentView, prompt-visibility, resource-limit, timeout, and queue-backpressure rules. |
-| `make llm-inference-smoke-check` | Deterministic request/response fixtures prove the shape of a future test-double smoke path without real provider calls. |
+| `make llm-inference-smoke-check` | Deterministic request/response fixtures and server tests prove the test-double path without real provider calls. |
 | `make secrets-check` | Tracked repository files are scanned for provider-secret-like literals. |
 
 Reports are written under `target/llm-inference/` and keep
 `built_in_llm_ready=false`. They do not claim a model runtime, scheduling layer,
-or inference endpoint exists.
+remote provider integration, or production inference readiness.
 
 ## Required Gates
 

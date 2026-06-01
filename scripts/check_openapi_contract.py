@@ -75,6 +75,7 @@ def start_server(repo: Path, port: int) -> tuple[subprocess.Popen, Path]:
         "RUST_LOG": "error",
         "CORTEXDB_AUTH_TOKEN": CONTRACT_AUTH_TOKEN,
         "CORTEXDB_AUTH_POLICY_STORE_FILE": str(auth_policy_store),
+        "CORTEXDB_LLM_TEST_DOUBLE": "true",
     }
     proc = subprocess.Popen(
         [str(bin_path), str(tmpdir), f"127.0.0.1:{port}"],
@@ -100,12 +101,17 @@ def start_server(repo: Path, port: int) -> tuple[subprocess.Popen, Path]:
     return proc, tmpdir
 
 
-def request(method: str, url: str, body: bytes | None = None) -> dict:
+def request(
+    method: str,
+    url: str,
+    body: bytes | None = None,
+    content_type: str = "text/plain",
+) -> dict:
     """Make an HTTP request and return parsed JSON."""
     req = urllib.request.Request(url, method=method, data=body)
     req.add_header("Authorization", f"Bearer {CONTRACT_AUTH_TOKEN}")
     if body is not None:
-        req.add_header("Content-Type", "text/plain")
+        req.add_header("Content-Type", content_type)
     with urllib.request.urlopen(req, timeout=5) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
@@ -187,6 +193,17 @@ def main() -> int:
             b'RETRIEVE CONTEXT FOR TASK "hello" IN BRAIN default WHERE space = default AND status = "ready" LIMIT 10 CANDIDATES;',
         )
         check("/v1/context", "POST", context_resp)
+
+        inference_body = (
+            repo / "crates/cortex-engine/fixtures/llm_inference_smoke_request_v1.json"
+        ).read_bytes()
+        inference_resp = request(
+            "POST",
+            f"{base}/v1/inference",
+            inference_body,
+            content_type="application/json",
+        )
+        check("/v1/inference", "POST", inference_resp)
 
         # Verify
         verify_resp = request(

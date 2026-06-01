@@ -29,6 +29,7 @@ mod context;
 mod dashboard;
 #[cfg(test)]
 mod dashboard_tests;
+mod llm;
 mod memory;
 mod rate_limit;
 pub mod responses;
@@ -108,6 +109,11 @@ pub struct ServerOptions {
     /// file is synced after each event. The sink stores route metadata only,
     /// never request bodies or query strings.
     pub audit_log_path: Option<PathBuf>,
+    /// Enables the deterministic local LLM inference test-double endpoint.
+    ///
+    /// Disabled by default. This does not enable a production model runtime or
+    /// external provider calls.
+    pub llm_test_double_enabled: bool,
 }
 
 impl ServerOptions {
@@ -536,6 +542,35 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                     .into_response(),
                 &request_id,
             );
+        }
+    }
+
+    if method == "POST" && path == "/v1/inference" {
+        match llm::handle_inference_test_double(&body_bytes, state.options.llm_test_double_enabled)
+        {
+            Ok(body_str) => {
+                audit_http_response(&state, &audit_event, StatusCode::OK, None);
+                let response =
+                    if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_str) {
+                        (StatusCode::OK, Json(json_val)).into_response()
+                    } else {
+                        (StatusCode::OK, body_str).into_response()
+                    };
+                return with_request_id(response, &request_id);
+            }
+            Err(error) => {
+                let status =
+                    StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::BAD_REQUEST);
+                audit_http_response(&state, &audit_event, status, Some(error.code()));
+                return with_request_id(
+                    (
+                        status,
+                        Json(error_response(error.code(), error.to_string())),
+                    )
+                        .into_response(),
+                    &request_id,
+                );
+            }
         }
     }
 

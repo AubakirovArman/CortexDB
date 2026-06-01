@@ -275,7 +275,7 @@ println!("{}", results.results[0].payload);
 - **HNSW** has guarded production controls, but exact vector scan is still the most predictable default for critical workloads.
 - **Replication** is a local consensus model, not a real distributed transport.
 - **Ingestion pipelines** are alpha smoke paths, not production document/OCR/API adapters.
-- **No built-in LLM integration** — ContextPack is designed to be consumed by external agents.
+- **No production built-in LLM runtime** — ContextPack is designed for external agents; `/v1/inference` is only an opt-in deterministic test-double contract.
 - **Single-node only** — sharding and multi-node replication are on the long-term roadmap.
 
 The built-in developer console is available at:

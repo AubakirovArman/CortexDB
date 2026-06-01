@@ -355,15 +355,30 @@ changes exist, `available` is `false` and `reason` is
 }
 ```
 
-## No Built-in LLM Inference Endpoint
+## LLM Inference Test-double Endpoint
 
-Core Alpha intentionally has no `/v1/inference`, `/v1/llm`, or `/v1/chat`
-endpoint. CortexDB produces ContextPacks for external agents and model
-runtimes; it does not host model inference inside the database process.
+`POST /v1/inference` is an opt-in deterministic test-double contract. It is
+disabled by default and must be enabled with `CORTEXDB_LLM_TEST_DOUBLE=true`.
+It consumes explicit ContextPack input, never calls an external provider, never
+retrieves context internally, and must not receive provider API keys.
 
-Any future built-in LLM endpoint must first pass the LLM inference contract,
-safety, smoke, and secrets gates, then update this document and
-[`docs/openapi.yaml`](openapi.yaml) with typed request and response schemas.
+`/v1/llm` and `/v1/chat` remain intentionally absent.
+
+```json
+{
+  "schema_version": "cortexdb.llm_inference.smoke_response.v1",
+  "provider": "test_double",
+  "model": "deterministic-echo-v1",
+  "output": "Test-double answer from explicit ContextPack only: ...",
+  "used_context_cell_ids": [101],
+  "citations": ["doc://investment-risk#p1"],
+  "audit": {
+    "context_pack_only": true,
+    "prompt_body_logged": false,
+    "secrets_logged": false
+  }
+}
+```
 
 ## Remember
 

@@ -3,7 +3,7 @@ use std::path::Path;
 use cortex_engine::Database;
 
 use crate::{
-    auth, auth_policy_store, dashboard, json_error, json_response, route_shared_with_agent,
+    auth, auth_policy_store, dashboard, json_error, json_response, llm, route_shared_with_agent,
     ErrorCode, ServerOptions,
 };
 
@@ -78,6 +78,16 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
         Ok(Some(value)) => return json_response(200, &value),
         Ok(None) => {}
         Err(error) => return json_error(error.status_code(), error.code(), &error.to_string()),
+    }
+
+    if parts[0] == "POST" && path == "/v1/inference" {
+        return match llm::handle_inference_test_double(
+            body.as_bytes(),
+            options.llm_test_double_enabled,
+        ) {
+            Ok(value) => json_response(200, &value),
+            Err(error) => json_error(error.status_code(), error.code(), &error.to_string()),
+        };
     }
 
     let Ok(db) = Database::open(root) else {

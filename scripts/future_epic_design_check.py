@@ -123,7 +123,7 @@ EPIC_MARKERS: dict[str, dict[str, object]] = {
             ],
             "scripts/llm_inference_gate_check.py": [
                 "built_in_llm_ready",
-                "no model runtime or inference endpoint claim",
+                "no production model runtime claim",
             ],
         },
     },

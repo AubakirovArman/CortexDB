@@ -437,6 +437,7 @@ llm-inference-safety-check:
 	python3 scripts/llm_inference_gate_check.py --gate safety --report "$(LLM_INFERENCE_SAFETY_REPORT)"
 
 llm-inference-smoke-check:
+	cargo test -p cortex-server llm_inference
 	python3 scripts/llm_inference_gate_check.py --gate smoke --report "$(LLM_INFERENCE_SMOKE_REPORT)"
 
 secrets-check:

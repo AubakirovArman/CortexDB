@@ -5,6 +5,7 @@ mod error_response_snapshot_tests;
 mod error_taxonomy_tests;
 mod format_tests;
 mod ingest_tests;
+mod llm_inference_tests;
 mod response_snapshot_tests;
 mod search_api_tests;
 mod security_quota_tests;

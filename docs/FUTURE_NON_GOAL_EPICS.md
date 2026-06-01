@@ -17,7 +17,7 @@ Total future epics: 7.
 | 2 | Managed Cloud | future-phase-1-started | `make managed-cloud-design-check` | Hosted control plane, tenant isolation, billing/quotas, cloud operations, and support lifecycle |
 | 3 | Enterprise RBAC And Compliance | future-phase-1-started | `make enterprise-rbac-design-check` | Durable policy store, auditable permissions, compliance controls, and admin lifecycle |
 | 4 | Full Production HNSW Without Fallback | future-phase-1-started | `make hnsw-no-fallback-design-check` | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
-| 5 | Built-in LLM Inference | future-phase-1-started | `make llm-inference-design-check` | Model runtime, resource isolation, prompt safety, provider compatibility, and operational cost controls |
+| 5 | Built-in LLM Inference | future-phase-2-contract-started | `make llm-inference-design-check` | Model runtime, resource isolation, prompt safety, provider compatibility, and operational cost controls |
 | 6 | External Identity Providers | future-phase-1-started | `make external-identity-design-check` | OIDC/SAML or equivalent identity integration with role/scope mapping and rotation |
 | 7 | Legal-grade Verification | future-phase-1-started | `make legal-verification-design-check` | Legal-domain evidence model, citations, review workflow, liability boundaries, and evaluation by domain experts |
 
@@ -320,19 +320,19 @@ Why this is future:
 
 Current implementation slice:
 
-- `make llm-inference-contract-check` verifies that OpenAPI/server routes do
-  not expose a future inference endpoint yet and that API docs keep the no-LLM
-  endpoint boundary explicit.
+- `make llm-inference-contract-check` verifies that OpenAPI/server routes expose
+  only the disabled-by-default `/v1/inference` deterministic test-double
+  contract; `/v1/llm` and `/v1/chat` remain absent.
 - `make llm-inference-safety-check` verifies that the design has ContextPack,
   AgentView, prompt visibility, resource limit, timeout, and queue
   backpressure rules.
 - `make llm-inference-smoke-check` validates deterministic test-double request
-  and response fixtures without calling a real model.
+  and response fixtures plus the local server path without calling a real model.
 - `make secrets-check` scans tracked repository files for provider-secret-like
   literals.
-- All new reports are written under `target/llm-inference/` and carry
-  `built_in_llm_ready=false`; they prove local prerequisites only, not a model
-  runtime or hosted inference endpoint.
+- All reports are written under `target/llm-inference/` and carry
+  `built_in_llm_ready=false`; they prove a local test-double contract only, not
+  a model runtime, remote provider integration, or production inference service.
 
 Task pool:
 
@@ -342,9 +342,9 @@ Task pool:
 4. Define model resource limits, concurrency, and cancellation.
 5. Define safety and audit logging for model calls.
 6. Define cost and quota controls.
-7. Add an inference endpoint only after API contract approval.
-8. Add model-runtime health and metrics.
-9. Add deterministic test doubles for CI.
+7. Keep `/v1/inference` disabled by default until explicitly enabled.
+8. Add model-runtime health and metrics after a real runtime is selected.
+9. Keep deterministic test doubles for CI and SDK contract proof.
 10. Add end-to-end examples that do not require committed secrets.
 
 Required gates:

@@ -12,16 +12,16 @@ from pathlib import Path
 from typing import Any
 
 
-FORBIDDEN_ENDPOINTS = ("/v1/inference", "/v1/llm", "/v1/chat")
+FORBIDDEN_ENDPOINTS = ("/v1/llm", "/v1/chat")
 
 GATES: dict[str, dict[str, object]] = {
     "contract": {
         "schema": "cortexdb.llm_inference.contract_gate.v1",
         "markers": [
             ("docs/LLM_INFERENCE_DESIGN.md", "API Contract Boundary"),
-            ("docs/API_JSON_SCHEMAS.md", "No Built-in LLM Inference Endpoint"),
+            ("docs/API_JSON_SCHEMAS.md", "LLM Inference Test-double Endpoint"),
             ("docs/FUTURE_NON_GOAL_EPICS.md", "make llm-inference-contract-check"),
-            ("README.md", "No built-in LLM integration"),
+            ("README.md", "No production built-in LLM runtime"),
             ("Makefile", "llm-inference-contract-check"),
         ],
     },
@@ -133,6 +133,26 @@ def validate_no_forbidden_endpoints() -> list[str]:
     return failures
 
 
+def validate_test_double_endpoint_contract() -> list[str]:
+    failures: list[str] = []
+    openapi = read(Path("docs/openapi.yaml"))
+    server = read(Path("crates/cortex-server/src/llm.rs"))
+    main = read(Path("crates/cortex-server/src/main.rs"))
+    design = read(Path("docs/LLM_INFERENCE_DESIGN.md"))
+    expected = [
+        (openapi, "/v1/inference", "docs/openapi.yaml"),
+        (openapi, "LlmInferenceResponse", "docs/openapi.yaml"),
+        (server, "handle_inference_test_double", "crates/cortex-server/src/llm.rs"),
+        (main, "CORTEXDB_LLM_TEST_DOUBLE", "crates/cortex-server/src/main.rs"),
+        (design, "disabled by default", "docs/LLM_INFERENCE_DESIGN.md"),
+        (design, "test-double", "docs/LLM_INFERENCE_DESIGN.md"),
+    ]
+    for text, marker, path in expected:
+        if marker not in text:
+            failures.append(f"{path}: missing test-double endpoint marker {marker!r}")
+    return failures
+
+
 def validate_smoke_fixtures(paths: list[str]) -> list[str]:
     failures: list[str] = []
     request = load_json(Path(paths[0]))
@@ -194,6 +214,7 @@ def validate(gate: str) -> dict[str, Any]:
 
     if gate == "contract":
         contract_failures = validate_no_forbidden_endpoints()
+        contract_failures.extend(validate_test_double_endpoint_contract())
         failures.extend(contract_failures)
         checks["contract_boundary"] = not contract_failures
     elif gate == "safety":
@@ -222,7 +243,7 @@ def validate(gate: str) -> dict[str, Any]:
         "gate": gate,
         "status": "passed" if not failures else "failed",
         "built_in_llm_ready": False,
-        "boundary": "local built-in LLM inference prerequisites only; no model runtime or inference endpoint claim",
+        "boundary": "local built-in LLM inference test-double contract only; no production model runtime claim",
         "checks": checks,
         "failures": failures,
     }
