@@ -190,6 +190,10 @@ pub struct ExplainResponse {
     #[serde(default)]
     pub score_components: Vec<ScoreComponentResponse>,
     pub base_bm25: u32,
+    #[serde(default)]
+    pub source_trust_q16: u16,
+    #[serde(default)]
+    pub source_trust_category: String,
     pub source_trust_bonus: u32,
     pub redundancy_penalty: u32,
 }
@@ -247,6 +251,8 @@ pub struct EvidenceResponse {
     pub cell_id: u64,
     pub matched_terms: u32,
     pub source_trust_q16: u16,
+    #[serde(default)]
+    pub source_trust_category: String,
     pub citation: Option<String>,
     pub payload_text: String,
 }

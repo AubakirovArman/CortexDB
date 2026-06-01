@@ -22,6 +22,7 @@ pub mod repair;
 pub mod replay;
 pub mod replication;
 pub mod search;
+pub mod source_trust;
 pub mod typed_body;
 pub mod validation;
 pub mod verification;
@@ -60,5 +61,6 @@ pub use replay::{
 };
 pub use replication::*;
 pub use search::*;
+pub use source_trust::{SourceTrust, SourceTrustCategory, DEFAULT_SOURCE_TRUST_Q16};
 pub use typed_body::{EntityBody, FactBody, RelationBody};
 pub use validation::{StorageStats, StorageValidation, StorageValidationReport};

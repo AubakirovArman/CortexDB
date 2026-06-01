@@ -8,6 +8,7 @@ use crate::database::{Database, RetrievedCell};
 use crate::error::EngineResult;
 use crate::query::CellMetadata;
 use crate::search::tokenize;
+use crate::source_trust::{SourceTrust, SourceTrustCategory};
 
 pub mod dedup;
 pub mod explain;
@@ -56,6 +57,8 @@ pub struct ContextExplain {
     pub why_selected: String,
     pub score_components: Vec<ContextScoreComponent>,
     pub base_bm25: u32,
+    pub source_trust_q16: u16,
+    pub source_trust_category: SourceTrustCategory,
     pub source_trust_bonus: u32,
     pub redundancy_penalty: u32,
 }
@@ -262,7 +265,8 @@ impl ContextPack {
                 .collect();
 
             let base_bm25 = (matched.len() as u32) * 10_000;
-            let source_trust_bonus = metadata.source_trust_q16.unwrap_or(32768) as u32;
+            let source_trust = SourceTrust::from_q16(metadata.source_trust_q16);
+            let source_trust_bonus = source_trust.score_bonus();
 
             let mut max_jaccard_similarity_q16 = 0u32;
             for packed in &pack_cells {
@@ -280,8 +284,7 @@ impl ContextPack {
 
             let why_selected =
                 generate_selection_reason(score, base_bm25, source_trust_bonus, redundancy_penalty);
-            let score_components =
-                score_components(base_bm25, source_trust_bonus, redundancy_penalty);
+            let score_components = score_components(base_bm25, source_trust, redundancy_penalty);
 
             let explain = Some(ContextExplain {
                 score,
@@ -289,6 +292,8 @@ impl ContextPack {
                 why_selected,
                 score_components,
                 base_bm25,
+                source_trust_q16: source_trust.q16,
+                source_trust_category: source_trust.category,
                 source_trust_bonus,
                 redundancy_penalty,
             });
@@ -316,9 +321,10 @@ impl ContextPack {
 
 fn score_components(
     base_bm25: u32,
-    source_trust_bonus: u32,
+    source_trust: SourceTrust,
     redundancy_penalty: u32,
 ) -> Vec<ContextScoreComponent> {
+    let source_trust_bonus = source_trust.score_bonus();
     vec![
         ContextScoreComponent {
             name: "base_bm25".to_owned(),
@@ -330,7 +336,7 @@ fn score_components(
             name: "source_trust_bonus".to_owned(),
             value: source_trust_bonus,
             contribution: i32::try_from(source_trust_bonus).unwrap_or(i32::MAX),
-            reason: "source_trust_q16 metadata or default provenance trust".to_owned(),
+            reason: source_trust.score_reason(),
         },
         ContextScoreComponent {
             name: "redundancy_penalty".to_owned(),

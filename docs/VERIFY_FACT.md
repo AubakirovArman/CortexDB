@@ -38,7 +38,8 @@ cortexdb verify ./db project:investments \
       "citation": "report_q1.pdf#page=3",
       "matched_terms": 7,
       "payload_text": "Solar Plant budget is 1.2B KZT in Q1.",
-      "source_trust_q16": 32768
+      "source_trust_q16": 32768,
+      "source_trust_category": "unknown"
     }
   ],
   "contradicting": [
@@ -47,7 +48,8 @@ cortexdb verify ./db project:investments \
       "citation": "report_q2.pdf#page=5",
       "matched_terms": 4,
       "payload_text": "Solar Plant budget is 1.4B KZT in Q2.",
-      "source_trust_q16": 32768
+      "source_trust_q16": 32768,
+      "source_trust_category": "unknown"
     }
   ],
   "numeric_conflicts": [
@@ -104,13 +106,15 @@ CLI/server responses do not re-parse payloads independently.
 - **Magnitude parsing** relies on explicit `B`/`M`/`K` suffixes or raw integers.
 - **Currency** must be explicit in the fact or in cell metadata.
 - **No temporal reasoning** — "budget was 1.2B in Q1" and "budget is 1.4B in Q2" are treated as a conflict, not as a timeline update.
-- **Source trust is a ranking hint** — `source_trust=` can order otherwise
-  comparable evidence, but it is not a full trust/provenance model.
+- **Source trust is deterministic but simple** — `source_trust_q16` is
+  classified as `low`, `medium`, `high`, or `official`; missing values are
+  reported as `unknown` with the default q16. It is not a full trust/provenance
+  model.
 
 ## Future (Verification v1)
 
 - Metric-aware comparison (budget vs revenue vs cost).
-- Richer source trust scoring and evidence ranking.
+- Richer source trust policy inputs beyond q16 thresholds.
 - Contradiction index output.
 
 ## Quality Gate

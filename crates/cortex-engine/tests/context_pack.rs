@@ -5,7 +5,7 @@ use cortex_core::CellId;
 use cortex_engine::feedback::ContextFeedback;
 use cortex_engine::{
     scope_id, ContextPack, ContextPackAnomalyCode, ContextPackExportFormat, ContextPackOptions,
-    Database, RetrievedCell, DEFAULT_CITATION_OVERHEAD_TOKENS,
+    Database, RetrievedCell, SourceTrustCategory, DEFAULT_CITATION_OVERHEAD_TOKENS,
 };
 
 #[test]
@@ -438,8 +438,34 @@ fn test_context_pack_scoring_and_explain() {
         component_names,
         vec!["base_bm25", "source_trust_bonus", "redundancy_penalty"]
     );
+    assert_eq!(exp.source_trust_q16, 32_768);
+    assert_eq!(exp.source_trust_category, SourceTrustCategory::Unknown);
     assert!(exp
         .score_components
         .iter()
         .any(|component| component.name == "redundancy_penalty" && component.contribution <= 0));
+}
+
+#[test]
+fn context_pack_explain_reports_source_trust_category() {
+    let cells = vec![retrieved(
+        1,
+        "scope=project:investments\nstatus=ready\nsource_trust_q16=60000\n\nalpha budget",
+    )];
+    let pack = ContextPack::from_retrieved_with_options(
+        cells,
+        1_000,
+        false,
+        &ContextPackOptions::default(),
+        "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects;",
+    );
+    let explain = pack.cells[0].explain.as_ref().unwrap();
+
+    assert_eq!(explain.source_trust_q16, 60_000);
+    assert_eq!(explain.source_trust_category, SourceTrustCategory::Official);
+    assert!(explain
+        .score_components
+        .iter()
+        .any(|component| component.name == "source_trust_bonus"
+            && component.reason.contains("official provenance trust")));
 }

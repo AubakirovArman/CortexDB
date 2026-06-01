@@ -90,6 +90,8 @@ fn map_context_pack(pack: &ContextPack) -> ContextPackResponse {
                     })
                     .collect(),
                 base_bm25: exp.base_bm25,
+                source_trust_q16: exp.source_trust_q16,
+                source_trust_category: exp.source_trust_category.as_str().to_owned(),
                 source_trust_bonus: exp.source_trust_bonus,
                 redundancy_penalty: exp.redundancy_penalty,
             });

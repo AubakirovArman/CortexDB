@@ -11,6 +11,7 @@ expression: resp
       "cell_id": 1,
       "matched_terms": 3,
       "source_trust_q16": 65535,
+      "source_trust_category": "official",
       "citation": "report_q1.pdf#page=3",
       "payload_text": "Solar Plant budget is 1.2B KZT"
     }
@@ -20,6 +21,7 @@ expression: resp
       "cell_id": 2,
       "matched_terms": 3,
       "source_trust_q16": 65535,
+      "source_trust_category": "official",
       "citation": "report_q2.pdf#page=5",
       "payload_text": "Solar Plant budget is 1.4B KZT"
     }
@@ -41,6 +43,7 @@ expression: resp
       "cell_id": 1,
       "matched_terms": 3,
       "source_trust_q16": 65535,
+      "source_trust_category": "official",
       "citation": "report_q1.pdf#page=3",
       "payload_text": "Solar Plant budget is 1.2B KZT"
     }
@@ -50,6 +53,7 @@ expression: resp
       "cell_id": 2,
       "matched_terms": 3,
       "source_trust_q16": 65535,
+      "source_trust_category": "official",
       "citation": "report_q2.pdf#page=5",
       "payload_text": "Solar Plant budget is 1.4B KZT"
     }

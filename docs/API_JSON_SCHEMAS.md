@@ -411,7 +411,7 @@ stable Markdown export.
             "name": "source_trust_bonus",
             "value": 0,
             "contribution": 0,
-            "reason": "source_trust_q16 metadata or default provenance trust"
+            "reason": "default provenance trust because source_trust_q16 is absent"
           },
           {
             "name": "redundancy_penalty",
@@ -421,6 +421,8 @@ stable Markdown export.
           }
         ],
         "base_bm25": 65535,
+        "source_trust_q16": 32768,
+        "source_trust_category": "unknown",
         "source_trust_bonus": 0,
         "redundancy_penalty": 0
       },
@@ -533,6 +535,7 @@ Supported fact:
       "cell_id": 1,
       "matched_terms": 5,
       "source_trust_q16": 32768,
+      "source_trust_category": "unknown",
       "citation": "doc-a",
       "payload_text": "scope=project:investments\nstatus=ready\n..."
     }
@@ -544,6 +547,7 @@ Supported fact:
       "cell_id": 1,
       "matched_terms": 5,
       "source_trust_q16": 32768,
+      "source_trust_category": "unknown",
       "citation": "doc-a",
       "payload_text": "scope=project:investments\nstatus=ready\n..."
     }
@@ -565,6 +569,7 @@ Mixed evidence with numeric conflict:
       "cell_id": 1,
       "matched_terms": 5,
       "source_trust_q16": 32768,
+      "source_trust_category": "unknown",
       "citation": "doc-a",
       "payload_text": "scope=project:investments\nstatus=ready\n..."
     }
@@ -574,6 +579,7 @@ Mixed evidence with numeric conflict:
       "cell_id": 2,
       "matched_terms": 2,
       "source_trust_q16": 32768,
+      "source_trust_category": "unknown",
       "citation": "doc-b",
       "payload_text": "scope=project:investments\nstatus=ready\n..."
     }
@@ -590,6 +596,7 @@ Mixed evidence with numeric conflict:
       "cell_id": 1,
       "matched_terms": 5,
       "source_trust_q16": 32768,
+      "source_trust_category": "unknown",
       "citation": "doc-a",
       "payload_text": "scope=project:investments\nstatus=ready\n..."
     }
@@ -599,6 +606,7 @@ Mixed evidence with numeric conflict:
       "cell_id": 2,
       "matched_terms": 2,
       "source_trust_q16": 32768,
+      "source_trust_category": "unknown",
       "citation": "doc-b",
       "payload_text": "scope=project:investments\nstatus=ready\n..."
     }

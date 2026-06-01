@@ -220,6 +220,7 @@ Verifies a specific factual claim against the available database knowledge using
         "cell_id": 1,
         "matched_terms": 7,
         "source_trust_q16": 32768,
+        "source_trust_category": "unknown",
         "citation": "report_q1.pdf#page=3",
         "payload_text": "scope=project:investments\nstatus=ready\n..."
       }
@@ -229,6 +230,7 @@ Verifies a specific factual claim against the available database knowledge using
         "cell_id": 2,
         "matched_terms": 4,
         "source_trust_q16": 32768,
+        "source_trust_category": "unknown",
         "citation": "report_q2.pdf#page=5",
         "payload_text": "scope=project:investments\nstatus=ready\n..."
       }

@@ -172,6 +172,14 @@ fn push_markdown_cell(out: &mut String, index: usize, cell: &ContextPackCell) {
             out,
             &format!("- matched_terms: `{}`", explain.matched_terms.join(", ")),
         );
+        push_line(
+            out,
+            &format!(
+                "- source_trust: `{}` (`{}`)",
+                explain.source_trust_category.as_str(),
+                explain.source_trust_q16
+            ),
+        );
     }
     push_line(out, "");
     let payload = String::from_utf8_lossy(&cell.payload);

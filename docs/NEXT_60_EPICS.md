@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 22 |
-| partial | 30 |
+| closed | 23 |
+| partial | 29 |
 | not started | 6 |
 | research | 2 |
 | total | 60 |
@@ -59,7 +59,7 @@ The plan recommends this first execution batch:
 | 15 | ContextPack Budget Optimizer | closed | ContextPack now accounts for required-citation overhead, applies redundancy checks before budget overload, skips oversized middle candidates while keeping later smaller cells, and documents/tests the optimizer behavior. | Keep estimator changes deterministic and covered by quality fixtures. |
 | 16 | Verification Dataset v2 | closed | `make verification-quality-check` now executes and reports 50 deterministic cases across 5 domains with all verdict classes and guard coverage. | Add real customer/legal review fixtures later without weakening deterministic gates. |
 | 17 | NumericValue Engine Integration | closed | `VerificationReport.numeric_conflicts` now carries engine-level structured numeric conflicts with `cell_id`, metric, display values, and typed `NumericValue` pairs; CLI/server only serialize the report. | Keep future unit/currency expansion inside engine structs before exposing new API fields. |
-| 18 | Source Trust Model v1 | partial | Source metadata/source refs exist. | Add first-class trust categories, scoring, and ContextPack/Verify contribution. |
+| 18 | Source Trust Model v1 | closed | Engine now has first-class `SourceTrust`/`SourceTrustCategory`; ContextPack explain and VERIFY evidence expose deterministic q16/category contribution across CLI/server/SDK surfaces. | Add richer policy inputs later without changing q16 category semantics silently. |
 | 19 | Contradiction Index v1 | not started | Verification detects conflicts dynamically. | Add persisted contradiction relation cells and conflict index. |
 | 20 | Verification Report Export | partial | Typed JSON reports and numeric conflicts exist. | Add stable Markdown/audit export from CLI/server. |
 | 21 | Real-domain Corpus Expansion | closed | `make retrieval-quality-check` now validates investment projects, support tickets, legal policies, and technical docs corpora with ground truth. | Add larger public/private corpora later as separate quality expansions. |
@@ -118,5 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 18: first-class source trust categories and scoring contribution.
-2. Advance Epic 20: stable Markdown/audit export for verification reports.
+1. Advance Epic 20: stable Markdown/audit export for verification reports.
+2. Advance Epic 19: persisted contradiction relation cells and conflict index.

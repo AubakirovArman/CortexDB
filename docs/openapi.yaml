@@ -1497,6 +1497,8 @@ components:
       - why_selected
       - score_components
       - base_bm25
+      - source_trust_q16
+      - source_trust_category
       - source_trust_bonus
       - redundancy_penalty
       properties:
@@ -1516,6 +1518,18 @@ components:
         base_bm25:
           type: integer
           minimum: 0
+        source_trust_q16:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        source_trust_category:
+          type: string
+          enum:
+          - unknown
+          - low
+          - medium
+          - high
+          - official
         source_trust_bonus:
           type: integer
           minimum: 0

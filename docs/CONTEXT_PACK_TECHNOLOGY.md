@@ -114,8 +114,13 @@ Each selected cell can include explain fields such as:
 - matched terms;
 - selection reason;
 - lexical score component;
-- source-trust bonus;
+- source-trust q16, source-trust category, and source-trust bonus;
 - redundancy penalty.
+
+Source trust categories are deterministic q16 bands: missing metadata is
+`unknown`, then explicit values classify as `low`, `medium`, `high`, or
+`official`. The category is explanatory; the numeric bonus remains the q16 value
+so ranking stays deterministic and backward compatible.
 
 This is meant for debugging and UI display. It is not a legal proof or a
 production-grade factual-certification score.

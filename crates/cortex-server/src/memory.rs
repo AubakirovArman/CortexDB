@@ -72,6 +72,7 @@ fn map_verification_report(
                     cell_id: ev.cell_id.0,
                     matched_terms: ev.matched_terms,
                     source_trust_q16: ev.source_trust_q16,
+                    source_trust_category: ev.source_trust_category.as_str().to_owned(),
                     citation: ev.citation.clone(),
                     payload_text,
                 }

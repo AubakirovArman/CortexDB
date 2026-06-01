@@ -211,6 +211,8 @@ fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> ContextPackCellRe
             })
             .collect(),
         base_bm25: exp.base_bm25,
+        source_trust_q16: exp.source_trust_q16,
+        source_trust_category: exp.source_trust_category.as_str().to_owned(),
         source_trust_bonus: exp.source_trust_bonus,
         redundancy_penalty: exp.redundancy_penalty,
     });
@@ -266,6 +268,7 @@ fn evidence_response(
         cell_id: evidence.cell_id.0,
         matched_terms: evidence.matched_terms,
         source_trust_q16: evidence.source_trust_q16,
+        source_trust_category: evidence.source_trust_category.as_str().to_owned(),
         citation: evidence.citation.clone(),
         payload_text,
     }

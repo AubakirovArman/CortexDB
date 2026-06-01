@@ -42,6 +42,8 @@ expression: resp
           }
         ],
         "base_bm25": 80,
+        "source_trust_q16": 60000,
+        "source_trust_category": "official",
         "source_trust_bonus": 10,
         "redundancy_penalty": 0
       },

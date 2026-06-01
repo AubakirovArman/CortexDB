@@ -90,6 +90,9 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 - **VERIFY numeric conflicts** — numeric conflict semantics now live in
   engine-level `VerificationReport.numeric_conflicts`; CLI/server JSON surfaces
   serialize that report instead of re-parsing payloads.
+- **Source trust explain metadata** — ContextPack explain and VERIFY evidence
+  now include deterministic `source_trust_category` alongside
+  `source_trust_q16`.
 
 ---
 

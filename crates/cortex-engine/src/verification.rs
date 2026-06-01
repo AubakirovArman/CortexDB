@@ -5,6 +5,7 @@ use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
+use crate::source_trust::{SourceTrust, SourceTrustCategory};
 
 mod contradiction;
 mod guards;
@@ -28,6 +29,7 @@ pub struct VerificationEvidence {
     pub cell_id: CellId,
     pub matched_terms: u32,
     pub source_trust_q16: Q16,
+    pub source_trust_category: SourceTrustCategory,
     pub citation: Option<String>,
 }
 
@@ -78,6 +80,7 @@ pub struct ConflictRecord {
     pub cell_id: CellId,
     pub fact: String,
     pub source_trust_q16: Q16,
+    pub source_trust_category: SourceTrustCategory,
 }
 
 impl Database {
@@ -174,12 +177,14 @@ impl Database {
             })
             .flat_map(|version| {
                 let source_trust_q16 = source_trust_q16(&version.payload);
+                let source_trust_category = source_trust(&version.payload).category;
                 contradiction_facts(&version.payload)
                     .into_iter()
                     .map(move |fact| ConflictRecord {
                         cell_id: version.cell_id,
                         fact,
                         source_trust_q16,
+                        source_trust_category,
                     })
             })
             .collect::<Vec<_>>();
@@ -235,10 +240,12 @@ fn evidence_for_version(
         .iter()
         .filter(|term| payload_terms.contains(term))
         .count();
+    let source_trust = source_trust(payload);
     (matched_terms > 0).then_some(VerificationEvidence {
         cell_id,
         matched_terms: matched_terms as u32,
-        source_trust_q16: source_trust_q16(payload),
+        source_trust_q16: source_trust.q16,
+        source_trust_category: source_trust.category,
         citation: metadata.citation().map(str::to_owned),
     })
 }
@@ -254,13 +261,14 @@ fn contradiction_for_version(
     if !view.can_read_scope(scope_id(&metadata.scope)) || fact_terms.is_empty() {
         return None;
     }
-    let source_trust_q16 = source_trust_q16(payload);
+    let source_trust = source_trust(payload);
     numeric_mismatch(fact, payload)
         .or_else(|| contradiction_match(payload, &fact_terms))
         .map(|matched_terms| VerificationEvidence {
             cell_id,
             matched_terms,
-            source_trust_q16,
+            source_trust_q16: source_trust.q16,
+            source_trust_category: source_trust.category,
             citation: metadata.citation().map(str::to_owned),
         })
 }
@@ -270,7 +278,9 @@ fn has_matching_contradiction(payload: &[u8], fact_terms: &[String]) -> bool {
 }
 
 fn source_trust_q16(payload: &[u8]) -> Q16 {
-    CellMetadata::from_payload(payload)
-        .source_trust_q16
-        .unwrap_or(32_768)
+    source_trust(payload).q16
+}
+
+fn source_trust(payload: &[u8]) -> SourceTrust {
+    SourceTrust::from_q16(CellMetadata::from_payload(payload).source_trust_q16)
 }

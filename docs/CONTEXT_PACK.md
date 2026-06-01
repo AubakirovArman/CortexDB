@@ -36,6 +36,9 @@ Implemented in `cortex-engine`:
 - Dedup-aware budget packing: redundant candidates are filtered before budget
   overload checks, and oversized middle candidates are skipped so smaller later
   candidates can still fit.
+- Source trust categories: explain metadata includes `source_trust_q16` and
+  `source_trust_category` (`unknown`, `low`, `medium`, `high`, `official`) so
+  UI/SDK consumers can see provenance contribution without reinterpreting q16.
 
 Public JSON responses include:
 

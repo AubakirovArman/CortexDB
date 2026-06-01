@@ -1,7 +1,7 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 use cortex_engine::verification::VerificationStatus;
-use cortex_engine::{scope_id, Database};
+use cortex_engine::{scope_id, Database, SourceTrustCategory};
 use std::collections::BTreeSet;
 
 #[test]
@@ -91,6 +91,10 @@ fn verify_fact_aql_orders_equal_matches_by_source_trust() {
         .unwrap();
     assert_eq!(report.evidence[0].cell_id, CellId(2));
     assert_eq!(report.evidence[0].source_trust_q16, 60_000);
+    assert_eq!(
+        report.evidence[0].source_trust_category,
+        SourceTrustCategory::Official
+    );
 }
 
 #[test]
