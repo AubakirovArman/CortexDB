@@ -1,6 +1,7 @@
 # Legal Verification Boundary
 
-Status: future design gate, not implemented.
+Status: future phase 1 local evidence gates started, no legal-grade product
+claim implemented.
 
 ## Goal
 
@@ -12,6 +13,12 @@ verification workflows.
 Any legal-grade claim must name a specific domain and jurisdiction. Generic
 legal advice is out of scope. The first domain must be selected with expert
 review before implementation.
+
+## Dataset Fixture
+
+The local dataset fixture is a contract fixture only. It names a candidate
+domain and jurisdiction, marks expert review as required, and keeps
+`legal_grade_ready=false` until domain experts approve real labeled data.
 
 ## Admissible Sources
 
@@ -31,10 +38,38 @@ Every supported or contradicted claim must trace to source records with stable
 source refs. The system must refuse unsupported legal conclusions when evidence
 is insufficient.
 
+## Citation Policy Fixture
+
+The citation policy fixture requires source refs, reviewer approval, refusal of
+unsupported conclusions, and explicit rejection of uncited model output as
+admissible evidence.
+
 ## Output Boundary
 
 Outputs must separate evidence summaries from legal advice. If the product is
 not certified for a domain, responses must explicitly state the limitation.
+
+## Quality Gate Boundary
+
+The current deterministic `VERIFY FACT` quality gate is useful evidence for
+numeric conflict, citation guard, contradiction, and insufficiency behavior.
+That gate is not legal proof. It is only a prerequisite signal that the engine
+can produce structured evidence reports before legal-domain review is added.
+
+## Current Evidence Boundary
+
+The current gates prove local prerequisites only:
+
+| Gate | Evidence |
+| --- | --- |
+| `make legal-verification-dataset-check` | A domain-specific dataset contract fixture exists, requires expert review, and keeps `legal_grade_ready=false`. |
+| `make legal-verification-quality-check` | The deterministic verification quality report passes and includes citation and numeric guard coverage. |
+| `make legal-citation-policy-check` | A citation policy fixture refuses uncited output, requires source refs, and requires reviewer approval. |
+| `make public-claims-check` | Public docs continue to block legal-grade overclaims. |
+
+Reports are written under `target/legal-verification/` and keep
+`legal_verification_ready=false`. They do not claim legal advice,
+certification, admissibility, or legal-grade verification for any jurisdiction.
 
 ## Required Gates
 

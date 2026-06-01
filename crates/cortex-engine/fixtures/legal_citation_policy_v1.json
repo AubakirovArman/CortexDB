@@ -1,0 +1,18 @@
+{
+  "schema_version": "cortexdb.legal_verification.citation_policy.v1",
+  "requires_source_ref": true,
+  "requires_reviewer_approval": true,
+  "uncited_model_output_admissible": false,
+  "legal_advice_output_allowed": false,
+  "refuse_unsupported_conclusions": true,
+  "admissible_source_classes": [
+    "signed_contract",
+    "official_disclosure",
+    "court_or_regulator_document"
+  ],
+  "retention_policy": {
+    "review_audit_required": true,
+    "retain_source_refs": true,
+    "retain_reviewer_decision": true
+  }
+}

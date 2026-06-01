@@ -2,6 +2,10 @@
 
 `VERIFY FACT` is CortexDB's deterministic fact-checking primitive. Unlike LLM-based verification, it runs entirely inside the database engine and produces a structured report with evidence, contradictions, and numeric guards.
 
+It is not legal proof and must not be presented as legal advice. Legal-grade
+verification is a separate future epic that requires domain selection,
+admissible-source rules, citation completeness, and human reviewer approval.
+
 ## How It Works
 
 1. **Parse the fact** — extract numeric values, units, and currencies from the statement.

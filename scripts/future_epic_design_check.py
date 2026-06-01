@@ -159,12 +159,17 @@ EPIC_MARKERS: dict[str, dict[str, object]] = {
                 "Reviewer Workflow",
                 "Citation Policy",
                 "Output Boundary",
+                "Current Evidence Boundary",
                 "Required Gates",
                 "Non-goals",
             ],
             "docs/FUTURE_NON_GOAL_EPICS.md": [
                 "Legal-grade Verification",
-                "make legal-verification-design-check",
+                "make legal-verification-dataset-check",
+            ],
+            "scripts/legal_verification_gate_check.py": [
+                "legal_verification_ready",
+                "no legal advice or legal-grade certification claim",
             ],
         },
     },

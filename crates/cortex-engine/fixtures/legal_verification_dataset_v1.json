@@ -1,0 +1,30 @@
+{
+  "schema_version": "cortexdb.legal_verification.dataset_contract.v1",
+  "selected_domain": "kazakhstan_investment_contract_disclosure",
+  "jurisdiction": "Kazakhstan",
+  "expert_review_required": true,
+  "expert_review_status": "not_reviewed",
+  "legal_grade_ready": false,
+  "cases": [
+    {
+      "case_id": "legal-fixture-001",
+      "claim": "A disclosed project contract contains a budget amendment clause.",
+      "expected_status": "supported",
+      "source_refs": [
+        "law://fixture/project-contract#section=budget-amendment"
+      ],
+      "reviewer_required": true,
+      "output_boundary": "evidence_summary_not_legal_advice"
+    },
+    {
+      "case_id": "legal-fixture-002",
+      "claim": "The disclosed contract permits uncited legal conclusions.",
+      "expected_status": "refused",
+      "source_refs": [
+        "law://fixture/project-contract#section=citations"
+      ],
+      "reviewer_required": true,
+      "output_boundary": "evidence_summary_not_legal_advice"
+    }
+  ]
+}

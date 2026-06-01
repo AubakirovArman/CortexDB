@@ -19,7 +19,7 @@ Total future epics: 7.
 | 4 | Full Production HNSW Without Fallback | future-phase-1-started | `make hnsw-no-fallback-design-check` | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
 | 5 | Built-in LLM Inference | future-phase-1-started | `make llm-inference-design-check` | Model runtime, resource isolation, prompt safety, provider compatibility, and operational cost controls |
 | 6 | External Identity Providers | future-phase-1-started | `make external-identity-design-check` | OIDC/SAML or equivalent identity integration with role/scope mapping and rotation |
-| 7 | Legal-grade Verification | future-design-ready | `make legal-verification-design-check` | Legal-domain evidence model, citations, review workflow, liability boundaries, and evaluation by domain experts |
+| 7 | Legal-grade Verification | future-phase-1-started | `make legal-verification-design-check` | Legal-domain evidence model, citations, review workflow, liability boundaries, and evaluation by domain experts |
 
 ## Promotion Rules
 
@@ -426,6 +426,21 @@ Why this is future:
   legal opinion or compliance certification.
 - Legal-grade behavior requires domain expertise, provenance rules, review
   workflows, and liability boundaries.
+
+Current implementation slice:
+
+- `make legal-verification-dataset-check` validates a domain-specific dataset
+  contract fixture that requires expert review and keeps
+  `legal_grade_ready=false`.
+- `make legal-verification-quality-check` reuses the deterministic
+  verification quality report as prerequisite evidence for citation and numeric
+  guard coverage.
+- `make legal-citation-policy-check` validates a citation policy fixture that
+  requires source refs, reviewer approval, and refusal of unsupported
+  conclusions.
+- All new reports are written under `target/legal-verification/` and carry
+  `legal_verification_ready=false`; they prove local prerequisites only, not
+  legal advice, certification, admissibility, or legal-grade verification.
 
 Task pool:
 
