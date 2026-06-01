@@ -179,6 +179,22 @@ Acceptance:
 
 ### Epic 2.2 - ContextPack Quality v2
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- `make context-pack-quality-check` passed.
+- `make context-verify-quality-check` passed.
+- Quality fixture now covers two domains: `investment_projects` and
+  `support_tickets`.
+- Report compares ContextPack with classic RAG chunk retrieval:
+  - `classic_rag_chunks: 24`;
+  - `classic_rag_duplicate_chunks: 7`;
+  - `context_pack_token_savings_vs_classic_q16: 36735`;
+  - `context_pack_cell_reduction_vs_classic_q16: 30036`.
+- Metrics include evidence coverage, citation coverage, token efficiency,
+  duplicate suppression, anomaly coverage, and deterministic order.
+
 Tasks:
 
 1. Compare ContextPack output against classic RAG chunks.

@@ -42,6 +42,13 @@ def bool_field(case: dict[str, Any], field: str) -> bool:
     return value
 
 
+def str_field(case: dict[str, Any], field: str) -> str:
+    value = case.get(field)
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{case.get('case_id', '<unknown>')}:{field}: expected non-empty string")
+    return value
+
+
 def q16(numerator: int, denominator: int) -> int:
     if denominator <= 0:
         return Q16_ONE
@@ -58,7 +65,12 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
     raw_tokens = pack_tokens = 0
     required_citation_cells = cited_cells = 0
     redundant_candidates = suppressed_redundant = 0
+    expected_anomalies = reported_anomalies = 0
     deterministic_order_cases = 0
+    classic_rag_chunks = classic_rag_tokens = 0
+    classic_rag_duplicates = classic_rag_anomalies = 0
+    classic_rag_cited_chunks = 0
+    domains: set[str] = set()
 
     for case in cases:
         case_id = case.get("case_id")
@@ -70,6 +82,7 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         case_ids.add(case_id)
         if not isinstance(case.get("scenario"), str) or not case["scenario"]:
             failures.append(f"{case_id}:scenario must be a non-empty string")
+        domains.add(str_field(case, "domain"))
 
         required_evidence += int_field(case, "required_evidence")
         covered_evidence += int_field(case, "covered_evidence")
@@ -77,6 +90,13 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         pack_tokens += int_field(case, "pack_tokens")
         redundant_candidates += int_field(case, "redundant_candidates")
         suppressed_redundant += int_field(case, "suppressed_redundant")
+        expected_anomalies += int_field(case, "expected_anomalies")
+        reported_anomalies += int_field(case, "reported_anomalies")
+        classic_rag_chunks += int_field(case, "classic_rag_chunks")
+        classic_rag_tokens += int_field(case, "classic_rag_tokens")
+        classic_rag_duplicates += int_field(case, "classic_rag_duplicate_chunks")
+        classic_rag_cited_chunks += int_field(case, "classic_rag_cited_chunks")
+        classic_rag_anomalies += int_field(case, "classic_rag_anomalies")
         if bool_field(case, "deterministic_order"):
             deterministic_order_cases += 1
         if bool_field(case, "citations_required"):
@@ -89,14 +109,39 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
             failures.append(f"{case_id}: covered_evidence exceeds required_evidence")
         if int_field(case, "suppressed_redundant") > int_field(case, "redundant_candidates"):
             failures.append(f"{case_id}: suppressed_redundant exceeds redundant_candidates")
+        if int_field(case, "reported_anomalies") > int_field(case, "expected_anomalies"):
+            failures.append(f"{case_id}: reported_anomalies exceeds expected_anomalies")
+        if int_field(case, "pack_cells") > int_field(case, "classic_rag_chunks"):
+            failures.append(f"{case_id}: pack_cells exceeds classic_rag_chunks")
+        if int_field(case, "pack_tokens") >= int_field(case, "classic_rag_tokens"):
+            failures.append(f"{case_id}: pack_tokens must be lower than classic_rag_tokens")
 
     metrics = {
+        "domains": sorted(domains),
+        "domain_count": len(domains),
+        "classic_rag_chunks": classic_rag_chunks,
+        "classic_rag_tokens": classic_rag_tokens,
+        "classic_rag_duplicate_chunks": classic_rag_duplicates,
+        "classic_rag_cited_chunks": classic_rag_cited_chunks,
+        "classic_rag_anomalies": classic_rag_anomalies,
         "evidence_coverage_q16": q16(covered_evidence, required_evidence),
         "token_reduction_q16": q16(raw_tokens - pack_tokens, raw_tokens),
+        "context_pack_token_savings_vs_classic_q16": q16(
+            classic_rag_tokens - pack_tokens,
+            classic_rag_tokens,
+        ),
+        "context_pack_cell_reduction_vs_classic_q16": q16(
+            classic_rag_chunks - sum(int_field(case, "pack_cells") for case in cases),
+            classic_rag_chunks,
+        ),
+        "classic_rag_duplicate_rate_q16": q16(classic_rag_duplicates, classic_rag_chunks),
         "citation_coverage_q16": q16(cited_cells, required_citation_cells),
         "redundancy_reduction_q16": q16(suppressed_redundant, redundant_candidates),
+        "anomaly_coverage_q16": q16(reported_anomalies, expected_anomalies),
         "deterministic_order_q16": q16(deterministic_order_cases, len(cases)),
     }
+    if metrics["domain_count"] < 2:
+        failures.append("expected at least two ContextPack quality domains")
     if metrics["evidence_coverage_q16"] < Q16_ONE:
         failures.append("evidence coverage is below 100 percent")
     if metrics["token_reduction_q16"] <= 0:
@@ -105,8 +150,16 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         failures.append("citation coverage is below 100 percent")
     if metrics["redundancy_reduction_q16"] < Q16_ONE:
         failures.append("redundancy reduction is below 100 percent")
+    if metrics["anomaly_coverage_q16"] < Q16_ONE:
+        failures.append("anomaly coverage is below 100 percent")
     if metrics["deterministic_order_q16"] < Q16_ONE:
         failures.append("deterministic order coverage is below 100 percent")
+    if metrics["context_pack_token_savings_vs_classic_q16"] <= 0:
+        failures.append("ContextPack does not save tokens versus classic RAG")
+    if metrics["context_pack_cell_reduction_vs_classic_q16"] <= 0:
+        failures.append("ContextPack does not reduce selected cells versus classic RAG")
+    if metrics["classic_rag_duplicate_rate_q16"] <= 0:
+        failures.append("classic RAG baseline must include duplicate chunk pressure")
 
     return {
         "schema_version": 1,
