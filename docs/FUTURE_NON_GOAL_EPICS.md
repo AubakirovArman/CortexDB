@@ -170,6 +170,9 @@ Current implementation slice:
 - `cortexdb auth-review` reports local policy-store/token-file principals,
   roles, AgentView bindings, quotas, and disabled state without printing token
   values.
+- `docs/COMPLIANCE_BOUNDARY_MAPPING.md` and `make compliance-boundary-check`
+  define the local evidence boundary and explicitly state that no external
+  compliance framework is currently certified.
 
 Task pool:
 
@@ -181,7 +184,8 @@ Task pool:
 5. Add per-token and per-principal quota accounting.
 6. Add tamper-evident audit chain with sequence continuity checks.
 7. Add vendor-specific SIEM delivery adapters and operational export schedules.
-8. Add compliance-control mapping docs for the intended target framework.
+8. Add framework-specific compliance-control mapping after an intended target
+   framework and external review process are selected.
 9. Add dashboard admin views for policy mutation, policy review, and audit
    review.
 10. Add migration and rollback for policy-store format changes.

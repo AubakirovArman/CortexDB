@@ -21,11 +21,16 @@ Current implementation slice:
 - `CORTEXDB_AUTH_POLICY_STORE_FILE` loads a local JSON policy store with
   `schema_version = cortexdb.auth_policy.v1`.
 - Entries contain `principal_id`, `token`, `role`, optional `agent_id`, and
-  optional `disabled`.
+  optional `disabled`, plus optional `request_quota_per_minute`.
 - Disabled principals are ignored.
 - Invalid policy-store files fail closed.
-- This slice is a local principal policy store, not the full admin mutation API
-  or compliance control layer.
+- `cortexdb auth-review` reports local policy-store/token-file state without
+  printing bearer tokens.
+- `cortexdb audit-export-siem` exports normalized local audit JSONL.
+- `docs/COMPLIANCE_BOUNDARY_MAPPING.md` states that no external compliance
+  framework is currently certified or supported as a product claim.
+- This slice is a local principal policy store and evidence boundary, not the
+  full admin mutation API or compliance control layer.
 
 ## Principal Lifecycle
 
@@ -53,9 +58,14 @@ enough metadata for external review.
 
 ## Compliance Boundary
 
-Compliance support must be named explicitly. A release may include controls that
-help compliance reviews, but it must not imply certification without an external
-assessment and a documented control map.
+Compliance support must be named explicitly. The current boundary mapping is in
+[`COMPLIANCE_BOUNDARY_MAPPING.md`](COMPLIANCE_BOUNDARY_MAPPING.md). A release
+may include controls that help compliance reviews, but it must not imply
+certification without an external assessment and a framework-specific control
+map.
+
+Release notes and public docs must not imply certification without that
+framework-specific map and external review status.
 
 ## Required Gates
 

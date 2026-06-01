@@ -16,6 +16,7 @@ design-only, so release gates can block overclaims.
 | Request limits | Process-wide and policy-store per-principal fixed-window request limits can return typed `rate_limited` errors. |
 | Audit redaction | HTTP audit events store route metadata, status, tenant, request id, duration, and authenticated principal metadata, not query strings, request bodies, or bearer tokens. |
 | Audit chain foundation | File-backed audit records include `chain_id`, `sequence`, `prev_hash`, and `event_hash`; `cortexdb audit --verify-chain` checks local continuity; `cortexdb audit-export-siem` exports normalized JSONL for downstream SIEM ingestion. |
+| Compliance boundary | `COMPLIANCE_BOUNDARY_MAPPING.md` states that current controls are local evidence only and that CortexDB has no external compliance certification today. |
 | Dashboard gate | `/dashboard` is an admin route; data tokens are denied. |
 | Backup validation | Local backup, restore, offsite staging, and restore drills validate storage before trust. |
 
@@ -162,3 +163,7 @@ Passing this gate means the beta security baseline is documented and locally
 reproducible. It does not mean CortexDB has external security certification,
 managed-cloud identity, distributed authorization, or encrypted backups in the
 current build.
+
+Run `make compliance-boundary-check` before any release note or README wording
+that mentions compliance. That gate verifies the current no-certification
+boundary and local evidence map.

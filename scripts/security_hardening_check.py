@@ -52,6 +52,12 @@ REQUIRED_MARKERS = {
         ("crates/cortex-cli/src/cli_audit_siem.rs", "cortexdb.siem.audit.v1"),
         ("crates/cortex-cli/src/cli_audit_siem_tests.rs", "audit_export_siem_writes_normalized_jsonl"),
     ],
+    "compliance_boundary_mapping": [
+        ("docs/COMPLIANCE_BOUNDARY_MAPPING.md", "cortexdb.compliance_boundary.v1"),
+        ("docs/COMPLIANCE_BOUNDARY_MAPPING.md", "Supported certified frameworks today: none."),
+        ("docs/SECURITY_HARDENING_EVIDENCE.md", "compliance_boundary_mapping: true"),
+        ("Makefile", "compliance-boundary-check"),
+    ],
     "audit_redaction": [
         ("crates/cortex-server/src/tests/security_tests.rs", "audit_log_file_redacts_ingestion_query_and_body"),
         ("crates/cortex-cli/src/cli_audit_tests.rs", "redaction_ok=true"),

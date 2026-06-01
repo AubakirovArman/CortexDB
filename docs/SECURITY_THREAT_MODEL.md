@@ -56,6 +56,7 @@ be treated as future work.
 | Request floods against the local API | Optional process-wide fixed-window limit via `CORTEXDB_RATE_LIMIT_PER_MINUTE`; optional policy-store `request_quota_per_minute` limits per principal. | Implemented as local Core Alpha guards. |
 | Accidental auth policy disclosure | `cortexdb auth-review` reports roles, principals, AgentView bindings, quotas, and disabled state without printing bearer token values. | Implemented for local policy review. |
 | Missing operational access trail | Optional structured HTTP audit events via `CORTEXDB_AUDIT_LOG`; optional synced JSONL file sink via `CORTEXDB_AUDIT_LOG_FILE`; `cortexdb audit` reviews JSONL files with route/status/action/tenant filters, redaction checks, and local chain verification; `cortexdb audit-export-siem` writes normalized local JSONL for SIEM pipelines. | Implemented for route-level events. |
+| Compliance claim drift | `COMPLIANCE_BOUNDARY_MAPPING.md` and `make compliance-boundary-check` state that current controls are local evidence only and no external compliance framework is certified. | Implemented as documentation gate. |
 | Unvalidated local backups | `cortexdb backup`, `restore`, `backup-drill`, `backup-prune`, and `backup-offsite-stage` validate source and restored copies. | Implemented for local filesystem/offsite-staging workflows. |
 
 ## Out Of Scope For Core Alpha

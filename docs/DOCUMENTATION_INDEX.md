@@ -116,6 +116,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`SECURITY_BETA_BASELINE.md`](SECURITY_BETA_BASELINE.md) - beta security baseline and backlog boundaries.
 - [`SECURITY_THREAT_MODEL.md`](SECURITY_THREAT_MODEL.md) - threat model.
 - [`SECURITY_HARDENING_EVIDENCE.md`](SECURITY_HARDENING_EVIDENCE.md) - local Epic 17 security hardening evidence gate.
+- [`COMPLIANCE_BOUNDARY_MAPPING.md`](COMPLIANCE_BOUNDARY_MAPPING.md) - local compliance evidence boundary and non-claim map.
 - [`SECURITY_RELEASE_CHECKLIST.md`](SECURITY_RELEASE_CHECKLIST.md) - security release checklist and non-goals.
 - [`SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md`](SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md) - release-blocking security claim decisions.
 - [`DEPLOYMENT_UPGRADE_EVIDENCE.md`](DEPLOYMENT_UPGRADE_EVIDENCE.md) - local Epic 19 deployment and upgrade evidence gate.
