@@ -414,6 +414,20 @@ Acceptance:
 
 ### Epic 3.2 - Security Beta Baseline
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- `docs/SECURITY_BETA_BASELINE.md` separates implemented controls from
+  beta/enterprise non-goals.
+- The baseline defines RBAC policy-store, per-token quota, tamper-evident
+  audit-chain, encrypted-backup, and dashboard auth hardening gates.
+- `security_redaction_tests::denied_ingestion_audit_event_does_not_leak_query_body_or_token`
+  covers a denied malicious ingestion request plus audit redaction.
+- `make security-hardening-check` blocks release when auth, quota-boundary,
+  audit, redaction, encrypted-backup-boundary, dashboard, or malicious-ingest
+  evidence is missing.
+
 Tasks:
 
 1. Convert RBAC policy-store design into an implementation plan or first

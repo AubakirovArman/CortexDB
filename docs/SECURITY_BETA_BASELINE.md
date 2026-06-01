@@ -1,0 +1,148 @@
+# Security Beta Baseline
+
+This document turns the Core Alpha security backlog into a beta-track baseline.
+It separates controls that are implemented today from controls that remain
+design-only, so release gates can block overclaims.
+
+## Current Implemented Controls
+
+| Area | Implemented now |
+| --- | --- |
+| Static route roles | `admin` and `data` bearer-token roles are enforced by route class. |
+| Token rotation | `CORTEXDB_AUTH_TOKENS_FILE` is re-read per request and fails closed on invalid content. |
+| AgentView scoping | Token-bound AgentViews restrict readable/writable scopes on data routes. |
+| Tenant path safety | Tenant IDs are percent-decoded, length-limited, and path-traversal checked. |
+| Request limits | A process-wide fixed-window request limit can return typed `rate_limited` errors. |
+| Audit redaction | HTTP audit events store route metadata, status, tenant, request id, and duration, not query strings or request bodies. |
+| Dashboard gate | `/dashboard` is an admin route; data tokens are denied. |
+| Backup validation | Local backup, restore, offsite staging, and restore drills validate storage before trust. |
+
+## Beta Implementation Backlog
+
+### 1. RBAC Policy Store
+
+Goal: move from static token roles to a durable local policy store without
+breaking the current token contract.
+
+Plan:
+
+1. Add a read-only policy-store preview command that prints effective route
+   class, token role, optional AgentView binding, and tenant.
+2. Persist principal, credential, role-binding, and AgentView-binding records in
+   a system scope.
+3. Add an `AuthPolicyResolver` abstraction that can read from static options,
+   token files, or the policy store.
+4. Fail closed when policy-store records are corrupt, expired, disabled, or
+   inconsistent.
+5. Add write APIs only after audit review, backup/restore, and rollback
+   behavior are documented.
+
+Beta gate:
+
+- disabled principals cannot authenticate;
+- data/auditor/operator roles cannot access admin-only routes;
+- AgentView-bound principals cannot read or write forbidden scopes;
+- policy-store corruption fails closed.
+
+### 2. Per-Token Quotas
+
+Goal: replace the current process-wide fixed-window guard with token-aware
+quota accounting.
+
+Plan:
+
+1. Key quota counters by safe token fingerprint, tenant, and route class.
+2. Keep raw tokens out of metrics, audit records, logs, and reports.
+3. Support at least fixed-window limits for beta; reserve sliding-window or
+   token-bucket behavior for production tuning.
+4. Return the existing typed `rate_limited` response on quota exhaustion.
+5. Document that distributed quotas remain out of scope until real replicated
+   state exists.
+
+Beta gate:
+
+- one token exhausting quota does not block another token;
+- denied quota responses do not expose raw token material;
+- data and admin route classes can be configured independently.
+
+### 3. Tamper-Evident Audit Chain
+
+Goal: extend JSONL route audit into a locally verifiable hash chain.
+
+Plan:
+
+1. Add `prev_hash`, `event_hash`, `chain_id`, and `sequence` fields to audit
+   records.
+2. Hash canonical route metadata only; do not hash or persist request bodies,
+   full query strings, bearer tokens, or secrets.
+3. Add `cortexdb audit --verify-chain` to validate sequence continuity and hash
+   integrity.
+4. Keep SIEM export as a follow-up adapter after local chain verification is
+   stable.
+
+Beta gate:
+
+- deleting, reordering, or editing a JSONL audit event is detected;
+- chain verification can run offline;
+- redaction checks still pass for malicious ingestion failures.
+
+### 4. Encrypted Backups
+
+Goal: add optional encrypted backup bundles while preserving current restore
+drill semantics.
+
+Plan:
+
+1. Keep unencrypted local backups as the Core Alpha compatibility path.
+2. Add encrypted backup commands or flags that produce authenticated encrypted
+   payloads and explicit encryption metadata.
+3. Start with a local operator-managed key provider for deterministic tests.
+4. Add a provider trait for KMS/secret-manager integrations later.
+5. Restore into a temporary directory, validate storage, then atomically publish
+   the restored target.
+
+Beta gate:
+
+- encrypted backup restore drill succeeds;
+- corrupted ciphertext or authentication tag fails before writing target data;
+- reports and audit events never expose key material.
+
+### 5. Dashboard Auth Hardening
+
+Goal: keep the dashboard useful for local operators while preventing it from
+becoming an accidental data-token administration surface.
+
+Plan:
+
+1. Keep `/dashboard` and dashboard assets admin-only when auth is configured.
+2. Keep the dashboard local read-only switch as client-side accident
+   prevention, not an authorization boundary.
+3. Add route-level tests for dashboard admin/data token behavior and static
+   asset behavior.
+4. Add visible operator warnings when auth is disabled.
+5. Do not add RBAC mutation UI before the policy store and audit-chain work are
+   stable.
+
+Beta gate:
+
+- data tokens cannot access dashboard HTML or assets;
+- dashboard mutation requests still require server-side admin authorization;
+- auth-disabled deployments are clearly labeled as local-only.
+
+## Release Blocking Rule
+
+`make security-hardening-check` must fail if the repository loses evidence for:
+
+- auth role tests;
+- tenant validation tests;
+- typed error contract tests;
+- audit redaction tests;
+- malicious ingestion denial tests;
+- dashboard admin-only tests;
+- documented boundaries for RBAC, per-token quotas, audit-chain, and encrypted
+  backups.
+
+Passing this gate means the beta security baseline is documented and locally
+reproducible. It does not mean CortexDB has external security certification,
+managed-cloud identity, distributed authorization, or encrypted backups in the
+current build.

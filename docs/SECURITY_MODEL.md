@@ -85,3 +85,8 @@ multi-process isolation guarantee.
 
 See `docs/SECURITY_THREAT_MODEL.md` for detailed threat analysis and current
 controls list.
+
+The beta-facing baseline is maintained in
+`docs/SECURITY_BETA_BASELINE.md`. That document is the release boundary between
+implemented Core Alpha controls and future RBAC policy-store, per-token quota,
+tamper-evident audit-chain, encrypted-backup, and dashboard-auth hardening work.

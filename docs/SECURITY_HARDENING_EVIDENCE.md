@@ -1,6 +1,6 @@
 # Security Hardening Evidence
 
-Last local security hardening run: 2026-05-31, passed.
+Last local security hardening run: 2026-06-01, passed.
 
 Run:
 
@@ -28,6 +28,7 @@ target/security-hardening/report.json
 | Malicious ingestion tests | AgentView scoped ingestion bypass attempts are denied and do not echo body content. |
 | Log redaction tests | Audit JSONL records contain route metadata, not query strings or request bodies. |
 | Security release checklist | `SECURITY_RELEASE_CHECKLIST.md` lists required local checks and non-goals. |
+| Beta security baseline | `SECURITY_BETA_BASELINE.md` separates implemented controls from RBAC, quota, audit-chain, encrypted-backup, and dashboard hardening work. |
 
 ## Boundary
 
@@ -49,4 +50,5 @@ secret_rotation_docs: true
 dashboard_auth_hardening: true
 malicious_ingestion_tests: true
 security_release_checklist: true
+security_beta_baseline: true
 ```

@@ -15,6 +15,7 @@ REQUIRED_MARKERS = {
         ("docs/SECURITY_HARDENING_EVIDENCE.md", "File-backed token policy rotation is implemented"),
     ],
     "per_token_quota_boundary": [
+        ("docs/SECURITY_BETA_BASELINE.md", "Key quota counters by safe token fingerprint"),
         ("docs/SECURITY_THREAT_MODEL.md", "Per-token quotas"),
         ("crates/cortex-server/src/tests/security_tests.rs", "rate_limit_returns_typed_429_when_enabled"),
     ],
@@ -23,10 +24,12 @@ REQUIRED_MARKERS = {
         ("crates/cortex-cli/src/cli_audit_tests.rs", "redaction_ok=true"),
     ],
     "tamper_evident_audit_boundary": [
+        ("docs/SECURITY_BETA_BASELINE.md", "Tamper-Evident Audit Chain"),
         ("docs/SECURITY_THREAT_MODEL.md", "Tamper-evident audit trails"),
         ("docs/SECURITY_HARDENING_EVIDENCE.md", "tamper-evident chain/SIEM export remains beta work"),
     ],
     "encrypted_backup_boundary": [
+        ("docs/SECURITY_BETA_BASELINE.md", "encrypted backup restore drill succeeds"),
         ("docs/ENCRYPTED_BACKUPS_DESIGN.md", "The current repository does not implement encrypted backups yet"),
         ("docs/SECURITY_HARDENING_EVIDENCE.md", "current backup/restore/offsite staging are local and unencrypted"),
     ],
@@ -39,11 +42,17 @@ REQUIRED_MARKERS = {
         ("docs/SECURITY_RELEASE_CHECKLIST.md", "local token rotation"),
     ],
     "dashboard_auth_hardening": [
+        ("docs/SECURITY_BETA_BASELINE.md", "data tokens cannot access dashboard HTML or assets"),
         ("crates/cortex-server/src/tests/auth_policy_tests.rs", "data_token_cannot_access_dashboard"),
         ("docs/SECURITY_RELEASE_CHECKLIST.md", "Dashboard access is treated as administrative"),
     ],
     "malicious_ingestion_tests": [
         ("crates/cortex-server/src/tests/security_tests.rs", "malicious_ingestion_scope_bypass_is_denied_by_agent_view"),
+        ("crates/cortex-server/src/tests/security_redaction_tests.rs", "denied_ingestion_audit_event_does_not_leak_query_body_or_token"),
+    ],
+    "security_beta_baseline": [
+        ("docs/SECURITY_BETA_BASELINE.md", "Release Blocking Rule"),
+        ("docs/SECURITY_BETA_BASELINE.md", "implemented today from controls that remain"),
     ],
     "security_release_checklist": [
         ("docs/SECURITY_RELEASE_CHECKLIST.md", "Required Local Gates"),

@@ -22,6 +22,8 @@ cargo clippy --workspace --all-targets -- -D warnings
 - Dashboard access is treated as administrative.
 - `CORTEXDB_AUDIT_LOG_FILE` is enabled when route-level audit review is needed.
 - `cortexdb audit <audit.jsonl> --summary --redaction-check` passes.
+- `SECURITY_BETA_BASELINE.md` still separates implemented controls from beta
+  and enterprise non-goals.
 - Backups are validated by restore drills before being trusted.
 - Tenant IDs are restricted to the documented safe character set.
 - Public deployment terminates TLS at a trusted reverse proxy.

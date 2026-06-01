@@ -105,6 +105,7 @@ At the time of this audit, the repository tracks 139 project markdown files.
 - [`SINGLE_NODE_SLO.md`](SINGLE_NODE_SLO.md) - local single-node SLO boundaries.
 - [`OPERATIONS.md`](OPERATIONS.md) - operational guidance.
 - [`SECURITY_MODEL.md`](SECURITY_MODEL.md) - security model.
+- [`SECURITY_BETA_BASELINE.md`](SECURITY_BETA_BASELINE.md) - beta security baseline and backlog boundaries.
 - [`SECURITY_THREAT_MODEL.md`](SECURITY_THREAT_MODEL.md) - threat model.
 - [`SECURITY_HARDENING_EVIDENCE.md`](SECURITY_HARDENING_EVIDENCE.md) - local Epic 17 security hardening evidence gate.
 - [`SECURITY_RELEASE_CHECKLIST.md`](SECURITY_RELEASE_CHECKLIST.md) - security release checklist and non-goals.
