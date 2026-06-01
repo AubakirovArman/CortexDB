@@ -1,5 +1,5 @@
 use cortex_core::CellId;
-use cortex_engine::{extract_pdf_text, scope_id};
+use cortex_engine::{extract_pdf_text, scope_id, split_text_chunks, CellMetadata, TextChunkPolicy};
 use cortex_engine::{CsvIngestOptions, Database, JsonIngestOptions, PdfIngestOptions};
 use cortex_engine::{IngestionJobStatus, IngestionProgressTracker, TextIngestOptions};
 
@@ -44,6 +44,77 @@ fn empty_text_chunk_ingestion_returns_zero_cells() {
 
     assert!(cells.is_empty());
     assert!(db.get_latest_cell(CellId(1)).is_none());
+}
+
+#[test]
+fn text_chunk_policy_produces_stable_ids_and_long_paragraph_chunks() {
+    let text = "A".repeat(1_200);
+    let policy = TextChunkPolicy {
+        max_chars: 500,
+        overlap_chars: 50,
+        min_chars: 1,
+    };
+
+    let chunks = split_text_chunks("Report 1.pdf", &text, policy).unwrap();
+    let repeated = split_text_chunks("Report 1.pdf", &text, policy).unwrap();
+
+    assert_eq!(chunks, repeated);
+    assert_eq!(chunks.len(), 3);
+    assert_eq!(chunks[0].chunk_id, "Report-1.pdf#chunk-0001");
+    assert_eq!(chunks[1].chunk_id, "Report-1.pdf#chunk-0002");
+    assert!(chunks.iter().all(|chunk| chunk.text.chars().count() <= 500));
+}
+
+#[test]
+fn text_chunk_policy_rejects_overlap_that_cannot_advance() {
+    let policy = TextChunkPolicy {
+        max_chars: 100,
+        overlap_chars: 100,
+        min_chars: 1,
+    };
+
+    assert!(split_text_chunks("doc", "body", policy).is_err());
+}
+
+#[test]
+fn text_ingestion_writes_chunk_id_as_source_ref_metadata() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let cells = db
+        .ingest_text_chunks_with_policy(
+            CellId(100),
+            "First paragraph about budget.\n\nSecond paragraph about timeline.",
+            TextIngestOptions {
+                scope: "project:investments".to_owned(),
+                source: "source/report.md".to_owned(),
+            },
+            TextChunkPolicy {
+                max_chars: 40,
+                overlap_chars: 0,
+                min_chars: 1,
+            },
+        )
+        .unwrap();
+
+    assert_eq!(cells.len(), 2);
+    assert_eq!(
+        cells[0].chunk_id.as_deref(),
+        Some("source-report.md#chunk-0001")
+    );
+    let payload = db.get_latest_cell(cells[0].cell_id).unwrap();
+    let payload_text = String::from_utf8_lossy(&payload);
+    assert!(payload_text.contains("source_id=source/report.md"));
+    assert!(payload_text.contains("document_id=source/report.md"));
+    assert!(payload_text.contains("chunk_id=source-report.md#chunk-0001"));
+
+    let metadata = CellMetadata::from_payload(&payload);
+    let source_ref = metadata.source_ref.unwrap();
+    assert_eq!(source_ref.source_id, "source/report.md");
+    assert_eq!(source_ref.document_id.as_deref(), Some("source/report.md"));
+    assert_eq!(
+        source_ref.cell_range.as_deref(),
+        Some("source-report.md#chunk-0001")
+    );
 }
 
 #[test]

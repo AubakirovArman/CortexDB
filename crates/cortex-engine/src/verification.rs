@@ -270,6 +270,7 @@ impl Database {
         Ok(IngestedCell {
             cell_id: relation_cell_id,
             commit_seq,
+            chunk_id: None,
         })
     }
 }

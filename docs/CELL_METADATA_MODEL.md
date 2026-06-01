@@ -48,6 +48,17 @@ confidence_q16=<0..65535>
 | **`value`** | No | Standardized raw numeric value. |
 | **`currency`** | No | Currency or unit of measurement (e.g. `KZT`, `USD`, `%`). |
 
+Plain-text ingestion writes stable chunk provenance into the header:
+
+```text
+document_id=<source>
+chunk_id=<sanitized-source>#chunk-0001
+```
+
+The chunk id is deterministic for the same document id, text, and
+`TextChunkPolicy`. It is independent of `CellId`, so ContextPack citations stay
+stable across restarts and reimports that preserve the same chunk policy.
+
 ---
 
 ## 3. Serialization Rules

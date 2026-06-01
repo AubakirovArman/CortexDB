@@ -52,6 +52,25 @@ The native PDF extractor handles literal strings and hex strings inside
 intentionally rejects unsupported/empty PDFs instead of silently storing an
 empty document.
 
+## Text Chunking Policy
+
+Plain-text chunking is now an engine-level policy instead of ad-hoc adapter
+logic. `TextChunkPolicy` controls maximum chunk size, overlap, and minimum
+chunk size. `split_text_chunks(document_id, text, policy)` returns deterministic
+`TextChunk` records with stable ids:
+
+```text
+<sanitized-document-id>#chunk-0001
+<sanitized-document-id>#chunk-0002
+```
+
+`Database::ingest_text_chunks` uses the default policy. For tests or controlled
+imports, `Database::ingest_text_chunks_with_policy` accepts an explicit policy.
+This matters because ContextPack citations need a stable provenance handle: each
+stored text chunk writes `source_id`, `document_id`, and `chunk_id` in the
+payload header before the body, so `CellMetadata::from_payload` can expose it as
+a structured `SourceRef`.
+
 `IngestionProgressTracker` provides a small synchronous progress surface for
 adapter jobs. The first tracked helper is `Database::ingest_csv_with_progress`,
 which records total rows, completed cells, status, and the last written

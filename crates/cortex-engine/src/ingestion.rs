@@ -5,6 +5,9 @@ use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 
 mod adapters;
+mod cells;
+mod chunking;
+mod formats;
 mod jobs;
 mod pdf;
 mod progress;
@@ -13,6 +16,7 @@ pub use adapters::{
     CsvIngestOptions, EntityIngestOptions, IngestedCell, JsonIngestOptions, PdfIngestOptions,
     RelationIngestOptions, TextIngestOptions,
 };
+pub use chunking::{split_text_chunks, stable_chunk_id, TextChunk, TextChunkPolicy};
 pub use pdf::{extract_pdf_text, PdfExtractionStats};
 pub use progress::{
     IngestionJobId, IngestionJobStatus, IngestionProgress, IngestionProgressTracker,

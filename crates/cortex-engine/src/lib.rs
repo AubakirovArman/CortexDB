@@ -42,9 +42,10 @@ pub use distributed::*;
 pub use error::{EngineError, EngineResult};
 pub use graph::{GraphEdge, ToolCell};
 pub use ingestion::{
-    extract_pdf_text, CsvIngestOptions, EntityIngestOptions, IngestedCell, IngestionJobId,
-    IngestionJobStatus, IngestionProgress, IngestionProgressTracker, JsonIngestOptions,
-    PdfExtractionStats, PdfIngestOptions, RelationIngestOptions, TextIngestOptions,
+    extract_pdf_text, split_text_chunks, stable_chunk_id, CsvIngestOptions, EntityIngestOptions,
+    IngestedCell, IngestionJobId, IngestionJobStatus, IngestionProgress, IngestionProgressTracker,
+    JsonIngestOptions, PdfExtractionStats, PdfIngestOptions, RelationIngestOptions, TextChunk,
+    TextChunkPolicy, TextIngestOptions,
 };
 pub use legal::{
     evaluate_legal_report_contract, evaluate_legal_verification_boundary, LegalOutputBoundary,
