@@ -150,23 +150,27 @@ pub(crate) fn ann_validate_to_json(
     })
 }
 
-pub(crate) fn ann_evaluation_to_json(
-    available: bool,
-    reason: Option<String>,
-    report: Option<CliAnnSearchReportResponse>,
-    exact_top_k: Vec<u32>,
-    ann_top_k: Vec<u32>,
-    overlap_count: usize,
-    recall_q16: u16,
-) -> String {
+pub(crate) struct CliAnnEvaluationJsonInput {
+    pub(crate) available: bool,
+    pub(crate) reason: Option<String>,
+    pub(crate) report: Option<CliAnnSearchReportResponse>,
+    pub(crate) no_fallback_decision: Option<crate::cli_json_types::CliNoFallbackDecisionResponse>,
+    pub(crate) exact_top_k: Vec<u32>,
+    pub(crate) ann_top_k: Vec<u32>,
+    pub(crate) overlap_count: usize,
+    pub(crate) recall_q16: u16,
+}
+
+pub(crate) fn ann_evaluation_to_json(input: CliAnnEvaluationJsonInput) -> String {
     serialize_or_error(&CliAnnEvaluationResponse {
-        available,
-        reason,
-        ann_report: report,
-        exact_top_k,
-        ann_top_k,
-        overlap_count,
-        recall_q16,
+        available: input.available,
+        reason: input.reason,
+        ann_report: input.report,
+        no_fallback_decision: input.no_fallback_decision,
+        exact_top_k: input.exact_top_k,
+        ann_top_k: input.ann_top_k,
+        overlap_count: input.overlap_count,
+        recall_q16: input.recall_q16,
     })
 }
 

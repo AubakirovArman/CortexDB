@@ -1,12 +1,13 @@
 use cortex_aql::AgentView;
 use cortex_engine::{
-    parse_vector_literal, AnnSearchPolicy, AnnSearchReport, Database, SearchLimit,
+    evaluate_hnsw_no_fallback_rollout, parse_vector_literal, AnnSearchPolicy, AnnSearchReport,
+    Database, HnswNoFallbackDecision, HnswNoFallbackRolloutPolicy, SearchLimit,
 };
 
 use crate::authz;
 use crate::responses::{
-    AnnEvaluationResponse, AnnSearchReportResponse, RouterError, SearchExplainItemResponse,
-    SearchExplainResponse, SearchResponse, SearchResultResponse,
+    AnnEvaluationResponse, AnnNoFallbackDecisionResponse, AnnSearchReportResponse, RouterError,
+    SearchExplainItemResponse, SearchExplainResponse, SearchResponse, SearchResultResponse,
 };
 use crate::router::{query_param_decoded, query_param_opt};
 
@@ -96,7 +97,9 @@ pub fn handle_search_shared(
     let mode = query_param_decoded(query, "mode").unwrap_or_else(|_| "keyword".to_owned());
     let algorithm = query_param_decoded(query, "algorithm").unwrap_or_else(|_| "ann".to_owned());
     let ann_policy = parse_ann_policy(query).map_err(RouterError::BadRequest)?;
-    let (search_mode, results, ann_report) = match mode.as_str() {
+    let rollout_policy =
+        parse_no_fallback_rollout_policy(query).map_err(RouterError::BadRequest)?;
+    let (search_mode, results, ann_report, no_fallback_decision) = match mode.as_str() {
         "keyword" => (
             "keyword",
             db.search_keyword(
@@ -105,6 +108,7 @@ pub fn handle_search_shared(
                 &view,
                 SearchLimit(limit),
             )?,
+            None,
             None,
         ),
         "vector" => {
@@ -116,6 +120,7 @@ pub fn handle_search_shared(
                     "vector_exact",
                     db.search_vector_exact(&vector, &view, SearchLimit(limit))?,
                     None,
+                    None,
                 ),
                 "ann" => {
                     let outcome = db.search_vector_with_report_with_policy(
@@ -124,7 +129,16 @@ pub fn handle_search_shared(
                         SearchLimit(limit),
                         ann_policy,
                     )?;
-                    return encode_response("vector_ann", outcome.results, outcome.ann_report);
+                    let no_fallback_decision = outcome
+                        .ann_report
+                        .as_ref()
+                        .and_then(|report| rollout_decision(rollout_policy, ann_policy, report));
+                    return encode_response(
+                        "vector_ann",
+                        outcome.results,
+                        outcome.ann_report,
+                        no_fallback_decision,
+                    );
                 }
                 _ => {
                     return Err(RouterError::BadRequest(
@@ -140,7 +154,7 @@ pub fn handle_search_shared(
         }
     };
 
-    encode_response(search_mode, results, ann_report)
+    encode_response(search_mode, results, ann_report, no_fallback_decision)
 }
 
 pub fn handle_ann_evaluate_shared(
@@ -160,31 +174,36 @@ pub fn handle_ann_evaluate_shared(
     let vector = query_param_decoded(query, "vector")
         .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
     let vector = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
-    let response = match db.evaluate_vector_ann_with_policy(
-        &vector,
-        &view,
-        SearchLimit(limit),
-        parse_ann_policy(query).map_err(RouterError::BadRequest)?,
-    )? {
-        Some(report) => AnnEvaluationResponse {
-            available: true,
-            reason: None,
-            ann_report: Some(report_response(report.search)),
-            exact_top_k: report.exact_top_k,
-            ann_top_k: report.ann_top_k,
-            overlap_count: report.overlap_count,
-            recall_q16: report.recall_q16,
-        },
-        None => AnnEvaluationResponse {
-            available: false,
-            reason: Some("requires_persisted_checkpoint_without_wal_tail".to_owned()),
-            ann_report: None,
-            exact_top_k: Vec::new(),
-            ann_top_k: Vec::new(),
-            overlap_count: 0,
-            recall_q16: 0,
-        },
-    };
+    let ann_policy = parse_ann_policy(query).map_err(RouterError::BadRequest)?;
+    let rollout_policy =
+        parse_no_fallback_rollout_policy(query).map_err(RouterError::BadRequest)?;
+    let response =
+        match db.evaluate_vector_ann_with_policy(&vector, &view, SearchLimit(limit), ann_policy)? {
+            Some(report) => {
+                let no_fallback_decision =
+                    rollout_decision(rollout_policy, ann_policy, &report.search);
+                AnnEvaluationResponse {
+                    available: true,
+                    reason: None,
+                    ann_report: Some(report_response(report.search)),
+                    no_fallback_decision,
+                    exact_top_k: report.exact_top_k,
+                    ann_top_k: report.ann_top_k,
+                    overlap_count: report.overlap_count,
+                    recall_q16: report.recall_q16,
+                }
+            }
+            None => AnnEvaluationResponse {
+                available: false,
+                reason: Some("requires_persisted_checkpoint_without_wal_tail".to_owned()),
+                ann_report: None,
+                no_fallback_decision: None,
+                exact_top_k: Vec::new(),
+                ann_top_k: Vec::new(),
+                overlap_count: 0,
+                recall_q16: 0,
+            },
+        };
     Ok(serde_json::to_string(&response)?)
 }
 
@@ -192,10 +211,12 @@ fn encode_response(
     search_mode: &str,
     results: Vec<cortex_engine::DatabaseSearchResult>,
     ann_report: Option<AnnSearchReport>,
+    no_fallback_decision: Option<AnnNoFallbackDecisionResponse>,
 ) -> Result<String, RouterError> {
     let response = SearchResponse {
         search_mode: search_mode.to_owned(),
         ann_report: ann_report.map(report_response),
+        no_fallback_decision,
         results: results
             .iter()
             .map(|result| SearchResultResponse {
@@ -240,6 +261,31 @@ fn report_response(report: AnnSearchReport) -> AnnSearchReportResponse {
     }
 }
 
+fn rollout_decision(
+    rollout_policy: Option<HnswNoFallbackRolloutPolicy>,
+    ann_policy: AnnSearchPolicy,
+    report: &AnnSearchReport,
+) -> Option<AnnNoFallbackDecisionResponse> {
+    rollout_policy.map(|policy| {
+        no_fallback_decision_response(evaluate_hnsw_no_fallback_rollout(
+            policy, ann_policy, report,
+        ))
+    })
+}
+
+fn no_fallback_decision_response(
+    decision: HnswNoFallbackDecision,
+) -> AnnNoFallbackDecisionResponse {
+    AnnNoFallbackDecisionResponse {
+        allowed: decision.allowed,
+        reasons: decision
+            .reasons
+            .iter()
+            .map(|reason| reason.as_str().to_owned())
+            .collect(),
+    }
+}
+
 fn parse_ann_policy(query: &str) -> Result<AnnSearchPolicy, String> {
     let default_policy = AnnSearchPolicy::default();
     let fallback = parse_optional_query_param(query, "fallback")?
@@ -278,6 +324,30 @@ fn parse_ann_policy(query: &str) -> Result<AnnSearchPolicy, String> {
         max_visited_candidates,
         require_slo,
     })
+}
+
+fn parse_no_fallback_rollout_policy(
+    query: &str,
+) -> Result<Option<HnswNoFallbackRolloutPolicy>, String> {
+    let rollout = parse_optional_query_param(query, "no_fallback_rollout")?
+        .map(|value| parse_bool("no_fallback_rollout", &value))
+        .transpose()?;
+    let min_recall = parse_optional_query_param(query, "no_fallback_min_recall")?
+        .map(|value| parse_min_recall_q16(&value))
+        .transpose()?;
+    if rollout.is_none() && min_recall.is_none() {
+        return Ok(None);
+    }
+    if rollout != Some(true) && min_recall.is_some() {
+        return Err("no_fallback_min_recall requires no_fallback_rollout=true".to_owned());
+    }
+    let default_policy = HnswNoFallbackRolloutPolicy::default();
+    let policy = HnswNoFallbackRolloutPolicy {
+        rollout_enabled: rollout.unwrap_or(false),
+        min_recall_q16: min_recall.unwrap_or(default_policy.min_recall_q16),
+        require_upper_layers: default_policy.require_upper_layers,
+    };
+    Ok(Some(policy))
 }
 
 fn parse_optional_query_param(query: &str, key: &str) -> Result<Option<String>, String> {

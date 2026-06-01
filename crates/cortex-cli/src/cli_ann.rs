@@ -1,8 +1,9 @@
 use cortex_engine::{
-    parse_vector_literal, AnnEvaluationReport, AnnSearchPolicy, Database, SearchLimit,
+    evaluate_hnsw_no_fallback_rollout, parse_vector_literal, AnnEvaluationReport, AnnSearchPolicy,
+    Database, HnswNoFallbackDecision, HnswNoFallbackRolloutPolicy, SearchLimit,
 };
 
-use crate::cli_json::ann_evaluation_to_json;
+use crate::cli_json::{ann_evaluation_to_json, CliAnnEvaluationJsonInput};
 use crate::context::view_for_scope;
 
 pub fn search_vector_eval(
@@ -11,41 +12,54 @@ pub fn search_vector_eval(
     vector: &str,
     json: bool,
     policy: Option<AnnSearchPolicy>,
+    rollout_policy: Option<HnswNoFallbackRolloutPolicy>,
 ) -> Result<String, String> {
     let vector = parse_vector_literal(vector)?;
     let db = Database::open(path).map_err(|error| error.to_string())?;
+    let search_policy = policy.unwrap_or_default();
     let report = db
         .evaluate_vector_ann_with_policy(
             &vector,
             &view_for_scope(scope),
             SearchLimit(20),
-            policy.unwrap_or_default(),
+            search_policy,
         )
         .map_err(|error| error.to_string())?;
     if json {
         return Ok(match report {
-            Some(report) => ann_evaluation_to_json(
-                true,
-                None,
-                Some(to_ann_search_report(&report)),
-                report.exact_top_k.clone(),
-                report.ann_top_k.clone(),
-                report.overlap_count,
-                report.recall_q16,
-            ),
-            None => ann_evaluation_to_json(
-                false,
-                Some("requires_persisted_checkpoint_without_wal_tail".to_owned()),
-                None,
-                Vec::new(),
-                Vec::new(),
-                0,
-                0,
-            ),
+            Some(report) => {
+                let decision = rollout_policy.map(|rollout_policy| {
+                    no_fallback_decision_to_json(&evaluate_hnsw_no_fallback_rollout(
+                        rollout_policy,
+                        search_policy,
+                        &report.search,
+                    ))
+                });
+                ann_evaluation_to_json(CliAnnEvaluationJsonInput {
+                    available: true,
+                    reason: None,
+                    report: Some(to_ann_search_report(&report)),
+                    no_fallback_decision: decision,
+                    exact_top_k: report.exact_top_k.clone(),
+                    ann_top_k: report.ann_top_k.clone(),
+                    overlap_count: report.overlap_count,
+                    recall_q16: report.recall_q16,
+                })
+            }
+            None => ann_evaluation_to_json(CliAnnEvaluationJsonInput {
+                available: false,
+                reason: Some("requires_persisted_checkpoint_without_wal_tail".to_owned()),
+                report: None,
+                no_fallback_decision: None,
+                exact_top_k: Vec::new(),
+                ann_top_k: Vec::new(),
+                overlap_count: 0,
+                recall_q16: 0,
+            }),
         });
     }
     Ok(match report {
-        Some(report) => format_ann_evaluation(&report),
+        Some(report) => format_ann_evaluation(&report, rollout_policy, search_policy),
         None => {
             "ann_evaluation available=false reason=requires_persisted_checkpoint_without_wal_tail"
                 .to_owned()
@@ -53,7 +67,11 @@ pub fn search_vector_eval(
     })
 }
 
-fn format_ann_evaluation(report: &AnnEvaluationReport) -> String {
+fn format_ann_evaluation(
+    report: &AnnEvaluationReport,
+    rollout_policy: Option<HnswNoFallbackRolloutPolicy>,
+    search_policy: AnnSearchPolicy,
+) -> String {
     let violations = if report.search.slo_violations.is_empty() {
         "none".to_owned()
     } else {
@@ -65,7 +83,7 @@ fn format_ann_evaluation(report: &AnnEvaluationReport) -> String {
             .collect::<Vec<_>>()
             .join(",")
     };
-    format!(
+    let mut line = format!(
         "ann_evaluation available=true path={} fallback_reason={} fallback_performed={} recall_q16={} min_recall_q16={} require_slo={} production_safe={} slo_violations={} overlap_count={} exact_top_k={:?} ann_top_k={:?}",
         report.search.path.as_str(),
         report
@@ -86,7 +104,14 @@ fn format_ann_evaluation(report: &AnnEvaluationReport) -> String {
         report.overlap_count,
         report.exact_top_k,
         report.ann_top_k
-    )
+    );
+    if let Some(rollout_policy) = rollout_policy {
+        let decision =
+            evaluate_hnsw_no_fallback_rollout(rollout_policy, search_policy, &report.search);
+        line.push('\n');
+        line.push_str(&format_no_fallback_decision(&decision));
+    }
+    line
 }
 
 fn to_ann_search_report(
@@ -123,6 +148,27 @@ fn to_ann_search_report(
     }
 }
 
+pub(crate) fn parse_no_fallback_rollout_policy(
+    rollout: bool,
+    min_recall: Option<String>,
+) -> Result<Option<HnswNoFallbackRolloutPolicy>, String> {
+    if !rollout && min_recall.is_none() {
+        return Ok(None);
+    }
+    if !rollout {
+        return Err("no_fallback_min_recall requires --no-fallback-rollout".to_owned());
+    }
+    let enabled_policy = HnswNoFallbackRolloutPolicy::enabled();
+    let policy = HnswNoFallbackRolloutPolicy {
+        min_recall_q16: match min_recall {
+            Some(value) => parse_min_recall_q16(&value)?,
+            None => enabled_policy.min_recall_q16,
+        },
+        ..enabled_policy
+    };
+    Ok(Some(policy))
+}
+
 pub(crate) fn parse_ann_policy(
     fallback: Option<String>,
     fallback_scan_cap: Option<usize>,
@@ -143,6 +189,36 @@ pub(crate) fn parse_ann_policy(
         max_visited_candidates,
         require_slo,
     })
+}
+
+pub(crate) fn format_no_fallback_decision(decision: &HnswNoFallbackDecision) -> String {
+    let reasons = if decision.reasons.is_empty() {
+        "none".to_owned()
+    } else {
+        decision
+            .reasons
+            .iter()
+            .map(|reason| reason.as_str())
+            .collect::<Vec<_>>()
+            .join(",")
+    };
+    format!(
+        "no_fallback_allowed={} no_fallback_reasons={}",
+        decision.allowed, reasons
+    )
+}
+
+pub(crate) fn no_fallback_decision_to_json(
+    decision: &HnswNoFallbackDecision,
+) -> crate::cli_json_types::CliNoFallbackDecisionResponse {
+    crate::cli_json_types::CliNoFallbackDecisionResponse {
+        allowed: decision.allowed,
+        reasons: decision
+            .reasons
+            .iter()
+            .map(|reason| reason.as_str().to_owned())
+            .collect(),
+    }
 }
 
 fn parse_option_bool(name: &str, value: Option<String>) -> Result<Option<bool>, String> {
@@ -192,6 +268,7 @@ fn parse_percent_without_unit(value: &str) -> Result<f64, String> {
 #[cfg(test)]
 mod tests {
     use super::parse_ann_policy;
+    use super::parse_no_fallback_rollout_policy;
 
     #[test]
     fn parse_ann_policy_default_values() {
@@ -222,5 +299,23 @@ mod tests {
     fn parse_ann_policy_rejects_invalid_bool() {
         let err = parse_ann_policy(Some("maybe".to_owned()), None, None, None, false).unwrap_err();
         assert!(err.contains("fallback must be true/false"));
+    }
+
+    #[test]
+    fn parse_no_fallback_rollout_policy_requires_explicit_rollout() {
+        let err = parse_no_fallback_rollout_policy(false, Some("1.0".to_owned())).unwrap_err();
+        assert!(err.contains("--no-fallback-rollout"));
+        assert!(parse_no_fallback_rollout_policy(false, None)
+            .unwrap()
+            .is_none());
+    }
+
+    #[test]
+    fn parse_no_fallback_rollout_policy_accepts_threshold() {
+        let policy = parse_no_fallback_rollout_policy(true, Some("100%".to_owned()))
+            .unwrap()
+            .unwrap();
+        assert!(policy.rollout_enabled);
+        assert_eq!(policy.min_recall_q16, 65_535);
     }
 }

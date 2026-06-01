@@ -291,6 +291,16 @@ paths:
         description: Enable strict ANN/HNSW SLO reporting. Responses include production_safe=false when recall, graph, fallback, or visit-budget guardrails are violated.
         schema:
           type: boolean
+      - name: no_fallback_rollout
+        in: query
+        description: Explicitly evaluate the selected ANN profile for fallback-free HNSW serving. This does not disable global exact fallback by itself.
+        schema:
+          type: boolean
+      - name: no_fallback_min_recall
+        in: query
+        description: Optional fallback-free rollout recall threshold. Requires no_fallback_rollout=true.
+        schema:
+          type: string
       responses:
         '200':
           description: Search results
@@ -376,6 +386,16 @@ paths:
         description: Enable strict ANN/HNSW SLO reporting. Responses include production_safe=false when recall, graph, fallback, or visit-budget guardrails are violated.
         schema:
           type: boolean
+      - name: no_fallback_rollout
+        in: query
+        description: Explicitly evaluate the selected ANN profile for fallback-free HNSW serving. This does not disable global exact fallback by itself.
+        schema:
+          type: boolean
+      - name: no_fallback_min_recall
+        in: query
+        description: Optional fallback-free rollout recall threshold. Requires no_fallback_rollout=true.
+        schema:
+          type: string
       responses:
         '200':
           description: ANN recall evaluation
@@ -1064,6 +1084,10 @@ components:
           anyOf:
           - $ref: '#/components/schemas/AnnSearchReport'
           - type: 'null'
+        no_fallback_decision:
+          anyOf:
+          - $ref: '#/components/schemas/AnnNoFallbackDecision'
+          - type: 'null'
         results:
           type: array
           items:
@@ -1191,6 +1215,36 @@ components:
             - no_persisted_segments
             - uncheckpointed_changes
             - recall_below_minimum
+            - weak_multi_layer_topology
+    AnnNoFallbackDecision:
+      type: object
+      required:
+      - allowed
+      - reasons
+      properties:
+        allowed:
+          type: boolean
+          description: True only when the explicit no-fallback rollout policy allows this ANN report.
+        reasons:
+          type: array
+          items:
+            type: string
+            enum:
+            - rollout_disabled
+            - fallback_enabled
+            - slo_not_required
+            - not_hnsw_graph_path
+            - fallback_occurred
+            - fallback_reason_present
+            - report_not_production_safe
+            - slo_violations_present
+            - empty_graph
+            - no_eligible_candidates
+            - no_results
+            - weak_multi_layer_topology
+            - recall_missing
+            - recall_below_minimum
+            - search_policy_below_rollout_minimum
     AnnEvaluationResponse:
       type: object
       required:
@@ -1213,6 +1267,10 @@ components:
         ann_report:
           anyOf:
           - $ref: '#/components/schemas/AnnSearchReport'
+          - type: 'null'
+        no_fallback_decision:
+          anyOf:
+          - $ref: '#/components/schemas/AnnNoFallbackDecision'
           - type: 'null'
         exact_top_k:
           type: array

@@ -24,12 +24,12 @@ mod types;
 
 use http::{append_query_param, parse_response, path};
 pub use types::{
-    AnnEvaluationResponse, AnnSearchReport, AqlCellResponse, AqlResponse, CellLookupResponse,
-    CellResponse, ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
-    DeleteJobResponse, ErrorCode, ErrorResponse, EvidenceResponse, ExplainResponse, GuardResponse,
-    HealthResponse, IngestResponse, IngestionJobResponse, IngestionJobStatus,
-    NumericConflictResponse, PutCellResponse, RememberResponse, SearchResponse, SearchResult,
-    SourceRefResponse, StatsResponse, ValidationResponse, VectorAlgorithm,
+    AnnEvaluationResponse, AnnNoFallbackDecision, AnnSearchReport, AqlCellResponse, AqlResponse,
+    CellLookupResponse, CellResponse, ContextPackAnomalyResponse, ContextPackCellResponse,
+    ContextPackResponse, DeleteJobResponse, ErrorCode, ErrorResponse, EvidenceResponse,
+    ExplainResponse, GuardResponse, HealthResponse, IngestResponse, IngestionJobResponse,
+    IngestionJobStatus, NumericConflictResponse, PutCellResponse, RememberResponse, SearchResponse,
+    SearchResult, SourceRefResponse, StatsResponse, ValidationResponse, VectorAlgorithm,
     VerificationReportResponse,
 };
 

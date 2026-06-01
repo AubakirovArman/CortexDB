@@ -193,6 +193,10 @@ enum Command {
         max_visited_candidates: Option<usize>,
         #[arg(long)]
         require_slo: bool,
+        #[arg(long)]
+        no_fallback_rollout: bool,
+        #[arg(long)]
+        no_fallback_min_recall: Option<String>,
     },
     SearchVectorExact {
         path: String,
@@ -213,6 +217,10 @@ enum Command {
         max_visited_candidates: Option<usize>,
         #[arg(long)]
         require_slo: bool,
+        #[arg(long)]
+        no_fallback_rollout: bool,
+        #[arg(long)]
+        no_fallback_min_recall: Option<String>,
     },
     SearchExplain {
         path: String,
@@ -414,6 +422,8 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             min_recall,
             max_visited_candidates,
             require_slo,
+            no_fallback_rollout,
+            no_fallback_min_recall,
         } => {
             let policy = ann::parse_ann_policy(
                 fallback,
@@ -422,12 +432,15 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
                 max_visited_candidates,
                 require_slo,
             )?;
+            let rollout_policy =
+                ann::parse_no_fallback_rollout_policy(no_fallback_rollout, no_fallback_min_recall)?;
             ops::search_vector(
                 resolved(&path).to_str().unwrap(),
                 &scope,
                 &vector,
                 false,
                 Some(policy),
+                rollout_policy,
             )
         }
         Command::SearchVectorExact {
@@ -440,6 +453,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             &vector,
             true,
             None,
+            None,
         ),
         Command::SearchVectorEval {
             path,
@@ -450,6 +464,8 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             min_recall,
             max_visited_candidates,
             require_slo,
+            no_fallback_rollout,
+            no_fallback_min_recall,
         } => {
             let policy = ann::parse_ann_policy(
                 fallback,
@@ -458,12 +474,15 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
                 max_visited_candidates,
                 require_slo,
             )?;
+            let rollout_policy =
+                ann::parse_no_fallback_rollout_policy(no_fallback_rollout, no_fallback_min_recall)?;
             ann::search_vector_eval(
                 resolved(&path).to_str().unwrap(),
                 &scope,
                 &vector,
                 cli.json,
                 Some(policy),
+                rollout_policy,
             )
         }
         Command::SearchExplain {

@@ -1,4 +1,4 @@
-use crate::responses::AnnMetricsResponse;
+use crate::responses::{AnnMetricsResponse, AnnNoFallbackDecisionResponse};
 use crate::responses::{
     CheckpointResponse, ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
     ErrorCode, ErrorResponse, EvidenceResponse, ExplainResponse, GuardResponse, HealthResponse,
@@ -220,6 +220,7 @@ fn snapshot_search_result_response() {
     let resp = crate::responses::SearchResponse {
         search_mode: "keyword".to_owned(),
         ann_report: None,
+        no_fallback_decision: None,
         results: vec![SearchResultResponse {
             cell_id: 1,
             score: 150,
@@ -253,6 +254,15 @@ fn snapshot_ann_search_report_response() {
         require_slo: true,
         production_safe: false,
         slo_violations: vec!["visit_budget_exceeded".to_owned()],
+    };
+    insta::assert_json_snapshot!(resp);
+}
+
+#[test]
+fn snapshot_ann_no_fallback_decision_response() {
+    let resp = AnnNoFallbackDecisionResponse {
+        allowed: false,
+        reasons: vec!["fallback_enabled".to_owned(), "slo_not_required".to_owned()],
     };
     insta::assert_json_snapshot!(resp);
 }

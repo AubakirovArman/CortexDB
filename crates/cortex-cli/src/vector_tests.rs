@@ -84,6 +84,10 @@ fn search_vector_command_respects_ann_policy_flags() {
         "0".to_owned(),
         "--min-recall".to_owned(),
         "50%".to_owned(),
+        "--require-slo".to_owned(),
+        "--no-fallback-rollout".to_owned(),
+        "--no-fallback-min-recall".to_owned(),
+        "50%".to_owned(),
         path_arg.clone(),
         "project:investments".to_owned(),
         "5,0".to_owned(),
@@ -91,6 +95,7 @@ fn search_vector_command_respects_ann_policy_flags() {
     .unwrap();
     assert!(strict_output.contains("ann_path="));
     assert!(strict_output.contains("min_recall_q16=32767"));
+    assert!(strict_output.contains("no_fallback_allowed=true"));
 
     let _ = std::fs::remove_dir_all(path);
 }
@@ -210,6 +215,10 @@ fn search_vector_eval_command_applies_min_recall_policy() {
         "false".to_owned(),
         "--min-recall".to_owned(),
         "50%".to_owned(),
+        "--require-slo".to_owned(),
+        "--no-fallback-rollout".to_owned(),
+        "--no-fallback-min-recall".to_owned(),
+        "50%".to_owned(),
         path_arg.clone(),
         "project:investments".to_owned(),
         "0,10".to_owned(),
@@ -219,6 +228,11 @@ fn search_vector_eval_command_applies_min_recall_policy() {
         .unwrap_or_else(|error| panic!("invalid json response: {error}"));
     assert_eq!(response["ann_report"]["min_recall_q16"], 32767);
     assert!(response["ann_report"]["slo_violations"].is_array());
+    assert_eq!(response["no_fallback_decision"]["allowed"], true);
+    assert!(response["no_fallback_decision"]["reasons"]
+        .as_array()
+        .unwrap()
+        .is_empty());
 
     let _ = std::fs::remove_dir_all(path);
 }

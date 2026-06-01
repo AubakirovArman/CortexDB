@@ -63,10 +63,18 @@ pub struct CliAnnSearchReportResponse {
 }
 
 #[derive(Serialize)]
+pub struct CliNoFallbackDecisionResponse {
+    pub allowed: bool,
+    pub reasons: Vec<String>,
+}
+
+#[derive(Serialize)]
 pub struct CliAnnEvaluationResponse {
     pub available: bool,
     pub reason: Option<String>,
     pub ann_report: Option<CliAnnSearchReportResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub no_fallback_decision: Option<CliNoFallbackDecisionResponse>,
     pub exact_top_k: Vec<u32>,
     pub ann_top_k: Vec<u32>,
     pub overlap_count: usize,

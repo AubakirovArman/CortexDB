@@ -75,10 +75,19 @@ pub struct AnnEvaluationResponse {
     pub available: bool,
     pub reason: Option<String>,
     pub ann_report: Option<AnnSearchReport>,
+    #[serde(default)]
+    pub no_fallback_decision: Option<AnnNoFallbackDecision>,
     pub exact_top_k: Vec<u32>,
     pub ann_top_k: Vec<u32>,
     pub overlap_count: usize,
     pub recall_q16: u16,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct AnnNoFallbackDecision {
+    pub allowed: bool,
+    #[serde(default)]
+    pub reasons: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
@@ -94,6 +103,8 @@ pub struct SearchResult {
 pub struct SearchResponse {
     pub search_mode: String,
     pub ann_report: Option<AnnSearchReport>,
+    #[serde(default)]
+    pub no_fallback_decision: Option<AnnNoFallbackDecision>,
     pub results: Vec<SearchResult>,
 }
 

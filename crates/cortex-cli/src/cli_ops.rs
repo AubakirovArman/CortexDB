@@ -1,7 +1,7 @@
 use cortex_core::CellId;
 use cortex_engine::{
-    parse_vector_literal, AnnSearchPath, AnnSearchPolicy, ContextPackOptions, Database,
-    EngineError, SearchLimit,
+    evaluate_hnsw_no_fallback_rollout, parse_vector_literal, AnnSearchPath, AnnSearchPolicy,
+    ContextPackOptions, Database, EngineError, HnswNoFallbackRolloutPolicy, SearchLimit,
 };
 
 use crate::cli_json::{
@@ -465,6 +465,7 @@ pub fn search_vector(
     vector: &str,
     exact: bool,
     policy: Option<AnnSearchPolicy>,
+    rollout_policy: Option<HnswNoFallbackRolloutPolicy>,
 ) -> Result<String, String> {
     let vector = parse_vector_literal(vector)?;
     let db = Database::open(path).map_err(fmt_engine_error)?;
@@ -475,17 +476,18 @@ pub fn search_vector(
             .map_err(fmt_engine_error)?;
         Ok(format_search_results(&results))
     } else {
-        let outcome = match policy {
-            Some(policy) => db
-                .search_vector_with_report_with_policy(&vector, &view, SearchLimit(20), policy)
-                .map_err(fmt_engine_error)?,
-            None => db
-                .search_vector_with_report(&vector, &view, SearchLimit(20))
-                .map_err(fmt_engine_error)?,
-        };
+        let search_policy = policy.unwrap_or_default();
+        let outcome = db
+            .search_vector_with_report_with_policy(&vector, &view, SearchLimit(20), search_policy)
+            .map_err(fmt_engine_error)?;
         let mut lines = Vec::new();
         lines.push(format_search_results(&outcome.results));
         if let Some(report) = outcome.ann_report {
+            if let Some(rollout_policy) = rollout_policy {
+                lines.push(crate::cli_ann::format_no_fallback_decision(
+                    &evaluate_hnsw_no_fallback_rollout(rollout_policy, search_policy, &report),
+                ));
+            }
             lines.push(format_ann_search_report(&report));
         }
         Ok(lines.join("\n"))

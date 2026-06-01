@@ -216,9 +216,17 @@ pub struct AnnSearchReportResponse {
 }
 
 #[derive(Serialize, Debug, Clone)]
+pub struct AnnNoFallbackDecisionResponse {
+    pub allowed: bool,
+    pub reasons: Vec<String>,
+}
+
+#[derive(Serialize, Debug, Clone)]
 pub struct SearchResponse {
     pub search_mode: String,
     pub ann_report: Option<AnnSearchReportResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub no_fallback_decision: Option<AnnNoFallbackDecisionResponse>,
     pub results: Vec<SearchResultResponse>,
 }
 
@@ -243,6 +251,8 @@ pub struct AnnEvaluationResponse {
     pub available: bool,
     pub reason: Option<String>,
     pub ann_report: Option<AnnSearchReportResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub no_fallback_decision: Option<AnnNoFallbackDecisionResponse>,
     pub exact_top_k: Vec<u32>,
     pub ann_top_k: Vec<u32>,
     pub overlap_count: usize,

@@ -273,6 +273,18 @@ For `search_mode: "vector_ann"`, `ann_report` is populated:
 }
 ```
 
+If callers explicitly pass `no_fallback_rollout=true`, responses also include a
+`no_fallback_decision` object. This is an operator-facing guardrail: it reports
+whether the current ANN result is allowed for fallback-free serving, but it does
+not remove exact fallback globally.
+
+```json
+{
+  "allowed": false,
+  "reasons": ["fallback_enabled", "slo_not_required"]
+}
+```
+
 `fallback_reason` may also be `low_recall` when the HNSW graph returns enough
 candidates but fails the exact top-k recall guard. In that case `recall_q16`
 contains the observed top-k recall and `min_recall_q16` contains the guard
@@ -307,6 +319,10 @@ used for recall and latency comparisons.
   },
   "exact_top_k": [2, 1],
   "ann_top_k": [2, 1],
+  "no_fallback_decision": {
+    "allowed": true,
+    "reasons": []
+  },
   "overlap_count": 2,
   "recall_q16": 65535
 }

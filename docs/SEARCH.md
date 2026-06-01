@@ -109,6 +109,20 @@ the report explicit about production guardrails. `production_safe=false` and
 The result still returns using the configured fallback policy; callers that need
 hard SLO enforcement should reject responses where `production_safe=false`.
 
+When an operator explicitly passes `no_fallback_rollout=true`, vector ANN
+responses include `no_fallback_decision`. This does not remove exact fallback
+globally. It only reports whether the current request, ANN policy, and
+`ann_report` satisfy the selected fallback-free rollout guard:
+
+```json
+{
+  "no_fallback_decision": {
+    "allowed": false,
+    "reasons": ["fallback_enabled", "slo_not_required"]
+  }
+}
+```
+
 For ANN quality work, `Database::evaluate_vector_ann` compares the persisted
 HNSW path with exact `.acv` vector scan for the same `AgentView`, query vector,
 and limit. It returns an `AnnEvaluationReport` with exact top-k ids, ANN top-k

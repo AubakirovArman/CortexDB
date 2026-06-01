@@ -109,6 +109,10 @@ fn typed_search_response_decodes_ann_report_contract() {
             "production_safe": false,
             "slo_violations": ["no_persisted_segments"]
         },
+        "no_fallback_decision": {
+            "allowed": false,
+            "reasons": ["not_hnsw_graph_path", "fallback_occurred"]
+        },
         "results": [{
             "cell_id": 1,
             "score": 42,
@@ -121,6 +125,9 @@ fn typed_search_response_decodes_ann_report_contract() {
     let response: SearchResponse =
         serde_json::from_value(value).expect("search response should decode");
     let report = response.ann_report.expect("ann report should be present");
+    let decision = response
+        .no_fallback_decision
+        .expect("no-fallback decision should decode");
 
     assert_eq!(response.search_mode, "vector_ann");
     assert_eq!(response.results[0].cell_id, 1);
@@ -135,6 +142,8 @@ fn typed_search_response_decodes_ann_report_contract() {
     assert!(report.require_slo);
     assert!(!report.production_safe);
     assert_eq!(report.slo_violations, vec!["no_persisted_segments"]);
+    assert!(!decision.allowed);
+    assert_eq!(decision.reasons[0], "not_hnsw_graph_path");
 }
 
 #[test]
@@ -169,6 +178,10 @@ fn typed_ann_evaluation_response_decodes_contract() {
             "production_safe": true,
             "slo_violations": []
         },
+        "no_fallback_decision": {
+            "allowed": true,
+            "reasons": []
+        },
         "exact_top_k": [2, 1],
         "ann_top_k": [2, 1],
         "overlap_count": 2,
@@ -189,4 +202,5 @@ fn typed_ann_evaluation_response_decodes_contract() {
     assert!(report.require_slo);
     assert!(report.production_safe);
     assert!(report.slo_violations.is_empty());
+    assert!(response.no_fallback_decision.expect("decision").allowed);
 }
