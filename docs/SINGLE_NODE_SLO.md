@@ -12,6 +12,7 @@ enterprise guarantees.
 | --- | --- | --- |
 | Lifecycle duration | `make single-node-performance-check` | `target/single-node-performance/report.json` |
 | Load smoke | `make load-smoke-check` | `target/load-smoke/report.json` |
+| Performance trends | `make performance-trend-check` | `target/performance-trends/report.json` |
 | Crash/fault recovery | `make crash-fault-check` | `target/crash-fault/report.json` |
 | Backup restore drill | `make backup-drill-check` | `target/backup-drill/report.json` |
 | API contract | `make openapi-contract-check` | command output |
@@ -35,6 +36,24 @@ SINGLE_NODE_PERF_MAX_TOTAL_MS=30000
 The gate exercises strict and balanced lifecycle paths and fails if the total
 local duration exceeds the configured budget.
 
+`make load-smoke-check` also records p95/p99 latency for write, read, search,
+ContextPack, and VerifyFact flows. It records actor queue saturation and fails
+if the local smoke workload observes `database_busy` / rejected requests.
+
+`make single-node-performance-check` records p95/p99 latency for embedded
+`put_single`, `get_latest`, `keyword_search`, `context_pack`, and `verify_fact`
+flows in both Strict and Balanced durability profiles.
+
+`make performance-trend-check` compares the current reports with checked-in
+release history under `fixtures/performance/history/` and writes:
+
+```text
+target/performance-trends/report.json
+```
+
+Workload classes and local RPO/RTO expectations are defined in
+`fixtures/performance/workload_classes.json`.
+
 ## Operational Interpretation
 
 - Passing this gate means the local build remains within the configured
@@ -52,3 +71,5 @@ local duration exceeds the configured budget.
   [`CONSENSUS_SLO.md`](CONSENSUS_SLO.md).
 - RPO/RTO boundaries:
   [`RPO_RTO.md`](RPO_RTO.md).
+- Performance trend history:
+  [`PERFORMANCE_TREND_HISTORY.md`](PERFORMANCE_TREND_HISTORY.md).

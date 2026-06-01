@@ -78,9 +78,12 @@ target/load-smoke/report.json
 ```
 
 The gate fails on request errors, failed validation, missing search/context
-results, or an overall runtime above the configured budget. It is not a
+results, observed `database_busy`/request rejection, p95/p99 threshold
+violations, or an overall runtime above the configured budget. It is not a
 production stress test; it is a release smoke check that proves the actor-backed
-HTTP surface remains usable under a small burst of real requests.
+HTTP surface remains usable under a small burst of real requests. The report
+records write, read, search, ContextPack, and VerifyFact latency summaries plus
+actor queue saturation.
 
 For a repeatable single-node engine performance matrix:
 
@@ -97,10 +100,29 @@ target/single-node-performance/report.json
 
 The report includes Strict and Balanced durability profiles and measures the
 same core lifecycle phases: open, batch put, latest reads, keyword search,
-ContextPack, checkpoint, compact, close, restart open, and validation. This is
-not a production SLA benchmark; it is a release artifact that proves the local
-single-node engine path still has a complete machine-readable performance
-matrix before consensus or distributed rollout work expands the runtime.
+ContextPack, VerifyFact, checkpoint, compact, close, restart open, and
+validation. The repeated flow phases include p95/p99 latency summaries and
+local thresholds. This is not a production SLA benchmark; it is a release
+artifact that proves the local single-node engine path still has a complete
+machine-readable performance matrix before consensus or distributed rollout work
+expands the runtime.
+
+To compare the current reports with release history:
+
+```bash
+make performance-trend-check
+```
+
+This writes:
+
+```text
+target/performance-trends/report.json
+```
+
+The trend gate reads checked-in history fixtures under
+`fixtures/performance/history/`, validates that current reports include p95/p99
+for write/read/search/context/verify flows, and keeps current-vs-latest ratios
+visible before release.
 
 The ANN section also emits a stable JSON line:
 

@@ -30,7 +30,9 @@ passed
 | Suite | Purpose |
 | --- | --- |
 | `hardening_docs` | Confirms load/fault, migration, audit/rate-limit, and encrypted-backup design docs exist. |
-| `load_smoke` | Runs local concurrent write/read/search/context smoke. |
+| `load_smoke` | Runs local concurrent write/read/search/context/verify smoke. |
+| `single_node_performance` | Runs embedded Strict/Balanced lifecycle with flow latency percentiles. |
+| `performance_trends` | Validates release history, p95/p99 thresholds, and actor busy metrics. |
 | `crash_fault` | Runs crash/fault and repair evidence. |
 | `migration_compatibility` | Runs storage/API/SDK compatibility fixture validation. |
 | `audit_hardening` | Runs audit classification, JSONL sink, and redaction tests. |
@@ -42,6 +44,7 @@ passed
 This gate proves:
 
 - load smoke evidence is locally repeatable;
+- single-node performance trend history is checked;
 - crash/fault evidence is locally repeatable;
 - migration compatibility gate passes;
 - audit and rate-limit behavior is tested;
@@ -49,7 +52,7 @@ This gate proves:
 
 It does not prove:
 
-- long-running production traffic SLO history;
+- production traffic SLO history beyond local release trend artifacts;
 - implemented encrypted backups;
 - per-user quota enforcement;
 - tamper-evident audit chain;

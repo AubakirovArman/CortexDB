@@ -1,10 +1,10 @@
 # CortexDB Documentation Index
 
-Last audited: 2026-05-31.
+Last audited: 2026-06-01.
 
 This index covers project-owned markdown tracked by git. Dependency,
 generated, virtualenv, `node_modules`, and `target` markdown files are excluded.
-At the time of this audit, the repository tracks 139 project markdown files.
+At the time of this audit, the repository tracks 160 project markdown files.
 
 ## Start Here
 
@@ -88,6 +88,7 @@ At the time of this audit, the repository tracks 139 project markdown files.
 - [`ANN_CORPUS_FORMAT.md`](ANN_CORPUS_FORMAT.md) - ANN corpus format.
 - [`ANN_PUBLIC_CORPUS_RUNS.md`](ANN_PUBLIC_CORPUS_RUNS.md) - public corpus run policy.
 - [`BENCHMARKS.md`](BENCHMARKS.md) - benchmark gates and reports.
+- [`PERFORMANCE_TREND_HISTORY.md`](PERFORMANCE_TREND_HISTORY.md) - local p95/p99 load and single-node trend gate.
 - [`RETRIEVAL_QUALITY_EVIDENCE.md`](RETRIEVAL_QUALITY_EVIDENCE.md) - local Epic 10 evidence gate.
 
 ## Product Surfaces

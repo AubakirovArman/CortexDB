@@ -1,0 +1,47 @@
+{
+  "schema_version": "cortexdb.performance_workload_classes.v1",
+  "workload_classes": {
+    "local_http_smoke": {
+      "description": "Small actor-backed HTTP burst used before release.",
+      "default_cells": 100,
+      "default_reads": 100,
+      "default_searches": 20,
+      "default_contexts": 5,
+      "default_verifies": 5,
+      "default_workers": 8,
+      "latency_thresholds_ms": {
+        "write": { "p95": 500, "p99": 1000 },
+        "read": { "p95": 250, "p99": 500 },
+        "search": { "p95": 1000, "p99": 2000 },
+        "context": { "p95": 1500, "p99": 3000 },
+        "verify": { "p95": 1500, "p99": 3000 }
+      },
+      "actor_expectations": {
+        "database_busy_count": 0,
+        "max_queue_saturation": 1.0
+      }
+    },
+    "local_single_node_lifecycle": {
+      "description": "Embedded engine lifecycle matrix for strict and balanced durability.",
+      "default_cells": 500,
+      "latency_thresholds_ms": {
+        "put_single": { "p95": 1000, "p99": 2000 },
+        "get_latest": { "p95": 100, "p99": 250 },
+        "keyword_search": { "p95": 1500, "p99": 3000 },
+        "context_pack": { "p95": 1500, "p99": 3000 },
+        "verify_fact": { "p95": 1500, "p99": 3000 }
+      }
+    }
+  },
+  "rpo_rto_expectations": {
+    "local_single_node": {
+      "rpo": "Strict durability expects the acknowledged WAL record to survive process restart; Balanced may group fsyncs inside the local WAL writer boundary.",
+      "rto": "Local restore and restart gates must complete inside their configured smoke budgets; deployment-specific RTO requires hardware-specific drills.",
+      "evidence": [
+        "make backup-drill-check",
+        "make storage-soak-check",
+        "make single-node-performance-check"
+      ]
+    }
+  }
+}

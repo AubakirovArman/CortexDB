@@ -1,0 +1,46 @@
+{
+  "schema_version": "cortexdb.single_node_performance.v1",
+  "workload_class": "local_single_node_lifecycle",
+  "ok": true,
+  "cells": 500,
+  "duration_ms": 300.0,
+  "profiles": [
+    {
+      "name": "strict",
+      "durability_mode": "strict",
+      "latency_thresholds": {
+        "put_single": { "p95_ms": 1000.0, "p99_ms": 2000.0 },
+        "get_latest": { "p95_ms": 100.0, "p99_ms": 250.0 },
+        "keyword_search": { "p95_ms": 1500.0, "p99_ms": 3000.0 },
+        "context_pack": { "p95_ms": 1500.0, "p99_ms": 3000.0 },
+        "verify_fact": { "p95_ms": 1500.0, "p99_ms": 3000.0 }
+      },
+      "phases": [
+        { "name": "put_single", "units": 10, "elapsed_ms": 10.0, "throughput_per_sec": 1000.0, "latency": { "count": 10, "p50_ms": 1.0, "p95_ms": 2.0, "p99_ms": 3.0, "max_ms": 4.0 } },
+        { "name": "get_latest", "units": 500, "elapsed_ms": 1.0, "throughput_per_sec": 500000.0, "latency": { "count": 500, "p50_ms": 0.01, "p95_ms": 0.05, "p99_ms": 0.08, "max_ms": 0.1 } },
+        { "name": "keyword_search", "units": 25, "elapsed_ms": 80.0, "throughput_per_sec": 312.5, "latency": { "count": 25, "p50_ms": 3.0, "p95_ms": 4.0, "p99_ms": 5.0, "max_ms": 6.0 } },
+        { "name": "context_pack", "units": 10, "elapsed_ms": 45.0, "throughput_per_sec": 222.2, "latency": { "count": 10, "p50_ms": 4.0, "p95_ms": 5.0, "p99_ms": 6.0, "max_ms": 7.0 } },
+        { "name": "verify_fact", "units": 10, "elapsed_ms": 45.0, "throughput_per_sec": 222.2, "latency": { "count": 10, "p50_ms": 4.0, "p95_ms": 5.0, "p99_ms": 6.0, "max_ms": 7.0 } }
+      ]
+    },
+    {
+      "name": "balanced",
+      "durability_mode": "balanced",
+      "latency_thresholds": {
+        "put_single": { "p95_ms": 1000.0, "p99_ms": 2000.0 },
+        "get_latest": { "p95_ms": 100.0, "p99_ms": 250.0 },
+        "keyword_search": { "p95_ms": 1500.0, "p99_ms": 3000.0 },
+        "context_pack": { "p95_ms": 1500.0, "p99_ms": 3000.0 },
+        "verify_fact": { "p95_ms": 1500.0, "p99_ms": 3000.0 }
+      },
+      "phases": [
+        { "name": "put_single", "units": 10, "elapsed_ms": 10.0, "throughput_per_sec": 1000.0, "latency": { "count": 10, "p50_ms": 1.0, "p95_ms": 2.0, "p99_ms": 3.0, "max_ms": 4.0 } },
+        { "name": "get_latest", "units": 500, "elapsed_ms": 1.0, "throughput_per_sec": 500000.0, "latency": { "count": 500, "p50_ms": 0.01, "p95_ms": 0.05, "p99_ms": 0.08, "max_ms": 0.1 } },
+        { "name": "keyword_search", "units": 25, "elapsed_ms": 80.0, "throughput_per_sec": 312.5, "latency": { "count": 25, "p50_ms": 3.0, "p95_ms": 4.0, "p99_ms": 5.0, "max_ms": 6.0 } },
+        { "name": "context_pack", "units": 10, "elapsed_ms": 45.0, "throughput_per_sec": 222.2, "latency": { "count": 10, "p50_ms": 4.0, "p95_ms": 5.0, "p99_ms": 6.0, "max_ms": 7.0 } },
+        { "name": "verify_fact", "units": 10, "elapsed_ms": 45.0, "throughput_per_sec": 222.2, "latency": { "count": 10, "p50_ms": 4.0, "p95_ms": 5.0, "p99_ms": 6.0, "max_ms": 7.0 } }
+      ]
+    }
+  ],
+  "errors": []
+}

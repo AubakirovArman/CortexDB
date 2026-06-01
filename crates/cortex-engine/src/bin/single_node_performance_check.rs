@@ -12,8 +12,11 @@ use serde_json::{json, Value};
 
 #[path = "single_node_performance/args.rs"]
 mod args;
+#[path = "single_node_performance/latency.rs"]
+mod latency;
 
 use args::Args;
+use latency::{check_phase_thresholds, measure_repeated, single_node_latency_thresholds};
 
 fn main() -> ExitCode {
     match run() {
@@ -52,6 +55,7 @@ fn run() -> Result<(), String> {
         "schema_version": "cortexdb.single_node_performance.v1",
         "ok": errors.is_empty(),
         "cells": args.cells,
+        "workload_class": "local_single_node_lifecycle",
         "duration_ms": round_ms(elapsed_ms),
         "profiles": [strict, balanced],
         "errors": errors,
@@ -104,55 +108,73 @@ fn run_profile(
     let (_, phase) = measure("put_batch", cells, || db.put_cells(payloads))?;
     phases.push(phase);
 
-    let (_, phase) = measure("get_latest", cells, || {
-        for index in 1..=cells {
-            let payload = db
-                .get_latest_cell(CellId(index as u64))
-                .ok_or_else(|| format!("missing cell after put: {index}"))?;
-            if payload.is_empty() {
-                return Err(format!("empty payload after put: {index}"));
-            }
+    let write_samples = 10;
+    let (_, phase) = measure_repeated("put_single", write_samples, |offset| {
+        let index = cells + offset + 1;
+        db.put_cell(CellId(index as u64), payload(index))
+            .map(|_| ())
+    })?;
+    phases.push(phase);
+    let total_cells = cells + write_samples;
+
+    let (_, phase) = measure_repeated("get_latest", cells, |offset| {
+        let index = offset + 1;
+        let payload = db
+            .get_latest_cell(CellId(index as u64))
+            .ok_or_else(|| format!("missing cell after put: {index}"))?;
+        if payload.is_empty() {
+            return Err(format!("empty payload after put: {index}"));
         }
         Ok(())
     })?;
     phases.push(phase);
 
-    let (_, phase) = measure("keyword_search", 25, || {
-        for _ in 0..25 {
-            let results = db
-                .search_keyword("budget ready", &view, SearchLimit(10))
-                .map_err(|error| error.to_string())?;
-            if results.is_empty() {
-                return Err("keyword search returned no results".to_owned());
-            }
+    let (_, phase) = measure_repeated("keyword_search", 25, |_| {
+        let results = db
+            .search_keyword("budget ready", &view, SearchLimit(10))
+            .map_err(|error| error.to_string())?;
+        if results.is_empty() {
+            return Err("keyword search returned no results".to_owned());
         }
         Ok(())
     })?;
     phases.push(phase);
 
-    let (_, phase) = measure("context_pack", 10, || {
-        for _ in 0..10 {
-            let pack = db
-                .context_pack_from_aql(query, &view, ContextPackOptions::default())
-                .map_err(|error| error.to_string())?;
-            if pack.cells.is_empty() {
-                return Err("ContextPack returned no cells".to_owned());
-            }
+    let (_, phase) = measure_repeated("context_pack", 10, |_| {
+        let pack = db
+            .context_pack_from_aql(query, &view, ContextPackOptions::default())
+            .map_err(|error| error.to_string())?;
+        if pack.cells.is_empty() {
+            return Err("ContextPack returned no cells".to_owned());
         }
         Ok(())
     })?;
     phases.push(phase);
 
-    let (_, phase) = measure("checkpoint", cells, || db.checkpoint())?;
+    let verify_query = r#"VERIFY FACT "budget ready" IN BRAIN default;"#;
+    let (_, phase) = measure_repeated("verify_fact", 10, |_| {
+        let report = db
+            .verify_fact_aql(verify_query, &view)
+            .map_err(|error| error.to_string())?;
+        if report.evidence.is_empty() {
+            return Err("VerifyFact returned no evidence".to_owned());
+        }
+        Ok(())
+    })?;
     phases.push(phase);
 
-    let (_, phase) = measure("compact", cells, || db.compact())?;
+    check_phase_thresholds(&phases)?;
+
+    let (_, phase) = measure("checkpoint", total_cells, || db.checkpoint())?;
+    phases.push(phase);
+
+    let (_, phase) = measure("compact", total_cells, || db.compact())?;
     phases.push(phase);
 
     let (_, phase) = measure("close", 1, || db.close())?;
     phases.push(phase);
 
-    let (db, phase) = measure("restart_open", cells, || {
+    let (db, phase) = measure("restart_open", total_cells, || {
         Database::open_with_options(&db_path, options)
     })?;
     phases.push(phase);
@@ -173,6 +195,7 @@ fn run_profile(
     Ok(json!({
         "name": label,
         "durability_mode": format!("{durability_mode:?}").to_lowercase(),
+        "latency_thresholds": single_node_latency_thresholds(),
         "phases": phases,
         "validation": {
             "manifest_ok": validation.manifest_ok,

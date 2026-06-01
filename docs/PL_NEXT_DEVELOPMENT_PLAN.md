@@ -644,6 +644,23 @@ Acceptance:
 
 ### Epic 4.3 - Load And Performance Trend History
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- `make load-smoke-check` now records write/read/search/context/verify p95 and
+  p99 latency, actor queue saturation, and `database_busy`/request rejection
+  counts in `target/load-smoke/report.json`.
+- `make single-node-performance-check` now records p95/p99 latency for
+  `put_single`, `get_latest`, `keyword_search`, `context_pack`, and
+  `verify_fact` in both Strict and Balanced durability profiles.
+- Added checked-in release history fixtures under
+  `fixtures/performance/history/v0.1.0-core-alpha.5/`.
+- Added `make performance-trend-check`, which validates current reports against
+  release history and writes `target/performance-trends/report.json`.
+- Added workload and RPO/RTO expectations in
+  `fixtures/performance/workload_classes.json`.
+
 Tasks:
 
 1. Keep single-node performance reports per release.
@@ -656,6 +673,7 @@ Gates:
 ```bash
 make load-smoke-check
 make single-node-performance-check
+make performance-trend-check
 ```
 
 Acceptance:

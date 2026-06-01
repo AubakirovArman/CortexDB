@@ -22,6 +22,12 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "make crash-fault-check",
         "target/crash-fault/report.json",
     ),
+    "docs/SINGLE_NODE_SLO.md": (
+        "make performance-trend-check",
+        "target/performance-trends/report.json",
+        "p95",
+        "p99",
+    ),
     "docs/UPGRADE_MIGRATION.md": (
         "make migration-compatibility-check",
         "compatibility",
@@ -42,7 +48,17 @@ SUITES: tuple[dict[str, Any], ...] = (
     {
         "name": "load_smoke",
         "command": ["make", "load-smoke-check"],
-        "covers": ["concurrent local writes", "reads", "search", "ContextPack"],
+        "covers": ["concurrent local writes", "reads", "search", "ContextPack", "VerifyFact"],
+    },
+    {
+        "name": "single_node_performance",
+        "command": ["make", "single-node-performance-check"],
+        "covers": ["embedded lifecycle", "strict/balanced durability", "flow latency percentiles"],
+    },
+    {
+        "name": "performance_trends",
+        "command": ["make", "performance-trend-check"],
+        "covers": ["release history", "p95/p99 thresholds", "actor busy metrics"],
     },
     {
         "name": "crash_fault",
@@ -137,6 +153,7 @@ def check_docs(repo: Path) -> dict[str, Any]:
         "missing": missing,
         "covers": [
             "load/fault runbooks",
+            "single-node performance trend history",
             "migration compatibility docs",
             "audit/rate-limit docs",
             "encrypted backups design",
@@ -154,7 +171,14 @@ def self_test() -> int:
     if len(names) != len(set(names)):
         print("production hardening self-test failed: duplicate suite names")
         return 1
-    required = {"load_smoke", "crash_fault", "migration_compatibility", "audit_hardening"}
+    required = {
+        "load_smoke",
+        "single_node_performance",
+        "performance_trends",
+        "crash_fault",
+        "migration_compatibility",
+        "audit_hardening",
+    }
     missing = sorted(required.difference(names))
     if missing:
         print(f"production hardening self-test failed: missing suites {missing}")
@@ -193,18 +217,21 @@ def main() -> int:
             "report": str(report_path),
             "root": str(root),
             "load_smoke_report": "target/load-smoke/report.json",
+            "single_node_performance_report": "target/single-node-performance/report.json",
+            "performance_trend_report": "target/performance-trends/report.json",
             "crash_fault_report": "target/crash-fault/report.json",
         },
         "boundary": {
             "proves": [
                 "single-node load smoke runs locally",
+                "single-node performance trend history is checked",
                 "crash/fault evidence is reproducible",
                 "migration compatibility gate passes",
                 "audit and rate-limit behavior is tested",
                 "encrypted backups have a documented design boundary",
             ],
             "does_not_prove": [
-                "production traffic SLO history",
+                "production traffic SLO history beyond local release trend artifacts",
                 "implemented encrypted backups",
                 "per-user quota enforcement",
                 "tamper-evident audit chain",

@@ -22,6 +22,12 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from perf_latency import (
+    check_latency_thresholds,
+    latency_summary,
+    load_smoke_latency_thresholds,
+)
+
 
 def free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -56,23 +62,6 @@ def timed(callable_obj):
     value = callable_obj()
     elapsed_ms = (time.perf_counter() - start) * 1000.0
     return value, elapsed_ms
-
-
-def percentile(values: list[float], percent: float) -> float:
-    if not values:
-        return 0.0
-    ordered = sorted(values)
-    index = min(len(ordered) - 1, int((len(ordered) - 1) * percent))
-    return ordered[index]
-
-
-def latency_summary(values: list[float]) -> dict[str, float | int]:
-    return {
-        "count": len(values),
-        "p50_ms": round(percentile(values, 0.50), 3),
-        "p95_ms": round(percentile(values, 0.95), 3),
-        "max_ms": round(max(values) if values else 0.0, 3),
-    }
 
 
 def write_cell(base_url: str, cell_id: int) -> float:
@@ -125,6 +114,16 @@ def context(base_url: str) -> float:
     return elapsed
 
 
+def verify(base_url: str) -> float:
+    statement = 'VERIFY FACT "budget ready" IN BRAIN default;'.encode("utf-8")
+    response, elapsed = timed(
+        lambda: request_json("POST", f"{base_url}/v1/verify?scope=load", statement)
+    )
+    if response.get("status") not in {"supported", "mixed"}:
+        raise AssertionError(f"verify returned unexpected status: {response}")
+    return elapsed
+
+
 def run_phase(label: str, workers: int, items: list[int], call) -> tuple[list[float], list[str]]:
     latencies: list[float] = []
     errors: list[str] = []
@@ -148,6 +147,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reads", type=int, default=100)
     parser.add_argument("--searches", type=int, default=20)
     parser.add_argument("--contexts", type=int, default=5)
+    parser.add_argument("--verifies", type=int, default=5)
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--max-total-ms", type=float, default=30_000.0)
     return parser.parse_args()
@@ -186,7 +186,9 @@ def main() -> int:
         "reads": args.reads,
         "searches": args.searches,
         "contexts": args.contexts,
+        "verifies": args.verifies,
         "workers": args.workers,
+        "workload_class": "local_http_smoke",
     }
 
     try:
@@ -207,17 +209,33 @@ def main() -> int:
 
         search_latencies = [search(base_url) for _ in range(args.searches)]
         context_latencies = [context(base_url) for _ in range(args.contexts)]
+        verify_latencies = [verify(base_url) for _ in range(args.verifies)]
 
         validation = request_json("GET", f"{base_url}/v1/validate")
         stats = request_json("GET", f"{base_url}/v1/stats")
+        metrics = request_json("GET", f"{base_url}/v1/metrics")
         if validation.get("ok") is not True:
             errors.append(f"validation failed: {validation}")
         if int(stats.get("current_seq", 0)) < args.cells:
             errors.append(f"current_seq lower than cells written: {stats}")
+        if int(metrics.get("request_rejected", 0)) > 0:
+            errors.append(f"database_busy/request rejected observed: {metrics}")
 
         elapsed_ms = (time.perf_counter() - start) * 1000.0
         if elapsed_ms > args.max_total_ms:
             errors.append(f"load smoke exceeded max-total-ms: {elapsed_ms:.3f}")
+
+        summaries = {
+            "write": latency_summary(write_latencies),
+            "read": latency_summary(read_latencies),
+            "search": latency_summary(search_latencies),
+            "context": latency_summary(context_latencies),
+            "verify": latency_summary(verify_latencies),
+        }
+        thresholds = load_smoke_latency_thresholds()
+        errors.extend(check_latency_thresholds(summaries, thresholds))
+        queue_capacity = max(int(metrics.get("actor_queue_capacity", 0)), 1)
+        queue_depth = int(metrics.get("actor_queue_depth", 0))
 
         report.update(
             {
@@ -225,11 +243,15 @@ def main() -> int:
                 "duration_ms": round(elapsed_ms, 3),
                 "validation_ok": validation.get("ok") is True,
                 "current_seq": stats.get("current_seq"),
-                "latencies": {
-                    "write": latency_summary(write_latencies),
-                    "read": latency_summary(read_latencies),
-                    "search": latency_summary(search_latencies),
-                    "context": latency_summary(context_latencies),
+                "latency_thresholds": thresholds,
+                "latencies": summaries,
+                "actor": {
+                    "queue_depth": queue_depth,
+                    "queue_capacity": metrics.get("actor_queue_capacity"),
+                    "queue_saturation": round(queue_depth / queue_capacity, 6),
+                    "database_busy_count": metrics.get("request_rejected"),
+                    "request_count": metrics.get("request_count"),
+                    "request_duration_ms_total": metrics.get("request_duration_ms_total"),
                 },
                 "errors": errors,
             }
