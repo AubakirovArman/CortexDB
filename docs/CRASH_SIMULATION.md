@@ -22,6 +22,7 @@ kill/restart loop.
 | corruption of `.acs`, `.acb`, `.aci`, `.acv`, and `.ach` is detected by open or validation. | `corruption_matrix.rs` |
 | CLI repair removes orphan temp file and truncates a partial WAL tail. | `make crash-fault-check` |
 | HTTP server survives repeatable forced kill/restart cycles after writes, flushes, and compacts. | `make chaos-restart-check` |
+| Repeated storage cycles track backup/restore, partial WAL repair, and kill attempts during checkpoint, compact, WAL replay, and restore. | `make storage-soak-check` |
 
 ## Release Evidence
 
@@ -60,12 +61,29 @@ target/chaos-restart/report.json
 The GitHub `Rust` workflow runs this gate on stable Rust and uploads
 `chaos-restart-evidence` with the JSON report and server log.
 
+Run the longer local storage soak:
+
+```bash
+make storage-soak-check
+```
+
+It repeats write, flush, compact, backup, restore, validation, and partial WAL
+repair cycles before representative kill attempts around checkpoint, compact,
+WAL replay, and restore. It writes:
+
+```text
+target/storage-soak/report.json
+```
+
 ## Current Limits
 
 - `crash-fault-check` simulates crash aftermath by writing or corrupting files
   directly.
 - `chaos-restart-check` kills the server between completed API operations; it
   does not yet kill exactly between every internal checkpoint/compact step.
+- `storage-soak-check` attempts kills around high-level operations and records
+  whether the process was still alive at the kill point; very fast operations
+  may complete before the kill arrives.
 - It does not yet inject failures between every internal checkpoint step.
 - The default chaos loop is deterministic for release reproducibility; increase
   `CHAOS_RESTART_STEPS` or change `CHAOS_RESTART_SEED` for longer local runs.

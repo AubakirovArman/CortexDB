@@ -567,6 +567,21 @@ Goal: controlled local single-node production candidate for Linux/macOS.
 
 ### Epic 4.1 - Long-Running Storage And Crash Soak
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- Added `make storage-soak-check`, backed by `scripts/storage_soak_check.py`
+  and `scripts/storage_soak_lib.py`.
+- Default storage soak produced `target/storage-soak/report.json` with 3
+  repeated write/flush/compact/backup/restore cycles and final validation OK.
+- The soak report tracks partial WAL repair plus kill attempts during
+  checkpoint, compact, WAL replay, and restore.
+- Added release-tagged restore fixture metadata at
+  `fixtures/restore/v0.1.0-core-alpha/restore_fixture.json`.
+- `make storage-compat-check`, `make crash-fault-check`,
+  `make chaos-restart-check`, and `make storage-soak-check` passed locally.
+
 Tasks:
 
 1. Add `make storage-soak-check`.

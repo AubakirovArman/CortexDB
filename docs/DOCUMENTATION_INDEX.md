@@ -56,6 +56,7 @@ At the time of this audit, the repository tracks 139 project markdown files.
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) - backup/restore operations.
 - [`STORAGE_COMPATIBILITY.md`](STORAGE_COMPATIBILITY.md) - storage compatibility boundary.
 - [`STORAGE_COMPATIBILITY_EVIDENCE.md`](STORAGE_COMPATIBILITY_EVIDENCE.md) - local Epic 7 evidence gate.
+- [`STORAGE_SOAK.md`](STORAGE_SOAK.md) - repeated storage durability soak gate.
 - [`ENCRYPTED_BACKUPS_DESIGN.md`](ENCRYPTED_BACKUPS_DESIGN.md) - future encrypted backup design.
 - [`RPO_RTO.md`](RPO_RTO.md) - single-node RPO/RTO boundaries.
 - [`CRASH_SIMULATION.md`](CRASH_SIMULATION.md) - crash/fault checks.

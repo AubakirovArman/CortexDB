@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "release_tag": "v0.1.0-core-alpha",
+  "mode": "offline backup restore fixture",
+  "cells": [
+    {
+      "cell_id": 101,
+      "payload": "scope=restore-fixture\nstatus=ready\nfixture payload alpha"
+    },
+    {
+      "cell_id": 102,
+      "payload": "scope=restore-fixture\nstatus=ready\nfixture payload beta"
+    }
+  ],
+  "expected_gates": [
+    "make migration-compatibility-check",
+    "make backup-drill-check",
+    "make storage-soak-check"
+  ],
+  "boundary": "This fixture is release-tagged metadata for current restore drills. It is not a binary backup from a previous published package."
+}
