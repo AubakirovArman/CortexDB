@@ -50,6 +50,20 @@ It checks snapshot sender/install behavior, repair background progress,
 membership rotation resume, topology config loading, and runtime progress
 reconciliation.
 
+The future-epic consensus gates wrap those lower-level reports into the
+promotion evidence format:
+
+```bash
+make distributed-consensus-check
+make consensus-partition-soak-check
+make consensus-failover-slo-check
+make consensus-rejoin-check
+```
+
+These reports are written under `target/consensus/`. They intentionally include
+`production_ready=false` because current evidence is local and repeatable, but
+not yet a sustained multi-process production HA certification.
+
 ## Target SLOs Before Beta
 
 These target thresholds are intentionally conservative placeholders until

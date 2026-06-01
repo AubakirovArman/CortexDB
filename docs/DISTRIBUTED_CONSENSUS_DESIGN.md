@@ -1,6 +1,6 @@
 # Distributed Consensus Design
 
-Status: future design gate, not implemented.
+Status: future phase 1 local evidence gates started, not production-ready.
 
 ## Goal
 
@@ -60,6 +60,22 @@ safety proof and tests.
 3. `make consensus-failover-slo-check`
 4. `make consensus-rejoin-check`
 5. `make public-claims-check`
+
+## Current Evidence Boundary
+
+The current gates are local engineering evidence, not a production distributed
+database claim. They connect the existing replication integration suites to
+machine-readable reports under `target/consensus/`:
+
+| Gate | Evidence |
+| --- | --- |
+| `make distributed-consensus-check` | replicated log recovery, log matching, commit advancement, election, membership, and replay/apply idempotence |
+| `make consensus-partition-soak-check` | partition matrix, split-brain prevention, rejoin repair, repair worker, and consensus-hardening suites |
+| `make consensus-failover-slo-check` | local failover/SLO markers and partition evidence with `production_ready=false` |
+| `make consensus-rejoin-check` | partition evidence plus snapshot, membership-rotation, runtime, and repair lifecycle evidence |
+
+Promotion beyond this boundary requires sustained multi-process runs, real
+operator lifecycle testing, and measured p95/p99 failover and rejoin timings.
 
 ## Acceptance
 

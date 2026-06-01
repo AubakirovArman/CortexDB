@@ -19,12 +19,17 @@ EPIC_MARKERS: dict[str, dict[str, object]] = {
                 "Replicated Log",
                 "Snapshot Install",
                 "Membership Changes",
+                "Current Evidence Boundary",
                 "Required Gates",
                 "Non-goals",
             ],
             "docs/FUTURE_NON_GOAL_EPICS.md": [
                 "Production Distributed Consensus",
                 "make distributed-consensus-check",
+            ],
+            "scripts/consensus_gate_check.py": [
+                "production_ready",
+                "local consensus evidence only",
             ],
         },
     },

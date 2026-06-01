@@ -13,7 +13,7 @@ Total future epics: 7.
 
 | # | Epic | Status | Design gate | Promotion boundary |
 |---|---|---|---|---|
-| 1 | Production Distributed Consensus | future-design-ready | `make distributed-consensus-design-check` | Multi-node replicated log, leader failover, split-brain prevention, and sustained rejoin evidence |
+| 1 | Production Distributed Consensus | future-phase-1-started | `make distributed-consensus-design-check` | Multi-node replicated log, leader failover, split-brain prevention, and sustained rejoin evidence |
 | 2 | Managed Cloud | future-design-ready | `make managed-cloud-design-check` | Hosted control plane, tenant isolation, billing/quotas, cloud operations, and support lifecycle |
 | 3 | Enterprise RBAC And Compliance | future-phase-1-started | `make enterprise-rbac-design-check` | Durable policy store, auditable permissions, compliance controls, and admin lifecycle |
 | 4 | Full Production HNSW Without Fallback | future-design-ready | `make hnsw-no-fallback-design-check` | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
@@ -66,6 +66,22 @@ Why this is future:
 - Current production boundary is local single-node.
 - Current replication and consensus evidence is useful hardening evidence, not
   a production distributed database claim.
+
+Current implementation slice:
+
+- `make distributed-consensus-check` now binds the core replicated-log,
+  conflict-resolution, election, membership, commit, and replay/apply tests to a
+  machine-readable local evidence report.
+- `make consensus-partition-soak-check` wraps the existing partition,
+  split-brain, rejoin, repair, and consensus-hardening suites as an explicit
+  future-epic gate.
+- `make consensus-failover-slo-check` verifies that the local partition
+  evidence is present while keeping the SLO status experimental until
+  multi-process failover timings are collected.
+- `make consensus-rejoin-check` combines partition and lifecycle evidence for
+  append repair, snapshot handoff, membership rotation, and runtime recovery.
+- All new reports are written under `target/consensus/` and carry
+  `production_ready=false`; they prove local evidence only, not production HA.
 
 Task pool:
 
