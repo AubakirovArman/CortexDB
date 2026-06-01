@@ -10,6 +10,7 @@ mod chunking;
 mod formats;
 mod jobs;
 mod pdf;
+mod pdf_contracts;
 mod progress;
 
 pub use adapters::{
@@ -18,6 +19,11 @@ pub use adapters::{
 };
 pub use chunking::{split_text_chunks, stable_chunk_id, TextChunk, TextChunkPolicy};
 pub use pdf::{extract_pdf_text, PdfExtractionStats};
+pub use pdf_contracts::{
+    validate_external_ocr_request, DigitalPdfTextExtractor, DisabledExternalOcrAdapter,
+    ExternalOcrAdapter, ExternalOcrOutput, ExternalOcrPageImage, ExternalOcrPageText,
+    ExternalOcrRequest, NativeDigitalPdfTextExtractor, PdfTextExtractionBoundary,
+};
 pub use progress::{
     IngestionJobId, IngestionJobStatus, IngestionProgress, IngestionProgressTracker,
 };

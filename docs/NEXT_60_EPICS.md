@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 30 |
-| partial | 23 |
+| closed | 31 |
+| partial | 22 |
 | not started | 5 |
 | research | 2 |
 | total | 60 |
@@ -70,7 +70,7 @@ The plan recommends this first execution batch:
 | 26 | Ingestion Jobs v2 | closed | Ingestion endpoints/CLI now expose durable local job records; job state is atomically written, progress tracks completed cells and last cell id, retry/cancel/delete are available, and restart requeues stale `running` jobs as `queued`. | Keep this as a local synchronous job lifecycle until a real background ingestion executor is introduced. |
 | 27 | SourceRef Model v1 | closed | `SourceRef` now carries source id, optional source URL, document/page/range/json-path fields, parser aliases for `doc_id` and `chunk_id`, confidence q16, ContextPack citation enforcement, HTTP/CLI/SDK JSON propagation, OpenAPI/docs coverage, and AQL `REQUIRE confidence` runtime filtering. | Keep future provenance fields additive and preserve SourceRef as the structured citation source. |
 | 28 | Document Chunking Policies | closed | Engine-level `TextChunkPolicy`, deterministic `split_text_chunks`, stable `chunk_id` generation, chunk SourceRef payload metadata, and regression tests now exist. | Keep future chunking changes policy-driven and backwards-compatible with stable chunk ids. |
-| 29 | PDF/Text Extraction Adapter Boundary | partial | Ingestion docs and adapter-boundary direction exist. | Add explicit digital PDF/external OCR adapter contracts. |
+| 29 | PDF/Text Extraction Adapter Boundary | closed | `DigitalPdfTextExtractor`, `NativeDigitalPdfTextExtractor`, `ExternalOcrAdapter`, request/output structs, fail-closed disabled OCR adapter, tests, and `PDF_TEXT_EXTRACTION.md` now define the digital-PDF vs external-OCR boundary. | Keep OCR as an explicit external integration until a production OCR adapter is separately built and gated. |
 | 30 | Ingestion Validation Report | partial | Typed ingest responses exist. | Add richer warnings, skipped chunks, invalid metadata, and source-ref reports. |
 | 31 | Dynamic RBAC Policy Store | partial | RBAC design/security docs exist. | Implement persisted user/role/policy cells and runtime policy mapping. |
 | 32 | Per-token Quotas | partial | Security/rate-limit gates exist. | Add complete per-token body, queue, and metrics budgets. |

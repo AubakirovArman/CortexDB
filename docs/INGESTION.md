@@ -52,6 +52,12 @@ The native PDF extractor handles literal strings and hex strings inside
 intentionally rejects unsupported/empty PDFs instead of silently storing an
 empty document.
 
+PDF extraction has an explicit adapter boundary. `NativeDigitalPdfTextExtractor`
+is the local digital-PDF path for files that already contain text. Scanned PDFs
+and page images must use an external `ExternalOcrAdapter`; the default
+`DisabledExternalOcrAdapter` validates the OCR request shape and then fails
+closed. See [`PDF_TEXT_EXTRACTION.md`](PDF_TEXT_EXTRACTION.md).
+
 ## Text Chunking Policy
 
 Plain-text chunking is now an engine-level policy instead of ad-hoc adapter
