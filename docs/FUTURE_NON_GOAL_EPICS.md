@@ -18,7 +18,7 @@ Total future epics: 7.
 | 3 | Enterprise RBAC And Compliance | future-phase-1-started | `make enterprise-rbac-design-check` | Durable policy store, auditable permissions, compliance controls, and admin lifecycle |
 | 4 | Full Production HNSW Without Fallback | future-phase-1-started | `make hnsw-no-fallback-design-check` | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
 | 5 | Built-in LLM Inference | future-phase-1-started | `make llm-inference-design-check` | Model runtime, resource isolation, prompt safety, provider compatibility, and operational cost controls |
-| 6 | External Identity Providers | future-design-ready | `make external-identity-design-check` | OIDC/SAML or equivalent identity integration with role/scope mapping and rotation |
+| 6 | External Identity Providers | future-phase-1-started | `make external-identity-design-check` | OIDC/SAML or equivalent identity integration with role/scope mapping and rotation |
 | 7 | Legal-grade Verification | future-design-ready | `make legal-verification-design-check` | Legal-domain evidence model, citations, review workflow, liability boundaries, and evaluation by domain experts |
 
 ## Promotion Rules
@@ -372,6 +372,19 @@ Why this is future:
   AgentView binding.
 - External identity adds lifecycle, group mapping, session validation, key
   rotation, and incident response requirements.
+
+Current implementation slice:
+
+- `make oidc-auth-contract-check` verifies that OpenAPI/server routes do not
+  expose future login/callback endpoints yet and that OIDC remains the first
+  protocol target.
+- `make identity-policy-mapping-check` validates an explicit mapping fixture
+  from provider group to CortexDB role, tenant, scope list, and AgentView id.
+- `make auth-rotation-check` validates a JWKS rotation/outage fixture with
+  fail-closed behavior for unknown keys and missing mappings.
+- All new reports are written under `target/external-identity/` and carry
+  `external_identity_ready=false`; they prove local prerequisites only, not a
+  live OIDC, SAML, or session provider.
 
 Task pool:
 

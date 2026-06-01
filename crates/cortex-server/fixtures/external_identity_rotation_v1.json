@@ -1,0 +1,18 @@
+{
+  "schema_version": "cortexdb.external_identity.rotation.v1",
+  "issuer": "https://idp.example.test/",
+  "jwks_url": "https://idp.example.test/.well-known/jwks.json",
+  "current_kid": "kid-current",
+  "next_kid": "kid-next",
+  "jwks_cache_ttl_seconds": 300,
+  "unknown_kid_policy": "deny",
+  "provider_outage_policy": "fail_closed_for_new_tokens",
+  "rejected_cases": [
+    "invalid_issuer",
+    "invalid_audience",
+    "expired_token",
+    "unknown_kid",
+    "missing_mapping"
+  ],
+  "audit_principal_without_token": true
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": "cortexdb.external_identity.policy_mapping.v1",
+  "protocol": "oidc",
+  "issuer": "https://idp.example.test/",
+  "audience": "cortexdb-api",
+  "trust_provider_groups_as_scopes": false,
+  "fail_closed_on_missing_mapping": true,
+  "static_tokens_supported": true,
+  "mappings": [
+    {
+      "external_group": "finance-analysts",
+      "role": "data",
+      "tenant": "default",
+      "scopes": [
+        "project:investments"
+      ],
+      "agent_id": 11
+    },
+    {
+      "external_group": "platform-admins",
+      "role": "admin",
+      "tenant": "default",
+      "scopes": [
+        "admin:local"
+      ],
+      "agent_id": 1
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 # External Identity Design
 
-Status: future design gate, not implemented.
+Status: future phase 1 local evidence gates started, no live OIDC or SAML
+provider integration implemented.
 
 ## Goal
 
@@ -11,6 +12,16 @@ token deployments.
 
 The first implementation should choose one protocol, preferably OIDC, before
 adding SAML or other provider-specific behavior.
+
+## OIDC Contract Boundary
+
+Core Alpha does not expose `/v1/oidc`, `/v1/saml`, `/v1/identity/callback`, or
+`/v1/login` routes. External identity is a future authentication layer, not a
+new data API.
+
+The first provider implementation must be OIDC-only unless a later design
+explicitly adds SAML. OIDC acceptance requires typed configuration for issuer,
+audience, JWKS URL, token lifetime, clock skew, and mapping policy.
 
 ## Issuer And Audience
 
@@ -28,10 +39,44 @@ Identity claims must map to explicit CortexDB roles, tenants, scopes, and
 AgentViews. Missing mappings fail closed. Group names from the identity provider
 must not be trusted as CortexDB scopes without a configured mapping.
 
+## Mapping Fixture
+
+The local policy-mapping fixture models the future mapping contract:
+
+- provider group strings are inputs, not CortexDB scopes;
+- each allowed group maps to explicit role, tenant, scopes, and AgentView id;
+- missing mappings deny access;
+- static bearer-token deployments remain supported.
+
 ## Fail-closed Behavior
 
 Invalid tokens, expired tokens, unknown keys, disabled principals, missing
 scope mappings, and provider errors must deny access with stable typed errors.
+
+## Rotation Fixture
+
+The rotation fixture models expected JWKS behavior without a live provider:
+
+- `unknown_kid` is denied;
+- invalid issuer, invalid audience, expired token, and missing mapping are
+  denied;
+- provider outage fails closed for new tokens;
+- audit metadata may identify the principal but must not log raw bearer tokens.
+
+## Current Evidence Boundary
+
+The current gates prove local prerequisites only:
+
+| Gate | Evidence |
+| --- | --- |
+| `make oidc-auth-contract-check` | OpenAPI/server routes do not expose external identity login/callback endpoints yet, and the design keeps OIDC as the first protocol target. |
+| `make identity-policy-mapping-check` | A fixture validates explicit group-to-role/tenant/scope/AgentView mapping and rejects direct group-as-scope trust. |
+| `make auth-rotation-check` | A fixture validates JWKS rotation and provider-outage fail-closed policy. |
+| `make security-hardening-check` | Existing auth, AgentView, audit, quota, and local policy-store evidence remains green. |
+
+Reports are written under `target/external-identity/` and keep
+`external_identity_ready=false`. They do not claim live OIDC, SAML, session,
+or external provider integration.
 
 ## Required Gates
 

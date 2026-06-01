@@ -136,12 +136,17 @@ EPIC_MARKERS: dict[str, dict[str, object]] = {
                 "JWKS And Rotation",
                 "Role And Scope Mapping",
                 "Fail-closed Behavior",
+                "Current Evidence Boundary",
                 "Required Gates",
                 "Non-goals",
             ],
             "docs/FUTURE_NON_GOAL_EPICS.md": [
                 "External Identity Providers",
-                "make external-identity-design-check",
+                "make oidc-auth-contract-check",
+            ],
+            "scripts/external_identity_gate_check.py": [
+                "external_identity_ready",
+                "no live OIDC or SAML provider integration claim",
             ],
         },
     },
