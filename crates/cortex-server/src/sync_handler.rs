@@ -3,7 +3,8 @@ use std::path::Path;
 use cortex_engine::Database;
 
 use crate::{
-    auth, dashboard, json_error, json_response, route_shared_with_agent, ErrorCode, ServerOptions,
+    auth, auth_policy_store, dashboard, json_error, json_response, route_shared_with_agent,
+    ErrorCode, ServerOptions,
 };
 
 fn serve_dashboard() -> String {
@@ -70,6 +71,13 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
     }
     if let Some(response) = serve_dashboard_asset(parts[1]) {
         return response;
+    }
+
+    let query = parts[1].split_once('?').map_or("", |(_, query)| query);
+    match auth_policy_store::handle_admin_request(options, parts[0], path, query, body.as_bytes()) {
+        Ok(Some(value)) => return json_response(200, &value),
+        Ok(None) => {}
+        Err(error) => return json_error(error.status_code(), error.code(), &error.to_string()),
     }
 
     let Ok(db) = Database::open(root) else {

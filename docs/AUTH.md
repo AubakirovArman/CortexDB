@@ -100,6 +100,32 @@ The review output includes source, principal ID, role, active/disabled state,
 optional `agent_id`, and optional `request_quota_per_minute`. It intentionally
 does not print token values.
 
+Admin tokens can mutate the local JSON policy store when
+`CORTEXDB_AUTH_POLICY_STORE_FILE` is configured. These routes are admin-only and
+write a rollback snapshot next to the policy file before publishing the mutated
+store:
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer root-token" \
+  -H "Content-Type: application/json" \
+  http://127.0.0.1:8181/v1/admin/auth/principal \
+  -d '{"principal_id":"agent-b","token":"agent-b-token","role":"data","agent_id":8,"request_quota_per_minute":600}'
+
+curl -X DELETE \
+  -H "Authorization: Bearer root-token" \
+  "http://127.0.0.1:8181/v1/admin/auth/principal?principal_id=agent-b"
+
+curl -X POST \
+  -H "Authorization: Bearer root-token" \
+  http://127.0.0.1:8181/v1/admin/auth/policy/rollback
+```
+
+The mutation response has schema `cortexdb.auth_policy_mutation.v1` and reports
+the action, affected principal, active/disabled principal counts, and whether a
+rollback snapshot exists. This is still a local file-backed admin lifecycle, not
+external identity or enterprise compliance certification.
+
 ## Sending Requests with Auth
 
 Include the `Authorization: Bearer <token>` header in every request:

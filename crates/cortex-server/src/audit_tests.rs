@@ -13,6 +13,10 @@ fn classify_core_api_actions() {
     assert_eq!(classify("POST", "/v1/ingest/text"), AuditAction::Ingest);
     assert_eq!(classify("POST", "/v1/remember"), AuditAction::Memory);
     assert_eq!(classify("POST", "/v1/compact"), AuditAction::Admin);
+    assert_eq!(
+        classify("POST", "/v1/admin/auth/principal"),
+        AuditAction::Admin
+    );
     assert_eq!(classify("GET", "/v1/metrics"), AuditAction::Metrics);
 }
 

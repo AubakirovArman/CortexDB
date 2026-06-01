@@ -1,9 +1,8 @@
 use crate::audit::{self, AuditAction};
+use crate::auth_policy_store;
 use crate::dashboard;
 use crate::responses::RouterError;
 use crate::ServerOptions;
-use serde::Deserialize;
-use std::collections::BTreeSet;
 use std::path::Path;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -177,85 +176,8 @@ fn load_auth_tokens_file(path: &Path) -> Result<Vec<AuthTokenPolicy>, String> {
     Ok(tokens)
 }
 
-#[derive(Deserialize)]
-struct AuthPolicyStoreFile {
-    schema_version: String,
-    principals: Vec<AuthPolicyPrincipal>,
-}
-
-#[derive(Deserialize)]
-struct AuthPolicyPrincipal {
-    principal_id: String,
-    token: String,
-    role: String,
-    #[serde(default)]
-    agent_id: Option<u64>,
-    #[serde(default)]
-    disabled: bool,
-    #[serde(default)]
-    request_quota_per_minute: Option<u64>,
-}
-
 fn load_auth_policy_store(path: &Path) -> Result<Vec<AuthTokenPolicy>, String> {
-    let raw = std::fs::read_to_string(path)
-        .map_err(|error| format!("auth policy store could not be read: {error}"))?;
-    let store = serde_json::from_str::<AuthPolicyStoreFile>(&raw)
-        .map_err(|error| format!("auth policy store is invalid JSON: {error}"))?;
-    if store.schema_version != "cortexdb.auth_policy.v1" {
-        return Err("auth policy store schema_version must be cortexdb.auth_policy.v1".to_owned());
-    }
-    let mut seen_principals = BTreeSet::new();
-    let mut seen_tokens = BTreeSet::new();
-    let mut policies = Vec::new();
-    for (index, principal) in store.principals.into_iter().enumerate() {
-        let principal_id = principal.principal_id.trim();
-        if principal_id.is_empty() {
-            return Err(format!(
-                "auth policy store principal {} has empty principal_id",
-                index + 1
-            ));
-        }
-        if !seen_principals.insert(principal_id.to_owned()) {
-            return Err(format!(
-                "auth policy store principal_id {principal_id:?} is duplicated"
-            ));
-        }
-        let token = principal.token.trim();
-        if token.is_empty() {
-            return Err(format!(
-                "auth policy store principal {principal_id:?} has empty token"
-            ));
-        }
-        if !seen_tokens.insert(token.to_owned()) {
-            return Err(format!(
-                "auth policy store token for principal {principal_id:?} is duplicated"
-            ));
-        }
-        let role = parse_role(&principal.role)?;
-        if matches!(principal.agent_id, Some(0)) {
-            return Err(format!(
-                "auth policy store principal {principal_id:?} has invalid agent_id"
-            ));
-        }
-        if matches!(principal.request_quota_per_minute, Some(0)) {
-            return Err(format!(
-                "auth policy store principal {principal_id:?} has invalid request_quota_per_minute"
-            ));
-        }
-        if principal.disabled {
-            continue;
-        }
-        let mut policy =
-            AuthTokenPolicy::new(token.to_owned(), role).with_principal_id(principal_id.to_owned());
-        if let Some(agent_id) = principal.agent_id {
-            policy = policy.with_agent_id(agent_id);
-        }
-        if let Some(quota) = principal.request_quota_per_minute {
-            policy = policy.with_request_quota_per_minute(quota);
-        }
-        policies.push(policy);
-    }
-    Ok(policies)
+    auth_policy_store::load_token_policies_from_store(path)
 }
 
 fn effective_auth_tokens(options: &ServerOptions) -> Result<Vec<AuthTokenPolicy>, String> {

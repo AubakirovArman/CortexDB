@@ -29,6 +29,18 @@ GATE_MARKERS = {
                 "crates/cortex-cli/src/cli_auth_review_tests.rs",
                 "auth_review_redacts_policy_store_tokens",
             ),
+            (
+                "crates/cortex-server/src/tests/auth_policy_tests.rs",
+                "admin_can_upsert_policy_store_principal",
+            ),
+            (
+                "crates/cortex-server/src/tests/auth_policy_tests.rs",
+                "data_token_cannot_mutate_policy_store",
+            ),
+            (
+                "crates/cortex-server/src/tests/auth_policy_tests.rs",
+                "admin_can_disable_policy_store_principal_and_rollback",
+            ),
         ],
     },
     "quota-policy": {

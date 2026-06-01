@@ -93,6 +93,41 @@ Missing cells return:
 }
 ```
 
+## Auth Policy Mutation
+
+Admin-only local policy-store lifecycle routes. They require
+`CORTEXDB_AUTH_POLICY_STORE_FILE` and do not expose bearer token values in
+responses.
+
+`POST /v1/admin/auth/principal`
+
+```json
+{
+  "principal_id": "agent-a",
+  "token": "agent-token",
+  "role": "data",
+  "agent_id": 7,
+  "request_quota_per_minute": 600
+}
+```
+
+`DELETE /v1/admin/auth/principal?principal_id=agent-a`
+
+`POST /v1/admin/auth/policy/rollback`
+
+Response:
+
+```json
+{
+  "schema_version": "cortexdb.auth_policy_mutation.v1",
+  "action": "upsert_principal",
+  "principal_id": "agent-a",
+  "active_principals": 1,
+  "disabled_principals": 0,
+  "rollback_available": true
+}
+```
+
 ## Flush / Compact
 
 `POST /v1/flush` and `POST /v1/compact`

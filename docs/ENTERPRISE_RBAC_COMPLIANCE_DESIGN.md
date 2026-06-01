@@ -32,8 +32,11 @@ Current implementation slice:
 - `make rbac-policy-store-check`, `make quota-policy-check`, and
   `make audit-chain-check` bind the required local gates to current tests and
   marker reports.
+- Admin-only local HTTP routes can upsert principals, disable principals, and
+  roll back the last local policy-store mutation:
+  `/v1/admin/auth/principal` and `/v1/admin/auth/policy/rollback`.
 - This slice is a local principal policy store and evidence boundary, not the
-  full admin mutation API or compliance control layer.
+  full dashboard-driven RBAC administration system or compliance control layer.
 
 ## Principal Lifecycle
 
@@ -80,7 +83,8 @@ framework-specific map and external review status.
 
 ## Acceptance
 
-1. Policy changes are durable, auditable, and reversible.
+1. Policy changes are durable, auditable, and reversible through the local
+   policy-store mutation routes.
 2. Disabled principals fail closed.
 3. Audit-chain verification detects tampering.
 4. Public docs state the exact compliance boundary.

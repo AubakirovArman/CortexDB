@@ -126,7 +126,42 @@ Writes or overwrites a single knowledge cell payload.
 
 ---
 
-### 2.6. POST `/v1/context?scope=<scope>`
+### 2.6. Admin auth policy mutation
+
+These routes require an `admin` token and a configured
+`CORTEXDB_AUTH_POLICY_STORE_FILE`. They mutate only the local JSON policy-store
+file and create a rollback snapshot before publishing the new policy.
+
+* `POST /v1/admin/auth/principal`
+* `DELETE /v1/admin/auth/principal?principal_id=<principal_id>`
+* `POST /v1/admin/auth/policy/rollback`
+
+* **Request Body for upsert:**
+  ```json
+  {
+    "principal_id": "agent-a",
+    "token": "agent-token",
+    "role": "data",
+    "agent_id": 7,
+    "request_quota_per_minute": 600
+  }
+  ```
+
+* **Response (200 OK):**
+  ```json
+  {
+    "schema_version": "cortexdb.auth_policy_mutation.v1",
+    "action": "upsert_principal",
+    "principal_id": "agent-a",
+    "active_principals": 1,
+    "disabled_principals": 0,
+    "rollback_available": true
+  }
+  ```
+
+---
+
+### 2.7. POST `/v1/context?scope=<scope>`
 Executes an AQL query and compiles a budgeted, deduplicated, and scored `ContextPack`.
 
 * **Request Body:** Raw AQL query string.
@@ -168,7 +203,7 @@ Executes an AQL query and compiles a budgeted, deduplicated, and scored `Context
 
 ---
 
-### 2.7. POST `/v1/verify?scope=<scope>`
+### 2.8. POST `/v1/verify?scope=<scope>`
 Verifies a specific factual claim against the available database knowledge using AQL.
 
 * **Request Body:** Raw AQL query string.
@@ -215,7 +250,7 @@ Verifies a specific factual claim against the available database knowledge using
 
 ---
 
-### 2.8. POST `/v1/ingest/json?scope=<scope>&source=<source_id>`
+### 2.9. POST `/v1/ingest/json?scope=<scope>&source=<source_id>`
 Ingests a structured JSON payload recursively flattening keys into multiple fact cells.
 
 * **Response (200 OK):**

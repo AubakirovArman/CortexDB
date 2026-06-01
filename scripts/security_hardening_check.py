@@ -19,6 +19,8 @@ REQUIRED_MARKERS = {
         ("scripts/enterprise_rbac_gate_check.py", "cortexdb.enterprise_rbac.rbac_policy_store_gate.v1"),
         ("crates/cortex-server/src/tests/auth_policy_tests.rs", "auth_policy_store_allows_active_principal_and_denies_disabled"),
         ("crates/cortex-server/src/tests/auth_policy_tests.rs", "auth_policy_store_invalid_json_fails_closed"),
+        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "admin_can_upsert_policy_store_principal"),
+        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "admin_can_disable_policy_store_principal_and_rollback"),
     ],
     "auth_policy_review": [
         ("docs/AUTH.md", "cortexdb auth-review --policy-store"),

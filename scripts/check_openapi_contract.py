@@ -57,12 +57,25 @@ def schema_for_response(spec: dict, path: str, method: str, status: str = "200")
     return schema
 
 
+CONTRACT_AUTH_TOKEN = "contract-admin"
+
+
 def start_server(repo: Path, port: int) -> tuple[subprocess.Popen, Path]:
     """Build and start the cortex-server binary on a temp dir."""
     subprocess.run(["cargo", "build", "-p", "cortex-server"], cwd=repo, check=True)
     tmpdir = Path(tempfile.mkdtemp(prefix="cortex_contract_"))
     bin_path = repo / "target" / "debug" / "cortex-server"
-    env = {**dict(subprocess.os.environ), "RUST_LOG": "error"}
+    auth_policy_store = tmpdir / "auth-policy.json"
+    auth_policy_store.write_text(
+        '{"schema_version":"cortexdb.auth_policy.v1","principals":[]}\n',
+        encoding="utf-8",
+    )
+    env = {
+        **dict(subprocess.os.environ),
+        "RUST_LOG": "error",
+        "CORTEXDB_AUTH_TOKEN": CONTRACT_AUTH_TOKEN,
+        "CORTEXDB_AUTH_POLICY_STORE_FILE": str(auth_policy_store),
+    }
     proc = subprocess.Popen(
         [str(bin_path), str(tmpdir), f"127.0.0.1:{port}"],
         stdout=subprocess.DEVNULL,
@@ -73,7 +86,9 @@ def start_server(repo: Path, port: int) -> tuple[subprocess.Popen, Path]:
     # Wait for server to come up
     for _ in range(50):
         try:
-            with urllib.request.urlopen(f"http://127.0.0.1:{port}/v1/health", timeout=0.2) as resp:
+            req = urllib.request.Request(f"http://127.0.0.1:{port}/v1/health")
+            req.add_header("Authorization", f"Bearer {CONTRACT_AUTH_TOKEN}")
+            with urllib.request.urlopen(req, timeout=0.2) as resp:
                 if resp.status == 200:
                     break
         except Exception:
@@ -88,6 +103,7 @@ def start_server(repo: Path, port: int) -> tuple[subprocess.Popen, Path]:
 def request(method: str, url: str, body: bytes | None = None) -> dict:
     """Make an HTTP request and return parsed JSON."""
     req = urllib.request.Request(url, method=method, data=body)
+    req.add_header("Authorization", f"Bearer {CONTRACT_AUTH_TOKEN}")
     if body is not None:
         req.add_header("Content-Type", "text/plain")
     with urllib.request.urlopen(req, timeout=5) as resp:
@@ -134,6 +150,27 @@ def main() -> int:
 
         get_resp = request("GET", f"{base}/v1/cell?cell_id=1")
         check("/v1/cell", "GET", get_resp)
+
+        # Admin auth policy mutation
+        auth_upsert_resp = request(
+            "POST",
+            f"{base}/v1/admin/auth/principal",
+            b'{"principal_id":"contract-data","token":"contract-data-token","role":"data","request_quota_per_minute":600}',
+        )
+        check("/v1/admin/auth/principal", "POST", auth_upsert_resp)
+
+        auth_disable_resp = request(
+            "DELETE",
+            f"{base}/v1/admin/auth/principal?principal_id=contract-data",
+        )
+        check("/v1/admin/auth/principal", "DELETE", auth_disable_resp)
+
+        auth_rollback_resp = request(
+            "POST",
+            f"{base}/v1/admin/auth/policy/rollback",
+            b"",
+        )
+        check("/v1/admin/auth/policy/rollback", "POST", auth_rollback_resp)
 
         # Search
         search_resp = request(

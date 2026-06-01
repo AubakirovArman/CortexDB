@@ -22,6 +22,8 @@ mod audit_chain;
 #[cfg(test)]
 mod audit_tests;
 mod auth;
+mod auth_policy_io;
+mod auth_policy_store;
 mod authz;
 mod context;
 mod dashboard;
@@ -503,6 +505,39 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
             );
         }
     };
+
+    match auth_policy_store::handle_admin_request(
+        &state.options,
+        &method,
+        &path,
+        &query,
+        &body_bytes,
+    ) {
+        Ok(Some(body_str)) => {
+            audit_http_response(&state, &audit_event, StatusCode::OK, None);
+            let response =
+                if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_str) {
+                    (StatusCode::OK, Json(json_val)).into_response()
+                } else {
+                    (StatusCode::OK, body_str).into_response()
+                };
+            return with_request_id(response, &request_id);
+        }
+        Ok(None) => {}
+        Err(error) => {
+            let status =
+                StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::BAD_REQUEST);
+            audit_http_response(&state, &audit_event, status, Some(error.code()));
+            return with_request_id(
+                (
+                    status,
+                    Json(error_response(error.code(), error.to_string())),
+                )
+                    .into_response(),
+                &request_id,
+            );
+        }
+    }
 
     let tenant = query_param_opt_decoded(&query, "tenant").unwrap_or_else(|| "default".to_owned());
     if !validate_tenant_id(&tenant) {

@@ -176,6 +176,9 @@ Current implementation slice:
 - `make rbac-policy-store-check`, `make quota-policy-check`, and
   `make audit-chain-check` now exist as local evidence gates that bind the
   Epic 3 required checks to current tests and marker reports.
+- Admin-only local policy-store mutation routes now support principal upsert,
+  principal disablement, and rollback of the previous local policy-store
+  snapshot.
 
 Task pool:
 
@@ -183,7 +186,10 @@ Task pool:
 2. Implement a durable local policy store for principals, roles, scopes, and
    capabilities.
 3. Add policy mutation APIs with admin-only access and full audit events.
+   Local file-backed upsert, disable, and rollback are implemented; dashboard
+   UX and richer role/capability objects remain future work.
 4. Add disabled-principal and token revocation lifecycle.
+   Local disabled-principal lifecycle is implemented for the JSON policy store.
 5. Add per-token and per-principal quota accounting.
 6. Add tamper-evident audit chain with sequence continuity checks.
 7. Add vendor-specific SIEM delivery adapters and operational export schedules.
@@ -192,6 +198,8 @@ Task pool:
 9. Add dashboard admin views for policy mutation, policy review, and audit
    review.
 10. Add migration and rollback for policy-store format changes.
+    Last-mutation rollback snapshot is implemented; format migration remains
+    future work.
 
 Required gates:
 

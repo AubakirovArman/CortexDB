@@ -111,6 +111,74 @@ paths:
         '400': *id001
         '404': *id003
         '500': *id002
+  /v1/admin/auth/principal:
+    post:
+      summary: Upsert a local auth policy principal
+      description: Admin-only local policy-store mutation. Requires CORTEXDB_AUTH_POLICY_STORE_FILE.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthPolicyPrincipalRequest'
+      responses:
+        '200':
+          description: Policy mutation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthPolicyMutationResponse'
+        '400': *id001
+        '401': &id004
+          description: Unauthorized — missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403': &id005
+          description: Forbidden — authenticated principal lacks route role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500': *id002
+    delete:
+      summary: Disable a local auth policy principal
+      description: Admin-only local policy-store mutation. Requires CORTEXDB_AUTH_POLICY_STORE_FILE.
+      parameters:
+      - name: principal_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Policy mutation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthPolicyMutationResponse'
+        '400': *id001
+        '401': *id004
+        '403': *id005
+        '404': *id003
+        '500': *id002
+  /v1/admin/auth/policy/rollback:
+    post:
+      summary: Restore the previous local auth policy-store snapshot
+      description: Admin-only rollback for the previous local policy-store mutation.
+      responses:
+        '200':
+          description: Policy mutation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthPolicyMutationResponse'
+        '400': *id001
+        '401': *id004
+        '403': *id005
+        '404': *id003
+        '500': *id002
   /v1/flush:
     post:
       summary: Checkpoint current changes
@@ -765,6 +833,64 @@ components:
         cell_id:
           type: integer
           format: uint64
+    AuthPolicyPrincipalRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - principal_id
+      - token
+      - role
+      properties:
+        principal_id:
+          type: string
+        token:
+          type: string
+        role:
+          type: string
+          enum:
+          - admin
+          - data
+        agent_id:
+          type: integer
+          format: uint64
+          minimum: 1
+        disabled:
+          type: boolean
+        request_quota_per_minute:
+          type: integer
+          format: uint64
+          minimum: 1
+    AuthPolicyMutationResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - schema_version
+      - action
+      - principal_id
+      - active_principals
+      - disabled_principals
+      - rollback_available
+      properties:
+        schema_version:
+          type: string
+          enum:
+          - cortexdb.auth_policy_mutation.v1
+        action:
+          type: string
+          enum:
+          - upsert_principal
+          - disable_principal
+          - rollback_policy
+        principal_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+        active_principals:
+          type: integer
+        disabled_principals:
+          type: integer
+        rollback_available:
+          type: boolean
     CheckpointResponse:
       type: object
       required:

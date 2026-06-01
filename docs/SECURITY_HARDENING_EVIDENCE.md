@@ -18,7 +18,7 @@ target/security-hardening/report.json
 
 | Area | Current status |
 | --- | --- |
-| Persisted auth policy store | File-backed token rotation and JSON principal policy store are implemented through `CORTEXDB_AUTH_TOKENS_FILE` and `CORTEXDB_AUTH_POLICY_STORE_FILE`; `make rbac-policy-store-check` verifies the local evidence gate; full enterprise RBAC administration remains future work. |
+| Persisted auth policy store | File-backed token rotation and JSON principal policy store are implemented through `CORTEXDB_AUTH_TOKENS_FILE` and `CORTEXDB_AUTH_POLICY_STORE_FILE`; admin-only local mutation routes support upsert, disable, and rollback; `make rbac-policy-store-check` verifies the local evidence gate; full enterprise RBAC administration remains future work. |
 | Auth policy review | `cortexdb auth-review` shows local policy-store/token-file principals, roles, AgentView bindings, quotas, and disabled state while redacting token values. |
 | Per-principal quotas | Process-wide rate limit and policy-store `request_quota_per_minute` are implemented; `make quota-policy-check` verifies the local evidence gate; route-class and distributed quotas remain future work. |
 | Principal-aware audit metadata | Authenticated route-level JSONL audit records include `principal_id`, `auth_role`, and `auth_agent_id` without storing bearer tokens. |
