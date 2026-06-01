@@ -398,6 +398,9 @@ Current implementation slice:
 - The local `verify_oidc_claims` verifier enforces issuer, audience,
   expiration, not-before, explicit group mapping, role, tenant, scope, and
   AgentView constraints for already-validated OIDC claims.
+- The local verifier now validates mapping configuration before issuing a
+  decision, so empty config, duplicate provider groups, invalid roles, invalid
+  scopes, and invalid AgentView ids fail closed.
 - `make auth-rotation-check` validates a JWKS rotation/outage fixture with
   fail-closed behavior for unknown keys and missing mappings.
 - All new reports are written under `target/external-identity/` and carry
@@ -412,6 +415,8 @@ Task pool:
 3. Define issuer, audience, JWKS, token lifetime, and key rotation behavior.
 4. Define identity-to-role and identity-to-AgentView mapping.
 5. Define group and tenant mapping rules.
+   Local mapping-config validation now rejects empty or duplicate group mapping
+   rules before a decision is issued.
 6. Add fail-closed behavior for identity provider outages.
 7. Add admin docs for provider configuration and rotation.
 8. Add security tests for invalid issuer, invalid audience, expired tokens,

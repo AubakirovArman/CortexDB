@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 
 use crate::auth::AuthRole;
 
@@ -43,6 +44,7 @@ pub struct ExternalIdentityDecision {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ExternalIdentityFailure {
+    InvalidConfig,
     InvalidIssuer,
     InvalidAudience,
     ExpiredToken,
@@ -56,6 +58,7 @@ pub fn verify_oidc_claims(
     claims: &ExternalIdentityClaims,
     now_unix_seconds: u64,
 ) -> Result<ExternalIdentityDecision, ExternalIdentityFailure> {
+    validate_external_identity_config(config)?;
     if claims.issuer != config.issuer {
         return Err(ExternalIdentityFailure::InvalidIssuer);
     }
@@ -86,6 +89,27 @@ pub fn verify_oidc_claims(
         return Err(ExternalIdentityFailure::MissingMapping);
     };
     decision_from_mapping(&claims.subject, mapping)
+}
+
+pub fn validate_external_identity_config(
+    config: &ExternalIdentityConfig,
+) -> Result<(), ExternalIdentityFailure> {
+    if config.issuer.trim().is_empty()
+        || config.audience.trim().is_empty()
+        || config.mappings.is_empty()
+    {
+        return Err(ExternalIdentityFailure::InvalidConfig);
+    }
+
+    let mut seen_groups = BTreeSet::new();
+    for mapping in &config.mappings {
+        let external_group = mapping.external_group.trim();
+        if external_group.is_empty() || !seen_groups.insert(external_group.to_owned()) {
+            return Err(ExternalIdentityFailure::InvalidConfig);
+        }
+        decision_from_mapping("config-validation", mapping)?;
+    }
+    Ok(())
 }
 
 fn decision_from_mapping(
@@ -204,6 +228,25 @@ mod tests {
         assert_eq!(
             verify_oidc_claims(&config, &claims(), 1_700_000_000),
             Err(ExternalIdentityFailure::InvalidMapping)
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_external_identity_config_before_mapping_claims() {
+        let mut invalid_config = config();
+        invalid_config.issuer.clear();
+        assert_eq!(
+            verify_oidc_claims(&invalid_config, &claims(), 1_700_000_000),
+            Err(ExternalIdentityFailure::InvalidConfig)
+        );
+
+        let mut invalid_config = config();
+        invalid_config
+            .mappings
+            .push(invalid_config.mappings[0].clone());
+        assert_eq!(
+            verify_oidc_claims(&invalid_config, &claims(), 1_700_000_000),
+            Err(ExternalIdentityFailure::InvalidConfig)
         );
     }
 }

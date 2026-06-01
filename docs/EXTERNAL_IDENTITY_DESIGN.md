@@ -44,6 +44,11 @@ claims and enforces issuer, audience, expiration, not-before, explicit group
 mapping, role, tenant, scope, and AgentView constraints. It is intentionally not
 a JWT signature verifier and does not fetch JWKS.
 
+The local verifier also validates the mapping configuration before issuing a
+decision. Empty issuer or audience values, empty mapping lists, duplicate
+provider groups, empty scopes, invalid roles, and invalid AgentView ids fail
+closed.
+
 ## Mapping Fixture
 
 The local policy-mapping fixture models the future mapping contract:

@@ -130,6 +130,8 @@ def validate_local_claim_verifier() -> list[str]:
         "TokenNotYetValid",
         "MissingMapping",
         "InvalidMapping",
+        "InvalidConfig",
+        "validate_external_identity_config",
         "project:investments",
     ]
     for marker in markers:
