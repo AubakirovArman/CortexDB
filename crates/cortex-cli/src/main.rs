@@ -9,6 +9,9 @@ mod cli_audit_siem;
 mod cli_audit_siem_tests;
 #[cfg(test)]
 mod cli_audit_tests;
+mod cli_auth_review;
+#[cfg(test)]
+mod cli_auth_review_tests;
 mod cli_ingest;
 #[cfg(test)]
 mod cli_ingest_tests;

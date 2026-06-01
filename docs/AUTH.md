@@ -88,6 +88,18 @@ Roles:
 If an `agent_id` is present, that token is also bound to the persisted
 `AgentView` with the same ID, so scope permissions are enforced per token.
 
+Review local auth policy files without exposing bearer tokens:
+
+```bash
+cortexdb auth-review --policy-store ./auth-policy.json
+cortexdb auth-review --tokens-file ./auth.tokens
+cortexdb --json auth-review --policy-store ./auth-policy.json --tokens-file ./auth.tokens
+```
+
+The review output includes source, principal ID, role, active/disabled state,
+optional `agent_id`, and optional `request_quota_per_minute`. It intentionally
+does not print token values.
+
 ## Sending Requests with Auth
 
 Include the `Authorization: Bearer <token>` header in every request:

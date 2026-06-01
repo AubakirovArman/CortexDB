@@ -167,6 +167,9 @@ Current implementation slice:
   another principal.
 - `cortexdb audit-export-siem` exports normalized local JSONL with principal
   and audit-chain metadata after optional redaction and chain checks.
+- `cortexdb auth-review` reports local policy-store/token-file principals,
+  roles, AgentView bindings, quotas, and disabled state without printing token
+  values.
 
 Task pool:
 
@@ -179,7 +182,8 @@ Task pool:
 6. Add tamper-evident audit chain with sequence continuity checks.
 7. Add vendor-specific SIEM delivery adapters and operational export schedules.
 8. Add compliance-control mapping docs for the intended target framework.
-9. Add dashboard admin views for policy review and audit review.
+9. Add dashboard admin views for policy mutation, policy review, and audit
+   review.
 10. Add migration and rollback for policy-store format changes.
 
 Required gates:

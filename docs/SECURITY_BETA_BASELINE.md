@@ -10,6 +10,7 @@ design-only, so release gates can block overclaims.
 | --- | --- |
 | Static route roles | `admin` and `data` bearer-token roles are enforced by route class. |
 | Token rotation | `CORTEXDB_AUTH_TOKENS_FILE` is re-read per request and fails closed on invalid content. |
+| Policy review tooling | `cortexdb auth-review` reports local policy-store/token-file roles, principals, AgentView bindings, quotas, and disabled state without printing token values. |
 | AgentView scoping | Token-bound AgentViews restrict readable/writable scopes on data routes. |
 | Tenant path safety | Tenant IDs are percent-decoded, length-limited, and path-traversal checked. |
 | Request limits | Process-wide and policy-store per-principal fixed-window request limits can return typed `rate_limited` errors. |
@@ -31,8 +32,9 @@ Plan:
 1. Keep `CORTEXDB_AUTH_POLICY_STORE_FILE` as the local durable JSON policy-store
    entry point for principals, roles, disabled principals, and optional
    AgentView binding.
-2. Add a read-only policy-store preview command that prints effective route
-   class, token role, optional AgentView binding, and tenant.
+2. Keep `cortexdb auth-review` as the read-only local policy preview command
+   for roles, principals, optional AgentView binding, quotas, and disabled
+   state.
 3. Persist principal, credential, role-binding, and AgentView-binding records in
    a system scope.
 4. Add an `AuthPolicyResolver` abstraction that can read from static options,
@@ -45,6 +47,7 @@ Plan:
 Beta gate:
 
 - disabled principals cannot authenticate;
+- local policy review output never contains raw token material;
 - data/auditor/operator roles cannot access admin-only routes;
 - AgentView-bound principals cannot read or write forbidden scopes;
 - policy-store corruption fails closed.

@@ -1,8 +1,8 @@
 use clap::{error::ErrorKind, Parser, Subcommand};
 
 use crate::{
-    cli_ann as ann, cli_audit as audit, cli_audit_siem as audit_siem, cli_ingest as ingest,
-    cli_ops as ops,
+    cli_ann as ann, cli_audit as audit, cli_audit_siem as audit_siem,
+    cli_auth_review as auth_review, cli_ingest as ingest, cli_ops as ops,
 };
 
 #[derive(Parser, Debug)]
@@ -119,6 +119,14 @@ enum Command {
         redaction_check: bool,
         #[arg(long = "verify-chain")]
         verify_chain: bool,
+    },
+    AuthReview {
+        #[arg(long = "policy-store")]
+        policy_store: Option<String>,
+        #[arg(long = "tokens-file")]
+        tokens_file: Option<String>,
+        #[arg(long)]
+        tokens: Option<String>,
     },
     Restore {
         backup_path: String,
@@ -358,6 +366,16 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             verify_chain,
             cli.json,
         ),
+        Command::AuthReview {
+            policy_store,
+            tokens_file,
+            tokens,
+        } => auth_review::review(auth_review::AuthReviewOptions {
+            policy_store: policy_store.as_deref(),
+            tokens_file: tokens_file.as_deref(),
+            tokens: tokens.as_deref(),
+            json: cli.json,
+        }),
         Command::Restore { backup_path, path } => {
             ops::restore(&backup_path, resolved(&path).to_str().unwrap())
         }

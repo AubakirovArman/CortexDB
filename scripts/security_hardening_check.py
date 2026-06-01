@@ -17,6 +17,12 @@ REQUIRED_MARKERS = {
         ("crates/cortex-server/src/tests/auth_policy_tests.rs", "auth_policy_store_allows_active_principal_and_denies_disabled"),
         ("crates/cortex-server/src/tests/auth_policy_tests.rs", "auth_policy_store_invalid_json_fails_closed"),
     ],
+    "auth_policy_review": [
+        ("docs/AUTH.md", "cortexdb auth-review --policy-store"),
+        ("docs/SECURITY_HARDENING_EVIDENCE.md", "auth_policy_review: true"),
+        ("crates/cortex-cli/src/cli_auth_review.rs", "cortexdb.auth_review.v1"),
+        ("crates/cortex-cli/src/cli_auth_review_tests.rs", "auth_review_redacts_policy_store_tokens"),
+    ],
     "per_token_quota_boundary": [
         ("docs/SECURITY_BETA_BASELINE.md", "request_quota_per_minute"),
         ("docs/SECURITY_THREAT_MODEL.md", "Per-token quotas by route class"),
