@@ -1,5 +1,7 @@
 use cortex_core::CellId;
-use cortex_engine::{CsvIngestOptions, Database, JsonIngestOptions, TextIngestOptions};
+use cortex_engine::{
+    CsvIngestOptions, Database, IngestionProgress, JsonIngestOptions, TextIngestOptions,
+};
 
 pub fn load_fixture(path: &str, fixture_path: &str) -> Result<String, String> {
     let jsonl_file = std::path::Path::new(fixture_path).join("cells.jsonl");
@@ -93,9 +95,74 @@ pub fn csv(path: &str, scope: &str, file: &str) -> Result<String, String> {
     ))
 }
 
+pub fn jobs(path: &str, json: bool) -> Result<String, String> {
+    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let jobs = db
+        .list_ingestion_jobs()
+        .map_err(|error| error.to_string())?;
+    if json {
+        return serde_json::to_string(&jobs).map_err(|error| error.to_string());
+    }
+    let ids = jobs
+        .iter()
+        .map(|job| job.job_id.0.to_string())
+        .collect::<Vec<_>>()
+        .join(",");
+    Ok(format!("jobs={} ids={ids}", jobs.len()))
+}
+
+pub fn job(path: &str, job_id: u64, json: bool) -> Result<String, String> {
+    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let progress = db
+        .load_ingestion_job(job_id)
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| format!("ingestion job not found: {job_id}"))?;
+    format_job(progress, json)
+}
+
+pub fn cancel_job(path: &str, job_id: u64, json: bool) -> Result<String, String> {
+    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let progress = db
+        .cancel_ingestion_job(job_id)
+        .map_err(|error| error.to_string())?;
+    format_job(progress, json)
+}
+
+pub fn retry_job(path: &str, job_id: u64, json: bool) -> Result<String, String> {
+    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let progress = db
+        .retry_ingestion_job(job_id)
+        .map_err(|error| error.to_string())?;
+    format_job(progress, json)
+}
+
+pub fn delete_job(path: &str, job_id: u64) -> Result<String, String> {
+    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let deleted = db
+        .delete_ingestion_job(job_id)
+        .map_err(|error| error.to_string())?;
+    Ok(format!("deleted={deleted}"))
+}
+
 fn first_cell_output(label: &str, count: usize, first_cell_id: Option<u64>) -> String {
     match first_cell_id {
         Some(id) => format!("{label}={count} first_cell_id={id}"),
         None => format!("{label}=0 first_cell_id=null"),
     }
+}
+
+fn format_job(progress: IngestionProgress, json: bool) -> Result<String, String> {
+    if json {
+        return serde_json::to_string(&progress).map_err(|error| error.to_string());
+    }
+    Ok(format!(
+        "job_id={} status={:?} completed_items={} failed_items={} retry_count={} message={}",
+        progress.job_id.0,
+        progress.status,
+        progress.completed_items,
+        progress.failed_items,
+        progress.retry_count,
+        progress.message.unwrap_or_else(|| "null".to_owned())
+    )
+    .to_ascii_lowercase())
 }

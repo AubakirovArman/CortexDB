@@ -413,4 +413,7 @@ parameters.
 Empty inputs return zero counts and `first_cell_id: null`.
 
 `GET /v1/ingest/jobs/<job_id>` returns the persisted ingestion job progress
-object for jobs created by engine-side job workflows.
+object for jobs created by engine-side job workflows. `POST
+/v1/ingest/jobs/<job_id>/retry` moves a failed job back to `queued`, `POST
+/v1/ingest/jobs/<job_id>/cancel` cancels queued/running jobs, and `DELETE
+/v1/ingest/jobs/<job_id>` deletes a persisted job record.

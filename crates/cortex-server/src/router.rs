@@ -401,6 +401,19 @@ pub fn route_database_with_agent(
         }
         _ if method == "POST"
             && path.starts_with("/v1/ingest/jobs/")
+            && path.ends_with("/cancel") =>
+        {
+            let prefix = "/v1/ingest/jobs/";
+            let suffix = "/cancel";
+            let id_str = &path[prefix.len()..path.len() - suffix.len()];
+            let id = id_str
+                .parse::<u64>()
+                .map_err(|_| RouterError::BadRequest("invalid job id".to_owned()))?;
+            let progress = db.cancel_ingestion_job(id)?;
+            Ok(serde_json::to_string(&progress)?)
+        }
+        _ if method == "POST"
+            && path.starts_with("/v1/ingest/jobs/")
             && path.ends_with("/retry") =>
         {
             let prefix = "/v1/ingest/jobs/";

@@ -72,6 +72,21 @@ operator surface for deterministic local jobs, not a distributed background job
 system. Empty text, JSON, and CSV ingestion requests return zero cells and a
 `null` first cell id instead of panicking or fabricating a cell.
 
+The CLI exposes the same local job lifecycle for operator review:
+
+```bash
+cortexdb ingest-jobs ./db
+cortexdb ingest-job ./db 1
+cortexdb ingest-job-retry ./db 1
+cortexdb ingest-job-cancel ./db 1
+cortexdb ingest-job-delete ./db 1
+```
+
+`retry` only accepts failed jobs and clears the failure message while increasing
+`retry_count`. `cancel` only accepts queued/running jobs. Completed jobs are
+immutable from the cancel/retry path and can only be deleted as persisted
+history.
+
 ## Implemented
 
 - **TTL expiry/decay scanning** — `Database::expired_memory_cells` and
@@ -82,4 +97,5 @@ system. Empty text, JSON, and CSV ingestion requests return zero cells and a
 ## Not Yet
 
 - PDF layout reconstruction and object graph repair.
+- OCR, page images, tables, forms, and scanned-document pipelines.
 - Enrichment jobs.

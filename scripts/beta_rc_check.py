@@ -67,8 +67,8 @@ SUITES: tuple[dict[str, Any], ...] = (
     },
     {
         "name": "ingestion_jobs",
-        "command": ["cargo", "test", "-p", "cortex-server", "ingest"],
-        "covers": ["ingestion endpoints", "job lifecycle", "empty input behavior"],
+        "command": ["cargo", "test", "--workspace", "--all-features", "ingest"],
+        "covers": ["ingestion endpoints", "CLI job commands", "job lifecycle", "empty input behavior"],
     },
     {
         "name": "dashboard_operational_view",
@@ -160,7 +160,12 @@ def self_test() -> int:
     if len(names) != len(set(names)):
         print("beta rc self-test failed: duplicate suite names")
         return 1
-    required = {"beta_foundation", "backup_restore_drill", "security_model_tests"}
+    required = {
+        "beta_foundation",
+        "backup_restore_drill",
+        "security_model_tests",
+        "ingestion_jobs",
+    }
     missing = sorted(required.difference(names))
     if missing:
         print(f"beta rc self-test failed: missing suites {missing}")

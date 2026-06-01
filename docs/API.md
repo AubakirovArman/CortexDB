@@ -245,6 +245,23 @@ Ingests a structured CSV table creating one document block cell per row.
 
 ---
 
+### 2.10. Ingestion job lifecycle
+
+Persisted ingestion jobs expose local progress and recovery operations:
+
+| Route | Purpose |
+| --- | --- |
+| `GET /v1/ingest/jobs` | List persisted ingestion jobs. |
+| `GET /v1/ingest/jobs/<job_id>` | Read one job. |
+| `POST /v1/ingest/jobs/<job_id>/retry` | Move a failed job back to `queued`. |
+| `POST /v1/ingest/jobs/<job_id>/cancel` | Cancel a queued or running job. |
+| `DELETE /v1/ingest/jobs/<job_id>` | Delete a persisted job record. |
+
+Job records include `status`, `total_items`, `completed_items`,
+`failed_items`, `last_cell_id`, `message`, `retry_count`, and `max_retries`.
+
+---
+
 ## 3. Status Codes & Error Specification
 
 If an error occurs, the server responds with a corresponding HTTP status code and a structured JSON body:

@@ -1,3 +1,5 @@
+use cortex_engine::{Database, IngestionJobId, IngestionJobStatus, IngestionProgress};
+
 use crate::handle_http;
 
 #[test]
@@ -49,6 +51,39 @@ fn ingestion_jobs_list_and_get() {
 }
 
 #[test]
+fn ingestion_job_cancel_and_retry_over_http() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let db = Database::open(dir.path()).unwrap();
+        db.save_ingestion_job(&job(7, IngestionJobStatus::Running, None, 0))
+            .unwrap();
+        db.save_ingestion_job(&job(
+            8,
+            IngestionJobStatus::Failed,
+            Some("temporary parser failure"),
+            0,
+        ))
+        .unwrap();
+    }
+
+    let cancel_request = "POST /v1/ingest/jobs/7/cancel HTTP/1.1\r\n\r\n";
+    let cancel_response = handle_http(dir.path(), cancel_request);
+    assert!(cancel_response.contains(r#""job_id":7"#));
+    assert!(cancel_response.contains(r#""status":"cancelled""#));
+
+    let retry_request = "POST /v1/ingest/jobs/8/retry HTTP/1.1\r\n\r\n";
+    let retry_response = handle_http(dir.path(), retry_request);
+    assert!(retry_response.contains(r#""job_id":8"#));
+    assert!(retry_response.contains(r#""status":"queued""#));
+    assert!(retry_response.contains(r#""retry_count":1"#));
+    assert!(!retry_response.contains("temporary parser failure"));
+
+    let delete_request = "DELETE /v1/ingest/jobs/7 HTTP/1.1\r\n\r\n";
+    let delete_response = handle_http(dir.path(), delete_request);
+    assert!(delete_response.contains(r#""deleted":true"#));
+}
+
+#[test]
 fn forget_endpoint_tombstones_cell() {
     let dir = tempfile::tempdir().unwrap();
     let put_request = "POST /v1/cell?cell_id=42 HTTP/1.1\r\n\r\nhello world";
@@ -61,4 +96,24 @@ fn forget_endpoint_tombstones_cell() {
     let get_request = "GET /v1/cell?cell_id=42 HTTP/1.1\r\n\r\n";
     let get_response = handle_http(dir.path(), get_request);
     assert!(get_response.contains(r#""cell":null"#));
+}
+
+fn job(
+    id: u64,
+    status: IngestionJobStatus,
+    message: Option<&str>,
+    retry_count: u32,
+) -> IngestionProgress {
+    IngestionProgress {
+        job_id: IngestionJobId(id),
+        label: format!("test-job-{id}"),
+        status,
+        total_items: Some(10),
+        completed_items: 2,
+        failed_items: u64::from(message.is_some()),
+        last_cell_id: None,
+        message: message.map(str::to_owned),
+        retry_count,
+        max_retries: 3,
+    }
 }

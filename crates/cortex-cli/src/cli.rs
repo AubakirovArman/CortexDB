@@ -224,6 +224,25 @@ enum Command {
         scope: String,
         file: String,
     },
+    IngestJobs {
+        path: String,
+    },
+    IngestJob {
+        path: String,
+        job_id: u64,
+    },
+    IngestJobCancel {
+        path: String,
+        job_id: u64,
+    },
+    IngestJobRetry {
+        path: String,
+        job_id: u64,
+    },
+    IngestJobDelete {
+        path: String,
+        job_id: u64,
+    },
 }
 
 pub fn run(args: Vec<String>) -> Result<String, String> {
@@ -420,6 +439,19 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         }
         Command::IngestCsv { path, scope, file } => {
             ingest::csv(resolved(&path).to_str().unwrap(), &scope, &file)
+        }
+        Command::IngestJobs { path } => ingest::jobs(resolved(&path).to_str().unwrap(), cli.json),
+        Command::IngestJob { path, job_id } => {
+            ingest::job(resolved(&path).to_str().unwrap(), job_id, cli.json)
+        }
+        Command::IngestJobCancel { path, job_id } => {
+            ingest::cancel_job(resolved(&path).to_str().unwrap(), job_id, cli.json)
+        }
+        Command::IngestJobRetry { path, job_id } => {
+            ingest::retry_job(resolved(&path).to_str().unwrap(), job_id, cli.json)
+        }
+        Command::IngestJobDelete { path, job_id } => {
+            ingest::delete_job(resolved(&path).to_str().unwrap(), job_id)
         }
     }
 }

@@ -153,6 +153,20 @@ cortexdb restore ./db.backup ./db.restored
 cortexdb validate ./db.restored
 ```
 
+#### Ingestion job commands
+
+```bash
+cortexdb ingest-jobs ./db
+cortexdb ingest-job ./db 1
+cortexdb ingest-job-retry ./db 1
+cortexdb ingest-job-cancel ./db 1
+cortexdb ingest-job-delete ./db 1
+```
+
+These commands expose the same persisted local job records as the HTTP
+`/v1/ingest/jobs` routes. They are for local operator review and recovery, not a
+distributed background-job system.
+
 ### Search
 
 #### `search <path> <scope> <query>`

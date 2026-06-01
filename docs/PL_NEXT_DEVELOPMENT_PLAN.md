@@ -490,6 +490,21 @@ Acceptance:
 
 ### Epic 3.4 - Ingestion Jobs Maturity
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- Engine ingestion jobs persist progress, failed item counts, failure messages,
+  retry counts, cancel state, and delete state.
+- HTTP exposes list/get/retry/cancel/delete job lifecycle routes.
+- CLI exposes `ingest-jobs`, `ingest-job`, `ingest-job-retry`,
+  `ingest-job-cancel`, and `ingest-job-delete`.
+- Server and CLI tests cover list/get/retry/cancel/delete flows plus empty
+  ingestion behavior.
+- `docs/INGESTION.md` clarifies PDF/OCR/document ingestion alpha limits.
+- `scripts/beta_rc_check.py` gates ingestion job lifecycle evidence across the
+  workspace.
+
 Tasks:
 
 1. Harden ingestion jobs lifecycle:

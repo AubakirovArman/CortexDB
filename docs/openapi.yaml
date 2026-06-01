@@ -554,6 +554,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500': *id002
+  /v1/ingest/jobs/{job_id}/cancel:
+    post:
+      summary: Cancel a queued or running ingestion job
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: uint64
+      responses:
+        '200':
+          description: Cancelled job progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestionProgress'
+        '400':
+          description: Job not in queued or running state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500': *id002
   /get:
     get:
       summary: Legacy cell read
