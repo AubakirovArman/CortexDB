@@ -3,6 +3,9 @@ use std::collections::BTreeSet;
 
 use crate::auth::AuthRole;
 
+mod provider;
+pub use provider::{validate_oidc_provider_config, OidcProviderConfig, OidcProviderConfigFailure};
+
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ExternalIdentityConfig {
     pub issuer: String,

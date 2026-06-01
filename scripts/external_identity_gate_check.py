@@ -147,6 +147,20 @@ def validate_rotation_fixture(path: Path) -> list[str]:
         failures.append("rotation fixture has wrong schema_version")
     if value.get("jwks_cache_ttl_seconds", 0) <= 0:
         failures.append("jwks_cache_ttl_seconds must be positive")
+    if not isinstance(value.get("audience"), str) or not value["audience"]:
+        failures.append("audience must be present")
+    jwks_url = value.get("jwks_url")
+    if not isinstance(jwks_url, str) or not jwks_url.startswith("https://"):
+        failures.append("jwks_url must be https")
+    algorithms = value.get("allowed_algorithms")
+    if not isinstance(algorithms, list) or not algorithms:
+        failures.append("allowed_algorithms must be non-empty")
+    elif any(algorithm not in {"RS256", "ES256", "PS256"} for algorithm in algorithms):
+        failures.append("allowed_algorithms must use asymmetric production algorithms")
+    if value.get("request_timeout_ms", 0) <= 0:
+        failures.append("request_timeout_ms must be positive")
+    if value.get("fail_open") is not False:
+        failures.append("fail_open must be false")
     if value.get("unknown_kid_policy") != "deny":
         failures.append("unknown kid policy must deny")
     if value.get("provider_outage_policy") != "fail_closed_for_new_tokens":
@@ -158,6 +172,22 @@ def validate_rotation_fixture(path: Path) -> list[str]:
     if value.get("audit_principal_without_token") is not True:
         failures.append("audit must identify principal without logging token")
     return failures
+
+
+def validate_provider_config_marker() -> list[str]:
+    source = read(Path("crates/cortex-server/src/external_identity/provider.rs"))
+    markers = [
+        "OidcProviderConfig",
+        "validate_oidc_provider_config",
+        "InvalidJwksUrl",
+        "FailOpenNotAllowed",
+        '"RS256" | "ES256" | "PS256"',
+    ]
+    return [
+        f"external_identity/provider.rs missing provider marker {marker!r}"
+        for marker in markers
+        if marker not in source
+    ]
 
 
 def validate(gate: str) -> dict[str, Any]:
@@ -183,6 +213,7 @@ def validate(gate: str) -> dict[str, Any]:
         checks["local_claim_verifier"] = not mapping_failures
     elif gate == "rotation":
         rotation_failures = validate_rotation_fixture(Path(spec["fixture"]))  # type: ignore[arg-type]
+        rotation_failures.extend(validate_provider_config_marker())
         failures.extend(rotation_failures)
         checks["rotation_fixture"] = not rotation_failures
 

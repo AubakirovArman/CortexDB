@@ -424,6 +424,9 @@ Current implementation slice:
   scopes, and invalid AgentView ids fail closed.
 - `make auth-rotation-check` validates a JWKS rotation/outage fixture with
   fail-closed behavior for unknown keys and missing mappings.
+- The local `validate_oidc_provider_config` helper validates OIDC provider
+  configuration shape before token acceptance: HTTPS JWKS URL, safe asymmetric
+  algorithms, bounded cache/timeout values, and `fail_open=false`.
 - All new reports are written under `target/external-identity/` and carry
   `external_identity_ready=false`; they prove local prerequisites and claim
   mapping only, not a live OIDC, SAML, session provider, JWT signature verifier,
@@ -434,11 +437,16 @@ Task pool:
 1. Write `docs/EXTERNAL_IDENTITY_DESIGN.md`.
 2. Choose first protocol target, such as OIDC, before adding others.
 3. Define issuer, audience, JWKS, token lifetime, and key rotation behavior.
+   Local typed provider configuration validation is implemented for issuer,
+   audience, JWKS URL, allowed algorithms, cache TTL, timeout, and fail-open
+   policy; live JWKS fetch and JWT signature validation remain future work.
 4. Define identity-to-role and identity-to-AgentView mapping.
 5. Define group and tenant mapping rules.
    Local mapping-config validation now rejects empty or duplicate group mapping
    rules before a decision is issued.
 6. Add fail-closed behavior for identity provider outages.
+   The rotation fixture and provider config validation now require fail-closed
+   outage semantics; live provider outage handling remains future work.
 7. Add admin docs for provider configuration and rotation.
 8. Add security tests for invalid issuer, invalid audience, expired tokens,
    revoked keys, and missing scope mapping. Issuer, audience, expiration,

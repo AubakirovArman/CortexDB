@@ -21,7 +21,8 @@ new data API.
 
 The first provider implementation must be OIDC-only unless a later design
 explicitly adds SAML. OIDC acceptance requires typed configuration for issuer,
-audience, JWKS URL, token lifetime, clock skew, and mapping policy.
+audience, JWKS URL, allowed signature algorithms, token lifetime, clock skew,
+request timeout, fail-open policy, and mapping policy.
 
 ## Issuer And Audience
 
@@ -32,6 +33,12 @@ signature. Incorrect issuer or audience must fail closed.
 
 JWKS retrieval needs cache TTLs, refresh behavior, key rotation, and outage
 policy. A provider outage must not silently widen access.
+
+The local `validate_oidc_provider_config` helper now validates provider
+configuration before any future token acceptance path can trust it. It requires
+an HTTPS JWKS URL, non-empty issuer and audience, a positive bounded cache TTL,
+a positive bounded request timeout, asymmetric production algorithms
+(`RS256`, `ES256`, or `PS256`), and `fail_open=false`.
 
 ## Role And Scope Mapping
 

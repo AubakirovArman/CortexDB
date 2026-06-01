@@ -1,10 +1,16 @@
 {
   "schema_version": "cortexdb.external_identity.rotation.v1",
   "issuer": "https://idp.example.test/",
+  "audience": "cortexdb-api",
   "jwks_url": "https://idp.example.test/.well-known/jwks.json",
+  "allowed_algorithms": [
+    "RS256"
+  ],
   "current_kid": "kid-current",
   "next_kid": "kid-next",
   "jwks_cache_ttl_seconds": 300,
+  "request_timeout_ms": 2000,
+  "fail_open": false,
   "unknown_kid_policy": "deny",
   "provider_outage_policy": "fail_closed_for_new_tokens",
   "rejected_cases": [
