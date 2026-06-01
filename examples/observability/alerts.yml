@@ -55,6 +55,15 @@ groups:
           summary: CortexDB ANN fallback rate is elevated
           description: More than 10% of ANN-capable searches reported exact/fallback behavior.
 
+      - alert: CortexDbAnnNoFallbackBlocked
+        expr: increase(cortexdb_ann_no_fallback_blocked[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: CortexDB no-fallback ANN rollout was blocked
+          description: A fallback-free rollout decision was denied by guardrails; inspect no_fallback_decision reasons before retrying.
+
       - alert: CortexDbValidationFailures
         expr: increase(cortexdb_validation_failures[5m]) > 0
         for: 1m

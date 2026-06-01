@@ -70,6 +70,9 @@ fn snapshot_metrics_includes_actor_and_request_fields() {
     assert!(response.contains(r#""request_duration_ms_total":"#));
     assert!(response.contains(r#""ann_search_requests":"#));
     assert!(response.contains(r#""ann_fallbacks":"#));
+    assert!(response.contains(r#""ann_no_fallback_requests":"#));
+    assert!(response.contains(r#""ann_no_fallback_allowed":"#));
+    assert!(response.contains(r#""ann_no_fallback_blocked":"#));
     assert!(response.contains(r#""validation_failures":"#));
 }
 

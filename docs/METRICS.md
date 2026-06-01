@@ -58,6 +58,9 @@ Important fields:
 | `ann_has_uncheckpointed_changes` | Whether WAL tail is newer than ANN graph. | True can disable evaluation evidence. |
 | `ann_search_requests` | ANN-capable search responses observed by the HTTP surface. | Use with `ann_fallbacks` for fallback rate. |
 | `ann_fallbacks` | ANN-capable searches that reported exact/fallback behavior. | Sustained growth means ANN is not meeting its runtime guardrails. |
+| `ann_no_fallback_requests` | ANN responses that included a no-fallback rollout decision. | Confirms operators are explicitly exercising fallback-free guardrails. |
+| `ann_no_fallback_allowed` | No-fallback rollout decisions that allowed serving. | Should only rise for proven profile-scoped rollout requests. |
+| `ann_no_fallback_blocked` | No-fallback rollout decisions blocked by guardrails. | Any increase requires inspection before retrying fallback-free rollout. |
 | `actor_queue_depth` | Current per-tenant actor queue depth. | Sustained high values show backpressure. |
 | `actor_queue_capacity` | Configured actor queue capacity. | Used with depth to compute saturation. |
 | `request_count` | Requests handled by the process. | Traffic counter. |
@@ -154,6 +157,8 @@ Treat these as Core Alpha operator heuristics, not production SLA guarantees:
 - `live_segments` keeps growing: compaction is not keeping up.
 - `ann_fallbacks / ann_search_requests > 0.10` over five minutes: ANN is
   frequently falling back; inspect SLO violations and graph freshness.
+- `ann_no_fallback_blocked` increases: keep fallback-free serving disabled for
+  that profile, inspect `no_fallback_decision.reasons`, and re-run ANN evidence.
 - `validation_failures` increases: stop promotion and inspect `/v1/validate`
   output before continuing writes.
 - `ann_has_uncheckpointed_changes = true`: ANN evaluation can be unavailable;

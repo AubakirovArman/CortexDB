@@ -20,7 +20,11 @@ GATES: dict[str, dict[str, object]] = {
         "markers": [
             ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "Serving Guardrails"),
             ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "Runtime Rollout Policy"),
+            ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "ann_no_fallback_blocked"),
             ("docs/SEARCH.md", "Guarded production mode"),
+            ("docs/OBSERVABILITY_ALERTS.md", "CortexDbAnnNoFallbackBlocked"),
+            ("examples/observability/alerts.yml", "cortexdb_ann_no_fallback_blocked"),
+            ("crates/cortex-server/src/lib.rs", "cortexdb_ann_no_fallback_blocked"),
             ("crates/cortex-engine/src/search/hnsw_no_fallback.rs", "HnswNoFallbackRolloutPolicy"),
             ("crates/cortex-engine/src/search/hnsw_no_fallback.rs", "RolloutDisabled"),
             ("crates/cortex-engine/src/search/hnsw_no_fallback.rs", "FallbackEnabled"),

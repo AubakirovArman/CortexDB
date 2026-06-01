@@ -20,6 +20,8 @@ They cover:
 - missing persisted ANN graph: `cortexdb_ann_graph_nodes == 0`;
 - ANN fallback rate:
   `increase(cortexdb_ann_fallbacks[5m]) / increase(cortexdb_ann_search_requests[5m])`;
+- no-fallback rollout blocks:
+  `increase(cortexdb_ann_no_fallback_blocked[5m])`;
 - validation failures: `cortexdb_validation_failures`.
 
 ## Suggested Actions
@@ -32,6 +34,7 @@ They cover:
 | `CortexDbDatabaseBusy` | Inspect rate limits and actor saturation; retry with backoff rather than tight loops. |
 | `CortexDbAnnGraphUnavailable` | Use exact vector search as the correctness path; checkpoint/compact to rebuild ANN evidence. |
 | `CortexDbAnnFallbackRate` | Inspect ANN search reports for SLO violations, graph freshness, and visit-budget fallback reasons. |
+| `CortexDbAnnNoFallbackBlocked` | Keep fallback-free serving disabled for that profile, inspect `no_fallback_decision.reasons`, and re-run ANN release evidence before retrying rollout. |
 | `CortexDbValidationFailures` | Stop release promotion, save `/v1/validate` output, and run `cortexdb validate` plus backup/restore checks. |
 
 ## Operator Playbooks
@@ -58,6 +61,16 @@ They cover:
    stale.
 3. Use exact vector search for correctness while graph tuning is investigated.
 4. Re-run ANN release evidence before promoting a release.
+
+### ANN No-fallback Blocks
+
+1. Inspect `no_fallback_decision.reasons` from the blocked request.
+2. If the reason is recall, graph topology, stale graph, or fallback-enabled
+   policy, keep `no_fallback_profile=active` disabled for production traffic.
+3. Rebuild/checkpoint/compact the graph only after validating corpus and vector
+   generation consistency.
+4. Re-run `make ann-production-no-fallback-check` and the relevant history
+   gate before re-enabling the operator profile.
 
 ### Validation Failures
 

@@ -73,6 +73,15 @@
     },
     {
       "id": 8,
+      "title": "ANN No-fallback Decisions",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "increase(cortexdb_ann_no_fallback_allowed[5m])", "legendFormat": "allowed" },
+        { "expr": "increase(cortexdb_ann_no_fallback_blocked[5m])", "legendFormat": "blocked" }
+      ]
+    },
+    {
+      "id": 9,
       "title": "Validation Failures",
       "type": "timeseries",
       "targets": [

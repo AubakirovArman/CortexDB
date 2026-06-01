@@ -83,6 +83,11 @@ The response includes `no_fallback_decision.allowed` and stable reason strings.
 Absence of the rollout flag or profile selector means CortexDB keeps the normal
 guarded ANN mode.
 
+Operational counters are exposed through `/v1/metrics` and Prometheus:
+`ann_no_fallback_requests`, `ann_no_fallback_allowed`, and
+`ann_no_fallback_blocked`. These counters are profile-rollout evidence only;
+they do not imply fallback-free production readiness by themselves.
+
 ## Required Gates
 
 1. `make ann-production-no-fallback-check`
@@ -116,7 +121,9 @@ ready by their own evidence.
 4. Runtime policy rejects disabled rollout, fallback-enabled search policy,
    missing SLO enforcement, fallback reasons, unsafe reports, weak topology, and
    recall below the rollout threshold.
-5. Public docs do not generalize beyond proven profiles.
+5. Operator metrics show attempted, allowed, and blocked no-fallback rollout
+   decisions.
+6. Public docs do not generalize beyond proven profiles.
 
 ## Non-goals
 

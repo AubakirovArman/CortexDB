@@ -1861,6 +1861,9 @@ components:
       - ann_has_uncheckpointed_changes
       - ann_search_requests
       - ann_fallbacks
+      - ann_no_fallback_requests
+      - ann_no_fallback_allowed
+      - ann_no_fallback_blocked
       - actor_queue_depth
       - actor_queue_capacity
       - request_count
@@ -1911,6 +1914,15 @@ components:
           type: integer
           format: uint64
         ann_fallbacks:
+          type: integer
+          format: uint64
+        ann_no_fallback_requests:
+          type: integer
+          format: uint64
+        ann_no_fallback_allowed:
+          type: integer
+          format: uint64
+        ann_no_fallback_blocked:
           type: integer
           format: uint64
         actor_queue_depth:

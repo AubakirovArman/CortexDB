@@ -173,6 +173,16 @@ snapshot precondition is met.
 - `deleted_vectors` — tombstoned vectors across all live segments
 - `rebuild_count` — number of graph rebuilds performed
 
+`GET /v1/metrics` also exposes operator counters for fallback-free rollout
+decisions:
+
+- `ann_no_fallback_requests` — ANN responses that included a no-fallback
+  rollout decision
+- `ann_no_fallback_allowed` — decisions that allowed serving for the selected
+  profile
+- `ann_no_fallback_blocked` — decisions blocked by recall, graph, fallback, or
+  SLO guardrails
+
 ### 5. Limitations & Fail-Safes
 - **Static Rebuild Lifecycle:** Graphs are built deterministically during the `checkpoint`/`compact` phase and remain static in `.ach` files. Real-time updates inside the MemTable (WAL tail) bypass HNSW and are merged on-the-fly using exact scan, ensuring 100% freshness and correctness.
 - **Profile-aware graph construction:** `DatabaseOptions::hnsw_build_config` controls the HNSW shape written by checkpoint/compact. Use wider profiles for semantic/audit workloads and compact after a profile change to rebuild existing `.ach` files.
