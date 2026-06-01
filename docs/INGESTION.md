@@ -120,6 +120,23 @@ cortexdb ingest-job-delete ./db 1
 immutable from the cancel/retry path and can only be deleted as persisted
 history.
 
+## Ingestion Validation Report
+
+Every HTTP ingestion response includes `validation_report`. The report is built
+from the cells that were actually written:
+
+- `cells_seen`: number of emitted cells checked after write.
+- `warnings`: structured issues such as missing payloads, missing SourceRef
+  metadata, or chunk id mismatch.
+- `skipped_items`: non-error skips such as `no_cells_emitted` for empty text,
+  `{}`, `[]`, or header-only CSV.
+- `source_refs`: per-cell summary of SourceRef availability, source id,
+  document id, chunk id, and confidence.
+
+The engine API exposes the same check as
+`Database::ingestion_validation_report(&cells)`. This keeps ingestion reports
+derived from durable cells rather than request-local assumptions.
+
 ## Implemented
 
 - **TTL expiry/decay scanning** — `Database::expired_memory_cells` and

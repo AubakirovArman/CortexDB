@@ -12,6 +12,7 @@ mod jobs;
 mod pdf;
 mod pdf_contracts;
 mod progress;
+mod report;
 
 pub use adapters::{
     CsvIngestOptions, EntityIngestOptions, IngestedCell, JsonIngestOptions, PdfIngestOptions,
@@ -26,6 +27,10 @@ pub use pdf_contracts::{
 };
 pub use progress::{
     IngestionJobId, IngestionJobStatus, IngestionProgress, IngestionProgressTracker,
+};
+pub use report::{
+    IngestionSkippedItem, IngestionSourceRefReport, IngestionValidationIssue,
+    IngestionValidationReport,
 };
 
 const MEMORY_CELL_NAMESPACE: u64 = 0x8000_0000_0000_0000;

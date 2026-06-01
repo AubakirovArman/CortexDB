@@ -46,9 +46,10 @@ pub use ingestion::{
     CsvIngestOptions, DigitalPdfTextExtractor, DisabledExternalOcrAdapter, EntityIngestOptions,
     ExternalOcrAdapter, ExternalOcrOutput, ExternalOcrPageImage, ExternalOcrPageText,
     ExternalOcrRequest, IngestedCell, IngestionJobId, IngestionJobStatus, IngestionProgress,
-    IngestionProgressTracker, JsonIngestOptions, NativeDigitalPdfTextExtractor, PdfExtractionStats,
-    PdfIngestOptions, PdfTextExtractionBoundary, RelationIngestOptions, TextChunk, TextChunkPolicy,
-    TextIngestOptions,
+    IngestionProgressTracker, IngestionSkippedItem, IngestionSourceRefReport,
+    IngestionValidationIssue, IngestionValidationReport, JsonIngestOptions,
+    NativeDigitalPdfTextExtractor, PdfExtractionStats, PdfIngestOptions, PdfTextExtractionBoundary,
+    RelationIngestOptions, TextChunk, TextChunkPolicy, TextIngestOptions,
 };
 pub use legal::{
     evaluate_legal_report_contract, evaluate_legal_verification_boundary, LegalOutputBoundary,

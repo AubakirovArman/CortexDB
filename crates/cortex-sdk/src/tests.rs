@@ -115,6 +115,41 @@ fn typed_context_response_decodes_source_ref_url() {
 }
 
 #[test]
+fn typed_ingest_response_decodes_validation_report() {
+    let value = serde_json::json!({
+        "rows_ingested": 0,
+        "chunks_ingested": 1,
+        "facts_ingested": 0,
+        "first_cell_id": 42,
+        "job_id": 7,
+        "validation_report": {
+            "cells_seen": 1,
+            "warnings": [],
+            "skipped_items": [],
+            "source_refs": [{
+                "cell_id": 42,
+                "chunk_id": "memo.md#chunk-0001",
+                "has_source_ref": true,
+                "source_id": "memo.md",
+                "document_id": "memo.md",
+                "confidence_q16": 32768
+            }]
+        }
+    });
+
+    let response: IngestResponse =
+        serde_json::from_value(value).expect("ingest response should decode");
+
+    assert_eq!(response.validation_report.cells_seen, 1);
+    assert_eq!(
+        response.validation_report.source_refs[0]
+            .chunk_id
+            .as_deref(),
+        Some("memo.md#chunk-0001")
+    );
+}
+
+#[test]
 fn tenant_query_param_is_appended_to_existing_queries() {
     let value = append_query_param("/v1/stats?limit=10", "tenant", "tenant:alpha");
     assert_eq!(value, "/v1/stats?limit=10&tenant=tenant%3Aalpha");

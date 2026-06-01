@@ -105,6 +105,7 @@ fn snapshot_ingest_text_response_shape() {
     assert!(response.contains(r#""facts_ingested":"#));
     assert!(response.contains(r#""rows_ingested":"#));
     assert!(response.contains(r#""first_cell_id":"#));
+    assert!(response.contains(r#""validation_report":"#));
 }
 
 #[test]

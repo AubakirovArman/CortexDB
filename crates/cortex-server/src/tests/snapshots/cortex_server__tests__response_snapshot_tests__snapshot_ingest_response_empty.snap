@@ -1,5 +1,6 @@
 ---
 source: crates/cortex-server/src/tests/response_snapshot_tests.rs
+assertion_line: 334
 expression: resp
 ---
 {
@@ -7,5 +8,16 @@ expression: resp
   "chunks_ingested": 0,
   "facts_ingested": 0,
   "first_cell_id": null,
-  "job_id": 1
+  "job_id": 1,
+  "validation_report": {
+    "cells_seen": 0,
+    "warnings": [],
+    "skipped_items": [
+      {
+        "reason": "no_cells_emitted",
+        "input_ref": "ingest_text"
+      }
+    ],
+    "source_refs": []
+  }
 }

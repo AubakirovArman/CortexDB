@@ -1878,6 +1878,7 @@ components:
       - facts_ingested
       - first_cell_id
       - job_id
+      - validation_report
       properties:
         rows_ingested:
           type: integer
@@ -1894,6 +1895,94 @@ components:
           anyOf:
           - type: integer
             format: uint64
+          - type: 'null'
+        validation_report:
+          $ref: '#/components/schemas/IngestionValidationReport'
+    IngestionValidationReport:
+      type: object
+      required:
+      - cells_seen
+      - warnings
+      - skipped_items
+      - source_refs
+      properties:
+        cells_seen:
+          type: integer
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngestionValidationIssue'
+        skipped_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngestionSkippedItem'
+        source_refs:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngestionSourceRefReport'
+    IngestionValidationIssue:
+      type: object
+      required:
+      - code
+      - message
+      - cell_id
+      - chunk_id
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        cell_id:
+          anyOf:
+          - type: integer
+            format: uint64
+          - type: 'null'
+        chunk_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+    IngestionSkippedItem:
+      type: object
+      required:
+      - reason
+      - input_ref
+      properties:
+        reason:
+          type: string
+        input_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+    IngestionSourceRefReport:
+      type: object
+      required:
+      - cell_id
+      - chunk_id
+      - has_source_ref
+      - source_id
+      - document_id
+      - confidence_q16
+      properties:
+        cell_id:
+          type: integer
+          format: uint64
+        chunk_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+        has_source_ref:
+          type: boolean
+        source_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+        document_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+        confidence_q16:
+          anyOf:
+          - type: integer
           - type: 'null'
     IngestionProgress:
       type: object

@@ -11,18 +11,36 @@ fn empty_ingestion_endpoints_safety() {
     assert!(text_response.contains(r#""chunks_ingested":0"#));
     assert!(text_response.contains(r#""first_cell_id":null"#));
     assert!(text_response.contains(r#""job_id":1"#));
+    assert!(text_response.contains(r#""reason":"no_cells_emitted""#));
+    assert!(text_response.contains(r#""input_ref":"ingest_text""#));
 
     let json_request = "POST /v1/ingest/json?scope=project:investments HTTP/1.1\r\n\r\n{}";
     let json_response = handle_http(dir.path(), json_request);
     assert!(json_response.contains(r#""facts_ingested":0"#));
     assert!(json_response.contains(r#""first_cell_id":null"#));
     assert!(json_response.contains(r#""job_id":2"#));
+    assert!(json_response.contains(r#""input_ref":"ingest_json""#));
 
     let csv_request = "POST /v1/ingest/csv?scope=project:investments HTTP/1.1\r\n\r\n";
     let csv_response = handle_http(dir.path(), csv_request);
     assert!(csv_response.contains(r#""rows_ingested":0"#));
     assert!(csv_response.contains(r#""first_cell_id":null"#));
     assert!(csv_response.contains(r#""job_id":3"#));
+    assert!(csv_response.contains(r#""input_ref":"ingest_csv""#));
+}
+
+#[test]
+fn text_ingestion_response_reports_source_refs() {
+    let dir = tempfile::tempdir().unwrap();
+    let request = "POST /v1/ingest/text?scope=project:investments&source=memo.md HTTP/1.1\r\n\r\nalpha budget";
+
+    let response = handle_http(dir.path(), request);
+
+    assert!(response.contains(r#""validation_report":"#));
+    assert!(response.contains(r#""cells_seen":1"#));
+    assert!(response.contains(r#""has_source_ref":true"#));
+    assert!(response.contains(r#""source_id":"memo.md""#));
+    assert!(response.contains(r#""chunk_id":"memo.md#chunk-0001""#));
 }
 
 #[test]

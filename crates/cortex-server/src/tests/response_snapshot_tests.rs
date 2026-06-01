@@ -6,6 +6,7 @@ use crate::responses::{
     PutCellResponse, ScoreComponentResponse, SearchResultResponse, SourceRefResponse,
     StatsResponse, ValidationResponse, VerificationReportResponse,
 };
+use cortex_engine::{IngestionSkippedItem, IngestionSourceRefReport, IngestionValidationReport};
 
 #[test]
 fn snapshot_health_response() {
@@ -320,6 +321,15 @@ fn snapshot_ingest_response_empty() {
         facts_ingested: 0,
         first_cell_id: None,
         job_id: Some(1),
+        validation_report: IngestionValidationReport {
+            cells_seen: 0,
+            warnings: Vec::new(),
+            skipped_items: vec![IngestionSkippedItem {
+                reason: "no_cells_emitted".to_owned(),
+                input_ref: Some("ingest_text".to_owned()),
+            }],
+            source_refs: Vec::new(),
+        },
     };
     insta::assert_json_snapshot!(resp);
 }
@@ -332,6 +342,19 @@ fn snapshot_ingest_response_with_cells() {
         facts_ingested: 3,
         first_cell_id: Some(1),
         job_id: Some(1),
+        validation_report: IngestionValidationReport {
+            cells_seen: 1,
+            warnings: Vec::new(),
+            skipped_items: Vec::new(),
+            source_refs: vec![IngestionSourceRefReport {
+                cell_id: 1,
+                chunk_id: Some("memo.md#chunk-0001".to_owned()),
+                has_source_ref: true,
+                source_id: Some("memo.md".to_owned()),
+                document_id: Some("memo.md".to_owned()),
+                confidence_q16: Some(32768),
+            }],
+        },
     };
     insta::assert_json_snapshot!(resp);
 }

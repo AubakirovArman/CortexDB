@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use cortex_engine::IngestionValidationReport;
+
 #[derive(Serialize, Debug, Clone)]
 pub struct HealthResponse {
     pub status: String,
@@ -350,6 +352,7 @@ pub struct IngestResponse {
     pub facts_ingested: usize,
     pub first_cell_id: Option<u64>,
     pub job_id: Option<u64>,
+    pub validation_report: IngestionValidationReport,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

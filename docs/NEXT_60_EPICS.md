@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 31 |
-| partial | 22 |
+| closed | 32 |
+| partial | 21 |
 | not started | 5 |
 | research | 2 |
 | total | 60 |
@@ -71,7 +71,7 @@ The plan recommends this first execution batch:
 | 27 | SourceRef Model v1 | closed | `SourceRef` now carries source id, optional source URL, document/page/range/json-path fields, parser aliases for `doc_id` and `chunk_id`, confidence q16, ContextPack citation enforcement, HTTP/CLI/SDK JSON propagation, OpenAPI/docs coverage, and AQL `REQUIRE confidence` runtime filtering. | Keep future provenance fields additive and preserve SourceRef as the structured citation source. |
 | 28 | Document Chunking Policies | closed | Engine-level `TextChunkPolicy`, deterministic `split_text_chunks`, stable `chunk_id` generation, chunk SourceRef payload metadata, and regression tests now exist. | Keep future chunking changes policy-driven and backwards-compatible with stable chunk ids. |
 | 29 | PDF/Text Extraction Adapter Boundary | closed | `DigitalPdfTextExtractor`, `NativeDigitalPdfTextExtractor`, `ExternalOcrAdapter`, request/output structs, fail-closed disabled OCR adapter, tests, and `PDF_TEXT_EXTRACTION.md` now define the digital-PDF vs external-OCR boundary. | Keep OCR as an explicit external integration until a production OCR adapter is separately built and gated. |
-| 30 | Ingestion Validation Report | partial | Typed ingest responses exist. | Add richer warnings, skipped chunks, invalid metadata, and source-ref reports. |
+| 30 | Ingestion Validation Report | closed | Engine-level `IngestionValidationReport` now reports warnings, skipped items, and per-cell SourceRef summaries; HTTP ingest responses include it with OpenAPI/docs/snapshot coverage. | Extend warning codes only additively as new ingestion adapters are added. |
 | 31 | Dynamic RBAC Policy Store | partial | RBAC design/security docs exist. | Implement persisted user/role/policy cells and runtime policy mapping. |
 | 32 | Per-token Quotas | partial | Security/rate-limit gates exist. | Add complete per-token body, queue, and metrics budgets. |
 | 33 | Tamper-evident Audit Log | partial | Audit paths and security checks exist. | Add hash-chain audit log and `cortexdb audit verify`. |

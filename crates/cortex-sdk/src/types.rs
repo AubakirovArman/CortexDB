@@ -341,6 +341,39 @@ pub struct IngestResponse {
     pub facts_ingested: usize,
     pub first_cell_id: Option<u64>,
     pub job_id: Option<u64>,
+    pub validation_report: IngestionValidationReport,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct IngestionValidationReport {
+    pub cells_seen: usize,
+    pub warnings: Vec<IngestionValidationIssue>,
+    pub skipped_items: Vec<IngestionSkippedItem>,
+    pub source_refs: Vec<IngestionSourceRefReport>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct IngestionValidationIssue {
+    pub code: String,
+    pub message: String,
+    pub cell_id: Option<u64>,
+    pub chunk_id: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct IngestionSkippedItem {
+    pub reason: String,
+    pub input_ref: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct IngestionSourceRefReport {
+    pub cell_id: u64,
+    pub chunk_id: Option<String>,
+    pub has_source_ref: bool,
+    pub source_id: Option<String>,
+    pub document_id: Option<String>,
+    pub confidence_q16: Option<u16>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]

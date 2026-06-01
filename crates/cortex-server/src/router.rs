@@ -322,6 +322,7 @@ pub fn route_database_with_agent(
                 facts_ingested: 0,
                 first_cell_id: results.first().map(|cell| cell.cell_id.0),
                 job_id: Some(job_id.0),
+                validation_report: ingestion_validation_report(db, &results, "ingest_text"),
             };
             Ok(serde_json::to_string(&response)?)
         }
@@ -349,6 +350,7 @@ pub fn route_database_with_agent(
                 facts_ingested: results.len(),
                 first_cell_id: results.first().map(|cell| cell.cell_id.0),
                 job_id: Some(job_id.0),
+                validation_report: ingestion_validation_report(db, &results, "ingest_json"),
             };
             Ok(serde_json::to_string(&response)?)
         }
@@ -377,6 +379,7 @@ pub fn route_database_with_agent(
                 facts_ingested: 0,
                 first_cell_id: results.first().map(|cell| cell.cell_id.0),
                 job_id: Some(job_id.0),
+                validation_report: ingestion_validation_report(db, &results, "ingest_csv"),
             };
             Ok(serde_json::to_string(&response)?)
         }
@@ -588,6 +591,18 @@ fn track_ingest(
             Err(error.into())
         }
     }
+}
+
+fn ingestion_validation_report(
+    db: &Database,
+    cells: &[IngestedCell],
+    input_ref: &str,
+) -> cortex_engine::IngestionValidationReport {
+    let mut report = db.ingestion_validation_report(cells);
+    if cells.is_empty() {
+        report.record_skipped("no_cells_emitted", Some(input_ref.to_owned()));
+    }
+    report
 }
 
 pub fn reason(status: u16) -> &'static str {

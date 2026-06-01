@@ -335,7 +335,23 @@ Ingests a structured JSON payload recursively flattening keys into multiple fact
     "rows_ingested": 0,
     "chunks_ingested": 0,
     "facts_ingested": 10,
-    "first_cell_id": 1000
+    "first_cell_id": 1000,
+    "job_id": 1,
+    "validation_report": {
+      "cells_seen": 10,
+      "warnings": [],
+      "skipped_items": [],
+      "source_refs": [
+        {
+          "cell_id": 1000,
+          "chunk_id": null,
+          "has_source_ref": true,
+          "source_id": "api",
+          "document_id": null,
+          "confidence_q16": 32768
+        }
+      ]
+    }
   }
   ```
 
@@ -351,7 +367,22 @@ Ingests a structured CSV table creating one document block cell per row.
     "facts_ingested": 0,
     "rows_ingested": 150,
     "first_cell_id": 2000,
-    "job_id": 1
+    "job_id": 1,
+    "validation_report": {
+      "cells_seen": 150,
+      "warnings": [],
+      "skipped_items": [],
+      "source_refs": [
+        {
+          "cell_id": 2000,
+          "chunk_id": null,
+          "has_source_ref": true,
+          "source_id": "budget.csv",
+          "document_id": null,
+          "confidence_q16": 32768
+        }
+      ]
+    }
   }
   ```
 

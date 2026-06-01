@@ -693,11 +693,22 @@ parameters.
   "chunks_ingested": 0,
   "facts_ingested": 0,
   "first_cell_id": null,
-  "job_id": 1
+  "job_id": 1,
+  "validation_report": {
+    "cells_seen": 0,
+    "warnings": [],
+    "skipped_items": [
+      {"reason": "no_cells_emitted", "input_ref": "ingest_text"}
+    ],
+    "source_refs": []
+  }
 }
 ```
 
-Empty inputs return zero counts and `first_cell_id: null`.
+Empty inputs return zero counts, `first_cell_id: null`, and a
+`validation_report.skipped_items` entry. Non-empty ingestion reports include
+per-cell SourceRef summaries so clients can verify whether chunks/facts are
+citable.
 
 `GET /v1/ingest/jobs/<job_id>` returns the persisted ingestion job progress
 object for jobs created by engine-side job workflows. `POST
