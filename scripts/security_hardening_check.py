@@ -18,9 +18,15 @@ REQUIRED_MARKERS = {
         ("crates/cortex-server/src/tests/auth_policy_tests.rs", "auth_policy_store_invalid_json_fails_closed"),
     ],
     "per_token_quota_boundary": [
-        ("docs/SECURITY_BETA_BASELINE.md", "Key quota counters by safe token fingerprint"),
-        ("docs/SECURITY_THREAT_MODEL.md", "Per-token quotas"),
+        ("docs/SECURITY_BETA_BASELINE.md", "request_quota_per_minute"),
+        ("docs/SECURITY_THREAT_MODEL.md", "Per-token quotas by route class"),
         ("crates/cortex-server/src/tests/security_tests.rs", "rate_limit_returns_typed_429_when_enabled"),
+    ],
+    "per_principal_quota": [
+        ("docs/AUTH.md", "request_quota_per_minute"),
+        ("docs/SECURITY_HARDENING_EVIDENCE.md", "per_principal_quota: true"),
+        ("crates/cortex-server/src/auth.rs", "auth_policy_store_rejects_zero_quota"),
+        ("crates/cortex-server/src/tests/security_quota_tests.rs", "policy_store_principal_quota_is_isolated_per_principal"),
     ],
     "audit_principal_metadata": [
         ("docs/AUTH.md", "principal_id`, `auth_role`, and `auth_agent_id`"),

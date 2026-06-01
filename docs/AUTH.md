@@ -58,7 +58,7 @@ cat > ./auth-policy.json <<'EOF'
   "schema_version": "cortexdb.auth_policy.v1",
   "principals": [
     {"principal_id":"admin-a","token":"root-token","role":"admin"},
-    {"principal_id":"agent-a","token":"agent-token","role":"data","agent_id":7},
+    {"principal_id":"agent-a","token":"agent-token","role":"data","agent_id":7,"request_quota_per_minute":600},
     {"principal_id":"old-agent","token":"disabled-token","role":"data","disabled":true}
   ]
 }
@@ -72,6 +72,11 @@ The policy store is re-read for every request. Disabled principals are ignored,
 invalid JSON or invalid policy entries fail closed, and active entries use the
 same `admin`/`data` role plus optional `agent_id` behavior as token-file
 policies.
+
+Policy-store principals may also set `request_quota_per_minute`. This is a
+local fixed-window quota keyed by `principal_id`, so one principal exhausting
+its quota does not block another principal. The quota value must be greater
+than zero. Raw bearer tokens are not used as quota keys.
 
 Roles:
 
@@ -156,8 +161,8 @@ let client = CortexDbClient::new("http://127.0.0.1:8181")
 - `CORTEXDB_AUTH_POLICY_STORE_FILE` adds a local durable policy-store file for
   explicit principals and disabled-principal lifecycle, but it is not yet a
   full enterprise RBAC administration system.
-- Sessions, per-user quotas, external identity providers, and compliance-grade
-  audit chains are future work.
+- Sessions, distributed quotas, external identity providers, and
+  compliance-grade audit chains are future work.
 - For multi-user deployments, run separate tenant realms with network-level isolation.
 
 ## Binding Auth To An AgentView
@@ -230,8 +235,24 @@ When the 60-second window is exhausted, the server returns:
 ```
 
 with HTTP status `429 Too Many Requests`. This is a Core Alpha safety guard, not
-a replacement for reverse-proxy quotas, per-user authorization, or API gateway
+a replacement for reverse-proxy quotas, distributed quota state, or API gateway
 controls.
+
+When `CORTEXDB_AUTH_POLICY_STORE_FILE` is used, each active principal may set a
+local per-principal quota:
+
+```json
+{
+  "principal_id": "agent-a",
+  "token": "agent-token",
+  "role": "data",
+  "request_quota_per_minute": 600
+}
+```
+
+If that principal exhausts its quota, the server returns the same typed
+`rate_limited` response. Other principals continue using their own independent
+quota windows.
 
 ## Audit Logging
 

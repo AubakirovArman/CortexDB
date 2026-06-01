@@ -53,7 +53,7 @@ be treated as future work.
 | API error drift | Typed `RouterError`, OpenAPI checks, snapshot tests. | Implemented and gated. |
 | SDK contract drift | Python, TypeScript, and Rust live SDK smoke checks. | Implemented and gated. |
 | Browser cross-origin API calls | CORS disabled by default; optional exact-origin allowlist via `CORTEXDB_CORS_ALLOW_ORIGIN`. | Implemented for one trusted origin. |
-| Request floods against the local API | Optional process-wide fixed-window limit via `CORTEXDB_RATE_LIMIT_PER_MINUTE`. | Implemented as a coarse Core Alpha guard. |
+| Request floods against the local API | Optional process-wide fixed-window limit via `CORTEXDB_RATE_LIMIT_PER_MINUTE`; optional policy-store `request_quota_per_minute` limits per principal. | Implemented as local Core Alpha guards. |
 | Missing operational access trail | Optional structured HTTP audit events via `CORTEXDB_AUDIT_LOG`; optional synced JSONL file sink via `CORTEXDB_AUDIT_LOG_FILE`; `cortexdb audit` reviews JSONL files with route/status/action/tenant filters, redaction checks, and local chain verification. | Implemented for route-level events. |
 | Unvalidated local backups | `cortexdb backup`, `restore`, `backup-drill`, `backup-prune`, and `backup-offsite-stage` validate source and restored copies. | Implemented for local filesystem/offsite-staging workflows. |
 
@@ -64,7 +64,7 @@ The following are not production security guarantees yet:
 - TLS/mTLS and certificate management.
 - User identity, sessions, dynamic RBAC policy stores, org roles, or external identity providers.
 - Persisted auth policy management beyond local file-backed token rotation.
-- Per-token quotas or distributed rate limiting.
+- Per-token quotas by route class or distributed rate limiting.
 - Multi-origin, wildcard, or per-token CORS policies.
 - Compliance-grade audit trails or SIEM export beyond the local audit-chain
   verification foundation.
@@ -94,8 +94,10 @@ For any non-local deployment:
 8. Treat dashboard access as administrative.
 9. Enable `CORTEXDB_CORS_ALLOW_ORIGIN` only for one trusted browser origin;
    keep it unset for local CLI/SDK-only deployments.
-10. Set `CORTEXDB_RATE_LIMIT_PER_MINUTE` for exposed local deployments; use an
-   API gateway or reverse proxy for user-aware quotas.
+10. Set `CORTEXDB_RATE_LIMIT_PER_MINUTE` for exposed local deployments, and set
+   `request_quota_per_minute` on JSON policy-store principals when local
+   principal isolation is needed; use an API gateway or reverse proxy for
+   distributed quotas.
 11. Set `CORTEXDB_AUDIT_LOG=true` when route-level access auditing is required;
     export `tracing` output to your process supervisor or log pipeline.
 12. Set `CORTEXDB_AUDIT_LOG_FILE` when route-level audit events should also be
@@ -141,7 +143,8 @@ Security-sensitive test areas include:
 
 ## Beta Security Backlog
 
-1. Add per-token quotas and user-aware rate limiting.
+1. Extend local per-principal quotas into route-class quotas and distributed
+   quota state.
 2. Expand CORS beyond the current single exact-origin allowlist only after
    adding user/RBAC-aware authorization.
 3. Extend file-backed token rotation into a persisted auth policy management

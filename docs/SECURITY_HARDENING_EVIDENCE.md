@@ -19,7 +19,7 @@ target/security-hardening/report.json
 | Area | Current status |
 | --- | --- |
 | Persisted auth policy store | File-backed token rotation and JSON principal policy store are implemented through `CORTEXDB_AUTH_TOKENS_FILE` and `CORTEXDB_AUTH_POLICY_STORE_FILE`; full enterprise RBAC administration remains future work. |
-| Per-token quotas | Process-wide rate limit is implemented; user/token-aware quotas remain beta work. |
+| Per-principal quotas | Process-wide rate limit and policy-store `request_quota_per_minute` are implemented; route-class and distributed quotas remain future work. |
 | Principal-aware audit metadata | Authenticated route-level JSONL audit records include `principal_id`, `auth_role`, and `auth_agent_id` without storing bearer tokens. |
 | Tamper-evident audit chain | File-backed route audit records include local chain metadata and `cortexdb audit --verify-chain` detects local deletion, reordering, and metadata edits; compliance-grade ledger/SIEM export remains future work. |
 | Encrypted backup support | Design exists in `ENCRYPTED_BACKUPS_DESIGN.md`; current backup/restore/offsite staging are local and unencrypted. |
@@ -36,7 +36,7 @@ target/security-hardening/report.json
 
 This evidence closes the Core Alpha security-hardening pass by proving current
 guards and documenting what is explicitly not an enterprise security guarantee.
-It does not claim full RBAC, per-user quota, encrypted backup, or
+It does not claim full RBAC, distributed quota, encrypted backup, or
 tamper-evident audit compliance.
 
 ## Latest Local Checks
@@ -44,6 +44,7 @@ tamper-evident audit compliance.
 ```text
 persisted_auth_policy_store: true
 per_token_quota_boundary: true
+per_principal_quota: true
 audit_principal_metadata: true
 audit_chain_foundation: true
 audit_redaction: true

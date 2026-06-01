@@ -12,7 +12,7 @@ design-only, so release gates can block overclaims.
 | Token rotation | `CORTEXDB_AUTH_TOKENS_FILE` is re-read per request and fails closed on invalid content. |
 | AgentView scoping | Token-bound AgentViews restrict readable/writable scopes on data routes. |
 | Tenant path safety | Tenant IDs are percent-decoded, length-limited, and path-traversal checked. |
-| Request limits | A process-wide fixed-window request limit can return typed `rate_limited` errors. |
+| Request limits | Process-wide and policy-store per-principal fixed-window request limits can return typed `rate_limited` errors. |
 | Audit redaction | HTTP audit events store route metadata, status, tenant, request id, duration, and authenticated principal metadata, not query strings, request bodies, or bearer tokens. |
 | Audit chain foundation | File-backed audit records include `chain_id`, `sequence`, `prev_hash`, and `event_hash`; `cortexdb audit --verify-chain` checks local continuity. |
 | Dashboard gate | `/dashboard` is an admin route; data tokens are denied. |
@@ -49,24 +49,28 @@ Beta gate:
 - AgentView-bound principals cannot read or write forbidden scopes;
 - policy-store corruption fails closed.
 
-### 2. Per-Token Quotas
+### 2. Per-Principal Quotas
 
-Goal: replace the current process-wide fixed-window guard with token-aware
-quota accounting.
+Goal: continue from the implemented local per-principal fixed-window guard
+toward route-aware and distributed quota accounting.
 
 Plan:
 
-1. Key quota counters by safe token fingerprint, tenant, and route class.
-2. Keep raw tokens out of metrics, audit records, logs, and reports.
-3. Support at least fixed-window limits for beta; reserve sliding-window or
+1. Keep `request_quota_per_minute` on policy-store principals as the local
+   fixed-window quota entry point.
+2. Keep raw tokens out of quota keys, metrics, audit records, logs, and
+   reports.
+3. Add route-class and tenant dimensions after the local principal counter is
+   stable.
+4. Support fixed-window limits for beta; reserve sliding-window or
    token-bucket behavior for production tuning.
-4. Return the existing typed `rate_limited` response on quota exhaustion.
-5. Document that distributed quotas remain out of scope until real replicated
+5. Return the existing typed `rate_limited` response on quota exhaustion.
+6. Document that distributed quotas remain out of scope until real replicated
    state exists.
 
 Beta gate:
 
-- one token exhausting quota does not block another token;
+- one principal exhausting quota does not block another principal;
 - denied quota responses do not expose raw token material;
 - data and admin route classes can be configured independently.
 

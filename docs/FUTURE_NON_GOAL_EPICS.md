@@ -162,6 +162,9 @@ Current implementation slice:
   `auth_agent_id` for authenticated requests without logging bearer tokens.
 - File-backed audit records now include local chain metadata and can be checked
   with `cortexdb audit --verify-chain`.
+- Policy-store principals can set local fixed-window
+  `request_quota_per_minute`; one principal exhausting quota does not block
+  another principal.
 
 Task pool:
 

@@ -27,6 +27,7 @@ pub struct AuthTokenPolicy {
     pub role: AuthRole,
     pub agent_id: Option<u64>,
     pub principal_id: Option<String>,
+    pub request_quota_per_minute: Option<u64>,
 }
 
 impl AuthTokenPolicy {
@@ -36,6 +37,7 @@ impl AuthTokenPolicy {
             role,
             agent_id: None,
             principal_id: None,
+            request_quota_per_minute: None,
         }
     }
 
@@ -48,6 +50,11 @@ impl AuthTokenPolicy {
         self.principal_id = Some(principal_id.into());
         self
     }
+
+    pub fn with_request_quota_per_minute(mut self, quota: u64) -> Self {
+        self.request_quota_per_minute = Some(quota);
+        self
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -55,6 +62,7 @@ pub(crate) struct AuthDecision {
     pub agent_id: Option<u64>,
     pub role: Option<AuthRole>,
     pub principal_id: Option<String>,
+    pub request_quota_per_minute: Option<u64>,
 }
 
 pub(crate) fn authorize_request(
@@ -71,6 +79,7 @@ pub(crate) fn authorize_request(
             agent_id: None,
             role: None,
             principal_id: None,
+            request_quota_per_minute: None,
         });
     };
 
@@ -83,6 +92,7 @@ pub(crate) fn authorize_request(
         agent_id: policy.agent_id,
         role: Some(policy.role),
         principal_id: policy.principal_id,
+        request_quota_per_minute: policy.request_quota_per_minute,
     })
 }
 
@@ -96,6 +106,11 @@ pub(crate) fn validate_token_policies(options: &ServerOptions) -> Result<(), Str
         }
         if matches!(policy.principal_id.as_deref(), Some("")) {
             return Err("auth token policy principal_id must not be empty".to_owned());
+        }
+        if matches!(policy.request_quota_per_minute, Some(0)) {
+            return Err(
+                "auth token policy request_quota_per_minute must be greater than zero".to_owned(),
+            );
         }
     }
     Ok(())
@@ -177,6 +192,8 @@ struct AuthPolicyPrincipal {
     agent_id: Option<u64>,
     #[serde(default)]
     disabled: bool,
+    #[serde(default)]
+    request_quota_per_minute: Option<u64>,
 }
 
 fn load_auth_policy_store(path: &Path) -> Result<Vec<AuthTokenPolicy>, String> {
@@ -220,6 +237,11 @@ fn load_auth_policy_store(path: &Path) -> Result<Vec<AuthTokenPolicy>, String> {
                 "auth policy store principal {principal_id:?} has invalid agent_id"
             ));
         }
+        if matches!(principal.request_quota_per_minute, Some(0)) {
+            return Err(format!(
+                "auth policy store principal {principal_id:?} has invalid request_quota_per_minute"
+            ));
+        }
         if principal.disabled {
             continue;
         }
@@ -227,6 +249,9 @@ fn load_auth_policy_store(path: &Path) -> Result<Vec<AuthTokenPolicy>, String> {
             AuthTokenPolicy::new(token.to_owned(), role).with_principal_id(principal_id.to_owned());
         if let Some(agent_id) = principal.agent_id {
             policy = policy.with_agent_id(agent_id);
+        }
+        if let Some(quota) = principal.request_quota_per_minute {
+            policy = policy.with_request_quota_per_minute(quota);
         }
         policies.push(policy);
     }
@@ -380,6 +405,23 @@ mod tests {
               "principals": [
                 {"principal_id":"a","token":"same","role":"admin"},
                 {"principal_id":"b","token":"same","role":"data"}
+              ]
+            }"#,
+        )
+        .unwrap();
+        assert!(load_auth_policy_store(&path).is_err());
+    }
+
+    #[test]
+    fn auth_policy_store_rejects_zero_quota() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("auth-policy.json");
+        std::fs::write(
+            &path,
+            r#"{
+              "schema_version": "cortexdb.auth_policy.v1",
+              "principals": [
+                {"principal_id":"a","token":"worker","role":"data","request_quota_per_minute":0}
               ]
             }"#,
         )

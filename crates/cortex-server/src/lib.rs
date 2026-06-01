@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use tower_http::cors::CorsLayer;
 use tower_http::limit::RequestBodyLimitLayer;
 
@@ -28,6 +28,7 @@ mod dashboard;
 #[cfg(test)]
 mod dashboard_tests;
 mod memory;
+mod rate_limit;
 pub mod responses;
 mod router;
 mod search;
@@ -38,6 +39,7 @@ mod sync_handler;
 #[cfg(test)]
 mod tests;
 
+use crate::rate_limit::{GlobalRateLimit, PrincipalRateLimits};
 use crate::responses::RouterError;
 pub use auth::{parse_auth_tokens, AuthRole, AuthTokenPolicy};
 pub use router::{
@@ -49,7 +51,6 @@ pub use router::{
 pub use sync_handler::{handle_http, handle_http_with_options};
 
 pub const DEFAULT_ACTOR_QUEUE_CAPACITY: usize = 1024;
-const RATE_LIMIT_WINDOW: Duration = Duration::from_secs(60);
 static REQUEST_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -156,7 +157,8 @@ pub struct AppState {
     ann_search_requests: Arc<AtomicU64>,
     ann_fallbacks: Arc<AtomicU64>,
     validation_failures: Arc<AtomicU64>,
-    rate_limit: Option<Arc<Mutex<RateLimitState>>>,
+    rate_limit: Option<GlobalRateLimit>,
+    principal_rate_limits: PrincipalRateLimits,
 }
 
 impl AppState {
@@ -208,9 +210,7 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             .map(Arc::new);
         let rate_limit = options
             .request_rate_limit_per_minute
-            .map(RateLimitState::new)
-            .map(Mutex::new)
-            .map(Arc::new);
+            .map(GlobalRateLimit::new);
         let state = AppState {
             root: root.to_owned(),
             dbs: Arc::new(Mutex::new(BTreeMap::new())),
@@ -223,6 +223,7 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             ann_fallbacks: Arc::new(AtomicU64::new(0)),
             validation_failures: Arc::new(AtomicU64::new(0)),
             rate_limit,
+            principal_rate_limits: PrincipalRateLimits::default(),
         };
 
         let mut app = Router::new()
@@ -314,43 +315,21 @@ fn cors_layer(options: &ServerOptions) -> std::io::Result<Option<CorsLayer>> {
     ))
 }
 
-#[derive(Debug)]
-struct RateLimitState {
-    limit: u64,
-    window_started: Instant,
-    used: u64,
-}
-
-impl RateLimitState {
-    fn new(limit: u64) -> Self {
-        Self {
-            limit,
-            window_started: Instant::now(),
-            used: 0,
-        }
-    }
-
-    fn allow(&mut self, now: Instant) -> bool {
-        if now.duration_since(self.window_started) >= RATE_LIMIT_WINDOW {
-            self.window_started = now;
-            self.used = 0;
-        }
-        if self.used >= self.limit {
-            return false;
-        }
-        self.used += 1;
-        true
-    }
-}
-
 fn request_allowed_by_rate_limit(state: &AppState) -> bool {
     let Some(rate_limit) = &state.rate_limit else {
         return true;
     };
-    let Ok(mut rate_limit) = rate_limit.lock() else {
-        return false;
+    rate_limit.allow()
+}
+
+fn request_allowed_by_principal_quota(state: &AppState, decision: &auth::AuthDecision) -> bool {
+    let Some(limit) = decision.request_quota_per_minute else {
+        return true;
     };
-    rate_limit.allow(Instant::now())
+    let Some(principal_id) = decision.principal_id.as_deref() else {
+        return true;
+    };
+    state.principal_rate_limits.allow(principal_id, limit)
 }
 
 fn audit_http_response(
@@ -474,6 +453,27 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                 Json(error_response(
                     ErrorCode::RateLimited,
                     "request rate limit exceeded",
+                )),
+            )
+                .into_response(),
+            &request_id,
+        );
+    }
+
+    if !request_allowed_by_principal_quota(&state, &auth_decision) {
+        state.request_rejected.fetch_add(1, Ordering::Relaxed);
+        audit_http_response(
+            &state,
+            &audit_event,
+            StatusCode::TOO_MANY_REQUESTS,
+            Some(ErrorCode::RateLimited),
+        );
+        return with_request_id(
+            (
+                StatusCode::TOO_MANY_REQUESTS,
+                Json(error_response(
+                    ErrorCode::RateLimited,
+                    "principal request quota exceeded",
                 )),
             )
                 .into_response(),
