@@ -1,5 +1,11 @@
 use serde::{Deserialize, Serialize};
 
+mod report;
+pub use report::{
+    evaluate_legal_report_contract, LegalReportContract, LegalReportContractIssue,
+    LegalReportRetention,
+};
+
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct LegalVerificationPolicy {
     pub domain: String,

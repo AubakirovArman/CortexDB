@@ -45,7 +45,8 @@ pub use ingestion::{
     PdfExtractionStats, PdfIngestOptions, RelationIngestOptions, TextIngestOptions,
 };
 pub use legal::{
-    evaluate_legal_verification_boundary, LegalOutputBoundary, LegalRefusalReason,
+    evaluate_legal_report_contract, evaluate_legal_verification_boundary, LegalOutputBoundary,
+    LegalRefusalReason, LegalReportContract, LegalReportContractIssue, LegalReportRetention,
     LegalVerificationPolicy, LegalVerificationRequest, LegalVerificationReview,
 };
 pub use operation::*;

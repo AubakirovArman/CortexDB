@@ -508,6 +508,9 @@ Current implementation slice:
 - The local `evaluate_legal_verification_boundary` helper checks selected
   domain, jurisdiction, source refs, reviewer identity, reviewer approval, and
   evidence-summary output boundaries while keeping `legal_grade_ready=false`.
+- The local `LegalReportContract` helper and fixture define a reviewed evidence
+  summary output shape with source refs, reviewer approval, and retention/audit
+  requirements while rejecting legal-advice text.
 - All new reports are written under `target/legal-verification/` and carry
   `legal_verification_ready=false`; they prove local prerequisites only, not
   legal advice, certification, admissibility, or legal-grade verification.
@@ -525,8 +528,12 @@ Task pool:
 7. Add legal-domain labeled evaluation datasets with expert review.
 8. Add legal-specific output schema that avoids unsupported legal advice. The
    local evaluator currently refuses legal-advice output when policy disallows
-   it; public API schemas remain future work.
+   it, and the local report contract now rejects legal-advice text in reviewed
+   evidence summaries; public API schemas remain future work.
 9. Add audit and retention policy for verification reports.
+   The local report contract now requires source-ref retention, reviewer
+   decision retention, and audit-required policy; durable report retention
+   storage remains future work.
 10. Add public disclaimers and user-facing limitations.
 
 Required gates:

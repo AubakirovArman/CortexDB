@@ -35,10 +35,12 @@ GATES: dict[str, dict[str, object]] = {
         "markers": [
             ("docs/LEGAL_VERIFICATION_BOUNDARY.md", "Citation Policy"),
             ("docs/LEGAL_VERIFICATION_BOUNDARY.md", "Citation Policy Fixture"),
+            ("docs/LEGAL_VERIFICATION_BOUNDARY.md", "Report Contract"),
             ("docs/FUTURE_NON_GOAL_EPICS.md", "make legal-citation-policy-check"),
             ("Makefile", "legal-citation-policy-check"),
         ],
         "fixture": "crates/cortex-engine/fixtures/legal_citation_policy_v1.json",
+        "report_fixture": "crates/cortex-engine/fixtures/legal_report_contract_v1.json",
     },
 }
 
@@ -164,6 +166,47 @@ def validate_citation_policy(path: Path) -> list[str]:
     return failures
 
 
+def validate_report_contract(path: Path) -> list[str]:
+    failures: list[str] = []
+    value = load_json(path)
+    if value.get("schema_version") != "cortexdb.legal_verification.report_contract.v1":
+        failures.append("report contract fixture has wrong schema_version")
+    if value.get("legal_grade_ready") is not False:
+        failures.append("report contract must keep legal_grade_ready=false")
+    if value.get("output_boundary") != "evidence_summary_not_legal_advice":
+        failures.append("report contract output boundary must avoid legal advice")
+    required = value.get("required_fields")
+    for field in ["source_refs", "reviewer_id", "reviewer_approved", "retention"]:
+        if not isinstance(required, list) or field not in required:
+            failures.append(f"report contract missing required field {field}")
+    forbidden = value.get("forbidden_fields")
+    if not isinstance(forbidden, list) or "legal_advice_text" not in forbidden:
+        failures.append("report contract must forbid legal_advice_text")
+    retention = value.get("retention_policy")
+    if not isinstance(retention, dict) or retention.get("audit_required") is not True:
+        failures.append("report contract retention must require audit")
+    example = value.get("example_report")
+    if not isinstance(example, dict) or example.get("reviewer_approved") is not True:
+        failures.append("report contract example must be reviewer approved")
+    return failures
+
+
+def validate_report_contract_marker() -> list[str]:
+    source = read(Path("crates/cortex-engine/src/legal/report.rs"))
+    markers = [
+        "LegalReportContract",
+        "evaluate_legal_report_contract",
+        "ContainsLegalAdvice",
+        "MissingRetentionPolicy",
+        "audit_required",
+    ]
+    return [
+        f"legal/report.rs missing report-contract marker {marker!r}"
+        for marker in markers
+        if marker not in source
+    ]
+
+
 def validate(gate: str, evidence: Path | None) -> dict[str, Any]:
     spec = GATES[gate]
     failures = validate_markers(spec["markers"])  # type: ignore[arg-type]
@@ -187,6 +230,8 @@ def validate(gate: str, evidence: Path | None) -> dict[str, Any]:
     elif gate == "citation-policy":
         policy_failures = validate_citation_policy(Path(spec["fixture"]))  # type: ignore[arg-type]
         policy_failures.extend(validate_local_review_boundary())
+        policy_failures.extend(validate_report_contract(Path(spec["report_fixture"])))  # type: ignore[arg-type]
+        policy_failures.extend(validate_report_contract_marker())
         failures.extend(policy_failures)
         checks["citation_policy"] = not policy_failures
         checks["local_review_boundary"] = not policy_failures

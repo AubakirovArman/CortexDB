@@ -1,0 +1,40 @@
+{
+  "schema_version": "cortexdb.legal_verification.report_contract.v1",
+  "legal_grade_ready": false,
+  "output_boundary": "evidence_summary_not_legal_advice",
+  "required_fields": [
+    "report_id",
+    "domain",
+    "jurisdiction",
+    "evidence_summary",
+    "source_refs",
+    "reviewer_id",
+    "reviewer_approved",
+    "retention"
+  ],
+  "forbidden_fields": [
+    "legal_advice_text",
+    "unreviewed_model_conclusion"
+  ],
+  "retention_policy": {
+    "retain_source_refs": true,
+    "retain_reviewer_decision": true,
+    "audit_required": true
+  },
+  "example_report": {
+    "report_id": "legal-report-001",
+    "domain": "kazakhstan_investment_contract_disclosure",
+    "jurisdiction": "Kazakhstan",
+    "evidence_summary": "The cited contract section contains a budget amendment clause.",
+    "source_refs": [
+      "law://fixture/project-contract#section=budget-amendment"
+    ],
+    "reviewer_id": "reviewer-1",
+    "reviewer_approved": true,
+    "retention": {
+      "retain_source_refs": true,
+      "retain_reviewer_decision": true,
+      "audit_required": true
+    }
+  }
+}

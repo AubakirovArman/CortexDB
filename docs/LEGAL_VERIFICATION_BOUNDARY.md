@@ -56,6 +56,19 @@ admissible evidence.
 Outputs must separate evidence summaries from legal advice. If the product is
 not certified for a domain, responses must explicitly state the limitation.
 
+## Report Contract
+
+The local `LegalReportContract` fixture defines the current reviewed-output
+shape. A candidate legal report must include a report id, domain, jurisdiction,
+evidence summary, source refs, reviewer identity, reviewer approval, and a
+retention policy that keeps source refs, reviewer decisions, and audit records.
+The local evaluator rejects legal-advice text, missing source refs, missing
+reviewer approval, and missing retention/audit policy.
+
+The report contract remains `legal_grade_ready=false`. It proves local output
+shape and audit-retention prerequisites only; it does not certify the report as
+legal advice or admissible evidence.
+
 ## Quality Gate Boundary
 
 The current deterministic `VERIFY FACT` quality gate is useful evidence for
@@ -71,7 +84,7 @@ The current gates prove local prerequisites only:
 | --- | --- |
 | `make legal-verification-dataset-check` | A domain-specific dataset contract fixture exists, requires expert review, and the local review-boundary evaluator keeps `legal_grade_ready=false`. |
 | `make legal-verification-quality-check` | The deterministic verification quality report passes and includes citation and numeric guard coverage. |
-| `make legal-citation-policy-check` | A citation policy fixture and local evaluator refuse uncited output, require source refs, and require reviewer approval. |
+| `make legal-citation-policy-check` | A citation policy fixture, report contract fixture, and local evaluators refuse uncited output, require source refs, reviewer approval, and retention/audit policy. |
 | `make public-claims-check` | Public docs continue to block legal-grade overclaims. |
 
 Reports are written under `target/legal-verification/` and keep
