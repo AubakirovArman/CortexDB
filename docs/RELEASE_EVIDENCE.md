@@ -1,6 +1,6 @@
 # Release Evidence
 
-Last local release evidence run: 2026-05-31.
+Last local release evidence run: 2026-06-01.
 
 This document records the latest local evidence for the Core Alpha release
 surface. It does not claim production readiness. It records what was run, which
@@ -23,11 +23,27 @@ passed
 Git commit:
 
 ```text
-92ce19846c6a16fc79a4076a2b2378a79985f94a
+f7b48865fa7f277d6f3053ffa38abcd254416940
 ```
 
 The annotated tag `v0.1.0-core-alpha` already exists in the local and remote
 repository, so this run did not create a new tag.
+
+Host/toolchain profile:
+
+```text
+os=Linux srv 6.8.0-87-generic x86_64
+rustc=1.95.0 (59807616e 2026-04-14)
+cargo=1.95.0 (f2d3ce0bd 2026-03-21)
+node=v22.21.0
+npm=10.9.4
+```
+
+Run scope:
+
+```text
+local clean worktree; not an independent hosted CI or clean-container rerun
+```
 
 ## Gates Covered
 
@@ -56,7 +72,7 @@ repository, so this run did not create a new tag.
 | `target/chaos-restart/report.json` | ok | 24-step seeded restart/repair/readback scenario. |
 | `target/replication-partition/report.json` | ok | Partition, split-brain, repair, and consensus-hardening suites. |
 | `target/replication-lifecycle/report.json` | ok | 50 replication lifecycle tests across snapshot, repair, membership, runtime, and topology suites. |
-| `target/release-artifacts/cortexdb-dev-linux-x86_64.tar.gz` | passed | Binary package generated and validated with checksum file. |
+| `target/release-artifacts/cortexdb-dev-linux-x86_64.tar.gz` | passed | Binary package generated and validated with checksum `9bd5b82a0026ce98dd9f347286e2c01457a14fc2fdc605b6265ce0f53a7da48e`. |
 | `target/dashboard/dashboard-v1.tar.gz` | passed | Dashboard package generated and validated. |
 
 ## Important Boundary

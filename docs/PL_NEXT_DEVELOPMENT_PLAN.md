@@ -58,6 +58,10 @@ Goal: make the current Core Alpha release reproducible from a clean checkout.
 
 ### Epic 1.1 - Clean Release Evidence Reproduction
 
+Status: local clean-worktree release evidence passed on 2026-06-01 at
+`f7b48865fa7f277d6f3053ffa38abcd254416940`. Independent hosted CI or
+clean-container reproduction remains required before a public release claim.
+
 Tasks:
 
 1. Run `make release-check` on a clean machine or clean container.
