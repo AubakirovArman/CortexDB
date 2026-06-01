@@ -14,8 +14,10 @@ REQUIRED_FILES = [
     Path("crates/cortex-sdk/examples/live_contract.rs"),
     Path("sdk/python/pyproject.toml"),
     Path("sdk/python/cortexdb_client.py"),
+    Path("sdk/python/examples/basic.py"),
     Path("sdk/typescript/package.json"),
     Path("sdk/typescript/cortexdb-client.ts"),
+    Path("sdk/typescript/examples/basic.mjs"),
     Path("sdk/release-manifest.json"),
     Path(".github/workflows/sdk-release.yml"),
     Path("docs/SDK_RELEASE.md"),
@@ -37,6 +39,13 @@ REQUIRED_MARKERS = {
         ("scripts/check_sdk_release_contract.py", "npm publish --access public --provenance"),
         ("docs/SDK_RELEASE.md", "publish=true"),
         ("docs/SDK_RELEASE.md", "protected `sdk-release` environment"),
+    ],
+    "release_artifacts": [
+        ("scripts/sdk_release_artifacts_check.py", "Package SDK examples"),
+        ("sdk/release-manifest.json", "sdk_examples_archive"),
+        ("sdk/python/examples/basic.py", "CortexDBClient"),
+        ("sdk/typescript/examples/basic.mjs", "CortexDBClient"),
+        ("docs/SDK_RELEASE.md", "SDK examples artifact"),
     ],
     "deprecation_policy": [
         ("scripts/check_sdk_deprecation_policy.py", "SDK clients MUST NOT expose deprecated compatibility aliases"),
@@ -93,6 +102,7 @@ def validate() -> dict[str, object]:
         "failures": failures,
         "checks": checks,
         "packages": ["rust", "python", "typescript"],
+        "release_artifacts": ["target/sdk-release-artifacts/cortexdb-sdk-examples-<version>.tar.gz"],
     }
 
 

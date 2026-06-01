@@ -757,6 +757,20 @@ Goal: stable local single-node release only.
 
 ### Epic 5.1 - Stable API/SDK Release Train
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- `make sdk-check` passed with Rust crate packaging, Python wheel build,
+  TypeScript npm dry-run, and version lock-step.
+- `make sdk-contract-check` passed against a freshly built local server for
+  Rust, Python, and TypeScript SDKs.
+- `make sdk-e2e-release-check` now includes `make sdk-release-artifacts-check`
+  and writes `target/sdk-e2e-release/report.json`.
+- Added a checksummed SDK examples artifact at
+  `target/sdk-release-artifacts/cortexdb-sdk-examples-0.1.0.tar.gz`, covering
+  Rust, Python, and TypeScript examples plus SDK lifecycle docs.
+
 Tasks:
 
 1. Publish or dry-run every SDK package with version lock-step.

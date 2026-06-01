@@ -34,6 +34,9 @@ ingest text, and structured error decoding for `invalid_aql`, `not_found`, and
 commands, deprecation policy, and manual tag-gated publish policy.
 `make sdk-release-contract-check` validates that lifecycle contract without
 building packages.
+`make sdk-release-artifacts-check` packages Rust, Python, and TypeScript
+examples into a checksummed tarball under `target/sdk-release-artifacts/` so
+the release train carries runnable examples alongside package dry-runs.
 
 Use `make sdk-check` for the local gate. The GitHub `SDK Release` workflow runs
 the same preflight on SDK changes and can publish all three packages manually

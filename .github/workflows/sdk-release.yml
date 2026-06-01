@@ -62,9 +62,20 @@ jobs:
       - name: TypeScript npm pack dry-run
         run: npm pack --dry-run
         working-directory: sdk/typescript
+      - name: SDK examples artifact
+        run: make sdk-release-artifacts-check
 
       # Existing publish check script
       - run: ./sdk/publish/check.sh
+
+      - name: Upload SDK examples artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: cortexdb-sdk-examples
+          path: |
+            target/sdk-release-artifacts/*.tar.gz
+            target/sdk-release-artifacts/*.sha256
+            target/sdk-release-artifacts/report.json
 
   publish:
     name: Publish SDK packages

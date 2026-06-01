@@ -26,6 +26,7 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     ),
     "docs/SDK_RELEASE.md": (
         "sdk-release-contract-check",
+        "sdk-release-artifacts-check",
         "deprecation",
         "version",
     ),
@@ -70,6 +71,11 @@ SUITES: tuple[dict[str, Any], ...] = (
         "name": "sdk_deprecation_policy",
         "command": ["make", "sdk-deprecation-check"],
         "covers": ["SDK/API lifecycle policy", "deprecated route policy"],
+    },
+    {
+        "name": "sdk_e2e_release",
+        "command": ["make", "sdk-e2e-release-check"],
+        "covers": ["live SDK compatibility", "SDK examples release artifact"],
     },
     {
         "name": "backup_restore_support",

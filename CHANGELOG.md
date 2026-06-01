@@ -75,6 +75,9 @@
 - Hardened SDK release lifecycle checks: protected `sdk-release` deployment
   environment, Node.js 24 workflow runtime, and tag/version lock-step
   enforcement before public publish jobs.
+- Added a checked SDK examples release artifact gate, packaging Rust, Python,
+  and TypeScript examples with checksum evidence under
+  `target/sdk-release-artifacts/`.
 - Added SDK deprecation policy checks so deprecated OpenAPI aliases, SDK route
   usage, and breaking-change changelog requirements stay synchronized.
 - Added `POST /v1/search/explain` endpoint — returns tokenized query terms and per-cell

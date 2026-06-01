@@ -41,9 +41,26 @@
     }
   ],
   "release_workflow": ".github/workflows/sdk-release.yml",
+  "release_artifacts": {
+    "sdk_examples_archive": "target/sdk-release-artifacts/cortexdb-sdk-examples-${version}.tar.gz",
+    "sdk_examples": [
+      "sdk/README.md",
+      "sdk/release-manifest.json",
+      "sdk/python/README.md",
+      "sdk/python/examples/basic.py",
+      "sdk/typescript/README.md",
+      "sdk/typescript/examples/basic.mjs",
+      "crates/cortex-sdk/examples/basic.rs",
+      "crates/cortex-sdk/examples/live_contract.rs",
+      "docs/SDK_QUICKSTART.md",
+      "docs/SDK_RELEASE.md",
+      "docs/SDK_DEPRECATION_POLICY.md"
+    ]
+  },
   "required_gates": [
     "make sdk-check",
     "make sdk-contract-check",
+    "make sdk-release-artifacts-check",
     "make openapi-contract-check"
   ],
   "publish_policy": {

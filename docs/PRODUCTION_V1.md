@@ -35,10 +35,12 @@ Required local gates:
 make openapi-contract-check
 make sdk-release-contract-check
 make sdk-deprecation-check
+make sdk-e2e-release-check
 ```
 
 These gates prove that the published client contract is internally consistent
-for this checkout. They do not publish packages to external registries.
+for this checkout and that SDK examples are packaged as release artifacts. They
+do not publish packages to external registries.
 
 ## Supported Backup/Restore
 

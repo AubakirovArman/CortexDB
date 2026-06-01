@@ -44,6 +44,24 @@ It also runs `scripts/check_sdk_deprecation_policy.py`, which rejects
 undocumented OpenAPI deprecations, SDK clients that call deprecated legacy route
 aliases, and missing breaking-change/deprecation policy text.
 
+For SDK example release artifacts, run:
+
+```bash
+make sdk-release-artifacts-check
+```
+
+This packages the Rust, Python, and TypeScript examples plus SDK quickstart and
+lifecycle docs into:
+
+```text
+target/sdk-release-artifacts/cortexdb-sdk-examples-<version>.tar.gz
+target/sdk-release-artifacts/cortexdb-sdk-examples-<version>.tar.gz.sha256
+target/sdk-release-artifacts/report.json
+```
+
+The SDK examples artifact is part of the release train evidence. It lets users
+download the same minimal examples that the release gates validate locally.
+
 For live API compatibility, run:
 
 ```bash

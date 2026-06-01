@@ -26,6 +26,7 @@ Latest local status: passed.
 | OpenAPI contract | Confirms the typed HTTP API contract is current. |
 | SDK release contract | Confirms SDK metadata and version lock-step. |
 | SDK deprecation policy | Confirms lifecycle/deprecation rules remain documented and enforced. |
+| SDK e2e release | Confirms live SDK compatibility and SDK examples release artifact packaging. |
 | backup/restore support | Confirms the local backup drill. |
 | backup offsite support | Confirms local offsite staging. |
 | public claims | Confirms public wording does not overclaim the product boundary. |

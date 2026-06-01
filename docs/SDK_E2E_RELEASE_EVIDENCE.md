@@ -12,6 +12,8 @@ Primary artifact:
 
 ```text
 target/sdk-e2e-release/report.json
+target/sdk-release-artifacts/report.json
+target/sdk-release-artifacts/cortexdb-sdk-examples-0.1.0.tar.gz
 ```
 
 ## Coverage
@@ -23,6 +25,7 @@ This gate covers:
 - Bearer auth success and structured `401 unauthorized` failures through all
   three SDKs;
 - SDK release manifest and manual publish controls;
+- SDK examples artifact for Rust, Python, and TypeScript examples;
 - SDK deprecation policy;
 - quickstart and release documentation.
 
@@ -31,6 +34,7 @@ This gate covers:
 ```text
 live_sdk_contract: true
 release_contract: true
+release_artifacts: true
 deprecation_policy: true
 quickstart: true
 packages: rust, python, typescript
