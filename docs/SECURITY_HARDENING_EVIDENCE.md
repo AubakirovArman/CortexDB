@@ -18,7 +18,7 @@ target/security-hardening/report.json
 
 | Area | Current status |
 | --- | --- |
-| Persisted auth policy store | File-backed token policy rotation is implemented; full persisted RBAC store remains a beta design in `RBAC_POLICY_STORE_DESIGN.md`. |
+| Persisted auth policy store | File-backed token rotation and JSON principal policy store are implemented through `CORTEXDB_AUTH_TOKENS_FILE` and `CORTEXDB_AUTH_POLICY_STORE_FILE`; full enterprise RBAC administration remains future work. |
 | Per-token quotas | Process-wide rate limit is implemented; user/token-aware quotas remain beta work. |
 | Tamper-evident audit chain | Route-level JSONL audit plus redaction checks are implemented; tamper-evident chain/SIEM export remains beta work. |
 | Encrypted backup support | Design exists in `ENCRYPTED_BACKUPS_DESIGN.md`; current backup/restore/offsite staging are local and unencrypted. |
@@ -41,7 +41,7 @@ tamper-evident audit compliance.
 ## Latest Local Checks
 
 ```text
-persisted_auth_policy_boundary: true
+persisted_auth_policy_store: true
 per_token_quota_boundary: true
 audit_redaction: true
 tamper_evident_audit_boundary: true

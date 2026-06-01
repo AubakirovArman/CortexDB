@@ -49,6 +49,30 @@ therefore rotates tokens without a process restart. If the configured file is
 missing, empty, or invalid, authentication fails closed and no token from that
 file is accepted.
 
+For a durable local policy-store shape with explicit principals and disabled
+principal lifecycle, point `CORTEXDB_AUTH_POLICY_STORE_FILE` at a JSON file:
+
+```bash
+cat > ./auth-policy.json <<'EOF'
+{
+  "schema_version": "cortexdb.auth_policy.v1",
+  "principals": [
+    {"principal_id":"admin-a","token":"root-token","role":"admin"},
+    {"principal_id":"agent-a","token":"agent-token","role":"data","agent_id":7},
+    {"principal_id":"old-agent","token":"disabled-token","role":"data","disabled":true}
+  ]
+}
+EOF
+
+export CORTEXDB_AUTH_POLICY_STORE_FILE="./auth-policy.json"
+cargo run -p cortex-server -- ./data 127.0.0.1:8181
+```
+
+The policy store is re-read for every request. Disabled principals are ignored,
+invalid JSON or invalid policy entries fail closed, and active entries use the
+same `admin`/`data` role plus optional `agent_id` behavior as token-file
+policies.
+
 Roles:
 
 - `admin`: can access all authenticated API routes, including stats, validate,
@@ -129,8 +153,11 @@ let client = CortexDbClient::new("http://127.0.0.1:8181")
 - CortexDB auth is **transport-first**. Core Alpha supports a legacy single
   admin token, static multi-token `admin`/`data` policies, and file-backed
   token rotation through `CORTEXDB_AUTH_TOKENS_FILE`.
-- Dynamic multi-user RBAC policy stores, sessions, per-user quotas, and
-  external identity providers are future work.
+- `CORTEXDB_AUTH_POLICY_STORE_FILE` adds a local durable policy-store file for
+  explicit principals and disabled-principal lifecycle, but it is not yet a
+  full enterprise RBAC administration system.
+- Sessions, per-user quotas, external identity providers, and compliance-grade
+  audit chains are future work.
 - For multi-user deployments, run separate tenant realms with network-level isolation.
 
 ## Binding Auth To An AgentView
@@ -257,9 +284,13 @@ fields, which keeps route-level audit review separate from request payloads.
 ## RBAC Roadmap
 
 Core Alpha keeps route authorization intentionally small: static `admin` and
-`data` roles plus optional AgentView binding. A future dynamic policy store is
-designed in [`RBAC_POLICY_STORE_DESIGN.md`](RBAC_POLICY_STORE_DESIGN.md). Until
-that layer exists, do not treat CortexDB as a full multi-user RBAC system.
+`data` roles plus optional AgentView binding. The JSON policy-store file adds a
+durable local principal list and disabled-principal lifecycle, while the broader
+enterprise design remains tracked in
+[`RBAC_POLICY_STORE_DESIGN.md`](RBAC_POLICY_STORE_DESIGN.md) and
+[`ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md`](ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md).
+Until that layer is complete, do not treat CortexDB as a full multi-user RBAC or
+compliance system.
 
 ## Browser CORS
 

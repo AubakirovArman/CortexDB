@@ -71,6 +71,13 @@ pub struct ServerOptions {
     /// server restart. If the configured file is missing or invalid, auth fails
     /// closed.
     pub auth_tokens_file: Option<PathBuf>,
+    /// Optional JSON policy store for durable local auth principals.
+    ///
+    /// The file is re-read for every request and uses
+    /// `schema_version = cortexdb.auth_policy.v1`. Disabled principals are
+    /// ignored, invalid stores fail closed, and policies may bind principals to
+    /// a role plus optional AgentView id.
+    pub auth_policy_store_file: Option<PathBuf>,
     /// Capacity of the bounded actor command queue. Default is 1024.
     pub actor_queue_capacity: usize,
     /// Optional exact browser origin allowed for cross-origin API requests.

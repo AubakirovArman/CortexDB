@@ -2,6 +2,8 @@ use crate::audit::{self, AuditAction};
 use crate::dashboard;
 use crate::responses::RouterError;
 use crate::ServerOptions;
+use serde::Deserialize;
+use std::collections::BTreeSet;
 use std::path::Path;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -15,6 +17,7 @@ pub struct AuthTokenPolicy {
     pub token: String,
     pub role: AuthRole,
     pub agent_id: Option<u64>,
+    pub principal_id: Option<String>,
 }
 
 impl AuthTokenPolicy {
@@ -23,11 +26,17 @@ impl AuthTokenPolicy {
             token: token.into(),
             role,
             agent_id: None,
+            principal_id: None,
         }
     }
 
     pub fn with_agent_id(mut self, agent_id: u64) -> Self {
         self.agent_id = Some(agent_id);
+        self
+    }
+
+    pub fn with_principal_id(mut self, principal_id: impl Into<String>) -> Self {
+        self.principal_id = Some(principal_id.into());
         self
     }
 }
@@ -68,6 +77,9 @@ pub(crate) fn validate_token_policies(options: &ServerOptions) -> Result<(), Str
         if matches!(policy.agent_id, Some(0)) {
             return Err("auth token policy agent_id must be greater than zero".to_owned());
         }
+        if matches!(policy.principal_id.as_deref(), Some("")) {
+            return Err("auth token policy principal_id must not be empty".to_owned());
+        }
     }
     Ok(())
 }
@@ -92,11 +104,7 @@ fn parse_auth_token_policy(raw: &str) -> Result<AuthTokenPolicy, String> {
     if !(2..=3).contains(&parts.len()) {
         return Err("auth token entries must use role:token or role:token:agent_id".to_owned());
     }
-    let role = match parts[0].trim().to_ascii_lowercase().as_str() {
-        "admin" => AuthRole::Admin,
-        "data" => AuthRole::Data,
-        _ => return Err("auth token role must be admin or data".to_owned()),
-    };
+    let role = parse_role(parts[0])?;
     let token = parts[1].trim();
     if token.is_empty() {
         return Err("auth token must not be empty".to_owned());
@@ -137,10 +145,84 @@ fn load_auth_tokens_file(path: &Path) -> Result<Vec<AuthTokenPolicy>, String> {
     Ok(tokens)
 }
 
+#[derive(Deserialize)]
+struct AuthPolicyStoreFile {
+    schema_version: String,
+    principals: Vec<AuthPolicyPrincipal>,
+}
+
+#[derive(Deserialize)]
+struct AuthPolicyPrincipal {
+    principal_id: String,
+    token: String,
+    role: String,
+    #[serde(default)]
+    agent_id: Option<u64>,
+    #[serde(default)]
+    disabled: bool,
+}
+
+fn load_auth_policy_store(path: &Path) -> Result<Vec<AuthTokenPolicy>, String> {
+    let raw = std::fs::read_to_string(path)
+        .map_err(|error| format!("auth policy store could not be read: {error}"))?;
+    let store = serde_json::from_str::<AuthPolicyStoreFile>(&raw)
+        .map_err(|error| format!("auth policy store is invalid JSON: {error}"))?;
+    if store.schema_version != "cortexdb.auth_policy.v1" {
+        return Err("auth policy store schema_version must be cortexdb.auth_policy.v1".to_owned());
+    }
+    let mut seen_principals = BTreeSet::new();
+    let mut seen_tokens = BTreeSet::new();
+    let mut policies = Vec::new();
+    for (index, principal) in store.principals.into_iter().enumerate() {
+        let principal_id = principal.principal_id.trim();
+        if principal_id.is_empty() {
+            return Err(format!(
+                "auth policy store principal {} has empty principal_id",
+                index + 1
+            ));
+        }
+        if !seen_principals.insert(principal_id.to_owned()) {
+            return Err(format!(
+                "auth policy store principal_id {principal_id:?} is duplicated"
+            ));
+        }
+        let token = principal.token.trim();
+        if token.is_empty() {
+            return Err(format!(
+                "auth policy store principal {principal_id:?} has empty token"
+            ));
+        }
+        if !seen_tokens.insert(token.to_owned()) {
+            return Err(format!(
+                "auth policy store token for principal {principal_id:?} is duplicated"
+            ));
+        }
+        let role = parse_role(&principal.role)?;
+        if matches!(principal.agent_id, Some(0)) {
+            return Err(format!(
+                "auth policy store principal {principal_id:?} has invalid agent_id"
+            ));
+        }
+        if principal.disabled {
+            continue;
+        }
+        let mut policy =
+            AuthTokenPolicy::new(token.to_owned(), role).with_principal_id(principal_id.to_owned());
+        if let Some(agent_id) = principal.agent_id {
+            policy = policy.with_agent_id(agent_id);
+        }
+        policies.push(policy);
+    }
+    Ok(policies)
+}
+
 fn effective_auth_tokens(options: &ServerOptions) -> Result<Vec<AuthTokenPolicy>, String> {
     let mut tokens = options.effective_auth_tokens();
     if let Some(path) = &options.auth_tokens_file {
         tokens.extend(load_auth_tokens_file(path)?);
+    }
+    if let Some(path) = &options.auth_policy_store_file {
+        tokens.extend(load_auth_policy_store(path)?);
     }
     Ok(tokens)
 }
@@ -162,6 +244,7 @@ fn has_auth(options: &ServerOptions) -> bool {
     options.auth_token.is_some()
         || !options.auth_tokens.is_empty()
         || options.auth_tokens_file.is_some()
+        || options.auth_policy_store_file.is_some()
 }
 
 fn role_can_access(role: AuthRole, method: &str, path: &str) -> bool {
@@ -186,6 +269,14 @@ fn route_class(method: &str, path: &str) -> RouteClass {
         AuditAction::Health => RouteClass::Public,
         AuditAction::Admin | AuditAction::Metrics => RouteClass::Admin,
         _ => RouteClass::Data,
+    }
+}
+
+fn parse_role(raw: &str) -> Result<AuthRole, String> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "admin" => Ok(AuthRole::Admin),
+        "data" => Ok(AuthRole::Data),
+        _ => Err("auth token role must be admin or data".to_owned()),
     }
 }
 
@@ -235,5 +326,47 @@ mod tests {
         assert_eq!(tokens.len(), 2);
         assert_eq!(tokens[0].role, AuthRole::Admin);
         assert_eq!(tokens[1].agent_id, Some(9));
+    }
+
+    #[test]
+    fn auth_policy_store_loads_active_principals_and_skips_disabled() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("auth-policy.json");
+        std::fs::write(
+            &path,
+            r#"{
+              "schema_version": "cortexdb.auth_policy.v1",
+              "principals": [
+                {"principal_id":"admin-a","token":"root","role":"admin"},
+                {"principal_id":"data-a","token":"worker","role":"data","agent_id":7},
+                {"principal_id":"disabled-a","token":"disabled","role":"data","disabled":true}
+              ]
+            }"#,
+        )
+        .unwrap();
+        let tokens = load_auth_policy_store(&path).unwrap();
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens[0].principal_id.as_deref(), Some("admin-a"));
+        assert_eq!(tokens[0].role, AuthRole::Admin);
+        assert_eq!(tokens[1].principal_id.as_deref(), Some("data-a"));
+        assert_eq!(tokens[1].agent_id, Some(7));
+    }
+
+    #[test]
+    fn auth_policy_store_rejects_duplicate_tokens() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("auth-policy.json");
+        std::fs::write(
+            &path,
+            r#"{
+              "schema_version": "cortexdb.auth_policy.v1",
+              "principals": [
+                {"principal_id":"a","token":"same","role":"admin"},
+                {"principal_id":"b","token":"same","role":"data"}
+              ]
+            }"#,
+        )
+        .unwrap();
+        assert!(load_auth_policy_store(&path).is_err());
     }
 }

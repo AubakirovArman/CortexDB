@@ -16,6 +16,17 @@ policy revision metadata.
 Policy changes must be applied through admin-only APIs and must generate audit
 events before they become effective.
 
+Current implementation slice:
+
+- `CORTEXDB_AUTH_POLICY_STORE_FILE` loads a local JSON policy store with
+  `schema_version = cortexdb.auth_policy.v1`.
+- Entries contain `principal_id`, `token`, `role`, optional `agent_id`, and
+  optional `disabled`.
+- Disabled principals are ignored.
+- Invalid policy-store files fail closed.
+- This slice is a local principal policy store, not the full admin mutation API
+  or compliance control layer.
+
 ## Principal Lifecycle
 
 The lifecycle must support:

@@ -15,7 +15,7 @@ Total future epics: 7.
 |---|---|---|---|---|
 | 1 | Production Distributed Consensus | future-design-ready | `make distributed-consensus-design-check` | Multi-node replicated log, leader failover, split-brain prevention, and sustained rejoin evidence |
 | 2 | Managed Cloud | future-design-ready | `make managed-cloud-design-check` | Hosted control plane, tenant isolation, billing/quotas, cloud operations, and support lifecycle |
-| 3 | Enterprise RBAC And Compliance | future-design-ready | `make enterprise-rbac-design-check` | Durable policy store, auditable permissions, compliance controls, and admin lifecycle |
+| 3 | Enterprise RBAC And Compliance | future-phase-1-started | `make enterprise-rbac-design-check` | Durable policy store, auditable permissions, compliance controls, and admin lifecycle |
 | 4 | Full Production HNSW Without Fallback | future-design-ready | `make hnsw-no-fallback-design-check` | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
 | 5 | Built-in LLM Inference | future-design-ready | `make llm-inference-design-check` | Model runtime, resource isolation, prompt safety, provider compatibility, and operational cost controls |
 | 6 | External Identity Providers | future-design-ready | `make external-identity-design-check` | OIDC/SAML or equivalent identity integration with role/scope mapping and rotation |
@@ -149,6 +149,15 @@ Why this is future:
   rotation, optional AgentView binding, audit JSONL, CORS, and rate limits.
 - It does not claim enterprise RBAC, compliance certification, or full audit
   integrity.
+
+Current implementation slice:
+
+- `CORTEXDB_AUTH_POLICY_STORE_FILE` supports a local JSON principal policy
+  store.
+- Active principals can authenticate with `admin` or `data` roles.
+- Disabled principals fail closed.
+- Optional `agent_id` binds a policy-store principal to a persisted AgentView.
+- Invalid policy-store JSON or invalid entries fail closed.
 
 Task pool:
 

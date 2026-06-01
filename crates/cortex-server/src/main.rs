@@ -52,6 +52,13 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    let auth_policy_store_file = match auth_policy_store_file_from_env() {
+        Ok(path) => path,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
     let audit_log_path = match audit_log_path_from_env() {
         Ok(path) => path,
         Err(error) => {
@@ -64,6 +71,7 @@ fn main() -> ExitCode {
         auth_agent_id,
         auth_tokens,
         auth_tokens_file,
+        auth_policy_store_file,
         actor_queue_capacity,
         cors_allowed_origin: env::var("CORTEXDB_CORS_ALLOW_ORIGIN").ok(),
         request_rate_limit_per_minute,
@@ -100,10 +108,27 @@ fn auth_tokens_file_from_env() -> Result<Option<PathBuf>, String> {
     }
 }
 
+fn auth_policy_store_file_from_env() -> Result<Option<PathBuf>, String> {
+    match env::var("CORTEXDB_AUTH_POLICY_STORE_FILE") {
+        Ok(raw) => parse_auth_policy_store_file_path(&raw).map(Some),
+        Err(env::VarError::NotPresent) => Ok(None),
+        Err(error) => Err(format!("invalid CORTEXDB_AUTH_POLICY_STORE_FILE: {error}")),
+    }
+}
+
 fn parse_auth_tokens_file_path(raw: &str) -> Result<PathBuf, String> {
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         Err("CORTEXDB_AUTH_TOKENS_FILE must not be empty".to_owned())
+    } else {
+        Ok(PathBuf::from(trimmed))
+    }
+}
+
+fn parse_auth_policy_store_file_path(raw: &str) -> Result<PathBuf, String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        Err("CORTEXDB_AUTH_POLICY_STORE_FILE must not be empty".to_owned())
     } else {
         Ok(PathBuf::from(trimmed))
     }
@@ -201,8 +226,9 @@ fn parse_actor_queue_capacity(raw: &str) -> Result<usize, String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        parse_actor_queue_capacity, parse_audit_log_path, parse_auth_agent_id, parse_auth_tokens,
-        parse_auth_tokens_file_path, parse_bool_flag, parse_request_rate_limit,
+        parse_actor_queue_capacity, parse_audit_log_path, parse_auth_agent_id,
+        parse_auth_policy_store_file_path, parse_auth_tokens, parse_auth_tokens_file_path,
+        parse_bool_flag, parse_request_rate_limit,
     };
 
     #[test]
@@ -267,6 +293,17 @@ mod tests {
                 .unwrap()
                 .to_string_lossy(),
             "/tmp/cortexdb-auth.tokens"
+        );
+    }
+
+    #[test]
+    fn parse_auth_policy_store_file_path_rejects_empty_value() {
+        assert!(parse_auth_policy_store_file_path(" ").is_err());
+        assert_eq!(
+            parse_auth_policy_store_file_path("/tmp/cortexdb-auth-policy.json")
+                .unwrap()
+                .to_string_lossy(),
+            "/tmp/cortexdb-auth-policy.json"
         );
     }
 

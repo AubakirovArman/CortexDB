@@ -10,9 +10,12 @@ from pathlib import Path
 
 
 REQUIRED_MARKERS = {
-    "persisted_auth_policy_boundary": [
-        ("docs/RBAC_POLICY_STORE_DESIGN.md", "persisted dynamic policy updates through HTTP"),
-        ("docs/SECURITY_HARDENING_EVIDENCE.md", "File-backed token policy rotation is implemented"),
+    "persisted_auth_policy_store": [
+        ("docs/AUTH.md", "CORTEXDB_AUTH_POLICY_STORE_FILE"),
+        ("docs/SECURITY_BETA_BASELINE.md", "implemented JSON principal policy store"),
+        ("docs/SECURITY_HARDENING_EVIDENCE.md", "JSON principal policy store"),
+        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "auth_policy_store_allows_active_principal_and_denies_disabled"),
+        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "auth_policy_store_invalid_json_fails_closed"),
     ],
     "per_token_quota_boundary": [
         ("docs/SECURITY_BETA_BASELINE.md", "Key quota counters by safe token fingerprint"),

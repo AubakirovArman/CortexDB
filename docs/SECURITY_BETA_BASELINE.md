@@ -21,20 +21,24 @@ design-only, so release gates can block overclaims.
 
 ### 1. RBAC Policy Store
 
-Goal: move from static token roles to a durable local policy store without
-breaking the current token contract.
+Goal: continue from the implemented JSON principal policy store toward a full
+enterprise RBAC administration layer without breaking the current token
+contract.
 
 Plan:
 
-1. Add a read-only policy-store preview command that prints effective route
+1. Keep `CORTEXDB_AUTH_POLICY_STORE_FILE` as the local durable JSON policy-store
+   entry point for principals, roles, disabled principals, and optional
+   AgentView binding.
+2. Add a read-only policy-store preview command that prints effective route
    class, token role, optional AgentView binding, and tenant.
-2. Persist principal, credential, role-binding, and AgentView-binding records in
+3. Persist principal, credential, role-binding, and AgentView-binding records in
    a system scope.
-3. Add an `AuthPolicyResolver` abstraction that can read from static options,
+4. Add an `AuthPolicyResolver` abstraction that can read from static options,
    token files, or the policy store.
-4. Fail closed when policy-store records are corrupt, expired, disabled, or
+5. Fail closed when policy-store records are corrupt, expired, disabled, or
    inconsistent.
-5. Add write APIs only after audit review, backup/restore, and rollback
+6. Add write APIs only after audit review, backup/restore, and rollback
    behavior are documented.
 
 Beta gate:
