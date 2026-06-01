@@ -188,6 +188,7 @@ Review the audit file:
 
 ```bash
 cortexdb audit ./audit/http.jsonl --summary --redaction-check --verify-chain
+cortexdb audit verify ./audit/http.jsonl
 ```
 
 ## Before Using Beta
@@ -210,4 +211,3 @@ cortexdb audit ./audit/http.jsonl --summary --redaction-check --verify-chain
 - No built-in TLS lifecycle; terminate TLS outside CortexDB.
 - No encrypted backup support in the current beta boundary.
 - HNSW/ANN remains guarded by exact fallback for beta claims.
-

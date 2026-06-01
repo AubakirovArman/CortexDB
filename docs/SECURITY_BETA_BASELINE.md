@@ -13,9 +13,9 @@ design-only, so release gates can block overclaims.
 | Policy review tooling | `cortexdb auth-review` reports local policy-store/token-file roles, principals, AgentView bindings, quotas, and disabled state without printing token values. |
 | AgentView scoping | Token-bound AgentViews restrict readable/writable scopes on data routes. |
 | Tenant path safety | Tenant IDs are percent-decoded, length-limited, and path-traversal checked. |
-| Request limits | Process-wide and policy-store per-principal fixed-window request limits can return typed `rate_limited` errors. |
+| Request limits | Process-wide and policy-store per-principal request, body-byte, and actor-queue limits can return typed `rate_limited` errors. |
 | Audit redaction | HTTP audit events store route metadata, status, tenant, request id, duration, and authenticated principal metadata, not query strings, request bodies, or bearer tokens. |
-| Audit chain foundation | File-backed audit records include `chain_id`, `sequence`, `prev_hash`, and `event_hash`; `cortexdb audit --verify-chain` checks local continuity; `cortexdb audit-export-siem` exports normalized JSONL for downstream SIEM ingestion. |
+| Audit chain foundation | File-backed audit records include `chain_id`, `sequence`, `prev_hash`, and `event_hash`; `cortexdb audit --verify-chain` and `cortexdb audit verify <file>` check local continuity; `cortexdb audit-export-siem` exports normalized JSONL for downstream SIEM ingestion. |
 | Compliance boundary | `COMPLIANCE_BOUNDARY_MAPPING.md` states that current controls are local evidence only and that CortexDB has no external compliance certification today. |
 | Dashboard gate | `/dashboard` is an admin route; data tokens are denied. |
 | Backup validation | Local backup, restore, offsite staging, and restore drills validate storage before trust. |

@@ -98,6 +98,7 @@ action, and tenant filters plus an automated redaction check.
 
 ```bash
 cortexdb audit ./audit/http.jsonl --summary --redaction-check
+cortexdb audit verify ./audit/http.jsonl
 cortexdb audit ./audit/http.jsonl --route /v1/cell --status 403
 cortexdb audit ./audit/http.jsonl --action write --tenant-filter tenant-alpha
 cortexdb --json audit ./audit/http.jsonl --summary --redaction-check

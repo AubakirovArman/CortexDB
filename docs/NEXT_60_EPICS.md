@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 34 |
-| partial | 19 |
+| closed | 35 |
+| partial | 18 |
 | not started | 5 |
 | research | 2 |
 | total | 60 |
@@ -74,7 +74,7 @@ The plan recommends this first execution batch:
 | 30 | Ingestion Validation Report | closed | Engine-level `IngestionValidationReport` now reports warnings, skipped items, and per-cell SourceRef summaries; HTTP ingest responses include it with OpenAPI/docs/snapshot coverage. | Extend warning codes only additively as new ingestion adapters are added. |
 | 31 | Dynamic RBAC Policy Store | closed | JSON policy-store principals now sync through `DatabaseActor` into redacted durable `_system:auth_policy` cells; tests cover policy-cell sync, disabled mapping, and no raw-token exposure. | Keep full enterprise RBAC, external identity, and session management out of beta claims until their own gates exist. |
 | 32 | Per-token Quotas | closed | Policy-store principals now support request/minute, body-byte/minute, and actor queue quotas; enforcement uses per-token/principal quota keys, returns typed `rate_limited`, and `/v1/metrics` exposes aggregate quota counters without token/principal leakage. | Keep distributed, route-class, and tenant-aware quota accounting for later production tuning. |
-| 33 | Tamper-evident Audit Log | partial | Audit paths and security checks exist. | Add hash-chain audit log and `cortexdb audit verify`. |
+| 33 | Tamper-evident Audit Log | closed | File-backed route audit records include `chain_id`, monotonic `sequence`, `prev_hash`, and `event_hash`; `cortexdb audit --verify-chain`, `cortexdb audit verify <file>`, and `cortexdb audit-export-siem --verify-chain` fail closed on broken local continuity. | Compliance-grade immutable ledger, external timestamping, and vendor-managed SIEM delivery remain future work. |
 | 34 | Encrypted Backup Design to MVP | partial | Encrypted backup design doc exists. | Implement passphrase encrypted archive and restore validation. |
 | 35 | Security Check Gate | closed | `make security-check` exists and passed in beta release gate. | Keep it in release gating as new auth surfaces are added. |
 | 36 | CortexDB Doctor | closed | `cortexdb doctor` exists with tests/docs. | Extend diagnostics as operations features grow. |
@@ -118,5 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 33: hash-chain audit log and `cortexdb audit verify`.
-2. Advance Epic 34: passphrase encrypted archive and restore validation.
+1. Advance Epic 34: passphrase encrypted archive and restore validation.
+2. Advance Epic 37: promote backup/restore operational workflow with prune/RPO/RTO evidence.

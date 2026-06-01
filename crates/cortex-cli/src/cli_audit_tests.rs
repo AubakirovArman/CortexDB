@@ -199,6 +199,64 @@ fn audit_command_can_verify_chain() {
     let _ = std::fs::remove_file(path);
 }
 
+#[test]
+fn audit_verify_alias_accepts_valid_chain() {
+    let path = unique_path("cortexdb-cli-audit-verify-alias.jsonl");
+    std::fs::write(&path, crate::cli_audit_chain::test_chained_record_jsonl()).unwrap();
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "audit".to_owned(),
+        "verify".to_owned(),
+        path.to_string_lossy().into_owned(),
+    ])
+    .unwrap();
+
+    assert!(output.contains("chain_ok=true chain_violations=0"));
+    assert!(!output.contains("record method="));
+
+    let _ = std::fs::remove_file(path);
+}
+
+#[test]
+fn audit_verify_alias_rejects_tampered_chain() {
+    let path = unique_path("cortexdb-cli-audit-verify-alias-tampered.jsonl");
+    let first = chained_record(1, "0000000000000000", "GET", "/v1/health", 200);
+    let second = chained_record(
+        2,
+        first.event_hash.as_deref().unwrap(),
+        "POST",
+        "/v1/cell",
+        403,
+    );
+    std::fs::write(
+        &path,
+        format!(
+            "{}\n{}\n",
+            serde_json::to_string(&first).unwrap(),
+            serde_json::to_string(&second).unwrap()
+        ),
+    )
+    .unwrap();
+    let tampered = std::fs::read_to_string(&path)
+        .unwrap()
+        .replace(r#""path":"/v1/cell""#, r#""path":"/v1/compact""#);
+    std::fs::write(&path, tampered).unwrap();
+
+    let error = run(vec![
+        "cortexdb".to_owned(),
+        "audit".to_owned(),
+        "verify".to_owned(),
+        path.to_string_lossy().into_owned(),
+    ])
+    .unwrap_err();
+
+    assert!(error.contains("audit chain verification failed"));
+    assert!(error.contains("chain_violations=1"));
+
+    let _ = std::fs::remove_file(path);
+}
+
 fn unique_path(prefix: &str) -> std::path::PathBuf {
     std::env::temp_dir().join(format!(
         "{prefix}-{}",

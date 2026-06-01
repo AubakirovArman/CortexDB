@@ -363,6 +363,7 @@ Review a persisted audit file with the CLI instead of hand-parsing JSONL:
 ```bash
 cortexdb audit ./audit/http.jsonl --summary --redaction-check
 cortexdb audit ./audit/http.jsonl --summary --redaction-check --verify-chain
+cortexdb audit verify ./audit/http.jsonl
 cortexdb audit ./audit/http.jsonl --route /v1/cell --status 403
 cortexdb audit ./audit/http.jsonl --action write --tenant-filter tenant-alpha
 cortexdb --json audit ./audit/http.jsonl --summary --redaction-check
@@ -376,9 +377,11 @@ fields, which keeps route-level audit review separate from request payloads.
 The `--verify-chain` flag validates local sequence continuity and chained event
 hashes, detecting line deletion, reordering, and edited route metadata in
 chain-v1 audit files. This is a local tamper-evidence foundation, not a
-compliance-certified audit ledger. If the configured file sink ends with a
-malformed chained record, server startup fails instead of silently resetting the
-chain; rotate or repair the audit file explicitly.
+compliance-certified audit ledger. `cortexdb audit verify <audit.jsonl>` is the
+short fail-closed alias for `cortexdb audit <audit.jsonl> --summary
+--verify-chain`. If the configured file sink ends with a malformed chained
+record, server startup fails instead of silently resetting the chain; rotate or
+repair the audit file explicitly.
 
 `audit-export-siem` writes normalized JSONL records with schema
 `cortexdb.siem.audit.v1`. It preserves route metadata, principal metadata,

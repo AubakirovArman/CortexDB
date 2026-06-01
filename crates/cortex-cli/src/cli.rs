@@ -112,6 +112,7 @@ enum Command {
     },
     Audit {
         path: String,
+        verify_path: Option<String>,
         #[arg(long)]
         route: Option<String>,
         #[arg(long)]
@@ -428,6 +429,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         } => ops::backup_offsite_stage(&backup_path, &offsite_root, &backup_id),
         Command::Audit {
             path,
+            verify_path,
             route,
             status,
             action,
@@ -435,17 +437,34 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             summary,
             redaction_check,
             verify_chain,
-        } => audit::review(audit::AuditReviewOptions {
-            path: &path,
-            route: route.as_deref(),
-            status,
-            action: action.as_deref(),
-            tenant: tenant_filter.as_deref(),
-            summary_only: summary,
-            redaction_check,
-            verify_chain,
-            json: cli.json,
-        }),
+        } => {
+            let audit_verify_alias = path == "verify";
+            let actual_path = if audit_verify_alias {
+                verify_path.as_deref().ok_or_else(|| {
+                    "usage: cortexdb audit verify <audit.jsonl> [--redaction-check]".to_owned()
+                })?
+            } else {
+                if verify_path.is_some() {
+                    return Err(
+                        "unexpected extra audit path; use `cortexdb audit verify <audit.jsonl>` \
+                         or `cortexdb audit <audit.jsonl> --verify-chain`"
+                            .to_owned(),
+                    );
+                }
+                path.as_str()
+            };
+            audit::review(audit::AuditReviewOptions {
+                path: actual_path,
+                route: route.as_deref(),
+                status,
+                action: action.as_deref(),
+                tenant: tenant_filter.as_deref(),
+                summary_only: summary || audit_verify_alias,
+                redaction_check,
+                verify_chain: verify_chain || audit_verify_alias,
+                json: cli.json,
+            })
+        }
         Command::AuditExportSiem {
             input_path,
             output_path,
