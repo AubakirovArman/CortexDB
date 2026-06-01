@@ -100,6 +100,34 @@ The `metric=budget` line helps VERIFY FACT label precise
 typed `NumericValue` pairs extracted from the fact and evidence body text, so
 CLI/server responses do not re-parse payloads independently.
 
+## Contradiction Index
+
+`Database::conflict_index` exposes deterministic contradiction records from two
+sources:
+
+1. Inline fact markers such as `contradicts=ABC budget approved`.
+2. Persisted Relation cells with `predicate=contradicts`.
+
+Persisted contradiction relations are durable database cells. They use the
+existing Relation cell model:
+
+```text
+scope=project:investments
+status=ready
+type=relation
+source=reviewer
+
+subject=cell:42
+predicate=contradicts
+object=ABC budget approved
+source_cell_id=42
+```
+
+The relation cell is written through WAL and survives restart like any other
+cell. `conflicts_for_fact` reads both inline markers and persisted relation
+cells, then applies the caller's `AgentView` readable-scope mask before
+returning records.
+
 ## Report Exports
 
 `VerificationReport` has engine-level stable exports:
@@ -134,7 +162,8 @@ output for diffing, archiving, or attaching to external review tooling.
 
 - Metric-aware comparison (budget vs revenue vs cost).
 - Richer source trust policy inputs beyond q16 thresholds.
-- Contradiction index output.
+- Public API output for the durable contradiction index if product consumers
+  need it outside the engine API.
 
 ## Quality Gate
 

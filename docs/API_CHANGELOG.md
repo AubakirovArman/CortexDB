@@ -8,6 +8,12 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 
 ## Unreleased
 
+### Added
+- **Persisted contradiction relation cells** — engine users can now call
+  `Database::persist_contradiction_relation` to write durable Relation cells
+  with `predicate=contradicts`; `conflict_index` and `conflicts_for_fact` read
+  both inline `contradicts=` markers and persisted relation cells.
+
 ### Changed
 - **Error taxonomy contract guard** — `make openapi-contract-check` now also
   verifies the stable error-code list across `API_ERROR_TAXONOMY.md`,

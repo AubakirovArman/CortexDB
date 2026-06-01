@@ -1,5 +1,6 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
+use cortex_engine::verification::ContradictionRelationOptions;
 use cortex_engine::verification::VerificationStatus;
 use cortex_engine::{scope_id, Database, SourceTrustCategory};
 use std::collections::BTreeSet;
@@ -204,6 +205,85 @@ fn conflicts_for_fact_filters_by_normalized_terms() {
 }
 
 #[test]
+fn persisted_contradiction_relation_appears_in_conflict_index() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        fact_cell("project:investments", "ABC budget rejected"),
+    )
+    .unwrap();
+    db.persist_contradiction_relation(
+        CellId(10),
+        CellId(1),
+        "ABC budget approved",
+        contradiction_relation_options("project:investments"),
+    )
+    .unwrap();
+
+    let records = db.conflict_index(&view("project:investments", true));
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].cell_id, CellId(1));
+    assert_eq!(records[0].relation_cell_id, Some(CellId(10)));
+    assert_eq!(records[0].source_cell_id, Some(CellId(1)));
+    assert_eq!(records[0].fact, "ABC budget approved");
+}
+
+#[test]
+fn conflicts_for_fact_includes_persisted_relation() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.persist_contradiction_relation(
+        CellId(10),
+        CellId(1),
+        "ABC budget approved",
+        contradiction_relation_options("project:investments"),
+    )
+    .unwrap();
+
+    let records = db.conflicts_for_fact("abc budget approved", &view("project:investments", true));
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].relation_cell_id, Some(CellId(10)));
+}
+
+#[test]
+fn persisted_contradiction_relation_survives_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.persist_contradiction_relation(
+            CellId(10),
+            CellId(1),
+            "ABC budget approved",
+            contradiction_relation_options("project:investments"),
+        )
+        .unwrap();
+    }
+
+    let db = Database::open(dir.path()).unwrap();
+    let records = db.conflicts_for_fact("abc budget approved", &view("project:investments", true));
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].cell_id, CellId(1));
+    assert_eq!(records[0].relation_cell_id, Some(CellId(10)));
+}
+
+#[test]
+fn conflict_index_hides_unreadable_persisted_relation_scope() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.persist_contradiction_relation(
+        CellId(10),
+        CellId(1),
+        "hidden budget approved",
+        contradiction_relation_options("tenant:private"),
+    )
+    .unwrap();
+
+    let records = db.conflict_index(&view("project:investments", true));
+    assert!(records.is_empty());
+}
+
+#[test]
 fn verify_fact_aql_denied_by_agent_view_policy() {
     let dir = tempfile::tempdir().unwrap();
     let db = Database::open(dir.path()).unwrap();
@@ -234,6 +314,14 @@ fn fact_cell_with_trust(scope: &str, body: &str, trust: Option<u16>) -> Knowledg
         },
         body,
     )
+}
+
+fn contradiction_relation_options(scope: &str) -> ContradictionRelationOptions {
+    ContradictionRelationOptions {
+        scope: scope.to_owned(),
+        source: "fixture".to_owned(),
+        source_trust_q16: Some(50_000),
+    }
 }
 
 fn view(scope: &str, allow_verify: bool) -> AgentView {

@@ -17,9 +17,9 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 24 |
+| closed | 25 |
 | partial | 28 |
-| not started | 6 |
+| not started | 5 |
 | research | 2 |
 | total | 60 |
 
@@ -60,7 +60,7 @@ The plan recommends this first execution batch:
 | 16 | Verification Dataset v2 | closed | `make verification-quality-check` now executes and reports 50 deterministic cases across 5 domains with all verdict classes and guard coverage. | Add real customer/legal review fixtures later without weakening deterministic gates. |
 | 17 | NumericValue Engine Integration | closed | `VerificationReport.numeric_conflicts` now carries engine-level structured numeric conflicts with `cell_id`, metric, display values, and typed `NumericValue` pairs; CLI/server only serialize the report. | Keep future unit/currency expansion inside engine structs before exposing new API fields. |
 | 18 | Source Trust Model v1 | closed | Engine now has first-class `SourceTrust`/`SourceTrustCategory`; ContextPack explain and VERIFY evidence expose deterministic q16/category contribution across CLI/server/SDK surfaces. | Add richer policy inputs later without changing q16 category semantics silently. |
-| 19 | Contradiction Index v1 | not started | Verification detects conflicts dynamically. | Add persisted contradiction relation cells and conflict index. |
+| 19 | Contradiction Index v1 | closed | `Database::persist_contradiction_relation` writes durable `type=relation` cells with `predicate=contradicts`; `conflict_index` and `conflicts_for_fact` now read both inline markers and persisted relation cells under the caller's AgentView scope mask, with restart regression coverage. | Expose the contradiction index through CLI/server later only if product consumers need a public route. |
 | 20 | Verification Report Export | closed | `VerificationReport` now has engine-level Markdown and deterministic audit-text exporters, wired through CLI `verify --format markdown|audit` and HTTP `/v1/verify?format=markdown|audit`. | Keep export wording stable unless a new report export version is introduced. |
 | 21 | Real-domain Corpus Expansion | closed | `make retrieval-quality-check` now validates investment projects, support tickets, legal policies, and technical docs corpora with ground truth. | Add larger public/private corpora later as separate quality expansions. |
 | 22 | Retrieval Quality Dashboard | closed | `make retrieval-quality-check` now writes `target/retrieval-quality/dashboard.html` with guarded ANN and per-domain recall/MRR/nDCG/p95/exact-parity tables. | Keep the dashboard in the beta evidence bundle and extend it as more domains are added. |
@@ -118,5 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 19: persisted contradiction relation cells and conflict index.
-2. Advance Epic 24: fuller search explain contribution details and SDK coverage.
+1. Advance Epic 24: fuller search explain contribution details and SDK coverage.
+2. Advance Epic 25: explicit query intent routing and selected strategy/reason.
