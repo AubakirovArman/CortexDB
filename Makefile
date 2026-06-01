@@ -204,6 +204,8 @@ PRODUCTION_V1_ROOT ?= target/production-v1
 PRODUCTION_V1_REPORT ?= $(PRODUCTION_V1_ROOT)/report.json
 STORAGE_COMPAT_ROOT ?= target/storage-compat
 STORAGE_COMPAT_REPORT ?= $(STORAGE_COMPAT_ROOT)/report.json
+MIGRATION_HISTORICAL_RESTORE_ROOT ?= target/migration-historical-restore
+MIGRATION_HISTORICAL_RESTORE_REPORT ?= $(MIGRATION_HISTORICAL_RESTORE_ROOT)/report.json
 ENGINE_API_ROOT ?= target/engine-api
 ENGINE_API_REPORT ?= $(ENGINE_API_ROOT)/report.json
 AQL_COMPAT_ROOT ?= target/aql-compat
@@ -245,6 +247,7 @@ migration-policy-check:
 
 migration-compatibility-check:
 	python3 scripts/check_migration_compatibility.py
+	python3 scripts/migration_historical_restore_check.py --root "$(MIGRATION_HISTORICAL_RESTORE_ROOT)" --report "$(MIGRATION_HISTORICAL_RESTORE_REPORT)"
 
 storage-compat-check:
 	python3 scripts/storage_compat_check.py --root "$(STORAGE_COMPAT_ROOT)" --report "$(STORAGE_COMPAT_REPORT)"

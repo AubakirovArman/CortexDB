@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "release_tag": "v0.1.0-core-alpha.5",
+  "backup_path": "backup",
+  "created_by": "target/debug/cortexdb from tag v0.1.0-core-alpha.5",
+  "expected_cells": [
+    {
+      "cell_id": 61001,
+      "payload": "scope=migration:fixture\nstatus=ready\nrelease=v0.1.0-core-alpha.5\nhistorical fixture alpha"
+    },
+    {
+      "cell_id": 61002,
+      "payload": "scope=migration:fixture\nstatus=ready\nrelease=v0.1.0-core-alpha.5\nhistorical fixture beta"
+    }
+  ]
+}

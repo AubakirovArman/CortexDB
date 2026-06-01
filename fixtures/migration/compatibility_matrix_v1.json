@@ -83,6 +83,15 @@
       "proof": ["docs/UPGRADE_MIGRATION.md"]
     }
   ],
+  "historical_restore_fixtures": [
+    {
+      "release_tag": "v0.1.0-core-alpha.5",
+      "backup_path": "fixtures/migration/historical/v0.1.0-core-alpha.5/backup",
+      "fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json",
+      "gate": "make migration-compatibility-check",
+      "proof": ["target/migration-historical-restore/report.json"]
+    }
+  ],
   "migration_notes": [
     {
       "change_type": "storage",

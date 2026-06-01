@@ -13,6 +13,7 @@ Primary artifacts:
 ```text
 target/storage-compat/report.json
 target/storage-compat/*.log
+target/migration-historical-restore/report.json
 target/backup-drill/report.json
 target/crash-fault/report.json
 target/chaos-restart/report.json
@@ -31,6 +32,7 @@ Latest local status: passed.
 | Suite | Purpose |
 | --- | --- |
 | migration compatibility | Checks the machine-readable storage/API/SDK compatibility fixture. |
+| historical restore fixture | Restores release-tagged backup fixtures with the current binary. |
 | backup drill | Proves a current-version backup can be restored and validated by the checkout under test. |
 | backup archive corruption | Proves corrupted backup segment and manifest archives are rejected on restore. |
 | crash/fault | Runs interrupted checkpoint/compact, restart tail, corruption, and repair tests. |
@@ -44,6 +46,7 @@ Latest local status: passed.
 The local gate proves:
 
 - storage compatibility evidence is repeatable locally;
+- historical backup fixtures restore with the current binary;
 - current checkout can restore and validate current-version backups;
 - corrupted backup archives are rejected during restore;
 - known storage file corruption is detected;

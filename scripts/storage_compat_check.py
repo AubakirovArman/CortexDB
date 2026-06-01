@@ -15,6 +15,7 @@ from typing import Any
 DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "docs/STORAGE_COMPATIBILITY.md": (
         "current-version backup restored by next-version code",
+        "historical backup restore fixture",
         "corruption of `.acs`, `.acb`, `.aci`, `.acv`, and `.ach`",
         "repair dry-run vs repair apply",
         "Strict And Best-Effort Recovery",
@@ -40,6 +41,7 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "docs/UPGRADE_MIGRATION.md": (
         "compatibility_matrix_v1.json",
         "upgrade/downgrade matrix",
+        "historical restore fixture",
         "backup-drill",
     ),
 }
@@ -219,11 +221,13 @@ def main() -> int:
             "backup_drill_report": "target/backup-drill/report.json",
             "crash_fault_report": "target/crash-fault/report.json",
             "chaos_restart_report": "target/chaos-restart/report.json",
+            "migration_historical_restore_report": "target/migration-historical-restore/report.json",
             "migration_fixture": "fixtures/migration/compatibility_matrix_v1.json",
         },
         "boundary": {
             "proves": [
                 "storage compatibility evidence is repeatable locally",
+                "historical backup fixtures restore with the current binary",
                 "current checkout can restore and validate current-version backups",
                 "corrupted backup archives are rejected during restore",
                 "known storage file corruption is detected",

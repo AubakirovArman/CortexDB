@@ -133,6 +133,8 @@ It validates `fixtures/migration/compatibility_matrix_v1.json`, including:
 - storage/API/SDK compatibility boundaries;
 - current and old read-only format markers;
 - an offline upgrade/downgrade matrix;
+- at least one historical restore fixture whose old backup is restored and
+  validated by the current binary;
 - proof files that back each compatibility claim.
 
 Core Alpha release candidates should pass:

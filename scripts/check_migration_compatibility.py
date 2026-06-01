@@ -71,11 +71,23 @@ def main() -> int:
             if section == "upgrade_matrix" and "downgrade" not in item:
                 errors.append(f"upgrade_matrix[{index}] must document downgrade behavior")
 
+    historical = fixture.get("historical_restore_fixtures", [])
+    if not historical:
+        errors.append("historical_restore_fixtures must not be empty")
+    for index, item in enumerate(historical):
+        for field in ("release_tag", "backup_path", "fixture", "gate"):
+            if not item.get(field):
+                errors.append(f"historical_restore_fixtures[{index}] missing {field}")
+        for field in ("backup_path", "fixture"):
+            if item.get(field):
+                require_file(repo, item[field], errors)
+
     docs = {
         "docs/UPGRADE_MIGRATION.md": (
             "migration-compatibility-check",
             "compatibility_matrix_v1.json",
             "upgrade/downgrade matrix",
+            "historical restore fixture",
         ),
         "docs/BINARY_RELEASES.md": ("binary-release-check", "SHA256SUMS"),
     }
