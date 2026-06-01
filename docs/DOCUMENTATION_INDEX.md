@@ -110,6 +110,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`DASHBOARD_PRODUCT_UI_EVIDENCE.md`](DASHBOARD_PRODUCT_UI_EVIDENCE.md) - local Epic 16 dashboard product UI evidence gate.
 - [`BINARY_RELEASES.md`](BINARY_RELEASES.md) - binary tarball packaging and install flow.
 - [`BINARY_PLATFORM_MATRIX.md`](BINARY_PLATFORM_MATRIX.md) - supported binary platforms and clean-install smoke.
+- [`RELEASE_ARTIFACT_MANIFEST.md`](RELEASE_ARTIFACT_MANIFEST.md) - machine-readable release evidence manifest.
 - [`INSTALL.md`](INSTALL.md) - local binary/source install and first database checks.
 - [`SYSTEMD.md`](SYSTEMD.md) - single-node systemd service example.
 - [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md) - offline upgrade and restore-based rollback workflow.

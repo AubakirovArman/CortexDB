@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 17 |
-| partial | 35 |
+| closed | 18 |
+| partial | 34 |
 | not started | 6 |
 | research | 2 |
 | total | 60 |
@@ -90,7 +90,7 @@ The plan recommends this first execution batch:
 | 46 | Linux/macOS Binary Release Pipeline | closed | `.github/workflows/release.yml` now has an explicit four-platform matrix for `linux-x86_64`, `linux-aarch64`, `macos-arm64`, and `macos-x86_64`; `make binary-platform-matrix-check` validates docs/workflow markers and clean-install smoke for the local archive. | Keep release tag runs attached with all matrix artifacts before each public release. |
 | 47 | Install Script | closed | `scripts/install.sh` verifies external `.sha256`, internal `SHA256SUMS`, executable bits, and installs CLI/server binaries; `make install-script-check` validates dry-run, install, and corrupt-checksum rejection. | Keep the script compatible with Linux `sha256sum` and macOS `shasum`. |
 | 48 | Systemd and launchd Support | partial | Systemd docs exist. | Add launchd docs/examples and smoke validation. |
-| 49 | Release Artifact Manifest | partial | Release artifacts/checksums/evidence exist. | Add formal release manifest validator with binary/evidence/SDK/OpenAPI/git metadata. |
+| 49 | Release Artifact Manifest | closed | `make release-artifact-manifest-check` now writes and validates `target/release-artifact-manifest/manifest.json` with binary, sidecar checksum, SDK, OpenAPI, evidence report, install-script, binary-platform, and git metadata. | Keep adding required evidence reports as release gates expand. |
 | 50 | Version and Compatibility Dashboard | not started | Compatibility docs exist. | Expose API/SDK/storage/migration versions in dashboard/API. |
 | 51 | Official Beta Landing Page | partial | README and positioning docs exist. | Turn them into a concise external beta landing path. |
 | 52 | Use-case Packs | partial | Investment/support demos and RAG demo exist. | Add legal, financial, and technical use-case packs. |
@@ -118,5 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 49: formal release artifact manifest validator.
-2. Advance Epic 12: complete ContextPack `why_excluded` explanations.
+1. Advance Epic 12: complete ContextPack `why_excluded` explanations.
+2. Advance Epic 14: stable ContextPack prompt/Markdown export modes.

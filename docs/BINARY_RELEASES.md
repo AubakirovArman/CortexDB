@@ -139,6 +139,16 @@ BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local
 and packages the resulting archive plus checksum into the beta evidence
 artifact list.
 
+The broader release evidence manifest is generated with:
+
+```bash
+make release-artifact-manifest-check
+```
+
+See [`RELEASE_ARTIFACT_MANIFEST.md`](RELEASE_ARTIFACT_MANIFEST.md) for the
+binary, SDK, OpenAPI, evidence, and git metadata that are bound into the
+machine-readable manifest.
+
 ## Limits
 
 - No Windows binary artifact is produced yet.
