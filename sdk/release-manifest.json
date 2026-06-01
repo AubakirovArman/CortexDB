@@ -71,5 +71,16 @@
     "tag_prefix": "v",
     "requires_explicit_publish_input": true,
     "environment": "sdk-release"
+  },
+  "registry_gate": {
+    "command": "make sdk-registry-gate-check",
+    "report": "target/sdk-registry-gate/report.json",
+    "requires_manual_approval": true,
+    "requires_registry_credentials": [
+      "PyPI trusted publishing",
+      "NPM_TOKEN",
+      "CARGO_REGISTRY_TOKEN"
+    ],
+    "does_not_claim_publication_without_release_job": true
   }
 }

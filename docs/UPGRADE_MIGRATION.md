@@ -66,6 +66,34 @@ For Core Alpha, upgrades are offline and single-node:
    make migration-compatibility-check
    ```
 
+## Release-To-Release Compatibility
+
+The current beta compatibility pair is:
+
+```text
+v0.1.0-core-alpha.5 -> v0.2.0-beta.1
+```
+
+It is represented in `fixtures/migration/compatibility_matrix_v1.json` and
+validated by:
+
+```bash
+make migration-compatibility-check
+```
+
+The pair requires:
+
+| Boundary | Gate |
+| --- | --- |
+| Historical restore fixture | `python3 scripts/migration_historical_restore_check.py` |
+| API contract | `make openapi-contract-check` |
+| SDK contract | `make sdk-contract-check` |
+| Storage contract | `make storage-compat-check` |
+
+Downgrade remains restore-only: restore the immutable pre-upgrade backup and run
+the previous binary against that restored directory. CortexDB does not support
+in-place downgrade across this pair.
+
 ## Rollback Workflow
 
 Rollback is restore-based:
@@ -133,6 +161,7 @@ It validates `fixtures/migration/compatibility_matrix_v1.json`, including:
 - storage/API/SDK compatibility boundaries;
 - current and old read-only format markers;
 - an offline upgrade/downgrade matrix;
+- the explicit `v0.1.0-core-alpha.5 -> v0.2.0-beta.1` release-to-release pair;
 - at least one historical restore fixture whose old backup is restored and
   validated by the current binary;
 - proof files that back each compatibility claim.

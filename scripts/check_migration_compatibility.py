@@ -21,6 +21,14 @@ REQUIRED_FORMATS = {
 }
 
 REQUIRED_BOUNDARIES = {"storage", "api", "sdk"}
+CURRENT_RELEASE = "v0.2.0-beta.1"
+PREVIOUS_RELEASE = "v0.1.0-core-alpha.5"
+REQUIRED_RELEASE_GATES = {
+    "restore_gate": "python3 scripts/migration_historical_restore_check.py",
+    "api_contract_gate": "make openapi-contract-check",
+    "sdk_contract_gate": "make sdk-contract-check",
+    "storage_contract_gate": "make storage-compat-check",
+}
 
 
 def read(path: Path) -> str:
@@ -50,6 +58,8 @@ def main() -> int:
         errors.append("fixture schema_version must be 1")
     if fixture.get("release") != "v0.1.0-core-alpha":
         errors.append("fixture release must be v0.1.0-core-alpha")
+    if fixture.get("current_release") != CURRENT_RELEASE:
+        errors.append(f"fixture current_release must be {CURRENT_RELEASE}")
 
     formats = {item.get("marker") for item in fixture.get("storage_formats", [])}
     missing_formats = sorted(REQUIRED_FORMATS - formats)
@@ -82,12 +92,40 @@ def main() -> int:
             if item.get(field):
                 require_file(repo, item[field], errors)
 
+    release_matrix = fixture.get("release_compatibility_matrix", [])
+    if not release_matrix:
+        errors.append("release_compatibility_matrix must not be empty")
+    for index, item in enumerate(release_matrix):
+        if item.get("from") != PREVIOUS_RELEASE:
+            errors.append(
+                f"release_compatibility_matrix[{index}] from must be {PREVIOUS_RELEASE}"
+            )
+        if item.get("to") != CURRENT_RELEASE:
+            errors.append(f"release_compatibility_matrix[{index}] to must be {CURRENT_RELEASE}")
+        for field in ("fixture", "backup_path"):
+            if not item.get(field):
+                errors.append(f"release_compatibility_matrix[{index}] missing {field}")
+            else:
+                require_file(repo, item[field], errors)
+        for field, expected in REQUIRED_RELEASE_GATES.items():
+            if item.get(field) != expected:
+                errors.append(
+                    f"release_compatibility_matrix[{index}] {field} must be {expected!r}"
+                )
+        if "restore-only" not in item.get("downgrade", ""):
+            errors.append(
+                f"release_compatibility_matrix[{index}] must document restore-only downgrade"
+            )
+        for proof in item.get("proof", []):
+            require_file(repo, proof, errors)
+
     docs = {
         "docs/UPGRADE_MIGRATION.md": (
             "migration-compatibility-check",
             "compatibility_matrix_v1.json",
             "upgrade/downgrade matrix",
             "historical restore fixture",
+            "v0.1.0-core-alpha.5 -> v0.2.0-beta.1",
         ),
         "docs/BINARY_RELEASES.md": ("binary-release-check", "SHA256SUMS"),
     }

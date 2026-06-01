@@ -121,6 +121,20 @@ def validate_manifest(repo: Path, errors: list[str]) -> dict[str, Any]:
                 errors.append("sdk/release-manifest.json: publish_policy.tag_prefix must be 'v'")
             if publish_policy.get("environment") != "sdk-release":
                 errors.append("sdk/release-manifest.json: publish_policy.environment must be 'sdk-release'")
+        registry_gate = manifest.get("registry_gate")
+        if not isinstance(registry_gate, dict):
+            errors.append("sdk/release-manifest.json: registry_gate missing")
+        else:
+            if registry_gate.get("command") != "make sdk-registry-gate-check":
+                errors.append("sdk/release-manifest.json: registry_gate.command mismatch")
+            if registry_gate.get("report") != "target/sdk-registry-gate/report.json":
+                errors.append("sdk/release-manifest.json: registry_gate.report mismatch")
+            if registry_gate.get("requires_manual_approval") is not True:
+                errors.append("sdk/release-manifest.json: registry_gate.requires_manual_approval must be true")
+            if registry_gate.get("does_not_claim_publication_without_release_job") is not True:
+                errors.append(
+                    "sdk/release-manifest.json: registry_gate must forbid publication claims without release job"
+                )
         deprecation_policy = manifest.get("deprecation_policy")
         if not isinstance(deprecation_policy, dict):
             errors.append("sdk/release-manifest.json: deprecation_policy missing")

@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 9 |
-| partial | 43 |
+| closed | 11 |
+| partial | 41 |
 | not started | 6 |
 | research | 2 |
 | total | 60 |
@@ -46,8 +46,8 @@ The plan recommends this first execution batch:
 | 2 | Beta Release Evidence Bundle | closed | `make beta-release-check`, `target/beta-release/evidence.tar.gz`, GitHub release asset. | Keep bundle regenerated for each release. |
 | 3 | Public Beta Release Notes | closed | `RELEASE_NOTES_v0.2.0-beta.1.md` and GitHub release notes. | Update for patch/beta follow-ups. |
 | 4 | Beta Claims Guard | closed | `make public-claims-check`, public claims policy/freeze docs. | Add new forbidden claims as surfaces expand. |
-| 5 | Beta Compatibility Matrix | partial | API/storage compatibility docs and migration check targets exist. | Add previous-release fixtures and release-to-release restore checks. |
-| 6 | SDK Public Release Train | partial | SDK release docs, release manifest, dry-run/e2e gates exist. | Public registry publication lifecycle and manual publish gate still need finalization. |
+| 5 | Beta Compatibility Matrix | closed | `compatibility_matrix_v1.json` now fixes `v0.1.0-core-alpha.5 -> v0.2.0-beta.1`; `make migration-compatibility-check` restores the historical backup fixture and validates API/SDK/storage gate wiring. | Keep adding previous-release fixtures for future releases. |
+| 6 | SDK Public Release Train | closed | SDK release manifest now includes `sdk-registry-gate-check`; `make sdk-e2e-release-check` runs release contract, artifacts, registry gate, and live SDK contract checks. | Public registry publication still requires manual tag-gated workflow execution and credentials. |
 | 7 | Python SDK Productization | partial | Python SDK, examples, tests, wheel artifacts exist. | Harden packaging, structured errors, docs, and published package workflow. |
 | 8 | TypeScript SDK Productization | partial | TypeScript SDK, generated types, examples, package metadata exist. | Harden ESM/CJS packaging, typed errors, and public npm workflow. |
 | 9 | Rust SDK Productization | partial | `crates/cortex-sdk` exists with typed client/examples. | Finish crate publication readiness and docs.rs-quality docs. |
@@ -118,10 +118,8 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Finish Epic 5: previous-release compatibility fixtures.
-2. Finish Epic 6: SDK release train and manual registry gate.
-3. Finish Epic 11: ContextPack quality dataset expansion.
-4. Finish Epic 16: Verification dataset v2 expansion.
-5. Finish Epic 21: legal/technical real-domain corpora.
-6. Advance Epic 22: retrieval quality dashboard report view.
-7. Advance Epic 46: complete binary platform matrix.
+1. Finish Epic 11: ContextPack quality dataset expansion.
+2. Finish Epic 16: Verification dataset v2 expansion.
+3. Finish Epic 21: legal/technical real-domain corpora.
+4. Advance Epic 22: retrieval quality dashboard report view.
+5. Advance Epic 46: complete binary platform matrix.

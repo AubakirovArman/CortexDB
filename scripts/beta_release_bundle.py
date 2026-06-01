@@ -43,6 +43,7 @@ SUITES: tuple[dict[str, Any], ...] = (
 KNOWN_ARTIFACTS = (
     "target/beta-foundation/report.json",
     "target/sdk-e2e-release/report.json",
+    "target/sdk-registry-gate/report.json",
     "target/context-pack-quality/report.json",
     "target/verification-quality/report.json",
     "target/retrieval-quality/report.json",

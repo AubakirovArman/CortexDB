@@ -19,9 +19,15 @@ The SDKs are part of the `v0.2.0-beta.1` developer/API beta contract only after:
 1. `make sdk-check` passes.
 2. `make sdk-e2e-release-check` passes.
 3. `make openapi-contract-check` passes.
-4. The release tag matches the workspace version.
-5. The manual `sdk-release` GitHub environment approves publication.
-6. Registry credentials or trusted publishing are configured outside the repo.
+4. `make sdk-registry-gate-check` writes
+   `target/sdk-registry-gate/report.json`.
+5. The release tag matches the workspace version.
+6. The manual `sdk-release` GitHub environment approves publication.
+7. Registry credentials or trusted publishing are configured outside the repo.
+
+The registry gate is local evidence that publication is manual-only and
+tag-gated. Public registry publication is not claimed until the manual release
+job actually runs from the tag and the registry pages exist.
 
 ## Compatibility Policy
 

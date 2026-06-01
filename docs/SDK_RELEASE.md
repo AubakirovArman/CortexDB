@@ -62,6 +62,23 @@ target/sdk-release-artifacts/report.json
 The SDK examples artifact is part of the release train evidence. It lets users
 download the same minimal examples that the release gates validate locally.
 
+For registry publication guardrails, run:
+
+```bash
+make sdk-registry-gate-check
+```
+
+This writes:
+
+```text
+target/sdk-registry-gate/report.json
+```
+
+The registry gate proves that SDK publication is manual-only, tag-gated, bound
+to the protected `sdk-release` environment, and wired to PyPI trusted
+publishing, npm, and crates.io commands. It does not claim that public registry
+publication has happened.
+
 For live API compatibility, run:
 
 ```bash
@@ -104,6 +121,15 @@ The publish job is skipped unless all of these are true:
 - `publish=true` was explicitly set.
 - The protected `sdk-release` environment approves the deployment.
 - Registry credentials/trusted publishing are configured.
+
+The local release train gate is:
+
+```bash
+make sdk-e2e-release-check
+```
+
+It includes the registry gate, SDK examples artifact packaging, OpenAPI/SDK
+contract checks, deprecation policy checks, and live local server e2e evidence.
 
 ## Required Registry Configuration
 
