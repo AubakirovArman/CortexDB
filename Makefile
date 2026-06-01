@@ -416,6 +416,7 @@ cloud-upgrade-check: deployment-upgrade-check migration-policy-check migration-c
 	python3 scripts/managed_cloud_gate_check.py --gate upgrade --evidence deployment_upgrade="$(DEPLOYMENT_UPGRADE_REPORT)" --report "$(MANAGED_CLOUD_UPGRADE_REPORT)"
 
 ann-production-no-fallback-check: ann-fixture-report ann-external-report ann-metric-matrix-report ann-domain-corpus-report
+	cargo test -p cortex-engine hnsw_no_fallback
 	python3 scripts/hnsw_no_fallback_gate_check.py --gate production-no-fallback --evidence fixture="$(ANN_FIXTURE_REPORT)" --evidence external="$(ANN_EXTERNAL_REPORT)" --evidence metric_matrix="$(ANN_METRIC_MATRIX_REPORT)" --evidence domain="$(ANN_DOMAIN_REPORT)" --report "$(HNSW_PRODUCTION_NO_FALLBACK_REPORT)"
 
 ann-real-domain-history-check: ann-domain-corpus-report ann-history-fixture-check
@@ -425,6 +426,7 @@ ann-public-corpus-history-check: ann-public-corpus-smoke ann-history-fixture-che
 	python3 scripts/hnsw_no_fallback_gate_check.py --gate public-corpus-history --history "$(ANN_HISTORY_CLEAN_FIXTURE)" --report "$(HNSW_PUBLIC_CORPUS_HISTORY_REPORT)"
 
 ann-graph-freshness-check:
+	cargo test -p cortex-engine hnsw_no_fallback
 	cargo test -p cortex-engine --test hnsw_persistence
 	cargo test -p cortex-engine --test hnsw_manifest_profile
 	cargo test -p cortex-engine --test validation_tests hnsw

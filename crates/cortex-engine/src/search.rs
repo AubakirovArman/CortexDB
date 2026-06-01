@@ -14,6 +14,7 @@ mod ann_report;
 mod database;
 mod evaluation;
 mod hnsw;
+mod hnsw_no_fallback;
 mod hnsw_policy;
 mod persisted;
 mod quality_tests;
@@ -49,6 +50,10 @@ pub use ann_report::{
 };
 pub use database::{DatabaseSearchOutcome, DatabaseSearchResult, SearchLimit};
 pub use hnsw::{integrity::HnswIntegrityReport, DistanceMetric, HnswIndex, VectorCollectionConfig};
+pub use hnsw_no_fallback::{
+    evaluate_hnsw_no_fallback_rollout, HnswNoFallbackBlockReason, HnswNoFallbackDecision,
+    HnswNoFallbackRolloutPolicy,
+};
 pub use hnsw_policy::{
     HnswBuildConfig, HnswBuildProfile, HnswMaintenancePolicy, HnswMaintenanceReport,
     HnswRebuildPolicy,

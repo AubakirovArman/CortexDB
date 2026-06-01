@@ -1,6 +1,6 @@
 # HNSW No-fallback Production Design
 
-Status: future phase 1 local evidence gates started, not globally production-ready.
+Status: future phase 2 local rollout policy started, not globally production-ready.
 
 ## Goal
 
@@ -43,6 +43,23 @@ Serving without fallback requires:
 5. no corruption flags;
 6. explicit rollout flag.
 
+## Runtime Rollout Policy
+
+Local no-fallback serving is blocked by default. A selected profile can pass the
+runtime rollout evaluator only when:
+
+1. rollout is explicitly enabled for that profile;
+2. the ANN search policy disables exact fallback;
+3. SLO enforcement is required by both policy and report;
+4. the search path is `hnsw_graph`;
+5. no fallback reason or fallback execution is present;
+6. `production_safe=true` and no SLO violations are present;
+7. graph nodes, eligible candidates, returned results, recall, and upper-layer
+   topology satisfy the profile threshold.
+
+This runtime policy is a local guardrail. It does not promote HNSW to a general
+fallback-free production engine for unknown corpora.
+
 ## Required Gates
 
 1. `make ann-production-no-fallback-check`
@@ -59,7 +76,7 @@ corpora.
 
 | Gate | Evidence |
 | --- | --- |
-| `make ann-production-no-fallback-check` | synthetic, explicit external fixture, metric matrix, and local domain reports with recall, latency, graph shape, and `production_safe=true` |
+| `make ann-production-no-fallback-check` | synthetic, explicit external fixture, metric matrix, local domain reports with recall, latency, graph shape, `production_safe=true`, and runtime rollout policy tests |
 | `make ann-real-domain-history-check` | local domain corpus report plus clean multi-run history fixture with no recall or latency regression |
 | `make ann-public-corpus-history-check` | public-corpus harness self-test plus clean history fixture; real external public corpus source is still required before promotion |
 | `make ann-graph-freshness-check` | HNSW persistence, maintenance, manifest profile, validation, stale/change, and corrupt graph guard tests |
@@ -73,7 +90,10 @@ ready by their own evidence.
 1. No-fallback mode is profile-scoped and opt-in.
 2. Degraded graphs cannot serve no-fallback results.
 3. Recall and latency reports are repeatable.
-4. Public docs do not generalize beyond proven profiles.
+4. Runtime policy rejects disabled rollout, fallback-enabled search policy,
+   missing SLO enforcement, fallback reasons, unsafe reports, weak topology, and
+   recall below the rollout threshold.
+5. Public docs do not generalize beyond proven profiles.
 
 ## Non-goals
 
