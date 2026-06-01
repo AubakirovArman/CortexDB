@@ -362,6 +362,9 @@ Current implementation slice:
 - `make llm-inference-safety-check` verifies that the design has ContextPack,
   AgentView, prompt visibility, resource limit, timeout, and queue
   backpressure rules.
+- The local `LlmRuntimeSafetyConfig` helper and fixture validate bounded prompt,
+  context, output, timeout, queue, and concurrency limits while rejecting
+  request-body API keys and default prompt-body logging.
 - `make llm-inference-smoke-check` validates deterministic test-double request
   and response fixtures plus the local server path without calling a real model.
 - `make secrets-check` scans tracked repository files for provider-secret-like
@@ -376,8 +379,17 @@ Task pool:
 2. Define model provider interfaces and supported local/remote runtimes.
 3. Define prompt assembly from ContextPack without hidden data expansion.
 4. Define model resource limits, concurrency, and cancellation.
+   Local runtime safety config validation now covers prompt bytes, ContextPack
+   cell count, output tokens, timeout, queue capacity, and concurrency. Runtime
+   cancellation remains future work.
 5. Define safety and audit logging for model calls.
+   Local runtime safety config validation now rejects request-body API keys and
+   default prompt-body logging. Live model-call audit integration remains future
+   work.
 6. Define cost and quota controls.
+   Local bounded output and concurrency limits are implemented as prerequisites;
+   provider billing integration and per-principal inference quotas remain future
+   work.
 7. Keep `/v1/inference` disabled by default until explicitly enabled.
 8. Add model-runtime health and metrics after a real runtime is selected.
 9. Keep deterministic test doubles for CI and SDK contract proof.

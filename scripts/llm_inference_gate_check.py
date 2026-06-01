@@ -11,6 +11,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from llm_inference_runtime_safety import (
+    validate_runtime_safety_config,
+    validate_runtime_safety_marker,
+)
+
 
 FORBIDDEN_ENDPOINTS = ("/v1/llm", "/v1/chat")
 
@@ -31,10 +36,12 @@ GATES: dict[str, dict[str, object]] = {
             ("docs/LLM_INFERENCE_DESIGN.md", "Prompt Visibility"),
             ("docs/LLM_INFERENCE_DESIGN.md", "ContextPack Boundary"),
             ("docs/LLM_INFERENCE_DESIGN.md", "Resource Limits"),
+            ("docs/LLM_INFERENCE_DESIGN.md", "Runtime Safety Config"),
             ("docs/LLM_INFERENCE_DESIGN.md", "Safety And Audit"),
             ("docs/FUTURE_NON_GOAL_EPICS.md", "make llm-inference-safety-check"),
             ("Makefile", "llm-inference-safety-check"),
         ],
+        "fixture": "crates/cortex-server/fixtures/llm_runtime_safety_config_v1.json",
     },
     "smoke": {
         "schema": "cortexdb.llm_inference.smoke_gate.v1",
@@ -228,7 +235,10 @@ def validate(gate: str) -> dict[str, Any]:
         ]
         missing = [item for item in required if item not in text]
         failures.extend(f"docs/LLM_INFERENCE_DESIGN.md missing safety rule {item!r}" for item in missing)
-        checks["safety_boundary"] = not missing
+        runtime_failures = validate_runtime_safety_config(Path(spec["fixture"]))  # type: ignore[arg-type]
+        runtime_failures.extend(validate_runtime_safety_marker())
+        failures.extend(runtime_failures)
+        checks["safety_boundary"] = not missing and not runtime_failures
     elif gate == "smoke":
         fixture_failures = validate_smoke_fixtures(spec["fixtures"])  # type: ignore[arg-type]
         failures.extend(fixture_failures)

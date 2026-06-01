@@ -1,6 +1,9 @@
 use serde::Deserialize;
 
 use crate::responses::{LlmInferenceAuditResponse, LlmInferenceResponse, RouterError};
+use safety::{validate_llm_runtime_safety_config, LlmRuntimeSafetyConfig};
+
+mod safety;
 
 const REQUEST_SCHEMA_VERSION: &str = "cortexdb.llm_inference.smoke_request.v1";
 const RESPONSE_SCHEMA_VERSION: &str = "cortexdb.llm_inference.smoke_response.v1";
@@ -46,6 +49,9 @@ pub(crate) fn handle_inference_test_double(
             "LLM inference test-double endpoint is disabled".to_owned(),
         ));
     }
+    validate_llm_runtime_safety_config(&test_double_runtime_safety_config(enabled)).map_err(
+        |failure| RouterError::Internal(format!("unsafe LLM runtime safety config: {failure:?}")),
+    )?;
     let request = serde_json::from_slice::<LlmInferenceRequest>(body)
         .map_err(|error| RouterError::BadRequest(format!("invalid inference JSON: {error}")))?;
     if request.schema_version != REQUEST_SCHEMA_VERSION {
@@ -133,6 +139,22 @@ pub(crate) fn handle_inference_test_double(
 fn summarize_from_context(text: &str) -> String {
     let snippet = text.chars().take(180).collect::<String>();
     format!("Test-double answer from explicit ContextPack only: {snippet}")
+}
+
+fn test_double_runtime_safety_config(enabled: bool) -> LlmRuntimeSafetyConfig {
+    LlmRuntimeSafetyConfig {
+        enabled,
+        provider: TEST_DOUBLE_PROVIDER.to_owned(),
+        model: TEST_DOUBLE_MODEL.to_owned(),
+        max_prompt_bytes: 16 * 1024,
+        max_context_cells: 32,
+        max_output_tokens: 512,
+        request_timeout_ms: 5_000,
+        queue_capacity: 64,
+        max_concurrent_requests: 4,
+        request_api_keys_allowed: false,
+        prompt_body_logging_enabled: false,
+    }
 }
 
 #[cfg(test)]

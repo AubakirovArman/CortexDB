@@ -45,6 +45,17 @@ The runtime must support request size limits, token limits, concurrency limits,
 timeouts, cancellation, and queue backpressure. GPU scheduling is out of scope
 until a concrete runtime is chosen.
 
+## Runtime Safety Config
+
+The local `LlmRuntimeSafetyConfig` contract validates the future runtime shape
+before any real model provider is selected. It requires bounded prompt bytes,
+bounded ContextPack cell counts, bounded output tokens, request timeout,
+queue capacity, and max concurrent requests.
+
+The contract also rejects request-body API keys and default prompt-body logging.
+This keeps provider secrets in runtime environment only and preserves the
+current audit boundary where full prompt bodies are not logged by default.
+
 ## Safety And Audit
 
 Model calls must be auditable without logging secrets or full sensitive prompt
@@ -82,7 +93,7 @@ The current gates prove local prerequisites only:
 | Gate | Evidence |
 | --- | --- |
 | `make llm-inference-contract-check` | OpenAPI and server routes expose only the disabled-by-default `/v1/inference` test-double contract; `/v1/llm` and `/v1/chat` remain absent. |
-| `make llm-inference-safety-check` | The design contains ContextPack, AgentView, prompt-visibility, resource-limit, timeout, and queue-backpressure rules. |
+| `make llm-inference-safety-check` | The design and local runtime safety fixture contain ContextPack, AgentView, prompt-visibility, resource-limit, timeout, queue-backpressure, no-request-key, and no-prompt-logging rules. |
 | `make llm-inference-smoke-check` | Deterministic request/response fixtures and server tests prove the test-double path without real provider calls. |
 | `make secrets-check` | Tracked repository files are scanned for provider-secret-like literals. |
 

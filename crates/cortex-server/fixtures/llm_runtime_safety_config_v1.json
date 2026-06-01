@@ -1,0 +1,15 @@
+{
+  "schema_version": "cortexdb.llm_inference.runtime_safety_config.v1",
+  "built_in_llm_ready": false,
+  "enabled": false,
+  "provider": "test_double",
+  "model": "deterministic-echo-v1",
+  "max_prompt_bytes": 16384,
+  "max_context_cells": 32,
+  "max_output_tokens": 512,
+  "request_timeout_ms": 5000,
+  "queue_capacity": 64,
+  "max_concurrent_requests": 4,
+  "request_api_keys_allowed": false,
+  "prompt_body_logging_enabled": false
+}
