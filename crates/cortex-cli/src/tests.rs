@@ -140,6 +140,32 @@ fn context_command_returns_pack_summary() {
     assert!(output.contains("cells=1"));
     assert!(output.contains("citation=doc-a"));
 
+    let prompt = run(vec![
+        "cortexdb".to_owned(),
+        "context".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#.to_owned(),
+        "--format".to_owned(),
+        "prompt".to_owned(),
+    ])
+    .unwrap();
+    assert!(prompt.contains("CortexDB ContextPack v1"));
+    assert!(prompt.contains("Use only the context cells below."));
+
+    let markdown = run(vec![
+        "cortexdb".to_owned(),
+        "context".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#.to_owned(),
+        "--format".to_owned(),
+        "markdown".to_owned(),
+    ])
+    .unwrap();
+    assert!(markdown.contains("# CortexDB ContextPack"));
+    assert!(markdown.contains("### Cell 1"));
+
     let _ = std::fs::remove_dir_all(path);
 }
 

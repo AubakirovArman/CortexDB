@@ -134,15 +134,20 @@ CLI:
 
 ```bash
 cargo run -p cortex-cli -- context ./data project:investments '<AQL>' --json
+cargo run -p cortex-cli -- context ./data project:investments '<AQL>' --format prompt
+cargo run -p cortex-cli -- context ./data project:investments '<AQL>' --format markdown
 ```
 
 HTTP:
 
 ```http
 POST /v1/context?scope=project:investments
+POST /v1/context?scope=project:investments&format=prompt
+POST /v1/context?scope=project:investments&format=markdown
 ```
 
-SDKs expose the same HTTP contract through typed client helpers.
+SDKs expose the same HTTP contract through typed client helpers, including
+agent prompt and Markdown export helpers where available.
 
 ## What It Is Not
 

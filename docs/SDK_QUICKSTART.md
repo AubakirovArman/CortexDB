@@ -118,6 +118,13 @@ Every endpoint has two methods:
 
 Use typed methods for compile-time safety. Use raw methods when experimenting or when the server returns fields not yet modeled in the SDK.
 
+Rust also exposes stable ContextPack agent exports:
+
+```rust
+let prompt = client.context_prompt("default", aql)?;
+let markdown = client.context_markdown("default", aql)?;
+```
+
 ## Live Contract Gate
 
 Before publishing or changing SDK contracts, run:

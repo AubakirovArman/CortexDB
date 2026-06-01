@@ -165,6 +165,8 @@ file and create a rollback snapshot before publishing the new policy.
 Executes an AQL query and compiles a budgeted, deduplicated, and scored `ContextPack`.
 
 * **Request Body:** Raw AQL query string.
+* **Formats:** JSON is the default. Use `format=prompt` for a stable agent
+  prompt export or `format=markdown` for a stable Markdown export.
 * **Response (200 OK):**
   ```json
   {

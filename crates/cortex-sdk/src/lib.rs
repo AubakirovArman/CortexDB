@@ -277,6 +277,20 @@ impl CortexDbClient {
         decode_value(self.context(scope, statement)?)
     }
 
+    pub fn context_prompt(&self, scope: &str, statement: &str) -> SdkResult<String> {
+        self.post_text(
+            &path("/v1/context", &[("scope", scope), ("format", "prompt")]),
+            statement,
+        )
+    }
+
+    pub fn context_markdown(&self, scope: &str, statement: &str) -> SdkResult<String> {
+        self.post_text(
+            &path("/v1/context", &[("scope", scope), ("format", "markdown")]),
+            statement,
+        )
+    }
+
     pub fn verify(&self, scope: &str, statement: &str) -> SdkResult<serde_json::Value> {
         self.post(&path("/v1/verify", &[("scope", scope)]), statement)
     }
@@ -400,6 +414,14 @@ impl CortexDbClient {
         })
     }
 
+    fn post_text(&self, path: &str, body: &str) -> SdkResult<String> {
+        self.execute_text(|this| {
+            this.authorized(this.agent.post(&this.url(path)))
+                .send_string(body)
+                .map_err(Box::new)
+        })
+    }
+
     fn authorized(&self, request: ureq::Request) -> ureq::Request {
         if let Some(token) = &self.token {
             request.set("authorization", &format!("Bearer {token}"))
@@ -420,6 +442,40 @@ impl CortexDbClient {
                     ureq::Error::Status(status, response) => {
                         let body = response.into_string().unwrap_or_default();
                         // Try to decode structured error response.
+                        if let Ok(error_response) = serde_json::from_str::<ErrorResponse>(&body) {
+                            return Err(SdkError::CortexDb(error_response));
+                        }
+                        if self.is_retryable(status) && attempt < self.max_retries {
+                            attempt += 1;
+                            std::thread::sleep(self.retry_delay * attempt);
+                            continue;
+                        }
+                        return Err(SdkError::HttpStatus { status, body });
+                    }
+                    error => {
+                        if attempt < self.max_retries {
+                            attempt += 1;
+                            std::thread::sleep(self.retry_delay * attempt);
+                            continue;
+                        }
+                        return Err(SdkError::Transport(error.to_string()));
+                    }
+                },
+            }
+        }
+    }
+
+    fn execute_text(
+        &self,
+        call: impl Fn(&Self) -> Result<ureq::Response, Box<ureq::Error>>,
+    ) -> SdkResult<String> {
+        let mut attempt = 0u32;
+        loop {
+            match call(self) {
+                Ok(response) => return Ok(response.into_string().unwrap_or_default()),
+                Err(boxed) => match *boxed {
+                    ureq::Error::Status(status, response) => {
+                        let body = response.into_string().unwrap_or_default();
                         if let Ok(error_response) = serde_json::from_str::<ErrorResponse>(&body) {
                             return Err(SdkError::CortexDb(error_response));
                         }

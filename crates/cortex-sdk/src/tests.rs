@@ -19,6 +19,26 @@ fn path_encodes_search_query_contract() {
 }
 
 #[test]
+fn context_export_paths_are_wire_stable() {
+    let prompt = path(
+        "/v1/context",
+        &[("scope", "project:investments"), ("format", "prompt")],
+    );
+    let markdown = path(
+        "/v1/context",
+        &[("scope", "project:investments"), ("format", "markdown")],
+    );
+    assert_eq!(
+        prompt,
+        "/v1/context?scope=project%3Ainvestments&format=prompt"
+    );
+    assert_eq!(
+        markdown,
+        "/v1/context?scope=project%3Ainvestments&format=markdown"
+    );
+}
+
+#[test]
 fn tenant_query_param_is_appended_to_existing_queries() {
     let value = append_query_param("/v1/stats?limit=10", "tenant", "tenant:alpha");
     assert_eq!(value, "/v1/stats?limit=10&tenant=tenant%3Aalpha");

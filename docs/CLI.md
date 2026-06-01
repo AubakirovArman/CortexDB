@@ -207,13 +207,21 @@ cortexdb aql ./db project:investments \
   'RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments LIMIT 10 CANDIDATES;'
 ```
 
-#### `context <path> <scope> <aql> [--json]`
+#### `context <path> <scope> <aql> [--json] [--format summary|json|prompt|markdown]`
 Execute CONTEXT PACK AQL.
 
 ```bash
 cortexdb context ./db project:investments \
   'RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments LIMIT 10 CANDIDATES;' \
   --json
+
+cortexdb context ./db project:investments \
+  'RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments LIMIT 10 CANDIDATES;' \
+  --format prompt
+
+cortexdb context ./db project:investments \
+  'RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments LIMIT 10 CANDIDATES;' \
+  --format markdown
 ```
 
 #### `remember <path> <scope> <aql>`

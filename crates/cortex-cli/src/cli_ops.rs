@@ -1,7 +1,8 @@
 use cortex_core::CellId;
 use cortex_engine::{
     evaluate_hnsw_no_fallback_rollout, parse_vector_literal, AnnSearchPath, AnnSearchPolicy,
-    ContextPackOptions, Database, EngineError, HnswNoFallbackRolloutPolicy, SearchLimit,
+    ContextPackExportFormat, ContextPackOptions, Database, EngineError,
+    HnswNoFallbackRolloutPolicy, SearchLimit,
 };
 
 use crate::cli_json::{
@@ -351,15 +352,25 @@ pub fn gc_retired(path: &str) -> Result<String, String> {
     ))
 }
 
-pub fn context(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, String> {
+pub fn context(
+    path: &str,
+    scope: &str,
+    aql: &str,
+    json: bool,
+    format: &str,
+) -> Result<String, String> {
     let db = Database::open(path).map_err(fmt_engine_error)?;
     let pack = db
         .context_pack_from_aql(aql, &view_for_scope(scope), ContextPackOptions::default())
         .map_err(fmt_engine_error)?;
-    if json {
-        Ok(context_pack_to_json(&pack))
-    } else {
-        Ok(format_context_pack(&pack))
+    match if json { "json" } else { format } {
+        "json" => Ok(context_pack_to_json(&pack)),
+        "summary" => Ok(format_context_pack(&pack)),
+        "prompt" => Ok(pack.export(ContextPackExportFormat::Prompt)),
+        "markdown" => Ok(pack.export(ContextPackExportFormat::Markdown)),
+        value => Err(format!(
+            "unsupported context format '{value}' (expected summary, json, prompt, or markdown)"
+        )),
     }
 }
 

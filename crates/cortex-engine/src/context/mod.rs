@@ -11,9 +11,11 @@ use crate::search::tokenize;
 
 pub mod dedup;
 pub mod explain;
+pub mod export;
 
 use dedup::{effective_redundancy_threshold, is_redundant, term_set, weighted_jaccard_q16};
 use explain::{extract_query_terms, generate_selection_reason};
+pub use export::ContextPackExportFormat;
 
 pub const DEFAULT_REDUNDANCY_THRESHOLD_Q16: u16 = 32_768;
 

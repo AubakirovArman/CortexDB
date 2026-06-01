@@ -59,3 +59,15 @@ This gate does not prove:
 - dense semantic reranking quality beyond the deterministic local vector
   redundancy checks;
 - private customer-domain evidence quality.
+
+## Export Evidence
+
+Stable ContextPack prompt and Markdown export modes are covered by:
+
+- `cargo test -p cortex-engine --test context_pack`, including prompt/Markdown
+  formatting and Markdown fence preservation;
+- `cargo test -p cortex-cli`, including `cortexdb context --format prompt` and
+  `cortexdb context --format markdown`;
+- `cargo test -p cortex-server v1_context_returns_prompt_and_markdown_exports`;
+- `make openapi-contract-check`, which keeps `/v1/context?format=...` documented
+  alongside the typed JSON contract.

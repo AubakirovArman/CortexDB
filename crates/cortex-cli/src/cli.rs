@@ -1,4 +1,4 @@
-use clap::{error::ErrorKind, Parser, Subcommand};
+use clap::{error::ErrorKind, Parser, Subcommand, ValueEnum};
 
 use crate::{
     cli_ann as ann, cli_audit as audit, cli_audit_siem as audit_siem,
@@ -169,6 +169,8 @@ enum Command {
         path: String,
         scope: String,
         aql: String,
+        #[arg(long, value_enum, default_value_t = ContextOutputFormat::Summary)]
+        format: ContextOutputFormat,
     },
     Remember {
         path: String,
@@ -291,6 +293,25 @@ enum Command {
         path: String,
         job_id: u64,
     },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+enum ContextOutputFormat {
+    Summary,
+    Json,
+    Prompt,
+    Markdown,
+}
+
+impl ContextOutputFormat {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Summary => "summary",
+            Self::Json => "json",
+            Self::Prompt => "prompt",
+            Self::Markdown => "markdown",
+        }
+    }
 }
 
 pub fn run(args: Vec<String>) -> Result<String, String> {
@@ -429,9 +450,18 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         Command::ManifestValidate { path } => {
             ops::manifest_validate(resolved(&path).to_str().unwrap())
         }
-        Command::Context { path, scope, aql } => {
-            ops::context(resolved(&path).to_str().unwrap(), &scope, &aql, cli.json)
-        }
+        Command::Context {
+            path,
+            scope,
+            aql,
+            format,
+        } => ops::context(
+            resolved(&path).to_str().unwrap(),
+            &scope,
+            &aql,
+            cli.json,
+            format.as_str(),
+        ),
         Command::Remember { path, scope, aql } => {
             ops::remember(resolved(&path).to_str().unwrap(), &scope, &aql, cli.json)
         }

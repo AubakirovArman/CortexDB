@@ -1,5 +1,5 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
-use cortex_engine::{scope_id, ContextPack, ContextPackOptions, Database};
+use cortex_engine::{scope_id, ContextPack, ContextPackExportFormat, ContextPackOptions, Database};
 
 use crate::authz;
 use crate::responses::{
@@ -7,7 +7,7 @@ use crate::responses::{
     RouterError, ScoreComponentResponse, SourceRefResponse,
 };
 
-use crate::router::query_param_decoded;
+use crate::router::{query_param_decoded, query_param_opt_decoded};
 
 pub fn handle_context_shared(
     db: &Database,
@@ -20,8 +20,21 @@ pub fn handle_context_shared(
     let view = authz::read_view_for_scope(&scope, authenticated_view)?;
     let pack = db.context_pack_from_aql(&aql, &view, ContextPackOptions::default())?;
 
-    let response = map_context_pack(&pack);
-    Ok(serde_json::to_string(&response)?)
+    match context_output_format(query).as_str() {
+        "json" => Ok(serde_json::to_string(&map_context_pack(&pack))?),
+        "prompt" => Ok(pack.export(ContextPackExportFormat::Prompt)),
+        "markdown" => Ok(pack.export(ContextPackExportFormat::Markdown)),
+        other => Err(RouterError::BadRequest(format!(
+            "unsupported context format '{other}' (expected json, prompt, or markdown)"
+        ))),
+    }
+}
+
+fn context_output_format(query: &str) -> String {
+    query_param_opt_decoded(query, "format")
+        .unwrap_or_else(|| "json".to_owned())
+        .trim()
+        .to_ascii_lowercase()
 }
 
 pub(crate) fn view_for_scope(scope: &str) -> AgentView {

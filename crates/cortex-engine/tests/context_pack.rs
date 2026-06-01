@@ -4,7 +4,8 @@ use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZER
 use cortex_core::CellId;
 use cortex_engine::feedback::ContextFeedback;
 use cortex_engine::{
-    scope_id, ContextPack, ContextPackAnomalyCode, ContextPackOptions, Database, RetrievedCell,
+    scope_id, ContextPack, ContextPackAnomalyCode, ContextPackExportFormat, ContextPackOptions,
+    Database, RetrievedCell,
 };
 
 #[test]
@@ -89,6 +90,48 @@ fn context_pack_uses_source_line_as_citation() {
 
     assert!(pack.anomalies.is_empty());
     assert_eq!(pack.cells[0].citation.as_deref(), Some("annual-report"));
+}
+
+#[test]
+fn context_pack_exports_stable_prompt_and_markdown() {
+    let cells = vec![retrieved(
+        7,
+        "scope=project:investments\nstatus=ready\nsource=doc-a\nsource_id=doc-a\ndocument_id=doc-1\npage=3\n\nSolar budget evidence.",
+    )];
+    let pack = ContextPack::from_retrieved_with_options(
+        cells,
+        1_000,
+        true,
+        &ContextPackOptions::default(),
+        "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects;",
+    );
+
+    let prompt = pack.export(ContextPackExportFormat::Prompt);
+    assert!(prompt.contains("CortexDB ContextPack v1"));
+    assert!(prompt.contains("Use only the context cells below."));
+    assert!(prompt.contains("[1] cell_id=7"));
+    assert!(prompt.contains("source_ref=source_id=doc-a;document_id=doc-1;page=3"));
+    assert!(prompt.contains("Solar budget evidence."));
+
+    let markdown = pack.export(ContextPackExportFormat::Markdown);
+    assert!(markdown.contains("# CortexDB ContextPack"));
+    assert!(markdown.contains("### Cell 1"));
+    assert!(markdown.contains("- cell_id: `7`"));
+    assert!(markdown.contains("```text"));
+    assert!(markdown.contains("Solar budget evidence."));
+}
+
+#[test]
+fn context_pack_markdown_export_preserves_code_fences() {
+    let cells = vec![retrieved(
+        8,
+        "scope=project:investments\nstatus=ready\nsource=doc-a\n\npayload with ``` fenced text",
+    )];
+    let pack = ContextPack::from_retrieved(cells, 1_000, false);
+
+    let markdown = pack.export(ContextPackExportFormat::Markdown);
+    assert!(markdown.contains("````text"));
+    assert!(markdown.contains("payload with ``` fenced text"));
 }
 
 #[test]

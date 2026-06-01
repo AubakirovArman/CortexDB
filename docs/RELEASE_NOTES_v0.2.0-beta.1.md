@@ -11,8 +11,8 @@ release, or legal-grade verification product.
 - Durable local write path: WAL, MemTable MVCC, checkpoint, compact, and restart
   recovery.
 - AQL retrieval over the local database.
-- ContextPack v1 with citations, token budgeting, deterministic ordering, and
-  quality evidence.
+- ContextPack v1 with citations, token budgeting, deterministic ordering,
+  stable prompt/Markdown exports, and quality evidence.
 - Deterministic `VERIFY FACT` with supported, contradicted, mixed, and
   insufficient verdicts.
 - HTTP API, CLI, and Rust/Python/TypeScript SDK beta contracts.

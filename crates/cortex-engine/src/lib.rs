@@ -33,7 +33,7 @@ pub use backup::{
 pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use context::{
     estimate_tokens, ContextExplain, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode,
-    ContextPackCell, ContextPackOptions, ContextScoreComponent,
+    ContextPackCell, ContextPackExportFormat, ContextPackOptions, ContextScoreComponent,
 };
 pub use database::{CandidateResolver, CheckpointStats, Database, RetrievedCell};
 pub use distributed::*;

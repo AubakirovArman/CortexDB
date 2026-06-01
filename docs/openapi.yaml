@@ -255,6 +255,17 @@ paths:
       parameters:
       - $ref: '#/components/parameters/Tenant'
       - $ref: '#/components/parameters/Scope'
+      - name: format
+        in: query
+        required: false
+        description: Output format. Defaults to JSON; prompt and markdown are stable agent export modes.
+        schema:
+          type: string
+          enum:
+          - json
+          - prompt
+          - markdown
+          default: json
       requestBody:
         required: true
         content:
@@ -501,6 +512,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ContextPackResponse'
+            text/plain:
+              schema:
+                type: string
+                description: Stable agent prompt export when `format=prompt`.
+            text/markdown:
+              schema:
+                type: string
+                description: Stable Markdown export when `format=markdown`.
         '400': *id001
         '500': *id002
   /v1/inference:

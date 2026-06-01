@@ -30,7 +30,7 @@ context storage and retrieval workflows.
 - CLI and SDK flows for health, put/get, search, AQL, ContextPack, Verify,
   Remember, ingest, tenant routing, auth errors, stats, and validate.
 - ContextPack v1 evidence packing with citations, token budgets, deterministic
-  order, and anomaly reporting.
+  order, anomaly reporting, and stable prompt/Markdown exports.
 - Deterministic `VERIFY FACT` quality fixtures for supported, contradicted,
   mixed, and insufficient verdicts.
 - Guarded lexical, vector, hybrid, and ANN retrieval with exact fallback.

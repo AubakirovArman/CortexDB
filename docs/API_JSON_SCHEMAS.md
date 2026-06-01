@@ -379,7 +379,9 @@ changes exist, `available` is `false` and `reason` is
 
 ## Context Pack
 
-`POST /v1/context?scope=<scope>` with an AQL body.
+`POST /v1/context?scope=<scope>` with an AQL body returns typed JSON by default.
+Use `format=prompt` for a stable agent prompt export or `format=markdown` for a
+stable Markdown export.
 
 ```json
 {
@@ -434,6 +436,48 @@ changes exist, `available` is `false` and `reason` is
   ],
   "anomalies": []
 }
+```
+
+Prompt export:
+
+```text
+CortexDB ContextPack v1
+
+Use only the context cells below.
+Preserve citations when answering.
+If the supplied context is insufficient or conflicting, say so.
+
+Budget: token_budget_tokens=1000 estimated_tokens=42 truncated=false citations_required=false
+
+Context cells:
+
+[1] cell_id=1
+estimated_tokens=42
+citation=doc-a
+text:
+scope=project:investments
+status=ready
+...
+```
+
+Markdown export:
+
+```markdown
+# CortexDB ContextPack
+
+- schema_version: `context_pack.v1`
+- token_budget_tokens: `1000`
+- estimated_tokens: `42`
+- truncated: `false`
+- citations_required: `false`
+
+## Cells
+
+### Cell 1
+
+- cell_id: `1`
+- estimated_tokens: `42`
+- citation: `doc-a`
 ```
 
 ## LLM Inference Test-double Endpoint
