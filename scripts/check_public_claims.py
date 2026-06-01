@@ -14,6 +14,7 @@ from pathlib import Path
 PUBLIC_DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "README.md": (
         "experimental Core Alpha",
+        "Beta Foundation evidence",
         "not recommended for production workloads",
         "Long-Term Vision",
     ),
@@ -33,11 +34,20 @@ PUBLIC_DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "Experimental",
     ),
     "docs/BETA_DELTA.md": (
+        "v0.2.0-beta.1",
+        "BETA_RELEASE.md",
         "Stable Now",
         "Experimental Or Guarded",
         "Blocked Before Beta Promotion",
     ),
+    "docs/BETA_RELEASE.md": (
+        "v0.2.0-beta.1",
+        "Core Alpha with Beta Foundation evidence",
+        "Explicit Non-Goals For Beta",
+        "make beta-release-check",
+    ),
     "docs/PUBLIC_CLAIMS_POLICY.md": (
+        "Beta Foundation evidence",
         "make public-claims-check",
         "Disallowed Claims",
         "Required Qualifiers",

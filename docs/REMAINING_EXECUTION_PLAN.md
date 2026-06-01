@@ -75,6 +75,8 @@ Core Alpha is operational:
   - what is stable
   - what is still experimental
   - what is blocked
+  - beta release boundary: `docs/BETA_RELEASE.md`
+  - beta release evidence gate: `make beta-release-check`
   - current note: `docs/BETA_DELTA.md`
   - consistency gate: `make beta-delta-check`
 - Run the focused Beta Foundation evidence gate:

@@ -1,0 +1,10 @@
+{
+  "domain": "support_tickets",
+  "sources": [
+    {
+      "source": "synthetic_support",
+      "type": "synthetic_operational_fixture",
+      "license_note": "Checked-in synthetic data; no customer records."
+    }
+  ]
+}

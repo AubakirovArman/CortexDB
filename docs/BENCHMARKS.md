@@ -457,6 +457,24 @@ It validates corpus/query/ground-truth files, requires at least three local
 real-embedding history runs, and fails on recall, ranking, exact-parity,
 production-safety, or latency regressions.
 
+For the beta gate, the same command also writes a multi-domain fixture report:
+
+```text
+target/retrieval-quality/beta-report.json
+```
+
+That beta report covers two checked-in real-domain corpora:
+
+```text
+examples/real_domains/investment_projects/
+examples/real_domains/support_tickets/
+```
+
+It repeats a deterministic local retrieval probe five times per domain and
+records `production_safe=true` only when both domains validate, produce positive
+recall, and show no local regression. Endpoint-backed real-embedding history is
+still tracked separately under `target/ann/real-embedding/runs/history.json`.
+
 The report separates the search modes that matter for beta review:
 
 - `lexical`: BM25-like golden query behavior from the checked-in search quality

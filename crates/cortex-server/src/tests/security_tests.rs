@@ -24,6 +24,22 @@ fn v1_api_requires_bearer_token_when_configured() {
 }
 
 #[test]
+fn v1_api_rejects_wrong_bearer_token_when_configured() {
+    let dir = tempfile::tempdir().unwrap();
+    let options = ServerOptions {
+        auth_token: Some("secret".to_owned()),
+        ..Default::default()
+    };
+    let denied = handle_http_with_options(
+        dir.path(),
+        "GET /v1/health HTTP/1.1\r\nAuthorization: Bearer wrong-secret\r\n\r\n",
+        &options,
+    );
+    assert!(denied.contains("401 Unauthorized"));
+    assert!(denied.contains("unauthorized"));
+}
+
+#[test]
 fn auth_agent_view_blocks_unreadable_scope_over_http() {
     let dir = tempfile::tempdir().unwrap();
     {

@@ -63,6 +63,9 @@ For non-local deployments, treat Core Alpha as **alpha quality** and:
 - run `cortexdb validate`, `cortexdb backup`, and `cortexdb restore` in change control.
 - run `make tenant-recovery-check` before releases that modify tenant routing,
   backup/restore, or server actor lifecycle.
+- run `make security-check` before beta/release packaging; it writes
+  `target/security/report.json` with focused auth, tenant, CORS, rate-limit,
+  audit-redaction, AgentView, body-limit, and OpenAPI contract evidence.
 
 ## Tenant Recovery Evidence
 

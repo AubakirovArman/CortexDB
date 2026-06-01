@@ -54,12 +54,14 @@
       "crates/cortex-sdk/examples/live_contract.rs",
       "docs/SDK_QUICKSTART.md",
       "docs/SDK_RELEASE.md",
+      "docs/SDK_PUBLICATION_STATUS.md",
       "docs/SDK_DEPRECATION_POLICY.md"
     ]
   },
   "required_gates": [
     "make sdk-check",
     "make sdk-contract-check",
+    "make sdk-e2e-release-check",
     "make sdk-release-artifacts-check",
     "make openapi-contract-check"
   ],

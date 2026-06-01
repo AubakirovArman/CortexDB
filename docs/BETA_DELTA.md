@@ -5,6 +5,13 @@ work. It is intentionally conservative: do not promote a capability from
 experimental to stable unless its release gate is repeatable and its
 operational limits are documented.
 
+The beta target is `v0.2.0-beta.1`. The public boundary is defined in
+[`BETA_RELEASE.md`](BETA_RELEASE.md): local single-node developer/API beta with
+stable HTTP/CLI/SDK contracts, ContextPack, Verify, guarded retrieval, backup,
+security, and operations evidence. Production distributed consensus, managed
+cloud, enterprise compliance, legal-grade verification, unrestricted HNSW, and
+built-in production LLM inference remain explicitly out of beta scope.
+
 ## Stable Now
 
 - Core Alpha single-node loop: WAL append, MVCC MemTable update, restart,
@@ -78,6 +85,7 @@ make sdk-check
 make production-evidence-sweep
 make ann-real-embedding-readiness
 make beta-delta-check
+make beta-release-check
 ```
 
 `make ann-real-embedding-readiness` may return a blocked readiness report when

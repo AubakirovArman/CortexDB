@@ -10,9 +10,11 @@ from pathlib import Path
 
 REQUIRED_DOC_TERMS = (
     "Core Alpha",
+    "v0.2.0-beta.1",
     "Stable Now",
     "Experimental Or Guarded",
     "Blocked Before Beta Promotion",
+    "BETA_RELEASE.md",
     "make production-evidence-sweep",
     "make beta-foundation-check",
     "make beta-rc-check",
@@ -21,6 +23,7 @@ REQUIRED_DOC_TERMS = (
     "make production-v1-check",
     "make ann-real-embedding-readiness",
     "make beta-delta-check",
+    "make beta-release-check",
     "CORTEXDB_EMBEDDING_URL",
     "CORTEXDB_EMBEDDING_MODEL",
     "production_safe",
@@ -31,12 +34,14 @@ REQUIRED_MAKEFILE_TERMS = (
     "beta-delta-check:",
     "beta-foundation-check:",
     "beta-rc-check:",
+    "beta-release-check:",
     "production-hardening-check:",
     "production-candidate-check:",
     "production-v1-check:",
     "python3 scripts/check_beta_delta.py",
     "python3 scripts/beta_foundation_check.py",
     "python3 scripts/beta_rc_check.py",
+    "python3 scripts/beta_release_bundle.py",
     "python3 scripts/production_hardening_check.py",
     "python3 scripts/production_candidate_check.py",
     "python3 scripts/production_v1_check.py",
@@ -45,7 +50,9 @@ REQUIRED_MAKEFILE_TERMS = (
 
 REQUIRED_PLAN_TERMS = (
     "docs/BETA_DELTA.md",
+    "docs/BETA_RELEASE.md",
     "make beta-delta-check",
+    "make beta-release-check",
 )
 
 

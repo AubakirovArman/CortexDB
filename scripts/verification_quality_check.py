@@ -11,6 +11,7 @@ from typing import Any
 
 Q16_ONE = 65_535
 STATUSES = ("supported", "contradicted", "mixed", "insufficient")
+MIN_BETA_CASES = 30
 
 
 def load_cases(path: Path) -> list[dict[str, Any]]:
@@ -110,6 +111,9 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         if "numeric_mismatch" in guards:
             numeric_guard_cases += 1
 
+    if len(cases) < MIN_BETA_CASES:
+        failures.append(f"expected at least {MIN_BETA_CASES} beta verification cases")
+
     required_scenarios = {
         "supported",
         "contradiction_marker",
@@ -120,10 +124,23 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "equal_values",
         "ambiguous",
         "no_evidence",
+        "date_mismatch",
+        "same_company_different_project",
+        "same_project_different_period",
+        "same_budget_different_currency",
+        "updated_value_vs_old_value",
+        "natural_negation",
+        "not_only_support",
     }
     missing_scenarios = sorted(required_scenarios.difference(scenario_counts))
     if missing_scenarios:
         failures.append(f"missing required scenarios: {', '.join(missing_scenarios)}")
+
+    missing_statuses = sorted(
+        status for status in STATUSES if confusion[status][status] == 0
+    )
+    if missing_statuses:
+        failures.append(f"missing expected verdict classes: {', '.join(missing_statuses)}")
 
     positive_statuses = tuple(status for status in STATUSES if status != "insufficient")
     false_positive_count = sum(confusion["insufficient"][status] for status in positive_statuses)

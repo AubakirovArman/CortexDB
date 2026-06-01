@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "min_search_results": 1,
+  "min_aql_cells": 1,
+  "min_context_cells": 1,
+  "verify_verdict": "mixed_evidence",
+  "min_prompt_chars": 100,
+  "ingested_records": 74
+}

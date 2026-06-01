@@ -1,0 +1,20 @@
+{"query_id":"stq001","name":"stq001","query":"SSO certificate rotation invalid signature login failures","intent":"auth_incident"}
+{"query_id":"stq002","name":"stq002","query":"SAML metadata rollback certificate chain mitigation","intent":"auth_resolution"}
+{"query_id":"stq003","name":"stq003","query":"lexical index rebuild cold segment caches p95 latency","intent":"search_latency"}
+{"query_id":"stq004","name":"stq004","query":"compaction reduced search p95 latency support threshold","intent":"search_resolution"}
+{"query_id":"stq005","name":"stq005","query":"backup manifest missing segment bundle restore drill failed","intent":"backup_failure"}
+{"query_id":"stq006","name":"stq006","query":"verified WAL replay before accepting restored database","intent":"backup_resolution"}
+{"query_id":"stq007","name":"stq007","query":"HTTP 429 bulk ingestion data token rate limit","intent":"server_rate_limit"}
+{"query_id":"stq008","name":"stq008","query":"dedicated ingestion token stagger CSV upload batches","intent":"server_ingestion_resolution"}
+{"query_id":"stq009","name":"stq009","query":"context pack missing citations support facts","intent":"context_citation_gap"}
+{"query_id":"stq010","name":"stq010","query":"require citations policy audit mode source references","intent":"context_resolution"}
+{"query_id":"stq011","name":"stq011","query":"VERIFY FACT mixed evidence patch deployed postponed","intent":"verify_mixed_evidence"}
+{"query_id":"stq012","name":"stq012","query":"old note superseded kept both citations","intent":"verify_resolution"}
+{"query_id":"stq013","name":"stq013","query":"AgentView runtime filtering private tenant cells retrieval","intent":"security_scope_filter"}
+{"query_id":"stq014","name":"stq014","query":"audit logs recorded denied scope tenant access","intent":"security_audit"}
+{"query_id":"stq015","name":"stq015","query":"CORS allowlist staging origin dashboard preflight failures","intent":"cors_failure"}
+{"query_id":"stq016","name":"stq016","query":"adding staging origin fixed dashboard support workflow","intent":"cors_resolution"}
+{"query_id":"stq017","name":"stq017","query":"best effort recovery partial WAL tail safe truncate offset","intent":"wal_best_effort"}
+{"query_id":"stq018","name":"stq018","query":"strict recovery failed until operator repaired WAL tail","intent":"wal_strict"}
+{"query_id":"stq019","name":"stq019","query":"guarded ANN recall risk exact vector fallback","intent":"retrieval_fallback"}
+{"query_id":"stq020","name":"stq020","query":"fallback preserved exact parity production_safe true","intent":"retrieval_safety"}

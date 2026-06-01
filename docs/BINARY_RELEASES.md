@@ -27,9 +27,9 @@ Override the release metadata:
 
 ```bash
 make binary-release-check \
-  BINARY_RELEASE_ID=cortexdb-v0.1.0-core-alpha-linux-x86_64 \
+  BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local \
   BINARY_RELEASE_PLATFORM=linux-x86_64 \
-  BINARY_RELEASE_VERSION=v0.1.0-core-alpha
+  BINARY_RELEASE_VERSION=v0.2.0-beta.1
 ```
 
 ## Archive Contents
@@ -94,6 +94,17 @@ path, service, packaging, and clean-install smoke gates exist.
 package -> archive validation -> clean install -> fixture load -> query
 -> backup -> restore -> server health/query
 ```
+
+For the beta evidence bundle, `make beta-release-check` runs the local binary
+release gate with:
+
+```text
+BINARY_RELEASE_VERSION=v0.2.0-beta.1
+BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local
+```
+
+and packages the resulting archive plus checksum into the beta evidence
+artifact list.
 
 ## Limits
 

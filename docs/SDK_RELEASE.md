@@ -116,8 +116,19 @@ The publish job is skipped unless all of these are true:
 
 ## Release Discipline
 
-The SDKs are Core Alpha contracts. Breaking changes require a version bump and
-release notes in both `CHANGELOG.md` and `docs/API_CHANGELOG.md`. Additive
-endpoint coverage can ship in patch releases when the server API remains
-backward compatible. Deprecated route aliases and removal windows are governed
-by [`SDK_DEPRECATION_POLICY.md`](SDK_DEPRECATION_POLICY.md).
+## Beta Compatibility Policy
+
+For the `v0.2.0-beta.1` target, the SDKs are treated as beta developer/API
+contracts:
+
+- Additive endpoint and response-field coverage can ship in patch releases when
+  existing typed methods remain backward compatible.
+- Breaking SDK or HTTP contract changes require a version bump and release notes
+  in both `CHANGELOG.md` and `docs/API_CHANGELOG.md`.
+- Deprecated route aliases and removal windows are governed by
+  [`SDK_DEPRECATION_POLICY.md`](SDK_DEPRECATION_POLICY.md).
+- Public registry publication is not claimed until the manual tag-gated
+  workflow runs with registry credentials or trusted publishing.
+
+Current registry status is tracked in
+[`SDK_PUBLICATION_STATUS.md`](SDK_PUBLICATION_STATUS.md).

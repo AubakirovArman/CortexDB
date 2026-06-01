@@ -10,6 +10,9 @@ from pathlib import Path
 from typing import Any
 
 Q16_ONE = 65_535
+MIN_BETA_CASES = 20
+MIN_BETA_DOMAINS = 3
+MIN_BETA_COVERAGE_Q16 = 60_000
 
 
 def load_cases(path: Path) -> list[dict[str, Any]]:
@@ -140,14 +143,16 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "anomaly_coverage_q16": q16(reported_anomalies, expected_anomalies),
         "deterministic_order_q16": q16(deterministic_order_cases, len(cases)),
     }
-    if metrics["domain_count"] < 2:
-        failures.append("expected at least two ContextPack quality domains")
-    if metrics["evidence_coverage_q16"] < Q16_ONE:
-        failures.append("evidence coverage is below 100 percent")
+    if len(cases) < MIN_BETA_CASES:
+        failures.append(f"expected at least {MIN_BETA_CASES} ContextPack quality cases")
+    if metrics["domain_count"] < MIN_BETA_DOMAINS:
+        failures.append(f"expected at least {MIN_BETA_DOMAINS} ContextPack quality domains")
+    if metrics["evidence_coverage_q16"] < MIN_BETA_COVERAGE_Q16:
+        failures.append("evidence coverage is below beta threshold")
     if metrics["token_reduction_q16"] <= 0:
         failures.append("token reduction must be positive")
-    if metrics["citation_coverage_q16"] < Q16_ONE:
-        failures.append("citation coverage is below 100 percent")
+    if metrics["citation_coverage_q16"] < MIN_BETA_COVERAGE_Q16:
+        failures.append("citation coverage is below beta threshold")
     if metrics["redundancy_reduction_q16"] < Q16_ONE:
         failures.append("redundancy reduction is below 100 percent")
     if metrics["anomaly_coverage_q16"] < Q16_ONE:

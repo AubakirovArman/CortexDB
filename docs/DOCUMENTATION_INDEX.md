@@ -9,6 +9,9 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 
 - [`README.md`](../README.md) - project overview, quickstart, current status.
 - [`PROJECT_STATUS.md`](PROJECT_STATUS.md) - honest Core Alpha status.
+- [`BETA_RELEASE.md`](BETA_RELEASE.md) - `v0.2.0-beta.1` scope, non-goals, and promotion gate.
+- [`BETA_OPERATIONS.md`](BETA_OPERATIONS.md) - beta operator runbook for install, auth, backup, validation, repair, metrics, and known limits.
+- [`RELEASE_NOTES_v0.2.0-beta.1.md`](RELEASE_NOTES_v0.2.0-beta.1.md) - planned beta release notes and checklist.
 - [`BETA_DELTA.md`](BETA_DELTA.md) - what remains before beta promotion.
 - [`BETA_FOUNDATION_EVIDENCE.md`](BETA_FOUNDATION_EVIDENCE.md) - local Epic 2 evidence gate.
 - [`BETA_RC_EVIDENCE.md`](BETA_RC_EVIDENCE.md) - local Epic 3 evidence gate.
@@ -34,6 +37,8 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`DISTRIBUTED_CONSENSUS_DESIGN.md`](DISTRIBUTED_CONSENSUS_DESIGN.md) - future production distributed consensus design.
 - [`WHY_CORTEXDB.md`](WHY_CORTEXDB.md) - positioning and rationale.
 - [`WHY_AGENT_NATIVE_DB.md`](WHY_AGENT_NATIVE_DB.md) - agent-native database concept.
+- [`RAG_VS_CORTEXDB.md`](RAG_VS_CORTEXDB.md) - practical comparison with classic RAG.
+- [`RAG_VS_CORTEXDB_DEMO.md`](RAG_VS_CORTEXDB_DEMO.md) - beta product demo scenario and expected output contract.
 
 ## AQL And Context
 
@@ -83,6 +88,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`CLI_PRODUCT_EVIDENCE.md`](CLI_PRODUCT_EVIDENCE.md) - local Epic 14 evidence gate.
 - [`SDK_QUICKSTART.md`](SDK_QUICKSTART.md) - SDK usage.
 - [`SDK_RELEASE.md`](SDK_RELEASE.md) - package release procedure.
+- [`SDK_PUBLICATION_STATUS.md`](SDK_PUBLICATION_STATUS.md) - registry publication boundary and beta SDK status.
 - [`SDK_DEPRECATION_POLICY.md`](SDK_DEPRECATION_POLICY.md) - SDK deprecation rules.
 - [`SDK_E2E_RELEASE_EVIDENCE.md`](SDK_E2E_RELEASE_EVIDENCE.md) - local Epic 15 evidence gate.
 
@@ -113,6 +119,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`OBSERVABILITY_ALERTS.md`](OBSERVABILITY_ALERTS.md) - alert rules and operator actions.
 - [`SINGLE_NODE_SLO.md`](SINGLE_NODE_SLO.md) - local single-node SLO boundaries.
 - [`OPERATIONS.md`](OPERATIONS.md) - operational guidance.
+- [`BETA_OPERATIONS.md`](BETA_OPERATIONS.md) - beta operations checklist and runbook.
 - [`SECURITY_MODEL.md`](SECURITY_MODEL.md) - security model.
 - [`SECURITY_BETA_BASELINE.md`](SECURITY_BETA_BASELINE.md) - beta security baseline and backlog boundaries.
 - [`SECURITY_THREAT_MODEL.md`](SECURITY_THREAT_MODEL.md) - threat model.

@@ -213,6 +213,15 @@ make rag-demo-smoke
 Эта проверка входит в `make alpha-check`, поэтому demo не может тихо
 рассинхронизироваться с API CortexDB.
 
+Ожидаемый contract для release smoke хранится в:
+
+```text
+examples/rag_demo/expected_output.json
+```
+
+Он требует, чтобы `VERIFY FACT` вернул `mixed_evidence` для бюджетного
+конфликта, а ContextPack вернул цитируемые evidence cells.
+
 ### Ручные HTTP-пробы с FastAPI/vLLM
 
 ```bash

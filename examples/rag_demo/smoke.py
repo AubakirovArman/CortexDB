@@ -25,6 +25,7 @@ from typing import Any
 DEMO_DIR = Path(__file__).resolve().parent
 REPO_ROOT = DEMO_DIR.parents[1]
 DATA_DIR = DEMO_DIR / "data"
+EXPECTED_OUTPUT = DEMO_DIR / "expected_output.json"
 
 
 def fail(message: str) -> None:
@@ -162,6 +163,31 @@ def build_prompt(question: str, context_response: dict[str, Any]) -> str:
     )
 
 
+def load_expected_output() -> dict[str, Any]:
+    with EXPECTED_OUTPUT.open("r", encoding="utf-8") as handle:
+        value = json.load(handle)
+    if not isinstance(value, dict):
+        fail(f"{EXPECTED_OUTPUT}: expected JSON object")
+    return value
+
+
+def assert_expected_output(summary: dict[str, Any]) -> None:
+    expected = load_expected_output()
+    if summary.get("verify_verdict") != expected.get("verify_verdict"):
+        fail(f"unexpected verify verdict: {summary}")
+    if summary.get("ingested_records") != expected.get("ingested_records"):
+        fail(f"unexpected ingested record count: {summary}")
+    minimums = {
+        "search_results": "min_search_results",
+        "aql_cells": "min_aql_cells",
+        "context_cells": "min_context_cells",
+        "prompt_chars": "min_prompt_chars",
+    }
+    for field, expected_field in minimums.items():
+        if int(summary.get(field, 0)) < int(expected.get(expected_field, 0)):
+            fail(f"{field} below expected minimum: {summary}")
+
+
 def assert_pipeline(base_url: str) -> dict[str, Any]:
     question = "Какой бюджет у Финансового департамента на 2024 год?"
     aql = (
@@ -193,8 +219,8 @@ def assert_pipeline(base_url: str) -> dict[str, Any]:
         fail("assembled prompt is missing the expected budget evidence")
 
     verify = post_endpoint(base_url, "/v1/verify", {"scope": "finance"}, verify_aql)
-    if verify.get("verdict") not in {"supported", "mixed_evidence"}:
-        fail(f"VERIFY FACT did not find usable evidence: {verify}")
+    if verify.get("verdict") != "mixed_evidence":
+        fail(f"VERIFY FACT did not return mixed evidence: {verify}")
 
     return {
         "search_results": len(search_results),
@@ -216,6 +242,7 @@ def main() -> int:
                 fail(f"expected at least 70 demo records, ingested {ingested}")
             summary = assert_pipeline(base_url)
             summary["ingested_records"] = ingested
+            assert_expected_output(summary)
             print(json.dumps({"ok": True, **summary}, ensure_ascii=False, indent=2))
         finally:
             stop_server(proc)

@@ -128,11 +128,37 @@ Current relevant gates:
 ```bash
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets -- -D warnings
+make security-check
 make openapi-check
 make openapi-contract-check
 make sdk-contract-check
 make security-hardening-check
 ```
+
+## Beta Security Status
+
+`make security-check` now writes:
+
+```text
+target/security/report.json
+```
+
+The beta report covers local evidence for:
+
+- bearer auth required when configured;
+- wrong bearer token rejected;
+- data token cannot access admin/dashboard routes;
+- tenant path traversal rejected;
+- fixed-window rate limit behavior;
+- CORS exact-origin allowlist behavior;
+- audit log redaction for body, query, and bearer token material;
+- AgentView scope enforcement on HTTP routes;
+- 2MB request body limit behavior;
+- OpenAPI/error contract alignment.
+
+Passing this gate does not claim enterprise compliance, external identity,
+managed-cloud security, encrypted backups, or production distributed
+authorization.
 
 Security-sensitive test areas include:
 

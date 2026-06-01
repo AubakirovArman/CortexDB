@@ -2,9 +2,13 @@
 
 [![Rust](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml/badge.svg)](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml)
 
-**CortexDB is an experimental Core Alpha of an agent-native context database.**
+**CortexDB is an experimental Core Alpha with Beta Foundation evidence for an agent-native context database.**
 
 > ⚠️ **Warning:** CortexDB is currently in **Core Alpha status** and is suitable for local experiments, research, architecture validation, and early contributors. It is **not recommended for production workloads yet.**
+>
+> The current beta target is `v0.2.0-beta.1`: a local single-node developer/API
+> beta. Promotion requires `make beta-release-check` and the evidence bundle
+> described in [`docs/BETA_RELEASE.md`](docs/BETA_RELEASE.md).
 
 CortexDB is specifically engineered for autonomous AI agents. Unlike traditional databases that return raw rows or tables, or vector databases that return fragmented, unverified text chunks, CortexDB compiles permission-safe, evidence-aware **Context Packs** with strict token-budget limits and deterministic fact verification.
 
@@ -32,7 +36,7 @@ Or run the full demo: `make demo`
 
 ---
 
-## Current Core Alpha Features (v0.1.0-core-alpha)
+## Current Core Alpha / Beta Foundation Features
 
 - **Single-Node Durable Storage:** Strict Write-Ahead Log (WAL) with group commit, MVCC MemTable, and incremental check-pointing/compaction.
 - **Durable Local Agent Memory:** Scope-isolated agent-facing memory retrieval with dynamic decay/TTL scoring.
@@ -114,6 +118,12 @@ cargo run -p cortex-cli -- load-fixture examples/datasets/legal_policies ./data
 
 Backup and restore behavior is documented in
 [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
+The beta release boundary and target version are documented in
+[`docs/BETA_RELEASE.md`](docs/BETA_RELEASE.md).
+The planned beta release notes are documented in
+[`docs/RELEASE_NOTES_v0.2.0-beta.1.md`](docs/RELEASE_NOTES_v0.2.0-beta.1.md).
+The beta operations runbook is documented in
+[`docs/BETA_OPERATIONS.md`](docs/BETA_OPERATIONS.md).
 The current Core Alpha vs beta-readiness delta is documented in
 [`docs/BETA_DELTA.md`](docs/BETA_DELTA.md).
 Public product-claim boundaries are documented in

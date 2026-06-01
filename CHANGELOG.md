@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+### Beta Release Preparation
+
+- Added `docs/BETA_RELEASE.md` to freeze the `v0.2.0-beta.1` target as a
+  local single-node developer/API beta, with explicit non-goals for production
+  distributed consensus, managed cloud, enterprise compliance, legal-grade
+  verification, unrestricted HNSW, and built-in production LLM inference.
+- Updated README, beta delta, public-claims policy, and documentation index so
+  public wording now says Core Alpha with Beta Foundation evidence instead of
+  implying a finished beta or production release.
+- Added `docs/SDK_PUBLICATION_STATUS.md` and beta SDK compatibility wording so
+  the SDK release lifecycle clearly separates local package/e2e evidence from
+  actual public registry publication.
+- Expanded the ContextPack quality fixture to 20 cases across four domains and
+  raised the local gate to the beta acceptance floor for case/domain coverage.
+- Expanded the VERIFY FACT quality fixture to 30 labelled cases covering all
+  verdict classes, numeric/date/currency mismatches, missing citations,
+  unreadable scopes, and hard current-vs-old evidence cases.
+- Added the `support_tickets` real-domain retrieval corpus and a
+  multi-domain beta retrieval report, with five deterministic local retrieval
+  repeats per checked-in domain under `target/retrieval-quality/beta-report.json`.
+- Added a focused beta security report under `target/security/report.json` and
+  an explicit wrong-token HTTP regression test in the server security suite.
+- Added `docs/BETA_OPERATIONS.md`, a Linux/macOS beta runbook covering install,
+  server startup, auth, tenants, backup/restore, validation, repair,
+  upgrade/rollback, metrics, logs, and known limits.
+- Added planned `v0.2.0-beta.1` release notes and wired local binary package
+  validation into the beta release evidence bundle.
+- Added a beta product demo article and expected-output contract, and tightened
+  `make rag-demo-smoke` to require `mixed_evidence` from `VERIFY FACT`.
+
 ### P1 (Alpha Polish)
 
 - Added `docs/DOCUMENTATION_INDEX.md`,
