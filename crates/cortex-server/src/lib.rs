@@ -33,6 +33,7 @@ pub mod external_identity;
 mod hnsw_profile;
 mod llm;
 mod memory;
+mod metrics;
 mod rate_limit;
 pub mod responses;
 mod router;
@@ -169,6 +170,7 @@ pub struct AppState {
     ann_no_fallback_requests: Arc<AtomicU64>,
     ann_no_fallback_allowed: Arc<AtomicU64>,
     ann_no_fallback_blocked: Arc<AtomicU64>,
+    ann_search_latency_ms: metrics::LatencyHistogram,
     validation_failures: Arc<AtomicU64>,
     rate_limit: Option<GlobalRateLimit>,
     principal_rate_limits: PrincipalRateLimits,
@@ -237,6 +239,7 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             ann_no_fallback_requests: Arc::new(AtomicU64::new(0)),
             ann_no_fallback_allowed: Arc::new(AtomicU64::new(0)),
             ann_no_fallback_blocked: Arc::new(AtomicU64::new(0)),
+            ann_search_latency_ms: metrics::LatencyHistogram::new(),
             validation_failures: Arc::new(AtomicU64::new(0)),
             rate_limit,
             principal_rate_limits: PrincipalRateLimits::default(),
@@ -660,15 +663,19 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
     match res {
         Ok(body_str) => {
             audit_http_response(&state, &audit_event, StatusCode::OK, None);
-            if method == "POST" && matches!(path.as_str(), "/v1/search" | "/v1/search/ann-evaluate")
+            if method == "POST"
+                && matches!(path.as_str(), "/v1/search" | "/v1/search/ann-evaluate")
+                && record_ann_search_metrics(&state, &body_str)
             {
-                record_ann_search_metrics(&state, &body_str);
+                state.ann_search_latency_ms.observe_ms(duration_ms);
             }
             if method == "GET" && path == "/v1/validate" {
                 record_validation_metrics(&state, &body_str);
             }
             if method == "GET" && path == "/v1/metrics" {
                 if query.contains("format=prometheus") {
+                    let ann_latency = state.ann_search_latency_ms.snapshot();
+                    let ann_search_requests = state.ann_search_requests.load(Ordering::Relaxed);
                     let extra = format!(
                         "# HELP cortexdb_actor_queue_depth Current actor command queue depth.\n\
                          # TYPE cortexdb_actor_queue_depth gauge\n\
@@ -700,6 +707,16 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                          # HELP cortexdb_ann_no_fallback_blocked Total no-fallback rollout decisions blocked by guardrails.\n\
                          # TYPE cortexdb_ann_no_fallback_blocked counter\n\
                          cortexdb_ann_no_fallback_blocked {}\n\
+                         # HELP cortexdb_ann_search_latency_ms ANN-capable HTTP search latency in milliseconds.\n\
+                         # TYPE cortexdb_ann_search_latency_ms histogram\n\
+                         cortexdb_ann_search_latency_ms_bucket{{le=\"10\"}} {}\n\
+                         cortexdb_ann_search_latency_ms_bucket{{le=\"50\"}} {}\n\
+                         cortexdb_ann_search_latency_ms_bucket{{le=\"100\"}} {}\n\
+                         cortexdb_ann_search_latency_ms_bucket{{le=\"500\"}} {}\n\
+                         cortexdb_ann_search_latency_ms_bucket{{le=\"1000\"}} {}\n\
+                         cortexdb_ann_search_latency_ms_bucket{{le=\"+Inf\"}} {}\n\
+                         cortexdb_ann_search_latency_ms_count {}\n\
+                         cortexdb_ann_search_latency_ms_sum {}\n\
                          # HELP cortexdb_validation_failures Total validation responses that reported errors.\n\
                          # TYPE cortexdb_validation_failures counter\n\
                          cortexdb_validation_failures {}\n",
@@ -708,11 +725,19 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                         state.request_count.load(Ordering::Relaxed),
                         state.request_rejected.load(Ordering::Relaxed),
                         state.request_duration_ms_total.load(Ordering::Relaxed),
-                        state.ann_search_requests.load(Ordering::Relaxed),
+                        ann_search_requests,
                         state.ann_fallbacks.load(Ordering::Relaxed),
                         state.ann_no_fallback_requests.load(Ordering::Relaxed),
                         state.ann_no_fallback_allowed.load(Ordering::Relaxed),
                         state.ann_no_fallback_blocked.load(Ordering::Relaxed),
+                        ann_latency.le_10_ms,
+                        ann_latency.le_50_ms,
+                        ann_latency.le_100_ms,
+                        ann_latency.le_500_ms,
+                        ann_latency.le_1000_ms,
+                        ann_latency.count,
+                        ann_latency.count,
+                        ann_latency.sum_ms,
                         state.validation_failures.load(Ordering::Relaxed),
                     );
                     return with_request_id(
@@ -735,6 +760,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                         state.ann_no_fallback_allowed.load(Ordering::Relaxed);
                     metrics.ann_no_fallback_blocked =
                         state.ann_no_fallback_blocked.load(Ordering::Relaxed);
+                    metrics.ann_search_latency_ms = state.ann_search_latency_ms.snapshot();
                     metrics.validation_failures = state.validation_failures.load(Ordering::Relaxed);
                     return with_request_id(
                         (StatusCode::OK, Json(metrics)).into_response(),
@@ -767,15 +793,15 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
     }
 }
 
-fn record_ann_search_metrics(state: &AppState, body: &str) {
+fn record_ann_search_metrics(state: &AppState, body: &str) -> bool {
     let Ok(value) = serde_json::from_str::<serde_json::Value>(body) else {
-        return;
+        return false;
     };
     let Some(report) = value.get("ann_report") else {
-        return;
+        return false;
     };
     if report.is_null() {
-        return;
+        return false;
     }
     state.ann_search_requests.fetch_add(1, Ordering::Relaxed);
     if report
@@ -786,10 +812,10 @@ fn record_ann_search_metrics(state: &AppState, body: &str) {
         state.ann_fallbacks.fetch_add(1, Ordering::Relaxed);
     }
     let Some(decision) = value.get("no_fallback_decision") else {
-        return;
+        return true;
     };
     if decision.is_null() {
-        return;
+        return true;
     }
     state
         .ann_no_fallback_requests
@@ -807,6 +833,7 @@ fn record_ann_search_metrics(state: &AppState, body: &str) {
             .ann_no_fallback_blocked
             .fetch_add(1, Ordering::Relaxed);
     }
+    true
 }
 
 fn record_validation_metrics(state: &AppState, body: &str) {
@@ -873,6 +900,7 @@ mod metrics_tests {
             ann_no_fallback_requests: Arc::new(AtomicU64::new(0)),
             ann_no_fallback_allowed: Arc::new(AtomicU64::new(0)),
             ann_no_fallback_blocked: Arc::new(AtomicU64::new(0)),
+            ann_search_latency_ms: metrics::LatencyHistogram::new(),
             validation_failures: Arc::new(AtomicU64::new(0)),
             rate_limit: None,
             principal_rate_limits: PrincipalRateLimits::default(),
@@ -882,19 +910,37 @@ mod metrics_tests {
     #[test]
     fn records_no_fallback_rollout_decision_counters() {
         let state = app_state_for_metrics();
-        record_ann_search_metrics(
+        assert!(record_ann_search_metrics(
             &state,
             r#"{"ann_report":{"fallback_performed":false},"no_fallback_decision":{"allowed":true,"reasons":[]}}"#,
-        );
-        record_ann_search_metrics(
+        ));
+        assert!(record_ann_search_metrics(
             &state,
             r#"{"ann_report":{"fallback_performed":true},"no_fallback_decision":{"allowed":false,"reasons":["recall_below_minimum"]}}"#,
-        );
+        ));
 
         assert_eq!(state.ann_search_requests.load(Ordering::Relaxed), 2);
         assert_eq!(state.ann_fallbacks.load(Ordering::Relaxed), 1);
         assert_eq!(state.ann_no_fallback_requests.load(Ordering::Relaxed), 2);
         assert_eq!(state.ann_no_fallback_allowed.load(Ordering::Relaxed), 1);
         assert_eq!(state.ann_no_fallback_blocked.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn records_ann_search_latency_histogram_buckets() {
+        let state = app_state_for_metrics();
+        state.ann_search_latency_ms.observe_ms(9);
+        state.ann_search_latency_ms.observe_ms(75);
+        state.ann_search_latency_ms.observe_ms(1500);
+
+        let buckets = state.ann_search_latency_ms.snapshot();
+        assert_eq!(buckets.count, 3);
+        assert_eq!(buckets.sum_ms, 1584);
+        assert_eq!(buckets.le_10_ms, 1);
+        assert_eq!(buckets.le_50_ms, 1);
+        assert_eq!(buckets.le_100_ms, 2);
+        assert_eq!(buckets.le_500_ms, 2);
+        assert_eq!(buckets.le_1000_ms, 2);
+        assert_eq!(buckets.gt_1000_ms, 1);
     }
 }

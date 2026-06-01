@@ -182,6 +182,8 @@ decisions:
   profile
 - `ann_no_fallback_blocked` — decisions blocked by recall, graph, fallback, or
   SLO guardrails
+- `ann_search_latency_ms` — cumulative live latency buckets for ANN-capable
+  search responses
 
 ### 5. Limitations & Fail-Safes
 - **Static Rebuild Lifecycle:** Graphs are built deterministically during the `checkpoint`/`compact` phase and remain static in `.ach` files. Real-time updates inside the MemTable (WAL tail) bypass HNSW and are merged on-the-fly using exact scan, ensuring 100% freshness and correctness.

@@ -207,6 +207,16 @@ Response:
   "ann_no_fallback_requests": 0,
   "ann_no_fallback_allowed": 0,
   "ann_no_fallback_blocked": 0,
+  "ann_search_latency_ms": {
+    "count": 0,
+    "sum_ms": 0,
+    "le_10_ms": 0,
+    "le_50_ms": 0,
+    "le_100_ms": 0,
+    "le_500_ms": 0,
+    "le_1000_ms": 0,
+    "gt_1000_ms": 0
+  },
   "actor_queue_depth": 0,
   "actor_queue_capacity": 1024,
   "request_count": 10,

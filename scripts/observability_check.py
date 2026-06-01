@@ -31,6 +31,7 @@ METRICS_FIELDS = [
     "ann_no_fallback_requests",
     "ann_no_fallback_allowed",
     "ann_no_fallback_blocked",
+    "ann_search_latency_ms",
     "actor_queue_depth",
     "actor_queue_capacity",
     "request_count",
@@ -62,6 +63,7 @@ REQUIRED_MARKERS = {
         ("examples/observability/alerts.yml", "CortexDbAnnGraphUnavailable"),
         ("examples/observability/alerts.yml", "CortexDbAnnFallbackRate"),
         ("examples/observability/alerts.yml", "CortexDbAnnNoFallbackBlocked"),
+        ("examples/observability/alerts.yml", "CortexDbAnnSearchLatencyP99High"),
         ("examples/observability/alerts.yml", "CortexDbValidationFailures"),
         ("docs/OBSERVABILITY_ALERTS.md", "Suggested Actions"),
     ],
@@ -96,6 +98,7 @@ def validate_grafana() -> list[str]:
         "cortexdb_actor_queue_depth",
         "cortexdb_ann_fallbacks",
         "cortexdb_ann_no_fallback_blocked",
+        "cortexdb_ann_search_latency_ms_bucket",
         "cortexdb_validation_failures",
     ]:
         if marker not in text:

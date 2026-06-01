@@ -82,6 +82,17 @@
     },
     {
       "id": 9,
+      "title": "ANN Search p99 Latency",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(cortexdb_ann_search_latency_ms_bucket[5m])) by (le))",
+          "legendFormat": "p99_ms"
+        }
+      ]
+    },
+    {
+      "id": 10,
       "title": "Validation Failures",
       "type": "timeseries",
       "targets": [

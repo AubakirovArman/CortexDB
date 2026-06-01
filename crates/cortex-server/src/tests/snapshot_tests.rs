@@ -73,6 +73,7 @@ fn snapshot_metrics_includes_actor_and_request_fields() {
     assert!(response.contains(r#""ann_no_fallback_requests":"#));
     assert!(response.contains(r#""ann_no_fallback_allowed":"#));
     assert!(response.contains(r#""ann_no_fallback_blocked":"#));
+    assert!(response.contains(r#""ann_search_latency_ms":"#));
     assert!(response.contains(r#""validation_failures":"#));
 }
 

@@ -64,6 +64,15 @@ groups:
           summary: CortexDB no-fallback ANN rollout was blocked
           description: A fallback-free rollout decision was denied by guardrails; inspect no_fallback_decision reasons before retrying.
 
+      - alert: CortexDbAnnSearchLatencyP99High
+        expr: histogram_quantile(0.99, sum(rate(cortexdb_ann_search_latency_ms_bucket[5m])) by (le)) > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: CortexDB ANN search p99 latency is high
+          description: ANN-capable search p99 is above 1000ms; keep fallback-free rollout disabled until latency stabilizes.
+
       - alert: CortexDbValidationFailures
         expr: increase(cortexdb_validation_failures[5m]) > 0
         for: 1m

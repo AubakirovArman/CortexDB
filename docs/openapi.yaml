@@ -1864,6 +1864,7 @@ components:
       - ann_no_fallback_requests
       - ann_no_fallback_allowed
       - ann_no_fallback_blocked
+      - ann_search_latency_ms
       - actor_queue_depth
       - actor_queue_capacity
       - request_count
@@ -1925,6 +1926,8 @@ components:
         ann_no_fallback_blocked:
           type: integer
           format: uint64
+        ann_search_latency_ms:
+          $ref: '#/components/schemas/LatencyHistogramResponse'
         actor_queue_depth:
           type: integer
         actor_queue_capacity:
@@ -1939,6 +1942,42 @@ components:
           type: integer
           format: uint64
         validation_failures:
+          type: integer
+          format: uint64
+    LatencyHistogramResponse:
+      type: object
+      required:
+      - count
+      - sum_ms
+      - le_10_ms
+      - le_50_ms
+      - le_100_ms
+      - le_500_ms
+      - le_1000_ms
+      - gt_1000_ms
+      properties:
+        count:
+          type: integer
+          format: uint64
+        sum_ms:
+          type: integer
+          format: uint64
+        le_10_ms:
+          type: integer
+          format: uint64
+        le_50_ms:
+          type: integer
+          format: uint64
+        le_100_ms:
+          type: integer
+          format: uint64
+        le_500_ms:
+          type: integer
+          format: uint64
+        le_1000_ms:
+          type: integer
+          format: uint64
+        gt_1000_ms:
           type: integer
           format: uint64
     AnnMetricsResponse:

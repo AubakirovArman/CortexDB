@@ -22,6 +22,8 @@ They cover:
   `increase(cortexdb_ann_fallbacks[5m]) / increase(cortexdb_ann_search_requests[5m])`;
 - no-fallback rollout blocks:
   `increase(cortexdb_ann_no_fallback_blocked[5m])`;
+- ANN runtime p99 latency:
+  `histogram_quantile(0.99, sum(rate(cortexdb_ann_search_latency_ms_bucket[5m])) by (le))`;
 - validation failures: `cortexdb_validation_failures`.
 
 ## Suggested Actions
@@ -35,6 +37,7 @@ They cover:
 | `CortexDbAnnGraphUnavailable` | Use exact vector search as the correctness path; checkpoint/compact to rebuild ANN evidence. |
 | `CortexDbAnnFallbackRate` | Inspect ANN search reports for SLO violations, graph freshness, and visit-budget fallback reasons. |
 | `CortexDbAnnNoFallbackBlocked` | Keep fallback-free serving disabled for that profile, inspect `no_fallback_decision.reasons`, and re-run ANN release evidence before retrying rollout. |
+| `CortexDbAnnSearchLatencyP99High` | Keep no-fallback rollout disabled, inspect traffic shape and graph profile, then re-run ANN latency evidence. |
 | `CortexDbValidationFailures` | Stop release promotion, save `/v1/validate` output, and run `cortexdb validate` plus backup/restore checks. |
 
 ## Operator Playbooks

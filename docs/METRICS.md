@@ -61,6 +61,7 @@ Important fields:
 | `ann_no_fallback_requests` | ANN responses that included a no-fallback rollout decision. | Confirms operators are explicitly exercising fallback-free guardrails. |
 | `ann_no_fallback_allowed` | No-fallback rollout decisions that allowed serving. | Should only rise for proven profile-scoped rollout requests. |
 | `ann_no_fallback_blocked` | No-fallback rollout decisions blocked by guardrails. | Any increase requires inspection before retrying fallback-free rollout. |
+| `ann_search_latency_ms` | Runtime ANN search latency histogram with `count`, `sum_ms`, and cumulative buckets: `le_10_ms`, `le_50_ms`, `le_100_ms`, `le_500_ms`, `le_1000_ms`, `gt_1000_ms`. | Use with `ann_search_requests` to watch live tail latency during profile rollout. |
 | `actor_queue_depth` | Current per-tenant actor queue depth. | Sustained high values show backpressure. |
 | `actor_queue_capacity` | Configured actor queue capacity. | Used with depth to compute saturation. |
 | `request_count` | Requests handled by the process. | Traffic counter. |
@@ -71,9 +72,14 @@ Important fields:
 ### `GET /v1/metrics?format=prometheus`
 
 Returns a minimal Prometheus text exposition for the main storage, WAL,
-MemTable, ANN/HNSW, actor pressure, request rejection, ANN fallback, and
-validation-failure counters. JSON remains the richer source for full typed
-metrics.
+MemTable, ANN/HNSW, actor pressure, request rejection, ANN fallback, ANN
+latency buckets, and validation-failure counters. JSON remains the richer
+source for full typed metrics.
+
+ANN latency is emitted as a Prometheus histogram named
+`cortexdb_ann_search_latency_ms` with `_bucket`, `_count`, and `_sum` samples.
+Use the `+Inf` bucket as the runtime ANN search count and the bounded buckets
+for rollout latency SLO alerts.
 
 Example:
 

@@ -92,6 +92,13 @@ Operational counters are exposed through `/v1/metrics` and Prometheus:
 `ann_no_fallback_blocked`. These counters are profile-rollout evidence only;
 they do not imply fallback-free production readiness by themselves.
 
+Runtime ANN search latency is exposed as cumulative buckets under
+`ann_search_latency_ms` in JSON and
+`cortexdb_ann_search_latency_ms_bucket{le="..."}` in Prometheus. These live
+buckets let operators detect tail-latency drift during no-fallback profile
+rollout, while offline corpus reports remain the source of recall and p99
+promotion evidence.
+
 ## Required Gates
 
 1. `make ann-production-no-fallback-check`

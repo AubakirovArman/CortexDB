@@ -11,8 +11,8 @@ use crate::memory;
 use crate::responses::{
     AnnMetricsResponse, CellLookupResponse, CellResponse, CheckpointResponse, ClusterNodeResponse,
     ClusterStatusResponse, DeleteJobResponse, ErrorCode, ErrorResponse, HealthResponse,
-    IngestResponse, MetricsResponse, PutCellResponse, RouterError, StatsResponse,
-    ValidationResponse,
+    IngestResponse, LatencyHistogramResponse, MetricsResponse, PutCellResponse, RouterError,
+    StatsResponse, ValidationResponse,
 };
 use crate::search;
 
@@ -257,6 +257,7 @@ pub fn route_database_with_agent(
                     ann_no_fallback_requests: 0,
                     ann_no_fallback_allowed: 0,
                     ann_no_fallback_blocked: 0,
+                    ann_search_latency_ms: LatencyHistogramResponse::default(),
                     actor_queue_depth: 0,
                     actor_queue_capacity: 0,
                     request_count: 0,

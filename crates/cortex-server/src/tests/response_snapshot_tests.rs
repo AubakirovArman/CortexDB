@@ -2,8 +2,8 @@ use crate::responses::{AnnMetricsResponse, AnnNoFallbackDecisionResponse};
 use crate::responses::{
     CheckpointResponse, ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
     ErrorCode, ErrorResponse, EvidenceResponse, ExplainResponse, GuardResponse, HealthResponse,
-    IngestResponse, MetricsResponse, NumericConflictResponse, PutCellResponse,
-    SearchResultResponse, SourceRefResponse, StatsResponse, ValidationResponse,
+    IngestResponse, LatencyHistogramResponse, MetricsResponse, NumericConflictResponse,
+    PutCellResponse, SearchResultResponse, SourceRefResponse, StatsResponse, ValidationResponse,
     VerificationReportResponse,
 };
 
@@ -78,6 +78,16 @@ fn snapshot_metrics_response() {
         ann_no_fallback_requests: 4,
         ann_no_fallback_allowed: 3,
         ann_no_fallback_blocked: 1,
+        ann_search_latency_ms: LatencyHistogramResponse {
+            count: 11,
+            sum_ms: 120,
+            le_10_ms: 5,
+            le_50_ms: 8,
+            le_100_ms: 10,
+            le_500_ms: 11,
+            le_1000_ms: 11,
+            gt_1000_ms: 0,
+        },
         actor_queue_depth: 2,
         actor_queue_capacity: 16,
         request_count: 1000,

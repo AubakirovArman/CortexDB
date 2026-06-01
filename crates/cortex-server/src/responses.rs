@@ -357,6 +357,19 @@ pub struct ErrorResponse {
     pub message: String,
 }
 
+/// Cumulative latency histogram buckets in milliseconds.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct LatencyHistogramResponse {
+    pub count: u64,
+    pub sum_ms: u64,
+    pub le_10_ms: u64,
+    pub le_50_ms: u64,
+    pub le_100_ms: u64,
+    pub le_500_ms: u64,
+    pub le_1000_ms: u64,
+    pub gt_1000_ms: u64,
+}
+
 /// Aggregated metrics combining storage, WAL, MemTable, and ANN/HNSW stats.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MetricsResponse {
@@ -381,6 +394,7 @@ pub struct MetricsResponse {
     pub ann_no_fallback_requests: u64,
     pub ann_no_fallback_allowed: u64,
     pub ann_no_fallback_blocked: u64,
+    pub ann_search_latency_ms: LatencyHistogramResponse,
     pub actor_queue_depth: usize,
     pub actor_queue_capacity: usize,
     pub request_count: u64,
