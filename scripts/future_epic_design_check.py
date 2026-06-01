@@ -90,12 +90,17 @@ EPIC_MARKERS: dict[str, dict[str, object]] = {
                 "Latency SLO",
                 "Graph Freshness",
                 "Serving Guardrails",
+                "Current Evidence Boundary",
                 "Required Gates",
                 "Non-goals",
             ],
             "docs/FUTURE_NON_GOAL_EPICS.md": [
                 "Full Production HNSW Without Fallback",
                 "make ann-production-no-fallback-check",
+            ],
+            "scripts/hnsw_no_fallback_gate_check.py": [
+                "fallback_free_general_ready",
+                "local no-fallback prerequisite evidence only",
             ],
         },
     },

@@ -1,6 +1,6 @@
 # HNSW No-fallback Production Design
 
-Status: future design gate, not implemented.
+Status: future phase 1 local evidence gates started, not globally production-ready.
 
 ## Goal
 
@@ -50,6 +50,23 @@ Serving without fallback requires:
 3. `make ann-public-corpus-history-check`
 4. `make ann-graph-freshness-check`
 5. `make performance-trend-check`
+
+## Current Evidence Boundary
+
+The current gates prove local HNSW no-fallback prerequisites only. They do not
+remove exact fallback globally and they do not make HNSW safe for unknown
+corpora.
+
+| Gate | Evidence |
+| --- | --- |
+| `make ann-production-no-fallback-check` | synthetic, explicit external fixture, metric matrix, and local domain reports with recall, latency, graph shape, and `production_safe=true` |
+| `make ann-real-domain-history-check` | local domain corpus report plus clean multi-run history fixture with no recall or latency regression |
+| `make ann-public-corpus-history-check` | public-corpus harness self-test plus clean history fixture; real external public corpus source is still required before promotion |
+| `make ann-graph-freshness-check` | HNSW persistence, maintenance, manifest profile, validation, stale/change, and corrupt graph guard tests |
+
+Reports are written under `target/hnsw-no-fallback/`. They keep
+`fallback_free_general_ready=false`; only selected local profiles can be marked
+ready by their own evidence.
 
 ## Acceptance
 

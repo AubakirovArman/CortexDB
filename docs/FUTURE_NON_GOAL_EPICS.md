@@ -16,7 +16,7 @@ Total future epics: 7.
 | 1 | Production Distributed Consensus | future-phase-1-started | `make distributed-consensus-design-check` | Multi-node replicated log, leader failover, split-brain prevention, and sustained rejoin evidence |
 | 2 | Managed Cloud | future-phase-1-started | `make managed-cloud-design-check` | Hosted control plane, tenant isolation, billing/quotas, cloud operations, and support lifecycle |
 | 3 | Enterprise RBAC And Compliance | future-phase-1-started | `make enterprise-rbac-design-check` | Durable policy store, auditable permissions, compliance controls, and admin lifecycle |
-| 4 | Full Production HNSW Without Fallback | future-design-ready | `make hnsw-no-fallback-design-check` | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
+| 4 | Full Production HNSW Without Fallback | future-phase-1-started | `make hnsw-no-fallback-design-check` | ANN can serve critical workloads without exact fallback while meeting recall and latency SLOs |
 | 5 | Built-in LLM Inference | future-design-ready | `make llm-inference-design-check` | Model runtime, resource isolation, prompt safety, provider compatibility, and operational cost controls |
 | 6 | External Identity Providers | future-design-ready | `make external-identity-design-check` | OIDC/SAML or equivalent identity integration with role/scope mapping and rotation |
 | 7 | Legal-grade Verification | future-design-ready | `make legal-verification-design-check` | Legal-domain evidence model, citations, review workflow, liability boundaries, and evaluation by domain experts |
@@ -258,6 +258,23 @@ Why this is future:
   the safety policy for critical workloads.
 - Removing fallback changes the failure mode from slower exact retrieval to
   potentially incorrect retrieval.
+
+Current implementation slice:
+
+- `make ann-production-no-fallback-check` binds synthetic, explicit external
+  fixture, metric-matrix, and local domain ANN reports into one no-fallback
+  prerequisite report.
+- `make ann-real-domain-history-check` validates the local domain corpus report
+  against clean multi-run history evidence.
+- `make ann-public-corpus-history-check` validates the public-corpus harness and
+  history contract, while still requiring an external public source before
+  promotion.
+- `make ann-graph-freshness-check` binds HNSW persistence, maintenance,
+  manifest-profile, validation, and stale/corrupt graph guard tests to a
+  machine-readable report.
+- All new reports are written under `target/hnsw-no-fallback/` and keep
+  `fallback_free_general_ready=false`; they do not remove exact fallback
+  globally.
 
 Task pool:
 
