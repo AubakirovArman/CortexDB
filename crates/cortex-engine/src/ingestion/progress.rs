@@ -6,8 +6,6 @@ use cortex_core::CellId;
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 
-use super::{CsvIngestOptions, IngestedCell};
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct IngestionJobId(pub u64);
 
@@ -172,124 +170,6 @@ impl IngestionProgressTracker {
         self.jobs
             .get_mut(&job_id)
             .ok_or(EngineError::InvalidOperation)
-    }
-}
-
-impl Database {
-    pub fn save_ingestion_job(&self, progress: &IngestionProgress) -> EngineResult<()> {
-        let dir = self.root_path.join("ingestion_jobs");
-        std::fs::create_dir_all(&dir)?;
-        let path = dir.join(format!("{}.json", progress.job_id.0));
-        let content = serde_json::to_string_pretty(progress)
-            .map_err(|e| EngineError::StorageInvariant(e.to_string()))?;
-        std::fs::write(path, content)?;
-        Ok(())
-    }
-
-    pub fn load_ingestion_job(&self, id: u64) -> EngineResult<Option<IngestionProgress>> {
-        let path = self
-            .root_path
-            .join("ingestion_jobs")
-            .join(format!("{id}.json"));
-        if !path.exists() {
-            return Ok(None);
-        }
-        let content = std::fs::read_to_string(path)?;
-        let progress: IngestionProgress = serde_json::from_str(&content)
-            .map_err(|e| EngineError::StorageInvariant(e.to_string()))?;
-        Ok(Some(progress))
-    }
-
-    pub fn list_ingestion_jobs(&self) -> EngineResult<Vec<IngestionProgress>> {
-        let dir = self.root_path.join("ingestion_jobs");
-        if !dir.exists() {
-            return Ok(Vec::new());
-        }
-        let mut jobs = Vec::new();
-        for entry in std::fs::read_dir(dir)?.flatten() {
-            let path = entry.path();
-            if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {
-                let content = std::fs::read_to_string(path)?;
-                if let Ok(progress) = serde_json::from_str::<IngestionProgress>(&content) {
-                    jobs.push(progress);
-                }
-            }
-        }
-        jobs.sort_by_key(|j| j.job_id.0);
-        Ok(jobs)
-    }
-
-    pub fn ingest_csv_with_progress(
-        &mut self,
-        first_cell_id: CellId,
-        csv: &str,
-        options: CsvIngestOptions,
-        tracker: &mut IngestionProgressTracker,
-        label: impl Into<String>,
-    ) -> EngineResult<(IngestionJobId, Vec<IngestedCell>)> {
-        let total = csv.lines().count().saturating_sub(1) as u64;
-        let job_id = tracker.start(label, Some(total))?;
-        let _ = self.save_ingestion_job(tracker.get(job_id).unwrap());
-        match self.ingest_csv(first_cell_id, csv, options) {
-            Ok(cells) => {
-                for cell in &cells {
-                    tracker.record_cell(job_id, cell.cell_id)?;
-                }
-                tracker.finish(job_id)?;
-                let _ = self.save_ingestion_job(tracker.get(job_id).unwrap());
-                Ok((job_id, cells))
-            }
-            Err(error) => {
-                let _ = tracker.fail(job_id, error.to_string());
-                let _ = self.save_ingestion_job(tracker.get(job_id).unwrap());
-                Err(error)
-            }
-        }
-    }
-
-    pub fn cancel_ingestion_job(&self, id: u64) -> EngineResult<IngestionProgress> {
-        let mut progress = self
-            .load_ingestion_job(id)?
-            .ok_or(EngineError::InvalidOperation)?;
-        match progress.status {
-            IngestionJobStatus::Queued | IngestionJobStatus::Running => {
-                progress.status = IngestionJobStatus::Cancelled;
-                self.save_ingestion_job(&progress)?;
-                Ok(progress)
-            }
-            _ => Err(EngineError::InvalidOperation),
-        }
-    }
-
-    pub fn retry_ingestion_job(&self, id: u64) -> EngineResult<IngestionProgress> {
-        let mut progress = self
-            .load_ingestion_job(id)?
-            .ok_or(EngineError::InvalidOperation)?;
-        if progress.status != IngestionJobStatus::Failed {
-            return Err(EngineError::InvalidOperation);
-        }
-        if progress.retry_count >= progress.max_retries {
-            return Err(EngineError::StorageInvariant(
-                "max retries exceeded".to_owned(),
-            ));
-        }
-        progress.retry_count += 1;
-        progress.status = IngestionJobStatus::Queued;
-        progress.message = None;
-        self.save_ingestion_job(&progress)?;
-        Ok(progress)
-    }
-
-    pub fn delete_ingestion_job(&self, id: u64) -> EngineResult<bool> {
-        let path = self
-            .root_path
-            .join("ingestion_jobs")
-            .join(format!("{id}.json"));
-        if !path.exists() {
-            return Ok(false);
-        }
-        std::fs::remove_file(path)?;
-        Ok(true)
     }
 }
 

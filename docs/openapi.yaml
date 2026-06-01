@@ -679,6 +679,7 @@ paths:
   /v1/ingest/jobs:
     get:
       summary: List persisted ingestion jobs
+      description: Lists atomically persisted local ingestion job records. Jobs left running across a database restart are requeued as queued with a recovery message.
       parameters:
       - $ref: '#/components/parameters/Tenant'
       responses:
@@ -694,6 +695,7 @@ paths:
   /v1/ingest/jobs/{job_id}:
     get:
       summary: Read persisted ingestion job progress
+      description: Returns durable local progress, including completed item count, failed item count, last cell id, retry count, and restart recovery message when applicable.
       parameters:
       - $ref: '#/components/parameters/Tenant'
       - name: job_id

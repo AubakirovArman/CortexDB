@@ -691,7 +691,8 @@ parameters.
   "rows_ingested": 0,
   "chunks_ingested": 0,
   "facts_ingested": 0,
-  "first_cell_id": null
+  "first_cell_id": null,
+  "job_id": 1
 }
 ```
 
@@ -701,4 +702,6 @@ Empty inputs return zero counts and `first_cell_id: null`.
 object for jobs created by engine-side job workflows. `POST
 /v1/ingest/jobs/<job_id>/retry` moves a failed job back to `queued`, `POST
 /v1/ingest/jobs/<job_id>/cancel` cancels queued/running jobs, and `DELETE
-/v1/ingest/jobs/<job_id>` deletes a persisted job record.
+/v1/ingest/jobs/<job_id>` deletes a persisted job record. Job records are
+durable local metadata; on database restart, stale `running` jobs are atomically
+requeued as `queued` and retain their completed item counters and last cell id.

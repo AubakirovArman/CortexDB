@@ -114,7 +114,7 @@ impl Database {
 
         truncate_wal_tail(&wal_path, last_safe_offset)?;
         let writer = WalWriter::start(&wal_path, options.durability_mode)?;
-        Ok(Self {
+        let database = Self {
             root_path,
             wal_path,
             manifest_path,
@@ -127,7 +127,9 @@ impl Database {
             hnsw_build_config: options.hnsw_build_config.normalized(),
             _lock: lock,
             closed: false,
-        })
+        };
+        database.resume_interrupted_ingestion_jobs()?;
+        Ok(database)
     }
 
     /// Store a single cell payload and return the commit sequence.

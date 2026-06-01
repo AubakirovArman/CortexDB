@@ -55,7 +55,9 @@ empty document.
 `IngestionProgressTracker` provides a small synchronous progress surface for
 adapter jobs. The first tracked helper is `Database::ingest_csv_with_progress`,
 which records total rows, completed cells, status, and the last written
-`CellId`.
+`CellId`. Persisted job files are written atomically with file sync plus rename,
+so a restart should see either the old complete job state or the new complete
+job state, not a partially written JSON file.
 
 ## Ingestion Job Lifecycle
 
@@ -71,6 +73,12 @@ The current retry and cancel behavior is deliberately small: it is a Core Alpha
 operator surface for deterministic local jobs, not a distributed background job
 system. Empty text, JSON, and CSV ingestion requests return zero cells and a
 `null` first cell id instead of panicking or fabricating a cell.
+
+On `Database::open`, stale jobs that were persisted as `running` are requeued as
+`queued` with a recovery message. This is CortexDB's current restart-resume
+boundary: the engine does not silently replay an HTTP upload body, but it also
+does not leave an interrupted job looking active forever. Operators can inspect
+the durable progress, then retry, cancel, or delete the job record explicitly.
 
 The CLI exposes the same local job lifecycle for operator review:
 

@@ -494,12 +494,15 @@ Status: closed on 2026-06-01.
 Evidence:
 
 - Engine ingestion jobs persist progress, failed item counts, failure messages,
-  retry counts, cancel state, and delete state.
+  retry counts, cancel state, and delete state; persisted job JSON is written
+  atomically and stale `running` jobs are requeued after database restart.
 - HTTP exposes list/get/retry/cancel/delete job lifecycle routes.
 - CLI exposes `ingest-jobs`, `ingest-job`, `ingest-job-retry`,
   `ingest-job-cancel`, and `ingest-job-delete`.
 - Server and CLI tests cover list/get/retry/cancel/delete flows plus empty
   ingestion behavior.
+- Engine tests cover durable save/load/list, retry/cancel/delete validation, and
+  restart requeue for interrupted jobs.
 - `docs/INGESTION.md` clarifies PDF/OCR/document ingestion alpha limits.
 - `scripts/beta_rc_check.py` gates ingestion job lifecycle evidence across the
   workspace.
@@ -511,7 +514,9 @@ Tasks:
    - retry;
    - cancel;
    - failure reason;
-   - empty input behavior.
+   - empty input behavior;
+   - atomic persistence;
+   - restart requeue.
 2. Clarify alpha limitations for PDF/OCR/document ingestion.
 3. Add server and CLI tests for ingestion job flows.
 

@@ -80,7 +80,7 @@ fn ingestion_job_commands_cover_list_get_retry_cancel_and_delete() {
         "7".to_owned(),
     ])
     .unwrap();
-    assert!(get_output.contains("job_id=7 status=running"));
+    assert!(get_output.contains("job_id=7 status=queued"));
 
     let retry_output = run(vec![
         "cortexdb".to_owned(),

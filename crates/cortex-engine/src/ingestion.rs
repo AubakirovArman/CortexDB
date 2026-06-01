@@ -5,6 +5,7 @@ use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 
 mod adapters;
+mod jobs;
 mod pdf;
 mod progress;
 

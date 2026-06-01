@@ -165,7 +165,9 @@ cortexdb ingest-job-delete ./db 1
 
 These commands expose the same persisted local job records as the HTTP
 `/v1/ingest/jobs` routes. They are for local operator review and recovery, not a
-distributed background-job system.
+distributed background-job system. Job files are written atomically; if the
+database restarts with a job still marked `running`, it is shown as `queued` so
+an operator can retry, cancel, or delete the record explicitly.
 
 ### Search
 

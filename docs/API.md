@@ -349,7 +349,8 @@ Ingests a structured CSV table creating one document block cell per row.
     "chunks_ingested": 0,
     "facts_ingested": 0,
     "rows_ingested": 150,
-    "first_cell_id": 2000
+    "first_cell_id": 2000,
+    "job_id": 1
   }
   ```
 
@@ -367,8 +368,11 @@ Persisted ingestion jobs expose local progress and recovery operations:
 | `POST /v1/ingest/jobs/<job_id>/cancel` | Cancel a queued or running job. |
 | `DELETE /v1/ingest/jobs/<job_id>` | Delete a persisted job record. |
 
-Job records include `status`, `total_items`, `completed_items`,
-`failed_items`, `last_cell_id`, `message`, `retry_count`, and `max_retries`.
+Job records are written atomically and include `status`, `total_items`,
+`completed_items`, `failed_items`, `last_cell_id`, `message`, `retry_count`,
+and `max_retries`. If CortexDB restarts while a local ingestion job is marked
+`running`, `Database::open` requeues it as `queued` with a recovery message so
+operators can retry or delete it instead of leaving a stale in-flight status.
 
 ---
 

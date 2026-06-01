@@ -44,6 +44,8 @@ fn ingestion_jobs_list_and_get() {
     let get_response = handle_http(dir.path(), get_request);
     assert!(get_response.contains(r#""job_id":1"#));
     assert!(get_response.contains("ingest_csv"));
+    assert!(get_response.contains(r#""completed_items":2"#));
+    assert!(get_response.contains(r#""last_cell_id":10002"#));
 
     let missing_request = "GET /v1/ingest/jobs/999 HTTP/1.1\r\n\r\n";
     let missing_response = handle_http(dir.path(), missing_request);

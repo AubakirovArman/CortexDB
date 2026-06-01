@@ -1,7 +1,7 @@
 use cortex_aql::AgentId;
 use cortex_core::CellId;
 use cortex_engine::ClusterConfig;
-use cortex_engine::{Database, IngestionJobId, IngestionProgressTracker};
+use cortex_engine::{Database, IngestedCell, IngestionJobId, IngestionProgressTracker};
 
 use crate::aql;
 use crate::authz;
@@ -549,29 +549,42 @@ pub fn json_error(status: u16, code: ErrorCode, message: &str) -> String {
     json_response(status, &body)
 }
 
-fn track_ingest<T>(
+fn track_ingest(
     db: &mut Database,
     label: &str,
     total_items: Option<u64>,
-    ingest: impl FnOnce(&mut Database) -> Result<T, cortex_engine::error::EngineError>,
-) -> Result<(IngestionJobId, T), RouterError> {
+    ingest: impl FnOnce(&mut Database) -> Result<Vec<IngestedCell>, cortex_engine::error::EngineError>,
+) -> Result<(IngestionJobId, Vec<IngestedCell>), RouterError> {
     let mut tracker = IngestionProgressTracker::default();
     tracker.seed_next_id_from_disk(db);
     let job_id = tracker
         .start(label, total_items)
         .map_err(|e| RouterError::Internal(e.to_string()))?;
-    let _ = db.save_ingestion_job(tracker.get(job_id).unwrap());
+    let progress = tracker
+        .get(job_id)
+        .ok_or_else(|| RouterError::Internal("ingestion job disappeared".to_owned()))?;
+    db.save_ingestion_job(progress)?;
     match ingest(db) {
         Ok(result) => {
+            for cell in &result {
+                tracker
+                    .record_cell(job_id, cell.cell_id)
+                    .map_err(|e| RouterError::Internal(e.to_string()))?;
+            }
             tracker
                 .finish(job_id)
                 .map_err(|e| RouterError::Internal(e.to_string()))?;
-            let _ = db.save_ingestion_job(tracker.get(job_id).unwrap());
+            let progress = tracker
+                .get(job_id)
+                .ok_or_else(|| RouterError::Internal("ingestion job disappeared".to_owned()))?;
+            db.save_ingestion_job(progress)?;
             Ok((job_id, result))
         }
         Err(error) => {
             let _ = tracker.fail(job_id, error.to_string());
-            let _ = db.save_ingestion_job(tracker.get(job_id).unwrap());
+            if let Some(progress) = tracker.get(job_id) {
+                let _ = db.save_ingestion_job(progress);
+            }
             Err(error.into())
         }
     }

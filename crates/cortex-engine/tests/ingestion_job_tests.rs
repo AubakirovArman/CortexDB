@@ -85,6 +85,62 @@ fn ingestion_job_list_roundtrip() {
 }
 
 #[test]
+fn ingestion_job_running_requeues_after_database_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let db = Database::open(dir.path()).unwrap();
+        let progress = IngestionProgress {
+            job_id: cortex_engine::IngestionJobId(12),
+            label: "interrupted".to_owned(),
+            status: IngestionJobStatus::Running,
+            total_items: Some(10),
+            completed_items: 4,
+            failed_items: 0,
+            last_cell_id: Some(cortex_core::CellId(44)),
+            message: None,
+            retry_count: 0,
+            max_retries: 3,
+        };
+        db.save_ingestion_job(&progress).unwrap();
+    }
+
+    let db = Database::open(dir.path()).unwrap();
+    let loaded = db.load_ingestion_job(12).unwrap().unwrap();
+    assert_eq!(loaded.status, IngestionJobStatus::Queued);
+    assert_eq!(loaded.completed_items, 4);
+    assert_eq!(loaded.last_cell_id, Some(cortex_core::CellId(44)));
+    assert!(loaded
+        .message
+        .as_deref()
+        .unwrap_or_default()
+        .contains("resumed after database restart"));
+}
+
+#[test]
+fn resume_interrupted_ingestion_jobs_returns_requeued_jobs() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = Database::open(dir.path()).unwrap();
+    let progress = IngestionProgress {
+        job_id: cortex_engine::IngestionJobId(13),
+        label: "manual-resume".to_owned(),
+        status: IngestionJobStatus::Running,
+        total_items: Some(1),
+        completed_items: 0,
+        failed_items: 0,
+        last_cell_id: None,
+        message: None,
+        retry_count: 0,
+        max_retries: 3,
+    };
+    db.save_ingestion_job(&progress).unwrap();
+
+    let resumed = db.resume_interrupted_ingestion_jobs().unwrap();
+    assert_eq!(resumed.len(), 1);
+    assert_eq!(resumed[0].job_id.0, 13);
+    assert_eq!(resumed[0].status, IngestionJobStatus::Queued);
+}
+
+#[test]
 fn ingestion_progress_tracker_lifecycle() {
     let mut tracker = IngestionProgressTracker::default();
 
