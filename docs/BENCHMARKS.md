@@ -461,19 +461,24 @@ For the beta gate, the same command also writes a multi-domain fixture report:
 
 ```text
 target/retrieval-quality/beta-report.json
+target/retrieval-quality/dashboard.html
 ```
 
-That beta report covers two checked-in real-domain corpora:
+That beta report covers four checked-in real-domain corpora:
 
 ```text
 examples/real_domains/investment_projects/
+examples/real_domains/legal_policies/
 examples/real_domains/support_tickets/
+examples/real_domains/technical_docs/
 ```
 
 It repeats a deterministic local retrieval probe five times per domain and
-records `production_safe=true` only when both domains validate, produce positive
+records `production_safe=true` only when all domains validate, produce positive
 recall, and show no local regression. Endpoint-backed real-embedding history is
 still tracked separately under `target/ann/real-embedding/runs/history.json`.
+The generated HTML dashboard renders per-domain recall, MRR, nDCG, p95 latency,
+exact parity, and regression counts for release review.
 
 The report separates the search modes that matter for beta review:
 

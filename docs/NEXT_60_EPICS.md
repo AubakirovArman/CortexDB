@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 14 |
-| partial | 38 |
+| closed | 15 |
+| partial | 37 |
 | not started | 6 |
 | research | 2 |
 | total | 60 |
@@ -63,7 +63,7 @@ The plan recommends this first execution batch:
 | 19 | Contradiction Index v1 | not started | Verification detects conflicts dynamically. | Add persisted contradiction relation cells and conflict index. |
 | 20 | Verification Report Export | partial | Typed JSON reports and numeric conflicts exist. | Add stable Markdown/audit export from CLI/server. |
 | 21 | Real-domain Corpus Expansion | closed | `make retrieval-quality-check` now validates investment projects, support tickets, legal policies, and technical docs corpora with ground truth. | Add larger public/private corpora later as separate quality expansions. |
-| 22 | Retrieval Quality Dashboard | partial | Retrieval reports and dashboard foundations exist. | Add full dashboard table for recall/MRR/nDCG/p95/exact parity. |
+| 22 | Retrieval Quality Dashboard | closed | `make retrieval-quality-check` now writes `target/retrieval-quality/dashboard.html` with guarded ANN and per-domain recall/MRR/nDCG/p95/exact-parity tables. | Keep the dashboard in the beta evidence bundle and extend it as more domains are added. |
 | 23 | HNSW Production SLO History | partial | ANN guardrails and real-domain report gates exist. | Build sustained 10+ run history and SLO regression tracking. |
 | 24 | Search Explain API | partial | `/v1/search/explain` exists and is in OpenAPI/dashboard. | Add fuller term/vector/fusion contribution details and SDK coverage. |
 | 25 | Query Routing: Lexical vs Vector vs Hybrid | partial | Multiple search modes and hybrid foundations exist. | Add explicit query intent routing and expose selected strategy/reason. |
@@ -118,5 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 22: retrieval quality dashboard report view.
-2. Advance Epic 46: complete binary platform matrix.
+1. Advance Epic 46: complete binary platform matrix.
+2. Advance Epic 47: checksum-verifying install script.

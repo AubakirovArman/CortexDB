@@ -100,6 +100,7 @@ RETRIEVAL_QUALITY_QUERIES ?= examples/real_domains/investment_projects/queries/q
 RETRIEVAL_QUALITY_GROUND_TRUTH ?= examples/real_domains/investment_projects/queries/ground_truth.jsonl
 RETRIEVAL_QUALITY_REPORT ?= target/retrieval-quality/report.json
 RETRIEVAL_BETA_REPORT ?= target/retrieval-quality/beta-report.json
+RETRIEVAL_QUALITY_DASHBOARD ?= target/retrieval-quality/dashboard.html
 RETRIEVAL_QUALITY_MIN_DOCS ?= 50
 RETRIEVAL_QUALITY_MIN_CHUNKS ?= 150
 RETRIEVAL_QUALITY_MIN_QUERIES ?= 40
@@ -326,6 +327,7 @@ retrieval-quality-check:
 	$(MAKE) ann-real-embedding-history-regression-check
 	python3 scripts/retrieval_quality_check.py --source-root "$(RETRIEVAL_QUALITY_SOURCE_ROOT)" --queries "$(RETRIEVAL_QUALITY_QUERIES)" --ground-truth "$(RETRIEVAL_QUALITY_GROUND_TRUTH)" --history "$(ANN_REAL_EMBEDDING_HISTORY_REPORT)" --benchmarks docs/BENCHMARKS.md --output "$(RETRIEVAL_QUALITY_REPORT)" --min-docs $(RETRIEVAL_QUALITY_MIN_DOCS) --min-chunks $(RETRIEVAL_QUALITY_MIN_CHUNKS) --min-queries $(RETRIEVAL_QUALITY_MIN_QUERIES) --min-history-runs $(ANN_REAL_EMBEDDING_MIN_HISTORY_RUNS)
 	python3 scripts/retrieval_beta_report.py --domain-root examples/real_domains --output "$(RETRIEVAL_BETA_REPORT)" --min-domains 4 --repeat-runs 5
+	python3 scripts/retrieval_quality_dashboard.py --report "$(RETRIEVAL_QUALITY_REPORT)" --beta-report "$(RETRIEVAL_BETA_REPORT)" --output "$(RETRIEVAL_QUALITY_DASHBOARD)"
 
 context-pack-quality-check:
 	cargo test -p cortex-engine --test context_pack

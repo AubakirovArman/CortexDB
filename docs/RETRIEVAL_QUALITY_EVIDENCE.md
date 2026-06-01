@@ -13,6 +13,7 @@ Primary artifacts:
 ```text
 target/retrieval-quality/report.json
 target/retrieval-quality/beta-report.json
+target/retrieval-quality/dashboard.html
 target/ann/real-embedding/runs/history.json
 target/ann/real-embedding/investment_projects_readiness_epic25.json
 target/ann/real-embedding/runs/<run-id>/report.json
@@ -44,9 +45,21 @@ domain_count: 4
 domains: investment_projects, legal_policies, support_tickets, technical_docs
 repeat_runs_per_domain: 5
 investment_projects_latest_mean_recall_q16: 62258
+investment_projects_latest_mean_mrr_q16: 49767
+investment_projects_latest_mean_ndcg_q16: 37590
+investment_projects_latest_exact_parity_q16: 65535
 legal_policies_latest_mean_recall_q16: 65535
+legal_policies_latest_mean_mrr_q16: 65535
+legal_policies_latest_mean_ndcg_q16: 65535
+legal_policies_latest_exact_parity_q16: 65535
 support_tickets_latest_mean_recall_q16: 65535
+support_tickets_latest_mean_mrr_q16: 65535
+support_tickets_latest_mean_ndcg_q16: 65535
+support_tickets_latest_exact_parity_q16: 65535
 technical_docs_latest_mean_recall_q16: 65535
+technical_docs_latest_mean_mrr_q16: 65535
+technical_docs_latest_mean_ndcg_q16: 65535
+technical_docs_latest_exact_parity_q16: 65535
 regression_count: 0
 production_safe: true
 ```
@@ -55,11 +68,20 @@ The beta report is saved at:
 
 ```text
 target/retrieval-quality/beta-report.json
+target/retrieval-quality/dashboard.html
 ```
 
 It is a deterministic local fixture gate over checked-in real-domain corpora.
 The endpoint-backed embedding history remains tracked separately under
 `target/ann/real-embedding/runs/history.json`.
+
+The dashboard artifact is a static HTML view for release and operations review.
+It renders:
+
+- guarded ANN history summary;
+- per-domain recall, MRR, nDCG, p95 latency, exact parity, and regression count;
+- investment-project query-level recall, MRR, nDCG, latency, exact parity, and
+  production-safety rows.
 
 ## Boundary
 
@@ -81,6 +103,8 @@ This gate proves:
   group;
 - recall, MRR, nDCG, exact parity, graph shape, latency, and
   `production_safe=true` remain visible in machine-readable reports;
+- recall, MRR, nDCG, p95 latency, and exact parity are visible in the static
+  dashboard report view;
 - lexical, vector, hybrid, and guarded ANN evidence are tracked separately;
 - query-level guarded ANN rows are available for review;
 - the local history has no adjacent regression under the configured latency

@@ -48,6 +48,7 @@ KNOWN_ARTIFACTS = (
     "target/verification-quality/report.json",
     "target/retrieval-quality/report.json",
     "target/retrieval-quality/beta-report.json",
+    "target/retrieval-quality/dashboard.html",
     "target/security/report.json",
     "target/security-hardening/report.json",
     "target/tenant-recovery/report.json",

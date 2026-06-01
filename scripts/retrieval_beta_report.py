@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 import time
@@ -39,6 +40,12 @@ def q16(numerator: int, denominator: int) -> int:
     return min(Q16_ONE, (numerator * Q16_ONE) // denominator)
 
 
+def mean_q16(values: list[int]) -> int:
+    if not values:
+        return Q16_ONE
+    return min(Q16_ONE, sum(values) // len(values))
+
+
 def tokens(text: str) -> set[str]:
     return {
         token
@@ -61,6 +68,32 @@ def query_id(row: dict[str, Any]) -> str:
         if isinstance(value, str) and value.strip():
             return value
     raise ValueError("query row missing query_id/name")
+
+
+def reciprocal_rank_q16(top: list[str], relevant: set[str]) -> int:
+    if not relevant:
+        return Q16_ONE
+    for rank, chunk_id in enumerate(top, start=1):
+        if chunk_id in relevant:
+            return max(1, Q16_ONE // rank)
+    return 0
+
+
+def ndcg_q16(top: list[str], relevant: set[str]) -> int:
+    if not relevant:
+        return Q16_ONE
+    gains = [
+        1.0 / math.log2(rank + 1)
+        for rank, chunk_id in enumerate(top, start=1)
+        if chunk_id in relevant
+    ]
+    ideal_count = min(len(relevant), len(top))
+    if ideal_count == 0:
+        return Q16_ONE
+    ideal = sum(1.0 / math.log2(rank + 1) for rank in range(1, ideal_count + 1))
+    if ideal <= 0.0:
+        return 0
+    return min(Q16_ONE, int((sum(gains) / ideal) * Q16_ONE))
 
 
 def domain_paths(domain: Path) -> dict[str, Path]:
@@ -92,6 +125,8 @@ def retrieve_once(
 ) -> dict[str, Any]:
     query_rows = []
     hits = 0
+    mrr_values: list[int] = []
+    ndcg_values: list[int] = []
     started = time.perf_counter_ns()
     chunk_terms = [
         (str(chunk["chunk_id"]), tokens(str(chunk.get("text", "")))) for chunk in chunks
@@ -107,11 +142,18 @@ def retrieve_once(
         top = [chunk_id for score, chunk_id in scored[:top_k] if score > 0]
         relevant = truth_by_query.get(qid, set())
         hit = bool(relevant.intersection(top))
+        mrr = reciprocal_rank_q16(top, relevant)
+        ndcg = ndcg_q16(top, relevant)
         hits += int(hit)
+        mrr_values.append(mrr)
+        ndcg_values.append(ndcg)
         query_rows.append({
             "query_id": qid,
             "hit": hit,
+            "mrr_q16": mrr,
+            "ndcg_q16": ndcg,
             "top_k": top_k,
+            "top_chunk_ids": top,
             "relevant_chunk_count": len(relevant),
         })
     elapsed = max(1, time.perf_counter_ns() - started)
@@ -119,9 +161,29 @@ def retrieve_once(
         "query_count": len(queries),
         "hit_count": hits,
         "mean_recall_q16": q16(hits, len(queries)),
+        "mean_mrr_q16": mean_q16(mrr_values),
+        "mean_ndcg_q16": mean_q16(ndcg_values),
         "p95_latency_nanos": elapsed // max(1, len(queries)),
         "queries": query_rows,
     }
+
+
+def repeat_exact_parity_q16(runs: list[dict[str, Any]]) -> int:
+    if len(runs) <= 1:
+        return Q16_ONE
+    first = {
+        str(row["query_id"]): list(row.get("top_chunk_ids", []))
+        for row in runs[0].get("queries", [])
+    }
+    comparisons = 0
+    matches = 0
+    for run in runs[1:]:
+        for row in run.get("queries", []):
+            qid = str(row["query_id"])
+            comparisons += 1
+            if first.get(qid) == list(row.get("top_chunk_ids", [])):
+                matches += 1
+    return q16(matches, comparisons)
 
 
 def domain_report(domain: Path, *, repeat_runs: int, top_k: int) -> dict[str, Any]:
@@ -163,7 +225,10 @@ def domain_report(domain: Path, *, repeat_runs: int, top_k: int) -> dict[str, An
         "ground_truth": len(truth_rows),
         "run_count": len(runs),
         "latest_mean_recall_q16": latest.get("mean_recall_q16", 0),
+        "latest_mean_mrr_q16": latest.get("mean_mrr_q16", 0),
+        "latest_mean_ndcg_q16": latest.get("mean_ndcg_q16", 0),
         "latest_p95_latency_nanos": latest.get("p95_latency_nanos", 0),
+        "latest_exact_parity_q16": repeat_exact_parity_q16(runs),
         "regression_count": len(regressions),
         "regressions": regressions,
         "failures": failures,
