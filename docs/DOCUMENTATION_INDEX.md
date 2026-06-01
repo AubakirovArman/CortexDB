@@ -21,6 +21,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`PRODUCTION_V1_EVIDENCE.md`](PRODUCTION_V1_EVIDENCE.md) - local Epic 6 evidence gate.
 - [`PUBLIC_CLAIMS_FREEZE.md`](PUBLIC_CLAIMS_FREEZE.md) - public wording freeze for local single-node claims.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - ordered epic queue and closing rules.
+- [`NEXT_60_EPICS.md`](NEXT_60_EPICS.md) - normalized next-stage backlog extracted from the latest external `pl.md`.
 - [`FUTURE_NON_GOAL_EPICS.md`](FUTURE_NON_GOAL_EPICS.md) - future epics extracted from current non-goals.
 - [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md) - current cycle plan.
 - [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md) - wording boundaries.
@@ -163,6 +164,7 @@ backlogs, snapshots, or deeper planning notes.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product backlog.
 - [`FUTURE_NON_GOAL_EPICS.md`](FUTURE_NON_GOAL_EPICS.md) - future non-goal epics and promotion gates.
 - [`EPIC_EXECUTION_ORDER.md`](EPIC_EXECUTION_ORDER.md) - active ordered epic queue.
+- [`NEXT_60_EPICS.md`](NEXT_60_EPICS.md) - normalized next-stage backlog extracted from the latest external `pl.md`.
 - [`PL_IMPLEMENTATION_TASKS.md`](PL_IMPLEMENTATION_TASKS.md) - normalized action list from the external `pl.md` audit.
 - [`PL_EXTRACTED_EPICS.md`](PL_EXTRACTED_EPICS.md) - full epic/task extraction from the external `pl.md` audit.
 - [`PL_NEXT_DEVELOPMENT_PLAN.md`](PL_NEXT_DEVELOPMENT_PLAN.md) - normalized next-stage plan from the latest external `pl.md` audit.
