@@ -94,6 +94,26 @@ The release notes for this target are maintained in
 Do not treat a GitHub release as current Core Alpha evidence unless those assets
 are present and the notes preserve the explicit non-production limits.
 
+Publication audit:
+
+```text
+release_url=https://github.com/AubakirovArman/CortexDB/releases/tag/v0.1.0-core-alpha.5
+tag=v0.1.0-core-alpha.5
+commit=3b717992e84f5917316c158fcae401c1fe13e067
+draft=false
+prerelease=true
+assets=5/5 required assets present
+```
+
+Archive SHA-256 values:
+
+| Asset | SHA-256 |
+| --- | --- |
+| `cortexdb-v0.1.0-core-alpha.5-linux-x86_64.tar.gz` | `1b1d3522c0ec35dddcc37f3f4552b231057add9e68b4e327f13314fd48b5cf39` |
+| `dashboard-v1.tar.gz` | `6599d3c145d5d977275a240cf98926b3154968cb2a7f7b78ebc2092d964624b1` |
+| `v0.1.0-core-alpha.5-ann-smoke.tar.gz` | `6e3221e5aa5d7cfc9e6e8ad118d9bc7abeeee652f76e23cfeca690875bc3aa80` |
+| `v0.1.0-core-alpha.5-ann-demo-domain.tar.gz` | `e230864ac25f71b5a113d152eac492e2c6b1e04ee44a15cf1414d533b6399b04` |
+
 ## Important Boundary
 
 `target/ann/real-embedding/readiness.json` was generated during the production

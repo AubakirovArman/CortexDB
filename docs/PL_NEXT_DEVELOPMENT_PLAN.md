@@ -88,6 +88,24 @@ Risks:
 
 ### Epic 1.2 - Public Release Tag And Artifact Audit
 
+Status: closed on 2026-06-01 with the public prerelease
+`v0.1.0-core-alpha.5`.
+
+Evidence:
+
+- Local tag and GitHub tag exist for `v0.1.0-core-alpha.5`.
+- GitHub Release is public prerelease, not draft:
+  <https://github.com/AubakirovArman/CortexDB/releases/tag/v0.1.0-core-alpha.5>.
+- Required assets are present:
+  - `cortexdb-v0.1.0-core-alpha.5-linux-x86_64.tar.gz`;
+  - `cortexdb-v0.1.0-core-alpha.5-linux-x86_64.tar.gz.sha256`;
+  - `dashboard-v1.tar.gz`;
+  - `v0.1.0-core-alpha.5-ann-smoke.tar.gz`;
+  - `v0.1.0-core-alpha.5-ann-demo-domain.tar.gz`.
+- Release notes preserve Core Alpha limits and do not claim production
+  distributed consensus, production HNSW, managed cloud readiness, or
+  legal-grade verification.
+
 Tasks:
 
 1. Confirm whether `v0.1.0-core-alpha` exists locally and on GitHub.
