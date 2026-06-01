@@ -155,6 +155,8 @@ Security-sensitive test areas include:
 10. Review replication and dashboard paths before claiming beta readiness.
 
 The release-facing checklist is maintained in
-[`SECURITY_RELEASE_CHECKLIST.md`](SECURITY_RELEASE_CHECKLIST.md), and the latest
-local hardening evidence is summarized in
+[`SECURITY_RELEASE_CHECKLIST.md`](SECURITY_RELEASE_CHECKLIST.md). Production
+candidate security claim boundaries are recorded in
+[`SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md`](SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md),
+and the latest local hardening evidence is summarized in
 [`SECURITY_HARDENING_EVIDENCE.md`](SECURITY_HARDENING_EVIDENCE.md).

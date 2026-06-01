@@ -29,6 +29,7 @@ target/security-hardening/report.json
 | Log redaction tests | Audit JSONL records contain route metadata, not query strings or request bodies. |
 | Security release checklist | `SECURITY_RELEASE_CHECKLIST.md` lists required local checks and non-goals. |
 | Beta security baseline | `SECURITY_BETA_BASELINE.md` separates implemented controls from RBAC, quota, audit-chain, encrypted-backup, and dashboard hardening work. |
+| Production-candidate decisions | `SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md` records release-blocking decisions for RBAC, quotas, audit-chain, encrypted backups, and remote object-store backups. |
 
 ## Boundary
 
@@ -51,4 +52,5 @@ dashboard_auth_hardening: true
 malicious_ingestion_tests: true
 security_release_checklist: true
 security_beta_baseline: true
+production_candidate_decisions: true
 ```

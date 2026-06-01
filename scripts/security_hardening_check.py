@@ -58,6 +58,13 @@ REQUIRED_MARKERS = {
         ("docs/SECURITY_RELEASE_CHECKLIST.md", "Required Local Gates"),
         ("docs/SECURITY_RELEASE_CHECKLIST.md", "Explicit Non-Goals For Core Alpha"),
     ],
+    "production_candidate_decisions": [
+        ("docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md", "Decision Matrix"),
+        ("docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md", "Release-blocking rule"),
+        ("docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md", "enterprise RBAC"),
+        ("docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md", "built-in encrypted backups"),
+        ("docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md", "remote object-store backups"),
+    ],
 }
 
 

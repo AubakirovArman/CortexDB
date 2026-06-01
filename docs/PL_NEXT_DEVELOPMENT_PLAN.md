@@ -717,6 +717,18 @@ Acceptance:
 
 ### Epic 4.5 - Security Production-Candidate Controls
 
+Status: closed on 2026-06-01.
+
+Evidence:
+
+- Added `docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md`, a release-facing
+  decision register for dynamic RBAC, per-token quotas, tamper-evident audit,
+  encrypted backups, and remote object-store backups.
+- `make security-hardening-check` now verifies that the production-candidate
+  decision register is present and contains release-blocking boundaries.
+- `docs/SECURITY_THREAT_MODEL.md`, `docs/SECURITY_RELEASE_CHECKLIST.md`, and
+  `docs/SECURITY_HARDENING_EVIDENCE.md` point to the decision register.
+
 Tasks:
 
 1. Decide implementation boundary for:
