@@ -94,7 +94,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux-x86_64
+          - os: ubuntu-24.04-arm
+            platform: linux-aarch64
+          - os: macos-latest
+            platform: macos-arm64
+          - os: macos-13
+            platform: macos-x86_64
     steps:
       - uses: actions/checkout@v5
         with:
@@ -108,9 +116,7 @@ jobs:
         run: |
           tag="${GITHUB_REF_NAME}"
           safe_tag="$(printf '%s' "$tag" | tr -c 'A-Za-z0-9._-' '-')"
-          os_name="$(uname -s | tr '[:upper:]' '[:lower:]')"
-          if [ "$os_name" = "darwin" ]; then os_name="macos"; fi
-          platform="${os_name}-$(uname -m)"
+          platform="${{ matrix.platform }}"
           package_id="cortexdb-${safe_tag}-${platform}"
           archive="target/release-artifacts/${package_id}.tar.gz"
           echo "RELEASE_TAG=$tag" >> "$GITHUB_ENV"
@@ -130,7 +136,7 @@ jobs:
       - name: Upload workflow artifact copy
         uses: actions/upload-artifact@v7
         with:
-          name: cortexdb-binaries-${{ matrix.os }}
+          name: cortexdb-binaries-${{ matrix.platform }}
           path: |
             target/release-artifacts/*.tar.gz
             target/release-artifacts/*.sha256

@@ -70,6 +70,7 @@ GitHub release packaging may publish platform-specific names such as:
 
 ```text
 cortexdb-linux-x86_64.tar.gz
+cortexdb-linux-aarch64.tar.gz
 cortexdb-macos-arm64.tar.gz
 cortexdb-macos-x86_64.tar.gz
 ```
@@ -129,4 +130,3 @@ This beta does not claim:
 6. Inspect `target/beta-release/report.json`.
 7. Attach `target/beta-release/evidence.tar.gz` to the GitHub release.
 8. Tag only after the report status is `passed`.
-

@@ -12,9 +12,20 @@ Status: Production v1.0 local single-node platform boundary.
 | `macos-x86_64` | `cortexdb-<version>-macos-x86_64.tar.gz` | supported when built by release workflow | Same tarball contract. |
 | Windows | none | unsupported | Windows is unsupported until native path, service, and CI gates exist. |
 
-The release workflow currently builds Linux and macOS artifacts from tag pushes.
+The release workflow builds Linux and macOS artifacts from tag pushes with an
+explicit platform matrix:
+
+```text
+ubuntu-latest -> linux-x86_64
+ubuntu-24.04-arm -> linux-aarch64
+macos-latest -> macos-arm64
+macos-13 -> macos-x86_64
+```
+
 Each archive must contain `bin/cortexdb`, `bin/cortex-server`,
-`package_manifest.json`, `SHA256SUMS`, and install notes.
+`package_manifest.json`, `SHA256SUMS`, and install notes. The workflow passes
+the expected platform string into `make binary-release-check`; archive naming is
+not inferred from `uname`.
 
 ## Clean Install Smoke
 

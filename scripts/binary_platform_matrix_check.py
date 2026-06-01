@@ -19,7 +19,9 @@ from typing import Any
 DOC_MARKERS = {
     "docs/BINARY_PLATFORM_MATRIX.md": [
         "linux-x86_64",
+        "linux-aarch64",
         "macos-arm64",
+        "macos-x86_64",
         "Windows is unsupported",
         "Clean Install Smoke",
         "launchd",
@@ -31,7 +33,9 @@ DOC_MARKERS = {
     ],
     "docs/INSTALL.md": [
         "cortexdb-<version>-linux-x86_64.tar.gz",
+        "cortexdb-<version>-linux-aarch64.tar.gz",
         "cortexdb-<version>-macos-arm64.tar.gz",
+        "cortexdb-<version>-macos-x86_64.tar.gz",
         "Binary platform matrix",
     ],
     "docs/deployment/com.cortexdb.server.plist": [
@@ -58,7 +62,19 @@ def require_markers(repo: Path) -> list[str]:
             if marker not in text:
                 failures.append(f"{relative}: missing {marker!r}")
     workflow = read(repo / ".github/workflows/release.yml")
-    for marker in ("ubuntu-latest", "macos-latest", "make binary-release-check", "gh release upload"):
+    for marker in (
+        "ubuntu-latest",
+        "ubuntu-24.04-arm",
+        "macos-latest",
+        "macos-13",
+        "platform: linux-x86_64",
+        "platform: linux-aarch64",
+        "platform: macos-arm64",
+        "platform: macos-x86_64",
+        "BINARY_RELEASE_PLATFORM=\"$platform\"",
+        "make binary-release-check",
+        "gh release upload",
+    ):
         if marker not in workflow:
             failures.append(f".github/workflows/release.yml: missing {marker!r}")
     return failures
@@ -186,6 +202,11 @@ def main(argv: list[str]) -> int:
         "platforms": {
             "supported": ["linux-x86_64", "linux-aarch64", "macos-arm64", "macos-x86_64"],
             "unsupported": ["windows"],
+        },
+        "release_workflow": {
+            "path": ".github/workflows/release.yml",
+            "platforms": ["linux-x86_64", "linux-aarch64", "macos-arm64", "macos-x86_64"],
+            "upload": "gh release upload",
         },
         "clean_install_smoke": smoke,
         "failures": failures,

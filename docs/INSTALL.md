@@ -12,7 +12,9 @@ Download the platform archive from the GitHub release:
 
 ```text
 cortexdb-<version>-linux-x86_64.tar.gz
+cortexdb-<version>-linux-aarch64.tar.gz
 cortexdb-<version>-macos-arm64.tar.gz
+cortexdb-<version>-macos-x86_64.tar.gz
 ```
 
 Verify the archive checksum:

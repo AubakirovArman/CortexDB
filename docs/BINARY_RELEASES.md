@@ -81,6 +81,19 @@ cortexdb stats ./db
 pushes. The workflow validates each tarball before uploading it to the GitHub
 Release and also uploads workflow artifact copies.
 
+The release matrix is explicit:
+
+```text
+linux-x86_64
+linux-aarch64
+macos-arm64
+macos-x86_64
+```
+
+Local `make binary-release-check` still validates the archive for the current
+machine; the GitHub release workflow is responsible for producing the full
+platform set.
+
 ## Binary Platform Matrix
 
 The supported local single-node matrix is documented in
