@@ -99,6 +99,18 @@ accuracy: 0.2051
 empty hypotheses: 0
 ```
 
+Compare the latest thinking-disabled flash run against the previous
+implicit-thinking flash run:
+
+```bash
+make longmemeval-v1-deepseek-flash-diff
+```
+
+Current diff summary: `10` questions became correct only in the
+thinking-disabled run, while `13` were correct only in the previous implicit
+run. The thinking-disabled run removed empty hypotheses (`4 -> 0`) and reduced
+completion tokens (`48,555 -> 8,955`).
+
 ## Current Boundary
 
 - CortexDB owns the retrieval log generation.

@@ -2,7 +2,7 @@
 .PHONY: encrypted-backup-check
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
-.PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check
+.PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check longmemeval-v1-deepseek-flash-diff
 .PHONY: operations-runbook-check
 .PHONY: service-manager-smoke-check
 .PHONY: beta-landing-check
@@ -278,6 +278,8 @@ LONGMEMEVAL_V1_DEEPSEEK_ROOT ?= target/longmemeval-v1/targeted-deepseek-flash-th
 LONGMEMEVAL_V1_DEEPSEEK_MODEL ?= deepseek-v4-flash
 LONGMEMEVAL_V1_DEEPSEEK_GENERATION_THINKING ?= disabled
 LONGMEMEVAL_V1_DEEPSEEK_JUDGE_THINKING ?= disabled
+LONGMEMEVAL_V1_DEEPSEEK_FLASH_IMPLICIT_ROOT ?= target/longmemeval-v1/targeted-deepseek-flash
+LONGMEMEVAL_V1_DEEPSEEK_FLASH_DIFF_ROOT ?= target/longmemeval-v1/deepseek-flash-diff
 DEEPSEEK_KEY_FILE ?= /mnt/hf_model_weights/arman/3bit/.deepseek
 SINGLE_NODE_PERF_ROOT ?= target/single-node-performance
 SINGLE_NODE_PERF_REPORT ?= $(SINGLE_NODE_PERF_ROOT)/report.json
@@ -756,6 +758,13 @@ longmemeval-v1-deepseek-flash-falsecase-check:
 	  --model "$(LONGMEMEVAL_V1_DEEPSEEK_MODEL)" \
 	  --generation-thinking "$(LONGMEMEVAL_V1_DEEPSEEK_GENERATION_THINKING)" \
 	  --judge-thinking "$(LONGMEMEVAL_V1_DEEPSEEK_JUDGE_THINKING)"
+
+longmemeval-v1-deepseek-flash-diff:
+	python3 scripts/longmemeval/compare_deepseek_flash_runs.py \
+	  --old-root "$(LONGMEMEVAL_V1_DEEPSEEK_FLASH_IMPLICIT_ROOT)" \
+	  --new-root "$(LONGMEMEVAL_V1_DEEPSEEK_ROOT)" \
+	  --reference-file "$(LONGMEMEVAL_V1_FALSECASE_ROOT)/false_cases_reference.json" \
+	  --output-root "$(LONGMEMEVAL_V1_DEEPSEEK_FLASH_DIFF_ROOT)"
 
 single-node-performance-check:
 	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)"

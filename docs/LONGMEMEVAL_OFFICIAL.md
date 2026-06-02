@@ -239,6 +239,37 @@ empty hypotheses: 4
 completion tokens: 48,555
 ```
 
+Flash-only diff between the previous implicit-thinking run and the
+thinking-disabled run:
+
+```bash
+make longmemeval-v1-deepseek-flash-diff
+```
+
+```text
+both correct: 14
+both wrong: 80
+new-only correct: 10
+old-only correct: 13
+old empty hypotheses: 4
+new empty hypotheses: 0
+old completion tokens: 48,555
+new completion tokens: 8,955
+```
+
+The thinking-disabled run is cleaner operationally because it produces no empty
+hypotheses and uses far fewer completion tokens. It also improves several
+knowledge-update cases, but it regresses more temporal-reasoning cases:
+
+| Type | Count | Both correct | Both wrong | New only | Old only |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `knowledge-update` | `11` | `2` | `6` | `3` | `0` |
+| `multi-session` | `48` | `8` | `32` | `3` | `5` |
+| `single-session-assistant` | `3` | `0` | `3` | `0` | `0` |
+| `single-session-preference` | `22` | `0` | `22` | `0` | `0` |
+| `single-session-user` | `1` | `0` | `0` | `1` | `0` |
+| `temporal-reasoning` | `32` | `4` | `17` | `3` | `8` |
+
 This is useful for iteration, but it is not an official LongMemEval result:
 generation and judging both use DeepSeek flash instead of the official GPT-4o
 judge.
