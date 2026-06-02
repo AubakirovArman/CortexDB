@@ -1,7 +1,7 @@
 # Current Epics Extracted From `pl.md`
 
 Source: `/mnt/hf_model_weights/arman/3bit/sites/pl.md`
-Reviewed: 2026-06-01
+Reviewed: 2026-06-02
 
 This file is the current epic extraction from the external `pl.md` audit plan.
 It intentionally separates current local evidence from future/general
@@ -21,8 +21,8 @@ Total current epics extracted from `pl.md`: 18.
 
 Current local completion:
 
-- `done-local`: 18 / 18
-- `partial`: 0 / 18
+- `done-local`: 17 / 18
+- `partial`: 1 / 18
 - `future`: 0 / 18 current epics, with explicit future/non-goals listed below
 
 | # | Epic | Status | Main evidence / gate |
@@ -34,7 +34,7 @@ Current local completion:
 | 5 | Real-domain Embedding History / Retrieval Quality | done-local | `target/retrieval-quality/report.json`, `target/ann/real-embedding/runs/*/report.json` |
 | 6 | Release Evidence Bundle | done-local | `target/production-evidence/report.json`, release-check output |
 | 7 | Error Taxonomy And API Snapshot Evidence | done-local | `make openapi-contract-check`, server/API snapshot tests |
-| 8 | Storage Compatibility And Soak History | done-local | `target/storage-compat/report.json`, `target/storage-soak/report.json` |
+| 8 | Storage Compatibility And Soak History | partial | `target/storage-compat/report.json`, `target/storage-soak/report.json`, `target/storage-soak-history/report.json` |
 | 9 | Core Engine API Stability | done-local | `target/engine-api/report.json` |
 | 10 | AQL Compatibility Pack | done-local | `target/aql-compat/report.json` |
 | 11 | HTTP Server Contract And Operations | done-local | `target/http-contract-ops/report.json` |
@@ -223,10 +223,13 @@ Acceptance:
 
 Current status:
 
-- `done-local`.
+- `partial`.
 - Evidence: `target/storage-compat/report.json`,
-  `target/storage-soak/report.json`, backup reports, crash/fault reports, and
-  migration compatibility reports.
+  `target/storage-soak/report.json`, `target/storage-soak-history/report.json`,
+  backup reports, crash/fault reports, and migration compatibility reports.
+- Remaining closure: keep the 24-hour campaign running until
+  `target/storage-soak-history/report.json` reports
+  `twenty_four_hour_evidence.met=true`.
 
 ### Epic 9 - Core Engine API Stability
 
