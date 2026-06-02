@@ -17,7 +17,7 @@ every required row is green on `main`.
 | Storage safety | WAL, segment, bitmap, lexical, and manifest corruption tests pass. |
 | Lifecycle safety | open, close, Drop, lock, and stale unlock tests pass. |
 | Repair safety | `Database::repair_best_effort` removes orphan temps and truncates only safe WAL tails. |
-| Production evidence sweep | `make production-evidence-sweep` writes `target/production-evidence/report.json` and per-step logs for OpenAPI contract, backup drill, single-node performance, tenant recovery, ANN release evidence, real-embedding readiness, and replication partition checks. |
+| Production evidence sweep | `make production-evidence-sweep` writes `target/production-evidence/report.json` and per-step logs for OpenAPI contract, backup drill, single-node performance, tenant recovery, ANN release evidence, ANN 10-run production SLO history, real-embedding readiness, and replication partition checks. |
 | Backup drill evidence | `make backup-drill-check` writes `target/backup-drill/report.json` after backup, restore, prune, validate, and readback checks. |
 | Offsite backup staging | `make backup-offsite-check` writes `target/backup-offsite/report.json` after local drill, validated offsite staging, staged validation, and readback checks. |
 | Single-node performance matrix | `make single-node-performance-check` writes `target/single-node-performance/report.json` with Strict and Balanced local engine lifecycle timings. |

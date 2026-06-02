@@ -14,7 +14,7 @@
 .PHONY: knowledge-graph-check
 .PHONY: distributed-consensus-research-check
 .PHONY: managed-cloud-feasibility-check
-.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check sdk-release-artifacts-check sdk-registry-gate-check sdk-productization-check openapi-check openapi-contract-check sdk-contract-check sdk-e2e-release-check migration-policy-check migration-compatibility-check storage-compat-check engine-api-check aql-compat-check retrieval-quality-check context-pack-quality-check verification-quality-check security-check rbac-policy-store-check quota-policy-check audit-chain-check security-hardening-check compliance-boundary-check observability-check deployment-upgrade-check http-contract-ops-check cli-product-check future-epic-design-check distributed-consensus-design-check managed-cloud-design-check enterprise-rbac-design-check hnsw-no-fallback-design-check llm-inference-design-check external-identity-design-check legal-verification-design-check distributed-consensus-check consensus-partition-soak-check consensus-failover-slo-check consensus-rejoin-check cloud-tenant-lifecycle-check cloud-backup-restore-check cloud-upgrade-check ann-production-no-fallback-check ann-real-domain-history-check ann-public-corpus-history-check ann-graph-freshness-check llm-inference-contract-check llm-inference-safety-check llm-inference-smoke-check secrets-check oidc-auth-contract-check identity-policy-mapping-check auth-rotation-check legal-verification-dataset-check legal-verification-quality-check legal-citation-policy-check binary-release-package binary-release-validate binary-platform-matrix-check install-script-check binary-release-check beta-delta-check beta-foundation-check beta-rc-check beta-release-check production-hardening-check production-candidate-check production-v1-check public-claims-check load-smoke-check single-node-performance-check performance-trend-check tenant-recovery-check context-verify-quality-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-product-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-recall-probe-check ann-recall-probe-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-readiness ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-real-embedding-release-check ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-history-fixture-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check crash-fault-check chaos-restart-check storage-soak-check storage-soak-history-check replication-partition-check replication-lifecycle-check production-evidence-sweep smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
+.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check sdk-release-artifacts-check sdk-registry-gate-check sdk-productization-check openapi-check openapi-contract-check sdk-contract-check sdk-e2e-release-check migration-policy-check migration-compatibility-check storage-compat-check engine-api-check aql-compat-check retrieval-quality-check context-pack-quality-check verification-quality-check security-check rbac-policy-store-check quota-policy-check audit-chain-check security-hardening-check compliance-boundary-check observability-check deployment-upgrade-check http-contract-ops-check cli-product-check future-epic-design-check distributed-consensus-design-check managed-cloud-design-check enterprise-rbac-design-check hnsw-no-fallback-design-check llm-inference-design-check external-identity-design-check legal-verification-design-check distributed-consensus-check consensus-partition-soak-check consensus-failover-slo-check consensus-rejoin-check cloud-tenant-lifecycle-check cloud-backup-restore-check cloud-upgrade-check ann-production-no-fallback-check ann-production-slo-history-check ann-real-domain-history-check ann-public-corpus-history-check ann-graph-freshness-check llm-inference-contract-check llm-inference-safety-check llm-inference-smoke-check secrets-check oidc-auth-contract-check identity-policy-mapping-check auth-rotation-check legal-verification-dataset-check legal-verification-quality-check legal-citation-policy-check binary-release-package binary-release-validate binary-platform-matrix-check install-script-check binary-release-check beta-delta-check beta-foundation-check beta-rc-check beta-release-check production-hardening-check production-candidate-check production-v1-check public-claims-check load-smoke-check single-node-performance-check performance-trend-check tenant-recovery-check context-verify-quality-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-product-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-recall-probe-check ann-recall-probe-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-readiness ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-real-embedding-release-check ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-history-fixture-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check crash-fault-check chaos-restart-check storage-soak-check storage-soak-history-check replication-partition-check replication-lifecycle-check production-evidence-sweep smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -35,6 +35,12 @@ ANN_DOMAIN_GROUND_TRUTH ?= crates/cortex-engine/fixtures/ann_domain_ground_truth
 ANN_DOMAIN_REPORT ?= target/ann/ann_domain_corpus_report.json
 ANN_RECALL_PROBE_REPORT ?= target/ann/ann_recall_probe_report.json
 ANN_RECALL_PROBE_ITERATIONS ?= 3
+ANN_PRODUCTION_SLO_HISTORY_ROOT ?= target/ann/production-slo-history/runs
+ANN_PRODUCTION_SLO_HISTORY_REPORT ?= $(ANN_PRODUCTION_SLO_HISTORY_ROOT)/history.json
+ANN_PRODUCTION_SLO_HISTORY_RUNS ?= 10
+ANN_PRODUCTION_SLO_HISTORY_P95_TOLERANCE_NANOS ?= 100000000
+ANN_PRODUCTION_SLO_HISTORY_P99_TOLERANCE_NANOS ?= 150000000
+ANN_PRODUCTION_SLO_HISTORY_MAX_TOLERANCE_NANOS ?= 200000000
 ANN_DEMO_DOMAIN_SOURCE_ROOT ?= examples/datasets
 ANN_DEMO_DOMAIN_EXTRA_SOURCE_ROOT ?= examples/rag_demo/data
 ANN_DEMO_DOMAIN_OUTPUT_DIR ?= target/ann/demo-domain-corpus/converted
@@ -721,6 +727,32 @@ ann-recall-probe-check:
 ann-recall-probe-report:
 	cargo build --release -p cortex-engine --bin ann_corpus_check
 	python3 scripts/ann/recall_probe.py --runner ./target/release/ann_corpus_check --vectors $(ANN_DOMAIN_VECTORS) --queries $(ANN_DOMAIN_QUERIES) --ground-truth $(ANN_DOMAIN_GROUND_TRUTH) --iterations $(ANN_RECALL_PROBE_ITERATIONS) --output $(ANN_RECALL_PROBE_REPORT)
+
+ann-production-slo-history-check:
+	rm -rf "$(ANN_PRODUCTION_SLO_HISTORY_ROOT)"
+	cargo build --release -p cortex-engine --bin ann_corpus_check
+	@i=1; while [ $$i -le "$(ANN_PRODUCTION_SLO_HISTORY_RUNS)" ]; do \
+	  run_id=$$(printf "slo-%02d" $$i); \
+	  scripts/ann/run_external_corpus.sh \
+	    --vectors "$(ANN_DOMAIN_VECTORS)" \
+	    --queries "$(ANN_DOMAIN_QUERIES)" \
+	    --ground-truth "$(ANN_DOMAIN_GROUND_TRUTH)" \
+	    --metric dot_product \
+	    --output-root "$(ANN_PRODUCTION_SLO_HISTORY_ROOT)" \
+	    --run-id "$$run_id" \
+	    --min-recall-q16 65535 \
+	    --min-mean-recall-q16 65535; \
+	  i=$$((i + 1)); \
+	done
+	python3 scripts/ann/history_gate.py \
+	  --run-root "$(ANN_PRODUCTION_SLO_HISTORY_ROOT)" \
+	  --output "$(ANN_PRODUCTION_SLO_HISTORY_REPORT)" \
+	  --fail-on-regression \
+	  --min-runs "$(ANN_PRODUCTION_SLO_HISTORY_RUNS)" \
+	  --min-corpora 1 \
+	  --max-p95-regression-nanos "$(ANN_PRODUCTION_SLO_HISTORY_P95_TOLERANCE_NANOS)" \
+	  --max-p99-regression-nanos "$(ANN_PRODUCTION_SLO_HISTORY_P99_TOLERANCE_NANOS)" \
+	  --max-max-regression-nanos "$(ANN_PRODUCTION_SLO_HISTORY_MAX_TOLERANCE_NANOS)"
 
 ann-demo-domain-corpus-build:
 	python3 scripts/ann/build_demo_domain_corpus.py --source-root $(ANN_DEMO_DOMAIN_SOURCE_ROOT) --source-root $(ANN_DEMO_DOMAIN_EXTRA_SOURCE_ROOT) --output-dir $(ANN_DEMO_DOMAIN_OUTPUT_DIR) --dimension $(ANN_DEMO_DOMAIN_DIMENSION) --limit $(ANN_DEMO_DOMAIN_LIMIT) --scale $(ANN_DEMO_DOMAIN_SCALE)

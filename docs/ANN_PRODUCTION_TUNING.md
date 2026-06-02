@@ -594,6 +594,21 @@ gate the history summary. The regression-check targets fail closed when the run
 root has no archived run or corpus group, so an empty directory cannot count as
 production latency evidence.
 
+For local production-SLO evidence, run:
+
+```bash
+make ann-production-slo-history-check
+```
+
+This creates a fresh 10-run history under
+`target/ann/production-slo-history/runs`, using the checked-in local domain
+fixture and release-mode `ann_corpus_check`. The gate requires one corpus
+group, ten runs, zero recall/graph regressions, bounded latency drift, and
+latest `production_safe=true` multi-layer graph evidence. It is included in
+`make production-evidence-sweep`. This is local release evidence; larger
+external corpora and real production traffic histories remain separate future
+tuning inputs.
+
 For local release hygiene, `make ann-scripts-check` also runs
 `history_fixture_check.py --self-test` and `make ann-history-fixture-check`.
 That means script self-tests, generated ground truth checks, report contracts,

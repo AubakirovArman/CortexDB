@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 56 |
-| partial | 2 |
+| closed | 57 |
+| partial | 1 |
 | not started | 0 |
 | research | 2 |
 | total | 60 |
@@ -64,7 +64,7 @@ The plan recommends this first execution batch:
 | 20 | Verification Report Export | closed | `VerificationReport` now has engine-level Markdown and deterministic audit-text exporters, wired through CLI `verify --format markdown|audit` and HTTP `/v1/verify?format=markdown|audit`. | Keep export wording stable unless a new report export version is introduced. |
 | 21 | Real-domain Corpus Expansion | closed | `make retrieval-quality-check` now validates investment projects, support tickets, legal policies, and technical docs corpora with ground truth. | Add larger public/private corpora later as separate quality expansions. |
 | 22 | Retrieval Quality Dashboard | closed | `make retrieval-quality-check` now writes `target/retrieval-quality/dashboard.html` with guarded ANN and per-domain recall/MRR/nDCG/p95/exact-parity tables. | Keep the dashboard in the beta evidence bundle and extend it as more domains are added. |
-| 23 | HNSW Production SLO History | partial | ANN guardrails and real-domain report gates exist. | Build sustained 10+ run history and SLO regression tracking. |
+| 23 | HNSW Production SLO History | closed | `make ann-production-slo-history-check` now builds a fresh 10-run local domain ANN/HNSW history, requires one corpus group, zero recall/graph regressions, bounded latency drift, and production-safe multi-layer graph evidence; `make production-evidence-sweep` includes the gate. | Keep adding larger external and real traffic histories without weakening the 10-run local SLO gate. |
 | 24 | Search Explain API | closed | `/v1/search/explain` now exposes rank, matched terms, term contribution details, lexical/vector q16 shares, hybrid fusion rank score, typed SDK decoding, CLI hybrid explain support, and OpenAPI/docs coverage. | Keep explain fields additive and deterministic as ranking internals evolve. |
 | 25 | Query Routing: Lexical vs Vector vs Hybrid | closed | Engine-level `route_search_query` now selects keyword/vector_ann/vector_exact/hybrid, `/v1/search` and `cortexdb search` support `mode=auto`, and HTTP/CLI/SDK responses expose `routing.selected_strategy` plus `routing.reason` with tests/docs/OpenAPI coverage. | Keep routing deterministic until a measured planner is introduced. |
 | 26 | Ingestion Jobs v2 | closed | Ingestion endpoints/CLI now expose durable local job records; job state is atomically written, progress tracks completed cells and last cell id, retry/cancel/delete are available, and restart requeues stale `running` jobs as `queued`. | Keep this as a local synchronous job lifecycle until a real background ingestion executor is introduced. |
@@ -118,6 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 23: build sustained 10+ ANN/HNSW SLO history and regression tracking.
-2. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
-3. Keep Epics 59-60 as research/feasibility until real operational evidence changes their claim boundary.
+1. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
+2. Keep Epics 59-60 as research/feasibility until real operational evidence changes their claim boundary.

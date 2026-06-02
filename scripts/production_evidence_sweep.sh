@@ -39,6 +39,7 @@ run_step storage_soak_history make storage-soak-history-check
 run_step single_node_performance make single-node-performance-check
 run_step tenant_recovery make tenant-recovery-check
 run_step ann_release_evidence make ann-release-evidence-check
+run_step ann_production_slo_history make ann-production-slo-history-check
 run_step ann_real_embedding_readiness make ann-real-embedding-readiness
 run_step replication_partition make replication-partition-check
 
@@ -68,6 +69,7 @@ FINISHED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   printf '    "single_node_performance_report": "target/single-node-performance/report.json",\n'
   printf '    "tenant_recovery_report": "target/tenant-recovery/report.json",\n'
   printf '    "ann_release_evidence_root": "target/ann/release-evidence",\n'
+  printf '    "ann_production_slo_history_report": "target/ann/production-slo-history/runs/history.json",\n'
   printf '    "ann_real_embedding_readiness_report": "target/ann/real-embedding/readiness.json",\n'
   printf '    "replication_partition_report": "target/replication-partition/report.json"\n'
   printf '  }\n'
