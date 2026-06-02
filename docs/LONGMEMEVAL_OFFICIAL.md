@@ -369,8 +369,63 @@ Updated breakdown:
 | `single-session-user` | `40` | `70` | `0.5714` |
 | `temporal-reasoning` | `68` | `133` | `0.5113` |
 
-The next improvement target moves from format correction to the lowest remaining
-general slice, especially `multi-session` retrieval/answer synthesis.
+## Multi-Session Aggregation Diagnostic
+
+The next weakness was `multi-session`: DeepSeek often found the right facts but
+refused to compute a final count, total, duration, or comparison unless the
+history explicitly stated the combined answer. The runner now uses a
+multi-session-aware generation prompt for `multi-session`: it asks the reader to
+use evidence across all provided sessions, reconcile duplicates, and compute the
+final aggregate directly.
+
+Run the focused check:
+
+```bash
+make longmemeval-v1-deepseek-flash-multi-session-check
+```
+
+Latest local result:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+question type: multi-session
+before multi-session-aware prompt: 63 / 133
+after multi-session-aware prompt: 77 / 133
+accuracy: 0.5789
+empty hypotheses: 0
+```
+
+After enabling both the preference-aware and multi-session-aware generation
+prompts, the full compact-500 diagnostic improved again:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+official score: false
+correct by DeepSeek judge: 283 / 500
+accuracy: 0.5660
+empty hypotheses: 0
+prompt tokens: 4,301,681
+completion tokens: 45,261
+```
+
+Updated breakdown:
+
+| Question type | Correct | Count | Accuracy |
+| --- | ---: | ---: | ---: |
+| `knowledge-update` | `47` | `78` | `0.6026` |
+| `multi-session` | `77` | `133` | `0.5789` |
+| `single-session-assistant` | `35` | `56` | `0.6250` |
+| `single-session-preference` | `19` | `30` | `0.6333` |
+| `single-session-user` | `40` | `70` | `0.5714` |
+| `temporal-reasoning` | `65` | `133` | `0.4887` |
+
+The remaining major weak slice is `temporal-reasoning`: the multi-session prompt
+raised the total score, but temporal reasoning dipped from `68 / 133` to
+`65 / 133` in this full local diagnostic.
 
 This is useful for iteration, but it is not an official LongMemEval result:
 generation and judging both use DeepSeek flash instead of the official GPT-4o

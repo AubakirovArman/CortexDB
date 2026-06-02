@@ -139,6 +139,16 @@ def generation_prompt(row: dict[str, Any], ref: dict[str, Any]) -> str:
             "known preferences to the new recommendation request. If no relevant preference signal "
             "exists at all, say what is missing briefly."
         )
+    elif ref.get("question_type") == "multi-session":
+        task_instruction = (
+            "This is a multi-session memory question. Use evidence across all provided sessions, "
+            "not just one session. Identify every relevant event, item, amount, date, or place, "
+            "reconcile duplicates, and answer the final aggregate, comparison, or count directly. "
+            "For count, total, duration, or money questions, compute the result from the listed "
+            "facts; do not say the history is insufficient merely because it does not state the "
+            "combined total explicitly. If the available sessions truly miss a required fact, state "
+            "only the missing fact briefly."
+        )
     else:
         task_instruction = (
             "Answer the question using only the history. If the history is insufficient, say so."

@@ -162,6 +162,38 @@ empty hypotheses: 0
 single-session-preference: 18 / 30
 ```
 
+Run the focused multi-session aggregation check:
+
+```bash
+make longmemeval-v1-deepseek-flash-multi-session-check
+```
+
+Latest local result with the multi-session-aware generation prompt:
+
+```text
+model: deepseek-v4-flash
+question type: multi-session
+before multi-session-aware prompt: 63 / 133
+after multi-session-aware prompt: 77 / 133
+accuracy: 0.5789
+empty hypotheses: 0
+```
+
+After applying both the preference-aware and multi-session-aware prompt fixes to
+the full compact-500 run:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+correct by DeepSeek judge: 283 / 500
+accuracy: 0.5660
+empty hypotheses: 0
+multi-session: 77 / 133
+single-session-preference: 19 / 30
+temporal-reasoning: 65 / 133
+```
+
 ## Current Boundary
 
 - CortexDB owns the retrieval log generation.
