@@ -129,6 +129,22 @@ Search, AQL, and Verify success responses also render compact report views for
 result count, top cells, verdict, evidence, contradictions, guards, and numeric
 conflicts.
 
+### Incident Timeline
+
+The Overview operational status view includes a read-only incident timeline for
+the current operator session. It groups dashboard-visible evidence into:
+
+- `audit_event` for audit readiness and last request review;
+- `rate_limit_event` for `429` or rate-limit shaped request failures;
+- `storage_event` for validation failures or missing validation checks;
+- `backup_event` for backup posture, restore-drill evidence, and validation
+  blockers.
+
+Each row includes severity, source, message, and a concrete action. The
+timeline is a triage helper, not a pager or incident-management system; it
+points operators back to CLI evidence gates such as
+`make backup-restore-production-pack-check` and storage validation.
+
 ### Verification Explorer
 
 Verify responses render a mixed-evidence explorer:
@@ -162,5 +178,6 @@ For Beta Release Candidate evidence, the dashboard counts as an operational
 view only for local developer/operator workflows: health, metrics, validation,
 storage status, backup posture, ANN evaluation, ingestion jobs, cluster status,
 permissions review, audit readiness, local read-only guard state, and typed
-error reports. It is not yet a full incident-management console, RBAC
-administration UI, audit log browser, or production observability product.
+error reports, including the read-only incident timeline. It is not yet a full
+incident-management console, RBAC administration UI, audit log browser, or
+production observability product.

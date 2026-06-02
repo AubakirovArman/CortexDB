@@ -222,14 +222,17 @@
 
         const results = body.results || [];
         const incidents = body.incidents || [];
+        const timeline = body.incident_timeline || [];
         const summary = document.createElement("div");
         const details = document.createElement("div");
         const incidentList = document.createElement("ul");
+        const timelineList = document.createElement("div");
         const backupList = document.createElement("ul");
         const checkList = document.createElement("ul");
         summary.className = "report-grid";
         details.className = "report-grid";
         incidentList.className = "report-list compact";
+        timelineList.className = "report-list";
         backupList.className = "report-list compact";
         checkList.className = "report-list compact";
 
@@ -253,6 +256,7 @@
             card("Backup posture", backup.available ? backup.mode || "operator_cli" : "admin required", backup.available ? "warn" : "bad"),
             card("Checks", results.length),
             card("Incidents", incidents.length, incidents.length ? "bad" : "good"),
+            card("Timeline events", timeline.length, timeline.length ? "warn" : "good"),
             card("Last error", lastError ? `${lastError.label}: ${lastError.message}` : "none", lastError ? "bad" : "good"),
         );
 
@@ -273,6 +277,12 @@
             incidentList.replaceChildren(textItem("No dashboard-visible incidents reported"));
         }
 
+        if (timeline.length) {
+            timelineList.replaceChildren(...timeline.map(renderIncidentEvent));
+        } else {
+            timelineList.replaceChildren(card("Incident timeline", "No audit/rate/storage/backup events", "good"));
+        }
+
         if (backupCommands.length) {
             backupList.replaceChildren(
                 textItem(`${backup.evidence_gate || "backup evidence gate"} proves restore posture outside the browser.`),
@@ -291,7 +301,31 @@
             checkList.replaceChildren(textItem("No status checks were run"));
         }
 
-        container.replaceChildren(summary, details, checkList, backupList, incidentList);
+        container.replaceChildren(
+            summary,
+            details,
+            checkList,
+            backupList,
+            card("Incident timeline", "audit / rate / storage / backup", timeline.length ? "warn" : "good"),
+            timelineList,
+            incidentList,
+        );
+    }
+
+    function renderIncidentEvent(event) {
+        const item = document.createElement("article");
+        const title = document.createElement("h4");
+        const meta = document.createElement("p");
+        const action = document.createElement("p");
+        item.className = "report-item";
+        item.dataset.category = event.category || "unknown";
+        item.dataset.severity = event.severity || "info";
+        title.textContent = `${event.category || "incident"} · ${event.label || "event"}`;
+        meta.className = "report-meta";
+        meta.textContent = `${event.severity || "info"} · ${event.source || "dashboard"} · ${event.message || "no message"}`;
+        action.textContent = `Action: ${event.action || "Review the event and run the matching operator check."}`;
+        item.append(title, meta, action);
+        return item;
     }
 
     function renderPermissionsView(body) {

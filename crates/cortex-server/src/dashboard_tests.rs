@@ -106,6 +106,12 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "dashboard_status.v1",
         "backup_posture",
         "last_request_error",
+        "incident_timeline",
+        "buildIncidentTimeline",
+        "audit_event",
+        "rate_limit_event",
+        "storage_event",
+        "backup_event",
         "make backup-restore-production-pack-check",
         "dashboard_permissions.v1",
         "selected_scopes",
@@ -204,6 +210,9 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert!(operations.body.contains("renderOperationalStatus"));
     assert!(operations.body.contains("Backup posture"));
     assert!(operations.body.contains("Last error"));
+    assert!(operations.body.contains("renderIncidentEvent"));
+    assert!(operations.body.contains("Incident timeline"));
+    assert!(operations.body.contains("audit / rate / storage / backup"));
     assert!(operations.body.contains("renderPermissionsView"));
     assert!(operations.body.contains("Permissions explorer"));
     assert!(operations.body.contains("Token / role / scope / AgentView"));

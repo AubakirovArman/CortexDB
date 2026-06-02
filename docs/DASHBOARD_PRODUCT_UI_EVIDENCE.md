@@ -28,6 +28,8 @@ This gate covers:
   the API;
 - an operational status panel for health, stats, validation, metrics, backup
   posture, last request error state, and visible incidents;
+- an incident timeline that classifies audit, rate-limit, storage, and backup
+  events with severity, source, message, and action guidance;
 - a ContextPack Explorer covering selected cells, citations, explain score
   components, anomalies, and `why_excluded` messages;
 - a Verification Explorer covering mixed evidence, supporting and
@@ -46,6 +48,7 @@ read_only_mode: true
 operational_status: true
 operational_backup_posture: true
 operational_last_error: true
+incident_timeline: true
 context_pack_explorer: true
 verification_explorer: true
 audit_readiness: true

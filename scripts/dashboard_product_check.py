@@ -26,6 +26,18 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_operations.js", "Backup posture"),
         ("web/dashboard/src/reporting_operations.js", "Last error"),
     ],
+    "incident_timeline": [
+        ("web/dashboard/src/app.js", "incident_timeline"),
+        ("web/dashboard/src/app.js", "buildIncidentTimeline"),
+        ("web/dashboard/src/app.js", "audit_event"),
+        ("web/dashboard/src/app.js", "rate_limit_event"),
+        ("web/dashboard/src/app.js", "storage_event"),
+        ("web/dashboard/src/app.js", "backup_event"),
+        ("web/dashboard/src/reporting_operations.js", "renderIncidentEvent"),
+        ("web/dashboard/src/reporting_operations.js", "Incident timeline"),
+        ("web/dashboard/src/reporting_operations.js", "audit / rate / storage / backup"),
+        ("docs/DASHBOARD_UI.md", "Incident Timeline"),
+    ],
     "audit_readiness": [
         ("web/dashboard/src/index.html", "id=\"audit-report\""),
         ("web/dashboard/src/index.html", "data-action=\"audit-readiness\""),
