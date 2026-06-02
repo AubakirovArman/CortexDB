@@ -2,7 +2,7 @@
 .PHONY: encrypted-backup-check
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
-.PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission
+.PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis
 .PHONY: operations-runbook-check
 .PHONY: service-manager-smoke-check
 .PHONY: beta-landing-check
@@ -268,6 +268,7 @@ LONGMEMEVAL_V1_HYPOTHESIS_FILE ?=
 LONGMEMEVAL_V1_EVAL_MODEL ?= gpt-4o
 LONGMEMEVAL_V1_PACKAGE_NAME ?= cortexdb-longmemeval-v1-official-gpt4o
 LONGMEMEVAL_V1_SUBMISSION_ROOT ?= target/longmemeval-v1/submission
+LONGMEMEVAL_V1_ANALYSIS_ROOT ?= target/longmemeval-v1/analysis
 SINGLE_NODE_PERF_ROOT ?= target/single-node-performance
 SINGLE_NODE_PERF_REPORT ?= $(SINGLE_NODE_PERF_ROOT)/report.json
 SINGLE_NODE_PERF_CELLS ?= 500
@@ -724,6 +725,13 @@ longmemeval-v1-package-submission:
 	  --package-name "$(LONGMEMEVAL_V1_PACKAGE_NAME)" \
 	  --output-root "$(LONGMEMEVAL_V1_SUBMISSION_ROOT)" \
 	  --force
+
+longmemeval-v1-error-analysis:
+	python3 scripts/longmemeval/analyze_v1_results.py \
+	  --retrieval-log "$(LONGMEMEVAL_V1_RETRIEVAL_LOG)" \
+	  --official-metrics "$(LONGMEMEVAL_V1_OFFICIAL_METRICS_REPORT)" \
+	  --generation-dir "$(LONGMEMEVAL_V1_GENERATION_ROOT)" \
+	  --output-root "$(LONGMEMEVAL_V1_ANALYSIS_ROOT)"
 
 single-node-performance-check:
 	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)"

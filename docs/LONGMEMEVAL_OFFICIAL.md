@@ -112,6 +112,40 @@ target/longmemeval-v1/logs/official_generation_gpt4o_20260602-034241.log
 target/longmemeval-v1/logs/official_eval_gpt4o_20260602-042609.log
 ```
 
+## Error Analysis
+
+After the official local QA run is available, generate the post-hoc error
+analysis report:
+
+```bash
+make longmemeval-v1-error-analysis
+```
+
+The command writes:
+
+```text
+target/longmemeval-v1/analysis/error_report.json
+target/longmemeval-v1/analysis/error_report.md
+target/longmemeval-v1/analysis/false_cases.jsonl
+target/longmemeval-v1/analysis/retrieval_diagnostics.jsonl
+```
+
+Latest local error analysis on the official v1 run:
+
+| Category | False cases |
+| --- | ---: |
+| `multi_session_reader_failure` | `27` |
+| `retrieval_partial_miss_top10` | `27` |
+| `retrieval_miss_no_answer_session_top10` | `17` |
+| `preference_reader_failure` | `16` |
+| `temporal_reasoning_failure` | `16` |
+| `abstention_failure` | `7` |
+| `knowledge_update_reader_failure` | `7` |
+
+This report is diagnostic only. It uses official labels after evaluation to
+prioritize future changes; it must not be used inside runtime retrieval or
+generation.
+
 ## Submission Package
 
 Build the local evidence package:

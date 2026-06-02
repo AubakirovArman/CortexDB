@@ -52,6 +52,17 @@ make longmemeval-v1-official-qa-score \
   LONGMEMEVAL_V1_HYPOTHESIS_FILE=target/longmemeval-v1/generation/<file>
 ```
 
+Analyze false cases after the official evaluator finishes:
+
+```bash
+make longmemeval-v1-error-analysis
+```
+
+This writes `target/longmemeval-v1/analysis/error_report.md`,
+`error_report.json`, `false_cases.jsonl`, and `retrieval_diagnostics.jsonl`.
+The analysis is post-hoc only and is meant to guide improvements without using
+gold labels inside runtime retrieval.
+
 ## Current Boundary
 
 - CortexDB owns the retrieval log generation.
