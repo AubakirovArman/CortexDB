@@ -29,6 +29,54 @@ CortexDB is specifically engineered for autonomous AI agents. Unlike traditional
 
 ---
 
+## Public Benchmark Snapshot
+
+Status: beta evidence, not a production or leaderboard claim.
+
+CortexDB has a full local LongMemEval v1 run on the official cleaned
+`longmemeval_s_cleaned.json` split:
+
+| Benchmark | Result |
+| --- | ---: |
+| Official GPT-4o QA accuracy | `0.7660` |
+| Correct answers | `383 / 500` |
+| Session `recall_all@10` | `0.9021` |
+| Session `ndcg_any@10` | `0.7873` |
+| Generation prompt tokens | `14,213,801` |
+| Generation completion tokens | `33,942` |
+
+The run uses the official LongMemEval v1 data, official retrieval metric script,
+official generation format, and official `evaluate_qa.py gpt-4o` evaluator.
+Artifacts and packaging commands are documented in
+[`docs/LONGMEMEVAL_OFFICIAL.md`](docs/LONGMEMEVAL_OFFICIAL.md).
+
+Current interpretation: CortexDB is not claiming SOTA. The result shows that a
+beta-stage local context database can already run a real long-memory benchmark
+end-to-end with reproducible artifacts.
+
+Public context from the LongMemEval GitHub issue tracker, checked on
+2026-06-02, includes these self-reported results. These are not independently
+reproduced by CortexDB and may use different methods, splits, readers, or
+retrieval metrics:
+
+| System / issue | Publicly reported result | Type |
+| --- | --- | --- |
+| CortexDB beta | `76.6%` E2E QA, `90.21%` session `recall_all@10` | official local run |
+| [M3 Memory](https://github.com/xiaowu0162/LongMemEval/issues/43) | `89.0%` E2E QA, `96.8% R@10` | self-reported |
+| [OpenDB](https://github.com/xiaowu0162/LongMemEval/issues/34) | `93.6%` (`468/500`) | self-reported |
+| [Neutrally](https://github.com/xiaowu0162/LongMemEval/issues/30) | `89.4%` (`447/500`) | self-reported |
+| [Graphnosis](https://github.com/xiaowu0162/LongMemEval/issues/36) | `72.20%` E2E QA | self-reported |
+| [QMG v1.2](https://github.com/xiaowu0162/LongMemEval/issues/46) | `R@1=90.6%`, `R@5=98.6%`, `R@10=99.4%` | retrieval-only |
+| [ContextFit](https://github.com/xiaowu0162/LongMemEval/issues/44) | `Any@5=96.6%`, `Any@10=98.7%` | retrieval-only |
+| [YourMemory](https://github.com/xiaowu0162/LongMemEval/issues/42) | `R@1=84.4%`, `R@5=95.8%` | retrieval-only |
+| [Prism](https://github.com/xiaowu0162/LongMemEval/issues/31) | `92.3% R@5` | retrieval-only |
+
+The next target is to improve CortexDB's multi-session and preference-query
+accuracy without weakening the beta boundary: no production-SLA, no managed
+cloud, and no published leaderboard claim until submitted and accepted.
+
+---
+
 ## 3-Minute Demo
 
 ```bash
