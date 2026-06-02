@@ -70,6 +70,9 @@ Or run the full demo: `make demo`
 Distributed consensus evidence is tracked as research in
 [`docs/DISTRIBUTED_CONSENSUS_RESEARCH.md`](docs/DISTRIBUTED_CONSENSUS_RESEARCH.md);
 it is not a production HA claim.
+Managed-cloud feasibility is tracked in
+[`docs/MANAGED_CLOUD_FEASIBILITY.md`](docs/MANAGED_CLOUD_FEASIBILITY.md);
+it is not a hosted-service claim.
 
 ---
 

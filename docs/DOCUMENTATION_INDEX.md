@@ -46,6 +46,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`CONSENSUS_SLO.md`](CONSENSUS_SLO.md) - consensus hardening gates and beta SLO targets.
 - [`DISTRIBUTED_CONSENSUS_DESIGN.md`](DISTRIBUTED_CONSENSUS_DESIGN.md) - future production distributed consensus design.
 - [`DISTRIBUTED_CONSENSUS_RESEARCH.md`](DISTRIBUTED_CONSENSUS_RESEARCH.md) - local research evidence gates without production HA claims.
+- [`MANAGED_CLOUD_FEASIBILITY.md`](MANAGED_CLOUD_FEASIBILITY.md) - local prerequisites and non-claims for a future hosted service.
 - [`WHY_CORTEXDB.md`](WHY_CORTEXDB.md) - positioning and rationale.
 - [`WHY_AGENT_NATIVE_DB.md`](WHY_AGENT_NATIVE_DB.md) - agent-native database concept.
 - [`COMPARISONS.md`](COMPARISONS.md) - adjacent-stack comparison without replacement claims.
