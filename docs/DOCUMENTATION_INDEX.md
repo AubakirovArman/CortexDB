@@ -15,6 +15,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`CONTRIBUTOR_ONBOARDING.md`](CONTRIBUTOR_ONBOARDING.md) - 15-minute first contributor path.
 - [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) - bounded starter issue map.
 - [`PUBLIC_BENCHMARKS.md`](PUBLIC_BENCHMARKS.md) - release-by-release public benchmark history.
+- [`COMPARISONS.md`](COMPARISONS.md) - neutral comparison with SQL databases, vector databases, RAG stacks, and memory frameworks.
 - [`BETA_OPERATIONS.md`](BETA_OPERATIONS.md) - beta operator runbook for install, auth, backup, validation, repair, metrics, and known limits.
 - [`RELEASE_NOTES_v0.2.0-beta.1.md`](RELEASE_NOTES_v0.2.0-beta.1.md) - planned beta release notes and checklist.
 - [`BETA_DELTA.md`](BETA_DELTA.md) - what remains before beta promotion.
@@ -44,6 +45,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`DISTRIBUTED_CONSENSUS_DESIGN.md`](DISTRIBUTED_CONSENSUS_DESIGN.md) - future production distributed consensus design.
 - [`WHY_CORTEXDB.md`](WHY_CORTEXDB.md) - positioning and rationale.
 - [`WHY_AGENT_NATIVE_DB.md`](WHY_AGENT_NATIVE_DB.md) - agent-native database concept.
+- [`COMPARISONS.md`](COMPARISONS.md) - adjacent-stack comparison without replacement claims.
 - [`RAG_VS_CORTEXDB.md`](RAG_VS_CORTEXDB.md) - practical comparison with classic RAG.
 - [`RAG_VS_CORTEXDB_DEMO.md`](RAG_VS_CORTEXDB_DEMO.md) - beta product demo scenario and expected output contract.
 

@@ -57,7 +57,7 @@ Use classic RAG services when:
 4. Tune `ContextPack` budget and required fields by route.
 
 ```bash
-cargo run -p cortex-cli -- load-fixture examples/datasets/investment_projects ./demo-db
+cargo run -p cortex-cli -- load-fixture ./demo-db examples/datasets/investment_projects
 cargo run -p cortex-cli -- context ./demo-db investment_projects 'RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN default LIMIT 10 CANDIDATES;'
 cargo run -p cortex-cli -- verify ./demo-db investment_projects 'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN default;'
 ```

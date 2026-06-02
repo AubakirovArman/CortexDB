@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 50 |
-| partial | 4 |
+| closed | 51 |
+| partial | 3 |
 | not started | 4 |
 | research | 2 |
 | total | 60 |
@@ -96,7 +96,7 @@ The plan recommends this first execution batch:
 | 52 | Use-case Packs | closed | Legal, financial, and technical use-case packs now live under `examples/use_cases`; `make use-case-pack-check` validates manifests, fixtures, scenario docs, and CLI search/context/verify smoke flows. | Keep packs aligned with public claims boundaries and add more domains only behind the same gate. |
 | 53 | Contributor Onboarding | closed | `CONTRIBUTOR_ONBOARDING.md`, `GOOD_FIRST_ISSUES.md`, a good-first-issue template, and `make contributor-onboarding-check` now provide a checked 15-minute path and starter task map. | Keep starter tasks bounded and update the checker as new contributor surfaces appear. |
 | 54 | Public Benchmarks Page | closed | `PUBLIC_BENCHMARKS.md` now summarizes release-by-release benchmark evidence and links retrieval, ContextPack, verification, performance, beta, and claims gates; `make public-benchmarks-check` validates the page. | Refresh snapshots before each public release and keep non-claims visible. |
-| 55 | Comparison Docs | partial | RAG/vector positioning docs exist. | Add clearer Postgres/vector DB/memory framework comparison without aggressive claims. |
+| 55 | Comparison Docs | closed | `COMPARISONS.md` now compares CortexDB with SQL databases, vector databases, classic RAG stacks, agent memory frameworks, and search engines without replacement claims; `make comparison-docs-check` validates the public-claims boundary. | Keep comparisons factual and update when product boundaries change. |
 | 56 | Agent Memory v2 | partial | Agent memory docs/module foundations exist. | Add TTL/decay/feedback and end-to-end memory demo. |
 | 57 | Tool Registry | not started | Tool registry is roadmap-level only. | Add tool cells, schemas, permissions, and ContextPack inclusion. |
 | 58 | Knowledge Graph Layer | not started | Typed cell foundations exist. | Add entity/relation/source graph indexes and traversal. |
@@ -119,4 +119,4 @@ The plan recommends this first execution batch:
 The next practical implementation batch is:
 
 1. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
-2. Advance Epic 55: add clear Postgres/vector DB/memory-framework comparison without aggressive claims.
+2. Advance Epic 56: add TTL/decay/feedback and an end-to-end agent memory demo.
