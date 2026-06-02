@@ -92,8 +92,11 @@ The workload classes link to the single-node RPO/RTO boundary in
 ```bash
 make backup-drill-check
 make storage-soak-check
+make storage-soak-history-check
 make single-node-performance-check
 ```
 
 The trend gate does not claim production SLA behavior. It proves that the local
 release candidate has comparable performance evidence to prior release fixtures.
+The storage soak history report is the source of truth for whether accumulated
+local soak duration has crossed the 24-hour threshold.

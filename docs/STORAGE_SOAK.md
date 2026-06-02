@@ -15,6 +15,18 @@ Default output:
 target/storage-soak/report.json
 ```
 
+The repeatable history gate runs a fresh soak, appends a de-duplicated entry to
+local history, and writes an aggregate report:
+
+```bash
+make storage-soak-history-check
+```
+
+```text
+target/storage-soak-history/report.json
+target/storage-soak-history/history.jsonl
+```
+
 The report records:
 
 - repeated write, flush, compact, validate cycles;
@@ -31,9 +43,21 @@ runs can raise:
 make storage-soak-check STORAGE_SOAK_CYCLES=20 STORAGE_SOAK_CELLS_PER_CYCLE=50
 ```
 
+For the 24-hour acceptance threshold, run the history gate with an explicit
+duration requirement after enough soak history has accumulated:
+
+```bash
+make storage-soak-history-check STORAGE_SOAK_HISTORY_MIN_HOURS=24
+```
+
+The default history gate does not pretend to be a 24-hour proof. It records
+`twenty_four_hour_evidence.met=false` until accumulated local soak duration
+crosses 24 hours.
+
 ## Boundary
 
 This gate proves the checkout can survive repeated local durability cycles and
 recover from representative kill attempts. It does not prove every internal
 byte-boundary crash point, remote/offsite restore, encrypted backups, online
-rolling upgrades, or multi-process writer safety.
+rolling upgrades, 24-hour soak unless the history report says the 24-hour
+threshold is met, or multi-process writer safety.

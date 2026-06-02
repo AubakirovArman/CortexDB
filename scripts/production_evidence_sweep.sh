@@ -33,6 +33,7 @@ run_step() {
 
 run_step openapi_contract make openapi-contract-check
 run_step backup_restore_pack make backup-restore-production-pack-check
+run_step storage_soak_history make storage-soak-history-check
 run_step single_node_performance make single-node-performance-check
 run_step tenant_recovery make tenant-recovery-check
 run_step ann_release_evidence make ann-release-evidence-check
@@ -55,6 +56,9 @@ FINISHED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   printf '    "backup_restore_pack_report": "target/backup-restore-production-pack/report.json",\n'
   printf '    "backup_drill_report": "target/backup-drill/report.json",\n'
   printf '    "backup_offsite_report": "target/backup-offsite/report.json",\n'
+  printf '    "storage_soak_report": "target/storage-soak/report.json",\n'
+  printf '    "storage_soak_history_report": "target/storage-soak-history/report.json",\n'
+  printf '    "storage_soak_history_jsonl": "target/storage-soak-history/history.jsonl",\n'
   printf '    "single_node_performance_report": "target/single-node-performance/report.json",\n'
   printf '    "tenant_recovery_report": "target/tenant-recovery/report.json",\n'
   printf '    "ann_release_evidence_root": "target/ann/release-evidence",\n'
