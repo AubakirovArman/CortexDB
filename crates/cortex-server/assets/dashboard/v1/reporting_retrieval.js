@@ -123,6 +123,15 @@
         return item;
     }
 
+    function guardItem(guard) {
+        const prefix = guard.cell_id ? `Cell ${guard.cell_id}` : "Global";
+        return textItem(`${prefix}: ${guard.code} - ${guard.message}`);
+    }
+
+    function numericConflictItem(conflict) {
+        return textItem(`${conflict.metric}: ${conflict.left} vs ${conflict.right}`);
+    }
+
     function renderSearchReport(body) {
         const container = document.querySelector("#search-report");
         if (!container || !body?.search_mode || !Array.isArray(body.results)) return;
@@ -177,34 +186,57 @@
         const container = document.querySelector("#verify-report");
         if (!container || !body?.fact || !body?.verdict) return;
 
-        const evidence = body.evidence || body.supporting || [];
-        const contradicting = body.contradicting_evidence || body.contradicting || [];
+        const evidence = body.supporting || body.evidence || [];
+        const contradicting = body.contradicting || body.contradicting_evidence || [];
         const guards = body.guards || [];
         const numericConflicts = body.numeric_conflicts || [];
         const verdictTone = body.verdict === "supported" ? "good" : body.verdict === "mixed_evidence" ? "warn" : "bad";
         const summary = document.createElement("div");
-        const evidenceList = document.createElement("div");
+        const supportList = document.createElement("div");
+        const contradictionList = document.createElement("div");
         const guardList = document.createElement("ul");
+        const conflictList = document.createElement("ul");
         summary.className = "report-grid";
-        evidenceList.className = "report-list";
+        supportList.className = "report-list";
+        contradictionList.className = "report-list";
         guardList.className = "report-list compact";
+        conflictList.className = "report-list compact";
 
         summary.replaceChildren(
             card("Verdict", body.verdict, verdictTone),
             card("Status", body.status || body.verdict, verdictTone),
-            card("Evidence", evidence.length),
+            card("Supporting", evidence.length, evidence.length ? "good" : "warn"),
             card("Contradicting", contradicting.length, contradicting.length ? "bad" : "good"),
             card("Guards", guards.length, guards.length ? "warn" : "good"),
             card("Numeric conflicts", numericConflicts.length, numericConflicts.length ? "bad" : "good"),
+            card("Mixed evidence", yesNo(evidence.length > 0 && contradicting.length > 0), evidence.length > 0 && contradicting.length > 0 ? "warn" : "good"),
         );
 
-        if (evidence.length) evidenceList.replaceChildren(...evidence.slice(0, 3).map(evidenceItem));
-        else evidenceList.replaceChildren(card("Evidence", "none", "warn"));
+        if (evidence.length) supportList.replaceChildren(...evidence.slice(0, 5).map(evidenceItem));
+        else supportList.replaceChildren(card("Supporting evidence", "none", "warn"));
 
-        if (guards.length) guardList.replaceChildren(...guards.map((guard) => textItem(`${guard.code}: ${guard.message}`)));
+        if (contradicting.length) contradictionList.replaceChildren(...contradicting.slice(0, 5).map(evidenceItem));
+        else contradictionList.replaceChildren(card("Contradicting evidence", "none", "good"));
+
+        if (numericConflicts.length) conflictList.replaceChildren(...numericConflicts.map(numericConflictItem));
+        else conflictList.replaceChildren(textItem("No numeric conflicts reported"));
+
+        if (guards.length) guardList.replaceChildren(...guards.map(guardItem));
         else guardList.replaceChildren(textItem("No guards reported"));
 
-        container.replaceChildren(summary, card("Fact", body.fact), evidenceList, guardList);
+        container.replaceChildren(
+            card("Explorer", "Mixed evidence / Numeric conflict / Guard explorer", "good"),
+            summary,
+            card("Fact", body.fact),
+            card("Supporting evidence", `${evidence.length} cells`, evidence.length ? "good" : "warn"),
+            supportList,
+            card("Contradicting evidence", `${contradicting.length} cells`, contradicting.length ? "bad" : "good"),
+            contradictionList,
+            card("Numeric conflict explorer", `${numericConflicts.length} conflicts`, numericConflicts.length ? "bad" : "good"),
+            conflictList,
+            card("Guard explorer", `${guards.length} guards`, guards.length ? "warn" : "good"),
+            guardList,
+        );
     }
 
     function renderContextPack(body) {

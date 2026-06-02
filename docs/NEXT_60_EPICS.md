@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 41 |
-| partial | 12 |
+| closed | 42 |
+| partial | 11 |
 | not started | 5 |
 | research | 2 |
 | total | 60 |
@@ -84,7 +84,7 @@ The plan recommends this first execution batch:
 | 40 | Operations Runbook | closed | `OPERATIONS.md` now has release-binary and source paths, health/auth/data/backup/restore/repair/audit/upgrade commands, known limits, and an evidence bundle; `make operations-runbook-check` writes `target/operations-runbook/report.json` and is included in production evidence sweep. | Keep the runbook aligned as operator surfaces change. |
 | 41 | Dashboard Operational Status View | closed | Dashboard operational status now combines health, stats, validation, metrics reachability, backup posture, last request error state, and visible incidents; `make dashboard-product-check` verifies the source markers and release package. | Keep the status view aligned as backup and observability surfaces change. |
 | 42 | Dashboard ContextPack Explorer | closed | Context route now renders selected cells, token budget usage, citation/source-ref rows, score-component explain cards, anomalies, and `why_excluded` rows; `make dashboard-product-check` guards the explorer markers. | Keep the explorer additive as ContextPack scoring fields evolve. |
-| 43 | Dashboard Verification Explorer | partial | Dashboard has verification/reporting foundations. | Add full mixed-evidence/numeric-conflict explorer. |
+| 43 | Dashboard Verification Explorer | closed | Verify route now renders verdict, supporting evidence, contradicting evidence, numeric conflict, mixed-evidence, and guard explorer sections; `make dashboard-product-check` guards the UI markers. | Keep future verification fields additive and visible in the explorer. |
 | 44 | Dashboard Permissions View | partial | Security/RBAC docs and dashboard foundations exist. | Add read-only token/role/scope/AgentView UI. |
 | 45 | Dashboard Incident View | partial | Audit/metrics foundations exist. | Add operational incident timeline for audit/rate/storage/backup events. |
 | 46 | Linux/macOS Binary Release Pipeline | closed | `.github/workflows/release.yml` now has an explicit four-platform matrix for `linux-x86_64`, `linux-aarch64`, `macos-arm64`, and `macos-x86_64`; `make binary-platform-matrix-check` validates docs/workflow markers and clean-install smoke for the local archive. | Keep release tag runs attached with all matrix artifacts before each public release. |
@@ -119,4 +119,4 @@ The plan recommends this first execution batch:
 The next practical implementation batch is:
 
 1. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
-2. Advance Epic 43: add full mixed-evidence and numeric-conflict verification explorer.
+2. Advance Epic 44: add read-only token/role/scope/AgentView permission details.

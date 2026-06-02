@@ -116,6 +116,19 @@ database.
 Search, AQL, and Verify success responses also render compact report views for
 result count, top cells, verdict, evidence, contradictions, guards, and numeric
 conflicts.
+
+### Verification Explorer
+
+Verify responses render a mixed-evidence explorer:
+
+- verdict and status cards for supported, contradicted, mixed, or insufficient
+  evidence;
+- supporting evidence and contradicting evidence lists with matched terms,
+  citations, source-trust category, and payload previews;
+- a numeric conflict explorer that shows normalized metric disagreements such
+  as `budget: 1.2B KZT vs 1.4B KZT`;
+- a guard explorer for missing citations, numeric mismatches, scope issues, and
+  other policy/runtime guard messages.
 Report rendering lives outside `app.js` to keep product-facing formatting
 separate from request/session control logic. Each renderer reacts only to its
 typed response shape, so unrelated responses do not overwrite route-specific

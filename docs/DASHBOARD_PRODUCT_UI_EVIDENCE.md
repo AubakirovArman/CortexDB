@@ -30,6 +30,8 @@ This gate covers:
   posture, last request error state, and visible incidents;
 - a ContextPack Explorer covering selected cells, citations, explain score
   components, anomalies, and `why_excluded` messages;
+- a Verification Explorer covering mixed evidence, supporting and
+  contradicting evidence, numeric conflicts, and guard messages;
 - an audit readiness panel that keeps raw audit events out of the browser and
   points operators to file-backed CLI redaction checks;
 - a permissions view for tenant, active role, token state, admin/data
@@ -44,6 +46,7 @@ operational_status: true
 operational_backup_posture: true
 operational_last_error: true
 context_pack_explorer: true
+verification_explorer: true
 audit_readiness: true
 permissions_view: true
 release_artifacts: true

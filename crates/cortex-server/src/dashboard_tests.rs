@@ -189,6 +189,11 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert!(retrieval.body.contains("why_excluded"));
     assert!(retrieval.body.contains("renderSearchReport"));
     assert!(retrieval.body.contains("renderVerificationReport"));
+    assert!(retrieval.body.contains("Mixed evidence"));
+    assert!(retrieval.body.contains("Contradicting evidence"));
+    assert!(retrieval.body.contains("Numeric conflict explorer"));
+    assert!(retrieval.body.contains("Guard explorer"));
+    assert!(retrieval.body.contains("numeric_conflicts"));
     assert!(operations.body.contains("renderAnnEvaluation"));
     assert!(operations.body.contains("renderCellReport"));
     assert!(operations.body.contains("renderClusterReport"));

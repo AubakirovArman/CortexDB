@@ -47,6 +47,15 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_retrieval.js", "why_excluded"),
         ("docs/DASHBOARD_UI.md", "ContextPack Explorer"),
     ],
+    "verification_explorer": [
+        ("web/dashboard/src/index.html", "id=\"verify-report\""),
+        ("web/dashboard/src/reporting_retrieval.js", "Mixed evidence"),
+        ("web/dashboard/src/reporting_retrieval.js", "Contradicting evidence"),
+        ("web/dashboard/src/reporting_retrieval.js", "Numeric conflict explorer"),
+        ("web/dashboard/src/reporting_retrieval.js", "Guard explorer"),
+        ("web/dashboard/src/reporting_retrieval.js", "numeric_conflicts"),
+        ("docs/DASHBOARD_UI.md", "Verification Explorer"),
+    ],
     "release_artifacts": [
         ("e2e/dashboard_screenshots.mjs", "permissions"),
         ("docs/DASHBOARD_UI.md", "dashboard-screenshots"),
