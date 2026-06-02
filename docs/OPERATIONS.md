@@ -5,7 +5,19 @@
 Use this path when you are opening CortexDB for the first time and want the
 shortest route from clone or release archive to a validated local database.
 
-1. Install or build the binaries:
+1. Install from release archive or build the binaries.
+
+   Release archive path:
+
+   ```bash
+   tar -xzf cortexdb-<platform>.tar.gz
+   sudo install -m 0755 cortexdb /usr/local/bin/cortexdb
+   sudo install -m 0755 cortex-server /usr/local/bin/cortex-server
+   cortexdb version
+   cortex-server --help
+   ```
+
+   Source checkout path:
 
    ```bash
    cargo build --workspace
@@ -18,6 +30,12 @@ shortest route from clone or release archive to a validated local database.
 
    ```bash
    export CORTEXDB_AUTH_TOKEN=dev-token
+   cortex-server ./data 127.0.0.1:8181
+   ```
+
+   From a source checkout, the equivalent command is:
+
+   ```bash
    cargo run -p cortex-server -- ./data 127.0.0.1:8181
    ```
 
@@ -31,21 +49,23 @@ shortest route from clone or release archive to a validated local database.
 4. Write, read, flush, and validate via CLI:
 
    ```bash
-   cargo run -p cortex-cli -- put ./data 1 "scope=default
+   cortexdb put ./data 1 "scope=default
    status=ready
    type=fact
    source=first-run
 
    hello cortex"
-   cargo run -p cortex-cli -- get ./data 1
-   cargo run -p cortex-cli -- flush ./data
-   cargo run -p cortex-cli -- stats ./data
-   cargo run -p cortex-cli -- validate ./data
+   cortexdb get ./data 1
+   cortexdb flush ./data
+   cortexdb stats ./data
+   cortexdb validate ./data
+   cortexdb doctor ./data
    ```
 
 5. Run the local operator smoke gates:
 
    ```bash
+   make operations-runbook-check
    make deployment-upgrade-check
    make observability-check
    make public-claims-check
@@ -92,6 +112,10 @@ For installed release binaries, the equivalent validation entrypoint is:
 
 ```bash
 cortexdb validate ./data
+cortexdb stats ./data
+cortexdb wal-validate ./data
+cortexdb manifest-validate ./data
+cortexdb doctor ./data
 ```
 
 Optional typed checks and smoke paths:
@@ -125,19 +149,19 @@ The beta RC operator path is split by activity:
 ## 5) Backup and recovery
 
 ```bash
-cargo run -p cortex-cli -- backup ./data ./backups/data-$(date -u +%Y%m%dT%H%M%SZ)
-cargo run -p cortex-cli -- backup-prune ./backups cortexdb- 5
-cargo run -p cortex-cli -- restore ./backups/data-... ./data-restored
-cargo run -p cortex-cli -- validate ./data-restored
+cortexdb backup ./data ./backups/data-$(date -u +%Y%m%dT%H%M%SZ)
+cortexdb backup-prune ./backups cortexdb- 5
+cortexdb restore ./backups/data-20260602T000000Z ./data-restored
+cortexdb validate ./data-restored
 export CORTEXDB_BACKUP_PASSPHRASE="choose-a-long-local-passphrase"
-cargo run -p cortex-cli -- backup-encrypted ./data ./backups/data.cdbenc --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
-cargo run -p cortex-cli -- restore-encrypted ./backups/data.cdbenc ./data-encrypted-restored --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
+cortexdb backup-encrypted ./data ./backups/data.cdbenc --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
+cortexdb restore-encrypted ./backups/data.cdbenc ./data-encrypted-restored --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
 ```
 
 Offsite staging:
 
 ```bash
-cargo run -p cortex-cli -- backup-offsite-stage ./backups/data-20260602 ./offsite cortexdb-$(date -u +%Y%m%dT%H%M%SZ)
+cortexdb backup-offsite-stage ./backups/data-20260602 ./offsite cortexdb-$(date -u +%Y%m%dT%H%M%SZ)
 ```
 
 Release evidence:
@@ -156,8 +180,8 @@ conflict.
 Action:
 
 ```bash
-cargo run -p cortex-cli -- unlock ./data --force
-cargo run -p cortex-cli -- validate ./data
+cortexdb unlock ./data --force
+cortexdb validate ./data
 ```
 
 Only use `unlock --force` after confirming no other process owns the same
@@ -170,10 +194,10 @@ Symptom: validation or startup reports WAL checksum/tail issues.
 Action:
 
 ```bash
-cargo run -p cortex-cli -- validate ./data
-cargo run -p cortex-cli -- wal-dump ./data
-cargo run -p cortex-cli -- wal-truncate ./data
-cargo run -p cortex-cli -- validate ./data
+cortexdb validate ./data
+cortexdb wal-dump ./data
+cortexdb wal-truncate ./data
+cortexdb validate ./data
 ```
 
 ### Corrupt segment or index bundle
@@ -184,15 +208,16 @@ corruption.
 Action:
 
 ```bash
-cargo run -p cortex-cli -- validate ./data
-cargo run -p cortex-cli -- repair ./data --dry-run
-cargo run -p cortex-cli -- repair ./data --best-effort
-cargo run -p cortex-cli -- validate ./data
+cortexdb validate ./data
+cortexdb repair ./data --dry-run
+cortexdb repair ./data --best-effort
+cortexdb validate ./data
 ```
 
-If the live segment is corrupt and repair cannot produce a safe plan, restore
-from the latest validated backup as documented in
+If the live segment is corrupt and repair cannot produce a safe plan, restore from the
+latest validated backup as documented in
 [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
+Operator action: restore from the latest validated backup.
 
 ### Failed authentication
 
@@ -232,10 +257,13 @@ and confirm the audit sink did not persist query strings or body-like fields.
 
 ## 7) Performance/reliability smoke
 
+- Runbook coverage: `make operations-runbook-check`
 - CLI/HTTP smoke: `scripts/smoke_test.sh`
 - Load and metrics smoke: `make load-smoke-check`
 - ANN/recall drift: `make ann-history-regression-check`, `make ann-drift-check`
 - Recovery/fault: `make crash-fault-check`, `make chaos-restart-check`
+- Migration compatibility: `make migration-compatibility-check`
+- Storage soak history: `make storage-soak-history-check`
 - Production boundary: `make production-candidate-check`,
   `make production-v1-check`
 
@@ -244,4 +272,34 @@ and confirm the audit sink did not persist query strings or body-like fields.
 - Single-node model first.
 - Production multi-node is experimental.
 - HNSW is guarded; exact vector path remains the correctness fallback.
-- For distributed security/compliance needs, wait for dedicated production hardening milestone.
+- 24-hour soak is only claimed when
+  `target/storage-soak-history/report.json` reports
+  `twenty_four_hour_evidence.met=true`.
+- Local encrypted backups are passphrase-based; KMS-backed backup custody is
+  future work.
+- For distributed security/compliance needs, wait for dedicated production
+  hardening milestone.
+
+## 9) Operator evidence bundle
+
+Before publishing or handing a build to another operator, collect:
+
+```bash
+make operations-runbook-check
+make deployment-upgrade-check
+make observability-check
+make migration-compatibility-check
+make backup-restore-production-pack-check
+make storage-soak-history-check
+```
+
+Primary reports:
+
+```text
+target/operations-runbook/report.json
+target/deployment-upgrade/report.json
+target/observability/report.json
+target/migration-upgrade-matrix-v2/report.json
+target/backup-restore-production-pack/report.json
+target/storage-soak-history/report.json
+```
