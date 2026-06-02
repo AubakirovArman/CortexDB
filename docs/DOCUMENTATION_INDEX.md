@@ -45,6 +45,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`CORE_CONSISTENCY_AUDIT.md`](CORE_CONSISTENCY_AUDIT.md) - consistency checks.
 - [`CONSENSUS_SLO.md`](CONSENSUS_SLO.md) - consensus hardening gates and beta SLO targets.
 - [`DISTRIBUTED_CONSENSUS_DESIGN.md`](DISTRIBUTED_CONSENSUS_DESIGN.md) - future production distributed consensus design.
+- [`DISTRIBUTED_CONSENSUS_RESEARCH.md`](DISTRIBUTED_CONSENSUS_RESEARCH.md) - local research evidence gates without production HA claims.
 - [`WHY_CORTEXDB.md`](WHY_CORTEXDB.md) - positioning and rationale.
 - [`WHY_AGENT_NATIVE_DB.md`](WHY_AGENT_NATIVE_DB.md) - agent-native database concept.
 - [`COMPARISONS.md`](COMPARISONS.md) - adjacent-stack comparison without replacement claims.

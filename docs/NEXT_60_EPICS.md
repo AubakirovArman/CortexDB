@@ -100,7 +100,7 @@ The plan recommends this first execution batch:
 | 56 | Agent Memory v2 | closed | TTL expiry, fixed-point decay scoring, durable feedback cells, feedback-aware ContextPack ordering, and `examples/demo/agent_memory` are now covered by `make agent-memory-demo-check`. | Keep natural-language contradiction extraction and production memory ranking as future work. |
 | 57 | Tool Registry | closed | Tool descriptions now persist as `KnowledgeCellType::Tool` cells with schema fields, permission markers, scope-filtered `Database::list_tools`, AQL retrieval, ContextPack inclusion, docs, and `make tool-registry-check`. | Execution, external credentials, and enterprise RBAC remain future product layers. |
 | 58 | Knowledge Graph Layer | closed | `KnowledgeGraphIndex` now builds entity, relation-adjacency, and source-reference indexes from visible typed cells, survives checkpoint/reopen, and is guarded by `make knowledge-graph-check`. | Persisted graph index files, graph query language, and multi-hop ranking remain future work. |
-| 59 | Distributed Consensus Research Track | research | Consensus/replication design docs and experimental code exist. | Keep as research until split-brain/failover/snapshot evidence is sustained. |
+| 59 | Distributed Consensus Research Track | research | `make distributed-consensus-research-check` now aggregates replicated-log, partition, failover, and rejoin local reports while preserving `production_ready=false`. | Keep as research until sustained multi-process split-brain/failover/snapshot evidence can support a production claim. |
 | 60 | Managed Cloud Feasibility Track | research | Managed cloud design doc exists. | Decide build/postpone/reject using tenant/security/ops cost model. |
 
 ## Closure Rules
@@ -119,4 +119,4 @@ The plan recommends this first execution batch:
 The next practical implementation batch is:
 
 1. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
-2. Advance Epic 59 only as a research track unless sustained split-brain/failover/snapshot evidence is added.
+2. Advance Epic 60 only as a feasibility track unless tenant/security/ops cost evidence supports a managed-cloud build decision.
