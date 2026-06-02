@@ -61,12 +61,18 @@ def main() -> int:
     campaign = load_json(ROOT / args.campaign)
     history = load_json(ROOT / args.history)
     evidence = history.get("twenty_four_hour_evidence", {})
+    target_hours = float(campaign.get("target_hours", 24.0))
+    total_duration_hours = float(history.get("total_duration_hours", 0.0))
+    progress_percent = 0.0
+    if target_hours > 0:
+        progress_percent = min(100.0, (total_duration_hours / target_hours) * 100.0)
     status = {
         "process": process_status(ROOT / args.pid_file),
         "campaign_status": campaign.get("status", "unknown"),
         "completed_runs": campaign.get("completed_runs", 0),
-        "target_hours": campaign.get("target_hours", 24.0),
-        "total_duration_hours": history.get("total_duration_hours", 0.0),
+        "target_hours": target_hours,
+        "total_duration_hours": total_duration_hours,
+        "progress_percent": round(progress_percent, 4),
         "run_count": history.get("run_count", 0),
         "total_cycles": history.get("total_cycles", 0),
         "total_cells_written": history.get("total_cells_written", 0),
@@ -83,7 +89,8 @@ def main() -> int:
             f"runs:{status['run_count']} "
             f"cycles:{status['total_cycles']} "
             f"cells:{status['total_cells_written']} "
-            f"hours:{status['total_duration_hours']}"
+            f"hours:{status['total_duration_hours']} "
+            f"progress_percent:{status['progress_percent']}"
         )
         print(
             "twenty_four_hour_evidence="

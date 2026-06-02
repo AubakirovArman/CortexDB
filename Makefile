@@ -273,6 +273,7 @@ STORAGE_SOAK_CAMPAIGN_TARGET_HOURS ?= 24
 STORAGE_SOAK_CAMPAIGN_MAX_RUNS ?= 100000
 STORAGE_SOAK_CAMPAIGN_CYCLES ?= 20
 STORAGE_SOAK_CAMPAIGN_CELLS_PER_CYCLE ?= 50
+STORAGE_SOAK_CAMPAIGN_STATUS_FORMAT ?= text
 REPLICATION_PARTITION_ROOT ?= target/replication-partition
 REPLICATION_PARTITION_REPORT ?= $(REPLICATION_PARTITION_ROOT)/report.json
 REPLICATION_LIFECYCLE_ROOT ?= target/replication-lifecycle
@@ -990,7 +991,7 @@ storage-soak-24h-campaign:
 	python3 scripts/storage_soak_campaign.py --target-hours "$(STORAGE_SOAK_CAMPAIGN_TARGET_HOURS)" --max-runs "$(STORAGE_SOAK_CAMPAIGN_MAX_RUNS)" --cycles "$(STORAGE_SOAK_CAMPAIGN_CYCLES)" --cells-per-cycle "$(STORAGE_SOAK_CAMPAIGN_CELLS_PER_CYCLE)" --kill-delay-ms "$(STORAGE_SOAK_KILL_DELAY_MS)" --soak-root "$(STORAGE_SOAK_ROOT)" --soak-report "$(STORAGE_SOAK_REPORT)" --history-jsonl "$(STORAGE_SOAK_HISTORY_FILE)" --history-report "$(STORAGE_SOAK_HISTORY_REPORT)" --campaign-report "$(STORAGE_SOAK_CAMPAIGN_REPORT)"
 
 storage-soak-campaign-status:
-	python3 scripts/storage_soak_campaign_status.py
+	python3 scripts/storage_soak_campaign_status.py --format "$(STORAGE_SOAK_CAMPAIGN_STATUS_FORMAT)"
 
 replication-partition-check:
 	python3 scripts/replication_partition_check.py --root "$(REPLICATION_PARTITION_ROOT)" --report "$(REPLICATION_PARTITION_REPORT)"

@@ -81,6 +81,15 @@ Check campaign progress with:
 make storage-soak-campaign-status
 ```
 
+For machine-readable monitoring:
+
+```bash
+make storage-soak-campaign-status STORAGE_SOAK_CAMPAIGN_STATUS_FORMAT=json
+```
+
+The status includes accumulated soak duration, run/cycle/cell counts,
+`progress_percent`, and the explicit `twenty_four_hour_met` boolean.
+
 The default history gate does not pretend to be a 24-hour proof. It records
 `twenty_four_hour_evidence.met=false` until accumulated local soak duration
 crosses 24 hours.
