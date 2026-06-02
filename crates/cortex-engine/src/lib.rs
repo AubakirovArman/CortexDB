@@ -24,6 +24,7 @@ pub mod replay;
 pub mod replication;
 pub mod search;
 pub mod source_trust;
+pub mod tool_registry;
 pub mod typed_body;
 pub mod validation;
 pub mod verification;
@@ -72,6 +73,7 @@ pub use replay::{
 pub use replication::*;
 pub use search::*;
 pub use source_trust::{SourceTrust, SourceTrustCategory, DEFAULT_SOURCE_TRUST_Q16};
+pub use tool_registry::{RegisteredTool, ToolDescriptor, ToolPermission};
 pub use typed_body::{EntityBody, FactBody, RelationBody};
 pub use validation::{StorageStats, StorageValidation, StorageValidationReport};
 pub use verification::{ContradictionRelationOptions, VerificationReportExportFormat};

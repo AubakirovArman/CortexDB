@@ -17,9 +17,9 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 52 |
+| closed | 53 |
 | partial | 2 |
-| not started | 4 |
+| not started | 3 |
 | research | 2 |
 | total | 60 |
 
@@ -98,7 +98,7 @@ The plan recommends this first execution batch:
 | 54 | Public Benchmarks Page | closed | `PUBLIC_BENCHMARKS.md` now summarizes release-by-release benchmark evidence and links retrieval, ContextPack, verification, performance, beta, and claims gates; `make public-benchmarks-check` validates the page. | Refresh snapshots before each public release and keep non-claims visible. |
 | 55 | Comparison Docs | closed | `COMPARISONS.md` now compares CortexDB with SQL databases, vector databases, classic RAG stacks, agent memory frameworks, and search engines without replacement claims; `make comparison-docs-check` validates the public-claims boundary. | Keep comparisons factual and update when product boundaries change. |
 | 56 | Agent Memory v2 | closed | TTL expiry, fixed-point decay scoring, durable feedback cells, feedback-aware ContextPack ordering, and `examples/demo/agent_memory` are now covered by `make agent-memory-demo-check`. | Keep natural-language contradiction extraction and production memory ranking as future work. |
-| 57 | Tool Registry | not started | Tool registry is roadmap-level only. | Add tool cells, schemas, permissions, and ContextPack inclusion. |
+| 57 | Tool Registry | closed | Tool descriptions now persist as `KnowledgeCellType::Tool` cells with schema fields, permission markers, scope-filtered `Database::list_tools`, AQL retrieval, ContextPack inclusion, docs, and `make tool-registry-check`. | Execution, external credentials, and enterprise RBAC remain future product layers. |
 | 58 | Knowledge Graph Layer | not started | Typed cell foundations exist. | Add entity/relation/source graph indexes and traversal. |
 | 59 | Distributed Consensus Research Track | research | Consensus/replication design docs and experimental code exist. | Keep as research until split-brain/failover/snapshot evidence is sustained. |
 | 60 | Managed Cloud Feasibility Track | research | Managed cloud design doc exists. | Decide build/postpone/reject using tenant/security/ops cost model. |
@@ -119,4 +119,4 @@ The plan recommends this first execution batch:
 The next practical implementation batch is:
 
 1. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
-2. Advance Epic 57: add tool cells, schemas, permissions, and ContextPack inclusion.
+2. Advance Epic 58: add entity/relation/source graph indexes and traversal.
