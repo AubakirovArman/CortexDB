@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 46 |
-| partial | 8 |
+| closed | 47 |
+| partial | 7 |
 | not started | 4 |
 | research | 2 |
 | total | 60 |
@@ -92,7 +92,7 @@ The plan recommends this first execution batch:
 | 48 | Systemd and launchd Support | closed | `SYSTEMD.md`, `LAUNCHD.md`, checked-in service/plist examples, and `make service-manager-smoke-check` now validate Linux/macOS service-manager artifacts. | Keep examples aligned with release binary paths and auth environment changes. |
 | 49 | Release Artifact Manifest | closed | `make release-artifact-manifest-check` now writes and validates `target/release-artifact-manifest/manifest.json` with binary, sidecar checksum, SDK, OpenAPI, evidence report, install-script, binary-platform, and git metadata. | Keep adding required evidence reports as release gates expand. |
 | 50 | Version and Compatibility Dashboard | closed | `/v1/compatibility` now exposes API, SDK contract, storage format, and migration matrix versions; dashboard operational status renders the compatibility section and OpenAPI/dashboard checks guard it. | Keep compatibility fields additive and update docs/OpenAPI when release contracts change. |
-| 51 | Official Beta Landing Page | partial | README and positioning docs exist. | Turn them into a concise external beta landing path. |
+| 51 | Official Beta Landing Page | closed | `BETA_LANDING.md` now provides a concise external beta path with demo, beta scope, non-goals, evidence links, and contribution path; `make beta-landing-check` is included in `make beta-release-check`. | Keep landing claims aligned with public claims policy and release notes. |
 | 52 | Use-case Packs | partial | Investment/support demos and RAG demo exist. | Add legal, financial, and technical use-case packs. |
 | 53 | Contributor Onboarding | partial | Contributing/module/test docs exist. | Add good-first-issue map and 15-minute onboarding path. |
 | 54 | Public Benchmarks Page | partial | Benchmark docs and evidence reports exist. | Publish release-by-release benchmark history in one public page. |
@@ -119,4 +119,4 @@ The plan recommends this first execution batch:
 The next practical implementation batch is:
 
 1. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
-2. Advance Epic 51: turn positioning docs into a concise external beta landing path.
+2. Advance Epic 52: add legal, financial, and technical use-case packs.

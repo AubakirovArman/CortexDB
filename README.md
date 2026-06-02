@@ -10,6 +10,9 @@
 > beta. Promotion requires `make beta-release-check` and the evidence bundle
 > described in [`docs/BETA_RELEASE.md`](docs/BETA_RELEASE.md).
 
+For the short external beta overview, start with
+[`docs/BETA_LANDING.md`](docs/BETA_LANDING.md).
+
 CortexDB is specifically engineered for autonomous AI agents. Unlike traditional databases that return raw rows or tables, or vector databases that return fragmented, unverified text chunks, CortexDB compiles permission-safe, evidence-aware **Context Packs** with strict token-budget limits and deterministic fact verification.
 
 ---

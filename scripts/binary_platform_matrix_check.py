@@ -40,7 +40,7 @@ DOC_MARKERS = {
     ],
     "docs/deployment/com.cortexdb.server.plist": [
         "/usr/local/bin/cortex-server",
-        "/var/lib/cortexdb",
+        "/usr/local/var/cortexdb",
         "KeepAlive",
     ],
 }
