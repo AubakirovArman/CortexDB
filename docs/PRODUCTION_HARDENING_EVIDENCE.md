@@ -29,7 +29,7 @@ passed
 
 | Suite | Purpose |
 | --- | --- |
-| `hardening_docs` | Confirms load/fault, migration, audit/rate-limit, and encrypted-backup design docs exist. |
+| `hardening_docs` | Confirms load/fault, migration, audit/rate-limit, and encrypted-backup MVP boundary docs exist. |
 | `load_smoke` | Runs local concurrent write/read/search/context/verify smoke. |
 | `single_node_performance` | Runs embedded Strict/Balanced lifecycle with flow latency percentiles. |
 | `performance_trends` | Validates release history, p95/p99 thresholds, and actor busy metrics. |
@@ -48,12 +48,12 @@ This gate proves:
 - crash/fault evidence is locally repeatable;
 - migration compatibility gate passes;
 - audit and rate-limit behavior is tested;
-- encrypted backup design exists and is explicitly not implemented yet.
+- local encrypted backup MVP exists with a documented KMS/compliance boundary.
 
 It does not prove:
 
 - production traffic SLO history beyond local release trend artifacts;
-- implemented encrypted backups;
+- KMS-backed encrypted backups;
 - per-user quota enforcement;
 - tamper-evident audit chain;
 - production distributed reliability.

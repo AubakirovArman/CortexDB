@@ -116,6 +116,7 @@ The beta RC operator path is split by activity:
 | validate | [`CLI.md`](CLI.md), [`API.md`](API.md) | `cortexdb validate ./data` |
 | backup | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | `make backup-drill-check` |
 | restore | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | `cortexdb restore <backup> <target>` |
+| backup pack | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md), [`RPO_RTO.md`](RPO_RTO.md) | `make backup-restore-production-pack-check` |
 | repair | [`CLI.md`](CLI.md), [`FAILURE_SCENARIOS.md`](FAILURE_SCENARIOS.md) | `cortexdb repair ./data --dry-run` |
 | metrics | [`METRICS.md`](METRICS.md), [`OBSERVABILITY_ALERTS.md`](OBSERVABILITY_ALERTS.md) | `make observability-check` |
 | upgrade | [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md), [`UPGRADE_MIGRATION.md`](UPGRADE_MIGRATION.md) | `make deployment-upgrade-check` |
@@ -128,12 +129,21 @@ cargo run -p cortex-cli -- backup ./data ./backups/data-$(date -u +%Y%m%dT%H%M%S
 cargo run -p cortex-cli -- backup-prune ./backups cortexdb- 5
 cargo run -p cortex-cli -- restore ./backups/data-... ./data-restored
 cargo run -p cortex-cli -- validate ./data-restored
+export CORTEXDB_BACKUP_PASSPHRASE="choose-a-long-local-passphrase"
+cargo run -p cortex-cli -- backup-encrypted ./data ./backups/data.cdbenc --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
+cargo run -p cortex-cli -- restore-encrypted ./backups/data.cdbenc ./data-encrypted-restored --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
 ```
 
 Offsite staging:
 
 ```bash
-cargo run -p cortex-cli -- backup-offsite-stage ./backups/data.tar.gz ./offsite cortexdb-$(date -u +%Y%m%dT%H%M%SZ)
+cargo run -p cortex-cli -- backup-offsite-stage ./backups/data-20260602 ./offsite cortexdb-$(date -u +%Y%m%dT%H%M%SZ)
+```
+
+Release evidence:
+
+```bash
+make backup-restore-production-pack-check
 ```
 
 ## 6) Troubleshooting

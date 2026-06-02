@@ -104,7 +104,7 @@ into `target/beta-rc/report.json`.
 
 `make production-hardening-check` is the focused local Epic 4 gate. It
 aggregates load smoke, crash/fault evidence, migration compatibility, audit
-hardening, rate-limit behavior, CLI audit tooling, and encrypted-backup design
+hardening, rate-limit behavior, CLI audit tooling, and encrypted-backup MVP
 checks into `target/production-hardening/report.json`.
 
 `make production-candidate-check` is the focused local Epic 5 gate. It

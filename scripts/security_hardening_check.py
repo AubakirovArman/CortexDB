@@ -83,8 +83,8 @@ REQUIRED_MARKERS = {
     ],
     "encrypted_backup_boundary": [
         ("docs/SECURITY_BETA_BASELINE.md", "encrypted backup restore drill succeeds"),
-        ("docs/ENCRYPTED_BACKUPS_DESIGN.md", "The current repository does not implement encrypted backups yet"),
-        ("docs/SECURITY_HARDENING_EVIDENCE.md", "current backup/restore/offsite staging are local and unencrypted"),
+        ("docs/ENCRYPTED_BACKUPS_DESIGN.md", "local MVP implemented"),
+        ("docs/SECURITY_HARDENING_EVIDENCE.md", "passphrase encrypted backup MVP"),
     ],
     "remote_backup_boundary": [
         ("docs/FUTURE_PRODUCT_LAYERS_PLAN.md", "Remote object-store upload"),
@@ -115,7 +115,7 @@ REQUIRED_MARKERS = {
         ("docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md", "Decision Matrix"),
         ("docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md", "Release-blocking rule"),
         ("docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md", "enterprise RBAC"),
-        ("docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md", "built-in encrypted backups"),
+        ("docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md", "passphrase encrypted backup archives"),
         ("docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md", "remote object-store backups"),
     ],
 }

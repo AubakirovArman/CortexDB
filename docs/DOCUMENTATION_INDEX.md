@@ -65,7 +65,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`STORAGE_COMPATIBILITY.md`](STORAGE_COMPATIBILITY.md) - storage compatibility boundary.
 - [`STORAGE_COMPATIBILITY_EVIDENCE.md`](STORAGE_COMPATIBILITY_EVIDENCE.md) - local Epic 7 evidence gate.
 - [`STORAGE_SOAK.md`](STORAGE_SOAK.md) - repeated storage durability soak gate.
-- [`ENCRYPTED_BACKUPS_DESIGN.md`](ENCRYPTED_BACKUPS_DESIGN.md) - future encrypted backup design.
+- [`ENCRYPTED_BACKUPS_DESIGN.md`](ENCRYPTED_BACKUPS_DESIGN.md) - encrypted backup MVP and future KMS boundary.
 - [`RPO_RTO.md`](RPO_RTO.md) - single-node RPO/RTO boundaries.
 - [`CRASH_SIMULATION.md`](CRASH_SIMULATION.md) - crash/fault checks.
 - [`FAILURE_SCENARIOS.md`](FAILURE_SCENARIOS.md) - failure behavior.

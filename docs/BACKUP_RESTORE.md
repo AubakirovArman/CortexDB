@@ -12,8 +12,11 @@ cortexdb validate ./db.restored
 cortexdb backup-drill ./db ./db.backup ./db.drill-restored
 cortexdb backup-prune ./backups cortexdb- 7
 cortexdb backup-offsite-stage ./db.backup ./offsite cortexdb-20260530T000000Z
+cortexdb backup-encrypted ./db ./db.cdbenc --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
+cortexdb restore-encrypted ./db.cdbenc ./db.encrypted-restored --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
 make backup-drill-check
 make backup-offsite-check
+make backup-restore-production-pack-check
 ```
 
 ## Safety Rules
@@ -27,6 +30,8 @@ make backup-offsite-check
 - Backup drills run backup, restore, and restored validation as one operation.
 - Offsite staging first restores the local backup as a preflight drill, then
   publishes an atomically renamed copy under the offsite root.
+- Encrypted backup restore rejects wrong passphrases or corrupted ciphertext
+  before trusting the restored database.
 - Retention pruning only removes directories whose names start with an
   explicit non-empty prefix and keeps at least one latest backup.
 
@@ -44,8 +49,8 @@ Symlinks and other non-regular files are rejected.
 
 ## Current Limitations
 
-- This is a local filesystem backup/staging format, not an encrypted backup
-  format.
+- Passphrase encrypted backups are a local MVP, not KMS-backed envelope
+  encryption or a compliance custody workflow.
 - Remote object-store upload is still delegated to external tools, but
   `backup-offsite-stage` now gives those tools a validated immutable directory
   to copy.
@@ -135,6 +140,18 @@ root, validates the staged copy, reads back the latest payload, and writes:
 target/backup-offsite/report.json
 ```
 
+`make backup-restore-production-pack-check` is the supported workflow gate. It
+runs local drill, offsite staging, encrypted backup restore tests, and writes a
+single release artifact:
+
+```text
+target/backup-restore-production-pack/report.json
+```
+
+The production-pack report records the supported workflow, RPO boundary, local
+RTO evidence, encrypted-backup gate coverage, and paths to the underlying drill
+and offsite reports.
+
 Override paths in automation when needed:
 
 ```bash
@@ -159,12 +176,10 @@ These backup archive corruption tests cover:
 - corrupted `.acs` segment file inside a backup directory;
 - corrupted `manifest.acm` inside a backup directory.
 
-## Encrypted Backup Decision
+## Encrypted Backup Boundary
 
-Encrypted backup remains a production-candidate requirement, not a beta blocker.
-The beta-supported backup path is validated local filesystem backup plus local
-offsite staging. The encrypted-backup design is documented in
-[`ENCRYPTED_BACKUPS_DESIGN.md`](ENCRYPTED_BACKUPS_DESIGN.md); implementation
-requires authenticated encryption, explicit key-provider behavior, restore
-drills for encrypted bundles, and key-material redaction tests before any public
-claim.
+Encrypted backup is available as a local passphrase archive MVP through
+`backup-encrypted` and `restore-encrypted`. This supports local release
+evidence and operator drills. KMS-backed envelope encryption, remote object
+restore, and compliance-grade custody remain future work documented in
+[`ENCRYPTED_BACKUPS_DESIGN.md`](ENCRYPTED_BACKUPS_DESIGN.md).

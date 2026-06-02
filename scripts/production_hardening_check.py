@@ -40,7 +40,7 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "docs/ENCRYPTED_BACKUPS_DESIGN.md": (
         "envelope encryption",
         "Key Management",
-        "Not Implemented",
+        "Implemented MVP",
     ),
 }
 
@@ -156,7 +156,7 @@ def check_docs(repo: Path) -> dict[str, Any]:
             "single-node performance trend history",
             "migration compatibility docs",
             "audit/rate-limit docs",
-            "encrypted backups design",
+            "encrypted backup MVP boundary",
         ],
     }
 
@@ -228,11 +228,11 @@ def main() -> int:
                 "crash/fault evidence is reproducible",
                 "migration compatibility gate passes",
                 "audit and rate-limit behavior is tested",
-                "encrypted backups have a documented design boundary",
+                "encrypted backups have a local MVP and documented future boundary",
             ],
             "does_not_prove": [
                 "production traffic SLO history beyond local release trend artifacts",
-                "implemented encrypted backups",
+                "KMS-backed encrypted backups",
                 "per-user quota enforcement",
                 "tamper-evident audit chain",
             ],
