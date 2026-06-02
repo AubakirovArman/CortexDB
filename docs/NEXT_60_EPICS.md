@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 49 |
-| partial | 5 |
+| closed | 50 |
+| partial | 4 |
 | not started | 4 |
 | research | 2 |
 | total | 60 |
@@ -95,7 +95,7 @@ The plan recommends this first execution batch:
 | 51 | Official Beta Landing Page | closed | `BETA_LANDING.md` now provides a concise external beta path with demo, beta scope, non-goals, evidence links, and contribution path; `make beta-landing-check` is included in `make beta-release-check`. | Keep landing claims aligned with public claims policy and release notes. |
 | 52 | Use-case Packs | closed | Legal, financial, and technical use-case packs now live under `examples/use_cases`; `make use-case-pack-check` validates manifests, fixtures, scenario docs, and CLI search/context/verify smoke flows. | Keep packs aligned with public claims boundaries and add more domains only behind the same gate. |
 | 53 | Contributor Onboarding | closed | `CONTRIBUTOR_ONBOARDING.md`, `GOOD_FIRST_ISSUES.md`, a good-first-issue template, and `make contributor-onboarding-check` now provide a checked 15-minute path and starter task map. | Keep starter tasks bounded and update the checker as new contributor surfaces appear. |
-| 54 | Public Benchmarks Page | partial | Benchmark docs and evidence reports exist. | Publish release-by-release benchmark history in one public page. |
+| 54 | Public Benchmarks Page | closed | `PUBLIC_BENCHMARKS.md` now summarizes release-by-release benchmark evidence and links retrieval, ContextPack, verification, performance, beta, and claims gates; `make public-benchmarks-check` validates the page. | Refresh snapshots before each public release and keep non-claims visible. |
 | 55 | Comparison Docs | partial | RAG/vector positioning docs exist. | Add clearer Postgres/vector DB/memory framework comparison without aggressive claims. |
 | 56 | Agent Memory v2 | partial | Agent memory docs/module foundations exist. | Add TTL/decay/feedback and end-to-end memory demo. |
 | 57 | Tool Registry | not started | Tool registry is roadmap-level only. | Add tool cells, schemas, permissions, and ContextPack inclusion. |
@@ -119,4 +119,4 @@ The plan recommends this first execution batch:
 The next practical implementation batch is:
 
 1. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
-2. Advance Epic 54: publish release-by-release benchmark history in one public page.
+2. Advance Epic 55: add clear Postgres/vector DB/memory-framework comparison without aggressive claims.

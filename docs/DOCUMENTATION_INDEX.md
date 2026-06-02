@@ -14,6 +14,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`USE_CASE_PACKS.md`](USE_CASE_PACKS.md) - runnable legal, financial, and technical beta scenarios.
 - [`CONTRIBUTOR_ONBOARDING.md`](CONTRIBUTOR_ONBOARDING.md) - 15-minute first contributor path.
 - [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) - bounded starter issue map.
+- [`PUBLIC_BENCHMARKS.md`](PUBLIC_BENCHMARKS.md) - release-by-release public benchmark history.
 - [`BETA_OPERATIONS.md`](BETA_OPERATIONS.md) - beta operator runbook for install, auth, backup, validation, repair, metrics, and known limits.
 - [`RELEASE_NOTES_v0.2.0-beta.1.md`](RELEASE_NOTES_v0.2.0-beta.1.md) - planned beta release notes and checklist.
 - [`BETA_DELTA.md`](BETA_DELTA.md) - what remains before beta promotion.
@@ -106,6 +107,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`ANN_CORPUS_FORMAT.md`](ANN_CORPUS_FORMAT.md) - ANN corpus format.
 - [`ANN_PUBLIC_CORPUS_RUNS.md`](ANN_PUBLIC_CORPUS_RUNS.md) - public corpus run policy.
 - [`BENCHMARKS.md`](BENCHMARKS.md) - benchmark gates and reports.
+- [`PUBLIC_BENCHMARKS.md`](PUBLIC_BENCHMARKS.md) - release-by-release public benchmark summary.
 - [`PERFORMANCE_TREND_HISTORY.md`](PERFORMANCE_TREND_HISTORY.md) - local p95/p99 load and single-node trend gate.
 - [`RETRIEVAL_QUALITY_EVIDENCE.md`](RETRIEVAL_QUALITY_EVIDENCE.md) - local Epic 10 evidence gate.
 
