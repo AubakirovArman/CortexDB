@@ -188,13 +188,23 @@ baseline.
 ## Unofficial DeepSeek Flash Diagnostic
 
 When GPT-4o quota is unavailable, CortexDB can run a local diagnostic pass with
-an OpenAI-compatible DeepSeek endpoint:
+an OpenAI-compatible DeepSeek endpoint. The default target uses explicit
+non-thinking mode for both generation and judging, because DeepSeek thinking mode
+can spend the output budget on `reasoning_content` and return empty visible
+`content`:
 
 ```bash
 make longmemeval-v1-deepseek-flash-falsecase-check
 ```
 
-Latest local diagnostic on the `117` baseline GPT-4o false cases:
+Default output root:
+
+```text
+target/longmemeval-v1/targeted-deepseek-flash-thinking-disabled/
+```
+
+Previously recorded local diagnostic on the `117` baseline GPT-4o false cases
+with implicit/default thinking behavior:
 
 ```text
 model: deepseek-v4-flash

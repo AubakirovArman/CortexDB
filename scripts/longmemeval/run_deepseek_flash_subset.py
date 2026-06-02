@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run an unofficial DeepSeek flash check on LongMemEval v1 false cases."""
+"""Run an unofficial DeepSeek check on LongMemEval v1 false cases."""
 
 from __future__ import annotations
 
@@ -35,9 +35,12 @@ def write_markdown(path: Path, report: dict[str, Any]) -> None:
         "",
         "- official score: `false`",
         f"- model: `{report['model']}`",
+        f"- generation thinking: `{report['generation_thinking']}`",
+        f"- judge thinking: `{report['judge_thinking']}`",
         f"- questions: `{report['questions']}` baseline GPT-4o false cases",
         f"- correct by DeepSeek judge: `{report['correct']}` / `{report['evaluated']}`",
         f"- accuracy: `{report['accuracy']:.4f}`",
+        f"- empty hypotheses: `{report['empty_hypotheses']}`",
         f"- prompt tokens: `{report['usage']['prompt_tokens']}`",
         f"- completion tokens: `{report['usage']['completion_tokens']}`",
         "",
@@ -52,7 +55,7 @@ def write_markdown(path: Path, report: dict[str, Any]) -> None:
         )
     lines += [
         "",
-        "This is an unofficial diagnostic check. It uses DeepSeek flash for both generation "
+        "This is an unofficial diagnostic check. It uses DeepSeek for both generation "
         "and judging, so it is useful for local iteration but is not comparable to the "
         "official LongMemEval GPT-4o evaluator score.",
     ]
@@ -78,14 +81,20 @@ def chat(
     model: str,
     prompt: str,
     max_tokens: int,
+    thinking: str,
+    reasoning_effort: str,
     retries: int,
 ) -> tuple[str, dict[str, Any]]:
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0,
         "max_tokens": max_tokens,
+        "thinking": {"type": thinking},
     }
+    if thinking == "disabled":
+        payload["temperature"] = 0
+    else:
+        payload["reasoning_effort"] = reasoning_effort
     data = json.dumps(payload).encode("utf-8")
     url = base_url.rstrip("/") + "/chat/completions"
     for attempt in range(retries + 1):
@@ -97,8 +106,15 @@ def chat(
         try:
             with urllib.request.urlopen(req, timeout=120) as response:
                 body = json.loads(response.read().decode("utf-8"))
-            choice = body["choices"][0]["message"]
-            return str(choice.get("content", "")).strip(), body.get("usage", {})
+            choice = body["choices"][0]
+            message = choice["message"]
+            metadata = {
+                "finish_reason": choice.get("finish_reason"),
+                "reasoning_content_chars": len(str(message.get("reasoning_content") or "")),
+                "thinking": thinking,
+                "usage": body.get("usage", {}),
+            }
+            return str(message.get("content", "")).strip(), metadata
         except urllib.error.HTTPError as exc:
             if exc.code not in {429, 500, 502, 503, 504} or attempt >= retries:
                 detail = exc.read().decode("utf-8", errors="replace")[:500]
@@ -175,33 +191,54 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     for index, row in enumerate(retrieval_rows, start=1):
         qid = row["question_id"]
         if qid not in existing_hyp:
-            content, usage = chat(
+            content, metadata = chat(
                 api_key=api_key,
                 base_url=args.base_url,
                 model=args.model,
                 prompt=generation_prompt(row),
                 max_tokens=args.gen_max_tokens,
+                thinking=args.generation_thinking,
+                reasoning_effort=args.reasoning_effort,
                 retries=args.retries,
             )
-            existing_hyp[qid] = {"question_id": qid, "hypothesis": content}
+            existing_hyp[qid] = {
+                "question_id": qid,
+                "hypothesis": content,
+                "generation": {
+                    "finish_reason": metadata["finish_reason"],
+                    "reasoning_content_chars": metadata["reasoning_content_chars"],
+                    "thinking": metadata["thinking"],
+                },
+            }
             append_jsonl(hyp_path, existing_hyp[qid])
+            usage = metadata["usage"]
             prompt_tokens += int(usage.get("prompt_tokens", 0))
             completion_tokens += int(usage.get("completion_tokens", 0))
         if qid not in existing_eval:
-            label_text, usage = chat(
+            label_text, metadata = chat(
                 api_key=api_key,
                 base_url=args.base_url,
                 model=args.model,
                 prompt=judge_prompt(refs[qid], existing_hyp[qid]["hypothesis"]),
                 max_tokens=args.judge_max_tokens,
+                thinking=args.judge_thinking,
+                reasoning_effort=args.reasoning_effort,
                 retries=args.retries,
             )
             label = "yes" in label_text.lower()
             existing_eval[qid] = {
                 **existing_hyp[qid],
-                "autoeval_label": {"model": args.model, "label": label, "raw": label_text},
+                "autoeval_label": {
+                    "model": args.model,
+                    "label": label,
+                    "raw": label_text,
+                    "finish_reason": metadata["finish_reason"],
+                    "reasoning_content_chars": metadata["reasoning_content_chars"],
+                    "thinking": metadata["thinking"],
+                },
             }
             append_jsonl(eval_path, existing_eval[qid])
+            usage = metadata["usage"]
             prompt_tokens += int(usage.get("prompt_tokens", 0))
             completion_tokens += int(usage.get("completion_tokens", 0))
         if index % 10 == 0:
@@ -216,10 +253,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "status": "complete",
         "official_score": False,
         "model": args.model,
+        "generation_thinking": args.generation_thinking,
+        "judge_thinking": args.judge_thinking,
         "questions": len(retrieval_rows),
         "evaluated": len(labels),
         "correct": sum(labels),
         "accuracy": sum(labels) / len(labels) if labels else 0.0,
+        "empty_hypotheses": sum(
+            1 for row in existing_hyp.values() if not str(row.get("hypothesis", "")).strip()
+        ),
         "by_question_type": {
             key: {"count": len(values), "correct": sum(values), "accuracy": sum(values) / len(values)}
             for key, values in sorted(by_type.items())
@@ -246,6 +288,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--gen-max-tokens", type=int, default=1024)
     parser.add_argument("--judge-max-tokens", type=int, default=64)
+    parser.add_argument("--generation-thinking", choices=["enabled", "disabled"], default="disabled")
+    parser.add_argument("--judge-thinking", choices=["enabled", "disabled"], default="disabled")
+    parser.add_argument("--reasoning-effort", choices=["high", "max"], default="high")
     parser.add_argument("--retries", type=int, default=4)
     return parser.parse_args()
 

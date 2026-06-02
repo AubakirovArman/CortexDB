@@ -274,8 +274,10 @@ LONGMEMEVAL_V1_PACKAGE_NAME ?= cortexdb-longmemeval-v1-official-gpt4o
 LONGMEMEVAL_V1_SUBMISSION_ROOT ?= target/longmemeval-v1/submission
 LONGMEMEVAL_V1_ANALYSIS_ROOT ?= target/longmemeval-v1/analysis
 LONGMEMEVAL_V1_FALSECASE_ROOT ?= target/longmemeval-v1/targeted-compact-falsecases
-LONGMEMEVAL_V1_DEEPSEEK_ROOT ?= target/longmemeval-v1/targeted-deepseek-flash
+LONGMEMEVAL_V1_DEEPSEEK_ROOT ?= target/longmemeval-v1/targeted-deepseek-flash-thinking-disabled
 LONGMEMEVAL_V1_DEEPSEEK_MODEL ?= deepseek-v4-flash
+LONGMEMEVAL_V1_DEEPSEEK_GENERATION_THINKING ?= disabled
+LONGMEMEVAL_V1_DEEPSEEK_JUDGE_THINKING ?= disabled
 DEEPSEEK_KEY_FILE ?= /mnt/hf_model_weights/arman/3bit/.deepseek
 SINGLE_NODE_PERF_ROOT ?= target/single-node-performance
 SINGLE_NODE_PERF_REPORT ?= $(SINGLE_NODE_PERF_ROOT)/report.json
@@ -751,7 +753,9 @@ longmemeval-v1-deepseek-flash-falsecase-check:
 	  --reference-file "$(LONGMEMEVAL_V1_FALSECASE_ROOT)/false_cases_reference.json" \
 	  --output-root "$(LONGMEMEVAL_V1_DEEPSEEK_ROOT)" \
 	  --api-key-file "$(DEEPSEEK_KEY_FILE)" \
-	  --model "$(LONGMEMEVAL_V1_DEEPSEEK_MODEL)"
+	  --model "$(LONGMEMEVAL_V1_DEEPSEEK_MODEL)" \
+	  --generation-thinking "$(LONGMEMEVAL_V1_DEEPSEEK_GENERATION_THINKING)" \
+	  --judge-thinking "$(LONGMEMEVAL_V1_DEEPSEEK_JUDGE_THINKING)"
 
 single-node-performance-check:
 	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)"

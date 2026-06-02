@@ -83,8 +83,10 @@ make longmemeval-v1-deepseek-flash-falsecase-check
 ```
 
 This uses `deepseek-v4-flash` for both generation and judging on the baseline
-GPT-4o false-case subset. It is useful for local iteration, but it is not an
-official LongMemEval score.
+GPT-4o false-case subset. The target explicitly disables DeepSeek thinking mode
+for generation and judging so the output budget goes to visible answer content
+instead of `reasoning_content`. It is useful for local iteration, but it is not
+an official LongMemEval score.
 
 ## Current Boundary
 
