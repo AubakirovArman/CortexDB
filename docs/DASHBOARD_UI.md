@@ -30,9 +30,11 @@ the API. ANN evaluation also
 renders a compact report card view for recall, production safety, fallback,
 SLO violations, graph shape, and HNSW tuning knobs.
 The dashboard also has a local read-only mode that blocks mutating actions
-before they reach the API, an operational status panel for visible health and
-incident checks, and a Permissions route that explains the active tenant, role,
-token state, admin/data capabilities, and local write guard state.
+before they reach the API, an operational status panel for visible health,
+stats, storage validation, metrics reachability, backup posture, last request
+error state, and incident checks, and a Permissions route that explains the
+active tenant, role, token state, admin/data capabilities, and local write guard
+state.
 The Overview route includes an Audit readiness panel that keeps incident review
 operators on the safe path: audit logs remain file-backed, raw audit events are
 not rendered in the browser, and the panel points operators to the CLI
@@ -42,7 +44,12 @@ selected cells, citations, anomalies, and per-cell explain metadata so pack
 quality can be reviewed without reading raw JSON.
 Storage validation responses render health cards for manifest/WAL status,
 checked segments, checked cells, index coverage, safe WAL truncate offset, and
-validation errors.
+validation errors. The Overview operational status view combines those
+validation cards with stats, metrics, request-error triage, and backup posture.
+Backups stay outside the browser as operator CLI workflows; the dashboard points
+to `make backup-restore-production-pack-check`, `cortexdb backup`,
+`cortexdb backup-drill`, `cortexdb backup-encrypted`, and
+`cortexdb backup-offsite-stage`.
 Cell, Ingest, and Cluster responses render their own report views for sequence
 numbers, lookup payload previews, ingest counts, job state, distributed mode,
 replication factor, and node list, so operators can review normal operations
@@ -116,7 +123,7 @@ workflow coverage and visual regression coverage.
 
 For Beta Release Candidate evidence, the dashboard counts as an operational
 view only for local developer/operator workflows: health, metrics, validation,
-storage status, ANN evaluation, ingestion jobs, cluster status, permissions
-review, audit readiness, local read-only guard state, and typed error reports.
-It is not yet a full incident-management console, RBAC administration UI, audit
-log browser, or production observability product.
+storage status, backup posture, ANN evaluation, ingestion jobs, cluster status,
+permissions review, audit readiness, local read-only guard state, and typed
+error reports. It is not yet a full incident-management console, RBAC
+administration UI, audit log browser, or production observability product.

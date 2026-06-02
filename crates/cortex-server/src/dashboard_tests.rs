@@ -79,6 +79,7 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "id=\"permission-report\"",
         "id=\"permissions-report\"",
         "id=\"status-report\"",
+        "Health, stats, validation, backup posture, and request error state",
         "id=\"history\"",
         "id=\"ingest-job-form\"",
         "id=\"error-report\"",
@@ -103,6 +104,9 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "/v1/ingest/jobs/",
         "/v1/ingest/${kind}",
         "dashboard_status.v1",
+        "backup_posture",
+        "last_request_error",
+        "make backup-restore-production-pack-check",
         "dashboard_permissions.v1",
     ] {
         assert!(
@@ -185,6 +189,8 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert!(operations.body.contains("renderClusterReport"));
     assert!(operations.body.contains("renderIngestReport"));
     assert!(operations.body.contains("renderOperationalStatus"));
+    assert!(operations.body.contains("Backup posture"));
+    assert!(operations.body.contains("Last error"));
     assert!(operations.body.contains("renderPermissionsView"));
     assert!(operations.body.contains("renderRequestIssue"));
     assert!(operations.body.contains("clearRequestIssue"));

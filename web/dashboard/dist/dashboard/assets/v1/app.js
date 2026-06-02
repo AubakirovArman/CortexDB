@@ -23,6 +23,7 @@ let tenant = sessionStorage.getItem("cortexdb-dashboard-tenant") || "default";
 let accessLevel = ACCESS_PUBLIC;
 let accessHint = "no token";
 let readOnlyMode = sessionStorage.getItem("cortexdb-dashboard-read-only") === "true";
+let lastRequestIssue = null;
 
 tenantInput.value = tenant;
 readOnlyToggle.checked = readOnlyMode;
@@ -322,6 +323,7 @@ function run(label, task) {
         .then((body) => {
             setRequestStatus("ok", `OK ${label}`);
             show(body);
+            lastRequestIssue = null;
             window.CortexDashboardReports?.clearRequestIssue?.();
             window.CortexDashboardReports?.renderAnnEvaluation?.(body);
             window.CortexDashboardReports?.renderAqlReport?.(body);
@@ -340,6 +342,12 @@ function run(label, task) {
         .catch((error) => {
             setRequestStatus("error", `ERR ${label}: ${errorMessage(error)}`);
             show(error, false);
+            lastRequestIssue = {
+                label,
+                status: Number(error?.http_status || 0),
+                code: error?.code || error?.status || "request_error",
+                message: errorMessage(error),
+            };
             window.CortexDashboardReports?.renderRequestIssue?.(error, label);
             addHistory(label, false);
         });
@@ -354,6 +362,12 @@ function guardWriteAllowed(label) {
     };
     setRequestStatus("error", `ERR read-only: ${label}`);
     show(error, false);
+    lastRequestIssue = {
+        label,
+        status: 0,
+        code: error.code,
+        message: error.message,
+    };
     window.CortexDashboardReports?.renderRequestIssue?.(error, label);
     addHistory(label, false);
     return false;
@@ -390,6 +404,78 @@ async function loadOperationalStatus() {
         read_only: readOnlyMode,
         results,
         incidents,
+        health: summarizeStatusResult(results, "health"),
+        stats: summarizeStatsResult(results),
+        validation: summarizeValidationResult(results),
+        metrics: summarizeStatusResult(results, "metrics"),
+        backup_posture: backupPosture(results),
+        last_request_error: lastRequestIssue,
+    };
+}
+
+function resultByLabel(results, label) {
+    return results.find((result) => result.label === label) || null;
+}
+
+function summarizeStatusResult(results, label) {
+    const result = resultByLabel(results, label);
+    return {
+        available: !!result,
+        ok: !!result?.ok,
+        code: result?.error?.code || result?.error?.status || null,
+        message: result?.ok ? "ok" : (result ? errorMessage(result.error) : "not checked"),
+    };
+}
+
+function summarizeStatsResult(results) {
+    const result = resultByLabel(results, "stats");
+    const body = result?.body || {};
+    return {
+        available: !!result,
+        ok: !!result?.ok,
+        current_seq: body.current_seq ?? null,
+        checkpoint_seq: body.checkpoint_seq ?? null,
+        live_segments: body.live_segments ?? null,
+        retired_segments: body.retired_segments ?? null,
+        memtable_cells: body.memtable_cells ?? null,
+        wal_size_bytes: body.wal_size_bytes ?? null,
+        message: result?.ok ? "ok" : (result ? errorMessage(result.error) : "admin token required"),
+    };
+}
+
+function summarizeValidationResult(results) {
+    const result = resultByLabel(results, "validate");
+    const body = result?.body || {};
+    const errors = body.errors || [];
+    return {
+        available: !!result,
+        ok: !!result?.ok && body.ok !== false && errors.length === 0,
+        manifest_ok: body.manifest_ok ?? null,
+        wal_ok: body.wal_ok ?? null,
+        live_segments_checked: body.live_segments_checked ?? null,
+        cells_checked: body.cells_checked ?? null,
+        errors,
+        message: result?.ok ? (errors.length ? `${errors.length} validation errors` : "ok") : (result ? errorMessage(result.error) : "admin token required"),
+    };
+}
+
+function backupPosture(results) {
+    const validation = summarizeValidationResult(results);
+    return {
+        available: canUse(ACCESS_ADMIN),
+        browser_runs_backup: false,
+        mode: "operator_cli",
+        evidence_gate: "make backup-restore-production-pack-check",
+        commands: [
+            "cortexdb backup",
+            "cortexdb backup-drill",
+            "cortexdb backup-encrypted",
+            "cortexdb backup-offsite-stage",
+        ],
+        validation_ok: validation.ok,
+        message: canUse(ACCESS_ADMIN)
+            ? "Backups are operator CLI actions; validate storage here before trusting backup posture."
+            : "Admin token required to inspect storage before backup.",
     };
 }
 

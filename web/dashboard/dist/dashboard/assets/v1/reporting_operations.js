@@ -223,16 +223,48 @@
         const results = body.results || [];
         const incidents = body.incidents || [];
         const summary = document.createElement("div");
+        const details = document.createElement("div");
         const incidentList = document.createElement("ul");
+        const backupList = document.createElement("ul");
+        const checkList = document.createElement("ul");
         summary.className = "report-grid";
+        details.className = "report-grid";
         incidentList.className = "report-list compact";
+        backupList.className = "report-list compact";
+        checkList.className = "report-list compact";
+
+        const health = body.health || {};
+        const stats = body.stats || {};
+        const validation = body.validation || {};
+        const metrics = body.metrics || {};
+        const backup = body.backup_posture || {};
+        const lastError = body.last_request_error || null;
+        const validationErrors = validation.errors || [];
+        const backupCommands = backup.commands || [];
 
         summary.replaceChildren(
             card("Tenant", body.tenant || "default"),
             card("Access", body.access_level || "limited"),
             card("Read-only", yesNo(body.read_only), body.read_only ? "warn" : "good"),
+            card("Health", health.ok ? "ok" : health.message || "not checked", health.ok ? "good" : "bad"),
+            card("Stats", stats.ok ? "ok" : stats.message || "not checked", stats.ok ? "good" : "warn"),
+            card("Validation", validation.ok ? "ok" : validation.message || "not checked", validation.ok ? "good" : "bad"),
+            card("Metrics", metrics.ok ? "ok" : metrics.message || "not checked", metrics.ok ? "good" : "warn"),
+            card("Backup posture", backup.available ? backup.mode || "operator_cli" : "admin required", backup.available ? "warn" : "bad"),
             card("Checks", results.length),
             card("Incidents", incidents.length, incidents.length ? "bad" : "good"),
+            card("Last error", lastError ? `${lastError.label}: ${lastError.message}` : "none", lastError ? "bad" : "good"),
+        );
+
+        details.replaceChildren(
+            card("Current seq", stats.current_seq ?? "n/a"),
+            card("Checkpoint seq", stats.checkpoint_seq ?? "n/a"),
+            card("Live segments", stats.live_segments ?? "n/a"),
+            card("Retired segments", stats.retired_segments ?? "n/a"),
+            card("MemTable cells", stats.memtable_cells ?? "n/a"),
+            card("WAL bytes", stats.wal_size_bytes ?? "n/a"),
+            card("Manifest", validation.manifest_ok === null ? "n/a" : yesNo(validation.manifest_ok), validation.manifest_ok === false ? "bad" : "good"),
+            card("WAL validation", validation.wal_ok === null ? "n/a" : yesNo(validation.wal_ok), validation.wal_ok === false ? "bad" : "good"),
         );
 
         if (incidents.length) {
@@ -240,7 +272,26 @@
         } else {
             incidentList.replaceChildren(textItem("No dashboard-visible incidents reported"));
         }
-        container.replaceChildren(summary, incidentList);
+
+        if (backupCommands.length) {
+            backupList.replaceChildren(
+                textItem(`${backup.evidence_gate || "backup evidence gate"} proves restore posture outside the browser.`),
+                ...backupCommands.map((item) => textItem(item)),
+                textItem(backup.message || "Backups are operator-controlled actions."),
+            );
+        } else {
+            backupList.replaceChildren(textItem(backup.message || "Backup posture not checked"));
+        }
+
+        if (validationErrors.length) {
+            checkList.replaceChildren(...validationErrors.map((item) => textItem(`validation: ${item}`)));
+        } else if (results.length) {
+            checkList.replaceChildren(...results.map((item) => textItem(`${item.ok ? "ok" : "err"} ${item.label}`)));
+        } else {
+            checkList.replaceChildren(textItem("No status checks were run"));
+        }
+
+        container.replaceChildren(summary, details, checkList, backupList, incidentList);
     }
 
     function renderPermissionsView(body) {

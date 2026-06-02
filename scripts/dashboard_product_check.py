@@ -17,8 +17,14 @@ REQUIRED_MARKERS = {
     ],
     "operational_status": [
         ("web/dashboard/src/index.html", "id=\"status-report\""),
+        ("web/dashboard/src/index.html", "backup posture"),
         ("web/dashboard/src/app.js", "dashboard_status.v1"),
+        ("web/dashboard/src/app.js", "backup_posture"),
+        ("web/dashboard/src/app.js", "last_request_error"),
+        ("web/dashboard/src/app.js", "make backup-restore-production-pack-check"),
         ("web/dashboard/src/reporting_operations.js", "renderOperationalStatus"),
+        ("web/dashboard/src/reporting_operations.js", "Backup posture"),
+        ("web/dashboard/src/reporting_operations.js", "Last error"),
     ],
     "audit_readiness": [
         ("web/dashboard/src/index.html", "id=\"audit-report\""),
