@@ -270,6 +270,46 @@ knowledge-update cases, but it regresses more temporal-reasoning cases:
 | `single-session-user` | `1` | `0` | `0` | `1` | `0` |
 | `temporal-reasoning` | `32` | `4` | `17` | `3` | `8` |
 
+## Unofficial DeepSeek Flash Compact-500 Diagnostic
+
+The false-case diagnostic above is intentionally hard because it only uses
+questions that the previous GPT-4o baseline got wrong. For broader iteration,
+CortexDB also keeps a 500-question diagnostic over the full
+`longmemeval_s_cleaned.json` split and the compact CortexDB retrieval log:
+
+```bash
+make longmemeval-v1-deepseek-flash-compact-500-check
+```
+
+Latest local result:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+official score: false
+correct by DeepSeek judge: 252 / 500
+accuracy: 0.5040
+empty hypotheses: 0
+prompt tokens: 4,274,340
+completion tokens: 31,512
+```
+
+Breakdown:
+
+| Question type | Correct | Count | Accuracy |
+| --- | ---: | ---: | ---: |
+| `knowledge-update` | `47` | `78` | `0.6026` |
+| `multi-session` | `62` | `133` | `0.4662` |
+| `single-session-assistant` | `35` | `56` | `0.6250` |
+| `single-session-preference` | `0` | `30` | `0.0000` |
+| `single-session-user` | `40` | `70` | `0.5714` |
+| `temporal-reasoning` | `68` | `133` | `0.5113` |
+
+The next optimization target is `single-session-preference`: DeepSeek judged all
+30 preference cases as incorrect, which points to a prompt/context shaping gap
+rather than a retrieval-only issue.
+
 This is useful for iteration, but it is not an official LongMemEval result:
 generation and judging both use DeepSeek flash instead of the official GPT-4o
 judge.

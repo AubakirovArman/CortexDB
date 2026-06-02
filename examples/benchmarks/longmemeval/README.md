@@ -111,6 +111,27 @@ thinking-disabled run, while `13` were correct only in the previous implicit
 run. The thinking-disabled run removed empty hypotheses (`4 -> 0`) and reduced
 completion tokens (`48,555 -> 8,955`).
 
+Run the broader 500-question DeepSeek flash diagnostic over the compact
+CortexDB retrieval log:
+
+```bash
+make longmemeval-v1-deepseek-flash-compact-500-check
+```
+
+Latest local result:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+correct by DeepSeek judge: 252 / 500
+accuracy: 0.5040
+empty hypotheses: 0
+```
+
+The weakest current slice is `single-session-preference`: `0 / 30`. Treat this
+as the next improvement target.
+
 ## Current Boundary
 
 - CortexDB owns the retrieval log generation.
