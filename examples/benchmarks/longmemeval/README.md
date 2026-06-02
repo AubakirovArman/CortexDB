@@ -76,6 +76,16 @@ This keeps `index-mode=user` and changes only the text passed to the reader.
 Run official generation/evaluation on that retrieval log before treating it as
 a score improvement.
 
+Run the unofficial DeepSeek flash false-case diagnostic:
+
+```bash
+make longmemeval-v1-deepseek-flash-falsecase-check
+```
+
+This uses `deepseek-v4-flash` for both generation and judging on the baseline
+GPT-4o false-case subset. It is useful for local iteration, but it is not an
+official LongMemEval score.
+
 ## Current Boundary
 
 - CortexDB owns the retrieval log generation.

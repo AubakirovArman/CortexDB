@@ -1,0 +1,260 @@
+#!/usr/bin/env python3
+"""Run an unofficial DeepSeek flash check on LongMemEval v1 false cases."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+from typing import Any
+
+
+DEFAULT_MODEL = "deepseek-v4-flash"
+DEFAULT_BASE_URL = "https://api.deepseek.com"
+
+
+def read_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
+
+
+def write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=True) + "\n")
+
+
+def write_markdown(path: Path, report: dict[str, Any]) -> None:
+    lines = [
+        "# DeepSeek Flash LongMemEval False-Case Subset Check",
+        "",
+        "- official score: `false`",
+        f"- model: `{report['model']}`",
+        f"- questions: `{report['questions']}` baseline GPT-4o false cases",
+        f"- correct by DeepSeek judge: `{report['correct']}` / `{report['evaluated']}`",
+        f"- accuracy: `{report['accuracy']:.4f}`",
+        f"- prompt tokens: `{report['usage']['prompt_tokens']}`",
+        f"- completion tokens: `{report['usage']['completion_tokens']}`",
+        "",
+        "## By Question Type",
+        "",
+        "| Type | Correct | Count | Accuracy |",
+        "| --- | ---: | ---: | ---: |",
+    ]
+    for name, row in report["by_question_type"].items():
+        lines.append(
+            f"| `{name}` | `{row['correct']}` | `{row['count']}` | `{row['accuracy']:.4f}` |"
+        )
+    lines += [
+        "",
+        "This is an unofficial diagnostic check. It uses DeepSeek flash for both generation "
+        "and judging, so it is useful for local iteration but is not comparable to the "
+        "official LongMemEval GPT-4o evaluator score.",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def append_jsonl(path: Path, row: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(row, ensure_ascii=True, sort_keys=True) + "\n")
+
+
+def load_existing(path: Path) -> dict[str, dict[str, Any]]:
+    if not path.exists():
+        return {}
+    return {row["question_id"]: row for row in read_jsonl(path)}
+
+
+def chat(
+    *,
+    api_key: str,
+    base_url: str,
+    model: str,
+    prompt: str,
+    max_tokens: int,
+    retries: int,
+) -> tuple[str, dict[str, Any]]:
+    payload = {
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0,
+        "max_tokens": max_tokens,
+    }
+    data = json.dumps(payload).encode("utf-8")
+    url = base_url.rstrip("/") + "/chat/completions"
+    for attempt in range(retries + 1):
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=120) as response:
+                body = json.loads(response.read().decode("utf-8"))
+            choice = body["choices"][0]["message"]
+            return str(choice.get("content", "")).strip(), body.get("usage", {})
+        except urllib.error.HTTPError as exc:
+            if exc.code not in {429, 500, 502, 503, 504} or attempt >= retries:
+                detail = exc.read().decode("utf-8", errors="replace")[:500]
+                raise RuntimeError(f"chat request failed: http={exc.code} detail={detail}") from exc
+            time.sleep(min(30, 2**attempt))
+    raise RuntimeError("unreachable retry state")
+
+
+def generation_prompt(row: dict[str, Any]) -> str:
+    contexts = []
+    for index, item in enumerate(row["retrieval_results"].get("ranked_items", []), start=1):
+        text = str(item.get("text", "")).strip()
+        timestamp = str(item.get("timestamp", "")).strip()
+        if text:
+            contexts.append(f"[Session {index} | {timestamp}]\n{text}")
+    return "\n\n".join(
+        [
+            "I will give you relevant history chats between an assistant and a user.",
+            "Answer the question using only the history. If the history is insufficient, say so.",
+            "",
+            "History Chats:",
+            "\n\n".join(contexts),
+            "",
+            f"Current Date: {row.get('question_date', '')}",
+            f"Question: {row['question']}",
+            "Answer:",
+        ]
+    )
+
+
+def judge_prompt(ref: dict[str, Any], hypothesis: str) -> str:
+    qtype = ref["question_type"]
+    question = ref["question"]
+    answer = ref["answer"]
+    if "_abs" in ref["question_id"]:
+        return (
+            "I will give you an unanswerable question, an explanation, and a response from a model. "
+            "Please answer yes if the model correctly identifies the question as unanswerable. "
+            "Answer yes or no only.\n\n"
+            f"Question: {question}\n\nExplanation: {answer}\n\nModel Response: {hypothesis}\n\n"
+            "Does the model correctly identify the question as unanswerable?"
+        )
+    if qtype == "single-session-preference":
+        return (
+            "I will give you a question, a rubric for desired personalized response, and a model "
+            "response. Answer yes if the response satisfies the desired response. Answer yes or no "
+            "only.\n\n"
+            f"Question: {question}\n\nRubric: {answer}\n\nModel Response: {hypothesis}\n\n"
+            "Is the model response correct?"
+        )
+    return (
+        "I will give you a question, a correct answer, and a model response. Answer yes if the "
+        "response contains the correct answer or is equivalent. Otherwise answer no. Answer yes or "
+        "no only.\n\n"
+        f"Question: {question}\n\nCorrect Answer: {answer}\n\nModel Response: {hypothesis}\n\n"
+        "Is the model response correct?"
+    )
+
+
+def run(args: argparse.Namespace) -> dict[str, Any]:
+    api_key = args.api_key_file.read_text(encoding="utf-8").strip()
+    retrieval_rows = read_jsonl(args.retrieval_log)
+    refs = {row["question_id"]: row for row in read_json(args.reference_file)}
+    args.output_root.mkdir(parents=True, exist_ok=True)
+    hyp_path = args.output_root / "deepseek_flash_hypotheses.jsonl"
+    eval_path = args.output_root / "deepseek_flash_eval.jsonl"
+    report_path = args.output_root / "deepseek_flash_report.json"
+    existing_hyp = load_existing(hyp_path)
+    existing_eval = load_existing(eval_path)
+    previous_report = read_json(report_path) if report_path.exists() else {}
+    previous_usage = previous_report.get("usage", {}) if isinstance(previous_report, dict) else {}
+
+    prompt_tokens = completion_tokens = 0
+    for index, row in enumerate(retrieval_rows, start=1):
+        qid = row["question_id"]
+        if qid not in existing_hyp:
+            content, usage = chat(
+                api_key=api_key,
+                base_url=args.base_url,
+                model=args.model,
+                prompt=generation_prompt(row),
+                max_tokens=args.gen_max_tokens,
+                retries=args.retries,
+            )
+            existing_hyp[qid] = {"question_id": qid, "hypothesis": content}
+            append_jsonl(hyp_path, existing_hyp[qid])
+            prompt_tokens += int(usage.get("prompt_tokens", 0))
+            completion_tokens += int(usage.get("completion_tokens", 0))
+        if qid not in existing_eval:
+            label_text, usage = chat(
+                api_key=api_key,
+                base_url=args.base_url,
+                model=args.model,
+                prompt=judge_prompt(refs[qid], existing_hyp[qid]["hypothesis"]),
+                max_tokens=args.judge_max_tokens,
+                retries=args.retries,
+            )
+            label = "yes" in label_text.lower()
+            existing_eval[qid] = {
+                **existing_hyp[qid],
+                "autoeval_label": {"model": args.model, "label": label, "raw": label_text},
+            }
+            append_jsonl(eval_path, existing_eval[qid])
+            prompt_tokens += int(usage.get("prompt_tokens", 0))
+            completion_tokens += int(usage.get("completion_tokens", 0))
+        if index % 10 == 0:
+            print(f"processed {index}/{len(retrieval_rows)}")
+
+    labels = [1 if row["autoeval_label"]["label"] else 0 for row in existing_eval.values()]
+    by_type: dict[str, list[int]] = {}
+    for qid, row in existing_eval.items():
+        by_type.setdefault(refs[qid]["question_type"], []).append(1 if row["autoeval_label"]["label"] else 0)
+    report = {
+        "schema_version": "cortexdb.longmemeval.v1.deepseek_flash_subset.v1",
+        "status": "complete",
+        "official_score": False,
+        "model": args.model,
+        "questions": len(retrieval_rows),
+        "evaluated": len(labels),
+        "correct": sum(labels),
+        "accuracy": sum(labels) / len(labels) if labels else 0.0,
+        "by_question_type": {
+            key: {"count": len(values), "correct": sum(values), "accuracy": sum(values) / len(values)}
+            for key, values in sorted(by_type.items())
+        },
+        "usage": {
+            "prompt_tokens": prompt_tokens + int(previous_usage.get("prompt_tokens", 0)),
+            "completion_tokens": completion_tokens + int(previous_usage.get("completion_tokens", 0)),
+        },
+        "hypotheses": str(hyp_path),
+        "eval_results": str(eval_path),
+    }
+    write_json(report_path, report)
+    write_markdown(args.output_root / "deepseek_flash_report.md", report)
+    return report
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--retrieval-log", type=Path, required=True)
+    parser.add_argument("--reference-file", type=Path, required=True)
+    parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--api-key-file", type=Path, default=Path("/mnt/hf_model_weights/arman/3bit/.deepseek"))
+    parser.add_argument("--base-url", default=DEFAULT_BASE_URL)
+    parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument("--gen-max-tokens", type=int, default=1024)
+    parser.add_argument("--judge-max-tokens", type=int, default=64)
+    parser.add_argument("--retries", type=int, default=4)
+    return parser.parse_args()
+
+
+def main() -> int:
+    report = run(parse_args())
+    print(json.dumps(report, ensure_ascii=True, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -185,6 +185,41 @@ experiment is to run official GPT-4o generation/evaluation against this
 compact-context log and compare QA accuracy with the `0.7660` user-context
 baseline.
 
+## Unofficial DeepSeek Flash Diagnostic
+
+When GPT-4o quota is unavailable, CortexDB can run a local diagnostic pass with
+an OpenAI-compatible DeepSeek endpoint:
+
+```bash
+make longmemeval-v1-deepseek-flash-falsecase-check
+```
+
+Latest local diagnostic on the `117` baseline GPT-4o false cases:
+
+```text
+model: deepseek-v4-flash
+official score: false
+correct by DeepSeek judge: 27 / 117
+accuracy: 0.2308
+prompt tokens: 1,007,768
+completion tokens: 48,555
+```
+
+Breakdown:
+
+| Question type | Correct | Count | Accuracy |
+| --- | ---: | ---: | ---: |
+| `knowledge-update` | `2` | `11` | `0.1818` |
+| `multi-session` | `13` | `48` | `0.2708` |
+| `single-session-assistant` | `0` | `3` | `0.0000` |
+| `single-session-preference` | `0` | `22` | `0.0000` |
+| `single-session-user` | `0` | `1` | `0.0000` |
+| `temporal-reasoning` | `12` | `32` | `0.3750` |
+
+This is useful for iteration, but it is not an official LongMemEval result:
+generation and judging both use DeepSeek flash instead of the official GPT-4o
+judge.
+
 ## Submission Package
 
 Build the local evidence package:

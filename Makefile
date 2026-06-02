@@ -2,7 +2,7 @@
 .PHONY: encrypted-backup-check
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
-.PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis
+.PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check
 .PHONY: operations-runbook-check
 .PHONY: service-manager-smoke-check
 .PHONY: beta-landing-check
@@ -273,6 +273,10 @@ LONGMEMEVAL_V1_EVAL_MODEL ?= gpt-4o
 LONGMEMEVAL_V1_PACKAGE_NAME ?= cortexdb-longmemeval-v1-official-gpt4o
 LONGMEMEVAL_V1_SUBMISSION_ROOT ?= target/longmemeval-v1/submission
 LONGMEMEVAL_V1_ANALYSIS_ROOT ?= target/longmemeval-v1/analysis
+LONGMEMEVAL_V1_FALSECASE_ROOT ?= target/longmemeval-v1/targeted-compact-falsecases
+LONGMEMEVAL_V1_DEEPSEEK_ROOT ?= target/longmemeval-v1/targeted-deepseek-flash
+LONGMEMEVAL_V1_DEEPSEEK_MODEL ?= deepseek-v4-flash
+DEEPSEEK_KEY_FILE ?= /mnt/hf_model_weights/arman/3bit/.deepseek
 SINGLE_NODE_PERF_ROOT ?= target/single-node-performance
 SINGLE_NODE_PERF_REPORT ?= $(SINGLE_NODE_PERF_ROOT)/report.json
 SINGLE_NODE_PERF_CELLS ?= 500
@@ -740,6 +744,14 @@ longmemeval-v1-error-analysis:
 	  --official-metrics "$(LONGMEMEVAL_V1_OFFICIAL_METRICS_REPORT)" \
 	  --generation-dir "$(LONGMEMEVAL_V1_GENERATION_ROOT)" \
 	  --output-root "$(LONGMEMEVAL_V1_ANALYSIS_ROOT)"
+
+longmemeval-v1-deepseek-flash-falsecase-check:
+	python3 scripts/longmemeval/run_deepseek_flash_subset.py \
+	  --retrieval-log "$(LONGMEMEVAL_V1_FALSECASE_ROOT)/compact_context_false_cases_retrieval.jsonl" \
+	  --reference-file "$(LONGMEMEVAL_V1_FALSECASE_ROOT)/false_cases_reference.json" \
+	  --output-root "$(LONGMEMEVAL_V1_DEEPSEEK_ROOT)" \
+	  --api-key-file "$(DEEPSEEK_KEY_FILE)" \
+	  --model "$(LONGMEMEVAL_V1_DEEPSEEK_MODEL)"
 
 single-node-performance-check:
 	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)"
