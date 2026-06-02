@@ -60,7 +60,7 @@ make longmemeval-v1-official-qa-score \
 - LongMemEval-V2 leaderboard submission needs both web and enterprise runs plus
   the official leaderboard package builder.
 
-## Latest Official-Script Retrieval Evidence
+## Latest Official Local Evidence
 
 On the official v1 `longmemeval_s_cleaned.json` split, the local CortexDB
 retrieval run has been accepted by the official retrieval metric script with:
@@ -70,5 +70,13 @@ session recall_all@10 = 0.9021
 session ndcg_any@10 = 0.7873
 ```
 
-This is not the final QA leaderboard score. The QA score still requires
-official generation output plus `evaluate_qa.py`.
+The same run was evaluated with official `evaluate_qa.py gpt-4o`:
+
+```text
+questions = 500
+correct = 383
+accuracy = 0.7660
+```
+
+This is a full official local score. It is not yet a published leaderboard
+entry until the package is submitted to the official maintainers.

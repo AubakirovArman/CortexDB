@@ -1,8 +1,9 @@
 # LongMemEval Official Score Path
 
-Status: CortexDB has an official LongMemEval v1 retrieval harness. The final
-QA leaderboard score is still gated on official hypothesis generation and
-official GPT-4o evaluation.
+Status: CortexDB has a full local LongMemEval v1 run using the official cleaned
+data, official retrieval metric script, official generation format, and official
+GPT-4o QA evaluator. Public leaderboard/list inclusion is still gated on
+submission to the official maintainers.
 
 ## What Is Official
 
@@ -53,9 +54,10 @@ make longmemeval-v1-official-qa-score \
   LONGMEMEVAL_V1_HYPOTHESIS_FILE=target/longmemeval-v1/generation/<file>.jsonl
 ```
 
-## Current Local Evidence
+## Current Official Local Evidence
 
-Local full-run evidence on the official `longmemeval_s_cleaned.json` split:
+Local full-run retrieval evidence on the official `longmemeval_s_cleaned.json`
+split:
 
 ```text
 Session-level metrics:
@@ -74,16 +76,49 @@ sha256: d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442
 
 These are retrieval metrics. They are not the final QA leaderboard score.
 
+Official QA evaluator evidence on the same split:
+
+```text
+model: gpt-4o
+questions: 500
+correct: 383
+accuracy: 0.7660
+```
+
+Breakdown:
+
+| Question type | Accuracy | Count |
+| --- | ---: | ---: |
+| `knowledge-update` | `0.8590` | `78` |
+| `multi-session` | `0.6391` | `133` |
+| `single-session-assistant` | `0.9464` | `56` |
+| `single-session-preference` | `0.2667` | `30` |
+| `single-session-user` | `0.9857` | `70` |
+| `temporal-reasoning` | `0.7594` | `133` |
+
+Generation token usage:
+
+```text
+prompt tokens: 14,213,801
+completion tokens: 33,942
+```
+
+Artifacts:
+
+```text
+target/longmemeval-v1/generation/longmemeval_s_cleaned_cortexdb_session_retrieval.jsonl_testlog_top10context_jsonformat_useronlyfalse_20260602-0342
+target/longmemeval-v1/generation/longmemeval_s_cleaned_cortexdb_session_retrieval.jsonl_testlog_top10context_jsonformat_useronlyfalse_20260602-0342.eval-results-gpt-4o
+target/longmemeval-v1/logs/official_generation_gpt4o_20260602-034241.log
+target/longmemeval-v1/logs/official_eval_gpt4o_20260602-042609.log
+```
+
 ## Submission Gap
 
 To appear in an official LongMemEval list or leaderboard, the remaining work is:
 
-1. Generate official QA hypotheses with the official generation script.
-2. Score those hypotheses with the official evaluator and GPT-4o-compatible
-   judge key.
-3. Package the run according to the official benchmark or LongMemEval-V2
+1. Package the run according to the official benchmark or LongMemEval-V2
    leaderboard requirements.
-4. Submit the package to the official maintainers.
+2. Submit the package to the official maintainers.
 
-Until those four steps are done, CortexDB has official-script retrieval
-evidence, but not an official published LongMemEval leaderboard entry.
+Until those steps are done, CortexDB has a full official local LongMemEval v1
+score, but not an official published LongMemEval leaderboard entry.

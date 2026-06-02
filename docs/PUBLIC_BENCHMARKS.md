@@ -31,7 +31,7 @@ Regenerate the source reports before cutting a release.
 | ContextPack quality | 25 cases across 5 domains; `evidence_coverage_q16=65535`, `citation_coverage_q16=65535`, `redundancy_reduction_q16=65535`, deterministic ordering coverage. |
 | Verification quality | 50 deterministic cases across 5 domains with support, contradiction, mixed evidence, insufficient evidence, numeric guards, and source trust coverage. |
 | Single-node performance | Local p95/p99 lifecycle matrix via `make single-node-performance-check`; trend comparison via `make performance-trend-check`. |
-| LongMemEval official retrieval | Official LongMemEval v1 small split, scored by official `print_retrieval_metrics.py`: `session recall_all@10=0.9021`, `session ndcg_any@10=0.7873`. |
+| LongMemEval official local run | Official LongMemEval v1 small split: retrieval `session recall_all@10=0.9021`, `session ndcg_any@10=0.7873`; official GPT-4o QA accuracy `0.7660`. |
 
 ## Evidence Sources
 
@@ -42,7 +42,7 @@ Regenerate the source reports before cutting a release.
 | ContextPack quality | `make context-pack-quality-check` | [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md) |
 | Verification quality | `make verification-quality-check` | [`VERIFICATION_QUALITY_EVIDENCE.md`](VERIFICATION_QUALITY_EVIDENCE.md) |
 | Single-node performance | `make single-node-performance-check` | [`BENCHMARKS.md`](BENCHMARKS.md) |
-| LongMemEval official retrieval | `make longmemeval-v1-official-retrieval-metrics` | [`LONGMEMEVAL_OFFICIAL.md`](LONGMEMEVAL_OFFICIAL.md) |
+| LongMemEval official local run | `make longmemeval-v1-official-retrieval-metrics`, then official generation/eval | [`LONGMEMEVAL_OFFICIAL.md`](LONGMEMEVAL_OFFICIAL.md) |
 | Performance trend | `make performance-trend-check` | [`PERFORMANCE_TREND_HISTORY.md`](PERFORMANCE_TREND_HISTORY.md) |
 | Public claims | `make public-claims-check` | [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md) |
 
