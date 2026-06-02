@@ -50,6 +50,31 @@ duration requirement after enough soak history has accumulated:
 make storage-soak-history-check STORAGE_SOAK_HISTORY_MIN_HOURS=24
 ```
 
+To actively accumulate that evidence, run the resumable campaign target:
+
+```bash
+make storage-soak-24h-campaign
+```
+
+The campaign repeatedly runs storage soak cycles and updates:
+
+```text
+target/storage-soak-history/campaign.json
+target/storage-soak-history/report.json
+target/storage-soak-history/history.jsonl
+```
+
+For a quick local smoke of the campaign wiring without claiming 24-hour
+evidence:
+
+```bash
+make storage-soak-24h-campaign \
+  STORAGE_SOAK_CAMPAIGN_TARGET_HOURS=0 \
+  STORAGE_SOAK_CAMPAIGN_MAX_RUNS=1 \
+  STORAGE_SOAK_CAMPAIGN_CYCLES=1 \
+  STORAGE_SOAK_CAMPAIGN_CELLS_PER_CYCLE=1
+```
+
 The default history gate does not pretend to be a 24-hour proof. It records
 `twenty_four_hour_evidence.met=false` until accumulated local soak duration
 crosses 24 hours.
