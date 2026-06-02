@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -47,12 +48,27 @@ def process_status(pid_file: Path) -> dict[str, Any]:
     }
 
 
+def parse_utc_timestamp(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+    normalized = value.removesuffix("Z") + "+00:00" if value.endswith("Z") else value
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pid-file", default="target/storage-soak-history/campaign-24h.pid")
     parser.add_argument("--campaign", default="target/storage-soak-history/campaign.json")
     parser.add_argument("--history", default="target/storage-soak-history/report.json")
     parser.add_argument("--format", choices=["text", "json"], default="text")
+    parser.add_argument("--require-active", action="store_true")
+    parser.add_argument("--max-stale-minutes", type=float, default=30.0)
     return parser.parse_args()
 
 
@@ -66,17 +82,32 @@ def main() -> int:
     progress_percent = 0.0
     if target_hours > 0:
         progress_percent = min(100.0, (total_duration_hours / target_hours) * 100.0)
+    updated_at = parse_utc_timestamp(campaign.get("updated_at"))
+    seconds_since_update = None
+    if updated_at is not None:
+        seconds_since_update = max(0, int((datetime.now(timezone.utc) - updated_at).total_seconds()))
+    process = process_status(ROOT / args.pid_file)
+    twenty_four_hour_met = evidence.get("met", False)
+    stale = seconds_since_update is None or seconds_since_update > args.max_stale_minutes * 60
+    healthy = bool(twenty_four_hour_met or (
+        process.get("running")
+        and campaign.get("status") == "running"
+        and not stale
+    ))
     status = {
-        "process": process_status(ROOT / args.pid_file),
+        "process": process,
         "campaign_status": campaign.get("status", "unknown"),
         "completed_runs": campaign.get("completed_runs", 0),
         "target_hours": target_hours,
         "total_duration_hours": total_duration_hours,
         "progress_percent": round(progress_percent, 4),
+        "updated_at": campaign.get("updated_at"),
+        "seconds_since_update": seconds_since_update,
+        "healthy": healthy,
         "run_count": history.get("run_count", 0),
         "total_cycles": history.get("total_cycles", 0),
         "total_cells_written": history.get("total_cells_written", 0),
-        "twenty_four_hour_met": evidence.get("met", False),
+        "twenty_four_hour_met": twenty_four_hour_met,
         "remaining_seconds": evidence.get("remaining_seconds", 24 * 3600),
     }
     if args.format == "json":
@@ -97,6 +128,13 @@ def main() -> int:
             f"met:{status['twenty_four_hour_met']} "
             f"remaining_seconds:{status['remaining_seconds']}"
         )
+        print(
+            "watchdog="
+            f"healthy:{status['healthy']} "
+            f"seconds_since_update:{status['seconds_since_update']}"
+        )
+    if args.require_active and not healthy:
+        return 1
     return 0
 
 

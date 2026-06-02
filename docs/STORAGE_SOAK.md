@@ -90,6 +90,16 @@ make storage-soak-campaign-status STORAGE_SOAK_CAMPAIGN_STATUS_FORMAT=json
 The status includes accumulated soak duration, run/cycle/cell counts,
 `progress_percent`, and the explicit `twenty_four_hour_met` boolean.
 
+Use the watchdog target for unattended runs:
+
+```bash
+make storage-soak-campaign-watchdog
+```
+
+It exits with a non-zero status if the 24-hour campaign is not complete and the
+campaign process is not running, the campaign is not in `running` state, or the
+campaign report has not been updated recently.
+
 The default history gate does not pretend to be a 24-hour proof. It records
 `twenty_four_hour_evidence.met=false` until accumulated local soak duration
 crosses 24 hours.
