@@ -182,6 +182,11 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert!(common.body.contains("function card"));
     assert!(retrieval.body.contains("renderAqlReport"));
     assert!(retrieval.body.contains("renderContextPack"));
+    assert!(retrieval.body.contains("Citation explorer"));
+    assert!(retrieval.body.contains("Explain explorer"));
+    assert!(retrieval.body.contains("Anomaly explorer"));
+    assert!(retrieval.body.contains("score_components"));
+    assert!(retrieval.body.contains("why_excluded"));
     assert!(retrieval.body.contains("renderSearchReport"));
     assert!(retrieval.body.contains("renderVerificationReport"));
     assert!(operations.body.contains("renderAnnEvaluation"));

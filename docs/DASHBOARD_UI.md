@@ -39,9 +39,21 @@ The Overview route includes an Audit readiness panel that keeps incident review
 operators on the safe path: audit logs remain file-backed, raw audit events are
 not rendered in the browser, and the panel points operators to the CLI
 redaction-check workflow.
+### ContextPack Explorer
+
 ContextPack responses render a separate report view for token budget usage,
 selected cells, citations, anomalies, and per-cell explain metadata so pack
-quality can be reviewed without reading raw JSON.
+quality can be reviewed without reading raw JSON. The Context route splits this
+into an operator-facing explorer:
+
+- Context cells: selected cell payload previews, token estimates, citation
+  status, source refs, matched terms, and why-selected text.
+- Citation explorer: one row per selected cell with citation/source-ref
+  visibility, including missing-citation cases.
+- Explain explorer: per-cell score, BM25 base, source-trust category/bonus,
+  redundancy penalty, and score component reasons.
+- Anomaly explorer: token overload, missing citation, redundancy, and
+  `why_excluded` messages when the engine reports excluded cells.
 Storage validation responses render health cards for manifest/WAL status,
 checked segments, checked cells, index coverage, safe WAL truncate offset, and
 validation errors. The Overview operational status view combines those

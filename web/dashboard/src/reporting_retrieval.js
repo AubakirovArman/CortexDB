@@ -30,9 +30,49 @@
 
     function anomalyItem(anomaly) {
         const item = document.createElement("li");
+        const exclusion = anomaly.why_excluded ? ` · ${anomaly.why_excluded}` : "";
         item.textContent = anomaly.cell_id
-            ? `Cell ${anomaly.cell_id}: ${anomaly.code} - ${anomaly.message}`
-            : `${anomaly.code} - ${anomaly.message}`;
+            ? `Cell ${anomaly.cell_id}: ${anomaly.code} - ${anomaly.message}${exclusion}`
+            : `${anomaly.code} - ${anomaly.message}${exclusion}`;
+        return item;
+    }
+
+    function citationItem(cell) {
+        const item = document.createElement("li");
+        const source = sourceLabel(cell.source_ref) || "source_ref missing";
+        const citation = cell.citation || "citation missing";
+        item.textContent = `Cell ${cell.cell_id}: ${citation} · ${source}`;
+        return item;
+    }
+
+    function explainItem(cell) {
+        const item = document.createElement("article");
+        const title = document.createElement("h4");
+        const meta = document.createElement("p");
+        const components = document.createElement("ul");
+        const explain = cell.explain || {};
+        const scoreComponents = explain.score_components || [];
+
+        item.className = "report-item";
+        title.textContent = `Cell ${cell.cell_id} explain`;
+        meta.className = "report-meta";
+        meta.textContent = [
+            `score: ${explain.score ?? "n/a"}`,
+            `base bm25: ${explain.base_bm25 ?? "n/a"}`,
+            `source trust: ${explain.source_trust_category || "unknown"} ${q16Percent(explain.source_trust_q16)}`,
+            `bonus: ${explain.source_trust_bonus ?? "n/a"}`,
+            `redundancy penalty: ${explain.redundancy_penalty ?? "n/a"}`,
+        ].join(" · ");
+        components.className = "report-list compact";
+        if (scoreComponents.length) {
+            components.replaceChildren(...scoreComponents.map((component) => textItem(
+                `${component.name}: value=${component.value} contribution=${component.contribution} - ${component.reason}`,
+            )));
+        } else {
+            components.replaceChildren(textItem(explain.why_selected || "No score components reported"));
+        }
+
+        item.append(title, meta, components);
         return item;
     }
 
@@ -182,9 +222,13 @@
 
         const summary = document.createElement("div");
         const cellList = document.createElement("div");
+        const citationList = document.createElement("ul");
+        const explainList = document.createElement("div");
         const anomalyList = document.createElement("ul");
         summary.className = "report-grid";
         cellList.className = "report-list";
+        citationList.className = "report-list compact";
+        explainList.className = "report-list";
         anomalyList.className = "report-list compact";
 
         summary.replaceChildren(
@@ -196,15 +240,35 @@
             card("Required", yesNo(body.citations_required)),
             card("Truncated", yesNo(body.truncated), body.truncated ? "warn" : "good"),
             card("Anomalies", anomalies.length, anomalyTone),
+            card("Explain rows", cells.filter((cell) => cell.explain).length),
+            card("Source refs", cells.filter((cell) => cell.source_ref).length),
         );
 
         if (cells.length) cellList.replaceChildren(...cells.slice(0, 5).map(cellItem));
         else cellList.replaceChildren(card("Cells", "none"));
 
+        if (cells.length) citationList.replaceChildren(...cells.map(citationItem));
+        else citationList.replaceChildren(textItem("No ContextPack cells to cite"));
+
+        const explainedCells = cells.filter((cell) => cell.explain);
+        if (explainedCells.length) explainList.replaceChildren(...explainedCells.slice(0, 5).map(explainItem));
+        else explainList.replaceChildren(card("Explain", "none", "warn"));
+
         if (anomalies.length) anomalyList.replaceChildren(...anomalies.map(anomalyItem));
         else anomalyList.replaceChildren(anomalyItem({ code: "none", message: "No anomalies reported" }));
 
-        container.replaceChildren(summary, cellList, anomalyList);
+        container.replaceChildren(
+            card("Explorer", "Context cells / Citation explorer / Explain explorer / Anomaly explorer", "good"),
+            summary,
+            card("Context cells", `${cells.length} selected`),
+            cellList,
+            card("Citation explorer", `${citations}/${cells.length} cited`, citationTone),
+            citationList,
+            card("Explain explorer", `${explainedCells.length} cells explained`),
+            explainList,
+            card("Anomaly explorer", `${anomalies.length} anomalies`, anomalyTone),
+            anomalyList,
+        );
     }
 
     Object.assign(reports, {

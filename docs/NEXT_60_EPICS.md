@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 40 |
-| partial | 13 |
+| closed | 41 |
+| partial | 12 |
 | not started | 5 |
 | research | 2 |
 | total | 60 |
@@ -83,7 +83,7 @@ The plan recommends this first execution batch:
 | 39 | Migration Compatibility Matrix v2 | closed | `make migration-compatibility-check` now validates the matrix, restores historical backup fixtures, and runs `migration_upgrade_matrix_v2_check.py` to open the previous-release direct database fixture, write with the current binary, flush/compact, back up, restore, and verify old plus new cells. | Keep adding release-to-release fixtures for each public release pair. |
 | 40 | Operations Runbook | closed | `OPERATIONS.md` now has release-binary and source paths, health/auth/data/backup/restore/repair/audit/upgrade commands, known limits, and an evidence bundle; `make operations-runbook-check` writes `target/operations-runbook/report.json` and is included in production evidence sweep. | Keep the runbook aligned as operator surfaces change. |
 | 41 | Dashboard Operational Status View | closed | Dashboard operational status now combines health, stats, validation, metrics reachability, backup posture, last request error state, and visible incidents; `make dashboard-product-check` verifies the source markers and release package. | Keep the status view aligned as backup and observability surfaces change. |
-| 42 | Dashboard ContextPack Explorer | partial | Dashboard can inspect retrieval/context foundations. | Add full ContextPack cells/citations/explain/anomalies/token UI. |
+| 42 | Dashboard ContextPack Explorer | closed | Context route now renders selected cells, token budget usage, citation/source-ref rows, score-component explain cards, anomalies, and `why_excluded` rows; `make dashboard-product-check` guards the explorer markers. | Keep the explorer additive as ContextPack scoring fields evolve. |
 | 43 | Dashboard Verification Explorer | partial | Dashboard has verification/reporting foundations. | Add full mixed-evidence/numeric-conflict explorer. |
 | 44 | Dashboard Permissions View | partial | Security/RBAC docs and dashboard foundations exist. | Add read-only token/role/scope/AgentView UI. |
 | 45 | Dashboard Incident View | partial | Audit/metrics foundations exist. | Add operational incident timeline for audit/rate/storage/backup events. |
@@ -119,4 +119,4 @@ The plan recommends this first execution batch:
 The next practical implementation batch is:
 
 1. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
-2. Advance Epic 42: add full ContextPack cells/citations/explain/anomalies/token UI.
+2. Advance Epic 43: add full mixed-evidence and numeric-conflict verification explorer.

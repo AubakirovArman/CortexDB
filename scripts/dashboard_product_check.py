@@ -38,6 +38,15 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/dashboard_manifest.json", "\"permissions\""),
         ("web/dashboard/src/reporting_operations.js", "renderPermissionsView"),
     ],
+    "context_pack_explorer": [
+        ("web/dashboard/src/index.html", "id=\"context-report\""),
+        ("web/dashboard/src/reporting_retrieval.js", "Citation explorer"),
+        ("web/dashboard/src/reporting_retrieval.js", "Explain explorer"),
+        ("web/dashboard/src/reporting_retrieval.js", "Anomaly explorer"),
+        ("web/dashboard/src/reporting_retrieval.js", "score_components"),
+        ("web/dashboard/src/reporting_retrieval.js", "why_excluded"),
+        ("docs/DASHBOARD_UI.md", "ContextPack Explorer"),
+    ],
     "release_artifacts": [
         ("e2e/dashboard_screenshots.mjs", "permissions"),
         ("docs/DASHBOARD_UI.md", "dashboard-screenshots"),

@@ -28,6 +28,8 @@ This gate covers:
   the API;
 - an operational status panel for health, stats, validation, metrics, backup
   posture, last request error state, and visible incidents;
+- a ContextPack Explorer covering selected cells, citations, explain score
+  components, anomalies, and `why_excluded` messages;
 - an audit readiness panel that keeps raw audit events out of the browser and
   points operators to file-backed CLI redaction checks;
 - a permissions view for tenant, active role, token state, admin/data
@@ -41,6 +43,7 @@ read_only_mode: true
 operational_status: true
 operational_backup_posture: true
 operational_last_error: true
+context_pack_explorer: true
 audit_readiness: true
 permissions_view: true
 release_artifacts: true
