@@ -18,7 +18,7 @@ make demo
 Minimal local loop:
 
 ```bash
-cargo run -p cortex-cli -- load-fixture examples/datasets/investment_projects ./demo-db
+cargo run -p cortex-cli -- load-fixture ./demo-db examples/datasets/investment_projects
 cargo run -p cortex-cli -- search ./demo-db project:investments "solar budget"
 cargo run -p cortex-cli -- context ./demo-db project:investments \
   'RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN default LIMIT 10 CANDIDATES;' --json

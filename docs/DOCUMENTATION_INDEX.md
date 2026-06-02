@@ -11,6 +11,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`PROJECT_STATUS.md`](PROJECT_STATUS.md) - honest Core Alpha status.
 - [`BETA_RELEASE.md`](BETA_RELEASE.md) - `v0.2.0-beta.1` scope, non-goals, and promotion gate.
 - [`BETA_LANDING.md`](BETA_LANDING.md) - concise external beta landing path.
+- [`USE_CASE_PACKS.md`](USE_CASE_PACKS.md) - runnable legal, financial, and technical beta scenarios.
 - [`BETA_OPERATIONS.md`](BETA_OPERATIONS.md) - beta operator runbook for install, auth, backup, validation, repair, metrics, and known limits.
 - [`RELEASE_NOTES_v0.2.0-beta.1.md`](RELEASE_NOTES_v0.2.0-beta.1.md) - planned beta release notes and checklist.
 - [`BETA_DELTA.md`](BETA_DELTA.md) - what remains before beta promotion.

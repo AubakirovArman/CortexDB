@@ -1,0 +1,41 @@
+{
+  "schema_version": "cortexdb.use_case_packs.v1",
+  "packs": [
+    {
+      "id": "legal_policy_review",
+      "title": "Legal Policy Review",
+      "domain": "legal",
+      "scope": "project:legal",
+      "fixture_path": "examples/datasets/legal_policies/cells.jsonl",
+      "readme_path": "examples/use_cases/legal_policy_review/README.md",
+      "search_query": "affiliate contract approval",
+      "context_aql": "RETRIEVE CONTEXT FOR TASK \"affiliate approval policy\" IN BRAIN default REQUIRE citations LIMIT 10 CANDIDATES;",
+      "verify_aql": "VERIFY FACT \"All affiliate contracts must be approved by legal department before signature\" IN BRAIN default;",
+      "expected_markers": ["affiliate", "legal department", "POL-01"]
+    },
+    {
+      "id": "financial_filing_review",
+      "title": "Financial Filing Review",
+      "domain": "financial",
+      "scope": "sec:filings",
+      "fixture_path": "examples/datasets/sec_financial_facts/cells.jsonl",
+      "readme_path": "examples/use_cases/financial_filing_review/README.md",
+      "search_query": "Tesla 2024 revenue",
+      "context_aql": "RETRIEVE CONTEXT FOR TASK \"Tesla annual revenue\" IN BRAIN default REQUIRE citations LIMIT 10 CANDIDATES;",
+      "verify_aql": "VERIFY FACT \"Tesla reported full year 2024 total revenues of 96.77B USD\" IN BRAIN default;",
+      "expected_markers": ["Tesla", "96.77B USD", "revenue"]
+    },
+    {
+      "id": "technical_runbook_triage",
+      "title": "Technical Runbook Triage",
+      "domain": "technical",
+      "scope": "docs:technical",
+      "fixture_path": "examples/datasets/technical_docs/cells.jsonl",
+      "readme_path": "examples/use_cases/technical_runbook_triage/README.md",
+      "search_query": "compatibility endpoint",
+      "context_aql": "RETRIEVE CONTEXT FOR TASK \"compatibility endpoint\" IN BRAIN default REQUIRE citations LIMIT 10 CANDIDATES;",
+      "verify_aql": "VERIFY FACT \"The /v1/compatibility endpoint exposes API version and SDK contract version\" IN BRAIN default;",
+      "expected_markers": ["/v1/compatibility", "SDK contract", "migration matrix"]
+    }
+  ]
+}
