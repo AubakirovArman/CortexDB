@@ -126,7 +126,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md) - offline upgrade and restore-based rollback workflow.
 - [`INGESTION.md`](INGESTION.md) - ingestion behavior.
 - [`PDF_TEXT_EXTRACTION.md`](PDF_TEXT_EXTRACTION.md) - digital PDF and external OCR adapter boundary.
-- [`AGENT_MEMORY.md`](AGENT_MEMORY.md) - local agent memory.
+- [`AGENT_MEMORY.md`](AGENT_MEMORY.md) - local agent memory, TTL, decay, feedback, and demo gate.
 - [`METRICS.md`](METRICS.md) - metrics endpoint and fields.
 - [`OBSERVABILITY_EVIDENCE.md`](OBSERVABILITY_EVIDENCE.md) - local Epic 18 observability evidence gate.
 - [`OBSERVABILITY_ALERTS.md`](OBSERVABILITY_ALERTS.md) - alert rules and operator actions.

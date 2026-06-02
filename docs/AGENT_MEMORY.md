@@ -1,4 +1,4 @@
-# Agent Memory v0
+# Agent Memory v2
 
 Agent memory now has a minimal durable path:
 
@@ -57,12 +57,35 @@ let scores = db.memory_decay_scores(now_unix_seconds);
 `freshness_q16` is `Q16_ONE` for permanent memory, decreases linearly over the
 TTL window, and becomes `Q16_ZERO` after expiry.
 
+Feedback is stored as durable `type=feedback` cells and is used as a
+deterministic pre-pack ordering signal for ContextPack selection. The current
+model supports useful/not-useful votes, per-source-cell scores, and stats.
+
+Run the end-to-end local memory demo:
+
+```bash
+make agent-memory-demo-check
+```
+
+or manually:
+
+```bash
+examples/demo/agent_memory/run.sh
+```
+
 ## Implemented
 
 - **Automatic background TTL scheduling** — A background task runs every 60s on each
   active tenant database, scans for expired memory cells, and tombstones them via WAL.
   See `cortex-server/src/lib.rs` (background interval loop) and
   `cortex-engine/src/memory.rs` (`expire_memory_cells`).
+- **Deterministic decay scoring** — `memory_decay_scores` reports q16 freshness
+  without floating-point scoring.
+- **Feedback ordering** — ContextPack candidate ordering uses durable feedback
+  scores before packing.
+- **End-to-end memory demo** — `examples/demo/agent_memory` exercises CLI
+  remember, context, and verify flows, while the gate also runs TTL/decay and
+  feedback regression tests.
 
 ## Not Yet
 
