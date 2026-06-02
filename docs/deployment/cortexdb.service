@@ -1,15 +1,21 @@
 [Unit]
-Description=CortexDB Server
-After=network.target
+Description=CortexDB single-node server
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 User=cortexdb
 Group=cortexdb
+EnvironmentFile=/etc/cortexdb/cortexdb.env
 WorkingDirectory=/var/lib/cortexdb
-ExecStart=/usr/local/bin/cortex-server /var/lib/cortexdb 0.0.0.0:8181
+ExecStart=/usr/local/bin/cortex-server /var/lib/cortexdb 127.0.0.1:8181
 Restart=on-failure
-RestartSec=5
+RestartSec=2s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/cortexdb
 
 [Install]
 WantedBy=multi-user.target

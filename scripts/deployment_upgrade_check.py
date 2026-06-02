@@ -22,6 +22,12 @@ REQUIRED_DOC_MARKERS = {
         "CORTEXDB_AUTH_TOKENS_FILE",
         "/v1/validate",
     ],
+    "docs/LAUNCHD.md": [
+        "launchctl bootstrap",
+        "launchctl kickstart",
+        "launchctl bootout",
+        "/v1/validate",
+    ],
     "docs/UPGRADE_ROLLBACK.md": [
         "Pre-Upgrade Checklist",
         "backup-drill",
@@ -54,13 +60,20 @@ REQUIRED_DOC_MARKERS = {
     ],
     "docs/deployment/com.cortexdb.server.plist": [
         "/usr/local/bin/cortex-server",
+        "/usr/local/var/cortexdb",
+        "CORTEXDB_AUTH_TOKENS_FILE",
         "KeepAlive",
+    ],
+    "docs/deployment/cortexdb.service": [
+        "EnvironmentFile=/etc/cortexdb/cortexdb.env",
+        "NoNewPrivileges=true",
+        "ProtectSystem=strict",
     ],
 }
 
 LINK_MARKERS = {
     "README.md": ["docs/INSTALL.md", "docs/SYSTEMD.md", "docs/UPGRADE_ROLLBACK.md"],
-    "docs/DOCUMENTATION_INDEX.md": ["INSTALL.md", "SYSTEMD.md", "UPGRADE_ROLLBACK.md", "BINARY_PLATFORM_MATRIX.md"],
+    "docs/DOCUMENTATION_INDEX.md": ["INSTALL.md", "SYSTEMD.md", "LAUNCHD.md", "UPGRADE_ROLLBACK.md", "BINARY_PLATFORM_MATRIX.md"],
     "docs/PL_EXTRACTED_EPICS.md": ["DEPLOYMENT_UPGRADE_EVIDENCE.md"],
 }
 
@@ -99,7 +112,7 @@ def main() -> int:
         failures.append("release workflow does not mention tar.gz and sha256 assets")
 
     makefile = read("Makefile")
-    for marker in ("deployment-upgrade-check", "binary-release-check", "migration-policy-check"):
+    for marker in ("deployment-upgrade-check", "service-manager-smoke-check", "binary-release-check", "migration-policy-check"):
         if marker not in makefile:
             failures.append(f"Makefile: missing {marker}")
 

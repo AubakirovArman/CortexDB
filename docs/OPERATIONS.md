@@ -23,8 +23,9 @@ shortest route from clone or release archive to a validated local database.
    cargo build --workspace
    ```
 
-   Release binary install steps are in [`INSTALL.md`](INSTALL.md). A systemd
-   service example is in [`SYSTEMD.md`](SYSTEMD.md).
+   Release binary install steps are in [`INSTALL.md`](INSTALL.md). Linux
+   systemd and macOS launchd service examples are in [`SYSTEMD.md`](SYSTEMD.md)
+   and [`LAUNCHD.md`](LAUNCHD.md).
 
 2. Create one local database root and start the HTTP server:
 
@@ -66,6 +67,7 @@ shortest route from clone or release archive to a validated local database.
 
    ```bash
    make operations-runbook-check
+   make service-manager-smoke-check
    make deployment-upgrade-check
    make observability-check
    make public-claims-check
@@ -136,7 +138,7 @@ The beta RC operator path is split by activity:
 | Activity | Primary doc | Local gate or command |
 | --- | --- | --- |
 | install | [`INSTALL.md`](INSTALL.md) | `make binary-release-check` |
-| service setup | [`SYSTEMD.md`](SYSTEMD.md) | `/v1/validate` health probe |
+| service setup | [`SYSTEMD.md`](SYSTEMD.md), [`LAUNCHD.md`](LAUNCHD.md) | `make service-manager-smoke-check` and `/v1/validate` health probe |
 | validate | [`CLI.md`](CLI.md), [`API.md`](API.md) | `cortexdb validate ./data` |
 | backup | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | `make backup-drill-check` |
 | restore | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | `cortexdb restore <backup> <target>` |
@@ -258,6 +260,7 @@ and confirm the audit sink did not persist query strings or body-like fields.
 ## 7) Performance/reliability smoke
 
 - Runbook coverage: `make operations-runbook-check`
+- Service manager examples: `make service-manager-smoke-check`
 - CLI/HTTP smoke: `scripts/smoke_test.sh`
 - Load and metrics smoke: `make load-smoke-check`
 - ANN/recall drift: `make ann-history-regression-check`, `make ann-drift-check`
@@ -286,6 +289,7 @@ Before publishing or handing a build to another operator, collect:
 
 ```bash
 make operations-runbook-check
+make service-manager-smoke-check
 make deployment-upgrade-check
 make observability-check
 make migration-compatibility-check
@@ -297,6 +301,7 @@ Primary reports:
 
 ```text
 target/operations-runbook/report.json
+target/service-manager-smoke/report.json
 target/deployment-upgrade/report.json
 target/observability/report.json
 target/migration-upgrade-matrix-v2/report.json

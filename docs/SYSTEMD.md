@@ -76,6 +76,15 @@ ReadWritePaths=/var/lib/cortexdb
 WantedBy=multi-user.target
 ```
 
+The checked-in example is:
+
+```text
+docs/deployment/cortexdb.service
+```
+
+`make service-manager-smoke-check` validates this unit and the macOS launchd
+plist before deployment evidence is accepted.
+
 Enable and start:
 
 ```bash

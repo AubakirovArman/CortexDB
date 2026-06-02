@@ -29,7 +29,8 @@ for a local single-node operator to:
 - run deployment, observability, migration, backup, and soak evidence gates.
 
 The gate also checks that the runbook links to the supporting install, systemd,
-backup/restore, RPO/RTO, upgrade, metrics, failure-scenario, CLI, and API docs.
+launchd, backup/restore, RPO/RTO, upgrade, metrics, failure-scenario, CLI, and
+API docs.
 
 ## Boundary
 

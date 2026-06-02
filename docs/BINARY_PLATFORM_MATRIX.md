@@ -54,6 +54,8 @@ docs/deployment/com.cortexdb.server.plist
 
 It is an operator example, not an installer. Operators still need to create the
 data/log directories and configure authentication secrets outside the plist.
+`make service-manager-smoke-check` validates the checked-in launchd plist and
+Linux systemd unit before they are referenced by deployment evidence.
 
 ## Windows Boundary
 

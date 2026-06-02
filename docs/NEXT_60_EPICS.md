@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 44 |
-| partial | 9 |
+| closed | 45 |
+| partial | 8 |
 | not started | 5 |
 | research | 2 |
 | total | 60 |
@@ -89,7 +89,7 @@ The plan recommends this first execution batch:
 | 45 | Dashboard Incident View | closed | Dashboard operational status now includes an incident timeline for audit/rate-limit/storage/backup events with severity, source, message, and action guidance; `make dashboard-product-check` guards the markers. | Keep this as a read-only triage view until a real incident-management product is introduced. |
 | 46 | Linux/macOS Binary Release Pipeline | closed | `.github/workflows/release.yml` now has an explicit four-platform matrix for `linux-x86_64`, `linux-aarch64`, `macos-arm64`, and `macos-x86_64`; `make binary-platform-matrix-check` validates docs/workflow markers and clean-install smoke for the local archive. | Keep release tag runs attached with all matrix artifacts before each public release. |
 | 47 | Install Script | closed | `scripts/install.sh` verifies external `.sha256`, internal `SHA256SUMS`, executable bits, and installs CLI/server binaries; `make install-script-check` validates dry-run, install, and corrupt-checksum rejection. | Keep the script compatible with Linux `sha256sum` and macOS `shasum`. |
-| 48 | Systemd and launchd Support | partial | Systemd docs exist. | Add launchd docs/examples and smoke validation. |
+| 48 | Systemd and launchd Support | closed | `SYSTEMD.md`, `LAUNCHD.md`, checked-in service/plist examples, and `make service-manager-smoke-check` now validate Linux/macOS service-manager artifacts. | Keep examples aligned with release binary paths and auth environment changes. |
 | 49 | Release Artifact Manifest | closed | `make release-artifact-manifest-check` now writes and validates `target/release-artifact-manifest/manifest.json` with binary, sidecar checksum, SDK, OpenAPI, evidence report, install-script, binary-platform, and git metadata. | Keep adding required evidence reports as release gates expand. |
 | 50 | Version and Compatibility Dashboard | not started | Compatibility docs exist. | Expose API/SDK/storage/migration versions in dashboard/API. |
 | 51 | Official Beta Landing Page | partial | README and positioning docs exist. | Turn them into a concise external beta landing path. |
@@ -119,4 +119,4 @@ The plan recommends this first execution batch:
 The next practical implementation batch is:
 
 1. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
-2. Advance Epic 48: add launchd docs/examples and smoke validation.
+2. Advance Epic 50: expose API/SDK/storage/migration versions in dashboard/API.

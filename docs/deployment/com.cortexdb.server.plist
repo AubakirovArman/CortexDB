@@ -7,16 +7,29 @@
     <key>ProgramArguments</key>
     <array>
         <string>/usr/local/bin/cortex-server</string>
-        <string>/var/lib/cortexdb</string>
+        <string>/usr/local/var/cortexdb</string>
         <string>127.0.0.1:8181</string>
     </array>
+    <key>WorkingDirectory</key>
+    <string>/usr/local/var/cortexdb</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>CORTEXDB_AUTH_TOKENS_FILE</key>
+        <string>/usr/local/etc/cortexdb/auth.tokens</string>
+        <key>CORTEXDB_ACTOR_QUEUE_CAPACITY</key>
+        <string>1024</string>
+        <key>CORTEXDB_REQUEST_RATE_LIMIT_PER_SECOND</key>
+        <string>100</string>
+        <key>CORTEXDB_AUDIT_LOG_PATH</key>
+        <string>/usr/local/var/log/cortexdb/audit.jsonl</string>
+    </dict>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/var/log/cortexdb/server.log</string>
+    <string>/usr/local/var/log/cortexdb/server.log</string>
     <key>StandardErrorPath</key>
-    <string>/var/log/cortexdb/server.error.log</string>
+    <string>/usr/local/var/log/cortexdb/server.error.log</string>
 </dict>
 </plist>
