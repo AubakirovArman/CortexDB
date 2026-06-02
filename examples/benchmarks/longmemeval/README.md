@@ -118,7 +118,7 @@ CortexDB retrieval log:
 make longmemeval-v1-deepseek-flash-compact-500-check
 ```
 
-Latest local result:
+First local result before preference-aware prompt:
 
 ```text
 model: deepseek-v4-flash
@@ -129,8 +129,38 @@ accuracy: 0.5040
 empty hypotheses: 0
 ```
 
-The weakest current slice is `single-session-preference`: `0 / 30`. Treat this
-as the next improvement target.
+This first 500-question run exposed a format issue: `single-session-preference`
+was `0 / 30` because the reader prompt treated preference questions like factual
+lookup questions.
+
+Run the focused preference-format check:
+
+```bash
+make longmemeval-v1-deepseek-flash-preference-check
+```
+
+Latest local result with the preference-aware generation prompt:
+
+```text
+model: deepseek-v4-flash
+question type: single-session-preference
+before preference-aware prompt: 0 / 30
+after preference-aware prompt: 20 / 30
+accuracy: 0.6667
+empty hypotheses: 0
+```
+
+After applying that prompt fix to the full compact-500 run:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+correct by DeepSeek judge: 269 / 500
+accuracy: 0.5380
+empty hypotheses: 0
+single-session-preference: 18 / 30
+```
 
 ## Current Boundary
 

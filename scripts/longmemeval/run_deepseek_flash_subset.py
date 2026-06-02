@@ -123,17 +123,30 @@ def chat(
     raise RuntimeError("unreachable retry state")
 
 
-def generation_prompt(row: dict[str, Any]) -> str:
+def generation_prompt(row: dict[str, Any], ref: dict[str, Any]) -> str:
     contexts = []
     for index, item in enumerate(row["retrieval_results"].get("ranked_items", []), start=1):
         text = str(item.get("text", "")).strip()
         timestamp = str(item.get("timestamp", "")).strip()
         if text:
             contexts.append(f"[Session {index} | {timestamp}]\n{text}")
+    if ref.get("question_type") == "single-session-preference":
+        task_instruction = (
+            "This is a preference-based personalization question. Use the history to infer the "
+            "user's preferences, constraints, brands, interests, style, or prior experiences, then "
+            "answer the current question with concrete personalized recommendations. Do not refuse "
+            "just because the exact current item is not already in the history; transfer the user's "
+            "known preferences to the new recommendation request. If no relevant preference signal "
+            "exists at all, say what is missing briefly."
+        )
+    else:
+        task_instruction = (
+            "Answer the question using only the history. If the history is insufficient, say so."
+        )
     return "\n\n".join(
         [
             "I will give you relevant history chats between an assistant and a user.",
-            "Answer the question using only the history. If the history is insufficient, say so.",
+            task_instruction,
             "",
             "History Chats:",
             "\n\n".join(contexts),
@@ -195,7 +208,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 api_key=api_key,
                 base_url=args.base_url,
                 model=args.model,
-                prompt=generation_prompt(row),
+                prompt=generation_prompt(row, refs[qid]),
                 max_tokens=args.gen_max_tokens,
                 thinking=args.generation_thinking,
                 reasoning_effort=args.reasoning_effort,

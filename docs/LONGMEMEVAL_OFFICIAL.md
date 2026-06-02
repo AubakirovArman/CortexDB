@@ -281,7 +281,7 @@ CortexDB also keeps a 500-question diagnostic over the full
 make longmemeval-v1-deepseek-flash-compact-500-check
 ```
 
-Latest local result:
+First local result before preference-aware prompt:
 
 ```text
 model: deepseek-v4-flash
@@ -306,9 +306,71 @@ Breakdown:
 | `single-session-user` | `40` | `70` | `0.5714` |
 | `temporal-reasoning` | `68` | `133` | `0.5113` |
 
-The next optimization target is `single-session-preference`: DeepSeek judged all
-30 preference cases as incorrect, which points to a prompt/context shaping gap
-rather than a retrieval-only issue.
+This first compact-500 pass exposed a prompt/context-shaping issue:
+`single-session-preference` was `0 / 30`.
+
+## Preference-Format Diagnostic
+
+The first compact-500 DeepSeek pass used the same factual-answer prompt for all
+question types. That format is wrong for `single-session-preference`: the model
+often answered with refusal/insufficient-history language even when retrieved
+context contained usable preference signals.
+
+The runner now uses a preference-aware generation prompt for
+`single-session-preference`: it asks the reader to infer user preferences from
+history and provide concrete personalized recommendations instead of looking for
+an exact pre-existing answer.
+
+Run the focused check:
+
+```bash
+make longmemeval-v1-deepseek-flash-preference-check
+```
+
+Latest local result:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+question type: single-session-preference
+before preference-aware prompt: 0 / 30
+after preference-aware prompt: 20 / 30
+accuracy: 0.6667
+empty hypotheses: 0
+```
+
+This confirms that the previous `single-session-preference` failure was mostly
+an answer-shape/prompt mismatch, not simply missing retrieval evidence.
+
+After enabling the preference-aware generation prompt, the full compact-500
+diagnostic improved:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+official score: false
+correct by DeepSeek judge: 269 / 500
+accuracy: 0.5380
+empty hypotheses: 0
+prompt tokens: 4,289,467
+completion tokens: 44,629
+```
+
+Updated breakdown:
+
+| Question type | Correct | Count | Accuracy |
+| --- | ---: | ---: | ---: |
+| `knowledge-update` | `45` | `78` | `0.5769` |
+| `multi-session` | `63` | `133` | `0.4737` |
+| `single-session-assistant` | `35` | `56` | `0.6250` |
+| `single-session-preference` | `18` | `30` | `0.6000` |
+| `single-session-user` | `40` | `70` | `0.5714` |
+| `temporal-reasoning` | `68` | `133` | `0.5113` |
+
+The next improvement target moves from format correction to the lowest remaining
+general slice, especially `multi-session` retrieval/answer synthesis.
 
 This is useful for iteration, but it is not an official LongMemEval result:
 generation and judging both use DeepSeek flash instead of the official GPT-4o
