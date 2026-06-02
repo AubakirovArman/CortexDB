@@ -113,6 +113,10 @@ The plan recommends this first execution batch:
 4. Work epics in order unless a blocking dependency forces a local reorder.
 5. Every completed epic should update this file, the relevant evidence doc, and
    the release checklist.
+6. Run `make next-60-epics-audit` to verify this map is internally consistent.
+7. Run `make next-60-epics-completion-check` only for the final completion
+   claim; it intentionally fails until Epic 38 has retained 24-hour storage
+   soak evidence.
 
 ## Next Batch
 
