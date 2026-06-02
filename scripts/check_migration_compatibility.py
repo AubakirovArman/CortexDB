@@ -25,6 +25,7 @@ CURRENT_RELEASE = "v0.2.0-beta.1"
 PREVIOUS_RELEASE = "v0.1.0-core-alpha.5"
 REQUIRED_RELEASE_GATES = {
     "restore_gate": "python3 scripts/migration_historical_restore_check.py",
+    "upgrade_matrix_v2_gate": "python3 scripts/migration_upgrade_matrix_v2_check.py",
     "api_contract_gate": "make openapi-contract-check",
     "sdk_contract_gate": "make sdk-contract-check",
     "storage_contract_gate": "make storage-compat-check",
@@ -85,10 +86,10 @@ def main() -> int:
     if not historical:
         errors.append("historical_restore_fixtures must not be empty")
     for index, item in enumerate(historical):
-        for field in ("release_tag", "backup_path", "fixture", "gate"):
+        for field in ("release_tag", "backup_path", "database_path", "fixture", "gate"):
             if not item.get(field):
                 errors.append(f"historical_restore_fixtures[{index}] missing {field}")
-        for field in ("backup_path", "fixture"):
+        for field in ("backup_path", "database_path", "fixture"):
             if item.get(field):
                 require_file(repo, item[field], errors)
 
@@ -102,7 +103,7 @@ def main() -> int:
             )
         if item.get("to") != CURRENT_RELEASE:
             errors.append(f"release_compatibility_matrix[{index}] to must be {CURRENT_RELEASE}")
-        for field in ("fixture", "backup_path"):
+        for field in ("fixture", "backup_path", "database_path"):
             if not item.get(field):
                 errors.append(f"release_compatibility_matrix[{index}] missing {field}")
             else:
@@ -125,6 +126,8 @@ def main() -> int:
             "compatibility_matrix_v1.json",
             "upgrade/downgrade matrix",
             "historical restore fixture",
+            "previous-release direct database",
+            "migration_upgrade_matrix_v2_check.py",
             "v0.1.0-core-alpha.5 -> v0.2.0-beta.1",
         ),
         "docs/BINARY_RELEASES.md": ("binary-release-check", "SHA256SUMS"),

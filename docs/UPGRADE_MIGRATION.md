@@ -86,9 +86,17 @@ The pair requires:
 | Boundary | Gate |
 | --- | --- |
 | Historical restore fixture | `python3 scripts/migration_historical_restore_check.py` |
+| Previous-release direct database upgrade | `python3 scripts/migration_upgrade_matrix_v2_check.py` |
 | API contract | `make openapi-contract-check` |
 | SDK contract | `make sdk-contract-check` |
 | Storage contract | `make storage-compat-check` |
+
+The v2 matrix gate copies the previous-release direct database fixture, validates
+that the current binary can open and read it, writes a current-release marker
+cell, runs `flush` and `compact`, creates a new backup, restores it, and verifies
+both the historical cells and the marker cell. This proves the offline upgrade
+path covers both historical backup restore and previous-release direct database
+open/write behavior.
 
 Downgrade remains restore-only: restore the immutable pre-upgrade backup and run
 the previous binary against that restored directory. CortexDB does not support
@@ -164,6 +172,8 @@ It validates `fixtures/migration/compatibility_matrix_v1.json`, including:
 - the explicit `v0.1.0-core-alpha.5 -> v0.2.0-beta.1` release-to-release pair;
 - at least one historical restore fixture whose old backup is restored and
   validated by the current binary;
+- at least one previous-release direct database fixture that is opened, written,
+  flushed, compacted, backed up, restored, and validated by the current binary;
 - proof files that back each compatibility claim.
 
 Core Alpha release candidates should pass:

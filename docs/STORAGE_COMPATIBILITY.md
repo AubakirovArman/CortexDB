@@ -62,13 +62,14 @@ The current release-to-release beta pair is fixed in the migration fixture:
 v0.1.0-core-alpha.5 -> v0.2.0-beta.1
 ```
 
-That pair requires the historical restore fixture plus API, SDK, and storage
-contract gates before the beta is treated as compatible with the previous alpha
-fixture.
+That pair requires the historical restore fixture, previous-release direct
+database upgrade evidence, plus API, SDK, and storage contract gates before the
+beta is treated as compatible with the previous alpha fixture.
 
 Evidence gates:
 
 ```bash
+make migration-compatibility-check
 make backup-drill-check
 make backup-offsite-check
 ```
@@ -76,6 +77,8 @@ make backup-offsite-check
 Reports:
 
 ```text
+target/migration-historical-restore/report.json
+target/migration-upgrade-matrix-v2/report.json
 target/backup-drill/report.json
 target/backup-offsite/report.json
 ```
@@ -159,6 +162,7 @@ The gate covers:
 
 - migration compatibility fixture;
 - historical backup restore fixture;
+- previous-release direct database open/write/backup/restore fixture;
 - backup drill;
 - crash/fault/corruption matrix;
 - process kill/restart around flush and compact;

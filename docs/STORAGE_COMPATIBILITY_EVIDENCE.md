@@ -14,6 +14,7 @@ Primary artifacts:
 target/storage-compat/report.json
 target/storage-compat/*.log
 target/migration-historical-restore/report.json
+target/migration-upgrade-matrix-v2/report.json
 target/backup-drill/report.json
 target/crash-fault/report.json
 target/chaos-restart/report.json
@@ -35,6 +36,7 @@ Latest local status: passed.
 | --- | --- |
 | migration compatibility | Checks the machine-readable storage/API/SDK compatibility fixture. |
 | historical restore fixture | Restores release-tagged backup fixtures with the current binary. |
+| migration upgrade matrix v2 | Opens the previous-release direct database fixture, writes with the current binary, backs it up, restores it, and validates old plus new cells. |
 | backup drill | Proves a current-version backup can be restored and validated by the checkout under test. |
 | backup archive corruption | Proves corrupted backup segment and manifest archives are rejected on restore. |
 | crash/fault | Runs interrupted checkpoint/compact, restart tail, corruption, and repair tests. |
@@ -50,6 +52,8 @@ The local gate proves:
 
 - storage compatibility evidence is repeatable locally;
 - historical backup fixtures restore with the current binary;
+- previous-release direct database fixtures open, accept current writes, and
+  survive backup/restore with the current binary;
 - current checkout can restore and validate current-version backups;
 - corrupted backup archives are rejected during restore;
 - known storage file corruption is detected;

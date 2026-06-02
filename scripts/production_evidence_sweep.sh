@@ -32,6 +32,7 @@ run_step() {
 }
 
 run_step openapi_contract make openapi-contract-check
+run_step migration_compatibility make migration-compatibility-check
 run_step backup_restore_pack make backup-restore-production-pack-check
 run_step storage_soak_history make storage-soak-history-check
 run_step single_node_performance make single-node-performance-check
@@ -53,6 +54,9 @@ FINISHED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   printf '  ],\n'
   printf '  "artifacts": {\n'
   printf '    "openapi_contract_log": "%s",\n' "$ROOT/openapi_contract.log"
+  printf '    "migration_compatibility_log": "%s",\n' "$ROOT/migration_compatibility.log"
+  printf '    "migration_historical_restore_report": "target/migration-historical-restore/report.json",\n'
+  printf '    "migration_upgrade_matrix_v2_report": "target/migration-upgrade-matrix-v2/report.json",\n'
   printf '    "backup_restore_pack_report": "target/backup-restore-production-pack/report.json",\n'
   printf '    "backup_drill_report": "target/backup-drill/report.json",\n'
   printf '    "backup_offsite_report": "target/backup-offsite/report.json",\n'

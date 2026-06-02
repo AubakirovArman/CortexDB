@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 37 |
-| partial | 16 |
+| closed | 38 |
+| partial | 15 |
 | not started | 5 |
 | research | 2 |
 | total | 60 |
@@ -80,7 +80,7 @@ The plan recommends this first execution batch:
 | 36 | CortexDB Doctor | closed | `cortexdb doctor` exists with tests/docs. | Extend diagnostics as operations features grow. |
 | 37 | Backup/Restore Production Pack | closed | `make backup-restore-production-pack-check` now runs local restore drills, offsite staging, encrypted-backup restore tests, retention evidence, and writes `target/backup-restore-production-pack/report.json` with RPO/RTO boundary evidence. | KMS-backed backup custody, provider object-store restore, and managed DR remain future work. |
 | 38 | Storage Soak History | partial | `make storage-soak-history-check` now runs a fresh soak, appends de-duplicated local history, and writes `target/storage-soak-history/report.json` with explicit 24h evidence status. | Run and retain a real 24-hour soak campaign until `twenty_four_hour_evidence.met=true`. |
-| 39 | Migration Compatibility Matrix v2 | partial | Migration compatibility docs/targets exist. | Add previous-release DB/backup fixtures and upgrade evidence. |
+| 39 | Migration Compatibility Matrix v2 | closed | `make migration-compatibility-check` now validates the matrix, restores historical backup fixtures, and runs `migration_upgrade_matrix_v2_check.py` to open the previous-release direct database fixture, write with the current binary, flush/compact, back up, restore, and verify old plus new cells. | Keep adding release-to-release fixtures for each public release pair. |
 | 40 | Operations Runbook | partial | `OPERATIONS.md`, beta operations docs, install/runbook docs exist. | Make it complete enough for an operator to run without repo knowledge. |
 | 41 | Dashboard Operational Status View | partial | Dashboard assets and product UI evidence exist. | Add complete health/stats/backup/validation/error status view. |
 | 42 | Dashboard ContextPack Explorer | partial | Dashboard can inspect retrieval/context foundations. | Add full ContextPack cells/citations/explain/anomalies/token UI. |
@@ -119,4 +119,4 @@ The plan recommends this first execution batch:
 The next practical implementation batch is:
 
 1. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
-2. Advance Epic 39: add previous-release DB/backup fixtures and upgrade evidence.
+2. Advance Epic 40: complete the operator runbook for someone without repo knowledge.

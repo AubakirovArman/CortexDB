@@ -26,7 +26,7 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "current-version backup restored by next-version code",
         "backup archive corruption tests",
         "restore drill trend across releases",
-        "Encrypted backup remains a production-candidate requirement",
+        "Encrypted backup is available as a local passphrase archive MVP",
     ),
     "docs/RPO_RTO.md": (
         "Strict",
@@ -42,6 +42,8 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "compatibility_matrix_v1.json",
         "upgrade/downgrade matrix",
         "historical restore fixture",
+        "previous-release direct database",
+        "migration_upgrade_matrix_v2_check.py",
         "backup-drill",
     ),
 }
@@ -222,12 +224,14 @@ def main() -> int:
             "crash_fault_report": "target/crash-fault/report.json",
             "chaos_restart_report": "target/chaos-restart/report.json",
             "migration_historical_restore_report": "target/migration-historical-restore/report.json",
+            "migration_upgrade_matrix_v2_report": "target/migration-upgrade-matrix-v2/report.json",
             "migration_fixture": "fixtures/migration/compatibility_matrix_v1.json",
         },
         "boundary": {
             "proves": [
                 "storage compatibility evidence is repeatable locally",
                 "historical backup fixtures restore with the current binary",
+                "previous-release direct database fixtures open and accept current writes",
                 "current checkout can restore and validate current-version backups",
                 "corrupted backup archives are rejected during restore",
                 "known storage file corruption is detected",
