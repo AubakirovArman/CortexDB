@@ -16,6 +16,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) - bounded starter issue map.
 - [`PUBLIC_BENCHMARKS.md`](PUBLIC_BENCHMARKS.md) - release-by-release public benchmark history.
 - [`COMPARISONS.md`](COMPARISONS.md) - neutral comparison with SQL databases, vector databases, RAG stacks, and memory frameworks.
+- [`SDK_PRODUCTIZATION.md`](SDK_PRODUCTIZATION.md) - local Rust, Python, and TypeScript SDK productization gate.
 - [`TOOL_REGISTRY.md`](TOOL_REGISTRY.md) - durable tool cells, schemas, permissions, and ContextPack inclusion.
 - [`KNOWLEDGE_GRAPH.md`](KNOWLEDGE_GRAPH.md) - entity, relation, and source-reference graph projection.
 - [`BETA_OPERATIONS.md`](BETA_OPERATIONS.md) - beta operator runbook for install, auth, backup, validation, repair, metrics, and known limits.

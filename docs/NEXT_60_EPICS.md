@@ -17,9 +17,9 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 54 |
+| closed | 56 |
 | partial | 2 |
-| not started | 2 |
+| not started | 0 |
 | research | 2 |
 | total | 60 |
 
@@ -48,9 +48,9 @@ The plan recommends this first execution batch:
 | 4 | Beta Claims Guard | closed | `make public-claims-check`, public claims policy/freeze docs. | Add new forbidden claims as surfaces expand. |
 | 5 | Beta Compatibility Matrix | closed | `compatibility_matrix_v1.json` now fixes `v0.1.0-core-alpha.5 -> v0.2.0-beta.1`; `make migration-compatibility-check` restores the historical backup fixture and validates API/SDK/storage gate wiring. | Keep adding previous-release fixtures for future releases. |
 | 6 | SDK Public Release Train | closed | SDK release manifest now includes `sdk-registry-gate-check`; `make sdk-e2e-release-check` runs release contract, artifacts, registry gate, and live SDK contract checks. | Public registry publication still requires manual tag-gated workflow execution and credentials. |
-| 7 | Python SDK Productization | partial | Python SDK, examples, tests, wheel artifacts exist. | Harden packaging, structured errors, docs, and published package workflow. |
-| 8 | TypeScript SDK Productization | partial | TypeScript SDK, generated types, examples, package metadata exist. | Harden ESM/CJS packaging, typed errors, and public npm workflow. |
-| 9 | Rust SDK Productization | partial | `crates/cortex-sdk` exists with typed client/examples. | Finish crate publication readiness and docs.rs-quality docs. |
+| 7 | Python SDK Productization | closed | Python SDK package metadata, typed client, tests, example, wheel/build evidence, registry-gate wiring, and live SDK contract coverage are checked by `make sdk-productization-check`. | Public PyPI publication remains manual tag-gated and is not claimed by the local gate. |
+| 8 | TypeScript SDK Productization | closed | TypeScript SDK package metadata, ESM client, `.d.ts` types, tests, example, npm dry-run evidence, registry-gate wiring, and live SDK contract coverage are checked by `make sdk-productization-check`. | Public npm publication remains manual tag-gated and is not claimed by the local gate. |
+| 9 | Rust SDK Productization | closed | `crates/cortex-sdk` has typed API structs, examples, `cargo package` evidence, docs coverage boundary, registry-gate wiring, and live SDK contract coverage checked by `make sdk-productization-check`. | Public crates.io publication remains manual tag-gated and is not claimed by the local gate. |
 | 10 | SDK Compatibility Contract | closed | `make sdk-contract-check` and OpenAPI/SDK checks exist. | Keep blocking drift on every release. |
 | 11 | ContextPack Quality v2 | closed | `make context-pack-quality-check` now validates 25 cases across 5 domains and writes aggregate plus per-domain metrics. | Keep adding private/customer-domain evidence later without weakening deterministic gates. |
 | 12 | ContextPack Explain v2 | closed | ContextPack explain now exposes `why_selected`, structured `score_components`, source refs, and `why_excluded` for excluded candidates/token overload across engine, CLI, SDK, server JSON, snapshots, and OpenAPI. | Keep explanations stable as new scoring components are added. |
@@ -118,5 +118,6 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
-2. Keep Epics 59-60 as research/feasibility until real operational evidence changes their claim boundary.
+1. Advance Epic 23: build sustained 10+ ANN/HNSW SLO history and regression tracking.
+2. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
+3. Keep Epics 59-60 as research/feasibility until real operational evidence changes their claim boundary.

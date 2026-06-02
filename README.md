@@ -323,9 +323,13 @@ and Rust `cargo package`:
 
 ```bash
 make sdk-check
+make sdk-productization-check
 ```
 
-Manual tag-gated package publishing is documented in
+The productization gate is local evidence only. Public registry publication is
+not claimed until a manual tag-gated publishing workflow runs. That boundary is
+documented in [`docs/SDK_PRODUCTIZATION.md`](docs/SDK_PRODUCTIZATION.md), and
+manual tag-gated package publishing is documented in
 [`docs/SDK_RELEASE.md`](docs/SDK_RELEASE.md).
 
 Binary tarball packaging for `cortexdb` and `cortex-server` is documented in
