@@ -4,10 +4,16 @@ Thank you for your interest in CortexDB! This document will help you get started
 
 ## Quick Start
 
+For a short first-session path, start with
+[`docs/CONTRIBUTOR_ONBOARDING.md`](docs/CONTRIBUTOR_ONBOARDING.md).
+
 ```bash
 # Clone the repository
 git clone https://github.com/AubakirovArman/CortexDB.git
 cd CortexDB
+
+# Run the 15-minute contributor smoke path
+make contributor-onboarding-check
 
 # Run the full quality gate
 make release-check
@@ -49,4 +55,6 @@ make demo
 ## Getting Help
 
 - Open an issue for bugs or feature requests.
+- Use [`docs/GOOD_FIRST_ISSUES.md`](docs/GOOD_FIRST_ISSUES.md) to choose a
+  bounded first task.
 - Check `docs/` for deeper architecture and design documents.

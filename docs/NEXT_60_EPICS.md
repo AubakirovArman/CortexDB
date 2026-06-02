@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 48 |
-| partial | 6 |
+| closed | 49 |
+| partial | 5 |
 | not started | 4 |
 | research | 2 |
 | total | 60 |
@@ -94,7 +94,7 @@ The plan recommends this first execution batch:
 | 50 | Version and Compatibility Dashboard | closed | `/v1/compatibility` now exposes API, SDK contract, storage format, and migration matrix versions; dashboard operational status renders the compatibility section and OpenAPI/dashboard checks guard it. | Keep compatibility fields additive and update docs/OpenAPI when release contracts change. |
 | 51 | Official Beta Landing Page | closed | `BETA_LANDING.md` now provides a concise external beta path with demo, beta scope, non-goals, evidence links, and contribution path; `make beta-landing-check` is included in `make beta-release-check`. | Keep landing claims aligned with public claims policy and release notes. |
 | 52 | Use-case Packs | closed | Legal, financial, and technical use-case packs now live under `examples/use_cases`; `make use-case-pack-check` validates manifests, fixtures, scenario docs, and CLI search/context/verify smoke flows. | Keep packs aligned with public claims boundaries and add more domains only behind the same gate. |
-| 53 | Contributor Onboarding | partial | Contributing/module/test docs exist. | Add good-first-issue map and 15-minute onboarding path. |
+| 53 | Contributor Onboarding | closed | `CONTRIBUTOR_ONBOARDING.md`, `GOOD_FIRST_ISSUES.md`, a good-first-issue template, and `make contributor-onboarding-check` now provide a checked 15-minute path and starter task map. | Keep starter tasks bounded and update the checker as new contributor surfaces appear. |
 | 54 | Public Benchmarks Page | partial | Benchmark docs and evidence reports exist. | Publish release-by-release benchmark history in one public page. |
 | 55 | Comparison Docs | partial | RAG/vector positioning docs exist. | Add clearer Postgres/vector DB/memory framework comparison without aggressive claims. |
 | 56 | Agent Memory v2 | partial | Agent memory docs/module foundations exist. | Add TTL/decay/feedback and end-to-end memory demo. |
@@ -119,4 +119,4 @@ The plan recommends this first execution batch:
 The next practical implementation batch is:
 
 1. Advance Epic 38: run and retain a real 24-hour storage soak campaign.
-2. Advance Epic 53: add good-first-issue map and 15-minute onboarding path.
+2. Advance Epic 54: publish release-by-release benchmark history in one public page.

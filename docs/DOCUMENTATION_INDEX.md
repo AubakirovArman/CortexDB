@@ -12,6 +12,8 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`BETA_RELEASE.md`](BETA_RELEASE.md) - `v0.2.0-beta.1` scope, non-goals, and promotion gate.
 - [`BETA_LANDING.md`](BETA_LANDING.md) - concise external beta landing path.
 - [`USE_CASE_PACKS.md`](USE_CASE_PACKS.md) - runnable legal, financial, and technical beta scenarios.
+- [`CONTRIBUTOR_ONBOARDING.md`](CONTRIBUTOR_ONBOARDING.md) - 15-minute first contributor path.
+- [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) - bounded starter issue map.
 - [`BETA_OPERATIONS.md`](BETA_OPERATIONS.md) - beta operator runbook for install, auth, backup, validation, repair, metrics, and known limits.
 - [`RELEASE_NOTES_v0.2.0-beta.1.md`](RELEASE_NOTES_v0.2.0-beta.1.md) - planned beta release notes and checklist.
 - [`BETA_DELTA.md`](BETA_DELTA.md) - what remains before beta promotion.
@@ -34,6 +36,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`CORE_ENGINE.md`](CORE_ENGINE.md) - engine facade and single-node loop.
 - [`ENGINE_API.md`](ENGINE_API.md) - stable embedded engine API boundary.
 - [`MODULE_OWNERSHIP.md`](MODULE_OWNERSHIP.md) - crate/module ownership map.
+- [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) - suggested starter task classes and required gates.
 - [`CORE_INVARIANTS.md`](CORE_INVARIANTS.md) - safety invariants.
 - [`CORE_CONSISTENCY_AUDIT.md`](CORE_CONSISTENCY_AUDIT.md) - consistency checks.
 - [`CONSENSUS_SLO.md`](CONSENSUS_SLO.md) - consensus hardening gates and beta SLO targets.
