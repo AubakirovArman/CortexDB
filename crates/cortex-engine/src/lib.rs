@@ -29,7 +29,7 @@ pub mod verification;
 
 pub use backup::{
     BackupDrillReport, BackupReport, BackupRetentionPlan, BackupRetentionReport,
-    OffsiteBackupStageReport, RestoreReport,
+    EncryptedBackupReport, EncryptedRestoreReport, OffsiteBackupStageReport, RestoreReport,
 };
 pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use context::{

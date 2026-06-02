@@ -8,8 +8,10 @@ use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::validation::StorageValidation;
 
+mod encrypted;
 mod offsite;
 mod retention;
+pub use encrypted::{EncryptedBackupReport, EncryptedRestoreReport};
 pub use offsite::OffsiteBackupStageReport;
 pub use retention::{BackupRetentionPlan, BackupRetentionReport};
 

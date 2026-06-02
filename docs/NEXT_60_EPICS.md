@@ -17,8 +17,8 @@ plan explicitly replaces it.
 
 | Status | Count |
 | --- | ---: |
-| closed | 35 |
-| partial | 18 |
+| closed | 36 |
+| partial | 17 |
 | not started | 5 |
 | research | 2 |
 | total | 60 |
@@ -75,7 +75,7 @@ The plan recommends this first execution batch:
 | 31 | Dynamic RBAC Policy Store | closed | JSON policy-store principals now sync through `DatabaseActor` into redacted durable `_system:auth_policy` cells; tests cover policy-cell sync, disabled mapping, and no raw-token exposure. | Keep full enterprise RBAC, external identity, and session management out of beta claims until their own gates exist. |
 | 32 | Per-token Quotas | closed | Policy-store principals now support request/minute, body-byte/minute, and actor queue quotas; enforcement uses per-token/principal quota keys, returns typed `rate_limited`, and `/v1/metrics` exposes aggregate quota counters without token/principal leakage. | Keep distributed, route-class, and tenant-aware quota accounting for later production tuning. |
 | 33 | Tamper-evident Audit Log | closed | File-backed route audit records include `chain_id`, monotonic `sequence`, `prev_hash`, and `event_hash`; `cortexdb audit --verify-chain`, `cortexdb audit verify <file>`, and `cortexdb audit-export-siem --verify-chain` fail closed on broken local continuity. | Compliance-grade immutable ledger, external timestamping, and vendor-managed SIEM delivery remain future work. |
-| 34 | Encrypted Backup Design to MVP | partial | Encrypted backup design doc exists. | Implement passphrase encrypted archive and restore validation. |
+| 34 | Encrypted Backup Design to MVP | closed | Local passphrase archive MVP now has `Database::encrypted_backup_path`, `Database::restore_from_encrypted_backup`, `cortexdb backup-encrypted`, `cortexdb restore-encrypted`, wrong-passphrase/corrupt-ciphertext rejection, and restore validation tests. | KMS-backed envelope encryption, remote object-store restore, and compliance-grade custody workflows remain future work. |
 | 35 | Security Check Gate | closed | `make security-check` exists and passed in beta release gate. | Keep it in release gating as new auth surfaces are added. |
 | 36 | CortexDB Doctor | closed | `cortexdb doctor` exists with tests/docs. | Extend diagnostics as operations features grow. |
 | 37 | Backup/Restore Production Pack | partial | Backup drill/offsite checks and docs exist. | Promote backup/restore to supported operational workflow with prune/RPO/RTO evidence. |
@@ -118,5 +118,5 @@ The plan recommends this first execution batch:
 
 The next practical implementation batch is:
 
-1. Advance Epic 34: passphrase encrypted archive and restore validation.
-2. Advance Epic 37: promote backup/restore operational workflow with prune/RPO/RTO evidence.
+1. Advance Epic 37: promote backup/restore operational workflow with prune/RPO/RTO evidence.
+2. Advance Epic 38: accumulate storage soak history and 24h evidence.

@@ -209,5 +209,6 @@ cortexdb audit verify ./audit/http.jsonl
 - No managed cloud control plane.
 - No enterprise RBAC/compliance certification.
 - No built-in TLS lifecycle; terminate TLS outside CortexDB.
-- No encrypted backup support in the current beta boundary.
+- Encrypted backup support is local passphrase-archive MVP only; no KMS,
+  managed key rotation, or compliance-certified custody workflow.
 - HNSW/ANN remains guarded by exact fallback for beta claims.

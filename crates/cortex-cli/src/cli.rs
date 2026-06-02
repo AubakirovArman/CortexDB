@@ -95,6 +95,14 @@ enum Command {
         path: String,
         backup_path: String,
     },
+    BackupEncrypted {
+        path: String,
+        archive_path: String,
+        #[arg(long)]
+        passphrase: Option<String>,
+        #[arg(long = "passphrase-env")]
+        passphrase_env: Option<String>,
+    },
     BackupDrill {
         path: String,
         backup_path: String,
@@ -147,6 +155,14 @@ enum Command {
     Restore {
         backup_path: String,
         path: String,
+    },
+    RestoreEncrypted {
+        archive_path: String,
+        path: String,
+        #[arg(long)]
+        passphrase: Option<String>,
+        #[arg(long = "passphrase-env")]
+        passphrase_env: Option<String>,
     },
     GcRetired {
         path: String,
@@ -344,6 +360,21 @@ impl VerificationOutputFormat {
     }
 }
 
+fn resolve_backup_passphrase(
+    passphrase: Option<String>,
+    passphrase_env: Option<String>,
+) -> Result<String, String> {
+    if let Some(value) = passphrase {
+        return Ok(value);
+    }
+    let env_name = passphrase_env.unwrap_or_else(|| "CORTEXDB_BACKUP_PASSPHRASE".to_owned());
+    std::env::var(&env_name).map_err(|_| {
+        format!(
+            "encrypted backup passphrase is required; set {env_name} or pass --passphrase-env <VAR>"
+        )
+    })
+}
+
 pub fn run(args: Vec<String>) -> Result<String, String> {
     let cli = match Cli::try_parse_from(args) {
         Ok(cli) => cli,
@@ -407,6 +438,19 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         }
         Command::Backup { path, backup_path } => {
             ops::backup(resolved(&path).to_str().unwrap(), &backup_path)
+        }
+        Command::BackupEncrypted {
+            path,
+            archive_path,
+            passphrase,
+            passphrase_env,
+        } => {
+            let passphrase = resolve_backup_passphrase(passphrase, passphrase_env)?;
+            ops::backup_encrypted(
+                resolved(&path).to_str().unwrap(),
+                &archive_path,
+                &passphrase,
+            )
         }
         Command::BackupDrill {
             path,
@@ -489,6 +533,19 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         }),
         Command::Restore { backup_path, path } => {
             ops::restore(&backup_path, resolved(&path).to_str().unwrap())
+        }
+        Command::RestoreEncrypted {
+            archive_path,
+            path,
+            passphrase,
+            passphrase_env,
+        } => {
+            let passphrase = resolve_backup_passphrase(passphrase, passphrase_env)?;
+            ops::restore_encrypted(
+                &archive_path,
+                resolved(&path).to_str().unwrap(),
+                &passphrase,
+            )
         }
         Command::GcRetired { path } => ops::gc_retired(resolved(&path).to_str().unwrap()),
         Command::WalValidate { path } => ops::wal_validate(resolved(&path).to_str().unwrap()),

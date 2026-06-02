@@ -113,6 +113,16 @@ files, and excludes `db.lock` plus known temporary files.
 cortexdb backup ./db ./db.backup
 ```
 
+#### `backup-encrypted <path> <archive_path>`
+Create a passphrase-protected single-file backup archive. Prefer
+`--passphrase-env` or `CORTEXDB_BACKUP_PASSPHRASE` instead of typing secrets
+directly into shell history.
+
+```bash
+export CORTEXDB_BACKUP_PASSPHRASE="choose-a-long-local-passphrase"
+cortexdb backup-encrypted ./db ./db.cdbenc --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
+```
+
 #### `backup-drill <path> <backup_path> <restore_path>`
 Create a backup, restore it into a new drill target, and validate the restored
 database. Use this before trusting a backup procedure, because it proves the
@@ -151,6 +161,16 @@ The target path must not already exist, which prevents accidental overwrite.
 
 ```bash
 cortexdb restore ./db.backup ./db.restored
+cortexdb validate ./db.restored
+```
+
+#### `restore-encrypted <archive_path> <path>`
+Restore a passphrase-protected archive into a new target directory and validate
+the restored database before returning success.
+
+```bash
+export CORTEXDB_BACKUP_PASSPHRASE="choose-a-long-local-passphrase"
+cortexdb restore-encrypted ./db.cdbenc ./db.restored --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
 cortexdb validate ./db.restored
 ```
 

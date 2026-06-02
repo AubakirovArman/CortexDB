@@ -439,6 +439,62 @@ fn backup_and_restore_commands_roundtrip_database() {
 }
 
 #[test]
+fn backup_encrypted_and_restore_encrypted_commands_roundtrip_database() {
+    let root = unique_path("cortexdb-cli-backup-encrypted-root");
+    let source = root.join("source");
+    let archive = root.join("backup.cdbenc");
+    let target = root.join("target");
+    let source_arg = source.to_string_lossy().into_owned();
+    let archive_arg = archive.to_string_lossy().into_owned();
+    let target_arg = target.to_string_lossy().into_owned();
+    let passphrase = "cli encrypted backup passphrase";
+
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        source_arg.clone(),
+        "142".to_owned(),
+        "encrypted backup payload".to_owned(),
+    ])
+    .unwrap();
+
+    let backup_output = run(vec![
+        "cortexdb".to_owned(),
+        "backup-encrypted".to_owned(),
+        source_arg,
+        archive_arg.clone(),
+        "--passphrase".to_owned(),
+        passphrase.to_owned(),
+    ])
+    .unwrap();
+    assert!(backup_output.contains("files_archived="));
+    assert!(backup_output.contains("ciphertext_bytes="));
+
+    let restore_output = run(vec![
+        "cortexdb".to_owned(),
+        "restore-encrypted".to_owned(),
+        archive_arg,
+        target_arg.clone(),
+        "--passphrase".to_owned(),
+        passphrase.to_owned(),
+    ])
+    .unwrap();
+    assert!(restore_output.contains("files_restored="));
+    assert!(restore_output.contains("restored_wal_records_checked=1"));
+
+    let payload = run(vec![
+        "cortexdb".to_owned(),
+        "get".to_owned(),
+        target_arg,
+        "142".to_owned(),
+    ])
+    .unwrap();
+    assert_eq!(payload, "encrypted backup payload");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn backup_drill_command_restores_and_validates_copy() {
     let root = unique_path("cortexdb-cli-backup-drill-root");
     let source = root.join("source");

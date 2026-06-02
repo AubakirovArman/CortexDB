@@ -1,10 +1,20 @@
 # Encrypted Backups Design
 
-Status: design only, not implemented.
+Status: local MVP implemented for passphrase-protected archive/restore drills.
 
 This document defines the intended encrypted-backup model for the single-node
-product line. Core Alpha currently supports validated local filesystem backups
-and local offsite staging; those backups are not encrypted by CortexDB itself.
+product line. Core Alpha already supports validated local filesystem backups
+and local offsite staging. The beta-track MVP adds a single-file passphrase
+archive through:
+
+```bash
+export CORTEXDB_BACKUP_PASSPHRASE="choose-a-long-local-passphrase"
+cortexdb backup-encrypted ./data ./backup.cdbenc --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
+cortexdb restore-encrypted ./backup.cdbenc ./restore --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
+```
+
+The MVP is intended for local release evidence and operator workflow testing.
+It is not a KMS-backed or compliance-certified encryption system.
 
 ## Goals
 
@@ -16,7 +26,7 @@ and local offsite staging; those backups are not encrypted by CortexDB itself.
 
 ## Proposed Format
 
-Encrypted backup bundles should use envelope encryption:
+The long-term production format should use envelope encryption:
 
 ```text
 backup/
@@ -42,9 +52,8 @@ authentication fails before writing to the target database path.
 
 ## Key Management
 
-The first implementation should support local operator-managed key files for
-offline testing. Production deployments should use an external KMS or secret
-manager through a small provider trait.
+The implemented MVP uses an operator-managed passphrase. Production deployments
+should use an external KMS or secret manager through a small provider trait.
 
 Required provider operations:
 
@@ -76,19 +85,30 @@ reports, or audit files.
 - Error messages must not expose key ids beyond safe aliases.
 - Audit logs should record backup operation metadata, not key material.
 
+## Implemented MVP
+
+The current repository implements:
+
+- `Database::encrypted_backup_path`;
+- `Database::restore_from_encrypted_backup`;
+- `cortexdb backup-encrypted`;
+- `cortexdb restore-encrypted`;
+- passphrase validation;
+- archive ciphertext integrity checks;
+- wrong-passphrase and corrupt-ciphertext rejection tests;
+- restore validation with `Database::validate_storage`.
+
+The current archive format is a CortexDB-local beta format with clear header
+metadata and encrypted payload bytes. Operators should prefer `--passphrase-env`
+or `CORTEXDB_BACKUP_PASSPHRASE` so passphrases do not need to be typed directly
+into shell history.
+
 ## Not Implemented
 
-The current repository does not implement encrypted backups yet. The existing
-hardening gate checks this design boundary and keeps the public claim honest:
+The current repository still does not implement:
 
-```bash
-make production-hardening-check
-```
-
-Future implementation work should add:
-
-- encrypted backup command flags or subcommands;
 - provider trait and local-file provider;
-- encrypted backup restore tests;
-- corrupted ciphertext/authentication failure tests;
-- docs and OpenAPI/CLI contract updates.
+- KMS-backed data-key wrapping;
+- externally auditable authenticated-encryption proof;
+- remote object-store upload;
+- compliance-grade backup custody workflow.

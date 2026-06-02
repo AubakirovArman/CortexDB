@@ -286,6 +286,98 @@ fn corrupt_backup_manifest_archive_is_rejected_on_restore() {
     );
 }
 
+#[test]
+fn encrypted_backup_restore_roundtrips_wal_and_checkpointed_data() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let archive = root.path().join("backup.cdbenc");
+    let target = root.path().join("target");
+    let passphrase = "correct horse battery staple";
+
+    {
+        let mut db = Database::open(&source).unwrap();
+        db.put_cell(
+            CellId(91),
+            b"scope=ops\nstatus=ready\nencrypted checkpointed".to_vec(),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+        db.put_cell(CellId(92), b"encrypted wal tail".to_vec())
+            .unwrap();
+    }
+
+    let backup = Database::encrypted_backup_path(&source, &archive, passphrase).unwrap();
+    assert!(backup.files_archived > 0);
+    assert!(backup.ciphertext_bytes > 0);
+    assert!(archive.exists());
+    let raw_archive = std::fs::read(&archive).unwrap();
+    assert!(!raw_archive
+        .windows("encrypted wal tail".len())
+        .any(|window| window == b"encrypted wal tail"));
+
+    let restore = Database::restore_from_encrypted_backup(&archive, &target, passphrase).unwrap();
+    assert!(restore.files_restored > 0);
+    assert_eq!(restore.restored_validation.live_segments_checked, 1);
+    assert_eq!(restore.restored_validation.wal_records_checked, 1);
+
+    let db = Database::open(&target).unwrap();
+    assert_eq!(
+        db.get_latest_cell(CellId(91)).unwrap(),
+        b"scope=ops\nstatus=ready\nencrypted checkpointed"
+    );
+    assert_eq!(
+        db.get_latest_cell(CellId(92)).unwrap(),
+        b"encrypted wal tail"
+    );
+}
+
+#[test]
+fn encrypted_backup_wrong_passphrase_fails_without_target() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let archive = root.path().join("backup.cdbenc");
+    let target = root.path().join("target");
+
+    {
+        let mut db = Database::open(&source).unwrap();
+        db.put_cell(CellId(93), b"secret payload".to_vec()).unwrap();
+    }
+    Database::encrypted_backup_path(&source, &archive, "correct passphrase 123").unwrap();
+
+    let error = Database::restore_from_encrypted_backup(&archive, &target, "wrong passphrase 123")
+        .unwrap_err()
+        .to_string();
+
+    assert!(error.contains("passphrase") || error.contains("authentication"));
+    assert!(!target.exists());
+}
+
+#[test]
+fn encrypted_backup_corrupt_ciphertext_is_rejected() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let archive = root.path().join("backup.cdbenc");
+    let target = root.path().join("target");
+    let passphrase = "correct passphrase 456";
+
+    {
+        let mut db = Database::open(&source).unwrap();
+        db.put_cell(CellId(94), b"payload".to_vec()).unwrap();
+    }
+    Database::encrypted_backup_path(&source, &archive, passphrase).unwrap();
+    let mut bytes = std::fs::read(&archive).unwrap();
+    let last = bytes.len() - 1;
+    bytes[last] ^= 0x7f;
+    std::fs::write(&archive, bytes).unwrap();
+
+    let error = Database::restore_from_encrypted_backup(&archive, &target, passphrase)
+        .unwrap_err()
+        .to_string();
+
+    assert!(error.contains("ciphertext checksum"));
+    assert!(!target.exists());
+}
+
 fn find_file_with_extension(root: &Path, extension: &str) -> PathBuf {
     for entry in std::fs::read_dir(root).unwrap() {
         let entry = entry.unwrap();
