@@ -34,8 +34,9 @@ This gate covers:
   contradicting evidence, numeric conflicts, and guard messages;
 - an audit readiness panel that keeps raw audit events out of the browser and
   points operators to file-backed CLI redaction checks;
-- a permissions view for tenant, active role, token state, admin/data
-  capabilities, and local write guard state;
+- a permissions view for tenant, active role, token state, selected scope
+  probes, AgentView enforcement posture, admin/data capabilities, and local
+  write guard state;
 - dashboard release packaging and screenshot artifact wiring.
 
 ## Latest Local Checks
@@ -49,6 +50,7 @@ context_pack_explorer: true
 verification_explorer: true
 audit_readiness: true
 permissions_view: true
+permissions_agent_view_posture: true
 release_artifacts: true
 standalone_package: target/dashboard/dashboard-v1.tar.gz
 screenshots: 22 route/viewport captures including permissions

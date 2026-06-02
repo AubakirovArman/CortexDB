@@ -108,6 +108,9 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "last_request_error",
         "make backup-restore-production-pack-check",
         "dashboard_permissions.v1",
+        "selected_scopes",
+        "server_token_policy",
+        "anonymous_synthetic_view",
     ] {
         assert!(
             script.contains(marker),
@@ -202,6 +205,10 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert!(operations.body.contains("Backup posture"));
     assert!(operations.body.contains("Last error"));
     assert!(operations.body.contains("renderPermissionsView"));
+    assert!(operations.body.contains("Permissions explorer"));
+    assert!(operations.body.contains("Token / role / scope / AgentView"));
+    assert!(operations.body.contains("Scope probes"));
+    assert!(operations.body.contains("AgentView policy"));
     assert!(operations.body.contains("renderRequestIssue"));
     assert!(operations.body.contains("clearRequestIssue"));
     assert!(operations.body.contains("Use an admin token"));

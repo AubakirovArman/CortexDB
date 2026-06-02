@@ -299,18 +299,29 @@
         if (!container || body?.schema_version !== "dashboard_permissions.v1") return;
 
         const capabilities = body.capabilities || {};
+        const agentView = body.agent_view || {};
+        const selectedScopes = body.selected_scopes || [];
         const cards = document.createElement("div");
         const rules = document.createElement("ul");
+        const scopeList = document.createElement("ul");
+        const agentRules = document.createElement("ul");
         cards.className = "report-grid";
         rules.className = "report-list compact";
+        scopeList.className = "report-list compact";
+        agentRules.className = "report-list compact";
         cards.replaceChildren(
             card("Tenant", body.tenant || "default"),
+            card("Role", body.role || body.access_level || "limited"),
             card("Access", body.access_level || "limited"),
             card("Token active", yesNo(body.token_active)),
+            card("Token storage", body.token_storage || "none"),
+            card("Token visible", yesNo(body.token_visible), body.token_visible ? "bad" : "good"),
             card("Read-only", yesNo(body.read_only), body.read_only ? "warn" : "good"),
             card("Data read", yesNo(capabilities.data_read), capabilities.data_read ? "good" : "warn"),
             card("Admin maintenance", yesNo(capabilities.admin_maintenance), capabilities.admin_maintenance ? "good" : "warn"),
             card("Local writes", yesNo(capabilities.local_writes), capabilities.local_writes ? "good" : "warn"),
+            card("AgentView source", agentView.source || "unknown"),
+            card("Server enforced", yesNo(agentView.server_enforced), agentView.server_enforced ? "good" : "bad"),
         );
         rules.replaceChildren(
             textItem("Public mode can load health and permissions only."),
@@ -318,7 +329,25 @@
             textItem("Admin mode can run storage maintenance, validation, metrics, and ANN metrics."),
             textItem("Read-only mode is a local dashboard guard that blocks mutating actions before they reach the API."),
         );
-        container.replaceChildren(cards, rules);
+        if (selectedScopes.length) {
+            scopeList.replaceChildren(...selectedScopes.map((scope) => textItem(`scope probe: ${scope}`)));
+        } else {
+            scopeList.replaceChildren(textItem("No scope inputs are visible in the current dashboard shell"));
+        }
+        agentRules.replaceChildren(
+            textItem(`read probe: ${agentView.readable_scope_probe || "not checked"}`),
+            textItem(`write probe: ${agentView.writable_scope_probe || "not checked"}`),
+            textItem(agentView.note || "AgentView policy is evaluated on the server."),
+        );
+        container.replaceChildren(
+            card("Permissions explorer", "Token / role / scope / AgentView", "good"),
+            cards,
+            card("Scope probes", `${selectedScopes.length} scopes`),
+            scopeList,
+            card("AgentView policy", agentView.source || "unknown"),
+            agentRules,
+            rules,
+        );
     }
 
     Object.assign(reports, {

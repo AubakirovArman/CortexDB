@@ -88,13 +88,25 @@ function renderPermissionReport() {
 }
 
 function permissionState() {
+    const selectedScopes = collectScopeInputs();
     return {
         schema_version: "dashboard_permissions.v1",
         tenant,
+        role: accessLabel(accessLevel),
         access_level: accessLevel,
         access_hint: accessHint,
         token_active: token.trim().length > 0,
+        token_storage: token.trim().length > 0 ? "memory_only" : "none",
+        token_visible: false,
         read_only: readOnlyMode,
+        selected_scopes: selectedScopes,
+        agent_view: {
+            source: token.trim().length > 0 ? "server_token_policy" : "anonymous_synthetic_view",
+            server_enforced: true,
+            readable_scope_probe: canUse(ACCESS_DATA) ? "allowed_by_role_then_checked_by_agent_view" : "public_only",
+            writable_scope_probe: canUse(ACCESS_DATA) && !readOnlyMode ? "write_requests_checked_by_agent_view" : "not_available",
+            note: "Dashboard shows local permission posture; the server remains the source of truth for AgentView scopes.",
+        },
         capabilities: {
             public_health: canUse(ACCESS_PUBLIC),
             data_read: canUse(ACCESS_DATA),
@@ -102,6 +114,13 @@ function permissionState() {
             local_writes: canUse(ACCESS_DATA) && !readOnlyMode,
         },
     };
+}
+
+function collectScopeInputs() {
+    const scopes = Array.from(document.querySelectorAll("input[name='scope']"))
+        .map((input) => input.value.trim())
+        .filter(Boolean);
+    return Array.from(new Set(scopes)).sort();
 }
 
 function headers() {

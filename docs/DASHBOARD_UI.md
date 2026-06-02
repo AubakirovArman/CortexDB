@@ -33,8 +33,8 @@ The dashboard also has a local read-only mode that blocks mutating actions
 before they reach the API, an operational status panel for visible health,
 stats, storage validation, metrics reachability, backup posture, last request
 error state, and incident checks, and a Permissions route that explains the
-active tenant, role, token state, admin/data capabilities, and local write guard
-state.
+active tenant, role, token state, selected scope probes, AgentView enforcement
+posture, admin/data capabilities, and local write guard state.
 The Overview route includes an Audit readiness panel that keeps incident review
 operators on the safe path: audit logs remain file-backed, raw audit events are
 not rendered in the browser, and the panel points operators to the CLI
@@ -113,6 +113,18 @@ The read-only mode is a dashboard-local safety switch. It does not replace
 server authorization; it prevents accidental cell writes, tombstones, ingest,
 flush, and compact actions from being sent while an operator is inspecting the
 database.
+
+### Permissions Explorer
+
+The Permissions route is read-only and shows the local session posture:
+
+- tenant and role/access level;
+- whether a bearer token is active, where it is stored, and that it is never
+  rendered back to the page;
+- read-only guard state and local write availability;
+- selected scope probes collected from the dashboard forms;
+- AgentView policy source and a reminder that the server remains the source of
+  truth for readable/writable scopes.
 Search, AQL, and Verify success responses also render compact report views for
 result count, top cells, verdict, evidence, contradictions, guards, and numeric
 conflicts.
