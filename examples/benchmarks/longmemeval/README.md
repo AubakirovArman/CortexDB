@@ -80,3 +80,21 @@ accuracy = 0.7660
 
 This is a full official local score. It is not yet a published leaderboard
 entry until the package is submitted to the official maintainers.
+
+## Package For Submission
+
+```bash
+make longmemeval-v1-package-submission
+```
+
+Output:
+
+```text
+target/longmemeval-v1/submission/cortexdb-longmemeval-v1-official-gpt4o.tar.gz
+```
+
+The package includes hypotheses, official QA labels, retrieval metrics, dataset
+manifest, retrieval report, and a package manifest with checksums. The full
+retrieval log is omitted by default because it is about 255 MB; rebuild with
+`scripts/longmemeval/package_v1_submission.py --include-retrieval-log` if a
+reviewer requests it.

@@ -112,13 +112,43 @@ target/longmemeval-v1/logs/official_generation_gpt4o_20260602-034241.log
 target/longmemeval-v1/logs/official_eval_gpt4o_20260602-042609.log
 ```
 
+## Submission Package
+
+Build the local evidence package:
+
+```bash
+make longmemeval-v1-package-submission
+```
+
+The package is written to:
+
+```text
+target/longmemeval-v1/submission/cortexdb-longmemeval-v1-official-gpt4o/
+target/longmemeval-v1/submission/cortexdb-longmemeval-v1-official-gpt4o.tar.gz
+```
+
+Package contents:
+
+```text
+README.md
+manifest.json
+data_manifest.json
+hypotheses.jsonl
+eval-results-gpt-4o.jsonl
+official_retrieval_metrics.txt
+retrieval_report.json
+```
+
+The package intentionally excludes the full 255 MB retrieval log by default.
+If the official maintainer asks for it, rebuild with the packaging script's
+`--include-retrieval-log` flag.
+
 ## Submission Gap
 
 To appear in an official LongMemEval list or leaderboard, the remaining work is:
 
-1. Package the run according to the official benchmark or LongMemEval-V2
-   leaderboard requirements.
-2. Submit the package to the official maintainers.
+1. Submit the local v1 package to the official maintainers, or
+2. run LongMemEval-V2 and build its separate web+enterprise leaderboard package.
 
 Until those steps are done, CortexDB has a full official local LongMemEval v1
 score, but not an official published LongMemEval leaderboard entry.
