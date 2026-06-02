@@ -100,6 +100,16 @@ It exits with a non-zero status if the 24-hour campaign is not complete and the
 campaign process is not running, the campaign is not in `running` state, or the
 campaign report has not been updated recently.
 
+After the 24-hour threshold is met, close the storage soak epic with:
+
+```bash
+make storage-soak-epic-finalize
+```
+
+The finalizer refuses to update status documents unless
+`target/storage-soak-history/report.json` reports
+`twenty_four_hour_evidence.met=true`.
+
 The default history gate does not pretend to be a 24-hour proof. It records
 `twenty_four_hour_evidence.met=false` until accumulated local soak duration
 crosses 24 hours.
