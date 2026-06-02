@@ -22,6 +22,8 @@ For agent-memory TTL/feedback demo, see
 [`examples/demo/agent_memory/README.md`](examples/demo/agent_memory/README.md).
 For durable tool registry cells and ContextPack inclusion, see
 [`docs/TOOL_REGISTRY.md`](docs/TOOL_REGISTRY.md).
+For typed entity/relation/source graph traversal, see
+[`docs/KNOWLEDGE_GRAPH.md`](docs/KNOWLEDGE_GRAPH.md).
 
 CortexDB is specifically engineered for autonomous AI agents. Unlike traditional databases that return raw rows or tables, or vector databases that return fragmented, unverified text chunks, CortexDB compiles permission-safe, evidence-aware **Context Packs** with strict token-budget limits and deterministic fact verification.
 
@@ -54,6 +56,7 @@ Or run the full demo: `make demo`
 - **Single-Node Durable Storage:** Strict Write-Ahead Log (WAL) with group commit, MVCC MemTable, and incremental check-pointing/compaction.
 - **Durable Local Agent Memory:** Scope-isolated agent-facing memory retrieval with dynamic decay/TTL scoring.
 - **Durable Tool Registry:** Tool descriptions, schemas, and permission markers are stored as scope-filtered `type=tool` cells and can be retrieved into Context Packs.
+- **Typed Knowledge Graph Projection:** Entity, relation, and source-reference cells can be indexed from the local snapshot for deterministic traversal.
 - **Deterministic Fact Verification (`VERIFY FACT`):** Heuristic and deterministic numerical and citation checking that detects contradictions before they reach the agent.
 - **HTTP Server:** Async HTTP surface over actor-isolated local single-node core built on **Tokio**, **Axum**, and **Tower-HTTP** with strict 2MB body limit boundaries.
 - **Crate Ecosystem:** Fully modular workspace crates: `cortex-core`, `cortex-aql`, `cortex-storage`, `cortex-engine`, `cortex-server`, and `cortex-cli`.
@@ -71,7 +74,7 @@ Or run the full demo: `make demo`
 - `crates/cortex-aql`: AQL parser, AST, policy validation, binder, and bitmap VM.
 - `crates/cortex-storage`: ACLOG WAL, manifest, segment, bitmap, lexical, vector, and experimental HNSW graph files.
 - `crates/cortex-core`: In-memory MVCC MemTable, read transactions, cell versions, and manifest primitives.
-- `crates/cortex-engine`: Single-node database loop, compaction, AQL-backed retrieve, memory TTL/decay, tool registry cells, source trust, `VERIFY FACT` reports, ContextPack, exact vector search, and experimental HNSW foundations.
+- `crates/cortex-engine`: Single-node database loop, compaction, AQL-backed retrieve, memory TTL/decay, tool registry cells, knowledge graph projection, source trust, `VERIFY FACT` reports, ContextPack, exact vector search, and experimental HNSW foundations.
 - `crates/cortex-sdk`: Blocking Rust HTTP client for the versioned server API, with `cargo package` preflight coverage.
 - `crates/cortex-cli`: Command `cortexdb` for local operations and loading fixtures.
 - `crates/cortex-server`: Async JSON HTTP API built on Axum and Tokio with per-tenant `DatabaseActor` workers over the local blocking database core.

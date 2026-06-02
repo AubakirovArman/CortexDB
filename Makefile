@@ -11,6 +11,7 @@
 .PHONY: comparison-docs-check
 .PHONY: agent-memory-demo-check
 .PHONY: tool-registry-check
+.PHONY: knowledge-graph-check
 .PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check sdk-release-artifacts-check sdk-registry-gate-check openapi-check openapi-contract-check sdk-contract-check sdk-e2e-release-check migration-policy-check migration-compatibility-check storage-compat-check engine-api-check aql-compat-check retrieval-quality-check context-pack-quality-check verification-quality-check security-check rbac-policy-store-check quota-policy-check audit-chain-check security-hardening-check compliance-boundary-check observability-check deployment-upgrade-check http-contract-ops-check cli-product-check future-epic-design-check distributed-consensus-design-check managed-cloud-design-check enterprise-rbac-design-check hnsw-no-fallback-design-check llm-inference-design-check external-identity-design-check legal-verification-design-check distributed-consensus-check consensus-partition-soak-check consensus-failover-slo-check consensus-rejoin-check cloud-tenant-lifecycle-check cloud-backup-restore-check cloud-upgrade-check ann-production-no-fallback-check ann-real-domain-history-check ann-public-corpus-history-check ann-graph-freshness-check llm-inference-contract-check llm-inference-safety-check llm-inference-smoke-check secrets-check oidc-auth-contract-check identity-policy-mapping-check auth-rotation-check legal-verification-dataset-check legal-verification-quality-check legal-citation-policy-check binary-release-package binary-release-validate binary-platform-matrix-check install-script-check binary-release-check beta-delta-check beta-foundation-check beta-rc-check beta-release-check production-hardening-check production-candidate-check production-v1-check public-claims-check load-smoke-check single-node-performance-check performance-trend-check tenant-recovery-check context-verify-quality-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-product-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-recall-probe-check ann-recall-probe-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-readiness ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-real-embedding-release-check ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-history-fixture-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check crash-fault-check chaos-restart-check storage-soak-check storage-soak-history-check replication-partition-check replication-lifecycle-check production-evidence-sweep smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
@@ -277,6 +278,7 @@ PUBLIC_BENCHMARKS_REPORT ?= target/public-benchmarks/report.json
 COMPARISON_DOCS_REPORT ?= target/comparison-docs/report.json
 AGENT_MEMORY_DEMO_REPORT ?= target/agent-memory-demo/report.json
 TOOL_REGISTRY_REPORT ?= target/tool-registry/report.json
+KNOWLEDGE_GRAPH_REPORT ?= target/knowledge-graph/report.json
 PRODUCTION_HARDENING_ROOT ?= target/production-hardening
 PRODUCTION_HARDENING_REPORT ?= $(PRODUCTION_HARDENING_ROOT)/report.json
 PRODUCTION_CANDIDATE_ROOT ?= target/production-candidate
@@ -588,6 +590,9 @@ agent-memory-demo-check:
 
 tool-registry-check:
 	python3 scripts/tool_registry_check.py --report "$(TOOL_REGISTRY_REPORT)"
+
+knowledge-graph-check:
+	python3 scripts/knowledge_graph_check.py --report "$(KNOWLEDGE_GRAPH_REPORT)"
 
 production-hardening-check:
 	python3 scripts/production_hardening_check.py --root "$(PRODUCTION_HARDENING_ROOT)" --report "$(PRODUCTION_HARDENING_REPORT)"

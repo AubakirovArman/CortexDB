@@ -17,6 +17,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`PUBLIC_BENCHMARKS.md`](PUBLIC_BENCHMARKS.md) - release-by-release public benchmark history.
 - [`COMPARISONS.md`](COMPARISONS.md) - neutral comparison with SQL databases, vector databases, RAG stacks, and memory frameworks.
 - [`TOOL_REGISTRY.md`](TOOL_REGISTRY.md) - durable tool cells, schemas, permissions, and ContextPack inclusion.
+- [`KNOWLEDGE_GRAPH.md`](KNOWLEDGE_GRAPH.md) - entity, relation, and source-reference graph projection.
 - [`BETA_OPERATIONS.md`](BETA_OPERATIONS.md) - beta operator runbook for install, auth, backup, validation, repair, metrics, and known limits.
 - [`RELEASE_NOTES_v0.2.0-beta.1.md`](RELEASE_NOTES_v0.2.0-beta.1.md) - planned beta release notes and checklist.
 - [`BETA_DELTA.md`](BETA_DELTA.md) - what remains before beta promotion.
@@ -63,6 +64,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`VERIFICATION_QUALITY_EVIDENCE.md`](VERIFICATION_QUALITY_EVIDENCE.md) - local Epic 12 evidence gate.
 - [`FEEDBACK.md`](FEEDBACK.md) - feedback scoring signal.
 - [`TOOL_REGISTRY.md`](TOOL_REGISTRY.md) - typed tool registry cells and agent scope enforcement.
+- [`KNOWLEDGE_GRAPH.md`](KNOWLEDGE_GRAPH.md) - typed entity/relation/source traversal.
 
 ## Storage And Recovery
 
