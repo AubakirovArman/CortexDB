@@ -88,6 +88,17 @@ for generation and judging so the output budget goes to visible answer content
 instead of `reasoning_content`. It is useful for local iteration, but it is not
 an official LongMemEval score.
 
+Latest local diagnostic:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+correct by DeepSeek judge: 24 / 117
+accuracy: 0.2051
+empty hypotheses: 0
+```
+
 ## Current Boundary
 
 - CortexDB owns the retrieval log generation.

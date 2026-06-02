@@ -203,28 +203,41 @@ Default output root:
 target/longmemeval-v1/targeted-deepseek-flash-thinking-disabled/
 ```
 
-Previously recorded local diagnostic on the `117` baseline GPT-4o false cases
-with implicit/default thinking behavior:
+Latest local diagnostic on the `117` baseline GPT-4o false cases with explicit
+thinking disabled:
 
 ```text
 model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
 official score: false
-correct by DeepSeek judge: 27 / 117
-accuracy: 0.2308
-prompt tokens: 1,007,768
-completion tokens: 48,555
+correct by DeepSeek judge: 24 / 117
+accuracy: 0.2051
+empty hypotheses: 0
+prompt tokens: 1,009,393
+completion tokens: 8,955
 ```
 
 Breakdown:
 
 | Question type | Correct | Count | Accuracy |
 | --- | ---: | ---: | ---: |
-| `knowledge-update` | `2` | `11` | `0.1818` |
-| `multi-session` | `13` | `48` | `0.2708` |
+| `knowledge-update` | `5` | `11` | `0.4545` |
+| `multi-session` | `11` | `48` | `0.2292` |
 | `single-session-assistant` | `0` | `3` | `0.0000` |
 | `single-session-preference` | `0` | `22` | `0.0000` |
-| `single-session-user` | `0` | `1` | `0.0000` |
-| `temporal-reasoning` | `12` | `32` | `0.3750` |
+| `single-session-user` | `1` | `1` | `1.0000` |
+| `temporal-reasoning` | `7` | `32` | `0.2188` |
+
+Previous implicit-thinking run for comparison:
+
+```text
+model: deepseek-v4-flash
+correct by DeepSeek judge: 27 / 117
+accuracy: 0.2308
+empty hypotheses: 4
+completion tokens: 48,555
+```
 
 This is useful for iteration, but it is not an official LongMemEval result:
 generation and judging both use DeepSeek flash instead of the official GPT-4o
