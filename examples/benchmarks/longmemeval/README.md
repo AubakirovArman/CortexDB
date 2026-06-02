@@ -63,6 +63,19 @@ This writes `target/longmemeval-v1/analysis/error_report.md`,
 The analysis is post-hoc only and is meant to guide improvements without using
 gold labels inside runtime retrieval.
 
+Try the compact reader-context variant without changing retrieval ranking:
+
+```bash
+make longmemeval-v1-official-retrieval-metrics \
+  LONGMEMEVAL_V1_OUTPUT_ROOT=target/longmemeval-v1/cortexdb-compact-context \
+  LONGMEMEVAL_V1_CONTEXT_MODE=compact \
+  LONGMEMEVAL_V1_OFFICIAL_METRICS_REPORT=target/longmemeval-v1/cortexdb-compact-context/official_retrieval_metrics.txt
+```
+
+This keeps `index-mode=user` and changes only the text passed to the reader.
+Run official generation/evaluation on that retrieval log before treating it as
+a score improvement.
+
 ## Current Boundary
 
 - CortexDB owns the retrieval log generation.

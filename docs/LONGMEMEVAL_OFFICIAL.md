@@ -146,6 +146,45 @@ This report is diagnostic only. It uses official labels after evaluation to
 prioritize future changes; it must not be used inside runtime retrieval or
 generation.
 
+## Reader Context Variants
+
+The default v1 retrieval log keeps the historical behavior:
+
+```text
+index mode = user
+context mode = user
+```
+
+This indexes only user turns and also sends only user-turn text to the official
+reader. For reader-failure analysis, CortexDB also supports a compact
+conversation context while keeping the same user-only index:
+
+```bash
+make longmemeval-v1-official-retrieval-metrics \
+  LONGMEMEVAL_V1_OUTPUT_ROOT=target/longmemeval-v1/cortexdb-compact-context \
+  LONGMEMEVAL_V1_CONTEXT_MODE=compact \
+  LONGMEMEVAL_V1_OFFICIAL_METRICS_REPORT=target/longmemeval-v1/cortexdb-compact-context/official_retrieval_metrics.txt
+```
+
+Latest compact-context retrieval-only evidence:
+
+```text
+index mode: user
+context mode: compact
+max turn chars: 900
+max session chars: 4000
+retrieval log size: 266M
+avg top10 context chars: 38,435
+official session recall_all@10: 0.9021
+official session ndcg_any@10: 0.7873
+```
+
+The compact context changes only the text passed to the reader; it does not use
+gold labels and does not change the ranking IDs. The next score-improvement
+experiment is to run official GPT-4o generation/evaluation against this
+compact-context log and compare QA accuracy with the `0.7660` user-context
+baseline.
+
 ## Submission Package
 
 Build the local evidence package:

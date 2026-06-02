@@ -256,6 +256,10 @@ LONGMEMEVAL_V1_OUTPUT_ROOT ?= target/longmemeval-v1/cortexdb
 LONGMEMEVAL_V1_RETRIEVAL_LOG ?= $(LONGMEMEVAL_V1_OUTPUT_ROOT)/$(basename $(notdir $(LONGMEMEVAL_V1_DATA_FILE)))_cortexdb_$(LONGMEMEVAL_V1_GRANULARITY)_retrieval.jsonl
 LONGMEMEVAL_V1_OFFICIAL_METRICS_REPORT ?= $(LONGMEMEVAL_V1_OUTPUT_ROOT)/official_retrieval_metrics.txt
 LONGMEMEVAL_V1_GRANULARITY ?= session
+LONGMEMEVAL_V1_INDEX_MODE ?= user
+LONGMEMEVAL_V1_CONTEXT_MODE ?= user
+LONGMEMEVAL_V1_MAX_TURN_CHARS ?= 900
+LONGMEMEVAL_V1_MAX_SESSION_CHARS ?= 4000
 LONGMEMEVAL_V1_TOPK ?= 10
 LONGMEMEVAL_V1_LIMIT ?=
 LONGMEMEVAL_V1_READER_MODEL_NAME ?= gpt-4o-2024-08-06
@@ -685,6 +689,10 @@ longmemeval-v1-cortexdb-retrieval: longmemeval-v1-official-data
 	  --cortexdb-bin ./target/release/cortexdb \
 	  --output-dir "$(LONGMEMEVAL_V1_OUTPUT_ROOT)" \
 	  --granularity "$(LONGMEMEVAL_V1_GRANULARITY)" \
+	  --index-mode "$(LONGMEMEVAL_V1_INDEX_MODE)" \
+	  --context-mode "$(LONGMEMEVAL_V1_CONTEXT_MODE)" \
+	  --max-turn-chars "$(LONGMEMEVAL_V1_MAX_TURN_CHARS)" \
+	  --max-session-chars "$(LONGMEMEVAL_V1_MAX_SESSION_CHARS)" \
 	  --top-k "$(LONGMEMEVAL_V1_TOPK)" \
 	  $$limit_args
 

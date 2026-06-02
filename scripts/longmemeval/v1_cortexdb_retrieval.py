@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from v1_context_modes import session_text
 from v1_official_metrics import evaluate_entry, should_skip_for_aggregate, summarize
 
 
@@ -25,15 +26,14 @@ def load_json_list(path: Path) -> list[dict[str, Any]]:
     return value
 
 
-def user_turns(session: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [turn for turn in session if turn.get("role") == "user"]
-
-
-def session_text(session: list[dict[str, Any]]) -> str:
-    return " ".join(str(turn.get("content", "")) for turn in user_turns(session)).strip()
-
-
-def corpus_for_entry(entry: dict[str, Any], granularity: str) -> list[dict[str, Any]]:
+def corpus_for_entry(
+    entry: dict[str, Any],
+    granularity: str,
+    index_mode: str,
+    context_mode: str,
+    max_turn_chars: int,
+    max_session_chars: int,
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for session_id, session, timestamp in zip(
         entry["haystack_session_ids"],
@@ -43,13 +43,16 @@ def corpus_for_entry(entry: dict[str, Any], granularity: str) -> list[dict[str, 
         require(isinstance(session, list), f"{entry['question_id']}: session must be list")
         if granularity == "session":
             corpus_id = session_id
-            turns = user_turns(session)
+            turns = [turn for turn in session if turn.get("role") == "user"]
             if "answer" in corpus_id and all(not turn.get("has_answer", False) for turn in turns):
                 corpus_id = corpus_id.replace("answer", "noans")
             rows.append(
                 {
                     "corpus_id": corpus_id,
-                    "text": session_text(session),
+                    "index_text": session_text(
+                        session, index_mode, max_turn_chars, max_session_chars
+                    ),
+                    "text": session_text(session, context_mode, max_turn_chars, max_session_chars),
                     "timestamp": timestamp,
                     "raw_session_id": session_id,
                 }
@@ -62,10 +65,12 @@ def corpus_for_entry(entry: dict[str, Any], granularity: str) -> list[dict[str, 
                 corpus_id = f"{session_id}_{index + 1}"
                 if "answer" in session_id and not turn.get("has_answer", False):
                     corpus_id = corpus_id.replace("answer", "noans")
+                text = str(turn.get("content", "")).strip()
                 rows.append(
                     {
                         "corpus_id": corpus_id,
-                        "text": str(turn.get("content", "")).strip(),
+                        "index_text": text,
+                        "text": text,
                         "timestamp": timestamp,
                         "raw_session_id": session_id,
                     }
@@ -86,7 +91,7 @@ def payload_for_cell(question_id: str, row: dict[str, Any]) -> str:
             f"LONGMEMEVAL_CORPUS_ID: {row['corpus_id']}",
             f"LONGMEMEVAL_TIMESTAMP: {row['timestamp']}",
             "",
-            row["text"],
+            row["index_text"],
         ]
     )
 
@@ -155,6 +160,10 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--cortexdb-bin", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--granularity", choices=["session", "turn"], default="session")
+    parser.add_argument("--index-mode", choices=["user", "conversation", "compact"], default="user")
+    parser.add_argument("--context-mode", choices=["user", "conversation", "compact"], default="user")
+    parser.add_argument("--max-turn-chars", type=int, default=900)
+    parser.add_argument("--max-session-chars", type=int, default=4000)
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--keep-workdir", action="store_true")
@@ -174,7 +183,14 @@ def main(argv: list[str]) -> int:
     results: list[dict[str, Any]] = []
     for index, entry in enumerate(data, start=1):
         question_id = str(entry["question_id"])
-        corpus = corpus_for_entry(entry, args.granularity)
+        corpus = corpus_for_entry(
+            entry,
+            args.granularity,
+            args.index_mode,
+            args.context_mode,
+            args.max_turn_chars,
+            args.max_session_chars,
+        )
         q_root = work_root / question_id
         fixture_dir = q_root / "fixture"
         db_path = q_root / "db"
@@ -222,6 +238,10 @@ def main(argv: list[str]) -> int:
         "official_dataset_file": str(args.data_file),
         "retrieval_log": str(log_path),
         "top_k": args.top_k,
+        "index_mode": args.index_mode,
+        "context_mode": args.context_mode,
+        "max_turn_chars": args.max_turn_chars,
+        "max_session_chars": args.max_session_chars,
         "summary": summarize(results, args.granularity),
     }
     report_path = args.output_dir / "report.json"
@@ -238,6 +258,8 @@ def main(argv: list[str]) -> int:
                 f"- questions: `{report['summary']['question_count']}`",
                 f"- aggregate questions: `{report['summary']['aggregate_count']}`",
                 f"- granularity: `{args.granularity}`",
+                f"- index mode: `{args.index_mode}`",
+                f"- context mode: `{args.context_mode}`",
                 f"- recall_all@10: `{metrics.get('recall_all@10', 0.0):.4f}`",
                 f"- ndcg_any@10: `{metrics.get('ndcg_any@10', 0.0):.4f}`",
                 "",
