@@ -58,6 +58,9 @@ Storage validation responses render health cards for manifest/WAL status,
 checked segments, checked cells, index coverage, safe WAL truncate offset, and
 validation errors. The Overview operational status view combines those
 validation cards with stats, metrics, request-error triage, and backup posture.
+It also calls `/v1/compatibility` and renders API, SDK, storage-format, and
+migration compatibility versions so operators can see the active contract
+surface before upgrade or SDK release checks.
 Backups stay outside the browser as operator CLI workflows; the dashboard points
 to `make backup-restore-production-pack-check`, `cortexdb backup`,
 `cortexdb backup-drill`, `cortexdb backup-encrypted`, and

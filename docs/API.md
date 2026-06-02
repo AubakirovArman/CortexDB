@@ -45,7 +45,46 @@ Checks the server health status.
 
 ---
 
-### 2.2. GET `/v1/stats`
+### 2.2. GET `/v1/compatibility`
+Reports the active API, SDK contract, storage format, and migration matrix
+versions.
+
+* **Response (200 OK):**
+  ```json
+  {
+    "schema_version": "cortexdb.compatibility.v1",
+    "api": {
+      "version": "v1",
+      "contract": "openapi.v1",
+      "gate": "make openapi-contract-check"
+    },
+    "sdk": {
+      "contract": "sdk-contract.v1",
+      "workspace_version": "0.2.0",
+      "gate": "make sdk-contract-check"
+    },
+    "storage_formats": [
+      {
+        "name": "ACLOG WAL",
+        "extension": "aclog",
+        "current_magic": "ACLOGv0",
+        "current_version": 0,
+        "legacy_magics": [],
+        "compatibility_rule": "breaking changes require WAL_FORMAT_VERSION bump"
+      }
+    ],
+    "migration": {
+      "matrix_schema_version": 1,
+      "release": "v0.1.0-core-alpha",
+      "current_release": "v0.2.0-beta.1",
+      "gate": "make migration-compatibility-check"
+    }
+  }
+  ```
+
+---
+
+### 2.3. GET `/v1/stats`
 Retrieves detailed storage, segment, and WAL engine metrics.
 
 * **Response (200 OK):**
@@ -67,7 +106,7 @@ Retrieves detailed storage, segment, and WAL engine metrics.
 
 ---
 
-### 2.3. GET `/v1/validate`
+### 2.4. GET `/v1/validate`
 Validates the structural and checksum integrity of all storage segments, bitmap indexes, lexical indices, and WAL records.
 
 * **Response (200 OK):**

@@ -48,6 +48,9 @@ pub fn route_database_with_agent(
             server_version: env!("CARGO_PKG_VERSION").to_owned(),
         })
         .map_err(|e| RouterError::BadRequest(e.to_string())),
+        ("GET", "/v1/compatibility") => Ok(serde_json::to_string(
+            &cortex_engine::compatibility_summary(),
+        )?),
         ("GET", "/v1/cluster/status") => {
             let cluster = ClusterConfig::single_node();
             let replication_factor = cluster.nodes.len();

@@ -28,6 +28,8 @@ This gate covers:
   the API;
 - an operational status panel for health, stats, validation, metrics, backup
   posture, last request error state, and visible incidents;
+- a version compatibility section for API, SDK, storage format, and migration
+  matrix contract state from `/v1/compatibility`;
 - an incident timeline that classifies audit, rate-limit, storage, and backup
   events with severity, source, message, and action guidance;
 - a ContextPack Explorer covering selected cells, citations, explain score
@@ -46,6 +48,7 @@ This gate covers:
 ```text
 read_only_mode: true
 operational_status: true
+operational_compatibility_versions: true
 operational_backup_posture: true
 operational_last_error: true
 incident_timeline: true

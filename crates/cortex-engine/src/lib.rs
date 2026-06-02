@@ -3,6 +3,7 @@ pub mod backup;
 pub mod bundle;
 pub mod checkpoint;
 mod cleanup;
+pub mod compatibility;
 pub mod context;
 pub mod database;
 mod database_files;
@@ -32,6 +33,10 @@ pub use backup::{
     EncryptedBackupReport, EncryptedRestoreReport, OffsiteBackupStageReport, RestoreReport,
 };
 pub use bundle::{RetiredSegmentGc, SegmentBundle};
+pub use compatibility::{
+    compatibility_summary, ApiCompatibility, CompatibilitySummary, MigrationCompatibility,
+    SdkCompatibility, StorageFormatCompatibility,
+};
 pub use context::{
     estimate_tokens, ContextExplain, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode,
     ContextPackCell, ContextPackExportFormat, ContextPackOptions, ContextScoreComponent,

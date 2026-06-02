@@ -237,6 +237,7 @@
         checkList.className = "report-list compact";
 
         const health = body.health || {};
+        const compatibility = body.compatibility || {};
         const stats = body.stats || {};
         const validation = body.validation || {};
         const metrics = body.metrics || {};
@@ -250,6 +251,7 @@
             card("Access", body.access_level || "limited"),
             card("Read-only", yesNo(body.read_only), body.read_only ? "warn" : "good"),
             card("Health", health.ok ? "ok" : health.message || "not checked", health.ok ? "good" : "bad"),
+            card("Compatibility", compatibility.ok ? "ok" : compatibility.message || "not checked", compatibility.ok ? "good" : "bad"),
             card("Stats", stats.ok ? "ok" : stats.message || "not checked", stats.ok ? "good" : "warn"),
             card("Validation", validation.ok ? "ok" : validation.message || "not checked", validation.ok ? "good" : "bad"),
             card("Metrics", metrics.ok ? "ok" : metrics.message || "not checked", metrics.ok ? "good" : "warn"),
@@ -269,6 +271,10 @@
             card("WAL bytes", stats.wal_size_bytes ?? "n/a"),
             card("Manifest", validation.manifest_ok === null ? "n/a" : yesNo(validation.manifest_ok), validation.manifest_ok === false ? "bad" : "good"),
             card("WAL validation", validation.wal_ok === null ? "n/a" : yesNo(validation.wal_ok), validation.wal_ok === false ? "bad" : "good"),
+            card("API version", compatibility.api_version || "n/a"),
+            card("SDK contract", compatibility.sdk_contract || "n/a"),
+            card("Storage formats", compatibility.storage_formats?.length ?? "n/a"),
+            card("Migration release", compatibility.migration_current_release || "n/a"),
         );
 
         if (incidents.length) {
@@ -301,15 +307,37 @@
             checkList.replaceChildren(textItem("No status checks were run"));
         }
 
+        const compatibilityList = renderCompatibilityList(compatibility);
+
         container.replaceChildren(
             summary,
             details,
+            card("Version compatibility", "API / SDK / storage / migration", compatibility.ok ? "good" : "bad"),
+            compatibilityList,
             checkList,
             backupList,
             card("Incident timeline", "audit / rate / storage / backup", timeline.length ? "warn" : "good"),
             timelineList,
             incidentList,
         );
+    }
+
+    function renderCompatibilityList(compatibility) {
+        const list = document.createElement("ul");
+        const formats = compatibility.storage_formats || [];
+        list.className = "report-list compact";
+        if (!compatibility.available) {
+            list.replaceChildren(textItem("Compatibility endpoint was not checked"));
+            return list;
+        }
+        const rows = [
+            textItem(`api: ${compatibility.api_version || "unknown"} / ${compatibility.api_contract || "unknown"}`),
+            textItem(`sdk: ${compatibility.sdk_contract || "unknown"} / workspace ${compatibility.sdk_workspace_version || "unknown"}`),
+            textItem(`migration: ${compatibility.migration_release || "unknown"} -> ${compatibility.migration_current_release || "unknown"} via ${compatibility.migration_gate || "unknown"}`),
+            ...formats.map((format) => textItem(`${format.extension}: ${format.current_magic} v${format.current_version} (${format.compatibility_rule})`)),
+        ];
+        list.replaceChildren(...rows);
+        return list;
     }
 
     function renderIncidentEvent(event) {

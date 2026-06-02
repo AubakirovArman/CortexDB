@@ -20,6 +20,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
+  /v1/compatibility:
+    get:
+      summary: API, SDK, storage, and migration compatibility versions
+      responses:
+        '200':
+          description: Compatibility report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompatibilityResponse'
   /v1/stats:
     get:
       summary: Storage and WAL statistics
@@ -954,6 +964,96 @@ components:
         version:
           type: string
         server_version:
+          type: string
+    CompatibilityResponse:
+      type: object
+      required:
+      - schema_version
+      - api
+      - sdk
+      - storage_formats
+      - migration
+      properties:
+        schema_version:
+          type: string
+          example: cortexdb.compatibility.v1
+        api:
+          $ref: '#/components/schemas/ApiCompatibility'
+        sdk:
+          $ref: '#/components/schemas/SdkCompatibility'
+        storage_formats:
+          type: array
+          items:
+            $ref: '#/components/schemas/StorageFormatCompatibility'
+        migration:
+          $ref: '#/components/schemas/MigrationCompatibility'
+    ApiCompatibility:
+      type: object
+      required:
+      - version
+      - contract
+      - gate
+      properties:
+        version:
+          type: string
+        contract:
+          type: string
+        gate:
+          type: string
+    SdkCompatibility:
+      type: object
+      required:
+      - contract
+      - workspace_version
+      - gate
+      properties:
+        contract:
+          type: string
+        workspace_version:
+          type: string
+        gate:
+          type: string
+    StorageFormatCompatibility:
+      type: object
+      required:
+      - name
+      - extension
+      - current_magic
+      - current_version
+      - legacy_magics
+      - compatibility_rule
+      properties:
+        name:
+          type: string
+        extension:
+          type: string
+        current_magic:
+          type: string
+        current_version:
+          type: integer
+          format: uint32
+        legacy_magics:
+          type: array
+          items:
+            type: string
+        compatibility_rule:
+          type: string
+    MigrationCompatibility:
+      type: object
+      required:
+      - matrix_schema_version
+      - release
+      - current_release
+      - gate
+      properties:
+        matrix_schema_version:
+          type: integer
+          format: uint64
+        release:
+          type: string
+        current_release:
+          type: string
+        gate:
           type: string
     Cell:
       type: object

@@ -13,6 +13,18 @@ fn snapshot_health_response() {
 }
 
 #[test]
+fn snapshot_compatibility_response_shape() {
+    let dir = tempfile::tempdir().unwrap();
+    let response = handle_http(dir.path(), "GET /v1/compatibility HTTP/1.1\r\n\r\n");
+    assert!(response.contains(r#""schema_version":"cortexdb.compatibility.v1""#));
+    assert!(response.contains(r#""version":"v1""#));
+    assert!(response.contains(r#""contract":"sdk-contract.v1""#));
+    assert!(response.contains(r#""current_magic":"ACLOGv0""#));
+    assert!(response.contains(r#""current_magic":"ACS1""#));
+    assert!(response.contains(r#""gate":"make migration-compatibility-check""#));
+}
+
+#[test]
 fn snapshot_stats_response_shape() {
     let dir = tempfile::tempdir().unwrap();
     handle_http(dir.path(), "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\nhello");
