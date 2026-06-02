@@ -75,6 +75,12 @@ make storage-soak-24h-campaign \
   STORAGE_SOAK_CAMPAIGN_CELLS_PER_CYCLE=1
 ```
 
+Check campaign progress with:
+
+```bash
+make storage-soak-campaign-status
+```
+
 The default history gate does not pretend to be a 24-hour proof. It records
 `twenty_four_hour_evidence.met=false` until accumulated local soak duration
 crosses 24 hours.
