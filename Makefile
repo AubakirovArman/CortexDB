@@ -2,6 +2,7 @@
 .PHONY: encrypted-backup-check
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
+.PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score
 .PHONY: operations-runbook-check
 .PHONY: service-manager-smoke-check
 .PHONY: beta-landing-check
@@ -244,6 +245,27 @@ LOAD_SMOKE_SEARCHES ?= 20
 LOAD_SMOKE_CONTEXTS ?= 5
 LOAD_SMOKE_VERIFIES ?= 5
 LOAD_SMOKE_WORKERS ?= 8
+LONGMEMEVAL_V1_OFFICIAL_REPO ?= target/external-benchmarks/longmemeval
+LONGMEMEVAL_V1_VENV ?= target/longmemeval-v1/.venv
+LONGMEMEVAL_V1_PYTHON ?= $(LONGMEMEVAL_V1_VENV)/bin/python
+LONGMEMEVAL_V1_DATA_ROOT ?= target/longmemeval-v1/data
+LONGMEMEVAL_V1_DATA_FILE ?= $(LONGMEMEVAL_V1_DATA_ROOT)/longmemeval_s_cleaned.json
+LONGMEMEVAL_V1_DATA_MANIFEST ?= $(LONGMEMEVAL_V1_DATA_ROOT)/manifest.json
+LONGMEMEVAL_V1_DATA_SPLIT ?= s
+LONGMEMEVAL_V1_OUTPUT_ROOT ?= target/longmemeval-v1/cortexdb
+LONGMEMEVAL_V1_RETRIEVAL_LOG ?= $(LONGMEMEVAL_V1_OUTPUT_ROOT)/$(basename $(notdir $(LONGMEMEVAL_V1_DATA_FILE)))_cortexdb_$(LONGMEMEVAL_V1_GRANULARITY)_retrieval.jsonl
+LONGMEMEVAL_V1_OFFICIAL_METRICS_REPORT ?= $(LONGMEMEVAL_V1_OUTPUT_ROOT)/official_retrieval_metrics.txt
+LONGMEMEVAL_V1_GRANULARITY ?= session
+LONGMEMEVAL_V1_TOPK ?= 10
+LONGMEMEVAL_V1_LIMIT ?=
+LONGMEMEVAL_V1_READER_MODEL_NAME ?= gpt-4o-2024-08-06
+LONGMEMEVAL_V1_READER_MODEL_ALIAS ?= gpt-4o
+LONGMEMEVAL_V1_READER_BASE_URL ?=
+LONGMEMEVAL_V1_READER_OPENAI_KEY ?= $(OPENAI_API_KEY)
+LONGMEMEVAL_V1_GENERATION_ROOT ?= target/longmemeval-v1/generation
+LONGMEMEVAL_V1_GENERATION_TOPK ?= 10
+LONGMEMEVAL_V1_HYPOTHESIS_FILE ?=
+LONGMEMEVAL_V1_EVAL_MODEL ?= gpt-4o
 SINGLE_NODE_PERF_ROOT ?= target/single-node-performance
 SINGLE_NODE_PERF_REPORT ?= $(SINGLE_NODE_PERF_ROOT)/report.json
 SINGLE_NODE_PERF_CELLS ?= 500
@@ -636,6 +658,64 @@ public-claims-check:
 load-smoke-check:
 	cargo build -p cortex-server --bin cortex-server
 	python3 scripts/load_smoke_check.py --server ./target/debug/cortex-server --root "$(LOAD_SMOKE_ROOT)" --report "$(LOAD_SMOKE_REPORT)" --cells "$(LOAD_SMOKE_CELLS)" --reads "$(LOAD_SMOKE_READS)" --searches "$(LOAD_SMOKE_SEARCHES)" --contexts "$(LOAD_SMOKE_CONTEXTS)" --verifies "$(LOAD_SMOKE_VERIFIES)" --workers "$(LOAD_SMOKE_WORKERS)"
+
+longmemeval-v1-official-repo:
+	@if [ ! -d "$(LONGMEMEVAL_V1_OFFICIAL_REPO)/.git" ]; then \
+	  git clone --depth 1 https://github.com/xiaowu0162/LongMemEval "$(LONGMEMEVAL_V1_OFFICIAL_REPO)"; \
+	else \
+	  git -C "$(LONGMEMEVAL_V1_OFFICIAL_REPO)" pull --ff-only; \
+	fi
+
+longmemeval-v1-official-lite-env: longmemeval-v1-official-repo
+	@if [ ! -x "$(LONGMEMEVAL_V1_PYTHON)" ]; then python3 -m venv "$(LONGMEMEVAL_V1_VENV)"; fi
+	"$(LONGMEMEVAL_V1_PYTHON)" -m pip install -r "$(LONGMEMEVAL_V1_OFFICIAL_REPO)/requirements-lite.txt"
+
+longmemeval-v1-official-data:
+	python3 scripts/longmemeval/download_v1.py --data-root "$(LONGMEMEVAL_V1_DATA_ROOT)" --split "$(LONGMEMEVAL_V1_DATA_SPLIT)" --manifest "$(LONGMEMEVAL_V1_DATA_MANIFEST)"
+
+longmemeval-v1-cortexdb-retrieval: longmemeval-v1-official-data
+	cargo build --release -p cortex-cli --bin cortexdb
+	@limit_args=""; \
+	if [ -n "$(LONGMEMEVAL_V1_LIMIT)" ]; then limit_args="--limit $(LONGMEMEVAL_V1_LIMIT)"; fi; \
+	python3 scripts/longmemeval/v1_cortexdb_retrieval.py \
+	  --data-file "$(LONGMEMEVAL_V1_DATA_FILE)" \
+	  --cortexdb-bin ./target/release/cortexdb \
+	  --output-dir "$(LONGMEMEVAL_V1_OUTPUT_ROOT)" \
+	  --granularity "$(LONGMEMEVAL_V1_GRANULARITY)" \
+	  --top-k "$(LONGMEMEVAL_V1_TOPK)" \
+	  $$limit_args
+
+longmemeval-v1-official-retrieval-metrics: longmemeval-v1-official-lite-env longmemeval-v1-cortexdb-retrieval
+	"$(LONGMEMEVAL_V1_PYTHON)" "$(LONGMEMEVAL_V1_OFFICIAL_REPO)/src/evaluation/print_retrieval_metrics.py" "$(LONGMEMEVAL_V1_RETRIEVAL_LOG)" > "$(LONGMEMEVAL_V1_OFFICIAL_METRICS_REPORT)"
+	cat "$(LONGMEMEVAL_V1_OFFICIAL_METRICS_REPORT)"
+
+longmemeval-v1-official-generate: longmemeval-v1-official-repo longmemeval-v1-cortexdb-retrieval
+	@if [ -z "$(LONGMEMEVAL_V1_READER_OPENAI_KEY)" ]; then echo "Set LONGMEMEVAL_V1_READER_OPENAI_KEY or OPENAI_API_KEY for official generation" >&2; exit 2; fi
+	mkdir -p "$(LONGMEMEVAL_V1_GENERATION_ROOT)"
+	@base_url_args=""; \
+	if [ -n "$(LONGMEMEVAL_V1_READER_BASE_URL)" ]; then base_url_args="--openai_base_url $(LONGMEMEVAL_V1_READER_BASE_URL)"; fi; \
+	python3 "$(LONGMEMEVAL_V1_OFFICIAL_REPO)/src/generation/run_generation.py" \
+	  --in_file "$(LONGMEMEVAL_V1_RETRIEVAL_LOG)" \
+	  --out_dir "$(LONGMEMEVAL_V1_GENERATION_ROOT)" \
+	  --model_name "$(LONGMEMEVAL_V1_READER_MODEL_NAME)" \
+	  --model_alias "$(LONGMEMEVAL_V1_READER_MODEL_ALIAS)" \
+	  $$base_url_args \
+	  --openai_key "$(LONGMEMEVAL_V1_READER_OPENAI_KEY)" \
+	  --retriever_type flat-session \
+	  --topk_context "$(LONGMEMEVAL_V1_GENERATION_TOPK)" \
+	  --history_format json \
+	  --useronly false \
+	  --cot false \
+	  --con false
+
+longmemeval-v1-official-qa-score: longmemeval-v1-official-lite-env longmemeval-v1-official-data
+	@if [ -z "$(OPENAI_API_KEY)" ]; then echo "Set OPENAI_API_KEY for official LongMemEval evaluator" >&2; exit 2; fi
+	@if [ -z "$(LONGMEMEVAL_V1_HYPOTHESIS_FILE)" ]; then echo "Set LONGMEMEVAL_V1_HYPOTHESIS_FILE to the official generation output jsonl" >&2; exit 2; fi
+	cd "$(LONGMEMEVAL_V1_OFFICIAL_REPO)/src/evaluation" && \
+	  "$(abspath $(LONGMEMEVAL_V1_PYTHON))" evaluate_qa.py "$(LONGMEMEVAL_V1_EVAL_MODEL)" "$(abspath $(LONGMEMEVAL_V1_HYPOTHESIS_FILE))" "$(abspath $(LONGMEMEVAL_V1_DATA_FILE))"
+
+longmemeval-v1-official-score: longmemeval-v1-official-generate
+	@echo "Generation completed. Re-run make longmemeval-v1-official-qa-score LONGMEMEVAL_V1_HYPOTHESIS_FILE=<generated-file>"
 
 single-node-performance-check:
 	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)"

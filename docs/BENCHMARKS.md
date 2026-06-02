@@ -218,6 +218,32 @@ fixture shaped around investment-project, legal-risk, operations-error, and
 agent-memory vectors. This keeps a CortexDB-shaped ANN gate in normal CI without
 checking in a large domain corpus.
 
+## LongMemEval Official Retrieval Evidence
+
+CortexDB includes a LongMemEval v1 official-data retrieval harness:
+
+```bash
+make longmemeval-v1-official-retrieval-metrics
+```
+
+The target downloads the official `xiaowu0162/longmemeval-cleaned` small split,
+runs CortexDB retrieval, then scores the generated retrieval log with the
+official LongMemEval `print_retrieval_metrics.py` script.
+
+Latest local full-run evidence on `longmemeval_s_cleaned.json`:
+
+| Metric | Value |
+| --- | ---: |
+| `session recall_all@5` | `0.8468` |
+| `session ndcg_any@5` | `0.7752` |
+| `session recall_all@10` | `0.9021` |
+| `session ndcg_any@10` | `0.7873` |
+
+The run writes `target/longmemeval-v1/cortexdb/official_retrieval_metrics.txt`.
+Final QA leaderboard scoring still requires the official generation/evaluation
+path with a GPT-4o-compatible judge key. See
+[`LONGMEMEVAL_OFFICIAL.md`](LONGMEMEVAL_OFFICIAL.md).
+
 `make ann-demo-domain-corpus-run` builds a repeatable corpus from the checked-in
 demo payloads under `examples/datasets` and `examples/rag_demo/data`, generates
 exact ground truth, runs the same HNSW gate, and archives a run directory under
