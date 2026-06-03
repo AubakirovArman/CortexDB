@@ -394,6 +394,7 @@ ENTERPRISE_RAG_BENCH_RETRIEVAL_50_METRICS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrie
 ENTERPRISE_RAG_BENCH_ANSWER_50_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/qa/deepseek-balanced-50
 ENTERPRISE_RAG_BENCH_ANSWER_50_METRICS ?= $(ENTERPRISE_RAG_BENCH_ANSWER_50_ROOT)/official_metrics.json
 ENTERPRISE_RAG_BENCH_TOPK ?= 10
+ENTERPRISE_RAG_BENCH_INGEST_BATCH_SIZE ?= 1000
 ENTERPRISE_RAG_BENCH_QA_MODEL ?= deepseek-v4-flash
 ENTERPRISE_RAG_BENCH_QA_BASE_URL ?= https://api.deepseek.com
 ENTERPRISE_RAG_BENCH_QA_TOPK_CONTEXT ?= 6
@@ -1015,6 +1016,7 @@ enterprise-rag-bench-cortexdb-retrieval-smoke: enterprise-rag-bench-balanced-50
 	  --output "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_SMOKE)" \
 	  --report "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_SMOKE_REPORT)" \
 	  --top-k "$(ENTERPRISE_RAG_BENCH_TOPK)" \
+	  --batch-size "$(ENTERPRISE_RAG_BENCH_INGEST_BATCH_SIZE)" \
 	  --max-documents "$(ENTERPRISE_RAG_BENCH_SMOKE_MAX_DOCUMENTS)" \
 	  --reset-db \
 	  --progress-every 250
@@ -1039,6 +1041,7 @@ enterprise-rag-bench-cortexdb-retrieval-50: enterprise-rag-bench-balanced-50
 	  --output "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_50)" \
 	  --report "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_50_REPORT)" \
 	  --top-k "$(ENTERPRISE_RAG_BENCH_TOPK)" \
+	  --batch-size "$(ENTERPRISE_RAG_BENCH_INGEST_BATCH_SIZE)" \
 	  --reset-db
 
 enterprise-rag-bench-cortexdb-retrieval-full: enterprise-rag-bench-preflight
@@ -1051,9 +1054,20 @@ enterprise-rag-bench-cortexdb-retrieval-full: enterprise-rag-bench-preflight
 	  --output "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_FULL)" \
 	  --report "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_FULL_REPORT)" \
 	  --top-k "$(ENTERPRISE_RAG_BENCH_TOPK)" \
+	  --batch-size "$(ENTERPRISE_RAG_BENCH_INGEST_BATCH_SIZE)" \
 	  --reset-db
 
 enterprise-rag-bench-official-retrieval-only-metrics-50: enterprise-rag-bench-official-env enterprise-rag-bench-cortexdb-retrieval-50
+	cd "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" && "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" -m src.scripts.answer_evaluation.metrics_based_eval \
+	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RETRIEVAL_50))" \
+	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
+	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_RETRIEVAL_50_METRICS))" \
+	  --updated-questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/questions_updated.jsonl)" \
+	  --uuid-index-cache-file "generated_data/uuid_index.json" \
+	  --no-correction \
+	  --skip-citation-stripping
+
+enterprise-rag-bench-official-retrieval-only-metrics-existing-50: enterprise-rag-bench-official-env
 	cd "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" && "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" -m src.scripts.answer_evaluation.metrics_based_eval \
 	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RETRIEVAL_50))" \
 	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \

@@ -47,13 +47,6 @@ pub fn build_payload(doc_id: &str, rel_path: &str, title: &str, content: &str) -
     .join("\n")
 }
 
-pub fn payload_field(payload: &str, field: &str) -> Option<String> {
-    let prefix = format!("{field}=");
-    payload
-        .lines()
-        .find_map(|line| line.strip_prefix(&prefix).map(str::to_owned))
-}
-
 fn clean_line(value: &str) -> String {
     value.replace(['\r', '\n'], " ").trim().to_owned()
 }

@@ -9,6 +9,7 @@ pub struct Args {
     pub output: PathBuf,
     pub report: Option<PathBuf>,
     pub top_k: usize,
+    pub batch_size: usize,
     pub progress_every: usize,
     pub max_documents: Option<usize>,
     pub reset_db: bool,
@@ -34,6 +35,9 @@ impl Args {
                 "--output" => parsed.output = Some(PathBuf::from(next_value(&mut args, &arg)?)),
                 "--report" => parsed.report = Some(PathBuf::from(next_value(&mut args, &arg)?)),
                 "--top-k" => parsed.top_k = parse_usize(&next_value(&mut args, &arg)?, &arg)?,
+                "--batch-size" => {
+                    parsed.batch_size = parse_usize(&next_value(&mut args, &arg)?, &arg)?
+                }
                 "--progress-every" => {
                     parsed.progress_every = parse_usize(&next_value(&mut args, &arg)?, &arg)?
                 }
@@ -58,6 +62,7 @@ struct PartialArgs {
     output: Option<PathBuf>,
     report: Option<PathBuf>,
     top_k: usize,
+    batch_size: usize,
     progress_every: usize,
     max_documents: Option<usize>,
     reset_db: bool,
@@ -74,6 +79,7 @@ impl Default for PartialArgs {
             output: None,
             report: None,
             top_k: 10,
+            batch_size: 1_000,
             progress_every: 10_000,
             max_documents: None,
             reset_db: false,
@@ -102,6 +108,7 @@ impl PartialArgs {
                 .ok_or_else(|| "--output is required".to_owned())?,
             report: self.report,
             top_k: self.top_k,
+            batch_size: self.batch_size.max(1),
             progress_every: self.progress_every,
             max_documents: self.max_documents,
             reset_db: self.reset_db,
@@ -126,7 +133,8 @@ fn usage() -> String {
         "usage: enterprise_rag_bench_retrieval ",
         "--questions <jsonl> --uuid-index <json> --sources-dir <dir> ",
         "--db-root <path> --output <jsonl> [--report <json>] ",
-        "[--top-k <n>] [--max-documents <n>] [--reset-db] [--skip-ingest]"
+        "[--top-k <n>] [--batch-size <n>] [--max-documents <n>] ",
+        "[--reset-db] [--skip-ingest]"
     )
     .to_owned()
 }

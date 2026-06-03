@@ -342,6 +342,24 @@ Current CortexDB support is intentionally staged:
 6. `enterprise-rag-bench-deepseek-answers-50` generates answers from retrieved
    documents for later full answer evaluation.
 
+Latest local retrieval-only evidence:
+
+| Field | Value |
+| --- | ---: |
+| corpus documents indexed | `511,958` |
+| subset questions | `50` |
+| retrieval mode | `keyword top-k=10` |
+| official evaluator mode | `--no-correction --skip-citation-stripping` |
+| average document recall | `43.56%` |
+| average invalid extra docs | `9.43` |
+| correctness / completeness | `0.0% / 0.0%` |
+
+Correctness and completeness are zero by design in this pass because the
+answer field is empty. The signal here is document recall: keyword-only
+retrieval finds a meaningful baseline on direct lookup questions, but semantic
+and project-related questions still need embedding/hybrid retrieval and answer
+generation before this can become a full EnterpriseRAG-Bench score.
+
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a
 full official-compatible run is produced and packaged reproducibly.

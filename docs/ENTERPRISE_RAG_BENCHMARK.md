@@ -81,14 +81,44 @@ The rows contain `question_id`, empty `answer`, and retrieved `document_ids`.
 That is intentionally retrieval-only. It validates document recall without
 spending LLM tokens on answer generation.
 
+Corpus ingest uses `Database::put_cells` with
+`ENTERPRISE_RAG_BENCH_INGEST_BATCH_SIZE` (default `1000`) so large runs still go
+through CortexDB's WAL/engine path without doing one sync boundary per document.
+After checkpoint, the runner loads the persisted lexical index once and reuses
+that cache for all questions in the run. This keeps the 50-question gate focused
+on retrieval quality instead of repeatedly decoding the multi-gigabyte `.aci`
+file for every question.
+
 Run retrieval-only official metrics:
 
 ```bash
 make enterprise-rag-bench-official-retrieval-only-metrics-50
 ```
 
+If the retrieval JSONL already exists and you only want to re-run the official
+evaluator, use:
+
+```bash
+make enterprise-rag-bench-official-retrieval-only-metrics-existing-50
+```
+
 Because answers are empty, correctness and completeness are expected to be zero.
 The useful field in this pass is document recall.
+
+Latest local retrieval-only result:
+
+| Field | Value |
+| --- | ---: |
+| corpus documents indexed | `511,958` |
+| subset questions | `50` |
+| retrieval mode | `keyword top-k=10` |
+| average document recall | `43.56%` |
+| average invalid extra docs | `9.43` |
+| correctness / completeness | `0.0% / 0.0%` |
+
+This is a baseline, not a final EnterpriseRAG-Bench answer score. It proves the
+full-corpus local retrieval path works and shows where the next quality work
+should focus: semantic and project-related retrieval.
 
 ## Answer Generation Gate
 

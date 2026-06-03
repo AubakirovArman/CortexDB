@@ -4,18 +4,17 @@ use std::fs;
 use std::process::ExitCode;
 
 use args::Args;
-use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
-use cortex_engine::{scope_id, Database, SearchLimit};
-use document::{build_payload, extract_document_content, payload_field};
+use cortex_engine::Database;
+use document::{build_payload, extract_document_content};
 use io::{read_json, read_jsonl, read_uuid_index, write_json, write_jsonl};
+use retrieval::BenchmarkRetrievalIndex;
 use serde_json::{json, Value};
 
 mod args;
 mod document;
 mod io;
-
-const SCOPE: &str = "bench:enterprise_rag";
+mod retrieval;
 
 fn main() -> ExitCode {
     match run() {
@@ -40,12 +39,14 @@ fn run() -> Result<(), String> {
         Database::open(&args.db_root).map_err(|error| format!("failed to open db: {error}"))?;
 
     if !args.skip_ingest {
-        ingest_documents(&mut db, &uuid_index, &args)?;
+        let indexed = ingest_documents(&mut db, &uuid_index, &args)?;
         db.checkpoint()
             .map_err(|error| format!("failed to checkpoint benchmark corpus: {error}"))?;
+        eprintln!("checkpointed {indexed} EnterpriseRAG-Bench documents");
     }
 
-    let rows = retrieve_questions(&db, &questions, &args)?;
+    let retrieval_index = BenchmarkRetrievalIndex::load(&db, &uuid_index)?;
+    let rows = retrieve_questions(&retrieval_index, &questions, &args)?;
     write_jsonl(&args.output, &rows)?;
     if let Some(report) = &args.report {
         write_json(report, &report_payload(&questions, &uuid_index, &args))?;
@@ -57,8 +58,9 @@ fn ingest_documents(
     db: &mut Database,
     uuid_index: &BTreeMap<String, String>,
     args: &Args,
-) -> Result<(), String> {
+) -> Result<usize, String> {
     let mut indexed = 0usize;
+    let mut batch = Vec::with_capacity(args.batch_size);
     for (index, (doc_id, rel_path)) in uuid_index.iter().enumerate() {
         if args.max_documents.is_some_and(|max| indexed >= max) {
             break;
@@ -67,37 +69,47 @@ fn ingest_documents(
         let (title, content) = extract_document_content(&document);
         let payload = build_payload(doc_id, rel_path, &title, &content);
         let cell_id = CellId(u64::try_from(index + 1).map_err(|_| "cell id overflow")?);
-        db.put_cell(cell_id, payload.into_bytes())
-            .map_err(|error| format!("failed to put {doc_id}: {error}"))?;
+        batch.push((cell_id, payload.into_bytes()));
+        if batch.len() >= args.batch_size {
+            flush_batch(db, &mut batch, doc_id)?;
+        }
         indexed += 1;
         if args.progress_every > 0 && indexed.is_multiple_of(args.progress_every) {
             eprintln!("indexed {indexed}/{}", uuid_index.len());
         }
     }
+    flush_batch(db, &mut batch, "final batch")?;
+    Ok(indexed)
+}
+
+fn flush_batch(
+    db: &mut Database,
+    batch: &mut Vec<(CellId, Vec<u8>)>,
+    label: &str,
+) -> Result<(), String> {
+    if batch.is_empty() {
+        return Ok(());
+    }
+    let cells = std::mem::take(batch);
+    db.put_cells(cells)
+        .map_err(|error| format!("failed to put batch near {label}: {error}"))?;
     Ok(())
 }
 
 fn retrieve_questions(
-    db: &Database,
+    retrieval_index: &BenchmarkRetrievalIndex,
     questions: &[Value],
     args: &Args,
 ) -> Result<Vec<Value>, String> {
-    let view = view_for_scope(SCOPE);
     let mut rows = Vec::with_capacity(questions.len());
     for (index, question) in questions.iter().enumerate() {
         let qid = required_str(question, "question_id", index)?;
         let query = required_str(question, "question", index)?;
-        let results = db
-            .search_keyword(query, &view, SearchLimit(args.top_k))
-            .map_err(|error| format!("failed to search {qid}: {error}"))?;
         let mut seen = BTreeSet::<String>::new();
         let mut doc_ids = Vec::<Value>::new();
-        for result in results {
-            let payload = String::from_utf8_lossy(&result.payload);
-            if let Some(doc_id) = payload_field(&payload, "doc_id") {
-                if seen.insert(doc_id.clone()) {
-                    doc_ids.push(Value::String(doc_id));
-                }
+        for doc_id in retrieval_index.search_doc_ids(query, args.top_k) {
+            if seen.insert(doc_id.clone()) {
+                doc_ids.push(Value::String(doc_id));
             }
         }
         rows.push(json!({
@@ -107,7 +119,10 @@ fn retrieve_questions(
             "answer": "",
             "document_ids": doc_ids,
         }));
-        if args.progress_every > 0 && (index + 1).is_multiple_of(args.progress_every) {
+        if args.progress_every > 0
+            && ((index + 1).is_multiple_of(args.progress_every)
+                || questions.len() <= args.progress_every)
+        {
             eprintln!("retrieved {}/{}", index + 1, questions.len());
         }
     }
@@ -133,6 +148,7 @@ fn report_payload(
         "questions": questions.len(),
         "documents_indexed": args.max_documents.unwrap_or(uuid_index.len()),
         "top_k": args.top_k,
+        "batch_size": args.batch_size,
         "by_question_type": by_type,
         "output": args.output,
         "db_root": args.db_root,
@@ -145,27 +161,4 @@ fn required_str<'a>(row: &'a Value, field: &str, index: usize) -> Result<&'a str
         .and_then(Value::as_str)
         .filter(|value| !value.trim().is_empty())
         .ok_or_else(|| format!("row {} missing non-empty {field}", index + 1))
-}
-
-fn view_for_scope(scope: &str) -> AgentView {
-    AgentView {
-        agent_id: AgentId(1),
-        label: Some("enterprise-rag-bench-runner".to_owned()),
-        readable_brains: BTreeSet::from([BrainId(1)]),
-        readable_scopes: BTreeSet::from([scope_id(scope)]),
-        writable_scopes: BTreeSet::new(),
-        allowed_modes: BTreeSet::from([RetrievalMode::Balanced]),
-        allowed_memory_types: BTreeSet::from([MemoryType::Decision]),
-        max_context_budget_tokens: 8_000,
-        default_context_budget_tokens: 2_000,
-        max_candidate_limit: 100,
-        default_candidate_limit: 20,
-        min_required_confidence_q16: Q16_ZERO,
-        max_ttl_seconds: Some(3_600),
-        allow_remember: false,
-        allow_verify_fact: false,
-        allow_audit_mode: false,
-        require_citations_by_default: false,
-        private_scope: None,
-    }
 }
