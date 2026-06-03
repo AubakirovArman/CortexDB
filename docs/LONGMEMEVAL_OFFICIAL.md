@@ -423,9 +423,63 @@ Updated breakdown:
 | `single-session-user` | `40` | `70` | `0.5714` |
 | `temporal-reasoning` | `65` | `133` | `0.4887` |
 
-The remaining major weak slice is `temporal-reasoning`: the multi-session prompt
-raised the total score, but temporal reasoning dipped from `68 / 133` to
-`65 / 133` in this full local diagnostic.
+## Temporal Reasoning Diagnostic
+
+The next weak slice was `temporal-reasoning`: DeepSeek often had the right
+events in context but refused to compute dates or durations unless the final
+interval was stated explicitly. The runner now uses a temporal-aware generation
+prompt for `temporal-reasoning`: it asks the reader to build a timeline from
+session timestamps, resolve relative phrases such as `yesterday` or `last week`,
+sort events by calendar time, and compute intervals directly.
+
+Run the focused check:
+
+```bash
+make longmemeval-v1-deepseek-flash-temporal-check
+```
+
+Latest local result:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+question type: temporal-reasoning
+before temporal-aware prompt: 65 / 133
+after temporal-aware prompt: 89 / 133
+accuracy: 0.6692
+empty hypotheses: 0
+```
+
+After enabling the preference-aware, multi-session-aware, and temporal-aware
+generation prompts, the full compact-500 diagnostic improved again:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+official score: false
+correct by DeepSeek judge: 309 / 500
+accuracy: 0.6180
+empty hypotheses: 0
+prompt tokens: 4,321,364
+completion tokens: 49,467
+```
+
+Updated breakdown:
+
+| Question type | Correct | Count | Accuracy |
+| --- | ---: | ---: | ---: |
+| `knowledge-update` | `46` | `78` | `0.5897` |
+| `multi-session` | `80` | `133` | `0.6015` |
+| `single-session-assistant` | `34` | `56` | `0.6071` |
+| `single-session-preference` | `20` | `30` | `0.6667` |
+| `single-session-user` | `41` | `70` | `0.5857` |
+| `temporal-reasoning` | `88` | `133` | `0.6617` |
+
+The remaining low slices are now less concentrated: `single-session-user`,
+`knowledge-update`, `multi-session`, and `single-session-assistant` all sit in
+the `0.58-0.61` range in this local diagnostic.
 
 This is useful for iteration, but it is not an official LongMemEval result:
 generation and judging both use DeepSeek flash instead of the official GPT-4o

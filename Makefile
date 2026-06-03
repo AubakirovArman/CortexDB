@@ -2,7 +2,7 @@
 .PHONY: encrypted-backup-check
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
-.PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check longmemeval-v1-deepseek-flash-diff longmemeval-v1-deepseek-flash-compact-500-check longmemeval-v1-deepseek-flash-preference-check longmemeval-v1-deepseek-flash-multi-session-check
+.PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check longmemeval-v1-deepseek-flash-diff longmemeval-v1-deepseek-flash-compact-500-check longmemeval-v1-deepseek-flash-preference-check longmemeval-v1-deepseek-flash-multi-session-check longmemeval-v1-deepseek-flash-temporal-check
 .PHONY: operations-runbook-check
 .PHONY: service-manager-smoke-check
 .PHONY: beta-landing-check
@@ -280,7 +280,7 @@ LONGMEMEVAL_V1_DEEPSEEK_GENERATION_THINKING ?= disabled
 LONGMEMEVAL_V1_DEEPSEEK_JUDGE_THINKING ?= disabled
 LONGMEMEVAL_V1_DEEPSEEK_FLASH_IMPLICIT_ROOT ?= target/longmemeval-v1/targeted-deepseek-flash
 LONGMEMEVAL_V1_DEEPSEEK_FLASH_DIFF_ROOT ?= target/longmemeval-v1/deepseek-flash-diff
-LONGMEMEVAL_V1_DEEPSEEK_COMPACT_500_ROOT ?= target/longmemeval-v1/deepseek-flash-compact-500-pref-ms-aware-thinking-disabled
+LONGMEMEVAL_V1_DEEPSEEK_COMPACT_500_ROOT ?= target/longmemeval-v1/deepseek-flash-compact-500-pref-ms-temporal-aware-thinking-disabled
 LONGMEMEVAL_V1_COMPACT_RETRIEVAL_LOG ?= target/longmemeval-v1/cortexdb-compact-context/longmemeval_s_cleaned_cortexdb_session_retrieval.jsonl
 LONGMEMEVAL_V1_PREFERENCE_ROOT ?= target/longmemeval-v1/preference-format-check-flash
 LONGMEMEVAL_V1_PREFERENCE_INPUT_ROOT ?= target/longmemeval-v1/preference-format-check-input
@@ -290,6 +290,10 @@ LONGMEMEVAL_V1_MULTI_SESSION_ROOT ?= target/longmemeval-v1/multi-session-format-
 LONGMEMEVAL_V1_MULTI_SESSION_INPUT_ROOT ?= target/longmemeval-v1/multi-session-format-check-input
 LONGMEMEVAL_V1_MULTI_SESSION_RETRIEVAL ?= $(LONGMEMEVAL_V1_MULTI_SESSION_INPUT_ROOT)/multi_session_retrieval.jsonl
 LONGMEMEVAL_V1_MULTI_SESSION_REFERENCE ?= $(LONGMEMEVAL_V1_MULTI_SESSION_INPUT_ROOT)/multi_session_reference.json
+LONGMEMEVAL_V1_TEMPORAL_ROOT ?= target/longmemeval-v1/temporal-reasoning-format-check-flash
+LONGMEMEVAL_V1_TEMPORAL_INPUT_ROOT ?= target/longmemeval-v1/temporal-reasoning-format-check-input
+LONGMEMEVAL_V1_TEMPORAL_RETRIEVAL ?= $(LONGMEMEVAL_V1_TEMPORAL_INPUT_ROOT)/temporal_retrieval.jsonl
+LONGMEMEVAL_V1_TEMPORAL_REFERENCE ?= $(LONGMEMEVAL_V1_TEMPORAL_INPUT_ROOT)/temporal_reference.json
 DEEPSEEK_KEY_FILE ?= /mnt/hf_model_weights/arman/3bit/.deepseek
 SINGLE_NODE_PERF_ROOT ?= target/single-node-performance
 SINGLE_NODE_PERF_REPORT ?= $(SINGLE_NODE_PERF_ROOT)/report.json
@@ -813,6 +817,22 @@ longmemeval-v1-deepseek-flash-multi-session-check:
 	  --retrieval-log "$(LONGMEMEVAL_V1_MULTI_SESSION_RETRIEVAL)" \
 	  --reference-file "$(LONGMEMEVAL_V1_MULTI_SESSION_REFERENCE)" \
 	  --output-root "$(LONGMEMEVAL_V1_MULTI_SESSION_ROOT)" \
+	  --api-key-file "$(DEEPSEEK_KEY_FILE)" \
+	  --model "$(LONGMEMEVAL_V1_DEEPSEEK_MODEL)" \
+	  --generation-thinking disabled \
+	  --judge-thinking disabled
+
+longmemeval-v1-deepseek-flash-temporal-check:
+	python3 scripts/longmemeval/build_question_type_subset.py \
+	  --reference-file "$(LONGMEMEVAL_V1_DATA_FILE)" \
+	  --retrieval-log "$(LONGMEMEVAL_V1_COMPACT_RETRIEVAL_LOG)" \
+	  --question-type temporal-reasoning \
+	  --output-root "$(LONGMEMEVAL_V1_TEMPORAL_INPUT_ROOT)" \
+	  --output-prefix temporal
+	python3 scripts/longmemeval/run_deepseek_flash_subset.py \
+	  --retrieval-log "$(LONGMEMEVAL_V1_TEMPORAL_RETRIEVAL)" \
+	  --reference-file "$(LONGMEMEVAL_V1_TEMPORAL_REFERENCE)" \
+	  --output-root "$(LONGMEMEVAL_V1_TEMPORAL_ROOT)" \
 	  --api-key-file "$(DEEPSEEK_KEY_FILE)" \
 	  --model "$(LONGMEMEVAL_V1_DEEPSEEK_MODEL)" \
 	  --generation-thinking disabled \

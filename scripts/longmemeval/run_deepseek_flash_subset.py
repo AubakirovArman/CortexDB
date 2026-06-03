@@ -149,6 +149,17 @@ def generation_prompt(row: dict[str, Any], ref: dict[str, Any]) -> str:
             "combined total explicitly. If the available sessions truly miss a required fact, state "
             "only the missing fact briefly."
         )
+    elif ref.get("question_type") == "temporal-reasoning":
+        task_instruction = (
+            "This is a temporal-reasoning memory question. Build a small timeline from the provided "
+            "sessions before answering. Use each session timestamp as the event date unless the text "
+            "gives a more specific date; resolve relative phrases such as yesterday, last week, or "
+            "ago relative to that session timestamp or the current date. For first/last/latest/order "
+            "questions, sort events by calendar time, not by retrieval rank. For days, weeks, months, "
+            "or duration questions, compute the interval from the dates or start/end events; do not "
+            "say the history is insufficient merely because the final interval is not written "
+            "explicitly. Answer with the concise final date, order, or duration."
+        )
     else:
         task_instruction = (
             "Answer the question using only the history. If the history is insufficient, say so."

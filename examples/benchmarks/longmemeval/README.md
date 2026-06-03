@@ -194,6 +194,38 @@ single-session-preference: 19 / 30
 temporal-reasoning: 65 / 133
 ```
 
+Run the focused temporal-reasoning check:
+
+```bash
+make longmemeval-v1-deepseek-flash-temporal-check
+```
+
+Latest local result with the temporal-aware generation prompt:
+
+```text
+model: deepseek-v4-flash
+question type: temporal-reasoning
+before temporal-aware prompt: 65 / 133
+after temporal-aware prompt: 89 / 133
+accuracy: 0.6692
+empty hypotheses: 0
+```
+
+After applying the preference-aware, multi-session-aware, and temporal-aware
+prompt fixes to the full compact-500 run:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+correct by DeepSeek judge: 309 / 500
+accuracy: 0.6180
+empty hypotheses: 0
+multi-session: 80 / 133
+single-session-preference: 20 / 30
+temporal-reasoning: 88 / 133
+```
+
 ## Current Boundary
 
 - CortexDB owns the retrieval log generation.
