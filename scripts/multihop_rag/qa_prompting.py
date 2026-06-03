@@ -240,3 +240,31 @@ def build_temporal_abstention_retry_prompt(row: dict[str, Any], top_k: int, max_
             "Answer:",
         ]
     )
+
+
+def build_comparison_retry_prompt(row: dict[str, Any], top_k: int, max_chars_per_doc: int) -> str:
+    contexts = []
+    for item in row.get("retrieval_list", [])[:top_k]:
+        snippet = best_snippet(str(row.get("query", "")), str(item.get("text", "")), max_chars_per_doc)
+        if snippet:
+            contexts.append(f"[{len(contexts) + 1}]\n{snippet}")
+    return "\n\n".join(
+        [
+            "Answer the comparison question using only the provided context.",
+            "The first pass may have been too strict. Re-check each clause independently.",
+            "For 'both' questions, answer Yes when both requested clauses are supported, even if they concern different sources or sectors.",
+            "For 'different', 'contrast', or 'different strategy' questions, answer Yes when the context shows a real difference.",
+            "For 'align', 'same', 'similar', or 'consistent' questions, answer Yes when the context is compatible on the requested point.",
+            "Answer No only when a requested side is unsupported, contradicted, or the requested relation is not supported.",
+            "Do not answer Insufficient Information when at least two relevant context snippets are present.",
+            "Use exactly one short answer. For yes/no wording, answer exactly Yes or No.",
+            "Do not explain your reasoning.",
+            "",
+            f"Question: {row.get('query', '')}",
+            "",
+            "Context:",
+            "\n\n".join(contexts),
+            "",
+            "Answer:",
+        ]
+    )

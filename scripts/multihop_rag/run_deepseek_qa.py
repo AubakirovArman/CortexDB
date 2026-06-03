@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import http.client
 import json
 import threading
 import time
@@ -13,7 +14,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from qa_prompting import build_prompt, build_temporal_abstention_retry_prompt
+from qa_prompting import build_comparison_retry_prompt, build_prompt, build_temporal_abstention_retry_prompt
 
 
 DEFAULT_BASE_URL = "https://api.deepseek.com"
@@ -47,6 +48,10 @@ def query_key(row: dict[str, Any]) -> str:
 
 def is_insufficient_answer(answer: str) -> bool:
     return " ".join(answer.lower().split()) in {"insufficient information", "insufficient info"}
+
+
+def is_no_answer(answer: str) -> bool:
+    return " ".join(answer.lower().split()).strip(".") == "no"
 
 
 def merge_usage(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
@@ -99,6 +104,16 @@ def chat(
                 detail = error.read().decode("utf-8", errors="replace")[:500]
                 raise RuntimeError(f"chat request failed: http={error.code} detail={detail}") from error
             time.sleep(min(30, 2 ** attempt))
+        except (
+            TimeoutError,
+            urllib.error.URLError,
+            http.client.IncompleteRead,
+            http.client.RemoteDisconnected,
+            json.JSONDecodeError,
+        ) as error:
+            if attempt >= retries:
+                raise RuntimeError(f"chat request failed after retryable transport error: {error}") from error
+            time.sleep(min(30, 2 ** attempt))
     raise RuntimeError("unreachable retry state")
 
 
@@ -126,9 +141,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "elapsed_ms": 0,
         "completed": len(existing),
         "temporal_abstention_retries": 0,
+        "comparison_retries": 0,
     }
 
-    def generate_one(index: int, row: dict[str, Any]) -> tuple[str, dict[str, Any], dict[str, Any], int, int]:
+    def generate_one(index: int, row: dict[str, Any]) -> tuple[str, dict[str, Any], dict[str, Any], int, int, int]:
         prompt = build_prompt(row, args.top_k_context, args.max_chars_per_doc, args.prompt_style)
         answer, usage, elapsed_ms = chat(
             api_key=api_key,
@@ -138,7 +154,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             max_tokens=args.max_tokens,
             retries=args.retries,
         )
-        retry_count = 0
+        temporal_retry_count = 0
+        comparison_retry_count = 0
         saved_extra = {}
         if (
             args.temporal_abstention_retry
@@ -166,7 +183,34 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             answer = retry_answer
             usage = merge_usage(usage, retry_usage)
             elapsed_ms += retry_elapsed_ms
-            retry_count = 1
+            temporal_retry_count = 1
+        elif (
+            args.comparison_retry
+            and row.get("question_type") == "comparison_query"
+            and (is_insufficient_answer(answer) or is_no_answer(answer))
+        ):
+            retry_prompt = build_comparison_retry_prompt(
+                row,
+                args.top_k_context,
+                args.max_chars_per_doc,
+            )
+            retry_answer, retry_usage, retry_elapsed_ms = chat(
+                api_key=api_key,
+                base_url=args.base_url,
+                model=args.model,
+                prompt=retry_prompt,
+                max_tokens=args.max_tokens,
+                retries=args.retries,
+            )
+            saved_extra = {
+                "initial_model_answer": answer,
+                "comparison_retry_used": True,
+                "comparison_retry_prompt": retry_prompt,
+            }
+            answer = retry_answer
+            usage = merge_usage(usage, retry_usage)
+            elapsed_ms += retry_elapsed_ms
+            comparison_retry_count = 1
         return query_key(row), {
             "query": row.get("query", ""),
             "prompt": prompt,
@@ -176,13 +220,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "usage": usage,
             "elapsed_ms": elapsed_ms,
             **saved_extra,
-        }, usage, elapsed_ms, retry_count
+        }, usage, elapsed_ms, temporal_retry_count, comparison_retry_count
 
     pending = [(index, row) for index, row in enumerate(rows, 1) if query_key(row) not in existing]
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = [executor.submit(generate_one, index, row) for index, row in pending]
         for future in concurrent.futures.as_completed(futures):
-            key, saved, usage, elapsed_ms, retry_count = future.result()
+            key, saved, usage, elapsed_ms, temporal_retry_count, comparison_retry_count = future.result()
             with output_lock:
                 if key not in existing:
                     existing[key] = saved
@@ -194,7 +238,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 usage_totals["prompt_cache_hit_tokens"] += int(usage.get("prompt_cache_hit_tokens", 0) or 0)
                 usage_totals["prompt_cache_miss_tokens"] += int(usage.get("prompt_cache_miss_tokens", 0) or 0)
                 usage_totals["elapsed_ms"] += elapsed_ms
-                usage_totals["temporal_abstention_retries"] += retry_count
+                usage_totals["temporal_abstention_retries"] += temporal_retry_count
+                usage_totals["comparison_retries"] += comparison_retry_count
                 usage_totals["completed"] += 1
                 if args.progress_every and usage_totals["completed"] % args.progress_every == 0:
                     print(f"generated {usage_totals['completed']}/{len(rows)}")
@@ -223,6 +268,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "workers": args.workers,
         "prompt_style": args.prompt_style,
         "temporal_abstention_retry": args.temporal_abstention_retry,
+        "comparison_retry": args.comparison_retry,
         "prompt_tokens_new": usage_totals["prompt_tokens"],
         "completion_tokens_new": usage_totals["completion_tokens"],
         "total_tokens_new": usage_totals["total_tokens"],
@@ -233,6 +279,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "wall_elapsed_ms": wall_elapsed_ms,
         "completion_tokens_per_second_new": completion_tokens_per_second,
         "temporal_abstention_retries_new": usage_totals["temporal_abstention_retries"],
+        "comparison_retries_new": usage_totals["comparison_retries"],
     }
     write_json(report_path, report)
     return report
@@ -259,6 +306,7 @@ def main() -> int:
     )
     parser.add_argument("--question-type")
     parser.add_argument("--temporal-abstention-retry", action="store_true")
+    parser.add_argument("--comparison-retry", action="store_true")
     print(json.dumps(run(parser.parse_args()), sort_keys=True))
     return 0
 
