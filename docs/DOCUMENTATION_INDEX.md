@@ -116,6 +116,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`ANN_CORPUS_FORMAT.md`](ANN_CORPUS_FORMAT.md) - ANN corpus format.
 - [`ANN_PUBLIC_CORPUS_RUNS.md`](ANN_PUBLIC_CORPUS_RUNS.md) - public corpus run policy.
 - [`BENCHMARKS.md`](BENCHMARKS.md) - benchmark gates and reports.
+- [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) - EnterpriseRAG-Bench scaffold and official-compatible answer flow.
 - [`MULTIHOP_RAG_BENCHMARK.md`](MULTIHOP_RAG_BENCHMARK.md) - MultiHop-RAG benchmark scaffold and publication boundary.
 - [`PUBLIC_BENCHMARKS.md`](PUBLIC_BENCHMARKS.md) - release-by-release public benchmark summary.
 - [`PERFORMANCE_TREND_HISTORY.md`](PERFORMANCE_TREND_HISTORY.md) - local p95/p99 load and single-node trend gate.

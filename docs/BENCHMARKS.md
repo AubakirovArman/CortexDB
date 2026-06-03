@@ -309,6 +309,43 @@ make multihop-rag-official-qa-metrics-existing-full
 make multihop-rag-qa-error-analysis-full
 ```
 
+## EnterpriseRAG-Bench Scaffold
+
+CortexDB now includes an EnterpriseRAG-Bench preparation scaffold:
+
+```bash
+make enterprise-rag-bench-preflight
+make enterprise-rag-bench-cortexdb-retrieval-50
+```
+
+EnterpriseRAG-Bench is the Onyx benchmark for company-internal RAG. It contains
+roughly 500k generated enterprise documents and 500 questions. The official
+answer format is JSONL:
+
+```json
+{"question_id":"qst_0001","answer":"...","document_ids":["dsid_..."]}
+```
+
+Current CortexDB support is intentionally staged:
+
+1. `enterprise-rag-bench-preflight` validates the official checkout, questions,
+   UUID index, expected document IDs, and source layout.
+2. `enterprise-rag-bench-balanced-50` builds a deterministic 50-question gate.
+3. `enterprise-rag-bench-official-retrieval-only-metrics-smoke` verifies local
+   runner/evaluator wiring against a capped corpus slice.
+4. `enterprise-rag-bench-cortexdb-retrieval-50` indexes the corpus through
+   `cortex-engine`, runs keyword retrieval, and writes official-compatible
+   retrieval-only answers.
+5. `enterprise-rag-bench-official-retrieval-only-metrics-50` runs the upstream
+   evaluator with empty answers and `--no-correction`; correctness/completeness
+   are expected to be zero, while document recall is meaningful.
+6. `enterprise-rag-bench-deepseek-answers-50` generates answers from retrieved
+   documents for later full answer evaluation.
+
+See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
+artifacts, and current limitations. No leaderboard score is claimed until a
+full official-compatible run is produced and packaged reproducibly.
+
 To measure DeepSeek prompt-cache behavior on the 50-query gate:
 
 ```bash

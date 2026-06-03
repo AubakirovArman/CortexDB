@@ -4,6 +4,7 @@
 .PHONY: migration-compatibility-v2-check
 .PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check longmemeval-v1-deepseek-flash-diff longmemeval-v1-deepseek-flash-compact-50-check longmemeval-v1-deepseek-flash-compact-500-check longmemeval-v1-deepseek-flash-preference-check longmemeval-v1-deepseek-flash-single-session-user-check longmemeval-v1-deepseek-flash-multi-session-check longmemeval-v1-deepseek-flash-temporal-check
 .PHONY: multihop-rag-official-repo multihop-rag-official-data multihop-rag-preflight multihop-rag-balanced-50 multihop-rag-local-50-check multihop-rag-cortexdb-retrieval-50 multihop-rag-official-retrieval-metrics-50 multihop-rag-cortexdb-retrieval-full multihop-rag-official-retrieval-metrics-full multihop-rag-retrieval-full-existing-check multihop-rag-qa-full-existing-check multihop-rag-qa-hybrid-full-retry-existing-check multihop-rag-qa-hybrid-full-retry-v4-existing-check multihop-rag-deepseek-qa-50 multihop-rag-deepseek-qa-50-cache-metrics multihop-rag-official-qa-metrics-50 multihop-rag-official-qa-metrics-existing-50 multihop-rag-qa-error-analysis-50 multihop-rag-deepseek-qa-full multihop-rag-deepseek-qa-temporal-50-v3 multihop-rag-official-qa-metrics-temporal-50-v3 multihop-rag-qa-error-analysis-temporal-50-v3 multihop-rag-deepseek-qa-temporal-50-v3-retry multihop-rag-official-qa-metrics-temporal-50-v3-retry multihop-rag-qa-error-analysis-temporal-50-v3-retry multihop-rag-deepseek-qa-temporal-50-v4-decompose-retry multihop-rag-official-qa-metrics-temporal-50-v4-decompose-retry multihop-rag-qa-error-analysis-temporal-50-v4-decompose-retry multihop-rag-deepseek-qa-temporal-chronology-50-v1 multihop-rag-official-qa-metrics-temporal-chronology-50-v1 multihop-rag-qa-error-analysis-temporal-chronology-50-v1 multihop-rag-deepseek-qa-temporal-chronology-yes-no-50-v1 multihop-rag-official-qa-metrics-temporal-chronology-yes-no-50-v1 multihop-rag-qa-error-analysis-temporal-chronology-yes-no-50-v1 multihop-rag-deepseek-qa-temporal-v3 multihop-rag-deepseek-qa-temporal-v3-retry multihop-rag-deepseek-qa-comparison-50-retry multihop-rag-official-qa-metrics-comparison-50-retry multihop-rag-qa-error-analysis-comparison-50-retry multihop-rag-deepseek-qa-comparison-50-decompose-retry multihop-rag-official-qa-metrics-comparison-50-decompose-retry multihop-rag-qa-error-analysis-comparison-50-decompose-retry multihop-rag-deepseek-qa-comparison-v2-retry multihop-rag-deepseek-qa-comparison-v3-decompose-retry multihop-rag-combine-qa-full-hybrid multihop-rag-combine-qa-full-hybrid-retry multihop-rag-combine-qa-full-hybrid-retry-v4 multihop-rag-postprocess-hybrid-full-retry-v5 multihop-rag-combine-qa-full-hybrid-retry-v6 multihop-rag-combine-qa-full-hybrid-retry-v7 multihop-rag-official-qa-metrics-hybrid-full multihop-rag-official-qa-metrics-hybrid-full-retry multihop-rag-official-qa-metrics-hybrid-full-retry-v4 multihop-rag-official-qa-metrics-hybrid-full-retry-v5 multihop-rag-official-qa-metrics-hybrid-full-retry-v6 multihop-rag-official-qa-metrics-hybrid-full-retry-v7 multihop-rag-official-qa-metrics-full multihop-rag-official-qa-metrics-existing-full multihop-rag-qa-error-analysis-full multihop-rag-qa-error-analysis-hybrid-full-retry multihop-rag-qa-error-analysis-hybrid-full-retry-v4 multihop-rag-qa-error-analysis-hybrid-full-retry-v5 multihop-rag-qa-error-analysis-hybrid-full-retry-v6 multihop-rag-qa-error-analysis-hybrid-full-retry-v7
+.PHONY: enterprise-rag-bench-official-repo enterprise-rag-bench-official-env enterprise-rag-bench-preflight enterprise-rag-bench-balanced-50 enterprise-rag-bench-cortexdb-retrieval-smoke enterprise-rag-bench-official-retrieval-only-metrics-smoke enterprise-rag-bench-cortexdb-retrieval-50 enterprise-rag-bench-official-retrieval-only-metrics-50 enterprise-rag-bench-deepseek-answers-50 enterprise-rag-bench-official-answer-metrics-50 enterprise-rag-bench-cortexdb-retrieval-full
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check
 .PHONY: service-manager-smoke-check
@@ -366,6 +367,38 @@ MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V5_METRICS ?= $(MULTIHOP_RAG_QA_HYBRID_FULL_RE
 MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_METRICS ?= $(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_ROOT)/official_qa_metrics.txt
 MULTIHOP_RAG_QA_50_ANALYSIS ?= $(MULTIHOP_RAG_QA_50_ROOT)/qa_error_analysis.json
 MULTIHOP_RAG_QA_FULL_ANALYSIS ?= $(MULTIHOP_RAG_QA_FULL_ROOT)/qa_error_analysis.json
+ENTERPRISE_RAG_BENCH_ROOT ?= target/enterprise-rag-bench
+ENTERPRISE_RAG_BENCH_OFFICIAL_REPO ?= target/external-benchmarks/EnterpriseRAG-Bench
+ENTERPRISE_RAG_BENCH_VENV ?= $(ENTERPRISE_RAG_BENCH_ROOT)/.venv
+ENTERPRISE_RAG_BENCH_PYTHON ?= $(ENTERPRISE_RAG_BENCH_VENV)/bin/python
+ENTERPRISE_RAG_BENCH_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)/questions.jsonl
+ENTERPRISE_RAG_BENCH_UUID_INDEX ?= $(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)/generated_data/uuid_index.json
+ENTERPRISE_RAG_BENCH_SOURCES_DIR ?= $(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)/generated_data/sources
+ENTERPRISE_RAG_BENCH_PREFLIGHT_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/preflight_report.json
+ENTERPRISE_RAG_BENCH_SUBSET_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/subsets
+ENTERPRISE_RAG_BENCH_SUBSET_LIMIT ?= 50
+ENTERPRISE_RAG_BENCH_SUBSET_PREFIX ?= balanced_50
+ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_SUBSET_ROOT)/$(ENTERPRISE_RAG_BENCH_SUBSET_PREFIX)/$(ENTERPRISE_RAG_BENCH_SUBSET_PREFIX)_questions.jsonl
+ENTERPRISE_RAG_BENCH_DB_50 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/cortexdb-50
+ENTERPRISE_RAG_BENCH_DB_FULL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/cortexdb-full
+ENTERPRISE_RAG_BENCH_SMOKE_MAX_DOCUMENTS ?= 500
+ENTERPRISE_RAG_BENCH_DB_SMOKE ?= $(ENTERPRISE_RAG_BENCH_ROOT)/smoke/cortexdb-$(ENTERPRISE_RAG_BENCH_SMOKE_MAX_DOCUMENTS)
+ENTERPRISE_RAG_BENCH_RETRIEVAL_SMOKE ?= $(ENTERPRISE_RAG_BENCH_ROOT)/smoke/retrieval_answers.jsonl
+ENTERPRISE_RAG_BENCH_RETRIEVAL_SMOKE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/smoke/retrieval_report.json
+ENTERPRISE_RAG_BENCH_RETRIEVAL_SMOKE_METRICS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/smoke/official_retrieval_metrics.json
+ENTERPRISE_RAG_BENCH_RETRIEVAL_50 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_balanced_50_answers.jsonl
+ENTERPRISE_RAG_BENCH_RETRIEVAL_FULL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_answers.jsonl
+ENTERPRISE_RAG_BENCH_RETRIEVAL_50_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_balanced_50_report.json
+ENTERPRISE_RAG_BENCH_RETRIEVAL_FULL_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_report.json
+ENTERPRISE_RAG_BENCH_RETRIEVAL_50_METRICS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_balanced_50_metrics.json
+ENTERPRISE_RAG_BENCH_ANSWER_50_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/qa/deepseek-balanced-50
+ENTERPRISE_RAG_BENCH_ANSWER_50_METRICS ?= $(ENTERPRISE_RAG_BENCH_ANSWER_50_ROOT)/official_metrics.json
+ENTERPRISE_RAG_BENCH_TOPK ?= 10
+ENTERPRISE_RAG_BENCH_QA_MODEL ?= deepseek-v4-flash
+ENTERPRISE_RAG_BENCH_QA_BASE_URL ?= https://api.deepseek.com
+ENTERPRISE_RAG_BENCH_QA_TOPK_CONTEXT ?= 6
+ENTERPRISE_RAG_BENCH_QA_MAX_CHARS_PER_DOC ?= 1600
+ENTERPRISE_RAG_BENCH_QA_WORKERS ?= 2
 DEEPSEEK_KEY_FILE ?= /mnt/hf_model_weights/arman/3bit/.deepseek
 SINGLE_NODE_PERF_ROOT ?= target/single-node-performance
 SINGLE_NODE_PERF_REPORT ?= $(SINGLE_NODE_PERF_ROOT)/report.json
@@ -941,6 +974,117 @@ longmemeval-v1-deepseek-flash-temporal-check:
 	  --model "$(LONGMEMEVAL_V1_DEEPSEEK_MODEL)" \
 	  --generation-thinking disabled \
 	  --judge-thinking disabled
+
+enterprise-rag-bench-official-repo:
+	@if [ ! -d "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)/.git" ]; then \
+	  git clone --depth 1 https://github.com/onyx-dot-app/EnterpriseRAG-Bench "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)"; \
+	else \
+	  git -C "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" pull --ff-only; \
+	fi
+
+enterprise-rag-bench-official-env: enterprise-rag-bench-official-repo $(ENTERPRISE_RAG_BENCH_VENV)/.requirements.stamp
+
+$(ENTERPRISE_RAG_BENCH_VENV)/.requirements.stamp: $(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)/requirements.txt
+	python3 -m venv "$(ENTERPRISE_RAG_BENCH_VENV)"
+	"$(ENTERPRISE_RAG_BENCH_PYTHON)" -m pip install --upgrade pip
+	"$(ENTERPRISE_RAG_BENCH_PYTHON)" -m pip install -r "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)/requirements.txt"
+	touch "$(ENTERPRISE_RAG_BENCH_VENV)/.requirements.stamp"
+
+enterprise-rag-bench-preflight: enterprise-rag-bench-official-repo
+	python3 scripts/enterprise_rag_bench/preflight.py \
+	  --bench-root "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_PREFLIGHT_REPORT)"
+
+enterprise-rag-bench-balanced-50: enterprise-rag-bench-preflight
+	python3 scripts/enterprise_rag_bench/build_balanced_subset.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --limit "$(ENTERPRISE_RAG_BENCH_SUBSET_LIMIT)" \
+	  --output-root "$(ENTERPRISE_RAG_BENCH_SUBSET_ROOT)" \
+	  --output-prefix "$(ENTERPRISE_RAG_BENCH_SUBSET_PREFIX)"
+
+enterprise-rag-bench-cortexdb-retrieval-smoke: enterprise-rag-bench-balanced-50
+	cargo build -p cortex-engine --bin enterprise_rag_bench_retrieval
+	./target/debug/enterprise_rag_bench_retrieval \
+	  --questions "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --db-root "$(ENTERPRISE_RAG_BENCH_DB_SMOKE)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_SMOKE)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_SMOKE_REPORT)" \
+	  --top-k "$(ENTERPRISE_RAG_BENCH_TOPK)" \
+	  --max-documents "$(ENTERPRISE_RAG_BENCH_SMOKE_MAX_DOCUMENTS)" \
+	  --reset-db \
+	  --progress-every 250
+
+enterprise-rag-bench-official-retrieval-only-metrics-smoke: enterprise-rag-bench-official-env enterprise-rag-bench-cortexdb-retrieval-smoke
+	cd "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" && "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" -m src.scripts.answer_evaluation.metrics_based_eval \
+	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RETRIEVAL_SMOKE))" \
+	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
+	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_RETRIEVAL_SMOKE_METRICS))" \
+	  --updated-questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_ROOT)/smoke/questions_updated.jsonl)" \
+	  --uuid-index-cache-file "generated_data/uuid_index.json" \
+	  --no-correction \
+	  --skip-citation-stripping
+
+enterprise-rag-bench-cortexdb-retrieval-50: enterprise-rag-bench-balanced-50
+	cargo build --release -p cortex-engine --bin enterprise_rag_bench_retrieval
+	./target/release/enterprise_rag_bench_retrieval \
+	  --questions "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --db-root "$(ENTERPRISE_RAG_BENCH_DB_50)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_50)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_50_REPORT)" \
+	  --top-k "$(ENTERPRISE_RAG_BENCH_TOPK)" \
+	  --reset-db
+
+enterprise-rag-bench-cortexdb-retrieval-full: enterprise-rag-bench-preflight
+	cargo build --release -p cortex-engine --bin enterprise_rag_bench_retrieval
+	./target/release/enterprise_rag_bench_retrieval \
+	  --questions "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --db-root "$(ENTERPRISE_RAG_BENCH_DB_FULL)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_FULL)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_FULL_REPORT)" \
+	  --top-k "$(ENTERPRISE_RAG_BENCH_TOPK)" \
+	  --reset-db
+
+enterprise-rag-bench-official-retrieval-only-metrics-50: enterprise-rag-bench-official-env enterprise-rag-bench-cortexdb-retrieval-50
+	cd "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" && "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" -m src.scripts.answer_evaluation.metrics_based_eval \
+	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RETRIEVAL_50))" \
+	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
+	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_RETRIEVAL_50_METRICS))" \
+	  --updated-questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/questions_updated.jsonl)" \
+	  --uuid-index-cache-file "generated_data/uuid_index.json" \
+	  --no-correction \
+	  --skip-citation-stripping
+
+enterprise-rag-bench-deepseek-answers-50: enterprise-rag-bench-cortexdb-retrieval-50
+	python3 scripts/enterprise_rag_bench/run_deepseek_answers.py \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_50)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output-root "$(ENTERPRISE_RAG_BENCH_ANSWER_50_ROOT)" \
+	  --api-key-file "$(DEEPSEEK_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_QA_BASE_URL)" \
+	  --model "$(ENTERPRISE_RAG_BENCH_QA_MODEL)" \
+	  --top-k-context "$(ENTERPRISE_RAG_BENCH_QA_TOPK_CONTEXT)" \
+	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_QA_MAX_CHARS_PER_DOC)" \
+	  --workers "$(ENTERPRISE_RAG_BENCH_QA_WORKERS)"
+
+enterprise-rag-bench-official-answer-metrics-50: enterprise-rag-bench-official-env enterprise-rag-bench-deepseek-answers-50
+	cd "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" && "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" -m src.scripts.answer_evaluation.metrics_based_eval \
+	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_ANSWER_50_ROOT)/answers.jsonl)" \
+	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
+	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_ANSWER_50_METRICS))" \
+	  --updated-questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_ANSWER_50_ROOT)/questions_updated.jsonl)" \
+	  --uuid-index-cache-file "generated_data/uuid_index.json" \
+	  --no-correction \
+	  --skip-citation-stripping
 
 multihop-rag-official-repo:
 	@if [ ! -d "$(MULTIHOP_RAG_OFFICIAL_REPO)/.git" ]; then \
