@@ -153,6 +153,16 @@ make multihop-rag-official-qa-metrics-hybrid-full-retry-v6
 make multihop-rag-qa-error-analysis-hybrid-full-retry-v6
 ```
 
+To classify the remaining temporal misses in the current best v6 full artifact:
+
+```bash
+make multihop-rag-temporal-subtype-analysis-v6
+```
+
+This is a diagnostic step, not a score-changing postprocess. It groups
+`temporal_query` rows into coarse failure buckets so the next prompt gate can
+target one subtype at a time.
+
 If answers already exist and only the official scorer must be rerun, use:
 
 ```bash
@@ -299,6 +309,21 @@ Full QA by question type:
 | `null_query` | 0.99 | 0.99 | 0.99 | 0.99 |
 | `temporal_query` | 0.65 | 0.65 | 0.65 | 0.59 |
 
+Temporal subtype analysis from the current best v6 full artifact:
+
+| Temporal subtype | Total | Hits | Misses | Hit rate |
+| --- | ---: | ---: | ---: | ---: |
+| `change_over_time` | 199 | 135 | 64 | 0.6784 |
+| `chronology` | 56 | 29 | 27 | 0.5179 |
+| `consistency_conflict` | 310 | 205 | 105 | 0.6613 |
+| `other` | 5 | 4 | 1 | 0.8000 |
+| `source_or_entity` | 13 | 7 | 6 | 0.5385 |
+
+The next temporal improvement should start with a chronology-specific gate:
+it is the weakest sizeable subtype by hit rate. `source_or_entity` is also
+weak but low-count, and `consistency_conflict` has the largest absolute miss
+count.
+
 Latest DeepSeek prompt-cache observation on the repeat 50-query gate:
 
 | Run | Prompt tokens | Cache hit tokens | Cache miss tokens | Cache hit rate | Wall time |
@@ -353,6 +378,8 @@ target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/deepseek_qa.
 target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/deepseek_qa_report.json
 target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/official_qa_metrics.txt
 target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/qa_error_analysis.md
+target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/temporal_subtype_analysis.json
+target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/temporal_subtype_analysis.md
 target/multihop-rag/qa/deepseek-balanced-50-cache-metrics/deepseek_qa_report.json
 ```
 

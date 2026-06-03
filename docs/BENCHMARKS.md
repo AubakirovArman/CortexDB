@@ -366,6 +366,17 @@ make multihop-rag-official-qa-metrics-hybrid-full-retry-v6
 make multihop-rag-qa-error-analysis-hybrid-full-retry-v6
 ```
 
+To break down the remaining temporal misses in the current best v6 full
+artifact:
+
+```bash
+make multihop-rag-temporal-subtype-analysis-v6
+```
+
+This report does not change the public score. It classifies `temporal_query`
+rows into coarse prompt-tuning buckets so the next gate can target a specific
+failure mode instead of changing all temporal prompts at once.
+
 Latest local official-retrieval-scorer evidence:
 
 | Run | Questions | Hits@10 | Hits@4 | MAP@10 | MRR@10 |
@@ -387,6 +398,21 @@ Latest local QA evidence with `deepseek-v4-flash`, thinking disabled:
 | Full official dataset, temporal retry + comparison retry | 2556 | 0.79 | 0.79 | 0.79 | 0.70 |
 | Full official dataset, temporal retry + comparison retry + temporal answer normalization | 2556 | 0.80 | 0.80 | 0.80 | 0.71 |
 | Full official dataset, temporal normalization + comparison decompose retry | 2556 | 0.80 | 0.80 | 0.80 | 0.72 |
+
+Temporal subtype evidence from the current best v6 full artifact:
+
+| Temporal subtype | Total | Hits | Misses | Hit rate |
+| --- | ---: | ---: | ---: | ---: |
+| `change_over_time` | 199 | 135 | 64 | 0.6784 |
+| `chronology` | 56 | 29 | 27 | 0.5179 |
+| `consistency_conflict` | 310 | 205 | 105 | 0.6613 |
+| `other` | 5 | 4 | 1 | 0.8000 |
+| `source_or_entity` | 13 | 7 | 6 | 0.5385 |
+
+`chronology` is the weakest sizeable subtype by hit rate. `source_or_entity`
+is also weak but low-count, while `consistency_conflict` has the largest
+absolute miss count. The next temporal prompt gate should target chronology
+first and keep the existing v6 full artifact as the comparison baseline.
 
 Latest DeepSeek prompt-cache evidence on a repeat 50-query run:
 
