@@ -3,7 +3,7 @@
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
 .PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check longmemeval-v1-deepseek-flash-diff longmemeval-v1-deepseek-flash-compact-50-check longmemeval-v1-deepseek-flash-compact-500-check longmemeval-v1-deepseek-flash-preference-check longmemeval-v1-deepseek-flash-single-session-user-check longmemeval-v1-deepseek-flash-multi-session-check longmemeval-v1-deepseek-flash-temporal-check
-.PHONY: multihop-rag-official-repo multihop-rag-official-data multihop-rag-preflight multihop-rag-balanced-50 multihop-rag-local-50-check multihop-rag-cortexdb-retrieval-50 multihop-rag-official-retrieval-metrics-50 multihop-rag-cortexdb-retrieval-full multihop-rag-official-retrieval-metrics-full multihop-rag-deepseek-qa-50 multihop-rag-official-qa-metrics-50 multihop-rag-deepseek-qa-full multihop-rag-official-qa-metrics-full
+.PHONY: multihop-rag-official-repo multihop-rag-official-data multihop-rag-preflight multihop-rag-balanced-50 multihop-rag-local-50-check multihop-rag-cortexdb-retrieval-50 multihop-rag-official-retrieval-metrics-50 multihop-rag-cortexdb-retrieval-full multihop-rag-official-retrieval-metrics-full multihop-rag-deepseek-qa-50 multihop-rag-official-qa-metrics-50 multihop-rag-official-qa-metrics-existing-50 multihop-rag-qa-error-analysis-50 multihop-rag-deepseek-qa-full multihop-rag-official-qa-metrics-full multihop-rag-official-qa-metrics-existing-full multihop-rag-qa-error-analysis-full
 .PHONY: operations-runbook-check
 .PHONY: service-manager-smoke-check
 .PHONY: beta-landing-check
@@ -323,15 +323,18 @@ MULTIHOP_RAG_RETRIEVAL_FULL_REPORT ?= $(MULTIHOP_RAG_ROOT)/retrieval/cortexdb_fu
 MULTIHOP_RAG_RETRIEVAL_50_METRICS ?= $(MULTIHOP_RAG_ROOT)/retrieval/cortexdb_balanced_50_metrics.txt
 MULTIHOP_RAG_RETRIEVAL_FULL_METRICS ?= $(MULTIHOP_RAG_ROOT)/retrieval/cortexdb_full_metrics.txt
 MULTIHOP_RAG_TOPK ?= 10
-MULTIHOP_RAG_QA_50_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-balanced-50
-MULTIHOP_RAG_QA_FULL_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-full
 MULTIHOP_RAG_QA_MODEL ?= deepseek-v4-flash
 MULTIHOP_RAG_QA_BASE_URL ?= https://api.deepseek.com
+MULTIHOP_RAG_QA_PROMPT_STYLE ?= multihop-v2
+MULTIHOP_RAG_QA_50_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-balanced-50-v2
+MULTIHOP_RAG_QA_FULL_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-full-v2
 MULTIHOP_RAG_QA_TOPK_CONTEXT ?= 6
 MULTIHOP_RAG_QA_MAX_CHARS_PER_DOC ?= 1200
 MULTIHOP_RAG_QA_WORKERS ?= 4
 MULTIHOP_RAG_QA_50_METRICS ?= $(MULTIHOP_RAG_QA_50_ROOT)/official_qa_metrics.txt
 MULTIHOP_RAG_QA_FULL_METRICS ?= $(MULTIHOP_RAG_QA_FULL_ROOT)/official_qa_metrics.txt
+MULTIHOP_RAG_QA_50_ANALYSIS ?= $(MULTIHOP_RAG_QA_50_ROOT)/qa_error_analysis.json
+MULTIHOP_RAG_QA_FULL_ANALYSIS ?= $(MULTIHOP_RAG_QA_FULL_ROOT)/qa_error_analysis.json
 DEEPSEEK_KEY_FILE ?= /mnt/hf_model_weights/arman/3bit/.deepseek
 SINGLE_NODE_PERF_ROOT ?= target/single-node-performance
 SINGLE_NODE_PERF_REPORT ?= $(SINGLE_NODE_PERF_ROOT)/report.json
@@ -973,12 +976,23 @@ multihop-rag-deepseek-qa-50: multihop-rag-official-retrieval-metrics-50
 	  --model "$(MULTIHOP_RAG_QA_MODEL)" \
 	  --top-k-context "$(MULTIHOP_RAG_QA_TOPK_CONTEXT)" \
 	  --max-chars-per-doc "$(MULTIHOP_RAG_QA_MAX_CHARS_PER_DOC)" \
+	  --prompt-style "$(MULTIHOP_RAG_QA_PROMPT_STYLE)" \
 	  --workers "$(MULTIHOP_RAG_QA_WORKERS)"
 
 multihop-rag-official-qa-metrics-50: multihop-rag-official-repo multihop-rag-deepseek-qa-50
+	$(MAKE) multihop-rag-official-qa-metrics-existing-50
+
+multihop-rag-official-qa-metrics-existing-50: multihop-rag-official-repo
+	test -f "$(MULTIHOP_RAG_QA_50_ROOT)/deepseek_qa.json"
 	mkdir -p "$(MULTIHOP_RAG_OFFICIAL_REPO)/qa_output"
 	cp "$(MULTIHOP_RAG_QA_50_ROOT)/deepseek_qa.json" "$(MULTIHOP_RAG_OFFICIAL_REPO)/qa_output/llama.json"
 	cd "$(MULTIHOP_RAG_OFFICIAL_REPO)" && PYTHONPATH="$(abspath scripts/multihop_rag)" python3 qa_evaluate.py | tee "$(abspath $(MULTIHOP_RAG_QA_50_METRICS))"
+
+multihop-rag-qa-error-analysis-50:
+	python3 scripts/multihop_rag/analyze_qa_errors.py \
+	  --qa-file "$(MULTIHOP_RAG_QA_50_ROOT)/deepseek_qa.json" \
+	  --output-json "$(MULTIHOP_RAG_QA_50_ANALYSIS)" \
+	  --output-md "$(MULTIHOP_RAG_QA_50_ROOT)/qa_error_analysis.md"
 
 multihop-rag-deepseek-qa-full: multihop-rag-official-retrieval-metrics-full
 	python3 scripts/multihop_rag/run_deepseek_qa.py \
@@ -989,12 +1003,23 @@ multihop-rag-deepseek-qa-full: multihop-rag-official-retrieval-metrics-full
 	  --model "$(MULTIHOP_RAG_QA_MODEL)" \
 	  --top-k-context "$(MULTIHOP_RAG_QA_TOPK_CONTEXT)" \
 	  --max-chars-per-doc "$(MULTIHOP_RAG_QA_MAX_CHARS_PER_DOC)" \
+	  --prompt-style "$(MULTIHOP_RAG_QA_PROMPT_STYLE)" \
 	  --workers "$(MULTIHOP_RAG_QA_WORKERS)"
 
 multihop-rag-official-qa-metrics-full: multihop-rag-official-repo multihop-rag-deepseek-qa-full
+	$(MAKE) multihop-rag-official-qa-metrics-existing-full
+
+multihop-rag-official-qa-metrics-existing-full: multihop-rag-official-repo
+	test -f "$(MULTIHOP_RAG_QA_FULL_ROOT)/deepseek_qa.json"
 	mkdir -p "$(MULTIHOP_RAG_OFFICIAL_REPO)/qa_output"
 	cp "$(MULTIHOP_RAG_QA_FULL_ROOT)/deepseek_qa.json" "$(MULTIHOP_RAG_OFFICIAL_REPO)/qa_output/llama.json"
 	cd "$(MULTIHOP_RAG_OFFICIAL_REPO)" && PYTHONPATH="$(abspath scripts/multihop_rag)" python3 qa_evaluate.py | tee "$(abspath $(MULTIHOP_RAG_QA_FULL_METRICS))"
+
+multihop-rag-qa-error-analysis-full:
+	python3 scripts/multihop_rag/analyze_qa_errors.py \
+	  --qa-file "$(MULTIHOP_RAG_QA_FULL_ROOT)/deepseek_qa.json" \
+	  --output-json "$(MULTIHOP_RAG_QA_FULL_ANALYSIS)" \
+	  --output-md "$(MULTIHOP_RAG_QA_FULL_ROOT)/qa_error_analysis.md"
 
 single-node-performance-check:
 	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)"

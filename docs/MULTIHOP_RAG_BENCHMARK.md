@@ -88,6 +88,17 @@ To generate answers with DeepSeek Flash and score them with the official
 make multihop-rag-official-qa-metrics-50
 ```
 
+If answers already exist and only the official scorer must be rerun, use:
+
+```bash
+make multihop-rag-official-qa-metrics-existing-50
+make multihop-rag-qa-error-analysis-50
+```
+
+The error analysis summarizes misses by `question_type`, exact-match rate, and
+false abstentions. This is the fast iteration loop for prompt or context
+selection changes.
+
 ## Official Full-Run Path
 
 After the 50-query gate is stable, run the full official data preparation:
@@ -117,9 +128,18 @@ Full QA generation and scoring:
 make multihop-rag-official-qa-metrics-full
 ```
 
-That command uses `deepseek-v4-flash` with thinking disabled, writes answers to
-`target/multihop-rag/qa/deepseek-full/deepseek_qa.json`, then evaluates that
+That command uses `deepseek-v4-flash` with thinking disabled and the
+`multihop-v2` question-type-aware prompt by default, writes answers to
+`target/multihop-rag/qa/deepseek-full-v2/deepseek_qa.json`, then evaluates that
 file with the official `qa_evaluate.py` script.
+
+To rerun only the scorer and local error analysis against existing full QA
+answers:
+
+```bash
+make multihop-rag-official-qa-metrics-existing-full
+make multihop-rag-qa-error-analysis-full
+```
 
 The official-compatible retrieval output shape is:
 
@@ -186,17 +206,17 @@ the official `qa_evaluate.py` script:
 
 | Run | Questions | Overall Precision | Overall Recall | Overall F1 | Overall Accuracy |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Balanced local gate | 50 | 0.46 | 0.46 | 0.46 | 0.48 |
-| Full official dataset | 2556 | 0.46 | 0.46 | 0.46 | 0.48 |
+| Balanced local gate, `multihop-v2` prompt | 50 | 0.68 | 0.68 | 0.68 | 0.61 |
+| Full official dataset, `multihop-v2` prompt | 2556 | 0.74 | 0.74 | 0.74 | 0.66 |
 
 Full QA by question type:
 
 | Type | Precision | Recall | F1 | Accuracy |
 | --- | ---: | ---: | ---: | ---: |
-| `inference_query` | 0.93 | 0.93 | 0.93 | 0.88 |
-| `comparison_query` | 0.11 | 0.11 | 0.11 | 0.36 |
-| `null_query` | 0.91 | 0.91 | 0.91 | 0.85 |
-| `temporal_query` | 0.08 | 0.08 | 0.08 | 0.35 |
+| `inference_query` | 0.94 | 0.94 | 0.94 | 0.90 |
+| `comparison_query` | 0.65 | 0.65 | 0.65 | 0.59 |
+| `null_query` | 0.99 | 0.99 | 0.99 | 0.99 |
+| `temporal_query` | 0.44 | 0.44 | 0.44 | 0.47 |
 
 Artifacts:
 
@@ -205,10 +225,12 @@ target/multihop-rag/retrieval/cortexdb_balanced_50_retrieval.json
 target/multihop-rag/retrieval/cortexdb_balanced_50_metrics.txt
 target/multihop-rag/retrieval/cortexdb_full_retrieval.json
 target/multihop-rag/retrieval/cortexdb_full_metrics.txt
-target/multihop-rag/qa/deepseek-balanced-50/deepseek_qa.json
-target/multihop-rag/qa/deepseek-balanced-50/official_qa_metrics.txt
-target/multihop-rag/qa/deepseek-full/deepseek_qa.json
-target/multihop-rag/qa/deepseek-full/official_qa_metrics.txt
+target/multihop-rag/qa/deepseek-balanced-50-v2/deepseek_qa.json
+target/multihop-rag/qa/deepseek-balanced-50-v2/official_qa_metrics.txt
+target/multihop-rag/qa/deepseek-balanced-50-v2/qa_error_analysis.json
+target/multihop-rag/qa/deepseek-full-v2/deepseek_qa.json
+target/multihop-rag/qa/deepseek-full-v2/official_qa_metrics.txt
+target/multihop-rag/qa/deepseek-full-v2/qa_error_analysis.json
 ```
 
 Current status:
@@ -218,5 +240,5 @@ MultiHop-RAG scaffold exists.
 Local 50-query retrieval gate runs and scores with the official evaluator.
 Full 2556-query retrieval run completes and scores with the official evaluator.
 DeepSeek Flash QA generation completes and scores with the official evaluator.
-Comparison and temporal QA remain the main quality gaps.
+Temporal QA remains the main quality gap.
 ```

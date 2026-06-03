@@ -299,6 +299,15 @@ make multihop-rag-official-qa-metrics-50
 make multihop-rag-official-qa-metrics-full
 ```
 
+To avoid repeating retrieval or generation while iterating on reports:
+
+```bash
+make multihop-rag-official-qa-metrics-existing-50
+make multihop-rag-qa-error-analysis-50
+make multihop-rag-official-qa-metrics-existing-full
+make multihop-rag-qa-error-analysis-full
+```
+
 Latest local official-retrieval-scorer evidence:
 
 | Run | Questions | Hits@10 | Hits@4 | MAP@10 | MRR@10 |
@@ -310,8 +319,8 @@ Latest local QA evidence with `deepseek-v4-flash`, thinking disabled:
 
 | Run | Questions | Overall Precision | Overall Recall | Overall F1 | Overall Accuracy |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Balanced local gate | 50 | 0.46 | 0.46 | 0.46 | 0.48 |
-| Full official dataset | 2556 | 0.46 | 0.46 | 0.46 | 0.48 |
+| Balanced local gate, `multihop-v2` prompt | 50 | 0.68 | 0.68 | 0.68 | 0.61 |
+| Full official dataset, `multihop-v2` prompt | 2556 | 0.74 | 0.74 | 0.74 | 0.66 |
 
 See [`MULTIHOP_RAG_BENCHMARK.md`](MULTIHOP_RAG_BENCHMARK.md).
 

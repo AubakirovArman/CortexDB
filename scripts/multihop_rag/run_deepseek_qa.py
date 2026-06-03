@@ -87,13 +87,51 @@ def best_snippet(query: str, payload: str, max_chars: int) -> str:
     return text[:max_chars]
 
 
-def build_prompt(row: dict[str, Any], top_k: int, max_chars_per_doc: int) -> str:
+def build_prompt(row: dict[str, Any], top_k: int, max_chars_per_doc: int, prompt_style: str) -> str:
     contexts = []
     for item in row.get("retrieval_list", [])[:top_k]:
         text = str(item.get("text", ""))
         snippet = best_snippet(str(row.get("query", "")), text, max_chars_per_doc)
         if snippet:
             contexts.append(f"[{len(contexts) + 1}]\n{snippet}")
+    question_type = str(row.get("question_type", ""))
+    if prompt_style == "multihop-v2":
+        type_instruction = {
+            "comparison_query": (
+                "This is a comparison question. If the context supports both sides, "
+                "answer with Yes or No."
+            ),
+            "temporal_query": (
+                "This is a temporal question. Compare the dates or event order in "
+                "the context and answer with Yes or No."
+            ),
+            "null_query": (
+                "This is a null-query check. Answer Insufficient Information unless "
+                "the context directly supports the requested entity or fact."
+            ),
+            "inference_query": (
+                "This is an inference question. Combine the relevant context snippets "
+                "and answer with the shortest supported entity, date, number, or phrase."
+            ),
+        }.get(question_type, "Use only the provided context.")
+        return "\n\n".join(
+            [
+                "Answer the question using only the provided context.",
+                type_instruction,
+                "Use exactly one short answer.",
+                "For yes/no questions, answer exactly Yes or No.",
+                "If the context is insufficient, answer exactly: Insufficient Information",
+                "Do not explain your reasoning.",
+                "",
+                f"Question type: {question_type}",
+                f"Question: {row.get('query', '')}",
+                "",
+                "Context:",
+                "\n\n".join(contexts),
+                "",
+                "Answer:",
+            ]
+        )
     return "\n\n".join(
         [
             "Answer the question using only the provided context.",
@@ -164,7 +202,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     usage_totals = {"prompt_tokens": 0, "completion_tokens": 0, "completed": len(existing)}
 
     def generate_one(index: int, row: dict[str, Any]) -> tuple[str, dict[str, Any], dict[str, Any]]:
-        prompt = build_prompt(row, args.top_k_context, args.max_chars_per_doc)
+        prompt = build_prompt(row, args.top_k_context, args.max_chars_per_doc, args.prompt_style)
         answer, usage = chat(
             api_key=api_key,
             base_url=args.base_url,
@@ -206,6 +244,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "retrieval_file": str(args.retrieval_file),
         "qa_json": str(json_path),
         "workers": args.workers,
+        "prompt_style": args.prompt_style,
         "prompt_tokens_new": usage_totals["prompt_tokens"],
         "completion_tokens_new": usage_totals["completion_tokens"],
     }
@@ -227,6 +266,7 @@ def main() -> int:
     parser.add_argument("--progress-every", type=int, default=25)
     parser.add_argument("--retries", type=int, default=3)
     parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument("--prompt-style", choices=["legacy", "multihop-v2"], default="multihop-v2")
     print(json.dumps(run(parser.parse_args()), sort_keys=True))
     return 0
 
