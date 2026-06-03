@@ -163,6 +163,18 @@ This is a diagnostic step, not a score-changing postprocess. It groups
 `temporal_query` rows into coarse failure buckets so the next prompt gate can
 target one subtype at a time.
 
+To test a chronology-only retry gate:
+
+```bash
+make multihop-rag-official-qa-metrics-temporal-chronology-50-v1
+make multihop-rag-qa-error-analysis-temporal-chronology-50-v1
+```
+
+The chronology-only retry gate is not promoted. It scored below the current v6
+temporal baseline because the `chronology` bucket mixes yes/no ordering
+questions with `between` and `which` choice questions. The next chronology
+iteration must split by answer form before changing the prompt again.
+
 If answers already exist and only the official scorer must be rerun, use:
 
 ```bash
@@ -292,6 +304,7 @@ the official `qa_evaluate.py` script:
 | Temporal-only gate, `multihop-v3` prompt | 50 | 0.62 | 0.62 | 0.62 | 0.57 |
 | Temporal-only gate, `multihop-v3` + abstention retry | 50 | 0.72 | 0.72 | 0.72 | 0.64 |
 | Temporal-only gate, decompose retry, not promoted | 50 | 0.60 | 0.60 | 0.60 | 0.56 |
+| Temporal chronology-only gate, not promoted | 50 | 0.48 | 0.48 | 0.48 | 0.49 |
 | Comparison-only gate, `multihop-v2` + retry + top-k 10 | 50 | 0.60 | 0.60 | 0.60 | 0.56 |
 | Comparison-only gate, decompose retry + top-k 10 | 50 | 0.70 | 0.70 | 0.70 | 0.62 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` | 2556 | 0.75 | 0.75 | 0.75 | 0.67 |
@@ -357,6 +370,9 @@ target/multihop-rag/qa/deepseek-temporal-50-v3-retry/deepseek_qa.json
 target/multihop-rag/qa/deepseek-temporal-50-v4-decompose-retry/deepseek_qa.json
 target/multihop-rag/qa/deepseek-temporal-50-v4-decompose-retry/official_qa_metrics.txt
 target/multihop-rag/qa/deepseek-temporal-50-v4-decompose-retry/qa_error_analysis.md
+target/multihop-rag/qa/deepseek-temporal-chronology-50-v1/deepseek_qa.json
+target/multihop-rag/qa/deepseek-temporal-chronology-50-v1/official_qa_metrics.txt
+target/multihop-rag/qa/deepseek-temporal-chronology-50-v1/qa_error_analysis.md
 target/multihop-rag/qa/deepseek-full-v3-hybrid/deepseek_qa.json
 target/multihop-rag/qa/deepseek-full-v3-hybrid/official_qa_metrics.txt
 target/multihop-rag/qa/deepseek-temporal-v3-retry/deepseek_qa.json

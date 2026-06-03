@@ -377,6 +377,18 @@ This report does not change the public score. It classifies `temporal_query`
 rows into coarse prompt-tuning buckets so the next gate can target a specific
 failure mode instead of changing all temporal prompts at once.
 
+To test a chronology-only temporal retry gate:
+
+```bash
+make multihop-rag-official-qa-metrics-temporal-chronology-50-v1
+make multihop-rag-qa-error-analysis-temporal-chronology-50-v1
+```
+
+This gate is not promoted. It scored below the current v6 temporal baseline and
+showed that the `chronology` bucket must be split by answer form before another
+prompt change. Several chronology questions ask `between` or `which` rather
+than yes/no, and a yes/no-heavy retry turns those into incorrect `No` answers.
+
 Latest local official-retrieval-scorer evidence:
 
 | Run | Questions | Hits@10 | Hits@4 | MAP@10 | MRR@10 |
@@ -392,6 +404,7 @@ Latest local QA evidence with `deepseek-v4-flash`, thinking disabled:
 | Temporal-only gate, `multihop-v3` prompt | 50 | 0.62 | 0.62 | 0.62 | 0.57 |
 | Temporal-only gate, `multihop-v3` + abstention retry | 50 | 0.72 | 0.72 | 0.72 | 0.64 |
 | Temporal-only gate, decompose retry, not promoted | 50 | 0.60 | 0.60 | 0.60 | 0.56 |
+| Temporal chronology-only gate, not promoted | 50 | 0.48 | 0.48 | 0.48 | 0.49 |
 | Comparison-only gate, `multihop-v2` + retry + top-k 10 | 50 | 0.60 | 0.60 | 0.60 | 0.56 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` | 2556 | 0.75 | 0.75 | 0.75 | 0.67 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` abstention retry | 2556 | 0.78 | 0.78 | 0.78 | 0.69 |

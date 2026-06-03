@@ -272,6 +272,36 @@ def build_temporal_decomposition_retry_prompt(row: dict[str, Any], top_k: int, m
     )
 
 
+def build_temporal_chronology_retry_prompt(row: dict[str, Any], top_k: int, max_chars_per_doc: int) -> str:
+    contexts = []
+    for item in row.get("retrieval_list", [])[:top_k]:
+        snippet = temporal_snippet(str(row.get("query", "")), str(item.get("text", "")), max_chars_per_doc)
+        if snippet:
+            contexts.append(f"[{len(contexts) + 1}]\n{snippet}")
+    return "\n\n".join(
+        [
+            "Answer the chronology question using only the provided context.",
+            "The question asks whether one report, event, action, or article happened before, after, earlier, or later than another.",
+            "Internally identify the two compared dates. Use published_at as the article or report date when the wording asks about reports or articles.",
+            "Use explicit event dates from the snippet when the wording asks about the event itself.",
+            "For before/earlier wording, answer Yes only when the first named item is earlier than the compared item.",
+            "For after/later/subsequent wording, answer Yes only when the first named item is later than the compared item.",
+            "For between wording, answer Yes only when the item falls inside the stated time window.",
+            "Answer No when the relevant dates are present but the order does not match the question.",
+            "Answer Insufficient Information only when one of the required compared dates is missing.",
+            "Use exactly one short answer. For yes/no wording, answer exactly Yes or No.",
+            "Do not explain your reasoning.",
+            "",
+            f"Question: {row.get('query', '')}",
+            "",
+            "Context:",
+            "\n\n".join(contexts),
+            "",
+            "Answer:",
+        ]
+    )
+
+
 def build_comparison_retry_prompt(row: dict[str, Any], top_k: int, max_chars_per_doc: int) -> str:
     contexts = []
     for item in row.get("retrieval_list", [])[:top_k]:
