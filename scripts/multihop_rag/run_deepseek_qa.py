@@ -19,6 +19,7 @@ from qa_prompting import (
     build_comparison_retry_prompt,
     build_prompt,
     build_temporal_abstention_retry_prompt,
+    build_temporal_decomposition_retry_prompt,
 )
 
 
@@ -57,6 +58,10 @@ def is_insufficient_answer(answer: str) -> bool:
 
 def is_no_answer(answer: str) -> bool:
     return " ".join(answer.lower().split()).strip(".") == "no"
+
+
+def is_yes_answer(answer: str) -> bool:
+    return " ".join(answer.lower().split()).strip(".") == "yes"
 
 
 def merge_usage(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
@@ -146,10 +151,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "elapsed_ms": 0,
         "completed": len(existing),
         "temporal_abstention_retries": 0,
+        "temporal_decomposition_retries": 0,
         "comparison_retries": 0,
     }
 
-    def generate_one(index: int, row: dict[str, Any]) -> tuple[str, dict[str, Any], dict[str, Any], int, int, int]:
+    def generate_one(index: int, row: dict[str, Any]) -> tuple[str, dict[str, Any], dict[str, Any], int, int, int, int]:
         prompt = build_prompt(row, args.top_k_context, args.max_chars_per_doc, args.prompt_style)
         answer, usage, elapsed_ms = chat(
             api_key=api_key,
@@ -160,9 +166,37 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             retries=args.retries,
         )
         temporal_retry_count = 0
+        temporal_decomposition_retry_count = 0
         comparison_retry_count = 0
         saved_extra = {}
         if (
+            args.temporal_decomposition_retry
+            and row.get("question_type") == "temporal_query"
+            and (is_yes_answer(answer) or is_no_answer(answer) or is_insufficient_answer(answer))
+        ):
+            retry_prompt = build_temporal_decomposition_retry_prompt(
+                row,
+                args.top_k_context,
+                args.max_chars_per_doc,
+            )
+            retry_answer, retry_usage, retry_elapsed_ms = chat(
+                api_key=api_key,
+                base_url=args.base_url,
+                model=args.model,
+                prompt=retry_prompt,
+                max_tokens=args.max_tokens,
+                retries=args.retries,
+            )
+            saved_extra = {
+                "initial_model_answer": answer,
+                "temporal_decomposition_retry_used": True,
+                "temporal_decomposition_retry_prompt": retry_prompt,
+            }
+            answer = retry_answer
+            usage = merge_usage(usage, retry_usage)
+            elapsed_ms += retry_elapsed_ms
+            temporal_decomposition_retry_count = 1
+        elif (
             args.temporal_abstention_retry
             and row.get("question_type") == "temporal_query"
             and is_insufficient_answer(answer)
@@ -232,13 +266,21 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "usage": usage,
             "elapsed_ms": elapsed_ms,
             **saved_extra,
-        }, usage, elapsed_ms, temporal_retry_count, comparison_retry_count
+        }, usage, elapsed_ms, temporal_retry_count, temporal_decomposition_retry_count, comparison_retry_count
 
     pending = [(index, row) for index, row in enumerate(rows, 1) if query_key(row) not in existing]
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = [executor.submit(generate_one, index, row) for index, row in pending]
         for future in concurrent.futures.as_completed(futures):
-            key, saved, usage, elapsed_ms, temporal_retry_count, comparison_retry_count = future.result()
+            (
+                key,
+                saved,
+                usage,
+                elapsed_ms,
+                temporal_retry_count,
+                temporal_decomposition_retry_count,
+                comparison_retry_count,
+            ) = future.result()
             with output_lock:
                 if key not in existing:
                     existing[key] = saved
@@ -251,6 +293,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 usage_totals["prompt_cache_miss_tokens"] += int(usage.get("prompt_cache_miss_tokens", 0) or 0)
                 usage_totals["elapsed_ms"] += elapsed_ms
                 usage_totals["temporal_abstention_retries"] += temporal_retry_count
+                usage_totals["temporal_decomposition_retries"] += temporal_decomposition_retry_count
                 usage_totals["comparison_retries"] += comparison_retry_count
                 usage_totals["completed"] += 1
                 if args.progress_every and usage_totals["completed"] % args.progress_every == 0:
@@ -280,6 +323,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "workers": args.workers,
         "prompt_style": args.prompt_style,
         "temporal_abstention_retry": args.temporal_abstention_retry,
+        "temporal_decomposition_retry": args.temporal_decomposition_retry,
         "comparison_retry": args.comparison_retry,
         "comparison_retry_style": args.comparison_retry_style,
         "prompt_tokens_new": usage_totals["prompt_tokens"],
@@ -292,6 +336,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "wall_elapsed_ms": wall_elapsed_ms,
         "completion_tokens_per_second_new": completion_tokens_per_second,
         "temporal_abstention_retries_new": usage_totals["temporal_abstention_retries"],
+        "temporal_decomposition_retries_new": usage_totals["temporal_decomposition_retries"],
         "comparison_retries_new": usage_totals["comparison_retries"],
     }
     write_json(report_path, report)
@@ -319,6 +364,7 @@ def main() -> int:
     )
     parser.add_argument("--question-type")
     parser.add_argument("--temporal-abstention-retry", action="store_true")
+    parser.add_argument("--temporal-decomposition-retry", action="store_true")
     parser.add_argument("--comparison-retry", action="store_true")
     parser.add_argument(
         "--comparison-retry-style",

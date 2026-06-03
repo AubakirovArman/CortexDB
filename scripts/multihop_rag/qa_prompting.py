@@ -242,6 +242,36 @@ def build_temporal_abstention_retry_prompt(row: dict[str, Any], top_k: int, max_
     )
 
 
+def build_temporal_decomposition_retry_prompt(row: dict[str, Any], top_k: int, max_chars_per_doc: int) -> str:
+    contexts = []
+    for item in row.get("retrieval_list", [])[:top_k]:
+        snippet = temporal_snippet(str(row.get("query", "")), str(item.get("text", "")), max_chars_per_doc)
+        if snippet:
+            contexts.append(f"[{len(contexts) + 1}]\n{snippet}")
+    return "\n\n".join(
+        [
+            "Answer the temporal question using only the provided context.",
+            "First compare report dates, event dates, and whether the later article changes or contradicts the earlier article.",
+            "For before/after wording, answer Yes only when the chronology matches the question.",
+            "For consistency or agreement wording, answer Yes when the reports are compatible and No when they conflict.",
+            "For inconsistency, disagreement, discrepancy, or contradiction wording, answer Yes only when a conflict exists and No when the reports are compatible.",
+            "For change wording, answer Yes only when the later report materially changes the portrayal, not merely when it adds another detail about the same topic.",
+            "If the question asks 'consistent or inconsistent', answer exactly Consistent or Inconsistent.",
+            "If the question asks 'agreement or disagreement', answer exactly Agreement or Disagreement.",
+            "If the question asks which source, entity, side, or event, answer the shortest supported source, entity, side, event, or Both when both apply.",
+            "Do not answer Insufficient Information when the named reports and events are present in the snippets.",
+            "Use exactly one short answer and do not explain your reasoning.",
+            "",
+            f"Question: {row.get('query', '')}",
+            "",
+            "Context:",
+            "\n\n".join(contexts),
+            "",
+            "Answer:",
+        ]
+    )
+
+
 def build_comparison_retry_prompt(row: dict[str, Any], top_k: int, max_chars_per_doc: int) -> str:
     contexts = []
     for item in row.get("retrieval_list", [])[:top_k]:

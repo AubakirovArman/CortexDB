@@ -322,6 +322,8 @@ make multihop-rag-official-qa-metrics-temporal-50-v3
 make multihop-rag-qa-error-analysis-temporal-50-v3
 make multihop-rag-official-qa-metrics-temporal-50-v3-retry
 make multihop-rag-qa-error-analysis-temporal-50-v3-retry
+make multihop-rag-official-qa-metrics-temporal-50-v4-decompose-retry
+make multihop-rag-qa-error-analysis-temporal-50-v4-decompose-retry
 ```
 
 To tune comparison questions with a wider context window and retry pass:
@@ -378,6 +380,7 @@ Latest local QA evidence with `deepseek-v4-flash`, thinking disabled:
 | Balanced local gate, `multihop-v2` prompt | 50 | 0.68 | 0.68 | 0.68 | 0.61 |
 | Temporal-only gate, `multihop-v3` prompt | 50 | 0.62 | 0.62 | 0.62 | 0.57 |
 | Temporal-only gate, `multihop-v3` + abstention retry | 50 | 0.72 | 0.72 | 0.72 | 0.64 |
+| Temporal-only gate, decompose retry, not promoted | 50 | 0.60 | 0.60 | 0.60 | 0.56 |
 | Comparison-only gate, `multihop-v2` + retry + top-k 10 | 50 | 0.60 | 0.60 | 0.60 | 0.56 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` | 2556 | 0.75 | 0.75 | 0.75 | 0.67 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` abstention retry | 2556 | 0.78 | 0.78 | 0.78 | 0.69 |
