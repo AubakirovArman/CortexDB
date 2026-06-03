@@ -88,10 +88,10 @@ def chat(
 def run(args: argparse.Namespace) -> dict[str, Any]:
     api_key = args.api_key_file.read_text(encoding="utf-8").strip()
     rows = read_json(args.retrieval_file)
-    if args.max_queries is not None:
-        rows = rows[: args.max_queries]
     if args.question_type:
         rows = [row for row in rows if row.get("question_type") == args.question_type]
+    if args.max_queries is not None:
+        rows = rows[: args.max_queries]
     output_root = args.output_root
     jsonl_path = output_root / "deepseek_qa.jsonl"
     json_path = output_root / "deepseek_qa.json"

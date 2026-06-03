@@ -315,6 +315,13 @@ To measure DeepSeek prompt-cache behavior on the 50-query gate:
 make multihop-rag-deepseek-qa-50-cache-metrics
 ```
 
+To tune only the weakest temporal question type:
+
+```bash
+make multihop-rag-official-qa-metrics-temporal-50-v3
+make multihop-rag-qa-error-analysis-temporal-50-v3
+```
+
 Latest local official-retrieval-scorer evidence:
 
 | Run | Questions | Hits@10 | Hits@4 | MAP@10 | MRR@10 |
@@ -327,6 +334,7 @@ Latest local QA evidence with `deepseek-v4-flash`, thinking disabled:
 | Run | Questions | Overall Precision | Overall Recall | Overall F1 | Overall Accuracy |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Balanced local gate, `multihop-v2` prompt | 50 | 0.68 | 0.68 | 0.68 | 0.61 |
+| Temporal-only gate, `multihop-v3` prompt | 50 | 0.62 | 0.62 | 0.62 | 0.57 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` | 2556 | 0.75 | 0.75 | 0.75 | 0.67 |
 
 Latest DeepSeek prompt-cache evidence on a repeat 50-query run:
