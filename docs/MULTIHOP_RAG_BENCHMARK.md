@@ -128,6 +128,14 @@ make multihop-rag-official-qa-metrics-hybrid-full-retry-v4
 make multihop-rag-qa-error-analysis-hybrid-full-retry-v4
 ```
 
+To normalize temporal label-style answers from the v4 artifact and rescore
+without issuing new model calls:
+
+```bash
+make multihop-rag-official-qa-metrics-hybrid-full-retry-v5
+make multihop-rag-qa-error-analysis-hybrid-full-retry-v5
+```
+
 If answers already exist and only the official scorer must be rerun, use:
 
 ```bash
@@ -260,6 +268,7 @@ the official `qa_evaluate.py` script:
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` | 2556 | 0.75 | 0.75 | 0.75 | 0.67 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` abstention retry | 2556 | 0.78 | 0.78 | 0.78 | 0.69 |
 | Full official dataset, temporal retry + comparison retry | 2556 | 0.79 | 0.79 | 0.79 | 0.70 |
+| Full official dataset, temporal retry + comparison retry + temporal answer normalization | 2556 | 0.80 | 0.80 | 0.80 | 0.71 |
 
 Full QA by question type:
 
@@ -268,7 +277,7 @@ Full QA by question type:
 | `inference_query` | 0.94 | 0.94 | 0.94 | 0.90 |
 | `comparison_query` | 0.69 | 0.69 | 0.69 | 0.62 |
 | `null_query` | 0.99 | 0.99 | 0.99 | 0.99 |
-| `temporal_query` | 0.61 | 0.61 | 0.61 | 0.56 |
+| `temporal_query` | 0.65 | 0.65 | 0.65 | 0.59 |
 
 Latest DeepSeek prompt-cache observation on the repeat 50-query gate:
 
@@ -308,6 +317,10 @@ target/multihop-rag/qa/deepseek-comparison-v2-retry/deepseek_qa.json
 target/multihop-rag/qa/deepseek-full-v4-hybrid-retry/deepseek_qa.json
 target/multihop-rag/qa/deepseek-full-v4-hybrid-retry/official_qa_metrics.txt
 target/multihop-rag/qa/deepseek-full-v4-hybrid-retry/qa_error_analysis.md
+target/multihop-rag/qa/deepseek-full-v5-hybrid-retry-normalized/deepseek_qa.json
+target/multihop-rag/qa/deepseek-full-v5-hybrid-retry-normalized/deepseek_qa_report.json
+target/multihop-rag/qa/deepseek-full-v5-hybrid-retry-normalized/official_qa_metrics.txt
+target/multihop-rag/qa/deepseek-full-v5-hybrid-retry-normalized/qa_error_analysis.md
 target/multihop-rag/qa/deepseek-balanced-50-cache-metrics/deepseek_qa_report.json
 ```
 
@@ -318,6 +331,7 @@ MultiHop-RAG scaffold exists.
 Local 50-query retrieval gate runs and scores with the official evaluator.
 Full 2556-query retrieval run completes and scores with the official evaluator.
 DeepSeek Flash QA generation completes and scores with the official evaluator.
-Temporal QA remains the main quality gap, but temporal-only prompt routing now
-improves the full-run temporal F1 from 0.44 to 0.51.
+Temporal QA remains the main quality gap, but the current best full run combines
+temporal retry, comparison retry, and deterministic temporal answer
+normalization, improving full-run temporal F1 to 0.65 and overall F1 to 0.80.
 ```

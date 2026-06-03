@@ -346,6 +346,14 @@ make multihop-rag-official-qa-metrics-hybrid-full-retry-v4
 make multihop-rag-qa-error-analysis-hybrid-full-retry-v4
 ```
 
+To normalize temporal label-style answers from the v4 artifact and rescore
+without any new model calls:
+
+```bash
+make multihop-rag-official-qa-metrics-hybrid-full-retry-v5
+make multihop-rag-qa-error-analysis-hybrid-full-retry-v5
+```
+
 Latest local official-retrieval-scorer evidence:
 
 | Run | Questions | Hits@10 | Hits@4 | MAP@10 | MRR@10 |
@@ -364,6 +372,7 @@ Latest local QA evidence with `deepseek-v4-flash`, thinking disabled:
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` | 2556 | 0.75 | 0.75 | 0.75 | 0.67 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` abstention retry | 2556 | 0.78 | 0.78 | 0.78 | 0.69 |
 | Full official dataset, temporal retry + comparison retry | 2556 | 0.79 | 0.79 | 0.79 | 0.70 |
+| Full official dataset, temporal retry + comparison retry + temporal answer normalization | 2556 | 0.80 | 0.80 | 0.80 | 0.71 |
 
 Latest DeepSeek prompt-cache evidence on a repeat 50-query run:
 

@@ -268,3 +268,41 @@ def build_comparison_retry_prompt(row: dict[str, Any], top_k: int, max_chars_per
             "Answer:",
         ]
     )
+
+
+def normalize_temporal_answer_for_question(question: str, answer: str) -> str:
+    question_words = " ".join(WORD_RE.findall(question.lower()))
+    answer_words = " ".join(WORD_RE.findall(answer.lower()))
+    if "consistent or inconsistent" in question_words or "agreement or disagreement" in question_words:
+        if answer_words == "yes":
+            return "Consistent"
+        if answer_words == "no":
+            return "Inconsistent"
+        return answer
+
+    yes_no_starter = re.match(r"^(was|did|has|after|between|before|is)\b", question_words) is not None
+    if not yes_no_starter:
+        return answer
+
+    asks_inconsistent = any(
+        term in question_words
+        for term in ["inconsistency", "inconsistent", "disagreement", "disagree", "discrepancy"]
+    )
+    asks_consistent = any(
+        term in question_words
+        for term in ["consistency", "consistent", "agreement", "agree", "align"]
+    )
+    asks_change = any(term in question_words for term in ["change", "changed", "different"])
+    compatible_answers = {"consistent", "agreement", "agree", "aligned", "same", "similar"}
+    incompatible_answers = {"inconsistent", "disagreement", "disagree", "different", "changed", "change"}
+    if answer_words in compatible_answers:
+        if asks_inconsistent or asks_change:
+            return "No"
+        if asks_consistent:
+            return "Yes"
+    if answer_words in incompatible_answers:
+        if asks_inconsistent or asks_change:
+            return "Yes"
+        if asks_consistent:
+            return "No"
+    return answer
