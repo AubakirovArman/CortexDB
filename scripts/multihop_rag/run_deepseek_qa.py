@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import concurrent.futures
 import json
-import re
 import threading
 import time
 import urllib.error
@@ -14,11 +13,11 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from qa_prompting import build_prompt
+
 
 DEFAULT_BASE_URL = "https://api.deepseek.com"
 DEFAULT_MODEL = "deepseek-v4-flash"
-WORD_RE = re.compile(r"[A-Za-z0-9]+")
-SENTENCE_RE = re.compile(r"(?<=[.!?])\s+")
 
 
 def read_json(path: Path) -> Any:
@@ -46,109 +45,6 @@ def query_key(row: dict[str, Any]) -> str:
     return str(row.get("query", ""))
 
 
-def tokenize(value: str) -> set[str]:
-    stop = {
-        "the", "and", "for", "with", "from", "that", "this", "what", "which", "who",
-        "about", "reported", "article", "according", "information", "another", "both",
-    }
-    return {word.lower() for word in WORD_RE.findall(value) if len(word) > 2 and word.lower() not in stop}
-
-
-def payload_parts(payload: str) -> tuple[dict[str, str], str]:
-    header, _, body = payload.partition("\n\n")
-    metadata: dict[str, str] = {}
-    for line in header.splitlines():
-        key, sep, value = line.partition("=")
-        if sep:
-            metadata[key.strip()] = value.strip()
-    return metadata, body.strip()
-
-
-def best_snippet(query: str, payload: str, max_chars: int) -> str:
-    metadata, body = payload_parts(payload)
-    query_terms = tokenize(query)
-    sentences = [sentence.strip() for sentence in SENTENCE_RE.split(body) if sentence.strip()]
-    scored = []
-    for index, sentence in enumerate(sentences):
-        words = tokenize(sentence)
-        score = len(query_terms & words)
-        if score:
-            scored.append((score, -index, sentence))
-    selected = [sentence for _, _, sentence in sorted(scored, reverse=True)[:4]]
-    if not selected:
-        selected = sentences[:4]
-    snippet = " ".join(selected)
-    prefix = " | ".join(
-        value
-        for value in [metadata.get("title", ""), metadata.get("source", ""), metadata.get("published_at", "")]
-        if value
-    )
-    text = f"{prefix}\n{snippet}" if prefix else snippet
-    return text[:max_chars]
-
-
-def build_prompt(row: dict[str, Any], top_k: int, max_chars_per_doc: int, prompt_style: str) -> str:
-    contexts = []
-    for item in row.get("retrieval_list", [])[:top_k]:
-        text = str(item.get("text", ""))
-        snippet = best_snippet(str(row.get("query", "")), text, max_chars_per_doc)
-        if snippet:
-            contexts.append(f"[{len(contexts) + 1}]\n{snippet}")
-    question_type = str(row.get("question_type", ""))
-    if prompt_style == "multihop-v2":
-        type_instruction = {
-            "comparison_query": (
-                "This is a comparison question. If the context supports both sides, "
-                "answer with Yes or No."
-            ),
-            "temporal_query": (
-                "This is a temporal question. Compare the dates or event order in "
-                "the context and answer with Yes or No."
-            ),
-            "null_query": (
-                "This is a null-query check. Answer Insufficient Information unless "
-                "the context directly supports the requested entity or fact."
-            ),
-            "inference_query": (
-                "This is an inference question. Combine the relevant context snippets "
-                "and answer with the shortest supported entity, date, number, or phrase."
-            ),
-        }.get(question_type, "Use only the provided context.")
-        return "\n\n".join(
-            [
-                "Answer the question using only the provided context.",
-                type_instruction,
-                "Use exactly one short answer.",
-                "For yes/no questions, answer exactly Yes or No.",
-                "If the context is insufficient, answer exactly: Insufficient Information",
-                "Do not explain your reasoning.",
-                "",
-                f"Question type: {question_type}",
-                f"Question: {row.get('query', '')}",
-                "",
-                "Context:",
-                "\n\n".join(contexts),
-                "",
-                "Answer:",
-            ]
-        )
-    return "\n\n".join(
-        [
-            "Answer the question using only the provided context.",
-            "The answer should be a short entity, name, date, number, or phrase.",
-            "If the context is insufficient, answer exactly: Insufficient Information",
-            "Do not explain your reasoning.",
-            "",
-            f"Question: {row.get('query', '')}",
-            "",
-            "Context:",
-            "\n\n".join(contexts),
-            "",
-            "Answer:",
-        ]
-    )
-
-
 def chat(
     *,
     api_key: str,
@@ -157,7 +53,7 @@ def chat(
     prompt: str,
     max_tokens: int,
     retries: int,
-) -> tuple[str, dict[str, Any]]:
+) -> tuple[str, dict[str, Any], int]:
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
@@ -174,11 +70,13 @@ def chat(
             headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"},
         )
         try:
+            started = time.perf_counter()
             with urllib.request.urlopen(req, timeout=120) as response:
                 body = json.loads(response.read().decode("utf-8"))
+            elapsed_ms = int((time.perf_counter() - started) * 1000)
             choice = body["choices"][0]
             message = choice["message"]
-            return str(message.get("content", "")).strip(), body.get("usage", {})
+            return str(message.get("content", "")).strip(), body.get("usage", {}), elapsed_ms
         except urllib.error.HTTPError as error:
             if error.code not in {429, 500, 502, 503, 504} or attempt >= retries:
                 detail = error.read().decode("utf-8", errors="replace")[:500]
@@ -192,6 +90,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     rows = read_json(args.retrieval_file)
     if args.max_queries is not None:
         rows = rows[: args.max_queries]
+    if args.question_type:
+        rows = [row for row in rows if row.get("question_type") == args.question_type]
     output_root = args.output_root
     jsonl_path = output_root / "deepseek_qa.jsonl"
     json_path = output_root / "deepseek_qa.json"
@@ -199,11 +99,20 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     existing = {query_key(row): row for row in read_jsonl(jsonl_path)}
     usage_lock = threading.Lock()
     output_lock = threading.Lock()
-    usage_totals = {"prompt_tokens": 0, "completion_tokens": 0, "completed": len(existing)}
+    started = time.perf_counter()
+    usage_totals = {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0,
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 0,
+        "elapsed_ms": 0,
+        "completed": len(existing),
+    }
 
-    def generate_one(index: int, row: dict[str, Any]) -> tuple[str, dict[str, Any], dict[str, Any]]:
+    def generate_one(index: int, row: dict[str, Any]) -> tuple[str, dict[str, Any], dict[str, Any], int]:
         prompt = build_prompt(row, args.top_k_context, args.max_chars_per_doc, args.prompt_style)
-        answer, usage = chat(
+        answer, usage, elapsed_ms = chat(
             api_key=api_key,
             base_url=args.base_url,
             model=args.model,
@@ -217,13 +126,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "model_answer": answer,
             "gold_answer": row.get("answer", ""),
             "question_type": row.get("question_type", ""),
-        }, usage
+            "usage": usage,
+            "elapsed_ms": elapsed_ms,
+        }, usage, elapsed_ms
 
     pending = [(index, row) for index, row in enumerate(rows, 1) if query_key(row) not in existing]
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = [executor.submit(generate_one, index, row) for index, row in pending]
         for future in concurrent.futures.as_completed(futures):
-            key, saved, usage = future.result()
+            key, saved, usage, elapsed_ms = future.result()
             with output_lock:
                 if key not in existing:
                     existing[key] = saved
@@ -231,11 +142,28 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             with usage_lock:
                 usage_totals["prompt_tokens"] += int(usage.get("prompt_tokens", 0) or 0)
                 usage_totals["completion_tokens"] += int(usage.get("completion_tokens", 0) or 0)
+                usage_totals["total_tokens"] += int(usage.get("total_tokens", 0) or 0)
+                usage_totals["prompt_cache_hit_tokens"] += int(usage.get("prompt_cache_hit_tokens", 0) or 0)
+                usage_totals["prompt_cache_miss_tokens"] += int(usage.get("prompt_cache_miss_tokens", 0) or 0)
+                usage_totals["elapsed_ms"] += elapsed_ms
                 usage_totals["completed"] += 1
                 if args.progress_every and usage_totals["completed"] % args.progress_every == 0:
                     print(f"generated {usage_totals['completed']}/{len(rows)}")
     ordered = [existing[query_key(row)] for row in rows if query_key(row) in existing]
     write_json(json_path, ordered)
+    wall_elapsed_ms = int((time.perf_counter() - started) * 1000)
+    cache_tokens = usage_totals["prompt_cache_hit_tokens"] + usage_totals["prompt_cache_miss_tokens"]
+    cache_hit_rate = (
+        usage_totals["prompt_cache_hit_tokens"] / cache_tokens
+        if cache_tokens
+        else None
+    )
+    completion_seconds = usage_totals["elapsed_ms"] / 1000
+    completion_tokens_per_second = (
+        usage_totals["completion_tokens"] / completion_seconds
+        if completion_seconds and usage_totals["completion_tokens"]
+        else None
+    )
     report = {
         "schema_version": "cortexdb.multihop_rag.deepseek_qa_report.v1",
         "model": args.model,
@@ -247,6 +175,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "prompt_style": args.prompt_style,
         "prompt_tokens_new": usage_totals["prompt_tokens"],
         "completion_tokens_new": usage_totals["completion_tokens"],
+        "total_tokens_new": usage_totals["total_tokens"],
+        "prompt_cache_hit_tokens_new": usage_totals["prompt_cache_hit_tokens"],
+        "prompt_cache_miss_tokens_new": usage_totals["prompt_cache_miss_tokens"],
+        "prompt_cache_hit_rate_new": cache_hit_rate,
+        "api_elapsed_ms_sum_new": usage_totals["elapsed_ms"],
+        "wall_elapsed_ms": wall_elapsed_ms,
+        "completion_tokens_per_second_new": completion_tokens_per_second,
     }
     write_json(report_path, report)
     return report
@@ -266,7 +201,8 @@ def main() -> int:
     parser.add_argument("--progress-every", type=int, default=25)
     parser.add_argument("--retries", type=int, default=3)
     parser.add_argument("--workers", type=int, default=1)
-    parser.add_argument("--prompt-style", choices=["legacy", "multihop-v2"], default="multihop-v2")
+    parser.add_argument("--prompt-style", choices=["legacy", "multihop-v2", "multihop-v3"], default="multihop-v2")
+    parser.add_argument("--question-type")
     print(json.dumps(run(parser.parse_args()), sort_keys=True))
     return 0
 

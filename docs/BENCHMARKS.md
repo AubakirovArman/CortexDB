@@ -297,6 +297,7 @@ To run DeepSeek Flash QA generation and the official QA scorer:
 ```bash
 make multihop-rag-official-qa-metrics-50
 make multihop-rag-official-qa-metrics-full
+make multihop-rag-official-qa-metrics-hybrid-full
 ```
 
 To avoid repeating retrieval or generation while iterating on reports:
@@ -306,6 +307,12 @@ make multihop-rag-official-qa-metrics-existing-50
 make multihop-rag-qa-error-analysis-50
 make multihop-rag-official-qa-metrics-existing-full
 make multihop-rag-qa-error-analysis-full
+```
+
+To measure DeepSeek prompt-cache behavior on the 50-query gate:
+
+```bash
+make multihop-rag-deepseek-qa-50-cache-metrics
 ```
 
 Latest local official-retrieval-scorer evidence:
@@ -320,7 +327,13 @@ Latest local QA evidence with `deepseek-v4-flash`, thinking disabled:
 | Run | Questions | Overall Precision | Overall Recall | Overall F1 | Overall Accuracy |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Balanced local gate, `multihop-v2` prompt | 50 | 0.68 | 0.68 | 0.68 | 0.61 |
-| Full official dataset, `multihop-v2` prompt | 2556 | 0.74 | 0.74 | 0.74 | 0.66 |
+| Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` | 2556 | 0.75 | 0.75 | 0.75 | 0.67 |
+
+Latest DeepSeek prompt-cache evidence on a repeat 50-query run:
+
+| Prompt tokens | Cache hit tokens | Cache miss tokens | Cache hit rate | Estimated savings |
+| ---: | ---: | ---: | ---: | ---: |
+| 71,513 | 68,608 | 2,905 | 95.94% | 93.71% |
 
 See [`MULTIHOP_RAG_BENCHMARK.md`](MULTIHOP_RAG_BENCHMARK.md).
 
