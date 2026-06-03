@@ -14,7 +14,12 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from qa_prompting import build_comparison_retry_prompt, build_prompt, build_temporal_abstention_retry_prompt
+from qa_prompting import (
+    build_comparison_decomposition_retry_prompt,
+    build_comparison_retry_prompt,
+    build_prompt,
+    build_temporal_abstention_retry_prompt,
+)
 
 
 DEFAULT_BASE_URL = "https://api.deepseek.com"
@@ -189,11 +194,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             and row.get("question_type") == "comparison_query"
             and (is_insufficient_answer(answer) or is_no_answer(answer))
         ):
-            retry_prompt = build_comparison_retry_prompt(
-                row,
-                args.top_k_context,
-                args.max_chars_per_doc,
-            )
+            if args.comparison_retry_style == "decompose":
+                retry_prompt = build_comparison_decomposition_retry_prompt(
+                    row,
+                    args.top_k_context,
+                    args.max_chars_per_doc,
+                )
+            else:
+                retry_prompt = build_comparison_retry_prompt(
+                    row,
+                    args.top_k_context,
+                    args.max_chars_per_doc,
+                )
             retry_answer, retry_usage, retry_elapsed_ms = chat(
                 api_key=api_key,
                 base_url=args.base_url,
@@ -269,6 +281,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "prompt_style": args.prompt_style,
         "temporal_abstention_retry": args.temporal_abstention_retry,
         "comparison_retry": args.comparison_retry,
+        "comparison_retry_style": args.comparison_retry_style,
         "prompt_tokens_new": usage_totals["prompt_tokens"],
         "completion_tokens_new": usage_totals["completion_tokens"],
         "total_tokens_new": usage_totals["total_tokens"],
@@ -307,6 +320,11 @@ def main() -> int:
     parser.add_argument("--question-type")
     parser.add_argument("--temporal-abstention-retry", action="store_true")
     parser.add_argument("--comparison-retry", action="store_true")
+    parser.add_argument(
+        "--comparison-retry-style",
+        choices=["standard", "decompose"],
+        default="standard",
+    )
     print(json.dumps(run(parser.parse_args()), sort_keys=True))
     return 0
 

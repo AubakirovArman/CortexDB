@@ -270,6 +270,34 @@ def build_comparison_retry_prompt(row: dict[str, Any], top_k: int, max_chars_per
     )
 
 
+def build_comparison_decomposition_retry_prompt(row: dict[str, Any], top_k: int, max_chars_per_doc: int) -> str:
+    contexts = []
+    for item in row.get("retrieval_list", [])[:top_k]:
+        snippet = best_snippet(str(row.get("query", "")), str(item.get("text", "")), max_chars_per_doc)
+        if snippet:
+            contexts.append(f"[{len(contexts) + 1}]\n{snippet}")
+    return "\n\n".join(
+        [
+            "Answer the comparison question using only the provided context.",
+            "Break the question into the requested clauses internally, but output only the final short answer.",
+            "For 'while', 'and', or 'both' wording, answer Yes when each requested clause is independently supported, even when the clauses come from unrelated articles.",
+            "Do not answer No only because the articles discuss different topics, sectors, teams, or companies.",
+            "For contrast, different, discrepancy, or different-strategy wording, answer Yes when the requested contrast is supported.",
+            "For agree, align, same, or similar wording with an explicit label choice, answer Agree, Align, Same, or Similar when that label is supported.",
+            "Answer No only when at least one requested clause is unsupported or contradicted by the context.",
+            "Do not answer Insufficient Information when the named articles and requested facts are present in the snippets.",
+            "Use exactly one short answer and do not explain your reasoning.",
+            "",
+            f"Question: {row.get('query', '')}",
+            "",
+            "Context:",
+            "\n\n".join(contexts),
+            "",
+            "Answer:",
+        ]
+    )
+
+
 def normalize_temporal_answer_for_question(question: str, answer: str) -> str:
     question_words = " ".join(WORD_RE.findall(question.lower()))
     answer_words = " ".join(WORD_RE.findall(answer.lower()))

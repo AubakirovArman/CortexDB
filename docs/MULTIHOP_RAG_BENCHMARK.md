@@ -110,6 +110,8 @@ To tune comparison questions with a wider context window and retry pass, use:
 ```bash
 make multihop-rag-official-qa-metrics-comparison-50-retry
 make multihop-rag-qa-error-analysis-comparison-50-retry
+make multihop-rag-official-qa-metrics-comparison-50-decompose-retry
+make multihop-rag-qa-error-analysis-comparison-50-decompose-retry
 ```
 
 To promote the temporal retry to the full official dataset score, reuse the
@@ -134,6 +136,15 @@ without issuing new model calls:
 ```bash
 make multihop-rag-official-qa-metrics-hybrid-full-retry-v5
 make multihop-rag-qa-error-analysis-hybrid-full-retry-v5
+```
+
+To promote the comparison decompose retry to the full official dataset score,
+combine the comparison replacement rows with the v5 temporal-normalized
+artifact:
+
+```bash
+make multihop-rag-official-qa-metrics-hybrid-full-retry-v6
+make multihop-rag-qa-error-analysis-hybrid-full-retry-v6
 ```
 
 If answers already exist and only the official scorer must be rerun, use:
@@ -265,17 +276,19 @@ the official `qa_evaluate.py` script:
 | Temporal-only gate, `multihop-v3` prompt | 50 | 0.62 | 0.62 | 0.62 | 0.57 |
 | Temporal-only gate, `multihop-v3` + abstention retry | 50 | 0.72 | 0.72 | 0.72 | 0.64 |
 | Comparison-only gate, `multihop-v2` + retry + top-k 10 | 50 | 0.60 | 0.60 | 0.60 | 0.56 |
+| Comparison-only gate, decompose retry + top-k 10 | 50 | 0.70 | 0.70 | 0.70 | 0.62 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` | 2556 | 0.75 | 0.75 | 0.75 | 0.67 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` abstention retry | 2556 | 0.78 | 0.78 | 0.78 | 0.69 |
 | Full official dataset, temporal retry + comparison retry | 2556 | 0.79 | 0.79 | 0.79 | 0.70 |
 | Full official dataset, temporal retry + comparison retry + temporal answer normalization | 2556 | 0.80 | 0.80 | 0.80 | 0.71 |
+| Full official dataset, temporal normalization + comparison decompose retry | 2556 | 0.80 | 0.80 | 0.80 | 0.72 |
 
 Full QA by question type:
 
 | Type | Precision | Recall | F1 | Accuracy |
 | --- | ---: | ---: | ---: | ---: |
 | `inference_query` | 0.94 | 0.94 | 0.94 | 0.90 |
-| `comparison_query` | 0.69 | 0.69 | 0.69 | 0.62 |
+| `comparison_query` | 0.70 | 0.70 | 0.70 | 0.63 |
 | `null_query` | 0.99 | 0.99 | 0.99 | 0.99 |
 | `temporal_query` | 0.65 | 0.65 | 0.65 | 0.59 |
 
@@ -300,6 +313,9 @@ target/multihop-rag/retrieval/cortexdb_full_metrics.txt
 target/multihop-rag/qa/deepseek-balanced-50-v2/deepseek_qa.json
 target/multihop-rag/qa/deepseek-balanced-50-v2/official_qa_metrics.txt
 target/multihop-rag/qa/deepseek-balanced-50-v2/qa_error_analysis.json
+target/multihop-rag/qa/deepseek-comparison-50-decompose-retry/deepseek_qa.json
+target/multihop-rag/qa/deepseek-comparison-50-decompose-retry/official_qa_metrics.txt
+target/multihop-rag/qa/deepseek-comparison-50-decompose-retry/qa_error_analysis.md
 target/multihop-rag/qa/deepseek-full-v2/deepseek_qa.json
 target/multihop-rag/qa/deepseek-full-v2/official_qa_metrics.txt
 target/multihop-rag/qa/deepseek-full-v2/qa_error_analysis.json
@@ -321,6 +337,12 @@ target/multihop-rag/qa/deepseek-full-v5-hybrid-retry-normalized/deepseek_qa.json
 target/multihop-rag/qa/deepseek-full-v5-hybrid-retry-normalized/deepseek_qa_report.json
 target/multihop-rag/qa/deepseek-full-v5-hybrid-retry-normalized/official_qa_metrics.txt
 target/multihop-rag/qa/deepseek-full-v5-hybrid-retry-normalized/qa_error_analysis.md
+target/multihop-rag/qa/deepseek-comparison-v3-decompose-retry/deepseek_qa.json
+target/multihop-rag/qa/deepseek-comparison-v3-decompose-retry/deepseek_qa_report.json
+target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/deepseek_qa.json
+target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/deepseek_qa_report.json
+target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/official_qa_metrics.txt
+target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/qa_error_analysis.md
 target/multihop-rag/qa/deepseek-balanced-50-cache-metrics/deepseek_qa_report.json
 ```
 
@@ -332,6 +354,7 @@ Local 50-query retrieval gate runs and scores with the official evaluator.
 Full 2556-query retrieval run completes and scores with the official evaluator.
 DeepSeek Flash QA generation completes and scores with the official evaluator.
 Temporal QA remains the main quality gap, but the current best full run combines
-temporal retry, comparison retry, and deterministic temporal answer
-normalization, improving full-run temporal F1 to 0.65 and overall F1 to 0.80.
+temporal retry, deterministic temporal answer normalization, and comparison
+decompose retry, improving full-run temporal F1 to 0.65, comparison F1 to 0.70,
+overall F1 to 0.80, and overall accuracy to 0.72.
 ```

@@ -329,6 +329,8 @@ To tune comparison questions with a wider context window and retry pass:
 ```bash
 make multihop-rag-official-qa-metrics-comparison-50-retry
 make multihop-rag-qa-error-analysis-comparison-50-retry
+make multihop-rag-official-qa-metrics-comparison-50-decompose-retry
+make multihop-rag-qa-error-analysis-comparison-50-decompose-retry
 ```
 
 To promote the temporal retry to the full dataset while reusing the existing
@@ -354,6 +356,14 @@ make multihop-rag-official-qa-metrics-hybrid-full-retry-v5
 make multihop-rag-qa-error-analysis-hybrid-full-retry-v5
 ```
 
+To promote the comparison decompose retry to the full dataset and combine it
+with the v5 temporal normalization artifact:
+
+```bash
+make multihop-rag-official-qa-metrics-hybrid-full-retry-v6
+make multihop-rag-qa-error-analysis-hybrid-full-retry-v6
+```
+
 Latest local official-retrieval-scorer evidence:
 
 | Run | Questions | Hits@10 | Hits@4 | MAP@10 | MRR@10 |
@@ -373,6 +383,7 @@ Latest local QA evidence with `deepseek-v4-flash`, thinking disabled:
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` abstention retry | 2556 | 0.78 | 0.78 | 0.78 | 0.69 |
 | Full official dataset, temporal retry + comparison retry | 2556 | 0.79 | 0.79 | 0.79 | 0.70 |
 | Full official dataset, temporal retry + comparison retry + temporal answer normalization | 2556 | 0.80 | 0.80 | 0.80 | 0.71 |
+| Full official dataset, temporal normalization + comparison decompose retry | 2556 | 0.80 | 0.80 | 0.80 | 0.72 |
 
 Latest DeepSeek prompt-cache evidence on a repeat 50-query run:
 
