@@ -139,6 +139,18 @@ def generation_prompt(row: dict[str, Any], ref: dict[str, Any]) -> str:
             "known preferences to the new recommendation request. If no relevant preference signal "
             "exists at all, say what is missing briefly."
         )
+    elif ref.get("question_type") == "single-session-user":
+        task_instruction = (
+            "This is a single-session user-memory question. Find the one most relevant session and "
+            "extract the user's explicit personal fact from it. The answer may be phrased near the "
+            "question topic rather than with the exact same words. For where, what, who, when, how "
+            "many, and how much questions, return the concise location, name, date, count, amount, "
+            "duration, or personal attribute found in the relevant session. Do not refuse merely "
+            "because the full question sentence is not repeated verbatim; refuse only when no "
+            "relevant fact is present in any provided session. Answer only the field requested by "
+            "the question; do not add adjacent gifts, items, events, or explanations unless the "
+            "question asks for a list."
+        )
     elif ref.get("question_type") == "multi-session":
         task_instruction = (
             "This is a multi-session memory question. Use evidence across all provided sessions, "

@@ -226,6 +226,28 @@ single-session-preference: 20 / 30
 temporal-reasoning: 88 / 133
 ```
 
+For normal iteration, run the balanced 50-question gate instead of the full
+500-question diagnostic:
+
+```bash
+make longmemeval-v1-deepseek-flash-compact-50-check
+```
+
+Latest local compact-50 result:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+correct by DeepSeek judge: 32 / 50
+accuracy: 0.6400
+empty hypotheses: 0
+```
+
+The current rule is focused-first: run 50-70 targeted examples, compare
+new-only vs old-only regressions, and only run the full 500-question diagnostic
+after a positive focused gate.
+
 ## Current Boundary
 
 - CortexDB owns the retrieval log generation.

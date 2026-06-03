@@ -481,6 +481,66 @@ The remaining low slices are now less concentrated: `single-session-user`,
 `knowledge-update`, `multi-session`, and `single-session-assistant` all sit in
 the `0.58-0.61` range in this local diagnostic.
 
+## Focused-First 50-Question Gate
+
+For local prompt and answer-shape iteration, CortexDB now uses a smaller
+balanced 50-question gate before any expensive 500-question diagnostic. The
+subset is deterministic and proportional by question type:
+
+```text
+knowledge-update: 8
+multi-session: 13
+single-session-assistant: 6
+single-session-preference: 3
+single-session-user: 7
+temporal-reasoning: 13
+```
+
+Run it with:
+
+```bash
+make longmemeval-v1-deepseek-flash-compact-50-check
+```
+
+Latest local compact-50 result with the preference-aware, multi-session-aware,
+temporal-aware, and single-session-user-aware prompts:
+
+```text
+model: deepseek-v4-flash
+generation thinking: disabled
+judge thinking: disabled
+official score: false
+correct by DeepSeek judge: 32 / 50
+accuracy: 0.6400
+empty hypotheses: 0
+prompt tokens: 435,067
+completion tokens: 5,313
+```
+
+Breakdown:
+
+| Question type | Correct | Count | Accuracy |
+| --- | ---: | ---: | ---: |
+| `knowledge-update` | `5` | `8` | `0.6250` |
+| `multi-session` | `6` | `13` | `0.4615` |
+| `single-session-assistant` | `6` | `6` | `1.0000` |
+| `single-session-preference` | `2` | `3` | `0.6667` |
+| `single-session-user` | `5` | `7` | `0.7143` |
+| `temporal-reasoning` | `8` | `13` | `0.6154` |
+
+The single-session-user prompt was tested first on its focused slice:
+
+```text
+before single-session-user-aware prompt: 41 / 70
+after single-session-user-aware prompt: 44 / 70
+accuracy: 0.6286
+empty hypotheses: 0
+```
+
+Operational rule: run a focused 50-70 question gate first. Only run the full
+500-question diagnostic when the focused gate has a positive net delta and does
+not introduce obvious old-correct regressions.
+
 This is useful for iteration, but it is not an official LongMemEval result:
 generation and judging both use DeepSeek flash instead of the official GPT-4o
 judge.
