@@ -105,6 +105,14 @@ make multihop-rag-official-qa-metrics-temporal-50-v3-retry
 make multihop-rag-qa-error-analysis-temporal-50-v3-retry
 ```
 
+To promote the temporal retry to the full official dataset score, reuse the
+existing non-temporal full QA artifact and replace all temporal rows:
+
+```bash
+make multihop-rag-official-qa-metrics-hybrid-full-retry
+make multihop-rag-qa-error-analysis-hybrid-full-retry
+```
+
 If answers already exist and only the official scorer must be rerun, use:
 
 ```bash
@@ -234,6 +242,7 @@ the official `qa_evaluate.py` script:
 | Temporal-only gate, `multihop-v3` prompt | 50 | 0.62 | 0.62 | 0.62 | 0.57 |
 | Temporal-only gate, `multihop-v3` + abstention retry | 50 | 0.72 | 0.72 | 0.72 | 0.64 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` | 2556 | 0.75 | 0.75 | 0.75 | 0.67 |
+| Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` abstention retry | 2556 | 0.78 | 0.78 | 0.78 | 0.69 |
 
 Full QA by question type:
 
@@ -242,7 +251,7 @@ Full QA by question type:
 | `inference_query` | 0.94 | 0.94 | 0.94 | 0.90 |
 | `comparison_query` | 0.65 | 0.65 | 0.65 | 0.59 |
 | `null_query` | 0.99 | 0.99 | 0.99 | 0.99 |
-| `temporal_query` | 0.51 | 0.51 | 0.51 | 0.50 |
+| `temporal_query` | 0.61 | 0.61 | 0.61 | 0.56 |
 
 Latest DeepSeek prompt-cache observation on the repeat 50-query gate:
 
@@ -273,6 +282,10 @@ target/multihop-rag/qa/deepseek-temporal-50-v3/deepseek_qa.json
 target/multihop-rag/qa/deepseek-temporal-50-v3-retry/deepseek_qa.json
 target/multihop-rag/qa/deepseek-full-v3-hybrid/deepseek_qa.json
 target/multihop-rag/qa/deepseek-full-v3-hybrid/official_qa_metrics.txt
+target/multihop-rag/qa/deepseek-temporal-v3-retry/deepseek_qa.json
+target/multihop-rag/qa/deepseek-full-v3-hybrid-retry/deepseek_qa.json
+target/multihop-rag/qa/deepseek-full-v3-hybrid-retry/official_qa_metrics.txt
+target/multihop-rag/qa/deepseek-full-v3-hybrid-retry/qa_error_analysis.md
 target/multihop-rag/qa/deepseek-balanced-50-cache-metrics/deepseek_qa_report.json
 ```
 
