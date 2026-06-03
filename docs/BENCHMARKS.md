@@ -253,6 +253,40 @@ and a generated hypothesis file under `target/longmemeval-v1/generation/`.
 Leaderboard/list inclusion still requires submission to the official
 maintainers. See [`LONGMEMEVAL_OFFICIAL.md`](LONGMEMEVAL_OFFICIAL.md).
 
+## MultiHop-RAG Benchmark Scaffold
+
+CortexDB also includes a MultiHop-RAG preparation scaffold:
+
+```bash
+make multihop-rag-local-50-check
+```
+
+This downloads the official `yixuantt/MultiHopRAG` JSON files from Hugging Face,
+validates the query/corpus schema, and creates a deterministic balanced
+50-query subset under:
+
+```text
+target/multihop-rag/subsets/balanced_50/
+```
+
+Generated artifacts:
+
+```text
+balanced_50_multihop.json
+balanced_50_queries.jsonl
+balanced_50_ground_truth.jsonl
+balanced_50_subset_report.json
+```
+
+The scaffold follows the same tuning rule as LongMemEval: run and improve the
+small 50-query gate first, then promote to the full 2556-query benchmark. No
+public MultiHop-RAG score is claimed until CortexDB produces official-compatible
+retrieval output and evaluates it with the official `retrieval_evaluate.py`.
+The official GitHub repository currently marks its leaderboard as "Coming soon",
+so public wording must stay limited to reproducible local artifacts.
+
+See [`MULTIHOP_RAG_BENCHMARK.md`](MULTIHOP_RAG_BENCHMARK.md).
+
 `make ann-demo-domain-corpus-run` builds a repeatable corpus from the checked-in
 demo payloads under `examples/datasets` and `examples/rag_demo/data`, generates
 exact ground truth, runs the same HNSW gate, and archives a run directory under

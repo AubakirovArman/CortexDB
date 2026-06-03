@@ -3,6 +3,7 @@
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
 .PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check longmemeval-v1-deepseek-flash-diff longmemeval-v1-deepseek-flash-compact-50-check longmemeval-v1-deepseek-flash-compact-500-check longmemeval-v1-deepseek-flash-preference-check longmemeval-v1-deepseek-flash-single-session-user-check longmemeval-v1-deepseek-flash-multi-session-check longmemeval-v1-deepseek-flash-temporal-check
+.PHONY: multihop-rag-official-data multihop-rag-preflight multihop-rag-balanced-50 multihop-rag-local-50-check
 .PHONY: operations-runbook-check
 .PHONY: service-manager-smoke-check
 .PHONY: beta-landing-check
@@ -303,6 +304,15 @@ LONGMEMEVAL_V1_TEMPORAL_ROOT ?= target/longmemeval-v1/temporal-reasoning-format-
 LONGMEMEVAL_V1_TEMPORAL_INPUT_ROOT ?= target/longmemeval-v1/temporal-reasoning-format-check-input
 LONGMEMEVAL_V1_TEMPORAL_RETRIEVAL ?= $(LONGMEMEVAL_V1_TEMPORAL_INPUT_ROOT)/temporal_retrieval.jsonl
 LONGMEMEVAL_V1_TEMPORAL_REFERENCE ?= $(LONGMEMEVAL_V1_TEMPORAL_INPUT_ROOT)/temporal_reference.json
+MULTIHOP_RAG_ROOT ?= target/multihop-rag
+MULTIHOP_RAG_DATA_ROOT ?= $(MULTIHOP_RAG_ROOT)/data
+MULTIHOP_RAG_QUERY_FILE ?= $(MULTIHOP_RAG_DATA_ROOT)/MultiHopRAG.json
+MULTIHOP_RAG_CORPUS_FILE ?= $(MULTIHOP_RAG_DATA_ROOT)/corpus.json
+MULTIHOP_RAG_DATA_MANIFEST ?= $(MULTIHOP_RAG_DATA_ROOT)/manifest.json
+MULTIHOP_RAG_PREFLIGHT_REPORT ?= $(MULTIHOP_RAG_ROOT)/preflight_report.json
+MULTIHOP_RAG_SUBSET_ROOT ?= $(MULTIHOP_RAG_ROOT)/subsets
+MULTIHOP_RAG_SUBSET_LIMIT ?= 50
+MULTIHOP_RAG_SUBSET_PREFIX ?= balanced_50
 DEEPSEEK_KEY_FILE ?= /mnt/hf_model_weights/arman/3bit/.deepseek
 SINGLE_NODE_PERF_ROOT ?= target/single-node-performance
 SINGLE_NODE_PERF_REPORT ?= $(SINGLE_NODE_PERF_ROOT)/report.json
@@ -878,6 +888,27 @@ longmemeval-v1-deepseek-flash-temporal-check:
 	  --model "$(LONGMEMEVAL_V1_DEEPSEEK_MODEL)" \
 	  --generation-thinking disabled \
 	  --judge-thinking disabled
+
+multihop-rag-official-data:
+	python3 scripts/multihop_rag/download.py \
+	  --data-root "$(MULTIHOP_RAG_DATA_ROOT)" \
+	  --manifest "$(MULTIHOP_RAG_DATA_MANIFEST)"
+
+multihop-rag-preflight: multihop-rag-official-data
+	python3 scripts/multihop_rag/preflight.py \
+	  --queries "$(MULTIHOP_RAG_QUERY_FILE)" \
+	  --corpus "$(MULTIHOP_RAG_CORPUS_FILE)" \
+	  --report "$(MULTIHOP_RAG_PREFLIGHT_REPORT)"
+
+multihop-rag-balanced-50: multihop-rag-preflight
+	python3 scripts/multihop_rag/build_balanced_subset.py \
+	  --queries "$(MULTIHOP_RAG_QUERY_FILE)" \
+	  --limit "$(MULTIHOP_RAG_SUBSET_LIMIT)" \
+	  --output-root "$(MULTIHOP_RAG_SUBSET_ROOT)" \
+	  --output-prefix "$(MULTIHOP_RAG_SUBSET_PREFIX)"
+
+multihop-rag-local-50-check: multihop-rag-balanced-50
+	@echo "MultiHop-RAG local 50-query subset ready under $(MULTIHOP_RAG_SUBSET_ROOT)/$(MULTIHOP_RAG_SUBSET_PREFIX)"
 
 single-node-performance-check:
 	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)"

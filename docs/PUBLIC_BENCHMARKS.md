@@ -43,6 +43,7 @@ Regenerate the source reports before cutting a release.
 | Verification quality | `make verification-quality-check` | [`VERIFICATION_QUALITY_EVIDENCE.md`](VERIFICATION_QUALITY_EVIDENCE.md) |
 | Single-node performance | `make single-node-performance-check` | [`BENCHMARKS.md`](BENCHMARKS.md) |
 | LongMemEval official local run | `make longmemeval-v1-official-retrieval-metrics`, then official generation/eval | [`LONGMEMEVAL_OFFICIAL.md`](LONGMEMEVAL_OFFICIAL.md) |
+| MultiHop-RAG local preparation | `make multihop-rag-local-50-check` | [`MULTIHOP_RAG_BENCHMARK.md`](MULTIHOP_RAG_BENCHMARK.md) |
 | Performance trend | `make performance-trend-check` | [`PERFORMANCE_TREND_HISTORY.md`](PERFORMANCE_TREND_HISTORY.md) |
 | Public claims | `make public-claims-check` | [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md) |
 
@@ -70,6 +71,7 @@ This page does not claim:
 - production distributed consensus;
 - production SLA or hosted latency guarantees;
 - managed cloud readiness;
+- MultiHop-RAG leaderboard placement;
 - legal-grade verification;
 - audited financial assurance;
 - fallback-free production HNSW;
