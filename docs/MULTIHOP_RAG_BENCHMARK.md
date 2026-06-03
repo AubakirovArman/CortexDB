@@ -168,12 +168,17 @@ To test a chronology-only retry gate:
 ```bash
 make multihop-rag-official-qa-metrics-temporal-chronology-50-v1
 make multihop-rag-qa-error-analysis-temporal-chronology-50-v1
+make multihop-rag-official-qa-metrics-temporal-chronology-yes-no-50-v1
+make multihop-rag-qa-error-analysis-temporal-chronology-yes-no-50-v1
 ```
 
 The chronology-only retry gate is not promoted. It scored below the current v6
 temporal baseline because the `chronology` bucket mixes yes/no ordering
 questions with `between` and `which` choice questions. The next chronology
 iteration must split by answer form before changing the prompt again.
+The narrower `chronology + yes_no` gate improved its slice by one hit and is
+promoted only through the v7 full artifact, where rounded public metrics remain
+unchanged.
 
 If answers already exist and only the official scorer must be rerun, use:
 
@@ -305,6 +310,7 @@ the official `qa_evaluate.py` script:
 | Temporal-only gate, `multihop-v3` + abstention retry | 50 | 0.72 | 0.72 | 0.72 | 0.64 |
 | Temporal-only gate, decompose retry, not promoted | 50 | 0.60 | 0.60 | 0.60 | 0.56 |
 | Temporal chronology-only gate, not promoted | 50 | 0.48 | 0.48 | 0.48 | 0.49 |
+| Temporal chronology yes/no gate | 49 | 0.55 | 0.55 | 0.55 | 0.53 |
 | Comparison-only gate, `multihop-v2` + retry + top-k 10 | 50 | 0.60 | 0.60 | 0.60 | 0.56 |
 | Comparison-only gate, decompose retry + top-k 10 | 50 | 0.70 | 0.70 | 0.70 | 0.62 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` | 2556 | 0.75 | 0.75 | 0.75 | 0.67 |
@@ -312,6 +318,7 @@ the official `qa_evaluate.py` script:
 | Full official dataset, temporal retry + comparison retry | 2556 | 0.79 | 0.79 | 0.79 | 0.70 |
 | Full official dataset, temporal retry + comparison retry + temporal answer normalization | 2556 | 0.80 | 0.80 | 0.80 | 0.71 |
 | Full official dataset, temporal normalization + comparison decompose retry | 2556 | 0.80 | 0.80 | 0.80 | 0.72 |
+| Full official dataset, v7 plus chronology yes/no replacement | 2556 | 0.80 | 0.80 | 0.80 | 0.72 |
 
 Full QA by question type:
 
@@ -332,10 +339,28 @@ Temporal subtype analysis from the current best v6 full artifact:
 | `other` | 5 | 4 | 1 | 0.8000 |
 | `source_or_entity` | 13 | 7 | 6 | 0.5385 |
 
-The next temporal improvement should start with a chronology-specific gate:
-it is the weakest sizeable subtype by hit rate. `source_or_entity` is also
-weak but low-count, and `consistency_conflict` has the largest absolute miss
-count.
+Temporal answer-form analysis from the current best v6 full artifact:
+
+| Answer form | Total | Hits | Misses | Hit rate |
+| --- | ---: | ---: | ---: | ---: |
+| `choice` | 222 | 145 | 77 | 0.6532 |
+| `other` | 3 | 1 | 2 | 0.3333 |
+| `temporal_label` | 37 | 21 | 16 | 0.5676 |
+| `yes_no` | 321 | 213 | 108 | 0.6636 |
+
+Chronology answer-form analysis:
+
+| Answer form | Total | Hits | Misses | Hit rate |
+| --- | ---: | ---: | ---: | ---: |
+| `choice` | 4 | 2 | 2 | 0.5000 |
+| `other` | 1 | 0 | 1 | 0.0000 |
+| `temporal_label` | 2 | 1 | 1 | 0.5000 |
+| `yes_no` | 49 | 26 | 23 | 0.5306 |
+
+The v7 artifact replaces only the 49 `chronology + yes_no` rows and improves
+raw full-run hits from 2056 to 2057. Rounded official metrics remain unchanged.
+The next temporal prompt gate should target `choice` or `temporal_label`
+answer forms rather than the whole chronology bucket.
 
 Latest DeepSeek prompt-cache observation on the repeat 50-query gate:
 
@@ -373,6 +398,9 @@ target/multihop-rag/qa/deepseek-temporal-50-v4-decompose-retry/qa_error_analysis
 target/multihop-rag/qa/deepseek-temporal-chronology-50-v1/deepseek_qa.json
 target/multihop-rag/qa/deepseek-temporal-chronology-50-v1/official_qa_metrics.txt
 target/multihop-rag/qa/deepseek-temporal-chronology-50-v1/qa_error_analysis.md
+target/multihop-rag/qa/deepseek-temporal-chronology-yes-no-50-v1/deepseek_qa.json
+target/multihop-rag/qa/deepseek-temporal-chronology-yes-no-50-v1/official_qa_metrics.txt
+target/multihop-rag/qa/deepseek-temporal-chronology-yes-no-50-v1/qa_error_analysis.md
 target/multihop-rag/qa/deepseek-full-v3-hybrid/deepseek_qa.json
 target/multihop-rag/qa/deepseek-full-v3-hybrid/official_qa_metrics.txt
 target/multihop-rag/qa/deepseek-temporal-v3-retry/deepseek_qa.json
@@ -396,6 +424,10 @@ target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/official_qa_
 target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/qa_error_analysis.md
 target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/temporal_subtype_analysis.json
 target/multihop-rag/qa/deepseek-full-v6-hybrid-decompose-normalized/temporal_subtype_analysis.md
+target/multihop-rag/qa/deepseek-full-v7-hybrid-chronology-yes-no/deepseek_qa.json
+target/multihop-rag/qa/deepseek-full-v7-hybrid-chronology-yes-no/deepseek_qa_report.json
+target/multihop-rag/qa/deepseek-full-v7-hybrid-chronology-yes-no/official_qa_metrics.txt
+target/multihop-rag/qa/deepseek-full-v7-hybrid-chronology-yes-no/qa_error_analysis.md
 target/multihop-rag/qa/deepseek-balanced-50-cache-metrics/deepseek_qa_report.json
 ```
 
@@ -408,6 +440,7 @@ Full 2556-query retrieval run completes and scores with the official evaluator.
 DeepSeek Flash QA generation completes and scores with the official evaluator.
 Temporal QA remains the main quality gap, but the current best full run combines
 temporal retry, deterministic temporal answer normalization, and comparison
-decompose retry, improving full-run temporal F1 to 0.65, comparison F1 to 0.70,
-overall F1 to 0.80, and overall accuracy to 0.72.
+decompose retry, then adds a narrow chronology yes/no replacement. This improves
+raw full-run hits from 2056 to 2057 while keeping rounded temporal F1 at 0.65,
+comparison F1 at 0.70, overall F1 at 0.80, and overall accuracy at 0.72.
 ```

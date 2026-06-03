@@ -382,12 +382,17 @@ To test a chronology-only temporal retry gate:
 ```bash
 make multihop-rag-official-qa-metrics-temporal-chronology-50-v1
 make multihop-rag-qa-error-analysis-temporal-chronology-50-v1
+make multihop-rag-official-qa-metrics-temporal-chronology-yes-no-50-v1
+make multihop-rag-qa-error-analysis-temporal-chronology-yes-no-50-v1
 ```
 
 This gate is not promoted. It scored below the current v6 temporal baseline and
 showed that the `chronology` bucket must be split by answer form before another
 prompt change. Several chronology questions ask `between` or `which` rather
 than yes/no, and a yes/no-heavy retry turns those into incorrect `No` answers.
+The narrower `chronology + yes_no` gate improved its slice from 26 to 27 hits
+and is promoted only through the v7 full artifact because it does not change
+the rounded public score.
 
 Latest local official-retrieval-scorer evidence:
 
@@ -405,12 +410,14 @@ Latest local QA evidence with `deepseek-v4-flash`, thinking disabled:
 | Temporal-only gate, `multihop-v3` + abstention retry | 50 | 0.72 | 0.72 | 0.72 | 0.64 |
 | Temporal-only gate, decompose retry, not promoted | 50 | 0.60 | 0.60 | 0.60 | 0.56 |
 | Temporal chronology-only gate, not promoted | 50 | 0.48 | 0.48 | 0.48 | 0.49 |
+| Temporal chronology yes/no gate | 49 | 0.55 | 0.55 | 0.55 | 0.53 |
 | Comparison-only gate, `multihop-v2` + retry + top-k 10 | 50 | 0.60 | 0.60 | 0.60 | 0.56 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` | 2556 | 0.75 | 0.75 | 0.75 | 0.67 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` abstention retry | 2556 | 0.78 | 0.78 | 0.78 | 0.69 |
 | Full official dataset, temporal retry + comparison retry | 2556 | 0.79 | 0.79 | 0.79 | 0.70 |
 | Full official dataset, temporal retry + comparison retry + temporal answer normalization | 2556 | 0.80 | 0.80 | 0.80 | 0.71 |
 | Full official dataset, temporal normalization + comparison decompose retry | 2556 | 0.80 | 0.80 | 0.80 | 0.72 |
+| Full official dataset, v7 plus chronology yes/no replacement | 2556 | 0.80 | 0.80 | 0.80 | 0.72 |
 
 Temporal subtype evidence from the current best v6 full artifact:
 
@@ -422,10 +429,28 @@ Temporal subtype evidence from the current best v6 full artifact:
 | `other` | 5 | 4 | 1 | 0.8000 |
 | `source_or_entity` | 13 | 7 | 6 | 0.5385 |
 
-`chronology` is the weakest sizeable subtype by hit rate. `source_or_entity`
-is also weak but low-count, while `consistency_conflict` has the largest
-absolute miss count. The next temporal prompt gate should target chronology
-first and keep the existing v6 full artifact as the comparison baseline.
+Temporal answer-form evidence from the current best v6 full artifact:
+
+| Answer form | Total | Hits | Misses | Hit rate |
+| --- | ---: | ---: | ---: | ---: |
+| `choice` | 222 | 145 | 77 | 0.6532 |
+| `other` | 3 | 1 | 2 | 0.3333 |
+| `temporal_label` | 37 | 21 | 16 | 0.5676 |
+| `yes_no` | 321 | 213 | 108 | 0.6636 |
+
+Chronology answer-form evidence:
+
+| Answer form | Total | Hits | Misses | Hit rate |
+| --- | ---: | ---: | ---: | ---: |
+| `choice` | 4 | 2 | 2 | 0.5000 |
+| `other` | 1 | 0 | 1 | 0.0000 |
+| `temporal_label` | 2 | 1 | 1 | 0.5000 |
+| `yes_no` | 49 | 26 | 23 | 0.5306 |
+
+The v7 artifact replaces only the 49 `chronology + yes_no` rows and improves
+raw full-run hits from 2056 to 2057. Rounded official metrics remain unchanged.
+The next temporal gate should target `choice` or `temporal_label` answer forms,
+not the whole chronology bucket.
 
 Latest DeepSeek prompt-cache evidence on a repeat 50-query run:
 

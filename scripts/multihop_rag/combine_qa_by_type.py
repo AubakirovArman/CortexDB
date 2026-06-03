@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from analyze_temporal_subtypes import temporal_answer_form, temporal_subtype
+
 
 def read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
@@ -22,23 +24,63 @@ def query_key(row: dict[str, Any]) -> str:
     return str(row.get("query", ""))
 
 
-def combine(base_rows: list[dict[str, Any]], replacement_rows: list[dict[str, Any]], question_type: str) -> list[dict[str, Any]]:
+def row_matches(
+    row: dict[str, Any],
+    question_type: str,
+    temporal_subtype_filter: str | None,
+    temporal_answer_form_filter: str | None,
+) -> bool:
+    if row.get("question_type") != question_type:
+        return False
+    query = str(row.get("query", ""))
+    if temporal_subtype_filter and temporal_subtype(query) != temporal_subtype_filter:
+        return False
+    if temporal_answer_form_filter and temporal_answer_form(query) != temporal_answer_form_filter:
+        return False
+    return True
+
+
+def route_label(
+    question_type: str,
+    temporal_subtype_filter: str | None,
+    temporal_answer_form_filter: str | None,
+) -> str:
+    parts = [question_type]
+    if temporal_subtype_filter:
+        parts.append(temporal_subtype_filter)
+    if temporal_answer_form_filter:
+        parts.append(temporal_answer_form_filter)
+    parts.append("replacement")
+    return ":".join(parts)
+
+
+def combine(
+    base_rows: list[dict[str, Any]],
+    replacement_rows: list[dict[str, Any]],
+    question_type: str,
+    temporal_subtype_filter: str | None = None,
+    temporal_answer_form_filter: str | None = None,
+) -> list[dict[str, Any]]:
     replacements = {
         query_key(row): row
         for row in replacement_rows
-        if row.get("question_type") == question_type
+        if row_matches(row, question_type, temporal_subtype_filter, temporal_answer_form_filter)
     }
     combined = []
     missing = []
     for row in base_rows:
-        if row.get("question_type") == question_type:
+        if row_matches(row, question_type, temporal_subtype_filter, temporal_answer_form_filter):
             replacement = replacements.get(query_key(row))
             if replacement is None:
                 missing.append(query_key(row))
                 combined.append(row)
             else:
                 merged = dict(replacement)
-                merged["prompt_route"] = f"{question_type}:replacement"
+                merged["prompt_route"] = route_label(
+                    question_type,
+                    temporal_subtype_filter,
+                    temporal_answer_form_filter,
+                )
                 combined.append(merged)
         else:
             merged = dict(row)
@@ -54,12 +96,26 @@ def main() -> int:
     parser.add_argument("--base-qa", type=Path, required=True)
     parser.add_argument("--replacement-qa", type=Path, required=True)
     parser.add_argument("--question-type", required=True)
+    parser.add_argument(
+        "--temporal-subtype",
+        choices=["change_over_time", "chronology", "consistency_conflict", "source_or_entity", "other"],
+    )
+    parser.add_argument(
+        "--temporal-answer-form",
+        choices=["yes_no", "choice", "temporal_label", "other"],
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     base_rows = read_json(args.base_qa)
     replacement_rows = read_json(args.replacement_qa)
-    combined = combine(base_rows, replacement_rows, args.question_type)
+    combined = combine(
+        base_rows,
+        replacement_rows,
+        args.question_type,
+        args.temporal_subtype,
+        args.temporal_answer_form,
+    )
     write_json(args.output, combined)
     replaced = sum(1 for row in combined if row.get("prompt_route") != "base")
     report = {
@@ -67,6 +123,8 @@ def main() -> int:
         "base_qa": str(args.base_qa),
         "replacement_qa": str(args.replacement_qa),
         "question_type": args.question_type,
+        "temporal_subtype": args.temporal_subtype,
+        "temporal_answer_form": args.temporal_answer_form,
         "output": str(args.output),
         "rows": len(combined),
         "replaced_rows": replaced,

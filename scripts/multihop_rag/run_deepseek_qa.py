@@ -22,7 +22,7 @@ from qa_prompting import (
     build_temporal_chronology_retry_prompt,
     build_temporal_decomposition_retry_prompt,
 )
-from analyze_temporal_subtypes import temporal_subtype
+from analyze_temporal_subtypes import temporal_answer_form, temporal_subtype
 
 
 DEFAULT_BASE_URL = "https://api.deepseek.com"
@@ -136,6 +136,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         rows = [row for row in rows if row.get("question_type") == args.question_type]
     if args.temporal_subtype:
         rows = [row for row in rows if temporal_subtype(str(row.get("query", ""))) == args.temporal_subtype]
+    if args.temporal_answer_form:
+        rows = [row for row in rows if temporal_answer_form(str(row.get("query", ""))) == args.temporal_answer_form]
     if args.max_queries is not None:
         rows = rows[: args.max_queries]
     output_root = args.output_root
@@ -359,6 +361,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "workers": args.workers,
         "prompt_style": args.prompt_style,
         "temporal_subtype": args.temporal_subtype,
+        "temporal_answer_form": args.temporal_answer_form,
         "temporal_abstention_retry": args.temporal_abstention_retry,
         "temporal_chronology_retry": args.temporal_chronology_retry,
         "temporal_decomposition_retry": args.temporal_decomposition_retry,
@@ -405,6 +408,10 @@ def main() -> int:
     parser.add_argument(
         "--temporal-subtype",
         choices=["change_over_time", "chronology", "consistency_conflict", "source_or_entity", "other"],
+    )
+    parser.add_argument(
+        "--temporal-answer-form",
+        choices=["yes_no", "choice", "temporal_label", "other"],
     )
     parser.add_argument("--temporal-abstention-retry", action="store_true")
     parser.add_argument("--temporal-chronology-retry", action="store_true")

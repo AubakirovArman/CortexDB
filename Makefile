@@ -3,7 +3,7 @@
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
 .PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check longmemeval-v1-deepseek-flash-diff longmemeval-v1-deepseek-flash-compact-50-check longmemeval-v1-deepseek-flash-compact-500-check longmemeval-v1-deepseek-flash-preference-check longmemeval-v1-deepseek-flash-single-session-user-check longmemeval-v1-deepseek-flash-multi-session-check longmemeval-v1-deepseek-flash-temporal-check
-.PHONY: multihop-rag-official-repo multihop-rag-official-data multihop-rag-preflight multihop-rag-balanced-50 multihop-rag-local-50-check multihop-rag-cortexdb-retrieval-50 multihop-rag-official-retrieval-metrics-50 multihop-rag-cortexdb-retrieval-full multihop-rag-official-retrieval-metrics-full multihop-rag-retrieval-full-existing-check multihop-rag-qa-full-existing-check multihop-rag-qa-hybrid-full-retry-existing-check multihop-rag-qa-hybrid-full-retry-v4-existing-check multihop-rag-deepseek-qa-50 multihop-rag-deepseek-qa-50-cache-metrics multihop-rag-official-qa-metrics-50 multihop-rag-official-qa-metrics-existing-50 multihop-rag-qa-error-analysis-50 multihop-rag-deepseek-qa-full multihop-rag-deepseek-qa-temporal-50-v3 multihop-rag-official-qa-metrics-temporal-50-v3 multihop-rag-qa-error-analysis-temporal-50-v3 multihop-rag-deepseek-qa-temporal-50-v3-retry multihop-rag-official-qa-metrics-temporal-50-v3-retry multihop-rag-qa-error-analysis-temporal-50-v3-retry multihop-rag-deepseek-qa-temporal-50-v4-decompose-retry multihop-rag-official-qa-metrics-temporal-50-v4-decompose-retry multihop-rag-qa-error-analysis-temporal-50-v4-decompose-retry multihop-rag-deepseek-qa-temporal-chronology-50-v1 multihop-rag-official-qa-metrics-temporal-chronology-50-v1 multihop-rag-qa-error-analysis-temporal-chronology-50-v1 multihop-rag-deepseek-qa-temporal-v3 multihop-rag-deepseek-qa-temporal-v3-retry multihop-rag-deepseek-qa-comparison-50-retry multihop-rag-official-qa-metrics-comparison-50-retry multihop-rag-qa-error-analysis-comparison-50-retry multihop-rag-deepseek-qa-comparison-50-decompose-retry multihop-rag-official-qa-metrics-comparison-50-decompose-retry multihop-rag-qa-error-analysis-comparison-50-decompose-retry multihop-rag-deepseek-qa-comparison-v2-retry multihop-rag-deepseek-qa-comparison-v3-decompose-retry multihop-rag-combine-qa-full-hybrid multihop-rag-combine-qa-full-hybrid-retry multihop-rag-combine-qa-full-hybrid-retry-v4 multihop-rag-postprocess-hybrid-full-retry-v5 multihop-rag-combine-qa-full-hybrid-retry-v6 multihop-rag-official-qa-metrics-hybrid-full multihop-rag-official-qa-metrics-hybrid-full-retry multihop-rag-official-qa-metrics-hybrid-full-retry-v4 multihop-rag-official-qa-metrics-hybrid-full-retry-v5 multihop-rag-official-qa-metrics-hybrid-full-retry-v6 multihop-rag-official-qa-metrics-full multihop-rag-official-qa-metrics-existing-full multihop-rag-qa-error-analysis-full multihop-rag-qa-error-analysis-hybrid-full-retry multihop-rag-qa-error-analysis-hybrid-full-retry-v4 multihop-rag-qa-error-analysis-hybrid-full-retry-v5 multihop-rag-qa-error-analysis-hybrid-full-retry-v6
+.PHONY: multihop-rag-official-repo multihop-rag-official-data multihop-rag-preflight multihop-rag-balanced-50 multihop-rag-local-50-check multihop-rag-cortexdb-retrieval-50 multihop-rag-official-retrieval-metrics-50 multihop-rag-cortexdb-retrieval-full multihop-rag-official-retrieval-metrics-full multihop-rag-retrieval-full-existing-check multihop-rag-qa-full-existing-check multihop-rag-qa-hybrid-full-retry-existing-check multihop-rag-qa-hybrid-full-retry-v4-existing-check multihop-rag-deepseek-qa-50 multihop-rag-deepseek-qa-50-cache-metrics multihop-rag-official-qa-metrics-50 multihop-rag-official-qa-metrics-existing-50 multihop-rag-qa-error-analysis-50 multihop-rag-deepseek-qa-full multihop-rag-deepseek-qa-temporal-50-v3 multihop-rag-official-qa-metrics-temporal-50-v3 multihop-rag-qa-error-analysis-temporal-50-v3 multihop-rag-deepseek-qa-temporal-50-v3-retry multihop-rag-official-qa-metrics-temporal-50-v3-retry multihop-rag-qa-error-analysis-temporal-50-v3-retry multihop-rag-deepseek-qa-temporal-50-v4-decompose-retry multihop-rag-official-qa-metrics-temporal-50-v4-decompose-retry multihop-rag-qa-error-analysis-temporal-50-v4-decompose-retry multihop-rag-deepseek-qa-temporal-chronology-50-v1 multihop-rag-official-qa-metrics-temporal-chronology-50-v1 multihop-rag-qa-error-analysis-temporal-chronology-50-v1 multihop-rag-deepseek-qa-temporal-chronology-yes-no-50-v1 multihop-rag-official-qa-metrics-temporal-chronology-yes-no-50-v1 multihop-rag-qa-error-analysis-temporal-chronology-yes-no-50-v1 multihop-rag-deepseek-qa-temporal-v3 multihop-rag-deepseek-qa-temporal-v3-retry multihop-rag-deepseek-qa-comparison-50-retry multihop-rag-official-qa-metrics-comparison-50-retry multihop-rag-qa-error-analysis-comparison-50-retry multihop-rag-deepseek-qa-comparison-50-decompose-retry multihop-rag-official-qa-metrics-comparison-50-decompose-retry multihop-rag-qa-error-analysis-comparison-50-decompose-retry multihop-rag-deepseek-qa-comparison-v2-retry multihop-rag-deepseek-qa-comparison-v3-decompose-retry multihop-rag-combine-qa-full-hybrid multihop-rag-combine-qa-full-hybrid-retry multihop-rag-combine-qa-full-hybrid-retry-v4 multihop-rag-postprocess-hybrid-full-retry-v5 multihop-rag-combine-qa-full-hybrid-retry-v6 multihop-rag-combine-qa-full-hybrid-retry-v7 multihop-rag-official-qa-metrics-hybrid-full multihop-rag-official-qa-metrics-hybrid-full-retry multihop-rag-official-qa-metrics-hybrid-full-retry-v4 multihop-rag-official-qa-metrics-hybrid-full-retry-v5 multihop-rag-official-qa-metrics-hybrid-full-retry-v6 multihop-rag-official-qa-metrics-hybrid-full-retry-v7 multihop-rag-official-qa-metrics-full multihop-rag-official-qa-metrics-existing-full multihop-rag-qa-error-analysis-full multihop-rag-qa-error-analysis-hybrid-full-retry multihop-rag-qa-error-analysis-hybrid-full-retry-v4 multihop-rag-qa-error-analysis-hybrid-full-retry-v5 multihop-rag-qa-error-analysis-hybrid-full-retry-v6 multihop-rag-qa-error-analysis-hybrid-full-retry-v7
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check
 .PHONY: service-manager-smoke-check
@@ -334,6 +334,7 @@ MULTIHOP_RAG_QA_TEMPORAL_50_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-temporal-50
 MULTIHOP_RAG_QA_TEMPORAL_50_RETRY_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-temporal-50-v3-retry
 MULTIHOP_RAG_QA_TEMPORAL_50_DECOMPOSE_RETRY_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-temporal-50-v4-decompose-retry
 MULTIHOP_RAG_QA_TEMPORAL_CHRONOLOGY_50_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-temporal-chronology-50-v1
+MULTIHOP_RAG_QA_TEMPORAL_CHRONOLOGY_YES_NO_50_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-temporal-chronology-yes-no-50-v1
 MULTIHOP_RAG_QA_TEMPORAL_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-temporal-v3
 MULTIHOP_RAG_QA_TEMPORAL_RETRY_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-temporal-v3-retry
 MULTIHOP_RAG_QA_COMPARISON_50_RETRY_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-comparison-50-retry
@@ -345,6 +346,7 @@ MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-full-
 MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V4_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-full-v4-hybrid-retry
 MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V5_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-full-v5-hybrid-retry-normalized
 MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-full-v6-hybrid-decompose-normalized
+MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V7_ROOT ?= $(MULTIHOP_RAG_ROOT)/qa/deepseek-full-v7-hybrid-chronology-yes-no
 MULTIHOP_RAG_TEMPORAL_GATE_LIMIT ?= 50
 MULTIHOP_RAG_TEMPORAL_CHRONOLOGY_GATE_LIMIT ?= 50
 MULTIHOP_RAG_COMPARISON_GATE_LIMIT ?= 50
@@ -1166,6 +1168,34 @@ multihop-rag-qa-error-analysis-temporal-chronology-50-v1:
 	  --output-json "$(MULTIHOP_RAG_QA_TEMPORAL_CHRONOLOGY_50_ROOT)/qa_error_analysis.json" \
 	  --output-md "$(MULTIHOP_RAG_QA_TEMPORAL_CHRONOLOGY_50_ROOT)/qa_error_analysis.md"
 
+multihop-rag-deepseek-qa-temporal-chronology-yes-no-50-v1: multihop-rag-retrieval-full-existing-check
+	python3 scripts/multihop_rag/run_deepseek_qa.py \
+	  --retrieval-file "$(MULTIHOP_RAG_RETRIEVAL_FULL)" \
+	  --output-root "$(MULTIHOP_RAG_QA_TEMPORAL_CHRONOLOGY_YES_NO_50_ROOT)" \
+	  --api-key-file "$(DEEPSEEK_KEY_FILE)" \
+	  --base-url "$(MULTIHOP_RAG_QA_BASE_URL)" \
+	  --model "$(MULTIHOP_RAG_QA_MODEL)" \
+	  --top-k-context "$(MULTIHOP_RAG_QA_TOPK_CONTEXT)" \
+	  --max-chars-per-doc "$(MULTIHOP_RAG_QA_MAX_CHARS_PER_DOC)" \
+	  --prompt-style multihop-v3 \
+	  --question-type temporal_query \
+	  --temporal-subtype chronology \
+	  --temporal-answer-form yes_no \
+	  --max-queries "$(MULTIHOP_RAG_TEMPORAL_CHRONOLOGY_GATE_LIMIT)" \
+	  --workers "$(MULTIHOP_RAG_QA_WORKERS)" \
+	  --temporal-chronology-retry
+
+multihop-rag-official-qa-metrics-temporal-chronology-yes-no-50-v1: multihop-rag-official-repo multihop-rag-deepseek-qa-temporal-chronology-yes-no-50-v1
+	mkdir -p "$(MULTIHOP_RAG_OFFICIAL_REPO)/qa_output"
+	cp "$(MULTIHOP_RAG_QA_TEMPORAL_CHRONOLOGY_YES_NO_50_ROOT)/deepseek_qa.json" "$(MULTIHOP_RAG_OFFICIAL_REPO)/qa_output/llama.json"
+	cd "$(MULTIHOP_RAG_OFFICIAL_REPO)" && PYTHONPATH="$(abspath scripts/multihop_rag)" python3 qa_evaluate.py | tee "$(abspath $(MULTIHOP_RAG_QA_TEMPORAL_CHRONOLOGY_YES_NO_50_ROOT)/official_qa_metrics.txt)"
+
+multihop-rag-qa-error-analysis-temporal-chronology-yes-no-50-v1:
+	python3 scripts/multihop_rag/analyze_qa_errors.py \
+	  --qa-file "$(MULTIHOP_RAG_QA_TEMPORAL_CHRONOLOGY_YES_NO_50_ROOT)/deepseek_qa.json" \
+	  --output-json "$(MULTIHOP_RAG_QA_TEMPORAL_CHRONOLOGY_YES_NO_50_ROOT)/qa_error_analysis.json" \
+	  --output-md "$(MULTIHOP_RAG_QA_TEMPORAL_CHRONOLOGY_YES_NO_50_ROOT)/qa_error_analysis.md"
+
 multihop-rag-deepseek-qa-comparison-50-retry: multihop-rag-retrieval-full-existing-check
 	python3 scripts/multihop_rag/run_deepseek_qa.py \
 	  --retrieval-file "$(MULTIHOP_RAG_RETRIEVAL_FULL)" \
@@ -1314,6 +1344,16 @@ multihop-rag-combine-qa-full-hybrid-retry-v6: multihop-rag-postprocess-hybrid-fu
 	  --output "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_ROOT)/deepseek_qa.json" \
 	  --report "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_ROOT)/deepseek_qa_report.json"
 
+multihop-rag-combine-qa-full-hybrid-retry-v7: multihop-rag-combine-qa-full-hybrid-retry-v6 multihop-rag-deepseek-qa-temporal-chronology-yes-no-50-v1
+	python3 scripts/multihop_rag/combine_qa_by_type.py \
+	  --base-qa "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_ROOT)/deepseek_qa.json" \
+	  --replacement-qa "$(MULTIHOP_RAG_QA_TEMPORAL_CHRONOLOGY_YES_NO_50_ROOT)/deepseek_qa.json" \
+	  --question-type temporal_query \
+	  --temporal-subtype chronology \
+	  --temporal-answer-form yes_no \
+	  --output "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V7_ROOT)/deepseek_qa.json" \
+	  --report "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V7_ROOT)/deepseek_qa_report.json"
+
 multihop-rag-official-qa-metrics-hybrid-full: multihop-rag-official-repo multihop-rag-combine-qa-full-hybrid
 	mkdir -p "$(MULTIHOP_RAG_OFFICIAL_REPO)/qa_output"
 	cp "$(MULTIHOP_RAG_QA_HYBRID_FULL_ROOT)/deepseek_qa.json" "$(MULTIHOP_RAG_OFFICIAL_REPO)/qa_output/llama.json"
@@ -1338,6 +1378,11 @@ multihop-rag-official-qa-metrics-hybrid-full-retry-v6: multihop-rag-official-rep
 	mkdir -p "$(MULTIHOP_RAG_OFFICIAL_REPO)/qa_output"
 	cp "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_ROOT)/deepseek_qa.json" "$(MULTIHOP_RAG_OFFICIAL_REPO)/qa_output/llama.json"
 	cd "$(MULTIHOP_RAG_OFFICIAL_REPO)" && PYTHONPATH="$(abspath scripts/multihop_rag)" python3 qa_evaluate.py | tee "$(abspath $(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_METRICS))"
+
+multihop-rag-official-qa-metrics-hybrid-full-retry-v7: multihop-rag-official-repo multihop-rag-combine-qa-full-hybrid-retry-v7
+	mkdir -p "$(MULTIHOP_RAG_OFFICIAL_REPO)/qa_output"
+	cp "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V7_ROOT)/deepseek_qa.json" "$(MULTIHOP_RAG_OFFICIAL_REPO)/qa_output/llama.json"
+	cd "$(MULTIHOP_RAG_OFFICIAL_REPO)" && PYTHONPATH="$(abspath scripts/multihop_rag)" python3 qa_evaluate.py | tee "$(abspath $(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V7_ROOT)/official_qa_metrics.txt)"
 
 multihop-rag-official-qa-metrics-full: multihop-rag-official-repo multihop-rag-deepseek-qa-full
 	$(MAKE) multihop-rag-official-qa-metrics-existing-full
@@ -1377,6 +1422,12 @@ multihop-rag-qa-error-analysis-hybrid-full-retry-v6:
 	  --qa-file "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_ROOT)/deepseek_qa.json" \
 	  --output-json "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_ROOT)/qa_error_analysis.json" \
 	  --output-md "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_ROOT)/qa_error_analysis.md"
+
+multihop-rag-qa-error-analysis-hybrid-full-retry-v7:
+	python3 scripts/multihop_rag/analyze_qa_errors.py \
+	  --qa-file "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V7_ROOT)/deepseek_qa.json" \
+	  --output-json "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V7_ROOT)/qa_error_analysis.json" \
+	  --output-md "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V7_ROOT)/qa_error_analysis.md"
 
 multihop-rag-temporal-subtype-analysis-v6:
 	python3 scripts/multihop_rag/analyze_temporal_subtypes.py \
