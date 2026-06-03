@@ -32,7 +32,7 @@ Regenerate the source reports before cutting a release.
 | Verification quality | 50 deterministic cases across 5 domains with support, contradiction, mixed evidence, insufficient evidence, numeric guards, and source trust coverage. |
 | Single-node performance | Local p95/p99 lifecycle matrix via `make single-node-performance-check`; trend comparison via `make performance-trend-check`. |
 | LongMemEval official local run | Official LongMemEval v1 small split: retrieval `session recall_all@10=0.9021`, `session ndcg_any@10=0.7873`; official GPT-4o QA accuracy `0.7660`. |
-| MultiHop-RAG local retrieval run | Official MultiHop-RAG retrieval evaluator over full 2556-query dataset: `Hits@10=0.9902`, `Hits@4=0.9295`, `MAP@10=0.4503`, `MRR@10=0.7906`; no leaderboard claim. |
+| MultiHop-RAG local run | Official MultiHop-RAG retrieval evaluator over full 2556-query dataset: `Hits@10=0.9902`, `Hits@4=0.9295`, `MAP@10=0.4503`, `MRR@10=0.7906`; DeepSeek Flash QA with official `qa_evaluate.py`: overall `F1=0.46`, `Accuracy=0.48`; no leaderboard claim. |
 
 ## Evidence Sources
 

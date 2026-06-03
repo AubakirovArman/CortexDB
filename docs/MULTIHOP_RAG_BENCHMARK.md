@@ -81,6 +81,13 @@ target/multihop-rag/retrieval/cortexdb_balanced_50_report.json
 target/multihop-rag/retrieval/cortexdb_balanced_50_metrics.txt
 ```
 
+To generate answers with DeepSeek Flash and score them with the official
+`qa_evaluate.py`:
+
+```bash
+make multihop-rag-official-qa-metrics-50
+```
+
 ## Official Full-Run Path
 
 After the 50-query gate is stable, run the full official data preparation:
@@ -103,6 +110,16 @@ target/multihop-rag/retrieval/cortexdb_full_retrieval.json
 target/multihop-rag/retrieval/cortexdb_full_report.json
 target/multihop-rag/retrieval/cortexdb_full_metrics.txt
 ```
+
+Full QA generation and scoring:
+
+```bash
+make multihop-rag-official-qa-metrics-full
+```
+
+That command uses `deepseek-v4-flash` with thinking disabled, writes answers to
+`target/multihop-rag/qa/deepseek-full/deepseek_qa.json`, then evaluates that
+file with the official `qa_evaluate.py` script.
 
 The official-compatible retrieval output shape is:
 
@@ -164,6 +181,23 @@ retrieval evaluator:
 | Balanced local gate | 50 | 1.0000 | 0.9545 | 0.4396 | 0.7760 |
 | Full official dataset | 2556 | 0.9902 | 0.9295 | 0.4503 | 0.7906 |
 
+Latest local QA run using CortexDB retrieval, DeepSeek Flash generation, and
+the official `qa_evaluate.py` script:
+
+| Run | Questions | Overall Precision | Overall Recall | Overall F1 | Overall Accuracy |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Balanced local gate | 50 | 0.46 | 0.46 | 0.46 | 0.48 |
+| Full official dataset | 2556 | 0.46 | 0.46 | 0.46 | 0.48 |
+
+Full QA by question type:
+
+| Type | Precision | Recall | F1 | Accuracy |
+| --- | ---: | ---: | ---: | ---: |
+| `inference_query` | 0.93 | 0.93 | 0.93 | 0.88 |
+| `comparison_query` | 0.11 | 0.11 | 0.11 | 0.36 |
+| `null_query` | 0.91 | 0.91 | 0.91 | 0.85 |
+| `temporal_query` | 0.08 | 0.08 | 0.08 | 0.35 |
+
 Artifacts:
 
 ```text
@@ -171,6 +205,10 @@ target/multihop-rag/retrieval/cortexdb_balanced_50_retrieval.json
 target/multihop-rag/retrieval/cortexdb_balanced_50_metrics.txt
 target/multihop-rag/retrieval/cortexdb_full_retrieval.json
 target/multihop-rag/retrieval/cortexdb_full_metrics.txt
+target/multihop-rag/qa/deepseek-balanced-50/deepseek_qa.json
+target/multihop-rag/qa/deepseek-balanced-50/official_qa_metrics.txt
+target/multihop-rag/qa/deepseek-full/deepseek_qa.json
+target/multihop-rag/qa/deepseek-full/official_qa_metrics.txt
 ```
 
 Current status:
@@ -179,5 +217,6 @@ Current status:
 MultiHop-RAG scaffold exists.
 Local 50-query retrieval gate runs and scores with the official evaluator.
 Full 2556-query retrieval run completes and scores with the official evaluator.
-QA generation and QA scoring remain next actions.
+DeepSeek Flash QA generation completes and scores with the official evaluator.
+Comparison and temporal QA remain the main quality gaps.
 ```

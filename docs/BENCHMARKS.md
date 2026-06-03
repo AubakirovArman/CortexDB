@@ -292,12 +292,26 @@ make multihop-rag-official-retrieval-metrics-50
 make multihop-rag-official-retrieval-metrics-full
 ```
 
+To run DeepSeek Flash QA generation and the official QA scorer:
+
+```bash
+make multihop-rag-official-qa-metrics-50
+make multihop-rag-official-qa-metrics-full
+```
+
 Latest local official-retrieval-scorer evidence:
 
 | Run | Questions | Hits@10 | Hits@4 | MAP@10 | MRR@10 |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Balanced local gate | 50 | 1.0000 | 0.9545 | 0.4396 | 0.7760 |
 | Full official dataset | 2556 | 0.9902 | 0.9295 | 0.4503 | 0.7906 |
+
+Latest local QA evidence with `deepseek-v4-flash`, thinking disabled:
+
+| Run | Questions | Overall Precision | Overall Recall | Overall F1 | Overall Accuracy |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Balanced local gate | 50 | 0.46 | 0.46 | 0.46 | 0.48 |
+| Full official dataset | 2556 | 0.46 | 0.46 | 0.46 | 0.48 |
 
 See [`MULTIHOP_RAG_BENCHMARK.md`](MULTIHOP_RAG_BENCHMARK.md).
 
