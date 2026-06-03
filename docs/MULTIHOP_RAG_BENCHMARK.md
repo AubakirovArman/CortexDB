@@ -1,6 +1,7 @@
 # MultiHop-RAG Benchmark Plan
 
-Status: reproducible local benchmark scaffold, not a published public result.
+Status: reproducible local retrieval run completed, not a published leaderboard
+result.
 
 MultiHop-RAG is the next benchmark layer after LongMemEval for CortexDB. It
 tests whether retrieval can gather evidence from multiple documents instead of
@@ -62,6 +63,24 @@ balanced_50_subset_report.json
 This is the same workflow rule as LongMemEval tuning: improve on 50 cases first,
 then promote to the full benchmark only when the focused gate improves.
 
+To run CortexDB retrieval on the 50-query subset and score it with the official
+retrieval evaluator:
+
+```bash
+make multihop-rag-official-retrieval-metrics-50
+```
+
+That command builds the local `multihop_rag_retrieval` runner, loads the
+official corpus into a temporary CortexDB database, checkpoints the corpus so
+the persisted lexical index is used, runs keyword retrieval for the 50 selected
+questions, and writes:
+
+```text
+target/multihop-rag/retrieval/cortexdb_balanced_50_retrieval.json
+target/multihop-rag/retrieval/cortexdb_balanced_50_report.json
+target/multihop-rag/retrieval/cortexdb_balanced_50_metrics.txt
+```
+
 ## Official Full-Run Path
 
 After the 50-query gate is stable, run the full official data preparation:
@@ -70,7 +89,22 @@ After the 50-query gate is stable, run the full official data preparation:
 make multihop-rag-preflight
 ```
 
-Then build a CortexDB retrieval output compatible with the official evaluator:
+Then build and evaluate a CortexDB retrieval output compatible with the official
+evaluator:
+
+```bash
+make multihop-rag-official-retrieval-metrics-full
+```
+
+The full run writes:
+
+```text
+target/multihop-rag/retrieval/cortexdb_full_retrieval.json
+target/multihop-rag/retrieval/cortexdb_full_report.json
+target/multihop-rag/retrieval/cortexdb_full_metrics.txt
+```
+
+The official-compatible retrieval output shape is:
 
 ```json
 [
@@ -120,10 +154,30 @@ Until a full official run is completed and archived, CortexDB must not claim:
 - superiority over other RAG systems;
 - official maintainer endorsement.
 
-Current status is only:
+## Latest Local Retrieval Evidence
+
+Latest local CortexDB keyword retrieval run using the official MultiHop-RAG
+retrieval evaluator:
+
+| Run | Questions | Hits@10 | Hits@4 | MAP@10 | MRR@10 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Balanced local gate | 50 | 1.0000 | 0.9545 | 0.4396 | 0.7760 |
+| Full official dataset | 2556 | 0.9902 | 0.9295 | 0.4503 | 0.7906 |
+
+Artifacts:
+
+```text
+target/multihop-rag/retrieval/cortexdb_balanced_50_retrieval.json
+target/multihop-rag/retrieval/cortexdb_balanced_50_metrics.txt
+target/multihop-rag/retrieval/cortexdb_full_retrieval.json
+target/multihop-rag/retrieval/cortexdb_full_metrics.txt
+```
+
+Current status:
 
 ```text
 MultiHop-RAG scaffold exists.
-Local 50-query gate can prepare reproducible subsets.
-Full benchmark execution remains a next action.
+Local 50-query retrieval gate runs and scores with the official evaluator.
+Full 2556-query retrieval run completes and scores with the official evaluator.
+QA generation and QA scoring remain next actions.
 ```

@@ -285,6 +285,20 @@ retrieval output and evaluates it with the official `retrieval_evaluate.py`.
 The official GitHub repository currently marks its leaderboard as "Coming soon",
 so public wording must stay limited to reproducible local artifacts.
 
+To run CortexDB single-process retrieval and the official retrieval scorer:
+
+```bash
+make multihop-rag-official-retrieval-metrics-50
+make multihop-rag-official-retrieval-metrics-full
+```
+
+Latest local official-retrieval-scorer evidence:
+
+| Run | Questions | Hits@10 | Hits@4 | MAP@10 | MRR@10 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Balanced local gate | 50 | 1.0000 | 0.9545 | 0.4396 | 0.7760 |
+| Full official dataset | 2556 | 0.9902 | 0.9295 | 0.4503 | 0.7906 |
+
 See [`MULTIHOP_RAG_BENCHMARK.md`](MULTIHOP_RAG_BENCHMARK.md).
 
 `make ann-demo-domain-corpus-run` builds a repeatable corpus from the checked-in

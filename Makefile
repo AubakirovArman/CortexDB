@@ -3,7 +3,7 @@
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
 .PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check longmemeval-v1-deepseek-flash-diff longmemeval-v1-deepseek-flash-compact-50-check longmemeval-v1-deepseek-flash-compact-500-check longmemeval-v1-deepseek-flash-preference-check longmemeval-v1-deepseek-flash-single-session-user-check longmemeval-v1-deepseek-flash-multi-session-check longmemeval-v1-deepseek-flash-temporal-check
-.PHONY: multihop-rag-official-data multihop-rag-preflight multihop-rag-balanced-50 multihop-rag-local-50-check
+.PHONY: multihop-rag-official-repo multihop-rag-official-data multihop-rag-preflight multihop-rag-balanced-50 multihop-rag-local-50-check multihop-rag-cortexdb-retrieval-50 multihop-rag-official-retrieval-metrics-50 multihop-rag-cortexdb-retrieval-full multihop-rag-official-retrieval-metrics-full
 .PHONY: operations-runbook-check
 .PHONY: service-manager-smoke-check
 .PHONY: beta-landing-check
@@ -313,6 +313,16 @@ MULTIHOP_RAG_PREFLIGHT_REPORT ?= $(MULTIHOP_RAG_ROOT)/preflight_report.json
 MULTIHOP_RAG_SUBSET_ROOT ?= $(MULTIHOP_RAG_ROOT)/subsets
 MULTIHOP_RAG_SUBSET_LIMIT ?= 50
 MULTIHOP_RAG_SUBSET_PREFIX ?= balanced_50
+MULTIHOP_RAG_OFFICIAL_REPO ?= target/external-benchmarks/multihop-rag
+MULTIHOP_RAG_DB_50 ?= $(MULTIHOP_RAG_ROOT)/cortexdb-50
+MULTIHOP_RAG_DB_FULL ?= $(MULTIHOP_RAG_ROOT)/cortexdb-full
+MULTIHOP_RAG_RETRIEVAL_50 ?= $(MULTIHOP_RAG_ROOT)/retrieval/cortexdb_balanced_50_retrieval.json
+MULTIHOP_RAG_RETRIEVAL_FULL ?= $(MULTIHOP_RAG_ROOT)/retrieval/cortexdb_full_retrieval.json
+MULTIHOP_RAG_RETRIEVAL_50_REPORT ?= $(MULTIHOP_RAG_ROOT)/retrieval/cortexdb_balanced_50_report.json
+MULTIHOP_RAG_RETRIEVAL_FULL_REPORT ?= $(MULTIHOP_RAG_ROOT)/retrieval/cortexdb_full_report.json
+MULTIHOP_RAG_RETRIEVAL_50_METRICS ?= $(MULTIHOP_RAG_ROOT)/retrieval/cortexdb_balanced_50_metrics.txt
+MULTIHOP_RAG_RETRIEVAL_FULL_METRICS ?= $(MULTIHOP_RAG_ROOT)/retrieval/cortexdb_full_metrics.txt
+MULTIHOP_RAG_TOPK ?= 10
 DEEPSEEK_KEY_FILE ?= /mnt/hf_model_weights/arman/3bit/.deepseek
 SINGLE_NODE_PERF_ROOT ?= target/single-node-performance
 SINGLE_NODE_PERF_REPORT ?= $(SINGLE_NODE_PERF_ROOT)/report.json
@@ -889,6 +899,13 @@ longmemeval-v1-deepseek-flash-temporal-check:
 	  --generation-thinking disabled \
 	  --judge-thinking disabled
 
+multihop-rag-official-repo:
+	@if [ ! -d "$(MULTIHOP_RAG_OFFICIAL_REPO)/.git" ]; then \
+	  git clone --depth 1 https://github.com/yixuantt/MultiHop-RAG "$(MULTIHOP_RAG_OFFICIAL_REPO)"; \
+	else \
+	  git -C "$(MULTIHOP_RAG_OFFICIAL_REPO)" pull --ff-only; \
+	fi
+
 multihop-rag-official-data:
 	python3 scripts/multihop_rag/download.py \
 	  --data-root "$(MULTIHOP_RAG_DATA_ROOT)" \
@@ -909,6 +926,34 @@ multihop-rag-balanced-50: multihop-rag-preflight
 
 multihop-rag-local-50-check: multihop-rag-balanced-50
 	@echo "MultiHop-RAG local 50-query subset ready under $(MULTIHOP_RAG_SUBSET_ROOT)/$(MULTIHOP_RAG_SUBSET_PREFIX)"
+
+multihop-rag-cortexdb-retrieval-50: multihop-rag-local-50-check
+	cargo build --release -p cortex-engine --bin multihop_rag_retrieval
+	./target/release/multihop_rag_retrieval \
+	  --queries "$(MULTIHOP_RAG_SUBSET_ROOT)/$(MULTIHOP_RAG_SUBSET_PREFIX)/$(MULTIHOP_RAG_SUBSET_PREFIX)_multihop.json" \
+	  --corpus "$(MULTIHOP_RAG_CORPUS_FILE)" \
+	  --db-root "$(MULTIHOP_RAG_DB_50)" \
+	  --output "$(MULTIHOP_RAG_RETRIEVAL_50)" \
+	  --report "$(MULTIHOP_RAG_RETRIEVAL_50_REPORT)" \
+	  --top-k "$(MULTIHOP_RAG_TOPK)" \
+	  --reset-db
+
+multihop-rag-official-retrieval-metrics-50: multihop-rag-official-repo multihop-rag-cortexdb-retrieval-50
+	python3 "$(MULTIHOP_RAG_OFFICIAL_REPO)/retrieval_evaluate.py" --file "$(MULTIHOP_RAG_RETRIEVAL_50)" | tee "$(MULTIHOP_RAG_RETRIEVAL_50_METRICS)"
+
+multihop-rag-cortexdb-retrieval-full: multihop-rag-preflight
+	cargo build --release -p cortex-engine --bin multihop_rag_retrieval
+	./target/release/multihop_rag_retrieval \
+	  --queries "$(MULTIHOP_RAG_QUERY_FILE)" \
+	  --corpus "$(MULTIHOP_RAG_CORPUS_FILE)" \
+	  --db-root "$(MULTIHOP_RAG_DB_FULL)" \
+	  --output "$(MULTIHOP_RAG_RETRIEVAL_FULL)" \
+	  --report "$(MULTIHOP_RAG_RETRIEVAL_FULL_REPORT)" \
+	  --top-k "$(MULTIHOP_RAG_TOPK)" \
+	  --reset-db
+
+multihop-rag-official-retrieval-metrics-full: multihop-rag-official-repo multihop-rag-cortexdb-retrieval-full
+	python3 "$(MULTIHOP_RAG_OFFICIAL_REPO)/retrieval_evaluate.py" --file "$(MULTIHOP_RAG_RETRIEVAL_FULL)" | tee "$(MULTIHOP_RAG_RETRIEVAL_FULL_METRICS)"
 
 single-node-performance-check:
 	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)"
