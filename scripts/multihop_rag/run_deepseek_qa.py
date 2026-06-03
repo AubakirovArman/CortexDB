@@ -13,7 +13,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from qa_prompting import build_prompt
+from qa_prompting import build_prompt, build_temporal_abstention_retry_prompt
 
 
 DEFAULT_BASE_URL = "https://api.deepseek.com"
@@ -43,6 +43,23 @@ def append_jsonl(path: Path, row: dict[str, Any]) -> None:
 
 def query_key(row: dict[str, Any]) -> str:
     return str(row.get("query", ""))
+
+
+def is_insufficient_answer(answer: str) -> bool:
+    return " ".join(answer.lower().split()) in {"insufficient information", "insufficient info"}
+
+
+def merge_usage(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(left)
+    for key in [
+        "prompt_tokens",
+        "completion_tokens",
+        "total_tokens",
+        "prompt_cache_hit_tokens",
+        "prompt_cache_miss_tokens",
+    ]:
+        merged[key] = int(left.get(key, 0) or 0) + int(right.get(key, 0) or 0)
+    return merged
 
 
 def chat(
@@ -108,9 +125,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "prompt_cache_miss_tokens": 0,
         "elapsed_ms": 0,
         "completed": len(existing),
+        "temporal_abstention_retries": 0,
     }
 
-    def generate_one(index: int, row: dict[str, Any]) -> tuple[str, dict[str, Any], dict[str, Any], int]:
+    def generate_one(index: int, row: dict[str, Any]) -> tuple[str, dict[str, Any], dict[str, Any], int, int]:
         prompt = build_prompt(row, args.top_k_context, args.max_chars_per_doc, args.prompt_style)
         answer, usage, elapsed_ms = chat(
             api_key=api_key,
@@ -120,6 +138,35 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             max_tokens=args.max_tokens,
             retries=args.retries,
         )
+        retry_count = 0
+        saved_extra = {}
+        if (
+            args.temporal_abstention_retry
+            and row.get("question_type") == "temporal_query"
+            and is_insufficient_answer(answer)
+        ):
+            retry_prompt = build_temporal_abstention_retry_prompt(
+                row,
+                args.top_k_context,
+                args.max_chars_per_doc,
+            )
+            retry_answer, retry_usage, retry_elapsed_ms = chat(
+                api_key=api_key,
+                base_url=args.base_url,
+                model=args.model,
+                prompt=retry_prompt,
+                max_tokens=args.max_tokens,
+                retries=args.retries,
+            )
+            saved_extra = {
+                "initial_model_answer": answer,
+                "abstention_retry_used": True,
+                "abstention_retry_prompt": retry_prompt,
+            }
+            answer = retry_answer
+            usage = merge_usage(usage, retry_usage)
+            elapsed_ms += retry_elapsed_ms
+            retry_count = 1
         return query_key(row), {
             "query": row.get("query", ""),
             "prompt": prompt,
@@ -128,13 +175,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "question_type": row.get("question_type", ""),
             "usage": usage,
             "elapsed_ms": elapsed_ms,
-        }, usage, elapsed_ms
+            **saved_extra,
+        }, usage, elapsed_ms, retry_count
 
     pending = [(index, row) for index, row in enumerate(rows, 1) if query_key(row) not in existing]
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = [executor.submit(generate_one, index, row) for index, row in pending]
         for future in concurrent.futures.as_completed(futures):
-            key, saved, usage, elapsed_ms = future.result()
+            key, saved, usage, elapsed_ms, retry_count = future.result()
             with output_lock:
                 if key not in existing:
                     existing[key] = saved
@@ -146,6 +194,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 usage_totals["prompt_cache_hit_tokens"] += int(usage.get("prompt_cache_hit_tokens", 0) or 0)
                 usage_totals["prompt_cache_miss_tokens"] += int(usage.get("prompt_cache_miss_tokens", 0) or 0)
                 usage_totals["elapsed_ms"] += elapsed_ms
+                usage_totals["temporal_abstention_retries"] += retry_count
                 usage_totals["completed"] += 1
                 if args.progress_every and usage_totals["completed"] % args.progress_every == 0:
                     print(f"generated {usage_totals['completed']}/{len(rows)}")
@@ -173,6 +222,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "qa_json": str(json_path),
         "workers": args.workers,
         "prompt_style": args.prompt_style,
+        "temporal_abstention_retry": args.temporal_abstention_retry,
         "prompt_tokens_new": usage_totals["prompt_tokens"],
         "completion_tokens_new": usage_totals["completion_tokens"],
         "total_tokens_new": usage_totals["total_tokens"],
@@ -182,6 +232,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "api_elapsed_ms_sum_new": usage_totals["elapsed_ms"],
         "wall_elapsed_ms": wall_elapsed_ms,
         "completion_tokens_per_second_new": completion_tokens_per_second,
+        "temporal_abstention_retries_new": usage_totals["temporal_abstention_retries"],
     }
     write_json(report_path, report)
     return report
@@ -201,8 +252,13 @@ def main() -> int:
     parser.add_argument("--progress-every", type=int, default=25)
     parser.add_argument("--retries", type=int, default=3)
     parser.add_argument("--workers", type=int, default=1)
-    parser.add_argument("--prompt-style", choices=["legacy", "multihop-v2", "multihop-v3"], default="multihop-v2")
+    parser.add_argument(
+        "--prompt-style",
+        choices=["legacy", "multihop-v2", "multihop-v3"],
+        default="multihop-v2",
+    )
     parser.add_argument("--question-type")
+    parser.add_argument("--temporal-abstention-retry", action="store_true")
     print(json.dumps(run(parser.parse_args()), sort_keys=True))
     return 0
 

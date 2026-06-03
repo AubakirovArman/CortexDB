@@ -101,6 +101,8 @@ It uses the existing full retrieval artifact, filters the first 50
 ```bash
 make multihop-rag-official-qa-metrics-temporal-50-v3
 make multihop-rag-qa-error-analysis-temporal-50-v3
+make multihop-rag-official-qa-metrics-temporal-50-v3-retry
+make multihop-rag-qa-error-analysis-temporal-50-v3-retry
 ```
 
 If answers already exist and only the official scorer must be rerun, use:
@@ -230,6 +232,7 @@ the official `qa_evaluate.py` script:
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Balanced local gate, `multihop-v2` prompt | 50 | 0.68 | 0.68 | 0.68 | 0.61 |
 | Temporal-only gate, `multihop-v3` prompt | 50 | 0.62 | 0.62 | 0.62 | 0.57 |
+| Temporal-only gate, `multihop-v3` + abstention retry | 50 | 0.72 | 0.72 | 0.72 | 0.64 |
 | Full official dataset, hybrid `multihop-v2` + temporal `multihop-v3` | 2556 | 0.75 | 0.75 | 0.75 | 0.67 |
 
 Full QA by question type:
@@ -267,6 +270,7 @@ target/multihop-rag/qa/deepseek-full-v2/official_qa_metrics.txt
 target/multihop-rag/qa/deepseek-full-v2/qa_error_analysis.json
 target/multihop-rag/qa/deepseek-temporal-v3/deepseek_qa.json
 target/multihop-rag/qa/deepseek-temporal-50-v3/deepseek_qa.json
+target/multihop-rag/qa/deepseek-temporal-50-v3-retry/deepseek_qa.json
 target/multihop-rag/qa/deepseek-full-v3-hybrid/deepseek_qa.json
 target/multihop-rag/qa/deepseek-full-v3-hybrid/official_qa_metrics.txt
 target/multihop-rag/qa/deepseek-balanced-50-cache-metrics/deepseek_qa_report.json

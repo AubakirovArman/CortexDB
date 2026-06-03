@@ -49,6 +49,20 @@ def sample_row(row: dict[str, Any], reason: str) -> dict[str, Any]:
     }
 
 
+def classify_row(predicted: str, gold: str) -> tuple[str, bool, bool]:
+    hit = official_like_hit(predicted.lower(), gold.lower())
+    exact = normalize(predicted) == normalize(gold)
+    if is_insufficient(predicted) and not is_insufficient(gold):
+        return "false_abstain", hit, exact
+    if is_insufficient(gold) and not is_insufficient(predicted):
+        return "missed_null", hit, exact
+    if not hit:
+        return "miss", hit, exact
+    if exact:
+        return "exact", hit, exact
+    return "hit", hit, exact
+
+
 def analyze(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
     by_type: dict[str, Counter[str]] = defaultdict(Counter)
     samples: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -57,17 +71,9 @@ def analyze(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
         qtype = str(row.get("question_type", "unknown"))
         predicted = str(row.get("model_answer", ""))
         gold = str(row.get("gold_answer", ""))
-        hit = official_like_hit(predicted.lower(), gold.lower())
-        exact = normalize(predicted) == normalize(gold)
-        false_abstain = is_insufficient(predicted) and not is_insufficient(gold)
-        missed_null = is_insufficient(gold) and not is_insufficient(predicted)
-        reason = "hit" if hit else "miss"
-        if false_abstain:
-            reason = "false_abstain"
-        elif missed_null:
-            reason = "missed_null"
-        elif exact:
-            reason = "exact"
+        reason, hit, exact = classify_row(predicted, gold)
+        false_abstain = reason == "false_abstain"
+        missed_null = reason == "missed_null"
         by_type[qtype]["total"] += 1
         by_type[qtype]["hit"] += int(hit)
         by_type[qtype]["exact"] += int(exact)
@@ -80,7 +86,7 @@ def analyze(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
         overall["miss"] += int(not hit)
         overall["false_abstain"] += int(false_abstain)
         overall["missed_null"] += int(missed_null)
-        if reason != "hit" and len(samples[qtype]) < sample_limit:
+        if reason not in {"hit", "exact"} and len(samples[qtype]) < sample_limit:
             samples[qtype].append(sample_row(row, reason))
 
     def materialize(counter: Counter[str]) -> dict[str, Any]:

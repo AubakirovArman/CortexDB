@@ -214,3 +214,29 @@ def legacy_prompt(row: dict[str, Any], contexts: list[str]) -> str:
             "Answer:",
         ]
     )
+
+
+def build_temporal_abstention_retry_prompt(row: dict[str, Any], top_k: int, max_chars_per_doc: int) -> str:
+    contexts = []
+    for item in row.get("retrieval_list", [])[:top_k]:
+        snippet = temporal_snippet(str(row.get("query", "")), str(item.get("text", "")), max_chars_per_doc)
+        if snippet:
+            contexts.append(f"[{len(contexts) + 1}]\n{snippet}")
+    return "\n\n".join(
+        [
+            "Answer the temporal question using only the provided context.",
+            "The first pass abstained, but this retry should choose the best supported temporal answer when context snippets are present.",
+            "Do not answer Insufficient Information unless there are no context snippets.",
+            "For yes/no wording, answer exactly Yes or No.",
+            "For consistent/inconsistent wording, answer exactly Consistent or Inconsistent.",
+            "For 'which source/entity/side' wording, answer the shortest source/entity/side name, or Both when both apply.",
+            "Do not explain your reasoning.",
+            "",
+            f"Question: {row.get('query', '')}",
+            "",
+            "Context:",
+            "\n\n".join(contexts),
+            "",
+            "Answer:",
+        ]
+    )
