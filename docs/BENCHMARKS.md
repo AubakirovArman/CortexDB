@@ -407,10 +407,47 @@ make enterprise-rag-bench-answer-error-analysis-embedding-rerank-50
 ```
 
 The latest analysis shows `50 / 50` non-empty answers and `35` questions with
-document recall above zero but `answer_correct=false`. It also records
-`LLM_API_KEY_present=false` for the upstream evaluator environment, so the next
-official answer-quality pass must configure the benchmark judge before treating
+document recall above zero but `answer_correct=false`. The unjudged metrics run
+did not configure the upstream evaluator environment, so a real answer-quality
+pass must use the judge-backed targets below before treating
 correctness/completeness as valid.
+
+For a real judge-backed smoke pass, keep the judge key in a local env file and
+run it against the already generated reranked `answers.jsonl`:
+
+```bash
+make enterprise-rag-bench-deepseek-answers-embedding-rerank-50
+make enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke
+```
+
+The helper maps `OPENAI_API_KEY` from
+`ENTERPRISE_RAG_BENCH_JUDGE_ENV_FILE` into the upstream evaluator's
+`LLM_API_KEY` environment variable without printing or committing the secret.
+The full local 50-question judged pass is:
+
+```bash
+make enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-50
+```
+
+These targets are deliberately local-only. They are not part of CI because they
+spend external judge-model tokens and require credentials. The smoke target has
+a default `120s` timeout and the full target has a default `900s` timeout so a
+slow upstream judge cannot hang local validation indefinitely.
+
+Latest judge-backed smoke scored 3 questions with `100.0%` average document
+recall but `0.0%` correctness/completeness. The full local judged gate then
+completed `50 / 50` questions with:
+
+| Metric | Value |
+| --- | ---: |
+| average correctness | `0.0%` |
+| average completeness | `0.0%` |
+| average document recall | `68.85%` |
+| average invalid extra documents | `9.09` |
+
+That proves the judge environment bridge works and shifts the remaining work to
+the EnterpriseRAG answer prompt/output contract and tighter top-k evidence
+selection.
 
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a

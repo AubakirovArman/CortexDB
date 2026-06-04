@@ -141,17 +141,24 @@ def analyze(args: argparse.Namespace) -> dict[str, Any]:
     )
     blank_reasoning = sum(1 for row in rows if row["correctness_reasoning_blank"])
     report = {
-        "schema_version": "cortexdb.enterprise_rag_bench.answer_error_analysis.v1",
+        "schema_version": "cortexdb.enterprise_rag_bench.answer_error_analysis.v2",
         "questions": len(rows),
         "answers_file": str(args.answers_file),
         "metrics_file": str(args.metrics_file),
         "nonempty_answers": nonempty,
         "doc_hit_but_answer_correct_false": doc_hit_answer_fail,
         "blank_correctness_reasoning": blank_reasoning,
-        "judge_env": {
+        "analysis_process_env": {
             "LLM_PROVIDER": os.environ.get("LLM_PROVIDER", "openai"),
             "LLM_API_KEY_present": bool(os.environ.get("LLM_API_KEY")),
             "LLM_MODEL_NAME_present": bool(os.environ.get("LLM_MODEL_NAME")),
+        },
+        "judge_env": {
+            "captured": False,
+            "note": (
+                "This analysis process does not inherit or persist the official "
+                "judge runner environment."
+            ),
         },
         "buckets": buckets,
         "aggregate_stats": metrics.get("aggregate_stats", {}),

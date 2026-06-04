@@ -226,12 +226,58 @@ The official answer evaluator requires an LLM provider supported by the upstream
 benchmark. The retrieval-only target is local and cheap; the answer metrics
 target is the one that becomes comparable to leaderboard-style results.
 
+### Official judge-backed answer metrics
+
+The upstream evaluator reads its judge config from `LLM_PROVIDER`,
+`LLM_API_KEY`, and `LLM_MODEL_NAME`. CortexDB keeps those values out of the
+repository and maps a local env file into the upstream names only for the
+evaluation subprocess:
+
+```bash
+make enterprise-rag-bench-deepseek-answers-embedding-rerank-50
+make enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke
+```
+
+The judge targets intentionally do not regenerate answers. They require the
+existing reranked `answers.jsonl` artifact and fail fast if it is missing.
+
+By default this reads `OPENAI_API_KEY` from
+`/mnt/hf_model_weights/arman/3bit/sites/.env`, maps it to `LLM_API_KEY`, and
+uses `gpt-4o-mini` as the upstream `openai` judge. Override without editing
+tracked files:
+
+```bash
+make enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke \
+  ENTERPRISE_RAG_BENCH_JUDGE_ENV_FILE=/path/to/.env \
+  ENTERPRISE_RAG_BENCH_JUDGE_MODEL=gpt-4o-mini
+```
+
+After the smoke pass succeeds, run the full 50-question judged gate:
+
+```bash
+make enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-50
+```
+
+The smoke target defaults to a `120s` timeout and the full target defaults to a
+`900s` timeout. Override these locally with
+`ENTERPRISE_RAG_BENCH_JUDGE_SMOKE_TIMEOUT_SECONDS` or
+`ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS` if the upstream judge endpoint is
+slow.
+
+This path is intentionally local-only and not wired into GitHub Actions. It
+spends judge-model tokens and depends on external credentials. DeepSeek answer
+generation remains separate; the official judge itself uses the upstream
+EnterpriseRAG-Bench provider contract, which currently supports OpenAI or
+Anthropic SDK clients rather than arbitrary chat-completions endpoints.
+
 Embedding-reranked answer artifacts are written separately:
 
 ```text
 target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank/answers.jsonl
 target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank/answer_generation_report.json
 target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank/official_metrics.json
+target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank/official_metrics_judge_smoke.json
+target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank/official_metrics_judge.json
 ```
 
 Latest local embedding-reranked answer gate:
@@ -274,7 +320,6 @@ Latest local answer analysis:
 | non-empty answers | `50 / 50` |
 | doc recall > 0 but answer_correct=false | `35` |
 | blank correctness reasoning rows | `50` |
-| local `LLM_API_KEY` visible to evaluator | `false` |
 | likely judge/format issue bucket | `3` |
 | answer missing gold facts bucket | `17` |
 | abstained despite evidence bucket | `15` |
@@ -283,9 +328,54 @@ Latest local answer analysis:
 The upstream metrics script uses its own LLM judge for fact validation and
 wholistic correctness. If that judge is not configured, correctness and
 completeness can collapse to `0.0%` even when candidate answers are non-empty
-and retrieved documents include gold evidence. The next answer-quality run must
-configure the upstream judge environment (`LLM_PROVIDER`, `LLM_API_KEY`, and
-`LLM_MODEL_NAME`) before claiming an official answer score.
+and retrieved documents include gold evidence. Judge-backed answer-quality runs
+must configure the upstream judge environment (`LLM_PROVIDER`, `LLM_API_KEY`,
+and `LLM_MODEL_NAME`) before claiming an official answer score.
+
+Latest judge-backed smoke:
+
+| Field | Value |
+| --- | ---: |
+| questions | `3` |
+| average correctness | `0.0%` |
+| average completeness | `0.0%` |
+| average document recall | `100.0%` |
+| average invalid extra | `9.0` |
+
+The smoke proves the upstream judge environment bridge works. The failing answer
+score means the next tuning target is the EnterpriseRAG answer prompt/output
+contract, not the retrieval path or local env wiring.
+
+Latest judge-backed 50-question gate:
+
+| Field | Value |
+| --- | ---: |
+| questions scored | `50 / 50` |
+| average correctness | `0.0%` |
+| average completeness | `0.0%` |
+| combined correctness * completeness | `0.0` |
+| average document recall | `68.85%` |
+| average invalid extra | `9.09` |
+
+The judged full gate confirms that the benchmark bridge is operational, but
+answer quality is not yet competitive. The next work item is to reduce
+over-broad evidence (`invalid_extra_docs`) and tune generated answers to match
+EnterpriseRAG gold facts without unnecessary abstention.
+
+Judge-backed answer error analysis:
+
+```bash
+make enterprise-rag-bench-answer-error-analysis-embedding-rerank-judge-50
+```
+
+Latest judge-backed failure buckets:
+
+| Bucket | Count |
+| --- | ---: |
+| `answer_missing_gold_facts` | `17` |
+| `abstained_with_evidence` | `15` |
+| `retrieval_miss` | `15` |
+| `likely_judge_or_format_issue` | `3` |
 
 ## Full Run
 
