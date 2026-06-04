@@ -538,6 +538,34 @@ nearby conflicting documents that reduce answer correctness. The next
 retrieval-stage improvement should be selective rather than applying the
 lexical anchor to every question type.
 
+Experimental v7 selective lexical routing:
+
+```bash
+make enterprise-rag-bench-routed-v7-selective-lexical-judge-50
+make enterprise-rag-bench-answer-error-analysis-routed-v7-selective-lexical-judge-50
+```
+
+v7 is a deterministic routing artifact over already generated and already
+DeepSeek-judged rows. It does not call an LLM. The route uses v5 as the default
+answer path and uses v6 lexical-anchor rows only for `basic`, `completeness`,
+`conflicting_info`, `constrained`, and `project_related` question types.
+
+Latest v7 routed result:
+
+| Field | v5 evidence-selection | v6 lexical-anchor | v7 selective routing |
+| --- | ---: | ---: | ---: |
+| average correctness | `58.0%` | `56.0%` | `58.0%` |
+| average completeness | `63.62%` | `62.32%` | `64.72%` |
+| combined correctness * completeness | `36.90` | `34.90` | `37.54` |
+| average document recall | `79.23%` | `81.89%` | `81.89%` |
+| average invalid extra documents | `8.98` | `8.91` | `8.91` |
+| route counts | n/a | n/a | `22 default / 28 routed` |
+
+v7 is the current best local 50-question routed gate. v5 remains the best
+single-generation path because v7 is a row-level policy that reuses prior v5
+and v6 answer/judge artifacts. Treat v7 as routing evidence for the next real
+generation experiment, not as a fresh model run.
+
 Judge-backed answer error analysis:
 
 ```bash
@@ -580,6 +608,14 @@ Latest v5 DeepSeek-judged failure buckets:
 | `likely_judge_or_format_issue` | `3` |
 
 Latest v6 DeepSeek-judged failure buckets:
+
+| Bucket | Count |
+| --- | ---: |
+| `answer_missing_gold_facts` | `37` |
+| `retrieval_miss` | `9` |
+| `likely_judge_or_format_issue` | `4` |
+
+Latest v7 routed failure buckets:
 
 | Bucket | Count |
 | --- | ---: |

@@ -481,6 +481,16 @@ it is not promoted because local DeepSeek-judged answer quality regressed to
 useful evidence for the next step: lexical anchoring should be selective by
 question/routing type instead of applied globally.
 
+The current best local routed artifact is v7 selective lexical routing. It
+combines already generated and already judged v5/v6 rows without a new LLM
+call: v5 remains the default path, while v6 lexical-anchor rows are used for
+`basic`, `completeness`, `conflicting_info`, `constrained`, and
+`project_related` question types. On the same 50-question local gate, v7 scores
+`58.0%` correctness, `64.72%` completeness, `37.54` combined, `81.89%` average
+document recall, and `8.91` average invalid extra documents. In short: v5 is
+still the best single-generation path, while v7 is the best routed evidence for
+the next real generation experiment.
+
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a
 full official-compatible run is produced and packaged reproducibly.
