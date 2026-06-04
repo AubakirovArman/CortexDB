@@ -400,6 +400,18 @@ completeness, while document recall remains `68.85%`. This means the retrieval
 evidence improved, but the EnterpriseRAG answer prompt/output contract still
 needs tuning before the run can be treated as an answer-quality result.
 
+The local answer error analysis is available with:
+
+```bash
+make enterprise-rag-bench-answer-error-analysis-embedding-rerank-50
+```
+
+The latest analysis shows `50 / 50` non-empty answers and `35` questions with
+document recall above zero but `answer_correct=false`. It also records
+`LLM_API_KEY_present=false` for the upstream evaluator environment, so the next
+official answer-quality pass must configure the benchmark judge before treating
+correctness/completeness as valid.
+
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a
 full official-compatible run is produced and packaged reproducibly.

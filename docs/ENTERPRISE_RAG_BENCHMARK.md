@@ -255,6 +255,38 @@ official answer-quality score. The current prompt/output contract still needs
 EnterpriseRAG-specific tuning. Treat the reranked run as validated retrieval
 evidence, not as a leaderboard-ready answer result.
 
+Run answer error analysis:
+
+```bash
+make enterprise-rag-bench-answer-error-analysis-embedding-rerank-50
+```
+
+Latest local analysis artifact:
+
+```text
+target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank/answer_error_analysis.json
+```
+
+Latest local answer analysis:
+
+| Field | Value |
+| --- | ---: |
+| non-empty answers | `50 / 50` |
+| doc recall > 0 but answer_correct=false | `35` |
+| blank correctness reasoning rows | `50` |
+| local `LLM_API_KEY` visible to evaluator | `false` |
+| likely judge/format issue bucket | `3` |
+| answer missing gold facts bucket | `17` |
+| abstained despite evidence bucket | `15` |
+| retrieval miss bucket | `15` |
+
+The upstream metrics script uses its own LLM judge for fact validation and
+wholistic correctness. If that judge is not configured, correctness and
+completeness can collapse to `0.0%` even when candidate answers are non-empty
+and retrieved documents include gold evidence. The next answer-quality run must
+configure the upstream judge environment (`LLM_PROVIDER`, `LLM_API_KEY`, and
+`LLM_MODEL_NAME`) before claiming an official answer score.
+
 ## Full Run
 
 The full retrieval target is:
