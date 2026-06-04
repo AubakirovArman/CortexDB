@@ -473,6 +473,14 @@ retrieval output. The remaining hard bucket is answer selection when the correct
 document is retrieved alongside similar conflicting evidence or the answer needs
 several gold facts.
 
+The v6 lexical-anchor fusion experiment adds the original keyword/source
+top-50 candidate list as a low-weight RRF input. It improves document recall
+from `79.23%` to `81.89%` and reduces full retrieval misses from `7` to `6`, but
+it is not promoted because local DeepSeek-judged answer quality regressed to
+`56.0%` correctness, `62.32%` completeness, and `34.90` combined score. This is
+useful evidence for the next step: lexical anchoring should be selective by
+question/routing type instead of applied globally.
+
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a
 full official-compatible run is produced and packaged reproducibly.

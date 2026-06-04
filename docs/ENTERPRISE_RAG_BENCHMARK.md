@@ -501,6 +501,43 @@ is answer-stage only: retrieval is unchanged from v4. The remaining hard cases
 are mostly questions where the correct document is present but the model still
 selects a nearby conflicting value or omits required details.
 
+Experimental v6 lexical-anchor fusion:
+
+```bash
+make enterprise-rag-bench-embedding-rerank-fused-v6-lexical-existing-50
+make enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v6-lexical-windowed-judge-50
+make enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v6-lexical-windowed-judge-50
+```
+
+v6 adds the original top-50 keyword/source candidate list as a low-weight RRF
+input (`weights=[1.0, 1.0, 0.75]`, `rrf_k=5`) alongside the top-50 and top-500
+embedding rerank lists. The goal is to keep exact lexical/source hits from
+falling out of the final top-10 when embedding rerank prefers semantically
+similar but conflicting documents.
+
+Latest v6 result with the local DeepSeek judge:
+
+| Field | v5 evidence-selection | v6 lexical-anchor |
+| --- | ---: | ---: |
+| average correctness | `58.0%` | `56.0%` |
+| average completeness | `63.62%` | `62.32%` |
+| combined correctness * completeness | `36.90` | `34.90` |
+| average document recall | `79.23%` | `81.89%` |
+| average invalid extra documents | `8.98` | `8.91` |
+| answer generation prompt tokens | `476,499` | `472,645` |
+| answer generation completion tokens | `2,354` | `2,465` |
+| answer generation total tokens | `478,853` | `475,110` |
+| answer generation wall time | `59.70s` | `77.40s` |
+| judge total tokens | `27,574` | `27,648` |
+| retrieval-miss bucket | `10` | `9` |
+
+v6 is not promoted as the current best answer gate. It proves that lexical
+anchoring can improve document recall (`48/75 -> 51/75` gold docs found and
+`7 -> 6` full retrieval misses), but the extra lexical evidence can also expose
+nearby conflicting documents that reduce answer correctness. The next
+retrieval-stage improvement should be selective rather than applying the
+lexical anchor to every question type.
+
 Judge-backed answer error analysis:
 
 ```bash
@@ -541,6 +578,14 @@ Latest v5 DeepSeek-judged failure buckets:
 | `answer_missing_gold_facts` | `37` |
 | `retrieval_miss` | `10` |
 | `likely_judge_or_format_issue` | `3` |
+
+Latest v6 DeepSeek-judged failure buckets:
+
+| Bucket | Count |
+| --- | ---: |
+| `answer_missing_gold_facts` | `37` |
+| `retrieval_miss` | `9` |
+| `likely_judge_or_format_issue` | `4` |
 
 ## Full Run
 
