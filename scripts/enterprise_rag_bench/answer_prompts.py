@@ -1,0 +1,153 @@
+"""EnterpriseRAG-Bench answer prompt variants."""
+
+from __future__ import annotations
+
+from typing import Any
+
+
+def evidence_selection_v5(row: dict[str, Any], context: str) -> str:
+    return f"""You answer EnterpriseRAG-Bench questions using only the retrieved documents.
+
+Before writing the answer, silently choose the exact evidence. Do not show this checklist.
+
+Evidence selection rules:
+- Match the exact entity, product, header, ticket, date, version, file path, region, metric, or numeric value named in the question.
+- If several documents look similar, prefer the one with the most exact anchors from the question, not the highest-ranked generic match.
+- If documents conflict, prefer incident-specific, current, dated, explicit, or directly quoted evidence over older or generic notes.
+- For cheapest/lowest/highest questions, compare every visible numeric candidate and answer with the selected item plus its value.
+- For path/file questions, copy the complete literal path exactly, including date suffixes and extensions.
+- For list/role/process questions, include all required items from the supporting evidence; do not summarize away names or roles.
+- If the context supports only part of the answer, answer that part. Do not append "Insufficient information." after a supported partial answer.
+- Answer exactly "Insufficient information." only when none of the retrieved documents supports the requested answer.
+
+Output rules:
+- Write the final answer directly.
+- Do not say "Based on the retrieved documents".
+- Do not include document IDs or citations.
+- Keep the answer compact, usually 1-4 sentences.
+
+Question:
+{row.get("question", "")}
+
+Retrieved documents:
+{context}
+
+Final answer:"""
+
+
+def fact_focused_v2(row: dict[str, Any], context: str) -> str:
+    return f"""You answer EnterpriseRAG-Bench questions using only the retrieved documents.
+
+Rules:
+- Write the final answer directly; do not say "Based on the retrieved documents".
+- Include every concrete name, ID, date, number, path, limit, region, ticket, or version that answers the question.
+- If the context contains partial evidence, answer the supported parts. Do not append "Insufficient information" after a partial answer.
+- Answer exactly "Insufficient information." only when none of the retrieved documents supports the requested answer.
+- Prefer current, updated, explicit, or incident-specific evidence over older or generic notes.
+- Avoid citations, document IDs, markdown headings, and long explanations.
+- Keep the answer compact, usually 1-4 sentences.
+
+Question:
+{row.get("question", "")}
+
+Retrieved documents:
+{context}
+
+Final answer:"""
+
+
+def type_aware_v9(row: dict[str, Any], context: str) -> str:
+    question_type = str(row.get("question_type") or "")
+    if question_type == "project_related":
+        return project_related_v9(row, context)
+    if question_type == "semantic":
+        return semantic_v9(row, context)
+    return evidence_selection_v5(row, context)
+
+
+def project_related_v9(row: dict[str, Any], context: str) -> str:
+    return f"""You answer EnterpriseRAG-Bench project and incident questions using only the retrieved documents.
+
+Silently build an evidence table before answering. Do not show the table.
+
+Project answer rules:
+- Identify the exact project, tenant, incident, account, ticket, PR, date, region, route, product, or policy named in the question.
+- Use only documents that match those anchors. Ignore nearby documents about similar incidents, tenants, products, headers, regions, or older guidance.
+- If the question asks what happened, include root cause, trigger, impacted system, and why it was not a different cause.
+- If the question asks remediation, include the concrete fix, rollout state, rollback or guardrail, verification metrics, dashboard/SLO checks, and time window.
+- If the question asks approvals or policy, include every named approver, role, threshold, exception, and audit trail requirement.
+- If there are multiple required steps, list all steps in the same order as the evidence. Do not compress away names, thresholds, dates, request IDs, ticket IDs, or paths.
+- If some gold-like facts are missing from context, answer the supported facts and explicitly say which requested part is not available.
+- Answer exactly "Insufficient information." only when no retrieved document supports the requested answer.
+
+Output rules:
+- Write the final answer directly.
+- Use one compact paragraph or short semicolon-separated clauses.
+- Do not include document IDs or citations.
+- Do not say "Based on the retrieved documents".
+
+Question:
+{row.get("question", "")}
+
+Retrieved documents:
+{context}
+
+Final answer:"""
+
+
+def semantic_v9(row: dict[str, Any], context: str) -> str:
+    return f"""You answer EnterpriseRAG-Bench semantic questions using only the retrieved documents.
+
+Silently decompose the question into required facts before answering. Do not show the decomposition.
+
+Semantic answer rules:
+- Select evidence by exact meaning plus concrete anchors: names, dates, files, paths, metrics, prices, limits, regions, versions, owners, and status labels.
+- For "which", "what", "why", "how", "cheapest", "lowest", "highest", or comparison questions, inspect every visible candidate value before choosing.
+- If one document gives a broad concept and another gives a concrete value, combine them only when they refer to the same entity or scenario.
+- Prefer current, explicit, incident-specific, or spec-like evidence over generic notes.
+- Avoid substituting a semantically similar but different approach, team, metric, header, store, rollout, or cost value.
+- Include all concrete facts needed to make the answer complete, even if that takes more than 4 sentences.
+- If the context only partially supports the answer, give the supported part and name the missing part.
+- Answer exactly "Insufficient information." only when no retrieved document supports the requested answer.
+
+Output rules:
+- Write the final answer directly.
+- Do not include document IDs or citations.
+- Do not say "Based on the retrieved documents".
+- Keep wording dense and factual.
+
+Question:
+{row.get("question", "")}
+
+Retrieved documents:
+{context}
+
+Final answer:"""
+
+
+def baseline(row: dict[str, Any], context: str) -> str:
+    return f"""You answer EnterpriseRAG-Bench questions using only the retrieved documents.
+
+Rules:
+- If the documents do not contain enough evidence, answer exactly: Insufficient information.
+- Be concise but include all required facts.
+- Do not invent facts outside the context.
+- Do not include document IDs unless they are necessary to disambiguate evidence.
+
+Question:
+{row.get("question", "")}
+
+Retrieved documents:
+{context}
+
+Answer:"""
+
+
+def build_prompt(row: dict[str, Any], context: str, prompt_style: str) -> str:
+    if prompt_style == "evidence-selection-v5":
+        return evidence_selection_v5(row, context)
+    if prompt_style == "type-aware-v9":
+        return type_aware_v9(row, context)
+    if prompt_style == "fact-focused-v2":
+        return fact_focused_v2(row, context)
+    return baseline(row, context)

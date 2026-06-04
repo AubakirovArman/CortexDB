@@ -488,16 +488,26 @@ call: v5 remains the default path, while v6 lexical-anchor rows are used for
 `project_related` question types. On the same 50-question local gate, v7 scores
 `58.0%` correctness, `64.72%` completeness, `37.54` combined, `81.89%` average
 document recall, and `8.91` average invalid extra documents. In short: v5 is
-the best routed reuse artifact.
+the best single-generation path before routing, while v7 is the best reuse
+routing artifact.
 
-The current best local fresh-generation gate is v8 selective lexical routing.
-It routes retrieval rows before prompting DeepSeek and then regenerates all 50
-answers with the v5 evidence-selection prompt. v8 scores `58.0%` correctness,
-`65.12%` completeness, `37.77` combined, `81.89%` average document recall, and
-`8.91` average invalid extra documents. The v8 answer run used `476,796` total
-tokens and completed in `61.84s`; its DeepSeek judge run used `27,618` total
-tokens. This is the best local 50-question answer-quality gate so far, but it
-is still not a full official leaderboard score.
+The current best local fresh-generation gate is v9 type-aware prompting over
+the v8 selective lexical retrieval route. It routes retrieval rows before
+prompting DeepSeek, then uses project-specific instructions for
+`project_related` questions, semantic disambiguation instructions for
+`semantic` questions, and the v5 evidence-selection prompt for all other
+question types. v9 scores `60.0%` correctness, `66.62%` completeness, `39.97`
+combined, `81.89%` average document recall, and `8.91` average invalid extra
+documents. The v9 answer run used `478,353` total tokens and completed in
+`63.49s`; its DeepSeek judge run used `29,057` total tokens. This is the best
+local 50-question answer-quality gate so far, but it is still not a full
+official leaderboard score.
+
+The v9 improvement is answer-stage only: retrieval is unchanged from v8. The
+main targeted gain is the `semantic` slice, which improved from `46.15%` to
+`53.85%` correctness. The `project_related` slice remains at `0.0%`
+correctness, so the next benchmark-quality work should improve project-chain
+retrieval and aggregation rather than only rewriting prompts.
 
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a

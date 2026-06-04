@@ -593,12 +593,44 @@ Latest v8 fresh-generation result:
 | answer generation wall time | `59.70s` | n/a | `61.84s` |
 | judge total tokens | `27,574` | n/a | `27,618` |
 
-v8 is the current best local 50-question fresh-generation gate. The gain is
-small but real under the same local DeepSeek judge: it keeps v7's retrieval
-recall while improving answer completeness over v5 and v7. The remaining hard
-cases are still selection failures when the correct document is present beside
-similar conflicting evidence, plus `project_related` and `semantic` questions
-with many required facts.
+v8 improved the previous fresh-generation gate, but it is no longer the best
+local 50-question answer-quality gate. It remains useful as the retrieval
+routing baseline for the v9 prompt experiment.
+
+Experimental v9 type-aware prompt:
+
+```bash
+make enterprise-rag-bench-official-answer-metrics-routed-v9-type-aware-windowed-judge-50
+make enterprise-rag-bench-answer-error-analysis-routed-v9-type-aware-windowed-judge-50
+```
+
+v9 keeps the same v8 routed retrieval output and changes only answer prompting.
+It uses project-specific instructions for `project_related` questions,
+semantic disambiguation instructions for `semantic` questions, and the v5
+evidence-selection prompt for all other question types. This isolates whether
+the remaining failures are answer-stage prompt failures or retrieval/aggregation
+failures.
+
+Latest v9 fresh-generation result:
+
+| Field | v8 routed fresh generation | v9 type-aware prompt |
+| --- | ---: | ---: |
+| average correctness | `58.0%` | `60.0%` |
+| average completeness | `65.12%` | `66.62%` |
+| combined correctness * completeness | `37.77` | `39.97` |
+| average document recall | `81.89%` | `81.89%` |
+| average invalid extra documents | `8.91` | `8.91` |
+| answer generation total tokens | `476,796` | `478,353` |
+| answer generation wall time | `61.84s` | `63.49s` |
+| judge total tokens | `27,618` | `29,057` |
+
+v9 is the current best local 50-question DeepSeek-judged fresh-generation gate.
+The improvement is prompt-stage only: retrieval is unchanged from v8. The
+strongest targeted gain is `semantic`, which improved from `46.15%` to
+`53.85%` correctness and from `23.79` to `31.27` combined score. The
+`project_related` slice remains unresolved (`0.0%` correctness), so the next
+quality step should be retrieval/aggregation for project chains rather than
+more prompt-only tuning.
 
 Judge-backed answer error analysis:
 
@@ -658,6 +690,14 @@ Latest v7 routed failure buckets:
 | `likely_judge_or_format_issue` | `4` |
 
 Latest v8 fresh-generation failure buckets:
+
+| Bucket | Count |
+| --- | ---: |
+| `answer_missing_gold_facts` | `37` |
+| `retrieval_miss` | `9` |
+| `likely_judge_or_format_issue` | `4` |
+
+Latest v9 type-aware failure buckets:
 
 | Bucket | Count |
 | --- | ---: |
