@@ -239,8 +239,7 @@ Latest local full-run evidence on `longmemeval_s_cleaned.json`:
 | `session recall_all@10` | `0.9021` |
 | `session ndcg_any@10` | `0.7873` |
 
-The same run has also been evaluated through the official LongMemEval
-`evaluate_qa.py gpt-4o` path:
+The same run also has a historical local QA evaluation artifact:
 
 | QA metric | Value |
 | --- | ---: |
@@ -250,8 +249,10 @@ The same run has also been evaluated through the official LongMemEval
 
 The run writes `target/longmemeval-v1/cortexdb/official_retrieval_metrics.txt`
 and a generated hypothesis file under `target/longmemeval-v1/generation/`.
-Leaderboard/list inclusion still requires submission to the official
-maintainers. See [`LONGMEMEVAL_OFFICIAL.md`](LONGMEMEVAL_OFFICIAL.md).
+New local generation/evaluation defaults use DeepSeek flash; the historical
+QA row above is retained only as prior evidence. Leaderboard/list inclusion
+still requires submission to the official maintainers. See
+[`LONGMEMEVAL_OFFICIAL.md`](LONGMEMEVAL_OFFICIAL.md).
 
 ## MultiHop-RAG Benchmark Scaffold
 
@@ -393,12 +394,11 @@ To evaluate answer quality from reranked documents:
 make enterprise-rag-bench-official-answer-metrics-embedding-rerank-50
 ```
 
-Latest local reranked answer gate used `deepseek-v4-flash` with thinking
-disabled and generated 50 answers in `43.33s` using `131,551` total tokens.
-The official evaluator still reports `0.0%` correctness and `0.0%`
-completeness, while document recall remains `68.85%`. This means the retrieval
-evidence improved, but the EnterpriseRAG answer prompt/output contract still
-needs tuning before the run can be treated as an answer-quality result.
+Latest local reranked answer gates use `deepseek-v4-flash` with thinking
+disabled for answer generation and local answer judging. The older
+retrieval-only metrics still report `0.0%` correctness and completeness because
+those rows intentionally contain empty answers; use the DeepSeek judge-backed
+targets below for answer-quality results.
 
 The local answer error analysis is available with:
 
@@ -406,24 +406,21 @@ The local answer error analysis is available with:
 make enterprise-rag-bench-answer-error-analysis-embedding-rerank-50
 ```
 
-The latest analysis shows `50 / 50` non-empty answers and `35` questions with
-document recall above zero but `answer_correct=false`. The unjudged metrics run
-did not configure the upstream evaluator environment, so a real answer-quality
-pass must use the judge-backed targets below before treating
+The answer analysis targets read DeepSeek judge metrics and classify the
+remaining failure buckets. A retrieval-only run is not an answer-quality result;
+it must be paired with the judge-backed targets below before treating
 correctness/completeness as valid.
 
-For a real judge-backed smoke pass, keep the judge key in a local env file and
-run it against the already generated reranked `answers.jsonl`:
+For a real local judge-backed smoke pass, keep the DeepSeek key in a local key
+file and run it against the already generated reranked `answers.jsonl`:
 
 ```bash
 make enterprise-rag-bench-deepseek-answers-embedding-rerank-50
 make enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke
 ```
 
-The helper maps `OPENAI_API_KEY` from
-`ENTERPRISE_RAG_BENCH_JUDGE_ENV_FILE` into the upstream evaluator's
-`LLM_API_KEY` environment variable without printing or committing the secret.
-The full local 50-question judged pass is:
+The helper uses `ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE` and does not print or
+commit the secret. The full local 50-question judged pass is:
 
 ```bash
 make enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-50
@@ -432,9 +429,9 @@ make enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-50
 These targets are deliberately local-only. They are not part of CI because they
 spend external judge-model tokens and require credentials. The smoke target has
 a default `120s` timeout and the full target has a default `900s` timeout so a
-slow upstream judge cannot hang local validation indefinitely.
+slow judge endpoint cannot hang local validation indefinitely.
 
-Latest judge-backed smoke using `gpt-5.4` scored 3 questions with `100.0%`
+Latest judge-backed smoke using `deepseek-v4-flash` scored 3 questions with `100.0%`
 average document recall, `66.67%` correctness, and `50.0%` completeness. The
 baseline local judged gate completed `50 / 50` questions with:
 
@@ -449,32 +446,32 @@ baseline local judged gate completed `50 / 50` questions with:
 An experimental `fact-focused-v2` prompt with top-10 context improved
 correctness to `30.0%` and completeness to `30.26%`, but reduced the combined
 score to `18.52`, so it remains an experiment rather than the new default.
-Earlier `gpt-4o-mini` judge runs are invalid for this evaluator path because
-the upstream adapter uses Responses API reasoning parameters.
+Earlier non-DeepSeek judge runs are kept only as historical artifacts and should
+not be used for new local CortexDB benchmark gates.
 
-The current best local 50-question judged gate is the v4 fused retrieval plus
-question-window context packing target. It keeps the v3 question-aware answer
-windows and improves retrieval by fusing the normal top-50 embedding-reranked
-output with a wider top-500 embedding-reranked output:
+The current best local 50-question DeepSeek-judged gate is the v5
+evidence-selection answer prompt over the v4 fused retrieval output. v5 keeps
+the improved v4 document recall, but changes the answer prompt so the model
+first selects exact evidence anchors such as entity, date, path, header, number,
+version, and region before writing the final answer:
 
 | Metric | Value |
 | --- | ---: |
 | average correctness | `58.0%` |
-| average completeness | `48.5%` |
-| combined correctness * completeness | `41.32` |
+| average completeness | `63.62%` |
+| combined correctness * completeness | `36.90` |
 | average document recall | `79.23%` |
 | average invalid extra documents | `8.98` |
-| answer generation total tokens | `470,662` |
-| answer generation wall time | `73.39s` |
+| answer generation total tokens | `478,853` |
+| answer generation wall time | `59.70s` |
+| judge total tokens | `27,574` |
 
-The v3 windowed answer gate remains useful as the cheaper answer-stage
-baseline: it reaches `52.0%` correctness, `46.52%` completeness, and `40.08`
-combined score without the expensive top-500 retrieval fusion. v4 improves the
-document-recall side: local gold-presence checks found `40 / 47` gold documents
-in the fused final top-10 lists (`85.11%`), compared with `35 / 47` (`74.47%`)
-for the normal top-50 embedding rerank. The remaining hard bucket is answer
-selection when the correct document is retrieved alongside similar conflicting
-evidence.
+For apples-to-apples comparison under the same local DeepSeek judge, v4 scored
+`52.0%` correctness, `61.42%` completeness, `31.94` combined, and used `30,124`
+judge tokens. v5 is therefore a real answer-stage improvement over the same
+retrieval output. The remaining hard bucket is answer selection when the correct
+document is retrieved alongside similar conflicting evidence or the answer needs
+several gold facts.
 
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a

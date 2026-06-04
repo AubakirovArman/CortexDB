@@ -8,11 +8,11 @@ For LongMemEval v1, CortexDB must use:
 
 - the official repository: `https://github.com/xiaowu0162/LongMemEval`;
 - the official cleaned dataset: `xiaowu0162/longmemeval-cleaned`;
-- the official QA evaluator: `src/evaluation/evaluate_qa.py gpt-4o`.
+- the official QA evaluator script: `src/evaluation/evaluate_qa.py`.
 
 Local retrieval-only reports are useful release evidence, but the final QA
-score is not official unless the generated hypotheses are evaluated by the
-official evaluator.
+score is not a submission artifact unless the generated hypotheses are
+evaluated with the configured evaluator model and packaged reproducibly.
 
 For leaderboard submission, prefer LongMemEval-V2. Its official repository
 contains `leaderboard/` packaging utilities and a submission form.
@@ -40,14 +40,14 @@ make longmemeval-v1-official-retrieval-metrics
 Generate QA hypotheses through the official generation script:
 
 ```bash
-export LONGMEMEVAL_V1_READER_OPENAI_KEY="$OPENAI_API_KEY"
+export DEEPSEEK_API_KEY=...
 make longmemeval-v1-official-generate
 ```
 
 Evaluate QA hypotheses through the official evaluator:
 
 ```bash
-export OPENAI_API_KEY=...
+export DEEPSEEK_API_KEY=...
 make longmemeval-v1-official-qa-score \
   LONGMEMEVAL_V1_HYPOTHESIS_FILE=target/longmemeval-v1/generation/<file>
 ```
@@ -252,7 +252,8 @@ after a positive focused gate.
 
 - CortexDB owns the retrieval log generation.
 - The official LongMemEval repository owns QA generation/evaluation format.
-- Official QA scoring needs a GPT-4o-compatible OpenAI key.
+- QA scoring uses the configured evaluator model; local CortexDB defaults use
+  DeepSeek flash through an OpenAI-compatible endpoint.
 - LongMemEval-V2 leaderboard submission needs both web and enterprise runs plus
   the official leaderboard package builder.
 
@@ -266,7 +267,7 @@ session recall_all@10 = 0.9021
 session ndcg_any@10 = 0.7873
 ```
 
-The same run was evaluated with official `evaluate_qa.py gpt-4o`:
+The same run has a historical local `evaluate_qa.py` QA artifact:
 
 ```text
 questions = 500
@@ -274,8 +275,10 @@ correct = 383
 accuracy = 0.7660
 ```
 
-This is a full official local score. It is not yet a published leaderboard
-entry until the package is submitted to the official maintainers.
+This is retained as prior local evidence. New local runs should use the
+DeepSeek defaults unless the submission policy requires another evaluator
+model. It is not yet a published leaderboard entry until the package is
+submitted to the official maintainers.
 
 ## Package For Submission
 
@@ -286,7 +289,7 @@ make longmemeval-v1-package-submission
 Output:
 
 ```text
-target/longmemeval-v1/submission/cortexdb-longmemeval-v1-official-gpt4o.tar.gz
+target/longmemeval-v1/submission/cortexdb-longmemeval-v1-deepseek-flash.tar.gz
 ```
 
 The package includes hypotheses, official QA labels, retrieval metrics, dataset

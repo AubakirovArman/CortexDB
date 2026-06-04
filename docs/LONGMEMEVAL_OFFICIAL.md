@@ -1,9 +1,10 @@
 # LongMemEval Official Score Path
 
 Status: CortexDB has a full local LongMemEval v1 run using the official cleaned
-data, official retrieval metric script, official generation format, and official
-GPT-4o QA evaluator. Public leaderboard/list inclusion is still gated on
-submission to the official maintainers.
+data, official retrieval metric script, and official generation/evaluation
+format. Current local generation/evaluation defaults use DeepSeek flash.
+Public leaderboard/list inclusion is still gated on submission to the official
+maintainers.
 
 ## What Is Official
 
@@ -49,7 +50,7 @@ Run official QA scoring after official generation has produced a hypothesis
 JSONL file:
 
 ```bash
-export OPENAI_API_KEY=...
+export DEEPSEEK_API_KEY=...
 make longmemeval-v1-official-qa-score \
   LONGMEMEVAL_V1_HYPOTHESIS_FILE=target/longmemeval-v1/generation/<file>.jsonl
 ```
@@ -76,7 +77,7 @@ sha256: d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442
 
 These are retrieval metrics. They are not the final QA leaderboard score.
 
-Official QA evaluator evidence on the same split:
+Historical QA evaluator evidence on the same split:
 
 ```text
 model: gpt-4o
@@ -84,6 +85,10 @@ questions: 500
 correct: 383
 accuracy: 0.7660
 ```
+
+This is retained as a historical local baseline. New local runs should use the
+DeepSeek defaults in the Makefile unless a submission policy explicitly requires
+a different evaluator model.
 
 Breakdown:
 
@@ -556,8 +561,8 @@ make longmemeval-v1-package-submission
 The package is written to:
 
 ```text
-target/longmemeval-v1/submission/cortexdb-longmemeval-v1-official-gpt4o/
-target/longmemeval-v1/submission/cortexdb-longmemeval-v1-official-gpt4o.tar.gz
+target/longmemeval-v1/submission/cortexdb-longmemeval-v1-deepseek-flash/
+target/longmemeval-v1/submission/cortexdb-longmemeval-v1-deepseek-flash.tar.gz
 ```
 
 Package contents:
@@ -567,7 +572,7 @@ README.md
 manifest.json
 data_manifest.json
 hypotheses.jsonl
-eval-results-gpt-4o.jsonl
+eval-results.jsonl
 official_retrieval_metrics.txt
 retrieval_report.json
 ```

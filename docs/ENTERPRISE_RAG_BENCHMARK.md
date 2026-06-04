@@ -136,7 +136,7 @@ that file or paste the key in logs:
 ```text
 CORTEXDB_EMBEDDING_URL=...
 CORTEXDB_EMBEDDING_MODEL=...
-CORTEXDB_EMBEDDING_API_KEY=...
+# CORTEXDB_EMBEDDING_API_KEY must be set locally; do not commit it.
 ```
 
 Run a small endpoint smoke first:
@@ -210,7 +210,7 @@ Generate DeepSeek answers from the embedding-reranked retrieval output:
 make enterprise-rag-bench-deepseek-answers-embedding-rerank-50
 ```
 
-Then run the official answer evaluator:
+Then run the local answer metrics path:
 
 ```bash
 make enterprise-rag-bench-official-answer-metrics-50
@@ -222,16 +222,17 @@ For embedding-reranked answers:
 make enterprise-rag-bench-official-answer-metrics-embedding-rerank-50
 ```
 
-The official answer evaluator requires an LLM provider supported by the upstream
-benchmark. The retrieval-only target is local and cheap; the answer metrics
-target is the one that becomes comparable to leaderboard-style results.
+The local answer metrics path now defaults to the CortexDB DeepSeek judge. The
+retrieval-only target is local and cheap; the answer metrics target spends
+external model tokens and must be reported as a local DeepSeek-judged gate
+unless a separate upstream submission package is produced.
 
-### Official judge-backed answer metrics
+### DeepSeek judge-backed answer metrics
 
-The upstream evaluator reads its judge config from `LLM_PROVIDER`,
-`LLM_API_KEY`, and `LLM_MODEL_NAME`. CortexDB keeps those values out of the
-repository and maps a local env file into the upstream names only for the
-evaluation subprocess:
+CortexDB's local EnterpriseRAG answer-quality gates now use DeepSeek for both
+answer generation and answer judging. The judge script writes the same metrics
+shape consumed by `analyze_answer_errors.py`, but it is a local CortexDB judge
+path rather than an upstream official leaderboard judge.
 
 ```bash
 make enterprise-rag-bench-deepseek-answers-embedding-rerank-50
@@ -241,20 +242,14 @@ make enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke
 The judge targets intentionally do not regenerate answers. They require the
 existing reranked `answers.jsonl` artifact and fail fast if it is missing.
 
-By default this reads `OPENAI_API_KEY` from
-`/mnt/hf_model_weights/arman/3bit/sites/.env`, maps it to `LLM_API_KEY`, and
-uses `gpt-5.4` as the upstream `openai` judge. Override without editing
-tracked files:
+By default this uses the same local DeepSeek key file as answer generation and
+the `deepseek-v4-flash` model:
 
 ```bash
 make enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke \
-  ENTERPRISE_RAG_BENCH_JUDGE_ENV_FILE=/path/to/.env \
-  ENTERPRISE_RAG_BENCH_JUDGE_MODEL=gpt-5.4
+  ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE=/path/to/deepseek-key \
+  ENTERPRISE_RAG_BENCH_JUDGE_MODEL=deepseek-v4-flash
 ```
-
-Use a model that supports the upstream evaluator's Responses API `reasoning`
-parameter. `gpt-4o-mini` can silently collapse this evaluator path to blank
-judge output and false `0.0%` answer scores.
 
 After the smoke pass succeeds, run the full 50-question judged gate:
 
@@ -265,14 +260,12 @@ make enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-50
 The smoke target defaults to a `120s` timeout and the full target defaults to a
 `900s` timeout. Override these locally with
 `ENTERPRISE_RAG_BENCH_JUDGE_SMOKE_TIMEOUT_SECONDS` or
-`ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS` if the upstream judge endpoint is
-slow.
+`ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS` if the DeepSeek endpoint is slow.
 
 This path is intentionally local-only and not wired into GitHub Actions. It
-spends judge-model tokens and depends on external credentials. DeepSeek answer
-generation remains separate; the official judge itself uses the upstream
-EnterpriseRAG-Bench provider contract, which currently supports OpenAI or
-Anthropic SDK clients rather than arbitrary chat-completions endpoints.
+spends judge-model tokens and depends on external credentials. For upstream
+official leaderboard-style claims, rerun with the benchmark maintainers'
+required evaluator contract and package those artifacts separately.
 
 Embedding-reranked answer artifacts are written separately:
 
@@ -295,8 +288,7 @@ Baseline local embedding-reranked answer gate:
 | completion tokens | `3,044` |
 | total tokens | `131,551` |
 | generation wall time | `43.33s` |
-| official evaluator mode | `--no-correction --skip-citation-stripping` |
-| judge model | `gpt-5.4` |
+| judge model | `deepseek-v4-flash` |
 | average correctness | `28.0%` |
 | average completeness | `28.65%` |
 | combined correctness * completeness | `20.37` |
@@ -329,34 +321,30 @@ Latest local answer analysis:
 | abstained despite evidence bucket | `15` |
 | retrieval miss bucket | `15` |
 
-The upstream metrics script uses its own LLM judge for fact validation and
-wholistic correctness. If that judge is not configured, correctness and
-completeness can collapse to `0.0%` even when candidate answers are non-empty
-and retrieved documents include gold evidence. Judge-backed answer-quality runs
-must configure the upstream judge environment (`LLM_PROVIDER`, `LLM_API_KEY`,
-and `LLM_MODEL_NAME`) before claiming an official answer score.
+If the judge is not configured, correctness and completeness can collapse to
+`0.0%` even when candidate answers are non-empty and retrieved documents include
+gold evidence. Judge-backed answer-quality runs must configure the local
+DeepSeek key file before claiming a CortexDB local answer score.
 
 Latest judge-backed smoke:
 
 | Field | Value |
 | --- | ---: |
 | questions | `3` |
-| judge model | `gpt-5.4` |
+| judge model | `deepseek-v4-flash` |
 | average correctness | `66.67%` |
 | average completeness | `50.0%` |
 | average document recall | `100.0%` |
 | average invalid extra | `9.0` |
 
-The smoke proves the upstream judge environment bridge works. Earlier
-`gpt-4o-mini` runs produced false `0.0%` scores because the upstream adapter uses
-Responses API `reasoning` parameters that require a compatible model.
+The smoke proves the local DeepSeek judge bridge works.
 
 Baseline judge-backed 50-question gate:
 
 | Field | Value |
 | --- | ---: |
 | questions scored | `50 / 50` |
-| judge model | `gpt-5.4` |
+| judge model | `deepseek-v4-flash` |
 | average correctness | `28.0%` |
 | average completeness | `28.65%` |
 | combined correctness * completeness | `20.37` |
@@ -448,18 +436,19 @@ target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank-fused-v4-wi
 target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank-fused-v4-windowed/answer_error_analysis_judge.json
 ```
 
-Latest v4 result:
+Latest v4 result with the local DeepSeek judge:
 
 | Field | Baseline | v3 windowed | v4 fused |
 | --- | ---: | ---: | ---: |
-| average correctness | `28.0%` | `52.0%` | `58.0%` |
-| average completeness | `28.65%` | `46.52%` | `48.5%` |
-| combined correctness * completeness | `20.37` | `40.08` | `41.32` |
+| average correctness | `28.0%` | `52.0%` | `52.0%` |
+| average completeness | `28.65%` | `46.52%` | `61.42%` |
+| combined correctness * completeness | `20.37` | `40.08` | `31.94` |
 | average document recall | `68.85%` | `68.85%` | `79.23%` |
 | average invalid extra documents | `9.09` | `9.09` | `8.98` |
 | answer generation prompt tokens | `128,507` | `463,245` | `465,749` |
 | answer generation completion tokens | `3,044` | `4,611` | `4,913` |
 | answer generation wall time | `43.33s` | `69.73s` | `73.39s` |
+| judge total tokens | n/a | n/a | `30,124` |
 | retrieval-miss bucket | `15` | `15` | `10` |
 | answer-missing-gold-facts bucket | `17` | `26` | `29` |
 
@@ -476,10 +465,41 @@ documents. In the local v4 run it embedded `18,544` new texts and grew the
 embedding cache to `21,028` vectors. Repeated runs are cheaper if the cache is
 kept, but this remains a local benchmark path rather than a CI gate.
 
-v4 is the current best local 50-question judged gate. The main remaining
-quality issue shifted from pure retrieval misses to answer selection over
-conflicting or similar evidence: the v4 analysis still shows `13` rows where a
-gold document was retrieved but the answer was judged incorrect.
+v4 improves document recall, but it is no longer the best local DeepSeek-judged
+answer gate. Its main remaining quality issue is answer selection over
+conflicting or similar evidence.
+
+Experimental v5 evidence-selection prompt:
+
+```bash
+make enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v5-windowed-judge-50
+make enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v5-windowed-judge-50
+```
+
+v5 keeps the same fused retrieval output as v4 and changes only the answer
+prompt. The prompt explicitly asks the model to choose exact evidence by entity,
+date, path, header, number, version, and other anchors before writing the final
+answer.
+
+Latest v5 result with the local DeepSeek judge:
+
+| Field | v4 fused | v5 evidence-selection |
+| --- | ---: | ---: |
+| average correctness | `52.0%` | `58.0%` |
+| average completeness | `61.42%` | `63.62%` |
+| combined correctness * completeness | `31.94` | `36.90` |
+| average document recall | `79.23%` | `79.23%` |
+| average invalid extra documents | `8.98` | `8.98` |
+| answer generation prompt tokens | `465,749` | `476,499` |
+| answer generation completion tokens | `4,913` | `2,354` |
+| answer generation total tokens | `470,662` | `478,853` |
+| answer generation wall time | `73.39s` | `59.70s` |
+| judge total tokens | `30,124` | `27,574` |
+
+v5 is the current best local 50-question DeepSeek-judged gate. The improvement
+is answer-stage only: retrieval is unchanged from v4. The remaining hard cases
+are mostly questions where the correct document is present but the model still
+selects a nearby conflicting value or omits required details.
 
 Judge-backed answer error analysis:
 
@@ -505,7 +525,7 @@ Latest v3 judge-backed failure buckets:
 | `likely_judge_or_format_issue` | `5` |
 | `abstained_with_evidence` | `4` |
 
-Latest v4 judge-backed failure buckets:
+Latest v4 DeepSeek-judged failure buckets:
 
 | Bucket | Count |
 | --- | ---: |
@@ -513,6 +533,14 @@ Latest v4 judge-backed failure buckets:
 | `retrieval_miss` | `10` |
 | `likely_judge_or_format_issue` | `7` |
 | `abstained_with_evidence` | `4` |
+
+Latest v5 DeepSeek-judged failure buckets:
+
+| Bucket | Count |
+| --- | ---: |
+| `answer_missing_gold_facts` | `37` |
+| `retrieval_miss` | `10` |
+| `likely_judge_or_format_issue` | `3` |
 
 ## Full Run
 
@@ -525,10 +553,10 @@ make enterprise-rag-bench-cortexdb-retrieval-full
 Do not start with the full run. Use the 50-question gate first, inspect document
 recall, then decide whether to run full answer generation.
 
-## Official Evaluator Environment
+## Upstream Evaluator Environment
 
-The upstream evaluator has its own Python dependencies (`pydantic`, `openai`,
-`anthropic`, and others). Keep them isolated from CortexDB:
+The upstream benchmark repository has its own Python dependencies and evaluator
+contract. Keep that environment isolated from CortexDB:
 
 ```bash
 make enterprise-rag-bench-official-env
@@ -540,7 +568,9 @@ This creates:
 target/enterprise-rag-bench/.venv/
 ```
 
-The official metrics targets use that virtualenv automatically.
+The retrieval-only official metrics targets use that virtualenv automatically.
+The current answer-quality targets use the local DeepSeek judge script instead
+of the upstream benchmark evaluator.
 
 ## Current Scope
 

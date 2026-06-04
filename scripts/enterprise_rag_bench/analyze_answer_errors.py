@@ -149,7 +149,7 @@ def analyze(args: argparse.Namespace) -> dict[str, Any]:
         "doc_hit_but_answer_correct_false": doc_hit_answer_fail,
         "blank_correctness_reasoning": blank_reasoning,
         "analysis_process_env": {
-            "LLM_PROVIDER": os.environ.get("LLM_PROVIDER", "openai"),
+            "LLM_PROVIDER": os.environ.get("LLM_PROVIDER", "unset"),
             "LLM_API_KEY_present": bool(os.environ.get("LLM_API_KEY")),
             "LLM_MODEL_NAME_present": bool(os.environ.get("LLM_MODEL_NAME")),
         },

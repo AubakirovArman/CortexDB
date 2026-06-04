@@ -4,7 +4,7 @@
 .PHONY: migration-compatibility-v2-check
 .PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check longmemeval-v1-deepseek-flash-diff longmemeval-v1-deepseek-flash-compact-50-check longmemeval-v1-deepseek-flash-compact-500-check longmemeval-v1-deepseek-flash-preference-check longmemeval-v1-deepseek-flash-single-session-user-check longmemeval-v1-deepseek-flash-multi-session-check longmemeval-v1-deepseek-flash-temporal-check
 .PHONY: multihop-rag-official-repo multihop-rag-official-data multihop-rag-preflight multihop-rag-balanced-50 multihop-rag-local-50-check multihop-rag-cortexdb-retrieval-50 multihop-rag-official-retrieval-metrics-50 multihop-rag-cortexdb-retrieval-full multihop-rag-official-retrieval-metrics-full multihop-rag-retrieval-full-existing-check multihop-rag-qa-full-existing-check multihop-rag-qa-hybrid-full-retry-existing-check multihop-rag-qa-hybrid-full-retry-v4-existing-check multihop-rag-deepseek-qa-50 multihop-rag-deepseek-qa-50-cache-metrics multihop-rag-official-qa-metrics-50 multihop-rag-official-qa-metrics-existing-50 multihop-rag-qa-error-analysis-50 multihop-rag-deepseek-qa-full multihop-rag-deepseek-qa-temporal-50-v3 multihop-rag-official-qa-metrics-temporal-50-v3 multihop-rag-qa-error-analysis-temporal-50-v3 multihop-rag-deepseek-qa-temporal-50-v3-retry multihop-rag-official-qa-metrics-temporal-50-v3-retry multihop-rag-qa-error-analysis-temporal-50-v3-retry multihop-rag-deepseek-qa-temporal-50-v4-decompose-retry multihop-rag-official-qa-metrics-temporal-50-v4-decompose-retry multihop-rag-qa-error-analysis-temporal-50-v4-decompose-retry multihop-rag-deepseek-qa-temporal-chronology-50-v1 multihop-rag-official-qa-metrics-temporal-chronology-50-v1 multihop-rag-qa-error-analysis-temporal-chronology-50-v1 multihop-rag-deepseek-qa-temporal-chronology-yes-no-50-v1 multihop-rag-official-qa-metrics-temporal-chronology-yes-no-50-v1 multihop-rag-qa-error-analysis-temporal-chronology-yes-no-50-v1 multihop-rag-deepseek-qa-temporal-v3 multihop-rag-deepseek-qa-temporal-v3-retry multihop-rag-deepseek-qa-comparison-50-retry multihop-rag-official-qa-metrics-comparison-50-retry multihop-rag-qa-error-analysis-comparison-50-retry multihop-rag-deepseek-qa-comparison-50-decompose-retry multihop-rag-official-qa-metrics-comparison-50-decompose-retry multihop-rag-qa-error-analysis-comparison-50-decompose-retry multihop-rag-deepseek-qa-comparison-v2-retry multihop-rag-deepseek-qa-comparison-v3-decompose-retry multihop-rag-combine-qa-full-hybrid multihop-rag-combine-qa-full-hybrid-retry multihop-rag-combine-qa-full-hybrid-retry-v4 multihop-rag-postprocess-hybrid-full-retry-v5 multihop-rag-combine-qa-full-hybrid-retry-v6 multihop-rag-combine-qa-full-hybrid-retry-v7 multihop-rag-official-qa-metrics-hybrid-full multihop-rag-official-qa-metrics-hybrid-full-retry multihop-rag-official-qa-metrics-hybrid-full-retry-v4 multihop-rag-official-qa-metrics-hybrid-full-retry-v5 multihop-rag-official-qa-metrics-hybrid-full-retry-v6 multihop-rag-official-qa-metrics-hybrid-full-retry-v7 multihop-rag-official-qa-metrics-full multihop-rag-official-qa-metrics-existing-full multihop-rag-qa-error-analysis-full multihop-rag-qa-error-analysis-hybrid-full-retry multihop-rag-qa-error-analysis-hybrid-full-retry-v4 multihop-rag-qa-error-analysis-hybrid-full-retry-v5 multihop-rag-qa-error-analysis-hybrid-full-retry-v6 multihop-rag-qa-error-analysis-hybrid-full-retry-v7
-.PHONY: enterprise-rag-bench-official-repo enterprise-rag-bench-official-env enterprise-rag-bench-preflight enterprise-rag-bench-balanced-50 enterprise-rag-bench-cortexdb-retrieval-smoke enterprise-rag-bench-official-retrieval-only-metrics-smoke enterprise-rag-bench-cortexdb-retrieval-50 enterprise-rag-bench-official-retrieval-only-metrics-50 enterprise-rag-bench-official-retrieval-only-metrics-existing-50 enterprise-rag-bench-cortexdb-retrieval-existing-50-candidates enterprise-rag-bench-embedding-rerank-existing-50 enterprise-rag-bench-cortexdb-retrieval-existing-50-candidates-wide enterprise-rag-bench-embedding-rerank-wide-existing-50 enterprise-rag-bench-embedding-rerank-fused-existing-50 enterprise-rag-bench-official-retrieval-only-metrics-embedding-rerank-existing-50 enterprise-rag-bench-deepseek-answers-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-v2-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-v3-windowed-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v4-windowed-50 enterprise-rag-bench-official-answer-metrics-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-v2-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-v3-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v4-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-v2-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-v3-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v4-windowed-judge-50 enterprise-rag-bench-cortexdb-retrieval-full
+.PHONY: enterprise-rag-bench-official-repo enterprise-rag-bench-official-env enterprise-rag-bench-preflight enterprise-rag-bench-balanced-50 enterprise-rag-bench-cortexdb-retrieval-smoke enterprise-rag-bench-official-retrieval-only-metrics-smoke enterprise-rag-bench-cortexdb-retrieval-50 enterprise-rag-bench-official-retrieval-only-metrics-50 enterprise-rag-bench-official-retrieval-only-metrics-existing-50 enterprise-rag-bench-cortexdb-retrieval-existing-50-candidates enterprise-rag-bench-embedding-rerank-existing-50 enterprise-rag-bench-cortexdb-retrieval-existing-50-candidates-wide enterprise-rag-bench-embedding-rerank-wide-existing-50 enterprise-rag-bench-embedding-rerank-fused-existing-50 enterprise-rag-bench-official-retrieval-only-metrics-embedding-rerank-existing-50 enterprise-rag-bench-deepseek-answers-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-v2-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-v3-windowed-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v4-windowed-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v5-windowed-50 enterprise-rag-bench-official-answer-metrics-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-v2-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-v3-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v4-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v5-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-v2-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-v3-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v4-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v5-windowed-judge-50 enterprise-rag-bench-cortexdb-retrieval-full
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check
 .PHONY: service-manager-smoke-check
@@ -265,15 +265,16 @@ LONGMEMEVAL_V1_MAX_TURN_CHARS ?= 900
 LONGMEMEVAL_V1_MAX_SESSION_CHARS ?= 4000
 LONGMEMEVAL_V1_TOPK ?= 10
 LONGMEMEVAL_V1_LIMIT ?=
-LONGMEMEVAL_V1_READER_MODEL_NAME ?= gpt-4o-2024-08-06
-LONGMEMEVAL_V1_READER_MODEL_ALIAS ?= gpt-4o
-LONGMEMEVAL_V1_READER_BASE_URL ?=
-LONGMEMEVAL_V1_READER_OPENAI_KEY ?= $(OPENAI_API_KEY)
+LONGMEMEVAL_V1_READER_MODEL_NAME ?= deepseek-v4-flash
+LONGMEMEVAL_V1_READER_MODEL_ALIAS ?= deepseek-v4-flash
+LONGMEMEVAL_V1_READER_BASE_URL ?= https://api.deepseek.com
+LONGMEMEVAL_V1_READER_API_KEY ?= $(DEEPSEEK_API_KEY)
 LONGMEMEVAL_V1_GENERATION_ROOT ?= target/longmemeval-v1/generation
 LONGMEMEVAL_V1_GENERATION_TOPK ?= 10
 LONGMEMEVAL_V1_HYPOTHESIS_FILE ?=
-LONGMEMEVAL_V1_EVAL_MODEL ?= gpt-4o
-LONGMEMEVAL_V1_PACKAGE_NAME ?= cortexdb-longmemeval-v1-official-gpt4o
+LONGMEMEVAL_V1_EVAL_MODEL ?= deepseek-v4-flash
+LONGMEMEVAL_V1_EVAL_API_KEY ?= $(DEEPSEEK_API_KEY)
+LONGMEMEVAL_V1_PACKAGE_NAME ?= cortexdb-longmemeval-v1-deepseek-flash
 LONGMEMEVAL_V1_SUBMISSION_ROOT ?= target/longmemeval-v1/submission
 LONGMEMEVAL_V1_ANALYSIS_ROOT ?= target/longmemeval-v1/analysis
 LONGMEMEVAL_V1_FALSECASE_ROOT ?= target/longmemeval-v1/targeted-compact-falsecases
@@ -416,12 +417,15 @@ ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/qa/de
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_METRICS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT)/official_metrics.json
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_JUDGE_SMOKE_METRICS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT)/official_metrics_judge_smoke.json
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_JUDGE_METRICS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT)/official_metrics_judge.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_JUDGE_SMOKE_ROWS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT)/deepseek_judgments_smoke.jsonl
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_JUDGE_ROWS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT)/deepseek_judgments.jsonl
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_JUDGE_SMOKE_UPDATED_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT)/questions_updated_judge_smoke.jsonl
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_JUDGE_UPDATED_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT)/questions_updated_judge.jsonl
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ANALYSIS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT)/answer_error_analysis.json
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_JUDGE_ANALYSIS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT)/answer_error_analysis_judge.json
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/qa/deepseek-balanced-50-embedding-rerank-v2
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_JUDGE_METRICS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_ROOT)/official_metrics_judge.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_JUDGE_ROWS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_ROOT)/deepseek_judgments.jsonl
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_JUDGE_UPDATED_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_ROOT)/questions_updated_judge.jsonl
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_JUDGE_ANALYSIS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_ROOT)/answer_error_analysis_judge.json
 ENTERPRISE_RAG_BENCH_QA_V2_TOPK_CONTEXT ?= 10
@@ -429,6 +433,7 @@ ENTERPRISE_RAG_BENCH_QA_V2_MAX_CHARS_PER_DOC ?= 1800
 ENTERPRISE_RAG_BENCH_QA_V2_MAX_TOKENS ?= 320
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/qa/deepseek-balanced-50-embedding-rerank-v3-windowed
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_JUDGE_METRICS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_ROOT)/official_metrics_judge.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_JUDGE_ROWS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_ROOT)/deepseek_judgments.jsonl
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_JUDGE_UPDATED_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_ROOT)/questions_updated_judge.jsonl
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_JUDGE_ANALYSIS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_ROOT)/answer_error_analysis_judge.json
 ENTERPRISE_RAG_BENCH_QA_V3_TOPK_CONTEXT ?= 10
@@ -436,12 +441,18 @@ ENTERPRISE_RAG_BENCH_QA_V3_MAX_CHARS_PER_DOC ?= 5000
 ENTERPRISE_RAG_BENCH_QA_V3_MAX_TOKENS ?= 320
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/qa/deepseek-balanced-50-embedding-rerank-fused-v4-windowed
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_JUDGE_METRICS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_ROOT)/official_metrics_judge.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_JUDGE_ROWS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_ROOT)/deepseek_judgments.jsonl
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_JUDGE_UPDATED_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_ROOT)/questions_updated_judge.jsonl
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_JUDGE_ANALYSIS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_ROOT)/answer_error_analysis_judge.json
-ENTERPRISE_RAG_BENCH_JUDGE_ENV_FILE ?= /mnt/hf_model_weights/arman/3bit/sites/.env
-ENTERPRISE_RAG_BENCH_JUDGE_PROVIDER ?= openai
-ENTERPRISE_RAG_BENCH_JUDGE_MODEL ?= gpt-5.4
-ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_VAR ?= OPENAI_API_KEY
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/qa/deepseek-balanced-50-embedding-rerank-fused-v5-windowed
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_JUDGE_METRICS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_ROOT)/official_metrics_judge.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_JUDGE_ROWS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_ROOT)/deepseek_judgments.jsonl
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_JUDGE_UPDATED_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_ROOT)/questions_updated_judge.jsonl
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_JUDGE_ANALYSIS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_ROOT)/answer_error_analysis_judge.json
+ENTERPRISE_RAG_BENCH_QA_V5_MAX_TOKENS ?= 420
+ENTERPRISE_RAG_BENCH_JUDGE_MODEL ?= deepseek-v4-flash
+ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL ?= https://api.deepseek.com
+ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE ?= $(DEEPSEEK_KEY_FILE)
 ENTERPRISE_RAG_BENCH_JUDGE_SMOKE_LIMIT ?= 3
 ENTERPRISE_RAG_BENCH_JUDGE_SMOKE_TIMEOUT_SECONDS ?= 120
 ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS ?= 900
@@ -881,7 +892,7 @@ longmemeval-v1-official-retrieval-metrics: longmemeval-v1-official-lite-env long
 	cat "$(LONGMEMEVAL_V1_OFFICIAL_METRICS_REPORT)"
 
 longmemeval-v1-official-generate: longmemeval-v1-official-repo longmemeval-v1-cortexdb-retrieval
-	@if [ -z "$(LONGMEMEVAL_V1_READER_OPENAI_KEY)" ]; then echo "Set LONGMEMEVAL_V1_READER_OPENAI_KEY or OPENAI_API_KEY for official generation" >&2; exit 2; fi
+	@if [ -z "$(LONGMEMEVAL_V1_READER_API_KEY)" ]; then echo "Set LONGMEMEVAL_V1_READER_API_KEY or DEEPSEEK_API_KEY for generation" >&2; exit 2; fi
 	mkdir -p "$(LONGMEMEVAL_V1_GENERATION_ROOT)"
 	@base_url_args=""; \
 	if [ -n "$(LONGMEMEVAL_V1_READER_BASE_URL)" ]; then base_url_args="--openai_base_url $(LONGMEMEVAL_V1_READER_BASE_URL)"; fi; \
@@ -891,7 +902,7 @@ longmemeval-v1-official-generate: longmemeval-v1-official-repo longmemeval-v1-co
 	  --model_name "$(LONGMEMEVAL_V1_READER_MODEL_NAME)" \
 	  --model_alias "$(LONGMEMEVAL_V1_READER_MODEL_ALIAS)" \
 	  $$base_url_args \
-	  --openai_key "$(LONGMEMEVAL_V1_READER_OPENAI_KEY)" \
+	  --openai_key "$(LONGMEMEVAL_V1_READER_API_KEY)" \
 	  --retriever_type flat-session \
 	  --topk_context "$(LONGMEMEVAL_V1_GENERATION_TOPK)" \
 	  --history_format json \
@@ -900,10 +911,10 @@ longmemeval-v1-official-generate: longmemeval-v1-official-repo longmemeval-v1-co
 	  --con false
 
 longmemeval-v1-official-qa-score: longmemeval-v1-official-lite-env longmemeval-v1-official-data
-	@if [ -z "$(OPENAI_API_KEY)" ]; then echo "Set OPENAI_API_KEY for official LongMemEval evaluator" >&2; exit 2; fi
+	@if [ -z "$(LONGMEMEVAL_V1_EVAL_API_KEY)" ]; then echo "Set LONGMEMEVAL_V1_EVAL_API_KEY or DEEPSEEK_API_KEY for LongMemEval evaluator" >&2; exit 2; fi
 	@if [ -z "$(LONGMEMEVAL_V1_HYPOTHESIS_FILE)" ]; then echo "Set LONGMEMEVAL_V1_HYPOTHESIS_FILE to the official generation output jsonl" >&2; exit 2; fi
 	cd "$(LONGMEMEVAL_V1_OFFICIAL_REPO)/src/evaluation" && \
-	  "$(abspath $(LONGMEMEVAL_V1_PYTHON))" evaluate_qa.py "$(LONGMEMEVAL_V1_EVAL_MODEL)" "$(abspath $(LONGMEMEVAL_V1_HYPOTHESIS_FILE))" "$(abspath $(LONGMEMEVAL_V1_DATA_FILE))"
+	  OPENAI_API_KEY="$(LONGMEMEVAL_V1_EVAL_API_KEY)" "$(abspath $(LONGMEMEVAL_V1_PYTHON))" evaluate_qa.py "$(LONGMEMEVAL_V1_EVAL_MODEL)" "$(abspath $(LONGMEMEVAL_V1_HYPOTHESIS_FILE))" "$(abspath $(LONGMEMEVAL_V1_DATA_FILE))"
 
 longmemeval-v1-official-score: longmemeval-v1-official-generate
 	@echo "Generation completed. Re-run make longmemeval-v1-official-qa-score LONGMEMEVAL_V1_HYPOTHESIS_FILE=<generated-file>"
@@ -1276,6 +1287,22 @@ enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v4-windowed-50: ent
 	  --context-mode question-window \
 	  --workers "$(ENTERPRISE_RAG_BENCH_QA_WORKERS)"
 
+enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v5-windowed-50: enterprise-rag-bench-embedding-rerank-fused-existing-50
+	python3 scripts/enterprise_rag_bench/run_deepseek_answers.py \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_EMBEDDING_RERANK_FUSED_50)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output-root "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_ROOT)" \
+	  --api-key-file "$(DEEPSEEK_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_QA_BASE_URL)" \
+	  --model "$(ENTERPRISE_RAG_BENCH_QA_MODEL)" \
+	  --top-k-context "$(ENTERPRISE_RAG_BENCH_QA_V3_TOPK_CONTEXT)" \
+	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_QA_V3_MAX_CHARS_PER_DOC)" \
+	  --max-tokens "$(ENTERPRISE_RAG_BENCH_QA_V5_MAX_TOKENS)" \
+	  --context-mode question-window \
+	  --prompt-style evidence-selection-v5 \
+	  --workers "$(ENTERPRISE_RAG_BENCH_QA_WORKERS)"
+
 enterprise-rag-bench-official-answer-metrics-50: enterprise-rag-bench-official-env enterprise-rag-bench-deepseek-answers-50
 	cd "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" && "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" -m src.scripts.answer_evaluation.metrics_based_eval \
 	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_ANSWER_50_ROOT)/answers.jsonl)" \
@@ -1296,91 +1323,78 @@ enterprise-rag-bench-official-answer-metrics-embedding-rerank-50: enterprise-rag
 	  --no-correction \
 	  --skip-citation-stripping
 
-enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke: enterprise-rag-bench-official-env
+enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke:
 	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT)/answers.jsonl"
-	python3 scripts/enterprise_rag_bench/run_official_answer_metrics_with_judge.py \
-	  --official-repo "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" \
-	  --python "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" \
+	python3 scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py \
 	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT)/answers.jsonl)" \
 	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
 	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_JUDGE_SMOKE_METRICS))" \
-	  --updated-questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_JUDGE_SMOKE_UPDATED_QUESTIONS))" \
-	  --judge-env-file "$(ENTERPRISE_RAG_BENCH_JUDGE_ENV_FILE)" \
-	  --provider "$(ENTERPRISE_RAG_BENCH_JUDGE_PROVIDER)" \
+	  --judgments-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_JUDGE_SMOKE_ROWS))" \
+	  --api-key-file "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL)" \
 	  --model "$(ENTERPRISE_RAG_BENCH_JUDGE_MODEL)" \
-	  --api-key-var "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_VAR)" \
 	  --limit "$(ENTERPRISE_RAG_BENCH_JUDGE_SMOKE_LIMIT)" \
-	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_SMOKE_TIMEOUT_SECONDS)" \
-	  --no-correction \
-	  --skip-citation-stripping
+	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_SMOKE_TIMEOUT_SECONDS)"
 
-enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-50: enterprise-rag-bench-official-env
+enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-50:
 	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT)/answers.jsonl"
-	python3 scripts/enterprise_rag_bench/run_official_answer_metrics_with_judge.py \
-	  --official-repo "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" \
-	  --python "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" \
+	python3 scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py \
 	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_ROOT)/answers.jsonl)" \
 	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
 	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_JUDGE_METRICS))" \
-	  --updated-questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_JUDGE_UPDATED_QUESTIONS))" \
-	  --judge-env-file "$(ENTERPRISE_RAG_BENCH_JUDGE_ENV_FILE)" \
-	  --provider "$(ENTERPRISE_RAG_BENCH_JUDGE_PROVIDER)" \
+	  --judgments-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_50_JUDGE_ROWS))" \
+	  --api-key-file "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL)" \
 	  --model "$(ENTERPRISE_RAG_BENCH_JUDGE_MODEL)" \
-	  --api-key-var "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_VAR)" \
-	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS)" \
-	  --no-correction \
-	  --skip-citation-stripping
+	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS)"
 
-enterprise-rag-bench-official-answer-metrics-embedding-rerank-v2-judge-50: enterprise-rag-bench-official-env enterprise-rag-bench-deepseek-answers-embedding-rerank-v2-50
+enterprise-rag-bench-official-answer-metrics-embedding-rerank-v2-judge-50: enterprise-rag-bench-deepseek-answers-embedding-rerank-v2-50
 	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_ROOT)/answers.jsonl"
-	python3 scripts/enterprise_rag_bench/run_official_answer_metrics_with_judge.py \
-	  --official-repo "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" \
-	  --python "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" \
+	python3 scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py \
 	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_ROOT)/answers.jsonl)" \
 	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
 	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_JUDGE_METRICS))" \
-	  --updated-questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_JUDGE_UPDATED_QUESTIONS))" \
-	  --judge-env-file "$(ENTERPRISE_RAG_BENCH_JUDGE_ENV_FILE)" \
-	  --provider "$(ENTERPRISE_RAG_BENCH_JUDGE_PROVIDER)" \
+	  --judgments-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V2_50_JUDGE_ROWS))" \
+	  --api-key-file "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL)" \
 	  --model "$(ENTERPRISE_RAG_BENCH_JUDGE_MODEL)" \
-	  --api-key-var "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_VAR)" \
-	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS)" \
-	  --no-correction \
-	  --skip-citation-stripping
+	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS)"
 
-enterprise-rag-bench-official-answer-metrics-embedding-rerank-v3-windowed-judge-50: enterprise-rag-bench-official-env enterprise-rag-bench-deepseek-answers-embedding-rerank-v3-windowed-50
+enterprise-rag-bench-official-answer-metrics-embedding-rerank-v3-windowed-judge-50: enterprise-rag-bench-deepseek-answers-embedding-rerank-v3-windowed-50
 	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_ROOT)/answers.jsonl"
-	python3 scripts/enterprise_rag_bench/run_official_answer_metrics_with_judge.py \
-	  --official-repo "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" \
-	  --python "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" \
+	python3 scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py \
 	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_ROOT)/answers.jsonl)" \
 	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
 	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_JUDGE_METRICS))" \
-	  --updated-questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_JUDGE_UPDATED_QUESTIONS))" \
-	  --judge-env-file "$(ENTERPRISE_RAG_BENCH_JUDGE_ENV_FILE)" \
-	  --provider "$(ENTERPRISE_RAG_BENCH_JUDGE_PROVIDER)" \
+	  --judgments-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V3_50_JUDGE_ROWS))" \
+	  --api-key-file "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL)" \
 	  --model "$(ENTERPRISE_RAG_BENCH_JUDGE_MODEL)" \
-	  --api-key-var "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_VAR)" \
-	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS)" \
-	  --no-correction \
-	  --skip-citation-stripping
+	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS)"
 
-enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v4-windowed-judge-50: enterprise-rag-bench-official-env enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v4-windowed-50
+enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v4-windowed-judge-50: enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v4-windowed-50
 	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_ROOT)/answers.jsonl"
-	python3 scripts/enterprise_rag_bench/run_official_answer_metrics_with_judge.py \
-	  --official-repo "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" \
-	  --python "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" \
+	python3 scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py \
 	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_ROOT)/answers.jsonl)" \
 	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
 	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_JUDGE_METRICS))" \
-	  --updated-questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_JUDGE_UPDATED_QUESTIONS))" \
-	  --judge-env-file "$(ENTERPRISE_RAG_BENCH_JUDGE_ENV_FILE)" \
-	  --provider "$(ENTERPRISE_RAG_BENCH_JUDGE_PROVIDER)" \
+	  --judgments-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_JUDGE_ROWS))" \
+	  --api-key-file "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL)" \
 	  --model "$(ENTERPRISE_RAG_BENCH_JUDGE_MODEL)" \
-	  --api-key-var "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_VAR)" \
-	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS)" \
-	  --no-correction \
-	  --skip-citation-stripping
+	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS)"
+
+enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v5-windowed-judge-50: enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v5-windowed-50
+	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_ROOT)/answers.jsonl"
+	python3 scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py \
+	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_ROOT)/answers.jsonl)" \
+	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
+	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_JUDGE_METRICS))" \
+	  --judgments-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_JUDGE_ROWS))" \
+	  --api-key-file "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL)" \
+	  --model "$(ENTERPRISE_RAG_BENCH_JUDGE_MODEL)" \
+	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS)"
 
 enterprise-rag-bench-answer-error-analysis-embedding-rerank-50: enterprise-rag-bench-official-answer-metrics-embedding-rerank-50
 	python3 scripts/enterprise_rag_bench/analyze_answer_errors.py \
@@ -1420,6 +1434,14 @@ enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v4-windowed-ju
 	  --answers-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_ROOT)/answers.jsonl" \
 	  --metrics-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_JUDGE_METRICS)" \
 	  --report "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V4_50_JUDGE_ANALYSIS)"
+
+enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v5-windowed-judge-50:
+	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_JUDGE_METRICS)"
+	python3 scripts/enterprise_rag_bench/analyze_answer_errors.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
+	  --answers-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_ROOT)/answers.jsonl" \
+	  --metrics-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_JUDGE_METRICS)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_JUDGE_ANALYSIS)"
 
 multihop-rag-official-repo:
 	@if [ ! -d "$(MULTIHOP_RAG_OFFICIAL_REPO)/.git" ]; then \

@@ -123,14 +123,14 @@ def write_readme(path: Path, metadata: dict[str, Any]) -> None:
                 "",
                 "- Data: `xiaowu0162/longmemeval-cleaned`",
                 "- Retrieval metrics: official `print_retrieval_metrics.py`",
-                "- QA evaluator: official `evaluate_qa.py gpt-4o`",
-                "- Reader model: `gpt-4o-2024-08-06`",
+                f"- QA evaluator: official `evaluate_qa.py {metadata['models']['judge_model']}`",
+                f"- Reader model: `{metadata['models']['reader_model']}`",
                 "",
                 "## Files",
                 "",
                 "- `manifest.json`: package metadata and artifact checksums",
                 "- `hypotheses.jsonl`: official generation output",
-                "- `eval-results-gpt-4o.jsonl`: official QA evaluator output",
+                "- `eval-results.jsonl`: official QA evaluator output",
                 "- `official_retrieval_metrics.txt`: official retrieval metrics stdout",
                 "- `retrieval_report.json`: CortexDB retrieval report",
                 "- `data_manifest.json`: official dataset manifest",
@@ -145,9 +145,9 @@ def write_readme(path: Path, metadata: dict[str, Any]) -> None:
 def build_package(args: argparse.Namespace) -> tuple[Path, Path]:
     generation_dir = args.generation_dir
     hypothesis = args.hypothesis or newest_file(generation_dir, "*testlog*")
-    if hypothesis.name.endswith(".eval-results-gpt-4o"):
-        hypothesis = Path(str(hypothesis).removesuffix(".eval-results-gpt-4o"))
-    eval_results = args.eval_results or Path(str(hypothesis) + ".eval-results-gpt-4o")
+    if hypothesis.name.endswith(args.eval_results_suffix):
+        hypothesis = Path(str(hypothesis).removesuffix(args.eval_results_suffix))
+    eval_results = args.eval_results or Path(str(hypothesis) + args.eval_results_suffix)
 
     references = read_json(args.reference_file)
     hyp_rows = read_jsonl(hypothesis)
@@ -173,7 +173,7 @@ def build_package(args: argparse.Namespace) -> tuple[Path, Path]:
 
     artifacts = {
         "hypotheses": copy_artifact(hypothesis, package_dir, "hypotheses.jsonl"),
-        "eval_results": copy_artifact(eval_results, package_dir, "eval-results-gpt-4o.jsonl"),
+        "eval_results": copy_artifact(eval_results, package_dir, "eval-results.jsonl"),
         "official_retrieval_metrics": copy_artifact(
             args.official_retrieval_metrics,
             package_dir,
@@ -195,9 +195,9 @@ def build_package(args: argparse.Namespace) -> tuple[Path, Path]:
             "reference_file": str(args.reference_file),
         },
         "models": {
-            "reader_model": "gpt-4o-2024-08-06",
-            "reader_alias": "gpt-4o",
-            "judge_model": "gpt-4o",
+            "reader_model": args.reader_model,
+            "reader_alias": args.reader_alias,
+            "judge_model": args.judge_model,
         },
         "retrieval": {
             "granularity": "session",
@@ -223,7 +223,7 @@ def build_package(args: argparse.Namespace) -> tuple[Path, Path]:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--package-name", default="cortexdb-longmemeval-v1-official-gpt4o")
+    parser.add_argument("--package-name", default="cortexdb-longmemeval-v1-deepseek-flash")
     parser.add_argument("--output-root", type=Path, default=Path("target/longmemeval-v1/submission"))
     parser.add_argument("--generation-dir", type=Path, default=Path("target/longmemeval-v1/generation"))
     parser.add_argument("--hypothesis", type=Path)
@@ -233,7 +233,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--retrieval-log", type=Path, default=Path("target/longmemeval-v1/cortexdb/longmemeval_s_cleaned_cortexdb_session_retrieval.jsonl"))
     parser.add_argument("--retrieval-report", type=Path, default=Path("target/longmemeval-v1/cortexdb/report.json"))
     parser.add_argument("--official-retrieval-metrics", type=Path, default=Path("target/longmemeval-v1/cortexdb/official_retrieval_metrics.txt"))
-    parser.add_argument("--generation-log", type=Path, default=Path("target/longmemeval-v1/logs/official_generation_gpt4o_20260602-034241.log"))
+    parser.add_argument("--generation-log", type=Path, default=Path("target/longmemeval-v1/logs/official_generation.log"))
+    parser.add_argument("--eval-results-suffix", default=".eval-results-deepseek-v4-flash")
+    parser.add_argument("--reader-model", default="deepseek-v4-flash")
+    parser.add_argument("--reader-alias", default="deepseek-v4-flash")
+    parser.add_argument("--judge-model", default="deepseek-v4-flash")
     parser.add_argument("--include-retrieval-log", action="store_true")
     parser.add_argument("--force", action="store_true")
     return parser.parse_args()

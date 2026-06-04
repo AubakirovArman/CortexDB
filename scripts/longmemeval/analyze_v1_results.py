@@ -260,7 +260,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    eval_results = args.eval_results or newest_file(args.generation_dir, "*.eval-results-gpt-4o")
+    eval_results = args.eval_results or newest_file(args.generation_dir, "*.eval-results-*")
     retrieval_rows = load_retrieval_rows(args.retrieval_log)
     eval_rows = read_jsonl(eval_results)
     require(len(retrieval_rows) == len(eval_rows), "retrieval/eval row counts differ")
