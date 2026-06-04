@@ -414,10 +414,72 @@ Latest v3 result:
 | answer-missing-gold-facts bucket | `17` | `30` | `26` |
 | retrieval-miss bucket | `15` | `15` | `15` |
 
-v3 is the current best local 50-question judged gate. It is intentionally kept
-as a separate target because it spends more generation tokens than the baseline.
-The remaining hard limit is retrieval recall: the 15 retrieval-miss bucket
-cannot be fixed by answer prompt or context packing alone.
+v3 was the first strong local 50-question judged gate. It is intentionally kept
+as a separate target because it spends more generation tokens than the baseline
+without changing retrieval. Its remaining hard limit is retrieval recall: the
+15 retrieval-miss bucket cannot be fixed by answer prompt or context packing
+alone.
+
+Experimental v4 fused retrieval plus question-window context packing:
+
+```bash
+make enterprise-rag-bench-cortexdb-retrieval-existing-50-candidates-wide
+make enterprise-rag-bench-embedding-rerank-wide-existing-50
+make enterprise-rag-bench-embedding-rerank-fused-existing-50
+make enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v4-windowed-judge-50
+make enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v4-windowed-judge-50
+```
+
+v4 keeps the v3 question-aware answer windows and changes retrieval. It builds
+two embedding-reranked retrieval lists, one from the normal top-50 candidate
+pool and one from a wider top-500 candidate pool, then fuses them with
+reciprocal-rank fusion. This catches documents that were present only deep in
+the keyword/source candidate list while preserving documents that the narrower
+rerank already placed well.
+
+Artifacts:
+
+```text
+target/enterprise-rag-bench/retrieval/cortexdb_balanced_50_candidates_top500.jsonl
+target/enterprise-rag-bench/retrieval/cortexdb_balanced_50_embedding_rerank_top500_answers.jsonl
+target/enterprise-rag-bench/retrieval/cortexdb_balanced_50_embedding_rerank_fused_answers.jsonl
+target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank-fused-v4-windowed/answers.jsonl
+target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank-fused-v4-windowed/official_metrics_judge.json
+target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank-fused-v4-windowed/answer_error_analysis_judge.json
+```
+
+Latest v4 result:
+
+| Field | Baseline | v3 windowed | v4 fused |
+| --- | ---: | ---: | ---: |
+| average correctness | `28.0%` | `52.0%` | `58.0%` |
+| average completeness | `28.65%` | `46.52%` | `48.5%` |
+| combined correctness * completeness | `20.37` | `40.08` | `41.32` |
+| average document recall | `68.85%` | `68.85%` | `79.23%` |
+| average invalid extra documents | `9.09` | `9.09` | `8.98` |
+| answer generation prompt tokens | `128,507` | `463,245` | `465,749` |
+| answer generation completion tokens | `3,044` | `4,611` | `4,913` |
+| answer generation wall time | `43.33s` | `69.73s` | `73.39s` |
+| retrieval-miss bucket | `15` | `15` | `10` |
+| answer-missing-gold-facts bucket | `17` | `26` | `29` |
+
+Local gold-presence checks over the final top-10 document lists showed:
+
+| Retrieval output | Gold docs found in top-10 |
+| --- | ---: |
+| top-50 embedding rerank | `35 / 47` (`74.47%`) |
+| top-500 embedding rerank | `38 / 47` (`80.85%`) |
+| fused top-50 + top-500 rerank | `40 / 47` (`85.11%`) |
+
+The first wide rerank is expensive because it embeds many more candidate
+documents. In the local v4 run it embedded `18,544` new texts and grew the
+embedding cache to `21,028` vectors. Repeated runs are cheaper if the cache is
+kept, but this remains a local benchmark path rather than a CI gate.
+
+v4 is the current best local 50-question judged gate. The main remaining
+quality issue shifted from pure retrieval misses to answer selection over
+conflicting or similar evidence: the v4 analysis still shows `13` rows where a
+gold document was retrieved but the answer was judged incorrect.
 
 Judge-backed answer error analysis:
 
@@ -441,6 +503,15 @@ Latest v3 judge-backed failure buckets:
 | `answer_missing_gold_facts` | `26` |
 | `retrieval_miss` | `15` |
 | `likely_judge_or_format_issue` | `5` |
+| `abstained_with_evidence` | `4` |
+
+Latest v4 judge-backed failure buckets:
+
+| Bucket | Count |
+| --- | ---: |
+| `answer_missing_gold_facts` | `29` |
+| `retrieval_miss` | `10` |
+| `likely_judge_or_format_issue` | `7` |
 | `abstained_with_evidence` | `4` |
 
 ## Full Run
@@ -485,8 +556,9 @@ Current harness scope:
 
 Not yet optimized:
 
-- embedding retrieval;
 - production-grade embedding retrieval;
 - answer-aware reranking;
+- exact fact selection when retrieved documents contain similar conflicting
+  evidence;
 - ContextPack-specific enterprise prompt tuning;
 - leaderboard submission package.

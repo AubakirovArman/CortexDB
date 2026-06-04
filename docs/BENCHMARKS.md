@@ -452,20 +452,29 @@ score to `18.52`, so it remains an experiment rather than the new default.
 Earlier `gpt-4o-mini` judge runs are invalid for this evaluator path because
 the upstream adapter uses Responses API reasoning parameters.
 
-The current best local 50-question judged gate is the v3 question-window context
-packing target. It keeps retrieval fixed and changes the answer context from
-leading document snippets to question-aware windows:
+The current best local 50-question judged gate is the v4 fused retrieval plus
+question-window context packing target. It keeps the v3 question-aware answer
+windows and improves retrieval by fusing the normal top-50 embedding-reranked
+output with a wider top-500 embedding-reranked output:
 
 | Metric | Value |
 | --- | ---: |
-| average correctness | `52.0%` |
-| average completeness | `46.52%` |
-| combined correctness * completeness | `40.08` |
-| average document recall | `68.85%` |
-| average invalid extra documents | `9.09` |
+| average correctness | `58.0%` |
+| average completeness | `48.5%` |
+| combined correctness * completeness | `41.32` |
+| average document recall | `79.23%` |
+| average invalid extra documents | `8.98` |
+| answer generation total tokens | `470,662` |
+| answer generation wall time | `73.39s` |
 
-This is an answer-stage improvement, not a retrieval-stage improvement. The
-remaining hard bucket is still retrieval misses.
+The v3 windowed answer gate remains useful as the cheaper answer-stage
+baseline: it reaches `52.0%` correctness, `46.52%` completeness, and `40.08`
+combined score without the expensive top-500 retrieval fusion. v4 improves the
+document-recall side: local gold-presence checks found `40 / 47` gold documents
+in the fused final top-10 lists (`85.11%`), compared with `35 / 47` (`74.47%`)
+for the normal top-50 embedding rerank. The remaining hard bucket is answer
+selection when the correct document is retrieved alongside similar conflicting
+evidence.
 
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a
