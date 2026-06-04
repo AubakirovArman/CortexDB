@@ -204,15 +204,56 @@ Generate DeepSeek answers from the retrieved documents:
 make enterprise-rag-bench-deepseek-answers-50
 ```
 
+Generate DeepSeek answers from the embedding-reranked retrieval output:
+
+```bash
+make enterprise-rag-bench-deepseek-answers-embedding-rerank-50
+```
+
 Then run the official answer evaluator:
 
 ```bash
 make enterprise-rag-bench-official-answer-metrics-50
 ```
 
+For embedding-reranked answers:
+
+```bash
+make enterprise-rag-bench-official-answer-metrics-embedding-rerank-50
+```
+
 The official answer evaluator requires an LLM provider supported by the upstream
 benchmark. The retrieval-only target is local and cheap; the answer metrics
 target is the one that becomes comparable to leaderboard-style results.
+
+Embedding-reranked answer artifacts are written separately:
+
+```text
+target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank/answers.jsonl
+target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank/answer_generation_report.json
+target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank/official_metrics.json
+```
+
+Latest local embedding-reranked answer gate:
+
+| Field | Value |
+| --- | ---: |
+| model | `deepseek-v4-flash` |
+| thinking | `disabled` |
+| questions | `50` |
+| prompt tokens | `128,507` |
+| completion tokens | `3,044` |
+| total tokens | `131,551` |
+| generation wall time | `43.33s` |
+| official evaluator mode | `--no-correction --skip-citation-stripping` |
+| average correctness | `0.0%` |
+| average completeness | `0.0%` |
+| average document recall | `68.85%` |
+
+The generated answers are non-empty, but this gate does not yet produce an
+official answer-quality score. The current prompt/output contract still needs
+EnterpriseRAG-specific tuning. Treat the reranked run as validated retrieval
+evidence, not as a leaderboard-ready answer result.
 
 ## Full Run
 

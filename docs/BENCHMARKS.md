@@ -343,6 +343,8 @@ Current CortexDB support is intentionally staged:
    candidate set with a configured embedding endpoint.
 7. `enterprise-rag-bench-deepseek-answers-50` generates answers from retrieved
    documents for later full answer evaluation.
+8. `enterprise-rag-bench-deepseek-answers-embedding-rerank-50` generates the
+   same answer gate from embedding-reranked documents.
 
 Latest local retrieval-only evidence:
 
@@ -384,6 +386,19 @@ make enterprise-rag-bench-official-retrieval-only-metrics-embedding-rerank-exist
 
 This produces a separate reranked answer file and metrics artifact. It is not a
 CI target because it depends on an external embedding endpoint.
+
+To evaluate answer quality from reranked documents:
+
+```bash
+make enterprise-rag-bench-official-answer-metrics-embedding-rerank-50
+```
+
+Latest local reranked answer gate used `deepseek-v4-flash` with thinking
+disabled and generated 50 answers in `43.33s` using `131,551` total tokens.
+The official evaluator still reports `0.0%` correctness and `0.0%`
+completeness, while document recall remains `68.85%`. This means the retrieval
+evidence improved, but the EnterpriseRAG answer prompt/output contract still
+needs tuning before the run can be treated as an answer-quality result.
 
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a
