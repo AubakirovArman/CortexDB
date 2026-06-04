@@ -436,7 +436,7 @@ slow upstream judge cannot hang local validation indefinitely.
 
 Latest judge-backed smoke using `gpt-5.4` scored 3 questions with `100.0%`
 average document recall, `66.67%` correctness, and `50.0%` completeness. The
-full local judged gate completed `50 / 50` questions with:
+baseline local judged gate completed `50 / 50` questions with:
 
 | Metric | Value |
 | --- | ---: |
@@ -451,6 +451,21 @@ correctness to `30.0%` and completeness to `30.26%`, but reduced the combined
 score to `18.52`, so it remains an experiment rather than the new default.
 Earlier `gpt-4o-mini` judge runs are invalid for this evaluator path because
 the upstream adapter uses Responses API reasoning parameters.
+
+The current best local 50-question judged gate is the v3 question-window context
+packing target. It keeps retrieval fixed and changes the answer context from
+leading document snippets to question-aware windows:
+
+| Metric | Value |
+| --- | ---: |
+| average correctness | `52.0%` |
+| average completeness | `46.52%` |
+| combined correctness * completeness | `40.08` |
+| average document recall | `68.85%` |
+| average invalid extra documents | `9.09` |
+
+This is an answer-stage improvement, not a retrieval-stage improvement. The
+remaining hard bucket is still retrieval misses.
 
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a

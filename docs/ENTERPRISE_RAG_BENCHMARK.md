@@ -284,7 +284,7 @@ target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank/official_me
 target/enterprise-rag-bench/qa/deepseek-balanced-50-embedding-rerank/official_metrics_judge.json
 ```
 
-Latest local embedding-reranked answer gate:
+Baseline local embedding-reranked answer gate:
 
 | Field | Value |
 | --- | ---: |
@@ -351,7 +351,7 @@ The smoke proves the upstream judge environment bridge works. Earlier
 `gpt-4o-mini` runs produced false `0.0%` scores because the upstream adapter uses
 Responses API `reasoning` parameters that require a compatible model.
 
-Latest judge-backed 50-question gate:
+Baseline judge-backed 50-question gate:
 
 | Field | Value |
 | --- | ---: |
@@ -364,8 +364,7 @@ Latest judge-backed 50-question gate:
 | average invalid extra | `9.09` |
 
 The judged full gate confirms that the benchmark bridge is operational and that
-answer quality is now measurable. The next work item is to improve recall for
-retrieval-miss questions and tune generated answers to cover more gold facts.
+answer quality is now measurable.
 
 Experimental v2 answer prompt:
 
@@ -387,6 +386,39 @@ Latest v2 result:
 v2 reduces unnecessary abstention but is not the new default because its
 combined score regressed.
 
+Experimental v3 question-window context packing:
+
+```bash
+make enterprise-rag-bench-official-answer-metrics-embedding-rerank-v3-windowed-judge-50
+make enterprise-rag-bench-answer-error-analysis-embedding-rerank-v3-windowed-judge-50
+```
+
+v3 keeps the same embedding-reranked retrieval output but changes answer
+context construction from "first N characters of each document" to
+question-aware document windows. This is a context-packing improvement, not a
+retrieval improvement: it helps when the correct document was retrieved but the
+answer fact was below the leading snippet.
+
+Latest v3 result:
+
+| Field | Baseline | v2 | v3 windowed |
+| --- | ---: | ---: | ---: |
+| average correctness | `28.0%` | `30.0%` | `52.0%` |
+| average completeness | `28.65%` | `30.26%` | `46.52%` |
+| combined correctness * completeness | `20.37` | `18.52` | `40.08` |
+| average document recall | `68.85%` | `68.85%` | `68.85%` |
+| answer generation prompt tokens | `128,507` | `237,057` | `463,245` |
+| answer generation completion tokens | `3,044` | `2,204` | `4,611` |
+| answer generation wall time | `43.33s` | `51.73s` | `69.73s` |
+| abstained-with-evidence bucket | `15` | `4` | `4` |
+| answer-missing-gold-facts bucket | `17` | `30` | `26` |
+| retrieval-miss bucket | `15` | `15` | `15` |
+
+v3 is the current best local 50-question judged gate. It is intentionally kept
+as a separate target because it spends more generation tokens than the baseline.
+The remaining hard limit is retrieval recall: the 15 retrieval-miss bucket
+cannot be fixed by answer prompt or context packing alone.
+
 Judge-backed answer error analysis:
 
 ```bash
@@ -401,6 +433,15 @@ Latest judge-backed failure buckets:
 | `abstained_with_evidence` | `15` |
 | `retrieval_miss` | `15` |
 | `likely_judge_or_format_issue` | `3` |
+
+Latest v3 judge-backed failure buckets:
+
+| Bucket | Count |
+| --- | ---: |
+| `answer_missing_gold_facts` | `26` |
+| `retrieval_miss` | `15` |
+| `likely_judge_or_format_issue` | `5` |
+| `abstained_with_evidence` | `4` |
 
 ## Full Run
 

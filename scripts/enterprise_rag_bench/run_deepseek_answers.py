@@ -14,6 +14,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from context_windows import question_aware_snippet
+
 
 DEFAULT_BASE_URL = "https://api.deepseek.com"
 DEFAULT_MODEL = "deepseek-v4-flash"
@@ -70,6 +72,8 @@ def load_context(
     uuid_index: dict[str, str],
     sources_dir: Path,
     max_chars_per_doc: int,
+    question: str,
+    context_mode: str,
 ) -> str:
     docs: list[str] = []
     for rank, doc_id in enumerate(doc_ids, 1):
@@ -77,7 +81,10 @@ def load_context(
         if not rel_path:
             continue
         title, content = extract_document_content(read_json(sources_dir / rel_path))
-        snippet = content[:max_chars_per_doc]
+        if context_mode == "question-window":
+            snippet = question_aware_snippet(content, question, max_chars_per_doc)
+        else:
+            snippet = content[:max_chars_per_doc]
         docs.append(
             f"--- Document {rank} (ID: {doc_id}) ---\n"
             f"Title: {title}\n\n{snippet}"
@@ -194,7 +201,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     def generate(row: dict[str, Any]) -> dict[str, Any]:
         doc_ids = [str(item) for item in row.get("document_ids", [])]
-        context = load_context(doc_ids[: args.top_k_context], uuid_index, args.sources_dir, args.max_chars_per_doc)
+        question = str(row.get("question", ""))
+        context = load_context(
+            doc_ids[: args.top_k_context],
+            uuid_index,
+            args.sources_dir,
+            args.max_chars_per_doc,
+            question,
+            args.context_mode,
+        )
         answer, usage, elapsed_ms = chat(
             api_key=api_key,
             base_url=args.base_url,
@@ -212,6 +227,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "document_ids": doc_ids,
             "elapsed_ms": elapsed_ms,
             "model": args.model,
+            "context_mode": args.context_mode,
             "prompt_style": args.prompt_style,
         }
 
@@ -229,6 +245,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "schema_version": "cortexdb.enterprise_rag_bench.deepseek_answers_report.v1",
         "model": args.model,
         "thinking": "disabled",
+        "context_mode": args.context_mode,
         "prompt_style": args.prompt_style,
         "questions": len(ordered),
         "retrieval_file": str(args.retrieval_file),
@@ -256,6 +273,11 @@ def main() -> int:
         "--prompt-style",
         choices=["baseline", "fact-focused-v2"],
         default="baseline",
+    )
+    parser.add_argument(
+        "--context-mode",
+        choices=["leading", "question-window"],
+        default="leading",
     )
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--retries", type=int, default=3)
