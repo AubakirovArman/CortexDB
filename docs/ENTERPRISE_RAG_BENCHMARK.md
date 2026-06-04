@@ -243,14 +243,18 @@ existing reranked `answers.jsonl` artifact and fail fast if it is missing.
 
 By default this reads `OPENAI_API_KEY` from
 `/mnt/hf_model_weights/arman/3bit/sites/.env`, maps it to `LLM_API_KEY`, and
-uses `gpt-4o-mini` as the upstream `openai` judge. Override without editing
+uses `gpt-5.4` as the upstream `openai` judge. Override without editing
 tracked files:
 
 ```bash
 make enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke \
   ENTERPRISE_RAG_BENCH_JUDGE_ENV_FILE=/path/to/.env \
-  ENTERPRISE_RAG_BENCH_JUDGE_MODEL=gpt-4o-mini
+  ENTERPRISE_RAG_BENCH_JUDGE_MODEL=gpt-5.4
 ```
+
+Use a model that supports the upstream evaluator's Responses API `reasoning`
+parameter. `gpt-4o-mini` can silently collapse this evaluator path to blank
+judge output and false `0.0%` answer scores.
 
 After the smoke pass succeeds, run the full 50-question judged gate:
 
@@ -292,14 +296,14 @@ Latest local embedding-reranked answer gate:
 | total tokens | `131,551` |
 | generation wall time | `43.33s` |
 | official evaluator mode | `--no-correction --skip-citation-stripping` |
-| average correctness | `0.0%` |
-| average completeness | `0.0%` |
+| judge model | `gpt-5.4` |
+| average correctness | `28.0%` |
+| average completeness | `28.65%` |
+| combined correctness * completeness | `20.37` |
 | average document recall | `68.85%` |
 
-The generated answers are non-empty, but this gate does not yet produce an
-official answer-quality score. The current prompt/output contract still needs
-EnterpriseRAG-specific tuning. Treat the reranked run as validated retrieval
-evidence, not as a leaderboard-ready answer result.
+The generated answers are non-empty and now have a real judge-backed score.
+Treat this as a local 50-question gate, not a leaderboard claim.
 
 Run answer error analysis:
 
@@ -318,8 +322,8 @@ Latest local answer analysis:
 | Field | Value |
 | --- | ---: |
 | non-empty answers | `50 / 50` |
-| doc recall > 0 but answer_correct=false | `35` |
-| blank correctness reasoning rows | `50` |
+| doc recall > 0 but answer_correct=false | `23` |
+| blank correctness reasoning rows | `0` |
 | likely judge/format issue bucket | `3` |
 | answer missing gold facts bucket | `17` |
 | abstained despite evidence bucket | `15` |
@@ -337,30 +341,51 @@ Latest judge-backed smoke:
 | Field | Value |
 | --- | ---: |
 | questions | `3` |
-| average correctness | `0.0%` |
-| average completeness | `0.0%` |
+| judge model | `gpt-5.4` |
+| average correctness | `66.67%` |
+| average completeness | `50.0%` |
 | average document recall | `100.0%` |
 | average invalid extra | `9.0` |
 
-The smoke proves the upstream judge environment bridge works. The failing answer
-score means the next tuning target is the EnterpriseRAG answer prompt/output
-contract, not the retrieval path or local env wiring.
+The smoke proves the upstream judge environment bridge works. Earlier
+`gpt-4o-mini` runs produced false `0.0%` scores because the upstream adapter uses
+Responses API `reasoning` parameters that require a compatible model.
 
 Latest judge-backed 50-question gate:
 
 | Field | Value |
 | --- | ---: |
 | questions scored | `50 / 50` |
-| average correctness | `0.0%` |
-| average completeness | `0.0%` |
-| combined correctness * completeness | `0.0` |
+| judge model | `gpt-5.4` |
+| average correctness | `28.0%` |
+| average completeness | `28.65%` |
+| combined correctness * completeness | `20.37` |
 | average document recall | `68.85%` |
 | average invalid extra | `9.09` |
 
-The judged full gate confirms that the benchmark bridge is operational, but
-answer quality is not yet competitive. The next work item is to reduce
-over-broad evidence (`invalid_extra_docs`) and tune generated answers to match
-EnterpriseRAG gold facts without unnecessary abstention.
+The judged full gate confirms that the benchmark bridge is operational and that
+answer quality is now measurable. The next work item is to improve recall for
+retrieval-miss questions and tune generated answers to cover more gold facts.
+
+Experimental v2 answer prompt:
+
+```bash
+make enterprise-rag-bench-official-answer-metrics-embedding-rerank-v2-judge-50
+make enterprise-rag-bench-answer-error-analysis-embedding-rerank-v2-judge-50
+```
+
+Latest v2 result:
+
+| Field | Baseline | v2 |
+| --- | ---: | ---: |
+| average correctness | `28.0%` | `30.0%` |
+| average completeness | `28.65%` | `30.26%` |
+| combined correctness * completeness | `20.37` | `18.52` |
+| abstained-with-evidence bucket | `15` | `4` |
+| answer-missing-gold-facts bucket | `17` | `30` |
+
+v2 reduces unnecessary abstention but is not the new default because its
+combined score regressed.
 
 Judge-backed answer error analysis:
 

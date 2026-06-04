@@ -85,7 +85,27 @@ def load_context(
     return "\n\n".join(docs)
 
 
-def build_prompt(row: dict[str, Any], context: str) -> str:
+def build_prompt(row: dict[str, Any], context: str, prompt_style: str) -> str:
+    if prompt_style == "fact-focused-v2":
+        return f"""You answer EnterpriseRAG-Bench questions using only the retrieved documents.
+
+Rules:
+- Write the final answer directly; do not say "Based on the retrieved documents".
+- Include every concrete name, ID, date, number, path, limit, region, ticket, or version that answers the question.
+- If the context contains partial evidence, answer the supported parts. Do not append "Insufficient information" after a partial answer.
+- Answer exactly "Insufficient information." only when none of the retrieved documents supports the requested answer.
+- Prefer current, updated, explicit, or incident-specific evidence over older or generic notes.
+- Avoid citations, document IDs, markdown headings, and long explanations.
+- Keep the answer compact, usually 1-4 sentences.
+
+Question:
+{row.get("question", "")}
+
+Retrieved documents:
+{context}
+
+Final answer:"""
+
     return f"""You answer EnterpriseRAG-Bench questions using only the retrieved documents.
 
 Rules:
@@ -168,6 +188,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     usage_lock = threading.Lock()
     usage_totals = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
     started = time.perf_counter()
+    pending = [row for row in rows if row.get("question_id") not in existing]
+    if not pending and output_report.exists():
+        return read_json(output_report)
 
     def generate(row: dict[str, Any]) -> dict[str, Any]:
         doc_ids = [str(item) for item in row.get("document_ids", [])]
@@ -176,7 +199,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             api_key=api_key,
             base_url=args.base_url,
             model=args.model,
-            prompt=build_prompt(row, context),
+            prompt=build_prompt(row, context, args.prompt_style),
             max_tokens=args.max_tokens,
             retries=args.retries,
         )
@@ -189,9 +212,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "document_ids": doc_ids,
             "elapsed_ms": elapsed_ms,
             "model": args.model,
+            "prompt_style": args.prompt_style,
         }
 
-    pending = [row for row in rows if row.get("question_id") not in existing]
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = [executor.submit(generate, row) for row in pending]
         for future in concurrent.futures.as_completed(futures):
@@ -206,6 +229,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "schema_version": "cortexdb.enterprise_rag_bench.deepseek_answers_report.v1",
         "model": args.model,
         "thinking": "disabled",
+        "prompt_style": args.prompt_style,
         "questions": len(ordered),
         "retrieval_file": str(args.retrieval_file),
         "answers_file": str(output_jsonl),
@@ -228,6 +252,11 @@ def main() -> int:
     parser.add_argument("--top-k-context", type=int, default=6)
     parser.add_argument("--max-chars-per-doc", type=int, default=1600)
     parser.add_argument("--max-tokens", type=int, default=180)
+    parser.add_argument(
+        "--prompt-style",
+        choices=["baseline", "fact-focused-v2"],
+        default="baseline",
+    )
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--retries", type=int, default=3)
     parser.add_argument("--limit", type=int)

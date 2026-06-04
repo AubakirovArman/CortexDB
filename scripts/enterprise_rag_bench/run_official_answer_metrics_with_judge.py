@@ -34,7 +34,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--uuid-index-cache-file", default="generated_data/uuid_index.json")
     parser.add_argument("--judge-env-file", type=Path, required=True)
     parser.add_argument("--provider", default="openai")
-    parser.add_argument("--model", default="gpt-4o-mini")
+    parser.add_argument("--model", default="gpt-5.4")
     parser.add_argument("--api-key-var", default="OPENAI_API_KEY")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--question-id")
@@ -55,6 +55,7 @@ def main() -> int:
     api_key = values.get(args.api_key_var) or os.environ.get(args.api_key_var)
     if not api_key:
         raise RuntimeError(f"judge key not found in {args.api_key_var}")
+    python_path = args.python if args.python.is_absolute() else Path.cwd() / args.python
 
     env = os.environ.copy()
     env["LLM_PROVIDER"] = args.provider
@@ -62,7 +63,7 @@ def main() -> int:
     env["LLM_MODEL_NAME"] = args.model
 
     command = [
-        str(args.python),
+        str(python_path),
         "-m",
         "src.scripts.answer_evaluation.metrics_based_eval",
         "--answers-file",

@@ -434,20 +434,23 @@ spend external judge-model tokens and require credentials. The smoke target has
 a default `120s` timeout and the full target has a default `900s` timeout so a
 slow upstream judge cannot hang local validation indefinitely.
 
-Latest judge-backed smoke scored 3 questions with `100.0%` average document
-recall but `0.0%` correctness/completeness. The full local judged gate then
-completed `50 / 50` questions with:
+Latest judge-backed smoke using `gpt-5.4` scored 3 questions with `100.0%`
+average document recall, `66.67%` correctness, and `50.0%` completeness. The
+full local judged gate completed `50 / 50` questions with:
 
 | Metric | Value |
 | --- | ---: |
-| average correctness | `0.0%` |
-| average completeness | `0.0%` |
+| average correctness | `28.0%` |
+| average completeness | `28.65%` |
+| combined correctness * completeness | `20.37` |
 | average document recall | `68.85%` |
 | average invalid extra documents | `9.09` |
 
-That proves the judge environment bridge works and shifts the remaining work to
-the EnterpriseRAG answer prompt/output contract and tighter top-k evidence
-selection.
+An experimental `fact-focused-v2` prompt with top-10 context improved
+correctness to `30.0%` and completeness to `30.26%`, but reduced the combined
+score to `18.52`, so it remains an experiment rather than the new default.
+Earlier `gpt-4o-mini` judge runs are invalid for this evaluator path because
+the upstream adapter uses Responses API reasoning parameters.
 
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a
