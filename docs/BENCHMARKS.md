@@ -488,8 +488,16 @@ call: v5 remains the default path, while v6 lexical-anchor rows are used for
 `project_related` question types. On the same 50-question local gate, v7 scores
 `58.0%` correctness, `64.72%` completeness, `37.54` combined, `81.89%` average
 document recall, and `8.91` average invalid extra documents. In short: v5 is
-still the best single-generation path, while v7 is the best routed evidence for
-the next real generation experiment.
+the best routed reuse artifact.
+
+The current best local fresh-generation gate is v8 selective lexical routing.
+It routes retrieval rows before prompting DeepSeek and then regenerates all 50
+answers with the v5 evidence-selection prompt. v8 scores `58.0%` correctness,
+`65.12%` completeness, `37.77` combined, `81.89%` average document recall, and
+`8.91` average invalid extra documents. The v8 answer run used `476,796` total
+tokens and completed in `61.84s`; its DeepSeek judge run used `27,618` total
+tokens. This is the best local 50-question answer-quality gate so far, but it
+is still not a full official leaderboard score.
 
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a

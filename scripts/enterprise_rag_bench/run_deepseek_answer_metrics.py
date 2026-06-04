@@ -26,6 +26,10 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
 
 
+def read_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -199,6 +203,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     usage_lock = threading.Lock()
     usage_totals = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
     pending = [qid for qid in qids if qid not in existing]
+    if not pending and args.results_file.exists():
+        return read_json(args.results_file)
 
     def judge(qid: str) -> dict[str, Any]:
         question = questions[qid]

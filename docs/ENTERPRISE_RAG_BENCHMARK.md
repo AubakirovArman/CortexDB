@@ -566,6 +566,40 @@ single-generation path because v7 is a row-level policy that reuses prior v5
 and v6 answer/judge artifacts. Treat v7 as routing evidence for the next real
 generation experiment, not as a fresh model run.
 
+Experimental v8 selective lexical fresh generation:
+
+```bash
+make enterprise-rag-bench-routed-v8-selective-lexical-retrieval-50
+make enterprise-rag-bench-official-answer-metrics-routed-v8-selective-lexical-windowed-judge-50
+make enterprise-rag-bench-answer-error-analysis-routed-v8-selective-lexical-windowed-judge-50
+```
+
+v8 turns the v7 routing evidence into a real answer-generation run. It routes
+retrieval rows before prompting DeepSeek: v5 fused retrieval remains the default
+context, and v6 lexical-anchor retrieval is used for `basic`, `completeness`,
+`conflicting_info`, `constrained`, and `project_related` question types. The
+answers are then freshly generated with the v5 evidence-selection prompt.
+
+Latest v8 fresh-generation result:
+
+| Field | v5 evidence-selection | v7 routed reuse | v8 routed fresh generation |
+| --- | ---: | ---: | ---: |
+| average correctness | `58.0%` | `58.0%` | `58.0%` |
+| average completeness | `63.62%` | `64.72%` | `65.12%` |
+| combined correctness * completeness | `36.90` | `37.54` | `37.77` |
+| average document recall | `79.23%` | `81.89%` | `81.89%` |
+| average invalid extra documents | `8.98` | `8.91` | `8.91` |
+| answer generation total tokens | `478,853` | n/a | `476,796` |
+| answer generation wall time | `59.70s` | n/a | `61.84s` |
+| judge total tokens | `27,574` | n/a | `27,618` |
+
+v8 is the current best local 50-question fresh-generation gate. The gain is
+small but real under the same local DeepSeek judge: it keeps v7's retrieval
+recall while improving answer completeness over v5 and v7. The remaining hard
+cases are still selection failures when the correct document is present beside
+similar conflicting evidence, plus `project_related` and `semantic` questions
+with many required facts.
+
 Judge-backed answer error analysis:
 
 ```bash
@@ -616,6 +650,14 @@ Latest v6 DeepSeek-judged failure buckets:
 | `likely_judge_or_format_issue` | `4` |
 
 Latest v7 routed failure buckets:
+
+| Bucket | Count |
+| --- | ---: |
+| `answer_missing_gold_facts` | `37` |
+| `retrieval_miss` | `9` |
+| `likely_judge_or_format_issue` | `4` |
+
+Latest v8 fresh-generation failure buckets:
 
 | Bucket | Count |
 | --- | ---: |
