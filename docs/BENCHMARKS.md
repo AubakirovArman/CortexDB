@@ -348,16 +348,16 @@ Latest local retrieval-only evidence:
 | --- | ---: |
 | corpus documents indexed | `511,958` |
 | subset questions | `50` |
-| retrieval mode | `keyword top-k=10` |
+| retrieval mode | `keyword + source_types top-k=10` |
 | official evaluator mode | `--no-correction --skip-citation-stripping` |
-| average document recall | `43.56%` |
-| average invalid extra docs | `9.43` |
+| average document recall | `56.35%` |
+| average invalid extra docs | `9.19` |
 | correctness / completeness | `0.0% / 0.0%` |
 
 Correctness and completeness are zero by design in this pass because the
-answer field is empty. The signal here is document recall: keyword-only
-retrieval finds a meaningful baseline on direct lookup questions, but semantic
-and project-related questions still need embedding/hybrid retrieval and answer
+answer field is empty. The signal here is document recall: source-aware keyword
+retrieval finds a stronger baseline on direct lookup questions, but semantic and
+project-related questions still need embedding/hybrid retrieval and answer
 generation before this can become a full EnterpriseRAG-Bench score.
 
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,

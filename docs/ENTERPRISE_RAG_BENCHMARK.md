@@ -85,9 +85,11 @@ Corpus ingest uses `Database::put_cells` with
 `ENTERPRISE_RAG_BENCH_INGEST_BATCH_SIZE` (default `1000`) so large runs still go
 through CortexDB's WAL/engine path without doing one sync boundary per document.
 After checkpoint, the runner loads the persisted lexical index once and reuses
-that cache for all questions in the run. This keeps the 50-question gate focused
-on retrieval quality instead of repeatedly decoding the multi-gigabyte `.aci`
-file for every question.
+that cache for all questions in the run. It also uses the benchmark-provided
+`source_types` metadata as a runtime source filter before filling any remaining
+top-k slots globally. This keeps the 50-question gate focused on retrieval
+quality instead of repeatedly decoding the multi-gigabyte `.aci` file for every
+question.
 
 Run retrieval-only official metrics:
 
@@ -111,9 +113,9 @@ Latest local retrieval-only result:
 | --- | ---: |
 | corpus documents indexed | `511,958` |
 | subset questions | `50` |
-| retrieval mode | `keyword top-k=10` |
-| average document recall | `43.56%` |
-| average invalid extra docs | `9.43` |
+| retrieval mode | `keyword + source_types top-k=10` |
+| average document recall | `56.35%` |
+| average invalid extra docs | `9.19` |
 | correctness / completeness | `0.0% / 0.0%` |
 
 This is a baseline, not a final EnterpriseRAG-Bench answer score. It proves the

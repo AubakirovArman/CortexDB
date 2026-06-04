@@ -105,9 +105,10 @@ fn retrieve_questions(
     for (index, question) in questions.iter().enumerate() {
         let qid = required_str(question, "question_id", index)?;
         let query = required_str(question, "question", index)?;
+        let source_types = source_types(question);
         let mut seen = BTreeSet::<String>::new();
         let mut doc_ids = Vec::<Value>::new();
-        for doc_id in retrieval_index.search_doc_ids(query, args.top_k) {
+        for doc_id in retrieval_index.search_doc_ids(query, &source_types, args.top_k) {
             if seen.insert(doc_id.clone()) {
                 doc_ids.push(Value::String(doc_id));
             }
@@ -149,10 +150,11 @@ fn report_payload(
         "documents_indexed": args.max_documents.unwrap_or(uuid_index.len()),
         "top_k": args.top_k,
         "batch_size": args.batch_size,
+        "source_type_filter": true,
         "by_question_type": by_type,
         "output": args.output,
         "db_root": args.db_root,
-        "runner": "cortex-engine-keyword-retrieval",
+        "runner": "cortex-engine-keyword-source-aware-retrieval",
     })
 }
 
@@ -161,4 +163,14 @@ fn required_str<'a>(row: &'a Value, field: &str, index: usize) -> Result<&'a str
         .and_then(Value::as_str)
         .filter(|value| !value.trim().is_empty())
         .ok_or_else(|| format!("row {} missing non-empty {field}", index + 1))
+}
+
+fn source_types(row: &Value) -> Vec<String> {
+    row.get("source_types")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .map(str::to_owned)
+        .collect()
 }
