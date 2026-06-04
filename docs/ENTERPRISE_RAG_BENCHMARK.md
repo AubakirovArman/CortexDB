@@ -122,6 +122,80 @@ This is a baseline, not a final EnterpriseRAG-Bench answer score. It proves the
 full-corpus local retrieval path works and shows where the next quality work
 should focus: semantic and project-related retrieval.
 
+## Embedding Rerank Gate
+
+CortexDB also includes a local embedding rerank harness for the 50-question
+gate. It does not re-ingest the corpus. Instead, it asks the existing retrieval
+runner for a wider candidate set, embeds the question and candidate documents,
+reranks by cosine similarity, and then runs the same official retrieval-only
+evaluator over the final top-k documents.
+
+The harness reads embedding credentials from a local env file. Do not commit
+that file or paste the key in logs:
+
+```text
+CORTEXDB_EMBEDDING_URL=...
+CORTEXDB_EMBEDDING_MODEL=...
+CORTEXDB_EMBEDDING_API_KEY=...
+```
+
+Run a small endpoint smoke first:
+
+```bash
+make enterprise-rag-bench-embedding-rerank-existing-50 \
+  ENTERPRISE_RAG_BENCH_RERANK_LIMIT=3
+```
+
+Run the full 50-question rerank and official retrieval-only metrics:
+
+```bash
+make enterprise-rag-bench-official-retrieval-only-metrics-embedding-rerank-existing-50
+```
+
+Artifacts:
+
+```text
+target/enterprise-rag-bench/retrieval/cortexdb_balanced_50_candidates_top50.jsonl
+target/enterprise-rag-bench/retrieval/cortexdb_balanced_50_embedding_rerank_answers.jsonl
+target/enterprise-rag-bench/retrieval/cortexdb_balanced_50_embedding_rerank_metrics.json
+target/enterprise-rag-bench/retrieval/cortexdb_balanced_50_embedding_rerank_report.json
+target/enterprise-rag-bench/retrieval/embedding_cache.jsonl
+```
+
+This gate is local-only for now. It is intentionally not wired into GitHub
+Actions because it requires an external embedding endpoint and a secret key.
+
+Latest local embedding-rerank evidence:
+
+| Field | Value |
+| --- | ---: |
+| subset questions | `50` |
+| candidate retrieval | `keyword + source_types top-k=50` |
+| rerank model | `BAAI/bge-m3` |
+| final top-k | `10` |
+| average document recall | `68.85%` |
+| average invalid extra docs | `9.09` |
+| correctness / completeness | `0.0% / 0.0%` |
+
+Correctness and completeness are still zero because this is still a
+retrieval-only pass with empty answers. The improvement is in supporting
+document recall: reranking a wider CortexDB candidate set with embeddings
+improved recall by `+12.50` percentage points over the top-10 keyword/source
+baseline.
+
+Recall by question type in the latest local rerank:
+
+| Type | Avg recall |
+| --- | ---: |
+| basic | `94.12%` |
+| semantic | `38.46%` |
+| intra_document_reasoning | `100.00%` |
+| project_related | `24.65%` |
+| constrained | `66.67%` |
+| conflicting_info | `100.00%` |
+| completeness | `68.75%` |
+| miscellaneous | `50.00%` |
+
 ## Answer Generation Gate
 
 Generate DeepSeek answers from the retrieved documents:
@@ -176,13 +250,14 @@ Current harness scope:
 - `preflight.py` for input validation;
 - `build_balanced_subset.py` for the first 50-question gate;
 - `enterprise_rag_bench_retrieval` Rust binary using `cortex-engine`;
+- embedding rerank helper for local source-aware candidates;
 - DeepSeek answer generation helper;
 - Make targets for retrieval-only and answer metrics.
 
 Not yet optimized:
 
 - embedding retrieval;
-- source-aware metadata filtering;
-- reranking;
+- production-grade embedding retrieval;
+- answer-aware reranking;
 - ContextPack-specific enterprise prompt tuning;
 - leaderboard submission package.

@@ -339,7 +339,9 @@ Current CortexDB support is intentionally staged:
 5. `enterprise-rag-bench-official-retrieval-only-metrics-50` runs the upstream
    evaluator with empty answers and `--no-correction`; correctness/completeness
    are expected to be zero, while document recall is meaningful.
-6. `enterprise-rag-bench-deepseek-answers-50` generates answers from retrieved
+6. `enterprise-rag-bench-embedding-rerank-existing-50` reranks a wider local
+   candidate set with a configured embedding endpoint.
+7. `enterprise-rag-bench-deepseek-answers-50` generates answers from retrieved
    documents for later full answer evaluation.
 
 Latest local retrieval-only evidence:
@@ -354,11 +356,34 @@ Latest local retrieval-only evidence:
 | average invalid extra docs | `9.19` |
 | correctness / completeness | `0.0% / 0.0%` |
 
+Latest local embedding-rerank evidence:
+
+| Field | Value |
+| --- | ---: |
+| candidate retrieval | `keyword + source_types top-k=50` |
+| rerank model | `BAAI/bge-m3` |
+| final top-k | `10` |
+| average document recall | `68.85%` |
+| average invalid extra docs | `9.09` |
+| correctness / completeness | `0.0% / 0.0%` |
+
 Correctness and completeness are zero by design in this pass because the
 answer field is empty. The signal here is document recall: source-aware keyword
 retrieval finds a stronger baseline on direct lookup questions, but semantic and
-project-related questions still need embedding/hybrid retrieval and answer
-generation before this can become a full EnterpriseRAG-Bench score.
+project-related questions still need stronger candidate generation and answer
+generation before this can become a full EnterpriseRAG-Bench score. The local
+embedding rerank improves supporting document recall by `+12.50` percentage
+points over the top-10 keyword/source baseline, but it remains a retrieval-only
+gate.
+
+For local embedding-rerank experiments, keep credentials in `.env` and run:
+
+```bash
+make enterprise-rag-bench-official-retrieval-only-metrics-embedding-rerank-existing-50
+```
+
+This produces a separate reranked answer file and metrics artifact. It is not a
+CI target because it depends on an external embedding endpoint.
 
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a
