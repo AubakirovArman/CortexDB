@@ -624,7 +624,8 @@ Latest v9 fresh-generation result:
 | answer generation wall time | `61.84s` | `63.49s` |
 | judge total tokens | `27,618` | `29,057` |
 
-v9 is the current best local 50-question DeepSeek-judged fresh-generation gate.
+v9 was the best local 50-question DeepSeek-judged fresh-generation gate before
+the v12 evidence-digest run.
 The improvement is prompt-stage only: retrieval is unchanged from v8. The
 strongest targeted gain is `semantic`, which improved from `46.15%` to
 `53.85%` correctness and from `23.79` to `31.27` combined score. The
@@ -673,6 +674,47 @@ retrieval now finds many more supporting documents, but the generator still
 selects wrong nearby details, invents thresholds, or misses required facts when
 the answer spans several policy and incident artifacts. The next improvement
 should be project-chain answer synthesis, not broader retrieval.
+
+Experimental v11/v12 evidence digest answer synthesis:
+
+```bash
+make enterprise-rag-bench-official-answer-metrics-routed-v11-evidence-audit-windowed-judge-50
+make enterprise-rag-bench-answer-error-analysis-routed-v11-evidence-audit-windowed-judge-50
+make enterprise-rag-bench-official-answer-metrics-routed-v12-type-aware-digest-windowed-judge-50
+make enterprise-rag-bench-answer-error-analysis-routed-v12-type-aware-digest-windowed-judge-50
+```
+
+v11 and v12 add a deterministic, question-anchored evidence digest before each
+question-aware document window. The digest is built only from retrieved
+document text and question anchors; it does not use gold answers or expected
+document IDs. Its purpose is to surface exact table rows, numeric limits,
+headers, region names, paths, and policy snippets before the full context
+window.
+
+v11 paired the digest with a new generic audit prompt. That helped some
+`project_related` cases but regressed the overall answer gate. v12 kept the
+safer v9 type-aware prompt and changed only the context mode to
+`question-window-digest`, which became the new best local 50-question gate.
+
+Latest v11/v12 result:
+
+| Field | v9 type-aware | v10 project-chain | v11 audit digest | v12 type-aware digest |
+| --- | ---: | ---: | ---: | ---: |
+| average correctness | `60.0%` | `56.0%` | `50.0%` | `62.0%` |
+| average completeness | `66.62%` | `63.38%` | `65.62%` | `68.56%` |
+| combined correctness * completeness | `39.97` | `35.49` | `32.81` | `42.51` |
+| average document recall | `81.89%` | `84.93%` | `84.93%` | `84.93%` |
+| `project_related` correctness | `0.0%` | `0.0%` | `25.0%` | `50.0%` |
+| average invalid extra documents | `8.91` | `8.72` | `8.72` | `8.72` |
+| answer generation total tokens | `478,353` | `484,419` | `591,580` | `586,581` |
+| answer generation wall time | `63.49s` | `213.23s` | `72.47s` | `67.69s` |
+| judge total tokens | `29,057` | `29,114` | `30,818` | `29,135` |
+
+v12 is now the current best local 50-question DeepSeek-judged fresh-generation
+gate. It also improved `doc_hit_but_answer_correct_false` from v10's `14` to
+`12`, showing that digest context helps answer synthesis when the right
+documents are already retrieved. Remaining failures are still dominated by
+answers that miss required facts rather than by empty answers.
 
 Judge-backed answer error analysis:
 
@@ -748,6 +790,22 @@ Latest v9 type-aware failure buckets:
 | `likely_judge_or_format_issue` | `4` |
 
 Latest v10 project-chain failure buckets:
+
+| Bucket | Count |
+| --- | ---: |
+| `answer_missing_gold_facts` | `37` |
+| `retrieval_miss` | `9` |
+| `likely_judge_or_format_issue` | `4` |
+
+Latest v11 audit-digest failure buckets:
+
+| Bucket | Count |
+| --- | ---: |
+| `answer_missing_gold_facts` | `37` |
+| `retrieval_miss` | `9` |
+| `likely_judge_or_format_issue` | `4` |
+
+Latest v12 type-aware-digest failure buckets:
 
 | Bucket | Count |
 | --- | ---: |

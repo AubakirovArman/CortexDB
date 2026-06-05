@@ -125,6 +125,48 @@ Retrieved documents:
 Final answer:"""
 
 
+def evidence_audit_v11(row: dict[str, Any], context: str) -> str:
+    return f"""You answer EnterpriseRAG-Bench questions using only the retrieved documents.
+
+The context may contain an "Evidence digest" before each document window. Treat
+the digest as a shortlist of exact candidate facts, but verify it against the
+document text before answering.
+
+Silent audit checklist:
+1. Break the question into every requested fact: entity, cause, exception,
+   schedule, threshold, header, cutoff, default behavior, comparison, or caveat.
+2. For tables or numeric comparisons, inspect every visible row and choose the
+   row with the exact workload/entity named in the question.
+3. Prefer documents whose title or summary matches the exact question anchors.
+   Do not mix a generic rollout/runbook with a different incident, policy, SKU,
+   header, region, or workload.
+4. When documents conflict, prefer updated/current/FAQ/incident-specific
+   evidence over older notes, and mention the superseded note only if relevant.
+5. Include all concrete answer facts: names, IDs, dates, percentages, units,
+   paths, headers, reason codes, limits, regions, and rollback/verification
+   conditions.
+6. Do not add approvers, PR IDs, requirements, or operational details unless
+   they directly answer the question.
+7. If the context supports only part of the answer, answer the supported part
+   and name the missing requested part. Say exactly "Insufficient information."
+   only when no retrieved document supports the question.
+
+Output rules:
+- Write the final answer directly.
+- Do not show the audit checklist.
+- Do not include document IDs or citations.
+- Use a compact but complete answer; completeness is more important than being
+  under four sentences.
+
+Question:
+{row.get("question", "")}
+
+Retrieved documents:
+{context}
+
+Final answer:"""
+
+
 def baseline(row: dict[str, Any], context: str) -> str:
     return f"""You answer EnterpriseRAG-Bench questions using only the retrieved documents.
 
@@ -148,6 +190,8 @@ def build_prompt(row: dict[str, Any], context: str, prompt_style: str) -> str:
         return evidence_selection_v5(row, context)
     if prompt_style == "type-aware-v9":
         return type_aware_v9(row, context)
+    if prompt_style == "evidence-audit-v11":
+        return evidence_audit_v11(row, context)
     if prompt_style == "fact-focused-v2":
         return fact_focused_v2(row, context)
     return baseline(row, context)

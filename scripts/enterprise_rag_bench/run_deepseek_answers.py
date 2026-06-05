@@ -16,6 +16,7 @@ from typing import Any
 
 from answer_prompts import build_prompt
 from context_windows import question_aware_snippet
+from evidence_digest import evidence_digest
 
 
 DEFAULT_BASE_URL = "https://api.deepseek.com"
@@ -84,6 +85,12 @@ def load_context(
         title, content = extract_document_content(read_json(sources_dir / rel_path))
         if context_mode == "question-window":
             snippet = question_aware_snippet(content, question, max_chars_per_doc)
+        elif context_mode == "question-window-digest":
+            digest = evidence_digest(content, title, question)
+            snippet_budget = max(1200, max_chars_per_doc - len(digest) - 160)
+            snippet = question_aware_snippet(content, question, snippet_budget)
+            if digest:
+                snippet = f"{digest}\n\nQuestion-aware windows:\n{snippet}"
         else:
             snippet = content[:max_chars_per_doc]
         docs.append(
@@ -234,12 +241,18 @@ def main() -> int:
     parser.add_argument("--max-tokens", type=int, default=180)
     parser.add_argument(
         "--prompt-style",
-        choices=["baseline", "fact-focused-v2", "evidence-selection-v5", "type-aware-v9"],
+        choices=[
+            "baseline",
+            "fact-focused-v2",
+            "evidence-selection-v5",
+            "type-aware-v9",
+            "evidence-audit-v11",
+        ],
         default="baseline",
     )
     parser.add_argument(
         "--context-mode",
-        choices=["leading", "question-window"],
+        choices=["leading", "question-window", "question-window-digest"],
         default="leading",
     )
     parser.add_argument("--workers", type=int, default=1)

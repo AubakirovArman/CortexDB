@@ -491,17 +491,16 @@ document recall, and `8.91` average invalid extra documents. In short: v5 is
 the best single-generation path before routing, while v7 is the best reuse
 routing artifact.
 
-The current best local fresh-generation gate is v9 type-aware prompting over
-the v8 selective lexical retrieval route. It routes retrieval rows before
-prompting DeepSeek, then uses project-specific instructions for
-`project_related` questions, semantic disambiguation instructions for
-`semantic` questions, and the v5 evidence-selection prompt for all other
-question types. v9 scores `60.0%` correctness, `66.62%` completeness, `39.97`
-combined, `81.89%` average document recall, and `8.91` average invalid extra
-documents. The v9 answer run used `478,353` total tokens and completed in
-`63.49s`; its DeepSeek judge run used `29,057` total tokens. This is the best
-local 50-question answer-quality gate so far, but it is still not a full
-official leaderboard score.
+The current best local fresh-generation gate is v12 type-aware prompting with
+question-anchored evidence digest context over the v10 project-chain retrieval
+route. It keeps the safer v9 prompt strategy, but prepends deterministic digest
+snippets that surface exact table rows, headers, limits, paths, and policy
+facts from the retrieved documents. v12 scores `62.0%` correctness, `68.56%`
+completeness, `42.51` combined, `84.93%` average document recall, and `8.72`
+average invalid extra documents. The v12 answer run used `586,581` total tokens
+and completed in `67.69s`; its DeepSeek judge run used `29,135` total tokens.
+This is the best local 50-question answer-quality gate so far, but it is still
+not a full official leaderboard score.
 
 The v9 improvement is answer-stage only: retrieval is unchanged from v8. The
 main targeted gain is the `semantic` slice, which improved from `46.15%` to
@@ -509,15 +508,16 @@ main targeted gain is the `semantic` slice, which improved from `46.15%` to
 correctness, so the next benchmark-quality work should improve project-chain
 retrieval and aggregation rather than only rewriting prompts.
 
-The v10 project-chain retrieval experiment improves `project_related` document
-recall but is not promoted as the best answer gate. It reranks wide top-500
-project candidates using question anchors, project-domain terms, and linked
-artifacts across Jira, Confluence, GitHub, Gmail, and Slack. On the same
-50-question gate, v10 raised average document recall from `81.89%` to `84.93%`
-and `project_related` recall from `49.65%` to `85.42%`, while answer quality
-regressed to `56.0%` correctness, `63.38%` completeness, and `35.49` combined.
-This means project evidence is now easier to find, but answer synthesis still
-chooses wrong nearby details or omits required policy facts.
+The v9 improvement was answer-stage only: retrieval was unchanged from v8. The
+main targeted gain was the `semantic` slice, which improved from `46.15%` to
+`53.85%` correctness. The v10 project-chain retrieval experiment then improved
+`project_related` document recall from `49.65%` to `85.42%`, but regressed
+answer quality to `56.0%` correctness. v11 paired the new evidence digest with
+a generic audit prompt and also regressed overall quality (`50.0%` correctness),
+although it proved that digest context can improve some project cases. v12 is
+the first combined improvement: it keeps v9 prompting, uses v10 retrieval, and
+adds digest context, lifting `project_related` correctness to `50.0%` and the
+overall combined score to `42.51`.
 
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a
