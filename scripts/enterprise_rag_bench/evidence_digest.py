@@ -82,9 +82,28 @@ def _score_block(text: str, tokens: set[str], phrases: list[str]) -> float:
 
 def evidence_digest(content: str, title: str, question: str, max_chars: int = 1400) -> str:
     """Return compact evidence blocks likely to contain exact answer facts."""
-    tokens = query_tokens(question)
-    if not tokens or max_chars <= 0:
+    if max_chars <= 0:
         return ""
+    selected = select_digest_blocks(content, question)
+    if not selected:
+        return ""
+    parts = [f"Evidence digest for title: {title}"]
+    for block in selected:
+        snippet = block.text[:360].rstrip()
+        parts.append(f"- {snippet}")
+    return "\n".join(parts)[:max_chars].strip()
+
+
+def evidence_digest_score(content: str, question: str) -> float:
+    """Return a deterministic question-evidence score for document ordering."""
+    return round(sum(block.score for block in select_digest_blocks(content, question)), 3)
+
+
+def select_digest_blocks(content: str, question: str) -> list[DigestBlock]:
+    """Return selected evidence blocks in document order."""
+    tokens = query_tokens(question)
+    if not tokens:
+        return []
     phrases = _question_phrases(question)
     lines = _normalize_lines(content)
     blocks: list[DigestBlock] = []
@@ -110,10 +129,4 @@ def evidence_digest(content: str, title: str, question: str, max_chars: int = 14
         if len(selected) >= 5:
             break
 
-    if not selected:
-        return ""
-    parts = [f"Evidence digest for title: {title}"]
-    for block in sorted(selected, key=lambda item: item.start_line):
-        snippet = block.text[:360].rstrip()
-        parts.append(f"- {snippet}")
-    return "\n".join(parts)[:max_chars].strip()
+    return sorted(selected, key=lambda item: item.start_line)

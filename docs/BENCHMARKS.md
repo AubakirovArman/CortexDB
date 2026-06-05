@@ -491,16 +491,18 @@ document recall, and `8.91` average invalid extra documents. In short: v5 is
 the best single-generation path before routing, while v7 is the best reuse
 routing artifact.
 
-The current best local routed answer-quality gate is v14 completeness
-source-of-truth routing over v12 type-aware evidence-digest answers. v12 remains
-the best single fresh-generation baseline: it scores `62.0%` correctness,
-`68.56%` completeness, `42.51` combined, `84.93%` average document recall, and
-`8.72` average invalid extra documents. v13 source-of-truth prompting improved
-the small `completeness` slice but regressed other slices, so v14 routes only
-`completeness` questions to v13 and keeps v12 everywhere else. v14 scores
-`64.0%` correctness, `69.16%` completeness, `44.26` combined, `84.93%` average
-document recall, and `8.72` average invalid extra documents. This is still a
-local 50-question DeepSeek-judged gate, not a full official leaderboard score.
+The current best local routed answer-quality gate is v16 conflict-coverage
+routing over v14. v12 remains the best single fresh-generation baseline:
+`62.0%` correctness, `68.56%` completeness, `42.51` combined, `84.93%` average
+document recall, and `8.72` average invalid extra documents. v14 routes only
+`completeness` questions to v13 and scores `64.0%` correctness, `69.16%`
+completeness, and `44.26` combined. v15 ranked evidence-digest prompting
+regressed overall as a full-generation gate, but fixed the `conflicting_info`
+slice; v16 routes only `conflicting_info` to v15 and keeps v14 everywhere else.
+v16 scores `66.0%` correctness, `70.36%` completeness, `46.44` combined,
+`84.93%` average document recall, and `8.72` average invalid extra documents.
+This is still a local 50-question DeepSeek-judged gate, not a full official
+leaderboard score.
 
 The v9 improvement is answer-stage only: retrieval is unchanged from v8. The
 main targeted gain is the `semantic` slice, which improved from `46.15%` to
@@ -519,7 +521,9 @@ the first combined improvement: it keeps v9 prompting, uses v10 retrieval, and
 adds digest context, lifting `project_related` correctness to `50.0%` and the
 overall combined score to `42.51`. v14 then reuses already judged v12/v13
 artifacts and routes only `completeness` questions through v13, lifting the
-combined score to `44.26` without making another LLM call.
+combined score to `44.26` without making another LLM call. v16 reuses v14/v15
+artifacts and routes only `conflicting_info` through v15, lifting the combined
+score to `46.44`.
 
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a

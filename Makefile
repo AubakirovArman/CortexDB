@@ -8,6 +8,7 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v11-evidence-audit-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v11-evidence-audit-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v11-evidence-audit-windowed-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v12-type-aware-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v12-type-aware-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v12-type-aware-digest-windowed-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
+.PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check
 .PHONY: service-manager-smoke-check
@@ -505,6 +506,16 @@ ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_50_JUDGE_METRICS ?= $(ENTERPRISE_RAG_BENC
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_50_REPORT ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_50_ROOT)/routed_answer_report.json
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_50_JUDGE_ANALYSIS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_50_ROOT)/answer_error_analysis_judge.json
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_ROUTE_TYPES ?= completeness
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/qa/deepseek-balanced-50-routed-v15-coverage-ranked-windowed
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_JUDGE_METRICS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_ROOT)/official_metrics_judge.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_JUDGE_ROWS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_ROOT)/deepseek_judgments.jsonl
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_JUDGE_ANALYSIS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_ROOT)/answer_error_analysis_judge.json
+ENTERPRISE_RAG_BENCH_QA_V15_MAX_TOKENS ?= 900
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/qa/routed-v16-conflict-coverage
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_JUDGE_METRICS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/official_metrics_judge.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_REPORT ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/routed_answer_report.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_JUDGE_ANALYSIS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/answer_error_analysis_judge.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_ROUTE_TYPES ?= conflicting_info
 ENTERPRISE_RAG_BENCH_JUDGE_MODEL ?= deepseek-v4-flash
 ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL ?= https://api.deepseek.com
 ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE ?= $(DEEPSEEK_KEY_FILE)
@@ -1509,6 +1520,22 @@ enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50
 	  --prompt-style type-aware-v13 \
 	  --workers "$(ENTERPRISE_RAG_BENCH_QA_WORKERS)"
 
+enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50: enterprise-rag-bench-routed-v10-project-chain-retrieval-existing-50
+	python3 scripts/enterprise_rag_bench/run_deepseek_answers.py \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_ROUTED_V10_PROJECT_CHAIN_50)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output-root "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_ROOT)" \
+	  --api-key-file "$(DEEPSEEK_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_QA_BASE_URL)" \
+	  --model "$(ENTERPRISE_RAG_BENCH_QA_MODEL)" \
+	  --top-k-context "$(ENTERPRISE_RAG_BENCH_QA_V3_TOPK_CONTEXT)" \
+	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_QA_V3_MAX_CHARS_PER_DOC)" \
+	  --max-tokens "$(ENTERPRISE_RAG_BENCH_QA_V15_MAX_TOKENS)" \
+	  --context-mode question-window-digest-ranked \
+	  --prompt-style type-aware-v15 \
+	  --workers "$(ENTERPRISE_RAG_BENCH_QA_WORKERS)"
+
 enterprise-rag-bench-official-answer-metrics-50: enterprise-rag-bench-official-env enterprise-rag-bench-deepseek-answers-50
 	cd "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" && "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" -m src.scripts.answer_evaluation.metrics_based_eval \
 	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_ANSWER_50_ROOT)/answers.jsonl)" \
@@ -1703,6 +1730,35 @@ enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50:
 	  --policy-name v14_completeness_source_truth \
 	  --routed-question-types "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_ROUTE_TYPES)"
 
+enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50
+	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_ROOT)/answers.jsonl"
+	python3 scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py \
+	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_ROOT)/answers.jsonl)" \
+	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
+	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_JUDGE_METRICS))" \
+	  --judgments-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_JUDGE_ROWS))" \
+	  --api-key-file "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL)" \
+	  --model "$(ENTERPRISE_RAG_BENCH_JUDGE_MODEL)" \
+	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS)"
+
+enterprise-rag-bench-routed-v16-conflict-coverage-judge-50:
+	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_50_ROOT)/answers.jsonl"
+	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_50_JUDGE_METRICS)"
+	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_ROOT)/answers.jsonl"
+	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_JUDGE_METRICS)"
+	python3 scripts/enterprise_rag_bench/combine_routed_answer_outputs.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
+	  --default-answers-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_50_ROOT)/answers.jsonl" \
+	  --default-metrics-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_50_JUDGE_METRICS)" \
+	  --routed-answers-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_ROOT)/answers.jsonl" \
+	  --routed-metrics-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_JUDGE_METRICS)" \
+	  --output-answers-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/answers.jsonl" \
+	  --output-metrics-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_JUDGE_METRICS)" \
+	  --output-report-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_REPORT)" \
+	  --policy-name v16_conflict_coverage \
+	  --routed-question-types "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_ROUTE_TYPES)"
+
 enterprise-rag-bench-routed-v7-selective-lexical-judge-50:
 	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_ROOT)/answers.jsonl"
 	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_JUDGE_METRICS)"
@@ -1829,6 +1885,20 @@ enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-
 	  --answers-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_50_ROOT)/answers.jsonl" \
 	  --metrics-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_50_JUDGE_METRICS)" \
 	  --report "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V14_50_JUDGE_ANALYSIS)"
+
+enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50: enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50
+	python3 scripts/enterprise_rag_bench/analyze_answer_errors.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
+	  --answers-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_ROOT)/answers.jsonl" \
+	  --metrics-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_JUDGE_METRICS)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V15_50_JUDGE_ANALYSIS)"
+
+enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50: enterprise-rag-bench-routed-v16-conflict-coverage-judge-50
+	python3 scripts/enterprise_rag_bench/analyze_answer_errors.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
+	  --answers-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/answers.jsonl" \
+	  --metrics-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_JUDGE_METRICS)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_JUDGE_ANALYSIS)"
 
 multihop-rag-official-repo:
 	@if [ ! -d "$(MULTIHOP_RAG_OFFICIAL_REPO)/.git" ]; then \

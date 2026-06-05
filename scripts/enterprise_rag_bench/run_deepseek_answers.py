@@ -16,7 +16,7 @@ from typing import Any
 
 from answer_prompts import build_prompt
 from context_windows import question_aware_snippet
-from evidence_digest import evidence_digest
+from evidence_digest import evidence_digest, evidence_digest_score
 
 
 DEFAULT_BASE_URL = "https://api.deepseek.com"
@@ -77,7 +77,7 @@ def load_context(
     question: str,
     context_mode: str,
 ) -> str:
-    docs: list[str] = []
+    docs: list[tuple[float, int, str]] = []
     for rank, doc_id in enumerate(doc_ids, 1):
         rel_path = uuid_index.get(doc_id)
         if not rel_path:
@@ -91,13 +91,24 @@ def load_context(
             snippet = question_aware_snippet(content, question, snippet_budget)
             if digest:
                 snippet = f"{digest}\n\nQuestion-aware windows:\n{snippet}"
+        elif context_mode == "question-window-digest-ranked":
+            digest = evidence_digest(content, title, question)
+            snippet_budget = max(1200, max_chars_per_doc - len(digest) - 160)
+            snippet = question_aware_snippet(content, question, snippet_budget)
+            if digest:
+                snippet = f"{digest}\n\nQuestion-aware windows:\n{snippet}"
         else:
             snippet = content[:max_chars_per_doc]
-        docs.append(
+        score = evidence_digest_score(content, question) if "digest-ranked" in context_mode else 0.0
+        docs.append((
+            score,
+            rank,
             f"--- Document {rank} (ID: {doc_id}) ---\n"
-            f"Title: {title}\n\n{snippet}"
-        )
-    return "\n\n".join(docs)
+            f"Title: {title}\n\n{snippet}",
+        ))
+    if "digest-ranked" in context_mode:
+        docs.sort(key=lambda item: (-item[0], item[1]))
+    return "\n\n".join(text for _, _, text in docs)
 
 
 def chat(
@@ -247,13 +258,19 @@ def main() -> int:
             "evidence-selection-v5",
             "type-aware-v9",
             "type-aware-v13",
+            "type-aware-v15",
             "evidence-audit-v11",
         ],
         default="baseline",
     )
     parser.add_argument(
         "--context-mode",
-        choices=["leading", "question-window", "question-window-digest"],
+        choices=[
+            "leading",
+            "question-window",
+            "question-window-digest",
+            "question-window-digest-ranked",
+        ],
         default="leading",
     )
     parser.add_argument("--workers", type=int, default=1)
