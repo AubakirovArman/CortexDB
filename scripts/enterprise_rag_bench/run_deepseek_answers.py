@@ -246,6 +246,7 @@ def main() -> int:
             "fact-focused-v2",
             "evidence-selection-v5",
             "type-aware-v9",
+            "type-aware-v13",
             "evidence-audit-v11",
         ],
         default="baseline",

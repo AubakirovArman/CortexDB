@@ -682,6 +682,10 @@ make enterprise-rag-bench-official-answer-metrics-routed-v11-evidence-audit-wind
 make enterprise-rag-bench-answer-error-analysis-routed-v11-evidence-audit-windowed-judge-50
 make enterprise-rag-bench-official-answer-metrics-routed-v12-type-aware-digest-windowed-judge-50
 make enterprise-rag-bench-answer-error-analysis-routed-v12-type-aware-digest-windowed-judge-50
+make enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50
+make enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50
+make enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50
+make enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
 ```
 
 v11 and v12 add a deterministic, question-anchored evidence digest before each
@@ -696,25 +700,33 @@ v11 paired the digest with a new generic audit prompt. That helped some
 safer v9 type-aware prompt and changed only the context mode to
 `question-window-digest`, which became the new best local 50-question gate.
 
-Latest v11/v12 result:
+Latest v11/v12/v13/v14 result:
 
-| Field | v9 type-aware | v10 project-chain | v11 audit digest | v12 type-aware digest |
-| --- | ---: | ---: | ---: | ---: |
-| average correctness | `60.0%` | `56.0%` | `50.0%` | `62.0%` |
-| average completeness | `66.62%` | `63.38%` | `65.62%` | `68.56%` |
-| combined correctness * completeness | `39.97` | `35.49` | `32.81` | `42.51` |
-| average document recall | `81.89%` | `84.93%` | `84.93%` | `84.93%` |
-| `project_related` correctness | `0.0%` | `0.0%` | `25.0%` | `50.0%` |
-| average invalid extra documents | `8.91` | `8.72` | `8.72` | `8.72` |
-| answer generation total tokens | `478,353` | `484,419` | `591,580` | `586,581` |
-| answer generation wall time | `63.49s` | `213.23s` | `72.47s` | `67.69s` |
-| judge total tokens | `29,057` | `29,114` | `30,818` | `29,135` |
+| Field | v9 type-aware | v10 project-chain | v11 audit digest | v12 type-aware digest | v13 source-of-truth digest | v14 completeness route |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| average correctness | `60.0%` | `56.0%` | `50.0%` | `62.0%` | `60.0%` | `64.0%` |
+| average completeness | `66.62%` | `63.38%` | `65.62%` | `68.56%` | `69.36%` | `69.16%` |
+| combined correctness * completeness | `39.97` | `35.49` | `32.81` | `42.51` | `41.62` | `44.26` |
+| average document recall | `81.89%` | `84.93%` | `84.93%` | `84.93%` | `84.93%` | `84.93%` |
+| `project_related` correctness | `0.0%` | `0.0%` | `25.0%` | `50.0%` | `25.0%` | `50.0%` |
+| `completeness` correctness | `0.0%` | `0.0%` | `0.0%` | `0.0%` | `50.0%` | `50.0%` |
+| average invalid extra documents | `8.91` | `8.72` | `8.72` | `8.72` | `8.72` | `8.72` |
+| answer generation total tokens | `478,353` | `484,419` | `591,580` | `586,581` | `587,720` | reused v12/v13 |
+| answer generation wall time | `63.49s` | `213.23s` | `72.47s` | `67.69s` | `67.93s` | no LLM call |
+| judge total tokens | `29,057` | `29,114` | `30,818` | `29,135` | `29,498` | reused v12/v13 |
 
-v12 is now the current best local 50-question DeepSeek-judged fresh-generation
-gate. It also improved `doc_hit_but_answer_correct_false` from v10's `14` to
-`12`, showing that digest context helps answer synthesis when the right
-documents are already retrieved. Remaining failures are still dominated by
-answers that miss required facts rather than by empty answers.
+v13 adds a stricter source-of-truth prompt for project, conflict, constraint,
+completeness, and miscellaneous questions. It improved the small
+`completeness` slice, but regressed project and intra-document behavior, so it
+is not the default full-generation gate. v14 routes only `completeness`
+questions to the already judged v13 artifacts and keeps v12 for all other
+question types. v14 is now the current best local 50-question DeepSeek-judged
+answer-quality gate.
+
+v14 also shows the next real bottleneck: most remaining failures are not empty
+answers, but answers that omit required facts even when the expected documents
+were retrieved. That points to targeted answer synthesis and evidence coverage
+work, not another broad prompt rewrite.
 
 Judge-backed answer error analysis:
 

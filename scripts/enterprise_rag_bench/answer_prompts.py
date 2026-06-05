@@ -65,6 +65,61 @@ def type_aware_v9(row: dict[str, Any], context: str) -> str:
     return evidence_selection_v5(row, context)
 
 
+def type_aware_v13(row: dict[str, Any], context: str) -> str:
+    question_type = str(row.get("question_type") or "")
+    if question_type in {
+        "project_related",
+        "conflicting_info",
+        "constrained",
+        "completeness",
+        "miscellaneous",
+    }:
+        return source_of_truth_v13(row, context)
+    return type_aware_v9(row, context)
+
+
+def source_of_truth_v13(row: dict[str, Any], context: str) -> str:
+    return f"""You answer EnterpriseRAG-Bench questions using only the retrieved documents.
+
+The context may include "Evidence digest" bullets before the document windows.
+Use those bullets as high-priority candidate facts, then verify against the
+document text. Do not use facts that are only from a similar but different
+incident, SKU, header, rollout, interview, policy, or project.
+
+Source-of-truth selection rules:
+- If there are conflicting old notes and updated/current/FAQ/requirements docs,
+  prefer the updated/current/FAQ/requirements source.
+- If the question asks "standardizing", "default", "procedure", "does it
+  support", "root cause", or "what mitigation", choose the document that
+  directly states that exact decision, procedure, support status, cause, or
+  deployed mitigation.
+- For headers, paths, IDs, cutoff values, region names, and reason codes, copy
+  the literal string exactly from the best matching evidence.
+- For multi-step procedures, include every required step, ordering rule,
+  verification metric, timing window, and evidence-capture requirement visible
+  in the selected evidence.
+- For interviews or strategy questions, list every strategy component visible
+  in the selected evidence; do not stop after the first component.
+- If two documents use different names for a similar thing, answer with the name
+  from the source that matches the question's scenario and latest decision.
+
+Output rules:
+- Write the final answer directly.
+- Do not include document IDs or citations.
+- Be compact but complete; include all concrete facts needed to avoid a partial
+  answer.
+- Say exactly "Insufficient information." only when no retrieved document
+  supports the question.
+
+Question:
+{row.get("question", "")}
+
+Retrieved documents:
+{context}
+
+Final answer:"""
+
+
 def project_related_v9(row: dict[str, Any], context: str) -> str:
     return f"""You answer EnterpriseRAG-Bench project and incident questions using only the retrieved documents.
 
@@ -190,6 +245,8 @@ def build_prompt(row: dict[str, Any], context: str, prompt_style: str) -> str:
         return evidence_selection_v5(row, context)
     if prompt_style == "type-aware-v9":
         return type_aware_v9(row, context)
+    if prompt_style == "type-aware-v13":
+        return type_aware_v13(row, context)
     if prompt_style == "evidence-audit-v11":
         return evidence_audit_v11(row, context)
     if prompt_style == "fact-focused-v2":

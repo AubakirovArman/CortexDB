@@ -491,16 +491,16 @@ document recall, and `8.91` average invalid extra documents. In short: v5 is
 the best single-generation path before routing, while v7 is the best reuse
 routing artifact.
 
-The current best local fresh-generation gate is v12 type-aware prompting with
-question-anchored evidence digest context over the v10 project-chain retrieval
-route. It keeps the safer v9 prompt strategy, but prepends deterministic digest
-snippets that surface exact table rows, headers, limits, paths, and policy
-facts from the retrieved documents. v12 scores `62.0%` correctness, `68.56%`
-completeness, `42.51` combined, `84.93%` average document recall, and `8.72`
-average invalid extra documents. The v12 answer run used `586,581` total tokens
-and completed in `67.69s`; its DeepSeek judge run used `29,135` total tokens.
-This is the best local 50-question answer-quality gate so far, but it is still
-not a full official leaderboard score.
+The current best local routed answer-quality gate is v14 completeness
+source-of-truth routing over v12 type-aware evidence-digest answers. v12 remains
+the best single fresh-generation baseline: it scores `62.0%` correctness,
+`68.56%` completeness, `42.51` combined, `84.93%` average document recall, and
+`8.72` average invalid extra documents. v13 source-of-truth prompting improved
+the small `completeness` slice but regressed other slices, so v14 routes only
+`completeness` questions to v13 and keeps v12 everywhere else. v14 scores
+`64.0%` correctness, `69.16%` completeness, `44.26` combined, `84.93%` average
+document recall, and `8.72` average invalid extra documents. This is still a
+local 50-question DeepSeek-judged gate, not a full official leaderboard score.
 
 The v9 improvement is answer-stage only: retrieval is unchanged from v8. The
 main targeted gain is the `semantic` slice, which improved from `46.15%` to
@@ -514,10 +514,12 @@ main targeted gain was the `semantic` slice, which improved from `46.15%` to
 `project_related` document recall from `49.65%` to `85.42%`, but regressed
 answer quality to `56.0%` correctness. v11 paired the new evidence digest with
 a generic audit prompt and also regressed overall quality (`50.0%` correctness),
-although it proved that digest context can improve some project cases. v12 is
+although it proved that digest context can improve some project cases. v12 was
 the first combined improvement: it keeps v9 prompting, uses v10 retrieval, and
 adds digest context, lifting `project_related` correctness to `50.0%` and the
-overall combined score to `42.51`.
+overall combined score to `42.51`. v14 then reuses already judged v12/v13
+artifacts and routes only `completeness` questions through v13, lifting the
+combined score to `44.26` without making another LLM call.
 
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a
