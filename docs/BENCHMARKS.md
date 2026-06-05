@@ -509,6 +509,16 @@ main targeted gain is the `semantic` slice, which improved from `46.15%` to
 correctness, so the next benchmark-quality work should improve project-chain
 retrieval and aggregation rather than only rewriting prompts.
 
+The v10 project-chain retrieval experiment improves `project_related` document
+recall but is not promoted as the best answer gate. It reranks wide top-500
+project candidates using question anchors, project-domain terms, and linked
+artifacts across Jira, Confluence, GitHub, Gmail, and Slack. On the same
+50-question gate, v10 raised average document recall from `81.89%` to `84.93%`
+and `project_related` recall from `49.65%` to `85.42%`, while answer quality
+regressed to `56.0%` correctness, `63.38%` completeness, and `35.49` combined.
+This means project evidence is now easier to find, but answer synthesis still
+chooses wrong nearby details or omits required policy facts.
+
 See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a
 full official-compatible run is produced and packaged reproducibly.

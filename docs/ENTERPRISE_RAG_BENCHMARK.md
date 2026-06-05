@@ -632,6 +632,48 @@ strongest targeted gain is `semantic`, which improved from `46.15%` to
 quality step should be retrieval/aggregation for project chains rather than
 more prompt-only tuning.
 
+Experimental v10 project-chain retrieval:
+
+```bash
+make enterprise-rag-bench-routed-v10-project-chain-retrieval-50
+make enterprise-rag-bench-routed-v10-project-chain-retrieval-existing-50
+make enterprise-rag-bench-official-answer-metrics-routed-v10-project-chain-windowed-judge-50
+make enterprise-rag-bench-answer-error-analysis-routed-v10-project-chain-windowed-judge-50
+```
+
+v10 keeps v9's answer prompt and changes only `project_related` retrieval. It
+starts from the wide top-500 keyword/source candidate pool, reranks those
+candidate documents with question anchors and project-domain terms, then expands
+from the strongest seed documents through linked artifacts such as Jira issues,
+Confluence playbooks, GitHub PRs, Gmail threads, and Slack discussions. The
+helper does not use gold answers or expected document IDs; expected IDs are used
+only in the report to compute recall.
+Use the `existing` retrieval target when the v8 routed retrieval artifact and
+wide top-500 candidate artifact already exist; it avoids rebuilding the wide
+candidate file while tuning the project-chain reranker.
+
+Latest v10 result:
+
+| Field | v9 type-aware prompt | v10 project-chain retrieval |
+| --- | ---: | ---: |
+| average correctness | `60.0%` | `56.0%` |
+| average completeness | `66.62%` | `63.38%` |
+| combined correctness * completeness | `39.97` | `35.49` |
+| average document recall | `81.89%` | `84.93%` |
+| `project_related` recall | `49.65%` | `85.42%` |
+| `project_related` correctness | `0.0%` | `0.0%` |
+| average invalid extra documents | `8.91` | `8.72` |
+| answer generation total tokens | `478,353` | `484,419` |
+| answer generation wall time | `63.49s` | `213.23s` |
+| judge total tokens | `29,057` | `29,114` |
+
+v10 is not promoted as the current best answer gate because answer quality
+regressed despite better retrieval. It is still useful evidence: project-chain
+retrieval now finds many more supporting documents, but the generator still
+selects wrong nearby details, invents thresholds, or misses required facts when
+the answer spans several policy and incident artifacts. The next improvement
+should be project-chain answer synthesis, not broader retrieval.
+
 Judge-backed answer error analysis:
 
 ```bash
@@ -698,6 +740,14 @@ Latest v8 fresh-generation failure buckets:
 | `likely_judge_or_format_issue` | `4` |
 
 Latest v9 type-aware failure buckets:
+
+| Bucket | Count |
+| --- | ---: |
+| `answer_missing_gold_facts` | `37` |
+| `retrieval_miss` | `9` |
+| `likely_judge_or_format_issue` | `4` |
+
+Latest v10 project-chain failure buckets:
 
 | Bucket | Count |
 | --- | ---: |
