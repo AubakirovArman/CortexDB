@@ -29,6 +29,9 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "docs/AQL_CHANGELOG.md": (
         "AQL v0.4",
         "breaking change",
+        "grammar_change_registry_v1.json",
+        "aql-v0.4-retrieve-context",
+        "aql-v0.4-require-thresholds",
         "golden tests",
     ),
 }
@@ -58,6 +61,16 @@ SUITES: tuple[dict[str, Any], ...] = (
         "name": "aql_stabilization",
         "command": ["cargo", "test", "-p", "cortex-aql", "--test", "aql_stabilization_tests"],
         "covers": ["default mode/budget", "LIMIT clamp", "REQUIRE thresholds"],
+    },
+    {
+        "name": "aql_changelog_policy",
+        "command": [
+            "python3",
+            "scripts/check_aql_changelog_policy.py",
+            "--report",
+            "target/aql-compat/aql_changelog_policy_report.json",
+        ],
+        "covers": ["AQL grammar change changelog entries", "SQL examples for grammar changes"],
     },
     {
         "name": "http_invalid_aql_error",
@@ -159,7 +172,7 @@ def self_test() -> int:
     if len(names) != len(set(names)):
         print("AQL compatibility self-test failed: duplicate suite names")
         return 1
-    required = {"aql_v0_4_golden", "parser_contract", "binder_contract"}
+    required = {"aql_v0_4_golden", "parser_contract", "binder_contract", "aql_changelog_policy"}
     missing = sorted(required.difference(names))
     if missing:
         print(f"AQL compatibility self-test failed: missing suites {missing}")

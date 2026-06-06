@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 38 / 150
+- Done: 39 / 150
 - Partial: 1 / 150
-- Todo: 111 / 150
-- Current closed epic: Epic 38, AQL Error Taxonomy
+- Todo: 110 / 150
+- Current closed epic: Epic 39, AQL Compatibility Changelog
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1056,12 +1056,24 @@ Tasks:
 
 ### Epic 39. AQL Compatibility Changelog
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `fixtures/aql/grammar_change_registry_v1.json`
+- `docs/AQL_CHANGELOG.md`
+- `scripts/check_aql_changelog_policy.py`
+- `make aql-changelog-policy-check`
+- `make aql-compat-check`
 
 Tasks:
 
-- Require changelog for every grammar change.
-- Add examples for grammar changes.
+- Require changelog for every grammar change. Done: the AQL grammar-change
+  registry requires a stable `change_id`, changelog anchor, SQL example, and
+  test reference for each grammar or binder compatibility change.
+- Add examples for grammar changes. Done: `docs/AQL_CHANGELOG.md` now lists
+  runnable SQL examples for the current AQL v0.4 grammar and diagnostic
+  compatibility entries, and the checker verifies them.
 
 ### Epic 40. AQL Query Cache
 

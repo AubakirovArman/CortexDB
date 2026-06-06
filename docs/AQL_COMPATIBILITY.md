@@ -83,10 +83,26 @@ crates/cortex-aql/tests/aql_stabilization_tests.rs
 
 AQL grammar or binder compatibility changes must update:
 
+- `fixtures/aql/grammar_change_registry_v1.json`;
 - `docs/AQL_CHANGELOG.md`;
 - `docs/AQL_V0_4.md` or a new versioned grammar doc;
 - golden tests;
 - API/SDK docs if HTTP-visible error behavior changes.
+
+Every registry entry must include:
+
+- a stable `change_id`;
+- an example SQL query in `docs/AQL_CHANGELOG.md`;
+- a test reference that covers the behavior.
+
+The local policy check is:
+
+```bash
+make aql-changelog-policy-check
+```
+
+`make aql-compat-check` runs the same policy check as part of the full AQL
+compatibility matrix.
 
 Breaking changes require a new AQL version document instead of silently
 reinterpreting v0.4.

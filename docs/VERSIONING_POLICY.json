@@ -42,7 +42,7 @@
     {
       "name": "aql",
       "version_source": "docs/AQL_V0_4.md",
-      "current_contract": "AQL v0.4 grammar",
+      "current_contract": "AQL v0.4 grammar plus grammar_change_registry_v1.json",
       "changelog": "docs/AQL_CHANGELOG.md",
       "compatibility_gate": "make aql-compat-check",
       "breaking_change_examples": [

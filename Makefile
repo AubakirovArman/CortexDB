@@ -738,6 +738,10 @@ engine-panic-audit-check:
 
 engine-api-check: engine-public-api-freeze-check engine-api-compat-check engine-error-model-check engine-feature-flags-check module-ownership-check engine-internal-boundary-check engine-determinism-check engine-panic-audit-check
 
+.PHONY: aql-changelog-policy-check
+aql-changelog-policy-check:
+	python3 scripts/check_aql_changelog_policy.py --report "target/aql-changelog-policy/report.json"
+
 aql-compat-check:
 	python3 scripts/aql_compat_check.py --root "$(AQL_COMPAT_ROOT)" --report "$(AQL_COMPAT_REPORT)"
 

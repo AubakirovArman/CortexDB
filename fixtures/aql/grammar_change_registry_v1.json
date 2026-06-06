@@ -1,0 +1,93 @@
+{
+  "schema_version": "cortexdb.aql_grammar_change_registry.v1",
+  "current_contract": "AQL v0.4",
+  "policy": {
+    "changelog": "docs/AQL_CHANGELOG.md",
+    "grammar_doc": "docs/AQL_V0_4.md",
+    "compatibility_gate": "make aql-compat-check",
+    "rule": "Every AQL grammar or binder compatibility change must have a changelog entry, a runnable example, and a compatibility test reference."
+  },
+  "entries": [
+    {
+      "change_id": "aql-v0.4-retrieve-context",
+      "introduced_in": "AQL v0.4",
+      "classification": "statement",
+      "summary": "Freeze RETRIEVE CONTEXT as the primary query statement.",
+      "grammar_terms": ["RETRIEVE CONTEXT", "FOR TASK", "IN BRAIN"],
+      "example": "RETRIEVE CONTEXT FOR TASK \"compare budgets\" IN BRAIN investment_projects;",
+      "tests": ["crates/cortex-aql/tests/aql_v0_4_golden_tests.rs"]
+    },
+    {
+      "change_id": "aql-v0.4-explain-retrieve",
+      "introduced_in": "AQL v0.4",
+      "classification": "statement",
+      "summary": "Freeze EXPLAIN RETRIEVE CONTEXT as the public explain surface.",
+      "grammar_terms": ["EXPLAIN RETRIEVE CONTEXT"],
+      "example": "EXPLAIN RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects;",
+      "tests": ["crates/cortex-aql/tests/aql_v0_4_golden_tests.rs"]
+    },
+    {
+      "change_id": "aql-v0.4-verify-fact",
+      "introduced_in": "AQL v0.4",
+      "classification": "statement",
+      "summary": "Freeze VERIFY FACT parse and bind policy behavior.",
+      "grammar_terms": ["VERIFY FACT"],
+      "example": "VERIFY FACT \"Mirny wind farm has a 600 MWh battery\" IN BRAIN investment_projects;",
+      "tests": ["crates/cortex-aql/tests/aql_v0_4_golden_tests.rs"]
+    },
+    {
+      "change_id": "aql-v0.4-remember",
+      "introduced_in": "AQL v0.4",
+      "classification": "statement",
+      "summary": "Freeze REMEMBER memory writes with scope, type, and optional TTL.",
+      "grammar_terms": ["REMEMBER", "IN SCOPE", "AS TYPE", "TTL"],
+      "example": "REMEMBER \"Use conservative budget assumptions\" IN SCOPE project:investments AS TYPE decision TTL 3600 SECONDS;",
+      "tests": ["crates/cortex-aql/tests/aql_v0_4_golden_tests.rs"]
+    },
+    {
+      "change_id": "aql-v0.4-retrieve-options",
+      "introduced_in": "AQL v0.4",
+      "classification": "clause",
+      "summary": "Freeze USING MODE, BUDGET, and LIMIT CANDIDATES options.",
+      "grammar_terms": ["USING MODE", "BUDGET", "LIMIT", "CANDIDATES"],
+      "example": "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects USING MODE balanced BUDGET 12000 TOKENS LIMIT 500 CANDIDATES;",
+      "tests": ["crates/cortex-aql/tests/aql_stabilization_tests.rs"]
+    },
+    {
+      "change_id": "aql-v0.4-where-precedence",
+      "introduced_in": "AQL v0.4",
+      "classification": "where",
+      "summary": "Freeze WHERE boolean precedence as NOT greater than AND greater than OR.",
+      "grammar_terms": ["WHERE", "NOT > AND > OR"],
+      "example": "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects WHERE NOT status = \"ready\" AND space = project:investments OR status = \"verified\";",
+      "tests": ["crates/cortex-aql/tests/parser_tests.rs"]
+    },
+    {
+      "change_id": "aql-v0.4-where-in-list",
+      "introduced_in": "AQL v0.4",
+      "classification": "where",
+      "summary": "Freeze IN list literals for bitmap filters.",
+      "grammar_terms": ["IN [...]", "list literals"],
+      "example": "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects WHERE status IN [\"ready\", \"verified\"];",
+      "tests": ["crates/cortex-aql/tests/binder_hardening_tests.rs"]
+    },
+    {
+      "change_id": "aql-v0.4-require-thresholds",
+      "introduced_in": "AQL v0.4",
+      "classification": "clause",
+      "summary": "Freeze REQUIRE citations, confidence, source_trust, and freshness syntax.",
+      "grammar_terms": ["REQUIRE", "citations", "confidence", "source_trust", "freshness"],
+      "example": "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects REQUIRE citations, confidence >= 0.80, source_trust >= 0.90, freshness <= 86400 SECONDS;",
+      "tests": ["crates/cortex-aql/tests/aql_stabilization_tests.rs"]
+    },
+    {
+      "change_id": "aql-v0.4-stable-bind-errors",
+      "introduced_in": "AQL v0.4",
+      "classification": "diagnostic",
+      "summary": "Freeze client-visible bind error classes for invalid AQL, permission denied, unknown fields, and unsupported operators.",
+      "grammar_terms": ["Bind errors expose stable codes", "unsupported comparator"],
+      "example": "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects WHERE status != \"ready\";",
+      "tests": ["crates/cortex-server/src/tests/snapshot_api_tests.rs"]
+    }
+  ]
+}

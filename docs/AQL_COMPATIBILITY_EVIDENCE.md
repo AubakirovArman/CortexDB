@@ -31,6 +31,7 @@ finished_at: 2026-05-31T19:35:50Z
 | Parser contract | Covers malformed AQL, `LIMIT`, `REQUIRE`, precedence, and integer errors. |
 | Binder contract | Covers forbidden scope, safe diagnostics, and filter compilation. |
 | AQL stabilization | Covers defaults, clamps, `REQUIRE` thresholds, and decimal behavior. |
+| AQL changelog policy | Confirms each registry grammar change has a changelog entry, SQL example, and test reference. |
 | HTTP invalid AQL | Confirms SDK-visible `invalid_aql` error code. |
 | HTTP unknown field | Confirms SDK-visible `unknown_field` error code. |
 | HTTP unsupported operator | Confirms SDK-visible `unsupported_operator` error code. |
@@ -41,6 +42,9 @@ finished_at: 2026-05-31T19:35:50Z
 The local gate proves:
 
 - AQL v0.4 parser and binder compatibility tests pass;
+- grammar and binder compatibility changes are covered by
+  `fixtures/aql/grammar_change_registry_v1.json`, `docs/AQL_CHANGELOG.md`, SQL
+  examples, and test references;
 - `EXPLAIN RETRIEVE CONTEXT` parses, binds, and exposes a stable HTTP/OpenAPI
   explain shape;
 - malformed AQL, permission denied, unknown field, unsupported operator,

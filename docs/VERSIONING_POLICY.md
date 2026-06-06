@@ -28,7 +28,7 @@ Breaking changes must not be hidden as routine refactors.
 | HTTP API | `/v1` plus `docs/openapi.yaml` | `docs/API_CHANGELOG.md` | `make openapi-contract-check` |
 | SDKs | workspace/package version alignment | `docs/SDK_RELEASE.md` | `make sdk-e2e-release-check` |
 | Storage formats | magic/version inventory | `docs/STORAGE_COMPATIBILITY_EVIDENCE.md` | `make storage-compat-check` |
-| AQL | AQL v0.4 grammar | `docs/AQL_CHANGELOG.md` | `make aql-compat-check` |
+| AQL | AQL v0.4 grammar plus `fixtures/aql/grammar_change_registry_v1.json` | `docs/AQL_CHANGELOG.md` | `make aql-compat-check` |
 
 ## Breaking Changes
 
@@ -57,6 +57,10 @@ AQL breaking changes include:
 - changing stable parse diagnostic kinds;
 - changing stable bind error codes;
 - widening permissions through query syntax.
+
+Every AQL grammar or binder compatibility change also requires a
+`fixtures/aql/grammar_change_registry_v1.json` entry with a changelog anchor,
+SQL example, and test reference.
 
 ## Non-Breaking Changes
 
