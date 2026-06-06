@@ -68,6 +68,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--history", default="target/storage-soak-history/report.json")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     parser.add_argument("--require-active", action="store_true")
+    parser.add_argument("--target-hours", type=float)
     parser.add_argument("--max-stale-minutes", type=float, default=30.0)
     return parser.parse_args()
 
@@ -77,7 +78,7 @@ def main() -> int:
     campaign = load_json(ROOT / args.campaign)
     history = load_json(ROOT / args.history)
     evidence = history.get("twenty_four_hour_evidence", {})
-    target_hours = float(campaign.get("target_hours", 24.0))
+    target_hours = float(args.target_hours if args.target_hours is not None else campaign.get("target_hours", 24.0))
     total_duration_hours = float(history.get("total_duration_hours", 0.0))
     progress_percent = 0.0
     if target_hours > 0:
@@ -88,8 +89,10 @@ def main() -> int:
         seconds_since_update = max(0, int((datetime.now(timezone.utc) - updated_at).total_seconds()))
     process = process_status(ROOT / args.pid_file)
     twenty_four_hour_met = evidence.get("met", False)
+    target_met = total_duration_hours >= target_hours
+    target_remaining_seconds = max(0, int((target_hours - total_duration_hours) * 3600))
     stale = seconds_since_update is None or seconds_since_update > args.max_stale_minutes * 60
-    healthy = bool(twenty_four_hour_met or (
+    healthy = bool(target_met or (
         process.get("running")
         and campaign.get("status") == "running"
         and not stale
@@ -108,6 +111,8 @@ def main() -> int:
         "total_cycles": history.get("total_cycles", 0),
         "total_cells_written": history.get("total_cells_written", 0),
         "twenty_four_hour_met": twenty_four_hour_met,
+        "target_met": target_met,
+        "target_remaining_seconds": target_remaining_seconds,
         "remaining_seconds": evidence.get("remaining_seconds", 24 * 3600),
     }
     if args.format == "json":
@@ -127,6 +132,11 @@ def main() -> int:
             "twenty_four_hour_evidence="
             f"met:{status['twenty_four_hour_met']} "
             f"remaining_seconds:{status['remaining_seconds']}"
+        )
+        print(
+            "target_evidence="
+            f"met:{status['target_met']} "
+            f"remaining_seconds:{status['target_remaining_seconds']}"
         )
         print(
             "watchdog="

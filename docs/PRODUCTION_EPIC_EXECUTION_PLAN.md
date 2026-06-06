@@ -255,7 +255,22 @@ Tasks:
 
 ### Epic 12. Storage Soak History v2
 
-Status: todo
+Status: partial
+
+Evidence:
+
+- `scripts/storage_soak_v2_gate.py`
+- `make storage-soak-72h-campaign`
+- `make storage-soak-72h-status`
+- `make storage-soak-72h-evidence-check`
+- V2 uses a separate `target/storage-soak-history-v2/` history root and a
+  heavier default workload: 50 cycles per run and 100 cells per cycle.
+
+Remaining:
+
+- Run and retain the full 72-hour v2 campaign.
+- Verify `target/storage-soak-history-v2/report.json` and
+  `target/storage-soak-history-v2/v2-gate.json` with status `passed`.
 
 Tasks:
 

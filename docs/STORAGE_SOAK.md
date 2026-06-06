@@ -130,6 +130,50 @@ make storage-soak-24h-evidence-check
 It does not run a new soak; it verifies that the retained history report has
 crossed the 24-hour threshold.
 
+## V2 72-Hour Soak Track
+
+Storage Soak History v2 raises the target to 72 hours and uses a heavier local
+workload:
+
+```bash
+make storage-soak-72h-campaign
+```
+
+Default v2 settings:
+
+```text
+target_hours=72
+cycles_per_run=50
+cells_per_cycle=100
+min_throughput_ratio=0.75
+```
+
+V2 writes separate artifacts so it does not overwrite the v1 24-hour evidence:
+
+```text
+target/storage-soak-v2/report.json
+target/storage-soak-history-v2/history.jsonl
+target/storage-soak-history-v2/report.json
+target/storage-soak-history-v2/campaign.json
+target/storage-soak-history-v2/v2-gate.json
+```
+
+Check progress with:
+
+```bash
+make storage-soak-72h-status
+```
+
+After the 72-hour campaign finishes, validate the retained evidence with:
+
+```bash
+make storage-soak-72h-evidence-check
+```
+
+The v2 gate checks accumulated duration, higher average cells per cycle,
+representative kill phases, and latest-run throughput regression. Until the
+72-hour report exists and passes, Storage Soak History v2 remains open.
+
 The default history gate does not pretend to be a 24-hour proof. It records
 `twenty_four_hour_evidence.met=false` until accumulated local soak duration
 crosses 24 hours.

@@ -184,6 +184,18 @@ make storage-soak-24h-evidence-check
 When present, the storage soak history and campaign reports are included in the
 unified release evidence bundle.
 
+Storage Soak History v2 is staged but not yet complete. The v2 track uses:
+
+```bash
+make storage-soak-72h-campaign
+make storage-soak-72h-status
+make storage-soak-72h-evidence-check
+```
+
+The v2 evidence check requires a retained 72-hour report under
+`target/storage-soak-history-v2/` with the heavier cells-per-cycle workload and
+throughput regression threshold.
+
 ## Public Release Artifact Audit
 
 The public artifact audit target is `v0.1.0-core-alpha.5`. It supersedes the
