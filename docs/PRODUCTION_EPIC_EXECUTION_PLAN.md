@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 80 / 150
+- Done: 81 / 150
 - Partial: 1 / 150
-- Todo: 69 / 150
-- Current closed epic: Epic 80, Verification Quality Dashboard
+- Todo: 68 / 150
+- Current closed epic: Epic 81, Ingestion Jobs v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2185,16 +2185,34 @@ Acceptance: ingestion becomes operationally safe and provenance-rich.
 
 ### Epic 81. Ingestion Jobs v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/ingestion/jobs.rs`
+- `crates/cortex-engine/src/ingestion/progress.rs`
+- `crates/cortex-engine/tests/ingestion_job_tests.rs`
+- `crates/cortex-server/src/tests/ingest_tests.rs`
+- `crates/cortex-cli/src/cli_ingest_tests.rs`
+- `docs/INGESTION.md`
+- `docs/API.md`
+- `scripts/ingestion_jobs_v2_check.py`
+- `make ingestion-jobs-v2-check`
 
 Tasks:
 
-- Add durable jobs.
-- Add retry.
-- Add cancel.
-- Add progress.
-- Add failure reasons.
-- Resume after restart.
+- Add durable jobs. Done: jobs are persisted atomically under
+  `ingestion_jobs/<job_id>.json`.
+- Add retry. Done: failed jobs can be requeued with retry counters and max retry
+  guards through engine, HTTP, and CLI surfaces.
+- Add cancel. Done: queued/running jobs can be cancelled through engine, HTTP,
+  and CLI surfaces.
+- Add progress. Done: records include total/completed/failed item counters and
+  the last emitted cell id.
+- Add failure reasons. Done: failed records persist `message` and failed-item
+  counters.
+- Resume after restart. Done: stale `running` jobs are requeued as `queued` with
+  a recovery message on database open.
 
 ### Epic 82. Ingestion Job Dashboard
 

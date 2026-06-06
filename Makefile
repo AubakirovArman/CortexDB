@@ -24,6 +24,7 @@
 .PHONY: agent-memory-demo-check
 .PHONY: tool-registry-check
 .PHONY: knowledge-graph-check
+.PHONY: ingestion-jobs-v2-check
 .PHONY: distributed-consensus-research-check
 .PHONY: managed-cloud-feasibility-check
 .PHONY: next-60-epics-audit next-60-epics-completion-check
@@ -174,6 +175,7 @@ VERIFICATION_QUALITY_FIXTURE ?= examples/eval/verification_cases.jsonl
 VERIFICATION_QUALITY_REPORT ?= target/verification-quality/report.json
 VERIFICATION_QUALITY_DASHBOARD_JSON ?= target/verification-quality/dashboard.json
 VERIFICATION_QUALITY_DASHBOARD_MD ?= target/verification-quality/dashboard.md
+INGESTION_JOBS_V2_REPORT ?= target/ingestion-jobs-v2/report.json
 HTTP_CONTRACT_OPS_REPORT ?= target/http-contract-ops/report.json
 CLI_PRODUCT_REPORT ?= target/cli-product/report.json
 OPERATIONS_RUNBOOK_REPORT ?= target/operations-runbook/report.json
@@ -872,6 +874,13 @@ verification-quality-check:
 	python3 scripts/verification_quality_check.py --fixture "$(VERIFICATION_QUALITY_FIXTURE)" --report "$(VERIFICATION_QUALITY_REPORT)"
 	python3 scripts/verification_quality_dashboard_self_test.py
 	python3 scripts/verification_quality_dashboard.py --report "$(VERIFICATION_QUALITY_REPORT)" --dashboard-json "$(VERIFICATION_QUALITY_DASHBOARD_JSON)" --dashboard-md "$(VERIFICATION_QUALITY_DASHBOARD_MD)"
+
+ingestion-jobs-v2-check:
+	cargo test -p cortex-engine --test ingestion_job_tests
+	cargo test -p cortex-server ingest_tests
+	cargo test -p cortex-cli ingest
+	python3 scripts/ingestion_jobs_v2_check.py --self-test
+	python3 scripts/ingestion_jobs_v2_check.py --report "$(INGESTION_JOBS_V2_REPORT)"
 
 security-check:
 	cargo test -p cortex-server security_tests

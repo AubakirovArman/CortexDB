@@ -45,6 +45,9 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 - **Verification quality dashboard artifacts** — `make verification-quality-check`
   now emits `target/verification-quality/dashboard.json` and `.md` with confusion
   rows, false-positive/false-negative counters, and per-domain quality summaries.
+- **Ingestion Jobs v2 evidence gate** — `make ingestion-jobs-v2-check` now
+  verifies durable job persistence, retry/cancel flows, progress counters,
+  failure reasons, restart requeue behavior, and HTTP/CLI lifecycle coverage.
 
 ### Changed
 - **Error taxonomy contract guard** — `make openapi-contract-check` now also
