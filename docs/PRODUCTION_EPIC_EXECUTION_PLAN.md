@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 63 / 150
+- Done: 64 / 150
 - Partial: 1 / 150
-- Todo: 86 / 150
-- Current closed epic: Epic 63, ContextPack Explain v2
+- Todo: 85 / 150
+- Current closed epic: Epic 64, ContextPack Prompt Export
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1755,15 +1755,33 @@ Tasks:
 
 ### Epic 64. ContextPack Prompt Export
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/context/export.rs`
+- `crates/cortex-engine/src/context/export/json_export.rs`
+- `crates/cortex-engine/tests/context_pack_prompt_export.rs`
+- `scripts/context_pack_prompt_export_check.py`
+- `make context-pack-prompt-export-check`
+- `target/context-pack-quality/prompt-export-report.json`
+- `docs/openapi.yaml`
+- `docs/CONTEXT_PACK_TECHNOLOGY.md`
+- `docs/CONTEXT_PACK_QUALITY_EVIDENCE.md`
 
 Tasks:
 
-- Export JSON format.
-- Export Markdown format.
-- Export prompt format.
-- Add citation instructions.
-- Add conflict-handling prompt.
+- Export JSON format. Done: `ContextPackExportFormat::Json` emits
+  `context_pack.v1` JSON from the engine and the HTTP default remains typed
+  JSON.
+- Export Markdown format. Done: `ContextPackExportFormat::Markdown` remains
+  covered by export tests and docs.
+- Export prompt format. Done: `ContextPackExportFormat::Prompt` remains
+  covered by export tests and docs.
+- Add citation instructions. Done: prompt export tells agents to preserve
+  citations and cite `citation=` or `source_ref=` values for factual claims.
+- Add conflict-handling prompt. Done: prompt export tells agents not to resolve
+  conflicting evidence silently and to report conflicts with citations.
 
 ### Epic 65. ContextPack Answerability Score
 

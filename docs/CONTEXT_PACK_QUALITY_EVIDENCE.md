@@ -17,6 +17,7 @@ fixtures/context_pack_quality_v3_datasets.json
 fixtures/context_pack_quality_v3_thresholds.json
 target/context-pack-quality/v3-report.json
 target/context-pack-quality/explain-v2-report.json
+target/context-pack-quality/prompt-export-report.json
 ```
 
 ## Latest Local Metrics
@@ -95,6 +96,25 @@ candidates expose `why_excluded` for redundancy control and
 `token_budget_tokens` pressure, and that engine structs, server response
 structs, OpenAPI, and docs keep the same explain contract.
 
+## Prompt Export Gate
+
+Run:
+
+```bash
+make context-pack-prompt-export-check
+```
+
+The gate writes:
+
+```text
+target/context-pack-quality/prompt-export-report.json
+```
+
+It proves that ContextPack has stable JSON, prompt, and Markdown export
+formats; that prompt export includes citation instructions and conflict
+handling instructions; and that CLI, server, OpenAPI, and docs expose the same
+public export formats.
+
 ## Boundary
 
 This gate proves:
@@ -117,6 +137,8 @@ This gate proves:
 - the Explain v2 gate keeps `why_selected`, score components, source trust,
   redundancy penalty, `why_excluded`, and token-budget exclusion reasons
   present across engine, server, OpenAPI, and docs;
+- the prompt export gate keeps JSON, prompt, and Markdown exports available
+  and keeps citation/conflict instructions visible to downstream agents;
 - the quality fixture records measurable evidence coverage, token reduction,
   citation coverage, redundancy reduction, anomaly coverage, and deterministic
   ordering.
@@ -134,6 +156,9 @@ Stable ContextPack prompt and Markdown export modes are covered by:
 
 - `cargo test -p cortex-engine --test context_pack`, including prompt/Markdown
   formatting and Markdown fence preservation;
+- `cargo test -p cortex-engine --test context_pack_prompt_export`, including
+  JSON export, prompt citation instructions, prompt conflict instructions, and
+  Markdown citation/source trust output;
 - `cargo test -p cortex-cli`, including `cortexdb context --format prompt` and
   `cortexdb context --format markdown`;
 - `cargo test -p cortex-server v1_context_returns_prompt_and_markdown_exports`;

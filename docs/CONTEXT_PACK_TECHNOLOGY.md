@@ -157,7 +157,10 @@ production-grade factual-certification score.
 Rust:
 
 ```rust
-db.context_pack_from_aql(aql, &agent_view, options)?;
+let pack = db.context_pack_from_aql(aql, &agent_view, options)?;
+let json = pack.export(ContextPackExportFormat::Json);
+let prompt = pack.export(ContextPackExportFormat::Prompt);
+let markdown = pack.export(ContextPackExportFormat::Markdown);
 ```
 
 CLI:
@@ -178,6 +181,10 @@ POST /v1/context?scope=project:investments&format=markdown
 
 SDKs expose the same HTTP contract through typed client helpers, including
 agent prompt and Markdown export helpers where available.
+
+The prompt export tells downstream agents to use only supplied cells, preserve
+citations, cite `citation=` or `source_ref=` values for factual claims, and
+report insufficient or conflicting context instead of silently resolving it.
 
 ## What It Is Not
 

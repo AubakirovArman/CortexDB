@@ -164,6 +164,7 @@ CONTEXT_PACK_QUALITY_V3_DATASETS ?= fixtures/context_pack_quality_v3_datasets.js
 CONTEXT_PACK_QUALITY_V3_THRESHOLDS ?= fixtures/context_pack_quality_v3_thresholds.json
 CONTEXT_PACK_QUALITY_V3_REPORT ?= target/context-pack-quality/v3-report.json
 CONTEXT_PACK_EXPLAIN_V2_REPORT ?= target/context-pack-quality/explain-v2-report.json
+CONTEXT_PACK_PROMPT_EXPORT_REPORT ?= target/context-pack-quality/prompt-export-report.json
 VERIFICATION_QUALITY_FIXTURE ?= examples/eval/verification_cases.jsonl
 VERIFICATION_QUALITY_REPORT ?= target/verification-quality/report.json
 HTTP_CONTRACT_OPS_REPORT ?= target/http-contract-ops/report.json
@@ -808,8 +809,14 @@ context-pack-quality-check:
 	cargo test -p cortex-engine --test context_pack
 	cargo test -p cortex-engine --test context_verify_quality
 	$(MAKE) context-pack-explain-v2-check
+	$(MAKE) context-pack-prompt-export-check
 	python3 scripts/context_pack_quality_check.py --fixture "$(CONTEXT_PACK_QUALITY_FIXTURE)" --report "$(CONTEXT_PACK_QUALITY_REPORT)"
 	$(MAKE) context-pack-quality-v3-check
+
+.PHONY: context-pack-prompt-export-check
+context-pack-prompt-export-check:
+	cargo test -p cortex-engine --test context_pack_prompt_export
+	python3 scripts/context_pack_prompt_export_check.py --root "." --report "$(CONTEXT_PACK_PROMPT_EXPORT_REPORT)"
 
 .PHONY: context-pack-explain-v2-check
 context-pack-explain-v2-check:

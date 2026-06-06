@@ -2,8 +2,11 @@ use super::{ContextPack, ContextPackAnomaly, ContextPackCell};
 use crate::query::metadata::SourceRef;
 use crate::query::CellMetadata;
 
+mod json_export;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ContextPackExportFormat {
+    Json,
     Prompt,
     Markdown,
 }
@@ -11,9 +14,14 @@ pub enum ContextPackExportFormat {
 impl ContextPack {
     pub fn export(&self, format: ContextPackExportFormat) -> String {
         match format {
+            ContextPackExportFormat::Json => self.to_json(),
             ContextPackExportFormat::Prompt => self.to_agent_prompt(),
             ContextPackExportFormat::Markdown => self.to_markdown(),
         }
+    }
+
+    pub fn to_json(&self) -> String {
+        json_export::to_json(self)
     }
 
     pub fn to_agent_prompt(&self) -> String {
@@ -24,7 +32,15 @@ impl ContextPack {
         push_line(&mut out, "Preserve citations when answering.");
         push_line(
             &mut out,
+            "Cite citation= or source_ref= values for factual claims.",
+        );
+        push_line(
+            &mut out,
             "If the supplied context is insufficient or conflicting, say so.",
+        );
+        push_line(
+            &mut out,
+            "Do not resolve conflicting evidence silently; report the conflict with citations.",
         );
         push_line(&mut out, "");
         push_line(

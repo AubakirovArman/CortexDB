@@ -524,8 +524,8 @@ paths:
           type: string
           enum:
           - json
+          - prompt
           - markdown
-          - audit
           default: json
       requestBody:
         required: true
