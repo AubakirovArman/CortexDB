@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 61 / 150
+- Done: 62 / 150
 - Partial: 1 / 150
-- Todo: 88 / 150
-- Current closed epic: Epic 61, ContextPack Quality v2
+- Todo: 87 / 150
+- Current closed epic: Epic 62, ContextPack Quality v3
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1704,14 +1704,28 @@ Tasks:
 
 ### Epic 62. ContextPack Quality v3
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `fixtures/context_pack_quality_v3_datasets.json`
+- `fixtures/context_pack_quality_v3_thresholds.json`
+- `scripts/context_pack_quality_v3_check.py`
+- `make context-pack-quality-v3-check`
+- `make context-pack-quality-check`
+- `target/context-pack-quality/v3-report.json`
 
 Tasks:
 
-- Add 100+ cases.
-- Use external datasets.
-- Add failure categories.
-- Add per-domain thresholds.
+- Add 100+ cases. Done: the v3 gate expands real-domain seed cases into 105
+  deterministic quality cases.
+- Use external datasets. Done: the dataset descriptor binds the gate to 4
+  checked-in real-domain external dataset fixtures.
+- Add failure categories. Done: the report tracks evidence selection,
+  citation pressure, token-budget pressure, redundancy pressure, and anomaly
+  pressure categories.
+- Add per-domain thresholds. Done: checked-in thresholds cover each v3 domain
+  and are enforced by `context_pack_quality_v3_check.py`.
 
 ### Epic 63. ContextPack Explain v2
 

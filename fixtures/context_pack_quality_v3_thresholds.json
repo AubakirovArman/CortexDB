@@ -1,0 +1,48 @@
+{
+  "schema_version": "cortexdb.context_pack_quality_v3.thresholds.v1",
+  "minimums": {
+    "min_cases": 100,
+    "min_external_datasets": 4,
+    "min_failure_categories": 5,
+    "min_evidence_coverage_q16": 60000,
+    "min_citation_coverage_q16": 60000,
+    "min_token_reduction_q16": 1,
+    "min_redundancy_reduction_q16": 65535,
+    "min_anomaly_coverage_q16": 65535,
+    "min_deterministic_order_q16": 65535
+  },
+  "domains": {
+    "investment_projects": {
+      "min_cases": 25,
+      "min_evidence_coverage_q16": 60000,
+      "min_citation_coverage_q16": 60000,
+      "min_token_reduction_q16": 1,
+      "min_redundancy_reduction_q16": 65535,
+      "min_anomaly_coverage_q16": 65535
+    },
+    "legal_policies": {
+      "min_cases": 20,
+      "min_evidence_coverage_q16": 60000,
+      "min_citation_coverage_q16": 60000,
+      "min_token_reduction_q16": 1,
+      "min_redundancy_reduction_q16": 65535,
+      "min_anomaly_coverage_q16": 65535
+    },
+    "support_tickets": {
+      "min_cases": 20,
+      "min_evidence_coverage_q16": 60000,
+      "min_citation_coverage_q16": 60000,
+      "min_token_reduction_q16": 1,
+      "min_redundancy_reduction_q16": 65535,
+      "min_anomaly_coverage_q16": 65535
+    },
+    "technical_docs": {
+      "min_cases": 20,
+      "min_evidence_coverage_q16": 60000,
+      "min_citation_coverage_q16": 60000,
+      "min_token_reduction_q16": 1,
+      "min_redundancy_reduction_q16": 65535,
+      "min_anomaly_coverage_q16": 65535
+    }
+  }
+}

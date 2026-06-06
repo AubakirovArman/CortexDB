@@ -1,0 +1,37 @@
+{
+  "schema_version": "cortexdb.context_pack_quality_v3.datasets.v1",
+  "datasets": [
+    {
+      "dataset_id": "investment_projects",
+      "domain": "investment_projects",
+      "source_type": "external_real_domain",
+      "corpus": "examples/real_domains/investment_projects/corpus/chunks.jsonl",
+      "queries": "examples/real_domains/investment_projects/queries/queries.jsonl",
+      "ground_truth": "examples/real_domains/investment_projects/queries/ground_truth.jsonl"
+    },
+    {
+      "dataset_id": "legal_policies",
+      "domain": "legal_policies",
+      "source_type": "external_real_domain",
+      "corpus": "examples/real_domains/legal_policies/corpus/chunks.jsonl",
+      "queries": "examples/real_domains/legal_policies/queries/queries.jsonl",
+      "ground_truth": "examples/real_domains/legal_policies/queries/ground_truth.jsonl"
+    },
+    {
+      "dataset_id": "support_tickets",
+      "domain": "support_tickets",
+      "source_type": "external_real_domain",
+      "corpus": "examples/real_domains/support_tickets/corpus/chunks.jsonl",
+      "queries": "examples/real_domains/support_tickets/queries/queries.jsonl",
+      "ground_truth": "examples/real_domains/support_tickets/queries/ground_truth.jsonl"
+    },
+    {
+      "dataset_id": "technical_docs",
+      "domain": "technical_docs",
+      "source_type": "external_real_domain",
+      "corpus": "examples/real_domains/technical_docs/corpus/chunks.jsonl",
+      "queries": "examples/real_domains/technical_docs/queries/queries.jsonl",
+      "ground_truth": "examples/real_domains/technical_docs/queries/ground_truth.jsonl"
+    }
+  ]
+}

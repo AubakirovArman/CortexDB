@@ -13,6 +13,9 @@ Primary artifacts:
 ```text
 examples/eval/context_pack_quality.jsonl
 target/context-pack-quality/report.json
+fixtures/context_pack_quality_v3_datasets.json
+fixtures/context_pack_quality_v3_thresholds.json
+target/context-pack-quality/v3-report.json
 ```
 
 ## Latest Local Metrics
@@ -34,6 +37,42 @@ anomaly_coverage_q16: 65535
 deterministic_order_q16: 65535
 ```
 
+## V3 Quality Gate
+
+Run:
+
+```bash
+make context-pack-quality-v3-check
+```
+
+Latest local v3 metrics:
+
+```text
+case_count: 105
+external_dataset_count: 4
+external_domains: investment_projects, legal_policies, support_tickets, technical_docs
+failure_category_count: 5
+failure_categories: anomaly_pressure, citation_pressure, evidence_selection, redundancy_pressure, token_budget_pressure
+evidence_coverage_q16: 65535
+citation_coverage_q16: 65535
+token_reduction_q16: 37126
+redundancy_reduction_q16: 65535
+anomaly_coverage_q16: 65535
+deterministic_order_q16: 65535
+```
+
+Per-domain v3 thresholds are checked from:
+
+```text
+fixtures/context_pack_quality_v3_thresholds.json
+```
+
+The v3 dataset descriptor is checked from:
+
+```text
+fixtures/context_pack_quality_v3_datasets.json
+```
+
 ## Boundary
 
 This gate proves:
@@ -50,6 +89,9 @@ This gate proves:
   savings, cell reduction, duplicate pressure, and anomaly coverage;
 - the report includes per-domain metrics under `per_domain_metrics`;
 - the quality gate requires at least 25 cases across at least 4 domains;
+- the v3 quality gate requires at least 100 expanded cases, at least 4
+  external real-domain datasets, at least 5 failure categories, and per-domain
+  thresholds;
 - the quality fixture records measurable evidence coverage, token reduction,
   citation coverage, redundancy reduction, anomaly coverage, and deterministic
   ordering.

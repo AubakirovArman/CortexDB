@@ -160,6 +160,9 @@ RETRIEVAL_QUALITY_MAX_P99_REGRESSION_NANOS ?= 100000000
 RETRIEVAL_QUALITY_MAX_MAX_REGRESSION_NANOS ?= 100000000
 CONTEXT_PACK_QUALITY_FIXTURE ?= examples/eval/context_pack_quality.jsonl
 CONTEXT_PACK_QUALITY_REPORT ?= target/context-pack-quality/report.json
+CONTEXT_PACK_QUALITY_V3_DATASETS ?= fixtures/context_pack_quality_v3_datasets.json
+CONTEXT_PACK_QUALITY_V3_THRESHOLDS ?= fixtures/context_pack_quality_v3_thresholds.json
+CONTEXT_PACK_QUALITY_V3_REPORT ?= target/context-pack-quality/v3-report.json
 VERIFICATION_QUALITY_FIXTURE ?= examples/eval/verification_cases.jsonl
 VERIFICATION_QUALITY_REPORT ?= target/verification-quality/report.json
 HTTP_CONTRACT_OPS_REPORT ?= target/http-contract-ops/report.json
@@ -804,6 +807,11 @@ context-pack-quality-check:
 	cargo test -p cortex-engine --test context_pack
 	cargo test -p cortex-engine --test context_verify_quality
 	python3 scripts/context_pack_quality_check.py --fixture "$(CONTEXT_PACK_QUALITY_FIXTURE)" --report "$(CONTEXT_PACK_QUALITY_REPORT)"
+	$(MAKE) context-pack-quality-v3-check
+
+.PHONY: context-pack-quality-v3-check
+context-pack-quality-v3-check:
+	python3 scripts/context_pack_quality_v3_check.py --seed-fixture "$(CONTEXT_PACK_QUALITY_FIXTURE)" --datasets "$(CONTEXT_PACK_QUALITY_V3_DATASETS)" --thresholds "$(CONTEXT_PACK_QUALITY_V3_THRESHOLDS)" --report "$(CONTEXT_PACK_QUALITY_V3_REPORT)"
 
 verification-quality-check:
 	cargo test -p cortex-engine --test verification_tests
