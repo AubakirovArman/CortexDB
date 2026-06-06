@@ -117,7 +117,11 @@ pub use replay::{
 };
 pub use replication::*;
 pub use search::*;
-pub use source_trust::{SourceTrust, SourceTrustCategory, DEFAULT_SOURCE_TRUST_Q16};
+pub use source_trust::{
+    parse_source_trust_class, SourceTrust, SourceTrustBasis, SourceTrustCategory, SourceTrustClass,
+    DEFAULT_SOURCE_TRUST_Q16, EXTRACTED_SOURCE_TRUST_Q16, INFERRED_SOURCE_TRUST_Q16,
+    INTERNAL_SOURCE_TRUST_Q16, OFFICIAL_SOURCE_TRUST_Q16,
+};
 pub use tool_registry::{RegisteredTool, ToolDescriptor, ToolPermission};
 pub use typed_body::{EntityBody, FactBody, RelationBody};
 pub use validation::{StorageStats, StorageValidation, StorageValidationReport};

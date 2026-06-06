@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use cortex_aql::{BitmapHandle, CellTypeId, MemoryType, ScopeId, StatusId};
 
 use crate::search::tokenize;
+use crate::source_trust::{parse_source_trust_class, SourceTrust, SourceTrustClass};
 
 const SCOPE_NS: u64 = 0x1000_0000_0000_0000;
 const STATUS_NS: u64 = 0x2000_0000_0000_0000;
@@ -29,6 +30,7 @@ pub struct CellMetadata {
     pub ttl_seconds: Option<u64>,
     pub created_unix_seconds: Option<u64>,
     pub source_trust_q16: Option<u16>,
+    pub source_trust_class: Option<SourceTrustClass>,
     pub source: Option<String>,
     pub citation: Option<String>,
     pub title: Option<String>,
@@ -47,6 +49,7 @@ impl CellMetadata {
         let mut ttl_seconds = None;
         let mut created_unix_seconds = None;
         let mut source_trust_q16 = None;
+        let mut source_trust_class = None;
         let mut source = None;
         let mut citation = None;
         let mut title = None;
@@ -87,6 +90,9 @@ impl CellMetadata {
                     continue;
                 } else if let Some(value) = line.strip_prefix("source_trust_q16=") {
                     source_trust_q16 = value.trim().parse().ok();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("source_trust_class=") {
+                    source_trust_class = parse_source_trust_class(value);
                     continue;
                 } else if let Some(value) = line.strip_prefix("source=") {
                     source = non_empty(value);
@@ -145,7 +151,9 @@ impl CellMetadata {
             page,
             cell_range,
             json_path,
-            confidence_q16: confidence_q16.or(source_trust_q16).unwrap_or(32768),
+            confidence_q16: confidence_q16.unwrap_or_else(|| {
+                SourceTrust::from_metadata(source_trust_q16, source_trust_class).q16
+            }),
         });
 
         Self {
@@ -156,6 +164,7 @@ impl CellMetadata {
             ttl_seconds,
             created_unix_seconds,
             source_trust_q16,
+            source_trust_class,
             source,
             citation,
             title,

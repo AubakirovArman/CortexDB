@@ -6,6 +6,7 @@ use cortex_engine::feedback::ContextFeedback;
 use cortex_engine::{
     scope_id, ContextPack, ContextPackAnomalyCode, ContextPackExportFormat, ContextPackOptions,
     Database, RetrievedCell, SourceTrustCategory, DEFAULT_CITATION_OVERHEAD_TOKENS,
+    INTERNAL_SOURCE_TRUST_Q16,
 };
 
 #[test]
@@ -524,4 +525,30 @@ fn context_pack_explain_reports_source_trust_category() {
         .iter()
         .any(|component| component.name == "source_trust_bonus"
             && component.reason.contains("official provenance trust")));
+}
+
+#[test]
+fn context_pack_explain_reports_calibrated_source_trust_class() {
+    let cells = vec![retrieved(
+        1,
+        "scope=project:investments\nstatus=ready\nsource_trust_class=internal\n\nalpha budget",
+    )];
+    let pack = ContextPack::from_retrieved_with_options(
+        cells,
+        1_000,
+        false,
+        &ContextPackOptions::default(),
+        "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects;",
+    );
+    let explain = pack.cells[0].explain.as_ref().unwrap();
+
+    assert_eq!(explain.source_trust_q16, INTERNAL_SOURCE_TRUST_Q16);
+    assert_eq!(explain.source_trust_category, SourceTrustCategory::High);
+    assert!(explain
+        .score_components
+        .iter()
+        .any(|component| component.name == "source_trust_bonus"
+            && component
+                .reason
+                .contains("internal calibrated provenance trust")));
 }

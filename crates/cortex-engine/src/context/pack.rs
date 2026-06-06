@@ -183,7 +183,8 @@ impl ContextPack {
                 .collect();
 
             let base_bm25 = (matched.len() as u32) * 10_000;
-            let source_trust = SourceTrust::from_q16(metadata.source_trust_q16);
+            let source_trust =
+                SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class);
             let source_trust_bonus = source_trust.score_bonus();
 
             let mut max_jaccard_similarity_q16 = 0u32;

@@ -11,8 +11,24 @@ Cells may include:
 source_trust_q16=60000
 ```
 
-The value is an integer in the Q16 range `0..65535`. If it is absent, the
-engine uses `32768` and labels the category as `unknown`.
+The value is an integer in the Q16 range `0..65535`. Cells may also use a
+calibrated source class:
+
+```text
+source_trust_class=internal
+```
+
+If both fields are present, `source_trust_q16` wins. If both fields are absent,
+the engine uses `32768` and labels the category as `unknown`.
+
+## Calibrated Classes
+
+| Class | Q16 weight | Resulting category | Typical use |
+| --- | ---: | --- | --- |
+| `official` | `60000` | `official` | Regulator, audited report, signed disclosure. |
+| `internal` | `52000` | `high` | Trusted internal system, reviewed enterprise source. |
+| `extracted` | `40000` | `medium` | Parsed document chunk or extraction pipeline output. |
+| `inferred` | `20000` | `low` | Derived claim, weak signal, model-assisted extraction. |
 
 ## Categories
 
@@ -38,8 +54,10 @@ source_trust_bonus
 ```
 
 The `source_trust_bonus` is the Q16 trust score used in the deterministic
-selection score. Missing metadata still contributes the default unknown score
-of `32768`, so unknown sources are not treated as zero-trust evidence.
+selection score. Score components explain whether the bonus came from explicit
+`source_trust_q16`, calibrated `source_trust_class`, or the default unknown
+trust. Missing metadata still contributes the default unknown score of `32768`,
+so unknown sources are not treated as zero-trust evidence.
 
 ## VERIFY FACT
 
@@ -57,9 +75,9 @@ evidence in the report.
 
 ## Current Limitations
 
-- v1 trusts explicit `source_trust_q16` metadata; it does not infer trust from
-  domain names or source URLs.
-- Category calibration for `official`, `internal`, `extracted`, and `inferred`
-  sources is a separate future epic.
+- v1 trusts explicit `source_trust_q16` and `source_trust_class` metadata; it
+  does not infer trust from domain names or source URLs.
+- Calibration weights are fixed constants in the Rust engine. Tenant-specific
+  trust policies are a future epic.
 - Trust affects ranking and explainability, not authorization. Agent scope
   permissions still determine what evidence is visible.

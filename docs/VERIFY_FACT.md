@@ -142,13 +142,16 @@ Evidence cells may include deterministic provenance trust:
 
 ```text
 source_trust_q16=60000
+source_trust_class=official
 ```
 
 `VERIFY FACT` reports both `source_trust_q16` and
 `source_trust_category` for supporting and contradicting evidence. Equal text
 matches are sorted by higher source trust first, then by `cell_id`, so the most
 trusted evidence is visible without hiding lower-trust evidence. The category
-thresholds are documented in `SOURCE_TRUST_MODEL.md`.
+thresholds and calibrated class weights are documented in
+`SOURCE_TRUST_MODEL.md`. If both fields are present, explicit
+`source_trust_q16` wins.
 
 ## Contradiction Index
 

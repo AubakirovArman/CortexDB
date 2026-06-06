@@ -433,5 +433,6 @@ fn source_trust_q16(payload: &[u8]) -> Q16 {
 }
 
 fn source_trust(payload: &[u8]) -> SourceTrust {
-    SourceTrust::from_q16(CellMetadata::from_payload(payload).source_trust_q16)
+    let metadata = CellMetadata::from_payload(payload);
+    SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class)
 }

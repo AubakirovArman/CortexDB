@@ -2,7 +2,7 @@ use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZER
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 use cortex_engine::verification::ContradictionRelationOptions;
 use cortex_engine::verification::VerificationStatus;
-use cortex_engine::{scope_id, Database, SourceTrustCategory};
+use cortex_engine::{scope_id, Database, SourceTrustCategory, INFERRED_SOURCE_TRUST_Q16};
 use std::collections::BTreeSet;
 
 #[test]
@@ -137,6 +137,34 @@ fn verify_fact_aql_reports_source_trust_categories() {
             (CellId(3), SourceTrustCategory::Medium),
             (CellId(2), SourceTrustCategory::Low),
         ]
+    );
+}
+
+#[test]
+fn verify_fact_aql_uses_calibrated_source_trust_class() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=verified\ntype=fact\nsource=extracted-note\nsource_trust_class=inferred\n\nABC budget approved".to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;"#,
+            &view("project:investments", true),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Supported);
+    assert_eq!(
+        report.evidence[0].source_trust_q16,
+        INFERRED_SOURCE_TRUST_Q16
+    );
+    assert_eq!(
+        report.evidence[0].source_trust_category,
+        SourceTrustCategory::Low
     );
 }
 

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 75 / 150
+- Done: 76 / 150
 - Partial: 1 / 150
-- Todo: 74 / 150
-- Current closed epic: Epic 75, Source Trust Model v1
+- Todo: 73 / 150
+- Current closed epic: Epic 76, Source Trust Calibration
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2060,12 +2060,29 @@ Tasks:
 
 ### Epic 76. Source Trust Calibration
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/source_trust.rs`
+- `crates/cortex-engine/src/query/metadata.rs`
+- `crates/cortex-engine/src/query/metadata_validation.rs`
+- `crates/cortex-engine/src/context/pack.rs`
+- `crates/cortex-engine/src/verification.rs`
+- `crates/cortex-engine/tests/context_pack.rs`
+- `crates/cortex-engine/tests/verification_tests.rs`
+- `docs/SOURCE_TRUST_MODEL.md`
+- `docs/VERIFY_FACT.md`
 
 Tasks:
 
-- Define official/internal/extracted/inferred weights.
-- Explain trust contribution.
+- Define official/internal/extracted/inferred weights. Done:
+  `source_trust_class` calibrates missing explicit Q16 metadata to stable
+  weights: official `60000`, internal `52000`, extracted `40000`, inferred
+  `20000`; explicit `source_trust_q16` remains the override.
+- Explain trust contribution. Done: ContextPack score components now explain
+  whether source trust came from explicit Q16 metadata, calibrated class
+  metadata, or the default unknown score.
 
 ### Epic 77. Contradiction Index v1
 
