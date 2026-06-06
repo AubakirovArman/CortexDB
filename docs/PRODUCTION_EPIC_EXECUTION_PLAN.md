@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 42 / 150
+- Done: 43 / 150
 - Partial: 1 / 150
-- Todo: 107 / 150
-- Current closed epic: Epic 42, AQL Limit/Budget Semantics
+- Todo: 106 / 150
+- Current closed epic: Epic 43, AQL Security Fuzzing
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1148,12 +1148,23 @@ Tasks:
 
 ### Epic 43. AQL Security Fuzzing
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/AQL_SECURITY_FUZZING.md`
+- `docs/AQL_V0_4.md`
+- `crates/cortex-engine/tests/aql_security_fuzzing.rs`
+- `cargo test -p cortex-engine --test aql_security_fuzzing`
 
 Tasks:
 
-- Generate random WHERE/NOT/AND/OR queries.
-- Verify no scope bypass.
+- Generate random WHERE/NOT/AND/OR queries. Done: the test builds a
+  fixed-seed deterministic corpus of nested predicate, `NOT`, `AND`, and `OR`
+  expressions plus hand-written edge cases.
+- Verify no scope bypass. Done: each generated query either returns only cells
+  from the readable scope or fails closed with `permission_denied`; the same
+  corpus runs before and after checkpoint/reopen.
 
 ### Epic 44. AQL SDK Helpers
 

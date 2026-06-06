@@ -60,6 +60,9 @@ Policy remains fail-closed:
 - `budget` and `candidate_limit` may be clamped by policy;
 - `audit` requires explicit `AgentView.allow_audit_mode`.
 
+Security fuzzing for nested `WHERE`/`NOT`/`AND`/`OR` scope-bypass attempts is
+tracked in [`AQL_SECURITY_FUZZING.md`](AQL_SECURITY_FUZZING.md).
+
 ## EXPLAIN
 
 `EXPLAIN` wraps a supported statement. For Core Alpha, the public execution
