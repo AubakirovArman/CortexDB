@@ -78,6 +78,11 @@ pub fn route_database_with_agent(
                 retired_segments: stats.retired_segments,
                 memtable_cells: stats.memtable.cell_count,
                 memtable_versions: stats.memtable.version_count,
+                memtable_payload_bytes: stats.memtable_payload_bytes,
+                estimated_memtable_bytes: stats.estimated_memtable_bytes,
+                estimated_index_bytes: stats.estimated_index_bytes,
+                estimated_context_pack_bytes: stats.estimated_context_pack_bytes,
+                estimated_total_memory_bytes: stats.estimated_total_memory_bytes,
                 wal_size_bytes: stats.wal_size_bytes,
                 wal_writer_records: stats.wal_writer.records_written,
                 wal_writer_bytes: stats.wal_writer.bytes_written,
@@ -197,6 +202,21 @@ pub fn route_database_with_agent(
                      # HELP cortexdb_memtable_versions Number of cell versions in memtable.\n\
                      # TYPE cortexdb_memtable_versions gauge\n\
                      cortexdb_memtable_versions {}\n\
+                     # HELP cortexdb_memtable_payload_bytes Raw payload bytes currently retained by MemTable versions.\n\
+                     # TYPE cortexdb_memtable_payload_bytes gauge\n\
+                     cortexdb_memtable_payload_bytes {}\n\
+                     # HELP cortexdb_estimated_memtable_bytes Estimated in-memory bytes used by MemTable structures and payloads.\n\
+                     # TYPE cortexdb_estimated_memtable_bytes gauge\n\
+                     cortexdb_estimated_memtable_bytes {}\n\
+                     # HELP cortexdb_estimated_index_bytes Estimated in-memory bytes used by query/index structures.\n\
+                     # TYPE cortexdb_estimated_index_bytes gauge\n\
+                     cortexdb_estimated_index_bytes {}\n\
+                     # HELP cortexdb_estimated_context_pack_bytes Estimated bytes needed to materialize a ContextPack working set.\n\
+                     # TYPE cortexdb_estimated_context_pack_bytes gauge\n\
+                     cortexdb_estimated_context_pack_bytes {}\n\
+                     # HELP cortexdb_estimated_total_memory_bytes Estimated total engine memory across tracked categories.\n\
+                     # TYPE cortexdb_estimated_total_memory_bytes gauge\n\
+                     cortexdb_estimated_total_memory_bytes {}\n\
                      # HELP cortexdb_wal_size_bytes Total WAL size in bytes.\n\
                      # TYPE cortexdb_wal_size_bytes gauge\n\
                      cortexdb_wal_size_bytes {}\n\
@@ -227,6 +247,11 @@ pub fn route_database_with_agent(
                     stats.retired_segments,
                     stats.memtable.cell_count,
                     stats.memtable.version_count,
+                    stats.memtable_payload_bytes,
+                    stats.estimated_memtable_bytes,
+                    stats.estimated_index_bytes,
+                    stats.estimated_context_pack_bytes,
+                    stats.estimated_total_memory_bytes,
                     stats.wal_size_bytes,
                     stats.wal_writer.records_written,
                     stats.wal_writer.bytes_written,
@@ -245,6 +270,11 @@ pub fn route_database_with_agent(
                     retired_segments: stats.retired_segments,
                     memtable_cells: stats.memtable.cell_count,
                     memtable_versions: stats.memtable.version_count,
+                    memtable_payload_bytes: stats.memtable_payload_bytes,
+                    estimated_memtable_bytes: stats.estimated_memtable_bytes,
+                    estimated_index_bytes: stats.estimated_index_bytes,
+                    estimated_context_pack_bytes: stats.estimated_context_pack_bytes,
+                    estimated_total_memory_bytes: stats.estimated_total_memory_bytes,
                     wal_size_bytes: stats.wal_size_bytes,
                     wal_writer_records: stats.wal_writer.records_written,
                     wal_writer_bytes: stats.wal_writer.bytes_written,

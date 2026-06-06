@@ -181,13 +181,18 @@ pub fn stats(path: &str, json: bool) -> Result<String, String> {
         return Ok(stats_to_json(&stats));
     }
     Ok(format!(
-        "current_seq={} checkpoint_seq={} live_segments={} retired_segments={} memtable_cells={} memtable_versions={} wal_size_bytes={} wal_writer_records={} wal_writer_bytes={} wal_writer_fsyncs={} wal_writer_batches={}",
+        "current_seq={} checkpoint_seq={} live_segments={} retired_segments={} memtable_cells={} memtable_versions={} memtable_payload_bytes={} estimated_memtable_bytes={} estimated_index_bytes={} estimated_context_pack_bytes={} estimated_total_memory_bytes={} wal_size_bytes={} wal_writer_records={} wal_writer_bytes={} wal_writer_fsyncs={} wal_writer_batches={}",
         stats.current_seq.0,
         stats.checkpoint_seq.0,
         stats.live_segments,
         stats.retired_segments,
         stats.memtable.cell_count,
         stats.memtable.version_count,
+        stats.memtable_payload_bytes,
+        stats.estimated_memtable_bytes,
+        stats.estimated_index_bytes,
+        stats.estimated_context_pack_bytes,
+        stats.estimated_total_memory_bytes,
         stats.wal_size_bytes,
         stats.wal_writer.records_written,
         stats.wal_writer.bytes_written,

@@ -67,6 +67,7 @@ in sync with the current top-level module list.
 | `legal` | verify | Legal verification boundary and legal report contracts. |
 | `lock` | storage | Private database lock implementation. |
 | `memory` | context | Agent memory expiration, decay, and memory-specific operations. |
+| `memory_accounting` | engine-facade | Engine memory estimate helpers for stats, metrics, and release evidence. |
 | `operation` | storage | WAL operation encoding/decoding and cell core metadata. |
 | `options` | engine-facade | Database options, recovery mode, stale lock policy, feature flags. |
 | `query` | search | AQL runtime catalog/provider/candidate/metadata integration. |

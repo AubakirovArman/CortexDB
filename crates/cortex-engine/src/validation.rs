@@ -14,6 +14,7 @@ use cortex_storage::wal::{WalReader, WalWriterMetrics};
 use crate::checkpoint::{bitmap_path, hnsw_path, lexical_path, segment_path, vector_path};
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
+use crate::memory_accounting::estimate_database_memory;
 use crate::search::HnswIndex;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -23,6 +24,11 @@ pub struct StorageStats {
     pub live_segments: usize,
     pub retired_segments: usize,
     pub memtable: MemTableStats,
+    pub memtable_payload_bytes: usize,
+    pub estimated_memtable_bytes: usize,
+    pub estimated_index_bytes: usize,
+    pub estimated_context_pack_bytes: usize,
+    pub estimated_total_memory_bytes: usize,
     pub wal_size_bytes: u64,
     pub wal_writer: WalWriterMetrics,
 }
@@ -52,12 +58,18 @@ pub struct StorageValidationReport {
 
 impl Database {
     pub fn storage_stats(&self) -> EngineResult<StorageStats> {
+        let memory = estimate_database_memory(self)?;
         Ok(StorageStats {
             current_seq: self.current_seq,
             checkpoint_seq: CommitSeq(self.manifest.checkpoint_seq),
             live_segments: self.manifest.live_segments.len(),
             retired_segments: self.manifest.retired_segments.len(),
             memtable: self.memtable.stats(),
+            memtable_payload_bytes: memory.memtable_payload_bytes,
+            estimated_memtable_bytes: memory.estimated_memtable_bytes,
+            estimated_index_bytes: memory.estimated_index_bytes,
+            estimated_context_pack_bytes: memory.estimated_context_pack_bytes,
+            estimated_total_memory_bytes: memory.estimated_total_memory_bytes,
             wal_size_bytes: file_len_or_zero(&self.wal_path)?,
             wal_writer: self.writer.metrics()?,
         })

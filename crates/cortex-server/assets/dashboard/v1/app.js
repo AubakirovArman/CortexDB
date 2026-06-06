@@ -593,6 +593,10 @@ function summarizeStatsResult(results) {
         live_segments: body.live_segments ?? null,
         retired_segments: body.retired_segments ?? null,
         memtable_cells: body.memtable_cells ?? null,
+        estimated_memtable_bytes: body.estimated_memtable_bytes ?? null,
+        estimated_index_bytes: body.estimated_index_bytes ?? null,
+        estimated_context_pack_bytes: body.estimated_context_pack_bytes ?? null,
+        estimated_total_memory_bytes: body.estimated_total_memory_bytes ?? null,
         wal_size_bytes: body.wal_size_bytes ?? null,
         message: result?.ok ? "ok" : (result ? errorMessage(result.error) : "admin token required"),
     };

@@ -46,6 +46,11 @@ Important fields:
 | `retired_segments` | Retired segment bundles. | High count suggests GC/cleanup pressure. |
 | `memtable_cells` | Unique cells in memory. | Growth indicates checkpoint/compaction need. |
 | `memtable_versions` | MVCC versions in memory. | High ratio vs cells indicates patch/tombstone churn. |
+| `memtable_payload_bytes` | Raw payload bytes retained by MemTable versions. | Payload growth baseline for memory estimates. |
+| `estimated_memtable_bytes` | Estimated bytes for MemTable structures and payloads. | Use as a local memory pressure trend, not exact RSS. |
+| `estimated_index_bytes` | Estimated bytes for query/index structures. | Growth indicates larger bitmap/lexical candidate state. |
+| `estimated_context_pack_bytes` | Estimated ContextPack working-set bytes for visible cells. | Growth predicts packing/query memory pressure. |
+| `estimated_total_memory_bytes` | Sum of tracked estimated engine memory categories. | Coarse total for dashboards and release evidence. |
 | `wal_size_bytes` | Active WAL size. | Growth indicates checkpoint lag. |
 | `wal_writer_records` | WAL records appended since writer start. | Write activity counter. |
 | `wal_writer_bytes` | WAL bytes written since writer start. | Write volume counter. |

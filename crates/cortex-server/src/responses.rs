@@ -40,6 +40,16 @@ pub struct StatsResponse {
     pub memtable_cells: usize,
     /// Total number of cell versions currently held in MemTable.
     pub memtable_versions: usize,
+    /// Raw payload bytes currently retained by MemTable versions.
+    pub memtable_payload_bytes: usize,
+    /// Estimated in-memory bytes used by MemTable structures and payloads.
+    pub estimated_memtable_bytes: usize,
+    /// Estimated in-memory bytes used by query/index structures.
+    pub estimated_index_bytes: usize,
+    /// Estimated bytes needed to materialize a ContextPack working set.
+    pub estimated_context_pack_bytes: usize,
+    /// Estimated total engine memory across tracked categories.
+    pub estimated_total_memory_bytes: usize,
     /// Total size of the active Write-Ahead Log (.aclog) files in bytes.
     pub wal_size_bytes: u64,
     /// Total number of transaction log records appended.
@@ -422,6 +432,11 @@ pub struct MetricsResponse {
     pub retired_segments: usize,
     pub memtable_cells: usize,
     pub memtable_versions: usize,
+    pub memtable_payload_bytes: usize,
+    pub estimated_memtable_bytes: usize,
+    pub estimated_index_bytes: usize,
+    pub estimated_context_pack_bytes: usize,
+    pub estimated_total_memory_bytes: usize,
     pub wal_size_bytes: u64,
     pub wal_writer_records: u64,
     pub wal_writer_bytes: u64,

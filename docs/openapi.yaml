@@ -1231,6 +1231,11 @@ components:
       - retired_segments
       - memtable_cells
       - memtable_versions
+      - memtable_payload_bytes
+      - estimated_memtable_bytes
+      - estimated_index_bytes
+      - estimated_context_pack_bytes
+      - estimated_total_memory_bytes
       - wal_size_bytes
       - wal_writer_records
       - wal_writer_bytes
@@ -1250,6 +1255,16 @@ components:
         memtable_cells:
           type: integer
         memtable_versions:
+          type: integer
+        memtable_payload_bytes:
+          type: integer
+        estimated_memtable_bytes:
+          type: integer
+        estimated_index_bytes:
+          type: integer
+        estimated_context_pack_bytes:
+          type: integer
+        estimated_total_memory_bytes:
           type: integer
         wal_size_bytes:
           type: integer
@@ -2183,6 +2198,11 @@ components:
       - retired_segments
       - memtable_cells
       - memtable_versions
+      - memtable_payload_bytes
+      - estimated_memtable_bytes
+      - estimated_index_bytes
+      - estimated_context_pack_bytes
+      - estimated_total_memory_bytes
       - wal_size_bytes
       - wal_writer_records
       - wal_writer_bytes
@@ -2225,6 +2245,16 @@ components:
         memtable_cells:
           type: integer
         memtable_versions:
+          type: integer
+        memtable_payload_bytes:
+          type: integer
+        estimated_memtable_bytes:
+          type: integer
+        estimated_index_bytes:
+          type: integer
+        estimated_context_pack_bytes:
+          type: integer
+        estimated_total_memory_bytes:
           type: integer
         wal_size_bytes:
           type: integer

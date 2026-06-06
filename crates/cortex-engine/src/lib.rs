@@ -42,6 +42,7 @@ pub mod ingestion;
 pub mod legal;
 mod lock;
 pub mod memory;
+mod memory_accounting;
 pub use memory::{ExpiredMemoryCell, MemoryDecayScore};
 pub mod operation;
 mod options;

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 32 / 150
+- Done: 33 / 150
 - Partial: 1 / 150
-- Todo: 117 / 150
-- Current closed epic: Epic 32, Engine Determinism Audit
+- Todo: 116 / 150
+- Current closed epic: Epic 33, Engine Memory Accounting
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -832,14 +832,35 @@ Tasks:
 
 ### Epic 33. Engine Memory Accounting
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/memory_accounting.rs`
+- `crates/cortex-engine/tests/storage_stats.rs`
+- `crates/cortex-server/src/responses.rs`
+- `docs/openapi.yaml`
+- `docs/METRICS.md`
+- `cargo test -p cortex-engine --test storage_stats`
+- `cargo test -p cortex-cli`
+- `make openapi-contract-check`
+- `make sdk-contract-check`
+- `make observability-check`
+- `cargo test --workspace --all-features`
+- `cargo clippy --workspace --all-targets -- -D warnings`
 
 Tasks:
 
-- Estimate MemTable memory.
-- Estimate index memory.
-- Estimate ContextPack memory.
-- Expose stats.
+- Estimate MemTable memory. Done: `storage_stats()` now reports raw
+  MemTable payload bytes and estimated MemTable structure+payload bytes.
+- Estimate index memory. Done: `memory_accounting.rs` estimates current AQL
+  bitmap, lexical, candidate, and frequency map memory.
+- Estimate ContextPack memory. Done: stats include a ContextPack working-set
+  estimate for visible cells.
+- Expose stats. Done: Rust `StorageStats`, CLI JSON/plain stats, HTTP
+  `/v1/stats`, `/v1/metrics`, Prometheus metrics, SDK `StatsResponse`,
+  dashboard cards, OpenAPI, API docs, and observability docs include the new
+  memory accounting fields.
 
 ### Epic 34. Engine Config Model
 
