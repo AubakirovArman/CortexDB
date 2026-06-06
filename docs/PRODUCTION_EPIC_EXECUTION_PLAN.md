@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 95 / 150
+- Done: 96 / 150
 - Partial: 1 / 150
-- Todo: 54 / 150
-- Current closed epic: Epic 95, Audit Export and Retention
+- Todo: 53 / 150
+- Current closed epic: Epic 96, Encrypted Backups MVP
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2641,14 +2641,38 @@ Boundary:
 
 ### Epic 96. Encrypted Backups MVP
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Add passphrase encryption.
-- Add key derivation.
-- Create encrypted archive.
-- Restore encrypted archive.
+- Add passphrase encryption. Done: this epic is the production-track
+  duplicate of Epic 23; `backup-encrypted`, `restore-encrypted`, and
+  `Database::encrypted_backup_path` create and restore CortexDB-local
+  passphrase archives.
+- Add key derivation. Done for MVP: archive metadata records
+  `cortexdb.fnv64-passphrase.v1` as the deterministic local KDF boundary.
+- Create encrypted archive. Done: `make encrypted-backup-check` writes
+  `target/encrypted-backup/backup.cdbenc`.
+- Restore encrypted archive. Done: the same gate restores checkpointed data and
+  WAL-tail data, validates the restored database, rejects a wrong passphrase,
+  and rejects corrupt ciphertext without creating the target database.
+
+Evidence:
+
+- `make encrypted-backup-check`
+- `target/encrypted-backup/report.json`
+- `scripts/encrypted_backup_check.py`
+- `crates/cortex-engine/src/backup/encrypted/`
+- `crates/cortex-engine/tests/backup_restore.rs`
+- `crates/cortex-cli/src/tests.rs`
+- `docs/ENCRYPTED_BACKUPS_DESIGN.md`
+- `docs/BACKUP_RESTORE.md`
+
+Boundary:
+
+- This closes the local encrypted-backup MVP for release evidence. The current
+  format is passphrase-based and deterministic for local drills; it is not
+  KMS-backed, externally audited, or compliance-certified encryption.
 
 ### Epic 97. Remote Backup Adapter
 
