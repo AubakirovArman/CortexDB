@@ -17,6 +17,7 @@ cortexdb backup-encrypted ./db ./db.cdbenc --passphrase-env CORTEXDB_BACKUP_PASS
 cortexdb restore-encrypted ./db.cdbenc ./db.encrypted-restored --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
 make backup-drill-check
 make backup-offsite-check
+make backup-rpo-rto-profile-check
 make backup-restore-production-pack-check
 ```
 
@@ -159,6 +160,15 @@ root, validates the staged copy, reads back the latest payload, and writes:
 target/backup-offsite/report.json
 ```
 
+`make backup-rpo-rto-profile-check` is the repeatable local RPO/RTO profile
+gate. It creates small, medium, and large local datasets, measures backup,
+restore dry-run, and restore duration for each profile, verifies readback, and
+proves that writes after the backup are not claimed by the restored copy:
+
+```text
+target/backup-rpo-rto/report.json
+```
+
 `make backup-restore-production-pack-check` is the supported workflow gate. It
 runs local drill, offsite staging, encrypted backup restore tests, and writes a
 single release artifact:
@@ -168,8 +178,8 @@ target/backup-restore-production-pack/report.json
 ```
 
 The production-pack report records the supported workflow, RPO boundary, local
-RTO evidence, encrypted-backup gate coverage, and paths to the underlying drill
-and offsite reports.
+RTO profile evidence, encrypted-backup gate coverage, and paths to the
+underlying drill, offsite, and profile reports.
 
 Override paths in automation when needed:
 

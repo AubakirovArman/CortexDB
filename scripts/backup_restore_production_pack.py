@@ -15,6 +15,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--backup-drill-report", required=True)
     parser.add_argument("--backup-offsite-report", required=True)
+    parser.add_argument("--rpo-rto-profile-report")
     parser.add_argument("--output", required=True)
     return parser.parse_args()
 
@@ -94,6 +95,51 @@ def validate_offsite(report: dict[str, Any], errors: list[str]) -> dict[str, Any
     }
 
 
+def validate_rpo_rto_profiles(
+    report: dict[str, Any] | None, errors: list[str]
+) -> dict[str, Any]:
+    if report is None:
+        errors.append("RPO/RTO profile report missing")
+        return {"profiles": []}
+    profiles = report.get("profiles", [])
+    require(report.get("status") == "ok", "RPO/RTO profile status is not ok", errors)
+    require(
+        isinstance(profiles, list) and len(profiles) >= 3,
+        "RPO/RTO profile report needs small/medium/large profiles",
+        errors,
+    )
+    profile_names = {
+        item.get("profile") for item in profiles if isinstance(item, dict)
+    } if isinstance(profiles, list) else set()
+    require(
+        {"small", "medium", "large"}.issubset(profile_names),
+        "RPO/RTO profile report must include small, medium, and large",
+        errors,
+    )
+    for profile in profiles if isinstance(profiles, list) else []:
+        name = profile.get("profile", "unknown")
+        require(
+            int(profile.get("backup_duration_ms", 0)) >= 0,
+            f"{name}: backup duration missing",
+            errors,
+        )
+        require(
+            int(profile.get("restore_duration_ms", 0)) >= 0,
+            f"{name}: restore duration missing",
+            errors,
+        )
+        require(
+            profile.get("post_backup_write_excluded") is True,
+            f"{name}: post-backup write boundary not proven",
+            errors,
+        )
+    return {
+        "profiles": profiles,
+        "data_loss_boundary": report.get("data_loss_boundary"),
+        "profile_definitions": report.get("profile_definitions"),
+    }
+
+
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     started_ms = int(time.time() * 1000)
     drill_path = Path(args.backup_drill_report)
@@ -101,6 +147,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     errors: list[str] = []
     drill_summary = validate_backup_drill(load_json(drill_path), errors)
     offsite_summary = validate_offsite(load_json(offsite_path), errors)
+    rpo_rto_profile_path = (
+        Path(args.rpo_rto_profile_report) if args.rpo_rto_profile_report else None
+    )
+    rpo_rto_summary = validate_rpo_rto_profiles(
+        load_json(rpo_rto_profile_path) if rpo_rto_profile_path else None,
+        errors,
+    )
     finished_ms = int(time.time() * 1000)
     return {
         "status": "ok" if not errors else "failed",
@@ -110,6 +163,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "inputs": {
             "backup_drill_report": str(drill_path),
             "backup_offsite_report": str(offsite_path),
+            "rpo_rto_profile_report": (
+                str(rpo_rto_profile_path) if rpo_rto_profile_path else None
+            ),
             "encrypted_backup_gate": "make encrypted-backup-check",
         },
         "supported_workflow": [
@@ -129,6 +185,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "rto_evidence": {
             "local_restore_drill": drill_summary,
             "offsite_preflight_restore": offsite_summary,
+            "profile_matrix": rpo_rto_summary,
             "note": "RTO is measured locally by these gates and depends on database size and storage device.",
         },
         "encrypted_backup_evidence": {

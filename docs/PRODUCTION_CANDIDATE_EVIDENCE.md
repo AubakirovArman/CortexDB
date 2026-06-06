@@ -31,7 +31,7 @@ passed
 | --- | --- |
 | `candidate_docs` | Confirms RPO/RTO, SLO, SDK/API compatibility, and upgrade/rollback docs exist. |
 | `production_hardening` | Reuses the Epic 4 hardening evidence gate. |
-| `backup_rpo_rto_drill` | Runs backup/restore/readback evidence for the RPO/RTO boundary. |
+| `backup_rpo_rto_drill` | Runs small/medium/large backup and restore profile evidence for the RPO/RTO boundary. |
 | `single_node_slo` | Runs local single-node performance gate; performance trend history is covered through `production_hardening`. |
 | `openapi_contract` | Verifies HTTP API schema compatibility. |
 | `sdk_release_contract` | Verifies SDK package metadata, version lock-step, and release workflow. |

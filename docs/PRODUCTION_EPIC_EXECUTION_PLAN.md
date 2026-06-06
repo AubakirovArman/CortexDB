@@ -458,14 +458,28 @@ Tasks:
 
 ### Epic 21. Backup/Restore RPO/RTO Profiles
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `make backup-rpo-rto-profile-check`
+- `target/backup-rpo-rto/report.json`
+- `make backup-restore-production-pack-check`
+- `target/backup-restore-production-pack/report.json`
+- `scripts/backup_rpo_rto_profiles.py`
+- `scripts/backup_restore_production_pack.py`
+- `docs/RPO_RTO.md`
+- `docs/BACKUP_RESTORE.md`
 
 Tasks:
 
-- Define small, medium, and large profiles.
-- Measure backup time.
-- Measure restore time.
-- Define data-loss boundary.
+- Define small, medium, and large profiles. Done: local profiles are 10, 100,
+  and 500 base cells plus a WAL-tail probe.
+- Measure backup time. Done: profile report records `backup_duration_ms`.
+- Measure restore time. Done: profile report records `restore_duration_ms` and
+  `restore_dry_run_duration_ms`.
+- Define data-loss boundary. Done: profile gate writes after backup and proves
+  the restored copy excludes that post-backup cell.
 
 ### Epic 22. Offsite Backup Adapter v1
 

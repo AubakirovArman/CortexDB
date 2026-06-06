@@ -49,8 +49,8 @@ SUITES: tuple[dict[str, Any], ...] = (
     },
     {
         "name": "backup_rpo_rto_drill",
-        "command": ["make", "backup-drill-check"],
-        "covers": ["restore drill", "backup validation", "readback evidence"],
+        "command": ["make", "backup-rpo-rto-profile-check"],
+        "covers": ["RPO/RTO profiles", "backup timing", "restore timing", "data-loss boundary"],
     },
     {
         "name": "single_node_slo",
