@@ -87,19 +87,17 @@ Tasks:
 
 ### Epic 4. Release Evidence Bundle v2
 
-Status: partial
+Status: done
 
 Evidence:
 
-- `scripts/beta_release_bundle.py`
-- `make beta-release-check`
-- Existing beta archive path: `target/beta-release/evidence.tar.gz`
-
-Remaining:
-
-- Add a unified `release-evidence.tar.gz` bundle for the production release train.
-- Include explicit checksums for every included evidence artifact.
-- Include benchmark outputs, SDK reports, and security reports under one release bundle schema.
+- `scripts/release_evidence_bundle.py`
+- `make release-evidence-bundle-check`
+- `target/release-evidence-bundle/manifest.json`
+- `target/release-evidence-bundle/report.json`
+- `target/release-evidence-bundle/release-evidence.tar.gz`
+- `target/release-evidence-bundle/release-evidence.tar.gz.sha256`
+- Latest local bundle report: `status=passed`, `artifact_count=25`
 
 Tasks:
 

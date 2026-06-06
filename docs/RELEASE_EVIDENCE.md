@@ -75,6 +75,39 @@ local clean worktree; not an independent hosted CI or clean-container rerun
 | `target/release-artifacts/cortexdb-dev-linux-x86_64.tar.gz` | passed | Binary package generated and validated with checksum `9bd5b82a0026ce98dd9f347286e2c01457a14fc2fdc605b6265ce0f53a7da48e`. |
 | `target/dashboard/dashboard-v1.tar.gz` | passed | Dashboard package generated and validated. |
 
+## Unified Release Evidence Bundle
+
+The production release train now has a single evidence bundle gate:
+
+```bash
+make release-evidence-bundle-check
+```
+
+It writes:
+
+```text
+target/release-evidence-bundle/manifest.json
+target/release-evidence-bundle/report.json
+target/release-evidence-bundle/release-evidence.tar.gz
+target/release-evidence-bundle/release-evidence.tar.gz.sha256
+```
+
+The bundle manifest records SHA-256 checksums for every included artifact. The
+current local bundle includes release, SDK, benchmark, security, storage,
+operations, dashboard, and explicitly experimental evidence categories.
+
+Latest local bundle result:
+
+```text
+status=passed
+artifact_count=25
+archive_sha256_sidecar=target/release-evidence-bundle/release-evidence.tar.gz.sha256
+```
+
+This archive is local release evidence packaging. It still does not prove a
+production distributed database, managed cloud readiness, enterprise compliance
+certification, legal-grade verification, or unrestricted HNSW without fallback.
+
 ## Public Release Artifact Audit
 
 The public artifact audit target is `v0.1.0-core-alpha.5`. It supersedes the
