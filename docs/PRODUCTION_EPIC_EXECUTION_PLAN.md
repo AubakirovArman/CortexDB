@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 70 / 150
+- Done: 71 / 150
 - Partial: 1 / 150
-- Todo: 79 / 150
-- Current closed epic: Epic 70, ContextPack SDK Types v1
+- Todo: 78 / 150
+- Current closed epic: Epic 71, Verification Dataset v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1933,13 +1933,27 @@ Acceptance: Verify has measured quality, structured conflicts, and usable report
 
 ### Epic 71. Verification Dataset v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `examples/eval/verification_cases.jsonl`
+- `crates/cortex-engine/tests/verification_evaluation.rs`
+- `scripts/verification_quality_check.py`
+- `target/verification-quality/report.json`
+- `docs/VERIFICATION_QUALITY_EVIDENCE.md`
 
 Tasks:
 
-- Add 50+ cases.
-- Cover 4 domains.
-- Include supported, contradicted, mixed, and insufficient labels.
+- Add 50+ cases. Done: `examples/eval/verification_cases.jsonl` contains 50
+  deterministic labelled cases and `make verification-quality-check` validates
+  them.
+- Cover 4 domains. Done: the report covers 5 domains:
+  `investment_projects`, `support_tickets`, `legal_policies`,
+  `technical_docs`, and `world_indicators`.
+- Include supported, contradicted, mixed, and insufficient labels. Done:
+  latest report records `supported=14`, `contradicted=20`, `mixed=8`, and
+  `insufficient=8` with zero false positives and zero false negatives.
 
 ### Epic 72. Verification Dataset v3
 
