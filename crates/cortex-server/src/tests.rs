@@ -1,5 +1,6 @@
 mod api_tests;
 mod auth_policy_tests;
+mod auth_rotation_tests;
 mod cell_tests;
 mod error_response_snapshot_tests;
 mod error_taxonomy_tests;

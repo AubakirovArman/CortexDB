@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 97 / 150
+- Done: 98 / 150
 - Partial: 1 / 150
-- Todo: 52 / 150
-- Current closed epic: Epic 97, Remote Backup Adapter
+- Todo: 51 / 150
+- Current closed epic: Epic 98, Secret Rotation Workflow
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2714,13 +2714,35 @@ Boundary:
 
 ### Epic 98. Secret Rotation Workflow
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Add token file rotation.
-- Add reload.
-- Fail closed on invalid token file.
+- Add token file rotation. Done: `CORTEXDB_AUTH_TOKENS_FILE` and
+  `ServerOptions::auth_tokens_file` support file-backed local token policy
+  rotation.
+- Add reload. Done: the auth layer re-reads the token policy file for every
+  request, so replacing the file rotates tokens without changing server
+  options or restarting the process.
+- Fail closed on invalid token file. Done: missing, empty/comment-only, and
+  malformed token files do not authenticate requests.
+
+Evidence:
+
+- `cargo test -p cortex-server auth_rotation_tests`
+- `cargo test -p cortex-server token_policy_file`
+- `crates/cortex-server/src/auth.rs`
+- `crates/cortex-server/src/tests/auth_rotation_tests.rs`
+- `crates/cortex-server/src/tests/auth_policy_tests.rs`
+- `docs/AUTH.md`
+- `docs/BETA_OPERATIONS.md`
+- `docs/SECURITY_RELEASE_CHECKLIST.md`
+
+Boundary:
+
+- This closes local file-backed static-token rotation. It does not provide
+  external identity provider rotation, managed sessions, hardware-backed
+  secrets, or enterprise credential lifecycle automation.
 
 ### Epic 99. Security Check Gate v2
 
