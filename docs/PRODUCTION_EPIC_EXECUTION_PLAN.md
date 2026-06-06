@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 96 / 150
+- Done: 97 / 150
 - Partial: 1 / 150
-- Todo: 53 / 150
-- Current closed epic: Epic 96, Encrypted Backups MVP
+- Todo: 52 / 150
+- Current closed epic: Epic 97, Remote Backup Adapter
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2676,14 +2676,41 @@ Boundary:
 
 ### Epic 97. Remote Backup Adapter
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Add local adapter.
-- Design S3-compatible adapter.
-- Add dry-run.
-- Add checksum validation.
+- Add local adapter. Done: this epic is the production-track duplicate of
+  Epic 22; `LocalFilesystemOffsiteAdapter` stages validated backup copies into
+  an external/offsite root.
+- Design S3-compatible adapter. Done for this MVP boundary: the
+  `OffsiteBackupAdapter` trait defines the provider seam, while actual
+  S3/GCS/Azure object-store upload remains out of scope until provider-backed
+  restore gates exist.
+- Add dry-run. Done through the staging preflight: `stage_backup_offsite`
+  restores the source backup into a temporary preflight directory before
+  publishing, and `make backup-offsite-check` records
+  `preflight_restore_completed=true`.
+- Add checksum validation. Done: the staged copy is opened through
+  `Database::validate_storage`, which reads manifest, WAL, segment, bitmap,
+  lexical, vector, and HNSW files through their checksum-aware storage readers.
+
+Evidence:
+
+- `make backup-offsite-check`
+- `target/backup-offsite/report.json`
+- `crates/cortex-engine/src/backup/offsite.rs`
+- `crates/cortex-engine/tests/backup_restore.rs`
+- `crates/cortex-cli/src/tests.rs`
+- `scripts/backup_offsite_check.sh`
+- `docs/BACKUP_RESTORE.md`
+- `docs/CLI.md`
+
+Boundary:
+
+- This closes local remote/offsite staging for single-node release evidence.
+  It does not provide provider-backed S3/GCS/Azure upload, remote object-store
+  restore drills, managed backup custody, or remote durability claims.
 
 ### Epic 98. Secret Rotation Workflow
 
