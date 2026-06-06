@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 35 / 150
+- Done: 36 / 150
 - Partial: 1 / 150
-- Todo: 114 / 150
-- Current closed epic: Epic 35, Engine Panic Audit
+- Todo: 113 / 150
+- Current closed epic: Epic 36, AQL v0.4 Compatibility Pack
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -939,15 +939,38 @@ Acceptance: AQL becomes stable contract, explainable, safe, and tested across SD
 
 ### Epic 36. AQL v0.4 Compatibility Pack
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/AQL_V0_4.md`
+- `docs/AQL_COMPATIBILITY.md`
+- `docs/AQL_CHANGELOG.md`
+- `scripts/aql_compat_check.py`
+- `crates/cortex-aql/tests/aql_v0_4_golden_tests.rs`
+- `crates/cortex-aql/tests/parser_tests.rs`
+- `crates/cortex-aql/tests/binder_hardening_tests.rs`
+- `crates/cortex-aql/tests/aql_stabilization_tests.rs`
+- `make aql-compat-check`
+- `target/aql-compat/report.json`
+- `cargo test -p cortex-aql`
+- `cargo test --workspace --all-features`
+- `cargo clippy --workspace --all-targets -- -D warnings`
 
 Tasks:
 
-- Add golden parser tests.
-- Add golden binder tests.
-- Add malformed query tests.
-- Add permission denial tests.
-- Add unknown field tests.
+- Add golden parser tests. Done: `aql_v0_4_golden_tests.rs` freezes
+  `RETRIEVE CONTEXT`, `EXPLAIN RETRIEVE CONTEXT`, `VERIFY FACT`, `REMEMBER`,
+  requirements, list literals, and parsed AST shape.
+- Add golden binder tests. Done: the same golden pack freezes bound retrieve
+  plan fields, policy clamps, quality thresholds, and bitmap bytecode.
+- Add malformed query tests. Done: `parser_tests.rs` and the compatibility
+  gate cover invalid modes, malformed syntax, huge integers, multiline
+  diagnostics, and safe parse messages.
+- Add permission denial tests. Done: golden and binder hardening tests cover
+  unreadable scopes, safe bind messages, and HTTP `permission_denied` mapping.
+- Add unknown field tests. Done: golden tests cover `FieldNotFilterable`, and
+  `AQL_COMPATIBILITY.md` documents unknown-field client behavior.
 
 ### Epic 37. AQL Explain
 
