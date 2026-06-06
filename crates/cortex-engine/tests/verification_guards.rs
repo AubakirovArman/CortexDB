@@ -161,6 +161,98 @@ fn verification_report_does_not_infer_billions_from_decimal_percent() {
 }
 
 #[test]
+fn stale_valid_to_evidence_is_guarded_and_not_supporting() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(11),
+        b"scope=project:investments\nstatus=verified\ntype=fact\nsource=archive\nvalid_to=2024-12-31\n\nSolar Plant budget is 1.2B KZT.".to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "Solar Plant budget is 1.2B KZT on 2025-01-10" IN BRAIN investment_projects;"#,
+            &view(),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Insufficient);
+    assert!(report.evidence.is_empty());
+    assert!(report.contradicting_evidence.is_empty());
+    assert_eq!(report.guards.len(), 1);
+    assert_eq!(report.guards[0].code, VerificationGuardCode::StaleFact);
+    assert!(report.guards[0].message.contains("valid_to=2024-12-31"));
+}
+
+#[test]
+fn stale_evidence_does_not_create_numeric_contradiction() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(12),
+        b"scope=project:investments\nstatus=verified\ntype=fact\nsource=archive\nmetric=budget\nvalid_to=2024-12-31\n\nSolar Plant budget is 1.4B KZT.".to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "Solar Plant budget is 1.2B KZT on 2025-01-10" IN BRAIN investment_projects;"#,
+            &view(),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Insufficient);
+    assert!(report.contradicting_evidence.is_empty());
+    assert!(report.numeric_conflicts.is_empty());
+    assert_eq!(report.guards[0].code, VerificationGuardCode::StaleFact);
+}
+
+#[test]
+fn future_valid_from_evidence_is_guarded_until_valid() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(13),
+        b"scope=project:investments\nstatus=verified\ntype=fact\nsource=forward-plan\nvalid_from=2026-01-01\n\nSolar Plant budget is 1.2B KZT.".to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "Solar Plant budget is 1.2B KZT in 2025" IN BRAIN investment_projects;"#,
+            &view(),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Insufficient);
+    assert_eq!(report.guards[0].code, VerificationGuardCode::StaleFact);
+    assert!(report.guards[0].message.contains("valid_from=2026-01-01"));
+}
+
+#[test]
+fn evidence_inside_validity_window_supports_fact() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(14),
+        b"scope=project:investments\nstatus=verified\ntype=fact\nsource=annual-report\nvalid_from=2025-01-01\nvalid_to=2025-12-31\n\nSolar Plant budget is 1.2B KZT.".to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "Solar Plant budget is 1.2B KZT on 2025-05-01" IN BRAIN investment_projects;"#,
+            &view(),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Supported);
+    assert_eq!(report.evidence[0].cell_id, CellId(14));
+    assert!(report.guards.is_empty());
+}
+
+#[test]
 fn verification_report_exports_markdown_and_audit_text() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();

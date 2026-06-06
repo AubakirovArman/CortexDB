@@ -123,9 +123,10 @@ pub use typed_body::{EntityBody, FactBody, RelationBody};
 pub use validation::{StorageStats, StorageValidation, StorageValidationReport};
 pub use vector_rebuild::VectorRebuildReport;
 pub use verification::{
-    compare_numeric_values, format_scaled_value, normalized_numeric_equal, parse_currency_code,
-    parse_magnitude_suffix, parse_unit_code, ContradictionRelationOptions, Magnitude,
-    NumericComparison, NumericValue, VerificationEvidence, VerificationGuard,
-    VerificationGuardCode, VerificationNumericConflict, VerificationReport,
+    compare_numeric_values, extract_temporal_query_range, format_scaled_value,
+    normalized_numeric_equal, parse_currency_code, parse_magnitude_suffix, parse_temporal_date,
+    parse_unit_code, ContradictionRelationOptions, Magnitude, NumericComparison, NumericValue,
+    TemporalDate, TemporalQueryRange, TemporalStaleReason, TemporalValidity, VerificationEvidence,
+    VerificationGuard, VerificationGuardCode, VerificationNumericConflict, VerificationReport,
     VerificationReportExportFormat, VerificationStatus,
 };

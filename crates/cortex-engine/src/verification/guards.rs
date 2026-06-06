@@ -1,8 +1,10 @@
 use crate::query::CellMetadata;
 use crate::search::tokenize;
+use cortex_aql::AgentView;
 use cortex_core::CellId;
 
 use crate::verification::numeric::{extract_numeric_values, numeric_conflict};
+use crate::verification::temporal::{temporal_stale_reason, TemporalStaleReason};
 
 use super::{VerificationEvidence, VerificationGuard, VerificationNumericConflict};
 
@@ -46,6 +48,28 @@ pub(super) fn numeric_mismatch_conflict(
         fact_value: details.fact_value,
         evidence_value: details.evidence_value,
     })
+}
+
+pub(super) fn stale_fact_guard(
+    fact: &str,
+    payload: &[u8],
+    cell_id: CellId,
+    view: &AgentView,
+) -> Option<VerificationGuard> {
+    let metadata = CellMetadata::from_payload(payload);
+    if !view.can_read_scope(crate::query::scope_id(&metadata.scope)) {
+        return None;
+    }
+    let reason = temporal_stale(fact, payload)?;
+    Some(VerificationGuard {
+        cell_id: Some(cell_id),
+        code: crate::verification::VerificationGuardCode::StaleFact,
+        message: temporal_stale_message(reason),
+    })
+}
+
+pub(super) fn temporal_stale(fact: &str, payload: &[u8]) -> Option<TemporalStaleReason> {
+    temporal_stale_reason(fact, payload)
 }
 
 struct NumericMismatchDetails {
@@ -119,5 +143,22 @@ fn numeric_display(value: &crate::verification::numeric::NumericValue) -> String
         }
         Some(context) => format!("{raw} {context}"),
         None => raw.to_owned(),
+    }
+}
+
+fn temporal_stale_message(reason: TemporalStaleReason) -> String {
+    match reason {
+        TemporalStaleReason::Expired { valid_to } => {
+            format!(
+                "evidence valid_to={} is before the fact date",
+                valid_to.as_iso_date()
+            )
+        }
+        TemporalStaleReason::NotYetValid { valid_from } => {
+            format!(
+                "evidence valid_from={} is after the fact date",
+                valid_from.as_iso_date()
+            )
+        }
     }
 }

@@ -14,15 +14,23 @@ mod contradiction;
 pub mod export;
 mod guards;
 pub mod numeric;
+pub mod temporal;
 
 use contradiction::{
     contradiction_facts, contradiction_match, contradiction_text_matches, tokenize_support_text,
 };
 pub use export::VerificationReportExportFormat;
-use guards::{citation_guard, numeric_mismatch, numeric_mismatch_conflict, numeric_mismatch_guard};
+use guards::{
+    citation_guard, numeric_mismatch, numeric_mismatch_conflict, numeric_mismatch_guard,
+    stale_fact_guard, temporal_stale,
+};
 pub use numeric::{
     compare_numeric_values, format_scaled_value, normalized_numeric_equal, parse_currency_code,
     parse_magnitude_suffix, parse_unit_code, Magnitude, NumericComparison, NumericValue,
+};
+pub use temporal::{
+    extract_temporal_query_range, parse_temporal_date, TemporalDate, TemporalQueryRange,
+    TemporalStaleReason, TemporalValidity,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -67,6 +75,7 @@ pub struct VerificationReport {
 pub enum VerificationGuardCode {
     MissingCitation,
     NumericMismatch,
+    StaleFact,
 }
 
 impl VerificationGuardCode {
@@ -74,6 +83,7 @@ impl VerificationGuardCode {
         match self {
             Self::MissingCitation => "missing_citation",
             Self::NumericMismatch => "numeric_mismatch",
+            Self::StaleFact => "stale_fact",
         }
     }
 }
@@ -160,6 +170,11 @@ impl Database {
         let mut guards = Vec::new();
         let mut numeric_conflicts = Vec::new();
         for version in self.snapshot_versions() {
+            if let Some(guard) =
+                stale_fact_guard(&plan.fact, &version.payload, version.cell_id, view)
+            {
+                guards.push(guard);
+            }
             if let Some(item) =
                 evidence_for_version(version.cell_id, &version.payload, view, &plan.fact)
             {
@@ -362,7 +377,9 @@ fn evidence_for_version(
     if !view.can_read_scope(scope_id(&metadata.scope)) {
         return None;
     }
-    if has_matching_contradiction(payload, &fact_terms) || numeric_mismatch(fact, payload).is_some()
+    if has_matching_contradiction(payload, &fact_terms)
+        || numeric_mismatch(fact, payload).is_some()
+        || temporal_stale(fact, payload).is_some()
     {
         return None;
     }
@@ -390,6 +407,9 @@ fn contradiction_for_version(
     let metadata = CellMetadata::from_payload(payload);
     let fact_terms = tokenize(fact);
     if !view.can_read_scope(scope_id(&metadata.scope)) || fact_terms.is_empty() {
+        return None;
+    }
+    if temporal_stale(fact, payload).is_some() {
         return None;
     }
     let source_trust = source_trust(payload);

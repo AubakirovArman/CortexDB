@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 73 / 150
+- Done: 74 / 150
 - Partial: 1 / 150
-- Todo: 76 / 150
-- Current closed epic: Epic 73, Engine-native NumericValue
+- Todo: 75 / 150
+- Current closed epic: Epic 74, Date/Temporal Conflict Detection
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2008,14 +2008,29 @@ Tasks:
 
 ### Epic 74. Date/Temporal Conflict Detection
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/verification/temporal.rs`
+- `crates/cortex-engine/src/verification/guards.rs`
+- `crates/cortex-engine/tests/verification_guards.rs`
+- `crates/cortex-engine/tests/verification_evaluation.rs`
+- `examples/eval/verification_cases.jsonl`
+- `docs/VERIFY_FACT.md`
 
 Tasks:
 
-- Add date parser.
-- Add `valid_from`.
-- Add `valid_to`.
-- Add stale fact detection.
+- Add date parser. Done: `parse_temporal_date` and
+  `extract_temporal_query_range` parse `YYYY-MM-DD`, `YYYY/MM/DD`, and
+  year-only query ranges.
+- Add `valid_from`. Done: verification reads `valid_from=` headers and treats
+  future evidence as not yet valid for earlier facts.
+- Add `valid_to`. Done: verification reads `valid_to=` headers and treats
+  expired evidence as stale for later facts.
+- Add stale fact detection. Done: stale evidence is excluded from support and
+  contradiction paths, emits a `stale_fact` guard, and is covered by labelled
+  fixture cases.
 
 ### Epic 75. Source Trust Model v1
 

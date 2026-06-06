@@ -8,10 +8,11 @@ admissible-source rules, citation completeness, and human reviewer approval.
 
 ## How It Works
 
-1. **Parse the fact** — extract numeric values, units, and currencies from the statement.
+1. **Parse the fact** — extract numeric values, units, currencies, and dates from the statement.
 2. **Search evidence** — find cells that support or contradict the fact.
 3. **Compare numbers** — detect numeric mismatches between the claimed value and stored values.
-4. **Produce a verdict** — `supported`, `insufficient`, `contradicted`, or `mixed_evidence`.
+4. **Check validity windows** — exclude evidence outside `valid_from` / `valid_to`.
+5. **Produce a verdict** — `supported`, `insufficient`, `contradicted`, or `mixed_evidence`.
 
 ## AQL Syntax
 
@@ -107,6 +108,34 @@ currency/unit/magnitude handling in one integer-only implementation and return
 structured `VerificationNumericConflict` entries for API, CLI, SDK, markdown,
 and audit exports.
 
+## Temporal Validity Detection
+
+Evidence cells may include validity headers:
+
+```text
+scope=project:investments
+status=ready
+type=fact
+source=report_2024.pdf
+valid_from=2024-01-01
+valid_to=2024-12-31
+
+Solar Plant budget is 1.2B KZT.
+```
+
+`VERIFY FACT` extracts an explicit fact date from `YYYY-MM-DD`, `YYYY/MM/DD`,
+or a four-digit year. If the fact date falls outside the evidence validity
+window, the cell is treated as stale evidence:
+
+- it is not counted as supporting evidence;
+- it is not counted as contradicting evidence;
+- a `stale_fact` guard is emitted.
+
+The Rust engine exposes this deterministic date contract through
+`parse_temporal_date` and `extract_temporal_query_range`. Year-only facts are
+treated as a full-year range, while `valid_from=2025` and `valid_to=2025` are
+expanded to the beginning and end of the year respectively.
+
 ## Contradiction Index
 
 `Database::conflict_index` exposes deterministic contradiction records from two
@@ -159,7 +188,9 @@ output for diffing, archiving, or attaching to external review tooling.
 - **Unit parsing** is heuristic, not a full SI unit converter.
 - **Magnitude parsing** relies on explicit `B`/`M`/`K` suffixes or raw integers.
 - **Currency** must be explicit in the fact or in cell metadata.
-- **No temporal reasoning** — "budget was 1.2B in Q1" and "budget is 1.4B in Q2" are treated as a conflict, not as a timeline update.
+- **Temporal reasoning is validity-window based** — only explicit
+  `valid_from`/`valid_to` headers and explicit fact dates are interpreted.
+  Quarter names and natural-language relative dates are not parsed yet.
 - **Source trust is deterministic but simple** — `source_trust_q16` is
   classified as `low`, `medium`, `high`, or `official`; missing values are
   reported as `unknown` with the default q16. It is not a full trust/provenance

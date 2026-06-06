@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
-use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
+use cortex_core::CellId;
 use cortex_engine::verification::{VerificationGuardCode, VerificationStatus};
 use cortex_engine::{scope_id, Database};
 use serde::Deserialize;
@@ -14,11 +14,8 @@ fn verification_evaluation_cases_match_expected_statuses() {
         let dir = tempfile::tempdir().unwrap();
         let mut db = Database::open(dir.path()).unwrap();
         for cell in &case.cells {
-            db.put_knowledge_cell(
-                CellId(cell.cell_id),
-                fact_cell(&cell.scope, cell.source.as_deref(), &cell.body),
-            )
-            .unwrap();
+            db.put_cell(CellId(cell.cell_id), fact_cell_payload(cell))
+                .unwrap();
         }
 
         let report = db
@@ -69,20 +66,24 @@ fn verify_aql(fact: &str) -> String {
     format!(r#"VERIFY FACT "{fact}" IN BRAIN investment_projects;"#)
 }
 
-fn fact_cell(scope: &str, source: Option<&str>, body: &str) -> KnowledgeCell {
-    KnowledgeCell::new(
-        KnowledgeCellMetadata {
-            scope: scope.to_owned(),
-            status: "verified".to_owned(),
-            cell_type: KnowledgeCellType::Fact,
-            memory_type: None,
-            ttl_seconds: None,
-            created_unix_seconds: None,
-            source_trust_q16: None,
-            source: source.map(str::to_owned),
-        },
-        body,
-    )
+fn fact_cell_payload(cell: &VerificationCell) -> Vec<u8> {
+    let mut lines = vec![
+        format!("scope={}", cell.scope),
+        "status=verified".to_owned(),
+        "type=fact".to_owned(),
+    ];
+    if let Some(source) = &cell.source {
+        lines.push(format!("source={source}"));
+    }
+    if let Some(valid_from) = &cell.valid_from {
+        lines.push(format!("valid_from={valid_from}"));
+    }
+    if let Some(valid_to) = &cell.valid_to {
+        lines.push(format!("valid_to={valid_to}"));
+    }
+    lines.push(String::new());
+    lines.push(cell.body.clone());
+    lines.join("\n").into_bytes()
 }
 
 fn view(scope: &str) -> AgentView {
@@ -121,6 +122,7 @@ fn guard_code_name(code: VerificationGuardCode) -> &'static str {
     match code {
         VerificationGuardCode::MissingCitation => "missing_citation",
         VerificationGuardCode::NumericMismatch => "numeric_mismatch",
+        VerificationGuardCode::StaleFact => "stale_fact",
     }
 }
 
@@ -140,5 +142,7 @@ struct VerificationCell {
     cell_id: u64,
     scope: String,
     source: Option<String>,
+    valid_from: Option<String>,
+    valid_to: Option<String>,
     body: String,
 }
