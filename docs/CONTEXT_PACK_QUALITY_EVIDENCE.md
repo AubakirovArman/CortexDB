@@ -1,6 +1,6 @@
 # ContextPack Quality Evidence
 
-Last local ContextPack quality run: 2026-06-01, passed.
+Last local ContextPack quality run: 2026-06-06, passed.
 
 Run:
 
@@ -49,6 +49,7 @@ This gate proves:
 - ContextPack output is measured against classic raw chunk retrieval for token
   savings, cell reduction, duplicate pressure, and anomaly coverage;
 - the report includes per-domain metrics under `per_domain_metrics`;
+- the quality gate requires at least 25 cases across at least 4 domains;
 - the quality fixture records measurable evidence coverage, token reduction,
   citation coverage, redundancy reduction, anomaly coverage, and deterministic
   ordering.

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 60 / 150
+- Done: 61 / 150
 - Partial: 1 / 150
-- Todo: 89 / 150
-- Current closed epic: Epic 60, Search Quality Gate v2
+- Todo: 88 / 150
+- Current closed epic: Epic 61, ContextPack Quality v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1682,13 +1682,25 @@ Acceptance: ContextPack becomes trustworthy product output, not just internal re
 
 ### Epic 61. ContextPack Quality v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `examples/eval/context_pack_quality.jsonl`
+- `scripts/context_pack_quality_check.py`
+- `docs/CONTEXT_PACK_QUALITY_EVIDENCE.md`
+- `make context-pack-quality-check`
+- `target/context-pack-quality/report.json`
 
 Tasks:
 
-- Add 25+ cases.
-- Cover 4 domains.
-- Measure evidence, citation, token, redundancy, and anomaly metrics.
+- Add 25+ cases. Done: the fixture contains 25 ContextPack quality cases.
+- Cover 4 domains. Done: the fixture covers 5 domains and the gate requires
+  at least 4 domains.
+- Measure evidence, citation, token, redundancy, and anomaly metrics. Done:
+  the generated report includes evidence coverage, citation coverage, token
+  reduction, redundancy reduction, anomaly coverage, deterministic ordering,
+  and per-domain metrics.
 
 ### Epic 62. ContextPack Quality v3
 
