@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 84 / 150
+- Done: 85 / 150
 - Partial: 1 / 150
-- Todo: 65 / 150
-- Current closed epic: Epic 84, Deterministic Chunking v1
+- Todo: 64 / 150
+- Current closed epic: Epic 85, Chunking Quality Benchmark
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2307,12 +2307,24 @@ Tasks:
 
 ### Epic 85. Chunking Quality Benchmark
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `examples/eval/chunking_quality_settings.json`
+- `scripts/chunking_quality_benchmark.py`
+- `docs/CHUNKING_QUALITY_BENCHMARK.md`
+- `docs/BENCHMARKS.md`
+- `make chunking-quality-benchmark-check`
 
 Tasks:
 
-- Evaluate chunk size vs retrieval quality.
-- Add per-domain settings.
+- Evaluate chunk size vs retrieval quality. Done: the benchmark compares
+  candidate `TextChunkPolicy` values per domain and reports doc-level
+  `recall_at_k_q16`, `mrr_q16`, chunk count, and average chunk size.
+- Add per-domain settings. Done: settings cover `investment_projects`,
+  `support_tickets`, `legal_policies`, and `technical_docs`; the gate fails if
+  the selected policy diverges from the current benchmark recommendation.
 
 ### Epic 86. PDF Digital Text Adapter
 

@@ -864,6 +864,29 @@ The first hosted public run is recorded in
 For threshold selection, fallback policy, and report-history rules, see
 [`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md).
 
+## Chunking Quality Benchmark
+
+Chunking policy quality is tracked by a local deterministic benchmark. It
+compares candidate `TextChunkPolicy` values across the real-domain corpora,
+measures document-level `recall_at_k_q16` and `mrr_q16`, and validates that the
+selected per-domain settings match the current benchmark recommendation.
+
+```bash
+make chunking-quality-benchmark-check
+```
+
+The selected settings live in:
+
+```text
+examples/eval/chunking_quality_settings.json
+```
+
+The latest local report is written to:
+
+```text
+target/chunking-quality/report.json
+```
+
 ## Real-Domain Embedding Baseline: Investment Projects
 
 The first local real-domain corpus is:

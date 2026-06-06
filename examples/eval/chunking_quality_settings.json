@@ -1,0 +1,65 @@
+{
+  "schema_version": "cortexdb.chunking_quality_settings.v1",
+  "domains": [
+    {
+      "domain": "investment_projects",
+      "source_root": "examples/real_domains/investment_projects/corpus",
+      "queries": "examples/real_domains/investment_projects/queries/queries.jsonl",
+      "ground_truth": "examples/real_domains/investment_projects/queries/ground_truth.jsonl",
+      "top_k": 5,
+      "min_recall_at_k_q16": 10000,
+      "min_mrr_q16": 1000,
+      "selected_policy": {"max_chars": 1600, "overlap_chars": 160, "min_chars": 1},
+      "candidates": [
+        {"max_chars": 500, "overlap_chars": 80, "min_chars": 1},
+        {"max_chars": 1000, "overlap_chars": 120, "min_chars": 1},
+        {"max_chars": 1600, "overlap_chars": 160, "min_chars": 1}
+      ]
+    },
+    {
+      "domain": "support_tickets",
+      "source_root": "examples/real_domains/support_tickets/corpus",
+      "queries": "examples/real_domains/support_tickets/queries/queries.jsonl",
+      "ground_truth": "examples/real_domains/support_tickets/queries/ground_truth.jsonl",
+      "top_k": 5,
+      "min_recall_at_k_q16": 10000,
+      "min_mrr_q16": 1000,
+      "selected_policy": {"max_chars": 350, "overlap_chars": 40, "min_chars": 1},
+      "candidates": [
+        {"max_chars": 350, "overlap_chars": 40, "min_chars": 1},
+        {"max_chars": 700, "overlap_chars": 80, "min_chars": 1},
+        {"max_chars": 1000, "overlap_chars": 120, "min_chars": 1}
+      ]
+    },
+    {
+      "domain": "legal_policies",
+      "source_root": "examples/real_domains/legal_policies/corpus",
+      "queries": "examples/real_domains/legal_policies/queries/queries.jsonl",
+      "ground_truth": "examples/real_domains/legal_policies/queries/ground_truth.jsonl",
+      "top_k": 5,
+      "min_recall_at_k_q16": 10000,
+      "min_mrr_q16": 1000,
+      "selected_policy": {"max_chars": 350, "overlap_chars": 40, "min_chars": 1},
+      "candidates": [
+        {"max_chars": 350, "overlap_chars": 40, "min_chars": 1},
+        {"max_chars": 700, "overlap_chars": 80, "min_chars": 1},
+        {"max_chars": 1000, "overlap_chars": 120, "min_chars": 1}
+      ]
+    },
+    {
+      "domain": "technical_docs",
+      "source_root": "examples/real_domains/technical_docs/corpus",
+      "queries": "examples/real_domains/technical_docs/queries/queries.jsonl",
+      "ground_truth": "examples/real_domains/technical_docs/queries/ground_truth.jsonl",
+      "top_k": 5,
+      "min_recall_at_k_q16": 10000,
+      "min_mrr_q16": 1000,
+      "selected_policy": {"max_chars": 350, "overlap_chars": 40, "min_chars": 1},
+      "candidates": [
+        {"max_chars": 350, "overlap_chars": 40, "min_chars": 1},
+        {"max_chars": 700, "overlap_chars": 80, "min_chars": 1},
+        {"max_chars": 1000, "overlap_chars": 120, "min_chars": 1}
+      ]
+    }
+  ]
+}

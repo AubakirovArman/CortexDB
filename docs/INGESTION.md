@@ -89,6 +89,13 @@ The deterministic ingestion policy is frozen in
 - CSV/table ingestion treats row 1 as the header and emits data row provenance
   as `row=<n>` and `cell_range=row-<n>`.
 
+Chunk size defaults are also tracked by a retrieval-quality benchmark. See
+[`CHUNKING_QUALITY_BENCHMARK.md`](CHUNKING_QUALITY_BENCHMARK.md) and run:
+
+```bash
+make chunking-quality-benchmark-check
+```
+
 `IngestionProgressTracker` provides a small synchronous progress surface for
 adapter jobs. The first tracked helper is `Database::ingest_csv_with_progress`,
 which records total rows, completed cells, status, and the last written
