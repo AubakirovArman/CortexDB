@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 113 / 150
+- Done: 114 / 150
 - Partial: 1 / 150
-- Todo: 36 / 150
-- Current closed epic: Epic 113, Verification Explorer
+- Todo: 35 / 150
+- Current closed epic: Epic 114, Retrieval Quality Explorer
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3180,15 +3180,20 @@ Tasks:
 
 ### Epic 114. Retrieval Quality Explorer
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Show recall.
-- Show MRR.
-- Show nDCG.
-- Show latency.
-- Break down by domain and query.
+- Show recall. Done: `target/retrieval-quality/dashboard.html` renders guarded
+  ANN recall in summary metrics, panels, domain rows, and query rows.
+- Show MRR. Done: dashboard renderer and query/domain tables include MRR.
+- Show nDCG. Done: dashboard renderer and query/domain tables include nDCG.
+- Show latency. Done: dashboard renders p95 latency and a latency trend panel
+  from retrieval history.
+- Break down by domain and query. Done: dashboard includes a domain quality
+  table and query-level table.
+- Evidence gate. Done: `make retrieval-quality-explorer-check`; full benchmark
+  gate remains `make retrieval-quality-check`.
 
 ### Epic 115. Permissions View
 

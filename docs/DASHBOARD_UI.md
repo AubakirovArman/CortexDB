@@ -220,6 +220,24 @@ Verify responses render a mixed-evidence explorer:
   as `budget: 1.2B KZT vs 1.4B KZT`;
 - a guard explorer for missing citations, numeric mismatches, scope issues, and
   other policy/runtime guard messages.
+
+### Retrieval Quality Explorer
+
+`make retrieval-quality-check` writes a static retrieval-quality explorer at
+`target/retrieval-quality/dashboard.html`. It is separate from the live
+dashboard because it is built from benchmark evidence instead of live API
+responses:
+
+- Summary cards show gate status, production safety, domain count, repeat
+  runs, and top-k.
+- Metric panels show recall, MRR, nDCG, and p95 latency trends.
+- The domain table breaks quality down by domain with documents, chunks,
+  queries, exact parity, and regression counts.
+- The query-level table shows per-query recall, MRR, nDCG, latency, exact
+  parity, and production-safe status.
+- `make retrieval-quality-explorer-check` verifies the explorer wiring without
+  running the full benchmark suite.
+
 Report rendering lives outside `app.js` to keep product-facing formatting
 separate from request/session control logic. Each renderer reacts only to its
 typed response shape, so unrelated responses do not overwrite route-specific

@@ -84,6 +84,9 @@ def main() -> int:
         "MRR Panel",
         "nDCG Panel",
         "Latency Trend Panel",
+        "Domain Quality Table",
+        "Query-Level Table",
+        "p95 latency",
         "faster",
     ]
     missing = [marker for marker in required if marker not in html]
