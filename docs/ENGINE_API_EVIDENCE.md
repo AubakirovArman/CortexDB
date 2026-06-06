@@ -6,6 +6,7 @@ Run:
 
 ```bash
 make engine-public-api-freeze-check
+make engine-api-compat-check
 make engine-api-check
 ```
 
@@ -23,6 +24,7 @@ Latest local status: passed.
 | Suite | Purpose |
 | --- | --- |
 | public API freeze | Validates `fixtures/engine/public_api_freeze_v1.json` against crate-root exports, docs, compile coverage, private helper modules, and rustdoc examples. |
+| external sample crate | Runs `examples/engine_api_compat` as an out-of-workspace embedded user over open, put/get, search, ContextPack, VERIFY, checkpoint, backup, and restore. |
 | public API compile | Compiles and runs the stable `cortex-engine` facade test. |
 | engine doctests | Compiles public documentation examples. |
 | engine docs build | Builds `cortex-engine` rustdoc without dependencies. |
@@ -34,6 +36,7 @@ The local gate proves:
 - stable embedded engine API docs exist;
 - stable facade symbols are frozen in a machine-readable fixture;
 - known internal helper modules remain private;
+- an external sample crate can compile and run the embedded facade flow;
 - public API compile test passes;
 - engine doctests compile;
 - engine rustdoc builds.

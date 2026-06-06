@@ -1,0 +1,12 @@
+[package]
+name = "cortex-engine-api-compat"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+cortex-aql = { path = "../../crates/cortex-aql" }
+cortex-core = { path = "../../crates/cortex-core" }
+cortex-engine = { path = "../../crates/cortex-engine" }

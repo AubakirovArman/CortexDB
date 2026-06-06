@@ -38,6 +38,7 @@ Change rule:
 - keep examples compiling;
 - update `ENGINE_API.md` for behavior changes;
 - run `make engine-api-check`;
+- run `make engine-api-compat-check`;
 - run `make engine-public-api-freeze-check`;
 - add migration or deprecation notes for breaking changes.
 

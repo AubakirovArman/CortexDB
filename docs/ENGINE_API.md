@@ -57,7 +57,7 @@ The central entrypoints are:
 - `Database::validate_storage`;
 - `Database::storage_stats`;
 - `Database::backup_path`;
-- `Database::restore_path`;
+- `Database::restore_from_backup`;
 - `Database::repair_best_effort`;
 - `Database::repair_best_effort_dry_run`.
 
@@ -107,6 +107,7 @@ Run:
 
 ```bash
 make engine-public-api-freeze-check
+make engine-api-compat-check
 make engine-api-check
 ```
 
@@ -118,6 +119,8 @@ This gate verifies:
 - known helper modules remain private;
 - rustdoc examples exist for the embedded database facade;
 - the public API compile test passes;
+- the external sample crate compiles and runs through open, put/get, search,
+  ContextPack, VERIFY, checkpoint, backup, and restore;
 - `cortex-engine` doctests compile;
 - rustdoc builds for `cortex-engine`.
 

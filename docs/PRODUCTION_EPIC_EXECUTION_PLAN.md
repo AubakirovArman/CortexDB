@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 25 / 150
+- Done: 26 / 150
 - Partial: 1 / 150
-- Todo: 124 / 150
-- Current closed epic: Epic 26, Engine Public API Freeze
+- Todo: 123 / 150
+- Current closed epic: Epic 27, Engine API Compatibility Tests
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -660,13 +660,35 @@ Boundary:
 
 ### Epic 27. Engine API Compatibility Tests
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Compile an external sample crate.
-- Test `Database::open`.
-- Test put/get/search/context/verify/backup.
+- Compile an external sample crate. Done: `examples/engine_api_compat` opts out
+  of the workspace and compiles through `make engine-api-compat-check`.
+- Test `Database::open`. Done: the sample opens a local database and later opens
+  a restored database with explicit options.
+- Test put/get/search/context/verify/backup. Done: the sample runs `put_cell`,
+  `get_latest_cell`, `search_keyword`, `context_pack_from_aql`,
+  `verify_fact_aql`, `checkpoint`, `Database::backup_path`, and
+  `Database::restore_from_backup`.
+
+Evidence:
+
+- `examples/engine_api_compat/Cargo.toml`
+- `examples/engine_api_compat/src/main.rs`
+- `scripts/engine_api_compat_check.py`
+- `make engine-api-compat-check`
+- `make engine-api-check`
+- `target/engine-api-compat/report.json`
+- `docs/ENGINE_API_COMPATIBILITY.md`
+- `docs/ENGINE_API.md`
+
+Boundary:
+
+- This proves source-level compatibility for an external local path dependency.
+  Published crate SemVer, remote registry packaging, HTTP API compatibility, and
+  SDK package lifecycle remain separate epics.
 
 ### Epic 28. Engine Error Model v1
 
