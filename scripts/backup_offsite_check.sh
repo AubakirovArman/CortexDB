@@ -35,6 +35,15 @@ VALIDATE_OUTPUT="$(run_cli validate "$STAGED")"
 PAYLOAD="$(run_cli get "$STAGED" 3)"
 
 case "$STAGE_OUTPUT" in
+  *"adapter=local_filesystem"*"published=true"*) ;;
+  *)
+    echo "offsite stage output did not report local filesystem adapter and publish status" >&2
+    echo "$STAGE_OUTPUT" >&2
+    exit 1
+    ;;
+esac
+
+case "$STAGE_OUTPUT" in
   *"target_path=$STAGED"*) ;;
   *)
     echo "offsite stage output did not report expected target" >&2
@@ -77,10 +86,13 @@ report = {
     "staged_path": os.environ["STAGED"],
     "local_drill_output": os.environ["DRILL_OUTPUT"],
     "offsite_stage_output": os.environ["STAGE_OUTPUT"],
+    "adapter": "local_filesystem",
     "staged_validate_output": os.environ["VALIDATE_OUTPUT"],
     "readback_payload": os.environ["PAYLOAD"],
     "staged_copy_validated": True,
     "preflight_restore_completed": True,
+    "staged_upload_simulated": True,
+    "published": True,
     "payload_readable_after_stage": True,
 }
 

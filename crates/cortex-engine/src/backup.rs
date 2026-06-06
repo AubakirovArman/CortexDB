@@ -14,7 +14,10 @@ mod offsite;
 mod retention;
 pub use dry_run::RestoreDryRunReport;
 pub use encrypted::{EncryptedBackupReport, EncryptedRestoreReport};
-pub use offsite::OffsiteBackupStageReport;
+pub use offsite::{
+    LocalFilesystemOffsiteAdapter, OffsiteBackupAdapter, OffsiteBackupStageReport,
+    OffsiteBackupTransferReport,
+};
 pub use retention::{BackupRetentionPlan, BackupRetentionReport};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

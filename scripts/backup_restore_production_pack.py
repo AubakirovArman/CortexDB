@@ -83,14 +83,26 @@ def validate_offsite(report: dict[str, Any], errors: list[str]) -> dict[str, Any
         errors,
     )
     require(
+        report.get("staged_upload_simulated") is True,
+        "offsite staged upload simulation missing",
+        errors,
+    )
+    require(
+        report.get("adapter") == "local_filesystem",
+        "offsite adapter evidence is not local_filesystem",
+        errors,
+    )
+    require(
         report.get("payload_readable_after_stage") is True,
         "offsite readback evidence missing",
         errors,
     )
     return {
         "backup_id": report.get("backup_id"),
+        "adapter": report.get("adapter"),
         "staged_path": report.get("staged_path"),
         "staged_validate_output": report.get("staged_validate_output"),
+        "staged_upload_simulated": report.get("staged_upload_simulated"),
         "payload_readable_after_stage": report.get("payload_readable_after_stage"),
     }
 

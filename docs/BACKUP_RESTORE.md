@@ -107,11 +107,12 @@ cortexdb backup-prune ./backups cortexdb- 7
 ```
 
 Core Alpha does not upload to remote storage itself. The supported offsite
-policy is: create a local validated backup, run a restore drill, stage the
-validated backup into an external/offsite root, then let an external tool copy
-that staged directory to object storage or another host. Keep the external copy
-immutable where possible and run a scheduled drill against a freshly restored
-offsite copy before relying on it.
+adapter is `local_filesystem`: create a local validated backup, run a restore
+drill, stage the validated backup into an external/offsite root, validate that
+staged copy, atomically publish it with a final rename, then let an external
+tool copy that staged directory to object storage or another host. Keep the
+external copy immutable where possible and run a scheduled drill against a
+freshly restored offsite copy before relying on it.
 
 ```bash
 cortexdb backup-offsite-stage \
@@ -120,9 +121,10 @@ cortexdb backup-offsite-stage \
   "cortexdb-$stamp"
 ```
 
-The command rejects unsafe backup ids, refuses to overwrite an existing staged
-backup, removes its preflight restore directory after validation, and publishes
-the final directory with atomic rename from `<backup_id>.staging`.
+The command reports `adapter=local_filesystem` and `published=true`. It rejects
+unsafe backup ids, refuses to overwrite an existing staged backup, removes its
+preflight restore directory after validation, and publishes the final directory
+with atomic rename from `<backup_id>.staging`.
 
 The retention command reports:
 
@@ -154,7 +156,8 @@ releases can be compared before beta promotion.
 
 `make backup-offsite-check` is the repeatable offsite-staging evidence gate. It
 creates a local backup, runs a restore drill, stages the backup under an offsite
-root, validates the staged copy, reads back the latest payload, and writes:
+root through the local filesystem adapter, validates the staged copy, reads back
+the latest payload, proves staged-upload simulation, and writes:
 
 ```text
 target/backup-offsite/report.json

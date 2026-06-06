@@ -1,5 +1,8 @@
 use cortex_core::CellId;
-use cortex_engine::{Database, EngineError};
+use cortex_engine::{
+    Database, EngineError, LocalFilesystemOffsiteAdapter, OffsiteBackupAdapter,
+    OffsiteBackupTransferReport, StorageValidation,
+};
 use std::path::{Path, PathBuf};
 
 #[test]
@@ -308,6 +311,8 @@ fn offsite_stage_validates_backup_and_publishes_copy() {
         Database::stage_backup_offsite(&backup, &offsite, "cortexdb-20260530T000000Z").unwrap();
 
     assert!(report.target_path.exists());
+    assert_eq!(report.adapter, "local_filesystem");
+    assert!(report.published);
     assert!(report.files_copied > 0);
     assert!(report.bytes_copied > 0);
     assert_eq!(report.drill_restore.restored_validation.cells_checked, 1);
@@ -322,6 +327,66 @@ fn offsite_stage_validates_backup_and_publishes_copy() {
         restored.get_latest_cell(CellId(44)).unwrap(),
         b"offsite payload"
     );
+}
+
+#[test]
+fn offsite_adapter_validation_failure_removes_staging_copy() {
+    struct RejectingValidationAdapter;
+
+    impl OffsiteBackupAdapter for RejectingValidationAdapter {
+        fn name(&self) -> &'static str {
+            "rejecting_validation_test"
+        }
+
+        fn stage_backup(
+            &self,
+            backup_path: &Path,
+            staging_path: &Path,
+        ) -> cortex_engine::EngineResult<OffsiteBackupTransferReport> {
+            LocalFilesystemOffsiteAdapter.stage_backup(backup_path, staging_path)
+        }
+
+        fn validate_staged_backup(
+            &self,
+            _staging_path: &Path,
+        ) -> cortex_engine::EngineResult<StorageValidation> {
+            Err(EngineError::StorageInvariant(
+                "adapter validation failed".to_owned(),
+            ))
+        }
+
+        fn publish_staged_backup(
+            &self,
+            _staging_path: &Path,
+            _final_path: &Path,
+        ) -> cortex_engine::EngineResult<()> {
+            unreachable!("validation failure must stop before publish")
+        }
+    }
+
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let backup = root.path().join("backup");
+    let offsite = root.path().join("offsite");
+
+    {
+        let mut db = Database::open(&source).unwrap();
+        db.put_cell(CellId(46), b"payload".to_vec()).unwrap();
+    }
+    Database::backup_path(&source, &backup).unwrap();
+
+    let error = Database::stage_backup_offsite_with_adapter(
+        &backup,
+        &offsite,
+        "backup-adapter-fails",
+        &RejectingValidationAdapter,
+    )
+    .unwrap_err()
+    .to_string();
+
+    assert!(error.contains("adapter validation failed"));
+    assert!(!offsite.join("backup-adapter-fails.staging").exists());
+    assert!(!offsite.join("backup-adapter-fails").exists());
 }
 
 #[test]

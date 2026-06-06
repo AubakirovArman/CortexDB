@@ -638,6 +638,8 @@ fn backup_offsite_stage_command_validates_and_publishes_copy() {
     .unwrap();
 
     assert!(output.contains("target_path="));
+    assert!(output.contains("adapter=local_filesystem"));
+    assert!(output.contains("published=true"));
     assert!(output.contains("staged_cells_checked="));
 
     let payload = run(vec![

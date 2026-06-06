@@ -9,11 +9,68 @@ use crate::validation::StorageValidation;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OffsiteBackupStageReport {
+    pub adapter: &'static str,
     pub target_path: PathBuf,
+    pub staging_path: PathBuf,
+    pub preflight_restore_path: PathBuf,
     pub files_copied: usize,
     pub bytes_copied: u64,
     pub drill_restore: RestoreReport,
     pub staged_validation: StorageValidation,
+    pub published: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct OffsiteBackupTransferReport {
+    pub files_copied: usize,
+    pub bytes_copied: u64,
+}
+
+pub trait OffsiteBackupAdapter {
+    fn name(&self) -> &'static str;
+
+    fn stage_backup(
+        &self,
+        backup_path: &Path,
+        staging_path: &Path,
+    ) -> EngineResult<OffsiteBackupTransferReport>;
+
+    fn validate_staged_backup(&self, staging_path: &Path) -> EngineResult<StorageValidation>;
+
+    fn publish_staged_backup(&self, staging_path: &Path, final_path: &Path) -> EngineResult<()>;
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct LocalFilesystemOffsiteAdapter;
+
+impl OffsiteBackupAdapter for LocalFilesystemOffsiteAdapter {
+    fn name(&self) -> &'static str {
+        "local_filesystem"
+    }
+
+    fn stage_backup(
+        &self,
+        backup_path: &Path,
+        staging_path: &Path,
+    ) -> EngineResult<OffsiteBackupTransferReport> {
+        let report = copy_database_dir(backup_path, staging_path)?;
+        Ok(OffsiteBackupTransferReport {
+            files_copied: report.files_copied,
+            bytes_copied: report.bytes_copied,
+        })
+    }
+
+    fn validate_staged_backup(&self, staging_path: &Path) -> EngineResult<StorageValidation> {
+        validate_staged_copy(staging_path)
+    }
+
+    fn publish_staged_backup(&self, staging_path: &Path, final_path: &Path) -> EngineResult<()> {
+        fs::rename(staging_path, final_path)?;
+        if let Some(parent) = final_path.parent() {
+            sync_dir(parent)?;
+        }
+        Ok(())
+    }
 }
 
 impl Database {
@@ -21,6 +78,20 @@ impl Database {
         backup_path: impl AsRef<Path>,
         offsite_root: impl AsRef<Path>,
         backup_id: &str,
+    ) -> EngineResult<OffsiteBackupStageReport> {
+        Self::stage_backup_offsite_with_adapter(
+            backup_path,
+            offsite_root,
+            backup_id,
+            &LocalFilesystemOffsiteAdapter,
+        )
+    }
+
+    pub fn stage_backup_offsite_with_adapter<A: OffsiteBackupAdapter>(
+        backup_path: impl AsRef<Path>,
+        offsite_root: impl AsRef<Path>,
+        backup_id: &str,
+        adapter: &A,
     ) -> EngineResult<OffsiteBackupStageReport> {
         validate_backup_id(backup_id)?;
         fs::create_dir_all(offsite_root.as_ref())?;
@@ -44,14 +115,14 @@ impl Database {
         };
         fs::remove_dir_all(&drill_path)?;
 
-        let copied = match copy_database_dir(backup_path.as_ref(), &staging_path) {
+        let copied = match adapter.stage_backup(backup_path.as_ref(), &staging_path) {
             Ok(report) => report,
             Err(error) => {
                 let _ = fs::remove_dir_all(&staging_path);
                 return Err(error);
             }
         };
-        let staged_validation = match validate_staged_copy(&staging_path) {
+        let staged_validation = match adapter.validate_staged_backup(&staging_path) {
             Ok(validation) => validation,
             Err(error) => {
                 let _ = fs::remove_dir_all(&staging_path);
@@ -59,15 +130,18 @@ impl Database {
             }
         };
 
-        fs::rename(&staging_path, &final_path)?;
-        sync_dir(offsite_root.as_ref())?;
+        adapter.publish_staged_backup(&staging_path, &final_path)?;
 
         Ok(OffsiteBackupStageReport {
+            adapter: adapter.name(),
             target_path: final_path,
+            staging_path,
+            preflight_restore_path: drill_path,
             files_copied: copied.files_copied,
             bytes_copied: copied.bytes_copied,
             drill_restore,
             staged_validation,
+            published: true,
         })
     }
 }

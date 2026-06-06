@@ -393,8 +393,10 @@ pub fn backup_offsite_stage(
     let report = Database::stage_backup_offsite(backup_path, offsite_root, backup_id)
         .map_err(fmt_engine_error)?;
     Ok(format!(
-        "target_path={} files_copied={} bytes_copied={} drill_restored_files_copied={} drill_restored_cells_checked={} staged_live_segments_checked={} staged_cells_checked={} staged_wal_records_checked={}",
+        "adapter={} target_path={} published={} files_copied={} bytes_copied={} drill_restored_files_copied={} drill_restored_cells_checked={} staged_live_segments_checked={} staged_cells_checked={} staged_wal_records_checked={}",
+        report.adapter,
         report.target_path.display(),
+        report.published,
         report.files_copied,
         report.bytes_copied,
         report.drill_restore.files_copied,

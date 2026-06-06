@@ -483,14 +483,28 @@ Tasks:
 
 ### Epic 22. Offsite Backup Adapter v1
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `cargo test -p cortex-engine --test backup_restore offsite`
+- `cargo test -p cortex-cli backup_offsite_stage_command_validates_and_publishes_copy`
+- `make backup-offsite-check`
+- `target/backup-offsite/report.json`
+- `python3 scripts/backup_restore_production_pack.py --backup-drill-report target/backup-drill/report.json --backup-offsite-report target/backup-offsite/report.json --rpo-rto-profile-report target/backup-rpo-rto/report.json --output target/backup-restore-production-pack/report.json`
+- `crates/cortex-engine/src/backup/offsite.rs`
+- `scripts/backup_offsite_check.sh`
+- `docs/BACKUP_RESTORE.md`
 
 Tasks:
 
-- Add local filesystem adapter.
-- Add adapter trait.
-- Validate checksums.
-- Simulate staged upload.
+- Add local filesystem adapter. Done: `LocalFilesystemOffsiteAdapter`.
+- Add adapter trait. Done: `OffsiteBackupAdapter`.
+- Validate checksums. Done: staged copy validation reads persisted files through
+  storage readers before publish and production-pack requires this evidence.
+- Simulate staged upload. Done: offsite gate reports
+  `staged_upload_simulated=true` and `published=true` for the local filesystem
+  adapter.
 
 ### Epic 23. Encrypted Backup MVP
 
