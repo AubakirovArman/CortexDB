@@ -47,6 +47,11 @@ Binder defaults:
 - missing `BUDGET` becomes `AgentView.default_context_budget_tokens`;
 - missing `LIMIT` becomes `AgentView.default_candidate_limit`.
 
+Runtime limit and budget semantics are frozen in
+[`AQL_LIMIT_BUDGET_SEMANTICS.md`](AQL_LIMIT_BUDGET_SEMANTICS.md): `LIMIT`
+bounds direct retrieval and ContextPack candidates, while `BUDGET` is the
+default ContextPack token budget unless an explicit runtime option overrides it.
+
 Policy remains fail-closed:
 
 - AQL `WHERE` filters can only narrow `AgentView` visibility;

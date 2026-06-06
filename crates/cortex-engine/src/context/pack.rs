@@ -19,8 +19,8 @@ use crate::source_trust::SourceTrust;
 impl Database {
     /// Compile a `RETRIEVE CONTEXT` AQL statement into a scored ContextPack.
     ///
-    /// The same bound retrieve plan drives bitmap filtering, AQL `REQUIRE`
-    /// gates, and the ContextPack citation policy.
+    /// The same bound retrieve plan drives bitmap filtering, AQL `LIMIT`,
+    /// `BUDGET`, `REQUIRE` gates, and the ContextPack citation policy.
     pub fn context_pack_from_aql(
         &self,
         aql: &str,
@@ -35,7 +35,11 @@ impl Database {
             return Err(EngineError::InvalidOperation);
         };
         let provider = EngineAqlProvider::new(index, view);
-        let budget = effective_budget(view, options.token_budget_tokens);
+        let budget = effective_budget(
+            view,
+            options.token_budget_tokens,
+            plan.context_policy.budget_tokens,
+        );
         let citations_required = options.require_citations || plan.context_policy.require_citations;
         let cells = order_by_feedback(
             self.retrieve_cells(&plan, &provider)?,
@@ -266,9 +270,9 @@ fn estimate_cell_tokens(
     estimate_tokens(payload).saturating_add(citation_overhead)
 }
 
-fn effective_budget(view: &AgentView, requested: u32) -> u32 {
+fn effective_budget(view: &AgentView, requested: u32, plan_budget: u32) -> u32 {
     let budget = if requested == 0 {
-        view.default_context_budget_tokens
+        plan_budget
     } else {
         requested
     };

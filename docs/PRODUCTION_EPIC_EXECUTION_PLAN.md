@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 41 / 150
+- Done: 42 / 150
 - Partial: 1 / 150
-- Todo: 108 / 150
-- Current closed epic: Epic 41, AQL Require Semantics v1
+- Todo: 107 / 150
+- Current closed epic: Epic 42, AQL Limit/Budget Semantics
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1125,13 +1125,26 @@ Tasks:
 
 ### Epic 42. AQL Limit/Budget Semantics
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/AQL_LIMIT_BUDGET_SEMANTICS.md`
+- `docs/AQL_V0_4.md`
+- `crates/cortex-engine/src/context/pack.rs`
+- `crates/cortex-engine/tests/aql_limit_budget_semantics.rs`
+- `cargo test -p cortex-engine --test aql_limit_budget_semantics`
 
 Tasks:
 
-- Clarify candidate limit.
-- Clarify ContextPack cell limit.
-- Clarify token budget.
+- Clarify candidate limit. Done: effective `LIMIT ... CANDIDATES` is a
+  policy-clamped hard upper bound for `retrieve_aql` and ContextPack input.
+- Clarify ContextPack cell limit. Done: v1 has no separate AQL final cell
+  limit; packed cells are bounded by candidate limit, token budget, and
+  optional redundancy reduction.
+- Clarify token budget. Done: `BUDGET ... TOKENS` is the default ContextPack
+  budget for AQL calls, while explicit `ContextPackOptions.token_budget_tokens`
+  can deliberately override it and remains AgentView-clamped.
 
 ### Epic 43. AQL Security Fuzzing
 
