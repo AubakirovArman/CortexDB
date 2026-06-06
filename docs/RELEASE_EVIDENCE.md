@@ -128,6 +128,18 @@ It writes `target/release-notes/generated.md` from the production evidence
 report, release evidence bundle report, release artifact manifest, beta
 non-goals, and upgrade/migration limitations.
 
+The release regression dashboard is produced by:
+
+```bash
+make release-regression-dashboard-check
+```
+
+It writes `target/release-regression-dashboard/report.json` and
+`target/release-regression-dashboard/dashboard.md`. The dashboard compares the
+current release candidate against the `v0.1.0-core-alpha.5` fixture across
+storage, search, ContextPack, Verify, API, and SDK evidence. When present, both
+files are included in the unified release evidence bundle.
+
 The release evidence retention policy is checked by:
 
 ```bash

@@ -1,0 +1,21 @@
+{
+  "schema_version": "cortexdb.release_regression_baseline.v1",
+  "release": "v0.1.0-core-alpha.5",
+  "metrics": {
+    "api.http_contract_checks_passed": 6,
+    "context.citation_coverage_q16": 60000,
+    "context.deterministic_order_q16": 60000,
+    "context.evidence_coverage_q16": 60000,
+    "context.token_reduction_q16": 30000,
+    "sdk.packages": 3,
+    "sdk.release_checks_passed": 6,
+    "search.retrieval_mean_mrr_q16": 60000,
+    "search.retrieval_mean_recall_q16": 60000,
+    "search.retrieval_p95_latency_nanos": 10000000,
+    "storage.backup_drills": 3,
+    "storage.single_node_duration_ms": 1000,
+    "verify.accuracy_q16": 60000,
+    "verify.false_negative_count": 0,
+    "verify.false_positive_count": 0
+  }
+}

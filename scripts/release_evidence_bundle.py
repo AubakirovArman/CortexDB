@@ -47,6 +47,8 @@ REQUIRED_ARTIFACTS: tuple[ArtifactSpec, ...] = (
 OPTIONAL_ARTIFACTS: tuple[ArtifactSpec, ...] = (
     ArtifactSpec("dashboard_package", "ui", "target/dashboard/dashboard-v1.tar.gz", required=False, validate_report=False),
     ArtifactSpec("retrieval_dashboard", "benchmark", "target/retrieval-quality/dashboard.html", required=False, validate_report=False),
+    ArtifactSpec("release_regression_dashboard", "release", "target/release-regression-dashboard/report.json", required=False),
+    ArtifactSpec("release_regression_dashboard_markdown", "release", "target/release-regression-dashboard/dashboard.md", required=False, validate_report=False),
     ArtifactSpec("ann_release_history", "benchmark", "target/ann/release-evidence/corpus-runs/history.json", required=False, validate_report=False),
     ArtifactSpec("ann_real_embedding_history", "benchmark", "target/ann/real-embedding/runs/history.json", required=False, validate_report=False),
     ArtifactSpec("chaos_restart", "storage", "target/chaos-restart/report.json", required=False),

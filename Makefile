@@ -1,4 +1,4 @@
-.PHONY: release-artifact-manifest-check release-artifact-manifest-production-check release-evidence-bundle-check release-notes-generate evidence-artifact-retention-check
+.PHONY: release-artifact-manifest-check release-artifact-manifest-production-check release-evidence-bundle-check release-notes-generate evidence-artifact-retention-check release-regression-dashboard-check
 .PHONY: encrypted-backup-check
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
@@ -543,6 +543,10 @@ SINGLE_NODE_PERF_MAX_TOTAL_MS ?= 30000
 PERFORMANCE_TREND_ROOT ?= target/performance-trends
 PERFORMANCE_TREND_REPORT ?= $(PERFORMANCE_TREND_ROOT)/report.json
 PERFORMANCE_HISTORY_ROOT ?= fixtures/performance/history
+RELEASE_REGRESSION_DASHBOARD_ROOT ?= target/release-regression-dashboard
+RELEASE_REGRESSION_DASHBOARD_REPORT ?= $(RELEASE_REGRESSION_DASHBOARD_ROOT)/report.json
+RELEASE_REGRESSION_DASHBOARD_MARKDOWN ?= $(RELEASE_REGRESSION_DASHBOARD_ROOT)/dashboard.md
+RELEASE_REGRESSION_BASELINE ?= fixtures/release_regression/history/v0.1.0-core-alpha.5/report.json
 TENANT_RECOVERY_ROOT ?= target/tenant-recovery
 TENANT_RECOVERY_REPORT ?= $(TENANT_RECOVERY_ROOT)/report.json
 CRASH_FAULT_ROOT ?= target/crash-fault
@@ -2417,6 +2421,9 @@ single-node-performance-check:
 performance-trend-check:
 	python3 scripts/performance_trend_check.py --load-report "$(LOAD_SMOKE_REPORT)" --single-node-report "$(SINGLE_NODE_PERF_REPORT)" --history-root "$(PERFORMANCE_HISTORY_ROOT)" --report "$(PERFORMANCE_TREND_REPORT)"
 
+release-regression-dashboard-check:
+	python3 scripts/release_regression_dashboard.py --baseline "$(RELEASE_REGRESSION_BASELINE)" --backup-report "$(BACKUP_DRILL_REPORT)" --single-node-report "$(SINGLE_NODE_PERF_REPORT)" --retrieval-report "$(RETRIEVAL_QUALITY_REPORT)" --context-report "$(CONTEXT_PACK_QUALITY_REPORT)" --verify-report "$(VERIFICATION_QUALITY_REPORT)" --api-report "$(HTTP_CONTRACT_OPS_REPORT)" --sdk-report "$(SDK_E2E_RELEASE_REPORT)" --report "$(RELEASE_REGRESSION_DASHBOARD_REPORT)" --markdown "$(RELEASE_REGRESSION_DASHBOARD_MARKDOWN)"
+
 tenant-recovery-check:
 	cargo build -p cortex-server --bin cortex-server
 	cargo build -p cortex-cli --bin cortexdb
@@ -2840,6 +2847,7 @@ release-check: alpha-check
 	$(MAKE) crash-fault-check
 	$(MAKE) chaos-restart-check
 	$(MAKE) replication-lifecycle-check
+	$(MAKE) release-regression-dashboard-check
 	$(MAKE) smoke-test
 	$(MAKE) sdk-smoke-test
 	$(MAKE) release-evidence-bundle-check

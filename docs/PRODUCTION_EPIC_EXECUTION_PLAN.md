@@ -182,18 +182,21 @@ Tasks:
 
 ### Epic 9. Release Regression Dashboard
 
-Status: partial
+Status: done
 
 Evidence:
 
 - `make performance-trend-check`
 - `docs/PERFORMANCE_TREND_HISTORY.md`
 - Retrieval and ANN regression/history gates already exist for narrower domains.
-
-Remaining:
-
-- Add release N vs N-1 comparison across storage, search, ContextPack, Verify, API, and SDK.
-- Publish one release regression dashboard/report.
+- `fixtures/release_regression/history/v0.1.0-core-alpha.5/report.json`
+- `scripts/release_regression_dashboard.py`
+- `make release-regression-dashboard-check`
+- `target/release-regression-dashboard/report.json`
+- `target/release-regression-dashboard/dashboard.md`
+- `docs/RELEASE_REGRESSION_DASHBOARD.md`
+- The release regression dashboard compares storage, search, ContextPack,
+  Verify, API, and SDK metrics against the previous release fixture.
 
 Tasks:
 
