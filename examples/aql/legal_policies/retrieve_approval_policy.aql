@@ -1,0 +1,7 @@
+RETRIEVE CONTEXT
+FOR TASK "Find the latest approval policy with citations and reviewer context"
+IN BRAIN legal_policies
+USING MODE audit
+WHERE scope = legal:policies AND status IN ["ready", "verified"] AND type = "document_block"
+REQUIRE citations, source_trust >= 0.90, freshness <= 2592000 SECONDS
+LIMIT 12 CANDIDATES;

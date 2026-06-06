@@ -1,0 +1,6 @@
+EXPLAIN RETRIEVE CONTEXT
+FOR TASK "Explain policy exceptions that require legal review"
+IN BRAIN legal_policies
+WHERE scope = legal:policies AND memory_type = "observation"
+REQUIRE citations
+LIMIT 10 CANDIDATES;

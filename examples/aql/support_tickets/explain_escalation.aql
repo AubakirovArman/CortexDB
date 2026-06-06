@@ -1,0 +1,6 @@
+EXPLAIN RETRIEVE CONTEXT
+FOR TASK "Show why this support issue should be escalated"
+IN BRAIN support_tickets
+WHERE scope = support:tickets AND type IN ["fact", "document_block"]
+REQUIRE citations
+LIMIT 10 CANDIDATES;

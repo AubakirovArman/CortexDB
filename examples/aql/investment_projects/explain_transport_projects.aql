@@ -1,0 +1,7 @@
+EXPLAIN RETRIEVE CONTEXT
+FOR TASK "Find transport infrastructure projects with multilateral financing"
+IN BRAIN investment_projects
+USING MODE balanced
+WHERE scope = project:investments AND status = "ready"
+REQUIRE citations
+LIMIT 15 CANDIDATES;

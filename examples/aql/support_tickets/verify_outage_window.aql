@@ -1,0 +1,1 @@
+VERIFY FACT "The authentication outage was mitigated by rotating the signing key" IN BRAIN support_tickets;

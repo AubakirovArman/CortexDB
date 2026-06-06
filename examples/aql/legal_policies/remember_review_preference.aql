@@ -1,0 +1,1 @@
+REMEMBER "Route unresolved legal policy conflicts to a human reviewer before final answer generation" IN SCOPE legal:policies AS TYPE preference TTL 2592000 SECONDS;

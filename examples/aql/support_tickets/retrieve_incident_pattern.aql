@@ -1,0 +1,7 @@
+RETRIEVE CONTEXT
+FOR TASK "Find repeated authentication incidents and successful remediation steps"
+IN BRAIN support_tickets
+USING MODE balanced
+WHERE scope = support:tickets AND status IN ["ready", "verified"]
+REQUIRE confidence >= 0.70
+LIMIT 20 CANDIDATES;

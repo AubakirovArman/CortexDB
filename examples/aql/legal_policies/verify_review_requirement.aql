@@ -1,0 +1,1 @@
+VERIFY FACT "High-risk vendor exceptions require documented reviewer approval" IN BRAIN legal_policies;

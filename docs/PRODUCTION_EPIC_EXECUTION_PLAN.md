@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 44 / 150
+- Done: 45 / 150
 - Partial: 1 / 150
-- Todo: 105 / 150
-- Current closed epic: Epic 44, AQL SDK Helpers
+- Todo: 104 / 150
+- Current closed epic: Epic 45, AQL Query Examples Pack
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1212,14 +1212,30 @@ Tasks:
 
 ### Epic 45. AQL Query Examples Pack
 
-Status: todo
+Status: done
+
+Evidence:
+
+- Domain example index: `examples/aql/README.md`.
+- Investment project examples: `examples/aql/investment_projects/*.aql`.
+- Legal policy examples: `examples/aql/legal_policies/*.aql`.
+- Support ticket examples: `examples/aql/support_tickets/*.aql`.
+- Technical docs examples: `examples/aql/technical_docs/*.aql`.
+- Parser regression gate:
+  `crates/cortex-aql/tests/aql_examples_pack.rs`.
+- Checks:
+  `cargo test -p cortex-aql --test aql_examples_pack`.
 
 Tasks:
 
-- Add investment examples.
-- Add legal examples.
-- Add support examples.
-- Add technical docs examples.
+- Add investment examples. Done: retrieve, explain, verify, and remember
+  examples for project finance and budget-risk workflows.
+- Add legal examples. Done: retrieve, explain, verify, and remember examples
+  for policy lookup and human-review workflows.
+- Add support examples. Done: retrieve, explain, verify, and remember examples
+  for incident triage and support remediation workflows.
+- Add technical docs examples. Done: retrieve, explain, verify, and remember
+  examples for SDK contracts and storage runbooks.
 
 ## E. Retrieval, Search, ANN
 

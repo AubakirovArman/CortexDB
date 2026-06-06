@@ -1,0 +1,1 @@
+REMEMBER "When Rust Actions fail after dashboard changes, run dashboard-check before dashboard-smoke" IN SCOPE technical:docs AS TYPE observation TTL 7776000 SECONDS;

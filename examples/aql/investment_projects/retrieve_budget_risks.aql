@@ -1,0 +1,8 @@
+RETRIEVE CONTEXT
+FOR TASK "Compare Kazakhstan project budget risks with cited evidence"
+IN BRAIN investment_projects
+USING MODE semantic
+BUDGET 12000 TOKENS
+WHERE scope = project:investments AND status IN ["ready", "verified"] AND type = "fact"
+REQUIRE citations, confidence >= 0.80, source_trust >= 0.85
+LIMIT 25 CANDIDATES;

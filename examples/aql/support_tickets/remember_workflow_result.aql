@@ -1,0 +1,1 @@
+REMEMBER "For repeated authentication failures, check token issuer drift before cache invalidation" IN SCOPE support:tickets AS TYPE workflow_result TTL 1209600 SECONDS;
