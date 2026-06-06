@@ -35,6 +35,12 @@ retrieval metric script:
 make longmemeval-v1-official-retrieval-metrics
 ```
 
+Run the retrieval-adapter acceptance gate for Epic 49:
+
+```bash
+make longmemeval-v1-retrieval-adapter-check
+```
+
 The command writes:
 
 ```text
@@ -44,6 +50,7 @@ target/longmemeval-v1/cortexdb/longmemeval_s_cleaned_cortexdb_session_retrieval.
 target/longmemeval-v1/cortexdb/official_retrieval_metrics.txt
 target/longmemeval-v1/cortexdb/report.json
 target/longmemeval-v1/cortexdb/summary.md
+target/longmemeval-v1/retrieval-adapter/report.json
 ```
 
 Run official QA scoring after official generation has produced a hypothesis
@@ -76,6 +83,15 @@ sha256: d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442
 ```
 
 These are retrieval metrics. They are not the final QA leaderboard score.
+
+Retrieval adapter acceptance evidence:
+
+```text
+schema: cortexdb.longmemeval.v1.retrieval_adapter_check.v1
+status: passed
+retrieval_log_rows: 500
+boundary: retrieval-only, not an end-to-end QA claim
+```
 
 Historical QA evaluator evidence on the same split:
 

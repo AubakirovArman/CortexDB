@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 48 / 150
+- Done: 49 / 150
 - Partial: 1 / 150
-- Todo: 101 / 150
-- Current closed epic: Epic 48, Public Retrieval Benchmark Page
+- Todo: 100 / 150
+- Current closed epic: Epic 49, LongMemEval Retrieval Adapter
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1340,13 +1340,33 @@ Tasks:
 
 ### Epic 49. LongMemEval Retrieval Adapter
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `scripts/longmemeval/check_v1_retrieval_adapter.py`
+- `make longmemeval-v1-retrieval-adapter-check`
+- `target/longmemeval-v1/data/manifest.json`
+- `target/longmemeval-v1/cortexdb/longmemeval_s_cleaned_cortexdb_session_retrieval.jsonl`
+- `target/longmemeval-v1/cortexdb/official_retrieval_metrics.txt`
+- `target/longmemeval-v1/cortexdb/report.json`
+- `target/longmemeval-v1/retrieval-adapter/report.json`
+- Latest local adapter report: `status=passed`, `retrieval_log_rows=500`,
+  official `session recall_all@10=0.9021`, official
+  `session ndcg_any@10=0.7873`.
 
 Tasks:
 
-- Ingest LongMemEval-S.
-- Produce official retrieval log.
-- Store official metrics.
+- Ingest LongMemEval-S. Done: `make longmemeval-v1-official-data`
+  downloads the official `xiaowu0162/longmemeval-cleaned` small split and
+  writes a manifest with 500 rows and dataset checksum.
+- Produce official retrieval log. Done: `make longmemeval-v1-cortexdb-retrieval`
+  builds the CLI, loads per-question CortexDB fixtures, and writes the
+  session-level retrieval JSONL.
+- Store official metrics. Done: `make longmemeval-v1-official-retrieval-metrics`
+  runs the official LongMemEval `print_retrieval_metrics.py`, and
+  `make longmemeval-v1-retrieval-adapter-check` stores the validated adapter
+  report.
 
 ### Epic 50. LongMemEval End-to-End Adapter
 

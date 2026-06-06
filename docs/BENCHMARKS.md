@@ -223,12 +223,13 @@ checking in a large domain corpus.
 CortexDB includes a LongMemEval v1 official-data retrieval harness:
 
 ```bash
-make longmemeval-v1-official-retrieval-metrics
+make longmemeval-v1-retrieval-adapter-check
 ```
 
 The target downloads the official `xiaowu0162/longmemeval-cleaned` small split,
-runs CortexDB retrieval, then scores the generated retrieval log with the
-official LongMemEval `print_retrieval_metrics.py` script.
+runs CortexDB retrieval, scores the generated retrieval log with the official
+LongMemEval `print_retrieval_metrics.py` script, and validates the adapter
+evidence bundle.
 
 Latest local full-run evidence on `longmemeval_s_cleaned.json`:
 
@@ -248,10 +249,10 @@ The same run also has a historical local QA evaluation artifact:
 | `accuracy` | `0.7660` |
 
 The run writes `target/longmemeval-v1/cortexdb/official_retrieval_metrics.txt`
-and a generated hypothesis file under `target/longmemeval-v1/generation/`.
-New local generation/evaluation defaults use DeepSeek flash; the historical
-QA row above is retained only as prior evidence. Leaderboard/list inclusion
-still requires submission to the official maintainers. See
+and `target/longmemeval-v1/retrieval-adapter/report.json`. New local
+generation/evaluation defaults use DeepSeek flash; the historical QA row above
+is retained only as prior evidence. Leaderboard/list inclusion still requires
+submission to the official maintainers. See
 [`LONGMEMEVAL_OFFICIAL.md`](LONGMEMEVAL_OFFICIAL.md).
 
 ## MultiHop-RAG Benchmark Scaffold
