@@ -565,7 +565,7 @@ fn track_ingest(
     db: &mut Database,
     label: &str,
     total_items: Option<u64>,
-    ingest: impl FnOnce(&mut Database) -> Result<Vec<IngestedCell>, cortex_engine::error::EngineError>,
+    ingest: impl FnOnce(&mut Database) -> Result<Vec<IngestedCell>, cortex_engine::EngineError>,
 ) -> Result<(IngestionJobId, Vec<IngestedCell>), RouterError> {
     let mut tracker = IngestionProgressTracker::default();
     tracker.seed_next_id_from_disk(db);

@@ -1,8 +1,8 @@
 use cortex_aql::AgentView;
-use cortex_engine::verification::{
-    VerificationReport, VerificationReportExportFormat, VerificationStatus,
+use cortex_engine::{
+    Database, VerificationEvidence, VerificationReport, VerificationReportExportFormat,
+    VerificationStatus,
 };
-use cortex_engine::Database;
 
 use crate::authz;
 use crate::responses::{
@@ -79,7 +79,7 @@ fn map_verification_report(
     }
     .to_owned();
 
-    let map_evidence = |evs: &[cortex_engine::verification::VerificationEvidence]| {
+    let map_evidence = |evs: &[VerificationEvidence]| {
         evs.iter()
             .map(|ev| {
                 let payload_text = db

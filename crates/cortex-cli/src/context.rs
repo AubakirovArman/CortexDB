@@ -1,6 +1,8 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
-use cortex_engine::verification::{VerificationReport, VerificationStatus};
-use cortex_engine::{scope_id, ContextPack, DatabaseSearchResult, RetrievedCell};
+use cortex_engine::{
+    scope_id, ContextPack, DatabaseSearchResult, RetrievedCell, VerificationReport,
+    VerificationStatus,
+};
 
 pub(crate) fn view_for_scope(scope: &str) -> AgentView {
     AgentView {

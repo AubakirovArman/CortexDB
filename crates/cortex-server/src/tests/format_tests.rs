@@ -1,4 +1,4 @@
-use cortex_engine::verification::numeric::format_scaled_value;
+use cortex_engine::format_scaled_value;
 
 #[test]
 fn test_numeric_scale_currency_formatting() {

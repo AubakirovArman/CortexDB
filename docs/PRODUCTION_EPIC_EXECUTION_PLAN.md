@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 30 / 150
+- Done: 31 / 150
 - Partial: 1 / 150
-- Todo: 119 / 150
-- Current closed epic: Epic 30, Engine Module Ownership
+- Todo: 118 / 150
+- Current closed epic: Epic 31, Engine Internal Boundary Audit
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -779,12 +779,30 @@ Boundary:
 
 ### Epic 31. Engine Internal Boundary Audit
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/ENGINE_INTERNAL_BOUNDARIES.md`
+- `scripts/engine_internal_boundary_check.py`
+- `make engine-internal-boundary-check`
+- `make engine-api-check`
+- `cargo test --workspace --all-features`
+- `cargo clippy --workspace --all-targets -- -D warnings`
 
 Tasks:
 
-- Mark internal modules.
-- Prevent SDK/server from depending on internal details.
+- Mark internal modules. Done: `ENGINE_INTERNAL_BOUNDARIES.md` defines the
+  crate-root facade rule and points to the existing module ownership map.
+- Prevent SDK/server from depending on internal details. Done: server and CLI
+  imports now use root facade re-exports, and the boundary gate rejects
+  `cortex_engine::<known_module>::...` references in server/SDK paths.
+
+Boundary:
+
+- This gate enforces external import discipline by scanning server/SDK code.
+  It does not make every engine module private yet; that larger compatibility
+  migration remains a future API-design task.
 
 ### Epic 32. Engine Determinism Audit
 

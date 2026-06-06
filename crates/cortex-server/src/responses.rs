@@ -539,9 +539,9 @@ impl From<serde_json::Error> for RouterError {
     }
 }
 
-impl From<cortex_engine::error::EngineError> for RouterError {
-    fn from(e: cortex_engine::error::EngineError) -> Self {
-        use cortex_engine::error::EngineErrorCode;
+impl From<cortex_engine::EngineError> for RouterError {
+    fn from(e: cortex_engine::EngineError) -> Self {
+        use cortex_engine::EngineErrorCode;
         let msg = e.safe_message();
         match e.code() {
             EngineErrorCode::BadRequest => RouterError::BadRequest(msg),

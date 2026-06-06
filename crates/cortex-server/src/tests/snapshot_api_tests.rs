@@ -268,7 +268,7 @@ fn error_taxonomy_busy_and_corruption_codes_are_stable() {
     assert_eq!(busy.code(), crate::responses::ErrorCode::DatabaseBusy);
 
     let corruption: crate::responses::RouterError =
-        cortex_engine::error::EngineError::StorageInvariant("manifest mismatch".to_owned()).into();
+        cortex_engine::EngineError::StorageInvariant("manifest mismatch".to_owned()).into();
     assert_eq!(corruption.status_code(), 500);
     assert_eq!(
         corruption.code(),

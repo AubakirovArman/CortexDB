@@ -19,6 +19,7 @@ use contradiction::{
 };
 pub use export::VerificationReportExportFormat;
 use guards::{citation_guard, numeric_mismatch, numeric_mismatch_conflict, numeric_mismatch_guard};
+pub use numeric::{format_scaled_value, Magnitude, NumericValue};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VerificationStatus {

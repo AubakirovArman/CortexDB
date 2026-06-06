@@ -1,5 +1,8 @@
-use cortex_engine::verification::{VerificationReport, VerificationStatus};
-use cortex_engine::{ContextPack, Database, SearchRouteDecision};
+use cortex_engine::{
+    CellMetadata, ContextPack, Database, DatabaseSearchResult, RememberedCell, RetrievedCell,
+    SearchRouteDecision, StorageStats, VerificationEvidence, VerificationReport,
+    VerificationStatus,
+};
 use serde_json::to_string;
 
 use crate::cli_json_types::{
@@ -65,7 +68,7 @@ pub(crate) fn cell_to_json(cell_id: u64, seq: u64, payload: &[u8]) -> String {
     })
 }
 
-pub(crate) fn aql_to_json(cells: &[cortex_engine::RetrievedCell]) -> String {
+pub(crate) fn aql_to_json(cells: &[RetrievedCell]) -> String {
     serialize_or_error(&AqlResponse {
         cells: cells
             .iter()
@@ -78,7 +81,7 @@ pub(crate) fn aql_to_json(cells: &[cortex_engine::RetrievedCell]) -> String {
 }
 
 pub(crate) fn search_to_json(
-    results: &[cortex_engine::search::DatabaseSearchResult],
+    results: &[DatabaseSearchResult],
     search_mode: &str,
     routing: Option<&SearchRouteDecision>,
 ) -> String {
@@ -104,7 +107,7 @@ pub(crate) fn search_to_json(
     })
 }
 
-pub(crate) fn remember_to_json(result: &cortex_engine::ingestion::RememberedCell) -> String {
+pub(crate) fn remember_to_json(result: &RememberedCell) -> String {
     serialize_or_error(&RememberResponse {
         seq: result.commit_seq.0,
         cell_id: result.cell_id.0,
@@ -112,7 +115,7 @@ pub(crate) fn remember_to_json(result: &cortex_engine::ingestion::RememberedCell
     })
 }
 
-pub(crate) fn stats_to_json(stats: &cortex_engine::validation::StorageStats) -> String {
+pub(crate) fn stats_to_json(stats: &StorageStats) -> String {
     serialize_or_error(&CliStatsResponse {
         current_seq: stats.current_seq.0,
         checkpoint_seq: stats.checkpoint_seq.0,
@@ -203,7 +206,7 @@ pub(crate) fn ann_evaluation_to_json(input: CliAnnEvaluationJsonInput) -> String
 }
 
 fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> ContextPackCellResponse {
-    let metadata = cortex_engine::query::CellMetadata::from_payload(&cell.payload);
+    let metadata = CellMetadata::from_payload(&cell.payload);
     let explain = cell.explain.as_ref().map(|exp| ContextPackExplainResponse {
         score: exp.score,
         matched_terms: exp.matched_terms.clone(),
@@ -266,7 +269,7 @@ fn context_pack_response(pack: &ContextPack) -> ContextPackResponse {
 }
 
 fn evidence_response(
-    evidence: &cortex_engine::verification::VerificationEvidence,
+    evidence: &VerificationEvidence,
     db: &Database,
 ) -> VerificationEvidenceResponse {
     let payload_text = db

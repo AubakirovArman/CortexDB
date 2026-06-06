@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::JoinHandle;
 
-use cortex_engine::{Database, DatabaseOptions};
+use cortex_engine::{Database, DatabaseOptions, ExpiredMemoryCell};
 
 use crate::auth_policy_cells::{self, AuthPolicyCellSyncReport};
 use crate::responses::RouterError;
@@ -20,7 +20,7 @@ enum ActorCommand {
     },
     ExpireMemory {
         now_unix_seconds: u64,
-        reply: mpsc::Sender<Result<Vec<cortex_engine::memory::ExpiredMemoryCell>, RouterError>>,
+        reply: mpsc::Sender<Result<Vec<ExpiredMemoryCell>, RouterError>>,
     },
     SyncAuthPolicyStore {
         store_json: String,
@@ -236,7 +236,7 @@ impl DatabaseActor {
     pub fn expire_memory(
         &self,
         now_unix_seconds: u64,
-    ) -> Result<Vec<cortex_engine::memory::ExpiredMemoryCell>, RouterError> {
+    ) -> Result<Vec<ExpiredMemoryCell>, RouterError> {
         let (reply_tx, reply_rx) = mpsc::channel();
         self.enqueue(ActorCommand::ExpireMemory {
             now_unix_seconds,

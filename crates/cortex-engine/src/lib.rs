@@ -84,7 +84,7 @@ pub use ingestion::{
     IngestionProgressTracker, IngestionSkippedItem, IngestionSourceRefReport,
     IngestionValidationIssue, IngestionValidationReport, JsonIngestOptions,
     NativeDigitalPdfTextExtractor, PdfExtractionStats, PdfIngestOptions, PdfTextExtractionBoundary,
-    RelationIngestOptions, TextChunk, TextChunkPolicy, TextIngestOptions,
+    RelationIngestOptions, RememberedCell, TextChunk, TextChunkPolicy, TextIngestOptions,
 };
 pub use legal::{
     evaluate_legal_report_contract, evaluate_legal_verification_boundary, LegalOutputBoundary,
@@ -113,4 +113,8 @@ pub use source_trust::{SourceTrust, SourceTrustCategory, DEFAULT_SOURCE_TRUST_Q1
 pub use tool_registry::{RegisteredTool, ToolDescriptor, ToolPermission};
 pub use typed_body::{EntityBody, FactBody, RelationBody};
 pub use validation::{StorageStats, StorageValidation, StorageValidationReport};
-pub use verification::{ContradictionRelationOptions, VerificationReportExportFormat};
+pub use verification::{
+    format_scaled_value, ContradictionRelationOptions, Magnitude, NumericValue,
+    VerificationEvidence, VerificationGuard, VerificationGuardCode, VerificationNumericConflict,
+    VerificationReport, VerificationReportExportFormat, VerificationStatus,
+};

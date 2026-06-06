@@ -3,7 +3,7 @@
 .PHONY: encrypted-backup-rotation-check
 .PHONY: backup-restore-production-pack-check
 .PHONY: storage-format-freeze-check
-.PHONY: engine-api-compat-check engine-public-api-freeze-check engine-error-model-check engine-feature-flags-check module-ownership-check
+.PHONY: engine-api-compat-check engine-public-api-freeze-check engine-error-model-check engine-feature-flags-check module-ownership-check engine-internal-boundary-check
 .PHONY: migration-compatibility-v2-check
 .PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check longmemeval-v1-deepseek-flash-diff longmemeval-v1-deepseek-flash-compact-50-check longmemeval-v1-deepseek-flash-compact-500-check longmemeval-v1-deepseek-flash-preference-check longmemeval-v1-deepseek-flash-single-session-user-check longmemeval-v1-deepseek-flash-multi-session-check longmemeval-v1-deepseek-flash-temporal-check
 .PHONY: multihop-rag-official-repo multihop-rag-official-data multihop-rag-preflight multihop-rag-balanced-50 multihop-rag-local-50-check multihop-rag-cortexdb-retrieval-50 multihop-rag-official-retrieval-metrics-50 multihop-rag-cortexdb-retrieval-full multihop-rag-official-retrieval-metrics-full multihop-rag-retrieval-full-existing-check multihop-rag-qa-full-existing-check multihop-rag-qa-hybrid-full-retry-existing-check multihop-rag-qa-hybrid-full-retry-v4-existing-check multihop-rag-deepseek-qa-50 multihop-rag-deepseek-qa-50-cache-metrics multihop-rag-official-qa-metrics-50 multihop-rag-official-qa-metrics-existing-50 multihop-rag-qa-error-analysis-50 multihop-rag-deepseek-qa-full multihop-rag-deepseek-qa-temporal-50-v3 multihop-rag-official-qa-metrics-temporal-50-v3 multihop-rag-qa-error-analysis-temporal-50-v3 multihop-rag-deepseek-qa-temporal-50-v3-retry multihop-rag-official-qa-metrics-temporal-50-v3-retry multihop-rag-qa-error-analysis-temporal-50-v3-retry multihop-rag-deepseek-qa-temporal-50-v4-decompose-retry multihop-rag-official-qa-metrics-temporal-50-v4-decompose-retry multihop-rag-qa-error-analysis-temporal-50-v4-decompose-retry multihop-rag-deepseek-qa-temporal-chronology-50-v1 multihop-rag-official-qa-metrics-temporal-chronology-50-v1 multihop-rag-qa-error-analysis-temporal-chronology-50-v1 multihop-rag-deepseek-qa-temporal-chronology-yes-no-50-v1 multihop-rag-official-qa-metrics-temporal-chronology-yes-no-50-v1 multihop-rag-qa-error-analysis-temporal-chronology-yes-no-50-v1 multihop-rag-deepseek-qa-temporal-v3 multihop-rag-deepseek-qa-temporal-v3-retry multihop-rag-deepseek-qa-comparison-50-retry multihop-rag-official-qa-metrics-comparison-50-retry multihop-rag-qa-error-analysis-comparison-50-retry multihop-rag-deepseek-qa-comparison-50-decompose-retry multihop-rag-official-qa-metrics-comparison-50-decompose-retry multihop-rag-qa-error-analysis-comparison-50-decompose-retry multihop-rag-deepseek-qa-comparison-v2-retry multihop-rag-deepseek-qa-comparison-v3-decompose-retry multihop-rag-combine-qa-full-hybrid multihop-rag-combine-qa-full-hybrid-retry multihop-rag-combine-qa-full-hybrid-retry-v4 multihop-rag-postprocess-hybrid-full-retry-v5 multihop-rag-combine-qa-full-hybrid-retry-v6 multihop-rag-combine-qa-full-hybrid-retry-v7 multihop-rag-official-qa-metrics-hybrid-full multihop-rag-official-qa-metrics-hybrid-full-retry multihop-rag-official-qa-metrics-hybrid-full-retry-v4 multihop-rag-official-qa-metrics-hybrid-full-retry-v5 multihop-rag-official-qa-metrics-hybrid-full-retry-v6 multihop-rag-official-qa-metrics-hybrid-full-retry-v7 multihop-rag-official-qa-metrics-full multihop-rag-official-qa-metrics-existing-full multihop-rag-qa-error-analysis-full multihop-rag-qa-error-analysis-hybrid-full-retry multihop-rag-qa-error-analysis-hybrid-full-retry-v4 multihop-rag-qa-error-analysis-hybrid-full-retry-v5 multihop-rag-qa-error-analysis-hybrid-full-retry-v6 multihop-rag-qa-error-analysis-hybrid-full-retry-v7
@@ -639,6 +639,7 @@ ENGINE_API_COMPAT_REPORT ?= $(ENGINE_API_COMPAT_ROOT)/report.json
 ENGINE_ERROR_MODEL_REPORT ?= target/engine-error-model/report.json
 ENGINE_FEATURE_FLAGS_REPORT ?= target/engine-feature-flags/report.json
 MODULE_OWNERSHIP_REPORT ?= target/module-ownership/report.json
+ENGINE_INTERNAL_BOUNDARY_REPORT ?= target/engine-internal-boundary/report.json
 AQL_COMPAT_ROOT ?= target/aql-compat
 AQL_COMPAT_REPORT ?= $(AQL_COMPAT_ROOT)/report.json
 FUTURE_EPIC_REPORT ?= target/future-epics/report.json
@@ -725,7 +726,10 @@ engine-feature-flags-check:
 module-ownership-check:
 	python3 scripts/module_ownership_check.py --report "$(MODULE_OWNERSHIP_REPORT)"
 
-engine-api-check: engine-public-api-freeze-check engine-api-compat-check engine-error-model-check engine-feature-flags-check module-ownership-check
+engine-internal-boundary-check:
+	python3 scripts/engine_internal_boundary_check.py --report "$(ENGINE_INTERNAL_BOUNDARY_REPORT)"
+
+engine-api-check: engine-public-api-freeze-check engine-api-compat-check engine-error-model-check engine-feature-flags-check module-ownership-check engine-internal-boundary-check
 
 aql-compat-check:
 	python3 scripts/aql_compat_check.py --root "$(AQL_COMPAT_ROOT)" --report "$(AQL_COMPAT_REPORT)"
