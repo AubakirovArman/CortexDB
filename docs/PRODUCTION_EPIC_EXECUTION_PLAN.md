@@ -325,7 +325,17 @@ Tasks:
 
 ### Epic 15. WAL Corruption Matrix v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `cargo test -p cortex-storage --test wal_tests`
+- `cargo test -p cortex-engine --test recovery_modes`
+- `cargo test -p cortex-engine --test alpha_matrix`
+- `crates/cortex-storage/tests/wal_tests.rs`
+- `crates/cortex-engine/tests/recovery_modes.rs`
+- `crates/cortex-engine/tests/alpha_matrix.rs`
+- `docs/WAL_REPLAY.md`
 
 Tasks:
 

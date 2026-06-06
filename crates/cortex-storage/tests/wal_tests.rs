@@ -68,6 +68,27 @@ fn corrupt_header_is_invalid_record() {
 }
 
 #[test]
+fn corrupt_section_entry_is_invalid_record() {
+    let mut encoded = WalCodec::encode_record_at(&record(), 42).unwrap();
+    let first_entry = WAL_RECORD_HEADER_LEN;
+    encoded[first_entry + 4..first_entry + 8].copy_from_slice(&1u32.to_le_bytes());
+    rewrite_header_crc(&mut encoded);
+    assert!(matches!(
+        WalCodec::decode_record(&encoded).unwrap_err(),
+        StorageError::InvalidWalRecord
+    ));
+
+    let mut encoded = WalCodec::encode_record_at(&record(), 42).unwrap();
+    let first_entry = WAL_RECORD_HEADER_LEN;
+    encoded[first_entry + 8..first_entry + 12].copy_from_slice(&u32::MAX.to_le_bytes());
+    rewrite_header_crc(&mut encoded);
+    assert!(matches!(
+        WalCodec::decode_record(&encoded).unwrap_err(),
+        StorageError::InvalidWalRecord
+    ));
+}
+
+#[test]
 fn partial_tail_is_reported() {
     let mut encoded = WalCodec::encode_record_at(&record(), 42).unwrap();
     encoded.truncate(encoded.len() - 3);
