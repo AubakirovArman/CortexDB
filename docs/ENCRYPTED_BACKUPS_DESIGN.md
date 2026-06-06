@@ -99,6 +99,9 @@ The current repository implements:
 - restore validation with `Database::validate_storage`.
 - repeatable evidence through `make encrypted-backup-check`, written to
   `target/encrypted-backup/report.json`.
+- archive-scoped passphrase rotation evidence through
+  `make encrypted-backup-rotation-check`, written to
+  `target/encrypted-backup-rotation/report.json`.
 
 The current archive format is a CortexDB-local beta format with clear header
 metadata and encrypted payload bytes. Operators should prefer `--passphrase-env`
@@ -113,12 +116,35 @@ The evidence gate verifies:
 - wrong-passphrase restore fails without creating the target path;
 - corrupt-ciphertext restore fails without creating the target path.
 
+## Rotation Policy MVP
+
+Passphrase rotation is archive-scoped in the current MVP:
+
+1. Create a fresh backup archive with the new passphrase.
+2. Verify the fresh archive can restore with the new passphrase.
+3. Keep older archives decryptable with their original passphrase until the
+   retention window expires.
+4. Verify cross-key restore attempts fail safely: old archives must reject the
+   new passphrase, and new archives must reject the old passphrase.
+5. Retire old passphrases only after every archive that needs them has expired
+   or has been replaced by a newly encrypted backup.
+
+The repeatable evidence gate is:
+
+```bash
+make encrypted-backup-rotation-check
+```
+
+It proves old-backup decrypt, new-backup encrypt/decrypt, cross-key fail-safe
+behavior, and plaintext hiding for both archive generations.
+
 ## Not Implemented
 
 The current repository still does not implement:
 
 - provider trait and local-file provider;
 - KMS-backed data-key wrapping;
+- KMS-backed key rotation;
 - externally auditable authenticated-encryption proof;
 - remote object-store upload;
 - compliance-grade backup custody workflow.

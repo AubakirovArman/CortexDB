@@ -542,14 +542,37 @@ Boundary:
 
 ### Epic 24. Encrypted Backup Rotation
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Define key rotation policy.
-- Verify old backup decrypt.
-- Verify new backup encrypt.
-- Document rotation flow.
+- Define key rotation policy. Done: current MVP uses archive-scoped
+  passphrase rotation. New backups are created with the new passphrase; old
+  backups remain decryptable only with the old passphrase until retention
+  expiry.
+- Verify old backup decrypt. Done: `make encrypted-backup-rotation-check`
+  restores the old archive with the old passphrase.
+- Verify new backup encrypt. Done: the same gate creates a new archive with the
+  new passphrase and restores current data from it.
+- Document rotation flow. Done:
+  `docs/ENCRYPTED_BACKUPS_DESIGN.md` and `docs/BACKUP_RESTORE.md`.
+
+Evidence:
+
+- `make encrypted-backup-rotation-check`
+- `target/encrypted-backup-rotation/report.json`
+- `make backup-restore-production-pack-check`
+- `target/backup-restore-production-pack/report.json`
+- `scripts/encrypted_backup_rotation_check.py`
+- `scripts/backup_restore_pack_validators.py`
+- `scripts/backup_restore_production_pack.py`
+- `docs/ENCRYPTED_BACKUPS_DESIGN.md`
+- `docs/BACKUP_RESTORE.md`
+
+Boundary:
+
+- This closes passphrase-rotation evidence for the encrypted-backup MVP. It is
+  not KMS-backed key rotation or compliance-grade custody.
 
 ### Epic 25. Storage Format Freeze v1
 

@@ -1,5 +1,6 @@
 .PHONY: release-artifact-manifest-check release-artifact-manifest-production-check release-evidence-bundle-check release-notes-generate evidence-artifact-retention-check release-regression-dashboard-check versioning-policy-check
 .PHONY: encrypted-backup-check
+.PHONY: encrypted-backup-rotation-check
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
 .PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check longmemeval-v1-deepseek-flash-diff longmemeval-v1-deepseek-flash-compact-50-check longmemeval-v1-deepseek-flash-compact-500-check longmemeval-v1-deepseek-flash-preference-check longmemeval-v1-deepseek-flash-single-session-user-check longmemeval-v1-deepseek-flash-multi-session-check longmemeval-v1-deepseek-flash-temporal-check
@@ -255,6 +256,8 @@ BACKUP_RPO_RTO_ROOT ?= target/backup-rpo-rto
 BACKUP_RPO_RTO_REPORT ?= $(BACKUP_RPO_RTO_ROOT)/report.json
 ENCRYPTED_BACKUP_ROOT ?= target/encrypted-backup
 ENCRYPTED_BACKUP_REPORT ?= $(ENCRYPTED_BACKUP_ROOT)/report.json
+ENCRYPTED_BACKUP_ROTATION_ROOT ?= target/encrypted-backup-rotation
+ENCRYPTED_BACKUP_ROTATION_REPORT ?= $(ENCRYPTED_BACKUP_ROTATION_ROOT)/report.json
 LOAD_SMOKE_ROOT ?= target/load-smoke
 LOAD_SMOKE_REPORT ?= $(LOAD_SMOKE_ROOT)/report.json
 LOAD_SMOKE_CELLS ?= 100
@@ -2778,12 +2781,16 @@ encrypted-backup-check:
 	cargo test -p cortex-cli backup_encrypted_and_restore_encrypted_commands_roundtrip_database
 	python3 scripts/encrypted_backup_check.py --root "$(ENCRYPTED_BACKUP_ROOT)" --report "$(ENCRYPTED_BACKUP_REPORT)"
 
+encrypted-backup-rotation-check:
+	python3 scripts/encrypted_backup_rotation_check.py --root "$(ENCRYPTED_BACKUP_ROTATION_ROOT)" --report "$(ENCRYPTED_BACKUP_ROTATION_REPORT)"
+
 backup-restore-production-pack-check:
 	$(MAKE) backup-drill-check
 	$(MAKE) backup-offsite-check
 	$(MAKE) backup-rpo-rto-profile-check
 	$(MAKE) encrypted-backup-check
-	python3 scripts/backup_restore_production_pack.py --backup-drill-report "$(BACKUP_DRILL_REPORT)" --backup-offsite-report "$(BACKUP_OFFSITE_REPORT)" --rpo-rto-profile-report "$(BACKUP_RPO_RTO_REPORT)" --encrypted-backup-report "$(ENCRYPTED_BACKUP_REPORT)" --output "$(BACKUP_RESTORE_PACK_REPORT)"
+	$(MAKE) encrypted-backup-rotation-check
+	python3 scripts/backup_restore_production_pack.py --backup-drill-report "$(BACKUP_DRILL_REPORT)" --backup-offsite-report "$(BACKUP_OFFSITE_REPORT)" --rpo-rto-profile-report "$(BACKUP_RPO_RTO_REPORT)" --encrypted-backup-report "$(ENCRYPTED_BACKUP_REPORT)" --encrypted-backup-rotation-report "$(ENCRYPTED_BACKUP_ROTATION_REPORT)" --output "$(BACKUP_RESTORE_PACK_REPORT)"
 
 crash-fault-check:
 	scripts/crash_fault_check.sh "$(CRASH_FAULT_ROOT)" "$(CRASH_FAULT_REPORT)"

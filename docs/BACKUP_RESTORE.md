@@ -19,6 +19,7 @@ make backup-drill-check
 make backup-offsite-check
 make backup-rpo-rto-profile-check
 make encrypted-backup-check
+make encrypted-backup-rotation-check
 make backup-restore-production-pack-check
 ```
 
@@ -183,6 +184,16 @@ fail-safe behavior:
 target/encrypted-backup/report.json
 ```
 
+`make encrypted-backup-rotation-check` is the repeatable passphrase-rotation
+MVP gate. It creates an old archive with the old passphrase, creates a new
+archive with the new passphrase, verifies both correct-key restores, verifies
+cross-key restore attempts fail safely, and verifies plaintext fixture bytes
+are hidden in both archive generations:
+
+```text
+target/encrypted-backup-rotation/report.json
+```
+
 `make backup-restore-production-pack-check` is the supported workflow gate. It
 runs local drill, offsite staging, RPO/RTO profiling, encrypted backup restore
 tests, and writes a single release artifact:
@@ -192,8 +203,9 @@ target/backup-restore-production-pack/report.json
 ```
 
 The production-pack report records the supported workflow, RPO boundary, local
-RTO profile evidence, encrypted-backup report coverage, and paths to the
-underlying drill, offsite, profile, and encrypted-backup reports.
+RTO profile evidence, encrypted-backup and encrypted-backup-rotation report
+coverage, and paths to the underlying drill, offsite, profile, encrypted-backup,
+and rotation reports.
 
 Override paths in automation when needed:
 
@@ -229,3 +241,7 @@ externally audited, or compliance-certified encryption system. KMS-backed
 envelope encryption, remote object restore, and compliance-grade custody remain
 future work documented in
 [`ENCRYPTED_BACKUPS_DESIGN.md`](ENCRYPTED_BACKUPS_DESIGN.md).
+
+Passphrase rotation is also MVP-scoped: create a fresh archive with the new
+passphrase, keep old passphrases only for retained old archives, and prove
+cross-key restore rejection with `make encrypted-backup-rotation-check`.

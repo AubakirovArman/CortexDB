@@ -10,6 +10,11 @@ import time
 from pathlib import Path
 from typing import Any
 
+from backup_restore_pack_validators import (
+    validate_encrypted_backup,
+    validate_encrypted_backup_rotation,
+)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -17,6 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--backup-offsite-report", required=True)
     parser.add_argument("--rpo-rto-profile-report")
     parser.add_argument("--encrypted-backup-report")
+    parser.add_argument("--encrypted-backup-rotation-report")
     parser.add_argument("--output", required=True)
     return parser.parse_args()
 
@@ -153,39 +159,6 @@ def validate_rpo_rto_profiles(
     }
 
 
-def validate_encrypted_backup(
-    report: dict[str, Any] | None, errors: list[str]
-) -> dict[str, Any]:
-    if report is None:
-        errors.append("encrypted backup report missing")
-        return {}
-    require(report.get("status") == "ok", "encrypted backup status is not ok", errors)
-    require(
-        report.get("plaintext_hidden") is True,
-        "encrypted backup plaintext hiding evidence missing",
-        errors,
-    )
-    require(
-        report.get("wrong_passphrase_rejected") is True,
-        "encrypted backup wrong-passphrase rejection missing",
-        errors,
-    )
-    require(
-        report.get("corrupt_ciphertext_rejected") is True,
-        "encrypted backup corrupt-ciphertext rejection missing",
-        errors,
-    )
-    return {
-        "archive_path": report.get("archive_path"),
-        "backup_duration_ms": report.get("backup_duration_ms"),
-        "restore_duration_ms": report.get("restore_duration_ms"),
-        "plaintext_hidden": report.get("plaintext_hidden"),
-        "wrong_passphrase_rejected": report.get("wrong_passphrase_rejected"),
-        "corrupt_ciphertext_rejected": report.get("corrupt_ciphertext_rejected"),
-        "boundary": report.get("boundary"),
-    }
-
-
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     started_ms = int(time.time() * 1000)
     drill_path = Path(args.backup_drill_report)
@@ -207,6 +180,15 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         load_json(encrypted_path) if encrypted_path else None,
         errors,
     )
+    encrypted_rotation_path = (
+        Path(args.encrypted_backup_rotation_report)
+        if args.encrypted_backup_rotation_report
+        else None
+    )
+    encrypted_rotation_summary = validate_encrypted_backup_rotation(
+        load_json(encrypted_rotation_path) if encrypted_rotation_path else None,
+        errors,
+    )
     finished_ms = int(time.time() * 1000)
     return {
         "status": "ok" if not errors else "failed",
@@ -220,6 +202,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 str(rpo_rto_profile_path) if rpo_rto_profile_path else None
             ),
             "encrypted_backup_report": str(encrypted_path) if encrypted_path else None,
+            "encrypted_backup_rotation_report": (
+                str(encrypted_rotation_path) if encrypted_rotation_path else None
+            ),
         },
         "supported_workflow": [
             "backup",
@@ -229,6 +214,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "backup-offsite-stage",
             "backup-encrypted",
             "restore-encrypted",
+            "encrypted-backup-rotation",
         ],
         "rpo_boundary": {
             "strict_wal": "acknowledged writes are intended durable when local fsync succeeds",
@@ -249,6 +235,17 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 "wrong passphrase rejection",
                 "corrupt ciphertext rejection",
                 "CLI backup-encrypted/restore-encrypted roundtrip",
+            ],
+        },
+        "encrypted_backup_rotation_evidence": {
+            "gate": "make encrypted-backup-rotation-check",
+            "report": encrypted_rotation_summary,
+            "covers": [
+                "old archive decrypts with old passphrase",
+                "new archive decrypts with new passphrase",
+                "old archive rejects new passphrase",
+                "new archive rejects old passphrase",
+                "rotated archive plaintext hiding",
             ],
         },
         "errors": errors,
