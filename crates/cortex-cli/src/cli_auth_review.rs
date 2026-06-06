@@ -21,6 +21,9 @@ struct AuthReviewRecord {
     role: String,
     agent_id: Option<u64>,
     request_quota_per_minute: Option<u64>,
+    body_quota_bytes_per_minute: Option<u64>,
+    queue_quota: Option<u64>,
+    context_budget_tokens: Option<u32>,
     capabilities: Option<Vec<String>>,
     tenants: Option<Vec<String>>,
     disabled: bool,
@@ -54,6 +57,12 @@ struct AuthPolicyPrincipal {
     disabled: bool,
     #[serde(default)]
     request_quota_per_minute: Option<u64>,
+    #[serde(default)]
+    body_quota_bytes_per_minute: Option<u64>,
+    #[serde(default)]
+    queue_quota: Option<u64>,
+    #[serde(default)]
+    context_budget_tokens: Option<u32>,
     #[serde(default)]
     capabilities: Option<Vec<String>>,
     #[serde(default)]
@@ -123,7 +132,16 @@ fn load_policy_store(path: &str) -> Result<Vec<AuthReviewRecord>, String> {
         }
         validate_role(&principal.role)?;
         validate_agent_id(principal.agent_id)?;
-        validate_quota(principal.request_quota_per_minute)?;
+        validate_u64_quota(
+            principal.request_quota_per_minute,
+            "request_quota_per_minute",
+        )?;
+        validate_u64_quota(
+            principal.body_quota_bytes_per_minute,
+            "body_quota_bytes_per_minute",
+        )?;
+        validate_u64_quota(principal.queue_quota, "queue_quota")?;
+        validate_u32_quota(principal.context_budget_tokens, "context_budget_tokens")?;
         let capabilities = validate_capabilities(principal.capabilities)?;
         let tenants = validate_tenants(principal.tenants)?;
         records.push(AuthReviewRecord {
@@ -133,6 +151,9 @@ fn load_policy_store(path: &str) -> Result<Vec<AuthReviewRecord>, String> {
             role: principal.role.trim().to_ascii_lowercase(),
             agent_id: principal.agent_id,
             request_quota_per_minute: principal.request_quota_per_minute,
+            body_quota_bytes_per_minute: principal.body_quota_bytes_per_minute,
+            queue_quota: principal.queue_quota,
+            context_budget_tokens: principal.context_budget_tokens,
             capabilities,
             tenants,
             disabled: principal.disabled,
@@ -216,6 +237,9 @@ fn parse_token_entry(
         role: parts[0].trim().to_ascii_lowercase(),
         agent_id,
         request_quota_per_minute: None,
+        body_quota_bytes_per_minute: None,
+        queue_quota: None,
+        context_budget_tokens: None,
         capabilities: None,
         tenants: None,
         disabled: false,
@@ -248,11 +272,20 @@ fn validate_agent_id(agent_id: Option<u64>) -> Result<(), String> {
     Ok(())
 }
 
-fn validate_quota(quota: Option<u64>) -> Result<(), String> {
+fn validate_u64_quota(quota: Option<u64>, field: &str) -> Result<(), String> {
     if matches!(quota, Some(0)) {
-        return Err(
-            "auth token policy request_quota_per_minute must be greater than zero".to_owned(),
-        );
+        return Err(format!(
+            "auth token policy {field} must be greater than zero"
+        ));
+    }
+    Ok(())
+}
+
+fn validate_u32_quota(quota: Option<u32>, field: &str) -> Result<(), String> {
+    if matches!(quota, Some(0)) {
+        return Err(format!(
+            "auth token policy {field} must be greater than zero"
+        ));
     }
     Ok(())
 }
@@ -322,7 +355,7 @@ fn format_plain(response: &AuthReviewResponse) -> String {
     )];
     for record in &response.records {
         lines.push(format!(
-            "record source={} line={} principal={} role={} active={} disabled={} agent_id={} quota_per_minute={} capabilities={} tenants={} token_redacted={}",
+            "record source={} line={} principal={} role={} active={} disabled={} agent_id={} quota_per_minute={} body_quota_bytes_per_minute={} queue_quota={} context_budget_tokens={} capabilities={} tenants={} token_redacted={}",
             record.source,
             record
                 .source_line
@@ -338,6 +371,18 @@ fn format_plain(response: &AuthReviewResponse) -> String {
                 .unwrap_or_else(|| "-".to_owned()),
             record
                 .request_quota_per_minute
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "-".to_owned()),
+            record
+                .body_quota_bytes_per_minute
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "-".to_owned()),
+            record
+                .queue_quota
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "-".to_owned()),
+            record
+                .context_budget_tokens
                 .map(|value| value.to_string())
                 .unwrap_or_else(|| "-".to_owned()),
             record

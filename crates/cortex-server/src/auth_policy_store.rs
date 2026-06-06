@@ -34,6 +34,8 @@ pub(crate) struct AuthPolicyPrincipal {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) queue_quota: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) context_budget_tokens: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) capabilities: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) tenants: Option<Vec<String>>,
@@ -70,6 +72,8 @@ pub(crate) struct AuthPolicyMutationRequest {
     #[serde(default)]
     pub queue_quota: Option<u64>,
     #[serde(default)]
+    pub context_budget_tokens: Option<u32>,
+    #[serde(default)]
     pub capabilities: Option<Vec<String>>,
     #[serde(default)]
     pub tenants: Option<Vec<String>>,
@@ -105,6 +109,7 @@ struct AuthPolicyListPrincipal {
     request_quota_per_minute: Option<u64>,
     body_quota_bytes_per_minute: Option<u64>,
     queue_quota: Option<u64>,
+    context_budget_tokens: Option<u32>,
     capabilities: Vec<String>,
     tenants: Vec<String>,
     token_present: bool,
@@ -141,6 +146,9 @@ pub(crate) fn load_token_policies_from_store(
         }
         if let Some(quota) = principal.queue_quota {
             policy = policy.with_queue_quota(quota);
+        }
+        if let Some(budget) = principal.context_budget_tokens {
+            policy = policy.with_context_budget_tokens(budget);
         }
         if let Some(capabilities) = principal.capabilities {
             policy = policy.with_capabilities(parse_capabilities(&capabilities)?);
@@ -224,6 +232,7 @@ fn upsert_principal(
         request_quota_per_minute: request.request_quota_per_minute,
         body_quota_bytes_per_minute: request.body_quota_bytes_per_minute,
         queue_quota: request.queue_quota,
+        context_budget_tokens: request.context_budget_tokens,
         capabilities: request.capabilities,
         tenants: request.tenants,
     };
@@ -327,6 +336,7 @@ fn redacted_principal(
         request_quota_per_minute: principal.request_quota_per_minute,
         body_quota_bytes_per_minute: principal.body_quota_bytes_per_minute,
         queue_quota: principal.queue_quota,
+        context_budget_tokens: principal.context_budget_tokens,
         capabilities,
         tenants,
         token_present: !principal.token.trim().is_empty(),
@@ -434,6 +444,7 @@ fn migrate_v0_store(legacy: AuthPolicyStoreFileV0) -> Result<AuthPolicyStoreFile
                 request_quota_per_minute: None,
                 body_quota_bytes_per_minute: None,
                 queue_quota: None,
+                context_budget_tokens: None,
                 capabilities: None,
                 tenants: None,
             })
@@ -485,6 +496,9 @@ fn validate_principal(principal: &AuthPolicyPrincipal) -> Result<(), String> {
     }
     if matches!(principal.queue_quota, Some(0)) {
         return Err("has invalid queue_quota".to_owned());
+    }
+    if matches!(principal.context_budget_tokens, Some(0)) {
+        return Err("has invalid context_budget_tokens".to_owned());
     }
     if let Some(capabilities) = &principal.capabilities {
         parse_capabilities(capabilities)?;

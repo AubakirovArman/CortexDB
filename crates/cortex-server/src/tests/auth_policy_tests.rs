@@ -559,7 +559,7 @@ fn admin_upsert_syncs_redacted_policy_cells() {
         ..Default::default()
     };
 
-    let body = r#"{"principal_id":"data-a","token":"data-secret","role":"data","agent_id":7,"request_quota_per_minute":600,"body_quota_bytes_per_minute":2048,"queue_quota":2,"capabilities":["search","read"],"tenants":["alpha","default"]}"#;
+    let body = r#"{"principal_id":"data-a","token":"data-secret","role":"data","agent_id":7,"request_quota_per_minute":600,"body_quota_bytes_per_minute":2048,"queue_quota":2,"context_budget_tokens":500,"capabilities":["search","read"],"tenants":["alpha","default"]}"#;
     let request = post_with_body("/v1/admin/auth/principal", "admin-secret", body);
     let response = handle_http_with_options(dir.path(), &request, &options);
     assert!(
@@ -576,6 +576,7 @@ fn admin_upsert_syncs_redacted_policy_cells() {
     assert_eq!(records[0].request_quota_per_minute, Some(600));
     assert_eq!(records[0].body_quota_bytes_per_minute, Some(2048));
     assert_eq!(records[0].queue_quota, Some(2));
+    assert_eq!(records[0].context_budget_tokens, Some(500));
     assert_eq!(records[0].capabilities, vec!["read", "search"]);
     assert_eq!(records[0].tenants, vec!["alpha", "default"]);
     assert!(records[0].token_fingerprint.starts_with("fnv64:"));
@@ -591,6 +592,7 @@ fn admin_upsert_syncs_redacted_policy_cells() {
     assert_eq!(effective[0].request_quota_per_minute, Some(600));
     assert_eq!(effective[0].body_quota_bytes_per_minute, Some(2048));
     assert_eq!(effective[0].queue_quota, Some(2));
+    assert_eq!(effective[0].context_budget_tokens, Some(500));
     assert_eq!(
         effective[0].tenants.as_ref().unwrap(),
         &BTreeSet::from(["alpha".to_owned(), "default".to_owned()])
@@ -615,6 +617,7 @@ fn admin_can_list_redacted_policy_store_principals() {
               "request_quota_per_minute":600,
               "body_quota_bytes_per_minute":2048,
               "queue_quota":2,
+              "context_budget_tokens":500,
               "capabilities":["search","read"],
               "tenants":["default","alpha"]
             },
@@ -655,6 +658,7 @@ fn admin_can_list_redacted_policy_store_principals() {
     assert_eq!(value["principals"][0]["principal_id"], "data-a");
     assert_eq!(value["principals"][0]["role"], "data");
     assert_eq!(value["principals"][0]["agent_id"], 7);
+    assert_eq!(value["principals"][0]["context_budget_tokens"], 500);
     assert_eq!(
         value["principals"][0]["capabilities"],
         serde_json::json!(["read", "search"])
@@ -720,6 +724,52 @@ fn admin_can_grant_and_revoke_agent_scope() {
     let project_alpha = scope_id("project:alpha");
     assert!(!view.readable_scopes.contains(&project_alpha));
     assert!(!view.writable_scopes.contains(&project_alpha));
+}
+
+#[test]
+fn policy_store_context_budget_clamps_agent_view_context_pack_budget() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.save_agent_view(&agent_view(AgentId(7), "finance"))
+            .unwrap();
+        db.put_cell(
+            cortex_core::CellId(1),
+            b"scope=finance\nstatus=ready\nsource=doc-a\n\nfinance budget memo".to_vec(),
+        )
+        .unwrap();
+    }
+    let policy_store = dir.path().join("auth-policy.json");
+    std::fs::write(
+        &policy_store,
+        r#"{
+          "schema_version": "cortexdb.auth_policy.v1",
+          "principals": [
+            {"principal_id":"finance-agent","token":"finance-token","role":"data","agent_id":7,"context_budget_tokens":500}
+          ]
+        }"#,
+    )
+    .unwrap();
+    let options = ServerOptions {
+        auth_policy_store_file: Some(policy_store),
+        ..Default::default()
+    };
+
+    let response = handle_http_with_options(
+        dir.path(),
+        &post_with_body(
+            "/v1/context?scope=finance",
+            "finance-token",
+            "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN default;",
+        ),
+        &options,
+    );
+    assert!(
+        response.contains("200 OK"),
+        "context route should succeed: {response}"
+    );
+    let value = body_json(&response);
+    assert_eq!(value["token_budget_tokens"], 500);
 }
 
 #[test]

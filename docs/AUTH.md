@@ -58,7 +58,7 @@ cat > ./auth-policy.json <<'EOF'
   "schema_version": "cortexdb.auth_policy.v1",
   "principals": [
     {"principal_id":"admin-a","token":"root-token","role":"admin"},
-    {"principal_id":"agent-a","token":"agent-token","role":"data","agent_id":7,"request_quota_per_minute":600,"tenants":["default","alpha"]},
+    {"principal_id":"agent-a","token":"agent-token","role":"data","agent_id":7,"request_quota_per_minute":600,"context_budget_tokens":1000,"tenants":["default","alpha"]},
     {"principal_id":"old-agent","token":"disabled-token","role":"data","disabled":true}
   ]
 }
@@ -85,6 +85,8 @@ Policy-store principals may also set local fixed-window quota fields:
   window;
 - `queue_quota`: concurrent actor queue/in-flight command permits for that
   token/principal.
+- `context_budget_tokens`: maximum AQL/ContextPack context budget for a
+  principal bound to an AgentView.
 
 Quota values must be greater than zero. Raw bearer tokens are not exposed as
 quota keys; principals use `principal_id`, while static token policies use an
@@ -135,7 +137,7 @@ curl -X POST \
   -H "Authorization: Bearer root-token" \
   -H "Content-Type: application/json" \
   http://127.0.0.1:8181/v1/admin/auth/principal \
-  -d '{"principal_id":"agent-b","token":"agent-b-token","role":"data","agent_id":8,"request_quota_per_minute":600,"body_quota_bytes_per_minute":1048576,"queue_quota":2,"capabilities":["search","read"],"tenants":["default","alpha"]}'
+  -d '{"principal_id":"agent-b","token":"agent-b-token","role":"data","agent_id":8,"request_quota_per_minute":600,"body_quota_bytes_per_minute":1048576,"queue_quota":2,"context_budget_tokens":1000,"capabilities":["search","read"],"tenants":["default","alpha"]}'
 
 curl -X DELETE \
   -H "Authorization: Bearer root-token" \
@@ -154,9 +156,10 @@ external identity or enterprise compliance certification.
 After a successful mutation, the server also mirrors the effective policy
 metadata into durable redacted CortexDB cells under `_system:auth_policy`. The
 mirror is written through the database actor and records principal ID, role,
-AgentView binding, disabled state, quota, capabilities, tenant allowlist, and a
-token fingerprint. It intentionally does not store the raw bearer token in the
-cell payload; the JSON policy store remains the credential source of truth.
+AgentView binding, disabled state, quota, context budget, capabilities, tenant
+allowlist, and a token fingerprint. It intentionally does not store the raw
+bearer token in the cell payload; the JSON policy store remains the credential
+source of truth.
 
 Admins can also review the redacted policy store through HTTP:
 
@@ -350,7 +353,8 @@ local per-principal/per-token quotas:
   "role": "data",
   "request_quota_per_minute": 600,
   "body_quota_bytes_per_minute": 1048576,
-  "queue_quota": 2
+  "queue_quota": 2,
+  "context_budget_tokens": 1000
 }
 ```
 

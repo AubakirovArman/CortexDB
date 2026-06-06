@@ -194,7 +194,8 @@ CortexDB cells. The cell mirror never stores the raw bearer token.
     "agent_id": 7,
     "request_quota_per_minute": 600,
     "body_quota_bytes_per_minute": 1048576,
-    "queue_quota": 2
+    "queue_quota": 2,
+    "context_budget_tokens": 1000
   }
   ```
 
@@ -227,6 +228,7 @@ CortexDB cells. The cell mirror never stores the raw bearer token.
         "request_quota_per_minute": 600,
         "body_quota_bytes_per_minute": 1048576,
         "queue_quota": 2,
+        "context_budget_tokens": 1000,
         "capabilities": ["read", "search"],
         "tenants": ["default"],
         "token_present": true,

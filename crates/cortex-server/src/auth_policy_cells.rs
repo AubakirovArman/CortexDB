@@ -28,6 +28,7 @@ pub(crate) struct AuthPolicyCellRecord {
     pub request_quota_per_minute: Option<u64>,
     pub body_quota_bytes_per_minute: Option<u64>,
     pub queue_quota: Option<u64>,
+    pub context_budget_tokens: Option<u32>,
     pub capabilities: Vec<String>,
     pub tenants: Vec<String>,
     pub token_fingerprint: String,
@@ -117,6 +118,7 @@ pub(crate) fn effective_policy_mapping_from_cells(
             request_quota_per_minute: record.request_quota_per_minute,
             body_quota_bytes_per_minute: record.body_quota_bytes_per_minute,
             queue_quota: record.queue_quota,
+            context_budget_tokens: record.context_budget_tokens,
             capabilities: None,
             tenants: None,
         };
@@ -154,6 +156,7 @@ fn record_from_principal(
         request_quota_per_minute: principal.request_quota_per_minute,
         body_quota_bytes_per_minute: principal.body_quota_bytes_per_minute,
         queue_quota: principal.queue_quota,
+        context_budget_tokens: principal.context_budget_tokens,
         capabilities,
         tenants: principal
             .tenants

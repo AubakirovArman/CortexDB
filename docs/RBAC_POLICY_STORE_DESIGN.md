@@ -20,6 +20,9 @@ Implemented today:
   `cortexdb.auth_policy.v0` token-list shape into v1 in memory.
 - v1 policy-store principals may set `request_quota_per_minute` for a local
   per-principal fixed-window quota.
+- v1 policy-store principals may set `body_quota_bytes_per_minute`,
+  `queue_quota`, and `context_budget_tokens` for local cost guardrails. The
+  context budget clamps the bound AgentView budget for AQL/ContextPack routes.
 - v1 policy-store principals may set `capabilities` to restrict a valid role to
   specific API action classes such as `search`, `read`, `write`, `ingest`,
   `verify`, `metrics`, or `admin`. Invalid, duplicate, or empty capability

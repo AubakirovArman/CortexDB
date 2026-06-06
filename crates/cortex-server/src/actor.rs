@@ -6,12 +6,13 @@ use std::thread::JoinHandle;
 use cortex_aql::AgentId;
 use cortex_engine::{Database, DatabaseOptions, ExpiredMemoryCell};
 
+use crate::auth::AuthRouteContext;
 use crate::auth_policy_cells::{self, AuthPolicyCellSyncReport};
 use crate::auth_scope_admin::{
     apply_agent_scope_mutation, AgentScopeAccess, AgentScopeMutationResponse,
 };
 use crate::responses::RouterError;
-use crate::router::route_database_with_agent;
+use crate::router::route_database_with_auth;
 use crate::DEFAULT_ACTOR_QUEUE_CAPACITY;
 
 enum ActorCommand {
@@ -19,7 +20,7 @@ enum ActorCommand {
         method: String,
         target: String,
         body: Vec<u8>,
-        auth_agent_id: Option<u64>,
+        auth_context: AuthRouteContext,
         reply: mpsc::Sender<Result<String, RouterError>>,
     },
     ExpireMemory {
@@ -85,15 +86,15 @@ impl DatabaseActor {
                         method,
                         target,
                         body,
-                        auth_agent_id,
+                        auth_context,
                         reply,
                     } => {
-                        let result = route_database_with_agent(
+                        let result = route_database_with_auth(
                             &mut db,
                             &method,
                             &target,
                             &body,
-                            auth_agent_id,
+                            auth_context,
                         );
                         let _ = reply.send(result);
                     }
@@ -220,12 +221,27 @@ impl DatabaseActor {
         body: &[u8],
         auth_agent_id: Option<u64>,
     ) -> Result<String, RouterError> {
+        self.route_with_auth(
+            method,
+            target,
+            body,
+            AuthRouteContext::for_agent(auth_agent_id),
+        )
+    }
+
+    pub(crate) fn route_with_auth(
+        &self,
+        method: &str,
+        target: &str,
+        body: &[u8],
+        auth_context: AuthRouteContext,
+    ) -> Result<String, RouterError> {
         let (reply_tx, reply_rx) = mpsc::channel();
         self.enqueue(ActorCommand::Route {
             method: method.to_owned(),
             target: target.to_owned(),
             body: body.to_vec(),
-            auth_agent_id,
+            auth_context,
             reply: reply_tx,
         })?;
         let result = reply_rx

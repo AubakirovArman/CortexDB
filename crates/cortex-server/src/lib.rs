@@ -578,7 +578,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
         }
     }
 
-    let auth_agent_id = auth_decision.agent_id;
+    let auth_context = auth_decision.route_context();
 
     if !request_allowed_by_rate_limit(&state) {
         state.request_rejected.fetch_add(1, Ordering::Relaxed);
@@ -1022,7 +1022,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
     let body_clone = body_bytes.clone();
 
     let res = match tokio::task::spawn_blocking(move || {
-        actor.route_with_agent(&method_clone, &target_clone, &body_clone, auth_agent_id)
+        actor.route_with_auth(&method_clone, &target_clone, &body_clone, auth_context)
     })
     .await
     {

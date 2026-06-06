@@ -115,6 +115,7 @@ fingerprint, not the raw token.
   "request_quota_per_minute": 600,
   "body_quota_bytes_per_minute": 1048576,
   "queue_quota": 2,
+  "context_budget_tokens": 1000,
   "capabilities": ["search", "read"],
   "tenants": ["default", "alpha"]
 }
@@ -125,7 +126,8 @@ action classes. Omitting the field preserves the default behavior for the
 principal role. Quota fields are optional fixed-window local guards:
 `request_quota_per_minute` counts requests, `body_quota_bytes_per_minute`
 counts accepted request body bytes, and `queue_quota` limits concurrent actor
-commands for the token/principal.
+commands for the token/principal. `context_budget_tokens` clamps the bound
+AgentView's AQL/ContextPack context budget for that principal.
 
 If `tenants` is present, the principal can only access those database realms
 through the HTTP `tenant=<realm>` query parameter. Omitting it preserves the
@@ -156,6 +158,7 @@ Response:
       "request_quota_per_minute": 600,
       "body_quota_bytes_per_minute": 1048576,
       "queue_quota": 2,
+      "context_budget_tokens": 1000,
       "capabilities": ["read", "search"],
       "tenants": ["default"],
       "token_present": true,

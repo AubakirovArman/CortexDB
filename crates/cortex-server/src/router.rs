@@ -1,4 +1,4 @@
-use cortex_aql::AgentId;
+use cortex_aql::{AgentId, AgentView};
 use cortex_core::CellId;
 use cortex_engine::ClusterConfig;
 use cortex_engine::{
@@ -6,6 +6,7 @@ use cortex_engine::{
 };
 
 use crate::aql;
+use crate::auth::AuthRouteContext;
 use crate::authz;
 use crate::context;
 use crate::hnsw_profile;
@@ -37,12 +38,33 @@ pub fn route_database_with_agent(
     body: &[u8],
     auth_agent_id: Option<u64>,
 ) -> Result<String, RouterError> {
+    route_database_with_auth(
+        db,
+        method,
+        target,
+        body,
+        AuthRouteContext::for_agent(auth_agent_id),
+    )
+}
+
+pub(crate) fn route_database_with_auth(
+    db: &mut Database,
+    method: &str,
+    target: &str,
+    body: &[u8],
+    auth_context: AuthRouteContext,
+) -> Result<String, RouterError> {
     let (path, query) = target.split_once('?').unwrap_or((target, ""));
-    let authenticated_view = if is_agent_scoped_route(method, path) {
-        authz::load_agent_view(db, auth_agent_id.map(AgentId))?
+    let mut authenticated_view = if is_agent_scoped_route(method, path) {
+        authz::load_agent_view(db, auth_context.agent_id.map(AgentId))?
     } else {
         None
     };
+    if let Some(limit) = auth_context.context_budget_tokens {
+        if let Some(view) = authenticated_view.as_mut() {
+            clamp_view_context_budget(view, limit);
+        }
+    }
     match (method, path) {
         ("GET", "/v1/health") => serde_json::to_string(&HealthResponse {
             status: "ok".to_owned(),
@@ -530,6 +552,27 @@ pub fn route_shared_with_agent(
         .write()
         .map_err(|e| RouterError::Internal(e.to_string()))?;
     route_database_with_agent(&mut db, method, target, body, auth_agent_id)
+}
+
+#[cfg(test)]
+pub(crate) fn route_shared_with_auth(
+    db: &std::sync::RwLock<Database>,
+    method: &str,
+    target: &str,
+    body: &[u8],
+    auth_context: AuthRouteContext,
+) -> Result<String, RouterError> {
+    let mut db = db
+        .write()
+        .map_err(|e| RouterError::Internal(e.to_string()))?;
+    route_database_with_auth(&mut db, method, target, body, auth_context)
+}
+
+fn clamp_view_context_budget(view: &mut AgentView, limit: u32) {
+    view.max_context_budget_tokens = view.max_context_budget_tokens.min(limit);
+    view.default_context_budget_tokens = view
+        .default_context_budget_tokens
+        .min(view.max_context_budget_tokens);
 }
 
 pub fn query_param_opt<'a>(query: &'a str, key: &str) -> Option<&'a str> {

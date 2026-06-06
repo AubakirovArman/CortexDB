@@ -84,6 +84,7 @@ pub(crate) struct EffectiveAuthPolicy {
     pub request_quota_per_minute: Option<u64>,
     pub body_quota_bytes_per_minute: Option<u64>,
     pub queue_quota: Option<u64>,
+    pub context_budget_tokens: Option<u32>,
     pub capabilities: Option<BTreeSet<AuthCapability>>,
 }
 
@@ -98,6 +99,7 @@ impl EffectiveAuthPolicy {
             request_quota_per_minute: policy.request_quota_per_minute,
             body_quota_bytes_per_minute: policy.body_quota_bytes_per_minute,
             queue_quota: policy.queue_quota,
+            context_budget_tokens: policy.context_budget_tokens,
             capabilities: None,
         }
     }
@@ -124,6 +126,11 @@ impl EffectiveAuthPolicy {
 
     pub(crate) fn with_queue_quota(mut self, quota: u64) -> Self {
         self.queue_quota = Some(quota);
+        self
+    }
+
+    pub(crate) fn with_context_budget_tokens(mut self, budget: u32) -> Self {
+        self.context_budget_tokens = Some(budget);
         self
     }
 

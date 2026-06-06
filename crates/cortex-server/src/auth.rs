@@ -30,6 +30,7 @@ pub struct AuthTokenPolicy {
     pub request_quota_per_minute: Option<u64>,
     pub body_quota_bytes_per_minute: Option<u64>,
     pub queue_quota: Option<u64>,
+    pub context_budget_tokens: Option<u32>,
 }
 
 impl AuthTokenPolicy {
@@ -42,6 +43,7 @@ impl AuthTokenPolicy {
             request_quota_per_minute: None,
             body_quota_bytes_per_minute: None,
             queue_quota: None,
+            context_budget_tokens: None,
         }
     }
 
@@ -69,6 +71,26 @@ impl AuthTokenPolicy {
         self.queue_quota = Some(quota);
         self
     }
+
+    pub fn with_context_budget_tokens(mut self, budget: u32) -> Self {
+        self.context_budget_tokens = Some(budget);
+        self
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AuthRouteContext {
+    pub agent_id: Option<u64>,
+    pub context_budget_tokens: Option<u32>,
+}
+
+impl AuthRouteContext {
+    pub fn for_agent(agent_id: Option<u64>) -> Self {
+        Self {
+            agent_id,
+            context_budget_tokens: None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -81,6 +103,16 @@ pub(crate) struct AuthDecision {
     pub request_quota_per_minute: Option<u64>,
     pub body_quota_bytes_per_minute: Option<u64>,
     pub queue_quota: Option<u64>,
+    pub context_budget_tokens: Option<u32>,
+}
+
+impl AuthDecision {
+    pub(crate) fn route_context(&self) -> AuthRouteContext {
+        AuthRouteContext {
+            agent_id: self.agent_id,
+            context_budget_tokens: self.context_budget_tokens,
+        }
+    }
 }
 
 pub(crate) fn authorize_request(
@@ -102,6 +134,7 @@ pub(crate) fn authorize_request(
             request_quota_per_minute: None,
             body_quota_bytes_per_minute: None,
             queue_quota: None,
+            context_budget_tokens: None,
         });
     };
 
@@ -124,6 +157,7 @@ pub(crate) fn authorize_request(
         request_quota_per_minute: policy.request_quota_per_minute,
         body_quota_bytes_per_minute: policy.body_quota_bytes_per_minute,
         queue_quota: policy.queue_quota,
+        context_budget_tokens: policy.context_budget_tokens,
     })
 }
 
@@ -158,6 +192,11 @@ pub(crate) fn validate_token_policies(options: &ServerOptions) -> Result<(), Str
         }
         if matches!(policy.queue_quota, Some(0)) {
             return Err("auth token policy queue_quota must be greater than zero".to_owned());
+        }
+        if matches!(policy.context_budget_tokens, Some(0)) {
+            return Err(
+                "auth token policy context_budget_tokens must be greater than zero".to_owned(),
+            );
         }
     }
     Ok(())
@@ -443,6 +482,18 @@ mod tests {
               "schema_version": "cortexdb.auth_policy.v1",
               "principals": [
                 {"principal_id":"a","token":"worker","role":"data","queue_quota":0}
+              ]
+            }"#,
+        )
+        .unwrap();
+        assert!(load_auth_policy_store(&path).is_err());
+
+        std::fs::write(
+            &path,
+            r#"{
+              "schema_version": "cortexdb.auth_policy.v1",
+              "principals": [
+                {"principal_id":"a","token":"worker","role":"data","context_budget_tokens":0}
               ]
             }"#,
         )

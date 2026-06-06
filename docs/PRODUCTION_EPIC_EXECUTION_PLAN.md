@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 92 / 150
+- Done: 93 / 150
 - Partial: 1 / 150
-- Todo: 57 / 150
-- Current closed epic: Epic 92, RBAC Admin API
+- Todo: 56 / 150
+- Current closed epic: Epic 93, Per-token Quotas
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2528,14 +2528,45 @@ Boundary:
 
 ### Epic 93. Per-token Quotas
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Add request rate quota.
-- Add body size quota.
-- Add queue budget.
-- Add context budget per token.
+- Add request rate quota. Done: policy-store principals can set
+  `request_quota_per_minute`, and requests over that per-principal fixed-window
+  quota return typed `429 rate_limited`.
+- Add body size quota. Done: policy-store principals can set
+  `body_quota_bytes_per_minute`, and accepted/rejected body bytes are counted
+  per principal.
+- Add queue budget. Done: policy-store principals can set `queue_quota`, and
+  actor command permits are acquired/released per principal.
+- Add context budget per token. Done: policy-store principals can set
+  `context_budget_tokens`, which clamps the bound AgentView budget used by AQL
+  and ContextPack routes.
+
+Evidence:
+
+- `crates/cortex-server/src/auth.rs`
+- `crates/cortex-server/src/auth_capability.rs`
+- `crates/cortex-server/src/auth_policy_store.rs`
+- `crates/cortex-server/src/auth_policy_cells.rs`
+- `crates/cortex-server/src/router.rs`
+- `crates/cortex-server/src/tests/security_quota_tests.rs`
+- `crates/cortex-server/src/tests/auth_policy_tests.rs`
+- `crates/cortex-cli/src/cli_auth_review.rs`
+- `crates/cortex-cli/src/cli_auth_review_tests.rs`
+- `docs/AUTH.md`
+- `docs/API.md`
+- `docs/API_JSON_SCHEMAS.md`
+- `docs/openapi.yaml`
+- `make quota-policy-check`
+
+Boundary:
+
+- Quotas are local fixed-window/process-local guardrails. They are not
+  distributed global quotas and reset on process restart.
+- `context_budget_tokens` applies when the principal is bound to an AgentView;
+  it clamps that AgentView rather than replacing AgentView policy.
 
 ### Epic 94. Future Tamper-evident Audit Log
 

@@ -2,10 +2,10 @@ use std::path::Path;
 
 use cortex_engine::Database;
 
-use crate::router::query_param_opt_decoded;
+use crate::router::{query_param_opt_decoded, route_shared_with_auth};
 use crate::{
     auth, auth_policy_cells, auth_policy_store, auth_scope_admin, dashboard, json_error,
-    json_response, llm, route_shared_with_agent, validate_tenant_id, ErrorCode, ServerOptions,
+    json_response, llm, validate_tenant_id, ErrorCode, ServerOptions,
 };
 
 fn serve_dashboard() -> String {
@@ -167,12 +167,12 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
         return json_error(500, ErrorCode::Internal, "failed to open database");
     };
     let db = std::sync::RwLock::new(db);
-    match route_shared_with_agent(
+    match route_shared_with_auth(
         &db,
         parts[0],
         parts[1],
         body.as_bytes(),
-        auth_decision.agent_id,
+        auth_decision.route_context(),
     ) {
         Ok(value) => json_response(200, &value),
         Err(error) => json_error(error.status_code(), error.code(), &error.to_string()),

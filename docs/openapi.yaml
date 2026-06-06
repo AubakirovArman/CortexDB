@@ -1181,6 +1181,10 @@ components:
           type: integer
           format: uint64
           minimum: 1
+        context_budget_tokens:
+          type: integer
+          format: uint32
+          minimum: 1
         capabilities:
           type: array
           items:
@@ -1246,6 +1250,7 @@ components:
       - request_quota_per_minute
       - body_quota_bytes_per_minute
       - queue_quota
+      - context_budget_tokens
       - capabilities
       - tenants
       - token_present
@@ -1282,6 +1287,12 @@ components:
           anyOf:
           - type: integer
             format: uint64
+            minimum: 1
+          - type: 'null'
+        context_budget_tokens:
+          anyOf:
+          - type: integer
+            format: uint32
             minimum: 1
           - type: 'null'
         capabilities:

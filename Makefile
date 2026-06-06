@@ -907,8 +907,10 @@ rbac-policy-store-check:
 
 quota-policy-check:
 	cargo test -p cortex-server security_quota_tests
+	cargo test -p cortex-server policy_store_context_budget_clamps_agent_view_context_pack_budget
 	cargo test -p cortex-server rate_limit_returns_typed_429_when_enabled
 	cargo test -p cortex-cli auth_review_rejects_zero_quota
+	cargo test -p cortex-cli auth_review_rejects_zero_context_budget
 	python3 scripts/enterprise_rbac_gate_check.py --gate quota-policy --report "$(QUOTA_POLICY_REPORT)"
 
 audit-chain-check:
