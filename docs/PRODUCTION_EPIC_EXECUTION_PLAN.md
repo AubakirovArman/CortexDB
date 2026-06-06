@@ -97,7 +97,7 @@ Evidence:
 - `target/release-evidence-bundle/report.json`
 - `target/release-evidence-bundle/release-evidence.tar.gz`
 - `target/release-evidence-bundle/release-evidence.tar.gz.sha256`
-- Latest local bundle report: `status=passed`, `artifact_count=25`
+- Latest local bundle report: `status=passed`, `artifact_count=23`
 
 Tasks:
 
@@ -106,19 +106,18 @@ Tasks:
 
 ### Epic 5. Release Manifest Verifier
 
-Status: partial
+Status: done
 
 Evidence:
 
 - `docs/RELEASE_ARTIFACT_MANIFEST.md`
 - `scripts/release_artifact_manifest_check.py`
 - `make release-artifact-manifest-check`
-
-Remaining:
-
-- Bind the release evidence bundle checksum into the manifest.
-- Include explicit SDK versions.
-- Include storage format versions.
+- `make release-artifact-manifest-production-check`
+- `target/release-artifact-manifest/manifest.json`
+- `target/release-artifact-manifest/report.json`
+- Latest production manifest report: `status=passed`, `artifact_count=15`
+- Manifest includes release evidence bundle checksum, SDK versions, and 7 storage format versions.
 
 Tasks:
 

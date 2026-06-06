@@ -1,4 +1,4 @@
-.PHONY: release-artifact-manifest-check release-evidence-bundle-check
+.PHONY: release-artifact-manifest-check release-artifact-manifest-production-check release-evidence-bundle-check
 .PHONY: encrypted-backup-check
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
@@ -867,6 +867,9 @@ install-script-check:
 
 release-artifact-manifest-check:
 	python3 scripts/release_artifact_manifest_check.py --version "$(BINARY_RELEASE_VERSION)" --binary-archive "$(BINARY_RELEASE_ARCHIVE)" --manifest "$(RELEASE_ARTIFACT_MANIFEST)" --report "$(RELEASE_ARTIFACT_MANIFEST_REPORT)"
+
+release-artifact-manifest-production-check:
+	python3 scripts/release_artifact_manifest_check.py --version "$(BINARY_RELEASE_VERSION)" --binary-archive "$(BINARY_RELEASE_ARCHIVE)" --evidence-bundle "$(RELEASE_EVIDENCE_BUNDLE_ARCHIVE)" --require-evidence-bundle --manifest "$(RELEASE_ARTIFACT_MANIFEST)" --report "$(RELEASE_ARTIFACT_MANIFEST_REPORT)"
 
 release-evidence-bundle-check:
 	python3 scripts/release_evidence_bundle.py --root "$(RELEASE_EVIDENCE_BUNDLE_ROOT)" --manifest "$(RELEASE_EVIDENCE_BUNDLE_MANIFEST)" --report "$(RELEASE_EVIDENCE_BUNDLE_REPORT)" --archive "$(RELEASE_EVIDENCE_BUNDLE_ARCHIVE)" --binary-archive "$(BINARY_RELEASE_ARCHIVE)"
@@ -2824,7 +2827,6 @@ alpha-check:
 
 release-check: alpha-check
 	$(MAKE) binary-release-check
-	$(MAKE) release-artifact-manifest-check
 	$(MAKE) production-evidence-sweep
 	$(MAKE) backup-offsite-check
 	$(MAKE) crash-fault-check
@@ -2833,6 +2835,7 @@ release-check: alpha-check
 	$(MAKE) smoke-test
 	$(MAKE) sdk-smoke-test
 	$(MAKE) release-evidence-bundle-check
+	$(MAKE) release-artifact-manifest-production-check
 	@echo "=== Release check passed ==="
 
 demo:

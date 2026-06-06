@@ -29,8 +29,6 @@ class ArtifactSpec:
 
 REQUIRED_ARTIFACTS: tuple[ArtifactSpec, ...] = (
     ArtifactSpec("production_evidence", "release", "target/production-evidence/report.json"),
-    ArtifactSpec("release_artifact_manifest", "release", "target/release-artifact-manifest/manifest.json", validate_report=False),
-    ArtifactSpec("release_artifact_manifest_report", "release", "target/release-artifact-manifest/report.json"),
     ArtifactSpec("sdk_e2e_release", "sdk", "target/sdk-e2e-release/report.json"),
     ArtifactSpec("sdk_release_artifacts", "sdk", "target/sdk-release-artifacts/report.json"),
     ArtifactSpec("sdk_registry_gate", "sdk", "target/sdk-registry-gate/report.json"),

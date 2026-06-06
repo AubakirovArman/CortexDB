@@ -31,6 +31,10 @@ OPTIONAL_ARTIFACTS = [
 ]
 
 
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -54,7 +58,7 @@ def file_entry(repo: Path, kind: str, relative: str, *, required: bool = True) -
 
 
 def read_json(path: Path) -> dict[str, Any]:
-    value = json.loads(path.read_text(encoding="utf-8"))
+    value = json.loads(read_text(path))
     if not isinstance(value, dict):
         raise ValueError(f"{path}: expected object")
     return value
@@ -72,11 +76,61 @@ def git_value(repo: Path, command: list[str]) -> str:
 
 
 def openapi_version(path: Path) -> str:
-    text = path.read_text(encoding="utf-8")
+    text = read_text(path)
     match = re.search(r"(?m)^\s*version:\s*['\"]?([^'\"\n]+)", text)
     if not match:
         raise ValueError("docs/openapi.yaml: info.version not found")
     return match.group(1).strip()
+
+
+def toml_version(path: Path, fallback: str | None = None) -> str:
+    text = read_text(path)
+    if "version.workspace = true" in text and fallback is not None:
+        return fallback
+    match = re.search(r"(?m)^\s*version\s*=\s*\"([^\"]+)\"", text)
+    if not match:
+        raise ValueError(f"{path}: version not found")
+    return match.group(1)
+
+
+def package_json_version(path: Path) -> str:
+    value = json.loads(read_text(path))
+    version = value.get("version")
+    if not isinstance(version, str) or not version:
+        raise ValueError(f"{path}: version not found")
+    return version
+
+
+def sdk_versions(repo: Path) -> dict[str, Any]:
+    workspace_version = toml_version(repo / "Cargo.toml")
+    versions = {
+        "workspace": workspace_version,
+        "rust": {"name": "cortex-sdk", "version": toml_version(repo / "crates/cortex-sdk/Cargo.toml", workspace_version), "manifest": "crates/cortex-sdk/Cargo.toml"},
+        "python": {"name": "cortexdb-client", "version": toml_version(repo / "sdk/python/pyproject.toml"), "manifest": "sdk/python/pyproject.toml"},
+        "typescript": {"name": "@cortexdb/client", "version": package_json_version(repo / "sdk/typescript/package.json"), "manifest": "sdk/typescript/package.json"},
+        "source": "sdk/release-manifest.json",
+    }
+    package_versions = [versions["rust"]["version"], versions["python"]["version"], versions["typescript"]["version"]]
+    if any(version != workspace_version for version in package_versions):
+        raise ValueError(f"SDK versions do not match workspace version {workspace_version}: {package_versions}")
+    return versions
+
+
+def storage_format_versions(repo: Path) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    table = read_text(repo / "docs/STORAGE_FORMATS.md").splitlines()
+    for line in table:
+        if not line.startswith("| ") or "Magic" in line or "---" in line:
+            continue
+        cells = [cell.strip().strip("`") for cell in line.strip("|").split("|")]
+        if len(cells) < 4:
+            continue
+        name, file_extension, magic, version_state = cells[:4]
+        if file_extension.startswith("."):
+            rows.append({"name": name, "file_extension": file_extension, "magic": magic, "version_state": version_state, "source": "docs/STORAGE_FORMATS.md"})
+    if len(rows) < 7:
+        raise ValueError("docs/STORAGE_FORMATS.md: expected at least 7 storage format rows")
+    return rows
 
 
 def verify_sidecar_checksum(archive: Path) -> dict[str, Any]:
@@ -94,6 +148,21 @@ def verify_sidecar_checksum(archive: Path) -> dict[str, Any]:
     }
 
 
+def evidence_bundle_entry(repo: Path, relative: str, required: bool) -> list[dict[str, Any]]:
+    archive = repo / relative
+    if not archive.is_file():
+        if required:
+            raise FileNotFoundError(relative)
+        return []
+    sidecar = verify_sidecar_checksum(archive)
+    archive_entry = file_entry(repo, "release_evidence_bundle", relative)
+    assert archive_entry is not None
+    archive_entry["sidecar"] = sidecar
+    sidecar_entry = file_entry(repo, "release_evidence_bundle_sha256", str(Path(relative + ".sha256")))
+    assert sidecar_entry is not None
+    return [archive_entry, sidecar_entry]
+
+
 def binary_package_manifest(archive: Path) -> dict[str, Any]:
     with tarfile.open(archive, "r:gz") as tar:
         names = tar.getnames()
@@ -108,13 +177,7 @@ def binary_package_manifest(archive: Path) -> dict[str, Any]:
         manifest = json.loads(member.read().decode("utf-8"))
     if manifest.get("schema_version") != 1:
         raise ValueError("binary package_manifest.json: unsupported schema")
-    return {
-        "package_id": manifest.get("package_id"),
-        "version": manifest.get("version"),
-        "platform": manifest.get("platform"),
-        "file_count": len(manifest.get("files", [])),
-        "binaries": manifest.get("binaries", []),
-    }
+    return {"package_id": manifest.get("package_id"), "version": manifest.get("version"), "platform": manifest.get("platform"), "file_count": len(manifest.get("files", [])), "binaries": manifest.get("binaries", [])}
 
 
 def report_entry(repo: Path, name: str, relative: str) -> dict[str, Any]:
@@ -155,6 +218,7 @@ def build_manifest(args: argparse.Namespace) -> dict[str, Any]:
         entry = file_entry(repo, kind, relative, required=False)
         if entry is not None:
             artifacts.append(entry)
+    artifacts.extend(evidence_bundle_entry(repo, args.evidence_bundle, args.require_evidence_bundle))
 
     return {
         "schema_version": "cortexdb.release_artifact_manifest.v1",
@@ -169,6 +233,8 @@ def build_manifest(args: argparse.Namespace) -> dict[str, Any]:
             "version": openapi_version(openapi_path),
             "sha256": sha256_file(openapi_path),
         },
+        "sdk_versions": sdk_versions(repo),
+        "storage_format_versions": storage_format_versions(repo),
         "artifact_count": len(artifacts),
         "artifacts": artifacts,
         "required_reports": [name for name, _ in REQUIRED_REPORTS],
@@ -179,6 +245,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", default="dev")
     parser.add_argument("--binary-archive", default="target/release-artifacts/cortexdb-dev-linux-x86_64.tar.gz")
+    parser.add_argument("--evidence-bundle", default="target/release-evidence-bundle/release-evidence.tar.gz")
+    parser.add_argument("--require-evidence-bundle", action="store_true")
     parser.add_argument("--manifest", default="target/release-artifact-manifest/manifest.json")
     parser.add_argument("--report", default="target/release-artifact-manifest/report.json")
     return parser.parse_args(argv)

@@ -100,13 +100,23 @@ Latest local bundle result:
 
 ```text
 status=passed
-artifact_count=25
+artifact_count=23
 archive_sha256_sidecar=target/release-evidence-bundle/release-evidence.tar.gz.sha256
 ```
 
 This archive is local release evidence packaging. It still does not prove a
 production distributed database, managed cloud readiness, enterprise compliance
 certification, legal-grade verification, or unrestricted HNSW without fallback.
+
+The final release artifact manifest gate is:
+
+```bash
+make release-artifact-manifest-production-check
+```
+
+It binds the release evidence bundle checksum into
+`target/release-artifact-manifest/manifest.json` and records explicit SDK
+versions plus the storage format version inventory from `docs/STORAGE_FORMATS.md`.
 
 ## Public Release Artifact Audit
 
