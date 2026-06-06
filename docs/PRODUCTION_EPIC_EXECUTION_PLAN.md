@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 29 / 150
+- Done: 30 / 150
 - Partial: 1 / 150
-- Todo: 120 / 150
-- Current closed epic: Epic 29, Engine Feature Flags
+- Todo: 119 / 150
+- Current closed epic: Epic 30, Engine Module Ownership
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -754,12 +754,28 @@ Boundary:
 
 ### Epic 30. Engine Module Ownership
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Maintain `MODULE_OWNERSHIP.md`.
+- Maintain `MODULE_OWNERSHIP.md`. Done: the document now defines stable
+  facades, required ownership areas, top-level `cortex-engine` module owners,
+  cross-crate boundaries, and review checklists.
 - Define owners for storage, search, context, verify, ingestion, and server.
+  Done: the required ownership matrix covers storage, search, context, verify,
+  ingestion, server, CLI, and SDK owners with required gates.
+
+Evidence:
+
+- `docs/MODULE_OWNERSHIP.md`
+- `scripts/module_ownership_check.py`
+- `make module-ownership-check`
+- `make engine-api-check`
+
+Boundary:
+
+- This epic documents and gates module ownership. It does not yet enforce Rust
+  visibility or dependency boundaries; that is Epic 31.
 
 ### Epic 31. Engine Internal Boundary Audit
 
