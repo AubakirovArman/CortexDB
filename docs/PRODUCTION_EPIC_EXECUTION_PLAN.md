@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 90 / 150
+- Done: 91 / 150
 - Partial: 1 / 150
-- Todo: 59 / 150
-- Current closed epic: Epic 90, Ingestion Deduplication
+- Todo: 58 / 150
+- Current closed epic: Epic 91, Dynamic RBAC Policy Store
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2455,15 +2455,37 @@ Acceptance: security moves from alpha controls to beta/production-governed contr
 
 ### Epic 91. Dynamic RBAC Policy Store
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-server/src/auth_policy_store.rs`
+- `crates/cortex-server/src/auth.rs`
+- `crates/cortex-server/src/auth_capability.rs`
+- `crates/cortex-server/src/auth_policy_cells.rs`
+- `crates/cortex-cli/src/cli_auth_review.rs`
+- `crates/cortex-server/src/tests/auth_policy_tests.rs`
+- `crates/cortex-cli/src/cli_auth_review_tests.rs`
+- `docs/AUTH.md`
+- `docs/API_JSON_SCHEMAS.md`
+- `docs/RBAC_POLICY_STORE_DESIGN.md`
+- `make rbac-policy-store-check`
 
 Tasks:
 
-- Add roles.
-- Add grants.
-- Add token mapping.
-- Add scope read/write.
-- Add tenant policy.
+- Add roles. Done: dynamic policy-store principals support `admin` and `data`
+  roles and fail closed for unknown roles.
+- Add grants. Done: `capabilities` restrict principals to explicit API action
+  classes such as `search`, `read`, `write`, `ingest`, and `verify`.
+- Add token mapping. Done: policy-store principals map bearer tokens to
+  principal IDs, roles, optional AgentView IDs, quotas, capabilities, disabled
+  state, and redacted policy-cell mirrors.
+- Add scope read/write. Done: policy-store principals can bind to persisted
+  AgentViews, and AgentView readable/writable scopes are enforced on data
+  routes.
+- Add tenant policy. Done: policy-store principals may set `tenants` allowlists;
+  invalid tenant policies fail closed and disallowed tenant requests return
+  `403`.
 
 ### Epic 92. RBAC Admin API
 

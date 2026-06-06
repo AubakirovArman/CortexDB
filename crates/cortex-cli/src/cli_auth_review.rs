@@ -22,6 +22,7 @@ struct AuthReviewRecord {
     agent_id: Option<u64>,
     request_quota_per_minute: Option<u64>,
     capabilities: Option<Vec<String>>,
+    tenants: Option<Vec<String>>,
     disabled: bool,
     active: bool,
     token_present: bool,
@@ -55,6 +56,8 @@ struct AuthPolicyPrincipal {
     request_quota_per_minute: Option<u64>,
     #[serde(default)]
     capabilities: Option<Vec<String>>,
+    #[serde(default)]
+    tenants: Option<Vec<String>>,
 }
 
 pub(crate) fn review(options: AuthReviewOptions<'_>) -> Result<String, String> {
@@ -122,6 +125,7 @@ fn load_policy_store(path: &str) -> Result<Vec<AuthReviewRecord>, String> {
         validate_agent_id(principal.agent_id)?;
         validate_quota(principal.request_quota_per_minute)?;
         let capabilities = validate_capabilities(principal.capabilities)?;
+        let tenants = validate_tenants(principal.tenants)?;
         records.push(AuthReviewRecord {
             source: path.to_owned(),
             source_line: Some(index + 1),
@@ -130,6 +134,7 @@ fn load_policy_store(path: &str) -> Result<Vec<AuthReviewRecord>, String> {
             agent_id: principal.agent_id,
             request_quota_per_minute: principal.request_quota_per_minute,
             capabilities,
+            tenants,
             disabled: principal.disabled,
             active: !principal.disabled,
             token_present: true,
@@ -212,6 +217,7 @@ fn parse_token_entry(
         agent_id,
         request_quota_per_minute: None,
         capabilities: None,
+        tenants: None,
         disabled: false,
         active: true,
         token_present: true,
@@ -275,6 +281,37 @@ fn validate_capabilities(raw: Option<Vec<String>>) -> Result<Option<Vec<String>>
     Ok(Some(normalized))
 }
 
+fn validate_tenants(raw: Option<Vec<String>>) -> Result<Option<Vec<String>>, String> {
+    let Some(values) = raw else {
+        return Ok(None);
+    };
+    if values.is_empty() {
+        return Err("auth policy tenants must not be empty".to_owned());
+    }
+    let mut seen = BTreeSet::new();
+    let mut normalized = Vec::new();
+    for value in values {
+        let tenant = value.trim();
+        if !validate_tenant_id(tenant) {
+            return Err("auth policy tenant is invalid".to_owned());
+        }
+        if !seen.insert(tenant.to_owned()) {
+            return Err("auth policy tenant is duplicated".to_owned());
+        }
+        normalized.push(tenant.to_owned());
+    }
+    Ok(Some(normalized))
+}
+
+fn validate_tenant_id(tenant: &str) -> bool {
+    if tenant.is_empty() || tenant.len() > 64 {
+        return false;
+    }
+    tenant
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+}
+
 fn format_plain(response: &AuthReviewResponse) -> String {
     let mut lines = vec![format!(
         "auth_policy_records={} active_records={} disabled_records={} token_redaction=\"{}\"",
@@ -285,7 +322,7 @@ fn format_plain(response: &AuthReviewResponse) -> String {
     )];
     for record in &response.records {
         lines.push(format!(
-            "record source={} line={} principal={} role={} active={} disabled={} agent_id={} quota_per_minute={} capabilities={} token_redacted={}",
+            "record source={} line={} principal={} role={} active={} disabled={} agent_id={} quota_per_minute={} capabilities={} tenants={} token_redacted={}",
             record.source,
             record
                 .source_line
@@ -305,6 +342,11 @@ fn format_plain(response: &AuthReviewResponse) -> String {
                 .unwrap_or_else(|| "-".to_owned()),
             record
                 .capabilities
+                .as_ref()
+                .map(|values| values.join(","))
+                .unwrap_or_else(|| "-".to_owned()),
+            record
+                .tenants
                 .as_ref()
                 .map(|values| values.join(","))
                 .unwrap_or_else(|| "-".to_owned()),

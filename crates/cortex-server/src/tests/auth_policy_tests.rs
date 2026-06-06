@@ -388,6 +388,36 @@ fn auth_policy_store_invalid_capability_fails_closed() {
 }
 
 #[test]
+fn auth_policy_store_invalid_tenant_fails_closed() {
+    let dir = tempfile::tempdir().unwrap();
+    let policy_store = dir.path().join("auth-policy.json");
+    std::fs::write(
+        &policy_store,
+        r#"{
+          "schema_version": "cortexdb.auth_policy.v1",
+          "principals": [
+            {"principal_id":"bad","token":"bad-token","role":"data","tenants":["../escape"]}
+          ]
+        }"#,
+    )
+    .unwrap();
+    let options = ServerOptions {
+        auth_policy_store_file: Some(policy_store),
+        ..Default::default()
+    };
+
+    let denied = handle_http_with_options(
+        dir.path(),
+        "GET /v1/health HTTP/1.1\r\nAuthorization: Bearer bad-token\r\n\r\n",
+        &options,
+    );
+    assert!(
+        !denied.contains("200 OK"),
+        "invalid tenant policy store must fail closed: {denied}"
+    );
+}
+
+#[test]
 fn auth_policy_store_invalid_json_fails_closed() {
     let dir = tempfile::tempdir().unwrap();
     let policy_store = dir.path().join("auth-policy.json");
@@ -529,11 +559,9 @@ fn admin_upsert_syncs_redacted_policy_cells() {
         ..Default::default()
     };
 
-    let response = handle_http_with_options(
-        dir.path(),
-        "POST /v1/admin/auth/principal HTTP/1.1\r\nAuthorization: Bearer admin-secret\r\ncontent-length: 217\r\n\r\n{\"principal_id\":\"data-a\",\"token\":\"data-secret\",\"role\":\"data\",\"agent_id\":7,\"request_quota_per_minute\":600,\"body_quota_bytes_per_minute\":2048,\"queue_quota\":2,\"capabilities\":[\"search\",\"read\"]}",
-        &options,
-    );
+    let body = r#"{"principal_id":"data-a","token":"data-secret","role":"data","agent_id":7,"request_quota_per_minute":600,"body_quota_bytes_per_minute":2048,"queue_quota":2,"capabilities":["search","read"],"tenants":["alpha","default"]}"#;
+    let request = post_with_body("/v1/admin/auth/principal", "admin-secret", body);
+    let response = handle_http_with_options(dir.path(), &request, &options);
     assert!(
         response.contains("200 OK"),
         "admin policy mutation should sync cells: {response}"
@@ -549,6 +577,7 @@ fn admin_upsert_syncs_redacted_policy_cells() {
     assert_eq!(records[0].body_quota_bytes_per_minute, Some(2048));
     assert_eq!(records[0].queue_quota, Some(2));
     assert_eq!(records[0].capabilities, vec!["read", "search"]);
+    assert_eq!(records[0].tenants, vec!["alpha", "default"]);
     assert!(records[0].token_fingerprint.starts_with("fnv64:"));
     assert!(!serde_json::to_string(&records)
         .unwrap()
@@ -562,7 +591,55 @@ fn admin_upsert_syncs_redacted_policy_cells() {
     assert_eq!(effective[0].request_quota_per_minute, Some(600));
     assert_eq!(effective[0].body_quota_bytes_per_minute, Some(2048));
     assert_eq!(effective[0].queue_quota, Some(2));
+    assert_eq!(
+        effective[0].tenants.as_ref().unwrap(),
+        &BTreeSet::from(["alpha".to_owned(), "default".to_owned()])
+    );
     assert!(effective[0].token.starts_with("fnv64:"));
+}
+
+#[test]
+fn auth_policy_store_tenants_restrict_database_realms() {
+    let dir = tempfile::tempdir().unwrap();
+    let policy_store = dir.path().join("auth-policy.json");
+    std::fs::write(
+        &policy_store,
+        r#"{
+          "schema_version": "cortexdb.auth_policy.v1",
+          "principals": [
+            {"principal_id":"alpha-data","token":"alpha-secret","role":"data","tenants":["alpha"]}
+          ]
+        }"#,
+    )
+    .unwrap();
+    let options = ServerOptions {
+        auth_policy_store_file: Some(policy_store),
+        ..Default::default()
+    };
+
+    let allowed = handle_http_with_options(
+        dir.path(),
+        "GET /v1/health?tenant=alpha HTTP/1.1\r\nAuthorization: Bearer alpha-secret\r\n\r\n",
+        &options,
+    );
+    assert!(
+        allowed.contains("200 OK"),
+        "tenant allowlist should allow alpha realm: {allowed}"
+    );
+
+    let denied = handle_http_with_options(
+        dir.path(),
+        "GET /v1/health?tenant=beta HTTP/1.1\r\nAuthorization: Bearer alpha-secret\r\n\r\n",
+        &options,
+    );
+    assert!(
+        denied.contains("403 Forbidden"),
+        "tenant allowlist should deny beta realm: {denied}"
+    );
+    assert!(
+        denied.contains("token tenant policy is not allowed"),
+        "denial should explain tenant policy: {denied}"
+    );
 }
 
 #[test]
@@ -706,6 +783,13 @@ fn admin_and_data_options() -> ServerOptions {
 fn body_json(response: &str) -> Value {
     let (_, body) = response.split_once("\r\n\r\n").unwrap();
     serde_json::from_str(body).unwrap()
+}
+
+fn post_with_body(path: &str, token: &str, body: &str) -> String {
+    format!(
+        "POST {path} HTTP/1.1\r\nAuthorization: Bearer {token}\r\ncontent-length: {}\r\n\r\n{body}",
+        body.len()
+    )
 }
 
 fn agent_view(agent_id: AgentId, scope: &str) -> AgentView {

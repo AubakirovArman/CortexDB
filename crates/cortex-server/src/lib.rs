@@ -837,6 +837,25 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
         )
             .into_response(), &request_id);
     }
+    if !auth::tenant_can_access(&auth_decision, &tenant) {
+        audit_http_response(
+            &state,
+            &audit_event,
+            StatusCode::FORBIDDEN,
+            Some(ErrorCode::Forbidden),
+        );
+        return with_request_id(
+            (
+                StatusCode::FORBIDDEN,
+                Json(error_response(
+                    ErrorCode::Forbidden,
+                    "token tenant policy is not allowed to access this tenant",
+                )),
+            )
+                .into_response(),
+            &request_id,
+        );
+    }
     let db = match state.get_db(&tenant) {
         Ok(db) => db,
         Err(e) => {

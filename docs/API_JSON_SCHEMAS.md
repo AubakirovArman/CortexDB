@@ -101,8 +101,8 @@ Admin-only local policy-store lifecycle routes. They require
 `CORTEXDB_AUTH_POLICY_STORE_FILE` and do not expose bearer token values in
 responses. Successful mutations also sync a redacted durable policy-cell mirror
 under the local `_system:auth_policy` scope; the mirror stores role, AgentView
-binding, quota, capabilities, disabled state, and token fingerprint, not the raw
-token.
+binding, quota, capabilities, tenant allowlist, disabled state, and token
+fingerprint, not the raw token.
 
 `POST /v1/admin/auth/principal`
 
@@ -115,7 +115,8 @@ token.
   "request_quota_per_minute": 600,
   "body_quota_bytes_per_minute": 1048576,
   "queue_quota": 2,
-  "capabilities": ["search", "read"]
+  "capabilities": ["search", "read"],
+  "tenants": ["default", "alpha"]
 }
 ```
 
@@ -125,6 +126,11 @@ principal role. Quota fields are optional fixed-window local guards:
 `request_quota_per_minute` counts requests, `body_quota_bytes_per_minute`
 counts accepted request body bytes, and `queue_quota` limits concurrent actor
 commands for the token/principal.
+
+If `tenants` is present, the principal can only access those database realms
+through the HTTP `tenant=<realm>` query parameter. Omitting it preserves the
+default all-tenant local behavior. Invalid, duplicate, or empty tenant lists
+fail closed.
 
 `DELETE /v1/admin/auth/principal?principal_id=agent-a`
 

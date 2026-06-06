@@ -9,7 +9,7 @@ fn auth_review_redacts_policy_store_tokens() {
           "schema_version": "cortexdb.auth_policy.v1",
           "principals": [
             {"principal_id":"admin-a","token":"root-secret-token","role":"admin"},
-            {"principal_id":"agent-a","token":"agent-secret-token","role":"data","agent_id":7,"request_quota_per_minute":600,"capabilities":["search","read"]},
+            {"principal_id":"agent-a","token":"agent-secret-token","role":"data","agent_id":7,"request_quota_per_minute":600,"capabilities":["search","read"],"tenants":["default","alpha"]},
             {"principal_id":"old-agent","token":"disabled-secret-token","role":"data","disabled":true}
           ]
         }"#,
@@ -30,6 +30,7 @@ fn auth_review_redacts_policy_store_tokens() {
     assert!(output.contains("agent_id=7"));
     assert!(output.contains("quota_per_minute=600"));
     assert!(output.contains("capabilities=search,read"));
+    assert!(output.contains("tenants=default,alpha"));
     assert!(output.contains("principal=old-agent role=data active=false disabled=true"));
     assert!(!output.contains("root-secret-token"));
     assert!(!output.contains("agent-secret-token"));
@@ -60,6 +61,33 @@ fn auth_review_rejects_invalid_capability() {
     ])
     .unwrap_err();
     assert!(error.contains("capability is not recognized"));
+    assert!(!error.contains("agent-secret-token"));
+
+    let _ = std::fs::remove_file(path);
+}
+
+#[test]
+fn auth_review_rejects_invalid_tenant() {
+    let path = unique_path("cortexdb-auth-review-invalid-tenant.json");
+    std::fs::write(
+        &path,
+        r#"{
+          "schema_version": "cortexdb.auth_policy.v1",
+          "principals": [
+            {"principal_id":"agent-a","token":"agent-secret-token","role":"data","tenants":["tenant:alpha"]}
+          ]
+        }"#,
+    )
+    .unwrap();
+
+    let error = run(vec![
+        "cortexdb".to_owned(),
+        "auth-review".to_owned(),
+        "--policy-store".to_owned(),
+        path.to_string_lossy().into_owned(),
+    ])
+    .unwrap_err();
+    assert!(error.contains("auth policy tenant is invalid"));
     assert!(!error.contains("agent-secret-token"));
 
     let _ = std::fs::remove_file(path);

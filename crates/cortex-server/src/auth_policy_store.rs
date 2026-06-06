@@ -3,7 +3,7 @@ use crate::auth_capability::{AuthCapability, EffectiveAuthPolicy};
 use crate::auth_policy_io::{atomic_write_text, rollback_path};
 use crate::responses::RouterError;
 use crate::router::query_param_decoded;
-use crate::ServerOptions;
+use crate::{validate_tenant_id, ServerOptions};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::fs;
@@ -35,6 +35,8 @@ pub(crate) struct AuthPolicyPrincipal {
     pub(crate) queue_quota: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) capabilities: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) tenants: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -69,6 +71,8 @@ pub(crate) struct AuthPolicyMutationRequest {
     pub queue_quota: Option<u64>,
     #[serde(default)]
     pub capabilities: Option<Vec<String>>,
+    #[serde(default)]
+    pub tenants: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -113,6 +117,9 @@ pub(crate) fn load_token_policies_from_store(
         }
         if let Some(capabilities) = principal.capabilities {
             policy = policy.with_capabilities(parse_capabilities(&capabilities)?);
+        }
+        if let Some(tenants) = principal.tenants {
+            policy = policy.with_tenants(parse_tenants(&tenants)?);
         }
         policies.push(policy);
     }
@@ -170,6 +177,7 @@ fn upsert_principal(
         body_quota_bytes_per_minute: request.body_quota_bytes_per_minute,
         queue_quota: request.queue_quota,
         capabilities: request.capabilities,
+        tenants: request.tenants,
     };
     validate_principal(&principal).map_err(RouterError::BadRequest)?;
     if let Some(existing) = store
@@ -325,6 +333,7 @@ fn migrate_v0_store(legacy: AuthPolicyStoreFileV0) -> Result<AuthPolicyStoreFile
                 body_quota_bytes_per_minute: None,
                 queue_quota: None,
                 capabilities: None,
+                tenants: None,
             })
             .collect(),
     })
@@ -378,6 +387,9 @@ fn validate_principal(principal: &AuthPolicyPrincipal) -> Result<(), String> {
     if let Some(capabilities) = &principal.capabilities {
         parse_capabilities(capabilities)?;
     }
+    if let Some(tenants) = &principal.tenants {
+        parse_tenants(tenants)?;
+    }
     Ok(())
 }
 
@@ -393,6 +405,23 @@ pub(crate) fn parse_capabilities(raw: &[String]) -> Result<BTreeSet<AuthCapabili
         }
     }
     Ok(capabilities)
+}
+
+pub(crate) fn parse_tenants(raw: &[String]) -> Result<BTreeSet<String>, String> {
+    if raw.is_empty() {
+        return Err("has empty tenants".to_owned());
+    }
+    let mut tenants = BTreeSet::new();
+    for value in raw {
+        let tenant = value.trim();
+        if !validate_tenant_id(tenant) {
+            return Err("has invalid tenant".to_owned());
+        }
+        if !tenants.insert(tenant.to_owned()) {
+            return Err("has duplicate tenant".to_owned());
+        }
+    }
+    Ok(tenants)
 }
 
 fn parse_role(raw: &str) -> Result<AuthRole, String> {

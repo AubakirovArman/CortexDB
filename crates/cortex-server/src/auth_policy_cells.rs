@@ -29,6 +29,7 @@ pub(crate) struct AuthPolicyCellRecord {
     pub body_quota_bytes_per_minute: Option<u64>,
     pub queue_quota: Option<u64>,
     pub capabilities: Vec<String>,
+    pub tenants: Vec<String>,
     pub token_fingerprint: String,
 }
 
@@ -117,10 +118,17 @@ pub(crate) fn effective_policy_mapping_from_cells(
             body_quota_bytes_per_minute: record.body_quota_bytes_per_minute,
             queue_quota: record.queue_quota,
             capabilities: None,
+            tenants: None,
         };
         if !record.capabilities.is_empty() {
             policy = policy.with_capabilities(
                 auth_policy_store::parse_capabilities(&record.capabilities)
+                    .map_err(RouterError::BadRequest)?,
+            );
+        }
+        if !record.tenants.is_empty() {
+            policy = policy.with_tenants(
+                auth_policy_store::parse_tenants(&record.tenants)
                     .map_err(RouterError::BadRequest)?,
             );
         }
@@ -147,6 +155,12 @@ fn record_from_principal(
         body_quota_bytes_per_minute: principal.body_quota_bytes_per_minute,
         queue_quota: principal.queue_quota,
         capabilities,
+        tenants: principal
+            .tenants
+            .as_deref()
+            .map(canonical_tenants)
+            .transpose()?
+            .unwrap_or_default(),
         token_fingerprint: token_fingerprint(&principal.token),
     })
 }
@@ -156,6 +170,13 @@ fn canonical_capabilities(raw: &[String]) -> Result<Vec<String>, RouterError> {
     Ok(parsed
         .into_iter()
         .map(|capability| capability.as_str().to_owned())
+        .collect())
+}
+
+fn canonical_tenants(raw: &[String]) -> Result<Vec<String>, RouterError> {
+    Ok(auth_policy_store::parse_tenants(raw)
+        .map_err(RouterError::BadRequest)?
+        .into_iter()
         .collect())
 }
 

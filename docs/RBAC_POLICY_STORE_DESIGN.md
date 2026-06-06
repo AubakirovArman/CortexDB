@@ -24,13 +24,16 @@ Implemented today:
   specific API action classes such as `search`, `read`, `write`, `ingest`,
   `verify`, `metrics`, or `admin`. Invalid, duplicate, or empty capability
   lists fail closed.
+- v1 policy-store principals may set `tenants` to restrict a valid principal
+  to specific HTTP tenant realms. Invalid, duplicate, or empty tenant lists fail
+  closed. Omitting `tenants` preserves the current all-tenant local behavior.
 - Admin-only local endpoints can upsert principals, disable principals, and
   roll back the last local policy-store mutation.
 - Every successful admin policy-store mutation is mirrored through the
   tenant-local `DatabaseActor` into redacted durable `_system:auth_policy`
   cells. These cells store principal ID, role, AgentView binding, disabled
-  state, quota, capabilities, and a token fingerprint, but never the raw bearer
-  token.
+  state, quota, capabilities, tenant allowlist, and a token fingerprint, but
+  never the raw bearer token.
 - Local audit JSONL records include chain metadata and can be verified by CLI.
 
 Not implemented in Core Alpha:
@@ -55,6 +58,7 @@ over the current route roles:
 Principal
 -> RoleBinding
 -> AgentView binding
+-> Tenant allowlist
 -> Scope permissions
 -> Route class permissions
 -> Action capability restrictions

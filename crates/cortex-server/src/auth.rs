@@ -76,6 +76,7 @@ pub(crate) struct AuthDecision {
     pub agent_id: Option<u64>,
     pub role: Option<AuthRole>,
     pub principal_id: Option<String>,
+    pub tenants: Option<std::collections::BTreeSet<String>>,
     pub quota_key: Option<String>,
     pub request_quota_per_minute: Option<u64>,
     pub body_quota_bytes_per_minute: Option<u64>,
@@ -96,6 +97,7 @@ pub(crate) fn authorize_request(
             agent_id: None,
             role: None,
             principal_id: None,
+            tenants: None,
             quota_key: None,
             request_quota_per_minute: None,
             body_quota_bytes_per_minute: None,
@@ -117,11 +119,19 @@ pub(crate) fn authorize_request(
         agent_id: policy.agent_id,
         role: Some(policy.role),
         principal_id: policy.principal_id.clone(),
+        tenants: policy.tenants.clone(),
         quota_key: Some(policy.quota_key()),
         request_quota_per_minute: policy.request_quota_per_minute,
         body_quota_bytes_per_minute: policy.body_quota_bytes_per_minute,
         queue_quota: policy.queue_quota,
     })
+}
+
+pub(crate) fn tenant_can_access(decision: &AuthDecision, tenant: &str) -> bool {
+    match &decision.tenants {
+        Some(tenants) => tenants.contains(tenant),
+        None => true,
+    }
 }
 
 pub(crate) fn validate_token_policies(options: &ServerOptions) -> Result<(), String> {

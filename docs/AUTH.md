@@ -58,7 +58,7 @@ cat > ./auth-policy.json <<'EOF'
   "schema_version": "cortexdb.auth_policy.v1",
   "principals": [
     {"principal_id":"admin-a","token":"root-token","role":"admin"},
-    {"principal_id":"agent-a","token":"agent-token","role":"data","agent_id":7,"request_quota_per_minute":600},
+    {"principal_id":"agent-a","token":"agent-token","role":"data","agent_id":7,"request_quota_per_minute":600,"tenants":["default","alpha"]},
     {"principal_id":"old-agent","token":"disabled-token","role":"data","disabled":true}
   ]
 }
@@ -96,6 +96,13 @@ valid role to selected API action classes. Supported values are `admin`, `aql`,
 `search`, `verify`, and `write`. Omitting `capabilities` preserves the default
 role behavior. An empty, duplicate, or unknown capability fails closed.
 
+Policy-store principals may also set `tenants` to restrict which database
+realms the token can access. Omitting `tenants` preserves the default
+all-tenant local behavior. When present, the list must contain one or more safe
+tenant IDs using the same validation as the HTTP `tenant=<realm>` query
+parameter. Empty lists, duplicate tenants, and path-like or scope-like tenant
+values fail closed.
+
 Roles:
 
 - `admin`: can access all authenticated API routes, including stats, validate,
@@ -128,7 +135,7 @@ curl -X POST \
   -H "Authorization: Bearer root-token" \
   -H "Content-Type: application/json" \
   http://127.0.0.1:8181/v1/admin/auth/principal \
-  -d '{"principal_id":"agent-b","token":"agent-b-token","role":"data","agent_id":8,"request_quota_per_minute":600,"body_quota_bytes_per_minute":1048576,"queue_quota":2,"capabilities":["search","read"]}'
+  -d '{"principal_id":"agent-b","token":"agent-b-token","role":"data","agent_id":8,"request_quota_per_minute":600,"body_quota_bytes_per_minute":1048576,"queue_quota":2,"capabilities":["search","read"],"tenants":["default","alpha"]}'
 
 curl -X DELETE \
   -H "Authorization: Bearer root-token" \
@@ -147,9 +154,9 @@ external identity or enterprise compliance certification.
 After a successful mutation, the server also mirrors the effective policy
 metadata into durable redacted CortexDB cells under `_system:auth_policy`. The
 mirror is written through the database actor and records principal ID, role,
-AgentView binding, disabled state, quota, capabilities, and a token fingerprint.
-It intentionally does not store the raw bearer token in the cell payload; the
-JSON policy store remains the credential source of truth.
+AgentView binding, disabled state, quota, capabilities, tenant allowlist, and a
+token fingerprint. It intentionally does not store the raw bearer token in the
+cell payload; the JSON policy store remains the credential source of truth.
 
 ## Sending Requests with Auth
 

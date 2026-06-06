@@ -80,6 +80,7 @@ pub(crate) struct EffectiveAuthPolicy {
     pub role: AuthRole,
     pub agent_id: Option<u64>,
     pub principal_id: Option<String>,
+    pub tenants: Option<BTreeSet<String>>,
     pub request_quota_per_minute: Option<u64>,
     pub body_quota_bytes_per_minute: Option<u64>,
     pub queue_quota: Option<u64>,
@@ -93,6 +94,7 @@ impl EffectiveAuthPolicy {
             role: policy.role,
             agent_id: policy.agent_id,
             principal_id: policy.principal_id,
+            tenants: None,
             request_quota_per_minute: policy.request_quota_per_minute,
             body_quota_bytes_per_minute: policy.body_quota_bytes_per_minute,
             queue_quota: policy.queue_quota,
@@ -107,6 +109,11 @@ impl EffectiveAuthPolicy {
 
     pub(crate) fn with_request_quota_per_minute(mut self, quota: u64) -> Self {
         self.request_quota_per_minute = Some(quota);
+        self
+    }
+
+    pub(crate) fn with_tenants(mut self, tenants: BTreeSet<String>) -> Self {
+        self.tenants = Some(tenants);
         self
     }
 

@@ -2,9 +2,10 @@ use std::path::Path;
 
 use cortex_engine::Database;
 
+use crate::router::query_param_opt_decoded;
 use crate::{
     auth, auth_policy_cells, auth_policy_store, dashboard, json_error, json_response, llm,
-    route_shared_with_agent, ErrorCode, ServerOptions,
+    route_shared_with_agent, validate_tenant_id, ErrorCode, ServerOptions,
 };
 
 fn serve_dashboard() -> String {
@@ -113,6 +114,22 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
                 &error.error.to_string(),
             ),
         };
+    }
+
+    let tenant = query_param_opt_decoded(query, "tenant").unwrap_or_else(|| "default".to_owned());
+    if !validate_tenant_id(&tenant) {
+        return json_error(
+            400,
+            ErrorCode::InvalidTenant,
+            "invalid tenant ID structure. Only alphanumeric, '_', and '-' up to 64 characters are allowed.",
+        );
+    }
+    if !auth::tenant_can_access(&auth_decision, &tenant) {
+        return json_error(
+            403,
+            ErrorCode::Forbidden,
+            "token tenant policy is not allowed to access this tenant",
+        );
     }
 
     let Ok(db) = open_database(root, options) else {
