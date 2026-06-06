@@ -89,6 +89,27 @@
                 </section>
                 <section class="report-panel" aria-labelledby="audit-report-title">
                     <h3 id="audit-report-title">Audit readiness</h3>
+                    <form id="audit-filter-form" class="grid compact-form" action="/dashboard" method="get">
+                        <div class="field">
+                            <label for="audit-filter-category">Category filter</label>
+                            <select id="audit-filter-category" name="audit_category">
+                                <option value="all">All categories</option>
+                                <option value="readiness">Readiness</option>
+                                <option value="hash_chain">Hash chain</option>
+                                <option value="redaction">Redaction</option>
+                                <option value="access">Access</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="audit-filter-severity">Severity filter</label>
+                            <select id="audit-filter-severity" name="audit_severity">
+                                <option value="all">All severities</option>
+                                <option value="info">Info</option>
+                                <option value="warn">Warn</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+                    </form>
                     <div id="audit-report" class="report-stack" aria-live="polite">
                         <div class="metric"><span>Status</span><strong>Audit</strong></div>
                     </div>

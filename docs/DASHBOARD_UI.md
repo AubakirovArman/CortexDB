@@ -40,10 +40,11 @@ availability, request latency, backup freshness, validation status, and error
 budget from the same status checks used by the operational panel. The SLO block
 uses `dashboard_slo.v1` as its browser-side schema so release checks can verify
 that all five operator signals remain visible.
-The Overview route includes an Audit readiness panel that keeps incident review
+The Overview route includes an Audit Viewer v2 panel that keeps incident review
 operators on the safe path: audit logs remain file-backed, raw audit events are
-not rendered in the browser, and the panel points operators to the CLI
-redaction-check workflow.
+not rendered in the browser, filters apply only to safe audit posture events,
+and the panel points operators to the CLI hash-chain verification and
+redaction-check workflows.
 
 ### Single-node SLO Dashboard
 
@@ -63,6 +64,24 @@ answer five questions before maintenance or release evidence collection:
 `make single-node-slo-dashboard-check` validates the dashboard source wiring for
 these fields. `make dashboard-product-check` also includes the SLO dashboard
 markers, so the panel cannot disappear from release UI evidence unnoticed.
+
+### Audit Viewer v2
+
+The Audit Viewer v2 is a browser-side operator posture view, not a raw audit log
+reader. It adds four safe review surfaces:
+
+- filters for safe audit event category and severity;
+- summary cards for visible events, warnings, hash-chain status, redaction
+  status, and raw-log visibility;
+- hash-chain verification guidance through
+  `cortexdb audit verify --file $CORTEXDB_AUDIT_LOG_FILE`;
+- redaction status showing that query, body, and bearer token values are hidden
+  in the dashboard, with `cortexdb audit --summary --redaction-check` as the
+  release evidence gate.
+
+`make audit-viewer-v2-check` validates the dashboard source wiring for these
+markers. Raw audit events remain a CLI/export workflow so the browser cannot
+accidentally expose sensitive request content.
 
 ### Operational Status View
 

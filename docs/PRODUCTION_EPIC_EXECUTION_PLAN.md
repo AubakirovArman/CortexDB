@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 115 / 150
+- Done: 116 / 150
 - Partial: 1 / 150
-- Todo: 34 / 150
-- Current closed epic: Epic 115, Permissions View
+- Todo: 33 / 150
+- Current closed epic: Epic 116, Audit Viewer v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3215,14 +3215,25 @@ Tasks:
 
 ### Epic 116. Audit Viewer v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `web/dashboard/src/reporting_audit.js`
+- `scripts/audit_viewer_v2_check.py`
+- `make audit-viewer-v2-check`
 
 Tasks:
 
-- Add filters.
-- Add summary.
-- Add hash-chain verification.
-- Show redaction status.
+- Add filters. Done: the Overview audit panel includes safe category and
+  severity filters.
+- Add summary. Done: visible event, warning, hash-chain, redaction, and raw-log
+  visibility cards render from `dashboard_audit_viewer.v2`.
+- Add hash-chain verification. Done: the panel shows the CLI verification
+  command and keeps raw audit JSONL out of the browser.
+- Show redaction status. Done: query, body, and token visibility are explicitly
+  false in the viewer state and rendered as browser-redacted status.
+- Evidence gate. Done: `make audit-viewer-v2-check`.
 
 ### Epic 117. Ingestion Jobs View
 

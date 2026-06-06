@@ -67,10 +67,15 @@ REQUIRED_MARKERS = {
     ],
     "audit_readiness": [
         ("web/dashboard/src/index.html", "id=\"audit-report\""),
+        ("web/dashboard/src/index.html", "id=\"audit-filter-category\""),
+        ("web/dashboard/src/index.html", "id=\"audit-filter-severity\""),
         ("web/dashboard/src/index.html", "data-action=\"audit-readiness\""),
-        ("web/dashboard/src/reporting_audit.js", "dashboard_audit_readiness.v1"),
+        ("web/dashboard/src/reporting_audit.js", "dashboard_audit_viewer.v2"),
         ("web/dashboard/src/reporting_audit.js", "renderAuditReadiness"),
-        ("docs/DASHBOARD_UI.md", "Audit readiness"),
+        ("web/dashboard/src/reporting_audit.js", "hash_chain_verification"),
+        ("web/dashboard/src/reporting_audit.js", "redaction_status"),
+        ("web/dashboard/src/reporting_audit.js", "filtered_events"),
+        ("docs/DASHBOARD_UI.md", "Audit Viewer v2"),
     ],
     "permissions_view": [
         ("web/dashboard/src/index.html", "href=\"/dashboard/permissions\""),

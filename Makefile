@@ -14,7 +14,7 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
-.PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check dashboard-operational-status-check context-pack-explorer-check verification-explorer-check retrieval-quality-explorer-check permissions-view-check
+.PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check dashboard-operational-status-check context-pack-explorer-check verification-explorer-check retrieval-quality-explorer-check permissions-view-check audit-viewer-v2-check
 .PHONY: doctor-check
 .PHONY: metrics-contract-v2-check
 .PHONY: service-manager-smoke-check
@@ -275,6 +275,7 @@ CONTEXT_PACK_EXPLORER_REPORT ?= target/dashboard/context-pack-explorer-report.js
 VERIFICATION_EXPLORER_REPORT ?= target/dashboard/verification-explorer-report.json
 RETRIEVAL_QUALITY_EXPLORER_REPORT ?= target/dashboard/retrieval-quality-explorer-report.json
 PERMISSIONS_VIEW_REPORT ?= target/dashboard/permissions-view-report.json
+AUDIT_VIEWER_V2_REPORT ?= target/dashboard/audit-viewer-v2-report.json
 BINARY_RELEASE_PLATFORM ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')-$(shell uname -m)
 BINARY_RELEASE_VERSION ?= dev
 BINARY_RELEASE_ID ?= cortexdb-$(BINARY_RELEASE_VERSION)-$(BINARY_RELEASE_PLATFORM)
@@ -2761,6 +2762,9 @@ retrieval-quality-explorer-check:
 
 permissions-view-check: dashboard-standalone-smoke
 	python3 scripts/permissions_view_check.py --report "$(PERMISSIONS_VIEW_REPORT)"
+
+audit-viewer-v2-check: dashboard-standalone-smoke
+	python3 scripts/audit_viewer_v2_check.py --report "$(AUDIT_VIEWER_V2_REPORT)"
 
 ingestion-job-dashboard-check: dashboard-standalone-smoke
 	cargo test -p cortex-server dashboard_
