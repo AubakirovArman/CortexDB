@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 39 / 150
+- Done: 40 / 150
 - Partial: 1 / 150
-- Todo: 110 / 150
-- Current closed epic: Epic 39, AQL Compatibility Changelog
+- Todo: 109 / 150
+- Current closed epic: Epic 40, AQL Query Cache
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1077,12 +1077,27 @@ Tasks:
 
 ### Epic 40. AQL Query Cache
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/query/cache.rs`
+- `Database::aql_query_cache_stats`
+- `crates/cortex-engine/tests/aql_query_cache.rs`
+- `crates/cortex-engine/tests/public_api.rs`
+- `fixtures/engine/public_api_freeze_v1.json`
+- `cargo test -p cortex-engine --test aql_query_cache`
+- `cargo test -p cortex-engine --test public_api`
+- `make engine-api-check`
 
 Tasks:
 
-- Add parse/bind cache.
-- Invalidate by AgentView/catalog version.
+- Add parse/bind cache. Done: `Database::bind_aql_cached` caches owned
+  `BoundPlan` values after parse+bind misses and reuses them for repeated
+  `RETRIEVE`, `EXPLAIN RETRIEVE`, `VERIFY FACT`, and `REMEMBER` calls.
+- Invalidate by AgentView/catalog version. Done: cache keys include an
+  `AgentView` fingerprint and the cache clears entries when the catalog
+  fingerprint changes through commit sequence or manifest/live-segment changes.
 
 ### Epic 41. AQL Require Semantics v1
 

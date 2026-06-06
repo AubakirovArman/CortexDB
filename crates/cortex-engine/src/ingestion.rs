@@ -1,8 +1,9 @@
-use cortex_aql::{parse_aql, AgentId, AgentView, Binder, BoundPlan, BoundRememberPlan, MemoryType};
+use cortex_aql::{AgentId, AgentView, BoundPlan, BoundRememberPlan, MemoryType};
 use cortex_core::{CellId, CommitSeq, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
+use crate::query::cache::AqlStatementKind;
 
 mod adapters;
 mod cells;
@@ -91,10 +92,11 @@ impl Database {
     /// assert!(result.is_ok(), "{}", result.unwrap_err());
     /// ```
     pub fn remember_aql(&mut self, aql: &str, view: &AgentView) -> EngineResult<RememberedCell> {
-        let statement = parse_aql(aql).map_err(|error| EngineError::AqlParse(error.to_string()))?;
-        let index = self.try_aql_index()?;
-        let bound = Binder::new(&index, view).bind_statement(&statement)?;
-        let BoundPlan::Remember(plan) = bound else {
+        let (cached, _) = self.bind_aql_cached(aql, view)?;
+        if cached.statement_kind != AqlStatementKind::Remember {
+            return Err(EngineError::InvalidOperation);
+        }
+        let BoundPlan::Remember(plan) = cached.bound_plan else {
             return Err(EngineError::InvalidOperation);
         };
         let BoundRememberPlan {

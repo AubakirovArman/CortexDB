@@ -105,8 +105,8 @@ pub use options::{
     DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
 };
 pub use query::{
-    scope_id, AqlCandidateCounts, AqlExplainFilter, AqlExplainReport, CandidateId, CellMetadata,
-    EngineAqlIndex,
+    scope_id, AqlCandidateCounts, AqlExplainFilter, AqlExplainReport, AqlQueryCacheStats,
+    CandidateId, CellMetadata, EngineAqlIndex,
 };
 pub use repair::RepairReport;
 pub use replay::{

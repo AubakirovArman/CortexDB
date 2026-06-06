@@ -1,9 +1,10 @@
-use cortex_aql::{parse_aql, AgentView, Binder, BoundPlan, Q16};
+use cortex_aql::{AgentView, BoundPlan, Q16};
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::ingestion::IngestedCell;
+use crate::query::cache::AqlStatementKind;
 use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
 use crate::source_trust::{SourceTrust, SourceTrustCategory};
@@ -144,10 +145,11 @@ impl Database {
     /// assert_eq!(report.fact, "budget is approved");
     /// ```
     pub fn verify_fact_aql(&self, aql: &str, view: &AgentView) -> EngineResult<VerificationReport> {
-        let statement = parse_aql(aql).map_err(|error| EngineError::AqlParse(error.to_string()))?;
-        let index = self.try_aql_index()?;
-        let bound = Binder::new(&index, view).bind_statement(&statement)?;
-        let BoundPlan::VerifyFact(plan) = bound else {
+        let (cached, _) = self.bind_aql_cached(aql, view)?;
+        if cached.statement_kind != AqlStatementKind::VerifyFact {
+            return Err(EngineError::InvalidOperation);
+        }
+        let BoundPlan::VerifyFact(plan) = cached.bound_plan else {
             return Err(EngineError::InvalidOperation);
         };
         let mut evidence = Vec::new();

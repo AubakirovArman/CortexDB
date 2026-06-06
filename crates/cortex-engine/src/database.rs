@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use cortex_aql::{eval_bitmap_program, BitmapProvider, BoundRetrievePlan, QualityThresholds};
 use cortex_core::memtable::{CellVersion, MemTable, ReadTxn};
@@ -18,6 +19,7 @@ use crate::operation::{
 use crate::options::{
     DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
 };
+use crate::query::cache::AqlQueryCache;
 use crate::query::CellMetadata;
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
 use crate::search::HnswBuildConfig;
@@ -39,6 +41,7 @@ pub struct Database {
     pub(crate) durability_mode: DurabilityMode,
     pub(crate) hnsw_build_config: HnswBuildConfig,
     pub(crate) feature_flags: EngineFeatureFlags,
+    pub(crate) aql_query_cache: Mutex<AqlQueryCache>,
     pub(crate) _lock: DatabaseLock,
     closed: bool,
 }
@@ -142,6 +145,7 @@ impl Database {
             durability_mode: options.durability_mode,
             hnsw_build_config: options.hnsw_build_config.normalized(),
             feature_flags: options.feature_flags,
+            aql_query_cache: Mutex::new(AqlQueryCache::default()),
             _lock: lock,
             closed: false,
         };

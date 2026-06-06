@@ -62,6 +62,7 @@ The central entrypoints are:
 - `Database::compact`;
 - `Database::validate_storage`;
 - `Database::storage_stats`;
+- `Database::aql_query_cache_stats`;
 - `Database::backup_path`;
 - `Database::restore_from_backup`;
 - `Database::repair_best_effort`;
@@ -88,6 +89,7 @@ The stable root-level types currently frozen are:
 - `RepairReport`;
 - `BackupReport`, `RestoreReport`;
 - `RetrievedCell`, `CheckpointStats`;
+- `AqlQueryCacheStats`;
 - `CandidateId`, `EngineAqlIndex`.
 
 The stable API boundary is source-level Rust compatibility for local embedded

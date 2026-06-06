@@ -1,13 +1,15 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+pub(crate) mod cache;
 mod candidates;
 mod catalog;
 mod explain;
 pub(crate) mod metadata;
 mod metadata_validation;
 mod provider;
+mod render;
 
-use cortex_aql::{parse_aql, AgentView, Binder, BitmapHandle, BoundPlan, BrainId};
+use cortex_aql::{AgentView, BitmapHandle, BoundPlan, BrainId};
 use cortex_core::memtable::CellVersion;
 use cortex_core::{CellId, CommitSeq};
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
@@ -15,6 +17,7 @@ use cortex_storage::segment::SegmentCell;
 
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
+pub use cache::AqlQueryCacheStats;
 use candidates::{
     candidate_from_ordinal, increment_candidate, next_candidate_after, reverse_candidate_map,
     validate_candidate,
@@ -64,10 +67,11 @@ impl Database {
     }
 
     pub fn retrieve_aql(&self, aql: &str, view: &AgentView) -> EngineResult<Vec<RetrievedCell>> {
-        let statement = parse_aql(aql).map_err(|error| EngineError::AqlParse(error.to_string()))?;
-        let index = self.try_aql_index()?;
-        let bound = Binder::new(&index, view).bind_statement(&statement)?;
-        match bound {
+        let (cached, index) = self.bind_aql_cached(aql, view)?;
+        if cached.statement_kind != cache::AqlStatementKind::Retrieve {
+            return Err(EngineError::InvalidOperation);
+        }
+        match cached.bound_plan {
             BoundPlan::Retrieve(plan) => {
                 let provider = EngineAqlProvider::new(index, view);
                 self.retrieve_cells(&plan, &provider)

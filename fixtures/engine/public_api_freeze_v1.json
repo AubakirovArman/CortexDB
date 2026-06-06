@@ -24,6 +24,7 @@
     "RestoreReport",
     "RetrievedCell",
     "CheckpointStats",
+    "AqlQueryCacheStats",
     "CandidateId",
     "EngineAqlIndex",
     "EngineErrorCode",
