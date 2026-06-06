@@ -17,24 +17,10 @@ use crate::context::{
 use crate::{manifest, wal};
 
 fn fmt_engine_error(e: EngineError) -> String {
-    match e {
-        EngineError::DatabaseAlreadyOpen(_) => e.to_string(),
-        EngineError::StorageInvariant(_) | EngineError::MissingStorageFile(_) => {
-            format!("{e}\n  → try: cortexdb repair <path>")
-        }
-        EngineError::AqlParse(_) | EngineError::AqlBind(_) => {
-            format!("{e}\n  → check AQL syntax in docs/AQL.md")
-        }
-        EngineError::InvalidOperation => {
-            format!("{e}\n  → ensure the database path exists and is valid")
-        }
-        EngineError::Io(ref io) if io.kind() == std::io::ErrorKind::NotFound => {
-            format!("{e}\n  → check that the database directory exists")
-        }
-        EngineError::Io(ref io) if io.kind() == std::io::ErrorKind::PermissionDenied => {
-            format!("{e}\n  → check file permissions for the database directory")
-        }
-        _ => e.to_string(),
+    let message = e.to_string();
+    match e.cli_hint() {
+        Some(hint) => format!("{message}\n  -> {hint}"),
+        None => message,
     }
 }
 

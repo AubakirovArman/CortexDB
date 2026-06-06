@@ -23,6 +23,8 @@ use cortex_engine::{
     DbOperation,
     EngineAqlIndex,
     EngineError,
+    EngineErrorCategory,
+    EngineErrorCode,
     EngineResult,
     RecoveryMode,
     RepairReport,
@@ -65,6 +67,7 @@ The stable root-level types currently frozen are:
 
 - `Database`, `DatabaseOptions`, `RecoveryMode`, `StaleLockPolicy`;
 - `EngineError`, `EngineResult`;
+- `EngineErrorCode`, `EngineErrorCategory`;
 - `DbOperation`;
 - `ContextPack`, `ContextPackOptions`;
 - `StorageStats`, `StorageValidationReport`;
@@ -108,6 +111,7 @@ Run:
 ```bash
 make engine-public-api-freeze-check
 make engine-api-compat-check
+make engine-error-model-check
 make engine-api-check
 ```
 
@@ -118,6 +122,8 @@ This gate verifies:
 - frozen public symbols are documented and compile-tested;
 - known helper modules remain private;
 - rustdoc examples exist for the embedded database facade;
+- engine errors expose stable code, category, HTTP status, safe message, and
+  CLI hint metadata;
 - the public API compile test passes;
 - the external sample crate compiles and runs through open, put/get, search,
   ContextPack, VERIFY, checkpoint, backup, and restore;

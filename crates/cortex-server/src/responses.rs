@@ -541,24 +541,18 @@ impl From<serde_json::Error> for RouterError {
 
 impl From<cortex_engine::error::EngineError> for RouterError {
     fn from(e: cortex_engine::error::EngineError) -> Self {
-        use cortex_aql::BindError;
-        use cortex_engine::error::EngineError;
-        let msg = e.to_string();
-        match e {
-            EngineError::AqlParse(_) => RouterError::InvalidAql(msg),
-            EngineError::AqlBind(BindError::PolicyDenied(error)) => {
-                RouterError::PermissionDenied(error.safe_message().to_owned())
-            }
-            EngineError::AqlBind(error) => RouterError::InvalidAql(error.safe_message().to_owned()),
-            EngineError::InvalidOperation => RouterError::BadRequest(msg),
-            EngineError::DatabaseAlreadyOpen(_) => RouterError::DatabaseBusy(msg),
-            EngineError::Storage(_) => RouterError::StorageCorruption(msg),
-            EngineError::StorageInvariant(_)
-            | EngineError::MissingStorageFile(_)
-            | EngineError::FatalCellMissingAfterWal(_)
-            | EngineError::MissingWalSection(_)
-            | EngineError::MissingCommitSeq => RouterError::StorageCorruption(msg),
-            _ => RouterError::Internal(msg),
+        use cortex_engine::error::EngineErrorCode;
+        let msg = e.safe_message();
+        match e.code() {
+            EngineErrorCode::BadRequest => RouterError::BadRequest(msg),
+            EngineErrorCode::InvalidAql => RouterError::InvalidAql(msg),
+            EngineErrorCode::PermissionDenied => RouterError::PermissionDenied(msg),
+            EngineErrorCode::Forbidden => RouterError::Forbidden(msg),
+            EngineErrorCode::NotFound => RouterError::NotFound(msg),
+            EngineErrorCode::DatabaseBusy => RouterError::DatabaseBusy(msg),
+            EngineErrorCode::StorageCorruption => RouterError::StorageCorruption(msg),
+            EngineErrorCode::ServiceUnavailable => RouterError::ServiceUnavailable,
+            EngineErrorCode::Internal => RouterError::Internal(msg),
         }
     }
 }

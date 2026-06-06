@@ -21,7 +21,9 @@
     "RetrievedCell",
     "CheckpointStats",
     "CandidateId",
-    "EngineAqlIndex"
+    "EngineAqlIndex",
+    "EngineErrorCode",
+    "EngineErrorCategory"
   ],
   "private_modules": [
     "cleanup",

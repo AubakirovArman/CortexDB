@@ -15,6 +15,8 @@ cortex_engine::DatabaseOptions
 cortex_engine::RecoveryMode
 cortex_engine::StaleLockPolicy
 cortex_engine::EngineError
+cortex_engine::EngineErrorCode
+cortex_engine::EngineErrorCategory
 cortex_engine::EngineResult
 cortex_engine::DbOperation
 cortex_engine::ContextPack

@@ -74,7 +74,7 @@ pub use context::{
 };
 pub use database::{CandidateResolver, CheckpointStats, Database, RetrievedCell};
 pub use distributed::*;
-pub use error::{EngineError, EngineResult};
+pub use error::{EngineError, EngineErrorCategory, EngineErrorCode, EngineResult};
 pub use graph::{GraphEdge, GraphEntity, GraphSourceRef, KnowledgeGraphIndex, ToolCell};
 pub use ingestion::{
     extract_pdf_text, split_text_chunks, stable_chunk_id, validate_external_ocr_request,

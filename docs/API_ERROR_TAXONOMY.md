@@ -35,6 +35,9 @@ filesystem internals, private scope names, brain names, or stack traces.
 
 ## Mapping Rules
 
+- Engine-level errors are classified by `EngineError::code()` and documented in
+  [`ENGINE_ERROR_MODEL.md`](ENGINE_ERROR_MODEL.md). The HTTP adapter maps that
+  engine code into this SDK-facing API taxonomy.
 - AQL syntax and non-policy bind failures map to `400 invalid_aql`.
 - Policy-denied AQL bind failures map to `403 permission_denied`.
 - `DatabaseAlreadyOpen` and bounded actor queue pressure map to

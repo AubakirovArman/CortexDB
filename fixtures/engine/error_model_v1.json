@@ -1,0 +1,45 @@
+{
+  "schema_version": "cortexdb.engine_error_model.v1",
+  "model_id": "engine-error-model-v1",
+  "status": "frozen",
+  "scope": "public cortex-engine error classification for embedded users and HTTP/CLI adapters",
+  "codes": [
+    {"code": "bad_request", "category": "user_input", "http_status": 400},
+    {"code": "invalid_aql", "category": "user_input", "http_status": 400},
+    {"code": "permission_denied", "category": "permission", "http_status": 403},
+    {"code": "forbidden", "category": "permission", "http_status": 403},
+    {"code": "not_found", "category": "not_found", "http_status": 404},
+    {"code": "database_busy", "category": "busy", "http_status": 503},
+    {"code": "storage_corruption", "category": "corruption", "http_status": 500},
+    {"code": "service_unavailable", "category": "unavailable", "http_status": 503},
+    {"code": "internal", "category": "internal", "http_status": 500}
+  ],
+  "variants": [
+    {"variant": "Core", "code": "not_found"},
+    {"variant": "Storage", "code": "storage_corruption"},
+    {"variant": "BitmapVm", "code": "internal"},
+    {"variant": "AqlParse", "code": "invalid_aql"},
+    {"variant": "AqlBind", "code": "invalid_aql_or_permission_denied"},
+    {"variant": "Io", "code": "not_found_or_forbidden_or_internal"},
+    {"variant": "InvalidOperation", "code": "bad_request"},
+    {"variant": "MissingWalSection", "code": "storage_corruption"},
+    {"variant": "MissingCommitSeq", "code": "storage_corruption"},
+    {"variant": "FatalCellMissingAfterWal", "code": "storage_corruption"},
+    {"variant": "MissingStorageFile", "code": "storage_corruption"},
+    {"variant": "StorageInvariant", "code": "storage_corruption"},
+    {"variant": "InvalidAnnFixture", "code": "bad_request"},
+    {"variant": "InvalidAnnCorpus", "code": "bad_request"},
+    {"variant": "CandidateIdOverflow", "code": "internal"},
+    {"variant": "VectorDimensionMismatch", "code": "bad_request"},
+    {"variant": "HnswBuildConfigOutOfRange", "code": "bad_request"},
+    {"variant": "InvalidCandidateId", "code": "storage_corruption"},
+    {"variant": "DatabaseAlreadyOpen", "code": "database_busy"},
+    {"variant": "BackupTargetExists", "code": "bad_request"},
+    {"variant": "NotLeader", "code": "service_unavailable"}
+  ],
+  "required_evidence_gates": [
+    "make engine-error-model-check",
+    "make engine-api-check",
+    "make openapi-contract-check"
+  ]
+}

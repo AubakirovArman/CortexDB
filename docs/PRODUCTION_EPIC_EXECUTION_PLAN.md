@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 26 / 150
+- Done: 27 / 150
 - Partial: 1 / 150
-- Todo: 123 / 150
-- Current closed epic: Epic 27, Engine API Compatibility Tests
+- Todo: 122 / 150
+- Current closed epic: Epic 28, Engine Error Model v1
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -692,13 +692,37 @@ Boundary:
 
 ### Epic 28. Engine Error Model v1
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Stabilize public error enum.
-- Map errors to HTTP, CLI, and SDK.
-- Remove ad-hoc public error strings.
+- Stabilize public error enum. Done: `EngineError` now exposes stable
+  `EngineErrorCode`, `EngineErrorCategory`, `http_status`, `safe_message`, and
+  `cli_hint` metadata.
+- Map errors to HTTP, CLI, and SDK. Done: server routing maps through
+  `EngineError::code()`, CLI hints use `EngineError::cli_hint()`, and
+  `engine-error-model-check` verifies SDK-visible code coverage.
+- Remove ad-hoc public error strings. Done: CLI engine errors no longer match
+  individual variants for hints; the engine owns the user-facing hint policy.
+
+Evidence:
+
+- `crates/cortex-engine/src/error.rs`
+- `crates/cortex-engine/tests/error_model.rs`
+- `fixtures/engine/error_model_v1.json`
+- `scripts/engine_error_model_check.py`
+- `make engine-error-model-check`
+- `make engine-api-check`
+- `make openapi-contract-check`
+- `target/engine-error-model/report.json`
+- `docs/ENGINE_ERROR_MODEL.md`
+- `docs/API_ERROR_TAXONOMY.md`
+
+Boundary:
+
+- The model freezes engine-level classification and adapter mapping. It does
+  not freeze every free-form human-readable message forever; messages may
+  become clearer while stable codes/categories remain compatible.
 
 ### Epic 29. Engine Feature Flags
 
