@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 108 / 150
+- Done: 109 / 150
 - Partial: 1 / 150
-- Todo: 41 / 150
-- Current closed epic: Epic 108, Load Testing Suite
+- Todo: 40 / 150
+- Current closed epic: Epic 109, Performance Trend Report
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3059,15 +3059,28 @@ Tasks:
 
 ### Epic 109. Performance Trend Report
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `scripts/performance_trend_check.py`
+- `docs/PERFORMANCE_TREND_HISTORY.md`
+- `docs/SINGLE_NODE_SLO.md`
+- `make performance-trend-check`
 
 Tasks:
 
-- Track p50 per endpoint.
-- Track p95 per endpoint.
-- Track p99 per endpoint.
-- Track trend over releases.
-- Add regression gates.
+- Track p50 per endpoint. Done: trend gate now requires and compares `p50_ms`
+  for HTTP smoke and single-node lifecycle flows.
+- Track p95 per endpoint. Done: `p95_ms` checks remain required and compared
+  to release history.
+- Track p99 per endpoint. Done: `p99_ms` checks remain required and compared
+  to release history.
+- Track trend over releases. Done: report compares current load and
+  single-node reports against the latest fixture under
+  `fixtures/performance/history`.
+- Add regression gates. Done: report fails on missing latency fields,
+  threshold violations, failed current reports, missing history, or actor busy.
 
 ### Epic 110. Single-node SLO Dashboard
 

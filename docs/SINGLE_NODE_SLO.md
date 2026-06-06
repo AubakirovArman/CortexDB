@@ -37,16 +37,17 @@ SINGLE_NODE_PERF_MAX_TOTAL_MS=30000
 The gate exercises strict and balanced lifecycle paths and fails if the total
 local duration exceeds the configured budget.
 
-`make load-smoke-check` also records p95/p99 latency for write, read, search,
-ContextPack, and VerifyFact flows. It records actor queue saturation and fails
-if the local smoke workload observes `database_busy` / rejected requests.
+`make load-smoke-check` also records p50/p95/p99 latency for write, read,
+search, ContextPack, and VerifyFact flows. It records actor queue saturation
+and fails if the local smoke workload observes `database_busy` / rejected
+requests.
 
-`make single-node-performance-check` records p95/p99 latency for embedded
-`put_single`, `get_latest`, `keyword_search`, `context_pack`, and `verify_fact`
-flows in both Strict and Balanced durability profiles.
+`make single-node-performance-check` records p50/p95/p99 latency for embedded
+`put_single`, `get_latest`, `keyword_search`, `context_pack`, and
+`verify_fact` flows in both Strict and Balanced durability profiles.
 
-`make performance-trend-check` compares the current reports with checked-in
-release history under `fixtures/performance/history/` and writes:
+`make performance-trend-check` compares current p50/p95/p99 values with
+checked-in release history under `fixtures/performance/history/` and writes:
 
 ```text
 target/performance-trends/report.json

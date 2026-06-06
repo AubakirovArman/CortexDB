@@ -54,7 +54,7 @@ they do not replace deployment-specific stress tests.
 
 ## Percentile Gates
 
-`load-smoke-check` records and gates p95/p99 latency for:
+`load-smoke-check` records p50/p95/p99 latency and gates p95/p99 latency for:
 
 - write;
 - read;
@@ -62,7 +62,8 @@ they do not replace deployment-specific stress tests.
 - context;
 - verify.
 
-`single-node-performance-check` records and gates p95/p99 latency for:
+`single-node-performance-check` records p50/p95/p99 latency and gates p95/p99
+latency for:
 
 - `put_single`;
 - `get_latest`;
@@ -70,7 +71,7 @@ they do not replace deployment-specific stress tests.
 - `context_pack`;
 - `verify_fact`.
 
-The trend report compares current p95/p99 values against the latest release
+The trend report compares current p50/p95/p99 values against the latest release
 fixture and keeps ratios in `target/performance-trends/report.json`.
 
 ## Actor Pressure

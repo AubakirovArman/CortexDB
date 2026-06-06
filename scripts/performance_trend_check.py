@@ -12,7 +12,7 @@ from typing import Any
 
 LOAD_FLOWS = ("write", "read", "search", "context", "verify")
 ENGINE_FLOWS = ("put_single", "get_latest", "keyword_search", "context_pack", "verify_fact")
-PERCENTILES = ("p95_ms", "p99_ms")
+PERCENTILES = ("p50_ms", "p95_ms", "p99_ms")
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -190,8 +190,8 @@ def main() -> int:
         },
         "comparisons_to_latest_history": {
             "release": latest["release"] if latest else None,
-            "load_p95_p99_ratio": compare_load(load_report, latest["load"]) if latest else {},
-            "single_node_p95_p99_ratio": compare_engine(
+            "load_p50_p95_p99_ratio": compare_load(load_report, latest["load"]) if latest else {},
+            "single_node_p50_p95_p99_ratio": compare_engine(
                 single_node_report, latest["single_node"]
             )
             if latest
