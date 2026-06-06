@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 109 / 150
+- Done: 110 / 150
 - Partial: 1 / 150
-- Todo: 40 / 150
-- Current closed epic: Epic 109, Performance Trend Report
+- Todo: 39 / 150
+- Current closed epic: Epic 110, Single-node SLO Dashboard
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3084,15 +3084,32 @@ Tasks:
 
 ### Epic 110. Single-node SLO Dashboard
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `web/dashboard/src/index.html`
+- `web/dashboard/src/app.js`
+- `web/dashboard/src/reporting_slo.js`
+- `scripts/single_node_slo_dashboard_check.py`
+- `docs/DASHBOARD_UI.md`
+- `docs/SINGLE_NODE_SLO.md`
+- `make single-node-slo-dashboard-check`
 
 Tasks:
 
-- Show availability.
-- Show latency.
-- Show backup freshness.
-- Show validation status.
-- Show error budget.
+- Show availability. Done: `dashboard_slo.v1` summarizes health and
+  compatibility status in the Overview route.
+- Show latency. Done: the panel displays request count, mean latency, and the
+  local latency budget from `/v1/metrics`.
+- Show backup freshness. Done: backup age is shown when metrics expose it, and
+  the backup evidence gate remains visible when browser backup state is
+  operator-controlled.
+- Show validation status. Done: validation status and validation error count
+  are rendered beside manifest/WAL status.
+- Show error budget. Done: rejected requests, quota rejects, validation
+  failures, and visible dashboard incidents are rolled into one error-budget
+  signal.
 
 ## K. Dashboard And UX
 

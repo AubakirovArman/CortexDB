@@ -88,6 +88,7 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "/dashboard/assets/v1/reporting_common.js",
         "/dashboard/assets/v1/reporting_retrieval.js",
         "/dashboard/assets/v1/reporting_operations.js",
+        "/dashboard/assets/v1/reporting_slo.js",
         "/dashboard/assets/v1/reporting_ingest.js",
         "/dashboard/assets/v1/reporting_audit.js",
         "/dashboard/assets/v1/reporting.js",
@@ -104,7 +105,9 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "id=\"permission-report\"",
         "id=\"permissions-report\"",
         "id=\"status-report\"",
+        "id=\"slo-report\"",
         "Health, stats, validation, backup posture, and request error state",
+        "Availability, latency, backup freshness, validation status, and error budget",
         "id=\"history\"",
         "id=\"ingest-job-form\"",
         "id=\"ingest-jobs-list-button\"",
@@ -134,6 +137,11 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "summarizeCompatibilityResult",
         "backup_posture",
         "last_request_error",
+        "dashboard_slo.v1",
+        "buildSloDashboard",
+        "backup_freshness",
+        "validation_status",
+        "error_budget",
         "incident_timeline",
         "buildIncidentTimeline",
         "audit_event",
@@ -190,6 +198,8 @@ fn dashboard_static_assets_are_versioned_and_typed() {
         .expect("dashboard reporting retrieval asset");
     let operations = super::dashboard::asset("/dashboard/assets/v1/reporting_operations.js")
         .expect("dashboard reporting operations asset");
+    let slo = super::dashboard::asset("/dashboard/assets/v1/reporting_slo.js")
+        .expect("dashboard reporting slo asset");
     let ingest = super::dashboard::asset("/dashboard/assets/v1/reporting_ingest.js")
         .expect("dashboard reporting ingest asset");
     let audit = super::dashboard::asset("/dashboard/assets/v1/reporting_audit.js")
@@ -208,6 +218,7 @@ fn dashboard_static_assets_are_versioned_and_typed() {
         operations.content_type,
         "application/javascript; charset=utf-8"
     );
+    assert_eq!(slo.content_type, "application/javascript; charset=utf-8");
     assert_eq!(ingest.content_type, "application/javascript; charset=utf-8");
     assert_eq!(audit.content_type, "application/javascript; charset=utf-8");
     assert_eq!(
@@ -256,6 +267,12 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert!(operations.body.contains("Use an admin token"));
     assert!(operations.body.contains("AgentView can read"));
     assert!(operations.body.contains("renderStorageValidation"));
+    assert!(slo.body.contains("renderSloDashboard"));
+    assert!(slo.body.contains("Availability"));
+    assert!(slo.body.contains("Latency"));
+    assert!(slo.body.contains("Backup freshness"));
+    assert!(slo.body.contains("Validation status"));
+    assert!(slo.body.contains("Error budget"));
     assert!(ingest.body.contains("ingestionJobDashboard"));
     assert!(ingest.body.contains("Ingestion job records"));
     assert!(ingest.body.contains("failure reason"));

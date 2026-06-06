@@ -174,6 +174,9 @@ nav { position: sticky; inset-block-start: 12px; }
 .metric span { display: block; color: var(--muted); font-size: .85rem; }
 .metric strong { font-size: 1.2rem; overflow-wrap: anywhere; }
 .report-panel { margin-block-start: 14px; }
+.slo-dashboard {
+    container-type: inline-size;
+}
 .request-issue-panel { margin-block: 10px 12px; }
 .report-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .report-stack { display: grid; gap: 10px; }
@@ -244,4 +247,10 @@ pre {
     main { grid-template-columns: 1fr; }
     nav { position: static; }
     aside { order: 3; }
+}
+
+@container (max-width: 520px) {
+    .slo-dashboard .report-grid {
+        grid-template-columns: 1fr;
+    }
 }

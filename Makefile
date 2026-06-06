@@ -14,7 +14,7 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
-.PHONY: operations-runbook-check incident-playbooks-check load-suite-check
+.PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check
 .PHONY: doctor-check
 .PHONY: metrics-contract-v2-check
 .PHONY: service-manager-smoke-check
@@ -269,6 +269,7 @@ ANN_MAX_MAX_REGRESSION_NANOS ?= 0
 DASHBOARD_PACKAGE_ID ?= dashboard-v1
 DASHBOARD_PACKAGE_ARCHIVE ?= target/dashboard/$(DASHBOARD_PACKAGE_ID).tar.gz
 DASHBOARD_PRODUCT_REPORT ?= target/dashboard/product-ui-report.json
+SINGLE_NODE_SLO_DASHBOARD_REPORT ?= target/dashboard/single-node-slo-report.json
 BINARY_RELEASE_PLATFORM ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')-$(shell uname -m)
 BINARY_RELEASE_VERSION ?= dev
 BINARY_RELEASE_ID ?= cortexdb-$(BINARY_RELEASE_VERSION)-$(BINARY_RELEASE_PLATFORM)
@@ -2736,6 +2737,9 @@ dashboard-release-check:
 dashboard-product-check: dashboard-standalone-smoke
 	$(MAKE) dashboard-release-check
 	python3 scripts/dashboard_product_check.py --report "$(DASHBOARD_PRODUCT_REPORT)"
+
+single-node-slo-dashboard-check: dashboard-standalone-smoke
+	python3 scripts/single_node_slo_dashboard_check.py --report "$(SINGLE_NODE_SLO_DASHBOARD_REPORT)"
 
 ingestion-job-dashboard-check: dashboard-standalone-smoke
 	cargo test -p cortex-server dashboard_

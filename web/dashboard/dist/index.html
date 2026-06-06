@@ -8,6 +8,7 @@
     <script src="/dashboard/assets/v1/reporting_common.js" defer></script>
     <script src="/dashboard/assets/v1/reporting_retrieval.js" defer></script>
     <script src="/dashboard/assets/v1/reporting_operations.js" defer></script>
+    <script src="/dashboard/assets/v1/reporting_slo.js" defer></script>
     <script src="/dashboard/assets/v1/reporting_ingest.js" defer></script>
     <script src="/dashboard/assets/v1/reporting_audit.js" defer></script>
     <script src="/dashboard/assets/v1/reporting.js" defer></script>
@@ -74,6 +75,15 @@
                         Health, stats, validation, backup posture, and request error state are shown together for operator triage.
                     </p>
                     <div id="status-report" class="report-stack" aria-live="polite">
+                        <div class="metric"><span>Status</span><strong>Refresh Status</strong></div>
+                    </div>
+                </section>
+                <section class="report-panel slo-dashboard" aria-labelledby="slo-report-title">
+                    <h3 id="slo-report-title">Single-node SLO dashboard</h3>
+                    <p class="panel-note">
+                        Availability, latency, backup freshness, validation status, and error budget are summarized from the same status checks.
+                    </p>
+                    <div id="slo-report" class="report-stack" aria-live="polite">
                         <div class="metric"><span>Status</span><strong>Refresh Status</strong></div>
                     </div>
                 </section>

@@ -14,6 +14,7 @@ enterprise guarantees.
 | Load smoke | `make load-smoke-check` | `target/load-smoke/report.json` |
 | Load suite | `make load-suite-check` | `target/load-suite/report.json` |
 | Performance trends | `make performance-trend-check` | `target/performance-trends/report.json` |
+| Dashboard SLO panel | `make single-node-slo-dashboard-check` | `target/dashboard/single-node-slo-report.json` |
 | Crash/fault recovery | `make crash-fault-check` | `target/crash-fault/report.json` |
 | Backup restore drill | `make backup-drill-check` | `target/backup-drill/report.json` |
 | API contract | `make openapi-contract-check` | command output |
@@ -55,6 +56,25 @@ target/performance-trends/report.json
 
 Workload classes and local RPO/RTO expectations are defined in
 `fixtures/performance/workload_classes.json`.
+
+## Dashboard SLO View
+
+The dashboard emits a browser-side `dashboard_slo.v1` summary on the Overview
+route after the operator runs Refresh Status. It is derived from `/v1/health`,
+`/v1/compatibility`, `/v1/stats`, `/v1/validate`, and `/v1/metrics`.
+
+The view intentionally shows the five local single-node signals together:
+
+- availability;
+- request latency;
+- backup freshness;
+- validation status;
+- error budget.
+
+The dashboard check is structural: it verifies that these fields are wired into
+the shipped static dashboard and server asset bundle. It does not replace the
+load, performance trend, backup, or validation gates that produce the underlying
+evidence.
 
 ## Operational Interpretation
 

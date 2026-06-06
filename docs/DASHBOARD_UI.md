@@ -35,10 +35,34 @@ stats, storage validation, metrics reachability, backup posture, last request
 error state, and incident checks, and a Permissions route that explains the
 active tenant, role, token state, selected scope probes, AgentView enforcement
 posture, admin/data capabilities, and local write guard state.
+The Overview route also includes a Single-node SLO Dashboard. It summarizes
+availability, request latency, backup freshness, validation status, and error
+budget from the same status checks used by the operational panel. The SLO block
+uses `dashboard_slo.v1` as its browser-side schema so release checks can verify
+that all five operator signals remain visible.
 The Overview route includes an Audit readiness panel that keeps incident review
 operators on the safe path: audit logs remain file-backed, raw audit events are
 not rendered in the browser, and the panel points operators to the CLI
 redaction-check workflow.
+
+### Single-node SLO Dashboard
+
+The SLO dashboard is a local operator summary, not a hosted SLA page. It helps
+answer five questions before maintenance or release evidence collection:
+
+- Availability: health and compatibility checks are reachable and consistent.
+- Latency: request counters and mean latency from `/v1/metrics` stay visible
+  beside the configured local budget.
+- Backup freshness: latest backup age is shown when metrics provide it, and
+  the operator evidence gate is always listed.
+- Validation status: storage validation errors are surfaced without opening
+  raw JSON.
+- Error budget: rejected requests, quota rejects, validation failures, and
+  visible dashboard incidents are rolled into one attention signal.
+
+`make single-node-slo-dashboard-check` validates the dashboard source wiring for
+these fields. `make dashboard-product-check` also includes the SLO dashboard
+markers, so the panel cannot disappear from release UI evidence unnoticed.
 ### ContextPack Explorer
 
 ContextPack responses render a separate report view for token budget usage,

@@ -353,6 +353,7 @@ function run(label, task) {
             window.CortexDashboardReports?.renderOperationalStatus?.(body);
             window.CortexDashboardReports?.renderPermissionsView?.(body);
             window.CortexDashboardReports?.renderSearchReport?.(body);
+            window.CortexDashboardReports?.renderSloDashboard?.(body);
             window.CortexDashboardReports?.renderStorageValidation?.(body);
             window.CortexDashboardReports?.renderVerificationReport?.(body);
             addHistory(label, true);
@@ -413,7 +414,7 @@ async function loadOperationalStatus() {
     const compatibility = summarizeCompatibilityResult(results);
     const stats = summarizeStatsResult(results);
     const validation = summarizeValidationResult(results);
-    const metrics = summarizeStatusResult(results, "metrics");
+    const metrics = summarizeMetricsResult(results);
     const backup = backupPosture(results);
     const incidents = results
         .filter((result) => !result.ok)
@@ -437,6 +438,7 @@ async function loadOperationalStatus() {
         validation,
         metrics,
         backup_posture: backup,
+        slo_dashboard: buildSloDashboard({ health, compatibility, stats, validation, metrics, backup, incidents }),
         last_request_error: lastRequestIssue,
     };
 }
@@ -611,6 +613,99 @@ function summarizeValidationResult(results) {
         cells_checked: body.cells_checked ?? null,
         errors,
         message: result?.ok ? (errors.length ? `${errors.length} validation errors` : "ok") : (result ? errorMessage(result.error) : "admin token required"),
+    };
+}
+
+function summarizeMetricsResult(results) {
+    const result = resultByLabel(results, "metrics");
+    const body = result?.body || {};
+    const requestCount = Number(body.request_count || 0);
+    const durationTotal = Number(body.request_duration_ms_total || 0);
+    const requestRejected = Number(body.request_rejected || 0);
+    const quotaRejected = [
+        body.principal_quota_requests_rejected,
+        body.principal_quota_body_bytes_rejected,
+        body.principal_quota_queue_rejected,
+    ].reduce((total, value) => total + Number(value || 0), 0);
+    const validationFailures = Number(body.validation_failures || 0);
+
+    return {
+        available: !!result,
+        ok: !!result?.ok,
+        request_count: requestCount,
+        request_rejected: requestRejected,
+        quota_rejected: quotaRejected,
+        validation_failures: validationFailures,
+        request_duration_ms_total: durationTotal,
+        mean_latency_ms: requestCount > 0 ? durationTotal / requestCount : null,
+        backup_latest_age_seconds: Number(body.backup_latest_age_seconds ?? -1),
+        actor_queue_depth: Number(body.actor_queue_depth || 0),
+        actor_queue_capacity: Number(body.actor_queue_capacity || 0),
+        message: result?.ok ? "ok" : (result ? errorMessage(result.error) : "admin token required"),
+    };
+}
+
+function buildSloDashboard({ health, compatibility, stats, validation, metrics, backup, incidents }) {
+    const latencyBudgetMs = 1000;
+    const backupFreshnessBudgetSeconds = 86400;
+    const rejected = metrics.request_rejected + metrics.quota_rejected;
+    const errorsUsed = rejected + metrics.validation_failures + incidents.length;
+    const meanLatency = metrics.mean_latency_ms;
+    const backupAge = metrics.backup_latest_age_seconds;
+    const backupKnown = Number.isFinite(backupAge) && backupAge >= 0;
+
+    return {
+        schema_version: "dashboard_slo.v1",
+        availability: {
+            ok: !!health.ok && !!compatibility.ok,
+            signal: health.ok && compatibility.ok ? "available" : "attention",
+            health: health.message || "not checked",
+            compatibility: compatibility.message || "not checked",
+        },
+        latency: {
+            ok: metrics.available && meanLatency !== null ? meanLatency <= latencyBudgetMs : null,
+            mean_ms: meanLatency === null ? null : Number(meanLatency.toFixed(2)),
+            budget_ms: latencyBudgetMs,
+            request_count: metrics.request_count,
+            signal: !metrics.available
+                ? metrics.message
+                : (meanLatency === null ? "no traffic yet" : `${meanLatency.toFixed(2)} ms mean`),
+        },
+        backup_freshness: {
+            ok: backupKnown ? backupAge <= backupFreshnessBudgetSeconds : null,
+            age_seconds: backupKnown ? backupAge : null,
+            budget_seconds: backupFreshnessBudgetSeconds,
+            signal: backupKnown ? `${backupAge}s since latest backup` : backup.message,
+            evidence_gate: backup.evidence_gate,
+        },
+        validation_status: {
+            ok: !!validation.ok,
+            signal: validation.ok ? "valid" : validation.message || "not checked",
+            errors: validation.errors || [],
+            manifest_ok: validation.manifest_ok,
+            wal_ok: validation.wal_ok,
+        },
+        error_budget: {
+            ok: metrics.available ? errorsUsed === 0 : null,
+            errors_used: errorsUsed,
+            request_rejected: metrics.request_rejected,
+            quota_rejected: metrics.quota_rejected,
+            validation_failures: metrics.validation_failures,
+            visible_incidents: incidents.length,
+            signal: !metrics.available ? metrics.message : (errorsUsed === 0 ? "clean" : `${errorsUsed} issue(s) used`),
+        },
+        operator_actions: [
+            "Refresh Status before maintenance.",
+            "Run make load-smoke-check and make performance-trend-check for release latency evidence.",
+            "Run make backup-restore-production-pack-check for backup freshness evidence.",
+            "Run validate before trusting checkpoint, compact, or backup workflows.",
+        ],
+        stats_context: {
+            current_seq: stats.current_seq,
+            checkpoint_seq: stats.checkpoint_seq,
+            live_segments: stats.live_segments,
+            wal_size_bytes: stats.wal_size_bytes,
+        },
     };
 }
 
