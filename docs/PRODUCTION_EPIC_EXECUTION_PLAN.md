@@ -17,9 +17,9 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 27 / 150
+- Done: 28 / 150
 - Partial: 1 / 150
-- Todo: 122 / 150
+- Todo: 121 / 150
 - Current closed epic: Epic 28, Engine Error Model v1
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
