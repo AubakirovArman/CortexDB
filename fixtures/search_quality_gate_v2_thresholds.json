@@ -1,0 +1,42 @@
+{
+  "schema_version": "cortexdb.search_quality_gate_v2.thresholds.v1",
+  "ann_safe_mode": {
+    "max_fallback_count": 0,
+    "max_fallback_rate_q16": 0,
+    "max_stale_vector_count": 0,
+    "min_exact_parity_q16": 65535,
+    "min_graph_freshness_q16": 65535,
+    "min_mean_recall_q16": 65535,
+    "require_production_safe": true
+  },
+  "domains": {
+    "investment_projects": {
+      "max_p95_latency_nanos": 1000000,
+      "min_exact_parity_q16": 65535,
+      "min_mrr_q16": 49000,
+      "min_ndcg_q16": 37000,
+      "min_recall_q16": 62000
+    },
+    "legal_policies": {
+      "max_p95_latency_nanos": 100000,
+      "min_exact_parity_q16": 65535,
+      "min_mrr_q16": 65000,
+      "min_ndcg_q16": 65000,
+      "min_recall_q16": 65000
+    },
+    "support_tickets": {
+      "max_p95_latency_nanos": 100000,
+      "min_exact_parity_q16": 65535,
+      "min_mrr_q16": 65000,
+      "min_ndcg_q16": 65000,
+      "min_recall_q16": 65000
+    },
+    "technical_docs": {
+      "max_p95_latency_nanos": 100000,
+      "min_exact_parity_q16": 65535,
+      "min_mrr_q16": 65000,
+      "min_ndcg_q16": 65000,
+      "min_recall_q16": 65000
+    }
+  }
+}

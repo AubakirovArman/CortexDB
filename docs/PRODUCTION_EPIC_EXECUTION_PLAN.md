@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 59 / 150
+- Done: 60 / 150
 - Partial: 1 / 150
-- Todo: 90 / 150
-- Current closed epic: Epic 59, Retrieval Regression Dashboard
+- Todo: 89 / 150
+- Current closed epic: Epic 60, Search Quality Gate v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1652,14 +1652,29 @@ Tasks:
 
 ### Epic 60. Search Quality Gate v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `fixtures/search_quality_gate_v2_thresholds.json`
+- `scripts/search_quality_gate_v2.py`
+- `make search-quality-gate-v2-check`
+- `make retrieval-quality-check`
+- `target/search-quality-gate-v2/report.json`
+- `release-check` invokes `retrieval-quality-check`, so release fails on search
+  quality regression.
 
 Tasks:
 
-- Add per-domain thresholds.
-- Add exact parity checks.
-- Add ANN safe mode.
-- Fail release on regression.
+- Add per-domain thresholds. Done: checked-in thresholds cover
+  `investment_projects`, `legal_policies`, `support_tickets`, and
+  `technical_docs`.
+- Add exact parity checks. Done: per-domain exact parity and ANN exact parity
+  are thresholded.
+- Add ANN safe mode. Done: the gate requires production-safe ANN history, zero
+  fallback, full graph freshness, and zero stale vectors.
+- Fail release on regression. Done: beta/history/ANN regression counts must be
+  zero and `release-check` runs the retrieval/search gate.
 
 ## F. ContextPack Production Layer
 

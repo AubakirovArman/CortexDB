@@ -15,6 +15,7 @@ target/retrieval-quality/report.json
 target/retrieval-quality/beta-report.json
 target/retrieval-quality/history.json
 target/retrieval-quality/dashboard.html
+target/search-quality-gate-v2/report.json
 target/ann/real-embedding/runs/history.json
 target/ann/real-embedding/investment_projects_readiness_epic25.json
 target/ann/real-embedding/runs/<run-id>/report.json
@@ -113,6 +114,7 @@ The beta report is saved at:
 target/retrieval-quality/beta-report.json
 target/retrieval-quality/history.json
 target/retrieval-quality/dashboard.html
+target/search-quality-gate-v2/report.json
 ```
 
 It is a deterministic local fixture gate over checked-in real-domain corpora.
@@ -127,6 +129,10 @@ It renders:
 - per-domain recall, MRR, nDCG, p95 latency, exact parity, and regression count;
 - investment-project query-level recall, MRR, nDCG, latency, exact parity, and
   production-safety rows.
+
+The Search Quality Gate v2 artifact is a release gate over the generated
+retrieval evidence. It enforces checked-in per-domain thresholds, exact parity,
+ANN safe mode, and a fail-on-regression release decision.
 
 ## Boundary
 
@@ -159,6 +165,8 @@ This gate proves:
 - query-level guarded ANN rows are available for review;
 - the local history has no adjacent regression under the configured latency
   tolerance.
+- Search Quality Gate v2 enforces per-domain recall, MRR, nDCG, p95 latency,
+  exact parity, ANN zero-fallback safe mode, and release failure on regression.
 
 This gate does not prove:
 
