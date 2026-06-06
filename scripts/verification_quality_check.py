@@ -11,8 +11,9 @@ from typing import Any
 
 Q16_ONE = 65_535
 STATUSES = ("supported", "contradicted", "mixed", "insufficient")
-MIN_BETA_CASES = 50
+MIN_BETA_CASES = 200
 MIN_BETA_DOMAINS = 5
+V3_CATEGORIES = ("temporal", "numeric", "currency", "source", "ambiguous", "outdated")
 
 
 def load_cases(path: Path) -> list[dict[str, Any]]:
@@ -78,6 +79,7 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
     numeric_guard_cases = 0
     domain_counts: dict[str, int] = {}
     per_domain_status_counts: dict[str, dict[str, int]] = {}
+    v3_category_counts = {category: 0 for category in V3_CATEGORIES}
 
     for case in cases:
         case_id = str_field(case, "case_id")
@@ -87,6 +89,8 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
 
         scenario = str_field(case, "scenario")
         scenario_counts[scenario] = scenario_counts.get(scenario, 0) + 1
+        for category in v3_categories_for(case):
+            v3_category_counts[category] += 1
         domain = domain_for_case(case)
         domain_counts[domain] = domain_counts.get(domain, 0) + 1
         expected = str_field(case, "expected_status")
@@ -132,6 +136,14 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         failures.append(f"expected at least {MIN_BETA_CASES} beta verification cases")
     if len(domain_counts) < MIN_BETA_DOMAINS:
         failures.append(f"expected at least {MIN_BETA_DOMAINS} verification domains")
+
+    missing_v3_categories = sorted(
+        category for category, count in v3_category_counts.items() if count == 0
+    )
+    if missing_v3_categories:
+        failures.append(
+            f"missing v3 verification categories: {', '.join(missing_v3_categories)}"
+        )
 
     required_scenarios = {
         "supported",
@@ -179,6 +191,7 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "scenario_counts": scenario_counts,
         "domain_counts": domain_counts,
         "per_domain_status_counts": per_domain_status_counts,
+        "v3_category_counts": v3_category_counts,
         "guard_cases": guard_cases,
         "citation_guard_cases": citation_guard_cases,
         "numeric_guard_cases": numeric_guard_cases,
@@ -186,6 +199,30 @@ def validate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "false_negative_count": false_negative_count,
     }
     return report
+
+
+def v3_categories_for(case: dict[str, Any]) -> set[str]:
+    scenario = str(case.get("scenario", "")).lower()
+    fact = str(case.get("fact", "")).lower()
+    guards = case.get("expected_guard_codes", [])
+    text = f"{scenario} {fact}"
+    categories: set[str] = set()
+    if any(token in text for token in ("date", "period", "temporal", "year")):
+        categories.add("temporal")
+    if (
+        "numeric_mismatch" in guards
+        or any(token in text for token in ("numeric", "amount", "budget", "value", "percent"))
+    ):
+        categories.add("numeric")
+    if any(token in text for token in ("currency", "usd", "eur", "kzt", "rub")):
+        categories.add("currency")
+    if "missing_citation" in guards or "source" in text or "citation" in text:
+        categories.add("source")
+    if "ambiguous" in text:
+        categories.add("ambiguous")
+    if any(token in text for token in ("outdated", "old", "stale", "updated")):
+        categories.add("outdated")
+    return categories
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:

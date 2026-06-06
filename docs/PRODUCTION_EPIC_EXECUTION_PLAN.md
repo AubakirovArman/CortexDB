@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 71 / 150
+- Done: 72 / 150
 - Partial: 1 / 150
-- Todo: 78 / 150
-- Current closed epic: Epic 71, Verification Dataset v2
+- Todo: 77 / 150
+- Current closed epic: Epic 72, Verification Dataset v3
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1957,17 +1957,26 @@ Tasks:
 
 ### Epic 72. Verification Dataset v3
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `examples/eval/verification_cases.jsonl`
+- `crates/cortex-engine/tests/verification_evaluation.rs`
+- `scripts/verification_quality_check.py`
+- `target/verification-quality/report.json`
+- `docs/VERIFICATION_QUALITY_EVIDENCE.md`
 
 Tasks:
 
-- Add 200+ cases.
-- Include temporal cases.
-- Include numeric cases.
-- Include currency cases.
-- Include source cases.
-- Include ambiguous cases.
-- Include outdated evidence cases.
+- Add 200+ cases. Done: `examples/eval/verification_cases.jsonl`
+  contains 200 deterministic labelled cases.
+- Include temporal cases. Done: latest report records 70 temporal cases.
+- Include numeric cases. Done: latest report records 114 numeric cases.
+- Include currency cases. Done: latest report records 75 currency cases.
+- Include source cases. Done: latest report records 25 source/citation cases.
+- Include ambiguous cases. Done: latest report records 23 ambiguous cases.
+- Include outdated evidence cases. Done: latest report records 24 outdated/current-old cases.
 
 ### Epic 73. Engine-native NumericValue
 
