@@ -80,6 +80,17 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_retrieval.js", "numeric_conflicts"),
         ("docs/DASHBOARD_UI.md", "Verification Explorer"),
     ],
+    "ingestion_job_dashboard": [
+        ("web/dashboard/src/index.html", "id=\"ingest-jobs-list-button\""),
+        ("web/dashboard/src/app.js", "/v1/ingest/jobs"),
+        ("web/dashboard/src/reporting_ingest.js", "ingestionJobDashboard"),
+        ("web/dashboard/src/reporting_ingest.js", "progress failures warnings records chunks source refs"),
+        ("web/dashboard/src/reporting_ingest.js", "Ingestion job records"),
+        ("web/dashboard/src/reporting_ingest.js", "failure reason"),
+        ("web/dashboard/src/reporting_ingest.js", "Ingestion chunks and SourceRefs"),
+        ("web/dashboard/src/style.css", ".report-table"),
+        ("docs/DASHBOARD_UI.md", "Ingestion Job Dashboard"),
+    ],
     "release_artifacts": [
         ("e2e/dashboard_screenshots.mjs", "permissions"),
         ("docs/DASHBOARD_UI.md", "dashboard-screenshots"),

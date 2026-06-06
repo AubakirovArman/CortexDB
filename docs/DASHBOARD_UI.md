@@ -54,6 +54,21 @@ into an operator-facing explorer:
   redundancy penalty, and score component reasons.
 - Anomaly explorer: token overload, missing citation, redundancy, and
   `why_excluded` messages when the engine reports excluded cells.
+
+### Ingestion Job Dashboard
+
+The Ingest route now has an operator-facing Ingestion Job Dashboard inside the
+Ingest report panel. It can render either the immediate ingestion response,
+one persisted job record, or the full persisted job list:
+
+- Progress cards show total, completed, failed, and last-cell counters.
+- Failure detail surfaces persisted failure reasons and retry counters.
+- Warning rows show ingestion validation warnings and skipped inputs.
+- Record tables list persisted job records with status, progress, failures,
+  last cell id, and messages.
+- Chunk and SourceRef rows show each emitted cell's chunk id, source id,
+  document id, citation availability, and confidence.
+
 Storage validation responses render health cards for manifest/WAL status,
 checked segments, checked cells, index coverage, safe WAL truncate offset, and
 validation errors. The Overview operational status view combines those
@@ -74,7 +89,8 @@ Report rendering is split by responsibility:
 ```text
 reporting_common.js      shared DOM helpers
 reporting_retrieval.js   Search, AQL, Verify, ContextPack
-reporting_operations.js  Cell, Ingest, Cluster, Storage, ANN, errors
+reporting_operations.js  Cell, Cluster, Storage, ANN, permissions, errors
+reporting_ingest.js      Ingest summaries, persisted jobs, SourceRefs
 reporting.js             compatibility facade
 ```
 

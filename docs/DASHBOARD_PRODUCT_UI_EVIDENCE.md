@@ -1,6 +1,6 @@
 # Dashboard Product UI Evidence
 
-Last local dashboard product UI run: 2026-06-01, passed.
+Last local dashboard product UI run: 2026-06-06, passed.
 
 Run:
 
@@ -36,6 +36,8 @@ This gate covers:
   components, anomalies, and `why_excluded` messages;
 - a Verification Explorer covering mixed evidence, supporting and
   contradicting evidence, numeric conflicts, and guard messages;
+- an Ingestion Job Dashboard covering persisted job progress, failures,
+  warnings, records, emitted chunks, and SourceRefs;
 - an audit readiness panel that keeps raw audit events out of the browser and
   points operators to file-backed CLI redaction checks;
 - a permissions view for tenant, active role, token state, selected scope
@@ -54,6 +56,7 @@ operational_last_error: true
 incident_timeline: true
 context_pack_explorer: true
 verification_explorer: true
+ingestion_job_dashboard: true
 audit_readiness: true
 permissions_view: true
 permissions_agent_view_posture: true

@@ -55,6 +55,7 @@ def main() -> int:
         reporting_common = fetch_text(f"{base}/dashboard/assets/v1/reporting_common.js")
         reporting_retrieval = fetch_text(f"{base}/dashboard/assets/v1/reporting_retrieval.js")
         reporting_operations = fetch_text(f"{base}/dashboard/assets/v1/reporting_operations.js")
+        reporting_ingest = fetch_text(f"{base}/dashboard/assets/v1/reporting_ingest.js")
         reporting = fetch_text(f"{base}/dashboard/assets/v1/reporting.js")
         script = fetch_text(f"{base}/dashboard/assets/v1/app.js")
         manifest = fetch_text(f"{base}/dashboard/assets/v1/dashboard_manifest.json")
@@ -65,6 +66,7 @@ def main() -> int:
         ("reporting common script link", "/dashboard/assets/v1/reporting_common.js" in index),
         ("reporting retrieval script link", "/dashboard/assets/v1/reporting_retrieval.js" in index),
         ("reporting operations script link", "/dashboard/assets/v1/reporting_operations.js" in index),
+        ("reporting ingest script link", "/dashboard/assets/v1/reporting_ingest.js" in index),
         ("reporting script link", "/dashboard/assets/v1/reporting.js" in index),
         ("route link", 'href="/dashboard/search"' in index),
         ("permissions route link", 'href="/dashboard/permissions"' in index),
@@ -92,6 +94,8 @@ def main() -> int:
         ("cell report renderer", "renderCellReport" in reporting_operations),
         ("cluster report renderer", "renderClusterReport" in reporting_operations),
         ("ingest report renderer", "renderIngestReport" in reporting_operations),
+        ("ingest job dashboard renderer", "ingestionJobDashboard" in reporting_ingest),
+        ("ingest source refs table", "Ingestion chunks and SourceRefs" in reporting_ingest),
         ("request issue renderer", "renderRequestIssue" in reporting_operations),
         ("storage report renderer", "renderStorageValidation" in reporting_operations),
         ("reporting facade", "facadeLoaded" in reporting),

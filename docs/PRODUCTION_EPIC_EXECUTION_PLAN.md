@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 81 / 150
+- Done: 82 / 150
 - Partial: 1 / 150
-- Todo: 68 / 150
-- Current closed epic: Epic 81, Ingestion Jobs v2
+- Todo: 67 / 150
+- Current closed epic: Epic 82, Ingestion Job Dashboard
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2216,16 +2216,34 @@ Tasks:
 
 ### Epic 82. Ingestion Job Dashboard
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `web/dashboard/src/reporting_ingest.js`
+- `web/dashboard/src/index.html`
+- `web/dashboard/src/app.js`
+- `web/dashboard/src/style.css`
+- `crates/cortex-server/src/dashboard.rs`
+- `crates/cortex-server/src/dashboard_tests.rs`
+- `docs/DASHBOARD_UI.md`
+- `scripts/dashboard_dist_smoke.py`
+- `scripts/dashboard_product_check.py`
+- `make ingestion-job-dashboard-check`
 
 Tasks:
 
-- View progress.
-- View failures.
-- View warnings.
-- View records.
-- View chunks.
-- View source refs.
+- View progress. Done: the dashboard renders total/completed/failed/last-cell
+  progress cards for one job and aggregate counters for the job list.
+- View failures. Done: persisted job detail renders failure reason and retry
+  counters.
+- View warnings. Done: ingestion summaries render validation warnings and
+  skipped inputs.
+- View records. Done: persisted ingestion jobs render a table with job id,
+  label, status, progress, failed count, last cell, and message.
+- View chunks. Done: ingestion summaries render emitted chunk rows.
+- View source refs. Done: emitted chunks show source-ref, source id, document
+  id, citation availability, and confidence.
 
 ### Epic 83. Structured SourceRef v1
 

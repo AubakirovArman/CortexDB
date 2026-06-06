@@ -25,6 +25,7 @@
 .PHONY: tool-registry-check
 .PHONY: knowledge-graph-check
 .PHONY: ingestion-jobs-v2-check
+.PHONY: ingestion-job-dashboard-check
 .PHONY: distributed-consensus-research-check
 .PHONY: managed-cloud-feasibility-check
 .PHONY: next-60-epics-audit next-60-epics-completion-check
@@ -176,6 +177,7 @@ VERIFICATION_QUALITY_REPORT ?= target/verification-quality/report.json
 VERIFICATION_QUALITY_DASHBOARD_JSON ?= target/verification-quality/dashboard.json
 VERIFICATION_QUALITY_DASHBOARD_MD ?= target/verification-quality/dashboard.md
 INGESTION_JOBS_V2_REPORT ?= target/ingestion-jobs-v2/report.json
+INGESTION_JOB_DASHBOARD_REPORT ?= target/ingestion-job-dashboard/report.json
 HTTP_CONTRACT_OPS_REPORT ?= target/http-contract-ops/report.json
 CLI_PRODUCT_REPORT ?= target/cli-product/report.json
 OPERATIONS_RUNBOOK_REPORT ?= target/operations-runbook/report.json
@@ -2692,6 +2694,10 @@ dashboard-release-check:
 dashboard-product-check: dashboard-standalone-smoke
 	$(MAKE) dashboard-release-check
 	python3 scripts/dashboard_product_check.py --report "$(DASHBOARD_PRODUCT_REPORT)"
+
+ingestion-job-dashboard-check: dashboard-standalone-smoke
+	cargo test -p cortex-server dashboard_
+	python3 scripts/dashboard_product_check.py --report "$(INGESTION_JOB_DASHBOARD_REPORT)"
 
 dashboard-smoke: dashboard-check
 	cargo build -p cortex-server

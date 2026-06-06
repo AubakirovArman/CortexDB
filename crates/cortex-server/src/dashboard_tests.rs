@@ -88,6 +88,7 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "/dashboard/assets/v1/reporting_common.js",
         "/dashboard/assets/v1/reporting_retrieval.js",
         "/dashboard/assets/v1/reporting_operations.js",
+        "/dashboard/assets/v1/reporting_ingest.js",
         "/dashboard/assets/v1/reporting_audit.js",
         "/dashboard/assets/v1/reporting.js",
         "/dashboard/assets/v1/app.js",
@@ -106,6 +107,7 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "Health, stats, validation, backup posture, and request error state",
         "id=\"history\"",
         "id=\"ingest-job-form\"",
+        "id=\"ingest-jobs-list-button\"",
         "id=\"error-report\"",
         "id=\"cell-report\"",
         "id=\"ingest-report\"",
@@ -188,6 +190,8 @@ fn dashboard_static_assets_are_versioned_and_typed() {
         .expect("dashboard reporting retrieval asset");
     let operations = super::dashboard::asset("/dashboard/assets/v1/reporting_operations.js")
         .expect("dashboard reporting operations asset");
+    let ingest = super::dashboard::asset("/dashboard/assets/v1/reporting_ingest.js")
+        .expect("dashboard reporting ingest asset");
     let audit = super::dashboard::asset("/dashboard/assets/v1/reporting_audit.js")
         .expect("dashboard reporting audit asset");
     let reporting = super::dashboard::asset("/dashboard/assets/v1/reporting.js")
@@ -204,6 +208,7 @@ fn dashboard_static_assets_are_versioned_and_typed() {
         operations.content_type,
         "application/javascript; charset=utf-8"
     );
+    assert_eq!(ingest.content_type, "application/javascript; charset=utf-8");
     assert_eq!(audit.content_type, "application/javascript; charset=utf-8");
     assert_eq!(
         reporting.content_type,
@@ -251,6 +256,10 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert!(operations.body.contains("Use an admin token"));
     assert!(operations.body.contains("AgentView can read"));
     assert!(operations.body.contains("renderStorageValidation"));
+    assert!(ingest.body.contains("ingestionJobDashboard"));
+    assert!(ingest.body.contains("Ingestion job records"));
+    assert!(ingest.body.contains("failure reason"));
+    assert!(ingest.body.contains("Ingestion chunks and SourceRefs"));
     assert!(audit.body.contains("renderAuditReadiness"));
     assert!(reporting.body.contains("facadeLoaded"));
     assert!(super::dashboard::asset("/dashboard/assets/v2/app.js").is_none());
@@ -290,6 +299,11 @@ fn dashboard_asset_endpoint_serves_css_and_js() {
             "/dashboard/assets/v1/reporting_operations.js",
             "Content-Type: application/javascript; charset=utf-8",
             "renderCellReport",
+        ),
+        (
+            "/dashboard/assets/v1/reporting_ingest.js",
+            "Content-Type: application/javascript; charset=utf-8",
+            "ingestionJobDashboard",
         ),
         (
             "/dashboard/assets/v1/reporting_audit.js",

@@ -48,6 +48,9 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 - **Ingestion Jobs v2 evidence gate** — `make ingestion-jobs-v2-check` now
   verifies durable job persistence, retry/cancel flows, progress counters,
   failure reasons, restart requeue behavior, and HTTP/CLI lifecycle coverage.
+- **Ingestion Job Dashboard** — the developer dashboard now renders persisted
+  ingestion job progress, failures, warnings, records, chunks, and SourceRefs
+  through a dedicated report renderer and `make ingestion-job-dashboard-check`.
 
 ### Changed
 - **Error taxonomy contract guard** — `make openapi-contract-check` now also

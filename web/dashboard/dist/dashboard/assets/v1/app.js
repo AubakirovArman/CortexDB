@@ -849,6 +849,10 @@ document.querySelector("#ingest-job-form").addEventListener("submit", (event) =>
     run("ingest job", () => api(`/v1/ingest/jobs/${id}`));
 });
 
+document.querySelector("#ingest-jobs-list-button").addEventListener("click", () => {
+    run("ingest jobs", () => api("/v1/ingest/jobs"));
+});
+
 (async function init() {
     const detected = await detectAccessLevel();
     accessLevel = detected.level;

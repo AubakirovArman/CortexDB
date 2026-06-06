@@ -188,6 +188,27 @@ nav { position: sticky; inset-block-start: 12px; }
 .report-item h4 { margin: 0 0 6px; font-size: .95rem; letter-spacing: 0; }
 .report-item p { margin: 6px 0 0; overflow-wrap: anywhere; }
 .report-meta { color: var(--muted); font-size: .86rem; }
+.report-table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--line);
+    background: #fbfcfd;
+}
+.report-table caption {
+    padding: 8px 10px;
+    color: var(--muted);
+    font-weight: 700;
+    text-align: start;
+}
+.report-table th,
+.report-table td {
+    border-block-start: 1px solid var(--line);
+    padding: 8px 10px;
+    text-align: start;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+.report-table th { color: var(--muted); font-size: .86rem; }
 .history { margin: 12px 0 0; padding-inline-start: 20px; max-block-size: 160px; overflow: auto; color: var(--muted); }
 .request-status {
     margin-block-end: 10px;

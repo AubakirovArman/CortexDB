@@ -39,6 +39,7 @@ REQUIRED_FILES = (
     "dashboard/assets/v1/reporting_common.js",
     "dashboard/assets/v1/reporting_retrieval.js",
     "dashboard/assets/v1/reporting_operations.js",
+    "dashboard/assets/v1/reporting_ingest.js",
     "dashboard/assets/v1/reporting.js",
     "dashboard/assets/v1/style.css",
     *(f"dashboard/{route}/index.html" for route in ROUTES),
@@ -256,6 +257,10 @@ class SelfTests(unittest.TestCase):
         )
         (dist / "dashboard" / "assets" / "v1" / "reporting_operations.js").write_text(
             "window.CortexDashboardReports.renderCellReport=()=>{}",
+            encoding="utf-8",
+        )
+        (dist / "dashboard" / "assets" / "v1" / "reporting_ingest.js").write_text(
+            "window.CortexDashboardReports.renderIngestReport=()=>{}",
             encoding="utf-8",
         )
         (dist / "dashboard" / "assets" / "v1" / "reporting.js").write_text(
