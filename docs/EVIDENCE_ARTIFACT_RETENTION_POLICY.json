@@ -38,6 +38,7 @@
     "target/storage-soak-history/campaign.json",
     "target/storage-soak-history-v2/report.json",
     "target/storage-soak-history-v2/campaign.json",
+    "target/storage-soak-history-v2/status.json",
     "target/storage-soak-history-v2/v2-gate.json",
     "target/chaos-restart/report.json",
     "target/crash-fault/report.json",

@@ -189,12 +189,16 @@ Storage Soak History v2 is staged but not yet complete. The v2 track uses:
 ```bash
 make storage-soak-72h-campaign
 make storage-soak-72h-status
+make storage-soak-72h-status-report
+make storage-soak-72h-watchdog
 make storage-soak-72h-evidence-check
 ```
 
 The v2 evidence check requires a retained 72-hour report under
 `target/storage-soak-history-v2/` with the heavier cells-per-cycle workload and
-throughput regression threshold.
+throughput regression threshold. The status snapshot is retained as
+`target/storage-soak-history-v2/status.json` while the long run is still
+accumulating.
 
 ## Public Release Artifact Audit
 

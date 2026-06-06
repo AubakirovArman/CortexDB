@@ -93,6 +93,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--campaign", default="target/storage-soak-history/campaign.json")
     parser.add_argument("--history", default="target/storage-soak-history/report.json")
     parser.add_argument("--soak-root", default="target/storage-soak")
+    parser.add_argument("--output")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     parser.add_argument("--require-active", action="store_true")
     parser.add_argument("--target-hours", type=float)
@@ -145,6 +146,10 @@ def main() -> int:
         "target_remaining_seconds": target_remaining_seconds,
         "remaining_seconds": evidence.get("remaining_seconds", 24 * 3600),
     }
+    if args.output:
+        output = ROOT / args.output
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(status, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if args.format == "json":
         print(json.dumps(status, indent=2, sort_keys=True))
     else:

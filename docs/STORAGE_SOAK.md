@@ -155,6 +155,7 @@ target/storage-soak-v2/report.json
 target/storage-soak-history-v2/history.jsonl
 target/storage-soak-history-v2/report.json
 target/storage-soak-history-v2/campaign.json
+target/storage-soak-history-v2/status.json
 target/storage-soak-history-v2/v2-gate.json
 target/storage-soak-history-v2/campaign-72h.pid
 ```
@@ -163,6 +164,18 @@ Check progress with:
 
 ```bash
 make storage-soak-72h-status
+```
+
+Save a JSON status snapshot for release evidence with:
+
+```bash
+make storage-soak-72h-status-report
+```
+
+The active watchdog gate is:
+
+```bash
+make storage-soak-72h-watchdog
 ```
 
 While a long run is still inside `storage_soak_check.py`, accumulated history

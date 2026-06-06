@@ -263,6 +263,8 @@ Evidence:
 - `make storage-soak-72h-start`
 - `make storage-soak-72h-campaign`
 - `make storage-soak-72h-status`
+- `make storage-soak-72h-status-report`
+- `make storage-soak-72h-watchdog`
 - `make storage-soak-72h-evidence-check`
 - V2 uses a separate `target/storage-soak-history-v2/` history root and a
   heavier default workload: 50 cycles per run and 100 cells per cycle.

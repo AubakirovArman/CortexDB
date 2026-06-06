@@ -56,6 +56,7 @@ OPTIONAL_ARTIFACTS: tuple[ArtifactSpec, ...] = (
     ArtifactSpec("storage_soak_campaign", "storage", "target/storage-soak-history/campaign.json", required=False),
     ArtifactSpec("storage_soak_v2_history", "storage", "target/storage-soak-history-v2/report.json", required=False),
     ArtifactSpec("storage_soak_v2_campaign", "storage", "target/storage-soak-history-v2/campaign.json", required=False),
+    ArtifactSpec("storage_soak_v2_status", "storage", "target/storage-soak-history-v2/status.json", required=False, validate_report=False),
     ArtifactSpec("storage_soak_v2_gate", "storage", "target/storage-soak-history-v2/v2-gate.json", required=False),
     ArtifactSpec("chaos_restart", "storage", "target/chaos-restart/report.json", required=False),
     ArtifactSpec("crash_fault", "storage", "target/crash-fault/report.json", required=False),
