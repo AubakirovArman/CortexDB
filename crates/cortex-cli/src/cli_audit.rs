@@ -34,6 +34,21 @@ pub struct AuditRecord {
     pub error_code: String,
     pub duration_ms: u64,
     pub unix_time_ms: u128,
+    #[serde(default)]
+    pub llm: Option<LlmAuditFields>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct LlmAuditFields {
+    pub outcome: String,
+    pub reason: String,
+    pub provider: String,
+    pub model: String,
+    pub context_cell_count: u64,
+    pub citation_count: u64,
+    pub request_api_key_present: bool,
+    pub prompt_body_logged: bool,
+    pub secrets_logged: bool,
 }
 
 #[derive(Debug, Serialize)]

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 93 / 150
+- Done: 94 / 150
 - Partial: 1 / 150
-- Todo: 56 / 150
-- Current closed epic: Epic 93, Per-token Quotas
+- Todo: 55 / 150
+- Current closed epic: Epic 94, Future Tamper-evident Audit Log
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2570,14 +2570,41 @@ Boundary:
 
 ### Epic 94. Future Tamper-evident Audit Log
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Add hash chain.
-- Add sequence numbers.
-- Add audit verify.
-- Add tamper detection.
+- Add hash chain. Done: file-backed audit records include `chain_id`,
+  `prev_hash`, and `event_hash`; HTTP and LLM inference audit records use the
+  same local chain verifier hash model.
+- Add sequence numbers. Done: the audit sink assigns monotonic `sequence`
+  values, persists them in JSONL, and continues from the existing tail after
+  restart.
+- Add audit verify. Done: `cortexdb audit --verify-chain`,
+  `cortexdb audit verify <file>`, and SIEM export `--verify-chain` validate
+  sequence continuity and event hash integrity offline.
+- Add tamper detection. Done: regression tests cover edited route metadata,
+  edited LLM inference metadata, deleted records, and reordered records.
+
+Evidence:
+
+- `crates/cortex-server/src/audit.rs`
+- `crates/cortex-server/src/audit_chain.rs`
+- `crates/cortex-server/src/audit/llm.rs`
+- `crates/cortex-server/src/audit_tests.rs`
+- `crates/cortex-cli/src/cli_audit.rs`
+- `crates/cortex-cli/src/cli_audit_chain.rs`
+- `crates/cortex-cli/src/cli_audit_tests.rs`
+- `crates/cortex-cli/src/cli_audit_chain_tests.rs`
+- `docs/AUTH.md`
+- `docs/SECURITY_BETA_BASELINE.md`
+- `make audit-chain-check`
+
+Boundary:
+
+- This is a local tamper-evidence foundation for JSONL audit files. It is not
+  an immutable compliance ledger, external timestamping service, or
+  vendor-managed SIEM delivery guarantee.
 
 ### Epic 95. Audit Export and Retention
 

@@ -297,6 +297,7 @@ fn chained_record(
         },
         duration_ms: 1,
         unix_time_ms: sequence as u128,
+        llm: None,
     };
     record.event_hash = Some(cli_audit_chain::event_hash_for_record(&record));
     record

@@ -915,6 +915,7 @@ quota-policy-check:
 
 audit-chain-check:
 	cargo test -p cortex-server audit_tests
+	cargo test -p cortex-cli cli_audit_chain_tests
 	cargo test -p cortex-cli audit_command_can_verify_chain
 	cargo test -p cortex-cli audit_review_verify_chain_accepts_valid_sequence_and_rejects_tampering
 	python3 scripts/enterprise_rbac_gate_check.py --gate audit-chain --report "$(AUDIT_CHAIN_REPORT)"

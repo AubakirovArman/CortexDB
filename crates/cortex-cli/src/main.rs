@@ -6,6 +6,8 @@ mod cli_aql;
 mod cli_aql_json;
 mod cli_audit;
 mod cli_audit_chain;
+#[cfg(test)]
+mod cli_audit_chain_tests;
 mod cli_audit_siem;
 #[cfg(test)]
 mod cli_audit_siem_tests;

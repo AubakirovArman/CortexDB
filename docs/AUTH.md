@@ -419,7 +419,10 @@ summary output includes counts by action, status, tenant, and route. The
 fields, which keeps route-level audit review separate from request payloads.
 The `--verify-chain` flag validates local sequence continuity and chained event
 hashes, detecting line deletion, reordering, and edited route metadata in
-chain-v1 audit files. This is a local tamper-evidence foundation, not a
+chain-v1 audit files. LLM inference audit decisions also include safe decision
+metadata such as provider, model, outcome, citation count, and guardrail reason
+in the event hash; prompts, request bodies, bearer tokens, and secrets remain
+excluded. This is a local tamper-evidence foundation, not a
 compliance-certified audit ledger. `cortexdb audit verify <audit.jsonl>` is the
 short fail-closed alias for `cortexdb audit <audit.jsonl> --summary
 --verify-chain`. If the configured file sink ends with a malformed chained

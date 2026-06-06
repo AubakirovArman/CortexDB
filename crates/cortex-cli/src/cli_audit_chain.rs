@@ -70,7 +70,26 @@ pub(crate) fn event_hash_for_record(record: &AuditRecord) -> String {
         ("error_code", record.error_code.clone()),
         ("duration_ms", record.duration_ms.to_string()),
         ("unix_time_ms", record.unix_time_ms.to_string()),
+        (
+            "llm",
+            record.llm.as_ref().map(llm_hash_value).unwrap_or_default(),
+        ),
     ])
+}
+
+fn llm_hash_value(fields: &crate::cli_audit::LlmAuditFields) -> String {
+    format!(
+        "{}|{}|{}|{}|{}|{}|{}|{}|{}",
+        fields.outcome,
+        fields.reason,
+        fields.provider,
+        fields.model,
+        fields.context_cell_count,
+        fields.citation_count,
+        fields.request_api_key_present,
+        fields.prompt_body_logged,
+        fields.secrets_logged,
+    )
 }
 
 fn event_hash(fields: &[(&str, String)]) -> String {
@@ -115,6 +134,7 @@ pub(crate) fn test_chained_record_jsonl() -> String {
         error_code: String::new(),
         duration_ms: 1,
         unix_time_ms: 1,
+        llm: None,
     };
     record.event_hash = Some(event_hash_for_record(&record));
     format!("{}\n", serde_json::to_string(&record).unwrap())
