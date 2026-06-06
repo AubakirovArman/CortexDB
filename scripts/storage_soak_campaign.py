@@ -145,6 +145,16 @@ def main() -> int:
     completed = 0
     last_exit_code = 0
 
+    write_campaign_report(
+        campaign_report,
+        status="running",
+        started_at=started_at,
+        target_hours=args.target_hours,
+        completed_runs=0,
+        history_report=history_report,
+        last_exit_code=0,
+    )
+
     if args.no_run_if_complete and history_hours(history_report) >= args.target_hours:
         write_campaign_report(
             campaign_report,

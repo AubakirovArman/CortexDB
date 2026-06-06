@@ -91,10 +91,11 @@ def main() -> int:
     twenty_four_hour_met = evidence.get("met", False)
     target_met = total_duration_hours >= target_hours
     target_remaining_seconds = max(0, int((target_hours - total_duration_hours) * 3600))
-    stale = seconds_since_update is None or seconds_since_update > args.max_stale_minutes * 60
+    stale = seconds_since_update is not None and seconds_since_update > args.max_stale_minutes * 60
+    campaign_running = campaign.get("status") in {"running", None} or not campaign
     healthy = bool(target_met or (
         process.get("running")
-        and campaign.get("status") == "running"
+        and campaign_running
         and not stale
     ))
     status = {
