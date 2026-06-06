@@ -51,6 +51,10 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 - **Ingestion Job Dashboard** — the developer dashboard now renders persisted
   ingestion job progress, failures, warnings, records, chunks, and SourceRefs
   through a dedicated report renderer and `make ingestion-job-dashboard-check`.
+- **Structured SourceRef v1 fields** — ingestion metadata and SourceRef JSON now
+  preserve document id, page, row, cell range, JSON path, source URL, and
+  fixed-point extraction confidence across engine, HTTP, SDK, and dashboard
+  surfaces.
 
 ### Changed
 - **Error taxonomy contract guard** — `make openapi-contract-check` now also

@@ -26,6 +26,7 @@
 .PHONY: knowledge-graph-check
 .PHONY: ingestion-jobs-v2-check
 .PHONY: ingestion-job-dashboard-check
+.PHONY: structured-source-ref-check
 .PHONY: distributed-consensus-research-check
 .PHONY: managed-cloud-feasibility-check
 .PHONY: next-60-epics-audit next-60-epics-completion-check
@@ -178,6 +179,7 @@ VERIFICATION_QUALITY_DASHBOARD_JSON ?= target/verification-quality/dashboard.jso
 VERIFICATION_QUALITY_DASHBOARD_MD ?= target/verification-quality/dashboard.md
 INGESTION_JOBS_V2_REPORT ?= target/ingestion-jobs-v2/report.json
 INGESTION_JOB_DASHBOARD_REPORT ?= target/ingestion-job-dashboard/report.json
+STRUCTURED_SOURCE_REF_REPORT ?= target/structured-source-ref/report.json
 HTTP_CONTRACT_OPS_REPORT ?= target/http-contract-ops/report.json
 CLI_PRODUCT_REPORT ?= target/cli-product/report.json
 OPERATIONS_RUNBOOK_REPORT ?= target/operations-runbook/report.json
@@ -2698,6 +2700,13 @@ dashboard-product-check: dashboard-standalone-smoke
 ingestion-job-dashboard-check: dashboard-standalone-smoke
 	cargo test -p cortex-server dashboard_
 	python3 scripts/dashboard_product_check.py --report "$(INGESTION_JOB_DASHBOARD_REPORT)"
+
+structured-source-ref-check: dashboard-standalone-smoke
+	cargo test -p cortex-engine --test ingestion_tests cell_metadata_parses_source_ref_aliases_and_url
+	cargo test -p cortex-engine --test ingestion_adapters
+	cargo test -p cortex-engine --test ingestion_validation_report
+	cargo test -p cortex-server response_snapshot_tests
+	python3 scripts/structured_source_ref_check.py --report "$(STRUCTURED_SOURCE_REF_REPORT)"
 
 dashboard-smoke: dashboard-check
 	cargo build -p cortex-server

@@ -111,6 +111,8 @@ fn cell_metadata_parses_source_ref_aliases_and_url() {
         "doc_id=doc-1\n",
         "chunk_id=chunk-7\n",
         "page=4\n",
+        "row=8\n",
+        "json_path=$.projects[0].budget\n",
         "confidence_q16=60000\n",
         "\n",
         "body"
@@ -125,6 +127,11 @@ fn cell_metadata_parses_source_ref_aliases_and_url() {
     assert_eq!(source_ref.document_id.as_deref(), Some("doc-1"));
     assert_eq!(source_ref.cell_range.as_deref(), Some("chunk-7"));
     assert_eq!(source_ref.page, Some(4));
+    assert_eq!(source_ref.row, Some(8));
+    assert_eq!(
+        source_ref.json_path.as_deref(),
+        Some("$.projects[0].budget")
+    );
     assert_eq!(source_ref.confidence_q16, 60_000);
 }
 

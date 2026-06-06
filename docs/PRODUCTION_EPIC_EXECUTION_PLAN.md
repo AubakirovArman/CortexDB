@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 82 / 150
+- Done: 83 / 150
 - Partial: 1 / 150
-- Todo: 67 / 150
-- Current closed epic: Epic 82, Ingestion Job Dashboard
+- Todo: 66 / 150
+- Current closed epic: Epic 83, Structured SourceRef v1
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2247,16 +2247,39 @@ Tasks:
 
 ### Epic 83. Structured SourceRef v1
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/query/metadata.rs`
+- `crates/cortex-engine/src/query/metadata_validation.rs`
+- `crates/cortex-engine/src/ingestion/cells.rs`
+- `crates/cortex-engine/src/ingestion/adapters.rs`
+- `crates/cortex-engine/src/ingestion/report.rs`
+- `crates/cortex-engine/tests/ingestion_adapters.rs`
+- `crates/cortex-engine/tests/ingestion_validation_report.rs`
+- `crates/cortex-server/src/responses.rs`
+- `crates/cortex-sdk/src/types.rs`
+- `docs/openapi.yaml`
+- `docs/CELL_METADATA_MODEL.md`
+- `scripts/structured_source_ref_check.py`
+- `make structured-source-ref-check`
 
 Tasks:
 
-- Add document ID.
-- Add page.
-- Add row.
-- Add JSON path.
-- Add source URL.
-- Add extraction confidence.
+- Add document ID. Done: SourceRef parser, ingestion adapters, validation
+  reports, OpenAPI, HTTP snapshots, and SDK types preserve `document_id`.
+- Add page. Done: PDF ingestion writes page SourceRef metadata and ContextPack
+  plus validation reports expose `page`.
+- Add row. Done: SourceRef parser accepts `row`/`row_number`; CSV ingestion
+  writes 1-based source rows and reports expose `row`.
+- Add JSON path. Done: JSON ingestion writes flattened `json_path` provenance
+  per emitted fact and reports expose it.
+- Add source URL. Done: SourceRef metadata and ingestion reports preserve
+  `source_url` / `url` when present.
+- Add extraction confidence. Done: SourceRef confidence stays fixed-point
+  `confidence_q16` across metadata, reports, ContextPack exports, HTTP, and SDK
+  surfaces.
 
 ### Epic 84. Deterministic Chunking v1
 

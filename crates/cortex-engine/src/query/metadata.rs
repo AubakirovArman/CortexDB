@@ -16,6 +16,7 @@ pub struct SourceRef {
     pub source_url: Option<String>,
     pub document_id: Option<String>,
     pub page: Option<u32>,
+    pub row: Option<u32>,
     pub cell_range: Option<String>,
     pub json_path: Option<String>,
     pub confidence_q16: u16,
@@ -60,6 +61,7 @@ impl CellMetadata {
         let mut source_url = None;
         let mut document_id = None;
         let mut page = None;
+        let mut row = None;
         let mut cell_range = None;
         let mut json_path = None;
         let mut confidence_q16 = None;
@@ -121,6 +123,12 @@ impl CellMetadata {
                 } else if let Some(value) = line.strip_prefix("page=") {
                     page = value.trim().parse().ok();
                     continue;
+                } else if let Some(value) = line.strip_prefix("row=") {
+                    row = value.trim().parse().ok();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("row_number=") {
+                    row = value.trim().parse().ok();
+                    continue;
                 } else if let Some(value) = line.strip_prefix("cell_range=") {
                     cell_range = non_empty(value);
                     continue;
@@ -149,6 +157,7 @@ impl CellMetadata {
             source_url,
             document_id,
             page,
+            row,
             cell_range,
             json_path,
             confidence_q16: confidence_q16.unwrap_or_else(|| {

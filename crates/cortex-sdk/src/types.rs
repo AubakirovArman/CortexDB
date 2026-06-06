@@ -305,9 +305,15 @@ pub struct SourceRefResponse {
     pub source_id: String,
     #[serde(default)]
     pub source_url: Option<String>,
+    #[serde(default)]
     pub document_id: Option<String>,
+    #[serde(default)]
     pub page: Option<u32>,
+    #[serde(default)]
+    pub row: Option<u32>,
+    #[serde(default)]
     pub cell_range: Option<String>,
+    #[serde(default)]
     pub json_path: Option<String>,
     pub confidence_q16: u16,
 }
@@ -421,7 +427,17 @@ pub struct IngestionSourceRefReport {
     pub chunk_id: Option<String>,
     pub has_source_ref: bool,
     pub source_id: Option<String>,
+    #[serde(default)]
+    pub source_url: Option<String>,
     pub document_id: Option<String>,
+    #[serde(default)]
+    pub page: Option<u32>,
+    #[serde(default)]
+    pub row: Option<u32>,
+    #[serde(default)]
+    pub cell_range: Option<String>,
+    #[serde(default)]
+    pub json_path: Option<String>,
     pub confidence_q16: Option<u16>,
 }
 

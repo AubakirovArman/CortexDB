@@ -139,6 +139,7 @@ pub struct SourceRefResponse {
     pub source_url: Option<String>,
     pub document_id: Option<String>,
     pub page: Option<u32>,
+    pub row: Option<u32>,
     pub cell_range: Option<String>,
     pub json_path: Option<String>,
     pub confidence_q16: u16,

@@ -68,6 +68,7 @@ fn source_ref_json(source_ref: &SourceRef) -> serde_json::Value {
         "source_url": &source_ref.source_url,
         "document_id": &source_ref.document_id,
         "page": source_ref.page,
+        "row": source_ref.row,
         "cell_range": &source_ref.cell_range,
         "json_path": &source_ref.json_path,
         "confidence_q16": source_ref.confidence_q16,

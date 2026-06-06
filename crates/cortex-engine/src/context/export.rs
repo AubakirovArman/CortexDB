@@ -268,6 +268,9 @@ fn source_ref_inline(source_ref: &SourceRef) -> String {
     if let Some(page) = source_ref.page {
         parts.push(format!("page={page}"));
     }
+    if let Some(row) = source_ref.row {
+        parts.push(format!("row={row}"));
+    }
     if let Some(cell_range) = &source_ref.cell_range {
         parts.push(format!("cell_range={cell_range}"));
     }

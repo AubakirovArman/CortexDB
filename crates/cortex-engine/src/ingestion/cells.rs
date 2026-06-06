@@ -20,6 +20,27 @@ pub(crate) fn put_text_chunk_cell(
     )
 }
 
+pub(crate) struct SourceRefHeaders<'a> {
+    pub document_id: &'a str,
+    pub page: Option<u32>,
+    pub row: Option<u32>,
+    pub cell_range: Option<&'a str>,
+    pub json_path: Option<&'a str>,
+    pub confidence_q16: Option<u16>,
+}
+
+pub(crate) fn put_source_ref_cell(
+    db: &mut Database,
+    cell_id: CellId,
+    metadata: KnowledgeCellMetadata,
+    body: &str,
+    source_ref: SourceRefHeaders<'_>,
+) -> EngineResult<CommitSeq> {
+    let wal_metadata = metadata.encode_wal_section();
+    let payload = source_ref_payload(&metadata, body, source_ref);
+    db.append_then_apply_with_metadata(DbOperation::PutCell { cell_id, payload }, wal_metadata)
+}
+
 pub(crate) fn document_metadata(scope: String, source: String) -> KnowledgeCellMetadata {
     KnowledgeCellMetadata {
         scope,
@@ -97,4 +118,51 @@ fn text_chunk_payload(
     let mut payload = lines.join("\n").into_bytes();
     payload.extend_from_slice(chunk.text.as_bytes());
     payload
+}
+
+fn source_ref_payload(
+    metadata: &KnowledgeCellMetadata,
+    body: &str,
+    source_ref: SourceRefHeaders<'_>,
+) -> Vec<u8> {
+    let mut lines = base_header_lines(metadata);
+    if let Some(source) = &metadata.source {
+        let source = sanitize_header_value(source);
+        lines.push(format!("source_id={source}"));
+    }
+    lines.push(format!(
+        "document_id={}",
+        sanitize_header_value(source_ref.document_id)
+    ));
+    if let Some(page) = source_ref.page {
+        lines.push(format!("page={page}"));
+    }
+    if let Some(row) = source_ref.row {
+        lines.push(format!("row={row}"));
+    }
+    if let Some(cell_range) = source_ref.cell_range {
+        lines.push(format!("cell_range={}", sanitize_header_value(cell_range)));
+    }
+    if let Some(json_path) = source_ref.json_path {
+        lines.push(format!("json_path={}", sanitize_header_value(json_path)));
+    }
+    if let Some(confidence_q16) = source_ref.confidence_q16 {
+        lines.push(format!("confidence_q16={confidence_q16}"));
+    }
+    lines.push(String::new());
+    let mut payload = lines.join("\n").into_bytes();
+    payload.extend_from_slice(body.as_bytes());
+    payload
+}
+
+fn base_header_lines(metadata: &KnowledgeCellMetadata) -> Vec<String> {
+    let mut lines = vec![
+        format!("scope={}", sanitize_header_value(&metadata.scope)),
+        format!("status={}", sanitize_header_value(&metadata.status)),
+        format!("type={}", metadata.cell_type.as_str()),
+    ];
+    if let Some(source) = &metadata.source {
+        lines.push(format!("source={}", sanitize_header_value(source)));
+    }
+    lines
 }

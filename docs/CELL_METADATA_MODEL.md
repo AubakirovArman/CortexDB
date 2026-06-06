@@ -15,7 +15,10 @@ source=<provenance_source_id>
 source_id=<structured_source_ref_id>
 source_url=<source_url>
 doc_id=<document_id>
+page=<page_number>
+row=<row_number>
 chunk_id=<chunk_or_cell_range>
+json_path=<json_path>
 confidence_q16=<0..65535>
 [project=<entity_project_id>]
 [metric=<numeric_metric_type>]
@@ -41,6 +44,7 @@ confidence_q16=<0..65535>
 | **`document_id` / `doc_id`** | No | Optional document id for the structured SourceRef. |
 | **`cell_range` / `chunk_id`** | No | Optional range or chunk id for the structured SourceRef. |
 | **`page`** | No | Optional page number for the structured SourceRef. |
+| **`row` / `row_number`** | No | Optional table/CSV row number for the structured SourceRef. |
 | **`json_path`** | No | Optional JSON path for structured JSON/API provenance. |
 | **`confidence_q16`** | No | Fixed-point SourceRef confidence. Used by AQL `REQUIRE confidence >= ...`. |
 | **`project`** | No | Associated entity name (used in numeric conflict extraction). |
@@ -54,6 +58,10 @@ Plain-text ingestion writes stable chunk provenance into the header:
 document_id=<source>
 chunk_id=<sanitized-source>#chunk-0001
 ```
+
+JSON ingestion writes `json_path=<flattened.path>` for every emitted fact. CSV
+ingestion writes `row=<1-based source row>` and `cell_range=row-<n>` for every
+data row. PDF text ingestion writes `page=<n>` when the caller provides a page.
 
 The chunk id is deterministic for the same document id, text, and
 `TextChunkPolicy`. It is independent of `CellId`, so ContextPack citations stay

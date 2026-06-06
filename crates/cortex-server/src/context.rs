@@ -71,6 +71,7 @@ fn map_context_pack(pack: &ContextPack) -> ContextPackResponse {
                 source_url: sr.source_url.clone(),
                 document_id: sr.document_id.clone(),
                 page: sr.page,
+                row: sr.row,
                 cell_range: sr.cell_range.clone(),
                 json_path: sr.json_path.clone(),
                 confidence_q16: sr.confidence_q16,

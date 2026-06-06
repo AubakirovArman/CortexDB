@@ -54,6 +54,7 @@ expression: resp
         "source_id": "report_q1.pdf",
         "document_id": "doc-1",
         "page": 3,
+        "row": null,
         "cell_range": null,
         "json_path": null,
         "confidence_q16": 65535

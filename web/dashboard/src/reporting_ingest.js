@@ -71,15 +71,43 @@
             item.chunk_id,
             item.has_source_ref ? "yes" : "no",
             item.source_id,
+            item.source_url,
             item.document_id,
+            item.page,
+            item.row,
+            item.cell_range,
+            item.json_path,
             q16Percent(item.confidence_q16),
         ]);
+        const headers = [
+            "Cell",
+            "Chunk",
+            "SourceRef",
+            "Source",
+            "URL",
+            "Document",
+            "Page",
+            "Row",
+            "Range",
+            "JSON path",
+            "Confidence",
+        ];
         if (!rows.length) {
-            return table("Ingestion chunks and SourceRefs", ["Cell", "Chunk", "SourceRef", "Source", "Document", "Confidence"], [
-                ["none", "none", "none", "none", "none", "n/a"],
-            ]);
+            return table("Ingestion chunks and SourceRefs", headers, [[
+                "none",
+                "none",
+                "none",
+                "none",
+                "none",
+                "none",
+                "none",
+                "none",
+                "none",
+                "none",
+                "n/a",
+            ]]);
         }
-        return table("Ingestion chunks and SourceRefs", ["Cell", "Chunk", "SourceRef", "Source", "Document", "Confidence"], rows);
+        return table("Ingestion chunks and SourceRefs", headers, rows);
     }
 
     function renderJobRows(jobs) {

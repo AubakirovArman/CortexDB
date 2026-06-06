@@ -3,8 +3,8 @@ use cortex_core::{CellId, CommitSeq, KnowledgeCell};
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::ingestion::cells::{
-    document_metadata, entity_metadata, fact_metadata, offset_cell_id, put_text_chunk_cell,
-    relation_metadata,
+    document_metadata, entity_metadata, fact_metadata, offset_cell_id, put_source_ref_cell,
+    put_text_chunk_cell, relation_metadata, SourceRefHeaders,
 };
 use crate::ingestion::chunking::{split_text_chunks, TextChunkPolicy};
 use crate::ingestion::extract_pdf_text;
@@ -108,12 +108,19 @@ impl Database {
             .map(|(index, (key, value))| {
                 let cell_id = offset_cell_id(first_cell_id, index)?;
                 let body = format!("{key}: {value}");
-                let commit_seq = self.put_knowledge_cell(
+                let commit_seq = put_source_ref_cell(
+                    self,
                     cell_id,
-                    KnowledgeCell::new(
-                        fact_metadata(options.scope.clone(), options.source.clone()),
-                        body,
-                    ),
+                    fact_metadata(options.scope.clone(), options.source.clone()),
+                    &body,
+                    SourceRefHeaders {
+                        document_id: &options.source,
+                        page: None,
+                        row: None,
+                        cell_range: None,
+                        json_path: Some(&key),
+                        confidence_q16: None,
+                    },
                 )?;
                 Ok(IngestedCell {
                     cell_id,
@@ -139,18 +146,28 @@ impl Database {
             .enumerate()
             .map(|(index, row)| {
                 let cell_id = offset_cell_id(first_cell_id, index)?;
+                let source_row = u32::try_from(index + 2)
+                    .map_err(|_| EngineError::StorageInvariant("csv row overflow".to_owned()))?;
+                let cell_range = format!("row-{source_row}");
                 let body = headers
                     .iter()
                     .zip(row)
                     .map(|(header, value)| format!("{header}: {value}"))
                     .collect::<Vec<_>>()
                     .join("\n");
-                let commit_seq = self.put_knowledge_cell(
+                let commit_seq = put_source_ref_cell(
+                    self,
                     cell_id,
-                    KnowledgeCell::new(
-                        document_metadata(options.scope.clone(), options.source.clone()),
-                        body,
-                    ),
+                    document_metadata(options.scope.clone(), options.source.clone()),
+                    &body,
+                    SourceRefHeaders {
+                        document_id: &options.source,
+                        page: None,
+                        row: Some(source_row),
+                        cell_range: Some(&cell_range),
+                        json_path: None,
+                        confidence_q16: None,
+                    },
                 )?;
                 Ok(IngestedCell {
                     cell_id,
@@ -167,14 +184,21 @@ impl Database {
         extracted_text: &str,
         options: PdfIngestOptions,
     ) -> EngineResult<IngestedCell> {
-        let page = options
-            .page
-            .map(|value| format!("\npage={value}"))
-            .unwrap_or_default();
-        let body = format!("source_format=pdf{page}\n{extracted_text}");
-        let commit_seq = self.put_knowledge_cell(
+        let body = format!("source_format=pdf\n{extracted_text}");
+        let source = options.source;
+        let commit_seq = put_source_ref_cell(
+            self,
             cell_id,
-            KnowledgeCell::new(document_metadata(options.scope, options.source), body),
+            document_metadata(options.scope, source.clone()),
+            &body,
+            SourceRefHeaders {
+                document_id: &source,
+                page: options.page,
+                row: None,
+                cell_range: None,
+                json_path: None,
+                confidence_q16: None,
+            },
         )?;
         Ok(IngestedCell {
             cell_id,

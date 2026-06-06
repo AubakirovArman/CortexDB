@@ -403,7 +403,12 @@ Ingests a structured JSON payload recursively flattening keys into multiple fact
           "chunk_id": null,
           "has_source_ref": true,
           "source_id": "api",
-          "document_id": null,
+          "source_url": null,
+          "document_id": "api",
+          "page": null,
+          "row": null,
+          "cell_range": null,
+          "json_path": "project.budget",
           "confidence_q16": 32768
         }
       ]
@@ -434,7 +439,12 @@ Ingests a structured CSV table creating one document block cell per row.
           "chunk_id": null,
           "has_source_ref": true,
           "source_id": "budget.csv",
-          "document_id": null,
+          "source_url": null,
+          "document_id": "budget.csv",
+          "page": null,
+          "row": 2,
+          "cell_range": "row-2",
+          "json_path": null,
           "confidence_q16": 32768
         }
       ]

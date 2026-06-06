@@ -1,6 +1,5 @@
 ---
 source: crates/cortex-server/src/tests/response_snapshot_tests.rs
-assertion_line: 359
 expression: resp
 ---
 {
@@ -19,7 +18,12 @@ expression: resp
         "chunk_id": "memo.md#chunk-0001",
         "has_source_ref": true,
         "source_id": "memo.md",
+        "source_url": "https://example.test/memo.md",
         "document_id": "memo.md",
+        "page": 3,
+        "row": 7,
+        "cell_range": "memo.md#chunk-0001",
+        "json_path": "$.items[0]",
         "confidence_q16": 32768
       }
     ]

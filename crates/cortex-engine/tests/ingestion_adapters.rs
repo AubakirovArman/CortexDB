@@ -135,7 +135,14 @@ fn json_ingestion_writes_fact_cells() {
 
     assert_eq!(cells.len(), 2);
     let payload = db.get_latest_cell(CellId(10)).unwrap();
-    assert!(String::from_utf8_lossy(&payload).contains("budget: 12000"));
+    let payload_text = String::from_utf8_lossy(&payload);
+    assert!(payload_text.contains("budget: 12000"));
+    assert!(payload_text.contains("source_id=api.json"));
+    assert!(payload_text.contains("document_id=api.json"));
+    assert!(payload_text.contains("json_path=budget"));
+    let source_ref = CellMetadata::from_payload(&payload).source_ref.unwrap();
+    assert_eq!(source_ref.document_id.as_deref(), Some("api.json"));
+    assert_eq!(source_ref.json_path.as_deref(), Some("budget"));
 }
 
 #[test]
@@ -159,6 +166,15 @@ fn csv_ingestion_writes_one_cell_per_row() {
         .search_keyword("XYZ", &crate_view(), cortex_engine::SearchLimit(10))
         .unwrap();
     assert_eq!(found[0].cell_id, CellId(21));
+    let payload = db.get_latest_cell(CellId(20)).unwrap();
+    let payload_text = String::from_utf8_lossy(&payload);
+    assert!(payload_text.contains("source_id=budget.csv"));
+    assert!(payload_text.contains("document_id=budget.csv"));
+    assert!(payload_text.contains("row=2"));
+    assert!(payload_text.contains("cell_range=row-2"));
+    let source_ref = CellMetadata::from_payload(&payload).source_ref.unwrap();
+    assert_eq!(source_ref.row, Some(2));
+    assert_eq!(source_ref.cell_range.as_deref(), Some("row-2"));
 }
 
 #[test]
@@ -181,8 +197,12 @@ fn pdf_text_ingestion_marks_external_pdf_source() {
     let payload = db.get_latest_cell(result.cell_id).unwrap();
     let text = String::from_utf8_lossy(&payload);
     assert!(text.contains("source=report.pdf"));
+    assert!(text.contains("source_id=report.pdf"));
+    assert!(text.contains("document_id=report.pdf"));
     assert!(text.contains("source_format=pdf"));
     assert!(text.contains("page=7"));
+    let source_ref = CellMetadata::from_payload(&payload).source_ref.unwrap();
+    assert_eq!(source_ref.page, Some(7));
 }
 
 #[test]

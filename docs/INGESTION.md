@@ -39,10 +39,12 @@ payload with `memory_type`, optional `ttl_seconds`, and `source=agent:<id>`.
 Minimal adapters now exist on `Database`:
 
 - `ingest_text`: one document block from plain text.
-- `ingest_json`: flat JSON object fields into fact cells.
-- `ingest_csv`: header row plus one document block per data row.
+- `ingest_json`: flat JSON object fields into fact cells with
+  `json_path=<flattened.path>` SourceRef provenance.
+- `ingest_csv`: header row plus one document block per data row with
+  `row=<1-based source row>` and `cell_range=row-<n>` provenance.
 - `ingest_pdf_text`: external PDF extraction hook that stores extracted text
-  with `source_format=pdf` and optional page metadata.
+  with `source_format=pdf` and optional `page=<n>` SourceRef metadata.
 - `ingest_pdf_bytes`: native no-dependency extractor for simple uncompressed
   PDF text objects and `/FlateDecode` zlib streams before storing the same
   `source_format=pdf` cell.
@@ -130,8 +132,8 @@ from the cells that were actually written:
   metadata, or chunk id mismatch.
 - `skipped_items`: non-error skips such as `no_cells_emitted` for empty text,
   `{}`, `[]`, or header-only CSV.
-- `source_refs`: per-cell summary of SourceRef availability, source id,
-  document id, chunk id, and confidence.
+- `source_refs`: per-cell summary of SourceRef availability, source id, source
+  URL, document id, page, row, cell range, JSON path, chunk id, and confidence.
 
 The engine API exposes the same check as
 `Database::ingestion_validation_report(&cells)`. This keeps ingestion reports

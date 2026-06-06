@@ -789,7 +789,9 @@ parameters.
 Empty inputs return zero counts, `first_cell_id: null`, and a
 `validation_report.skipped_items` entry. Non-empty ingestion reports include
 per-cell SourceRef summaries so clients can verify whether chunks/facts are
-citable.
+citable. SourceRef summaries expose `source_id`, `source_url`, `document_id`,
+`page`, `row`, `cell_range`, `json_path`, and `confidence_q16` when the source
+format provides those fields.
 
 `GET /v1/ingest/jobs/<job_id>` returns the persisted ingestion job progress
 object for jobs created by engine-side job workflows. `POST

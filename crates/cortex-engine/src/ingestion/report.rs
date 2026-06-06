@@ -32,7 +32,12 @@ pub struct IngestionSourceRefReport {
     pub chunk_id: Option<String>,
     pub has_source_ref: bool,
     pub source_id: Option<String>,
+    pub source_url: Option<String>,
     pub document_id: Option<String>,
+    pub page: Option<u32>,
+    pub row: Option<u32>,
+    pub cell_range: Option<String>,
+    pub json_path: Option<String>,
     pub confidence_q16: Option<u16>,
 }
 
@@ -80,9 +85,20 @@ impl Database {
                 chunk_id: cell.chunk_id.clone(),
                 has_source_ref: source_ref.is_some(),
                 source_id: source_ref.as_ref().map(|value| value.source_id.clone()),
+                source_url: source_ref
+                    .as_ref()
+                    .and_then(|value| value.source_url.clone()),
                 document_id: source_ref
                     .as_ref()
                     .and_then(|value| value.document_id.clone()),
+                page: source_ref.as_ref().and_then(|value| value.page),
+                row: source_ref.as_ref().and_then(|value| value.row),
+                cell_range: source_ref
+                    .as_ref()
+                    .and_then(|value| value.cell_range.clone()),
+                json_path: source_ref
+                    .as_ref()
+                    .and_then(|value| value.json_path.clone()),
                 confidence_q16: source_ref.as_ref().map(|value| value.confidence_q16),
             });
         }

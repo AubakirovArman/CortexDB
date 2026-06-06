@@ -1844,6 +1844,7 @@ components:
       - source_id
       - document_id
       - page
+      - row
       - cell_range
       - json_path
       - confidence_q16
@@ -1859,6 +1860,10 @@ components:
           - type: string
           - type: 'null'
         page:
+          anyOf:
+          - type: integer
+          - type: 'null'
+        row:
           anyOf:
           - type: integer
           - type: 'null'
@@ -2193,7 +2198,12 @@ components:
       - chunk_id
       - has_source_ref
       - source_id
+      - source_url
       - document_id
+      - page
+      - row
+      - cell_range
+      - json_path
       - confidence_q16
       properties:
         cell_id:
@@ -2209,7 +2219,27 @@ components:
           anyOf:
           - type: string
           - type: 'null'
+        source_url:
+          anyOf:
+          - type: string
+          - type: 'null'
         document_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+        page:
+          anyOf:
+          - type: integer
+          - type: 'null'
+        row:
+          anyOf:
+          - type: integer
+          - type: 'null'
+        cell_range:
+          anyOf:
+          - type: string
+          - type: 'null'
+        json_path:
           anyOf:
           - type: string
           - type: 'null'

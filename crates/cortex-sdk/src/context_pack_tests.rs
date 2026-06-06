@@ -40,6 +40,7 @@ fn context_pack_v1_sdk_models_roundtrip_full_shape() {
                 source_url: Some("https://example.test/project/42".to_owned()),
                 document_id: Some("doc-42".to_owned()),
                 page: Some(7),
+                row: None,
                 cell_range: Some("chunk-0003".to_owned()),
                 json_path: None,
                 confidence_q16: 61_000,

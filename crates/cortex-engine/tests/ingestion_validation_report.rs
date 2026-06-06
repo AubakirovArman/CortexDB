@@ -35,6 +35,62 @@ fn ingestion_validation_report_captures_text_chunk_source_refs() {
         report.source_refs[0].chunk_id.as_deref(),
         Some("memo.md#chunk-0001")
     );
+    assert_eq!(
+        report.source_refs[0].cell_range.as_deref(),
+        Some("memo.md#chunk-0001")
+    );
+    assert_eq!(
+        report.source_refs[0].document_id.as_deref(),
+        Some("memo.md")
+    );
+    assert_eq!(report.source_refs[0].confidence_q16, Some(32768));
+}
+
+#[test]
+fn ingestion_validation_report_captures_structured_json_and_csv_refs() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let json_cells = db
+        .ingest_json(
+            CellId(20),
+            r#"{"project":{"budget":"12000"}}"#,
+            cortex_engine::JsonIngestOptions {
+                scope: "project:investments".to_owned(),
+                source: "api.json".to_owned(),
+            },
+        )
+        .unwrap();
+    let csv_cells = db
+        .ingest_csv(
+            CellId(30),
+            "project,budget\nABC,12000",
+            cortex_engine::CsvIngestOptions {
+                scope: "project:investments".to_owned(),
+                source: "budget.csv".to_owned(),
+            },
+        )
+        .unwrap();
+
+    let json_report = db.ingestion_validation_report(&json_cells);
+    assert_eq!(
+        json_report.source_refs[0].json_path.as_deref(),
+        Some("project.budget")
+    );
+    assert_eq!(
+        json_report.source_refs[0].document_id.as_deref(),
+        Some("api.json")
+    );
+
+    let csv_report = db.ingestion_validation_report(&csv_cells);
+    assert_eq!(csv_report.source_refs[0].row, Some(2));
+    assert_eq!(
+        csv_report.source_refs[0].cell_range.as_deref(),
+        Some("row-2")
+    );
+    assert_eq!(
+        csv_report.source_refs[0].document_id.as_deref(),
+        Some("budget.csv")
+    );
 }
 
 #[test]

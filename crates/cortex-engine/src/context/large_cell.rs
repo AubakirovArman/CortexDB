@@ -134,6 +134,12 @@ fn placeholder(request: &LargeCellRequest<'_>, kind: &str) -> LargeCellDecision 
             || line.starts_with("source_id=")
             || line.starts_with("source_url=")
             || line.starts_with("url=")
+            || line.starts_with("page=")
+            || line.starts_with("row=")
+            || line.starts_with("row_number=")
+            || line.starts_with("cell_range=")
+            || line.starts_with("json_path=")
+            || line.starts_with("confidence_q16=")
             || line.starts_with("title=")
         {
             out.push_str(line);
