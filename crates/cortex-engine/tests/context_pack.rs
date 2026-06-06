@@ -142,6 +142,7 @@ REQUIRE citations, confidence >= 0.80;"#,
             .collect::<Vec<_>>(),
         vec![CellId(1)]
     );
+    assert!(pack.citations_required);
     assert_eq!(pack.cells[0].citation.as_deref(), Some("ifc:high"));
 }
 

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 40 / 150
+- Done: 41 / 150
 - Partial: 1 / 150
-- Todo: 109 / 150
-- Current closed epic: Epic 40, AQL Query Cache
+- Todo: 108 / 150
+- Current closed epic: Epic 41, AQL Require Semantics v1
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1101,14 +1101,27 @@ Tasks:
 
 ### Epic 41. AQL Require Semantics v1
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/AQL_REQUIRE_SEMANTICS.md`
+- `docs/AQL_V0_4.md`
+- `crates/cortex-engine/src/context/mod.rs`
+- `crates/cortex-engine/src/context/pack.rs`
+- `crates/cortex-engine/tests/aql_require_semantics.rs`
+- `cargo test -p cortex-engine --test aql_require_semantics`
 
 Tasks:
 
-- Formalize `REQUIRE citations`.
-- Formalize confidence.
-- Formalize source trust.
-- Formalize freshness.
+- Formalize `REQUIRE citations`. Done: AQL-bound citation policy now reaches
+  `ContextPack.citations_required` and missing-citation anomalies.
+- Formalize confidence. Done: confidence requirements are documented as hard
+  candidate filters using SourceRef confidence, source-trust fallback, or `0`.
+- Formalize source trust. Done: source-trust requirements are documented and
+  tested as hard filters over `source_trust_q16`.
+- Formalize freshness. Done: freshness requirements are documented and tested
+  as query-time age filters over `created_unix_seconds`.
 
 ### Epic 42. AQL Limit/Budget Semantics
 

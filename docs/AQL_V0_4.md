@@ -121,6 +121,11 @@ REQUIRE freshness <= 86400 SECONDS
 Decimal thresholds are deterministic decimal literals. They are converted to
 Q16 during binding. Values greater than `1.0` are bind errors, not silent clamps.
 
+Runtime semantics are frozen in
+[`AQL_REQUIRE_SEMANTICS.md`](AQL_REQUIRE_SEMANTICS.md): citation requirements
+flow into `ContextPack`, while confidence, source-trust, and freshness are hard
+candidate filters.
+
 ## VERIFY FACT
 
 ```sql
