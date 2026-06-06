@@ -49,6 +49,13 @@ status=ready
 backup drill payload 3"
 DRILL_3="$(run_drill 20260530T000003Z)"
 
+RESTORE_DRY_RUN_TARGET="$DRILLS/${PREFIX}20260530T000003Z.dry-run"
+RESTORE_DRY_RUN_OUTPUT="$(run_cli restore "$BACKUPS/${PREFIX}20260530T000003Z" "$RESTORE_DRY_RUN_TARGET" --dry-run)"
+if [ -e "$RESTORE_DRY_RUN_TARGET" ]; then
+  echo "restore dry-run created the target path" >&2
+  exit 1
+fi
+
 PRUNE_DRY_RUN_OUTPUT="$(run_cli backup-prune "$BACKUPS" "$PREFIX" "$KEEP_LATEST" --dry-run)"
 if [ ! -d "$BACKUPS/${PREFIX}20260530T000001Z" ]; then
   echo "dry-run prune removed the oldest backup" >&2
@@ -86,7 +93,7 @@ if [ ! -d "$BACKUPS/${PREFIX}20260530T000003Z" ]; then
 fi
 
 export ROOT REPORT KEEP_LATEST PREFIX
-export DRILL_1 DRILL_2 DRILL_3 PRUNE_DRY_RUN_OUTPUT PRUNE_OUTPUT LATEST_VALIDATE LATEST_PAYLOAD
+export DRILL_1 DRILL_2 DRILL_3 RESTORE_DRY_RUN_OUTPUT PRUNE_DRY_RUN_OUTPUT PRUNE_OUTPUT LATEST_VALIDATE LATEST_PAYLOAD
 export OLDEST_BACKUP_PRUNED GIT_SHA
 
 python3 - <<'PY'
@@ -130,6 +137,7 @@ report = {
         },
     ],
     "prune_dry_run": os.environ["PRUNE_DRY_RUN_OUTPUT"],
+    "restore_dry_run": os.environ["RESTORE_DRY_RUN_OUTPUT"],
     "prune": os.environ["PRUNE_OUTPUT"],
     "latest_validate": os.environ["LATEST_VALIDATE"],
     "latest_payload": os.environ["LATEST_PAYLOAD"],

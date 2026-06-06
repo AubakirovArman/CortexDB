@@ -304,7 +304,21 @@ pub fn backup_encrypted(
     ))
 }
 
-pub fn restore(backup_path: &str, path: &str) -> Result<String, String> {
+pub fn restore(backup_path: &str, path: &str, dry_run: bool) -> Result<String, String> {
+    if dry_run {
+        let report =
+            Database::restore_from_backup_dry_run(backup_path, path).map_err(fmt_engine_error)?;
+        return Ok(format!(
+            "dry_run=true restore_path={} files_checked={} bytes_checked={} version_compatible={} backup_live_segments_checked={} backup_cells_checked={} backup_wal_records_checked={}",
+            report.restore_path.display(),
+            report.files_checked,
+            report.bytes_checked,
+            report.version_compatible,
+            report.backup_validation.live_segments_checked,
+            report.backup_validation.cells_checked,
+            report.backup_validation.wal_records_checked
+        ));
+    }
     let report = Database::restore_from_backup(backup_path, path).map_err(fmt_engine_error)?;
     Ok(format!(
         "files_copied={} bytes_copied={} restored_live_segments_checked={} restored_cells_checked={} restored_wal_records_checked={}",

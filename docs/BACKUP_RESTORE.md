@@ -7,6 +7,7 @@ locked single-node database directory.
 
 ```bash
 cortexdb backup ./db ./db.backup
+cortexdb restore ./db.backup ./db.restored --dry-run
 cortexdb restore ./db.backup ./db.restored
 cortexdb validate ./db.restored
 cortexdb backup-drill ./db ./db.backup ./db.drill-restored
@@ -25,6 +26,9 @@ make backup-restore-production-pack-check
 - The WAL writer is shut down before copying and restarted afterward.
 - Source storage is validated before copying.
 - `db.lock` and known temporary files are excluded.
+- Restore dry-run inspects backup files, storage checksums, format
+  compatibility, manifest segments, indexes, and WAL readability without
+  creating the target path.
 - Restore only writes to a target path that does not already exist.
 - Restore validates the copied database before reporting success.
 - Backup drills run backup, restore, and restored validation as one operation.
@@ -61,6 +65,16 @@ Symlinks and other non-regular files are rejected.
 - The restored target must be new; in-place overwrite is intentionally refused.
 - Backup drill targets must also be new; the command leaves the restored copy in
   place for inspection.
+
+Before a real restore, run a dry-run preflight:
+
+```bash
+cortexdb restore ./db.backup ./db.restore-target --dry-run
+```
+
+This command does not create `./db.restore-target`. It verifies the backup can
+be read by the current binary and reports the files, bytes, manifest segments,
+cells, and WAL records that would be restored.
 
 ## Operational Drill
 
@@ -121,8 +135,9 @@ The retention command reports:
 
 `make backup-drill-check` is the repeatable local evidence gate. It creates a
 temporary database under `target/backup-drill`, runs three restore drills,
-previews and applies backup pruning, validates the latest restored copy, reads
-back the latest payload, and writes:
+previews a restore without creating the dry-run target, previews and applies
+backup pruning, validates the latest restored copy, reads back the latest
+payload, and writes:
 
 ```text
 target/backup-drill/report.json
@@ -130,9 +145,10 @@ target/backup-drill/report.json
 
 The report is a release artifact. Keep it with release evidence when promoting
 a build, because it contains the local git SHA, the backup prefix, the retained
-backup policy, dry-run prune output, applied prune output, readback output, and
-a `restore_drill_trend` array. The trend is local-current by default; release
-automation should archive each report so the restore drill trend across
+backup policy, restore dry-run output, dry-run prune output, applied prune
+output, readback output, and a `restore_drill_trend` array. The trend is
+local-current by default; release automation should archive each report so the
+restore drill trend across
 releases can be compared before beta promotion.
 
 `make backup-offsite-check` is the repeatable offsite-staging evidence gate. It

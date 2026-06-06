@@ -430,14 +430,31 @@ Tasks:
 
 ### Epic 20. Restore Dry-run Mode
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `cargo test -p cortex-engine --test backup_restore restore_dry_run`
+- `cargo test -p cortex-cli cli_restore_dry_run`
+- `make backup-drill-check`
+- `target/backup-drill/report.json`
+- `crates/cortex-engine/src/backup/dry_run.rs`
+- `crates/cortex-cli/src/cli.rs`
+- `crates/cortex-cli/src/cli_ops.rs`
+- `scripts/backup_drill_check.sh`
+- `docs/BACKUP_RESTORE.md`
+- `docs/CLI.md`
 
 Tasks:
 
-- Inspect archive without writing.
-- Verify checksums.
-- Verify version compatibility.
-- Estimate restore path.
+- Inspect archive without writing. Done: `restore_from_backup_dry_run` reads
+  backup files and leaves the target path absent.
+- Verify checksums. Done: dry-run reads manifest, segment, bitmap, lexical,
+  vector, HNSW, and WAL files through storage readers.
+- Verify version compatibility. Done: storage readers reject incompatible or
+  corrupt formats before restore.
+- Estimate restore path. Done: CLI report includes `restore_path=...` and
+  refuses existing targets like real restore.
 
 ### Epic 21. Backup/Restore RPO/RTO Profiles
 

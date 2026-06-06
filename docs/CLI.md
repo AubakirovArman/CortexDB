@@ -162,9 +162,14 @@ Restore a backup into a new target directory and validate the restored database.
 The target path must not already exist, which prevents accidental overwrite.
 
 ```bash
+cortexdb restore ./db.backup ./db.restored --dry-run
 cortexdb restore ./db.backup ./db.restored
 cortexdb validate ./db.restored
 ```
+
+`--dry-run` inspects the backup without creating the restore target. It checks
+storage checksums, format compatibility, manifest segments, indexes, and WAL
+readability, then reports the target path that would be used.
 
 #### `restore-encrypted <archive_path> <path>`
 Restore a passphrase-protected archive into a new target directory and validate

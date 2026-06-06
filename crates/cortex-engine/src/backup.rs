@@ -8,9 +8,11 @@ use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::validation::StorageValidation;
 
+mod dry_run;
 mod encrypted;
 mod offsite;
 mod retention;
+pub use dry_run::RestoreDryRunReport;
 pub use encrypted::{EncryptedBackupReport, EncryptedRestoreReport};
 pub use offsite::OffsiteBackupStageReport;
 pub use retention::{BackupRetentionPlan, BackupRetentionReport};
@@ -83,6 +85,13 @@ impl Database {
         })
     }
 
+    pub fn restore_from_backup_dry_run(
+        backup_path: impl AsRef<Path>,
+        target_path: impl AsRef<Path>,
+    ) -> EngineResult<RestoreDryRunReport> {
+        dry_run::restore_from_backup_dry_run(backup_path.as_ref(), target_path.as_ref())
+    }
+
     pub fn backup_restore_drill_path(
         source_path: impl AsRef<Path>,
         backup_path: impl AsRef<Path>,
@@ -109,7 +118,7 @@ pub(super) fn copy_database_dir(source: &Path, target: &Path) -> EngineResult<Co
     result
 }
 
-fn reject_target_inside_source(source: &Path, target: &Path) -> EngineResult<()> {
+pub(super) fn reject_target_inside_source(source: &Path, target: &Path) -> EngineResult<()> {
     let target_abs = absolute_target_path(target)?;
     if target_abs.starts_with(source) {
         return Err(EngineError::StorageInvariant(format!(
@@ -131,7 +140,7 @@ fn absolute_target_path(target: &Path) -> EngineResult<PathBuf> {
     Ok(parent.canonicalize()?.join(file_name))
 }
 
-fn reject_existing_target(target: &Path) -> EngineResult<()> {
+pub(super) fn reject_existing_target(target: &Path) -> EngineResult<()> {
     match fs::metadata(target) {
         Ok(_) => Err(EngineError::BackupTargetExists(target.to_owned())),
         Err(error) if error.kind() == ErrorKind::NotFound => Ok(()),
@@ -172,7 +181,7 @@ fn copy_dir_contents(source: &Path, target: &Path) -> EngineResult<CopyReport> {
     Ok(report)
 }
 
-fn should_skip_backup_entry(name: &str) -> bool {
+pub(super) fn should_skip_backup_entry(name: &str) -> bool {
     name == "db.lock" || is_known_temp_name(name)
 }
 

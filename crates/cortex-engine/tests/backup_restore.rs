@@ -121,6 +121,80 @@ fn restore_rejects_existing_target() {
 }
 
 #[test]
+fn restore_dry_run_validates_backup_without_creating_target() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let backup = root.path().join("backup");
+    let target = root.path().join("target");
+
+    {
+        let mut db = Database::open(&source).unwrap();
+        db.put_cell(
+            CellId(11),
+            b"scope=ops\nstatus=ready\ndry run checkpointed".to_vec(),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+        db.put_cell(CellId(12), b"dry run wal tail".to_vec())
+            .unwrap();
+    }
+    Database::backup_path(&source, &backup).unwrap();
+
+    let report = Database::restore_from_backup_dry_run(&backup, &target).unwrap();
+
+    assert!(!target.exists());
+    assert_eq!(report.restore_path, target);
+    assert!(report.files_checked > 0);
+    assert!(report.bytes_checked > 0);
+    assert!(report.version_compatible);
+    assert_eq!(report.backup_validation.live_segments_checked, 1);
+    assert_eq!(report.backup_validation.wal_records_checked, 1);
+}
+
+#[test]
+fn restore_dry_run_rejects_corrupt_backup_without_creating_target() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let backup = root.path().join("backup");
+    let target = root.path().join("target");
+
+    {
+        let mut db = Database::open(&source).unwrap();
+        db.put_cell(
+            CellId(13),
+            b"scope=ops\nstatus=ready\ndry run corruption".to_vec(),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+    }
+    Database::backup_path(&source, &backup).unwrap();
+    corrupt_first_byte(&find_file_with_extension(&backup, "acs"));
+
+    assert!(Database::restore_from_backup_dry_run(&backup, &target).is_err());
+    assert!(!target.exists());
+}
+
+#[test]
+fn restore_dry_run_rejects_existing_target() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let backup = root.path().join("backup");
+    let target = root.path().join("target");
+
+    {
+        let mut db = Database::open(&source).unwrap();
+        db.put_cell(CellId(14), b"payload".to_vec()).unwrap();
+    }
+    Database::backup_path(&source, &backup).unwrap();
+    std::fs::create_dir(&target).unwrap();
+
+    assert!(matches!(
+        Database::restore_from_backup_dry_run(&backup, &target).unwrap_err(),
+        EngineError::BackupTargetExists(_)
+    ));
+}
+
+#[test]
 fn backup_rejects_target_inside_source() {
     let root = tempfile::tempdir().unwrap();
     let source = root.path().join("source");

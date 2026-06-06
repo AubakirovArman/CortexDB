@@ -157,6 +157,8 @@ enum Command {
     Restore {
         backup_path: String,
         path: String,
+        #[arg(long)]
+        dry_run: bool,
     },
     RestoreEncrypted {
         archive_path: String,
@@ -534,9 +536,11 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             tokens: tokens.as_deref(),
             json: cli.json,
         }),
-        Command::Restore { backup_path, path } => {
-            ops::restore(&backup_path, resolved(&path).to_str().unwrap())
-        }
+        Command::Restore {
+            backup_path,
+            path,
+            dry_run,
+        } => ops::restore(&backup_path, resolved(&path).to_str().unwrap(), dry_run),
         Command::RestoreEncrypted {
             archive_path,
             path,

@@ -31,7 +31,8 @@ pub mod verification;
 
 pub use backup::{
     BackupDrillReport, BackupReport, BackupRetentionPlan, BackupRetentionReport,
-    EncryptedBackupReport, EncryptedRestoreReport, OffsiteBackupStageReport, RestoreReport,
+    EncryptedBackupReport, EncryptedRestoreReport, OffsiteBackupStageReport, RestoreDryRunReport,
+    RestoreReport,
 };
 pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use compatibility::{

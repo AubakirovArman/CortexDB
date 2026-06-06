@@ -80,3 +80,41 @@ fn cli_validate_reports_ok() {
     assert!(stdout.contains("ok"));
     assert!(validate.status.success());
 }
+
+#[test]
+fn cli_restore_dry_run_reports_without_creating_target() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = dir.path().join("db");
+    let backup = dir.path().join("backup");
+    let target = dir.path().join("target");
+    let db = db.to_str().unwrap();
+    let backup_arg = backup.to_str().unwrap();
+    let target_arg = target.to_str().unwrap();
+
+    let put = cortexdb_bin()
+        .args(["put", db, "1", "scope=ops\nstatus=ready\npayload"])
+        .output()
+        .unwrap();
+    assert!(put.status.success());
+
+    let backup_output = cortexdb_bin()
+        .args(["backup", db, backup_arg])
+        .output()
+        .unwrap();
+    assert!(backup_output.status.success());
+
+    let dry_run = cortexdb_bin()
+        .args(["restore", backup_arg, target_arg, "--dry-run"])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&dry_run.stdout);
+    assert!(
+        dry_run.status.success(),
+        "{}",
+        String::from_utf8_lossy(&dry_run.stderr)
+    );
+    assert!(stdout.contains("dry_run=true"));
+    assert!(stdout.contains("files_checked="));
+    assert!(stdout.contains("backup_wal_records_checked="));
+    assert!(!target.exists());
+}
