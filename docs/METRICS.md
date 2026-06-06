@@ -6,6 +6,10 @@ This document defines the Core Alpha observability surface. It complements
 [`OPERATIONS.md`](OPERATIONS.md), [`API.md`](API.md), and
 [`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md).
 
+The stable field-name contract is frozen in
+[`METRICS_CONTRACT_V2.md`](METRICS_CONTRACT_V2.md) and checked by
+`make metrics-contract-v2-check`.
+
 ## Scope
 
 CortexDB exposes lightweight operational metrics for a local single-node
@@ -73,6 +77,12 @@ Important fields:
 | `request_rejected` | Requests rejected by limits/backpressure. | Alert if nonzero under normal traffic. |
 | `request_duration_ms_total` | Sum of request durations in ms. | Use with request count for rough mean latency. |
 | `validation_failures` | `/v1/validate` responses that reported storage errors. | Any increase requires operator review. |
+| `principal_quota_requests_allowed` | Per-principal request quota checks allowed. | Confirms quota checks are being evaluated. |
+| `principal_quota_requests_rejected` | Per-principal request quota checks rejected. | Any increase means callers are exceeding configured request quota. |
+| `principal_quota_body_bytes_allowed` | Request body bytes accepted by per-principal body quotas. | Tracks accepted upload/body volume. |
+| `principal_quota_body_bytes_rejected` | Request body bytes rejected by per-principal body quotas. | Any increase means body quota blocked work. |
+| `principal_quota_queue_acquired` | Per-principal actor queue permits acquired. | Tracks queue admission pressure. |
+| `principal_quota_queue_rejected` | Per-principal actor queue permits rejected. | Any increase means per-principal queue pressure blocked work. |
 
 ### `GET /v1/metrics?format=prometheus`
 
@@ -149,6 +159,7 @@ cargo run -p cortex-cli -- ann-validate ./data
 Use these gates for release evidence:
 
 ```bash
+make metrics-contract-v2-check
 make load-smoke-check
 make ann-fixture-check
 make ann-drift-check

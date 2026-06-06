@@ -43,6 +43,12 @@ METRICS_FIELDS = [
     "request_rejected",
     "request_duration_ms_total",
     "validation_failures",
+    "principal_quota_requests_allowed",
+    "principal_quota_requests_rejected",
+    "principal_quota_body_bytes_allowed",
+    "principal_quota_body_bytes_rejected",
+    "principal_quota_queue_acquired",
+    "principal_quota_queue_rejected",
 ]
 
 ANN_FIELDS = [
@@ -74,7 +80,9 @@ REQUIRED_MARKERS = {
     ],
     "docs": [
         ("docs/METRICS.md", "examples/observability/prometheus.yml"),
+        ("docs/METRICS.md", "METRICS_CONTRACT_V2.md"),
         ("docs/METRICS.md", "examples/observability/grafana-cortexdb-core-alpha.json"),
+        ("docs/METRICS_CONTRACT_V2.md", "metrics-contract-v2-check"),
         ("docs/OBSERVABILITY_EVIDENCE.md", "make observability-check"),
     ],
 }

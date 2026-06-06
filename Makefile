@@ -16,6 +16,7 @@
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check
 .PHONY: doctor-check
+.PHONY: metrics-contract-v2-check
 .PHONY: service-manager-smoke-check
 .PHONY: beta-landing-check
 .PHONY: use-case-pack-check
@@ -234,6 +235,7 @@ LEGAL_VERIFICATION_DATASET_REPORT ?= $(LEGAL_VERIFICATION_GATE_ROOT)/dataset.jso
 LEGAL_VERIFICATION_QUALITY_REPORT ?= $(LEGAL_VERIFICATION_GATE_ROOT)/quality.json
 LEGAL_CITATION_POLICY_REPORT ?= $(LEGAL_VERIFICATION_GATE_ROOT)/citation-policy.json
 OBSERVABILITY_REPORT ?= target/observability/report.json
+METRICS_CONTRACT_V2_REPORT ?= target/observability/metrics-contract-v2.json
 DEPLOYMENT_UPGRADE_REPORT ?= target/deployment-upgrade/report.json
 SERVICE_MANAGER_REPORT ?= target/service-manager-smoke/report.json
 ANN_BASELINE_REPORT ?= $(ANN_CORPUS_REPORT)
@@ -940,7 +942,11 @@ security-release-report-check: security-gate-v2-check compliance-boundary-check
 compliance-boundary-check:
 	python3 scripts/compliance_boundary_check.py --report "$(COMPLIANCE_BOUNDARY_REPORT)"
 
-observability-check:
+metrics-contract-v2-check:
+	cargo test -p cortex-server metrics
+	python3 scripts/metrics_contract_v2_check.py --report "$(METRICS_CONTRACT_V2_REPORT)"
+
+observability-check: metrics-contract-v2-check
 	python3 scripts/observability_check.py --report "$(OBSERVABILITY_REPORT)"
 
 service-manager-smoke-check:

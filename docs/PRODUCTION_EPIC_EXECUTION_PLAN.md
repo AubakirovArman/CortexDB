@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 101 / 150
+- Done: 102 / 150
 - Partial: 1 / 150
-- Todo: 48 / 150
-- Current closed epic: Epic 101, `cortexdb doctor`
+- Todo: 47 / 150
+- Current closed epic: Epic 102, Metrics Contract v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2859,14 +2859,37 @@ Boundary:
 
 ### Epic 102. Metrics Contract v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/METRICS_CONTRACT_V2.md`
+- `docs/METRICS.md`
+- `scripts/metrics_contract_v2_check.py`
+- `scripts/observability_check.py`
+- `crates/cortex-server/src/tests/snapshot_tests.rs`
+- `Makefile` target `metrics-contract-v2-check`
+- `make metrics-contract-v2-check`
 
 Tasks:
 
-- Stabilize metrics names.
-- Document metrics.
-- Add Prometheus examples.
-- Test metrics output.
+- Stabilize metrics names. Done: Metrics Contract v2 freezes the required JSON
+  metrics fields, latency histogram fields, and Prometheus series names.
+- Document metrics. Done: `METRICS_CONTRACT_V2.md` and `METRICS.md` document
+  the full `/v1/metrics` JSON contract, including principal quota counters.
+- Add Prometheus examples. Done: the contract references
+  `/v1/metrics?format=prometheus`, `examples/observability/prometheus.yml`,
+  and the required Prometheus series names.
+- Test metrics output. Done: `metrics_prometheus_output_contains_contract_series`
+  checks Prometheus output, response snapshots cover JSON shape, and
+  `metrics-contract-v2-check` validates Rust/OpenAPI/docs/snapshots/source
+  alignment.
+
+Boundary:
+
+- This closes the local metrics field-name contract. It does not add long-term
+  metric retention, external Prometheus deployment, or route-level latency
+  histograms beyond the existing ANN search histogram.
 
 ### Epic 103. Grafana Dashboard Pack
 

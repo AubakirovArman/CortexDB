@@ -1,0 +1,152 @@
+# CortexDB Metrics Contract v2
+
+Status: stable local single-node contract for the current production epic plan.
+
+This document freezes the names exposed by:
+
+- `GET /v1/metrics` JSON;
+- `GET /v1/metrics?format=prometheus` text exposition;
+- `docs/openapi.yaml`;
+- `MetricsResponse` and `LatencyHistogramResponse` in `cortex-server`;
+- the response snapshot tests.
+
+Run the contract gate with:
+
+```bash
+make metrics-contract-v2-check
+```
+
+## JSON Contract
+
+`GET /v1/metrics` must include these required fields:
+
+| Field | Meaning |
+| --- | --- |
+| `current_seq` | Current database commit sequence. |
+| `checkpoint_seq` | Last checkpoint commit sequence. |
+| `live_segments` | Active segment bundle count. |
+| `retired_segments` | Retired segment bundle count. |
+| `memtable_cells` | Unique cells currently tracked by MemTable. |
+| `memtable_versions` | MVCC versions currently tracked by MemTable. |
+| `memtable_payload_bytes` | Payload bytes retained by MemTable versions. |
+| `estimated_memtable_bytes` | Estimated MemTable memory footprint. |
+| `estimated_index_bytes` | Estimated query/index memory footprint. |
+| `estimated_context_pack_bytes` | Estimated ContextPack working-set footprint. |
+| `estimated_total_memory_bytes` | Sum of tracked estimated memory categories. |
+| `wal_size_bytes` | Active WAL size in bytes. |
+| `wal_writer_records` | WAL records written by the active writer. |
+| `wal_writer_bytes` | WAL bytes written by the active writer. |
+| `wal_writer_fsyncs` | WAL fsync calls by the active writer. |
+| `wal_writer_batches` | WAL batches committed by the active writer. |
+| `ann_graph_nodes` | Persisted ANN graph node count. |
+| `ann_total_edges` | Persisted ANN graph base-edge count. |
+| `ann_persisted_segments` | Live segments with ANN evidence. |
+| `ann_has_checkpoint` | Whether checkpointed ANN evidence exists. |
+| `ann_has_uncheckpointed_changes` | Whether WAL tail is newer than ANN evidence. |
+| `ann_search_requests` | ANN-capable search responses observed by HTTP. |
+| `ann_fallbacks` | ANN searches that reported fallback/exact behavior. |
+| `ann_no_fallback_requests` | Searches carrying no-fallback rollout decisions. |
+| `ann_no_fallback_allowed` | No-fallback decisions allowed by guardrails. |
+| `ann_no_fallback_blocked` | No-fallback decisions blocked by guardrails. |
+| `ann_search_latency_ms` | ANN search latency histogram object. |
+| `actor_queue_depth` | Current database actor queue depth. |
+| `actor_queue_capacity` | Configured database actor queue capacity. |
+| `request_count` | Total HTTP requests observed by the server. |
+| `request_rejected` | HTTP requests rejected by pressure or quotas. |
+| `request_duration_ms_total` | Total HTTP request duration in milliseconds. |
+| `validation_failures` | `/v1/validate` responses that reported storage errors. |
+| `principal_quota_requests_allowed` | Request quota checks allowed per principal. |
+| `principal_quota_requests_rejected` | Request quota checks rejected per principal. |
+| `principal_quota_body_bytes_allowed` | Body bytes allowed by per-principal quotas. |
+| `principal_quota_body_bytes_rejected` | Body bytes rejected by per-principal quotas. |
+| `principal_quota_queue_acquired` | Actor queue permits acquired per principal. |
+| `principal_quota_queue_rejected` | Actor queue permits rejected per principal. |
+
+`ann_search_latency_ms` must include:
+
+```text
+count
+sum_ms
+le_10_ms
+le_50_ms
+le_100_ms
+le_500_ms
+le_1000_ms
+gt_1000_ms
+```
+
+## Prometheus Contract
+
+`GET /v1/metrics?format=prometheus` must expose these series:
+
+```text
+cortexdb_current_seq
+cortexdb_checkpoint_seq
+cortexdb_live_segments
+cortexdb_retired_segments
+cortexdb_memtable_cells
+cortexdb_memtable_versions
+cortexdb_memtable_payload_bytes
+cortexdb_estimated_memtable_bytes
+cortexdb_estimated_index_bytes
+cortexdb_estimated_context_pack_bytes
+cortexdb_estimated_total_memory_bytes
+cortexdb_wal_size_bytes
+cortexdb_wal_writer_records
+cortexdb_wal_writer_bytes
+cortexdb_wal_writer_fsyncs
+cortexdb_wal_writer_batches
+cortexdb_ann_graph_nodes
+cortexdb_ann_total_edges
+cortexdb_ann_persisted_segments
+cortexdb_actor_queue_depth
+cortexdb_actor_queue_capacity
+cortexdb_request_count
+cortexdb_request_rejected
+cortexdb_request_duration_ms_total
+cortexdb_ann_search_requests
+cortexdb_ann_fallbacks
+cortexdb_ann_no_fallback_requests
+cortexdb_ann_no_fallback_allowed
+cortexdb_ann_no_fallback_blocked
+cortexdb_ann_search_latency_ms_bucket
+cortexdb_ann_search_latency_ms_count
+cortexdb_ann_search_latency_ms_sum
+cortexdb_validation_failures
+cortexdb_principal_quota_requests_allowed
+cortexdb_principal_quota_requests_rejected
+cortexdb_principal_quota_body_bytes_allowed
+cortexdb_principal_quota_body_bytes_rejected
+cortexdb_principal_quota_queue_acquired
+cortexdb_principal_quota_queue_rejected
+```
+
+Boolean JSON fields such as `ann_has_checkpoint` and
+`ann_has_uncheckpointed_changes` are intentionally not exposed as Prometheus
+series in Contract v2. Operators should use the richer JSON response or ANN
+metrics endpoint for those booleans.
+
+## Stability Rules
+
+- Do not rename or remove a field without a new contract version.
+- New JSON metrics may be added only with docs, OpenAPI, snapshots, and gate
+  coverage.
+- New Prometheus series may be added only with docs, alert/runbook review, and
+  gate coverage.
+- Counters must remain monotonic within the running server process.
+- Gauges may move up or down and must be documented as gauges in Prometheus
+  output.
+
+## Evidence
+
+Contract v2 is guarded by:
+
+- `scripts/metrics_contract_v2_check.py`;
+- `make metrics-contract-v2-check`;
+- `snapshot_metrics_response`;
+- `snapshot_metrics_response_shape`;
+- `metrics_prometheus_output_contains_contract_series`;
+- `docs/openapi.yaml`;
+- `docs/METRICS.md`;
+- `examples/observability/prometheus.yml`;
+- `examples/observability/alerts.yml`.

@@ -90,6 +90,84 @@ fn snapshot_metrics_includes_actor_and_request_fields() {
 }
 
 #[test]
+fn metrics_prometheus_output_contains_contract_series() {
+    let dir = tempfile::tempdir().unwrap();
+    let local_addr = spawn_metrics_server(dir.path().join("db"));
+    let response = tcp_request(
+        local_addr,
+        "GET /v1/metrics?format=prometheus HTTP/1.1\r\n\r\n",
+    );
+    assert!(
+        response.contains("200 OK"),
+        "metrics request failed: {response}"
+    );
+    for metric in [
+        "cortexdb_current_seq",
+        "cortexdb_checkpoint_seq",
+        "cortexdb_wal_size_bytes",
+        "cortexdb_actor_queue_depth",
+        "cortexdb_request_count",
+        "cortexdb_ann_search_requests",
+        "cortexdb_ann_search_latency_ms_bucket",
+        "cortexdb_validation_failures",
+        "cortexdb_principal_quota_requests_allowed",
+        "cortexdb_principal_quota_queue_rejected",
+    ] {
+        assert!(response.contains(metric), "missing metric {metric}");
+    }
+}
+
+fn spawn_metrics_server(root_path: std::path::PathBuf) -> std::net::SocketAddr {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let local_addr = listener.local_addr().unwrap();
+    drop(listener);
+
+    std::thread::spawn(move || {
+        let _ = crate::serve_with_options(
+            &root_path,
+            &local_addr.to_string(),
+            crate::ServerOptions::default(),
+        );
+    });
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    local_addr
+}
+
+fn tcp_request(addr: std::net::SocketAddr, request: &str) -> String {
+    use std::io::{Read, Write};
+    use std::net::TcpStream;
+    use std::time::Duration;
+
+    let mut last_err = None;
+    for _ in 0..20 {
+        match TcpStream::connect(addr) {
+            Ok(mut stream) => {
+                if let Err(err) = stream.write_all(request.as_bytes()) {
+                    last_err = Some(err);
+                    std::thread::sleep(Duration::from_millis(50));
+                    continue;
+                }
+                let mut response = [0u8; 32768];
+                let read = match stream.read(&mut response) {
+                    Ok(read) => read,
+                    Err(err) => {
+                        last_err = Some(err);
+                        std::thread::sleep(Duration::from_millis(50));
+                        continue;
+                    }
+                };
+                return String::from_utf8_lossy(&response[..read]).to_string();
+            }
+            Err(err) => {
+                last_err = Some(err);
+                std::thread::sleep(Duration::from_millis(50));
+            }
+        }
+    }
+    panic!("failed to perform metrics request after retries: {last_err:?}");
+}
+
+#[test]
 fn snapshot_put_cell_response_shape() {
     let dir = tempfile::tempdir().unwrap();
     let response = handle_http(dir.path(), "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\nhello");
