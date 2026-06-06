@@ -304,7 +304,17 @@ Tasks:
 
 ### Epic 14. Backup Archive Compatibility
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `make storage-compat-check`
+- `target/storage-compat/report.json`
+- `target/backup-drill/report.json`
+- `target/migration-historical-restore/report.json`
+- `target/migration-upgrade-matrix-v2/report.json`
+- `docs/STORAGE_COMPATIBILITY.md`
+- `docs/BACKUP_RESTORE.md`
 
 Tasks:
 
