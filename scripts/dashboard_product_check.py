@@ -90,6 +90,8 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_retrieval.js", "Citation explorer"),
         ("web/dashboard/src/reporting_retrieval.js", "Explain explorer"),
         ("web/dashboard/src/reporting_retrieval.js", "Anomaly explorer"),
+        ("web/dashboard/src/reporting_retrieval.js", "Token budget"),
+        ("web/dashboard/src/reporting_retrieval.js", "Source refs"),
         ("web/dashboard/src/reporting_retrieval.js", "score_components"),
         ("web/dashboard/src/reporting_retrieval.js", "why_excluded"),
         ("docs/DASHBOARD_UI.md", "ContextPack Explorer"),

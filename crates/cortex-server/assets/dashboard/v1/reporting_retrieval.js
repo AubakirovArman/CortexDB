@@ -265,8 +265,8 @@
 
         summary.replaceChildren(
             card("Cells", cells.length),
-            card("Budget", budget),
-            card("Estimated", estimated),
+            card("Token budget", budget),
+            card("Estimated tokens", estimated),
             card("Used", used),
             card("Citations", `${citations}/${cells.length}`, citationTone),
             card("Required", yesNo(body.citations_required)),

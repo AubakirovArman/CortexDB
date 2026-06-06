@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 111 / 150
+- Done: 112 / 150
 - Partial: 1 / 150
-- Todo: 38 / 150
-- Current closed epic: Epic 111, Dashboard Operational Status View
+- Todo: 37 / 150
+- Current closed epic: Epic 112, ContextPack Explorer
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3144,15 +3144,21 @@ Tasks:
 
 ### Epic 112. ContextPack Explorer
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Show cells.
-- Show source refs.
-- Show explain data.
-- Show anomalies.
-- Show token budget.
+- Show cells. Done: ContextPack report renders selected cell previews with
+  token estimates, citation state, matched terms, and why-selected text.
+- Show source refs. Done: summary cards count source refs and the citation
+  explorer lists citation/source-ref visibility for each selected cell.
+- Show explain data. Done: explain rows render score, BM25 base,
+  source-trust metadata, redundancy penalty, and score component reasons.
+- Show anomalies. Done: anomaly explorer renders reported anomaly code,
+  message, cell id, and `why_excluded` text when present.
+- Show token budget. Done: ContextPack summary now shows token budget,
+  estimated tokens, used percentage, and truncation status.
+- Evidence gate. Done: `make context-pack-explorer-check`.
 
 ### Epic 113. Verification Explorer
 
