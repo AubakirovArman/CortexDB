@@ -103,6 +103,7 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_retrieval.js", "Numeric conflict explorer"),
         ("web/dashboard/src/reporting_retrieval.js", "Guard explorer"),
         ("web/dashboard/src/reporting_retrieval.js", "numeric_conflicts"),
+        ("web/dashboard/src/reporting_retrieval.js", "source_trust_category"),
         ("docs/DASHBOARD_UI.md", "Verification Explorer"),
     ],
     "ingestion_job_dashboard": [

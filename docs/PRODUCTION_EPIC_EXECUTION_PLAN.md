@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 112 / 150
+- Done: 113 / 150
 - Partial: 1 / 150
-- Todo: 37 / 150
-- Current closed epic: Epic 112, ContextPack Explorer
+- Todo: 36 / 150
+- Current closed epic: Epic 113, Verification Explorer
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3162,15 +3162,21 @@ Tasks:
 
 ### Epic 113. Verification Explorer
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Show verdict.
-- Show supporting evidence.
-- Show contradicting evidence.
-- Show numeric conflicts.
-- Show guards.
+- Show verdict. Done: Verify report summary cards render verdict and status
+  with supported, mixed, and bad-state tones.
+- Show supporting evidence. Done: supporting evidence list renders matched
+  terms, citation state, source-trust category/q16, and payload previews.
+- Show contradicting evidence. Done: contradicting evidence list uses the same
+  evidence renderer and highlights present contradictions.
+- Show numeric conflicts. Done: numeric conflict explorer renders normalized
+  metric disagreements such as budget deltas.
+- Show guards. Done: guard explorer renders policy/runtime guard code and
+  message by cell or globally.
+- Evidence gate. Done: `make verification-explorer-check`.
 
 ### Epic 114. Retrieval Quality Explorer
 

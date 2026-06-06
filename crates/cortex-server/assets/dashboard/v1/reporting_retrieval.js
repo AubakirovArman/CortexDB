@@ -116,7 +116,7 @@
         meta.textContent = [
             `matched terms: ${evidence.matched_terms ?? 0}`,
             evidence.citation ? `citation: ${evidence.citation}` : "citation: missing",
-            `source trust: ${q16Percent(evidence.source_trust_q16)}`,
+            `source trust: ${evidence.source_trust_category || "unknown"} ${q16Percent(evidence.source_trust_q16)}`,
         ].join(" · ");
         body.textContent = preview(evidence.payload_text);
         item.append(title, meta, body);
