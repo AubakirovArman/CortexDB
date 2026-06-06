@@ -285,7 +285,16 @@ Tasks:
 
 ### Epic 13. Previous Release Restore Fixtures
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json`
+- `fixtures/migration/historical/v0.1.0-core-alpha.5/backup/`
+- `fixtures/migration/compatibility_matrix_v1.json`
+- `make migration-compatibility-check`
+- `target/migration-historical-restore/report.json`
+- `target/migration-upgrade-matrix-v2/report.json`
 
 Tasks:
 
