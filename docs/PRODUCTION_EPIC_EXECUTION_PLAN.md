@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 46 / 150
+- Done: 47 / 150
 - Partial: 1 / 150
-- Todo: 103 / 150
-- Current closed epic: Epic 46, Multi-domain Retrieval Corpus v2
+- Todo: 102 / 150
+- Current closed epic: Epic 47, Retrieval Quality History
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1286,16 +1286,29 @@ Tasks:
 
 ### Epic 47. Retrieval Quality History
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `scripts/retrieval_quality_history.py`
+- `scripts/retrieval_quality_history_self_test.py`
+- `make retrieval-quality-history-check`
+- `target/retrieval-quality/history.json`
+- Latest local history report: `status=passed`, `production_safe=true`,
+  `domain_count=4`, `history_runs_per_domain=5`, `run_count=20`, and
+  `regression_count=0`.
 
 Tasks:
 
-- Run repeated evaluations per domain.
-- Track recall.
-- Track MRR.
-- Track nDCG.
-- Track p95/p99 latency.
-- Add no-regression report.
+- Run repeated evaluations per domain. Done: the history gate evaluates four
+  checked-in retrieval domains five times each.
+- Track recall. Done: each domain summary records `latest_mean_recall_q16`.
+- Track MRR. Done: each domain summary records `latest_mean_mrr_q16`.
+- Track nDCG. Done: each domain summary records `latest_mean_ndcg_q16`.
+- Track p95/p99 latency. Done: each domain summary records
+  `latest_p95_latency_nanos` and `latest_p99_latency_nanos`.
+- Add no-regression report. Done: adjacent runs fail the gate on quality,
+  exact-parity, or latency regressions beyond configured local tolerances.
 
 ### Epic 48. Public Retrieval Benchmark Page
 

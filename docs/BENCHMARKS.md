@@ -923,6 +923,7 @@ For the beta gate, the same command also writes a multi-domain fixture report:
 
 ```text
 target/retrieval-quality/beta-report.json
+target/retrieval-quality/history.json
 target/retrieval-quality/dashboard.html
 ```
 
@@ -939,8 +940,17 @@ It repeats a deterministic local retrieval probe five times per domain and
 records `production_safe=true` only when all domains validate, produce positive
 recall, and show no local regression. Endpoint-backed real-embedding history is
 still tracked separately under `target/ann/real-embedding/runs/history.json`.
-The generated HTML dashboard renders per-domain recall, MRR, nDCG, p95 latency,
+`target/retrieval-quality/history.json` is the focused no-regression report for
+checked-in retrieval domains: it tracks recall, MRR, nDCG, p95 latency, p99
+latency, max latency, exact top-k parity, and adjacent-run regressions. The
+generated HTML dashboard renders per-domain recall, MRR, nDCG, p95 latency,
 exact parity, and regression counts for release review.
+
+Run only the multi-domain retrieval history gate with:
+
+```bash
+make retrieval-quality-history-check
+```
 
 The report separates the search modes that matter for beta review:
 

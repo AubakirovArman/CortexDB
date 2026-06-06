@@ -13,6 +13,7 @@ Primary artifacts:
 ```text
 target/retrieval-quality/report.json
 target/retrieval-quality/beta-report.json
+target/retrieval-quality/history.json
 target/retrieval-quality/dashboard.html
 target/ann/real-embedding/runs/history.json
 target/ann/real-embedding/investment_projects_readiness_epic25.json
@@ -64,10 +65,53 @@ regression_count: 0
 production_safe: true
 ```
 
+## Latest Multi-Domain Retrieval Quality History
+
+```text
+status: passed
+production_safe: true
+domain_count: 4
+history_runs_per_domain: 5
+run_count: 20
+regression_count: 0
+investment_projects_latest_mean_recall_q16: 62258
+investment_projects_latest_mean_mrr_q16: 49767
+investment_projects_latest_mean_ndcg_q16: 37590
+investment_projects_latest_p95_latency_nanos: 105314
+investment_projects_latest_p99_latency_nanos: 116477
+legal_policies_latest_mean_recall_q16: 65535
+legal_policies_latest_mean_mrr_q16: 65535
+legal_policies_latest_mean_ndcg_q16: 65535
+legal_policies_latest_p95_latency_nanos: 12572
+legal_policies_latest_p99_latency_nanos: 12572
+support_tickets_latest_mean_recall_q16: 65535
+support_tickets_latest_mean_mrr_q16: 65535
+support_tickets_latest_mean_ndcg_q16: 65535
+support_tickets_latest_p95_latency_nanos: 17860
+support_tickets_latest_p99_latency_nanos: 17998
+technical_docs_latest_mean_recall_q16: 65535
+technical_docs_latest_mean_mrr_q16: 65535
+technical_docs_latest_mean_ndcg_q16: 65535
+technical_docs_latest_p95_latency_nanos: 12089
+technical_docs_latest_p99_latency_nanos: 12089
+```
+
+Run the focused history gate with:
+
+```bash
+make retrieval-quality-history-check
+```
+
+The history report stores repeated deterministic retrieval evaluations per
+checked-in domain, tracks recall, MRR, nDCG, p95 latency, p99 latency, and
+exact top-k parity, and fails on quality or latency regression beyond the
+configured local tolerance.
+
 The beta report is saved at:
 
 ```text
 target/retrieval-quality/beta-report.json
+target/retrieval-quality/history.json
 target/retrieval-quality/dashboard.html
 ```
 
@@ -97,6 +141,9 @@ This gate proves:
   structurally valid;
 - deterministic multi-domain retrieval repeats five times per domain with no
   local regression;
+- multi-domain retrieval history repeats five times per domain and records
+  recall, MRR, nDCG, p95 latency, p99 latency, exact top-k parity, and a
+  no-regression decision;
 - real-domain embedding readiness passed with `BAAI/bge-m3` against the local
   OpenAI-compatible endpoint configured in `.env`;
 - real-domain embedding history has at least three local runs for the same corpus
