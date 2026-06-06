@@ -255,6 +255,25 @@ pub fn ann_validate(path: &str, json: bool) -> Result<String, String> {
     }
 }
 
+pub fn vector_rebuild(path: &str, experimental_hnsw: bool, json: bool) -> Result<String, String> {
+    let mut db = open_database(path, experimental_hnsw)?;
+    let report = db
+        .rebuild_vector_indexes(experimental_hnsw)
+        .map_err(fmt_engine_error)?;
+    if json {
+        return Ok(crate::cli_json::vector_rebuild_to_json(&report));
+    }
+    Ok(format!(
+        "vector_rebuild segments_checked={} cells_scanned={} vector_candidates={} vector_indexes_rebuilt={} hnsw_graphs_rebuilt={} hnsw_enabled={}",
+        report.segments_checked,
+        report.cells_scanned,
+        report.vector_candidates,
+        report.vector_indexes_rebuilt,
+        report.hnsw_graphs_rebuilt,
+        report.hnsw_enabled
+    ))
+}
+
 pub fn repair(path: &str, dry_run: bool) -> Result<String, String> {
     let report = if dry_run {
         Database::repair_best_effort_dry_run(path)

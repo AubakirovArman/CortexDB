@@ -72,6 +72,10 @@ enum Command {
     Validate {
         path: String,
     },
+    Vector {
+        #[command(subcommand)]
+        command: VectorCommand,
+    },
     AnnValidate {
         path: String,
     },
@@ -342,6 +346,15 @@ enum ContextOutputFormat {
     Markdown,
 }
 
+#[derive(Subcommand, Debug)]
+enum VectorCommand {
+    Rebuild {
+        path: String,
+        #[arg(long)]
+        experimental_hnsw: bool,
+    },
+}
+
 impl ContextOutputFormat {
     fn as_str(self) -> &'static str {
         match self {
@@ -433,6 +446,16 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         } => ops::compact(resolved(&path).to_str().unwrap(), experimental_hnsw),
         Command::Stats { path } => ops::stats(resolved(&path).to_str().unwrap(), cli.json),
         Command::Validate { path } => ops::validate(resolved(&path).to_str().unwrap(), cli.json),
+        Command::Vector { command } => match command {
+            VectorCommand::Rebuild {
+                path,
+                experimental_hnsw,
+            } => ops::vector_rebuild(
+                resolved(&path).to_str().unwrap(),
+                experimental_hnsw,
+                cli.json,
+            ),
+        },
         Command::AnnValidate { path } => {
             ops::ann_validate(resolved(&path).to_str().unwrap(), cli.json)
         }

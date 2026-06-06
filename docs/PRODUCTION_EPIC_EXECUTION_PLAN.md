@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 55 / 150
+- Done: 56 / 150
 - Partial: 1 / 150
-- Todo: 94 / 150
-- Current closed epic: Epic 55, HNSW Failure Simulation
+- Todo: 93 / 150
+- Current closed epic: Epic 56, Vector Index Rebuild Tool
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1566,13 +1566,23 @@ Tasks:
 
 ### Epic 56. Vector Index Rebuild Tool
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `Database::rebuild_vector_indexes` rebuilds live-segment `.acv` files and
+  `.ach` files when HNSW is enabled or already expected by the manifest.
+- `cortexdb vector rebuild <path> [--experimental-hnsw]` exposes the local
+  repair path.
+- `crates/cortex-engine/tests/vector_rebuild.rs`
+- `crates/cortex-cli/src/tests.rs`
 
 Tasks:
 
-- Add `cortexdb vector rebuild`.
-- Validate ACV/ACH.
-- Repair mismatch.
+- Add `cortexdb vector rebuild`. Done.
+- Validate ACV/ACH. Done: rebuild finishes with `validate_storage()`.
+- Repair mismatch. Done: corrupt `.acv`, corrupt `.ach`, and stale `.ach`
+  regression tests rebuild healthy persisted ANN bundles.
 
 ### Epic 57. Embedding Provider Abstraction
 

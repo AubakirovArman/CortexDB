@@ -48,6 +48,7 @@ Current smoke surfaces:
 
 ```text
 cortexdb search <path> <scope> <query>
+cortexdb vector rebuild <path> [--experimental-hnsw]
 cortexdb search-vector <path> <scope> <i16-vector>
 cortexdb search-vector-eval <path> <scope> <i16-vector>
 POST /v1/search?scope=<scope>&q=<query>
@@ -60,6 +61,13 @@ POST /v1/search/ann-evaluate?scope=<scope>&vector=<i16-vector>
 The HTTP body is used as the keyword query text when `q` is omitted, and as the
 vector literal when `mode=vector&vector=...` is omitted. Vector literals accept
 comma or space separated signed 16-bit integers.
+
+`cortexdb vector rebuild` is the local recovery command for persisted ANN
+bundles. It rereads live `.acs` segment cells, rewrites `.acv` vector indexes,
+and, when `--experimental-hnsw` is set or the manifest already expects HNSW,
+rewrites `.ach` graph files from the same cells. The command finishes by running
+storage validation, so checksum corruption, vector dimension mismatch, or
+stale graph/vector mismatches are repaired before the command reports success.
 
 `algorithm=exact` forces the `.acv` exact scan path. `algorithm=ann` requests
 the persisted `.ach` HNSW graph and now applies a correctness guard: empty

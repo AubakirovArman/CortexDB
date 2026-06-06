@@ -1,16 +1,17 @@
 use cortex_engine::{
     CellMetadata, ContextPack, Database, DatabaseSearchResult, RememberedCell, SearchRouteDecision,
-    StorageStats, VerificationEvidence, VerificationReport, VerificationStatus,
+    StorageStats, VectorRebuildReport, VerificationEvidence, VerificationReport,
+    VerificationStatus,
 };
 use serde_json::to_string;
 
 use crate::cli_json_types::{
     CellResponse, CliAnnEvaluationResponse, CliAnnSearchReportResponse, CliAnnValidateResponse,
-    CliStatsResponse, CliValidateResponse, ContextPackAnomalyResponse, ContextPackCellResponse,
-    ContextPackExplainResponse, ContextPackResponse, ContextPackScoreComponentResponse,
-    NumericConflictResponse, RememberResponse, SearchResponse, SearchResultResponse,
-    SearchRoutingDecisionResponse, SourceRefResponse, VerificationEvidenceResponse,
-    VerificationResponse,
+    CliStatsResponse, CliValidateResponse, CliVectorRebuildResponse, ContextPackAnomalyResponse,
+    ContextPackCellResponse, ContextPackExplainResponse, ContextPackResponse,
+    ContextPackScoreComponentResponse, NumericConflictResponse, RememberResponse, SearchResponse,
+    SearchResultResponse, SearchRoutingDecisionResponse, SourceRefResponse,
+    VerificationEvidenceResponse, VerificationResponse,
 };
 
 fn serialize_or_error<T: serde::Serialize>(value: &T) -> String {
@@ -150,6 +151,17 @@ pub(crate) fn ann_validate_to_json(
         vector_indexes_checked,
         hnsw_graphs_checked,
         errors,
+    })
+}
+
+pub(crate) fn vector_rebuild_to_json(report: &VectorRebuildReport) -> String {
+    serialize_or_error(&CliVectorRebuildResponse {
+        segments_checked: report.segments_checked,
+        cells_scanned: report.cells_scanned,
+        vector_candidates: report.vector_candidates,
+        vector_indexes_rebuilt: report.vector_indexes_rebuilt,
+        hnsw_graphs_rebuilt: report.hnsw_graphs_rebuilt,
+        hnsw_enabled: report.hnsw_enabled,
     })
 }
 

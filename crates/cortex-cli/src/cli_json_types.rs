@@ -45,6 +45,16 @@ pub struct CliAnnValidateResponse {
 }
 
 #[derive(Serialize)]
+pub struct CliVectorRebuildResponse {
+    pub segments_checked: usize,
+    pub cells_scanned: usize,
+    pub vector_candidates: usize,
+    pub vector_indexes_rebuilt: usize,
+    pub hnsw_graphs_rebuilt: usize,
+    pub hnsw_enabled: bool,
+}
+
+#[derive(Serialize)]
 pub struct CliAnnSearchReportResponse {
     pub path: String,
     pub fallback_reason: Option<String>,

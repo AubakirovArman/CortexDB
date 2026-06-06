@@ -64,6 +64,7 @@ fn cli_golden_outputs_are_stable() {
         "doctor",
         "stats",
         "validate",
+        "vector",
         "context",
         "verify",
         "search-vector-eval",
@@ -73,6 +74,67 @@ fn cli_golden_outputs_are_stable() {
 
     let version = run(vec!["cortexdb".to_owned(), "version".to_owned()]).unwrap();
     assert!(version.starts_with("cortexdb "));
+}
+
+#[test]
+fn vector_rebuild_command_repairs_corrupt_ann_files() {
+    let path = unique_path("cortexdb-cli-vector-rebuild");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nvector=10,0\nalpha".to_owned(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "2".to_owned(),
+        "scope=project:investments\nstatus=ready\nvector=0,10\nbeta".to_owned(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "flush".to_owned(),
+        path_arg.clone(),
+        "--experimental-hnsw".to_owned(),
+    ])
+    .unwrap();
+
+    let graph_path = path.join("segments/segment-1.ach");
+    let mut bytes = std::fs::read(&graph_path).unwrap();
+    bytes.truncate(bytes.len().saturating_sub(4));
+    std::fs::write(&graph_path, bytes).unwrap();
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "vector".to_owned(),
+        "rebuild".to_owned(),
+        path_arg.clone(),
+        "--experimental-hnsw".to_owned(),
+    ])
+    .unwrap();
+    assert!(output.contains("vector_rebuild"));
+    assert!(output.contains("vector_indexes_rebuilt=1"));
+    assert!(output.contains("hnsw_graphs_rebuilt=1"));
+
+    let json = run(vec![
+        "cortexdb".to_owned(),
+        "--json".to_owned(),
+        "vector".to_owned(),
+        "rebuild".to_owned(),
+        path_arg.clone(),
+        "--experimental-hnsw".to_owned(),
+    ])
+    .unwrap();
+    assert!(json.contains(r#""vector_indexes_rebuilt":1"#));
+    assert!(json.contains(r#""hnsw_graphs_rebuilt":1"#));
+    assert!(json.contains(r#""hnsw_enabled":true"#));
+
+    let _ = std::fs::remove_dir_all(path);
 }
 
 #[test]

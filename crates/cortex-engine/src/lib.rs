@@ -56,6 +56,7 @@ pub mod source_trust;
 pub mod tool_registry;
 pub mod typed_body;
 pub mod validation;
+pub mod vector_rebuild;
 pub mod verification;
 
 pub use backup::{
@@ -119,6 +120,7 @@ pub use source_trust::{SourceTrust, SourceTrustCategory, DEFAULT_SOURCE_TRUST_Q1
 pub use tool_registry::{RegisteredTool, ToolDescriptor, ToolPermission};
 pub use typed_body::{EntityBody, FactBody, RelationBody};
 pub use validation::{StorageStats, StorageValidation, StorageValidationReport};
+pub use vector_rebuild::VectorRebuildReport;
 pub use verification::{
     format_scaled_value, ContradictionRelationOptions, Magnitude, NumericValue,
     VerificationEvidence, VerificationGuard, VerificationGuardCode, VerificationNumericConflict,
