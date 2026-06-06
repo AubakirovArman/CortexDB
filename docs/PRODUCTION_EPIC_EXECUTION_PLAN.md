@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 98 / 150
+- Done: 99 / 150
 - Partial: 1 / 150
-- Todo: 51 / 150
-- Current closed epic: Epic 98, Secret Rotation Workflow
+- Todo: 50 / 150
+- Current closed epic: Epic 99, Security Check Gate v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2746,17 +2746,46 @@ Boundary:
 
 ### Epic 99. Security Check Gate v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `Makefile` target `security-gate-v2-check`
+- `scripts/security_gate_v2_check.py`
+- `target/security-gate-v2/report.json`
+- `target/security/report.json`
+- `target/security-hardening/report.json`
+- `target/enterprise-rbac/rbac-policy-store.json`
+- `target/enterprise-rbac/quota-policy.json`
+- `target/enterprise-rbac/audit-chain.json`
+- `target/audit-export-retention/report.json`
+- `make security-gate-v2-check`
 
 Tasks:
 
-- Check auth.
-- Check RBAC.
-- Check tenant isolation.
-- Check CORS.
-- Check rate limits.
-- Check audit.
-- Check malicious ingestion.
+- Check auth. Done: the v2 gate requires the `auth_required`,
+  `wrong_token_rejected`, and `data_token_admin_denied` checks from
+  `target/security/report.json`.
+- Check RBAC. Done: the v2 gate requires passing RBAC policy-store evidence
+  from `target/enterprise-rbac/rbac-policy-store.json` and matching hardening
+  checks.
+- Check tenant isolation. Done: the v2 gate requires the
+  `tenant_traversal_rejected` check.
+- Check CORS. Done: the v2 gate requires the `cors_allowlist_works` check.
+- Check rate limits. Done: the v2 gate requires `rate_limit_works` and the
+  per-principal quota report.
+- Check audit. Done: the v2 gate requires audit redaction, audit-chain, and
+  audit-export-retention reports.
+- Check malicious ingestion. Done: the v2 gate requires
+  `malicious_ingestion_tests` in the hardening report.
+
+Boundary:
+
+- This closes the local single-node HTTP security gate for auth, RBAC policy
+  store, tenant isolation, CORS, rate limits, audit, malicious ingestion, and
+  OpenAPI contracts. It does not claim external identity, enterprise compliance
+  certification, managed-cloud security, or distributed authorization
+  correctness.
 
 ### Epic 100. Security Hardening Report
 
