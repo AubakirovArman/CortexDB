@@ -1,0 +1,88 @@
+{
+  "schema_version": "cortexdb.storage_format_freeze.v1",
+  "freeze_id": "storage-format-freeze-v1",
+  "status": "frozen",
+  "scope": "single-node durable storage files written by the current CortexDB checkout",
+  "formats": [
+    {
+      "kind": "aclog_wal",
+      "name": "ACLOG WAL",
+      "extension": "aclog",
+      "current_magic": "ACLOGv0\\0",
+      "current_version": 0,
+      "legacy_magics": [],
+      "breaking_change_policy": "breaking changes require WAL_FORMAT_VERSION bump and migration notes",
+      "docs": ["docs/ACLOG_FORMAT.md", "docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+    },
+    {
+      "kind": "segment",
+      "name": "Segment",
+      "extension": "acs",
+      "current_magic": "ACS1",
+      "current_version": 1,
+      "legacy_magics": [],
+      "breaking_change_policy": "breaking changes require a new segment magic and migration notes",
+      "docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+    },
+    {
+      "kind": "bitmap_index",
+      "name": "Bitmap index",
+      "extension": "acb",
+      "current_magic": "ACB0",
+      "current_version": 0,
+      "legacy_magics": [],
+      "breaking_change_policy": "breaking changes require a new bitmap magic and migration notes",
+      "docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+    },
+    {
+      "kind": "lexical_index",
+      "name": "Lexical index",
+      "extension": "aci",
+      "current_magic": "ACI2",
+      "current_version": 2,
+      "legacy_magics": ["ACI0", "ACI1"],
+      "breaking_change_policy": "ACI0 and ACI1 remain read-only compatible; breaking changes require a new lexical magic",
+      "docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+    },
+    {
+      "kind": "vector_index",
+      "name": "Vector index",
+      "extension": "acv",
+      "current_magic": "ACV0",
+      "current_version": 0,
+      "legacy_magics": [],
+      "breaking_change_policy": "breaking changes require a new vector magic and migration notes",
+      "docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+    },
+    {
+      "kind": "hnsw_graph",
+      "name": "HNSW graph",
+      "extension": "ach",
+      "current_magic": "ACH0",
+      "current_version": 0,
+      "legacy_magics": [],
+      "breaking_change_policy": "breaking changes require a new HNSW graph magic and migration notes",
+      "docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+    },
+    {
+      "kind": "manifest",
+      "name": "Manifest",
+      "extension": "acm",
+      "current_magic": "ACM0",
+      "current_version": 0,
+      "legacy_magics": [],
+      "breaking_change_policy": "breaking changes require a new manifest magic and migration notes",
+      "docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+    }
+  ],
+  "required_evidence_gates": [
+    "make storage-format-freeze-check",
+    "make migration-compatibility-check",
+    "make storage-compat-check"
+  ],
+  "non_goals": [
+    "online rolling upgrade",
+    "in-place downgrade",
+    "renumbering existing format magics to v1"
+  ]
+}

@@ -25,12 +25,15 @@ Machine-readable compatibility is tracked in:
 
 ```text
 fixtures/migration/compatibility_matrix_v1.json
+fixtures/storage/storage_format_freeze_v1.json
 ```
 
-The fixture records the current storage markers, compatibility boundaries, and
-offline upgrade/downgrade policy. The gate is:
+The migration fixture records compatibility boundaries and offline
+upgrade/downgrade policy. The storage freeze fixture records the current frozen
+markers for ACLOG, ACS, ACB, ACI, ACV, ACH, and manifest files. The gates are:
 
 ```bash
+make storage-format-freeze-check
 make migration-compatibility-check
 ```
 
@@ -160,6 +163,7 @@ target/storage-compat/*.log
 
 The gate covers:
 
+- storage format freeze-v1 contract;
 - migration compatibility fixture;
 - historical backup restore fixture;
 - previous-release direct database open/write/backup/restore fixture;

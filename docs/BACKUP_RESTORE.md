@@ -153,8 +153,7 @@ a build, because it contains the local git SHA, the backup prefix, the retained
 backup policy, restore dry-run output, dry-run prune output, applied prune
 output, readback output, and a `restore_drill_trend` array. The trend is
 local-current by default; release automation should archive each report so the
-restore drill trend across
-releases can be compared before beta promotion.
+restore drill trend across releases can be compared before beta promotion.
 
 `make backup-offsite-check` is the repeatable offsite-staging evidence gate. It
 creates a local backup, runs a restore drill, stages the backup under an offsite

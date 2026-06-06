@@ -576,18 +576,42 @@ Boundary:
 
 ### Epic 25. Storage Format Freeze v1
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Freeze ACLOG v1.
-- Freeze ACS v1.
-- Freeze ACB v1.
-- Freeze ACI v1.
-- Freeze ACV v1.
-- Freeze ACH v1.
-- Freeze manifest v1.
-- Add compatibility docs.
+- Freeze ACLOG v1. Done: `storage-format-freeze-v1` freezes the current
+  `ACLOGv0\0` marker and `WAL_FORMAT_VERSION = 0` as the first compatibility
+  contract for WAL.
+- Freeze ACS v1. Done: `.acs` is frozen at `ACS1`.
+- Freeze ACB v1. Done: `.acb` is frozen at `ACB0`.
+- Freeze ACI v1. Done: `.aci` is frozen at `ACI2` with read-only compatibility
+  for `ACI0` and `ACI1`.
+- Freeze ACV v1. Done: `.acv` is frozen at `ACV0`.
+- Freeze ACH v1. Done: `.ach` is frozen at `ACH0`.
+- Freeze manifest v1. Done: `.acm` is frozen at `ACM0`.
+- Add compatibility docs. Done: `STORAGE_FORMATS.md`,
+  `STORAGE_COMPATIBILITY.md`, and `UPGRADE_MIGRATION.md` describe the
+  freeze-v1 contract and evidence gate.
+
+Evidence:
+
+- `fixtures/storage/storage_format_freeze_v1.json`
+- `make storage-format-freeze-check`
+- `target/storage-format-freeze/report.json`
+- `make storage-compat-check`
+- `target/storage-compat/report.json`
+- `scripts/storage_format_freeze_check.py`
+- `scripts/storage_compat_check.py`
+- `docs/STORAGE_FORMATS.md`
+- `docs/STORAGE_COMPATIBILITY.md`
+- `docs/UPGRADE_MIGRATION.md`
+
+Boundary:
+
+- Freeze v1 is a compatibility contract over the current markers. It does not
+  renumber every existing magic to `v1`, and it does not prove online rolling
+  upgrade or in-place downgrade.
 
 ## C. Core Engine Stability
 

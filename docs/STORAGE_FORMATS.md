@@ -12,6 +12,24 @@ Machine-readable release compatibility is tracked in
 
 ## Version Policy
 
+Storage Format Freeze v1 is the first compatibility freeze contract for these
+formats. It intentionally freezes the current markers as they are written today
+instead of renumbering every format to a `v1` magic. The machine-readable
+contract lives in:
+
+```text
+fixtures/storage/storage_format_freeze_v1.json
+```
+
+The evidence gate is:
+
+```bash
+make storage-format-freeze-check
+```
+
+Breaking changes to any frozen marker require a new magic or WAL version, an
+upgrade/migration note, updated fixtures, and release notes.
+
 | Format | File | Magic | Version state | Compatibility rule |
 | --- | --- | --- | --- | --- |
 | ACLOG WAL | `.aclog` | `ACLOGv0\0` | `version = 0` in file header | Breaking changes require a new WAL version. |

@@ -14,6 +14,8 @@ from typing import Any
 
 DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "docs/STORAGE_COMPATIBILITY.md": (
+        "make storage-format-freeze-check",
+        "storage_format_freeze_v1.json",
         "current-version backup restored by next-version code",
         "historical backup restore fixture",
         "corruption of `.acs`, `.acb`, `.aci`, `.acv`, and `.ach`",
@@ -49,6 +51,14 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
 }
 
 SUITES: tuple[dict[str, Any], ...] = (
+    {
+        "name": "storage_format_freeze",
+        "command": ["make", "storage-format-freeze-check"],
+        "covers": [
+            "ACLOG/ACS/ACB/ACI/ACV/ACH/manifest freeze contract",
+            "Rust storage constants match freeze fixture",
+        ],
+    },
     {
         "name": "migration_compatibility",
         "command": ["make", "migration-compatibility-check"],
@@ -174,6 +184,7 @@ def self_test() -> int:
         print("storage compatibility self-test failed: duplicate suite names")
         return 1
     required = {
+        "storage_format_freeze",
         "migration_compatibility",
         "backup_drill",
         "backup_archive_corruption",
