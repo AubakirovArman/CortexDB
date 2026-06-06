@@ -18,6 +18,7 @@ cortexdb restore-encrypted ./db.cdbenc ./db.encrypted-restored --passphrase-env 
 make backup-drill-check
 make backup-offsite-check
 make backup-rpo-rto-profile-check
+make encrypted-backup-check
 make backup-restore-production-pack-check
 ```
 
@@ -172,17 +173,27 @@ proves that writes after the backup are not claimed by the restored copy:
 target/backup-rpo-rto/report.json
 ```
 
+`make encrypted-backup-check` is the repeatable encrypted-backup MVP gate. It
+runs engine and CLI roundtrip tests, creates a passphrase archive, verifies
+that fixture payload bytes are not visible in the archive, restores with the
+correct passphrase, and verifies wrong-passphrase and corrupt-ciphertext
+fail-safe behavior:
+
+```text
+target/encrypted-backup/report.json
+```
+
 `make backup-restore-production-pack-check` is the supported workflow gate. It
-runs local drill, offsite staging, encrypted backup restore tests, and writes a
-single release artifact:
+runs local drill, offsite staging, RPO/RTO profiling, encrypted backup restore
+tests, and writes a single release artifact:
 
 ```text
 target/backup-restore-production-pack/report.json
 ```
 
 The production-pack report records the supported workflow, RPO boundary, local
-RTO profile evidence, encrypted-backup gate coverage, and paths to the
-underlying drill, offsite, and profile reports.
+RTO profile evidence, encrypted-backup report coverage, and paths to the
+underlying drill, offsite, profile, and encrypted-backup reports.
 
 Override paths in automation when needed:
 
@@ -212,6 +223,9 @@ These backup archive corruption tests cover:
 
 Encrypted backup is available as a local passphrase archive MVP through
 `backup-encrypted` and `restore-encrypted`. This supports local release
-evidence and operator drills. KMS-backed envelope encryption, remote object
-restore, and compliance-grade custody remain future work documented in
+evidence and operator drills. The current implementation is a CortexDB-local
+passphrase archive format for workflow validation; it is not a KMS-backed,
+externally audited, or compliance-certified encryption system. KMS-backed
+envelope encryption, remote object restore, and compliance-grade custody remain
+future work documented in
 [`ENCRYPTED_BACKUPS_DESIGN.md`](ENCRYPTED_BACKUPS_DESIGN.md).

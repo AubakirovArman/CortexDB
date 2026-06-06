@@ -253,6 +253,8 @@ BACKUP_RESTORE_PACK_ROOT ?= target/backup-restore-production-pack
 BACKUP_RESTORE_PACK_REPORT ?= $(BACKUP_RESTORE_PACK_ROOT)/report.json
 BACKUP_RPO_RTO_ROOT ?= target/backup-rpo-rto
 BACKUP_RPO_RTO_REPORT ?= $(BACKUP_RPO_RTO_ROOT)/report.json
+ENCRYPTED_BACKUP_ROOT ?= target/encrypted-backup
+ENCRYPTED_BACKUP_REPORT ?= $(ENCRYPTED_BACKUP_ROOT)/report.json
 LOAD_SMOKE_ROOT ?= target/load-smoke
 LOAD_SMOKE_REPORT ?= $(LOAD_SMOKE_ROOT)/report.json
 LOAD_SMOKE_CELLS ?= 100
@@ -2774,13 +2776,14 @@ backup-rpo-rto-profile-check:
 encrypted-backup-check:
 	cargo test -p cortex-engine encrypted_backup
 	cargo test -p cortex-cli backup_encrypted_and_restore_encrypted_commands_roundtrip_database
+	python3 scripts/encrypted_backup_check.py --root "$(ENCRYPTED_BACKUP_ROOT)" --report "$(ENCRYPTED_BACKUP_REPORT)"
 
 backup-restore-production-pack-check:
 	$(MAKE) backup-drill-check
 	$(MAKE) backup-offsite-check
 	$(MAKE) backup-rpo-rto-profile-check
 	$(MAKE) encrypted-backup-check
-	python3 scripts/backup_restore_production_pack.py --backup-drill-report "$(BACKUP_DRILL_REPORT)" --backup-offsite-report "$(BACKUP_OFFSITE_REPORT)" --rpo-rto-profile-report "$(BACKUP_RPO_RTO_REPORT)" --output "$(BACKUP_RESTORE_PACK_REPORT)"
+	python3 scripts/backup_restore_production_pack.py --backup-drill-report "$(BACKUP_DRILL_REPORT)" --backup-offsite-report "$(BACKUP_OFFSITE_REPORT)" --rpo-rto-profile-report "$(BACKUP_RPO_RTO_REPORT)" --encrypted-backup-report "$(ENCRYPTED_BACKUP_REPORT)" --output "$(BACKUP_RESTORE_PACK_REPORT)"
 
 crash-fault-check:
 	scripts/crash_fault_check.sh "$(CRASH_FAULT_ROOT)" "$(CRASH_FAULT_REPORT)"

@@ -508,15 +508,37 @@ Tasks:
 
 ### Epic 23. Encrypted Backup MVP
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Add passphrase encryption.
-- Add key derivation.
-- Create encrypted archive.
-- Validate restore.
-- Fail safely on wrong key.
+- Add passphrase encryption. Done: `backup-encrypted`,
+  `restore-encrypted`, and `Database::encrypted_backup_path` create and restore
+  CortexDB-local passphrase archives.
+- Add key derivation. Done for MVP: archive metadata records
+  `cortexdb.fnv64-passphrase.v1` as the local deterministic KDF boundary.
+- Create encrypted archive. Done: `make encrypted-backup-check` writes
+  `target/encrypted-backup/backup.cdbenc`.
+- Validate restore. Done: the evidence gate restores checkpointed and WAL-tail
+  data and validates the restored database.
+- Fail safely on wrong key. Done: wrong-passphrase and corrupt-ciphertext
+  restores fail without creating the target database.
+
+Evidence:
+
+- `make encrypted-backup-check`
+- `target/encrypted-backup/report.json`
+- `make backup-restore-production-pack-check`
+- `target/backup-restore-production-pack/report.json`
+- `scripts/encrypted_backup_check.py`
+- `scripts/backup_restore_production_pack.py`
+- `docs/ENCRYPTED_BACKUPS_DESIGN.md`
+- `docs/BACKUP_RESTORE.md`
+
+Boundary:
+
+- This is an encrypted backup MVP for local release evidence. It is not
+  KMS-backed, externally audited, or compliance-certified encryption.
 
 ### Epic 24. Encrypted Backup Rotation
 

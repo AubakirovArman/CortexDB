@@ -97,11 +97,21 @@ The current repository implements:
 - archive ciphertext integrity checks;
 - wrong-passphrase and corrupt-ciphertext rejection tests;
 - restore validation with `Database::validate_storage`.
+- repeatable evidence through `make encrypted-backup-check`, written to
+  `target/encrypted-backup/report.json`.
 
 The current archive format is a CortexDB-local beta format with clear header
 metadata and encrypted payload bytes. Operators should prefer `--passphrase-env`
 or `CORTEXDB_BACKUP_PASSPHRASE` so passphrases do not need to be typed directly
 into shell history.
+
+The evidence gate verifies:
+
+- encrypted archive creation;
+- correct-passphrase restore and validation;
+- fixture payload bytes are not visible in the archive bytes;
+- wrong-passphrase restore fails without creating the target path;
+- corrupt-ciphertext restore fails without creating the target path.
 
 ## Not Implemented
 
