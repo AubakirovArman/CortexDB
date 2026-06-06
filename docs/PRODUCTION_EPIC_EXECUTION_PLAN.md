@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 56 / 150
+- Done: 59 / 150
 - Partial: 1 / 150
-- Todo: 93 / 150
-- Current closed epic: Epic 56, Vector Index Rebuild Tool
+- Todo: 90 / 150
+- Current closed epic: Epic 59, Retrieval Regression Dashboard
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1631,14 +1631,24 @@ Tasks:
 
 ### Epic 59. Retrieval Regression Dashboard
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `scripts/retrieval_quality_dashboard.py`
+- `scripts/retrieval_quality_dashboard_panels.py`
+- `scripts/retrieval_quality_dashboard_self_test.py`
+- `make retrieval-quality-check`
+- `target/retrieval-quality/dashboard.html`
 
 Tasks:
 
-- Add dashboard panel for recall.
-- Add dashboard panel for MRR.
-- Add dashboard panel for nDCG.
-- Add dashboard panel for latency trends.
+- Add dashboard panel for recall. Done.
+- Add dashboard panel for MRR. Done.
+- Add dashboard panel for nDCG. Done.
+- Add dashboard panel for latency trends. Done: the dashboard reads
+  `target/retrieval-quality/history.json` and compares latest p95 latency
+  against the previous per-domain run.
 
 ### Epic 60. Search Quality Gate v2
 

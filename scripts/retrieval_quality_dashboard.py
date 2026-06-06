@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from retrieval_quality_dashboard_panels import render_metric_panels
+
 Q16_ONE = 65_535
 REQUIRED_DOMAIN_FIELDS = [
     "domain",
@@ -137,7 +139,7 @@ def table(headers: list[str], body: str) -> str:
     return f"<table><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table>"
 
 
-def render_dashboard(report: dict[str, Any], beta: dict[str, Any]) -> str:
+def render_dashboard(report: dict[str, Any], beta: dict[str, Any], history: dict[str, Any]) -> str:
     failures = validate_beta_report(beta)
     if failures:
         raise ValueError("; ".join(failures))
@@ -180,6 +182,15 @@ def render_dashboard(report: dict[str, Any], beta: dict[str, Any]) -> str:
     .summary strong {{ font-size: 1.1rem; }}
     .good strong {{ color: #11693a; }}
     .bad strong {{ color: #9a1c1c; }}
+    .panel-grid {{ display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }}
+    .panel {{ border: 1px solid #d3d9de; border-radius: 8px; padding: 1rem; }}
+    .panel h3 {{ margin-block-start: 0; }}
+    .metric-bars {{ display: grid; gap: .75rem; padding: 0; }}
+    .metric-bars li {{ display: grid; gap: .3rem; list-style: none; }}
+    .metric-bars li > span {{ color: #5a6570; }}
+    .metric-bars li > strong {{ font-size: 1rem; }}
+    .bar {{ background: #eef2f5; block-size: .55rem; border-radius: 999px; overflow: clip; }}
+    .bar i {{ background: #326c8f; block-size: 100%; display: block; }}
     table {{ border-collapse: collapse; width: 100%; margin: 1rem 0 2rem; }}
     th, td {{ border: 1px solid #d3d9de; padding: .55rem .65rem; text-align: left; }}
     th {{ background: #f4f7f9; }}
@@ -193,6 +204,8 @@ def render_dashboard(report: dict[str, Any], beta: dict[str, Any]) -> str:
   <ul class="summary">{summary}</ul>
   <h2>Guarded ANN History</h2>
   <ul class="summary">{ann_summary}</ul>
+  <h2>Regression Panels</h2>
+  {render_metric_panels(beta, history)}
   <h2>Domain Quality Table</h2>
   {render_domain_table(domains)}
   <h2>Investment Query-Level Table</h2>
@@ -206,6 +219,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--beta-report", type=Path, required=True)
+    parser.add_argument("--history-report", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args(argv)
 
@@ -215,7 +229,8 @@ def main(argv: list[str]) -> int:
     try:
         report = load_json(args.report)
         beta = load_json(args.beta_report)
-        html_body = render_dashboard(report, beta)
+        history = load_json(args.history_report) if args.history_report else {}
+        html_body = render_dashboard(report, beta, history)
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"retrieval quality dashboard failed: {error}", file=sys.stderr)
         return 1
