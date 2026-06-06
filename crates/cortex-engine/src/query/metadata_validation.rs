@@ -75,6 +75,8 @@ impl CellMetadata {
         let mut source = None;
         let mut citation = None;
         let mut title = None;
+        let mut content_hash = None;
+        let mut source_hash = None;
         let mut body_lines = Vec::new();
         let mut in_header = true;
         let mut has_separator = false;
@@ -122,6 +124,10 @@ impl CellMetadata {
                     citation = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("title=") {
                     title = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("content_hash=") {
+                    content_hash = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("source_hash=") {
+                    source_hash = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("source_id=") {
                     source_id_val = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("source_url=") {
@@ -211,6 +217,8 @@ impl CellMetadata {
             source,
             citation,
             title,
+            content_hash,
+            source_hash,
             body_text,
             terms,
             source_ref,

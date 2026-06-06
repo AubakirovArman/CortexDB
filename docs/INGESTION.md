@@ -181,6 +181,35 @@ focused regression gate is:
 make ingestion-backpressure-check
 ```
 
+## Ingestion Deduplication
+
+Ingestion payloads now include deterministic hash metadata:
+
+- `source_hash`: stable FNV-1a hash of the source identifier.
+- `content_hash`: stable FNV-1a hash of the emitted body/chunk text.
+
+These hashes are written into text, JSON, CSV, and other SourceRef-style
+ingestion payloads before the body separator. `CellMetadata::from_payload` and
+`CellMetadata::decode_payload` expose both fields so validation/reporting tools
+can reason about duplicates without reparsing raw headers.
+
+The update policy is explicit:
+
+- `IngestionUpdatePolicy::AlwaysInsert` keeps the historical Core Alpha
+  behavior and writes every emitted chunk.
+- `IngestionUpdatePolicy::SkipExisting` skips a text chunk when a visible cell
+  already has the same `source_hash` and `content_hash`.
+
+Current deduplication is a deterministic local pre-write check over the visible
+snapshot. It is not yet a persisted global dedup index, so high-volume imports
+should treat it as a correctness guard, not as a large-scale indexing strategy.
+
+Focused gate:
+
+```bash
+make ingestion-deduplication-check
+```
+
 ## Ingestion Validation Report
 
 Every HTTP ingestion response includes `validation_report`. The report is built

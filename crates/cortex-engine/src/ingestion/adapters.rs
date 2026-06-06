@@ -7,7 +7,9 @@ use crate::ingestion::cells::{
     put_text_chunk_cell, relation_metadata, SourceRefHeaders,
 };
 use crate::ingestion::chunking::{split_text_chunks, TableChunkPolicy, TextChunkPolicy};
+use crate::ingestion::dedup::{content_hash_hex, source_hash_hex};
 use crate::ingestion::formats::{csv_rows, flat_json_fields};
+use crate::ingestion::IngestionUpdatePolicy;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IngestedCell {
@@ -76,6 +78,23 @@ impl Database {
         options: TextIngestOptions,
         policy: TextChunkPolicy,
     ) -> EngineResult<Vec<IngestedCell>> {
+        self.ingest_text_chunks_with_update_policy(
+            first_cell_id,
+            text,
+            options,
+            policy,
+            IngestionUpdatePolicy::AlwaysInsert,
+        )
+    }
+
+    pub fn ingest_text_chunks_with_update_policy(
+        &mut self,
+        first_cell_id: CellId,
+        text: &str,
+        options: TextIngestOptions,
+        policy: TextChunkPolicy,
+        update_policy: IngestionUpdatePolicy,
+    ) -> EngineResult<Vec<IngestedCell>> {
         let chunks = split_text_chunks(&options.source, text, policy)?;
         if chunks.is_empty() {
             return Ok(Vec::new());
@@ -83,6 +102,15 @@ impl Database {
 
         let mut ingested = Vec::new();
         for (index, chunk) in chunks.iter().enumerate() {
+            let source_hash = source_hash_hex(&options.source);
+            let content_hash = content_hash_hex(&chunk.text);
+            if update_policy == IngestionUpdatePolicy::SkipExisting
+                && self
+                    .find_duplicate_ingestion_chunk(&source_hash, &content_hash)
+                    .is_some()
+            {
+                continue;
+            }
             let cell_id = offset_cell_id(first_cell_id, index)?;
             let commit_seq =
                 put_text_chunk_cell(self, cell_id, chunk, &options.scope, &options.source)?;

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 89 / 150
+- Done: 90 / 150
 - Partial: 1 / 150
-- Todo: 60 / 150
-- Current closed epic: Epic 89, Ingestion Backpressure
+- Todo: 59 / 150
+- Current closed epic: Epic 90, Ingestion Deduplication
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2428,14 +2428,26 @@ Tasks:
 
 ### Epic 90. Ingestion Deduplication
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/ingestion/dedup.rs`
+- `crates/cortex-engine/src/ingestion/cells.rs`
+- `crates/cortex-engine/tests/ingestion_adapters.rs`
+- `docs/INGESTION.md`
+- `make ingestion-deduplication-check`
 
 Tasks:
 
-- Add content hash.
-- Add source hash.
-- Detect duplicate chunks.
-- Define update policy.
+- Add content hash. Done: ingestion payloads now emit deterministic
+  `content_hash` metadata and `CellMetadata` decodes it.
+- Add source hash. Done: ingestion payloads now emit deterministic
+  `source_hash` metadata and `CellMetadata` decodes it.
+- Detect duplicate chunks. Done: text ingestion can find visible cells with the
+  same source/content hash before writing.
+- Define update policy. Done: `IngestionUpdatePolicy::AlwaysInsert` preserves
+  existing behavior while `SkipExisting` skips duplicate visible chunks.
 
 ## I. Security And Access Control
 

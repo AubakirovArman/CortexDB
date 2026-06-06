@@ -9,6 +9,7 @@ mod adapters;
 pub(crate) mod backpressure;
 mod cells;
 mod chunking;
+mod dedup;
 mod formats;
 mod jobs;
 mod pdf;
@@ -27,6 +28,7 @@ pub use chunking::{
     split_text_chunks, stable_chunk_id, JsonChunkPolicy, TableChunkPolicy, TextChunk,
     TextChunkPolicy, TextOverlapPolicy,
 };
+pub use dedup::{stable_ingestion_hash_hex, IngestionUpdatePolicy};
 pub use pdf::{extract_pdf_text, PdfExtractedPageText, PdfExtractionStats};
 pub use pdf_contracts::{
     validate_external_ocr_output, validate_external_ocr_request, DigitalPdfTextExtractor,

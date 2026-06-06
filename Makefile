@@ -26,7 +26,7 @@
 .PHONY: knowledge-graph-check
 .PHONY: ingestion-jobs-v2-check
 .PHONY: ingestion-job-dashboard-check
-.PHONY: ingestion-validation-report-check ingestion-backpressure-check
+.PHONY: ingestion-validation-report-check ingestion-backpressure-check ingestion-deduplication-check
 .PHONY: structured-source-ref-check
 .PHONY: deterministic-chunking-check
 .PHONY: chunking-quality-benchmark-check
@@ -2717,6 +2717,11 @@ ingestion-backpressure-check:
 	cargo test -p cortex-engine --test ingestion_backpressure
 	cargo test -p cortex-server ingestion_backpressure_
 	$(MAKE) openapi-contract-check
+
+ingestion-deduplication-check:
+	cargo test -p cortex-engine --test ingestion_adapters text_ingestion_writes_content_and_source_hash_metadata
+	cargo test -p cortex-engine --test ingestion_adapters text_ingestion_skip_existing_policy_skips_duplicate_chunks
+	cargo test -p cortex-engine --test ingestion_adapters json_ingestion_writes_fact_cells
 
 structured-source-ref-check: dashboard-standalone-smoke
 	cargo test -p cortex-engine --test ingestion_tests cell_metadata_parses_source_ref_aliases_and_url

@@ -3,6 +3,7 @@ use cortex_core::{CellId, CommitSeq, KnowledgeCellMetadata, KnowledgeCellType};
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::ingestion::chunking::{sanitize_header_value, TextChunk};
+use crate::ingestion::dedup::{content_hash_hex, source_hash_hex};
 use crate::operation::DbOperation;
 
 pub(crate) fn put_text_chunk_cell(
@@ -107,6 +108,8 @@ fn text_chunk_payload(
         lines.push(format!("source={source}"));
         lines.push(format!("source_id={source}"));
     }
+    lines.push(format!("source_hash={}", source_hash_hex(document_id)));
+    lines.push(format!("content_hash={}", content_hash_hex(&chunk.text)));
     lines.push(format!(
         "document_id={}",
         sanitize_header_value(document_id)
@@ -130,7 +133,9 @@ fn source_ref_payload(
     if let Some(source) = &metadata.source {
         let source = sanitize_header_value(source);
         lines.push(format!("source_id={source}"));
+        lines.push(format!("source_hash={}", source_hash_hex(&source)));
     }
+    lines.push(format!("content_hash={}", content_hash_hex(body)));
     lines.push(format!(
         "document_id={}",
         sanitize_header_value(source_ref.document_id)

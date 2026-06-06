@@ -82,18 +82,19 @@ pub use distributed::*;
 pub use error::{EngineError, EngineErrorCategory, EngineErrorCode, EngineResult};
 pub use graph::{GraphEdge, GraphEntity, GraphSourceRef, KnowledgeGraphIndex, ToolCell};
 pub use ingestion::{
-    extract_pdf_text, split_text_chunks, stable_chunk_id, validate_external_ocr_output,
-    validate_external_ocr_request, CsvIngestOptions, DigitalPdfTextExtractor,
-    DisabledExternalOcrAdapter, DisabledExternalPdfParserAdapter, EntityIngestOptions,
-    ExternalOcrAdapter, ExternalOcrBoundingBox, ExternalOcrOutput, ExternalOcrPageImage,
-    ExternalOcrPageText, ExternalOcrRequest, ExternalOcrTextBlock, ExternalPdfParserAdapter,
-    ExternalPdfParserRequest, IngestedCell, IngestionBackpressurePolicy,
+    extract_pdf_text, split_text_chunks, stable_chunk_id, stable_ingestion_hash_hex,
+    validate_external_ocr_output, validate_external_ocr_request, CsvIngestOptions,
+    DigitalPdfTextExtractor, DisabledExternalOcrAdapter, DisabledExternalPdfParserAdapter,
+    EntityIngestOptions, ExternalOcrAdapter, ExternalOcrBoundingBox, ExternalOcrOutput,
+    ExternalOcrPageImage, ExternalOcrPageText, ExternalOcrRequest, ExternalOcrTextBlock,
+    ExternalPdfParserAdapter, ExternalPdfParserRequest, IngestedCell, IngestionBackpressurePolicy,
     IngestionBackpressureRequest, IngestionJobId, IngestionJobStatus, IngestionProgress,
     IngestionProgressTracker, IngestionSkippedItem, IngestionSourceRefReport,
-    IngestionValidationIssue, IngestionValidationReport, JsonChunkPolicy, JsonIngestOptions,
-    NativeDigitalPdfTextExtractor, PdfExtractedPageText, PdfExtractionStats, PdfIngestOptions,
-    PdfTextExtractionBoundary, RelationIngestOptions, RememberedCell, ScannedPdfOcrRequest,
-    TableChunkPolicy, TextChunk, TextChunkPolicy, TextIngestOptions, TextOverlapPolicy,
+    IngestionUpdatePolicy, IngestionValidationIssue, IngestionValidationReport, JsonChunkPolicy,
+    JsonIngestOptions, NativeDigitalPdfTextExtractor, PdfExtractedPageText, PdfExtractionStats,
+    PdfIngestOptions, PdfTextExtractionBoundary, RelationIngestOptions, RememberedCell,
+    ScannedPdfOcrRequest, TableChunkPolicy, TextChunk, TextChunkPolicy, TextIngestOptions,
+    TextOverlapPolicy,
 };
 pub use legal::{
     evaluate_legal_report_contract, evaluate_legal_verification_boundary, LegalOutputBoundary,

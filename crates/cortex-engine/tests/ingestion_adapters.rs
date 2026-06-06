@@ -1,5 +1,8 @@
 use cortex_core::CellId;
-use cortex_engine::{scope_id, split_text_chunks, CellMetadata, TextChunkPolicy};
+use cortex_engine::{
+    scope_id, split_text_chunks, stable_ingestion_hash_hex, CellMetadata, IngestionUpdatePolicy,
+    TextChunkPolicy,
+};
 use cortex_engine::{CsvIngestOptions, Database, JsonIngestOptions};
 use cortex_engine::{IngestionJobStatus, IngestionProgressTracker, TextIngestOptions};
 
@@ -118,6 +121,83 @@ fn text_ingestion_writes_chunk_id_as_source_ref_metadata() {
 }
 
 #[test]
+fn text_ingestion_writes_content_and_source_hash_metadata() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let cells = db
+        .ingest_text_chunks(
+            CellId(300),
+            "Alpha budget duplicate guard",
+            TextIngestOptions {
+                scope: "project:investments".to_owned(),
+                source: "dedup.md".to_owned(),
+            },
+        )
+        .unwrap();
+
+    let payload = db.get_latest_cell(cells[0].cell_id).unwrap();
+    let metadata = CellMetadata::decode_payload(&payload).unwrap();
+
+    assert_eq!(
+        metadata.content_hash.as_deref(),
+        Some(stable_ingestion_hash_hex(b"Alpha budget duplicate guard").as_str())
+    );
+    assert_eq!(
+        metadata.source_hash.as_deref(),
+        Some(stable_ingestion_hash_hex(b"dedup.md").as_str())
+    );
+}
+
+#[test]
+fn text_ingestion_skip_existing_policy_skips_duplicate_chunks() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let options = TextIngestOptions {
+        scope: "project:investments".to_owned(),
+        source: "same-source.md".to_owned(),
+    };
+    let policy = TextChunkPolicy {
+        max_chars: 100,
+        overlap_chars: 0,
+        min_chars: 1,
+    };
+
+    let first = db
+        .ingest_text_chunks_with_update_policy(
+            CellId(400),
+            "same body",
+            options.clone(),
+            policy,
+            IngestionUpdatePolicy::SkipExisting,
+        )
+        .unwrap();
+    let skipped = db
+        .ingest_text_chunks_with_update_policy(
+            CellId(500),
+            "same body",
+            options.clone(),
+            policy,
+            IngestionUpdatePolicy::SkipExisting,
+        )
+        .unwrap();
+    let inserted_again = db
+        .ingest_text_chunks_with_update_policy(
+            CellId(600),
+            "same body",
+            options,
+            policy,
+            IngestionUpdatePolicy::AlwaysInsert,
+        )
+        .unwrap();
+
+    assert_eq!(first.len(), 1);
+    assert!(skipped.is_empty());
+    assert_eq!(inserted_again.len(), 1);
+    assert!(db.get_latest_cell(CellId(500)).is_none());
+    assert!(db.get_latest_cell(CellId(600)).is_some());
+}
+
+#[test]
 fn json_ingestion_writes_fact_cells() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
@@ -143,6 +223,12 @@ fn json_ingestion_writes_fact_cells() {
     let source_ref = CellMetadata::from_payload(&payload).source_ref.unwrap();
     assert_eq!(source_ref.document_id.as_deref(), Some("api.json"));
     assert_eq!(source_ref.json_path.as_deref(), Some("budget"));
+    let metadata = CellMetadata::decode_payload(&payload).unwrap();
+    assert!(metadata.content_hash.is_some());
+    assert_eq!(
+        metadata.source_hash.as_deref(),
+        Some(stable_ingestion_hash_hex(b"api.json").as_str())
+    );
 }
 
 #[test]
