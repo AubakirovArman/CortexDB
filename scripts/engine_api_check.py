@@ -5,12 +5,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+
+FREEZE_FIXTURE = "fixtures/engine/public_api_freeze_v1.json"
 
 DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "docs/ENGINE_API.md": (
@@ -117,6 +120,96 @@ def check_docs(repo: Path) -> dict[str, Any]:
     }
 
 
+def read_json(repo: Path, relative: str) -> dict[str, Any]:
+    value = json.loads((repo / relative).read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError(f"{relative} must contain a JSON object")
+    return value
+
+
+def check_public_api_freeze(repo: Path) -> dict[str, Any]:
+    errors: list[str] = []
+    try:
+        fixture = read_json(repo, FREEZE_FIXTURE)
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as error:
+        return {
+            "name": "engine_public_api_freeze",
+            "status": "failed",
+            "errors": [f"{FREEZE_FIXTURE}: {error}"],
+            "covers": ["machine-readable engine API freeze contract"],
+        }
+
+    if fixture.get("schema_version") != "cortexdb.engine_public_api_freeze.v1":
+        errors.append("fixture schema_version must be cortexdb.engine_public_api_freeze.v1")
+    if fixture.get("freeze_id") != "engine-public-api-freeze-v1":
+        errors.append("fixture freeze_id must be engine-public-api-freeze-v1")
+
+    lib_rs = (repo / "crates/cortex-engine/src/lib.rs").read_text(encoding="utf-8")
+    public_test = (repo / "crates/cortex-engine/tests/public_api.rs").read_text(encoding="utf-8")
+    engine_api_doc = (repo / "docs/ENGINE_API.md").read_text(encoding="utf-8")
+    makefile = (repo / "Makefile").read_text(encoding="utf-8")
+
+    for symbol in fixture.get("stable_facade_symbols", []):
+        if not isinstance(symbol, str):
+            errors.append("stable_facade_symbols entries must be strings")
+            continue
+        if symbol not in lib_rs:
+            errors.append(f"lib.rs: stable facade symbol {symbol} is not exported")
+        if symbol not in public_test:
+            errors.append(f"public_api.rs: stable facade symbol {symbol} is not covered")
+        if symbol not in engine_api_doc:
+            errors.append(f"ENGINE_API.md: stable facade symbol {symbol} is not documented")
+
+    for module in fixture.get("private_modules", []):
+        if not isinstance(module, str):
+            errors.append("private_modules entries must be strings")
+            continue
+        pattern = rf"^pub\s+mod\s+{re.escape(module)};"
+        if re.search(pattern, lib_rs, re.M):
+            errors.append(f"lib.rs: internal module {module} must not be public")
+
+    for relative in fixture.get("required_docs", []):
+        if not isinstance(relative, str):
+            errors.append("required_docs entries must be strings")
+        elif not (repo / relative).exists():
+            errors.append(f"{relative}: missing required API document")
+
+    for relative, terms in fixture.get("rustdoc_examples", {}).items():
+        path = repo / relative
+        if not path.exists():
+            errors.append(f"{relative}: missing rustdoc source")
+            continue
+        text = path.read_text(encoding="utf-8")
+        if "```" not in text:
+            errors.append(f"{relative}: missing rustdoc code fence")
+        for term in terms:
+            if term not in text:
+                errors.append(f"{relative}: missing rustdoc example term {term!r}")
+
+    for gate in fixture.get("required_evidence_gates", []):
+        if not isinstance(gate, str):
+            errors.append("required_evidence_gates entries must be strings")
+            continue
+        target = gate.removeprefix("make ")
+        if f"{target}:" not in makefile:
+            errors.append(f"Makefile: missing evidence gate target {target}")
+
+    return {
+        "name": "engine_public_api_freeze",
+        "status": "passed" if not errors else "failed",
+        "errors": errors,
+        "fixture": FREEZE_FIXTURE,
+        "stable_facade_symbols": fixture.get("stable_facade_symbols", []),
+        "private_modules": fixture.get("private_modules", []),
+        "covers": [
+            "machine-readable engine API freeze contract",
+            "stable facade symbols are exported, documented, and compile-tested",
+            "known internal helper modules remain private",
+            "rustdoc examples exist for the embedded database facade",
+        ],
+    }
+
+
 def write_report(report_path: Path, report: dict[str, Any]) -> None:
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -134,6 +227,10 @@ def self_test() -> int:
         return 1
     if not DOC_REQUIREMENTS:
         print("engine API self-test failed: no doc requirements")
+        return 1
+    repo = repo_root()
+    if not (repo / FREEZE_FIXTURE).exists():
+        print(f"engine API self-test failed: missing {FREEZE_FIXTURE}")
         return 1
     print("engine API self-test passed")
     return 0
@@ -156,7 +253,8 @@ def main() -> int:
 
     started_at = utc_now()
     doc_suite = check_docs(repo)
-    suites = [doc_suite, *[run_suite(repo, root, suite) for suite in SUITES]]
+    freeze_suite = check_public_api_freeze(repo)
+    suites = [doc_suite, freeze_suite, *[run_suite(repo, root, suite) for suite in SUITES]]
     status = "passed" if all(suite["status"] == "passed" for suite in suites) else "failed"
     report = {
         "schema_version": 1,
@@ -171,10 +269,12 @@ def main() -> int:
             "public_api_test": "crates/cortex-engine/tests/public_api.rs",
             "engine_api_doc": "docs/ENGINE_API.md",
             "module_ownership_doc": "docs/MODULE_OWNERSHIP.md",
+            "public_api_freeze_fixture": FREEZE_FIXTURE,
         },
         "boundary": {
             "proves": [
                 "stable embedded engine API docs exist",
+                "public API freeze fixture matches crate-root exports and compile coverage",
                 "public API compile test passes",
                 "engine doctests compile",
                 "engine rustdoc builds",

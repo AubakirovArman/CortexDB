@@ -1,0 +1,59 @@
+{
+  "schema_version": "cortexdb.engine_public_api_freeze.v1",
+  "freeze_id": "engine-public-api-freeze-v1",
+  "status": "frozen",
+  "scope": "embedded Rust facade exported from the cortex-engine crate root",
+  "stable_facade_symbols": [
+    "Database",
+    "DatabaseOptions",
+    "RecoveryMode",
+    "StaleLockPolicy",
+    "EngineError",
+    "EngineResult",
+    "DbOperation",
+    "ContextPack",
+    "ContextPackOptions",
+    "StorageStats",
+    "StorageValidationReport",
+    "RepairReport",
+    "BackupReport",
+    "RestoreReport",
+    "RetrievedCell",
+    "CheckpointStats",
+    "CandidateId",
+    "EngineAqlIndex"
+  ],
+  "private_modules": [
+    "cleanup",
+    "database_files",
+    "lock",
+    "options"
+  ],
+  "rustdoc_examples": {
+    "crates/cortex-engine/src/lib.rs": [
+      "Database::open",
+      "put_cell",
+      "get_latest_cell"
+    ],
+    "crates/cortex-engine/src/database.rs": [
+      "Database::open",
+      "put_cell",
+      "get_latest_cell"
+    ]
+  },
+  "required_docs": [
+    "docs/ENGINE_API.md",
+    "docs/MODULE_OWNERSHIP.md",
+    "docs/ENGINE_API_EVIDENCE.md"
+  ],
+  "required_evidence_gates": [
+    "make engine-public-api-freeze-check",
+    "make engine-api-check"
+  ],
+  "non_goals": [
+    "C ABI stability",
+    "network API stability",
+    "permanent stability for implementation modules",
+    "promise that experimental search or replication internals are frozen"
+  ]
+}

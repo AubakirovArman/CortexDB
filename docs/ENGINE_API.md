@@ -1,6 +1,6 @@
 # Cortex Engine API
 
-Status: local Epic 8 embedded API stability gate.
+Status: Epic 26 embedded API freeze gate.
 
 `cortex-engine` is the embedded Rust facade over AQL, core MVCC, storage, WAL,
 checkpoint/compact, validation, search, ContextPack, verification, ingestion,
@@ -13,14 +13,36 @@ facade imported from the crate root:
 
 ```rust
 use cortex_engine::{
+    BackupReport,
+    CandidateId,
+    CheckpointStats,
+    ContextPack,
+    ContextPackOptions,
     Database,
     DatabaseOptions,
+    DbOperation,
+    EngineAqlIndex,
     EngineError,
     EngineResult,
     RecoveryMode,
+    RepairReport,
+    RestoreReport,
+    RetrievedCell,
     StaleLockPolicy,
+    StorageStats,
+    StorageValidationReport,
 };
 ```
+
+The machine-readable freeze contract is:
+
+```text
+fixtures/engine/public_api_freeze_v1.json
+```
+
+The contract names the stable facade symbols, the helper modules that must
+remain private, the required rustdoc example sources, and the evidence gates
+that must pass before changing the boundary.
 
 The central entrypoints are:
 
@@ -38,6 +60,18 @@ The central entrypoints are:
 - `Database::restore_path`;
 - `Database::repair_best_effort`;
 - `Database::repair_best_effort_dry_run`.
+
+The stable root-level types currently frozen are:
+
+- `Database`, `DatabaseOptions`, `RecoveryMode`, `StaleLockPolicy`;
+- `EngineError`, `EngineResult`;
+- `DbOperation`;
+- `ContextPack`, `ContextPackOptions`;
+- `StorageStats`, `StorageValidationReport`;
+- `RepairReport`;
+- `BackupReport`, `RestoreReport`;
+- `RetrievedCell`, `CheckpointStats`;
+- `CandidateId`, `EngineAqlIndex`.
 
 The stable API boundary is source-level Rust compatibility for local embedded
 users. It is not a C ABI, network protocol, or promise that every re-exported
@@ -59,17 +93,30 @@ not promised as stable for external callers:
 External callers should prefer `Database`, option structs, report structs, and
 typed result/error surfaces exported from `cortex_engine::`.
 
+The following helper modules are intentionally private and checked by the
+freeze gate:
+
+- `cleanup`;
+- `database_files`;
+- `lock`;
+- `options`.
+
 ## Compatibility Gate
 
 Run:
 
 ```bash
+make engine-public-api-freeze-check
 make engine-api-check
 ```
 
 This gate verifies:
 
 - stable docs exist;
+- `fixtures/engine/public_api_freeze_v1.json` matches crate-root exports;
+- frozen public symbols are documented and compile-tested;
+- known helper modules remain private;
+- rustdoc examples exist for the embedded database facade;
 - the public API compile test passes;
 - `cortex-engine` doctests compile;
 - rustdoc builds for `cortex-engine`.

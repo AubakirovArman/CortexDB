@@ -16,6 +16,18 @@ cortex_engine::RecoveryMode
 cortex_engine::StaleLockPolicy
 cortex_engine::EngineError
 cortex_engine::EngineResult
+cortex_engine::DbOperation
+cortex_engine::ContextPack
+cortex_engine::ContextPackOptions
+cortex_engine::StorageStats
+cortex_engine::StorageValidationReport
+cortex_engine::RepairReport
+cortex_engine::BackupReport
+cortex_engine::RestoreReport
+cortex_engine::RetrievedCell
+cortex_engine::CheckpointStats
+cortex_engine::CandidateId
+cortex_engine::EngineAqlIndex
 cortex_engine::*Report structs
 ```
 
@@ -26,7 +38,10 @@ Change rule:
 - keep examples compiling;
 - update `ENGINE_API.md` for behavior changes;
 - run `make engine-api-check`;
+- run `make engine-public-api-freeze-check`;
 - add migration or deprecation notes for breaking changes.
+
+The freeze fixture is `fixtures/engine/public_api_freeze_v1.json`.
 
 ## Internal modules
 
@@ -44,6 +59,10 @@ faster than the stable facade, but changes must preserve the public boundary:
 | `verification` | VERIFY FACT scoring and guard internals. |
 | `replication` | Experimental consensus and repair primitives. |
 | `backup`, `repair`, `validation` | Operator-facing maintenance implementation. |
+
+The helper modules `cleanup`, `database_files`, `lock`, and `options` are
+intentionally private and should not be promoted with `pub mod` without an API
+freeze update.
 
 ## Cross-Crate Boundaries
 

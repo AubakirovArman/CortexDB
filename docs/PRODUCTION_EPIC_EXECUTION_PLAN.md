@@ -15,6 +15,14 @@ Execution rule: close epics in order inside a block unless a later epic is a dir
 
 CortexDB is currently evidence-backed for Beta Foundation and local single-node production boundary evidence. This plan tracks the next layer: production-grade single-node maturity, stronger security, benchmark history, packaging, operational UX, and future agent-native product layers.
 
+## Current Progress Snapshot
+
+- Done: 25 / 150
+- Partial: 1 / 150
+- Todo: 124 / 150
+- Current closed epic: Epic 26, Engine Public API Freeze
+- Long-running partial: Epic 12, 72h storage soak evidence accumulation
+
 ## Recommended Order
 
 1. Release governance and public claims.
@@ -619,14 +627,36 @@ Acceptance: embedded users get stable API; server, SDK, and CLI share consistent
 
 ### Epic 26. Engine Public API Freeze
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Document stable public APIs.
-- Hide internal APIs.
-- Ensure examples compile.
-- Add rustdoc examples.
+- Document stable public APIs. Done: `ENGINE_API.md` now lists the frozen
+  crate-root facade symbols and points to the machine-readable freeze contract.
+- Hide internal APIs. Done: the freeze gate checks that `cleanup`,
+  `database_files`, `lock`, and `options` remain private helper modules.
+- Ensure examples compile. Done: `public_api.rs` covers the stable root facade,
+  and `engine-api-check` runs the compile test.
+- Add rustdoc examples. Done: crate-level `cortex-engine` docs and existing
+  `Database` docs compile through engine doctests.
+
+Evidence:
+
+- `fixtures/engine/public_api_freeze_v1.json`
+- `make engine-public-api-freeze-check`
+- `make engine-api-check`
+- `target/engine-api/report.json`
+- `crates/cortex-engine/tests/public_api.rs`
+- `crates/cortex-engine/src/lib.rs`
+- `docs/ENGINE_API.md`
+- `docs/ENGINE_API_EVIDENCE.md`
+- `docs/MODULE_OWNERSHIP.md`
+
+Boundary:
+
+- This freezes the embedded Rust crate-root facade for current local users. It
+  does not freeze C ABI, HTTP API, SDK package versions, or every experimental
+  implementation module.
 
 ### Epic 27. Engine API Compatibility Tests
 

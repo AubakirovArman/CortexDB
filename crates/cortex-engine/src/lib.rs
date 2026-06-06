@@ -1,3 +1,30 @@
+//! Embedded CortexDB engine facade.
+//!
+//! The stable embedded API is the crate-root facade: `Database`,
+//! `DatabaseOptions`, `EngineResult`, error/report structs, and typed operation
+//! structs. Implementation modules may remain public for current integration
+//! tests and internal tooling, but the documented compatibility boundary is the
+//! crate-root facade described in `docs/ENGINE_API.md`.
+//!
+//! # Example
+//!
+//! ```
+//! use cortex_core::CellId;
+//! use cortex_engine::{Database, EngineResult};
+//!
+//! fn main() -> EngineResult<()> {
+//!     let dir = tempfile::tempdir().unwrap();
+//!     let mut db = Database::open(dir.path())?;
+//!     db.put_cell(CellId(1), b"scope=docs\nstatus=ready\nhello".to_vec())?;
+//!     assert_eq!(
+//!         db.get_latest_cell(CellId(1)),
+//!         Some(b"scope=docs\nstatus=ready\nhello".to_vec())
+//!     );
+//!     db.close()?;
+//!     Ok(())
+//! }
+//! ```
+
 pub mod agent_views;
 pub mod backup;
 pub mod bundle;
@@ -64,7 +91,13 @@ pub use legal::{
     LegalRefusalReason, LegalReportContract, LegalReportContractIssue, LegalReportRetention,
     LegalVerificationPolicy, LegalVerificationRequest, LegalVerificationReview,
 };
-pub use operation::*;
+pub use operation::{
+    decode_cell_core, decode_cell_id, decoded_operation_from_wal_record, encode_cell_core,
+    encode_cell_id, metadata_from_decoded_wal_record, operation_from_decoded_wal_record,
+    wal_record_from_operation, wal_record_from_operation_with_metadata,
+    wal_record_from_operation_with_seq, DbOperation, DbOperationKind, DecodedCellCore,
+    DecodedDbOperation, OperationDecoder, OperationEncoder,
+};
 pub use options::{DatabaseOptions, RecoveryMode, StaleLockPolicy};
 pub use query::{scope_id, CandidateId, CellMetadata, EngineAqlIndex};
 pub use repair::RepairReport;

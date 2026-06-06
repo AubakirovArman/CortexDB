@@ -704,8 +704,10 @@ storage-format-freeze-check:
 storage-compat-check:
 	python3 scripts/storage_compat_check.py --root "$(STORAGE_COMPAT_ROOT)" --report "$(STORAGE_COMPAT_REPORT)"
 
-engine-api-check:
+engine-public-api-freeze-check:
 	python3 scripts/engine_api_check.py --root "$(ENGINE_API_ROOT)" --report "$(ENGINE_API_REPORT)"
+
+engine-api-check: engine-public-api-freeze-check
 
 aql-compat-check:
 	python3 scripts/aql_compat_check.py --root "$(AQL_COMPAT_ROOT)" --report "$(AQL_COMPAT_REPORT)"
