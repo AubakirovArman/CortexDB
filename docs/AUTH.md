@@ -434,6 +434,9 @@ repair the audit file explicitly.
 request IDs, status, duration, and audit-chain fields, but does not add request
 bodies, query strings, or bearer tokens. Use `--redaction-check` and
 `--verify-chain` before exporting to fail closed on unsafe local audit input.
+The local export, retention, and redaction boundary is defined in
+[`AUDIT_EXPORT_RETENTION_POLICY.md`](AUDIT_EXPORT_RETENTION_POLICY.md) and
+validated by `make audit-export-retention-check`.
 
 ## RBAC Roadmap
 

@@ -24,6 +24,7 @@ target/security-hardening/report.json
 | Principal-aware audit metadata | Authenticated route-level JSONL audit records include `principal_id`, `auth_role`, and `auth_agent_id` without storing bearer tokens. |
 | Tamper-evident audit chain | File-backed route audit records include local chain metadata and `cortexdb audit --verify-chain` detects local deletion, reordering, and metadata edits; `make audit-chain-check` verifies the local evidence gate; compliance-grade ledger and vendor-managed SIEM delivery remain future work. |
 | SIEM audit export | `cortexdb audit-export-siem` exports normalized local JSONL with principal and audit-chain metadata after optional redaction and chain checks; vendor-managed SIEM delivery remains future work. |
+| Audit export retention policy | `AUDIT_EXPORT_RETENTION_POLICY.md` and `.json` define local audit/SIEM export retention classes, forbidden redaction fields, safe metadata fields, and the `make audit-export-retention-check` evidence gate. |
 | Compliance boundary mapping | `COMPLIANCE_BOUNDARY_MAPPING.md` and `make compliance-boundary-check` document local evidence controls and explicitly state that no external compliance framework is currently certified. |
 | Encrypted backup support | Local passphrase encrypted backup MVP exists through `backup-encrypted`/`restore-encrypted`, wrong-passphrase and corrupt-ciphertext tests, and `make encrypted-backup-check`; KMS/compliance custody remains future work. |
 | Remote object-store backup | Local offsite staging exists; provider-backed object-store upload remains future work. |
@@ -56,6 +57,7 @@ audit_principal_metadata: true
 audit_chain_foundation: true
 audit_chain_gate: true
 siem_audit_export: true
+audit_export_retention_gate: true
 compliance_boundary_mapping: true
 audit_redaction: true
 tamper_evident_audit_boundary: true

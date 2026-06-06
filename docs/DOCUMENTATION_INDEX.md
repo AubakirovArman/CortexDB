@@ -97,6 +97,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`API_ERROR_TAXONOMY.md`](API_ERROR_TAXONOMY.md) - stable error classes.
 - [`HTTP_SERVER_CONTRACT_EVIDENCE.md`](HTTP_SERVER_CONTRACT_EVIDENCE.md) - local Epic 13 evidence gate.
 - [`AUTH.md`](AUTH.md) - authentication and token policy.
+- [`AUDIT_EXPORT_RETENTION_POLICY.md`](AUDIT_EXPORT_RETENTION_POLICY.md) - local audit export retention and redaction policy.
 - [`RBAC_POLICY_STORE_DESIGN.md`](RBAC_POLICY_STORE_DESIGN.md) - future dynamic RBAC policy-store design.
 - [`ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md`](ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md) - future enterprise RBAC and compliance design.
 - [`EXTERNAL_IDENTITY_DESIGN.md`](EXTERNAL_IDENTITY_DESIGN.md) - future external identity provider design.

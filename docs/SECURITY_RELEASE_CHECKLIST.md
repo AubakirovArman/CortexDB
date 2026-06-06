@@ -22,6 +22,13 @@ cargo clippy --workspace --all-targets -- -D warnings
 - Dashboard access is treated as administrative.
 - `CORTEXDB_AUDIT_LOG_FILE` is enabled when route-level audit review is needed.
 - `cortexdb audit <audit.jsonl> --summary --redaction-check` passes.
+- `cortexdb audit <audit.jsonl> --summary --redaction-check --verify-chain`
+  passes before trusting local chain-v1 audit files.
+- `cortexdb audit-export-siem <audit.jsonl> <siem.jsonl> --redaction-check
+  --verify-chain` passes before handing local JSONL exports to downstream
+  tooling.
+- `AUDIT_EXPORT_RETENTION_POLICY.md` still matches the implemented local
+  export, retention, and redaction boundary.
 - `SECURITY_BETA_BASELINE.md` still separates implemented controls from beta
   and enterprise non-goals.
 - `SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md` still records release-blocking
@@ -34,10 +41,13 @@ cargo clippy --workspace --all-targets -- -D warnings
 ## Explicit Non-Goals For Core Alpha
 
 - No built-in TLS or certificate lifecycle.
-- No persisted enterprise RBAC administration store.
-- No per-token quota accounting.
-- No tamper-evident audit chain or SIEM exporter.
-- No built-in encrypted backup or object-store upload adapter.
+- No full enterprise RBAC administration system beyond the local policy-store
+  controls and admin APIs.
+- No distributed/global quota accounting beyond local per-principal guards.
+- No compliance-grade immutable audit ledger, legal retention enforcement,
+  external timestamping, or vendor-managed SIEM delivery.
+- No KMS-backed encrypted backup custody or provider object-store upload
+  adapter.
 - No distributed security guarantees.
 
 Any release note, README, API doc, dashboard copy, or SDK doc that claims one of

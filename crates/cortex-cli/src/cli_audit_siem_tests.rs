@@ -70,6 +70,55 @@ fn audit_export_siem_can_emit_json_summary() {
     let _ = std::fs::remove_file(output_path);
 }
 
+#[test]
+fn audit_export_siem_rejects_redaction_violations() {
+    let input_path = unique_path("cortexdb-cli-audit-siem-redaction-input.jsonl");
+    let output_path = unique_path("cortexdb-cli-audit-siem-redaction-output.jsonl");
+    std::fs::write(
+        &input_path,
+        r#"{"schema_version":"cortexdb.audit.v1","audit_event":"http_response","audit_action":"read","method":"GET","path":"/v1/cell?cell_id=1","tenant":"default","status":200,"error_code":"","duration_ms":1,"unix_time_ms":1}
+"#,
+    )
+    .unwrap();
+
+    let error = run(vec![
+        "cortexdb".to_owned(),
+        "audit-export-siem".to_owned(),
+        input_path.to_string_lossy().into_owned(),
+        output_path.to_string_lossy().into_owned(),
+        "--redaction-check".to_owned(),
+    ])
+    .unwrap_err();
+
+    assert!(error.contains("audit redaction check failed"));
+    assert!(!output_path.exists());
+
+    let _ = std::fs::remove_file(input_path);
+}
+
+#[test]
+fn audit_export_siem_rejects_chain_violations() {
+    let input_path = unique_path("cortexdb-cli-audit-siem-chain-input.jsonl");
+    let output_path = unique_path("cortexdb-cli-audit-siem-chain-output.jsonl");
+    let tampered = crate::cli_audit_chain::test_chained_record_jsonl()
+        .replace(r#""status":200"#, r#""status":403"#);
+    std::fs::write(&input_path, tampered).unwrap();
+
+    let error = run(vec![
+        "cortexdb".to_owned(),
+        "audit-export-siem".to_owned(),
+        input_path.to_string_lossy().into_owned(),
+        output_path.to_string_lossy().into_owned(),
+        "--verify-chain".to_owned(),
+    ])
+    .unwrap_err();
+
+    assert!(error.contains("audit chain verification failed"));
+    assert!(!output_path.exists());
+
+    let _ = std::fs::remove_file(input_path);
+}
+
 fn unique_path(prefix: &str) -> std::path::PathBuf {
     std::env::temp_dir().join(format!(
         "{prefix}-{}",

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 94 / 150
+- Done: 95 / 150
 - Partial: 1 / 150
-- Todo: 55 / 150
-- Current closed epic: Epic 94, Future Tamper-evident Audit Log
+- Todo: 54 / 150
+- Current closed epic: Epic 95, Audit Export and Retention
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2608,13 +2608,36 @@ Boundary:
 
 ### Epic 95. Audit Export and Retention
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Export audit events.
-- Define retention policy.
-- Define redaction policy.
+- Export audit events. Done: `cortexdb audit-export-siem` writes local
+  normalized JSONL with schema `cortexdb.siem.audit.v1`, preserving principal,
+  request, route, status, timing, and audit-chain metadata.
+- Define retention policy. Done: `AUDIT_EXPORT_RETENTION_POLICY.md` and `.json`
+  define local audit JSONL, SIEM export JSONL, and local-only raw debug
+  retention classes.
+- Define redaction policy. Done: the policy lists forbidden body/query/token/
+  prompt/provider-response fields, safe exported metadata, and required
+  `--redaction-check`/`--verify-chain` workflows.
+
+Evidence:
+
+- `crates/cortex-cli/src/cli_audit_siem.rs`
+- `crates/cortex-cli/src/cli_audit_siem_tests.rs`
+- `docs/AUDIT_EXPORT_RETENTION_POLICY.md`
+- `docs/AUDIT_EXPORT_RETENTION_POLICY.json`
+- `docs/AUTH.md`
+- `docs/SECURITY_HARDENING_EVIDENCE.md`
+- `scripts/audit_export_retention_check.py`
+- `make audit-export-retention-check`
+
+Boundary:
+
+- CortexDB provides local audit review and local normalized JSONL export. It
+  does not provide vendor-managed SIEM delivery, legal retention enforcement,
+  or compliance-certified immutable audit custody.
 
 ### Epic 96. Encrypted Backups MVP
 

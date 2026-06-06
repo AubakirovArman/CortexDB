@@ -1,0 +1,92 @@
+{
+  "schema_version": "cortexdb.audit_export_retention_policy.v1",
+  "export_channels": [
+    {
+      "name": "local_siem_jsonl",
+      "command": "cortexdb audit-export-siem <audit.jsonl> <siem.jsonl> --redaction-check --verify-chain",
+      "output_schema": "cortexdb.siem.audit.v1",
+      "requires_redaction_check": true,
+      "supports_chain_check": true,
+      "boundary": "Local normalized JSONL export only; vendor-managed SIEM delivery remains out of scope."
+    }
+  ],
+  "retention_classes": [
+    {
+      "name": "local_audit_jsonl",
+      "minimum_retention": "operator-defined",
+      "storage_boundary": "local filesystem",
+      "contains_payloads": false,
+      "contains_tokens": false,
+      "rotation_policy": "rotate explicitly when file size or local policy requires it"
+    },
+    {
+      "name": "siem_export_jsonl",
+      "minimum_retention": "operator-defined",
+      "storage_boundary": "local export path before downstream shipping",
+      "contains_payloads": false,
+      "contains_tokens": false,
+      "rotation_policy": "generated per export run"
+    },
+    {
+      "name": "local_only_raw_security_debug",
+      "minimum_retention": "do not publish",
+      "storage_boundary": "local ignored target paths only",
+      "contains_payloads": true,
+      "contains_tokens": true,
+      "rotation_policy": "delete after local incident review"
+    }
+  ],
+  "redaction_policy": {
+    "forbidden_fields": [
+      "authorization",
+      "auth_header",
+      "bearer_token",
+      "body",
+      "payload",
+      "query",
+      "query_string",
+      "prompt",
+      "provider_response",
+      "api_key",
+      "secret"
+    ],
+    "safe_fields": [
+      "schema_version",
+      "audit_event",
+      "audit_action",
+      "chain_id",
+      "sequence",
+      "prev_hash",
+      "event_hash",
+      "principal_id",
+      "auth_role",
+      "auth_agent_id",
+      "method",
+      "path",
+      "tenant",
+      "request_id",
+      "status",
+      "error_code",
+      "duration_ms",
+      "unix_time_ms",
+      "llm.outcome",
+      "llm.reason",
+      "llm.provider",
+      "llm.model",
+      "llm.context_cell_count",
+      "llm.citation_count",
+      "llm.request_api_key_present",
+      "llm.prompt_body_logged",
+      "llm.secrets_logged"
+    ],
+    "required_cli_checks": [
+      "cortexdb audit <audit.jsonl> --redaction-check",
+      "cortexdb audit-export-siem <audit.jsonl> <siem.jsonl> --redaction-check --verify-chain"
+    ]
+  },
+  "notes": {
+    "hash_chain": "Audit export should be run with --verify-chain for chain-v1 files.",
+    "retention": "CortexDB defines local classes and boundaries but does not enforce legal retention schedules.",
+    "publication": "Raw audit JSONL and SIEM export JSONL are not release artifacts by default."
+  }
+}

@@ -65,6 +65,15 @@ REQUIRED_MARKERS = {
         ("docs/SECURITY_HARDENING_EVIDENCE.md", "siem_audit_export: true"),
         ("crates/cortex-cli/src/cli_audit_siem.rs", "cortexdb.siem.audit.v1"),
         ("crates/cortex-cli/src/cli_audit_siem_tests.rs", "audit_export_siem_writes_normalized_jsonl"),
+        ("crates/cortex-cli/src/cli_audit_siem_tests.rs", "audit_export_siem_rejects_redaction_violations"),
+        ("crates/cortex-cli/src/cli_audit_siem_tests.rs", "audit_export_siem_rejects_chain_violations"),
+    ],
+    "audit_export_retention_policy": [
+        ("docs/AUDIT_EXPORT_RETENTION_POLICY.md", "Audit Export And Retention Policy"),
+        ("docs/AUDIT_EXPORT_RETENTION_POLICY.json", "cortexdb.audit_export_retention_policy.v1"),
+        ("docs/SECURITY_HARDENING_EVIDENCE.md", "audit_export_retention_gate: true"),
+        ("Makefile", "audit-export-retention-check"),
+        ("scripts/audit_export_retention_check.py", "cortexdb.audit_export_retention_report.v1"),
     ],
     "compliance_boundary_mapping": [
         ("docs/COMPLIANCE_BOUNDARY_MAPPING.md", "cortexdb.compliance_boundary.v1"),
