@@ -110,13 +110,17 @@ fn put_u32(out: &mut Vec<u8>, value: u32) {
 }
 
 fn read_i16(bytes: &[u8], cursor: &mut usize) -> StorageResult<i16> {
-    let raw = read_bytes(bytes, cursor, 2)?;
-    Ok(i16::from_le_bytes(raw.try_into().expect("i16 width")))
+    Ok(i16::from_le_bytes(read_array(bytes, cursor)?))
 }
 
 fn read_u32(bytes: &[u8], cursor: &mut usize) -> StorageResult<u32> {
-    let raw = read_bytes(bytes, cursor, 4)?;
-    Ok(u32::from_le_bytes(raw.try_into().expect("u32 width")))
+    Ok(u32::from_le_bytes(read_array(bytes, cursor)?))
+}
+
+fn read_array<const N: usize>(bytes: &[u8], cursor: &mut usize) -> StorageResult<[u8; N]> {
+    read_bytes(bytes, cursor, N)?
+        .try_into()
+        .map_err(|_| StorageError::InvalidVectorIndexFile)
 }
 
 fn read_bytes<'a>(bytes: &'a [u8], cursor: &mut usize, len: usize) -> StorageResult<&'a [u8]> {

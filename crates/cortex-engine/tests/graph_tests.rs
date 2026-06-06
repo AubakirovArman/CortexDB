@@ -105,6 +105,30 @@ fn tool_cells_finds_tool_type_cells() {
 }
 
 #[test]
+fn tool_cells_allow_missing_name_without_panicking() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        KnowledgeCell::new(
+            KnowledgeCellMetadata {
+                scope: "project:investments".to_owned(),
+                status: "ready".to_owned(),
+                cell_type: KnowledgeCellType::Tool,
+                ..KnowledgeCellMetadata::default()
+            },
+            "A tool cell without an explicit name.",
+        ),
+    )
+    .unwrap();
+
+    let tools = db.tool_cells();
+    assert_eq!(tools.len(), 1);
+    assert_eq!(tools[0].cell_id, CellId(1));
+    assert_eq!(tools[0].name, None);
+}
+
+#[test]
 fn knowledge_graph_index_groups_entities_edges_and_sources() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();

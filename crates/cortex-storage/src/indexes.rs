@@ -191,18 +191,25 @@ fn put_u64(out: &mut Vec<u8>, value: u64) {
 }
 
 fn read_u16(bytes: &[u8], cursor: &mut usize, kind: IndexKind) -> StorageResult<u16> {
-    let raw = read_bytes(bytes, cursor, 2, kind)?;
-    Ok(u16::from_le_bytes(raw.try_into().expect("u16 width")))
+    Ok(u16::from_le_bytes(read_array(bytes, cursor, kind)?))
 }
 
 fn read_u32(bytes: &[u8], cursor: &mut usize, kind: IndexKind) -> StorageResult<u32> {
-    let raw = read_bytes(bytes, cursor, 4, kind)?;
-    Ok(u32::from_le_bytes(raw.try_into().expect("u32 width")))
+    Ok(u32::from_le_bytes(read_array(bytes, cursor, kind)?))
 }
 
 fn read_u64(bytes: &[u8], cursor: &mut usize, kind: IndexKind) -> StorageResult<u64> {
-    let raw = read_bytes(bytes, cursor, 8, kind)?;
-    Ok(u64::from_le_bytes(raw.try_into().expect("u64 width")))
+    Ok(u64::from_le_bytes(read_array(bytes, cursor, kind)?))
+}
+
+fn read_array<const N: usize>(
+    bytes: &[u8],
+    cursor: &mut usize,
+    kind: IndexKind,
+) -> StorageResult<[u8; N]> {
+    read_bytes(bytes, cursor, N, kind)?
+        .try_into()
+        .map_err(|_| invalid(kind))
 }
 
 fn read_bytes<'a>(

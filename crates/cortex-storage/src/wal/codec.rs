@@ -27,9 +27,9 @@ impl WalCodec {
         }
         let header = WalFileHeader {
             magic: AclogMagic(ACLOG_MAGIC),
-            header_len: get_u16(&bytes[8..10]),
-            version: WalCodecVersion(get_u16(&bytes[10..12])),
-            flags: WalFlags(get_u16(&bytes[12..14])),
+            header_len: get_file_u16(&bytes[8..10])?,
+            version: WalCodecVersion(get_file_u16(&bytes[10..12])?),
+            flags: WalFlags(get_file_u16(&bytes[12..14])?),
         };
         if usize::from(header.header_len) != WAL_FILE_HEADER_LEN
             || header.version.0 != WAL_FORMAT_VERSION
@@ -83,21 +83,21 @@ impl WalCodec {
         if bytes.len() < WAL_RECORD_HEADER_LEN {
             return Err(StorageError::IncompleteTail);
         }
-        if get_u32(&bytes[0..4]) != WAL_RECORD_MAGIC {
+        if get_u32(&bytes[0..4])? != WAL_RECORD_MAGIC {
             return Err(StorageError::InvalidWalRecord);
         }
-        let raw_record_type = get_u16(&bytes[6..8]);
+        let raw_record_type = get_u16(&bytes[6..8])?;
         let header = WalRecordHeader {
             magic: WAL_RECORD_MAGIC,
-            header_len: get_u16(&bytes[4..6]),
+            header_len: get_u16(&bytes[4..6])?,
             record_type: WalRecordType::from_u16(raw_record_type)
                 .ok_or(StorageError::InvalidWalRecord)?,
-            flags: WalFlags(get_u16(&bytes[22..24])),
-            lsn: get_u64(&bytes[8..16]),
-            payload_len: get_u32(&bytes[16..20]),
-            section_count: get_u16(&bytes[20..22]),
-            payload_crc32c: get_u32(&bytes[24..28]),
-            header_crc32c: get_u32(&bytes[28..32]),
+            flags: WalFlags(get_u16(&bytes[22..24])?),
+            lsn: get_u64(&bytes[8..16])?,
+            payload_len: get_u32(&bytes[16..20])?,
+            section_count: get_u16(&bytes[20..22])?,
+            payload_crc32c: get_u32(&bytes[24..28])?,
+            header_crc32c: get_u32(&bytes[28..32])?,
         };
         let header_len = usize::from(header.header_len);
         let payload_len = header.payload_len as usize;
@@ -217,9 +217,9 @@ fn decode_entries(bytes: &[u8], count: usize) -> StorageResult<Vec<SectionEntry>
         let start = index * WAL_SECTION_ENTRY_LEN;
         let raw = &bytes[start..start + WAL_SECTION_ENTRY_LEN];
         entries.push(SectionEntry {
-            tag_raw: get_u16(&raw[0..2]),
-            offset: get_u32(&raw[4..8]),
-            len: get_u32(&raw[8..12]),
+            tag_raw: get_u16(&raw[0..2])?,
+            offset: get_u32(&raw[4..8])?,
+            len: get_u32(&raw[8..12])?,
         });
     }
     Ok(entries)
@@ -237,14 +237,34 @@ fn put_u64(out: &mut [u8], value: u64) {
     out.copy_from_slice(&value.to_le_bytes());
 }
 
-fn get_u16(bytes: &[u8]) -> u16 {
-    u16::from_le_bytes(bytes.try_into().expect("u16 slice length"))
+fn get_file_u16(bytes: &[u8]) -> StorageResult<u16> {
+    Ok(u16::from_le_bytes(
+        bytes
+            .try_into()
+            .map_err(|_| StorageError::InvalidWalFileHeader)?,
+    ))
 }
 
-fn get_u32(bytes: &[u8]) -> u32 {
-    u32::from_le_bytes(bytes.try_into().expect("u32 slice length"))
+fn get_u16(bytes: &[u8]) -> StorageResult<u16> {
+    Ok(u16::from_le_bytes(
+        bytes
+            .try_into()
+            .map_err(|_| StorageError::InvalidWalRecord)?,
+    ))
 }
 
-fn get_u64(bytes: &[u8]) -> u64 {
-    u64::from_le_bytes(bytes.try_into().expect("u64 slice length"))
+fn get_u32(bytes: &[u8]) -> StorageResult<u32> {
+    Ok(u32::from_le_bytes(
+        bytes
+            .try_into()
+            .map_err(|_| StorageError::InvalidWalRecord)?,
+    ))
+}
+
+fn get_u64(bytes: &[u8]) -> StorageResult<u64> {
+    Ok(u64::from_le_bytes(
+        bytes
+            .try_into()
+            .map_err(|_| StorageError::InvalidWalRecord)?,
+    ))
 }

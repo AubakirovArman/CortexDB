@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 34 / 150
+- Done: 35 / 150
 - Partial: 1 / 150
-- Todo: 115 / 150
-- Current closed epic: Epic 34, Engine Config Model
+- Todo: 114 / 150
+- Current closed epic: Epic 35, Engine Panic Audit
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -899,13 +899,39 @@ Tasks:
 
 ### Epic 35. Engine Panic Audit
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/ENGINE_PANIC_AUDIT.md`
+- `scripts/engine_panic_audit_check.py`
+- `crates/cortex-storage/src/segment.rs`
+- `crates/cortex-storage/src/indexes.rs`
+- `crates/cortex-storage/src/vectors.rs`
+- `crates/cortex-storage/src/manifest.rs`
+- `crates/cortex-storage/src/wal/codec.rs`
+- `crates/cortex-storage/src/wal/writer.rs`
+- `crates/cortex-engine/src/graph.rs`
+- `crates/cortex-engine/tests/graph_tests.rs`
+- `make engine-panic-audit-check`
+- `make engine-api-check`
+- `cargo test -p cortex-storage`
+- `cargo test -p cortex-engine --test graph_tests`
+- `cargo test --workspace --all-features`
+- `cargo clippy --workspace --all-targets -- -D warnings`
 
 Tasks:
 
-- Search for `unwrap`, `expect`, and `panic`.
-- Replace in core paths.
-- Add regression tests.
+- Search for `unwrap`, `expect`, and `panic`. Done:
+  `engine_panic_audit_check.py` scans production `cortex-core`,
+  `cortex-engine`, and `cortex-storage` sources while excluding docs, tests,
+  and `src/bin` tooling.
+- Replace in core paths. Done: storage fixed-width binary readers, WAL codec
+  helpers, WAL writer append paths, and tool-cell name extraction no longer use
+  `unwrap`/`expect` in production paths.
+- Add regression tests. Done: graph tool-cell tests cover missing tool names,
+  and existing storage corruption/roundtrip tests cover the fallible binary
+  readers and WAL decode paths.
 
 ## D. AQL / Query Layer
 

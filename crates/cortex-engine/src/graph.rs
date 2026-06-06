@@ -84,7 +84,8 @@ impl Database {
                 let name = body
                     .lines()
                     .find(|l| l.starts_with("name="))
-                    .map(|l| l.split_once('=').unwrap().1.to_owned());
+                    .and_then(|line| line.strip_prefix("name="))
+                    .map(ToOwned::to_owned);
                 Some(ToolCell {
                     cell_id: version.cell_id,
                     name,

@@ -174,47 +174,30 @@ fn run_writer(path: PathBuf, options: WalWriterOptions, rx: Receiver<WalWriterCo
             WalWriterCommand::Append { record, reply } => {
                 rotate_if_needed(&path, options.max_wal_size, &mut file_opt, &mut next_lsn);
 
-                if file_opt.is_none() {
+                let Some(file) = file_opt.as_mut() else {
                     let _ = reply.send(Err(StorageError::WalWriterClosed));
                     continue;
-                }
+                };
 
                 if mode == DurabilityMode::Balanced {
-                    if append_balanced_batch(
-                        file_opt.as_mut().unwrap(),
-                        record,
-                        reply,
-                        &rx,
-                        &mut next_lsn,
-                        &mut metrics,
-                    ) {
+                    if append_balanced_batch(file, record, reply, &rx, &mut next_lsn, &mut metrics)
+                    {
                         break;
                     }
                 } else {
-                    let result = append_strict_record(
-                        file_opt.as_mut().unwrap(),
-                        record,
-                        &mut next_lsn,
-                        &mut metrics,
-                    );
+                    let result = append_strict_record(file, record, &mut next_lsn, &mut metrics);
                     let _ = reply.send(result);
                 }
             }
             WalWriterCommand::AppendBatch { records, reply } => {
                 rotate_if_needed(&path, options.max_wal_size, &mut file_opt, &mut next_lsn);
 
-                if file_opt.is_none() {
+                let Some(file) = file_opt.as_mut() else {
                     let _ = reply.send(Err(StorageError::WalWriterClosed));
                     continue;
-                }
+                };
 
-                let result = append_record_batch(
-                    file_opt.as_mut().unwrap(),
-                    records,
-                    mode,
-                    &mut next_lsn,
-                    &mut metrics,
-                );
+                let result = append_record_batch(file, records, mode, &mut next_lsn, &mut metrics);
                 let _ = reply.send(result);
             }
             WalWriterCommand::Shutdown { reply } => {
