@@ -209,6 +209,10 @@ Supporting docs: [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md) and
 
 ## 9. Incidents
 
+Use [`INCIDENT_PLAYBOOKS.md`](INCIDENT_PLAYBOOKS.md) for the detailed
+corrupted storage, actor busy, backup failed, auth failure spike, and tenant
+issue playbooks. The short flows below are the first triage path.
+
 For `database_busy`:
 
 1. Check `/v1/metrics` actor queue depth and rejected request counters.
@@ -240,6 +244,7 @@ Run these before release promotion or operator handoff:
 
 ```bash
 make operations-runbook-check
+make incident-playbooks-check
 make service-manager-smoke-check
 make deployment-upgrade-check
 make observability-check

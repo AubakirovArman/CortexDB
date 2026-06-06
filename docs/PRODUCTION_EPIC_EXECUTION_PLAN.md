@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 106 / 150
+- Done: 107 / 150
 - Partial: 1 / 150
-- Todo: 43 / 150
-- Current closed epic: Epic 106, Operations Runbook v1
+- Todo: 42 / 150
+- Current closed epic: Epic 107, Incident Playbooks
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3008,15 +3008,29 @@ Tasks:
 
 ### Epic 107. Incident Playbooks
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/INCIDENT_PLAYBOOKS.md`
+- `docs/INCIDENT_PLAYBOOKS_EVIDENCE.md`
+- `scripts/incident_playbooks_check.py`
+- `make incident-playbooks-check`
 
 Tasks:
 
-- Add corrupted storage playbook.
-- Add actor busy playbook.
-- Add backup failed playbook.
-- Add auth failure spike playbook.
-- Add tenant issue playbook.
+- Add corrupted storage playbook. Done: includes validation, WAL/manifest
+  triage, dry-run repair, best-effort repair, restore, containment, and exit
+  criteria.
+- Add actor busy playbook. Done: includes metrics triage, actor queue
+  pressure, client backoff, load smoke evidence, and validation exit criteria.
+- Add backup failed playbook. Done: includes stale/missing backup evidence,
+  backup drill, offsite staging, pruning containment, and production pack gate.
+- Add auth failure spike playbook. Done: includes 401/403 triage, audit review,
+  redaction, policy review, token rotation guidance, and security gate.
+- Add tenant issue playbook. Done: includes invalid tenant triage, tenant
+  naming rules, tenant validation, policy mapping containment, and tenant
+  recovery/quota gates.
 
 ### Epic 108. Load Testing Suite
 

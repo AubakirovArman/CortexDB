@@ -14,7 +14,7 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
-.PHONY: operations-runbook-check
+.PHONY: operations-runbook-check incident-playbooks-check
 .PHONY: doctor-check
 .PHONY: metrics-contract-v2-check
 .PHONY: service-manager-smoke-check
@@ -957,6 +957,9 @@ deployment-upgrade-check: service-manager-smoke-check
 
 operations-runbook-check:
 	python3 scripts/operations_runbook_check.py --report "$(OPERATIONS_RUNBOOK_REPORT)"
+
+incident-playbooks-check:
+	python3 scripts/incident_playbooks_check.py --report "target/incident-playbooks/report.json"
 
 doctor-check:
 	cargo test -p cortex-cli doctor

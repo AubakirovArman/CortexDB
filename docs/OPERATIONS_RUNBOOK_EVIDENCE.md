@@ -29,6 +29,8 @@ self-contained enough for a local single-node operator to:
 - review audit logs without query/body leakage;
 - run startup, shutdown, validation, backup, restore, repair, upgrade, and
   incident-response flows;
+- link to detailed corrupted storage, actor busy, backup failed, auth failure
+  spike, and tenant issue playbooks;
 - run deployment, observability, migration, backup, and soak evidence gates.
 
 The gate also checks that the runbook links to the supporting install, systemd,

@@ -146,6 +146,8 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`OPERATIONS.md`](OPERATIONS.md) - operational guidance.
 - [`OPERATIONS_RUNBOOK_V1.md`](OPERATIONS_RUNBOOK_V1.md) - step-by-step startup, shutdown, validation, backup, restore, repair, upgrade, and incident runbook.
 - [`OPERATIONS_RUNBOOK_EVIDENCE.md`](OPERATIONS_RUNBOOK_EVIDENCE.md) - local single-node operations runbook evidence gate.
+- [`INCIDENT_PLAYBOOKS.md`](INCIDENT_PLAYBOOKS.md) - corrupted storage, actor busy, backup failed, auth failure spike, and tenant issue playbooks.
+- [`INCIDENT_PLAYBOOKS_EVIDENCE.md`](INCIDENT_PLAYBOOKS_EVIDENCE.md) - local incident playbook evidence gate.
 - [`BETA_OPERATIONS.md`](BETA_OPERATIONS.md) - beta operations checklist and runbook.
 - [`SECURITY_MODEL.md`](SECURITY_MODEL.md) - security model.
 - [`SECURITY_BETA_BASELINE.md`](SECURITY_BETA_BASELINE.md) - beta security baseline and backlog boundaries.
