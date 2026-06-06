@@ -11,6 +11,9 @@ expression: resp
   "job_id": 1,
   "validation_report": {
     "cells_seen": 0,
+    "processed_records": 0,
+    "skipped_records": 1,
+    "invalid_metadata_records": 0,
     "warnings": [],
     "skipped_items": [
       {

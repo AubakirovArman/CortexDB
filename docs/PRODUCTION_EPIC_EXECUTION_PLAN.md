@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 87 / 150
+- Done: 88 / 150
 - Partial: 1 / 150
-- Todo: 62 / 150
-- Current closed epic: Epic 87, OCR Adapter Trait
+- Todo: 61 / 150
+- Current closed epic: Epic 88, Ingestion Validation Report
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2377,15 +2377,29 @@ Tasks:
 
 ### Epic 88. Ingestion Validation Report
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/ingestion/report.rs`
+- `crates/cortex-engine/tests/ingestion_validation_report.rs`
+- `crates/cortex-server/src/tests/response_snapshot_tests.rs`
+- `docs/openapi.yaml`
+- `docs/INGESTION.md`
+- `make ingestion-validation-report-check`
 
 Tasks:
 
-- Report processed records.
-- Report skipped records.
-- Report warnings.
-- Report invalid metadata.
-- Report source refs.
+- Report processed records. Done: reports now expose `processed_records`
+  alongside the compatibility `cells_seen` field.
+- Report skipped records. Done: `record_skipped` updates `skipped_records` and
+  preserves item-level skip reasons.
+- Report warnings. Done: structured warning codes remain exposed and are
+  covered by engine and HTTP snapshot tests.
+- Report invalid metadata. Done: strict metadata decode increments
+  `invalid_metadata_records` and records an `invalid_metadata` warning.
+- Report source refs. Done: per-cell SourceRef summaries remain exposed in the
+  engine report and HTTP ingestion response schema.
 
 ### Epic 89. Ingestion Backpressure
 

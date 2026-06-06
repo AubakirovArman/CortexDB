@@ -2140,11 +2140,20 @@ components:
       type: object
       required:
       - cells_seen
+      - processed_records
+      - skipped_records
+      - invalid_metadata_records
       - warnings
       - skipped_items
       - source_refs
       properties:
         cells_seen:
+          type: integer
+        processed_records:
+          type: integer
+        skipped_records:
+          type: integer
+        invalid_metadata_records:
           type: integer
         warnings:
           type: array

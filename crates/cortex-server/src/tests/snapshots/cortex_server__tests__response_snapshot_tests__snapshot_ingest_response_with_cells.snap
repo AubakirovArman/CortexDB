@@ -10,6 +10,9 @@ expression: resp
   "job_id": 1,
   "validation_report": {
     "cells_seen": 1,
+    "processed_records": 1,
+    "skipped_records": 0,
+    "invalid_metadata_records": 0,
     "warnings": [],
     "skipped_items": [],
     "source_refs": [

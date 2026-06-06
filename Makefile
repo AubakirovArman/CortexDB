@@ -26,6 +26,7 @@
 .PHONY: knowledge-graph-check
 .PHONY: ingestion-jobs-v2-check
 .PHONY: ingestion-job-dashboard-check
+.PHONY: ingestion-validation-report-check
 .PHONY: structured-source-ref-check
 .PHONY: deterministic-chunking-check
 .PHONY: chunking-quality-benchmark-check
@@ -2706,6 +2707,11 @@ dashboard-product-check: dashboard-standalone-smoke
 ingestion-job-dashboard-check: dashboard-standalone-smoke
 	cargo test -p cortex-server dashboard_
 	python3 scripts/dashboard_product_check.py --report "$(INGESTION_JOB_DASHBOARD_REPORT)"
+
+ingestion-validation-report-check:
+	cargo test -p cortex-engine --test ingestion_validation_report
+	cargo test -p cortex-server response_snapshot_tests
+	$(MAKE) openapi-contract-check
 
 structured-source-ref-check: dashboard-standalone-smoke
 	cargo test -p cortex-engine --test ingestion_tests cell_metadata_parses_source_ref_aliases_and_url

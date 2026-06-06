@@ -161,8 +161,12 @@ Every HTTP ingestion response includes `validation_report`. The report is built
 from the cells that were actually written:
 
 - `cells_seen`: number of emitted cells checked after write.
+- `processed_records`: number of emitted cells inspected from durable storage.
+- `skipped_records`: number of non-error inputs skipped by the adapter.
+- `invalid_metadata_records`: number of emitted cells whose headers fail strict
+  metadata validation.
 - `warnings`: structured issues such as missing payloads, missing SourceRef
-  metadata, or chunk id mismatch.
+  metadata, chunk id mismatch, or invalid metadata.
 - `skipped_items`: non-error skips such as `no_cells_emitted` for empty text,
   `{}`, `[]`, or header-only CSV.
 - `source_refs`: per-cell summary of SourceRef availability, source id, source

@@ -777,6 +777,9 @@ parameters.
   "job_id": 1,
   "validation_report": {
     "cells_seen": 0,
+    "processed_records": 0,
+    "skipped_records": 1,
+    "invalid_metadata_records": 0,
     "warnings": [],
     "skipped_items": [
       {"reason": "no_cells_emitted", "input_ref": "ingest_text"}
@@ -789,9 +792,11 @@ parameters.
 Empty inputs return zero counts, `first_cell_id: null`, and a
 `validation_report.skipped_items` entry. Non-empty ingestion reports include
 per-cell SourceRef summaries so clients can verify whether chunks/facts are
-citable. SourceRef summaries expose `source_id`, `source_url`, `document_id`,
-`page`, `row`, `cell_range`, `json_path`, and `confidence_q16` when the source
-format provides those fields.
+citable. Reports also expose aggregate `processed_records`, `skipped_records`,
+and `invalid_metadata_records` counters so clients can fail CI/import jobs
+without parsing warning arrays. SourceRef summaries expose `source_id`,
+`source_url`, `document_id`, `page`, `row`, `cell_range`, `json_path`, and
+`confidence_q16` when the source format provides those fields.
 
 `GET /v1/ingest/jobs/<job_id>` returns the persisted ingestion job progress
 object for jobs created by engine-side job workflows. `POST

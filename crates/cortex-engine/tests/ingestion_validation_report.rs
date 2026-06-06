@@ -26,6 +26,9 @@ fn ingestion_validation_report_captures_text_chunk_source_refs() {
     let report = db.ingestion_validation_report(&cells);
 
     assert_eq!(report.cells_seen, 2);
+    assert_eq!(report.processed_records, 2);
+    assert_eq!(report.skipped_records, 0);
+    assert_eq!(report.invalid_metadata_records, 0);
     assert!(report.warnings.is_empty());
     assert_eq!(report.source_refs.len(), 2);
     assert_eq!(report.source_refs[0].cell_id, 10);
@@ -106,9 +109,34 @@ fn ingestion_validation_report_warns_when_cell_is_missing() {
     let report = db.ingestion_validation_report(&cells);
 
     assert_eq!(report.cells_seen, 1);
+    assert_eq!(report.processed_records, 1);
+    assert_eq!(report.skipped_records, 0);
+    assert_eq!(report.invalid_metadata_records, 0);
     assert_eq!(report.warnings.len(), 1);
     assert_eq!(report.warnings[0].code, "missing_payload");
     assert!(report.source_refs.is_empty());
+}
+
+#[test]
+fn ingestion_validation_report_counts_invalid_metadata() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(CellId(123), b"scope=\nstatus=ready\n\nbody".to_vec())
+        .unwrap();
+    let cells = vec![IngestedCell {
+        cell_id: CellId(123),
+        commit_seq: CommitSeq(1),
+        chunk_id: Some("bad#chunk-0001".to_owned()),
+    }];
+
+    let report = db.ingestion_validation_report(&cells);
+
+    assert_eq!(report.processed_records, 1);
+    assert_eq!(report.invalid_metadata_records, 1);
+    assert_eq!(report.warnings[0].code, "invalid_metadata");
+    assert!(report.warnings[0]
+        .message
+        .contains("scope must not be empty"));
 }
 
 #[test]
@@ -117,6 +145,7 @@ fn ingestion_validation_report_records_skipped_items() {
 
     report.record_skipped("no_cells_emitted", Some("ingest_text".to_owned()));
 
+    assert_eq!(report.skipped_records, 1);
     assert_eq!(report.skipped_items.len(), 1);
     assert_eq!(report.skipped_items[0].reason, "no_cells_emitted");
     assert_eq!(

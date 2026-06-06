@@ -395,6 +395,9 @@ Ingests a structured JSON payload recursively flattening keys into multiple fact
     "job_id": 1,
     "validation_report": {
       "cells_seen": 10,
+      "processed_records": 10,
+      "skipped_records": 0,
+      "invalid_metadata_records": 0,
       "warnings": [],
       "skipped_items": [],
       "source_refs": [
@@ -431,6 +434,9 @@ Ingests a structured CSV table creating one document block cell per row.
     "job_id": 1,
     "validation_report": {
       "cells_seen": 150,
+      "processed_records": 150,
+      "skipped_records": 0,
+      "invalid_metadata_records": 0,
       "warnings": [],
       "skipped_items": [],
       "source_refs": [

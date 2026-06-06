@@ -343,6 +343,9 @@ fn snapshot_ingest_response_empty() {
         job_id: Some(1),
         validation_report: IngestionValidationReport {
             cells_seen: 0,
+            processed_records: 0,
+            skipped_records: 1,
+            invalid_metadata_records: 0,
             warnings: Vec::new(),
             skipped_items: vec![IngestionSkippedItem {
                 reason: "no_cells_emitted".to_owned(),
@@ -364,6 +367,9 @@ fn snapshot_ingest_response_with_cells() {
         job_id: Some(1),
         validation_report: IngestionValidationReport {
             cells_seen: 1,
+            processed_records: 1,
+            skipped_records: 0,
+            invalid_metadata_records: 0,
             warnings: Vec::new(),
             skipped_items: Vec::new(),
             source_refs: vec![IngestionSourceRefReport {

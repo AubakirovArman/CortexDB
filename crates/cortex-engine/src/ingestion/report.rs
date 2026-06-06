@@ -7,6 +7,9 @@ use crate::query::CellMetadata;
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IngestionValidationReport {
     pub cells_seen: usize,
+    pub processed_records: usize,
+    pub skipped_records: usize,
+    pub invalid_metadata_records: usize,
     pub warnings: Vec<IngestionValidationIssue>,
     pub skipped_items: Vec<IngestionSkippedItem>,
     pub source_refs: Vec<IngestionSourceRefReport>,
@@ -45,6 +48,7 @@ impl Database {
     pub fn ingestion_validation_report(&self, cells: &[IngestedCell]) -> IngestionValidationReport {
         let mut report = IngestionValidationReport {
             cells_seen: cells.len(),
+            processed_records: cells.len(),
             ..IngestionValidationReport::default()
         };
         for cell in cells {
@@ -57,6 +61,9 @@ impl Database {
                 );
                 continue;
             };
+            if let Err(error) = CellMetadata::decode_payload(&payload) {
+                report.record_invalid_metadata(cell.cell_id.0, cell.chunk_id.clone(), &error);
+            }
             let metadata = CellMetadata::from_payload(&payload);
             let source_ref = metadata.source_ref;
             if let (Some(expected), Some(actual)) = (
@@ -108,10 +115,26 @@ impl Database {
 
 impl IngestionValidationReport {
     pub fn record_skipped(&mut self, reason: &str, input_ref: Option<String>) {
+        self.skipped_records += 1;
         self.skipped_items.push(IngestionSkippedItem {
             reason: reason.to_owned(),
             input_ref,
         });
+    }
+
+    fn record_invalid_metadata(
+        &mut self,
+        cell_id: u64,
+        chunk_id: Option<String>,
+        error: &dyn core::fmt::Display,
+    ) {
+        self.invalid_metadata_records += 1;
+        self.warn(
+            "invalid_metadata",
+            &format!("ingested cell metadata is invalid: {error}"),
+            Some(cell_id),
+            chunk_id,
+        );
     }
 
     fn warn(&mut self, code: &str, message: &str, cell_id: Option<u64>, chunk_id: Option<String>) {
