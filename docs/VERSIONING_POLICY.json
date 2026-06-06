@@ -1,0 +1,64 @@
+{
+  "schema_version": "cortexdb.versioning_policy.v1",
+  "release_phase": "core-alpha-to-beta",
+  "surfaces": [
+    {
+      "name": "http_api",
+      "version_source": "docs/openapi.yaml",
+      "current_contract": "/v1",
+      "changelog": "docs/API_CHANGELOG.md",
+      "compatibility_gate": "make openapi-contract-check",
+      "breaking_change_examples": [
+        "remove or rename response field",
+        "change stable error code",
+        "remove endpoint",
+        "change required parameter"
+      ]
+    },
+    {
+      "name": "sdk",
+      "version_source": "Cargo.toml",
+      "current_contract": "workspace package version",
+      "changelog": "docs/SDK_RELEASE.md",
+      "compatibility_gate": "make sdk-e2e-release-check",
+      "breaking_change_examples": [
+        "remove typed client method",
+        "change decoded response type",
+        "drop support for documented error code"
+      ]
+    },
+    {
+      "name": "storage_format",
+      "version_source": "docs/STORAGE_FORMATS.md",
+      "current_contract": "format magic plus version inventory",
+      "changelog": "docs/STORAGE_COMPATIBILITY_EVIDENCE.md",
+      "compatibility_gate": "make storage-compat-check",
+      "breaking_change_examples": [
+        "make previous release fixture unreadable",
+        "change file magic without migration",
+        "remove supported restore path"
+      ]
+    },
+    {
+      "name": "aql",
+      "version_source": "docs/AQL_V0_4.md",
+      "current_contract": "AQL v0.4 grammar",
+      "changelog": "docs/AQL_CHANGELOG.md",
+      "compatibility_gate": "make aql-compat-check",
+      "breaking_change_examples": [
+        "reinterpret v0.4 syntax",
+        "change stable parse error kind",
+        "change stable bind error code",
+        "widen permissions through query syntax"
+      ]
+    }
+  ],
+  "breaking_change_process": [
+    "open a design note or PR section naming every affected surface",
+    "add a changelog entry before release",
+    "add or update migration/compatibility documentation",
+    "add golden or snapshot tests for the old and new behavior",
+    "run the compatibility gate for every affected surface",
+    "include the change in generated release notes"
+  ]
+}

@@ -205,7 +205,7 @@ Tasks:
 
 ### Epic 10. Versioning Policy v1
 
-Status: partial
+Status: done
 
 Evidence:
 
@@ -214,11 +214,12 @@ Evidence:
 - `docs/AQL_CHANGELOG.md`
 - `docs/SDK_RELEASE.md`
 - `docs/STORAGE_COMPATIBILITY_EVIDENCE.md`
-
-Remaining:
-
-- Add one unified versioning policy that covers API, SDK, storage formats, and AQL grammar together.
-- Document the single breaking-change process across all public surfaces.
+- `docs/VERSIONING_POLICY.md`
+- `docs/VERSIONING_POLICY.json`
+- `scripts/versioning_policy_check.py`
+- `make versioning-policy-check`
+- The unified policy covers HTTP API, SDKs, storage formats, and AQL grammar
+  with one breaking-change process.
 
 Tasks:
 

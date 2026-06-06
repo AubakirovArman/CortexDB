@@ -1,5 +1,9 @@
 # API Versioning Policy
 
+Unified CortexDB public-surface versioning rules are defined in
+[`VERSIONING_POLICY.md`](VERSIONING_POLICY.md). This document is the HTTP/API
+surface-specific policy.
+
 ## Current Status
 
 CortexDB is at **v0.1.0-core-alpha**. All HTTP endpoints are prefixed with `/v1/`.

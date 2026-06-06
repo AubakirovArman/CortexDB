@@ -31,6 +31,7 @@
     "target/retrieval-quality/dashboard.html",
     "target/release-regression-dashboard/report.json",
     "target/release-regression-dashboard/dashboard.md",
+    "target/versioning-policy/report.json",
     "target/ann/release-evidence/corpus-runs/history.json",
     "target/ann/real-embedding/runs/history.json",
     "target/chaos-restart/report.json",

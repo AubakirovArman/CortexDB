@@ -1,5 +1,9 @@
 # AQL Changelog
 
+Unified CortexDB public-surface versioning rules are defined in
+[`VERSIONING_POLICY.md`](VERSIONING_POLICY.md). This changelog covers AQL
+grammar and diagnostic compatibility.
+
 This changelog tracks AQL grammar and binder compatibility. It is separate from
 the HTTP API changelog because query syntax can remain stable even when response
 fields evolve.

@@ -1,4 +1,4 @@
-.PHONY: release-artifact-manifest-check release-artifact-manifest-production-check release-evidence-bundle-check release-notes-generate evidence-artifact-retention-check release-regression-dashboard-check
+.PHONY: release-artifact-manifest-check release-artifact-manifest-production-check release-evidence-bundle-check release-notes-generate evidence-artifact-retention-check release-regression-dashboard-check versioning-policy-check
 .PHONY: encrypted-backup-check
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
@@ -228,6 +228,7 @@ RELEASE_EVIDENCE_BUNDLE_REPORT ?= $(RELEASE_EVIDENCE_BUNDLE_ROOT)/report.json
 RELEASE_EVIDENCE_BUNDLE_ARCHIVE ?= $(RELEASE_EVIDENCE_BUNDLE_ROOT)/release-evidence.tar.gz
 GENERATED_RELEASE_NOTES ?= target/release-notes/generated.md
 EVIDENCE_ARTIFACT_RETENTION_REPORT ?= target/evidence-artifact-retention/report.json
+VERSIONING_POLICY_REPORT ?= target/versioning-policy/report.json
 ANN_PUBLIC_SOURCE ?=
 ANN_PUBLIC_DATASET_ID ?= public-ann
 ANN_PUBLIC_FORMAT ?= fvecs
@@ -885,6 +886,9 @@ release-notes-generate:
 
 evidence-artifact-retention-check:
 	python3 scripts/evidence_artifact_retention_check.py --report "$(EVIDENCE_ARTIFACT_RETENTION_REPORT)"
+
+versioning-policy-check:
+	python3 scripts/versioning_policy_check.py --report "$(VERSIONING_POLICY_REPORT)"
 
 binary-release-check:
 	python3 scripts/package_binaries.py --self-test
@@ -2850,6 +2854,7 @@ release-check: alpha-check
 	$(MAKE) release-regression-dashboard-check
 	$(MAKE) smoke-test
 	$(MAKE) sdk-smoke-test
+	$(MAKE) versioning-policy-check
 	$(MAKE) release-evidence-bundle-check
 	$(MAKE) release-artifact-manifest-production-check
 	$(MAKE) release-notes-generate

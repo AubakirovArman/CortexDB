@@ -1,5 +1,9 @@
 # SDK Release Process
 
+Unified CortexDB public-surface versioning rules are defined in
+[`VERSIONING_POLICY.md`](VERSIONING_POLICY.md). This document covers the SDK
+release train and registry guardrails.
+
 CortexDB publishes three Core Alpha client surfaces from one versioned source
 tree:
 

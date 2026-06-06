@@ -1,5 +1,9 @@
 # Storage Compatibility Evidence
 
+Unified CortexDB public-surface versioning rules are defined in
+[`VERSIONING_POLICY.md`](VERSIONING_POLICY.md). This document covers storage
+format compatibility and restore evidence.
+
 Last local storage compatibility run: 2026-06-01.
 
 Run:

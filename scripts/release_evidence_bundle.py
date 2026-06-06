@@ -49,6 +49,7 @@ OPTIONAL_ARTIFACTS: tuple[ArtifactSpec, ...] = (
     ArtifactSpec("retrieval_dashboard", "benchmark", "target/retrieval-quality/dashboard.html", required=False, validate_report=False),
     ArtifactSpec("release_regression_dashboard", "release", "target/release-regression-dashboard/report.json", required=False),
     ArtifactSpec("release_regression_dashboard_markdown", "release", "target/release-regression-dashboard/dashboard.md", required=False, validate_report=False),
+    ArtifactSpec("versioning_policy", "release", "target/versioning-policy/report.json", required=False),
     ArtifactSpec("ann_release_history", "benchmark", "target/ann/release-evidence/corpus-runs/history.json", required=False, validate_report=False),
     ArtifactSpec("ann_real_embedding_history", "benchmark", "target/ann/real-embedding/runs/history.json", required=False, validate_report=False),
     ArtifactSpec("chaos_restart", "storage", "target/chaos-restart/report.json", required=False),
