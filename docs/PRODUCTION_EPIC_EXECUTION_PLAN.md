@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 53 / 150
+- Done: 54 / 150
 - Partial: 1 / 150
-- Todo: 96 / 150
-- Current closed epic: Epic 53, Query Routing Engine
+- Todo: 95 / 150
+- Current closed epic: Epic 54, HNSW SLO History
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1497,15 +1497,46 @@ Tasks:
 
 ### Epic 54. HNSW SLO History
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `make ann-production-slo-history-check`
+- `target/ann/production-slo-history/runs/history.json`
+- `crates/cortex-engine/src/search/ann_corpus.rs`
+- `scripts/ann/summarize_history.py`
+- `scripts/ann/history_gate.py`
+- `scripts/ann/history_contract.py`
+- `docs/ANN_PRODUCTION_TUNING.md`
+
+Latest local evidence:
+
+- `run_count=10`
+- `corpus_count=1`
+- `regression_count=0`
+- `latest_min_observed_recall_q16=65535`
+- `latest_mean_recall_q16=65535`
+- `latest_p95_latency_nanos=9600`
+- `latest_p99_latency_nanos=9600`
+- `latest_fallback_count=0`
+- `latest_fallback_rate_q16=0`
+- `latest_graph_freshness_q16=65535`
+- `latest_stale_vector_count=0`
+- `latest_production_safe=true`
 
 Tasks:
 
-- Run 10+ HNSW runs.
-- Track latency.
-- Track recall.
-- Track fallback rate.
-- Track graph freshness.
+- Run 10+ HNSW runs. Done: `ann-production-slo-history-check` creates ten
+  release-mode local domain ANN/HNSW runs.
+- Track latency. Done: history tracks p50, p95, p99, and max latency and gates
+  adjacent regressions with configured tolerances.
+- Track recall. Done: history tracks min and mean recall and fails on recall
+  regressions.
+- Track fallback rate. Done: ANN corpus reports `fallback_count` and
+  `fallback_rate_q16`; the history gate requires latest fallback to be zero.
+- Track graph freshness. Done: ANN corpus reports `graph_freshness_q16` and
+  `stale_vector_count`; the history gate requires full freshness and zero stale
+  vectors.
 
 ### Epic 55. HNSW Failure Simulation
 

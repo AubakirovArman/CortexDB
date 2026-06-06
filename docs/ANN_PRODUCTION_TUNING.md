@@ -604,10 +604,15 @@ This creates a fresh 10-run history under
 `target/ann/production-slo-history/runs`, using the checked-in local domain
 fixture and release-mode `ann_corpus_check`. The gate requires one corpus
 group, ten runs, zero recall/graph regressions, bounded latency drift, and
-latest `production_safe=true` multi-layer graph evidence. It is included in
-`make production-evidence-sweep`. This is local release evidence; larger
-external corpora and real production traffic histories remain separate future
-tuning inputs.
+latest `production_safe=true` multi-layer graph evidence. The history summary
+also records explicit fallback and graph-freshness signals:
+`latest_fallback_count`, `latest_fallback_rate_q16`,
+`latest_graph_freshness_q16`, and `latest_stale_vector_count`. The production
+history gate fails closed if the latest corpus reports any fallback, stale
+vector nodes, or graph freshness below full coverage. It is included in `make
+production-evidence-sweep`. This is local release evidence; larger external
+corpora and real production traffic histories remain separate future tuning
+inputs.
 
 For local release hygiene, `make ann-scripts-check` also runs
 `history_fixture_check.py --self-test` and `make ann-history-fixture-check`.

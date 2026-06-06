@@ -28,6 +28,27 @@ def validate_history(
         errors.append(f"expected at least {min_corpora} ANN corpus group(s), found {summary['corpus_count']}")
     if fail_on_regression and summary["regression_count"] > 0:
         errors.append(f"found {summary['regression_count']} ANN history regression(s)")
+    for index, corpus in enumerate(summary.get("corpora", [])):
+        if corpus.get("latest_fallback_rate_q16", 0) != 0:
+            errors.append(
+                f"corpus[{index}] latest_fallback_rate_q16 must be 0, "
+                f"observed {corpus.get('latest_fallback_rate_q16')}"
+            )
+        if corpus.get("latest_fallback_count", 0) != 0:
+            errors.append(
+                f"corpus[{index}] latest_fallback_count must be 0, "
+                f"observed {corpus.get('latest_fallback_count')}"
+            )
+        if corpus.get("latest_graph_freshness_q16", 65_535) < 65_535:
+            errors.append(
+                f"corpus[{index}] latest_graph_freshness_q16 must be 65535, "
+                f"observed {corpus.get('latest_graph_freshness_q16')}"
+            )
+        if corpus.get("latest_stale_vector_count", 0) != 0:
+            errors.append(
+                f"corpus[{index}] latest_stale_vector_count must be 0, "
+                f"observed {corpus.get('latest_stale_vector_count')}"
+            )
     return errors
 
 
@@ -98,6 +119,10 @@ class SelfTests(unittest.TestCase):
             "graph_edges": 2,
             "upper_layers": 1,
             "upper_graph_edges": 1,
+            "graph_freshness_q16": 65_535,
+            "stale_vector_count": 0,
+            "fallback_count": 0,
+            "fallback_rate_q16": 0,
             "min_observed_recall_q16": recall,
             "mean_recall_q16": recall,
             "p50_latency_nanos": p95,
@@ -129,6 +154,23 @@ class SelfTests(unittest.TestCase):
             summary = summarize_history(root)
         errors = validate_history(summary, min_runs=2, min_corpora=1, fail_on_regression=True)
         self.assertTrue(any("regression" in error for error in errors))
+
+    def test_gate_fails_latest_fallback_or_stale_graph(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_dir:
+            root = Path(raw_dir)
+            self.write_run(root, "run-a", 65535, 10)
+            report_path = root / "run-a" / "report.json"
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            report["fallback_count"] = 1
+            report["fallback_rate_q16"] = 65_535
+            report["graph_freshness_q16"] = 32_767
+            report["stale_vector_count"] = 1
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            summary = summarize_history(root)
+
+        errors = validate_history(summary, min_runs=1, min_corpora=1, fail_on_regression=True)
+        self.assertTrue(any("fallback_rate_q16" in error for error in errors))
+        self.assertTrue(any("graph_freshness_q16" in error for error in errors))
 
     def test_gate_accepts_latency_within_tolerance(self) -> None:
         with tempfile.TemporaryDirectory() as raw_dir:

@@ -103,6 +103,10 @@ def load_run(manifest_path: Path) -> dict[str, Any]:
             report.get("upper_graph_edges"),
             f"{report_path}:upper_graph_edges",
         ),
+        "graph_freshness_q16": as_int_default(report.get("graph_freshness_q16"), 65_535),
+        "stale_vector_count": as_int_default(report.get("stale_vector_count"), 0),
+        "fallback_count": as_int_default(report.get("fallback_count"), 0),
+        "fallback_rate_q16": as_int_default(report.get("fallback_rate_q16"), 0),
         "min_observed_recall_q16": as_int(
             report.get("min_observed_recall_q16"),
             f"{report_path}:min_observed_recall_q16",
@@ -154,6 +158,7 @@ def compare_adjacent(
         ("graph_edges", "graph_shape"),
         ("upper_layers", "graph_shape"),
         ("upper_graph_edges", "graph_shape"),
+        ("graph_freshness_q16", "graph_freshness"),
     ]
     regressions: list[dict[str, Any]] = []
     for field, kind in checks:
@@ -163,6 +168,10 @@ def compare_adjacent(
     for field in ["hnsw_max_neighbors", "hnsw_ef_search", "hnsw_layer_count"]:
         delta = int(current[field]) - int(previous[field])
         if delta != 0: regressions.append(regression("hnsw_config", field, previous, current, delta))
+    for field in ["fallback_count", "fallback_rate_q16", "stale_vector_count"]:
+        delta = int(current[field]) - int(previous[field])
+        if delta > 0:
+            regressions.append(regression("graph_freshness", field, previous, current, delta))
     latency_limits = {
         "p95_latency_nanos": max_p95_regression_nanos,
         "p99_latency_nanos": max_p99_regression_nanos,
@@ -233,6 +242,10 @@ def summarize_history(
             "latest_mean_mrr_q16": latest["mean_mrr_q16"],
             "latest_mean_ndcg_q16": latest["mean_ndcg_q16"],
             "latest_exact_parity_q16": latest["exact_parity_q16"],
+            "latest_graph_freshness_q16": latest["graph_freshness_q16"],
+            "latest_stale_vector_count": latest["stale_vector_count"],
+            "latest_fallback_count": latest["fallback_count"],
+            "latest_fallback_rate_q16": latest["fallback_rate_q16"],
             "latest_p95_latency_nanos": latest["p95_latency_nanos"],
             "latest_p99_latency_nanos": latest["p99_latency_nanos"],
             "latest_production_safe": latest["production_safe"],
@@ -317,6 +330,10 @@ class SelfTests(unittest.TestCase):
             "graph_edges": 2,
             "upper_layers": 1,
             "upper_graph_edges": 1,
+            "graph_freshness_q16": 65_535,
+            "stale_vector_count": 0,
+            "fallback_count": 0,
+            "fallback_rate_q16": 0,
             "min_observed_recall_q16": recall,
             "mean_recall_q16": recall,
             "mean_mrr_q16": recall,
@@ -345,6 +362,28 @@ class SelfTests(unittest.TestCase):
         self.assertIn("min_observed_recall_q16", fields)
         self.assertIn("p95_latency_nanos", fields)
         self.assertIn("production_safe", fields)
+
+    def test_history_summary_detects_fallback_and_freshness_regressions(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_dir:
+            root = Path(raw_dir)
+            self.write_run(root, "20260101T000000Z-a", 65535, 10, True)
+            self.write_run(root, "20260102T000000Z-b", 65535, 10, True)
+            degraded_report = load_json(root / "20260102T000000Z-b" / "report.json")
+            degraded_report["fallback_count"] = 1
+            degraded_report["fallback_rate_q16"] = 65_535
+            degraded_report["stale_vector_count"] = 1
+            degraded_report["graph_freshness_q16"] = 32_767
+            (root / "20260102T000000Z-b" / "report.json").write_text(
+                json.dumps(degraded_report),
+                encoding="utf-8",
+            )
+            summary = summarize_history(root)
+
+        fields = {regression["field"] for regression in summary["regressions"]}
+        self.assertIn("fallback_count", fields)
+        self.assertIn("fallback_rate_q16", fields)
+        self.assertIn("stale_vector_count", fields)
+        self.assertIn("graph_freshness_q16", fields)
 
     def test_empty_history_is_valid(self) -> None:
         with tempfile.TemporaryDirectory() as raw_dir:

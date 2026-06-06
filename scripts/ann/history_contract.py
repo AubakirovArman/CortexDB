@@ -56,6 +56,14 @@ def packaged_history_failures(
                 failures.append(f"history.json:corpora[{index}]: latest_production_safe must be true")
             if int(corpus.get("run_count", 0)) <= 0:
                 failures.append(f"history.json:corpora[{index}]: run_count must be positive")
+            if int(corpus.get("latest_fallback_rate_q16", 0)) != 0:
+                failures.append(f"history.json:corpora[{index}]: latest_fallback_rate_q16 must be 0")
+            if int(corpus.get("latest_fallback_count", 0)) != 0:
+                failures.append(f"history.json:corpora[{index}]: latest_fallback_count must be 0")
+            if int(corpus.get("latest_graph_freshness_q16", 65_535)) < 65_535:
+                failures.append(f"history.json:corpora[{index}]: latest_graph_freshness_q16 must be 65535")
+            if int(corpus.get("latest_stale_vector_count", 0)) != 0:
+                failures.append(f"history.json:corpora[{index}]: latest_stale_vector_count must be 0")
     return failures
 
 
@@ -100,7 +108,15 @@ class SelfTests(unittest.TestCase):
             "corpus_count": 1,
             "regression_count": 0,
             "runs": [{"run_id": "smoke", "production_safe": True}],
-            "corpora": [{"run_count": 1, "latest_run_id": "smoke", "latest_production_safe": True}],
+            "corpora": [{
+                "run_count": 1,
+                "latest_run_id": "smoke",
+                "latest_production_safe": True,
+                "latest_fallback_count": 0,
+                "latest_fallback_rate_q16": 0,
+                "latest_graph_freshness_q16": 65_535,
+                "latest_stale_vector_count": 0,
+            }],
         }
 
     def test_clean_history_passes(self) -> None:
@@ -119,6 +135,15 @@ class SelfTests(unittest.TestCase):
     def test_latest_unsafe_corpus_fails(self) -> None:
         history = self.history()
         history["corpora"][0]["latest_production_safe"] = False
+        with self.assertRaises(ValueError):
+            validate_packaged_history(history, source_run_id="smoke")
+
+    def test_latest_fallback_or_stale_graph_fails(self) -> None:
+        history = self.history()
+        history["corpora"][0]["latest_fallback_count"] = 1
+        history["corpora"][0]["latest_fallback_rate_q16"] = 1
+        history["corpora"][0]["latest_graph_freshness_q16"] = 65_534
+        history["corpora"][0]["latest_stale_vector_count"] = 1
         with self.assertRaises(ValueError):
             validate_packaged_history(history, source_run_id="smoke")
 

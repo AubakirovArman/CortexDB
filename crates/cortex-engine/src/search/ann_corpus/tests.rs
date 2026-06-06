@@ -41,6 +41,10 @@ fn corpus_evaluation_uses_external_ground_truth() {
     assert_eq!(report.mean_ndcg_q16, 65_535);
     assert_eq!(report.exact_parity_q16, 65_535);
     assert_eq!(report.exact_parity_count, 2);
+    assert_eq!(report.graph_freshness_q16, 65_535);
+    assert_eq!(report.stale_vector_count, 0);
+    assert_eq!(report.fallback_count, 0);
+    assert_eq!(report.fallback_rate_q16, 0);
     assert_eq!(report.required_min_recall_q16, 49_151);
     assert_eq!(report.allowed_p95_latency_nanos, 100_000_000);
     assert_eq!(report.allowed_p99_latency_nanos, 200_000_000);

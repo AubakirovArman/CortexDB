@@ -38,6 +38,18 @@ pub(super) fn compare_corpus_report(
     if options.require_production_safe && !report.production_safe {
         failures.push("production_safe expected true, observed false".to_owned());
     }
+    if options.require_production_safe && report.graph_freshness_q16 < 65_535 {
+        failures.push(format!(
+            "graph_freshness_q16: expected 65535, observed {}",
+            report.graph_freshness_q16
+        ));
+    }
+    if options.require_production_safe && report.fallback_count > 0 {
+        failures.push(format!(
+            "fallback_count: expected 0, observed {}",
+            report.fallback_count
+        ));
+    }
     failures
 }
 

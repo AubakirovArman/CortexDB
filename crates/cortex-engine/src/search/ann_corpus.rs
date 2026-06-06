@@ -67,6 +67,10 @@ pub struct AnnCorpusReport {
     pub graph_edges: usize,
     pub upper_layers: usize,
     pub upper_graph_edges: usize,
+    pub graph_freshness_q16: u16,
+    pub stale_vector_count: usize,
+    pub fallback_count: usize,
+    pub fallback_rate_q16: u16,
     pub min_observed_recall_q16: u16,
     pub mean_recall_q16: u16,
     pub mean_mrr_q16: u16,
@@ -153,6 +157,7 @@ pub fn evaluate_ann_corpus(
     let mut reciprocal_ranks = Vec::with_capacity(corpus.queries.len());
     let mut ndcgs = Vec::with_capacity(corpus.queries.len());
     let mut exact_parity_count = 0usize;
+    let fallback_count = 0usize;
     let mut query_reports = Vec::with_capacity(corpus.queries.len());
     let mut production_safe = persisted_index.verify_hnsw_integrity();
     for query in &corpus.queries {
@@ -207,6 +212,8 @@ pub fn evaluate_ann_corpus(
     let mean_ndcg_q16 = mean_q16(&ndcgs);
     let exact_parity_q16 =
         ((exact_parity_count as u64 * 65_535) / corpus.queries.len() as u64) as u16;
+    let graph_nodes = graph.links.len();
+    let stale_vector_count = corpus.vectors.len().saturating_sub(graph_nodes);
     let mut report = AnnCorpusReport {
         passed: false,
         failures: Vec::new(),
@@ -224,7 +231,7 @@ pub fn evaluate_ann_corpus(
         vector_count: corpus.vectors.len(),
         query_count: corpus.queries.len(),
         dimension: corpus.dimension,
-        graph_nodes: graph.links.len(),
+        graph_nodes,
         graph_edges: graph.links.values().map(|neighbors| neighbors.len()).sum(),
         upper_layers: graph.upper_layers.len(),
         upper_graph_edges: graph
@@ -233,6 +240,10 @@ pub fn evaluate_ann_corpus(
             .flat_map(|links| links.values())
             .map(|neighbors| neighbors.len())
             .sum(),
+        graph_freshness_q16: ratio_q16(graph_nodes, corpus.vectors.len()),
+        stale_vector_count,
+        fallback_count,
+        fallback_rate_q16: ratio_q16(fallback_count, corpus.queries.len()),
         min_observed_recall_q16: recalls[0],
         mean_recall_q16,
         mean_mrr_q16,
@@ -296,6 +307,13 @@ fn mean_q16(values: &[u16]) -> u16 {
         return 0;
     }
     (values.iter().copied().map(u64::from).sum::<u64>() / values.len() as u64) as u16
+}
+
+fn ratio_q16(numerator: usize, denominator: usize) -> u16 {
+    if denominator == 0 {
+        return 0;
+    }
+    ((numerator as u64 * 65_535) / denominator as u64) as u16
 }
 
 mod compare;
