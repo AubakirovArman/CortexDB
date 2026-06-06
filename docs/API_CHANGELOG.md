@@ -38,6 +38,10 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 - **ContextPack conflict visibility metric** — ContextPack JSON now includes
   `conflict_visibility_q16` and `visible_conflict_count` for selected
   `project` + `metric` evidence groups with multiple `value=` variants.
+- **Rust SDK verification helpers** — `cortex-sdk` now provides typed
+  `VerifyRequest`, `VerifyResult`, and `VerifyConflict` helpers so agents can
+  build VERIFY FACT requests, decode result states, and inspect contradicting
+  evidence or numeric conflicts without ad-hoc string matching.
 
 ### Changed
 - **Error taxonomy contract guard** — `make openapi-contract-check` now also

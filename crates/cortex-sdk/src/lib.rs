@@ -24,6 +24,7 @@ mod aql_support;
 mod context_pack;
 mod http;
 mod types;
+mod verification;
 
 pub use aql::{
     Aql, AqlBuildError, AqlRetrievalMode, RememberBuilder, RetrieveContextBuilder,
@@ -47,11 +48,17 @@ pub use types::{
     SourceRefResponse, StatsResponse, ValidationResponse, VectorAlgorithm,
     VerificationReportResponse,
 };
+pub use verification::{
+    VerifyConflict, VerifyEvidenceConflict, VerifyNumericConflict, VerifyOutputFormat,
+    VerifyRequest, VerifyResult,
+};
 
 #[cfg(test)]
 mod context_pack_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod verification_tests;
 
 #[derive(Debug, Error)]
 pub enum SdkError {
@@ -380,6 +387,18 @@ impl CortexDbClient {
         statement: &str,
     ) -> SdkResult<VerificationReportResponse> {
         decode_value(self.verify(scope, statement)?)
+    }
+
+    pub fn verify_request_response(
+        &self,
+        request: &VerifyRequest,
+    ) -> SdkResult<VerificationReportResponse> {
+        let request = request.clone().json();
+        decode_value(self.post(&request.path(), request.statement())?)
+    }
+
+    pub fn verify_request_export(&self, request: &VerifyRequest) -> SdkResult<String> {
+        self.post_text(&request.path(), request.statement())
     }
 
     pub fn remember(&self, scope: &str, statement: &str) -> SdkResult<serde_json::Value> {

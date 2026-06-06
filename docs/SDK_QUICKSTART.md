@@ -146,6 +146,34 @@ The `ContextPackV1` aliases cover selected cells, source refs, explain details,
 and anomalies. They support both `serde_json` decode and encode so downstream
 agents can persist, snapshot, or forward packs without using ad-hoc JSON maps.
 
+Rust verification helpers keep VERIFY FACT requests and conflict handling typed:
+
+```rust
+use cortex_sdk::{VerifyConflict, VerifyRequest, VerifyResult};
+
+let request = VerifyRequest::fact("default", "Budget is 1.2B KZT", "default")?;
+let report = client.verify_request_response(&request)?;
+
+match report.result() {
+    VerifyResult::Supported => println!("supported"),
+    VerifyResult::Contradicted | VerifyResult::MixedEvidence => {
+        for conflict in report.conflicts() {
+            match conflict {
+                VerifyConflict::ContradictingEvidence(evidence) => {
+                    println!("conflicting cell {}", evidence.cell_id);
+                }
+                VerifyConflict::Numeric(numeric) => {
+                    println!("{}: {} vs {}", numeric.metric, numeric.left, numeric.right);
+                }
+            }
+        }
+    }
+    _ => println!("not enough database evidence"),
+}
+
+let markdown = client.verify_request_export(&request.markdown())?;
+```
+
 ## Live Contract Gate
 
 Before publishing or changing SDK contracts, run:

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 78 / 150
+- Done: 79 / 150
 - Partial: 1 / 150
-- Todo: 71 / 150
-- Current closed epic: Epic 78, Verification Markdown Export
+- Todo: 70 / 150
+- Current closed epic: Epic 79, Verification SDK Helpers
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2139,13 +2139,23 @@ Tasks:
 
 ### Epic 79. Verification SDK Helpers
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Add typed verify request builders.
-- Add result enums.
-- Add conflict types.
+- Add typed verify request builders. Done: Rust SDK now exposes
+  `VerifyRequest` with stable `/v1/verify` path construction, JSON/Markdown/Audit
+  formats, and `VerifyRequest::fact(...)` for AQL-backed request generation.
+- Add result enums. Done: `VerifyResult` maps current and legacy wire statuses
+  including `supported`, `insufficient`, `contradicted`, `mixed`, and
+  `mixed_evidence`.
+- Add conflict types. Done: `VerifyConflict`, `VerifyEvidenceConflict`, and
+  `VerifyNumericConflict` expose contradicting evidence and numeric conflicts
+  from `VerificationReportResponse::conflicts()`.
+- Evidence: `crates/cortex-sdk/src/verification.rs` and
+  `crates/cortex-sdk/src/verification_tests.rs` cover request building, result
+  mapping, and conflict extraction. `docs/SDK_QUICKSTART.md` documents the
+  helper flow.
 
 ### Epic 80. Verification Quality Dashboard
 
