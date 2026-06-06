@@ -118,6 +118,16 @@ It binds the release evidence bundle checksum into
 `target/release-artifact-manifest/manifest.json` and records explicit SDK
 versions plus the storage format version inventory from `docs/STORAGE_FORMATS.md`.
 
+The generated release-notes draft is produced by:
+
+```bash
+make release-notes-generate
+```
+
+It writes `target/release-notes/generated.md` from the production evidence
+report, release evidence bundle report, release artifact manifest, beta
+non-goals, and upgrade/migration limitations.
+
 ## Public Release Artifact Audit
 
 The public artifact audit target is `v0.1.0-core-alpha.5`. It supersedes the

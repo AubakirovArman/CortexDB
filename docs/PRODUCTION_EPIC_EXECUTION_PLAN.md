@@ -127,18 +127,17 @@ Tasks:
 
 ### Epic 6. Release Notes Automation
 
-Status: partial
+Status: done
 
 Evidence:
 
 - `docs/CHANGELOG_RULES.md`
 - `docs/API_CHANGELOG.md`
 - `docs/RELEASE_NOTES_v0.2.0-beta.1.md`
-
-Remaining:
-
-- Add generator that produces release notes from evidence reports.
-- Include passed/failed gates, known limitations, and migration notes automatically.
+- `scripts/generate_release_notes.py`
+- `make release-notes-generate`
+- `target/release-notes/generated.md`
+- Generated notes include evidence gates, evidence bundle summary, release manifest summary, known limitations, explicit non-goals, and migration notes.
 
 Tasks:
 

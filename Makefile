@@ -1,4 +1,4 @@
-.PHONY: release-artifact-manifest-check release-artifact-manifest-production-check release-evidence-bundle-check
+.PHONY: release-artifact-manifest-check release-artifact-manifest-production-check release-evidence-bundle-check release-notes-generate
 .PHONY: encrypted-backup-check
 .PHONY: backup-restore-production-pack-check
 .PHONY: migration-compatibility-v2-check
@@ -226,6 +226,7 @@ RELEASE_EVIDENCE_BUNDLE_ROOT ?= target/release-evidence-bundle
 RELEASE_EVIDENCE_BUNDLE_MANIFEST ?= $(RELEASE_EVIDENCE_BUNDLE_ROOT)/manifest.json
 RELEASE_EVIDENCE_BUNDLE_REPORT ?= $(RELEASE_EVIDENCE_BUNDLE_ROOT)/report.json
 RELEASE_EVIDENCE_BUNDLE_ARCHIVE ?= $(RELEASE_EVIDENCE_BUNDLE_ROOT)/release-evidence.tar.gz
+GENERATED_RELEASE_NOTES ?= target/release-notes/generated.md
 ANN_PUBLIC_SOURCE ?=
 ANN_PUBLIC_DATASET_ID ?= public-ann
 ANN_PUBLIC_FORMAT ?= fvecs
@@ -873,6 +874,9 @@ release-artifact-manifest-production-check:
 
 release-evidence-bundle-check:
 	python3 scripts/release_evidence_bundle.py --root "$(RELEASE_EVIDENCE_BUNDLE_ROOT)" --manifest "$(RELEASE_EVIDENCE_BUNDLE_MANIFEST)" --report "$(RELEASE_EVIDENCE_BUNDLE_REPORT)" --archive "$(RELEASE_EVIDENCE_BUNDLE_ARCHIVE)" --binary-archive "$(BINARY_RELEASE_ARCHIVE)"
+
+release-notes-generate:
+	python3 scripts/generate_release_notes.py --version "$(BINARY_RELEASE_VERSION)" --production-evidence-report "$(PRODUCTION_EVIDENCE_REPORT)" --evidence-bundle-report "$(RELEASE_EVIDENCE_BUNDLE_REPORT)" --release-manifest "$(RELEASE_ARTIFACT_MANIFEST)" --output "$(GENERATED_RELEASE_NOTES)"
 
 binary-release-check:
 	python3 scripts/package_binaries.py --self-test
@@ -2836,6 +2840,7 @@ release-check: alpha-check
 	$(MAKE) sdk-smoke-test
 	$(MAKE) release-evidence-bundle-check
 	$(MAKE) release-artifact-manifest-production-check
+	$(MAKE) release-notes-generate
 	@echo "=== Release check passed ==="
 
 demo:
