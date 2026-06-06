@@ -1,18 +1,56 @@
 # Security Hardening Evidence
 
-Last local security hardening run: 2026-06-01, passed.
+Last local security hardening run: 2026-06-06, passed.
 
 Run:
 
 ```bash
 make security-hardening-check
+make security-gate-v2-check
+make security-release-report-check
 ```
 
 Primary artifact:
 
 ```text
 target/security-hardening/report.json
+target/security-gate-v2/report.json
+target/security-release/report.json
 ```
+
+## Release Security Hardening Report
+
+Current release report gate:
+
+```bash
+make security-release-report-check
+```
+
+The gate writes:
+
+```text
+target/security-release/report.json
+```
+
+It requires the following lower-level reports to pass before the release
+security report can be trusted:
+
+```text
+target/security-gate-v2/report.json
+target/compliance-boundary/report.json
+```
+
+The release-level gate is intentionally an evidence aggregator. It does not
+replace the focused tests; it proves that the current release has a single
+security-hardening report tied to:
+
+- `make security-gate-v2-check`
+- `make compliance-boundary-check`
+- `make security-hardening-check`
+- `make rbac-policy-store-check`
+- `make quota-policy-check`
+- `make audit-chain-check`
+- `make audit-export-retention-check`
 
 ## Coverage Matrix
 
@@ -43,6 +81,20 @@ guards and documenting what is explicitly not an enterprise security guarantee.
 It does not claim full RBAC, distributed quota, KMS-backed encrypted backup, or
 tamper-evident audit compliance. It does not claim SOC 2, ISO 27001, HIPAA,
 GDPR, legal-grade verification, or other external compliance certification.
+
+## Remaining Risks
+
+These risks are still explicit non-claims for this release:
+
+- external identity integration is not production-enabled;
+- enterprise compliance certification is not claimed;
+- managed-cloud security is not claimed;
+- distributed authorization correctness is not claimed;
+- KMS-backed encrypted backup custody is not implemented;
+- provider-backed object-store backup is not implemented;
+- compliance-grade immutable audit ledger and legal retention enforcement are
+  not implemented;
+- TLS, mTLS, and certificate lifecycle remain deployment-boundary concerns.
 
 ## Latest Local Checks
 

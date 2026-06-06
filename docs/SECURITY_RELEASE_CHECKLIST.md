@@ -6,6 +6,8 @@ Use this checklist before labeling a CortexDB build as beta-security ready.
 
 ```bash
 make security-hardening-check
+make security-gate-v2-check
+make security-release-report-check
 make openapi-contract-check
 make sdk-contract-check
 make backup-drill-check

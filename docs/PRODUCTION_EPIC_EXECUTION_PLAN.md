@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 99 / 150
+- Done: 100 / 150
 - Partial: 1 / 150
-- Todo: 50 / 150
-- Current closed epic: Epic 99, Security Check Gate v2
+- Todo: 49 / 150
+- Current closed epic: Epic 100, Security Hardening Report
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2789,12 +2789,33 @@ Boundary:
 
 ### Epic 100. Security Hardening Report
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/SECURITY_HARDENING_EVIDENCE.md`
+- `docs/SECURITY_RELEASE_CHECKLIST.md`
+- `scripts/security_release_report_check.py`
+- `Makefile` target `security-release-report-check`
+- `target/security-release/report.json`
+- `make security-release-report-check`
 
 Tasks:
 
-- Generate security report per release.
-- Include remaining risks.
+- Generate security report per release. Done: `make security-release-report-check`
+  validates the release security-hardening report after
+  `security-gate-v2-check` and `compliance-boundary-check` pass.
+- Include remaining risks. Done: `SECURITY_HARDENING_EVIDENCE.md` now lists
+  explicit remaining risks for external identity, enterprise compliance,
+  managed-cloud security, distributed authorization, KMS-backed backup custody,
+  provider-backed object-store backup, compliance-grade audit ledger, and TLS
+  lifecycle.
+
+Boundary:
+
+- This closes the local per-release security hardening report. It does not
+  convert any remaining risk into a production guarantee or external
+  certification.
 
 ## J. Observability And Operations
 
