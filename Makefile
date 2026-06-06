@@ -2806,7 +2806,7 @@ storage-soak-72h-campaign:
 	python3 scripts/storage_soak_campaign.py --target-hours "$(STORAGE_SOAK_V2_TARGET_HOURS)" --max-runs "$(STORAGE_SOAK_V2_MAX_RUNS)" --cycles "$(STORAGE_SOAK_V2_CYCLES)" --cells-per-cycle "$(STORAGE_SOAK_V2_CELLS_PER_CYCLE)" --kill-delay-ms "$(STORAGE_SOAK_KILL_DELAY_MS)" --soak-root "$(STORAGE_SOAK_V2_ROOT)" --soak-report "$(STORAGE_SOAK_V2_REPORT)" --history-jsonl "$(STORAGE_SOAK_V2_HISTORY_FILE)" --history-report "$(STORAGE_SOAK_V2_HISTORY_REPORT)" --campaign-report "$(STORAGE_SOAK_V2_CAMPAIGN_REPORT)"
 
 storage-soak-72h-status:
-	python3 scripts/storage_soak_campaign_status.py --pid-file "$(STORAGE_SOAK_V2_PID_FILE)" --campaign "$(STORAGE_SOAK_V2_CAMPAIGN_REPORT)" --history "$(STORAGE_SOAK_V2_HISTORY_REPORT)" --target-hours "$(STORAGE_SOAK_V2_TARGET_HOURS)" --format "$(STORAGE_SOAK_CAMPAIGN_STATUS_FORMAT)"
+	python3 scripts/storage_soak_campaign_status.py --pid-file "$(STORAGE_SOAK_V2_PID_FILE)" --campaign "$(STORAGE_SOAK_V2_CAMPAIGN_REPORT)" --history "$(STORAGE_SOAK_V2_HISTORY_REPORT)" --soak-root "$(STORAGE_SOAK_V2_ROOT)" --target-hours "$(STORAGE_SOAK_V2_TARGET_HOURS)" --format "$(STORAGE_SOAK_CAMPAIGN_STATUS_FORMAT)"
 
 storage-soak-72h-evidence-check:
 	python3 scripts/storage_soak_v2_gate.py --report "$(STORAGE_SOAK_V2_HISTORY_REPORT)" --output "$(STORAGE_SOAK_V2_GATE_REPORT)" --min-hours "$(STORAGE_SOAK_V2_TARGET_HOURS)" --min-avg-cells-per-cycle "$(STORAGE_SOAK_V2_CELLS_PER_CYCLE)" --min-throughput-ratio "$(STORAGE_SOAK_V2_MIN_THROUGHPUT_RATIO)"

@@ -61,11 +61,38 @@ def parse_utc_timestamp(value: Any) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
+def max_cycle(path: Path) -> int:
+    if not path.exists():
+        return 0
+    best = 0
+    for child in path.iterdir():
+        if not child.is_dir() or not child.name.startswith("cycle-"):
+            continue
+        try:
+            best = max(best, int(child.name.removeprefix("cycle-").removesuffix(".tar")))
+        except ValueError:
+            continue
+    return best
+
+
+def active_progress(root: Path) -> dict[str, Any]:
+    backup_cycle = max_cycle(root / "backups")
+    restore_cycle = max_cycle(root / "restores")
+    db_exists = (root / "db").exists()
+    return {
+        "db_exists": db_exists,
+        "backup_cycle": backup_cycle,
+        "restore_cycle": restore_cycle,
+        "latest_cycle": max(backup_cycle, restore_cycle),
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pid-file", default="target/storage-soak-history/campaign-24h.pid")
     parser.add_argument("--campaign", default="target/storage-soak-history/campaign.json")
     parser.add_argument("--history", default="target/storage-soak-history/report.json")
+    parser.add_argument("--soak-root", default="target/storage-soak")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     parser.add_argument("--require-active", action="store_true")
     parser.add_argument("--target-hours", type=float)
@@ -88,6 +115,7 @@ def main() -> int:
     if updated_at is not None:
         seconds_since_update = max(0, int((datetime.now(timezone.utc) - updated_at).total_seconds()))
     process = process_status(ROOT / args.pid_file)
+    active = active_progress(ROOT / args.soak_root)
     twenty_four_hour_met = evidence.get("met", False)
     target_met = total_duration_hours >= target_hours
     target_remaining_seconds = max(0, int((target_hours - total_duration_hours) * 3600))
@@ -107,6 +135,7 @@ def main() -> int:
         "progress_percent": round(progress_percent, 4),
         "updated_at": campaign.get("updated_at"),
         "seconds_since_update": seconds_since_update,
+        "active_progress": active,
         "healthy": healthy,
         "run_count": history.get("run_count", 0),
         "total_cycles": history.get("total_cycles", 0),
@@ -121,6 +150,13 @@ def main() -> int:
     else:
         print(f"running={status['process']['running']} pid={status['process']['pid']}")
         print(f"campaign_status={status['campaign_status']} completed_runs={status['completed_runs']}")
+        print(
+            "active_run="
+            f"db_exists:{active['db_exists']} "
+            f"backup_cycle:{active['backup_cycle']} "
+            f"restore_cycle:{active['restore_cycle']} "
+            f"latest_cycle:{active['latest_cycle']}"
+        )
         print(
             "history="
             f"runs:{status['run_count']} "

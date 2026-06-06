@@ -165,6 +165,11 @@ Check progress with:
 make storage-soak-72h-status
 ```
 
+While a long run is still inside `storage_soak_check.py`, accumulated history
+may remain at zero until the run finishes. The status output includes
+`active_run.latest_cycle` inferred from the v2 backup/restore directories so
+operators can see that the current run is still moving.
+
 For an unattended local run, start it from the repository root:
 
 ```bash
