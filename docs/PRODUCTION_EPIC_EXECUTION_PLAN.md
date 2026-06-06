@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 107 / 150
+- Done: 108 / 150
 - Partial: 1 / 150
-- Todo: 42 / 150
-- Current closed epic: Epic 107, Incident Playbooks
+- Todo: 41 / 150
+- Current closed epic: Epic 108, Load Testing Suite
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3034,16 +3034,28 @@ Tasks:
 
 ### Epic 108. Load Testing Suite
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `scripts/load_suite_check.py`
+- `docs/LOAD_TESTING_SUITE.md`
+- `docs/LOAD_TESTING_SUITE_EVIDENCE.md`
+- `fixtures/performance/workload_classes.json`
+- `make load-suite-check`
 
 Tasks:
 
-- Add read-heavy workload.
-- Add write-heavy workload.
-- Add context-heavy workload.
-- Add verify-heavy workload.
-- Add ingest-heavy workload.
-- Add mixed-tenant workload.
+- Add read-heavy workload. Done: repeated `GET /v1/cell` lookups after seed
+  writes.
+- Add write-heavy workload. Done: concurrent `POST /v1/cell` write phase.
+- Add context-heavy workload. Done: repeated `/v1/context` calls over seeded
+  evidence cells.
+- Add verify-heavy workload. Done: repeated `/v1/verify` calls over seeded
+  evidence cells.
+- Add ingest-heavy workload. Done: repeated `/v1/ingest/text` calls.
+- Add mixed-tenant workload. Done: multi-tenant write/read cycles using tenant
+  query routing.
 
 ### Epic 109. Performance Trend Report
 

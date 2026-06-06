@@ -12,6 +12,7 @@ Run the gates in order:
 
 ```bash
 make load-smoke-check
+make load-suite-check
 make single-node-performance-check
 make performance-trend-check
 ```
@@ -20,6 +21,7 @@ Artifacts:
 
 ```text
 target/load-smoke/report.json
+target/load-suite/report.json
 target/single-node-performance/report.json
 target/performance-trends/report.json
 ```

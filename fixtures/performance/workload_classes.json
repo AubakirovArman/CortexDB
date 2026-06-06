@@ -31,6 +31,24 @@
         "context_pack": { "p95": 1500, "p99": 3000 },
         "verify_fact": { "p95": 1500, "p99": 3000 }
       }
+    },
+    "local_http_load_suite": {
+      "description": "Class-specific HTTP load suite for read-heavy, write-heavy, context-heavy, verify-heavy, ingest-heavy, and mixed-tenant smoke scenarios.",
+      "workloads": [
+        "read_heavy",
+        "write_heavy",
+        "context_heavy",
+        "verify_heavy",
+        "ingest_heavy",
+        "mixed_tenant"
+      ],
+      "actor_expectations": {
+        "database_busy_count": 0
+      },
+      "evidence": [
+        "make load-suite-check",
+        "target/load-suite/report.json"
+      ]
     }
   },
   "rpo_rto_expectations": {

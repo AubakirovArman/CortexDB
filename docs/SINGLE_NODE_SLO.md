@@ -12,6 +12,7 @@ enterprise guarantees.
 | --- | --- | --- |
 | Lifecycle duration | `make single-node-performance-check` | `target/single-node-performance/report.json` |
 | Load smoke | `make load-smoke-check` | `target/load-smoke/report.json` |
+| Load suite | `make load-suite-check` | `target/load-suite/report.json` |
 | Performance trends | `make performance-trend-check` | `target/performance-trends/report.json` |
 | Crash/fault recovery | `make crash-fault-check` | `target/crash-fault/report.json` |
 | Backup restore drill | `make backup-drill-check` | `target/backup-drill/report.json` |

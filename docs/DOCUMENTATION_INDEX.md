@@ -16,6 +16,8 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) - bounded starter issue map.
 - [`PUBLIC_BENCHMARKS.md`](PUBLIC_BENCHMARKS.md) - release-by-release public benchmark history.
 - [`PUBLIC_RETRIEVAL_BENCHMARKS.md`](PUBLIC_RETRIEVAL_BENCHMARKS.md) - public retrieval benchmark table, dataset sizes, exact-vs-ANN boundary, and limitations.
+- [`LOAD_TESTING_SUITE.md`](LOAD_TESTING_SUITE.md) - local read/write/context/verify/ingest/mixed-tenant HTTP load suite.
+- [`LOAD_TESTING_SUITE_EVIDENCE.md`](LOAD_TESTING_SUITE_EVIDENCE.md) - load suite gate and report boundary.
 - [`COMPARISONS.md`](COMPARISONS.md) - neutral comparison with SQL databases, vector databases, RAG stacks, and memory frameworks.
 - [`SDK_PRODUCTIZATION.md`](SDK_PRODUCTIZATION.md) - local Rust, Python, and TypeScript SDK productization gate.
 - [`TOOL_REGISTRY.md`](TOOL_REGISTRY.md) - durable tool cells, schemas, permissions, and ContextPack inclusion.

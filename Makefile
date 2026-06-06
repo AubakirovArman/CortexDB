@@ -14,7 +14,7 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
-.PHONY: operations-runbook-check incident-playbooks-check
+.PHONY: operations-runbook-check incident-playbooks-check load-suite-check
 .PHONY: doctor-check
 .PHONY: metrics-contract-v2-check
 .PHONY: service-manager-smoke-check
@@ -1177,6 +1177,10 @@ public-claims-check:
 load-smoke-check:
 	cargo build -p cortex-server --bin cortex-server
 	python3 scripts/load_smoke_check.py --server ./target/debug/cortex-server --root "$(LOAD_SMOKE_ROOT)" --report "$(LOAD_SMOKE_REPORT)" --cells "$(LOAD_SMOKE_CELLS)" --reads "$(LOAD_SMOKE_READS)" --searches "$(LOAD_SMOKE_SEARCHES)" --contexts "$(LOAD_SMOKE_CONTEXTS)" --verifies "$(LOAD_SMOKE_VERIFIES)" --workers "$(LOAD_SMOKE_WORKERS)"
+
+load-suite-check:
+	cargo build -p cortex-server --bin cortex-server
+	python3 scripts/load_suite_check.py --server ./target/debug/cortex-server --root "target/load-suite" --report "target/load-suite/report.json"
 
 longmemeval-v1-official-repo:
 	@if [ ! -d "$(LONGMEMEVAL_V1_OFFICIAL_REPO)/.git" ]; then \
