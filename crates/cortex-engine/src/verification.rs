@@ -1,24 +1,22 @@
 use cortex_aql::{AgentView, BoundPlan, Q16};
-use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
+use cortex_core::CellId;
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
-use crate::ingestion::IngestedCell;
 use crate::query::cache::AqlStatementKind;
 use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
 use crate::source_trust::{SourceTrust, SourceTrustCategory};
-use crate::typed_body::RelationBody;
 
+mod conflict_index;
 mod contradiction;
 pub mod export;
 mod guards;
 pub mod numeric;
 pub mod temporal;
 
-use contradiction::{
-    contradiction_facts, contradiction_match, contradiction_text_matches, tokenize_support_text,
-};
+pub use conflict_index::{ConflictRecord, ContradictionRelationOptions};
+use contradiction::{contradiction_match, tokenize_support_text};
 pub use export::VerificationReportExportFormat;
 use guards::{
     citation_guard, numeric_mismatch, numeric_mismatch_conflict, numeric_mismatch_guard,
@@ -103,23 +101,6 @@ pub struct VerificationNumericConflict {
     pub right: String,
     pub fact_value: numeric::NumericValue,
     pub evidence_value: numeric::NumericValue,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ConflictRecord {
-    pub cell_id: CellId,
-    pub relation_cell_id: Option<CellId>,
-    pub source_cell_id: Option<CellId>,
-    pub fact: String,
-    pub source_trust_q16: Q16,
-    pub source_trust_category: SourceTrustCategory,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ContradictionRelationOptions {
-    pub scope: String,
-    pub source: String,
-    pub source_trust_q16: Option<Q16>,
 }
 
 impl Database {
@@ -211,89 +192,6 @@ impl Database {
             numeric_conflicts,
         })
     }
-
-    pub fn conflict_index(&self, view: &AgentView) -> Vec<ConflictRecord> {
-        let mut records = Vec::new();
-        for version in self.snapshot_versions() {
-            let metadata = CellMetadata::from_payload(&version.payload);
-            if !view.can_read_scope(scope_id(&metadata.scope)) {
-                continue;
-            }
-            let source_trust_q16 = source_trust_q16(&version.payload);
-            let source_trust_category = source_trust(&version.payload).category;
-            records.extend(
-                contradiction_facts(&version.payload)
-                    .into_iter()
-                    .map(|fact| ConflictRecord {
-                        cell_id: version.cell_id,
-                        relation_cell_id: None,
-                        source_cell_id: Some(version.cell_id),
-                        fact,
-                        source_trust_q16,
-                        source_trust_category,
-                    }),
-            );
-            if metadata.cell_type == KnowledgeCellType::Relation.as_str() {
-                if let Some(record) = contradiction_relation_record(
-                    version.cell_id,
-                    &version.payload,
-                    source_trust_q16,
-                    source_trust_category,
-                ) {
-                    records.push(record);
-                }
-            }
-        }
-        records.sort_by_key(|record| {
-            (
-                record.fact.clone(),
-                record.cell_id,
-                record.relation_cell_id.unwrap_or(CellId(0)),
-            )
-        });
-        records.dedup_by(|left, right| {
-            left.cell_id == right.cell_id
-                && left.relation_cell_id == right.relation_cell_id
-                && left.fact == right.fact
-        });
-        records
-    }
-
-    pub fn conflicts_for_fact(&self, fact: &str, view: &AgentView) -> Vec<ConflictRecord> {
-        let fact_terms = tokenize(fact);
-        self.conflict_index(view)
-            .into_iter()
-            .filter(|record| contradiction_text_matches(&record.fact, &fact_terms))
-            .collect()
-    }
-
-    pub fn persist_contradiction_relation(
-        &mut self,
-        relation_cell_id: CellId,
-        source_cell_id: CellId,
-        contradicted_fact: &str,
-        options: ContradictionRelationOptions,
-    ) -> EngineResult<IngestedCell> {
-        let cell = KnowledgeCell::new(
-            KnowledgeCellMetadata {
-                scope: options.scope,
-                status: "ready".to_owned(),
-                cell_type: KnowledgeCellType::Relation,
-                memory_type: None,
-                ttl_seconds: None,
-                created_unix_seconds: None,
-                source_trust_q16: options.source_trust_q16,
-                source: Some(options.source),
-            },
-            contradiction_relation_body(source_cell_id, contradicted_fact),
-        );
-        let commit_seq = self.put_knowledge_cell(relation_cell_id, cell)?;
-        Ok(IngestedCell {
-            cell_id: relation_cell_id,
-            commit_seq,
-            chunk_id: None,
-        })
-    }
 }
 
 fn verification_status(has_support: bool, has_contradiction: bool) -> VerificationStatus {
@@ -313,57 +211,6 @@ fn sort_evidence(evidence: &mut [VerificationEvidence]) {
             item.cell_id,
         )
     });
-}
-
-fn contradiction_relation_body(source_cell_id: CellId, contradicted_fact: &str) -> String {
-    format!(
-        "subject=cell:{}\npredicate=contradicts\nobject={}\nsource_cell_id={}",
-        source_cell_id.0,
-        sanitize_relation_value(contradicted_fact),
-        source_cell_id.0
-    )
-}
-
-fn contradiction_relation_record(
-    relation_cell_id: CellId,
-    payload: &[u8],
-    source_trust_q16: Q16,
-    source_trust_category: SourceTrustCategory,
-) -> Option<ConflictRecord> {
-    let relation = RelationBody::parse(payload);
-    let predicate = relation.predicate.as_deref()?;
-    if !predicate.trim().eq_ignore_ascii_case("contradicts") {
-        return None;
-    }
-    let source_cell_id = relation_source_cell_id(&relation);
-    let fact = relation.object?;
-    Some(ConflictRecord {
-        cell_id: source_cell_id.unwrap_or(relation_cell_id),
-        relation_cell_id: Some(relation_cell_id),
-        source_cell_id,
-        fact,
-        source_trust_q16,
-        source_trust_category,
-    })
-}
-
-fn relation_source_cell_id(relation: &RelationBody) -> Option<CellId> {
-    relation
-        .subject
-        .as_deref()
-        .and_then(|subject| subject.strip_prefix("cell:"))
-        .and_then(|value| value.trim().parse::<u64>().ok())
-        .map(CellId)
-}
-
-fn sanitize_relation_value(value: &str) -> String {
-    value
-        .chars()
-        .map(|character| match character {
-            '\n' | '\r' => ' ',
-            other => other,
-        })
-        .collect()
 }
 
 fn evidence_for_version(
@@ -426,10 +273,6 @@ fn contradiction_for_version(
 
 fn has_matching_contradiction(payload: &[u8], fact_terms: &[String]) -> bool {
     contradiction_match(payload, fact_terms).is_some()
-}
-
-fn source_trust_q16(payload: &[u8]) -> Q16 {
-    source_trust(payload).q16
 }
 
 fn source_trust(payload: &[u8]) -> SourceTrust {

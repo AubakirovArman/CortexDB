@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 76 / 150
+- Done: 77 / 150
 - Partial: 1 / 150
-- Todo: 73 / 150
-- Current closed epic: Epic 76, Source Trust Calibration
+- Todo: 72 / 150
+- Current closed epic: Epic 77, Contradiction Index v1
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2086,14 +2086,29 @@ Tasks:
 
 ### Epic 77. Contradiction Index v1
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/verification/conflict_index.rs`
+- `crates/cortex-engine/src/verification.rs`
+- `crates/cortex-engine/tests/verification_conflict_index.rs`
+- `docs/VERIFY_FACT.md`
+- `docs/API_CHANGELOG.md`
 
 Tasks:
 
-- Persist known conflicts.
-- Query by entity.
-- Query by metric.
-- Query by source.
+- Persist known conflicts. Done: durable Relation cells with
+  `predicate=contradicts` remain the persisted conflict primitive and are read
+  by `Database::conflict_index`.
+- Query by entity. Done: `Database::conflicts_for_entity` filters inline and
+  persisted conflicts using structured `entity=` / `project=` facets and fact
+  text fallback.
+- Query by metric. Done: `Database::conflicts_for_metric` filters inline and
+  persisted conflicts using structured `metric=` facets and fact text fallback.
+- Query by source. Done: `Database::conflicts_for_source` filters by readable
+  evidence source metadata; persisted relation records inherit source facets
+  only from source cells visible to the caller's `AgentView`.
 
 ### Epic 78. Verification Markdown Export
 

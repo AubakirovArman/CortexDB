@@ -18,8 +18,9 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
   citation requirement.
 - **Persisted contradiction relation cells** — engine users can now call
   `Database::persist_contradiction_relation` to write durable Relation cells
-  with `predicate=contradicts`; `conflict_index` and `conflicts_for_fact` read
-  both inline `contradicts=` markers and persisted relation cells.
+  with `predicate=contradicts`; `conflict_index`, `conflicts_for_fact`,
+  `conflicts_for_entity`, `conflicts_for_metric`, and `conflicts_for_source`
+  read both inline `contradicts=` markers and persisted relation cells.
 - **Search Explain contribution details** — `/v1/search/explain`, `cortexdb
   search-explain`, and the Rust SDK now expose rank, matched terms, term
   contribution details, matched fields, lexical/vector q16 shares, selected

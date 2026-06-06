@@ -177,9 +177,31 @@ source_cell_id=42
 ```
 
 The relation cell is written through WAL and survives restart like any other
-cell. `conflicts_for_fact` reads both inline markers and persisted relation
-cells, then applies the caller's `AgentView` readable-scope mask before
-returning records.
+cell. `conflict_index` reads both inline markers and persisted relation cells,
+then applies the caller's `AgentView` readable-scope mask before returning
+records.
+
+Conflict records include deterministic query facets:
+
+```text
+entity: project=... or entity=... from the evidence cell body
+metric: metric=... from the evidence cell body
+source: source/source_id/citation metadata from the evidence cell
+```
+
+The engine exposes focused index lookups:
+
+```rust
+db.conflicts_for_fact("ABC Airport budget approved", view);
+db.conflicts_for_entity("ABC Airport", view);
+db.conflicts_for_metric("budget", view);
+db.conflicts_for_source("ifc", view);
+```
+
+For persisted relation cells, entity/metric/source facets are inherited from
+the readable `source_cell_id` evidence cell. If the source cell is outside the
+caller's `AgentView`, the relation remains visible only through its own
+readable scope and does not leak hidden evidence facets.
 
 ## Report Exports
 
