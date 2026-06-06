@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 52 / 150
+- Done: 53 / 150
 - Partial: 1 / 150
-- Todo: 97 / 150
-- Current closed epic: Epic 52, Search Explain API
+- Todo: 96 / 150
+- Current closed epic: Epic 53, Query Routing Engine
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1462,15 +1462,38 @@ Tasks:
 
 ### Epic 53. Query Routing Engine
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/search/routing.rs`
+- `crates/cortex-server/src/search.rs`
+- `crates/cortex-server/src/tests/search_api_tests.rs`
+- `crates/cortex-cli/src/cli_ops.rs`
+- `crates/cortex-cli/src/tests.rs`
+- `crates/cortex-sdk/src/types.rs`
+- `crates/cortex-sdk/src/tests.rs`
+- `docs/API.md`
+- `docs/API_JSON_SCHEMAS.md`
+- `docs/openapi.yaml`
+- `cargo test -p cortex-engine routing`
+- `cargo test -p cortex-server v1_search_auto_reports_selected_routing_strategy`
+- `cargo test -p cortex-cli search_command_auto_mode_reports_routing_json`
+- `cargo test -p cortex-sdk path_encodes_auto_search_routing_contract`
 
 Tasks:
 
-- Route lexical queries.
-- Route vector queries.
-- Route hybrid queries.
-- Explain strategy.
-- Define fallback behavior.
+- Route lexical queries. Done: explicit/default keyword requests route to
+  `SearchRouteStrategy::Keyword`.
+- Route vector queries. Done: `mode=vector&algorithm=ann|exact` routes to
+  `vector_ann` or `vector_exact`.
+- Route hybrid queries. Done: text plus vector routes to `hybrid`, and explicit
+  hybrid mode fails closed when no vector is provided.
+- Explain strategy. Done: server, CLI, SDK, and API docs expose
+  `routing.selected_strategy` and `routing.reason`.
+- Define fallback behavior. Done: invalid mode/algorithm values fail closed, and
+  `auto` routes based on text/vector availability with explicit ANN/exact
+  selection.
 
 ### Epic 54. HNSW SLO History
 

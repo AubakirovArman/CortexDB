@@ -107,6 +107,44 @@ mod tests {
     use super::{route_search_query, SearchRouteInput, SearchRouteStrategy};
 
     #[test]
+    fn explicit_keyword_routes_to_keyword() {
+        let decision = route_search_query(SearchRouteInput {
+            requested_mode: "keyword",
+            algorithm: "ann",
+            text_available: true,
+            vector_available: false,
+        })
+        .unwrap();
+
+        assert_eq!(decision.selected_strategy, SearchRouteStrategy::Keyword);
+        assert_eq!(decision.search_mode(), "keyword");
+        assert_eq!(decision.reason, "explicit_keyword_mode");
+    }
+
+    #[test]
+    fn explicit_vector_routes_by_algorithm() {
+        let ann = route_search_query(SearchRouteInput {
+            requested_mode: "vector",
+            algorithm: "ann",
+            text_available: false,
+            vector_available: true,
+        })
+        .unwrap();
+        let exact = route_search_query(SearchRouteInput {
+            requested_mode: "vector",
+            algorithm: "exact",
+            text_available: false,
+            vector_available: true,
+        })
+        .unwrap();
+
+        assert_eq!(ann.selected_strategy, SearchRouteStrategy::VectorAnn);
+        assert_eq!(ann.search_mode(), "vector_ann");
+        assert_eq!(exact.selected_strategy, SearchRouteStrategy::VectorExact);
+        assert_eq!(exact.search_mode(), "vector_exact");
+    }
+
+    #[test]
     fn auto_routes_text_and_vector_to_hybrid() {
         let decision = route_search_query(SearchRouteInput {
             requested_mode: "auto",
@@ -145,5 +183,29 @@ mod tests {
         .unwrap_err();
 
         assert_eq!(error, "mode=hybrid requires vector=<i16,...>");
+    }
+
+    #[test]
+    fn invalid_mode_and_algorithm_fail_closed() {
+        let invalid_mode = route_search_query(SearchRouteInput {
+            requested_mode: "semantic",
+            algorithm: "ann",
+            text_available: true,
+            vector_available: false,
+        })
+        .unwrap_err();
+        let invalid_algorithm = route_search_query(SearchRouteInput {
+            requested_mode: "vector",
+            algorithm: "flat",
+            text_available: false,
+            vector_available: true,
+        })
+        .unwrap_err();
+
+        assert_eq!(
+            invalid_mode,
+            "mode must be keyword, vector, hybrid, or auto"
+        );
+        assert_eq!(invalid_algorithm, "algorithm must be exact or ann");
     }
 }
