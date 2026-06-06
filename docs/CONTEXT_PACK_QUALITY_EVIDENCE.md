@@ -194,6 +194,20 @@ ContextPack conflict visibility is covered by:
 - OpenAPI and typed JSON schemas exposing `conflict_visibility_q16` and
   `visible_conflict_count`.
 
+## Private Scope Leak Evidence
+
+ContextPack private scope leak resistance is covered by:
+
+- `cargo test -p cortex-engine --test context_pack_private_scope`, including a
+  broad `WHERE status = "ready"` query that contains both public and forbidden
+  ready cells;
+- checkpoint/restart and compact/restart checks proving persisted indexes do
+  not reintroduce the forbidden scope;
+- JSON, prompt, and Markdown export assertions proving private payload, source,
+  and scope identifiers are absent from public ContextPack surfaces;
+- `make context-pack-private-scope-check`, which writes
+  `target/context-pack-quality/private-scope-report.json`.
+
 ## Budget Optimizer Evidence
 
 ContextPack budget optimization is covered by

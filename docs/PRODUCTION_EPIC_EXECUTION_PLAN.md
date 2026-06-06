@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 66 / 150
+- Done: 67 / 150
 - Partial: 1 / 150
-- Todo: 83 / 150
-- Current closed epic: Epic 66, ContextPack Conflict Visibility Metric
+- Todo: 82 / 150
+- Current closed epic: Epic 67, ContextPack Private Scope Leak Test
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1832,11 +1832,24 @@ Tasks:
 
 ### Epic 67. ContextPack Private Scope Leak Test
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/tests/context_pack_private_scope.rs`
+- `scripts/context_pack_private_scope_check.py`
+- `make context-pack-private-scope-check`
+- `target/context-pack-quality/private-scope-report.json`
+- `docs/CONTEXT_PACK.md`
+- `docs/CONTEXT_PACK_TECHNOLOGY.md`
+- `docs/CONTEXT_PACK_QUALITY_EVIDENCE.md`
 
 Tasks:
 
-- Ensure forbidden scope never appears in ContextPack.
+- Ensure forbidden scope never appears in ContextPack. Done: a broad
+  `WHERE status = "ready"` ContextPack query excludes forbidden-scope ready
+  cells before persistence, after checkpoint/restart, after compact/restart,
+  and from JSON, prompt, and Markdown exports.
 
 ### Epic 68. ContextPack Token Estimator v2
 

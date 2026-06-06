@@ -151,6 +151,9 @@ production-grade factual-certification score.
 5. Redundancy decisions are visible through anomalies.
 6. Context Pack does not call an LLM inside the database core.
 7. Exact retrieval remains the correctness fallback for guarded ANN/HNSW.
+8. Private scope leak tests must prove that broad queries cannot surface
+   forbidden-scope cells before persistence, after checkpoint/restart, after
+   compact/restart, or through JSON, prompt, and Markdown exports.
 
 ## Interfaces
 

@@ -129,7 +129,10 @@ existing compact summary default unless `--json` or `--format` is passed.
    the full-coverage threshold.
 9. `visible_conflict_count` counts selected conflict groups; it does not scan
    hidden or unreadable data outside the pack.
-10. No HNSW, reranking, or LLM calls run inside ContextPack v1 itself.
+10. A forbidden scope cannot enter ContextPack through broad queries or public
+    exports; `AgentView.readable_scopes` still constrains the runtime
+    `AgentAllowed` mask after binding.
+11. No HNSW, reranking, or LLM calls run inside ContextPack v1 itself.
 
 ## Known Limits
 
@@ -148,6 +151,10 @@ existing compact summary default unless `--json` or `--format` is passed.
 - `conflict_visibility_q16` is a visibility metric for conflicts already
   selected into the pack. It is not a full contradiction detector; use VERIFY
   FACT for fact-level contradiction analysis.
+- The private scope leak gate checks a broad `WHERE status = "ready"` query, a
+  checkpoint/restart path, a compact/restart path, and all ContextPack export
+  formats. It proves that a forbidden scope is excluded even when the AQL query
+  itself does not include a scope predicate.
 
 ## Quality Gate
 
@@ -182,6 +189,7 @@ For the focused ContextPack quality gate, run:
 make context-pack-quality-check
 make context-pack-answerability-check
 make context-pack-conflict-visibility-check
+make context-pack-private-scope-check
 ```
 
 That gate runs the ContextPack behavior tests, the ContextPack/VERIFY fixture,
@@ -195,6 +203,8 @@ measured release metrics:
 - deterministic ordering.
 - answerability score and `insufficient_context` anomaly coverage.
 - conflict visibility score and selected conflict-count coverage.
+- private scope leak resistance across retrieval, checkpoint, compact, JSON,
+  prompt, and Markdown exports.
 
 Latest local evidence is tracked in
 [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md).
