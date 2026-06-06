@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 100 / 150
+- Done: 101 / 150
 - Partial: 1 / 150
-- Todo: 49 / 150
-- Current closed epic: Epic 100, Security Hardening Report
+- Todo: 48 / 150
+- Current closed epic: Epic 101, `cortexdb doctor`
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2823,17 +2823,39 @@ Acceptance: operator can run, observe, debug, and recover CortexDB without autho
 
 ### Epic 101. `cortexdb doctor`
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-cli/src/cli_doctor.rs`
+- `crates/cortex-cli/src/cli_doctor_checks.rs`
+- `crates/cortex-cli/src/tests.rs`
+- `docs/CLI.md`
+- `Makefile` target `doctor-check`
+- `make doctor-check`
 
 Tasks:
 
-- Check DB lock.
-- Validate storage.
-- Check backup age.
-- Check server health.
-- Check auth.
-- Check tenant.
-- Print repair advice.
+- Check DB lock. Done: doctor reports the active lock after a successful open
+  and gives stale-lock unlock advice when open fails on an existing lock file.
+- Validate storage. Done: doctor includes `validate_storage_report` cell and
+  WAL scan evidence.
+- Check backup age. Done: doctor checks `CORTEXDB_BACKUP_ROOT` when configured
+  and conventional local backup directories otherwise.
+- Check server health. Done: doctor optionally checks
+  `CORTEXDB_SERVER_URL`/`CORTEXDB_SERVER_ADDR` TCP reachability.
+- Check auth. Done: doctor reports inline auth env, token file, and policy file
+  configuration and fails on unreadable configured auth files.
+- Check tenant. Done: doctor reports the tenant realm and rejects invalid CLI
+  tenant identifiers before command execution.
+- Print repair advice. Done: doctor prints repair or stale-lock advice in every
+  report.
+
+Boundary:
+
+- This closes local operator doctor diagnostics. It does not run repair
+  automatically, prove backup restore quality, or guarantee remote application
+  health unless a server endpoint is explicitly configured.
 
 ### Epic 102. Metrics Contract v2
 

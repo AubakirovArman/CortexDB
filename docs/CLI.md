@@ -60,10 +60,12 @@ cortexdb compact ./db
 ### Health & Diagnostics
 
 #### `doctor <path>`
-Run a health check: open, stats, validate, ANN metrics.
+Run a health check: DB lock, open, stats, validate, backup age, optional server
+health endpoint, auth environment, tenant realm, ANN metrics, and repair advice.
 
 ```bash
 cortexdb doctor ./db
+cortexdb --tenant tenant-alpha doctor ./db
 ```
 
 #### `stats <path> [--json]`

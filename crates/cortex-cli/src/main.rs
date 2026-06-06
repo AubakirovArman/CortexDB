@@ -16,6 +16,8 @@ mod cli_audit_tests;
 mod cli_auth_review;
 #[cfg(test)]
 mod cli_auth_review_tests;
+mod cli_doctor;
+mod cli_doctor_checks;
 mod cli_ingest;
 #[cfg(test)]
 mod cli_ingest_tests;

@@ -413,10 +413,20 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         }
         Err(err) => return Err(err.to_string()),
     };
+    if let Some(tenant) = cli.tenant.as_deref() {
+        if !ops::validate_tenant_id(tenant) {
+            return Err(
+                "tenant is invalid; allowed: ASCII alphanumeric, '_' and '-', max 64 characters"
+                    .to_owned(),
+            );
+        }
+    }
     let resolved = |p: &str| resolve_path(p, cli.tenant.as_deref());
     match cli.command {
         Command::Demo => ops::run_demo(),
-        Command::Doctor { path } => ops::doctor(resolved(&path).to_str().unwrap()),
+        Command::Doctor { path } => {
+            ops::doctor(resolved(&path).to_str().unwrap(), cli.tenant.as_deref())
+        }
         Command::Completions { shell } => {
             let mut cmd = <Cli as clap::CommandFactory>::command();
             let name = cmd.get_name().to_owned();

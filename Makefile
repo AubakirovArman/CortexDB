@@ -15,6 +15,7 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check
+.PHONY: doctor-check
 .PHONY: service-manager-smoke-check
 .PHONY: beta-landing-check
 .PHONY: use-case-pack-check
@@ -950,6 +951,9 @@ deployment-upgrade-check: service-manager-smoke-check
 
 operations-runbook-check:
 	python3 scripts/operations_runbook_check.py --report "$(OPERATIONS_RUNBOOK_REPORT)"
+
+doctor-check:
+	cargo test -p cortex-cli doctor
 
 http-contract-ops-check: security-check
 	python3 scripts/http_contract_ops_check.py --report "$(HTTP_CONTRACT_OPS_REPORT)"

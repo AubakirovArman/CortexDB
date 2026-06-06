@@ -40,6 +40,12 @@ fn doctor_and_completions_commands_work() {
     .unwrap();
     assert!(doctor.contains("CortexDB Doctor Report"));
     assert!(doctor.contains("open: database opened successfully"));
+    assert!(doctor.contains("tenant: tenant=default"));
+    assert!(doctor.contains("db_lock: lock acquired"));
+    assert!(doctor.contains("backup_age:"));
+    assert!(doctor.contains("server_health:"));
+    assert!(doctor.contains("auth:"));
+    assert!(doctor.contains("repair_advice:"));
     assert!(doctor.contains("All checks passed"));
 
     let bash = run(vec![
@@ -51,6 +57,64 @@ fn doctor_and_completions_commands_work() {
     assert!(bash.contains("_cortexdb"));
     assert!(bash.contains("doctor"));
     assert!(bash.contains("completions"));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
+fn doctor_reports_lock_backup_server_auth_tenant_and_repair_advice() {
+    let path = unique_path("cortexdb-cli-doctor-expanded");
+    let path_arg = path.to_string_lossy().into_owned();
+    let tenant = "tenant_alpha";
+    let doctor = run(vec![
+        "cortexdb".to_owned(),
+        "--tenant".to_owned(),
+        tenant.to_owned(),
+        "doctor".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+
+    assert!(doctor.contains("tenant: tenant=tenant_alpha"));
+    assert!(doctor.contains("db_lock: lock acquired"));
+    assert!(doctor.contains("validate:"));
+    assert!(doctor.contains("backup_age:"));
+    assert!(doctor.contains("server_health:"));
+    assert!(doctor.contains("auth:"));
+    assert!(doctor.contains("repair_advice: no repair needed"));
+    assert!(doctor.contains("All checks passed"));
+
+    let error = run(vec![
+        "cortexdb".to_owned(),
+        "--tenant".to_owned(),
+        "../escape".to_owned(),
+        "doctor".to_owned(),
+        path_arg,
+    ])
+    .unwrap_err();
+    assert!(error.contains("tenant is invalid"));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
+fn doctor_reports_stale_lock_repair_advice() {
+    let path = unique_path("cortexdb-cli-doctor-stale-lock");
+    std::fs::create_dir_all(&path).unwrap();
+    std::fs::write(path.join("db.lock"), b"stale").unwrap();
+    let path_arg = path.to_string_lossy().into_owned();
+
+    let doctor = run(vec![
+        "cortexdb".to_owned(),
+        "doctor".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    assert!(doctor.contains("open: failed to open"));
+    assert!(doctor.contains("db_lock: lock exists"));
+    assert!(doctor.contains("cortexdb unlock"));
+    assert!(doctor.contains("repair_advice: run cortexdb repair --dry-run"));
+    assert!(doctor.contains("Some checks failed"));
 
     let _ = std::fs::remove_dir_all(path);
 }
