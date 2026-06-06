@@ -1,34 +1,40 @@
 use cortex_engine::{
     evaluate_hnsw_no_fallback_rollout, parse_vector_literal, AnnEvaluationReport, AnnSearchPolicy,
-    Database, HnswNoFallbackDecision, HnswNoFallbackRolloutPolicy, SearchLimit,
+    HnswNoFallbackDecision, HnswNoFallbackRolloutPolicy, SearchLimit,
 };
 
 use crate::cli_json::{ann_evaluation_to_json, CliAnnEvaluationJsonInput};
 use crate::context::view_for_scope;
 
-pub fn search_vector_eval(
-    path: &str,
-    scope: &str,
-    vector: &str,
-    json: bool,
-    policy: Option<AnnSearchPolicy>,
-    rollout_policy: Option<HnswNoFallbackRolloutPolicy>,
-    use_no_fallback_profile: bool,
-) -> Result<String, String> {
-    let vector = parse_vector_literal(vector)?;
-    let db = Database::open(path).map_err(|error| error.to_string())?;
-    let rollout_policy =
-        crate::cli_ops::resolve_no_fallback_profile(&db, rollout_policy, use_no_fallback_profile)?;
-    let search_policy = policy.unwrap_or_default();
+pub struct SearchVectorEvalOptions<'a> {
+    pub path: &'a str,
+    pub scope: &'a str,
+    pub vector: &'a str,
+    pub json: bool,
+    pub policy: Option<AnnSearchPolicy>,
+    pub rollout_policy: Option<HnswNoFallbackRolloutPolicy>,
+    pub use_no_fallback_profile: bool,
+    pub experimental_hnsw: bool,
+}
+
+pub fn search_vector_eval(options: SearchVectorEvalOptions<'_>) -> Result<String, String> {
+    let vector = parse_vector_literal(options.vector)?;
+    let db = crate::cli_ops::open_database(options.path, options.experimental_hnsw)?;
+    let rollout_policy = crate::cli_ops::resolve_no_fallback_profile(
+        &db,
+        options.rollout_policy,
+        options.use_no_fallback_profile,
+    )?;
+    let search_policy = options.policy.unwrap_or_default();
     let report = db
         .evaluate_vector_ann_with_policy(
             &vector,
-            &view_for_scope(scope),
+            &view_for_scope(options.scope),
             SearchLimit(20),
             search_policy,
         )
         .map_err(|error| error.to_string())?;
-    if json {
+    if options.json {
         return Ok(match report {
             Some(report) => {
                 let decision = rollout_policy.map(|rollout_policy| {

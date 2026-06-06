@@ -60,6 +60,7 @@ fn search_vector_command_respects_ann_policy_flags() {
     run(vec![
         "cortexdb".to_owned(),
         "flush".to_owned(),
+        "--experimental-hnsw".to_owned(),
         path_arg.clone(),
     ])
     .unwrap();
@@ -67,6 +68,7 @@ fn search_vector_command_respects_ann_policy_flags() {
     let default_output = run(vec![
         "cortexdb".to_owned(),
         "search-vector".to_owned(),
+        "--experimental-hnsw".to_owned(),
         path_arg.clone(),
         "project:investments".to_owned(),
         "5,0".to_owned(),
@@ -78,6 +80,7 @@ fn search_vector_command_respects_ann_policy_flags() {
     let strict_output = run(vec![
         "cortexdb".to_owned(),
         "search-vector".to_owned(),
+        "--experimental-hnsw".to_owned(),
         "--fallback".to_owned(),
         "false".to_owned(),
         "--fallback-scan-cap".to_owned(),
@@ -115,6 +118,7 @@ fn hnsw_no_fallback_profile_commands_persist_and_drive_search() {
     run(vec![
         "cortexdb".to_owned(),
         "flush".to_owned(),
+        "--experimental-hnsw".to_owned(),
         path_arg.clone(),
     ])
     .unwrap();
@@ -135,6 +139,7 @@ fn hnsw_no_fallback_profile_commands_persist_and_drive_search() {
     let output = run(vec![
         "cortexdb".to_owned(),
         "search-vector".to_owned(),
+        "--experimental-hnsw".to_owned(),
         "--fallback".to_owned(),
         "false".to_owned(),
         "--fallback-scan-cap".to_owned(),
@@ -187,6 +192,7 @@ fn search_vector_eval_command_reports_recall_after_flush() {
     let unavailable = run(vec![
         "cortexdb".to_owned(),
         "search-vector-eval".to_owned(),
+        "--experimental-hnsw".to_owned(),
         path_arg.clone(),
         "project:investments".to_owned(),
         "0,10".to_owned(),
@@ -197,6 +203,7 @@ fn search_vector_eval_command_reports_recall_after_flush() {
     run(vec![
         "cortexdb".to_owned(),
         "flush".to_owned(),
+        "--experimental-hnsw".to_owned(),
         path_arg.clone(),
     ])
     .unwrap();
@@ -204,6 +211,7 @@ fn search_vector_eval_command_reports_recall_after_flush() {
     let output = run(vec![
         "cortexdb".to_owned(),
         "search-vector-eval".to_owned(),
+        "--experimental-hnsw".to_owned(),
         path_arg.clone(),
         "project:investments".to_owned(),
         "0,10".to_owned(),
@@ -217,6 +225,7 @@ fn search_vector_eval_command_reports_recall_after_flush() {
         "cortexdb".to_owned(),
         "--json".to_owned(),
         "search-vector-eval".to_owned(),
+        "--experimental-hnsw".to_owned(),
         path_arg.clone(),
         "project:investments".to_owned(),
         "0,10".to_owned(),
@@ -266,6 +275,7 @@ fn search_vector_eval_command_applies_min_recall_policy() {
     run(vec![
         "cortexdb".to_owned(),
         "flush".to_owned(),
+        "--experimental-hnsw".to_owned(),
         path_arg.clone(),
     ])
     .unwrap();
@@ -274,6 +284,7 @@ fn search_vector_eval_command_applies_min_recall_policy() {
         "cortexdb".to_owned(),
         "--json".to_owned(),
         "search-vector-eval".to_owned(),
+        "--experimental-hnsw".to_owned(),
         "--fallback".to_owned(),
         "false".to_owned(),
         "--min-recall".to_owned(),

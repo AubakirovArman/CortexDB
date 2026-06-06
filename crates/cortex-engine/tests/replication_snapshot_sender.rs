@@ -4,9 +4,10 @@ use std::thread;
 use cortex_core::{CellId, CommitSeq};
 use cortex_engine::{
     assemble_snapshot_chunks, decode_snapshot_segment, send_replication_snapshot_request, Database,
-    ElectionState, EngineResult, LogIndex, NodeId, ReplicationPeerServer, ReplicationPeerState,
-    ReplicationSnapshotRepairRequest, ReplicationSnapshotSendPolicy, ReplicationSnapshotTransport,
-    SnapshotChunk, SnapshotSegment, TcpReplicationTransport, Term,
+    DatabaseOptions, ElectionState, EngineFeatureFlags, EngineResult, LogIndex, NodeId,
+    ReplicationPeerServer, ReplicationPeerState, ReplicationSnapshotRepairRequest,
+    ReplicationSnapshotSendPolicy, ReplicationSnapshotTransport, SnapshotChunk, SnapshotSegment,
+    TcpReplicationTransport, Term,
 };
 use cortex_storage::segment::SegmentCell;
 
@@ -96,7 +97,7 @@ fn snapshot_sender_installs_snapshot_over_tcp_peer() {
     let addr = server.local_addr().unwrap().to_string();
     let path = dir.path().to_owned();
     let join = thread::spawn(move || {
-        let mut follower = Database::open(&path)?;
+        let mut follower = open_replication_database(&path)?;
         let result = server.serve_n_with_snapshot_install(1, &mut follower);
         let close_result = follower.close();
         result?;
@@ -163,4 +164,15 @@ fn follower_state() -> ElectionState {
         ElectionState::new(NodeId(2), BTreeSet::from([NodeId(1), NodeId(2), NodeId(3)]));
     state.current_term = Term(1);
     state
+}
+
+fn open_replication_database(path: &std::path::Path) -> cortex_engine::EngineResult<Database> {
+    Database::open_with_options(
+        path,
+        DatabaseOptions {
+            feature_flags: EngineFeatureFlags::production_safe()
+                .with_experimental_replication(true),
+            ..DatabaseOptions::default()
+        },
+    )
 }

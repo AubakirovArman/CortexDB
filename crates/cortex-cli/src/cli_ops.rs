@@ -1,9 +1,10 @@
 use cortex_core::CellId;
 use cortex_engine::{
     evaluate_hnsw_no_fallback_rollout, parse_vector_literal, route_search_query, AnnSearchPath,
-    AnnSearchPolicy, ContextPackExportFormat, ContextPackOptions, Database, DatabaseSearchResult,
-    EngineError, HnswNoFallbackRolloutPolicy, SearchLimit, SearchMode, SearchQuery,
-    SearchRouteInput, SearchRouteStrategy, VerificationReportExportFormat,
+    AnnSearchPolicy, ContextPackExportFormat, ContextPackOptions, Database, DatabaseOptions,
+    DatabaseSearchResult, EngineError, EngineFeatureFlags, HnswNoFallbackRolloutPolicy,
+    SearchLimit, SearchMode, SearchQuery, SearchRouteInput, SearchRouteStrategy,
+    VerificationReportExportFormat,
 };
 
 use crate::cli_json::{
@@ -22,6 +23,15 @@ fn fmt_engine_error(e: EngineError) -> String {
         Some(hint) => format!("{message}\n  -> {hint}"),
         None => message,
     }
+}
+
+pub(crate) fn open_database(path: &str, experimental_hnsw: bool) -> Result<Database, String> {
+    let options = DatabaseOptions {
+        feature_flags: EngineFeatureFlags::production_safe()
+            .with_experimental_hnsw(experimental_hnsw),
+        ..DatabaseOptions::default()
+    };
+    Database::open_with_options(path, options).map_err(fmt_engine_error)
 }
 
 pub fn doctor(path: &str) -> Result<String, String> {
@@ -146,8 +156,8 @@ pub fn tombstone(path: &str, cell_id: &str) -> Result<String, String> {
     Ok(format!("seq={}", seq.0))
 }
 
-pub fn flush(path: &str) -> Result<String, String> {
-    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+pub fn flush(path: &str, experimental_hnsw: bool) -> Result<String, String> {
+    let mut db = open_database(path, experimental_hnsw)?;
     let stats = db.checkpoint().map_err(fmt_engine_error)?;
     Ok(format!(
         "checkpoint_seq={} cells_flushed={}",
@@ -155,8 +165,8 @@ pub fn flush(path: &str) -> Result<String, String> {
     ))
 }
 
-pub fn compact(path: &str) -> Result<String, String> {
-    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+pub fn compact(path: &str, experimental_hnsw: bool) -> Result<String, String> {
+    let mut db = open_database(path, experimental_hnsw)?;
     let stats = db.compact().map_err(fmt_engine_error)?;
     Ok(format!(
         "checkpoint_seq={} cells_flushed={}",
@@ -620,26 +630,30 @@ fn format_search_explain_line(rank: usize, result: &DatabaseSearchResult) -> Str
     )
 }
 
-pub fn search_vector(
-    path: &str,
-    scope: &str,
-    vector: &str,
-    exact: bool,
-    policy: Option<AnnSearchPolicy>,
-    rollout_policy: Option<HnswNoFallbackRolloutPolicy>,
-    use_no_fallback_profile: bool,
-) -> Result<String, String> {
-    let vector = parse_vector_literal(vector)?;
-    let db = Database::open(path).map_err(fmt_engine_error)?;
-    let rollout_policy = resolve_no_fallback_profile(&db, rollout_policy, use_no_fallback_profile)?;
-    let view = view_for_scope(scope);
-    if exact {
+pub struct SearchVectorOptions<'a> {
+    pub path: &'a str,
+    pub scope: &'a str,
+    pub vector: &'a str,
+    pub exact: bool,
+    pub policy: Option<AnnSearchPolicy>,
+    pub rollout_policy: Option<HnswNoFallbackRolloutPolicy>,
+    pub use_no_fallback_profile: bool,
+    pub experimental_hnsw: bool,
+}
+
+pub fn search_vector(options: SearchVectorOptions<'_>) -> Result<String, String> {
+    let vector = parse_vector_literal(options.vector)?;
+    let db = open_database(options.path, options.experimental_hnsw)?;
+    let rollout_policy =
+        resolve_no_fallback_profile(&db, options.rollout_policy, options.use_no_fallback_profile)?;
+    let view = view_for_scope(options.scope);
+    if options.exact {
         let results = db
             .search_vector_exact(&vector, &view, SearchLimit(20))
             .map_err(fmt_engine_error)?;
         Ok(format_search_results(&results))
     } else {
-        let search_policy = policy.unwrap_or_default();
+        let search_policy = options.policy.unwrap_or_default();
         let outcome = db
             .search_vector_with_report_with_policy(&vector, &view, SearchLimit(20), search_policy)
             .map_err(fmt_engine_error)?;

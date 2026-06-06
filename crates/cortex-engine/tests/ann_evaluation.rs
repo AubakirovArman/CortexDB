@@ -2,12 +2,15 @@ use std::collections::BTreeSet;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
-use cortex_engine::{scope_id, AnnSearchPath, Database, SearchLimit, MIN_ANN_RECALL_Q16};
+use cortex_engine::{
+    scope_id, AnnSearchPath, Database, DatabaseOptions, EngineFeatureFlags, SearchLimit,
+    MIN_ANN_RECALL_Q16,
+};
 
 #[test]
 fn database_ann_evaluation_reports_recall_against_exact_baseline() {
     let dir = tempfile::tempdir().unwrap();
-    let mut db = Database::open(dir.path()).unwrap();
+    let mut db = Database::open_with_options(dir.path(), hnsw_options()).unwrap();
     db.put_cell(
         CellId(1),
         b"scope=project:investments\nstatus=ready\nvector=10,0\n\nalpha".to_vec(),
@@ -42,7 +45,7 @@ fn database_ann_evaluation_reports_recall_against_exact_baseline() {
 #[test]
 fn database_ann_evaluation_waits_for_persisted_snapshot() {
     let dir = tempfile::tempdir().unwrap();
-    let mut db = Database::open(dir.path()).unwrap();
+    let mut db = Database::open_with_options(dir.path(), hnsw_options()).unwrap();
     db.put_cell(
         CellId(1),
         b"scope=project:investments\nstatus=ready\nvector=10,0\n\nalpha".to_vec(),
@@ -69,6 +72,13 @@ fn database_ann_evaluation_waits_for_persisted_snapshot() {
         .evaluate_vector_ann(&[0, 10], &view("project:investments"), SearchLimit(1))
         .unwrap()
         .is_none());
+}
+
+fn hnsw_options() -> DatabaseOptions {
+    DatabaseOptions {
+        feature_flags: EngineFeatureFlags::production_safe().with_experimental_hnsw(true),
+        ..DatabaseOptions::default()
+    }
 }
 
 fn view(scope: &str) -> AgentView {

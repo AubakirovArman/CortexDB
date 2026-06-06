@@ -13,6 +13,7 @@ use std::time::Instant;
 use tower_http::cors::CorsLayer;
 use tower_http::limit::RequestBodyLimitLayer;
 
+use cortex_engine::EngineFeatureFlags;
 use responses::{ErrorCode, ErrorResponse, MetricsResponse};
 
 mod actor;
@@ -119,6 +120,17 @@ pub struct ServerOptions {
     /// Disabled by default. This does not enable a production model runtime or
     /// external provider calls.
     pub llm_test_double_enabled: bool,
+    /// Enables the embedded developer dashboard.
+    ///
+    /// Disabled by default so production-safe server defaults expose only typed
+    /// API routes. Enable explicitly for local admin consoles or demos.
+    pub dashboard_enabled: bool,
+    /// Engine features enabled for databases opened by this server.
+    ///
+    /// Defaults to production-safe behavior: experimental HNSW graphs,
+    /// experimental replication install surfaces, and dashboard features are off
+    /// unless explicitly enabled by configuration.
+    pub engine_feature_flags: EngineFeatureFlags,
 }
 
 impl ServerOptions {
@@ -205,9 +217,13 @@ impl AppState {
         };
         std::fs::create_dir_all(&tenant_path)?;
         let capacity = self.options.actor_queue_capacity();
-        let db_shared = Arc::new(actor::DatabaseActor::open_with_capacity(
+        let db_shared = Arc::new(actor::DatabaseActor::open_with_capacity_and_options(
             &tenant_path,
             capacity,
+            cortex_engine::DatabaseOptions {
+                feature_flags: self.options.engine_feature_flags,
+                ..cortex_engine::DatabaseOptions::default()
+            },
         )?);
         dbs.insert(tenant.to_owned(), db_shared.clone());
         Ok(db_shared)
@@ -546,11 +562,11 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
     audit_event.auth_role = auth_decision.role.map(auth::AuthRole::as_str);
     audit_event.auth_agent_id = auth_decision.agent_id;
 
-    if method == "GET" && dashboard::is_page(&path) {
+    if state.options.dashboard_enabled && method == "GET" && dashboard::is_page(&path) {
         audit_http_response(&state, &audit_event, StatusCode::OK, None);
         return with_request_id(Html(dashboard::html()).into_response(), &request_id);
     }
-    if method == "GET" {
+    if state.options.dashboard_enabled && method == "GET" {
         if let Some(asset) = dashboard::asset(&path) {
             audit_http_response(&state, &audit_event, StatusCode::OK, None);
             return with_request_id(

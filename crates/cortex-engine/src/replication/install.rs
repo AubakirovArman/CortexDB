@@ -12,12 +12,14 @@ use crate::checkpoint::vector::vector_index_for_cells;
 use crate::checkpoint::{bitmap_path, hnsw_path, lexical_path, segment_path, vector_path};
 use crate::database::{CheckpointStats, Database};
 use crate::error::{EngineError, EngineResult};
+use crate::options::EngineFeature;
 use crate::query::EngineAqlIndex;
 
 use super::SnapshotSegment;
 
 impl Database {
     pub fn replication_snapshot_segment(&self) -> EngineResult<SnapshotSegment> {
+        self.require_feature(EngineFeature::ExperimentalReplication)?;
         Ok(SnapshotSegment {
             checkpoint_seq: self.current_seq,
             cells: self.full_snapshot_cells()?,
@@ -28,6 +30,7 @@ impl Database {
         &mut self,
         snapshot: SnapshotSegment,
     ) -> EngineResult<CheckpointStats> {
+        self.require_feature(EngineFeature::ExperimentalReplication)?;
         validate_snapshot_cells(&snapshot.cells)?;
         self.writer.shutdown()?;
         fs::create_dir_all(&self.segments_path)?;
@@ -46,8 +49,10 @@ impl Database {
             .write(lexical_path(&self.segments_path, segment_id))?;
         vector_index_for_cells(&snapshot.cells)
             .write(vector_path(&self.segments_path, segment_id))?;
-        hnsw_graph_for_cells_with_config(&snapshot.cells, self.hnsw_build_config)?
-            .write(hnsw_path(&self.segments_path, segment_id))?;
+        if self.feature_flags.experimental_hnsw {
+            hnsw_graph_for_cells_with_config(&snapshot.cells, self.hnsw_build_config)?
+                .write(hnsw_path(&self.segments_path, segment_id))?;
+        }
 
         self.manifest.compact_to_segment(ManifestSegment {
             id: segment_id,
@@ -55,7 +60,11 @@ impl Database {
             checkpoint_seq: snapshot.checkpoint_seq.0,
             cell_count: cell_count(snapshot.cells.len())?,
         });
-        self.manifest.hnsw_profile = Some(manifest_hnsw_profile(self.hnsw_build_config)?);
+        self.manifest.hnsw_profile = self
+            .feature_flags
+            .experimental_hnsw
+            .then(|| manifest_hnsw_profile(self.hnsw_build_config))
+            .transpose()?;
         self.manifest.store(&self.manifest_path)?;
         crate::database::truncate_wal_tail(&self.wal_path, 0)?;
         self.memtable = memtable_from_snapshot(&snapshot);

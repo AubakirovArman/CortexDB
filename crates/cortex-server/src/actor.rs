@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::JoinHandle;
 
-use cortex_engine::Database;
+use cortex_engine::{Database, DatabaseOptions};
 
 use crate::auth_policy_cells::{self, AuthPolicyCellSyncReport};
 use crate::responses::RouterError;
@@ -52,7 +52,16 @@ impl DatabaseActor {
     }
 
     pub fn open_with_capacity(path: &Path, capacity: usize) -> std::io::Result<Self> {
-        let db = Database::open(path).map_err(|error| std::io::Error::other(error.to_string()))?;
+        Self::open_with_capacity_and_options(path, capacity, DatabaseOptions::default())
+    }
+
+    pub fn open_with_capacity_and_options(
+        path: &Path,
+        capacity: usize,
+        options: DatabaseOptions,
+    ) -> std::io::Result<Self> {
+        let db = Database::open_with_options(path, options)
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
         let (tx, rx) = mpsc::sync_channel::<ActorCommand>(capacity);
         let queued = Arc::new(AtomicUsize::new(0));
         let queued_worker = queued.clone();

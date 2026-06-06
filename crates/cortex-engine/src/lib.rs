@@ -98,7 +98,9 @@ pub use operation::{
     wal_record_from_operation_with_seq, DbOperation, DbOperationKind, DecodedCellCore,
     DecodedDbOperation, OperationDecoder, OperationEncoder,
 };
-pub use options::{DatabaseOptions, RecoveryMode, StaleLockPolicy};
+pub use options::{
+    DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
+};
 pub use query::{scope_id, CandidateId, CellMetadata, EngineAqlIndex};
 pub use repair::RepairReport;
 pub use replay::{

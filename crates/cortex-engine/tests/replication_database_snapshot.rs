@@ -5,17 +5,18 @@ use std::time::Duration;
 use cortex_core::CellId;
 use cortex_engine::{
     spawn_replication_repair_background_task, AppendEntriesRequest, AppendEntriesResponse,
-    ConsensusState, Database, ElectionState, InMemoryReplicationTransport, LogIndex, NodeId,
-    ReplicationDatabaseSnapshotSource, ReplicationFollowerProgress, ReplicationRecoveryPolicy,
-    ReplicationRepairBackgroundPolicy, ReplicationRepairSnapshotSource,
-    ReplicationRepairWorkerPolicy, ReplicationSnapshotSendPolicy, ReplicationSnapshotTransport,
-    ReplicationTransport, SnapshotChunk, Term, VoteRequest, VoteResponse,
+    ConsensusState, Database, DatabaseOptions, ElectionState, EngineFeatureFlags,
+    InMemoryReplicationTransport, LogIndex, NodeId, ReplicationDatabaseSnapshotSource,
+    ReplicationFollowerProgress, ReplicationRecoveryPolicy, ReplicationRepairBackgroundPolicy,
+    ReplicationRepairSnapshotSource, ReplicationRepairWorkerPolicy, ReplicationSnapshotSendPolicy,
+    ReplicationSnapshotTransport, ReplicationTransport, SnapshotChunk, Term, VoteRequest,
+    VoteResponse,
 };
 
 #[test]
 fn database_snapshot_source_returns_current_storage_snapshot() {
     let dir = tempfile::tempdir().unwrap();
-    let mut db = Database::open(dir.path()).unwrap();
+    let mut db = open_replication_db(dir.path());
     db.put_cell(CellId(42), b"snapshot payload".to_vec())
         .unwrap();
 
@@ -46,7 +47,7 @@ fn database_snapshot_source_returns_current_storage_snapshot() {
 #[test]
 fn database_snapshot_source_feeds_background_repair_task() {
     let dir = tempfile::tempdir().unwrap();
-    let mut db = Database::open(dir.path()).unwrap();
+    let mut db = open_replication_db(dir.path());
     db.put_cell(CellId(7), b"repair snapshot payload".to_vec())
         .unwrap();
     let snapshot_source = ReplicationDatabaseSnapshotSource::new(Arc::new(RwLock::new(db)));
@@ -84,6 +85,20 @@ fn database_snapshot_source_feeds_background_repair_task() {
     assert_eq!(report.snapshots_sent(), 1);
     assert_eq!(report.pending_snapshots(), 0);
     assert!(report.last_run_idle());
+}
+
+fn open_replication_db(path: &std::path::Path) -> Database {
+    Database::open_with_options(
+        path,
+        DatabaseOptions {
+            feature_flags: EngineFeatureFlags {
+                experimental_replication: true,
+                ..EngineFeatureFlags::production_safe()
+            },
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap()
 }
 
 struct SnapshotRecordingTransport {

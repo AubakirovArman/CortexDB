@@ -51,7 +51,11 @@ impl Database {
                 checkpoint_seq: self.current_seq,
             });
         }
-        let hnsw_profile = manifest_hnsw_profile(self.hnsw_build_config)?;
+        let hnsw_profile = self
+            .feature_flags
+            .experimental_hnsw
+            .then(|| manifest_hnsw_profile(self.hnsw_build_config))
+            .transpose()?;
         let vector_profile = vector::vector_profile_for_cells(&cells, self.hnsw_build_config)?;
         ensure_checkpoint_profiles(&self.manifest, hnsw_profile, vector_profile)?;
 
@@ -70,8 +74,10 @@ impl Database {
             .write(lexical_path(&self.segments_path, segment_id))?;
         vector::vector_index_for_cells(&cells)
             .write(vector_path(&self.segments_path, segment_id))?;
-        hnsw::hnsw_graph_for_cells_with_config(&cells, self.hnsw_build_config)?
-            .write(hnsw_path(&self.segments_path, segment_id))?;
+        if self.feature_flags.experimental_hnsw {
+            hnsw::hnsw_graph_for_cells_with_config(&cells, self.hnsw_build_config)?
+                .write(hnsw_path(&self.segments_path, segment_id))?;
+        }
 
         self.manifest.checkpoint_segment(ManifestSegment {
             id: segment_id,
@@ -79,7 +85,7 @@ impl Database {
             checkpoint_seq: self.current_seq.0,
             cell_count: segment_cell_count(cells.len())?,
         });
-        self.manifest.hnsw_profile = Some(hnsw_profile);
+        self.manifest.hnsw_profile = hnsw_profile;
         if let Some(profile) = vector_profile {
             self.manifest.vector_profile = Some(profile);
         }
@@ -96,7 +102,11 @@ impl Database {
 
     pub fn compact(&mut self) -> EngineResult<CheckpointStats> {
         let cells = self.full_snapshot_cells()?;
-        let hnsw_profile = manifest_hnsw_profile(self.hnsw_build_config)?;
+        let hnsw_profile = self
+            .feature_flags
+            .experimental_hnsw
+            .then(|| manifest_hnsw_profile(self.hnsw_build_config))
+            .transpose()?;
         let vector_profile = vector::vector_profile_for_cells(&cells, self.hnsw_build_config)?;
         if cells.is_empty() {
             return Ok(CheckpointStats {
@@ -121,8 +131,10 @@ impl Database {
             .write(lexical_path(&self.segments_path, segment_id))?;
         vector::vector_index_for_cells(&cells)
             .write(vector_path(&self.segments_path, segment_id))?;
-        hnsw::hnsw_graph_for_cells_with_config(&cells, self.hnsw_build_config)?
-            .write(hnsw_path(&self.segments_path, segment_id))?;
+        if self.feature_flags.experimental_hnsw {
+            hnsw::hnsw_graph_for_cells_with_config(&cells, self.hnsw_build_config)?
+                .write(hnsw_path(&self.segments_path, segment_id))?;
+        }
 
         self.manifest.compact_to_segment(ManifestSegment {
             id: segment_id,
@@ -130,7 +142,7 @@ impl Database {
             checkpoint_seq: self.current_seq.0,
             cell_count: segment_cell_count(cells.len())?,
         });
-        self.manifest.hnsw_profile = Some(hnsw_profile);
+        self.manifest.hnsw_profile = hnsw_profile;
         self.manifest.vector_profile = vector_profile;
         self.manifest.store(&self.manifest_path)?;
         super::database::truncate_wal_tail(&self.wal_path, 0)?;
@@ -263,17 +275,17 @@ pub(crate) fn manifest_hnsw_profile(config: HnswBuildConfig) -> EngineResult<Man
 
 fn ensure_checkpoint_profiles(
     manifest: &StorageManifest,
-    hnsw_profile: ManifestHnswProfile,
+    hnsw_profile: Option<ManifestHnswProfile>,
     vector_profile: Option<ManifestVectorProfile>,
 ) -> EngineResult<()> {
     if manifest.live_segments.is_empty() {
         return Ok(());
     }
-    if let Some(existing) = manifest.hnsw_profile {
-        if existing != hnsw_profile {
+    if let (Some(existing), Some(next)) = (manifest.hnsw_profile, hnsw_profile) {
+        if existing != next {
             return Err(EngineError::StorageInvariant(format!(
                 "checkpoint hnsw profile {:?} does not match existing manifest profile {:?}; run compact with the new HNSW build config first",
-                hnsw_profile, existing
+                next, existing
             )));
         }
     }

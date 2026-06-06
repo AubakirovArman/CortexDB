@@ -15,7 +15,9 @@ use crate::lock::DatabaseLock;
 use crate::operation::{
     wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq, DbOperation,
 };
-use crate::options::{DatabaseOptions, RecoveryMode, StaleLockPolicy};
+use crate::options::{
+    DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
+};
 use crate::query::CellMetadata;
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
 use crate::search::HnswBuildConfig;
@@ -36,6 +38,7 @@ pub struct Database {
     pub(crate) current_seq: CommitSeq,
     pub(crate) durability_mode: DurabilityMode,
     pub(crate) hnsw_build_config: HnswBuildConfig,
+    pub(crate) feature_flags: EngineFeatureFlags,
     pub(crate) _lock: DatabaseLock,
     closed: bool,
 }
@@ -71,6 +74,18 @@ impl Database {
 
     pub fn break_stale_lock(path: impl AsRef<Path>) -> EngineResult<()> {
         remove_lock_file(path.as_ref())
+    }
+
+    pub fn feature_flags(&self) -> EngineFeatureFlags {
+        self.feature_flags
+    }
+
+    pub(crate) fn require_feature(&self, feature: EngineFeature) -> EngineResult<()> {
+        if self.feature_flags.is_enabled(feature) {
+            Ok(())
+        } else {
+            Err(EngineError::FeatureDisabled(feature.as_str()))
+        }
     }
 
     pub fn open_with_options(
@@ -126,6 +141,7 @@ impl Database {
             current_seq,
             durability_mode: options.durability_mode,
             hnsw_build_config: options.hnsw_build_config.normalized(),
+            feature_flags: options.feature_flags,
             _lock: lock,
             closed: false,
         };

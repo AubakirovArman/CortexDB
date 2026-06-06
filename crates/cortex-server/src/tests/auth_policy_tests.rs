@@ -37,7 +37,10 @@ fn data_token_cannot_access_admin_routes() {
 #[test]
 fn data_token_cannot_access_dashboard() {
     let dir = tempfile::tempdir().unwrap();
-    let options = admin_and_data_options();
+    let options = ServerOptions {
+        dashboard_enabled: true,
+        ..admin_and_data_options()
+    };
 
     let denied = handle_http_with_options(
         dir.path(),

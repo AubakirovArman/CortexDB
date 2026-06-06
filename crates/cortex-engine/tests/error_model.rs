@@ -40,6 +40,12 @@ fn engine_error_codes_categories_and_statuses_are_stable() {
             400,
         ),
         (
+            EngineError::FeatureDisabled("experimental_hnsw"),
+            EngineErrorCode::BadRequest,
+            EngineErrorCategory::UserInput,
+            400,
+        ),
+        (
             EngineError::Io(io::Error::new(io::ErrorKind::PermissionDenied, "no access")),
             EngineErrorCode::Forbidden,
             EngineErrorCategory::Permission,

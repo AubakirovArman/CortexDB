@@ -7,9 +7,10 @@ use std::thread;
 use cortex_core::{CellId, CommitSeq};
 use cortex_engine::{
     decode_snapshot_segment, encode_snapshot_segment, AppendEntriesRequest, ConsensusState,
-    Database, ElectionRole, ElectionState, InMemoryReplicationTransport, LogIndex, NodeId,
-    ReplicatedEntry, ReplicationLog, ReplicationPeerServer, ReplicationPeerState,
-    ReplicationTransport, SnapshotChunk, SnapshotSegment, TcpReplicationTransport, Term,
+    Database, DatabaseOptions, ElectionRole, ElectionState, EngineFeatureFlags,
+    InMemoryReplicationTransport, LogIndex, NodeId, ReplicatedEntry, ReplicationLog,
+    ReplicationPeerServer, ReplicationPeerState, ReplicationTransport, SnapshotChunk,
+    SnapshotSegment, TcpReplicationTransport, Term,
 };
 use cortex_storage::segment::SegmentCell;
 
@@ -255,7 +256,7 @@ fn real_peer_transport_streams_chunked_snapshot_payload() {
 fn peer_snapshot_transport_installs_durable_follower_snapshot() {
     let dir = tempfile::tempdir().unwrap();
     {
-        let mut follower = Database::open(dir.path()).unwrap();
+        let mut follower = open_replication_database(dir.path());
         follower
             .put_cell(
                 CellId(7),
@@ -290,7 +291,7 @@ fn peer_snapshot_transport_installs_durable_follower_snapshot() {
     let addr = server.local_addr().unwrap().to_string();
     let follower_path = dir.path().to_owned();
     let handle = thread::spawn(move || {
-        let mut follower = Database::open(&follower_path).unwrap();
+        let mut follower = open_replication_database(&follower_path);
         server
             .serve_n_with_snapshot_install(2, &mut follower)
             .unwrap();
@@ -427,4 +428,16 @@ fn three_voters() -> BTreeSet<NodeId> {
 
 fn five_voters() -> BTreeSet<NodeId> {
     BTreeSet::from([NodeId(1), NodeId(2), NodeId(3), NodeId(4), NodeId(5)])
+}
+
+fn open_replication_database(path: &Path) -> Database {
+    Database::open_with_options(
+        path,
+        DatabaseOptions {
+            feature_flags: EngineFeatureFlags::production_safe()
+                .with_experimental_replication(true),
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap()
 }

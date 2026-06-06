@@ -152,26 +152,48 @@ impl Database {
                     }));
                 };
                 let index = self.persisted_vector_index()?;
-                let graph = self.persisted_hnsw_graph()?;
-                let outcome = match policy {
-                    Some(policy) => search_persisted_ann_with_policy(
+                if !self.feature_flags.experimental_hnsw {
+                    let metric = self
+                        .manifest()
+                        .vector_profile
+                        .map(|profile| distance_metric_from_manifest(profile.metric))
+                        .unwrap_or_default();
+                    let ranked = search_persisted_vectors(
                         &index.vectors,
-                        &graph,
                         vector,
                         &allowed,
                         query.limit,
-                        policy,
-                    ),
-                    None => super::ann::search_persisted_ann(
-                        &index.vectors,
-                        &graph,
-                        vector,
-                        &allowed,
+                        &metric,
+                    );
+                    ann_report = Some(persisted_exact_fallback_report(
                         query.limit,
-                    ),
-                };
-                ann_report = Some(outcome.report);
-                outcome.results
+                        allowed.len(),
+                        ranked.len(),
+                        policy.unwrap_or_default(),
+                    ));
+                    ranked
+                } else {
+                    let graph = self.persisted_hnsw_graph()?;
+                    let outcome = match policy {
+                        Some(policy) => search_persisted_ann_with_policy(
+                            &index.vectors,
+                            &graph,
+                            vector,
+                            &allowed,
+                            query.limit,
+                            policy,
+                        ),
+                        None => super::ann::search_persisted_ann(
+                            &index.vectors,
+                            &graph,
+                            vector,
+                            &allowed,
+                            query.limit,
+                        ),
+                    };
+                    ann_report = Some(outcome.report);
+                    outcome.results
+                }
             }
             SearchMode::VectorExact => {
                 let Some(vector) = query.vector else {
@@ -347,4 +369,36 @@ fn snapshot_ann_report(
         },
         policy,
     ))
+}
+
+fn persisted_exact_fallback_report(
+    requested_limit: usize,
+    allowed_candidates: usize,
+    returned_candidates: usize,
+    policy: AnnSearchPolicy,
+) -> AnnSearchReport {
+    finalize_report(
+        AnnSearchReport {
+            path: AnnSearchPath::ExactFallback,
+            fallback_reason: Some(AnnFallbackReason::HnswDisabled),
+            fallback_performed: true,
+            requested_limit,
+            allowed_candidates,
+            graph_nodes: 0,
+            returned_candidates,
+            visited_candidates: allowed_candidates,
+            max_visited_candidates: policy.max_visited_candidates,
+            recall_q16: None,
+            min_recall_q16: policy.min_recall_q16,
+            hnsw_max_neighbors: 0,
+            hnsw_ef_search: 0,
+            hnsw_layer_count: 0,
+            hnsw_ef_construction: 0,
+            upper_graph_edges: 0,
+            require_slo: policy.require_slo,
+            production_safe: true,
+            slo_violations: Vec::new(),
+        },
+        policy,
+    )
 }

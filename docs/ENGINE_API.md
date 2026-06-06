@@ -25,6 +25,8 @@ use cortex_engine::{
     EngineError,
     EngineErrorCategory,
     EngineErrorCode,
+    EngineFeature,
+    EngineFeatureFlags,
     EngineResult,
     RecoveryMode,
     RepairReport,
@@ -63,9 +65,14 @@ The central entrypoints are:
 - `Database::repair_best_effort`;
 - `Database::repair_best_effort_dry_run`.
 
+Production-safe feature defaults are documented in
+[`ENGINE_FEATURE_FLAGS.md`](ENGINE_FEATURE_FLAGS.md). Experimental HNSW,
+database-level replication, and dashboard surfaces must be enabled explicitly.
+
 The stable root-level types currently frozen are:
 
 - `Database`, `DatabaseOptions`, `RecoveryMode`, `StaleLockPolicy`;
+- `EngineFeature`, `EngineFeatureFlags`;
 - `EngineError`, `EngineResult`;
 - `EngineErrorCode`, `EngineErrorCategory`;
 - `DbOperation`;
@@ -112,6 +119,7 @@ Run:
 make engine-public-api-freeze-check
 make engine-api-compat-check
 make engine-error-model-check
+make engine-feature-flags-check
 make engine-api-check
 ```
 
@@ -124,6 +132,8 @@ This gate verifies:
 - rustdoc examples exist for the embedded database facade;
 - engine errors expose stable code, category, HTTP status, safe message, and
   CLI hint metadata;
+- engine feature flags keep experimental HNSW, replication, and dashboard
+  surfaces opt-in;
 - the public API compile test passes;
 - the external sample crate compiles and runs through open, put/get, search,
   ContextPack, VERIFY, checkpoint, backup, and restore;

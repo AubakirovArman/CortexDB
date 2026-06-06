@@ -3,7 +3,6 @@ use std::collections::BTreeSet;
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
 use cortex_engine::{scope_id, Database, SearchLimit};
-use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::indexes::LexicalIndex;
 use cortex_storage::vectors::VectorIndex;
 
@@ -230,8 +229,7 @@ fn checkpoint_vector_index_persists_payload_vectors() {
 
     let index = VectorIndex::read(dir.path().join("segments").join("segment-1.acv")).unwrap();
     assert_eq!(index.vectors.get(&1), Some(&vec![3, 4]));
-    let graph = HnswGraphIndex::read(dir.path().join("segments").join("segment-1.ach")).unwrap();
-    assert!(graph.links.contains_key(&1));
+    assert!(!dir.path().join("segments").join("segment-1.ach").exists());
 }
 
 fn view(scope: &str) -> AgentView {

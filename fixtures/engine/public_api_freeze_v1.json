@@ -8,6 +8,8 @@
     "DatabaseOptions",
     "RecoveryMode",
     "StaleLockPolicy",
+    "EngineFeature",
+    "EngineFeatureFlags",
     "EngineError",
     "EngineResult",
     "DbOperation",

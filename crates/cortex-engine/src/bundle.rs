@@ -38,7 +38,6 @@ impl SegmentBundle {
             && self.bitmap_path.exists()
             && self.lexical_path.exists()
             && self.vector_path.exists()
-            && self.hnsw_path.exists()
     }
 
     pub fn remove_files(&self) -> EngineResult<usize> {

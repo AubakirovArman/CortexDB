@@ -1,7 +1,7 @@
 use cortex_core::CellId;
 use cortex_engine::{
-    Database, DatabaseOptions, DistanceMetric, HnswBuildConfig, HnswBuildProfile,
-    HnswNoFallbackRolloutPolicy,
+    Database, DatabaseOptions, DistanceMetric, EngineFeatureFlags, HnswBuildConfig,
+    HnswBuildProfile, HnswNoFallbackRolloutPolicy,
 };
 use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::manifest::StorageManifest;
@@ -10,14 +10,7 @@ use cortex_storage::manifest::StorageManifest;
 fn checkpoint_manifest_persists_intended_hnsw_profile() {
     let dir = tempfile::tempdir().unwrap();
     let config = HnswBuildConfig::for_profile(HnswBuildProfile::Semantic);
-    let mut db = Database::open_with_options(
-        dir.path(),
-        DatabaseOptions {
-            hnsw_build_config: config,
-            ..DatabaseOptions::default()
-        },
-    )
-    .unwrap();
+    let mut db = Database::open_with_options(dir.path(), hnsw_options(config)).unwrap();
     put_vector_cell(&mut db);
     db.checkpoint().unwrap();
     drop(db);
@@ -38,14 +31,7 @@ fn checkpoint_manifest_persists_vector_collection_profile() {
         metric: DistanceMetric::Cosine,
         ..HnswBuildConfig::for_profile(HnswBuildProfile::Balanced)
     };
-    let mut db = Database::open_with_options(
-        dir.path(),
-        DatabaseOptions {
-            hnsw_build_config: config,
-            ..DatabaseOptions::default()
-        },
-    )
-    .unwrap();
+    let mut db = Database::open_with_options(dir.path(), hnsw_options(config)).unwrap();
     put_vector_cell(&mut db);
     db.checkpoint().unwrap();
     drop(db);
@@ -97,10 +83,7 @@ fn validation_rejects_hnsw_graph_profile_that_differs_from_manifest() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open_with_options(
         dir.path(),
-        DatabaseOptions {
-            hnsw_build_config: HnswBuildConfig::for_profile(HnswBuildProfile::Semantic),
-            ..DatabaseOptions::default()
-        },
+        hnsw_options(HnswBuildConfig::for_profile(HnswBuildProfile::Semantic)),
     )
     .unwrap();
     put_vector_cell(&mut db);
@@ -149,7 +132,11 @@ fn validation_rejects_vector_profile_that_differs_from_manifest() {
 #[test]
 fn validation_rejects_hnsw_dimension_that_differs_from_vector_index() {
     let dir = tempfile::tempdir().unwrap();
-    let mut db = Database::open(dir.path()).unwrap();
+    let mut db = Database::open_with_options(
+        dir.path(),
+        hnsw_options(HnswBuildConfig::for_profile(HnswBuildProfile::Balanced)),
+    )
+    .unwrap();
     put_vector_cell(&mut db);
     db.checkpoint().unwrap();
     drop(db);
@@ -193,4 +180,12 @@ fn put_vector_cell(db: &mut Database) {
         b"scope=project:investments\nstatus=ready\nvector=10,0\n\nalpha".to_vec(),
     )
     .unwrap();
+}
+
+fn hnsw_options(config: HnswBuildConfig) -> DatabaseOptions {
+    DatabaseOptions {
+        hnsw_build_config: config,
+        feature_flags: EngineFeatureFlags::production_safe().with_experimental_hnsw(true),
+        ..DatabaseOptions::default()
+    }
 }

@@ -30,6 +30,7 @@ pub enum AnnFallbackReason {
     VisitBudgetExceeded,
     NoPersistedSegments,
     UncheckpointedChanges,
+    HnswDisabled,
 }
 
 impl AnnFallbackReason {
@@ -42,6 +43,7 @@ impl AnnFallbackReason {
             Self::VisitBudgetExceeded => "visit_budget_exceeded",
             Self::NoPersistedSegments => "no_persisted_segments",
             Self::UncheckpointedChanges => "uncheckpointed_changes",
+            Self::HnswDisabled => "hnsw_disabled",
         }
     }
 }
@@ -55,6 +57,7 @@ pub enum AnnSloViolation {
     VisitBudgetExceeded,
     NoPersistedSegments,
     UncheckpointedChanges,
+    HnswDisabled,
     RecallBelowMinimum,
     WeakMultiLayerTopology,
 }
@@ -69,6 +72,7 @@ impl AnnSloViolation {
             Self::VisitBudgetExceeded => "visit_budget_exceeded",
             Self::NoPersistedSegments => "no_persisted_segments",
             Self::UncheckpointedChanges => "uncheckpointed_changes",
+            Self::HnswDisabled => "hnsw_disabled",
             Self::RecallBelowMinimum => "recall_below_minimum",
             Self::WeakMultiLayerTopology => "weak_multi_layer_topology",
         }
@@ -749,8 +753,10 @@ fn slo_violations(report: &AnnSearchReport, policy: AnnSearchPolicy) -> Vec<AnnS
             AnnFallbackReason::VisitBudgetExceeded => AnnSloViolation::VisitBudgetExceeded,
             AnnFallbackReason::NoPersistedSegments => AnnSloViolation::NoPersistedSegments,
             AnnFallbackReason::UncheckpointedChanges => AnnSloViolation::UncheckpointedChanges,
+            AnnFallbackReason::HnswDisabled => AnnSloViolation::HnswDisabled,
         });
     }
+    violations.retain(|violation| *violation != AnnSloViolation::HnswDisabled);
     if let (Some(recall), Some(min_recall)) = (report.recall_q16, policy.min_recall_q16) {
         if recall < min_recall && !violations.contains(&AnnSloViolation::LowRecall) {
             violations.push(AnnSloViolation::RecallBelowMinimum);

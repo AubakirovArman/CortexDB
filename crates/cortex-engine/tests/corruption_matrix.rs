@@ -1,5 +1,5 @@
 use cortex_core::CellId;
-use cortex_engine::Database;
+use cortex_engine::{Database, DatabaseOptions, EngineFeatureFlags};
 
 #[test]
 fn corrupt_live_segment_blocks_open() {
@@ -67,7 +67,7 @@ fn corrupt_vector_index_fails_validation_report() {
 #[test]
 fn corrupt_hnsw_graph_fails_validation_report() {
     let dir = tempfile::tempdir().unwrap();
-    write_checkpoint(dir.path());
+    write_hnsw_checkpoint(dir.path());
     corrupt_last_byte(&dir.path().join("segments").join("segment-1.ach"));
 
     let db = Database::open(dir.path()).unwrap();
@@ -83,6 +83,24 @@ fn write_checkpoint(root: &std::path::Path) {
     let mut db = Database::open(root).unwrap();
     db.put_cell(CellId(1), b"scope=default\nstatus=ready\none".to_vec())
         .unwrap();
+    db.checkpoint().unwrap();
+    drop(db);
+}
+
+fn write_hnsw_checkpoint(root: &std::path::Path) {
+    let mut db = Database::open_with_options(
+        root,
+        DatabaseOptions {
+            feature_flags: EngineFeatureFlags::production_safe().with_experimental_hnsw(true),
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=default\nstatus=ready\nvector=1,0\n\none".to_vec(),
+    )
+    .unwrap();
     db.checkpoint().unwrap();
     drop(db);
 }

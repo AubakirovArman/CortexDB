@@ -22,6 +22,7 @@
     {"variant": "AqlBind", "code": "invalid_aql_or_permission_denied"},
     {"variant": "Io", "code": "not_found_or_forbidden_or_internal"},
     {"variant": "InvalidOperation", "code": "bad_request"},
+    {"variant": "FeatureDisabled", "code": "bad_request"},
     {"variant": "MissingWalSection", "code": "storage_corruption"},
     {"variant": "MissingCommitSeq", "code": "storage_corruption"},
     {"variant": "FatalCellMissingAfterWal", "code": "storage_corruption"},

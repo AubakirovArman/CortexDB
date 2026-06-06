@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 28 / 150
+- Done: 29 / 150
 - Partial: 1 / 150
-- Todo: 121 / 150
-- Current closed epic: Epic 28, Engine Error Model v1
+- Todo: 120 / 150
+- Current closed epic: Epic 29, Engine Feature Flags
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -726,12 +726,31 @@ Boundary:
 
 ### Epic 29. Engine Feature Flags
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Separate experimental HNSW, replication, and dashboard features.
-- Keep production-safe defaults.
+- Separate experimental HNSW, replication, and dashboard features. Done:
+  `EngineFeatureFlags` exposes explicit `experimental_hnsw`,
+  `experimental_replication`, and `dashboard` flags. HNSW graph persistence and
+  database-level replication snapshot/install require explicit opt-in, while
+  dashboard routes require `CORTEXDB_DASHBOARD=true` on the server surface.
+- Keep production-safe defaults. Done: `DatabaseOptions::default()` uses
+  `EngineFeatureFlags::production_safe()`, so new databases skip `.ach` graph
+  creation and vector search uses exact persisted vector fallback unless HNSW
+  is enabled.
+
+Evidence:
+
+- `crates/cortex-engine/tests/feature_flags.rs`
+- `crates/cortex-server/src/dashboard_tests.rs`
+- `docs/ENGINE_FEATURE_FLAGS.md`
+- `make engine-feature-flags-check`
+
+Boundary:
+
+- Consensus primitives remain available for local tests and design work. The
+  gated surface is the database-level replication snapshot/install path.
 
 ### Epic 30. Engine Module Ownership
 

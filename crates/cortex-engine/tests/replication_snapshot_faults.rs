@@ -3,8 +3,9 @@ use std::thread;
 
 use cortex_core::{CellId, CommitSeq};
 use cortex_engine::{
-    encode_snapshot_segment, Database, ElectionState, NodeId, ReplicationPeerServer,
-    ReplicationPeerState, SnapshotChunk, SnapshotSegment, TcpReplicationTransport, Term,
+    encode_snapshot_segment, Database, DatabaseOptions, ElectionState, EngineFeatureFlags, NodeId,
+    ReplicationPeerServer, ReplicationPeerState, SnapshotChunk, SnapshotSegment,
+    TcpReplicationTransport, Term,
 };
 use cortex_storage::segment::SegmentCell;
 
@@ -213,7 +214,7 @@ fn serve_snapshot_install(path: &std::path::Path, requests: usize) -> SnapshotSe
     let addr = server.local_addr().unwrap().to_string();
     let path = path.to_owned();
     let join = thread::spawn(move || {
-        let mut follower = Database::open(&path)?;
+        let mut follower = open_replication_database(&path)?;
         let result = server.serve_n_with_snapshot_install(requests, &mut follower);
         let close_result = follower.close();
         result?;
@@ -239,6 +240,17 @@ fn seed_stale_follower(path: &std::path::Path) {
         )
         .unwrap();
     follower.close().unwrap();
+}
+
+fn open_replication_database(path: &std::path::Path) -> cortex_engine::EngineResult<Database> {
+    Database::open_with_options(
+        path,
+        DatabaseOptions {
+            feature_flags: EngineFeatureFlags::production_safe()
+                .with_experimental_replication(true),
+            ..DatabaseOptions::default()
+        },
+    )
 }
 
 fn snapshot_with_payload(seq: u64, cell_id: u64, payload: &[u8]) -> SnapshotSegment {

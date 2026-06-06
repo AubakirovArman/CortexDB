@@ -1,16 +1,16 @@
-use super::handle_http;
+use super::{handle_http, handle_http_with_options, ServerOptions};
 
 #[test]
 fn v1_ann_evaluate_reports_recall_for_checkpointed_vectors() {
     let dir = tempfile::tempdir().unwrap();
-    put_vector(dir.path(), 1, "project:investments", "10,0");
-    put_vector(dir.path(), 2, "project:investments", "0,10");
-    put_vector(dir.path(), 3, "tenant:private", "0,11");
-    assert!(handle_http(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n")
+    put_vector_hnsw(dir.path(), 1, "project:investments", "10,0");
+    put_vector_hnsw(dir.path(), 2, "project:investments", "0,10");
+    put_vector_hnsw(dir.path(), 3, "tenant:private", "0,11");
+    assert!(handle_hnsw(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n")
         .contains(r#""checkpoint_seq":3"#));
 
     let request = "POST /v1/search/ann-evaluate?scope=project:investments&vector=0,10&limit=2&fallback=false&min_recall=1.0&require_slo=true&no_fallback_rollout=true&no_fallback_min_recall=1.0 HTTP/1.1\r\n\r\n";
-    let response = handle_http(dir.path(), request);
+    let response = handle_hnsw(dir.path(), request);
 
     assert!(response.contains(r#""available":true"#));
     assert!(response.contains(r#""recall_q16":65535"#));
@@ -40,4 +40,23 @@ fn put_vector(path: &std::path::Path, cell_id: u64, scope: &str, vector: &str) {
         "POST /v1/cell?cell_id={cell_id} HTTP/1.1\r\n\r\nscope={scope}\nstatus=ready\nvector={vector}\n\nbody"
     );
     assert!(handle_http(path, &request).contains(&format!(r#""cell_id":{cell_id}"#)));
+}
+
+fn put_vector_hnsw(path: &std::path::Path, cell_id: u64, scope: &str, vector: &str) {
+    let request = format!(
+        "POST /v1/cell?cell_id={cell_id} HTTP/1.1\r\n\r\nscope={scope}\nstatus=ready\nvector={vector}\n\nbody"
+    );
+    assert!(handle_hnsw(path, &request).contains(&format!(r#""cell_id":{cell_id}"#)));
+}
+
+fn handle_hnsw(path: &std::path::Path, request: &str) -> String {
+    handle_http_with_options(path, request, &hnsw_options())
+}
+
+fn hnsw_options() -> ServerOptions {
+    ServerOptions {
+        engine_feature_flags: cortex_engine::EngineFeatureFlags::production_safe()
+            .with_experimental_hnsw(true),
+        ..ServerOptions::default()
+    }
 }

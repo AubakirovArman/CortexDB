@@ -58,9 +58,13 @@ enum Command {
     },
     Flush {
         path: String,
+        #[arg(long)]
+        experimental_hnsw: bool,
     },
     Compact {
         path: String,
+        #[arg(long)]
+        experimental_hnsw: bool,
     },
     Stats {
         path: String,
@@ -245,6 +249,8 @@ enum Command {
         no_fallback_min_recall: Option<String>,
         #[arg(long)]
         use_no_fallback_profile: bool,
+        #[arg(long)]
+        experimental_hnsw: bool,
     },
     SearchVectorExact {
         path: String,
@@ -271,6 +277,8 @@ enum Command {
         no_fallback_min_recall: Option<String>,
         #[arg(long)]
         use_no_fallback_profile: bool,
+        #[arg(long)]
+        experimental_hnsw: bool,
     },
     SearchExplain {
         path: String,
@@ -415,8 +423,14 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         Command::Tombstone { path, cell_id } => {
             ops::tombstone(resolved(&path).to_str().unwrap(), &cell_id)
         }
-        Command::Flush { path } => ops::flush(resolved(&path).to_str().unwrap()),
-        Command::Compact { path } => ops::compact(resolved(&path).to_str().unwrap()),
+        Command::Flush {
+            path,
+            experimental_hnsw,
+        } => ops::flush(resolved(&path).to_str().unwrap(), experimental_hnsw),
+        Command::Compact {
+            path,
+            experimental_hnsw,
+        } => ops::compact(resolved(&path).to_str().unwrap(), experimental_hnsw),
         Command::Stats { path } => ops::stats(resolved(&path).to_str().unwrap(), cli.json),
         Command::Validate { path } => ops::validate(resolved(&path).to_str().unwrap(), cli.json),
         Command::AnnValidate { path } => {
@@ -623,6 +637,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             no_fallback_rollout,
             no_fallback_min_recall,
             use_no_fallback_profile,
+            experimental_hnsw,
         } => {
             let policy = ann::parse_ann_policy(
                 fallback,
@@ -633,29 +648,31 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             )?;
             let rollout_policy =
                 ann::parse_no_fallback_rollout_policy(no_fallback_rollout, no_fallback_min_recall)?;
-            ops::search_vector(
-                resolved(&path).to_str().unwrap(),
-                &scope,
-                &vector,
-                false,
-                Some(policy),
+            ops::search_vector(ops::SearchVectorOptions {
+                path: resolved(&path).to_str().unwrap(),
+                scope: &scope,
+                vector: &vector,
+                exact: false,
+                policy: Some(policy),
                 rollout_policy,
                 use_no_fallback_profile,
-            )
+                experimental_hnsw,
+            })
         }
         Command::SearchVectorExact {
             path,
             scope,
             vector,
-        } => ops::search_vector(
-            resolved(&path).to_str().unwrap(),
-            &scope,
-            &vector,
-            true,
-            None,
-            None,
-            false,
-        ),
+        } => ops::search_vector(ops::SearchVectorOptions {
+            path: resolved(&path).to_str().unwrap(),
+            scope: &scope,
+            vector: &vector,
+            exact: true,
+            policy: None,
+            rollout_policy: None,
+            use_no_fallback_profile: false,
+            experimental_hnsw: false,
+        }),
         Command::SearchVectorEval {
             path,
             scope,
@@ -668,6 +685,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             no_fallback_rollout,
             no_fallback_min_recall,
             use_no_fallback_profile,
+            experimental_hnsw,
         } => {
             let policy = ann::parse_ann_policy(
                 fallback,
@@ -678,15 +696,16 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             )?;
             let rollout_policy =
                 ann::parse_no_fallback_rollout_policy(no_fallback_rollout, no_fallback_min_recall)?;
-            ann::search_vector_eval(
-                resolved(&path).to_str().unwrap(),
-                &scope,
-                &vector,
-                cli.json,
-                Some(policy),
+            ann::search_vector_eval(ann::SearchVectorEvalOptions {
+                path: resolved(&path).to_str().unwrap(),
+                scope: &scope,
+                vector: &vector,
+                json: cli.json,
+                policy: Some(policy),
                 rollout_policy,
                 use_no_fallback_profile,
-            )
+                experimental_hnsw,
+            })
         }
         Command::SearchExplain {
             path,

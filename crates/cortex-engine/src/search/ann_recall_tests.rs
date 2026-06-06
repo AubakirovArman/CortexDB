@@ -3,7 +3,7 @@
 #[cfg(test)]
 mod tests {
     use crate::search::{AnnSearchPolicy, SearchLimit, MIN_ANN_RECALL_Q16};
-    use crate::Database;
+    use crate::{Database, DatabaseOptions, EngineFeatureFlags};
     use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 
     fn vector_cell(_id: u64, vector: &[i16]) -> KnowledgeCell {
@@ -33,7 +33,7 @@ mod tests {
     #[test]
     fn ann_recall_perfect_with_exact_scan() {
         let dir = tempfile::tempdir().unwrap();
-        let mut db = Database::open(dir.path()).unwrap();
+        let mut db = open_hnsw_db(dir.path());
 
         // Insert 5 cells with simple 3D vectors
         let vectors: Vec<Vec<i16>> = vec![
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn ann_metrics_after_checkpoint() {
         let dir = tempfile::tempdir().unwrap();
-        let mut db = Database::open(dir.path()).unwrap();
+        let mut db = open_hnsw_db(dir.path());
 
         let vectors: Vec<Vec<i16>> = vec![vec![1, 0], vec![0, 1], vec![1, 1]];
         for (i, v) in vectors.iter().enumerate() {
@@ -125,7 +125,7 @@ mod tests {
     #[test]
     fn ann_fixture_gate_meets_recall_slo_after_checkpoint() {
         let dir = tempfile::tempdir().unwrap();
-        let mut db = Database::open(dir.path()).unwrap();
+        let mut db = open_hnsw_db(dir.path());
 
         let vectors: Vec<Vec<i16>> =
             vec![vec![10, 0], vec![8, 2], vec![0, 10], vec![1, 9], vec![5, 5]];
@@ -164,24 +164,24 @@ mod tests {
     #[test]
     fn ann_slo_gate_reports_budget_violation() {
         let dir = tempfile::tempdir().unwrap();
-        let mut db = Database::open(dir.path()).unwrap();
+        let mut db = open_hnsw_db(dir.path());
 
-        for (i, v) in [vec![10, 0], vec![0, 10], vec![9, 1]].iter().enumerate() {
-            db.put_knowledge_cell(CellId((i + 1) as u64), vector_cell((i + 1) as u64, v))
+        for id in 1..=64 {
+            db.put_knowledge_cell(CellId(id), vector_cell(id, &[id as i16, (64 - id) as i16]))
                 .unwrap();
         }
         db.checkpoint().unwrap();
 
         let outcome = db
             .search_vector_with_report_with_policy(
-                &[0, 10],
+                &[64, 0],
                 &test_view(),
                 SearchLimit(2),
                 AnnSearchPolicy {
                     min_recall_q16: Some(MIN_ANN_RECALL_Q16),
                     fallback: true,
                     fallback_scan_cap: None,
-                    max_visited_candidates: Some(0),
+                    max_visited_candidates: Some(1),
                     require_slo: true,
                 },
             )
@@ -219,5 +219,16 @@ mod tests {
             require_citations_by_default: false,
             private_scope: None,
         }
+    }
+
+    fn open_hnsw_db(path: &std::path::Path) -> Database {
+        Database::open_with_options(
+            path,
+            DatabaseOptions {
+                feature_flags: EngineFeatureFlags::production_safe().with_experimental_hnsw(true),
+                ..DatabaseOptions::default()
+            },
+        )
+        .unwrap()
     }
 }

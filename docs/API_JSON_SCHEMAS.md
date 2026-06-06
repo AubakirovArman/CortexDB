@@ -404,11 +404,11 @@ fields:
 ```
 
 `fallback_reason` may also be `low_recall` when the HNSW graph returns enough
-candidates but fails the exact top-k recall guard. In that case `recall_q16`
-contains the observed top-k recall and `min_recall_q16` contains the guard
-threshold. With `require_slo=true`, callers should treat
-`production_safe=false` as an ANN/HNSW guardrail breach even when exact fallback
-returned correct results.
+candidates but fails the exact top-k recall guard. It may be `hnsw_disabled`
+when production-safe defaults intentionally use exact persisted vector search
+instead of the experimental HNSW graph. In that case `production_safe=true`.
+With `require_slo=true`, callers should treat `production_safe=false` as an
+ANN/HNSW guardrail breach even when exact fallback returned correct results.
 The HNSW profile fields (`hnsw_max_neighbors`, `hnsw_ef_search`,
 `hnsw_ef_construction`, `hnsw_layer_count`) identify the persisted graph shape
 used for recall and latency comparisons.

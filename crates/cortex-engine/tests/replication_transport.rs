@@ -3,10 +3,10 @@ use std::collections::BTreeSet;
 use cortex_core::{CellId, CommitSeq};
 use cortex_engine::{
     decode_snapshot_segment, encode_snapshot_segment, plan_replication_recovery,
-    AppendEntriesRequest, ConsensusState, Database, ElectionRole, ElectionState,
-    InMemoryReplicationTransport, LogIndex, NodeId, ReplicationPeerServer, ReplicationPeerState,
-    ReplicationRecoveryAction, ReplicationRecoveryPolicy, ReplicationTransport, SnapshotChunk,
-    SnapshotSegment, TcpReplicationTransport, Term,
+    AppendEntriesRequest, ConsensusState, Database, DatabaseOptions, ElectionRole, ElectionState,
+    EngineFeatureFlags, InMemoryReplicationTransport, LogIndex, NodeId, ReplicationPeerServer,
+    ReplicationPeerState, ReplicationRecoveryAction, ReplicationRecoveryPolicy,
+    ReplicationTransport, SnapshotChunk, SnapshotSegment, TcpReplicationTransport, Term,
 };
 use cortex_storage::segment::SegmentCell;
 use std::collections::BTreeMap;
@@ -207,7 +207,7 @@ fn authenticated_replication_frame_rejects_wrong_token() {
 #[test]
 fn snapshot_segment_roundtrips_and_installs_durably() {
     let dir = tempfile::tempdir().unwrap();
-    let mut db = Database::open(dir.path()).unwrap();
+    let mut db = open_replication_db(dir.path());
     let snapshot = SnapshotSegment {
         checkpoint_seq: CommitSeq(7),
         cells: vec![SegmentCell {
@@ -231,6 +231,20 @@ fn snapshot_segment_roundtrips_and_installs_durably() {
         snapshot.cells[0].payload
     );
     assert_eq!(db.manifest().live_segments.len(), 1);
+}
+
+fn open_replication_db(path: &std::path::Path) -> Database {
+    Database::open_with_options(
+        path,
+        DatabaseOptions {
+            feature_flags: EngineFeatureFlags {
+                experimental_replication: true,
+                ..EngineFeatureFlags::production_safe()
+            },
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap()
 }
 
 #[test]

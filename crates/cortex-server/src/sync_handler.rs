@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use cortex_engine::Database;
+use cortex_engine::{Database, DatabaseOptions};
 
 use crate::{
     auth, auth_policy_cells, auth_policy_store, dashboard, json_error, json_response, llm,
@@ -66,21 +66,28 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
         Err(error) => return json_error(error.status_code(), error.code(), &error.to_string()),
     };
 
-    if dashboard::is_page(parts[1]) {
+    if options.dashboard_enabled && dashboard::is_page(parts[1]) {
         return serve_dashboard();
     }
-    if let Some(response) = serve_dashboard_asset(parts[1]) {
-        return response;
+    if options.dashboard_enabled {
+        if let Some(response) = serve_dashboard_asset(parts[1]) {
+            return response;
+        }
     }
 
     let query = parts[1].split_once('?').map_or("", |(_, query)| query);
     match auth_policy_store::handle_admin_request(options, parts[0], path, query, body.as_bytes()) {
         Ok(Some(value)) => {
-            let sync_result = Database::open(root).map_err(|_| ()).and_then(|mut db| {
-                auth_policy_cells::sync_store_json_to_database(&mut db, &value.policy_store_json)
+            let sync_result = open_database(root, options)
+                .map_err(|_| ())
+                .and_then(|mut db| {
+                    auth_policy_cells::sync_store_json_to_database(
+                        &mut db,
+                        &value.policy_store_json,
+                    )
                     .map(|_| ())
                     .map_err(|_| ())
-            });
+                });
             if sync_result.is_err() {
                 return json_error(
                     500,
@@ -108,7 +115,7 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
         };
     }
 
-    let Ok(db) = Database::open(root) else {
+    let Ok(db) = open_database(root, options) else {
         return json_error(500, ErrorCode::Internal, "failed to open database");
     };
     let db = std::sync::RwLock::new(db);
@@ -122,4 +129,14 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
         Ok(value) => json_response(200, &value),
         Err(error) => json_error(error.status_code(), error.code(), &error.to_string()),
     }
+}
+
+fn open_database(root: &Path, options: &ServerOptions) -> cortex_engine::EngineResult<Database> {
+    Database::open_with_options(
+        root,
+        DatabaseOptions {
+            feature_flags: options.engine_feature_flags,
+            ..DatabaseOptions::default()
+        },
+    )
 }

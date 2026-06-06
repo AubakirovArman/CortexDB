@@ -1,4 +1,4 @@
-use crate::handle_http;
+use crate::{handle_http, handle_http_with_options, ServerOptions};
 use tempfile::tempdir;
 
 #[test]
@@ -130,13 +130,13 @@ fn v1_search_ann_policy_is_applied_when_passing_query_params() {
         "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
         "scope=project:investments\nstatus=ready\nvector=5,0\nalpha"
     );
-    assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+    assert!(handle_hnsw(dir.path(), put).contains(r#""seq":1"#));
     let flush = "POST /v1/flush HTTP/1.1\r\n\r\n";
-    assert!(handle_http(dir.path(), flush).contains(r#""checkpoint_seq":1"#));
+    assert!(handle_hnsw(dir.path(), flush).contains(r#""checkpoint_seq":1"#));
 
     let request =
         "POST /v1/search?scope=project:investments&mode=vector&algorithm=ann&fallback=false&fallback_scan_cap=0&min_recall=1.0&require_slo=true&no_fallback_rollout=true&no_fallback_min_recall=1.0&vector=5,0 HTTP/1.1\r\n\r\n";
-    let response = handle_http(dir.path(), request);
+    let response = handle_hnsw(dir.path(), request);
     assert!(response.contains(r#""search_mode":"vector_ann""#));
     assert!(response.contains(r#""min_recall_q16":65535"#));
     assert!(response.contains(r#""require_slo":true"#));
@@ -150,29 +150,29 @@ fn v1_hnsw_no_fallback_profile_persists_and_drives_ann_decision() {
         "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
         "scope=project:investments\nstatus=ready\nvector=5,0\nalpha"
     );
-    assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
-    assert!(handle_http(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n")
+    assert!(handle_hnsw(dir.path(), put).contains(r#""seq":1"#));
+    assert!(handle_hnsw(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n")
         .contains(r#""checkpoint_seq":1"#));
 
     let profile = concat!(
         "PUT /v1/admin/search/hnsw/no-fallback-profile HTTP/1.1\r\n\r\n",
         r#"{"rollout_enabled":true,"min_recall_q16":32767,"require_upper_layers":true}"#
     );
-    let response = handle_http(dir.path(), profile);
+    let response = handle_hnsw(dir.path(), profile);
     assert!(response.contains(r#""configured":true"#));
     assert!(response.contains(r#""min_recall_q16":32767"#));
 
     let get = "GET /v1/admin/search/hnsw/no-fallback-profile HTTP/1.1\r\n\r\n";
-    let response = handle_http(dir.path(), get);
+    let response = handle_hnsw(dir.path(), get);
     assert!(response.contains(r#""configured":true"#));
 
     let request =
         "POST /v1/search?scope=project:investments&mode=vector&algorithm=ann&fallback=false&fallback_scan_cap=0&min_recall=50%25&require_slo=true&no_fallback_profile=active&vector=5,0 HTTP/1.1\r\n\r\n";
-    let response = handle_http(dir.path(), request);
+    let response = handle_hnsw(dir.path(), request);
     assert!(response.contains(r#""no_fallback_decision":{"allowed":true,"reasons":[]}"#));
 
     let delete = "DELETE /v1/admin/search/hnsw/no-fallback-profile HTTP/1.1\r\n\r\n";
-    let response = handle_http(dir.path(), delete);
+    let response = handle_hnsw(dir.path(), delete);
     assert!(response.contains(r#""configured":false"#));
 }
 
@@ -183,13 +183,13 @@ fn v1_search_ann_policy_decodes_encoded_recall_percent() {
         "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
         "scope=project:investments\nstatus=ready\nvector=1,2\nalpha"
     );
-    assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+    assert!(handle_hnsw(dir.path(), put).contains(r#""seq":1"#));
     let flush = "POST /v1/flush HTTP/1.1\r\n\r\n";
-    assert!(handle_http(dir.path(), flush).contains(r#""checkpoint_seq":1"#));
+    assert!(handle_hnsw(dir.path(), flush).contains(r#""checkpoint_seq":1"#));
 
     let request =
         "POST /v1/search?scope=project%3Ainvestments&mode=vector&algorithm=ann&fallback=true&min_recall=50%25&require_slo=false&vector=1,2 HTTP/1.1\r\n\r\n";
-    let response = handle_http(dir.path(), request);
+    let response = handle_hnsw(dir.path(), request);
     assert!(response.contains(r#""search_mode":"vector_ann""#));
     assert!(response.contains(r#""require_slo":false"#));
     assert!(response.contains(r#""fallback_performed":false"#));
@@ -202,4 +202,16 @@ fn v1_search_rejects_invalid_encoded_ann_param() {
     let response = handle_http(dir.path(), request);
     assert!(response.contains("400 Bad Request"));
     assert!(response.contains("\"error\":\"bad_request\""));
+}
+
+fn handle_hnsw(path: &std::path::Path, request: &str) -> String {
+    handle_http_with_options(path, request, &hnsw_options())
+}
+
+fn hnsw_options() -> ServerOptions {
+    ServerOptions {
+        engine_feature_flags: cortex_engine::EngineFeatureFlags::production_safe()
+            .with_experimental_hnsw(true),
+        ..ServerOptions::default()
+    }
 }

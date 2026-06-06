@@ -1,10 +1,17 @@
+fn dashboard_options() -> super::ServerOptions {
+    super::ServerOptions {
+        dashboard_enabled: true,
+        ..super::ServerOptions::default()
+    }
+}
+
 #[test]
 fn dashboard_endpoint_returns_html() {
     let tmp = std::env::temp_dir().join(format!("cortex-dashboard-test-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&tmp);
     std::fs::create_dir_all(&tmp).unwrap();
     let request = "GET /dashboard HTTP/1.1\r\n\r\n";
-    let response = super::handle_http(&tmp, request);
+    let response = super::handle_http_with_options(&tmp, request, &dashboard_options());
     assert!(
         response.starts_with("HTTP/1.1 200 OK"),
         "expected 200, got: {response}"
@@ -16,6 +23,23 @@ fn dashboard_endpoint_returns_html() {
     assert!(
         response.contains("CortexDB Console"),
         "expected dashboard title in body"
+    );
+    let _ = std::fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn dashboard_endpoint_is_disabled_by_default() {
+    let tmp = std::env::temp_dir().join(format!(
+        "cortex-dashboard-disabled-test-{}",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_dir_all(&tmp);
+    std::fs::create_dir_all(&tmp).unwrap();
+    let request = "GET /dashboard HTTP/1.1\r\n\r\n";
+    let response = super::handle_http(&tmp, request);
+    assert!(
+        response.starts_with("HTTP/1.1 404 Not Found"),
+        "expected dashboard to be disabled by default, got: {response}"
     );
     let _ = std::fs::remove_dir_all(&tmp);
 }
@@ -36,7 +60,7 @@ fn dashboard_route_pages_return_html() {
         "/dashboard/cluster",
     ] {
         let request = format!("GET {route} HTTP/1.1\r\n\r\n");
-        let response = super::handle_http(&tmp, &request);
+        let response = super::handle_http_with_options(&tmp, &request, &dashboard_options());
         assert!(
             response.starts_with("HTTP/1.1 200 OK"),
             "expected 200 for {route}, got: {response}"
@@ -279,7 +303,7 @@ fn dashboard_asset_endpoint_serves_css_and_js() {
         ),
     ] {
         let request = format!("GET {path} HTTP/1.1\r\n\r\n");
-        let response = super::handle_http(&tmp, &request);
+        let response = super::handle_http_with_options(&tmp, &request, &dashboard_options());
         assert!(
             response.starts_with("HTTP/1.1 200 OK"),
             "expected 200 for {path}, got: {response}"

@@ -3,9 +3,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use cortex_core::{CellId, CommitSeq};
 use cortex_engine::{
     assemble_snapshot_chunks, decode_snapshot_segment, encode_snapshot_segment,
-    AppendEntriesRequest, ConsensusState, Database, ElectionRole, ElectionState,
-    InMemoryReplicationTransport, LogIndex, NodeId, ReplicationLog, ReplicationTransport,
-    SnapshotChunk, SnapshotSegment, Term,
+    AppendEntriesRequest, ConsensusState, Database, DatabaseOptions, ElectionRole, ElectionState,
+    EngineFeatureFlags, InMemoryReplicationTransport, LogIndex, NodeId, ReplicationLog,
+    ReplicationTransport, SnapshotChunk, SnapshotSegment, Term,
 };
 use cortex_storage::segment::SegmentCell;
 
@@ -117,7 +117,7 @@ fn replication_log_replay_is_idempotent_after_restart() {
 #[test]
 fn chunked_snapshot_resync_installs_follower_and_survives_restart() {
     let dir = tempfile::tempdir().unwrap();
-    let mut follower = Database::open(dir.path()).unwrap();
+    let mut follower = open_replication_db(dir.path());
     follower
         .put_cell(CellId(7), b"stale local state".to_vec())
         .unwrap();
@@ -168,6 +168,20 @@ fn chunked_snapshot_resync_installs_follower_and_survives_restart() {
         follower.get_latest_cell(CellId(7)).is_none(),
         "snapshot install should replace stale follower state"
     );
+}
+
+fn open_replication_db(path: &std::path::Path) -> Database {
+    Database::open_with_options(
+        path,
+        DatabaseOptions {
+            feature_flags: EngineFeatureFlags {
+                experimental_replication: true,
+                ..EngineFeatureFlags::production_safe()
+            },
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap()
 }
 
 #[test]

@@ -95,6 +95,8 @@ pub enum EngineError {
     Io(#[from] std::io::Error),
     #[error("invalid database operation")]
     InvalidOperation,
+    #[error("engine feature is disabled: {0}")]
+    FeatureDisabled(&'static str),
     #[error("missing WAL section: {0}")]
     MissingWalSection(&'static str),
     #[error("missing WAL commit sequence")]
@@ -133,6 +135,7 @@ impl EngineError {
             Self::AqlBind(BindError::PolicyDenied(_)) => EngineErrorCode::PermissionDenied,
             Self::AqlBind(_) => EngineErrorCode::InvalidAql,
             Self::InvalidOperation
+            | Self::FeatureDisabled(_)
             | Self::InvalidAnnFixture(_)
             | Self::InvalidAnnCorpus(_)
             | Self::VectorDimensionMismatch { .. }

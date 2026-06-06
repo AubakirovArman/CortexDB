@@ -44,6 +44,7 @@ fixtures/engine/error_model_v1.json
 | `AqlBind` | `invalid_aql_or_permission_denied` |
 | `Io` | `not_found_or_forbidden_or_internal` |
 | `InvalidOperation` | `bad_request` |
+| `FeatureDisabled` | `bad_request` |
 | `MissingWalSection` | `storage_corruption` |
 | `MissingCommitSeq` | `storage_corruption` |
 | `FatalCellMissingAfterWal` | `storage_corruption` |

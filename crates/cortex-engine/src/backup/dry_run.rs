@@ -95,7 +95,9 @@ fn validate_backup_read_only(root: &Path) -> EngineResult<StorageValidation> {
         BitmapIndex::read(bitmap_path(&segments, segment.id))?;
         LexicalIndex::read(lexical_path(&segments, segment.id))?;
         VectorIndex::read(vector_path(&segments, segment.id))?;
-        HnswGraphIndex::read(hnsw_path(&segments, segment.id))?;
+        if checkpoint.manifest.hnsw_profile.is_some() {
+            HnswGraphIndex::read(hnsw_path(&segments, segment.id))?;
+        }
         cells_checked += cells.len();
     }
 

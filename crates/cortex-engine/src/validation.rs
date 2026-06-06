@@ -171,6 +171,16 @@ impl Database {
                             dimension_report.summary()
                         ));
                     }
+                    if let (Some(expected), Some(actual)) =
+                        (manifest_vector_profile, dimension_report.expected_dimension)
+                    {
+                        if expected.0 as usize != actual {
+                            report.errors.push(format!(
+                                "vector collection {} profile dimension={} does not match vector index dimension={}",
+                                segment.id, expected.0, actual
+                            ));
+                        }
+                    }
                     Some(index)
                 }
                 Err(error) => {
@@ -255,6 +265,10 @@ impl Database {
                         }
                     }
                 }
+                Err(error)
+                    if manifest_hnsw_profile.is_none()
+                        && matches!(error, cortex_storage::StorageError::Io(ref io) if io.kind() == ErrorKind::NotFound) =>
+                    {}
                 Err(error) => report
                     .errors
                     .push(format!("hnsw graph {}: {error}", segment.id)),

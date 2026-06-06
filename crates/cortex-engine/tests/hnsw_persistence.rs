@@ -2,8 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_core::CellId;
 use cortex_engine::{
-    Database, DatabaseOptions, DistanceMetric, HnswBuildConfig, HnswBuildProfile, HnswIndex,
-    HnswMaintenancePolicy, HnswRebuildPolicy,
+    Database, DatabaseOptions, DistanceMetric, EngineFeatureFlags, HnswBuildConfig,
+    HnswBuildProfile, HnswIndex, HnswMaintenancePolicy, HnswRebuildPolicy,
 };
 use cortex_storage::hnsw::HnswGraphIndex;
 
@@ -123,14 +123,7 @@ fn database_hnsw_build_config_controls_checkpoint_graph_density() {
 fn database_checkpoint_persists_hnsw_build_profile_metadata() {
     let dir = tempfile::tempdir().unwrap();
     let config = HnswBuildConfig::for_profile(HnswBuildProfile::Semantic);
-    let mut db = Database::open_with_options(
-        dir.path(),
-        DatabaseOptions {
-            hnsw_build_config: config,
-            ..DatabaseOptions::default()
-        },
-    )
-    .unwrap();
+    let mut db = Database::open_with_options(dir.path(), hnsw_options(config)).unwrap();
     db.put_cell(
         CellId(1),
         b"scope=project:investments\nstatus=ready\nvector=10,0\n\nalpha".to_vec(),
@@ -208,14 +201,7 @@ fn hnsw_integrity_report_catches_structural_link_errors() {
 
 fn checkpoint_edge_count(config: HnswBuildConfig) -> usize {
     let dir = tempfile::tempdir().unwrap();
-    let mut db = Database::open_with_options(
-        dir.path(),
-        DatabaseOptions {
-            hnsw_build_config: config,
-            ..DatabaseOptions::default()
-        },
-    )
-    .unwrap();
+    let mut db = Database::open_with_options(dir.path(), hnsw_options(config)).unwrap();
     for id in 1..=64 {
         db.put_cell(
             CellId(id),
@@ -230,4 +216,12 @@ fn checkpoint_edge_count(config: HnswBuildConfig) -> usize {
     }
     db.checkpoint().unwrap();
     db.ann_metrics().total_edges
+}
+
+fn hnsw_options(config: HnswBuildConfig) -> DatabaseOptions {
+    DatabaseOptions {
+        hnsw_build_config: config,
+        feature_flags: EngineFeatureFlags::production_safe().with_experimental_hnsw(true),
+        ..DatabaseOptions::default()
+    }
 }

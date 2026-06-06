@@ -14,6 +14,8 @@ cortex_engine::Database
 cortex_engine::DatabaseOptions
 cortex_engine::RecoveryMode
 cortex_engine::StaleLockPolicy
+cortex_engine::EngineFeature
+cortex_engine::EngineFeatureFlags
 cortex_engine::EngineError
 cortex_engine::EngineErrorCode
 cortex_engine::EngineErrorCategory

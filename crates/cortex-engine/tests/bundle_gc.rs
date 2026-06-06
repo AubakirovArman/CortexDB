@@ -42,7 +42,7 @@ fn gc_retired_segments_removes_files_and_preserves_live_data() {
 
     let report = db.garbage_collect_retired_segments().unwrap();
     assert_eq!(report.retired_segments_removed, 1);
-    assert_eq!(report.files_removed, 5);
+    assert_eq!(report.files_removed, 4);
     assert!(db.retired_segment_bundles().is_empty());
     assert!(!retired[0].segment_path.exists());
     assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"two");
