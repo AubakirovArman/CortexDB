@@ -137,6 +137,7 @@ The beta RC operator path is split by activity:
 
 | Activity | Primary doc | Local gate or command |
 | --- | --- | --- |
+| full runbook | [`OPERATIONS_RUNBOOK_V1.md`](OPERATIONS_RUNBOOK_V1.md) | `make operations-runbook-check` |
 | install | [`INSTALL.md`](INSTALL.md) | `make binary-release-check` |
 | service setup | [`SYSTEMD.md`](SYSTEMD.md), [`LAUNCHD.md`](LAUNCHD.md) | `make service-manager-smoke-check` and `/v1/validate` health probe |
 | validate | [`CLI.md`](CLI.md), [`API.md`](API.md) | `cortexdb validate ./data` |

@@ -14,11 +14,12 @@ target/operations-runbook/report.json
 
 ## What It Proves
 
-The gate verifies that [`OPERATIONS.md`](OPERATIONS.md) is self-contained enough
-for a local single-node operator to:
+The gate verifies that [`OPERATIONS_RUNBOOK_V1.md`](OPERATIONS_RUNBOOK_V1.md) is
+self-contained enough for a local single-node operator to:
 
 - install from a release archive or build from source;
 - start `cortex-server` and verify `/v1/health`;
+- stop the server before backup, repair, or upgrade;
 - use bearer-token authentication for protected routes;
 - write, read, flush, validate, inspect stats, and run `doctor`;
 - create normal, encrypted, and offsite-staged backups;
@@ -26,6 +27,8 @@ for a local single-node operator to:
 - run dry-run and best-effort repair;
 - inspect/truncate WAL only through explicit tools;
 - review audit logs without query/body leakage;
+- run startup, shutdown, validation, backup, restore, repair, upgrade, and
+  incident-response flows;
 - run deployment, observability, migration, backup, and soak evidence gates.
 
 The gate also checks that the runbook links to the supporting install, systemd,

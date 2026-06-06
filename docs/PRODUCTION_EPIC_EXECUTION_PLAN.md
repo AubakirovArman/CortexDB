@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 105 / 150
+- Done: 106 / 150
 - Partial: 1 / 150
-- Todo: 44 / 150
-- Current closed epic: Epic 105, Request ID and Trace Correlation
+- Todo: 43 / 150
+- Current closed epic: Epic 106, Operations Runbook v1
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2978,18 +2978,33 @@ Tasks:
 
 ### Epic 106. Operations Runbook v1
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/OPERATIONS_RUNBOOK_V1.md`
+- `docs/OPERATIONS_RUNBOOK_EVIDENCE.md`
+- `scripts/operations_runbook_check.py`
+- `make operations-runbook-check`
 
 Tasks:
 
-- Document startup.
-- Document shutdown.
-- Document backup.
-- Document restore.
-- Document validate.
-- Document repair.
-- Document upgrade.
-- Document incidents.
+- Document startup. Done: runbook includes install, server startup, health,
+  auth, and write/read smoke commands.
+- Document shutdown. Done: runbook includes foreground, systemd, launchd, stale
+  lock, and post-shutdown validation steps.
+- Document backup. Done: runbook includes local, encrypted, offsite staging,
+  and backup production pack gates.
+- Document restore. Done: runbook requires restore into a new directory and
+  post-restore validation.
+- Document validate. Done: runbook covers CLI validation, stats, WAL, manifest,
+  ANN validation, doctor, and HTTP validation.
+- Document repair. Done: runbook requires dry-run first, best-effort repair,
+  WAL tools, and backup fallback.
+- Document upgrade. Done: runbook links upgrade/rollback docs and lists the
+  offline upgrade sequence plus compatibility gates.
+- Document incidents. Done: runbook includes database busy, invalid tenant,
+  suspected corruption, and audit review flows.
 
 ### Epic 107. Incident Playbooks
 

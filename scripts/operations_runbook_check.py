@@ -15,6 +15,11 @@ REQUIRED_MARKERS: dict[str, tuple[str, ...]] = {
         "CORTEXDB_AUTH_TOKEN",
         "cortexdb doctor ./data",
     ),
+    "shutdown": (
+        "## 3. Shutdown",
+        "Stop writers before file-level backup, upgrade, or manual repair.",
+        "cortexdb unlock ./data --force",
+    ),
     "health_auth_and_data": (
         "/v1/health",
         "Authorization: Bearer",
@@ -46,7 +51,14 @@ REQUIRED_MARKERS: dict[str, tuple[str, ...]] = {
         "make migration-compatibility-check",
         "make storage-soak-history-check",
     ),
+    "upgrade": (
+        "## 8. Upgrade",
+        "make deployment-upgrade-check",
+        "make migration-compatibility-check",
+        "Rollback requires restoring the pre-upgrade backup",
+    ),
     "incident_response": (
+        "## 9. Incidents",
         "database_busy",
         "invalid_tenant",
         "audit ./audit/http.jsonl",
@@ -104,7 +116,7 @@ def validate(path: Path) -> dict[str, object]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--runbook", default="docs/OPERATIONS.md")
+    parser.add_argument("--runbook", default="docs/OPERATIONS_RUNBOOK_V1.md")
     parser.add_argument("--report", default="target/operations-runbook/report.json")
     args = parser.parse_args()
     report = validate(Path(args.runbook))

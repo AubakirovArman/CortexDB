@@ -144,6 +144,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`OBSERVABILITY_ALERTS.md`](OBSERVABILITY_ALERTS.md) - alert rules and operator actions.
 - [`SINGLE_NODE_SLO.md`](SINGLE_NODE_SLO.md) - local single-node SLO boundaries.
 - [`OPERATIONS.md`](OPERATIONS.md) - operational guidance.
+- [`OPERATIONS_RUNBOOK_V1.md`](OPERATIONS_RUNBOOK_V1.md) - step-by-step startup, shutdown, validation, backup, restore, repair, upgrade, and incident runbook.
 - [`OPERATIONS_RUNBOOK_EVIDENCE.md`](OPERATIONS_RUNBOOK_EVIDENCE.md) - local single-node operations runbook evidence gate.
 - [`BETA_OPERATIONS.md`](BETA_OPERATIONS.md) - beta operations checklist and runbook.
 - [`SECURITY_MODEL.md`](SECURITY_MODEL.md) - security model.
