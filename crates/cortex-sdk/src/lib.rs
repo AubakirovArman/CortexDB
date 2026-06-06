@@ -21,12 +21,17 @@ use thiserror::Error;
 
 mod aql;
 mod aql_support;
+mod context_pack;
 mod http;
 mod types;
 
 pub use aql::{
     Aql, AqlBuildError, AqlRetrievalMode, RememberBuilder, RetrieveContextBuilder,
     VerifyFactBuilder,
+};
+pub use context_pack::{
+    ContextPackAnomalyV1, ContextPackCellV1, ContextPackExplainV1, ContextPackSourceRefV1,
+    ContextPackV1,
 };
 use http::{append_query_param, parse_response, path};
 pub use types::{
@@ -43,6 +48,8 @@ pub use types::{
     VerificationReportResponse,
 };
 
+#[cfg(test)]
+mod context_pack_tests;
 #[cfg(test)]
 mod tests;
 

@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -276,7 +276,7 @@ pub struct AqlResponse {
     pub explain: Option<AqlExplainResponse>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ExplainResponse {
     pub score: u32,
     pub matched_terms: Vec<String>,
@@ -292,7 +292,7 @@ pub struct ExplainResponse {
     pub redundancy_penalty: u32,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ScoreComponentResponse {
     pub name: String,
     pub value: u32,
@@ -300,7 +300,7 @@ pub struct ScoreComponentResponse {
     pub reason: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct SourceRefResponse {
     pub source_id: String,
     #[serde(default)]
@@ -312,7 +312,7 @@ pub struct SourceRefResponse {
     pub confidence_q16: u16,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ContextPackCellResponse {
     pub cell_id: u64,
     pub estimated_tokens: u32,
@@ -322,7 +322,7 @@ pub struct ContextPackCellResponse {
     pub source_ref: Option<SourceRefResponse>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ContextPackAnomalyResponse {
     pub cell_id: Option<u64>,
     pub code: String,
@@ -331,7 +331,7 @@ pub struct ContextPackAnomalyResponse {
     pub why_excluded: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ContextPackResponse {
     pub schema_version: String,
     pub token_budget_tokens: u32,

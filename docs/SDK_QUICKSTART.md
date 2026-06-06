@@ -127,6 +127,25 @@ let prompt = client.context_prompt("default", aql)?;
 let markdown = client.context_markdown("default", aql)?;
 ```
 
+The Rust SDK models ContextPack v1 with typed public structs:
+
+```rust
+use cortex_sdk::{ContextPackAnomalyV1, ContextPackCellV1, ContextPackV1};
+
+let pack: ContextPackV1 = client.context_response("default", aql)?;
+assert!(pack.is_v1());
+
+for cell in &pack.cells {
+    println!("cell={} tokens={}", cell.cell_id, cell.estimated_tokens);
+}
+
+let overloads = pack.anomaly_count("token_overload");
+```
+
+The `ContextPackV1` aliases cover selected cells, source refs, explain details,
+and anomalies. They support both `serde_json` decode and encode so downstream
+agents can persist, snapshot, or forward packs without using ad-hoc JSON maps.
+
 ## Live Contract Gate
 
 Before publishing or changing SDK contracts, run:

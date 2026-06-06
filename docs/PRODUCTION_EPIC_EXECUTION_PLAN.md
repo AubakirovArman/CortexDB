@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 69 / 150
+- Done: 70 / 150
 - Partial: 1 / 150
-- Todo: 80 / 150
-- Current closed epic: Epic 69, ContextPack Large Cell Policy
+- Todo: 79 / 150
+- Current closed epic: Epic 70, ContextPack SDK Types v1
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1904,14 +1904,28 @@ Tasks:
 
 ### Epic 70. ContextPack SDK Types v1
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-sdk/src/context_pack.rs`
+- `crates/cortex-sdk/src/context_pack_tests.rs`
+- `crates/cortex-sdk/src/types.rs`
+- `docs/SDK_QUICKSTART.md`
 
 Tasks:
 
-- Add typed SDK models for cells.
-- Add typed SDK models for source refs.
-- Add typed SDK models for explain.
-- Add typed SDK models for anomalies.
+- Add typed SDK models for cells. Done: `ContextPackCellV1` aliases the
+  stable typed response model and is covered by serde round-trip tests.
+- Add typed SDK models for source refs. Done: `ContextPackSourceRefV1`
+  covers source id, optional URL, document/page/range/json-path, and
+  confidence fields.
+- Add typed SDK models for explain. Done: `ContextPackExplainV1` and
+  `ScoreComponentResponse` cover selection reasons, score components, source
+  trust, and redundancy fields.
+- Add typed SDK models for anomalies. Done: `ContextPackAnomalyV1` covers
+  optional cell id, code, message, and `why_excluded`, with helper counting on
+  `ContextPackV1`.
 
 ## G. Verification And Trust
 
