@@ -91,6 +91,22 @@ It reads endpoint/model/key settings from environment variables and prints only
 the numeric vector to stdout, which keeps provider secrets out of committed
 corpus artifacts.
 
+Repeated real-embedding exports can opt into a local JSONL cache:
+
+```bash
+make ann-real-embedding-benchmark \
+  ANN_REAL_EMBEDDING_SOURCE_ROOT=/data/cortexdb/text-cells \
+  ANN_REAL_EMBEDDING_QUERIES=/data/cortexdb/query_text.jsonl \
+  ANN_REAL_EMBEDDING_CACHE=target/ann/real-embedding/embeddings.cache.jsonl \
+  ANN_REAL_EMBEDDING_RUN_ID=my-domain-cosine-v1
+```
+
+Cache keys are based on the SHA-256 of the input text plus provider identity.
+The identity includes provider type, model, endpoint origin, configured
+dimension, hash dimension, and a hash of the command when command mode is used.
+This keeps API keys out of cache records and invalidates cached vectors when the
+model or configured dimension changes.
+
 Before running an expensive real-embedding benchmark, run the preflight gate:
 
 ```bash

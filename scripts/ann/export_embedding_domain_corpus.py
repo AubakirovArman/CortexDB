@@ -25,6 +25,9 @@ from embedding_provider import (
 SKIP_DIRS = {"venv", ".venv", "__pycache__", ".git", "target", "cortex_db", "cortex_data"}
 
 
+def optional_path(value: str) -> Path | None:
+    return None if value == "" else Path(value)
+
 def iter_jsonl_files(source_roots: Iterable[Path]) -> Iterable[Path]:
     for root in source_roots:
         for path in sorted(root.rglob("*.jsonl")):
@@ -45,13 +48,11 @@ def load_jsonl(path: Path) -> Iterable[tuple[int, dict]]:
         if isinstance(row, dict):
             yield line_no, row
 
-
 def row_payload(row: dict) -> str:
     payload = row.get("payload") or row.get("payload_text")
     if isinstance(payload, str) and payload.strip():
         return payload
     return json.dumps(row, ensure_ascii=False, sort_keys=True)
-
 
 def query_text(row: dict, label: str) -> str:
     for key in ("text", "query", "payload", "payload_text"):
@@ -59,7 +60,6 @@ def query_text(row: dict, label: str) -> str:
         if isinstance(value, str) and value.strip():
             return value
     raise ValueError(f"{label}: query row must contain text or query")
-
 
 def quantize(values: list[float], scale: int, normalization: str, label: str) -> list[int]:
     if normalization == "unit":
@@ -80,7 +80,6 @@ def quantize(values: list[float], scale: int, normalization: str, label: str) ->
         raise ValueError(f"{label}: empty vector")
     return output
 
-
 def embedding_config(args: argparse.Namespace) -> EmbeddingProviderConfig:
     return EmbeddingProviderConfig(
         provider=args.provider,
@@ -95,6 +94,7 @@ def embedding_config(args: argparse.Namespace) -> EmbeddingProviderConfig:
         require_model=args.require_model,
         dimension=args.dimension,
         hash_dimension=args.hash_dimension,
+        cache_file=args.embedding_cache,
     )
 
 
@@ -201,7 +201,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--model")
     parser.add_argument("--model-env", default=DEFAULT_MODEL_ENV)
     parser.add_argument("--api-key-env", default=DEFAULT_KEY_ENV)
-    parser.add_argument("--embedding-file", type=Path)
+    parser.add_argument("--embedding-file", type=optional_path)
+    parser.add_argument("--embedding-cache", type=optional_path)
     parser.add_argument("--timeout-seconds", type=float, default=30.0)
     parser.add_argument("--dimension", type=int)
     parser.add_argument("--require-model", action="store_true")

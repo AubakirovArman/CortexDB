@@ -17,6 +17,7 @@ from embedding_provider import DEFAULT_KEY_ENV, DEFAULT_MODEL_ENV, DEFAULT_URL_E
 from preflight_real_embedding_benchmark import (
     METRICS,
     embedding_config,
+    optional_path,
     validate_embedding_provider,
     validate_queries,
     validate_sources,
@@ -132,7 +133,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--model")
     parser.add_argument("--model-env", default=DEFAULT_MODEL_ENV)
     parser.add_argument("--api-key-env", default=DEFAULT_KEY_ENV)
-    parser.add_argument("--embedding-file", type=Path)
+    parser.add_argument("--embedding-file", type=optional_path)
+    parser.add_argument("--embedding-cache", type=optional_path)
     parser.add_argument("--timeout-seconds", type=float, default=30.0)
     parser.add_argument("--dimension", type=int)
     parser.add_argument("--hash-dimension", type=int, default=64)

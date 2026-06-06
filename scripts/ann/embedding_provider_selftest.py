@@ -74,6 +74,55 @@ class SelfTests(unittest.TestCase):
             else:
                 os.environ[DEFAULT_KEY_ENV] = old_value
 
+    def test_cache_reuses_vector_and_invalidates_model_and_dimension(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_dir:
+            root = Path(raw_dir)
+            counter = root / "count.txt"
+            counter.write_text("0", encoding="utf-8")
+            helper = root / "embed.py"
+            helper.write_text(
+                "\n".join([
+                    "import json, os, pathlib, sys",
+                    "counter = pathlib.Path(os.environ['COUNT_FILE'])",
+                    "counter.write_text(str(int(counter.read_text()) + 1))",
+                    "dim = int(os.environ.get('DIM', '2'))",
+                    "print(json.dumps([float(i) for i in range(1, dim + 1)]))",
+                ])
+                + "\n",
+                encoding="utf-8",
+            )
+            old_count = os.environ.get("COUNT_FILE")
+            old_dim = os.environ.get("DIM")
+            os.environ["COUNT_FILE"] = str(counter)
+            os.environ["DIM"] = "2"
+            try:
+                base = {
+                    "provider": "command",
+                    "command": f"{sys.executable} {helper}",
+                    "cache_file": root / "embeddings.cache.jsonl",
+                }
+                first = EmbeddingProviderConfig(**base, model="model-a", dimension=2)
+                self.assertEqual(embed_text(first, "alpha"), [1.0, 2.0])
+                self.assertEqual(embed_text(first, "alpha"), [1.0, 2.0])
+                self.assertEqual(counter.read_text(encoding="utf-8"), "1")
+
+                self.assertEqual(embed_text(EmbeddingProviderConfig(**base, model="model-b", dimension=2), "alpha"), [1.0, 2.0])
+                self.assertEqual(counter.read_text(encoding="utf-8"), "2")
+
+                os.environ["DIM"] = "3"
+                self.assertEqual(embed_text(EmbeddingProviderConfig(**base, model="model-b", dimension=3), "alpha"), [1.0, 2.0, 3.0])
+                self.assertEqual(counter.read_text(encoding="utf-8"), "3")
+            finally:
+                restore_env("COUNT_FILE", old_count)
+                restore_env("DIM", old_dim)
+
+
+def restore_env(name: str, value: str | None) -> None:
+    if value is None:
+        os.environ.pop(name, None)
+    else:
+        os.environ[name] = value
+
 
 def main() -> int:
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(SelfTests)

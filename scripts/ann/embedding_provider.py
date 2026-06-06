@@ -16,6 +16,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from embedding_cache import cache_get, cache_identity, cache_put
+
 
 DEFAULT_URL_ENV = "CORTEXDB_EMBEDDING_URL"
 DEFAULT_MODEL_ENV = "CORTEXDB_EMBEDDING_MODEL"
@@ -37,6 +39,7 @@ class EmbeddingProviderConfig:
     require_model: bool = False
     dimension: int | None = None
     hash_dimension: int = 64
+    cache_file: Path | None = None
 
 
 def numeric_vector(value: Any, label: str) -> list[float]:
@@ -71,6 +74,12 @@ def embed_text(config: EmbeddingProviderConfig, text: str, label: str = "input")
     if not text.strip():
         raise ValueError(f"{label}: text is empty")
     validate_provider_config(config)
+    digest = text_sha256(text)
+    identity = provider_cache_identity(config)
+    cached = cache_get(config.cache_file, digest, identity)
+    if cached is not None:
+        validate_dimension(cached, config.dimension, label)
+        return cached
     if config.provider == "command":
         vector = command_embedding(config.command, text, label)
     elif config.provider in {"openai-compatible", "local"}:
@@ -82,6 +91,7 @@ def embed_text(config: EmbeddingProviderConfig, text: str, label: str = "input")
     else:
         raise ValueError(f"unsupported embedding provider: {config.provider}")
     validate_dimension(vector, config.dimension, label)
+    cache_put(config.cache_file, digest, identity, vector)
     return vector
 
 
@@ -261,4 +271,15 @@ def provider_profile(config: EmbeddingProviderConfig) -> dict[str, Any]:
         "api_key_env": config.api_key_env if config.provider in {"openai-compatible", "local"} else "",
         "api_key_present": bool(os.environ.get(config.api_key_env)) if config.api_key_env else False,
         "embedding_file": str(config.embedding_file or "") if config.provider == "file" else "",
+        "cache_file": str(config.cache_file or ""),
     }
+
+
+def provider_cache_identity(config: EmbeddingProviderConfig) -> dict[str, Any]:
+    command_digest = text_sha256(config.command) if config.provider == "command" else ""
+    return cache_identity(
+        provider_profile(config),
+        config.dimension,
+        config.hash_dimension,
+        command_digest,
+    )

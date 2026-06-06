@@ -1610,13 +1610,24 @@ Tasks:
 
 ### Epic 58. Embedding Cache
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `scripts/ann/embedding_cache.py`
+- `scripts/ann/embedding_provider.py`
+- `scripts/ann/embedding_provider_selftest.py`
+- `Makefile`
+- `docs/ANN_PRODUCTION_TUNING.md`
+- `make ann-scripts-check`
 
 Tasks:
 
-- Cache text hash to embedding.
-- Invalidate on model change.
-- Invalidate on dimension change.
+- Cache text hash to embedding. Done: optional JSONL cache is keyed by input
+  text SHA-256 plus provider identity.
+- Invalidate on model change. Done: cache identity includes provider model.
+- Invalidate on dimension change. Done: cache identity includes configured
+  dimension and cached vectors are still dimension-validated on read.
 
 ### Epic 59. Retrieval Regression Dashboard
 

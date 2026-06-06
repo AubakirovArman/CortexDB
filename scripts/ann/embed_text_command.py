@@ -22,6 +22,10 @@ from embedding_provider import (
 )
 
 
+def optional_path(value: str) -> Path | None:
+    return None if value == "" else Path(value)
+
+
 def request_embedding(args: argparse.Namespace, text: str) -> list[float]:
     return embed_text(
         EmbeddingProviderConfig(
@@ -37,6 +41,7 @@ def request_embedding(args: argparse.Namespace, text: str) -> list[float]:
             require_model=args.require_model,
             dimension=args.dimension,
             hash_dimension=args.hash_dimension,
+            cache_file=args.embedding_cache,
         ),
         text,
         "stdin",
@@ -56,7 +61,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--model-env", default=DEFAULT_MODEL_ENV)
     parser.add_argument("--api-key-env", default=DEFAULT_KEY_ENV)
     parser.add_argument("--embedding-command")
-    parser.add_argument("--embedding-file", type=Path)
+    parser.add_argument("--embedding-file", type=optional_path)
+    parser.add_argument("--embedding-cache", type=optional_path)
     parser.add_argument("--timeout-seconds", type=float, default=30.0)
     parser.add_argument("--dimension", type=int)
     parser.add_argument("--hash-dimension", type=int, default=64)

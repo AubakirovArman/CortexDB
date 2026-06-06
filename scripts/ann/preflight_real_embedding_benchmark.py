@@ -28,6 +28,10 @@ TEXT_FIELDS = ("payload", "payload_text", "text", "query")
 METRICS = {"dot_product", "cosine", "l2"}
 
 
+def optional_path(value: str) -> Path | None:
+    return None if value == "" else Path(value)
+
+
 def iter_jsonl_files(source_roots: Iterable[Path]) -> Iterable[Path]:
     for root in source_roots:
         if not root.exists():
@@ -122,6 +126,7 @@ def embedding_config(args: argparse.Namespace) -> EmbeddingProviderConfig:
         require_model=args.require_model,
         dimension=args.dimension,
         hash_dimension=args.hash_dimension,
+        cache_file=args.embedding_cache,
     )
 
 
@@ -185,7 +190,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--model")
     parser.add_argument("--model-env", default=DEFAULT_MODEL_ENV)
     parser.add_argument("--api-key-env", default=DEFAULT_KEY_ENV)
-    parser.add_argument("--embedding-file", type=Path)
+    parser.add_argument("--embedding-file", type=optional_path)
+    parser.add_argument("--embedding-cache", type=optional_path)
     parser.add_argument("--timeout-seconds", type=float, default=30.0)
     parser.add_argument("--dimension", type=int)
     parser.add_argument("--hash-dimension", type=int, default=64)
