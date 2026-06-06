@@ -178,6 +178,12 @@ The active watchdog gate is:
 make storage-soak-72h-watchdog
 ```
 
+The watchdog/status regression check is:
+
+```bash
+make storage-soak-campaign-status-check
+```
+
 While a long run is still inside `storage_soak_check.py`, accumulated history
 may remain at zero until the run finishes. The status output includes
 `active_run.latest_cycle` and `active_run.seconds_since_update` inferred from
