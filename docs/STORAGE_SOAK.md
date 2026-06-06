@@ -180,8 +180,10 @@ make storage-soak-72h-watchdog
 
 While a long run is still inside `storage_soak_check.py`, accumulated history
 may remain at zero until the run finishes. The status output includes
-`active_run.latest_cycle` inferred from the v2 backup/restore directories so
-operators can see that the current run is still moving.
+`active_run.latest_cycle` and `active_run.seconds_since_update` inferred from
+the v2 backup/restore directories so operators can see that the current run is
+still moving. The watchdog treats stale active artifacts as unhealthy even if
+the campaign pid still exists.
 
 For an unattended local run, start it from the repository root:
 

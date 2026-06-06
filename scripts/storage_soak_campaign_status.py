@@ -75,15 +75,33 @@ def max_cycle(path: Path) -> int:
     return best
 
 
+def newest_mtime(root: Path) -> datetime | None:
+    if not root.exists():
+        return None
+    best = root.stat().st_mtime
+    for child in root.rglob("*"):
+        try:
+            best = max(best, child.stat().st_mtime)
+        except OSError:
+            continue
+    return datetime.fromtimestamp(best, timezone.utc)
+
+
 def active_progress(root: Path) -> dict[str, Any]:
     backup_cycle = max_cycle(root / "backups")
     restore_cycle = max_cycle(root / "restores")
     db_exists = (root / "db").exists()
+    updated_at = newest_mtime(root)
+    seconds_since_update = None
+    if updated_at is not None:
+        seconds_since_update = max(0, int((datetime.now(timezone.utc) - updated_at).total_seconds()))
     return {
         "db_exists": db_exists,
         "backup_cycle": backup_cycle,
         "restore_cycle": restore_cycle,
         "latest_cycle": max(backup_cycle, restore_cycle),
+        "updated_at": None if updated_at is None else updated_at.isoformat(),
+        "seconds_since_update": seconds_since_update,
     }
 
 
@@ -121,11 +139,16 @@ def main() -> int:
     target_met = total_duration_hours >= target_hours
     target_remaining_seconds = max(0, int((target_hours - total_duration_hours) * 3600))
     stale = seconds_since_update is not None and seconds_since_update > args.max_stale_minutes * 60
+    active_stale = (
+        active["seconds_since_update"] is not None
+        and active["seconds_since_update"] > args.max_stale_minutes * 60
+    )
     campaign_running = campaign.get("status") in {"running", None} or not campaign
     healthy = bool(target_met or (
         process.get("running")
         and campaign_running
         and not stale
+        and not active_stale
     ))
     status = {
         "process": process,
@@ -160,7 +183,8 @@ def main() -> int:
             f"db_exists:{active['db_exists']} "
             f"backup_cycle:{active['backup_cycle']} "
             f"restore_cycle:{active['restore_cycle']} "
-            f"latest_cycle:{active['latest_cycle']}"
+            f"latest_cycle:{active['latest_cycle']} "
+            f"seconds_since_update:{active['seconds_since_update']}"
         )
         print(
             "history="
