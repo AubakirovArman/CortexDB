@@ -8,6 +8,7 @@ use super::answerability;
 use super::conflicts;
 use super::dedup::{effective_redundancy_threshold, is_redundant, term_set, weighted_jaccard_q16};
 use super::explain::{extract_query_terms, generate_selection_reason};
+use super::token_estimator::estimate_tokens_for_profile;
 use super::{
     ContextExplain, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell,
     ContextPackOptions, ContextScoreComponent,
@@ -214,17 +215,6 @@ impl ContextPack {
     }
 }
 
-pub fn estimate_tokens(payload: &[u8]) -> u32 {
-    if payload.is_empty() {
-        return 0;
-    }
-    let bytes = match u32::try_from(payload.len()) {
-        Ok(value) => value,
-        Err(_) => return u32::MAX,
-    };
-    bytes.saturating_add(3) / 4
-}
-
 fn score_components(
     base_bm25: u32,
     source_trust: SourceTrust,
@@ -278,7 +268,7 @@ fn estimate_cell_tokens(
     } else {
         0
     };
-    estimate_tokens(payload).saturating_add(citation_overhead)
+    estimate_tokens_for_profile(payload, options.token_profile).saturating_add(citation_overhead)
 }
 
 fn effective_budget(view: &AgentView, requested: u32, plan_budget: u32) -> u32 {

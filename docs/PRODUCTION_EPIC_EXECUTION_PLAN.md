@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 67 / 150
+- Done: 68 / 150
 - Partial: 1 / 150
-- Todo: 82 / 150
-- Current closed epic: Epic 67, ContextPack Private Scope Leak Test
+- Todo: 81 / 150
+- Current closed epic: Epic 68, ContextPack Token Estimator v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1853,12 +1853,26 @@ Tasks:
 
 ### Epic 68. ContextPack Token Estimator v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/context/token_estimator.rs`
+- `crates/cortex-engine/tests/context_pack_token_estimator.rs`
+- `scripts/context_pack_token_estimator_check.py`
+- `make context-pack-token-estimator-check`
+- `target/context-pack-quality/token-estimator-report.json`
+- `docs/CONTEXT_PACK.md`
+- `docs/CONTEXT_PACK_TECHNOLOGY.md`
+- `docs/CONTEXT_PACK_QUALITY_EVIDENCE.md`
 
 Tasks:
 
-- Improve token estimation.
-- Add model-specific profiles.
+- Improve token estimation. Done: ContextPack now uses deterministic
+  profile-based token estimation instead of a single byte-count heuristic.
+- Add model-specific profiles. Done: `ContextTokenProfile` covers Cortex
+  default, GPT-4o-like, DeepSeek-chat-like, Gemma-it-like, and BGE-M3-like
+  profiles plus model-name alias mapping.
 
 ### Epic 69. ContextPack Large Cell Policy
 

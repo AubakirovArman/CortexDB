@@ -216,3 +216,16 @@ ContextPack budget optimization is covered by
 - required-citation overhead in `estimated_tokens`;
 - skipping an oversized middle candidate while keeping later smaller cells;
 - applying redundancy reduction before budget overload checks.
+
+## Token Estimator v2 Evidence
+
+ContextPack model-specific token estimation is covered by:
+
+- `cargo test -p cortex-engine --test context_pack_token_estimator`, including
+  deterministic default estimates, model-specific multilingual profile
+  differences, model-name alias mapping, selected-profile pack accounting, and
+  invalid UTF-8 fallback behavior;
+- `make context-pack-token-estimator-check`, which writes
+  `target/context-pack-quality/token-estimator-report.json`;
+- `ContextTokenProfile` variants for Cortex default, GPT-4o-like,
+  DeepSeek-chat-like, Gemma-it-like, and BGE-M3-like budgeting.

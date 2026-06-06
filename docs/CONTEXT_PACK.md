@@ -26,6 +26,8 @@ Implemented in `cortex-engine`:
 - `ContextPackAnomaly`
 - `Database::context_pack_from_aql`
 - `estimate_tokens`
+- `estimate_tokens_for_profile`
+- `ContextTokenProfile`
 - Optional sparse redundancy reduction using fixed-point Jaccard.
 - Optional dense-vector redundancy reduction when payloads include `vector=`.
 - Numeric guard coexistence: conflicting values for the same
@@ -33,6 +35,9 @@ Implemented in `cortex-engine`:
 - Citation-aware token accounting: when citations are required and a selected
   cell has a citation/source, the deterministic estimate includes fixed
   citation overhead.
+- Model-specific token profiles: `ContextTokenProfile` supports Cortex default,
+  GPT-4o-like, DeepSeek-chat-like, Gemma-it-like, and BGE-M3-like deterministic
+  budget estimates without calling external tokenizers.
 - Dedup-aware budget packing: redundant candidates are filtered before budget
   overload checks, and oversized middle candidates are skipped so smaller later
   candidates can still fit.
@@ -136,7 +141,10 @@ existing compact summary default unless `--json` or `--format` is passed.
 
 ## Known Limits
 
-- Token estimation is byte-based and approximate.
+- Token Estimator v2 is deterministic and profile-based, not a real tokenizer.
+  It supports `ContextTokenProfile` variants for Cortex default, GPT-4o-like,
+  DeepSeek-chat-like, Gemma-it-like, and BGE-M3-like budgeting. The profiles are
+  guardrails for stable budget decisions, not exact vendor token counts.
 - Citations are recognized from `citation=`, `source=`, or structured
   `source_id=` SourceRef metadata. When `REQUIRE confidence >= ...` is present
   in AQL, ContextPack retrieval filters candidates by `confidence_q16` or the
@@ -190,6 +198,7 @@ make context-pack-quality-check
 make context-pack-answerability-check
 make context-pack-conflict-visibility-check
 make context-pack-private-scope-check
+make context-pack-token-estimator-check
 ```
 
 That gate runs the ContextPack behavior tests, the ContextPack/VERIFY fixture,
@@ -205,6 +214,8 @@ measured release metrics:
 - conflict visibility score and selected conflict-count coverage.
 - private scope leak resistance across retrieval, checkpoint, compact, JSON,
   prompt, and Markdown exports.
+- deterministic model-specific token profile coverage for multilingual payloads,
+  citation overhead, model-name aliases, and invalid UTF-8 fallback behavior.
 
 Latest local evidence is tracked in
 [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md).

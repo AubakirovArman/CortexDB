@@ -8,10 +8,11 @@ pub mod dedup;
 pub mod explain;
 pub mod export;
 mod pack;
+mod token_estimator;
 
 pub use answerability::DEFAULT_ANSWERABILITY_THRESHOLD_Q16;
 pub use export::ContextPackExportFormat;
-pub use pack::estimate_tokens;
+pub use token_estimator::{estimate_tokens, estimate_tokens_for_profile, ContextTokenProfile};
 
 pub const DEFAULT_REDUNDANCY_THRESHOLD_Q16: u16 = 32_768;
 pub const DEFAULT_CITATION_OVERHEAD_TOKENS: u32 = 8;
@@ -23,6 +24,7 @@ pub struct ContextPackOptions {
     pub reduce_redundancy: bool,
     pub redundancy_threshold_q16: u16,
     pub citation_overhead_tokens: u32,
+    pub token_profile: ContextTokenProfile,
 }
 
 impl Default for ContextPackOptions {
@@ -33,6 +35,7 @@ impl Default for ContextPackOptions {
             reduce_redundancy: false,
             redundancy_threshold_q16: DEFAULT_REDUNDANCY_THRESHOLD_Q16,
             citation_overhead_tokens: DEFAULT_CITATION_OVERHEAD_TOKENS,
+            token_profile: ContextTokenProfile::default(),
         }
     }
 }

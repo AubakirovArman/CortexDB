@@ -69,9 +69,21 @@ The HTTP/API shape is documented in:
 
 ## Token Budget
 
-Core Alpha uses deterministic integer token estimates. The estimate is
-approximate, but stable: the same payload and options produce the same budget
-decision.
+Core Alpha uses deterministic integer token estimates. Token Estimator v2 is
+approximate, but stable: the same payload, model-specific profile, and options
+produce the same budget decision.
+
+The engine supports these model-specific profile choices:
+
+- `cortex_approx_v2` for the default CortexDB local estimate;
+- `openai_gpt4o` for GPT-4o-compatible context budgeting;
+- `deepseek_chat` for DeepSeek-chat-compatible context budgeting;
+- `google_gemma_it` for Gemma instruction-tuned context budgeting;
+- `bge_m3` for multilingual BGE-M3 embedding-context budgeting.
+
+Profiles are deterministic guardrails, not vendor tokenizer replacements. They
+avoid external tokenizer calls inside the database core and keep budget
+decisions reproducible in tests, CLI, server, and SDK paths.
 
 When citations are required and a selected cell has a source/citation, the
 estimate includes fixed citation overhead so the reported budget accounts for

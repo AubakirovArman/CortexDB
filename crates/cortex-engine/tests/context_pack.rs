@@ -28,7 +28,7 @@ fn context_pack_from_aql_respects_budget() {
             query(),
             &view(false),
             ContextPackOptions {
-                token_budget_tokens: 16,
+                token_budget_tokens: 32,
                 require_citations: false,
                 ..ContextPackOptions::default()
             },
