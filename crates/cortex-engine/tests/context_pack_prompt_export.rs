@@ -32,6 +32,7 @@ fn context_pack_prompt_export_includes_citation_and_conflict_instructions() {
     assert!(prompt.contains("Cite citation= or source_ref= values for factual claims."));
     assert!(prompt.contains("If the supplied context is insufficient or conflicting, say so."));
     assert!(prompt.contains("Do not resolve conflicting evidence silently"));
+    assert!(prompt.contains("Answerability: answerability_q16=65535"));
     assert!(prompt.contains("[1] cell_id=7"));
     assert!(prompt.contains("source_ref=source_id=doc-a;document_id=doc-1;page=3"));
     assert!(prompt.contains("Solar budget evidence."));
@@ -42,6 +43,7 @@ fn context_pack_markdown_export_is_stable_and_cited() {
     let markdown = export_pack().export(ContextPackExportFormat::Markdown);
 
     assert!(markdown.contains("# CortexDB ContextPack"));
+    assert!(markdown.contains("- answerability_q16: `65535`"));
     assert!(markdown.contains("### Cell 1"));
     assert!(markdown.contains("- cell_id: `7`"));
     assert!(markdown.contains("- citation: `doc-a`"));
@@ -58,6 +60,7 @@ fn context_pack_json_export_has_public_schema_fields() {
 
     assert_eq!(value["schema_version"], "context_pack.v1");
     assert_eq!(value["token_budget_tokens"], 1_000);
+    assert_eq!(value["answerability_q16"], 65535);
     assert_eq!(value["citations_required"], true);
     assert_eq!(value["cells"][0]["cell_id"], 7);
     assert_eq!(value["cells"][0]["citation"], "doc-a");

@@ -583,6 +583,7 @@ Preserve citations when answering.
 If the supplied context is insufficient or conflicting, say so.
 
 Budget: token_budget_tokens=1000 estimated_tokens=42 truncated=false citations_required=false
+Answerability: answerability_q16=65535
 
 Context cells:
 
@@ -605,6 +606,7 @@ Markdown export:
 - estimated_tokens: `42`
 - truncated: `false`
 - citations_required: `false`
+- answerability_q16: `65535`
 
 ## Cells
 

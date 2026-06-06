@@ -139,6 +139,9 @@ This gate proves:
   present across engine, server, OpenAPI, and docs;
 - the prompt export gate keeps JSON, prompt, and Markdown exports available
   and keeps citation/conflict instructions visible to downstream agents;
+- the answerability gate keeps `answerability_q16` and the
+  `insufficient_context` anomaly visible across engine, JSON contracts, OpenAPI,
+  and docs;
 - the quality fixture records measurable evidence coverage, token reduction,
   citation coverage, redundancy reduction, anomaly coverage, and deterministic
   ordering.
@@ -164,6 +167,17 @@ Stable ContextPack prompt and Markdown export modes are covered by:
 - `cargo test -p cortex-server v1_context_returns_prompt_and_markdown_exports`;
 - `make openapi-contract-check`, which keeps `/v1/context?format=...` documented
   alongside the typed JSON contract.
+
+## Answerability Evidence
+
+ContextPack answerability is covered by:
+
+- `cargo test -p cortex-engine --test context_pack_answerability`, including
+  full coverage, partial coverage, empty context, and export visibility cases;
+- `make context-pack-answerability-check`, which writes
+  `target/context-pack-quality/answerability-report.json`;
+- OpenAPI and typed JSON schemas exposing `answerability_q16` and the
+  `insufficient_context` anomaly code.
 
 ## Budget Optimizer Evidence
 

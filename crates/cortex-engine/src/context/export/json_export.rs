@@ -53,6 +53,7 @@ pub(super) fn to_json(pack: &ContextPack) -> String {
         "estimated_tokens": pack.estimated_tokens,
         "truncated": pack.truncated,
         "citations_required": pack.citations_required,
+        "answerability_q16": pack.answerability_q16,
         "cells": cells,
         "anomalies": anomalies,
     })

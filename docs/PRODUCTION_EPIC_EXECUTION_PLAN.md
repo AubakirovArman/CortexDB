@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 64 / 150
+- Done: 65 / 150
 - Partial: 1 / 150
-- Todo: 85 / 150
-- Current closed epic: Epic 64, ContextPack Prompt Export
+- Todo: 84 / 150
+- Current closed epic: Epic 65, ContextPack Answerability Score
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1785,12 +1785,28 @@ Tasks:
 
 ### Epic 65. ContextPack Answerability Score
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/context/answerability.rs`
+- `crates/cortex-engine/tests/context_pack_answerability.rs`
+- `scripts/context_pack_answerability_check.py`
+- `make context-pack-answerability-check`
+- `target/context-pack-quality/answerability-report.json`
+- `docs/openapi.yaml`
+- `docs/CONTEXT_PACK.md`
+- `docs/CONTEXT_PACK_TECHNOLOGY.md`
+- `docs/CONTEXT_PACK_QUALITY_EVIDENCE.md`
 
 Tasks:
 
-- Estimate whether context is enough.
-- Emit `insufficient_context` anomaly.
+- Estimate whether context is enough. Done: ContextPack now emits
+  `answerability_q16` as a deterministic 0..65535 coverage score for explicit
+  query terms selected into the pack.
+- Emit `insufficient_context` anomaly. Done: packs with empty or partially
+  covered context emit `ContextPackAnomalyCode::InsufficientContext` with
+  covered/missing term details.
 
 ### Epic 66. ContextPack Conflict Visibility Metric
 

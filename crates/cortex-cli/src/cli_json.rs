@@ -258,6 +258,7 @@ fn context_pack_response(pack: &ContextPack) -> ContextPackResponse {
         estimated_tokens: pack.estimated_tokens,
         truncated: pack.truncated,
         citations_required: pack.citations_required,
+        answerability_q16: pack.answerability_q16,
         cells: pack.cells.iter().map(context_cell_json).collect(),
         anomalies: pack
             .anomalies
@@ -271,7 +272,6 @@ fn context_pack_response(pack: &ContextPack) -> ContextPackResponse {
             .collect(),
     }
 }
-
 fn evidence_response(
     evidence: &VerificationEvidence,
     db: &Database,

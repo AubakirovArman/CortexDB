@@ -27,6 +27,9 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 - **Search query routing decisions** — `/v1/search`, `cortexdb search`, and the
   Rust SDK now support `mode=auto` and expose `routing.selected_strategy` plus
   `routing.reason` for keyword/vector/hybrid selection.
+- **ContextPack answerability score** — ContextPack JSON now includes
+  `answerability_q16`, and anomalies can include `insufficient_context` when
+  selected cells do not cover explicit query terms.
 
 ### Changed
 - **Error taxonomy contract guard** — `make openapi-contract-check` now also

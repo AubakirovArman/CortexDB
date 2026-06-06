@@ -39,6 +39,9 @@ Implemented in `cortex-engine`:
 - Source trust categories: explain metadata includes `source_trust_q16` and
   `source_trust_category` (`unknown`, `low`, `medium`, `high`, `official`) so
   UI/SDK consumers can see provenance contribution without reinterpreting q16.
+- Answerability score: `answerability_q16` estimates whether selected cells
+  cover explicit query terms. If coverage is incomplete, ContextPack emits an
+  `insufficient_context` anomaly instead of implying that an answer is safe.
 
 Public JSON responses include:
 
@@ -49,8 +52,16 @@ Public JSON responses include:
   "estimated_tokens": 42,
   "truncated": false,
   "citations_required": false,
+  "answerability_q16": 0,
   "cells": [],
-  "anomalies": []
+  "anomalies": [
+    {
+      "cell_id": null,
+      "code": "insufficient_context",
+      "message": "context answerability score 0/65535 is below the required threshold",
+      "why_excluded": "covered_terms=[]; missing_terms=[budget]"
+    }
+  ]
 }
 ```
 
@@ -109,7 +120,9 @@ existing compact summary default unless `--json` or `--format` is passed.
 6. Redundancy reduction, when enabled, reports skipped cells as anomalies before
    budget overload checks.
 7. Numeric guard conflicts are preserved as context, not treated as duplicates.
-8. No HNSW, reranking, or LLM calls run inside ContextPack v1 itself.
+8. `insufficient_context` is reported when deterministic answerability is below
+   the full-coverage threshold.
+9. No HNSW, reranking, or LLM calls run inside ContextPack v1 itself.
 
 ## Known Limits
 
@@ -123,6 +136,8 @@ existing compact summary default unless `--json` or `--format` is passed.
   does not call an external semantic model.
 - Full contradiction detection is handled by VERIFY FACT; ContextPack only keeps
   numeric guard variants together so an agent can see conflicting values.
+- `answerability_q16` is a deterministic coverage signal over explicit query
+  terms and selected cell text/metadata. It is not an external LLM judgment.
 
 ## Quality Gate
 
@@ -155,6 +170,7 @@ For the focused ContextPack quality gate, run:
 
 ```bash
 make context-pack-quality-check
+make context-pack-answerability-check
 ```
 
 That gate runs the ContextPack behavior tests, the ContextPack/VERIFY fixture,
@@ -166,6 +182,7 @@ measured release metrics:
 - citation coverage;
 - duplicate suppression;
 - deterministic ordering.
+- answerability score and `insufficient_context` anomaly coverage.
 
 Latest local evidence is tracked in
 [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md).

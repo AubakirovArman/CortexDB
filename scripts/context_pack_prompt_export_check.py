@@ -27,6 +27,7 @@ REQUIRED_JSON_FIELDS = [
     "schema_version",
     "token_budget_tokens",
     "estimated_tokens",
+    "answerability_q16",
     "citations_required",
     "cells",
     "anomalies",

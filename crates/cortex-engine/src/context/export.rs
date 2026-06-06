@@ -53,6 +53,13 @@ impl ContextPack {
                 self.citations_required
             ),
         );
+        push_line(
+            &mut out,
+            &format!(
+                "Answerability: answerability_q16={}",
+                self.answerability_q16
+            ),
+        );
         push_line(&mut out, "");
         push_line(&mut out, "Context cells:");
         for (index, cell) in self.cells.iter().enumerate() {
@@ -85,6 +92,10 @@ impl ContextPack {
         push_line(
             &mut out,
             &format!("- citations_required: `{}`", self.citations_required),
+        );
+        push_line(
+            &mut out,
+            &format!("- answerability_q16: `{}`", self.answerability_q16),
         );
         push_line(&mut out, "");
         push_line(&mut out, "## Cells");

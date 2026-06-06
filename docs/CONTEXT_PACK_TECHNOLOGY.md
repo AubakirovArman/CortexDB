@@ -186,6 +186,12 @@ The prompt export tells downstream agents to use only supplied cells, preserve
 citations, cite `citation=` or `source_ref=` values for factual claims, and
 report insufficient or conflicting context instead of silently resolving it.
 
+ContextPack also exposes `answerability_q16`, a deterministic 0..65535 coverage
+score for explicit query terms found in selected cells. When selected cells do
+not cover those terms, ContextPack emits an `insufficient_context` anomaly so
+agents and UI surfaces can refuse or ask for more evidence instead of treating a
+thin pack as answer-ready.
+
 ## What It Is Not
 
 Context Pack is not:

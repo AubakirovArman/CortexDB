@@ -152,6 +152,7 @@ fn snapshot_context_pack_response() {
         estimated_tokens: 2500,
         truncated: false,
         citations_required: true,
+        answerability_q16: 65535,
         cells: vec![ContextPackCellResponse {
             cell_id: 1,
             estimated_tokens: 120,

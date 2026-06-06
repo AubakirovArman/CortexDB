@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use cortex_aql::{AgentView, BoundPlan};
 use cortex_core::CellId;
 
+use super::answerability;
 use super::dedup::{effective_redundancy_threshold, is_redundant, term_set, weighted_jaccard_q16};
 use super::explain::{extract_query_terms, generate_selection_reason};
 use super::{
@@ -81,10 +82,10 @@ impl ContextPack {
         let mut estimated_tokens = 0u32;
         let mut truncated = false;
         let mut anomalies = Vec::new();
+        let query_terms = extract_query_terms(query);
 
         for cell in cells {
             let citation = extract_citation(&cell.payload);
-            let query_terms = extract_query_terms(query);
             let metadata = CellMetadata::from_payload(&cell.payload);
             let cell_body_terms = tokenize(&metadata.body_text)
                 .into_iter()
@@ -192,12 +193,18 @@ impl ContextPack {
             });
         }
 
+        let answerability = answerability::estimate(&pack_cells, &query_terms);
+        if answerability.is_insufficient() {
+            anomalies.push(answerability::insufficient_context_anomaly(&answerability));
+        }
+
         Self {
             cells: pack_cells,
             token_budget_tokens,
             estimated_tokens,
             truncated,
             citations_required,
+            answerability_q16: answerability.score_q16,
             anomalies,
         }
     }

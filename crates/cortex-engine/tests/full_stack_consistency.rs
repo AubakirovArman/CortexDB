@@ -51,7 +51,7 @@ fn context_pack_reports_policy_visible_citation_state_after_restart() {
         let mut db = Database::open(dir.path()).unwrap();
         db.put_cell(
             CellId(1),
-            b"scope=project:investments\nstatus=ready\nmissing citation".to_vec(),
+            b"scope=project:investments\nstatus=ready\nbudget evidence without citation".to_vec(),
         )
         .unwrap();
     }
@@ -70,6 +70,7 @@ fn context_pack_reports_policy_visible_citation_state_after_restart() {
         .unwrap();
 
     assert_eq!(pack.cells.len(), 1);
+    assert_eq!(pack.answerability_q16, u16::MAX);
     assert_eq!(pack.anomalies.len(), 1);
     assert_eq!(
         pack.anomalies[0].code,

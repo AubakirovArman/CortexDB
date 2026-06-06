@@ -2,11 +2,13 @@ use cortex_core::CellId;
 
 use crate::source_trust::SourceTrustCategory;
 
+mod answerability;
 pub mod dedup;
 pub mod explain;
 pub mod export;
 mod pack;
 
+pub use answerability::DEFAULT_ANSWERABILITY_THRESHOLD_Q16;
 pub use export::ContextPackExportFormat;
 pub use pack::estimate_tokens;
 
@@ -71,6 +73,7 @@ pub struct ContextPack {
     pub estimated_tokens: u32,
     pub truncated: bool,
     pub citations_required: bool,
+    pub answerability_q16: u16,
     pub anomalies: Vec<ContextPackAnomaly>,
 }
 
@@ -80,6 +83,7 @@ pub enum ContextPackAnomalyCode {
     MissingCitation,
     TokenOverload,
     ScopeMismatch,
+    InsufficientContext,
 }
 
 impl ContextPackAnomalyCode {
@@ -89,6 +93,7 @@ impl ContextPackAnomalyCode {
             Self::MissingCitation => "missing_citation",
             Self::TokenOverload => "token_overload",
             Self::ScopeMismatch => "scope_mismatch",
+            Self::InsufficientContext => "insufficient_context",
         }
     }
 }

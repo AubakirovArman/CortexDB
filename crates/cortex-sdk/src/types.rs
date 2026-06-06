@@ -338,6 +338,7 @@ pub struct ContextPackResponse {
     pub estimated_tokens: u32,
     pub truncated: bool,
     pub citations_required: bool,
+    pub answerability_q16: u16,
     pub cells: Vec<ContextPackCellResponse>,
     pub anomalies: Vec<ContextPackAnomalyResponse>,
 }

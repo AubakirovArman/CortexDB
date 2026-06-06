@@ -125,6 +125,7 @@ fn map_context_pack(pack: &ContextPack) -> ContextPackResponse {
         estimated_tokens: pack.estimated_tokens,
         truncated: pack.truncated,
         citations_required: pack.citations_required,
+        answerability_q16: pack.answerability_q16,
         cells,
         anomalies,
     }

@@ -151,6 +151,7 @@ fn typed_context_response_decodes_source_ref_url() {
         "estimated_tokens": 10,
         "truncated": false,
         "citations_required": true,
+        "answerability_q16": 65535,
         "cells": [{
             "cell_id": 1,
             "estimated_tokens": 10,
@@ -172,6 +173,7 @@ fn typed_context_response_decodes_source_ref_url() {
 
     let response: ContextPackResponse =
         serde_json::from_value(value).expect("context response should decode");
+    assert_eq!(response.answerability_q16, 65535);
     let source_ref = response.cells[0]
         .source_ref
         .as_ref()
