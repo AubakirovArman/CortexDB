@@ -6,6 +6,8 @@ fn snapshot_all_sdk_visible_error_responses() {
         ErrorCode::BadRequest,
         ErrorCode::InvalidTenant,
         ErrorCode::InvalidAql,
+        ErrorCode::UnknownField,
+        ErrorCode::UnsupportedOperator,
         ErrorCode::Unauthorized,
         ErrorCode::Forbidden,
         ErrorCode::PermissionDenied,

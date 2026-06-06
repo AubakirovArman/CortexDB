@@ -21,7 +21,9 @@ filesystem internals, private scope names, brain names, or stack traces.
 | --- | --- | --- | --- |
 | `400` | `bad_request` | Missing parameters, malformed non-AQL inputs, invalid vector literals, invalid job ids. | Fix the request and retry. |
 | `400` | `invalid_tenant` | Tenant realm name fails charset, length, or path-safety validation. | Fix tenant id; do not retry unchanged. |
-| `400` | `invalid_aql` | AQL parse error or non-policy bind error. | Fix the AQL query and retry. |
+| `400` | `invalid_aql` | AQL parse error or non-policy bind error that is not classified more specifically. | Fix the AQL query and retry. |
+| `400` | `unknown_field` | AQL `WHERE` references a field that is not filterable. | Use a supported AQL field and retry. |
+| `400` | `unsupported_operator` | AQL `WHERE` uses a parsed comparator that the binder does not support for that field. | Use a supported operator such as `=` or `IN`. |
 | `401` | `unauthorized` | Bearer auth is enabled and the request is missing or has a wrong token. | Authenticate and retry. |
 | `403` | `forbidden` | Non-AgentView authorization denials, such as a `data` token attempting an admin/metrics route. | Treat as a hard deny. |
 | `403` | `permission_denied` | `AgentView`, scope, mode, or policy denial. | Treat as a hard deny; changing the query must not bypass policy. |
@@ -38,7 +40,9 @@ filesystem internals, private scope names, brain names, or stack traces.
 - Engine-level errors are classified by `EngineError::code()` and documented in
   [`ENGINE_ERROR_MODEL.md`](ENGINE_ERROR_MODEL.md). The HTTP adapter maps that
   engine code into this SDK-facing API taxonomy.
-- AQL syntax and non-policy bind failures map to `400 invalid_aql`.
+- AQL syntax and generic non-policy bind failures map to `400 invalid_aql`.
+- AQL unknown fields map to `400 unknown_field`.
+- AQL unsupported comparators map to `400 unsupported_operator`.
 - Policy-denied AQL bind failures map to `403 permission_denied`.
 - `DatabaseAlreadyOpen` and bounded actor queue pressure map to
   `503 database_busy`.

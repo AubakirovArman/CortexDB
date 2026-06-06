@@ -1,5 +1,6 @@
 ---
 source: crates/cortex-server/src/tests/error_response_snapshot_tests.rs
+assertion_line: 33
 expression: responses
 ---
 [
@@ -17,6 +18,16 @@ expression: responses
     "code": "invalid_aql",
     "error": "invalid_aql",
     "message": "invalid_aql message"
+  },
+  {
+    "code": "unknown_field",
+    "error": "unknown_field",
+    "message": "unknown_field message"
+  },
+  {
+    "code": "unsupported_operator",
+    "error": "unsupported_operator",
+    "message": "unsupported_operator message"
   },
   {
     "code": "unauthorized",

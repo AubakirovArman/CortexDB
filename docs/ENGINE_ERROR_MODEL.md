@@ -24,7 +24,9 @@ fixtures/engine/error_model_v1.json
 | Code | Category | HTTP status | Meaning |
 | --- | --- | --- | --- |
 | `bad_request` | `user_input` | `400` | The caller supplied an invalid operation, option, payload, fixture, vector, or backup target. |
-| `invalid_aql` | `user_input` | `400` | AQL parse or non-policy bind failure. |
+| `invalid_aql` | `user_input` | `400` | AQL parse or generic non-policy bind failure. |
+| `unknown_field` | `user_input` | `400` | AQL references a non-filterable field. |
+| `unsupported_operator` | `user_input` | `400` | AQL uses a comparator unsupported by the binder. |
 | `permission_denied` | `permission` | `403` | AQL policy denied scope, brain, mode, budget, memory type, remember, verify, or audit mode. |
 | `forbidden` | `permission` | `403` | Local permission failure such as filesystem permission denial. |
 | `not_found` | `not_found` | `404` | A cell, path, or requested resource is missing. |
@@ -41,7 +43,7 @@ fixtures/engine/error_model_v1.json
 | `Storage` | `storage_corruption` |
 | `BitmapVm` | `internal` |
 | `AqlParse` | `invalid_aql` |
-| `AqlBind` | `invalid_aql_or_permission_denied` |
+| `AqlBind` | `invalid_aql_or_unknown_field_or_unsupported_operator_or_permission_denied` |
 | `Io` | `not_found_or_forbidden_or_internal` |
 | `InvalidOperation` | `bad_request` |
 | `FeatureDisabled` | `bad_request` |

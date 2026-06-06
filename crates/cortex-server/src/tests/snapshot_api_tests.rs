@@ -268,6 +268,38 @@ fn error_taxonomy_invalid_aql_has_stable_code() {
 }
 
 #[test]
+fn error_taxonomy_unknown_field_has_stable_code() {
+    let dir = tempfile::tempdir().unwrap();
+    let response = handle_http(
+        dir.path(),
+        concat!(
+            "POST /v1/aql?scope=project:test HTTP/1.1\r\n\r\n",
+            "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN default ",
+            "WHERE unknown = \"ready\" LIMIT 10 CANDIDATES;"
+        ),
+    );
+    assert!(response.contains("400 Bad Request"));
+    assert!(response.contains(r#""code":"unknown_field""#));
+    assert!(response.contains(r#""error":"unknown_field""#));
+}
+
+#[test]
+fn error_taxonomy_unsupported_operator_has_stable_code() {
+    let dir = tempfile::tempdir().unwrap();
+    let response = handle_http(
+        dir.path(),
+        concat!(
+            "POST /v1/aql?scope=project:test HTTP/1.1\r\n\r\n",
+            "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN default ",
+            "WHERE status != \"ready\" LIMIT 10 CANDIDATES;"
+        ),
+    );
+    assert!(response.contains("400 Bad Request"));
+    assert!(response.contains(r#""code":"unsupported_operator""#));
+    assert!(response.contains(r#""error":"unsupported_operator""#));
+}
+
+#[test]
 fn error_taxonomy_denied_scope_has_stable_code() {
     let dir = tempfile::tempdir().unwrap();
     let response = handle_http(

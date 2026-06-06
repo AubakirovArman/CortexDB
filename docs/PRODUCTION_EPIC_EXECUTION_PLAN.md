@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 37 / 150
+- Done: 38 / 150
 - Partial: 1 / 150
-- Todo: 112 / 150
-- Current closed epic: Epic 37, AQL Explain
+- Todo: 111 / 150
+- Current closed epic: Epic 38, AQL Error Taxonomy
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1015,15 +1015,44 @@ Tasks:
 
 ### Epic 38. AQL Error Taxonomy
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/error.rs`
+- `crates/cortex-server/src/responses.rs`
+- `crates/cortex-sdk/src/types.rs`
+- `crates/cortex-engine/tests/error_model.rs`
+- `crates/cortex-server/src/tests/error_taxonomy_tests.rs`
+- `crates/cortex-server/src/tests/snapshot_api_tests.rs`
+- `crates/cortex-server/src/tests/error_response_snapshot_tests.rs`
+- `crates/cortex-sdk/src/tests.rs`
+- `scripts/aql_compat_check.py`
+- `scripts/check_error_taxonomy_contract.py`
+- `docs/API_ERROR_TAXONOMY.md`
+- `docs/API_JSON_SCHEMAS.md`
+- `docs/API.md`
+- `docs/ENGINE_ERROR_MODEL.md`
+- `docs/openapi.yaml`
+- `cargo test -p cortex-engine --test error_model`
+- `cargo test -p cortex-server error_taxonomy`
+- `cargo test -p cortex-server snapshot_all_sdk_visible_error_responses`
+- `cargo test -p cortex-sdk error_code_decodes_full_core_alpha_taxonomy`
+- `make aql-compat-check`
+- `make openapi-contract-check`
 
 Tasks:
 
-- Add `invalid_aql`.
-- Add `permission_denied`.
-- Add `unknown_field`.
-- Add `unsupported_operator`.
-- Map errors to HTTP and SDK.
+- Add `invalid_aql`. Done: existing parser/generic bind class remains stable
+  through engine, HTTP, OpenAPI, and SDK.
+- Add `permission_denied`. Done: policy-denied AQL bind failures remain
+  `403 permission_denied`.
+- Add `unknown_field`. Done: `BindError::FieldNotFilterable` now maps to
+  `400 unknown_field`.
+- Add `unsupported_operator`. Done: `BindError::UnsupportedComparator` now maps
+  to `400 unsupported_operator`.
+- Map errors to HTTP and SDK. Done: engine codes, router errors, OpenAPI enum,
+  server snapshots, Rust SDK enum/tests, and compatibility gates are aligned.
 
 ### Epic 39. AQL Compatibility Changelog
 

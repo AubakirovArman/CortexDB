@@ -12,6 +12,8 @@ pub enum ErrorCode {
     ServiceUnavailable,
     Internal,
     InvalidAql,
+    UnknownField,
+    UnsupportedOperator,
     PermissionDenied,
     DatabaseBusy,
     StorageCorruption,

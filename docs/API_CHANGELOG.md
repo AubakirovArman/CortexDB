@@ -9,6 +9,9 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 ## Unreleased
 
 ### Added
+- **AQL-specific error classes** — HTTP, OpenAPI, and Rust SDK error taxonomy
+  now distinguish `unknown_field` and `unsupported_operator` from generic
+  `invalid_aql` while keeping both as `400` user-input errors.
 - **AQL Explain response** — `/v1/aql`, `cortexdb aql`, and the Rust SDK now
   expose an optional `explain` object for `EXPLAIN RETRIEVE CONTEXT`, including
   selected mode, bitmap plan, filters, candidate counts, limit, budget, and

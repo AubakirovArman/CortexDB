@@ -464,7 +464,9 @@ If an error occurs, the server responds with a corresponding HTTP status code an
 | --- | --- | --- |
 | **`400 Bad Request`** | `bad_request` | Invalid parameters or malformed non-AQL input. |
 | **`400 Bad Request`** | `invalid_tenant` | Tenant realm name fails charset, length, or path-safety validation. |
-| **`400 Bad Request`** | `invalid_aql` | AQL parse/bind failure that is not a policy denial. |
+| **`400 Bad Request`** | `invalid_aql` | AQL parse or generic bind failure that is not a policy denial. |
+| **`400 Bad Request`** | `unknown_field` | AQL `WHERE` references a non-filterable field. |
+| **`400 Bad Request`** | `unsupported_operator` | AQL `WHERE` uses a comparator unsupported by the binder. |
 | **`401 Unauthorized`** | `unauthorized` | Token auth required and missing or invalid. |
 | **`403 Forbidden`** | `forbidden` | Non-AgentView authorization denial, including data-token access to admin/metrics routes. |
 | **`403 Forbidden`** | `permission_denied` | AgentView or scope policy denied the query. |

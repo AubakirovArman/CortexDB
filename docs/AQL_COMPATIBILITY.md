@@ -33,7 +33,9 @@ target/aql-compat/*.log
 
 - malformed AQL through parser diagnostics and HTTP `invalid_aql`;
 - forbidden scope through bind policy denial and HTTP `permission_denied`;
-- unknown field through `FieldNotFilterable`;
+- unknown field through `FieldNotFilterable` and HTTP `unknown_field`;
+- unsupported comparator through `UnsupportedComparator` and HTTP
+  `unsupported_operator`;
 - LIMIT and REQUIRE parsing, policy clamp, and quality-threshold binding;
 - explain snapshots through `EXPLAIN RETRIEVE CONTEXT` parse and bind behavior.
 
@@ -47,8 +49,8 @@ The stable distinction for SDK callers is:
 | invalid syntax or invalid mode | parse error / HTTP `invalid_aql` |
 | readable policy violation | bind policy denial / HTTP `permission_denied` |
 | unknown unavailable scope | bind `UnknownScope` with safe message |
-| unknown field | bind `FieldNotFilterable` |
-| unsupported comparator | bind `UnsupportedComparator` |
+| unknown field | bind `FieldNotFilterable` / HTTP `unknown_field` |
+| unsupported comparator | bind `UnsupportedComparator` / HTTP `unsupported_operator` |
 
 Safe messages must not reveal private brain or scope names.
 

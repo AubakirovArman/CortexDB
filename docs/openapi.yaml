@@ -2271,6 +2271,8 @@ components:
           - service_unavailable
           - internal
           - invalid_aql
+          - unknown_field
+          - unsupported_operator
           - permission_denied
           - database_busy
           - storage_corruption

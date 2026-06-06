@@ -22,6 +22,18 @@ fn all_router_errors_have_stable_codes_and_statuses() {
             "invalid_aql",
         ),
         (
+            RouterError::UnknownField("unknown field".to_owned()),
+            400,
+            ErrorCode::UnknownField,
+            "unknown_field",
+        ),
+        (
+            RouterError::UnsupportedOperator("unsupported operator".to_owned()),
+            400,
+            ErrorCode::UnsupportedOperator,
+            "unsupported_operator",
+        ),
+        (
             RouterError::PermissionDenied("denied".to_owned()),
             403,
             ErrorCode::PermissionDenied,

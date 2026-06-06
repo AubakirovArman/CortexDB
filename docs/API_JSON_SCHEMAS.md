@@ -38,7 +38,9 @@ Stable Core Alpha error codes:
 | --- | --- | --- |
 | `400` | `bad_request` | Missing parameters or malformed non-AQL request input. |
 | `400` | `invalid_tenant` | Tenant realm name fails charset, length, or path-safety validation. |
-| `400` | `invalid_aql` | AQL parse/bind failure that is not a policy denial. |
+| `400` | `invalid_aql` | AQL parse or generic bind failure that is not a policy denial. |
+| `400` | `unknown_field` | AQL `WHERE` references a field that is not filterable. |
+| `400` | `unsupported_operator` | AQL `WHERE` uses a parsed comparator that the binder does not support. |
 | `401` | `unauthorized` | Missing or invalid bearer token. |
 | `403` | `forbidden` | Non-AgentView authorization denial, including data-token access to admin/metrics routes. |
 | `403` | `permission_denied` | AgentView, scope, mode, or policy denial. |

@@ -65,6 +65,16 @@ SUITES: tuple[dict[str, Any], ...] = (
         "covers": ["HTTP invalid_aql code for SDK callers"],
     },
     {
+        "name": "http_unknown_field_error",
+        "command": ["cargo", "test", "-p", "cortex-server", "error_taxonomy_unknown_field_has_stable_code"],
+        "covers": ["HTTP unknown_field code for SDK callers"],
+    },
+    {
+        "name": "http_unsupported_operator_error",
+        "command": ["cargo", "test", "-p", "cortex-server", "error_taxonomy_unsupported_operator_has_stable_code"],
+        "covers": ["HTTP unsupported_operator code for SDK callers"],
+    },
+    {
         "name": "http_permission_denied_error",
         "command": ["cargo", "test", "-p", "cortex-server", "error_taxonomy_denied_scope_has_stable_code"],
         "covers": ["HTTP permission_denied code for SDK callers"],
@@ -199,7 +209,7 @@ def main() -> int:
             "proves": [
                 "AQL v0.4 parser and binder compatibility tests pass",
                 "EXPLAIN RETRIEVE CONTEXT parses and binds like its inner retrieve",
-                "malformed AQL, permission denied, unknown field, LIMIT, and REQUIRE are covered",
+                "malformed AQL, permission denied, unknown field, unsupported operator, LIMIT, and REQUIRE are covered",
                 "HTTP error codes remain distinguishable for SDK callers",
             ],
             "does_not_prove": [

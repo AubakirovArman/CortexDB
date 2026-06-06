@@ -32,6 +32,8 @@ impl EngineErrorCategory {
 pub enum EngineErrorCode {
     BadRequest,
     InvalidAql,
+    UnknownField,
+    UnsupportedOperator,
     PermissionDenied,
     Forbidden,
     NotFound,
@@ -46,6 +48,8 @@ impl EngineErrorCode {
         match self {
             Self::BadRequest => "bad_request",
             Self::InvalidAql => "invalid_aql",
+            Self::UnknownField => "unknown_field",
+            Self::UnsupportedOperator => "unsupported_operator",
             Self::PermissionDenied => "permission_denied",
             Self::Forbidden => "forbidden",
             Self::NotFound => "not_found",
@@ -58,7 +62,10 @@ impl EngineErrorCode {
 
     pub fn http_status(self) -> u16 {
         match self {
-            Self::BadRequest | Self::InvalidAql => 400,
+            Self::BadRequest
+            | Self::InvalidAql
+            | Self::UnknownField
+            | Self::UnsupportedOperator => 400,
             Self::PermissionDenied | Self::Forbidden => 403,
             Self::NotFound => 404,
             Self::StorageCorruption | Self::Internal => 500,
@@ -68,7 +75,10 @@ impl EngineErrorCode {
 
     pub fn category(self) -> EngineErrorCategory {
         match self {
-            Self::BadRequest | Self::InvalidAql => EngineErrorCategory::UserInput,
+            Self::BadRequest
+            | Self::InvalidAql
+            | Self::UnknownField
+            | Self::UnsupportedOperator => EngineErrorCategory::UserInput,
             Self::PermissionDenied | Self::Forbidden => EngineErrorCategory::Permission,
             Self::NotFound => EngineErrorCategory::NotFound,
             Self::DatabaseBusy => EngineErrorCategory::Busy,
@@ -133,6 +143,8 @@ impl EngineError {
             Self::Core(CoreError::CellNotFound(_)) => EngineErrorCode::NotFound,
             Self::AqlParse(_) => EngineErrorCode::InvalidAql,
             Self::AqlBind(BindError::PolicyDenied(_)) => EngineErrorCode::PermissionDenied,
+            Self::AqlBind(BindError::FieldNotFilterable(_)) => EngineErrorCode::UnknownField,
+            Self::AqlBind(BindError::UnsupportedComparator) => EngineErrorCode::UnsupportedOperator,
             Self::AqlBind(_) => EngineErrorCode::InvalidAql,
             Self::InvalidOperation
             | Self::FeatureDisabled(_)
@@ -181,6 +193,10 @@ impl EngineError {
         match self.code() {
             EngineErrorCode::BadRequest => Some("check command arguments and input format"),
             EngineErrorCode::InvalidAql => Some("check AQL syntax in docs/AQL.md"),
+            EngineErrorCode::UnknownField => Some("use a filterable AQL field from docs/AQL.md"),
+            EngineErrorCode::UnsupportedOperator => {
+                Some("use a supported AQL operator for this field")
+            }
             EngineErrorCode::PermissionDenied | EngineErrorCode::Forbidden => {
                 Some("check auth token, AgentView, scope, and mode permissions")
             }

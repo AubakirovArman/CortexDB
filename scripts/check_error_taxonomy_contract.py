@@ -14,6 +14,8 @@ CODE_STATUS = {
     "bad_request": 400,
     "invalid_tenant": 400,
     "invalid_aql": 400,
+    "unknown_field": 400,
+    "unsupported_operator": 400,
     "unauthorized": 401,
     "forbidden": 403,
     "permission_denied": 403,

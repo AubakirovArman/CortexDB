@@ -186,6 +186,8 @@ fn error_code_decodes_full_core_alpha_taxonomy() {
         ("service_unavailable", ErrorCode::ServiceUnavailable),
         ("internal", ErrorCode::Internal),
         ("invalid_aql", ErrorCode::InvalidAql),
+        ("unknown_field", ErrorCode::UnknownField),
+        ("unsupported_operator", ErrorCode::UnsupportedOperator),
         ("permission_denied", ErrorCode::PermissionDenied),
         ("database_busy", ErrorCode::DatabaseBusy),
         ("storage_corruption", ErrorCode::StorageCorruption),
