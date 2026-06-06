@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 49 / 150
+- Done: 50 / 150
 - Partial: 1 / 150
-- Todo: 100 / 150
-- Current closed epic: Epic 49, LongMemEval Retrieval Adapter
+- Todo: 99 / 150
+- Current closed epic: Epic 50, LongMemEval End-to-End Adapter
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1370,13 +1370,30 @@ Tasks:
 
 ### Epic 50. LongMemEval End-to-End Adapter
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `scripts/longmemeval/check_v1_e2e_adapter.py`
+- `make longmemeval-v1-e2e-adapter-check`
+- `target/longmemeval-v1/submission/cortexdb-longmemeval-v1-official-gpt4o/manifest.json`
+- `target/longmemeval-v1/submission/cortexdb-longmemeval-v1-official-gpt4o/hypotheses.jsonl`
+- `target/longmemeval-v1/submission/cortexdb-longmemeval-v1-official-gpt4o/eval-results-gpt-4o.jsonl`
+- `target/longmemeval-v1/e2e-adapter/report.json`
+- Latest local E2E adapter report: `status=passed`, `hypotheses_rows=500`,
+  `eval_rows=500`, QA `accuracy=0.7660`, and official retrieval
+  `session recall_all@10=0.9021`.
 
 Tasks:
 
-- Wire ContextPack to reader LLM.
-- Run official QA eval.
-- Separate retrieval claims from QA claims.
+- Wire ContextPack to reader LLM. Done: the packaged historical official local
+  run validates CortexDB retrieval output through the official reader
+  hypotheses file.
+- Run official QA eval. Done: the package validates 500 official QA eval rows
+  and recomputes the `383 / 500` score from labels.
+- Separate retrieval claims from QA claims. Done: the E2E adapter report records
+  retrieval metrics and QA accuracy as separate claims and states that this is
+  not a published LongMemEval leaderboard entry.
 
 ### Epic 51. LoCoMo Adapter
 

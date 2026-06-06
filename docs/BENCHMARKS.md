@@ -224,6 +224,7 @@ CortexDB includes a LongMemEval v1 official-data retrieval harness:
 
 ```bash
 make longmemeval-v1-retrieval-adapter-check
+make longmemeval-v1-e2e-adapter-check
 ```
 
 The target downloads the official `xiaowu0162/longmemeval-cleaned` small split,
@@ -249,10 +250,13 @@ The same run also has a historical local QA evaluation artifact:
 | `accuracy` | `0.7660` |
 
 The run writes `target/longmemeval-v1/cortexdb/official_retrieval_metrics.txt`
-and `target/longmemeval-v1/retrieval-adapter/report.json`. New local
-generation/evaluation defaults use DeepSeek flash; the historical QA row above
-is retained only as prior evidence. Leaderboard/list inclusion still requires
-submission to the official maintainers. See
+and `target/longmemeval-v1/retrieval-adapter/report.json`. The E2E adapter
+gate validates the packaged hypotheses, official QA eval rows, checksums,
+dataset manifest, retrieval adapter report, and claim boundary, then writes
+`target/longmemeval-v1/e2e-adapter/report.json`. New local generation/evaluation
+defaults use DeepSeek flash; the historical QA row above is retained only as
+prior evidence. Leaderboard/list inclusion still requires submission to the
+official maintainers. See
 [`LONGMEMEVAL_OFFICIAL.md`](LONGMEMEVAL_OFFICIAL.md).
 
 ## MultiHop-RAG Benchmark Scaffold

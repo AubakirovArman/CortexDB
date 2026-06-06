@@ -41,6 +41,13 @@ Run the retrieval-adapter acceptance gate for Epic 49:
 make longmemeval-v1-retrieval-adapter-check
 ```
 
+Validate the end-to-end adapter package for Epic 50 without making any API
+calls:
+
+```bash
+make longmemeval-v1-e2e-adapter-check
+```
+
 The command writes:
 
 ```text
@@ -51,6 +58,7 @@ target/longmemeval-v1/cortexdb/official_retrieval_metrics.txt
 target/longmemeval-v1/cortexdb/report.json
 target/longmemeval-v1/cortexdb/summary.md
 target/longmemeval-v1/retrieval-adapter/report.json
+target/longmemeval-v1/e2e-adapter/report.json
 ```
 
 Run official QA scoring after official generation has produced a hypothesis
@@ -91,6 +99,17 @@ schema: cortexdb.longmemeval.v1.retrieval_adapter_check.v1
 status: passed
 retrieval_log_rows: 500
 boundary: retrieval-only, not an end-to-end QA claim
+```
+
+End-to-end adapter acceptance evidence:
+
+```text
+schema: cortexdb.longmemeval.v1.e2e_adapter_check.v1
+status: passed
+hypotheses_rows: 500
+eval_rows: 500
+qa accuracy: 0.7660
+boundary: retrieval metrics and QA accuracy are separate claims
 ```
 
 Historical QA evaluator evidence on the same split:
