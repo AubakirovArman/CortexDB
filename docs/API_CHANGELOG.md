@@ -21,6 +21,10 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
   with `predicate=contradicts`; `conflict_index`, `conflicts_for_fact`,
   `conflicts_for_entity`, `conflicts_for_metric`, and `conflicts_for_source`
   read both inline `contradicts=` markers and persisted relation cells.
+- **Verification Markdown report table and limitations** — `VerificationReport`
+  Markdown exports now include a summary table and explicit deterministic review
+  limitations while preserving supporting evidence, contradicting evidence,
+  numeric conflicts, and guards.
 - **Search Explain contribution details** — `/v1/search/explain`, `cortexdb
   search-explain`, and the Rust SDK now expose rank, matched terms, term
   contribution details, matched fields, lexical/vector q16 shares, selected

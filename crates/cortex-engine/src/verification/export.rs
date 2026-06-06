@@ -28,6 +28,19 @@ impl VerificationReport {
             format!("- guards: `{}`", self.guards.len()),
             format!("- numeric_conflicts: `{}`", self.numeric_conflicts.len()),
             String::new(),
+            "## Report Table".to_owned(),
+            "| Field | Value |".to_owned(),
+            "| --- | --- |".to_owned(),
+            format!("| Fact | `{}` |", escape_table_cell(&self.fact)),
+            format!("| Status | `{}` |", self.status.as_str()),
+            format!("| Supporting evidence | `{}` |", self.evidence.len()),
+            format!(
+                "| Contradicting evidence | `{}` |",
+                self.contradicting_evidence.len()
+            ),
+            format!("| Guards | `{}` |", self.guards.len()),
+            format!("| Numeric conflicts | `{}` |", self.numeric_conflicts.len()),
+            String::new(),
             "## Supporting Evidence".to_owned(),
         ];
         if self.evidence.is_empty() {
@@ -62,6 +75,7 @@ impl VerificationReport {
         }
         push_numeric_conflicts(&mut lines, &self.numeric_conflicts);
         push_guards(&mut lines, &self.guards);
+        push_limitations(&mut lines);
         lines.join("\n")
     }
 
@@ -190,12 +204,37 @@ fn push_guards(lines: &mut Vec<String>, guards: &[VerificationGuard]) {
     }
 }
 
+fn push_limitations(lines: &mut Vec<String>) {
+    lines.push(String::new());
+    lines.push("## Limitations".to_owned());
+    lines.push(
+        "- Verification is deterministic and limited to evidence visible through the caller's AgentView."
+            .to_owned(),
+    );
+    lines.push(
+        "- Missing evidence means insufficient database evidence, not proof that the fact is false."
+            .to_owned(),
+    );
+    lines.push(
+        "- Numeric, temporal, and contradiction checks are rule-based and may need domain review."
+            .to_owned(),
+    );
+    lines.push(
+        "- Source trust reflects configured provenance metadata, not an independent truth guarantee."
+            .to_owned(),
+    );
+}
+
 fn option_or_null(value: Option<&str>) -> String {
     value.unwrap_or("null").replace('\n', "\\n")
 }
 
 fn escape_inline(value: &str) -> String {
     value.replace('`', "\\`").replace('\n', " ")
+}
+
+fn escape_table_cell(value: &str) -> String {
+    escape_inline(value).replace('|', "\\|")
 }
 
 fn escape_value(value: &str) -> String {

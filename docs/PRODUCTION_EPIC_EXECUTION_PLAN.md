@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 77 / 150
+- Done: 78 / 150
 - Partial: 1 / 150
-- Todo: 72 / 150
-- Current closed epic: Epic 77, Contradiction Index v1
+- Todo: 71 / 150
+- Current closed epic: Epic 78, Verification Markdown Export
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2112,15 +2112,30 @@ Tasks:
 
 ### Epic 78. Verification Markdown Export
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/verification/export.rs`
+- `crates/cortex-engine/tests/verification_export.rs`
+- `crates/cortex-engine/tests/verification_guards.rs`
+- `docs/VERIFY_FACT.md`
+- `docs/API_CHANGELOG.md`
 
 Tasks:
 
-- Export report table.
-- Include supporting evidence.
-- Include contradicting evidence.
-- Include guards.
-- Include limitations.
+- Export report table. Done: Markdown export includes a `## Report Table`
+  section with fact, status, evidence counts, guard count, and numeric conflict
+  count.
+- Include supporting evidence. Done: `## Supporting Evidence` remains in the
+  stable Markdown report and is covered by regression tests.
+- Include contradicting evidence. Done: `## Contradicting Evidence` remains in
+  the stable Markdown report and is covered by regression tests.
+- Include guards. Done: `## Guards` lists rule guards with code, cell id, and
+  message.
+- Include limitations. Done: `## Limitations` explains AgentView visibility,
+  missing-evidence semantics, rule-based numeric/temporal/contradiction checks,
+  and source-trust boundaries.
 
 ### Epic 79. Verification SDK Helpers
 

@@ -219,8 +219,17 @@ POST /v1/verify?scope=project:investments&format=markdown
 POST /v1/verify?scope=project:investments&format=audit
 ```
 
-Markdown is intended for human review. Audit text is deterministic line-based
-output for diffing, archiving, or attaching to external review tooling.
+Markdown is intended for human review. It includes:
+
+- a report summary table;
+- supporting evidence;
+- contradicting evidence;
+- numeric conflicts;
+- guards;
+- limitations for deterministic review.
+
+Audit text is deterministic line-based output for diffing, archiving, or
+attaching to external review tooling.
 
 ## Limitations (Alpha)
 
