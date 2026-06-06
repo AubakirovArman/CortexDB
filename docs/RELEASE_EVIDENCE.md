@@ -128,6 +128,19 @@ It writes `target/release-notes/generated.md` from the production evidence
 report, release evidence bundle report, release artifact manifest, beta
 non-goals, and upgrade/migration limitations.
 
+The release evidence retention policy is checked by:
+
+```bash
+make evidence-artifact-retention-check
+```
+
+It writes `target/evidence-artifact-retention/report.json` and validates
+[`EVIDENCE_ARTIFACT_RETENTION_POLICY.json`](EVIDENCE_ARTIFACT_RETENTION_POLICY.json)
+against the current release evidence bundle and release artifact manifest.
+The policy defines GitHub Release assets, bundle artifacts, manifest-only
+artifacts, and local-only patterns for raw logs, prompts, provider responses,
+and secret-bearing files.
+
 ## Public Release Artifact Audit
 
 The public artifact audit target is `v0.1.0-core-alpha.5`. It supersedes the

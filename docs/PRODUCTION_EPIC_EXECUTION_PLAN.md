@@ -163,13 +163,16 @@ Tasks:
 
 ### Epic 8. Evidence Artifact Retention Policy
 
-Status: todo
+Status: done
 
-Remaining:
+Evidence:
 
-- Define which `target/*/report.json` artifacts are published.
-- Define which artifacts are attached to GitHub Releases.
-- Define which artifacts remain ignored/local-only.
+- `docs/EVIDENCE_ARTIFACT_RETENTION_POLICY.md`
+- `docs/EVIDENCE_ARTIFACT_RETENTION_POLICY.json`
+- `scripts/evidence_artifact_retention_check.py`
+- `make evidence-artifact-retention-check`
+- The policy classifies GitHub Release assets, release evidence bundle
+  artifacts, release manifest artifacts, and local-only patterns.
 
 Tasks:
 

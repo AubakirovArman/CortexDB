@@ -1,0 +1,64 @@
+{
+  "schema_version": "cortexdb.evidence_artifact_retention_policy.v1",
+  "github_release_assets": [
+    "target/release-artifacts/cortexdb-dev-linux-x86_64.tar.gz",
+    "target/release-artifacts/cortexdb-dev-linux-x86_64.tar.gz.sha256",
+    "target/dashboard/dashboard-v1.tar.gz",
+    "target/release-evidence-bundle/release-evidence.tar.gz",
+    "target/release-evidence-bundle/release-evidence.tar.gz.sha256",
+    "target/release-artifact-manifest/manifest.json",
+    "target/release-artifact-manifest/report.json",
+    "target/release-notes/generated.md"
+  ],
+  "release_evidence_bundle": [
+    "target/production-evidence/report.json",
+    "target/sdk-e2e-release/report.json",
+    "target/sdk-release-artifacts/report.json",
+    "target/sdk-registry-gate/report.json",
+    "target/context-pack-quality/report.json",
+    "target/verification-quality/report.json",
+    "target/retrieval-quality/report.json",
+    "target/single-node-performance/report.json",
+    "target/security-hardening/report.json",
+    "target/public-claims/report.json",
+    "target/backup-drill/report.json",
+    "target/backup-offsite/report.json",
+    "target/backup-restore-production-pack/report.json",
+    "target/tenant-recovery/report.json",
+    "target/release-artifacts/cortexdb-dev-linux-x86_64.tar.gz",
+    "target/release-artifacts/cortexdb-dev-linux-x86_64.tar.gz.sha256",
+    "target/dashboard/dashboard-v1.tar.gz",
+    "target/retrieval-quality/dashboard.html",
+    "target/ann/release-evidence/corpus-runs/history.json",
+    "target/ann/real-embedding/runs/history.json",
+    "target/chaos-restart/report.json",
+    "target/crash-fault/report.json",
+    "target/replication-lifecycle/report.json"
+  ],
+  "release_manifest_artifacts": [
+    "target/binary-platform-matrix/report.json",
+    "target/install-script/report.json",
+    "target/retrieval-quality/beta-report.json",
+    "target/sdk-release-artifacts/cortexdb-sdk-examples-0.1.0.tar.gz"
+  ],
+  "local_only_patterns": [
+    "target/**/raw.log",
+    "target/**/stderr.log",
+    "target/**/stdout.log",
+    "target/**/tmp/**",
+    "target/**/.env",
+    "target/**/secrets/**",
+    "target/**/request_body.json",
+    "target/**/prompt*.json",
+    "target/**/provider_response*.json",
+    "target/longmemeval-v1/**",
+    "target/enterprise-rag-bench/**",
+    "target/multihop-rag/**"
+  ],
+  "notes": {
+    "github_release_assets": "Top-level assets attached directly to a GitHub Release when they exist for the release train.",
+    "release_evidence_bundle": "Artifacts allowed inside the release evidence tarball. Reports must be passed/ok when validated by bundle tooling.",
+    "release_manifest_artifacts": "Artifacts referenced by the release artifact manifest but not attached as top-level GitHub assets.",
+    "local_only_patterns": "Artifacts that remain ignored/local-only unless a future policy explicitly promotes a redacted derivative."
+  }
+}
