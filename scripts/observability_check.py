@@ -26,6 +26,7 @@ METRICS_FIELDS = [
     "wal_writer_bytes",
     "wal_writer_fsyncs",
     "wal_writer_batches",
+    "backup_latest_age_seconds",
     "ann_graph_nodes",
     "ann_total_edges",
     "ann_persisted_segments",
@@ -100,15 +101,38 @@ def validate_grafana() -> list[str]:
     path = Path("examples/observability/grafana-cortexdb-core-alpha.json")
     dashboard = json.loads(read(path))
     panels = dashboard.get("panels")
-    if not isinstance(panels, list) or len(panels) < 5:
-        return [f"{path}: expected at least five panels"]
+    if not isinstance(panels, list) or len(panels) < 14:
+        return [f"{path}: expected at least fourteen panels"]
+    titles = {panel.get("title") for panel in panels if isinstance(panel, dict)}
+    required_titles = {
+        "Commit vs Checkpoint",
+        "WAL Size",
+        "Segments",
+        "Request Throughput",
+        "Request Mean Latency",
+        "Errors and Rejections",
+        "Actor Queue Pressure",
+        "Backup Age",
+    }
+    for title in sorted(required_titles - titles):
+        failures.append(f"{path}: missing panel {title}")
     text = json.dumps(dashboard)
     for marker in [
         "cortexdb_current_seq",
         "cortexdb_checkpoint_seq",
         "cortexdb_wal_size_bytes",
+        "cortexdb_live_segments",
+        "cortexdb_retired_segments",
+        "cortexdb_backup_latest_age_seconds",
         "cortexdb_ann_graph_nodes",
         "cortexdb_actor_queue_depth",
+        "cortexdb_actor_queue_capacity",
+        "cortexdb_request_count",
+        "cortexdb_request_rejected",
+        "cortexdb_request_duration_ms_total",
+        "cortexdb_principal_quota_requests_rejected",
+        "cortexdb_principal_quota_body_bytes_rejected",
+        "cortexdb_principal_quota_queue_rejected",
         "cortexdb_ann_fallbacks",
         "cortexdb_ann_no_fallback_blocked",
         "cortexdb_ann_search_latency_ms_bucket",

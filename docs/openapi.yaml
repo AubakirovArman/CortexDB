@@ -2585,6 +2585,7 @@ components:
       - wal_writer_bytes
       - wal_writer_fsyncs
       - wal_writer_batches
+      - backup_latest_age_seconds
       - ann_graph_nodes
       - ann_total_edges
       - ann_persisted_segments
@@ -2648,6 +2649,9 @@ components:
         wal_writer_batches:
           type: integer
           format: uint64
+        backup_latest_age_seconds:
+          type: integer
+          format: int64
         ann_graph_nodes:
           type: integer
         ann_total_edges:

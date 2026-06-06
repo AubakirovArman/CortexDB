@@ -98,6 +98,50 @@
       "targets": [
         { "expr": "increase(cortexdb_validation_failures[5m])", "legendFormat": "validation_failures" }
       ]
+    },
+    {
+      "id": 11,
+      "title": "Request Throughput",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(cortexdb_request_count[5m])", "legendFormat": "requests/sec" },
+        { "expr": "rate(cortexdb_request_rejected[5m])", "legendFormat": "rejected/sec" }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Request Mean Latency",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(cortexdb_request_duration_ms_total[5m]) / clamp_min(rate(cortexdb_request_count[5m]), 1)",
+          "legendFormat": "mean_ms"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "Errors and Rejections",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "increase(cortexdb_request_rejected[5m])", "legendFormat": "request_rejected" },
+        { "expr": "increase(cortexdb_validation_failures[5m])", "legendFormat": "validation_failures" },
+        {
+          "expr": "increase(cortexdb_principal_quota_requests_rejected[5m]) + increase(cortexdb_principal_quota_body_bytes_rejected[5m]) + increase(cortexdb_principal_quota_queue_rejected[5m])",
+          "legendFormat": "principal_quota_rejections"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Backup Age",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "cortexdb_backup_latest_age_seconds",
+          "legendFormat": "latest_backup_age_seconds"
+        }
+      ]
     }
   ]
 }

@@ -6,10 +6,11 @@ use axum::{
     Json,
 };
 use std::collections::BTreeMap;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use std::time::{Instant, SystemTime};
 use tower_http::cors::CorsLayer;
 use tower_http::limit::RequestBodyLimitLayer;
 
@@ -412,6 +413,38 @@ fn request_body_allowed_by_principal_quota(
             .fetch_add(body_len as u64, Ordering::Relaxed);
     }
     allowed
+}
+
+fn backup_latest_age_seconds(root: &Path) -> i64 {
+    let mut roots = Vec::new();
+    if let Ok(value) = std::env::var("CORTEXDB_BACKUP_ROOT") {
+        if !value.trim().is_empty() {
+            roots.push(PathBuf::from(value.trim()));
+        }
+    }
+    if roots.is_empty() {
+        roots.push(root.join("backups"));
+        roots.push(root.join("backup"));
+    }
+
+    let latest = roots.iter().filter_map(|root| latest_modified(root)).max();
+    latest
+        .and_then(|modified| SystemTime::now().duration_since(modified).ok())
+        .map_or(-1, |age| age.as_secs() as i64)
+}
+
+fn latest_modified(path: &Path) -> Option<SystemTime> {
+    let mut latest = fs::metadata(path)
+        .and_then(|metadata| metadata.modified())
+        .ok();
+    let entries = fs::read_dir(path).ok()?;
+    for entry in entries.flatten() {
+        let child_modified = fs::metadata(entry.path())
+            .and_then(|metadata| metadata.modified())
+            .ok();
+        latest = latest.max(child_modified);
+    }
+    latest
 }
 
 fn acquire_principal_queue_permit(
@@ -1125,7 +1158,10 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                          cortexdb_principal_quota_queue_acquired {}\n\
                          # HELP cortexdb_principal_quota_queue_rejected Total per-principal actor queue permits rejected.\n\
                          # TYPE cortexdb_principal_quota_queue_rejected counter\n\
-                         cortexdb_principal_quota_queue_rejected {}\n",
+                         cortexdb_principal_quota_queue_rejected {}\n\
+                         # HELP cortexdb_backup_latest_age_seconds Age of latest local backup evidence in seconds, or -1 when unavailable.\n\
+                         # TYPE cortexdb_backup_latest_age_seconds gauge\n\
+                         cortexdb_backup_latest_age_seconds {}\n",
                         db.queue_depth(),
                         db.queue_capacity(),
                         state.request_count.load(Ordering::Relaxed),
@@ -1163,6 +1199,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                         state
                             .principal_quota_queue_rejected
                             .load(Ordering::Relaxed),
+                        backup_latest_age_seconds(&state.root),
                     );
                     return with_request_id(
                         (StatusCode::OK, body_str + &extra).into_response(),
@@ -1202,6 +1239,7 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                         state.principal_quota_queue_acquired.load(Ordering::Relaxed);
                     metrics.principal_quota_queue_rejected =
                         state.principal_quota_queue_rejected.load(Ordering::Relaxed);
+                    metrics.backup_latest_age_seconds = backup_latest_age_seconds(&state.root);
                     return with_request_id(
                         (StatusCode::OK, Json(metrics)).into_response(),
                         &request_id,

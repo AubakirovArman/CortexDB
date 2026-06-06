@@ -60,6 +60,7 @@ Important fields:
 | `wal_writer_bytes` | WAL bytes written since writer start. | Write volume counter. |
 | `wal_writer_fsyncs` | WAL fsync calls. | Durability cost signal. |
 | `wal_writer_batches` | WAL batches committed. | Group commit behavior signal. |
+| `backup_latest_age_seconds` | Age of latest local backup evidence in seconds, or `-1` when unavailable. | `-1` or sustained high values mean backup evidence needs operator review. |
 | `ann_graph_nodes` | Nodes in persisted ANN graph. | Zero means ANN graph is unavailable. |
 | `ann_total_edges` | Base-layer ANN edges. | Sudden drops suggest graph rebuild/corruption checks. |
 | `ann_persisted_segments` | Segments with persisted ANN data. | ANN coverage across live storage. |
@@ -143,7 +144,8 @@ examples/observability/grafana-cortexdb-core-alpha.json
 ```
 
 It includes panels for commit/checkpoint progress, WAL size, WAL write rate,
-segment counts, ANN graph shape, actor queue pressure, ANN fallback rate, and
+segment counts, request throughput, request mean latency, errors and rejections,
+ANN graph shape, actor queue pressure, backup age, ANN fallback rate, and
 validation failures.
 
 ## CLI Probes

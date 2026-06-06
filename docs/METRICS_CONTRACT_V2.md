@@ -38,6 +38,7 @@ make metrics-contract-v2-check
 | `wal_writer_bytes` | WAL bytes written by the active writer. |
 | `wal_writer_fsyncs` | WAL fsync calls by the active writer. |
 | `wal_writer_batches` | WAL batches committed by the active writer. |
+| `backup_latest_age_seconds` | Age of latest local backup evidence in seconds, or `-1` when unavailable. |
 | `ann_graph_nodes` | Persisted ANN graph node count. |
 | `ann_total_edges` | Persisted ANN graph base-edge count. |
 | `ann_persisted_segments` | Live segments with ANN evidence. |
@@ -96,6 +97,7 @@ cortexdb_wal_writer_records
 cortexdb_wal_writer_bytes
 cortexdb_wal_writer_fsyncs
 cortexdb_wal_writer_batches
+cortexdb_backup_latest_age_seconds
 cortexdb_ann_graph_nodes
 cortexdb_ann_total_edges
 cortexdb_ann_persisted_segments

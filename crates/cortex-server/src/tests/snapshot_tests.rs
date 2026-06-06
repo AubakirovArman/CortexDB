@@ -87,6 +87,7 @@ fn snapshot_metrics_includes_actor_and_request_fields() {
     assert!(response.contains(r#""ann_no_fallback_blocked":"#));
     assert!(response.contains(r#""ann_search_latency_ms":"#));
     assert!(response.contains(r#""validation_failures":"#));
+    assert!(response.contains(r#""backup_latest_age_seconds":"#));
 }
 
 #[test]
@@ -110,6 +111,7 @@ fn metrics_prometheus_output_contains_contract_series() {
         "cortexdb_ann_search_requests",
         "cortexdb_ann_search_latency_ms_bucket",
         "cortexdb_validation_failures",
+        "cortexdb_backup_latest_age_seconds",
         "cortexdb_principal_quota_requests_allowed",
         "cortexdb_principal_quota_queue_rejected",
     ] {

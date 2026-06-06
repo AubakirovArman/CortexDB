@@ -19,6 +19,7 @@ expression: resp
   "wal_writer_bytes": 8192,
   "wal_writer_fsyncs": 10,
   "wal_writer_batches": 5,
+  "backup_latest_age_seconds": 3600,
   "ann_graph_nodes": 120,
   "ann_total_edges": 540,
   "ann_persisted_segments": 2,

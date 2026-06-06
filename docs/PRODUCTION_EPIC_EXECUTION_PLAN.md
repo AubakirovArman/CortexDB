@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 102 / 150
+- Done: 103 / 150
 - Partial: 1 / 150
-- Todo: 47 / 150
-- Current closed epic: Epic 102, Metrics Contract v2
+- Todo: 46 / 150
+- Current closed epic: Epic 103, Grafana Dashboard Pack
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2893,16 +2893,38 @@ Boundary:
 
 ### Epic 103. Grafana Dashboard Pack
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `examples/observability/grafana-cortexdb-core-alpha.json`
+- `docs/METRICS.md`
+- `scripts/observability_check.py`
+- `Makefile` target `observability-check`
+- `make observability-check`
 
 Tasks:
 
-- Add JSON dashboard.
-- Cover storage.
-- Cover requests.
-- Cover errors.
-- Cover actor queue.
-- Cover backup age.
+- Add JSON dashboard. Done: the Grafana dashboard pack is checked in as
+  `examples/observability/grafana-cortexdb-core-alpha.json`.
+- Cover storage. Done: panels cover commit/checkpoint, WAL size, WAL write
+  rate, live segments, and retired segments.
+- Cover requests. Done: panels cover request throughput and mean request
+  latency from `cortexdb_request_count` and
+  `cortexdb_request_duration_ms_total`.
+- Cover errors. Done: `Errors and Rejections` covers request rejections,
+  validation failures, and principal quota rejections.
+- Cover actor queue. Done: `Actor Queue Pressure` covers queue depth and
+  capacity.
+- Cover backup age. Done: `/v1/metrics` and Prometheus now expose
+  `backup_latest_age_seconds` / `cortexdb_backup_latest_age_seconds`, and the
+  dashboard includes a `Backup Age` panel.
+
+Boundary:
+
+- This closes the dashboard pack for local Prometheus/Grafana evidence. It does
+  not deploy Grafana, provision dashboards in managed infrastructure, or define
+  alert routing.
 
 ### Epic 104. Alert Rules Pack
 

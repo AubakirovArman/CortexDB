@@ -304,6 +304,7 @@ pub(crate) fn route_database_with_auth(
                     wal_writer_bytes: stats.wal_writer.bytes_written,
                     wal_writer_fsyncs: stats.wal_writer.fsync_count,
                     wal_writer_batches: stats.wal_writer.batches_committed,
+                    backup_latest_age_seconds: -1,
                     ann_graph_nodes: ann.graph_nodes,
                     ann_total_edges: ann.total_edges,
                     ann_persisted_segments: ann.persisted_segments,

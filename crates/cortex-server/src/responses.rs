@@ -484,6 +484,7 @@ pub struct MetricsResponse {
     pub wal_writer_bytes: u64,
     pub wal_writer_fsyncs: u64,
     pub wal_writer_batches: u64,
+    pub backup_latest_age_seconds: i64,
     pub ann_graph_nodes: usize,
     pub ann_total_edges: usize,
     pub ann_persisted_segments: usize,
