@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 62 / 150
+- Done: 63 / 150
 - Partial: 1 / 150
-- Todo: 87 / 150
-- Current closed epic: Epic 62, ContextPack Quality v3
+- Todo: 86 / 150
+- Current closed epic: Epic 63, ContextPack Explain v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1729,15 +1729,29 @@ Tasks:
 
 ### Epic 63. ContextPack Explain v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/tests/context_pack_explain_v2.rs`
+- `scripts/context_pack_explain_v2_check.py`
+- `make context-pack-explain-v2-check`
+- `target/context-pack-quality/explain-v2-report.json`
+- `docs/CONTEXT_PACK_TECHNOLOGY.md`
+- `docs/CONTEXT_PACK_QUALITY_EVIDENCE.md`
 
 Tasks:
 
-- Explain why selected.
-- Explain why excluded.
-- Explain source trust.
-- Explain redundancy penalty.
-- Explain token budget reason.
+- Explain why selected. Done: selected cells expose `why_selected`, matched
+  terms, and structured score components.
+- Explain why excluded. Done: excluded candidates expose `why_excluded` in
+  ContextPack anomalies.
+- Explain source trust. Done: explain output includes `source_trust_q16`,
+  `source_trust_category`, and `source_trust_bonus`.
+- Explain redundancy penalty. Done: explain output includes
+  `redundancy_penalty` and a negative score component reason.
+- Explain token budget reason. Done: token-overload anomalies explain
+  `estimated_tokens` vs `token_budget_tokens` pressure.
 
 ### Epic 64. ContextPack Prompt Export
 

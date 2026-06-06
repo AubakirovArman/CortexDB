@@ -16,6 +16,7 @@ target/context-pack-quality/report.json
 fixtures/context_pack_quality_v3_datasets.json
 fixtures/context_pack_quality_v3_thresholds.json
 target/context-pack-quality/v3-report.json
+target/context-pack-quality/explain-v2-report.json
 ```
 
 ## Latest Local Metrics
@@ -73,6 +74,27 @@ The v3 dataset descriptor is checked from:
 fixtures/context_pack_quality_v3_datasets.json
 ```
 
+## Explain V2 Gate
+
+Run:
+
+```bash
+make context-pack-explain-v2-check
+```
+
+The gate writes:
+
+```text
+target/context-pack-quality/explain-v2-report.json
+```
+
+It proves that selected cells expose `why_selected`, structured
+`score_components`, `source_trust_q16`, `source_trust_category`,
+`source_trust_bonus`, and `redundancy_penalty`. It also proves that excluded
+candidates expose `why_excluded` for redundancy control and
+`token_budget_tokens` pressure, and that engine structs, server response
+structs, OpenAPI, and docs keep the same explain contract.
+
 ## Boundary
 
 This gate proves:
@@ -92,6 +114,9 @@ This gate proves:
 - the v3 quality gate requires at least 100 expanded cases, at least 4
   external real-domain datasets, at least 5 failure categories, and per-domain
   thresholds;
+- the Explain v2 gate keeps `why_selected`, score components, source trust,
+  redundancy penalty, `why_excluded`, and token-budget exclusion reasons
+  present across engine, server, OpenAPI, and docs;
 - the quality fixture records measurable evidence coverage, token reduction,
   citation coverage, redundancy reduction, anomaly coverage, and deterministic
   ordering.

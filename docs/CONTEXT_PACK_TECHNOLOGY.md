@@ -120,11 +120,19 @@ duplicates.
 
 Each selected cell can include explain fields such as:
 
-- matched terms;
-- selection reason;
-- lexical score component;
-- source-trust q16, source-trust category, and source-trust bonus;
-- redundancy penalty.
+- `matched_terms`;
+- `why_selected`;
+- structured `score_components`;
+- `base_bm25`;
+- `source_trust_q16`;
+- `source_trust_category`;
+- `source_trust_bonus`;
+- `redundancy_penalty`.
+
+Excluded candidates are reported through anomalies. `why_excluded` explains
+whether the candidate was removed by redundancy control or by
+`token_budget_tokens` pressure. This keeps selected and rejected context
+debuggable through the same public JSON surface.
 
 Source trust categories are deterministic q16 bands: missing metadata is
 `unknown`, then explicit values classify as `low`, `medium`, `high`, or

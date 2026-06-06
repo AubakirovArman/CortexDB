@@ -163,6 +163,7 @@ CONTEXT_PACK_QUALITY_REPORT ?= target/context-pack-quality/report.json
 CONTEXT_PACK_QUALITY_V3_DATASETS ?= fixtures/context_pack_quality_v3_datasets.json
 CONTEXT_PACK_QUALITY_V3_THRESHOLDS ?= fixtures/context_pack_quality_v3_thresholds.json
 CONTEXT_PACK_QUALITY_V3_REPORT ?= target/context-pack-quality/v3-report.json
+CONTEXT_PACK_EXPLAIN_V2_REPORT ?= target/context-pack-quality/explain-v2-report.json
 VERIFICATION_QUALITY_FIXTURE ?= examples/eval/verification_cases.jsonl
 VERIFICATION_QUALITY_REPORT ?= target/verification-quality/report.json
 HTTP_CONTRACT_OPS_REPORT ?= target/http-contract-ops/report.json
@@ -806,8 +807,14 @@ retrieval-quality-check:
 context-pack-quality-check:
 	cargo test -p cortex-engine --test context_pack
 	cargo test -p cortex-engine --test context_verify_quality
+	$(MAKE) context-pack-explain-v2-check
 	python3 scripts/context_pack_quality_check.py --fixture "$(CONTEXT_PACK_QUALITY_FIXTURE)" --report "$(CONTEXT_PACK_QUALITY_REPORT)"
 	$(MAKE) context-pack-quality-v3-check
+
+.PHONY: context-pack-explain-v2-check
+context-pack-explain-v2-check:
+	cargo test -p cortex-engine --test context_pack_explain_v2
+	python3 scripts/context_pack_explain_v2_check.py --root "." --report "$(CONTEXT_PACK_EXPLAIN_V2_REPORT)"
 
 .PHONY: context-pack-quality-v3-check
 context-pack-quality-v3-check:
