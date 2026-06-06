@@ -156,12 +156,23 @@ target/storage-soak-history-v2/history.jsonl
 target/storage-soak-history-v2/report.json
 target/storage-soak-history-v2/campaign.json
 target/storage-soak-history-v2/v2-gate.json
+target/storage-soak-history-v2/campaign-72h.pid
 ```
 
 Check progress with:
 
 ```bash
 make storage-soak-72h-status
+```
+
+For an unattended local run, start it from the repository root and retain the
+pid file:
+
+```bash
+mkdir -p target/storage-soak-history-v2
+nohup make storage-soak-72h-campaign \
+  > target/storage-soak-history-v2/campaign.log 2>&1 &
+echo $! > target/storage-soak-history-v2/campaign-72h.pid
 ```
 
 After the 72-hour campaign finishes, validate the retained evidence with:
