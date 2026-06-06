@@ -18,7 +18,7 @@
 .PHONY: beta-landing-check
 .PHONY: use-case-pack-check
 .PHONY: contributor-onboarding-check
-.PHONY: public-benchmarks-check
+.PHONY: public-benchmarks-check public-retrieval-benchmark-page-check
 .PHONY: comparison-docs-check
 .PHONY: agent-memory-demo-check
 .PHONY: tool-registry-check
@@ -619,6 +619,7 @@ BETA_LANDING_REPORT ?= target/beta-landing/report.json
 USE_CASE_PACK_REPORT ?= target/use-case-packs/report.json
 CONTRIBUTOR_ONBOARDING_REPORT ?= target/contributor-onboarding/report.json
 PUBLIC_BENCHMARKS_REPORT ?= target/public-benchmarks/report.json
+PUBLIC_RETRIEVAL_BENCHMARKS_REPORT ?= target/public-retrieval-benchmarks/report.json
 COMPARISON_DOCS_REPORT ?= target/comparison-docs/report.json
 AGENT_MEMORY_DEMO_REPORT ?= target/agent-memory-demo/report.json
 TOOL_REGISTRY_REPORT ?= target/tool-registry/report.json
@@ -997,7 +998,12 @@ use-case-pack-check:
 contributor-onboarding-check:
 	python3 scripts/contributor_onboarding_check.py --report "$(CONTRIBUTOR_ONBOARDING_REPORT)"
 
-public-benchmarks-check:
+public-retrieval-benchmark-page-check:
+	python3 scripts/retrieval_beta_report.py --domain-root examples/real_domains --output "$(RETRIEVAL_BETA_REPORT)" --min-domains 4 --repeat-runs 5
+	$(MAKE) retrieval-quality-history-check
+	python3 scripts/public_retrieval_benchmark_check.py --page docs/PUBLIC_RETRIEVAL_BENCHMARKS.md --beta-report "$(RETRIEVAL_BETA_REPORT)" --history-report "$(RETRIEVAL_QUALITY_HISTORY_REPORT)" --report "$(PUBLIC_RETRIEVAL_BENCHMARKS_REPORT)"
+
+public-benchmarks-check: public-retrieval-benchmark-page-check
 	python3 scripts/public_benchmarks_check.py --report "$(PUBLIC_BENCHMARKS_REPORT)"
 
 comparison-docs-check:

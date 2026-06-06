@@ -26,7 +26,7 @@ Regenerate the source reports before cutting a release.
 
 | Area | Latest snapshot |
 | --- | --- |
-| Retrieval quality | 4 domains: `investment_projects`, `legal_policies`, `support_tickets`, `technical_docs`; beta fixture `production_safe=true`; no regression in local history. |
+| Retrieval quality | 4 domains: `investment_projects`, `legal_policies`, `support_tickets`, `technical_docs`; beta fixture `production_safe=true`; no regression in local history. See [`PUBLIC_RETRIEVAL_BENCHMARKS.md`](PUBLIC_RETRIEVAL_BENCHMARKS.md). |
 | Real embedding history | 3 local `investment_projects` runs; `vectors=221`, `queries=40`, `mean_recall_q16=65535`, `mean_mrr_q16=65535`, `mean_ndcg_q16=65535`, `exact_parity_q16=65535`, `production_safe=true`. |
 | ContextPack quality | 25 cases across 5 domains; `evidence_coverage_q16=65535`, `citation_coverage_q16=65535`, `redundancy_reduction_q16=65535`, deterministic ordering coverage. |
 | Verification quality | 50 deterministic cases across 5 domains with support, contradiction, mixed evidence, insufficient evidence, numeric guards, and source trust coverage. |
@@ -39,6 +39,7 @@ Regenerate the source reports before cutting a release.
 | Evidence | Command | Document |
 | --- | --- | --- |
 | Beta bundle | `make beta-release-check` | [`BETA_RELEASE.md`](BETA_RELEASE.md) |
+| Public retrieval benchmarks | `make public-retrieval-benchmark-page-check` | [`PUBLIC_RETRIEVAL_BENCHMARKS.md`](PUBLIC_RETRIEVAL_BENCHMARKS.md) |
 | Retrieval quality | `make retrieval-quality-check` | [`RETRIEVAL_QUALITY_EVIDENCE.md`](RETRIEVAL_QUALITY_EVIDENCE.md) |
 | ContextPack quality | `make context-pack-quality-check` | [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md) |
 | Verification quality | `make verification-quality-check` | [`VERIFICATION_QUALITY_EVIDENCE.md`](VERIFICATION_QUALITY_EVIDENCE.md) |

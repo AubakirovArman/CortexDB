@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 47 / 150
+- Done: 48 / 150
 - Partial: 1 / 150
-- Todo: 102 / 150
-- Current closed epic: Epic 47, Retrieval Quality History
+- Todo: 101 / 150
+- Current closed epic: Epic 48, Public Retrieval Benchmark Page
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1312,14 +1312,31 @@ Tasks:
 
 ### Epic 48. Public Retrieval Benchmark Page
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/PUBLIC_RETRIEVAL_BENCHMARKS.md`
+- `scripts/public_retrieval_benchmark_check.py`
+- `make public-retrieval-benchmark-page-check`
+- `make public-benchmarks-check`
+- `target/public-retrieval-benchmarks/report.json`
+- Latest local page report: `status=passed`, `domain_count=4`,
+  `run_count=20`, `regression_count=0`, and totals of 76 documents, 205
+  chunks, 70 queries, and 70 ground-truth rows.
 
 Tasks:
 
-- Publish metrics table.
-- Explain dataset size.
-- Explain exact vs ANN.
-- Document limitations.
+- Publish metrics table. Done: the page publishes per-domain recall, MRR,
+  nDCG, run count, and latency-field coverage.
+- Explain dataset size. Done: the page lists documents, chunks, queries, and
+  ground-truth rows per domain plus totals.
+- Explain exact vs ANN. Done: the page separates deterministic lexical fixture,
+  exact vector fallback, guarded ANN/HNSW, and endpoint-backed embedding
+  evidence.
+- Document limitations. Done: the page explicitly excludes production SLA,
+  hosted embedding CI, private customer corpus quality, fallback-free production
+  HNSW, leaderboard placement, and legal/financial correctness claims.
 
 ### Epic 49. LongMemEval Retrieval Adapter
 

@@ -13,6 +13,8 @@ REQUIRED_MARKERS = {
         "v0.1.0-core-alpha.5",
         "v0.2.0-beta.1",
         "make beta-release-check",
+        "make public-retrieval-benchmark-page-check",
+        "PUBLIC_RETRIEVAL_BENCHMARKS.md",
         "make retrieval-quality-check",
         "make context-pack-quality-check",
         "make verification-quality-check",
@@ -30,6 +32,19 @@ REQUIRED_MARKERS = {
     ],
     "docs/DOCUMENTATION_INDEX.md": [
         "PUBLIC_BENCHMARKS.md",
+        "PUBLIC_RETRIEVAL_BENCHMARKS.md",
+    ],
+    "docs/PUBLIC_RETRIEVAL_BENCHMARKS.md": [
+        "## Dataset Size",
+        "## Latest Local Metrics",
+        "## Exact Vs ANN",
+        "## Limitations",
+        "investment_projects",
+        "legal_policies",
+        "support_tickets",
+        "technical_docs",
+        "p95/p99/max",
+        "fallback-free production HNSW",
     ],
     "docs/RETRIEVAL_QUALITY_EVIDENCE.md": [
         "production_safe: true",

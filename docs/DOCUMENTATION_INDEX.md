@@ -15,6 +15,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`CONTRIBUTOR_ONBOARDING.md`](CONTRIBUTOR_ONBOARDING.md) - 15-minute first contributor path.
 - [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) - bounded starter issue map.
 - [`PUBLIC_BENCHMARKS.md`](PUBLIC_BENCHMARKS.md) - release-by-release public benchmark history.
+- [`PUBLIC_RETRIEVAL_BENCHMARKS.md`](PUBLIC_RETRIEVAL_BENCHMARKS.md) - public retrieval benchmark table, dataset sizes, exact-vs-ANN boundary, and limitations.
 - [`COMPARISONS.md`](COMPARISONS.md) - neutral comparison with SQL databases, vector databases, RAG stacks, and memory frameworks.
 - [`SDK_PRODUCTIZATION.md`](SDK_PRODUCTIZATION.md) - local Rust, Python, and TypeScript SDK productization gate.
 - [`TOOL_REGISTRY.md`](TOOL_REGISTRY.md) - durable tool cells, schemas, permissions, and ContextPack inclusion.
@@ -119,6 +120,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) - EnterpriseRAG-Bench scaffold and official-compatible answer flow.
 - [`MULTIHOP_RAG_BENCHMARK.md`](MULTIHOP_RAG_BENCHMARK.md) - MultiHop-RAG benchmark scaffold and publication boundary.
 - [`PUBLIC_BENCHMARKS.md`](PUBLIC_BENCHMARKS.md) - release-by-release public benchmark summary.
+- [`PUBLIC_RETRIEVAL_BENCHMARKS.md`](PUBLIC_RETRIEVAL_BENCHMARKS.md) - local multi-domain retrieval benchmark page.
 - [`PERFORMANCE_TREND_HISTORY.md`](PERFORMANCE_TREND_HISTORY.md) - local p95/p99 load and single-node trend gate.
 - [`RETRIEVAL_QUALITY_EVIDENCE.md`](RETRIEVAL_QUALITY_EVIDENCE.md) - local Epic 10 evidence gate.
 
