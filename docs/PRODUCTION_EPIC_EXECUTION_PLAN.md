@@ -34,7 +34,14 @@ Acceptance: public release cannot be published without a passing claims gate, ev
 
 ### Epic 1. Production Claims Governance v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/PUBLIC_CLAIMS_POLICY.md`
+- `docs/PUBLIC_CLAIMS_FREEZE.md`
+- `scripts/check_public_claims.py`
+- `make public-claims-check`
 
 Tasks:
 
@@ -45,7 +52,14 @@ Tasks:
 
 ### Epic 2. Public Beta Release Definition
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/BETA_RELEASE.md`
+- `docs/BETA_DELTA.md`
+- `scripts/beta_release_bundle.py`
+- `make beta-release-check`
 
 Tasks:
 
@@ -56,7 +70,14 @@ Tasks:
 
 ### Epic 3. Production v1 Boundary Hardening
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/PRODUCTION_V1.md`
+- `docs/PRODUCTION_V1_EVIDENCE.md`
+- `scripts/production_v1_check.py`
+- `make production-v1-check`
 
 Tasks:
 
@@ -66,7 +87,19 @@ Tasks:
 
 ### Epic 4. Release Evidence Bundle v2
 
-Status: todo
+Status: partial
+
+Evidence:
+
+- `scripts/beta_release_bundle.py`
+- `make beta-release-check`
+- Existing beta archive path: `target/beta-release/evidence.tar.gz`
+
+Remaining:
+
+- Add a unified `release-evidence.tar.gz` bundle for the production release train.
+- Include explicit checksums for every included evidence artifact.
+- Include benchmark outputs, SDK reports, and security reports under one release bundle schema.
 
 Tasks:
 
@@ -75,7 +108,19 @@ Tasks:
 
 ### Epic 5. Release Manifest Verifier
 
-Status: todo
+Status: partial
+
+Evidence:
+
+- `docs/RELEASE_ARTIFACT_MANIFEST.md`
+- `scripts/release_artifact_manifest_check.py`
+- `make release-artifact-manifest-check`
+
+Remaining:
+
+- Bind the release evidence bundle checksum into the manifest.
+- Include explicit SDK versions.
+- Include storage format versions.
 
 Tasks:
 
@@ -85,7 +130,18 @@ Tasks:
 
 ### Epic 6. Release Notes Automation
 
-Status: todo
+Status: partial
+
+Evidence:
+
+- `docs/CHANGELOG_RULES.md`
+- `docs/API_CHANGELOG.md`
+- `docs/RELEASE_NOTES_v0.2.0-beta.1.md`
+
+Remaining:
+
+- Add generator that produces release notes from evidence reports.
+- Include passed/failed gates, known limitations, and migration notes automatically.
 
 Tasks:
 
@@ -96,7 +152,13 @@ Tasks:
 
 ### Epic 7. Public Claims CI Gate
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `scripts/check_public_claims.py`
+- `make public-claims-check`
+- `.github/workflows/release.yml`
 
 Tasks:
 
@@ -107,6 +169,12 @@ Tasks:
 
 Status: todo
 
+Remaining:
+
+- Define which `target/*/report.json` artifacts are published.
+- Define which artifacts are attached to GitHub Releases.
+- Define which artifacts remain ignored/local-only.
+
 Tasks:
 
 - Define which `target/*/report.json` artifacts are published.
@@ -115,7 +183,18 @@ Tasks:
 
 ### Epic 9. Release Regression Dashboard
 
-Status: todo
+Status: partial
+
+Evidence:
+
+- `make performance-trend-check`
+- `docs/PERFORMANCE_TREND_HISTORY.md`
+- Retrieval and ANN regression/history gates already exist for narrower domains.
+
+Remaining:
+
+- Add release N vs N-1 comparison across storage, search, ContextPack, Verify, API, and SDK.
+- Publish one release regression dashboard/report.
 
 Tasks:
 
@@ -124,7 +203,20 @@ Tasks:
 
 ### Epic 10. Versioning Policy v1
 
-Status: todo
+Status: partial
+
+Evidence:
+
+- `docs/API_VERSIONING.md`
+- `docs/API_CHANGELOG.md`
+- `docs/AQL_CHANGELOG.md`
+- `docs/SDK_RELEASE.md`
+- `docs/STORAGE_COMPATIBILITY_EVIDENCE.md`
+
+Remaining:
+
+- Add one unified versioning policy that covers API, SDK, storage formats, and AQL grammar together.
+- Document the single breaking-change process across all public surfaces.
 
 Tasks:
 
@@ -1069,7 +1161,7 @@ Tasks:
 - Add queue budget.
 - Add context budget per token.
 
-### Epic 94. Tamper-evident Audit Log
+### Epic 94. Future Tamper-evident Audit Log
 
 Status: todo
 
@@ -1731,13 +1823,13 @@ Tasks:
 - Add feedback decay.
 - Explain feedback contribution.
 
-### Epic 150. Managed Cloud Feasibility Track
+### Epic 150. Future Managed Cloud Feasibility Track
 
 Status: todo
 
 Tasks:
 
-- Evaluate hosted model.
+- Evaluate hosted model. This remains out of scope for the current local single-node release boundary.
 - Evaluate tenant isolation.
 - Evaluate billing and quotas.
 - Evaluate remote backup.
