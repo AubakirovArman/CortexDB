@@ -611,6 +611,8 @@ impl From<cortex_engine::EngineError> for RouterError {
             EngineErrorCode::InvalidAql => RouterError::InvalidAql(msg),
             EngineErrorCode::UnknownField => RouterError::UnknownField(msg),
             EngineErrorCode::UnsupportedOperator => RouterError::UnsupportedOperator(msg),
+            EngineErrorCode::PayloadTooLarge => RouterError::PayloadTooLarge,
+            EngineErrorCode::RateLimited => RouterError::RateLimited,
             EngineErrorCode::PermissionDenied => RouterError::PermissionDenied(msg),
             EngineErrorCode::Forbidden => RouterError::Forbidden(msg),
             EngineErrorCode::NotFound => RouterError::NotFound(msg),

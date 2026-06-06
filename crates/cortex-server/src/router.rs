@@ -1,7 +1,9 @@
 use cortex_aql::AgentId;
 use cortex_core::CellId;
 use cortex_engine::ClusterConfig;
-use cortex_engine::{Database, IngestedCell, IngestionJobId, IngestionProgressTracker};
+use cortex_engine::{
+    Database, IngestedCell, IngestionBackpressureRequest, IngestionJobId, IngestionProgressTracker,
+};
 
 use crate::aql;
 use crate::authz;
@@ -345,7 +347,7 @@ pub fn route_database_with_agent(
                 query_param_opt_decoded(query, "source").unwrap_or_else(|| "http_post".to_owned());
             let text = String::from_utf8_lossy(body);
             let start_id = db.allocate_cell_id_range(0);
-            let (job_id, results) = track_ingest(db, "ingest_text", None, |db| {
+            let (job_id, results) = track_ingest(db, "ingest_text", None, body.len(), |db| {
                 db.ingest_text_chunks(
                     start_id,
                     &text,
@@ -373,7 +375,7 @@ pub fn route_database_with_agent(
                 query_param_opt_decoded(query, "source").unwrap_or_else(|| "http_post".to_owned());
             let json = String::from_utf8_lossy(body);
             let start_id = db.allocate_cell_id_range(0);
-            let (job_id, results) = track_ingest(db, "ingest_json", None, |db| {
+            let (job_id, results) = track_ingest(db, "ingest_json", None, body.len(), |db| {
                 db.ingest_json(
                     start_id,
                     &json,
@@ -402,16 +404,17 @@ pub fn route_database_with_agent(
             let csv = String::from_utf8_lossy(body);
             let total = csv.lines().count().saturating_sub(1) as u64;
             let start_id = db.allocate_cell_id_range(0);
-            let (job_id, results) = track_ingest(db, "ingest_csv", Some(total), |db| {
-                db.ingest_csv(
-                    start_id,
-                    &csv,
-                    cortex_engine::CsvIngestOptions {
-                        scope: scope.to_owned(),
-                        source: source.to_owned(),
-                    },
-                )
-            })?;
+            let (job_id, results) =
+                track_ingest(db, "ingest_csv", Some(total), body.len(), |db| {
+                    db.ingest_csv(
+                        start_id,
+                        &csv,
+                        cortex_engine::CsvIngestOptions {
+                            scope: scope.to_owned(),
+                            source: source.to_owned(),
+                        },
+                    )
+                })?;
             let response = IngestResponse {
                 rows_ingested: results.len(),
                 chunks_ingested: 0,
@@ -595,8 +598,13 @@ fn track_ingest(
     db: &mut Database,
     label: &str,
     total_items: Option<u64>,
+    input_bytes: usize,
     ingest: impl FnOnce(&mut Database) -> Result<Vec<IngestedCell>, cortex_engine::EngineError>,
 ) -> Result<(IngestionJobId, Vec<IngestedCell>), RouterError> {
+    db.check_ingestion_backpressure(IngestionBackpressureRequest {
+        input_bytes,
+        total_items,
+    })?;
     let mut tracker = IngestionProgressTracker::default();
     tracker.seed_next_id_from_disk(db);
     let job_id = tracker
@@ -606,6 +614,7 @@ fn track_ingest(
         .get(job_id)
         .ok_or_else(|| RouterError::Internal("ingestion job disappeared".to_owned()))?;
     db.save_ingestion_job(progress)?;
+    db.ensure_ingestion_job_not_cancelled(job_id)?;
     match ingest(db) {
         Ok(result) => {
             for cell in &result {

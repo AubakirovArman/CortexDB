@@ -42,6 +42,7 @@ impl EngineConfig {
             stale_lock_policy: parse_stale_lock_policy(&vars)?,
             hnsw_build_config: parse_hnsw_build_config(&vars)?,
             feature_flags,
+            ingestion_backpressure: Default::default(),
         };
         database_options.hnsw_build_config = database_options.hnsw_build_config.normalized();
         Ok(Self { database_options })

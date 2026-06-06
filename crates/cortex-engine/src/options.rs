@@ -1,5 +1,6 @@
 use cortex_storage::wal::DurabilityMode;
 
+use crate::ingestion::IngestionBackpressurePolicy;
 use crate::search::HnswBuildConfig;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -92,6 +93,7 @@ pub struct DatabaseOptions {
     pub stale_lock_policy: StaleLockPolicy,
     pub hnsw_build_config: HnswBuildConfig,
     pub feature_flags: EngineFeatureFlags,
+    pub ingestion_backpressure: IngestionBackpressurePolicy,
 }
 
 impl Default for DatabaseOptions {
@@ -102,6 +104,7 @@ impl Default for DatabaseOptions {
             stale_lock_policy: StaleLockPolicy::Reject,
             hnsw_build_config: HnswBuildConfig::default(),
             feature_flags: EngineFeatureFlags::production_safe(),
+            ingestion_backpressure: IngestionBackpressurePolicy::default(),
         }
     }
 }

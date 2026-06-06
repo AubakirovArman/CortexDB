@@ -6,6 +6,7 @@ use crate::error::{EngineError, EngineResult};
 use crate::query::cache::AqlStatementKind;
 
 mod adapters;
+pub(crate) mod backpressure;
 mod cells;
 mod chunking;
 mod formats;
@@ -20,6 +21,8 @@ pub use adapters::{
     CsvIngestOptions, EntityIngestOptions, IngestedCell, JsonIngestOptions, PdfIngestOptions,
     RelationIngestOptions, TextIngestOptions,
 };
+pub(crate) use backpressure::{default_ingestion_rate_state, IngestionRateState};
+pub use backpressure::{IngestionBackpressurePolicy, IngestionBackpressureRequest};
 pub use chunking::{
     split_text_chunks, stable_chunk_id, JsonChunkPolicy, TableChunkPolicy, TextChunk,
     TextChunkPolicy, TextOverlapPolicy,

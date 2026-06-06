@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 88 / 150
+- Done: 89 / 150
 - Partial: 1 / 150
-- Todo: 61 / 150
-- Current closed epic: Epic 88, Ingestion Validation Report
+- Todo: 60 / 150
+- Current closed epic: Epic 89, Ingestion Backpressure
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2403,14 +2403,28 @@ Tasks:
 
 ### Epic 89. Ingestion Backpressure
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/ingestion/backpressure.rs`
+- `crates/cortex-engine/tests/ingestion_job_tests.rs`
+- `crates/cortex-server/src/tests/ingest_tests.rs`
+- `docs/INGESTION.md`
+- `make ingestion-backpressure-check`
 
 Tasks:
 
-- Add job queue limits.
-- Add memory limits.
-- Add rate limits.
-- Add cancellation.
+- Add job queue limits. Done: `IngestionBackpressurePolicy` rejects new
+  ingestion starts when persisted queued/running job counts exceed configured
+  limits.
+- Add memory limits. Done: `max_input_bytes` rejects oversized ingestion
+  payloads before WAL/MemTable writes.
+- Add rate limits. Done: per-database in-memory request windows reject
+  excessive accepted ingestion starts.
+- Add cancellation. Done: `ensure_ingestion_job_not_cancelled` prevents
+  cancelled durable jobs from being continued by future worker-style ingestion
+  paths.
 
 ### Epic 90. Ingestion Deduplication
 

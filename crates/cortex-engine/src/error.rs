@@ -34,6 +34,8 @@ pub enum EngineErrorCode {
     InvalidAql,
     UnknownField,
     UnsupportedOperator,
+    PayloadTooLarge,
+    RateLimited,
     PermissionDenied,
     Forbidden,
     NotFound,
@@ -50,6 +52,8 @@ impl EngineErrorCode {
             Self::InvalidAql => "invalid_aql",
             Self::UnknownField => "unknown_field",
             Self::UnsupportedOperator => "unsupported_operator",
+            Self::PayloadTooLarge => "payload_too_large",
+            Self::RateLimited => "rate_limited",
             Self::PermissionDenied => "permission_denied",
             Self::Forbidden => "forbidden",
             Self::NotFound => "not_found",
@@ -66,6 +70,8 @@ impl EngineErrorCode {
             | Self::InvalidAql
             | Self::UnknownField
             | Self::UnsupportedOperator => 400,
+            Self::PayloadTooLarge => 413,
+            Self::RateLimited => 429,
             Self::PermissionDenied | Self::Forbidden => 403,
             Self::NotFound => 404,
             Self::StorageCorruption | Self::Internal => 500,
@@ -79,6 +85,8 @@ impl EngineErrorCode {
             | Self::InvalidAql
             | Self::UnknownField
             | Self::UnsupportedOperator => EngineErrorCategory::UserInput,
+            Self::PayloadTooLarge => EngineErrorCategory::UserInput,
+            Self::RateLimited => EngineErrorCategory::Busy,
             Self::PermissionDenied | Self::Forbidden => EngineErrorCategory::Permission,
             Self::NotFound => EngineErrorCategory::NotFound,
             Self::DatabaseBusy => EngineErrorCategory::Busy,
@@ -131,6 +139,21 @@ pub enum EngineError {
     InvalidCandidateId(u32),
     #[error("database is already open: {0}; if this is a stale lock, close the running process or remove db.lock with cortexdb unlock <path> --force")]
     DatabaseAlreadyOpen(PathBuf),
+    #[error("ingestion input too large: {actual_bytes} bytes exceeds {limit_bytes} byte limit")]
+    IngestionInputTooLarge {
+        limit_bytes: usize,
+        actual_bytes: usize,
+    },
+    #[error(
+        "ingestion item limit exceeded: {actual_items} items exceeds {limit_items} item limit"
+    )]
+    IngestionItemLimitExceeded { limit_items: u64, actual_items: u64 },
+    #[error("ingestion rate limited: limit {limit} requests per {window_seconds} seconds")]
+    IngestionRateLimited { limit: u32, window_seconds: u64 },
+    #[error("ingestion backpressure: {reason}")]
+    IngestionBackpressure { reason: String },
+    #[error("ingestion job cancelled: {0}")]
+    IngestionCancelled(u64),
     #[error("backup or restore target already exists: {0}")]
     BackupTargetExists(PathBuf),
     #[error("not leader: node {local} cannot perform write, leader is {leader:?}")]
@@ -152,14 +175,20 @@ impl EngineError {
             | Self::InvalidAnnCorpus(_)
             | Self::VectorDimensionMismatch { .. }
             | Self::HnswBuildConfigOutOfRange { .. }
+            | Self::IngestionItemLimitExceeded { .. }
+            | Self::IngestionCancelled(_)
             | Self::BackupTargetExists(_) => EngineErrorCode::BadRequest,
+            Self::IngestionInputTooLarge { .. } => EngineErrorCode::PayloadTooLarge,
+            Self::IngestionRateLimited { .. } => EngineErrorCode::RateLimited,
             Self::Io(error) if error.kind() == std::io::ErrorKind::NotFound => {
                 EngineErrorCode::NotFound
             }
             Self::Io(error) if error.kind() == std::io::ErrorKind::PermissionDenied => {
                 EngineErrorCode::Forbidden
             }
-            Self::DatabaseAlreadyOpen(_) => EngineErrorCode::DatabaseBusy,
+            Self::DatabaseAlreadyOpen(_) | Self::IngestionBackpressure { .. } => {
+                EngineErrorCode::DatabaseBusy
+            }
             Self::Storage(_)
             | Self::MissingWalSection(_)
             | Self::MissingCommitSeq
@@ -197,6 +226,8 @@ impl EngineError {
             EngineErrorCode::UnsupportedOperator => {
                 Some("use a supported AQL operator for this field")
             }
+            EngineErrorCode::PayloadTooLarge => Some("reduce the request body or ingestion batch"),
+            EngineErrorCode::RateLimited => Some("retry after the rate limit window resets"),
             EngineErrorCode::PermissionDenied | EngineErrorCode::Forbidden => {
                 Some("check auth token, AgentView, scope, and mode permissions")
             }

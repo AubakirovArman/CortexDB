@@ -155,6 +155,32 @@ cortexdb ingest-job-delete ./db 1
 immutable from the cancel/retry path and can only be deleted as persisted
 history.
 
+## Ingestion Backpressure
+
+Ingestion now has an engine-level `IngestionBackpressurePolicy`. The policy is
+configured through `DatabaseOptions` and is checked before a new HTTP ingestion
+job is created or any cells are written. This protects the local WAL/MemTable
+path from unbounded uploads and job buildup.
+
+The policy currently covers:
+
+- queued job limit: too many durable queued jobs returns `database_busy`;
+- running job limit: too many durable running jobs returns `database_busy`;
+- input byte limit: oversized request bodies return `payload_too_large`;
+- item limit: oversized row/fact batches are rejected before writes;
+- rate limit: too many accepted ingestion starts in one window return
+  `rate_limited`;
+- cancellation guard: cancelled persisted jobs cannot be continued by future
+  worker-style ingestion paths.
+
+Core Alpha ingestion is still synchronous. Backpressure therefore acts as a
+pre-write admission gate, not as a distributed work queue scheduler. The
+focused regression gate is:
+
+```bash
+make ingestion-backpressure-check
+```
+
 ## Ingestion Validation Report
 
 Every HTTP ingestion response includes `validation_report`. The report is built

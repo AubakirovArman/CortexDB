@@ -1,6 +1,9 @@
-use cortex_engine::{Database, IngestionJobId, IngestionJobStatus, IngestionProgress};
+use cortex_engine::{
+    Database, DatabaseOptions, IngestionBackpressurePolicy, IngestionJobId, IngestionJobStatus,
+    IngestionProgress,
+};
 
-use crate::handle_http;
+use crate::{handle_http, handle_http_with_options, ServerOptions};
 
 #[test]
 fn empty_ingestion_endpoints_safety() {
@@ -101,6 +104,60 @@ fn ingestion_job_cancel_and_retry_over_http() {
     let delete_request = "DELETE /v1/ingest/jobs/7 HTTP/1.1\r\n\r\n";
     let delete_response = handle_http(dir.path(), delete_request);
     assert!(delete_response.contains(r#""deleted":true"#));
+}
+
+#[test]
+fn ingestion_backpressure_payload_too_large_over_http() {
+    let dir = tempfile::tempdir().unwrap();
+    let options = ServerOptions {
+        engine_database_options: DatabaseOptions {
+            ingestion_backpressure: IngestionBackpressurePolicy {
+                max_input_bytes: 4,
+                ..IngestionBackpressurePolicy::default()
+            },
+            ..DatabaseOptions::default()
+        },
+        ..ServerOptions::default()
+    };
+
+    let response = handle_http_with_options(
+        dir.path(),
+        "POST /v1/ingest/text?scope=default HTTP/1.1\r\n\r\nabcde",
+        &options,
+    );
+
+    assert!(response.contains("413 Payload Too Large"), "{response}");
+    assert!(response.contains(r#""error":"payload_too_large""#));
+}
+
+#[test]
+fn ingestion_backpressure_queue_limit_over_http() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let db = Database::open(dir.path()).unwrap();
+        db.save_ingestion_job(&job(20, IngestionJobStatus::Queued, None, 0))
+            .unwrap();
+    }
+    let options = ServerOptions {
+        engine_database_options: DatabaseOptions {
+            ingestion_backpressure: IngestionBackpressurePolicy {
+                max_queued_jobs: 1,
+                ..IngestionBackpressurePolicy::default()
+            },
+            ..DatabaseOptions::default()
+        },
+        ..ServerOptions::default()
+    };
+
+    let response = handle_http_with_options(
+        dir.path(),
+        "POST /v1/ingest/text?scope=default HTTP/1.1\r\n\r\nhello",
+        &options,
+    );
+
+    assert!(response.contains("503 Service Unavailable"), "{response}");
+    assert!(response.contains(r#""error":"database_busy""#));
+    assert!(response.contains("queued job limit exceeded"));
 }
 
 #[test]
