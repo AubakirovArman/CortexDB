@@ -25,6 +25,8 @@ fn context_json_contains_cells_budget_anomalies() {
     assert!(output.contains(r#""schema_version":"context_pack.v1""#));
     assert!(output.contains(r#""token_budget_tokens""#));
     assert!(output.contains(r#""answerability_q16":65535"#));
+    assert!(output.contains(r#""conflict_visibility_q16":0"#));
+    assert!(output.contains(r#""visible_conflict_count":0"#));
     assert!(output.contains(r#""cells""#));
     assert!(output.contains(r#""anomalies""#));
     assert!(output.contains(r#""cell_id":1"#));

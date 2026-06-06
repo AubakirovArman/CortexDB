@@ -30,6 +30,9 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 - **ContextPack answerability score** — ContextPack JSON now includes
   `answerability_q16`, and anomalies can include `insufficient_context` when
   selected cells do not cover explicit query terms.
+- **ContextPack conflict visibility metric** — ContextPack JSON now includes
+  `conflict_visibility_q16` and `visible_conflict_count` for selected
+  `project` + `metric` evidence groups with multiple `value=` variants.
 
 ### Changed
 - **Error taxonomy contract guard** — `make openapi-contract-check` now also

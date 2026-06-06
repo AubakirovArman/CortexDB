@@ -2,7 +2,10 @@ use super::{ContextPack, ContextPackAnomaly, ContextPackCell};
 use crate::query::metadata::SourceRef;
 use crate::query::CellMetadata;
 
+use text::{markdown_fence_for, option_or_null, push_line, trim_final_newline};
+
 mod json_export;
+mod text;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ContextPackExportFormat {
@@ -60,6 +63,13 @@ impl ContextPack {
                 self.answerability_q16
             ),
         );
+        push_line(
+            &mut out,
+            &format!(
+                "Conflict visibility: conflict_visibility_q16={} visible_conflict_count={}",
+                self.conflict_visibility_q16, self.visible_conflict_count
+            ),
+        );
         push_line(&mut out, "");
         push_line(&mut out, "Context cells:");
         for (index, cell) in self.cells.iter().enumerate() {
@@ -96,6 +106,20 @@ impl ContextPack {
         push_line(
             &mut out,
             &format!("- answerability_q16: `{}`", self.answerability_q16),
+        );
+        push_line(
+            &mut out,
+            &format!(
+                "- conflict_visibility_q16: `{}`",
+                self.conflict_visibility_q16
+            ),
+        );
+        push_line(
+            &mut out,
+            &format!(
+                "- visible_conflict_count: `{}`",
+                self.visible_conflict_count
+            ),
         );
         push_line(&mut out, "");
         push_line(&mut out, "## Cells");
@@ -252,34 +276,4 @@ fn source_ref_inline(source_ref: &SourceRef) -> String {
     }
     parts.push(format!("confidence_q16={}", source_ref.confidence_q16));
     parts.join(";")
-}
-
-fn option_or_null(value: Option<&str>) -> &str {
-    value.unwrap_or("null")
-}
-
-fn push_line(out: &mut String, line: &str) {
-    out.push_str(line);
-    out.push('\n');
-}
-
-fn markdown_fence_for(text: &str) -> String {
-    let mut max_run = 0usize;
-    let mut current = 0usize;
-    for ch in text.chars() {
-        if ch == '`' {
-            current += 1;
-            max_run = max_run.max(current);
-        } else {
-            current = 0;
-        }
-    }
-    "`".repeat(max_run.max(2) + 1)
-}
-
-fn trim_final_newline(mut value: String) -> String {
-    if value.ends_with('\n') {
-        value.pop();
-    }
-    value
 }

@@ -1706,6 +1706,8 @@ components:
       - truncated
       - citations_required
       - answerability_q16
+      - conflict_visibility_q16
+      - visible_conflict_count
       - cells
       - anomalies
       properties:
@@ -1727,6 +1729,13 @@ components:
           type: integer
           minimum: 0
           maximum: 65535
+        conflict_visibility_q16:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        visible_conflict_count:
+          type: integer
+          minimum: 0
         cells:
           type: array
           items:

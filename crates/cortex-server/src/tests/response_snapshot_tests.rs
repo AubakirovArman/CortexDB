@@ -153,6 +153,8 @@ fn snapshot_context_pack_response() {
         truncated: false,
         citations_required: true,
         answerability_q16: 65535,
+        conflict_visibility_q16: 65535,
+        visible_conflict_count: 1,
         cells: vec![ContextPackCellResponse {
             cell_id: 1,
             estimated_tokens: 120,

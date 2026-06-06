@@ -142,6 +142,9 @@ This gate proves:
 - the answerability gate keeps `answerability_q16` and the
   `insufficient_context` anomaly visible across engine, JSON contracts, OpenAPI,
   and docs;
+- the conflict visibility gate keeps `conflict_visibility_q16` and
+  `visible_conflict_count` visible across engine, JSON contracts, OpenAPI, and
+  docs;
 - the quality fixture records measurable evidence coverage, token reduction,
   citation coverage, redundancy reduction, anomaly coverage, and deterministic
   ordering.
@@ -178,6 +181,18 @@ ContextPack answerability is covered by:
   `target/context-pack-quality/answerability-report.json`;
 - OpenAPI and typed JSON schemas exposing `answerability_q16` and the
   `insufficient_context` anomaly code.
+
+## Conflict Visibility Evidence
+
+ContextPack conflict visibility is covered by:
+
+- `cargo test -p cortex-engine --test context_pack_conflict_visibility`,
+  including no-conflict, one-conflict, multi-conflict, and export visibility
+  cases;
+- `make context-pack-conflict-visibility-check`, which writes
+  `target/context-pack-quality/conflict-visibility-report.json`;
+- OpenAPI and typed JSON schemas exposing `conflict_visibility_q16` and
+  `visible_conflict_count`.
 
 ## Budget Optimizer Evidence
 

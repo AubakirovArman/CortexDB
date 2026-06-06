@@ -170,6 +170,8 @@ pub struct ContextPackResponse {
     pub truncated: bool,
     pub citations_required: bool,
     pub answerability_q16: u16,
+    pub conflict_visibility_q16: u16,
+    pub visible_conflict_count: u32,
     pub cells: Vec<ContextPackCellResponse>,
     pub anomalies: Vec<ContextPackAnomalyResponse>,
 }

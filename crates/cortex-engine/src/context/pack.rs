@@ -5,6 +5,7 @@ use cortex_aql::{AgentView, BoundPlan};
 use cortex_core::CellId;
 
 use super::answerability;
+use super::conflicts;
 use super::dedup::{effective_redundancy_threshold, is_redundant, term_set, weighted_jaccard_q16};
 use super::explain::{extract_query_terms, generate_selection_reason};
 use super::{
@@ -194,6 +195,7 @@ impl ContextPack {
         }
 
         let answerability = answerability::estimate(&pack_cells, &query_terms);
+        let conflict_visibility = conflicts::measure(&pack_cells);
         if answerability.is_insufficient() {
             anomalies.push(answerability::insufficient_context_anomaly(&answerability));
         }
@@ -205,6 +207,8 @@ impl ContextPack {
             truncated,
             citations_required,
             answerability_q16: answerability.score_q16,
+            conflict_visibility_q16: conflict_visibility.conflict_visibility_q16,
+            visible_conflict_count: conflict_visibility.visible_conflict_count,
             anomalies,
         }
     }

@@ -522,6 +522,9 @@ stable Markdown export.
   "estimated_tokens": 42,
   "truncated": false,
   "citations_required": false,
+  "answerability_q16": 65535,
+  "conflict_visibility_q16": 0,
+  "visible_conflict_count": 0,
   "cells": [
     {
       "cell_id": 1,
@@ -584,6 +587,7 @@ If the supplied context is insufficient or conflicting, say so.
 
 Budget: token_budget_tokens=1000 estimated_tokens=42 truncated=false citations_required=false
 Answerability: answerability_q16=65535
+Conflict visibility: conflict_visibility_q16=0 visible_conflict_count=0
 
 Context cells:
 
@@ -607,6 +611,8 @@ Markdown export:
 - truncated: `false`
 - citations_required: `false`
 - answerability_q16: `65535`
+- conflict_visibility_q16: `0`
+- visible_conflict_count: `0`
 
 ## Cells
 

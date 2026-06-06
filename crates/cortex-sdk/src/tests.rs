@@ -152,6 +152,8 @@ fn typed_context_response_decodes_source_ref_url() {
         "truncated": false,
         "citations_required": true,
         "answerability_q16": 65535,
+        "conflict_visibility_q16": 0,
+        "visible_conflict_count": 0,
         "cells": [{
             "cell_id": 1,
             "estimated_tokens": 10,
@@ -174,6 +176,8 @@ fn typed_context_response_decodes_source_ref_url() {
     let response: ContextPackResponse =
         serde_json::from_value(value).expect("context response should decode");
     assert_eq!(response.answerability_q16, 65535);
+    assert_eq!(response.conflict_visibility_q16, 0);
+    assert_eq!(response.visible_conflict_count, 0);
     let source_ref = response.cells[0]
         .source_ref
         .as_ref()

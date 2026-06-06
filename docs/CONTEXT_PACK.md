@@ -42,6 +42,9 @@ Implemented in `cortex-engine`:
 - Answerability score: `answerability_q16` estimates whether selected cells
   cover explicit query terms. If coverage is incomplete, ContextPack emits an
   `insufficient_context` anomaly instead of implying that an answer is safe.
+- Conflict visibility score: `conflict_visibility_q16` and
+  `visible_conflict_count` report whether selected cells contain visible
+  conflicting `project` + `metric` values that survived packing.
 
 Public JSON responses include:
 
@@ -53,6 +56,8 @@ Public JSON responses include:
   "truncated": false,
   "citations_required": false,
   "answerability_q16": 0,
+  "conflict_visibility_q16": 0,
+  "visible_conflict_count": 0,
   "cells": [],
   "anomalies": [
     {
@@ -122,7 +127,9 @@ existing compact summary default unless `--json` or `--format` is passed.
 7. Numeric guard conflicts are preserved as context, not treated as duplicates.
 8. `insufficient_context` is reported when deterministic answerability is below
    the full-coverage threshold.
-9. No HNSW, reranking, or LLM calls run inside ContextPack v1 itself.
+9. `visible_conflict_count` counts selected conflict groups; it does not scan
+   hidden or unreadable data outside the pack.
+10. No HNSW, reranking, or LLM calls run inside ContextPack v1 itself.
 
 ## Known Limits
 
@@ -138,6 +145,9 @@ existing compact summary default unless `--json` or `--format` is passed.
   numeric guard variants together so an agent can see conflicting values.
 - `answerability_q16` is a deterministic coverage signal over explicit query
   terms and selected cell text/metadata. It is not an external LLM judgment.
+- `conflict_visibility_q16` is a visibility metric for conflicts already
+  selected into the pack. It is not a full contradiction detector; use VERIFY
+  FACT for fact-level contradiction analysis.
 
 ## Quality Gate
 
@@ -171,6 +181,7 @@ For the focused ContextPack quality gate, run:
 ```bash
 make context-pack-quality-check
 make context-pack-answerability-check
+make context-pack-conflict-visibility-check
 ```
 
 That gate runs the ContextPack behavior tests, the ContextPack/VERIFY fixture,
@@ -183,6 +194,7 @@ measured release metrics:
 - duplicate suppression;
 - deterministic ordering.
 - answerability score and `insufficient_context` anomaly coverage.
+- conflict visibility score and selected conflict-count coverage.
 
 Latest local evidence is tracked in
 [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md).

@@ -192,6 +192,12 @@ not cover those terms, ContextPack emits an `insufficient_context` anomaly so
 agents and UI surfaces can refuse or ask for more evidence instead of treating a
 thin pack as answer-ready.
 
+ContextPack exposes `conflict_visibility_q16` and `visible_conflict_count` for
+numeric guard conflicts that are actually present in the selected pack. The
+metric is `65535` when at least one selected `project` + `metric` group contains
+multiple `value=` variants, and `0` otherwise. This makes conflict visibility
+auditable without turning ContextPack into a full VERIFY FACT subsystem.
+
 ## What It Is Not
 
 Context Pack is not:

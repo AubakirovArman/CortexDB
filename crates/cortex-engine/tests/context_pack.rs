@@ -462,6 +462,8 @@ fn test_numeric_guard_coexistence() {
     );
     // Both are kept together because they represent different values for same project+metric (Numeric Guard!)
     assert_eq!(pack.cells.len(), 2);
+    assert_eq!(pack.visible_conflict_count, 1);
+    assert_eq!(pack.conflict_visibility_q16, u16::MAX);
 }
 
 #[test]

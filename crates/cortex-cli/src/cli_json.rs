@@ -1,10 +1,3 @@
-use cortex_engine::{
-    CellMetadata, ContextPack, Database, DatabaseSearchResult, RememberedCell, SearchRouteDecision,
-    StorageStats, VectorRebuildReport, VerificationEvidence, VerificationReport,
-    VerificationStatus,
-};
-use serde_json::to_string;
-
 use crate::cli_json_types::{
     CellResponse, CliAnnEvaluationResponse, CliAnnSearchReportResponse, CliAnnValidateResponse,
     CliStatsResponse, CliValidateResponse, CliVectorRebuildResponse, ContextPackAnomalyResponse,
@@ -13,7 +6,12 @@ use crate::cli_json_types::{
     SearchResultResponse, SearchRoutingDecisionResponse, SourceRefResponse,
     VerificationEvidenceResponse, VerificationResponse,
 };
-
+use cortex_engine::{
+    CellMetadata, ContextPack, Database, DatabaseSearchResult, RememberedCell, SearchRouteDecision,
+    StorageStats, VectorRebuildReport, VerificationEvidence, VerificationReport,
+    VerificationStatus,
+};
+use serde_json::to_string;
 fn serialize_or_error<T: serde::Serialize>(value: &T) -> String {
     to_string(value).unwrap_or_else(|e| {
         to_string(&crate::cli_json_types::ErrorResponse {
@@ -259,6 +257,8 @@ fn context_pack_response(pack: &ContextPack) -> ContextPackResponse {
         truncated: pack.truncated,
         citations_required: pack.citations_required,
         answerability_q16: pack.answerability_q16,
+        conflict_visibility_q16: pack.conflict_visibility_q16,
+        visible_conflict_count: pack.visible_conflict_count,
         cells: pack.cells.iter().map(context_cell_json).collect(),
         anomalies: pack
             .anomalies

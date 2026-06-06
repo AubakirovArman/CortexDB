@@ -28,6 +28,8 @@ REQUIRED_JSON_FIELDS = [
     "token_budget_tokens",
     "estimated_tokens",
     "answerability_q16",
+    "conflict_visibility_q16",
+    "visible_conflict_count",
     "citations_required",
     "cells",
     "anomalies",

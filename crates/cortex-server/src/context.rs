@@ -126,6 +126,8 @@ fn map_context_pack(pack: &ContextPack) -> ContextPackResponse {
         truncated: pack.truncated,
         citations_required: pack.citations_required,
         answerability_q16: pack.answerability_q16,
+        conflict_visibility_q16: pack.conflict_visibility_q16,
+        visible_conflict_count: pack.visible_conflict_count,
         cells,
         anomalies,
     }
