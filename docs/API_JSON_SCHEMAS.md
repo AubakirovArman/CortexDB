@@ -393,6 +393,13 @@ For hybrid inspection, pass both query text and vector:
 {
   "query_terms": ["budget"],
   "search_mode": "hybrid",
+  "routing": {
+    "requested_mode": "hybrid",
+    "selected_strategy": "hybrid",
+    "reason": "explicit_hybrid_mode",
+    "text_available": true,
+    "vector_available": true
+  },
   "results": [
     {
       "cell_id": 1,
@@ -404,6 +411,7 @@ For hybrid inspection, pass both query text and vector:
       "vector_contribution_q16": 46152,
       "fusion_rank_score": 32786,
       "matched_terms": ["budget"],
+      "matched_fields": ["body_text", "vector"],
       "term_contributions": [
         {
           "term": "budget",
@@ -418,9 +426,12 @@ For hybrid inspection, pass both query text and vector:
 }
 ```
 
-`term_contributions` explains lexical matches. `vector_score` is the raw vector
-similarity score. `fusion_rank_score` is non-zero when a result has both lexical
-and vector evidence in hybrid mode.
+`routing.selected_strategy` reports the exact strategy used by explain:
+`keyword`, `vector_exact`, `vector_ann`, or `hybrid`. `term_contributions`
+explains lexical matches. `matched_fields` identifies the ranking fields that
+contributed evidence: `title`, `body_text`, and/or `vector`. `vector_score` is
+the raw vector similarity score. `fusion_rank_score` is non-zero when a result
+has both lexical and vector evidence in hybrid mode.
 
 ## HNSW No-fallback Profile
 

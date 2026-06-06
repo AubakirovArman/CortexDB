@@ -364,6 +364,13 @@ fn typed_search_explain_response_decodes_contribution_contract() {
     let value = serde_json::json!({
         "query_terms": ["budget"],
         "search_mode": "hybrid",
+        "routing": {
+            "requested_mode": "hybrid",
+            "selected_strategy": "hybrid",
+            "reason": "explicit_hybrid_mode",
+            "text_available": true,
+            "vector_available": true
+        },
         "results": [{
             "cell_id": 1,
             "rank": 1,
@@ -374,6 +381,7 @@ fn typed_search_explain_response_decodes_contribution_contract() {
             "vector_contribution_q16": 46152,
             "fusion_rank_score": 32786,
             "matched_terms": ["budget"],
+            "matched_fields": ["title", "body_text", "vector"],
             "term_contributions": [{
                 "term": "budget",
                 "term_frequency": 2,
@@ -388,10 +396,18 @@ fn typed_search_explain_response_decodes_contribution_contract() {
         serde_json::from_value(value).expect("search explain response should decode");
 
     assert_eq!(response.search_mode, "hybrid");
+    assert_eq!(
+        response
+            .routing
+            .as_ref()
+            .map(|route| route.selected_strategy.as_str()),
+        Some("hybrid")
+    );
     assert_eq!(response.query_terms, vec!["budget"]);
     let item = &response.results[0];
     assert_eq!(item.rank, 1);
     assert_eq!(item.matched_terms, vec!["budget"]);
+    assert_eq!(item.matched_fields, vec!["title", "body_text", "vector"]);
     assert_eq!(item.term_contributions[0].term_frequency, 2);
     assert_eq!(item.fusion_rank_score, 32786);
     assert!(item.contribution_summary.contains("hybrid rrf_score="));

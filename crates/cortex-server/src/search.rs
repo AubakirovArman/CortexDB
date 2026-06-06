@@ -1,11 +1,11 @@
 use cortex_aql::AgentView;
 use cortex_engine::{
     evaluate_hnsw_no_fallback_rollout, parse_vector_literal, route_search_query, tokenize,
-    AnnSearchPolicy, AnnSearchReport, Database, DatabaseSearchResult, HnswNoFallbackDecision,
-    HnswNoFallbackRolloutPolicy, SearchLimit, SearchMode, SearchQuery, SearchRouteDecision,
-    SearchRouteInput, SearchRouteStrategy,
+    AnnSearchPolicy, AnnSearchReport, CellMetadata, Database, DatabaseSearchResult,
+    HnswNoFallbackDecision, HnswNoFallbackRolloutPolicy, SearchLimit, SearchMode, SearchQuery,
+    SearchRouteDecision, SearchRouteInput, SearchRouteStrategy,
 };
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::authz;
 use crate::responses::{
@@ -30,20 +30,37 @@ pub fn handle_search_explain_shared(
         .map_err(RouterError::BadRequest)?
         .unwrap_or(20);
     let mode = query_param_decoded(query, "mode").unwrap_or_else(|_| "keyword".to_owned());
+    let algorithm = query_param_decoded(query, "algorithm").unwrap_or_else(|_| "ann".to_owned());
     let q = query_param_decoded(query, "q")
         .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
+    let vector_literal = query_param_opt_decoded(query, "vector");
+    let route = route_search_query(SearchRouteInput {
+        requested_mode: &mode,
+        algorithm: &algorithm,
+        text_available: !q.trim().is_empty(),
+        vector_available: vector_literal
+            .as_deref()
+            .map(|value| !value.trim().is_empty())
+            .unwrap_or(false),
+    })
+    .map_err(RouterError::BadRequest)?;
 
     let query_terms = tokenize(&q);
 
-    let results = match mode.as_str() {
-        "keyword" => db.search_keyword(&q, &view, SearchLimit(limit)),
-        "vector" => {
-            let vector = query_param_decoded(query, "vector").unwrap_or_else(|_| q.clone());
+    let results = match route.selected_strategy {
+        SearchRouteStrategy::Keyword => db.search_keyword(&q, &view, SearchLimit(limit)),
+        SearchRouteStrategy::VectorExact => {
+            let vector = vector_literal.clone().unwrap_or_else(|| q.clone());
+            let v = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
+            db.search_vector_exact(&v, &view, SearchLimit(limit))
+        }
+        SearchRouteStrategy::VectorAnn => {
+            let vector = vector_literal.clone().unwrap_or_else(|| q.clone());
             let v = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
             db.search_vector(&v, &view, SearchLimit(limit))
         }
-        "hybrid" => {
-            let vector = query_param_decoded(query, "vector").map_err(|_| {
+        SearchRouteStrategy::Hybrid => {
+            let vector = vector_literal.ok_or_else(|| {
                 RouterError::BadRequest("mode=hybrid requires vector=<i16,...>".to_owned())
             })?;
             let v = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
@@ -57,21 +74,17 @@ pub fn handle_search_explain_shared(
                 &view,
             )
         }
-        _ => {
-            return Err(RouterError::BadRequest(
-                "mode must be keyword, vector, or hybrid".to_owned(),
-            ))
-        }
     }?;
 
     let explain_results = results
         .iter()
         .enumerate()
-        .map(|(index, result)| explain_item(index + 1, result, &query_terms, &mode))
+        .map(|(index, result)| explain_item(index + 1, result, &query_terms, route.search_mode()))
         .collect();
     let response = SearchExplainResponse {
         query_terms,
-        search_mode: mode,
+        search_mode: route.search_mode().to_owned(),
+        routing: routing_response(route),
         results: explain_results,
     };
     Ok(serde_json::to_string(&response)?)
@@ -83,13 +96,15 @@ fn explain_item(
     query_terms: &[String],
     mode: &str,
 ) -> SearchExplainItemResponse {
-    let payload_terms = term_frequencies(&String::from_utf8_lossy(&result.payload));
+    let metadata = CellMetadata::from_payload(&result.payload);
+    let payload_terms = metadata.weighted_lexical_terms();
     let matched_terms = query_terms
         .iter()
         .filter(|term| payload_terms.contains_key(term.as_str()))
         .cloned()
         .collect::<Vec<_>>();
     let term_contributions = term_contributions(&matched_terms, &payload_terms, result);
+    let matched_fields = matched_fields(&metadata, query_terms, result);
     SearchExplainItemResponse {
         cell_id: result.cell_id.0,
         rank,
@@ -100,18 +115,37 @@ fn explain_item(
         vector_contribution_q16: contribution_q16(result.vector_score, result),
         fusion_rank_score: fusion_rank_score(result),
         matched_terms,
+        matched_fields,
         term_contributions,
         contribution_summary: contribution_summary(mode, result),
         payload_preview: truncate_preview(&result.payload, 200),
     }
 }
 
-fn term_frequencies(text: &str) -> BTreeMap<String, u32> {
-    let mut terms = BTreeMap::new();
-    for term in tokenize(text) {
-        *terms.entry(term).or_default() += 1;
+fn matched_fields(
+    metadata: &CellMetadata,
+    query_terms: &[String],
+    result: &DatabaseSearchResult,
+) -> Vec<String> {
+    let mut fields = Vec::new();
+    if field_matches(metadata.title.as_deref(), query_terms) {
+        fields.push("title".to_owned());
     }
-    terms
+    if field_matches(Some(&metadata.body_text), query_terms) {
+        fields.push("body_text".to_owned());
+    }
+    if result.vector_score > 0 {
+        fields.push("vector".to_owned());
+    }
+    fields
+}
+
+fn field_matches(text: Option<&str>, query_terms: &[String]) -> bool {
+    let Some(text) = text else {
+        return false;
+    };
+    let terms = tokenize(text).into_iter().collect::<BTreeSet<_>>();
+    query_terms.iter().any(|term| terms.contains(term))
 }
 
 fn term_contributions(

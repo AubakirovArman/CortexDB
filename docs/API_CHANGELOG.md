@@ -22,8 +22,8 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
   both inline `contradicts=` markers and persisted relation cells.
 - **Search Explain contribution details** — `/v1/search/explain`, `cortexdb
   search-explain`, and the Rust SDK now expose rank, matched terms, term
-  contribution details, lexical/vector q16 shares, and hybrid fusion rank
-  scores.
+  contribution details, matched fields, lexical/vector q16 shares, selected
+  routing strategy, and hybrid fusion rank scores.
 - **Search query routing decisions** — `/v1/search`, `cortexdb search`, and the
   Rust SDK now support `mode=auto` and expose `routing.selected_strategy` plus
   `routing.reason` for keyword/vector/hybrid selection.

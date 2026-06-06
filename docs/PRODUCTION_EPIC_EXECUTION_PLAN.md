@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 51 / 150
+- Done: 52 / 150
 - Partial: 1 / 150
-- Todo: 98 / 150
-- Current closed epic: Epic 51, LoCoMo Adapter
+- Todo: 97 / 150
+- Current closed epic: Epic 52, Search Explain API
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1430,15 +1430,35 @@ Tasks:
 
 ### Epic 52. Search Explain API
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-server/src/search.rs`
+- `crates/cortex-server/src/responses.rs`
+- `crates/cortex-server/src/tests/search_api_tests.rs`
+- `crates/cortex-server/src/tests/snapshot_completion_tests.rs`
+- `crates/cortex-sdk/src/types.rs`
+- `crates/cortex-sdk/src/tests.rs`
+- `docs/API.md`
+- `docs/API_JSON_SCHEMAS.md`
+- `docs/openapi.yaml`
+- `make openapi-contract-check`
+- `cargo test -p cortex-server search_explain`
+- `cargo test -p cortex-sdk`
 
 Tasks:
 
-- Explain term scores.
-- Explain vector score.
-- Explain fusion score.
-- Explain selected strategy.
-- Explain matched fields.
+- Explain term scores. Done: `/v1/search/explain` returns per-term
+  contribution rows with weighted term frequencies.
+- Explain vector score. Done: each result returns `vector_score` and
+  `vector_contribution_q16`.
+- Explain fusion score. Done: hybrid results return `fusion_rank_score` and a
+  deterministic contribution summary.
+- Explain selected strategy. Done: explain responses include the same
+  `routing.selected_strategy` contract as `/v1/search`.
+- Explain matched fields. Done: each result reports matched ranking fields:
+  `title`, `body_text`, and/or `vector`.
 
 ### Epic 53. Query Routing Engine
 

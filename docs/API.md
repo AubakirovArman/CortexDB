@@ -347,6 +347,13 @@ Explains why search results ranked where they did.
   {
     "query_terms": ["budget"],
     "search_mode": "hybrid",
+    "routing": {
+      "requested_mode": "hybrid",
+      "selected_strategy": "hybrid",
+      "reason": "explicit_hybrid_mode",
+      "text_available": true,
+      "vector_available": true
+    },
     "results": [
       {
         "cell_id": 1,
@@ -358,6 +365,7 @@ Explains why search results ranked where they did.
         "vector_contribution_q16": 46152,
         "fusion_rank_score": 32786,
         "matched_terms": ["budget"],
+        "matched_fields": ["body_text", "vector"],
         "term_contributions": [
           {
             "term": "budget",

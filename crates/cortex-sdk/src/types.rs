@@ -153,6 +153,8 @@ pub struct SearchExplainItem {
     #[serde(default)]
     pub matched_terms: Vec<String>,
     #[serde(default)]
+    pub matched_fields: Vec<String>,
+    #[serde(default)]
     pub term_contributions: Vec<SearchExplainTermContribution>,
     #[serde(default)]
     pub contribution_summary: String,
@@ -163,6 +165,8 @@ pub struct SearchExplainItem {
 pub struct SearchExplainResponse {
     pub query_terms: Vec<String>,
     pub search_mode: String,
+    #[serde(default)]
+    pub routing: Option<SearchRoutingDecision>,
     pub results: Vec<SearchExplainItem>,
 }
 

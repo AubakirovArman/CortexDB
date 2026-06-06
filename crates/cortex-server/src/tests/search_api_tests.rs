@@ -58,8 +58,10 @@ fn v1_search_explain_reports_term_and_fusion_contributions() {
         "POST /v1/search/explain?scope=project:investments&q=budget&limit=5 HTTP/1.1\r\n\r\n";
     let response = handle_http(dir.path(), keyword);
     assert!(response.contains(r#""search_mode":"keyword""#));
+    assert!(response.contains(r#""selected_strategy":"keyword""#));
     assert!(response.contains(r#""rank":1"#));
     assert!(response.contains(r#""matched_terms":["budget"]"#));
+    assert!(response.contains(r#""matched_fields":["body_text"]"#));
     assert!(response.contains(r#""term_contributions":"#));
     assert!(response.contains(r#""term_frequency":2"#));
     assert!(response.contains(r#""contribution_summary":"keyword lexical_score="#));
@@ -67,6 +69,8 @@ fn v1_search_explain_reports_term_and_fusion_contributions() {
     let hybrid = "POST /v1/search/explain?scope=project:investments&mode=hybrid&q=budget&vector=5,0&limit=5 HTTP/1.1\r\n\r\n";
     let response = handle_http(dir.path(), hybrid);
     assert!(response.contains(r#""search_mode":"hybrid""#));
+    assert!(response.contains(r#""selected_strategy":"hybrid""#));
+    assert!(response.contains(r#""matched_fields":["body_text","vector"]"#));
     assert!(response.contains(r#""fusion_rank_score":"#));
     assert!(response.contains(r#""contribution_summary":"hybrid rrf_score="#));
 }

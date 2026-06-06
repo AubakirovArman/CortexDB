@@ -294,6 +294,7 @@ pub struct SearchExplainItemResponse {
     pub vector_contribution_q16: u16,
     pub fusion_rank_score: u64,
     pub matched_terms: Vec<String>,
+    pub matched_fields: Vec<String>,
     pub term_contributions: Vec<SearchExplainTermContributionResponse>,
     pub contribution_summary: String,
     pub payload_preview: String,
@@ -303,6 +304,7 @@ pub struct SearchExplainItemResponse {
 pub struct SearchExplainResponse {
     pub query_terms: Vec<String>,
     pub search_mode: String,
+    pub routing: SearchRoutingDecisionResponse,
     pub results: Vec<SearchExplainItemResponse>,
 }
 

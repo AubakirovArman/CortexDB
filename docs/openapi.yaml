@@ -1446,6 +1446,30 @@ components:
           minimum: 0
         citations_required:
           type: boolean
+    SearchRoutingDecision:
+      type: object
+      required:
+      - requested_mode
+      - selected_strategy
+      - reason
+      - text_available
+      - vector_available
+      properties:
+        requested_mode:
+          type: string
+        selected_strategy:
+          type: string
+          enum:
+          - keyword
+          - vector_exact
+          - vector_ann
+          - hybrid
+        reason:
+          type: string
+        text_available:
+          type: boolean
+        vector_available:
+          type: boolean
     SearchResponse:
       type: object
       required:
@@ -1462,29 +1486,7 @@ components:
           - hybrid
         routing:
           anyOf:
-          - type: object
-            required:
-            - requested_mode
-            - selected_strategy
-            - reason
-            - text_available
-            - vector_available
-            properties:
-              requested_mode:
-                type: string
-              selected_strategy:
-                type: string
-                enum:
-                - keyword
-                - vector_exact
-                - vector_ann
-                - hybrid
-              reason:
-                type: string
-              text_available:
-                type: boolean
-              vector_available:
-                type: boolean
+          - $ref: '#/components/schemas/SearchRoutingDecision'
           - type: 'null'
         ann_report:
           anyOf:
@@ -2491,6 +2493,7 @@ components:
       required:
       - query_terms
       - search_mode
+      - routing
       - results
       properties:
         query_terms:
@@ -2499,6 +2502,8 @@ components:
             type: string
         search_mode:
           type: string
+        routing:
+          $ref: '#/components/schemas/SearchRoutingDecision'
         results:
           type: array
           items:
@@ -2513,6 +2518,7 @@ components:
             - vector_contribution_q16
             - fusion_rank_score
             - matched_terms
+            - matched_fields
             - term_contributions
             - contribution_summary
             - payload_preview
@@ -2542,6 +2548,10 @@ components:
                 type: integer
                 format: uint64
               matched_terms:
+                type: array
+                items:
+                  type: string
+              matched_fields:
                 type: array
                 items:
                   type: string
