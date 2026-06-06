@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 103 / 150
+- Done: 104 / 150
 - Partial: 1 / 150
-- Todo: 46 / 150
-- Current closed epic: Epic 103, Grafana Dashboard Pack
+- Todo: 45 / 150
+- Current closed epic: Epic 104, Alert Rules Pack
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2928,15 +2928,27 @@ Boundary:
 
 ### Epic 104. Alert Rules Pack
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `examples/observability/alerts.yml`
+- `docs/OBSERVABILITY_ALERTS.md`
+- `scripts/observability_check.py`
+- `make observability-check`
 
 Tasks:
 
-- Alert on stale backup.
-- Alert on validation failure.
-- Alert on high actor queue.
-- Alert on error rate.
-- Alert on rate-limit spike.
+- Alert on stale backup. Done: `CortexDbBackupStale` fires when
+  `cortexdb_backup_latest_age_seconds` is older than 24 hours.
+- Alert on validation failure. Done: `CortexDbValidationFailures` remains a
+  critical alert on validation-failure counter growth.
+- Alert on high actor queue. Done: `CortexDbActorQueuePressure` watches queue
+  depth versus capacity.
+- Alert on error rate. Done: `CortexDbOperationalErrorRateHigh` watches recent
+  rejected requests plus validation failures over request count.
+- Alert on rate-limit spike. Done: `CortexDbRateLimitSpike` watches
+  per-principal request, body-size, and queue quota rejection counters.
 
 ### Epic 105. Request ID and Trace Correlation
 

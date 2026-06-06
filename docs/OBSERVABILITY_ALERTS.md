@@ -17,6 +17,13 @@ They cover:
 - large WAL size: `cortexdb_wal_size_bytes`;
 - actor queue pressure: `cortexdb_actor_queue_depth / cortexdb_actor_queue_capacity`;
 - database busy/rejected requests: `cortexdb_request_rejected`;
+- operational error rate:
+  `(increase(cortexdb_request_rejected[5m]) + increase(cortexdb_validation_failures[5m])) / increase(cortexdb_request_count[5m])`;
+- quota/rate-limit spikes:
+  `cortexdb_principal_quota_requests_rejected`,
+  `cortexdb_principal_quota_body_bytes_rejected`, and
+  `cortexdb_principal_quota_queue_rejected`;
+- stale backup evidence: `cortexdb_backup_latest_age_seconds`;
 - missing persisted ANN graph: `cortexdb_ann_graph_nodes == 0`;
 - ANN fallback rate:
   `increase(cortexdb_ann_fallbacks[5m]) / increase(cortexdb_ann_search_requests[5m])`;
@@ -34,6 +41,10 @@ They cover:
 | `CortexDbWalGrowth` | Check whether checkpoint is stuck and confirm free disk before restart. |
 | `CortexDbActorQueuePressure` | Reduce client concurrency or raise `--actor-queue-capacity` only after checking disk/WAL latency. |
 | `CortexDbDatabaseBusy` | Inspect rate limits and actor saturation; retry with backoff rather than tight loops. |
+| `CortexDbOperationalErrorRateHigh` | Compare rejected requests with validation failures; reduce client load first, then inspect storage validation output. |
+| `CortexDbRateLimitSpike` | Identify the principal that exceeded request/body/queue quota and adjust caller backoff before raising limits. |
+| `CortexDbBackupStale` | Run backup validation, check backup destination health, and refresh backup evidence before promotion. |
+| `CortexDbBackupEvidenceMissing` | Set `CORTEXDB_BACKUP_ROOT` or create the local backup evidence directory used by the server. |
 | `CortexDbAnnGraphUnavailable` | Use exact vector search as the correctness path; checkpoint/compact to rebuild ANN evidence. |
 | `CortexDbAnnFallbackRate` | Inspect ANN search reports for SLO violations, graph freshness, and visit-budget fallback reasons. |
 | `CortexDbAnnNoFallbackBlocked` | Keep fallback-free serving disabled for that profile, inspect `no_fallback_decision.reasons`, and re-run ANN release evidence before retrying rollout. |
@@ -56,6 +67,34 @@ They cover:
 2. Check `request_rejected` and application retry behavior.
 3. Reduce client concurrency or add backoff.
 4. Increase queue capacity only when disk/WAL latency is healthy.
+
+### Operational Error Rate
+
+1. Separate validation failures from request rejections.
+2. If validation failures increased, stop release promotion and save
+   `/v1/validate` output before taking repair actions.
+3. If only request rejections increased, reduce caller concurrency and inspect
+   rate-limit or actor queue alerts.
+4. Re-run `make load-smoke-check` after tuning caller backoff or queue limits.
+
+### Rate-limit Spike
+
+1. Check which quota counter increased: request count, body bytes, or actor
+   queue admission.
+2. Verify the caller is using retry with backoff, not tight retry loops.
+3. Raise per-principal limits only after confirming the workload is expected.
+4. If queue quota is the cause, inspect actor queue pressure before changing
+   limits.
+
+### Backup Evidence
+
+1. For stale backup evidence, run the backup drill and verify the destination
+   can still be restored.
+2. For missing backup evidence, set `CORTEXDB_BACKUP_ROOT` or create the local
+   backup evidence directory next to the database root.
+3. Treat `backup_latest_age_seconds = -1` as "unknown", not as a successful
+   recent backup.
+4. Re-run `make backup-offsite-check` before release promotion.
 
 ### ANN Fallback Rate
 
@@ -85,6 +124,6 @@ They cover:
 
 ## Boundary
 
-Core Alpha does not yet provide latency histograms, tracing spans, alert
-routing, or long-term metric retention. Use Prometheus/Grafana externally for
-those concerns.
+Core Alpha now exposes ANN latency buckets and alert-rule examples, but it does
+not provide managed alert routing, paging, tracing spans, or long-term metric
+retention. Use Prometheus/Grafana externally for those concerns.

@@ -24,8 +24,9 @@ This gate covers:
 - Grafana dashboard JSON in
   `examples/observability/grafana-cortexdb-core-alpha.json`;
 - operator action guidance in `docs/OBSERVABILITY_ALERTS.md`;
-- alert thresholds for WAL growth, checkpoint lag, actor queue pressure, ANN
-  fallback rate, and validation failures.
+- alert thresholds for WAL growth, checkpoint lag, stale backup evidence,
+  actor queue pressure, operational error rate, rate-limit spikes, ANN fallback
+  rate, and validation failures.
 
 ## Boundary
 
@@ -36,7 +37,7 @@ routing.
 ## Latest Local Checks
 
 ```text
-metrics_fields_checked: 24
+metrics_fields_checked: 41
 ann_fields_checked: 7
 prometheus_scrape: true
 alerts: true

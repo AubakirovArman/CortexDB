@@ -174,6 +174,15 @@ make release-check
 Treat these as Core Alpha operator heuristics, not production SLA guarantees:
 
 - `request_rejected > 0`: inspect rate limit and actor queue pressure.
+- `(request_rejected + validation_failures) / request_count > 0.05` over five
+  minutes: operational error rate is elevated; separate caller pressure from
+  storage validation failures before changing limits.
+- any principal quota rejection counter increases: inspect per-principal
+  request/body/queue limits and caller backoff.
+- `backup_latest_age_seconds > 86400`: latest local backup evidence is older
+  than 24 hours; refresh and validate backup evidence.
+- `backup_latest_age_seconds < 0`: backup age is unknown because no local
+  evidence path was found.
 - `actor_queue_depth == actor_queue_capacity`: callers are overdriving the
   local database actor; expect `503 database_busy`.
 - `wal_size_bytes` grows while `checkpoint_seq` does not advance: checkpoint is

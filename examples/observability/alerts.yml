@@ -46,6 +46,42 @@ groups:
           summary: CortexDB rejected requests due to pressure
           description: database_busy/rate-limit rejections were observed in the last five minutes.
 
+      - alert: CortexDbOperationalErrorRateHigh
+        expr: (increase(cortexdb_request_rejected[5m]) + increase(cortexdb_validation_failures[5m])) / clamp_min(increase(cortexdb_request_count[5m]), 1) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: CortexDB operational error rate is elevated
+          description: More than 5% of recent requests were rejected or accompanied by validation failures.
+
+      - alert: CortexDbRateLimitSpike
+        expr: increase(cortexdb_principal_quota_requests_rejected[5m]) + increase(cortexdb_principal_quota_body_bytes_rejected[5m]) + increase(cortexdb_principal_quota_queue_rejected[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: CortexDB rate-limit or quota rejection spike
+          description: Per-principal request, body-size, or queue quota rejected work in the last five minutes.
+
+      - alert: CortexDbBackupStale
+        expr: cortexdb_backup_latest_age_seconds > 86400
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: CortexDB latest backup evidence is stale
+          description: The newest local backup evidence is older than 24 hours; run backup validation before release promotion.
+
+      - alert: CortexDbBackupEvidenceMissing
+        expr: cortexdb_backup_latest_age_seconds < 0
+        for: 30m
+        labels:
+          severity: info
+        annotations:
+          summary: CortexDB backup age evidence is unavailable
+          description: No local backup evidence path was found; set CORTEXDB_BACKUP_ROOT or create a backup evidence directory.
+
       - alert: CortexDbAnnFallbackRate
         expr: increase(cortexdb_ann_search_requests[5m]) > 0 and (increase(cortexdb_ann_fallbacks[5m]) / increase(cortexdb_ann_search_requests[5m])) > 0.1
         for: 5m
