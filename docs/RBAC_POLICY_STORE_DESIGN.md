@@ -29,6 +29,11 @@ Implemented today:
   closed. Omitting `tenants` preserves the current all-tenant local behavior.
 - Admin-only local endpoints can upsert principals, disable principals, and
   roll back the last local policy-store mutation.
+- Admin-only local endpoints can list the redacted policy store without
+  returning raw bearer tokens.
+- Admin-only local endpoints can grant or revoke persisted `AgentView` scopes
+  for existing agents. This keeps `AgentView` as the source of scope
+  permissions instead of duplicating read/write scopes inside the policy store.
 - Every successful admin policy-store mutation is mirrored through the
   tenant-local `DatabaseActor` into redacted durable `_system:auth_policy`
   cells. These cells store principal ID, role, AgentView binding, disabled

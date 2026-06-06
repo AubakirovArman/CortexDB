@@ -85,9 +85,36 @@ pub(crate) struct AuthPolicyMutationResponse {
     pub rollback_available: bool,
 }
 
+#[derive(Clone, Debug, Serialize)]
+struct AuthPolicyListResponse {
+    schema_version: &'static str,
+    supported_roles: [&'static str; 2],
+    principal_count: usize,
+    active_principals: usize,
+    disabled_principals: usize,
+    principals: Vec<AuthPolicyListPrincipal>,
+    token_redaction: &'static str,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct AuthPolicyListPrincipal {
+    principal_id: String,
+    role: String,
+    agent_id: Option<u64>,
+    disabled: bool,
+    request_quota_per_minute: Option<u64>,
+    body_quota_bytes_per_minute: Option<u64>,
+    queue_quota: Option<u64>,
+    capabilities: Vec<String>,
+    tenants: Vec<String>,
+    token_present: bool,
+    token_fingerprint: String,
+}
+
 pub(crate) struct AuthPolicyAdminResponse {
     pub body: String,
     pub policy_store_json: String,
+    pub sync_policy_cells: bool,
 }
 
 pub(crate) fn load_token_policies_from_store(
@@ -133,33 +160,54 @@ pub(crate) fn handle_admin_request(
     query: &str,
     body: &[u8],
 ) -> Result<Option<AuthPolicyAdminResponse>, RouterError> {
-    let response = match (method, path) {
+    match (method, path) {
         ("POST", "/v1/admin/auth/principal") => {
             let request =
                 serde_json::from_slice::<AuthPolicyMutationRequest>(body).map_err(|error| {
                     RouterError::BadRequest(format!("invalid auth policy JSON: {error}"))
                 })?;
-            Some(upsert_principal(policy_path(options)?, request)?)
+            let path = policy_path(options)?;
+            Ok(Some(admin_response(
+                path,
+                &upsert_principal(path, request)?,
+                true,
+            )?))
         }
         ("DELETE", "/v1/admin/auth/principal") => {
             let principal_id =
                 query_param_decoded(query, "principal_id").map_err(RouterError::BadRequest)?;
-            Some(disable_principal(policy_path(options)?, &principal_id)?)
+            let path = policy_path(options)?;
+            Ok(Some(admin_response(
+                path,
+                &disable_principal(path, &principal_id)?,
+                true,
+            )?))
         }
-        ("POST", "/v1/admin/auth/policy/rollback") => Some(rollback_policy(policy_path(options)?)?),
-        _ => None,
-    };
-    response
-        .map(|value| {
-            let body = serde_json::to_string(&value)?;
-            let store = read_store(policy_path(options)?).map_err(RouterError::BadRequest)?;
-            let policy_store_json = encode_store_json(&store).map_err(RouterError::Internal)?;
-            Ok(AuthPolicyAdminResponse {
-                body,
-                policy_store_json,
-            })
-        })
-        .transpose()
+        ("POST", "/v1/admin/auth/policy/rollback") => {
+            let path = policy_path(options)?;
+            Ok(Some(admin_response(path, &rollback_policy(path)?, true)?))
+        }
+        ("GET", "/v1/admin/auth/policies") => {
+            let path = policy_path(options)?;
+            Ok(Some(admin_response(path, &list_policies(path)?, false)?))
+        }
+        _ => Ok(None),
+    }
+}
+
+fn admin_response<T: Serialize>(
+    path: &Path,
+    value: &T,
+    sync_policy_cells: bool,
+) -> Result<AuthPolicyAdminResponse, RouterError> {
+    let body = serde_json::to_string(value)?;
+    let store = read_store(path).map_err(RouterError::BadRequest)?;
+    let policy_store_json = encode_store_json(&store).map_err(RouterError::Internal)?;
+    Ok(AuthPolicyAdminResponse {
+        body,
+        policy_store_json,
+        sync_policy_cells,
+    })
 }
 
 fn upsert_principal(
@@ -230,6 +278,60 @@ fn rollback_policy(path: &Path) -> Result<AuthPolicyMutationResponse, RouterErro
     let store = read_store(&rollback_path).map_err(RouterError::BadRequest)?;
     atomic_write_json(path, &validate_store(store)?).map_err(RouterError::Internal)?;
     Ok(response("rollback_policy", None, path))
+}
+
+fn list_policies(path: &Path) -> Result<AuthPolicyListResponse, RouterError> {
+    let store = read_store(path).map_err(RouterError::BadRequest)?;
+    let principals = store
+        .principals
+        .iter()
+        .map(redacted_principal)
+        .collect::<Result<Vec<_>, _>>()?;
+    let active_principals = store
+        .principals
+        .iter()
+        .filter(|principal| !principal.disabled)
+        .count();
+    let disabled_principals = store.principals.len().saturating_sub(active_principals);
+    Ok(AuthPolicyListResponse {
+        schema_version: "cortexdb.auth_policy_list.v1",
+        supported_roles: ["admin", "data"],
+        principal_count: store.principals.len(),
+        active_principals,
+        disabled_principals,
+        principals,
+        token_redaction: "token omitted; token_fingerprint uses stable fnv64",
+    })
+}
+
+fn redacted_principal(
+    principal: &AuthPolicyPrincipal,
+) -> Result<AuthPolicyListPrincipal, RouterError> {
+    let capabilities = principal
+        .capabilities
+        .as_deref()
+        .map(canonical_capabilities)
+        .transpose()?
+        .unwrap_or_default();
+    let tenants = principal
+        .tenants
+        .as_deref()
+        .map(canonical_tenants)
+        .transpose()?
+        .unwrap_or_default();
+    Ok(AuthPolicyListPrincipal {
+        principal_id: principal.principal_id.clone(),
+        role: principal.role.trim().to_ascii_lowercase(),
+        agent_id: principal.agent_id,
+        disabled: principal.disabled,
+        request_quota_per_minute: principal.request_quota_per_minute,
+        body_quota_bytes_per_minute: principal.body_quota_bytes_per_minute,
+        queue_quota: principal.queue_quota,
+        capabilities,
+        tenants,
+        token_present: !principal.token.trim().is_empty(),
+        token_fingerprint: token_fingerprint(&principal.token),
+    })
 }
 
 fn persist_mutated_store(path: &Path, store: AuthPolicyStoreFile) -> Result<(), RouterError> {
@@ -424,6 +526,21 @@ pub(crate) fn parse_tenants(raw: &[String]) -> Result<BTreeSet<String>, String> 
     Ok(tenants)
 }
 
+fn canonical_capabilities(raw: &[String]) -> Result<Vec<String>, RouterError> {
+    Ok(parse_capabilities(raw)
+        .map_err(RouterError::BadRequest)?
+        .into_iter()
+        .map(|capability| capability.as_str().to_owned())
+        .collect())
+}
+
+fn canonical_tenants(raw: &[String]) -> Result<Vec<String>, RouterError> {
+    Ok(parse_tenants(raw)
+        .map_err(RouterError::BadRequest)?
+        .into_iter()
+        .collect())
+}
+
 fn parse_role(raw: &str) -> Result<AuthRole, String> {
     match raw.trim().to_ascii_lowercase().as_str() {
         "admin" => Ok(AuthRole::Admin),
@@ -447,6 +564,19 @@ fn atomic_write_json(path: &Path, store: &AuthPolicyStoreFile) -> Result<(), Str
 fn encode_store_json(store: &AuthPolicyStoreFile) -> Result<String, String> {
     serde_json::to_string_pretty(store)
         .map_err(|error| format!("failed to encode auth policy store: {error}"))
+}
+
+fn token_fingerprint(token: &str) -> String {
+    format!("fnv64:{:016x}", stable_hash(token))
+}
+
+fn stable_hash(value: &str) -> u64 {
+    let mut hash = 0xcbf2_9ce4_8422_2325u64;
+    for byte in value.as_bytes() {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    hash
 }
 
 fn is_false(value: &bool) -> bool {

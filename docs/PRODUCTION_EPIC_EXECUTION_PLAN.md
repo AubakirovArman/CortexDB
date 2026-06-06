@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 91 / 150
+- Done: 92 / 150
 - Partial: 1 / 150
-- Todo: 58 / 150
-- Current closed epic: Epic 91, Dynamic RBAC Policy Store
+- Todo: 57 / 150
+- Current closed epic: Epic 92, RBAC Admin API
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2489,15 +2489,42 @@ Tasks:
 
 ### Epic 92. RBAC Admin API
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Create role.
-- Grant scope.
-- Revoke scope.
-- List policies.
-- Audit changes.
+- Create role. Done within the Core Alpha static-role boundary: admin
+  endpoints can create or update principals bound to supported roles `admin`
+  and `data`; dynamic custom role definitions remain future work.
+- Grant scope. Done: `POST /v1/admin/auth/scope/grant` mutates persisted
+  AgentView readable/writable scopes for existing agents.
+- Revoke scope. Done: `POST /v1/admin/auth/scope/revoke` mutates persisted
+  AgentView readable/writable scopes for existing agents.
+- List policies. Done: `GET /v1/admin/auth/policies` returns a redacted
+  policy-store listing with token fingerprints, quotas, capabilities, tenants,
+  disabled state, role, and AgentView binding.
+- Audit changes. Done at the HTTP route layer: new admin routes are classified
+  as admin actions by the existing audit classifier and covered by the
+  OpenAPI/error contract gate.
+
+Evidence:
+
+- `crates/cortex-server/src/auth_policy_store.rs`
+- `crates/cortex-server/src/auth_scope_admin.rs`
+- `crates/cortex-server/src/tests/auth_policy_tests.rs`
+- `docs/AUTH.md`
+- `docs/API.md`
+- `docs/API_JSON_SCHEMAS.md`
+- `docs/openapi.yaml`
+- `make rbac-policy-store-check`
+- `make openapi-contract-check`
+
+Boundary:
+
+- Scope grant/revoke intentionally update AgentView, not the auth policy store,
+  so AgentView remains the single source of read/write scope permissions.
+- Dynamic custom role definitions are not implemented; Core Alpha supports
+  static `admin` and `data` roles plus principal capabilities.
 
 ### Epic 93. Per-token Quotas
 

@@ -189,6 +189,65 @@ paths:
         '403': *id005
         '404': *id003
         '500': *id002
+  /v1/admin/auth/policies:
+    get:
+      summary: List redacted local auth policy principals
+      description: Admin-only policy-store review. Raw bearer tokens are never returned.
+      responses:
+        '200':
+          description: Redacted policy list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthPolicyListResponse'
+        '400': *id001
+        '401': *id004
+        '403': *id005
+        '500': *id002
+  /v1/admin/auth/scope/grant:
+    post:
+      summary: Grant a scope to an existing AgentView
+      description: Admin-only AgentView scope mutation. AgentView remains the source of scope permissions.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthScopeMutationRequest'
+      responses:
+        '200':
+          description: Agent scope mutation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthScopeMutationResponse'
+        '400': *id001
+        '401': *id004
+        '403': *id005
+        '404': *id003
+        '500': *id002
+  /v1/admin/auth/scope/revoke:
+    post:
+      summary: Revoke a scope from an existing AgentView
+      description: Admin-only AgentView scope mutation. AgentView remains the source of scope permissions.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthScopeMutationRequest'
+      responses:
+        '200':
+          description: Agent scope mutation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthScopeMutationResponse'
+        '400': *id001
+        '401': *id004
+        '403': *id005
+        '404': *id003
+        '500': *id002
   /v1/admin/search/hnsw/no-fallback-profile:
     get:
       summary: Read the persisted HNSW no-fallback rollout profile
@@ -1140,6 +1199,11 @@ components:
             - verify
             - write
           minimum: 1
+        tenants:
+          type: array
+          items:
+            type: string
+          minimum: 1
     AuthPolicyMutationResponse:
       type: object
       additionalProperties: false
@@ -1171,6 +1235,159 @@ components:
           type: integer
         rollback_available:
           type: boolean
+    AuthPolicyListPrincipal:
+      type: object
+      additionalProperties: false
+      required:
+      - principal_id
+      - role
+      - agent_id
+      - disabled
+      - request_quota_per_minute
+      - body_quota_bytes_per_minute
+      - queue_quota
+      - capabilities
+      - tenants
+      - token_present
+      - token_fingerprint
+      properties:
+        principal_id:
+          type: string
+        role:
+          type: string
+          enum:
+          - admin
+          - data
+        agent_id:
+          anyOf:
+          - type: integer
+            format: uint64
+            minimum: 1
+          - type: 'null'
+        disabled:
+          type: boolean
+        request_quota_per_minute:
+          anyOf:
+          - type: integer
+            format: uint64
+            minimum: 1
+          - type: 'null'
+        body_quota_bytes_per_minute:
+          anyOf:
+          - type: integer
+            format: uint64
+            minimum: 1
+          - type: 'null'
+        queue_quota:
+          anyOf:
+          - type: integer
+            format: uint64
+            minimum: 1
+          - type: 'null'
+        capabilities:
+          type: array
+          items:
+            type: string
+        tenants:
+          type: array
+          items:
+            type: string
+        token_present:
+          type: boolean
+        token_fingerprint:
+          type: string
+    AuthPolicyListResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - schema_version
+      - supported_roles
+      - principal_count
+      - active_principals
+      - disabled_principals
+      - principals
+      - token_redaction
+      properties:
+        schema_version:
+          type: string
+          enum:
+          - cortexdb.auth_policy_list.v1
+        supported_roles:
+          type: array
+          items:
+            type: string
+            enum:
+            - admin
+            - data
+        principal_count:
+          type: integer
+        active_principals:
+          type: integer
+        disabled_principals:
+          type: integer
+        principals:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthPolicyListPrincipal'
+        token_redaction:
+          type: string
+    AuthScopeMutationRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - agent_id
+      - scope
+      - access
+      properties:
+        agent_id:
+          type: integer
+          format: uint64
+          minimum: 1
+        scope:
+          type: string
+          minLength: 1
+        access:
+          type: string
+          enum:
+          - read
+          - write
+          - read_write
+    AuthScopeMutationResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - schema_version
+      - action
+      - agent_id
+      - scope
+      - access
+      - readable_scope_count
+      - writable_scope_count
+      properties:
+        schema_version:
+          type: string
+          enum:
+          - cortexdb.auth_scope_mutation.v1
+        action:
+          type: string
+          enum:
+          - grant_scope
+          - revoke_scope
+        agent_id:
+          type: integer
+          format: uint64
+        scope:
+          type: string
+        access:
+          type: string
+          enum:
+          - read
+          - write
+          - read_write
+        readable_scope_count:
+          type: integer
+        writable_scope_count:
+          type: integer
     HnswNoFallbackProfileRequest:
       type: object
       additionalProperties: false

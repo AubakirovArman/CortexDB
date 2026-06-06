@@ -3,9 +3,13 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::JoinHandle;
 
+use cortex_aql::AgentId;
 use cortex_engine::{Database, DatabaseOptions, ExpiredMemoryCell};
 
 use crate::auth_policy_cells::{self, AuthPolicyCellSyncReport};
+use crate::auth_scope_admin::{
+    apply_agent_scope_mutation, AgentScopeAccess, AgentScopeMutationResponse,
+};
 use crate::responses::RouterError;
 use crate::router::route_database_with_agent;
 use crate::DEFAULT_ACTOR_QUEUE_CAPACITY;
@@ -25,6 +29,13 @@ enum ActorCommand {
     SyncAuthPolicyStore {
         store_json: String,
         reply: mpsc::Sender<Result<AuthPolicyCellSyncReport, RouterError>>,
+    },
+    MutateAgentScope {
+        agent_id: AgentId,
+        scope: String,
+        access: AgentScopeAccess,
+        grant: bool,
+        reply: mpsc::Sender<Result<AgentScopeMutationResponse, RouterError>>,
     },
     #[cfg(test)]
     TestBlock {
@@ -98,6 +109,17 @@ impl DatabaseActor {
                     ActorCommand::SyncAuthPolicyStore { store_json, reply } => {
                         let result =
                             auth_policy_cells::sync_store_json_to_database(&mut db, &store_json);
+                        let _ = reply.send(result);
+                    }
+                    ActorCommand::MutateAgentScope {
+                        agent_id,
+                        scope,
+                        access,
+                        grant,
+                        reply,
+                    } => {
+                        let result =
+                            apply_agent_scope_mutation(&mut db, agent_id, &scope, access, grant);
                         let _ = reply.send(result);
                     }
                     #[cfg(test)]
@@ -256,6 +278,28 @@ impl DatabaseActor {
         let (reply_tx, reply_rx) = mpsc::channel();
         self.enqueue(ActorCommand::SyncAuthPolicyStore {
             store_json: store_json.to_owned(),
+            reply: reply_tx,
+        })?;
+        let result = reply_rx
+            .recv()
+            .map_err(|_| RouterError::Internal("database actor stopped".to_owned()))?;
+        self.requests_completed.fetch_add(1, Ordering::Relaxed);
+        result
+    }
+
+    pub(crate) fn mutate_agent_scope(
+        &self,
+        agent_id: AgentId,
+        scope: &str,
+        access: AgentScopeAccess,
+        grant: bool,
+    ) -> Result<AgentScopeMutationResponse, RouterError> {
+        let (reply_tx, reply_rx) = mpsc::channel();
+        self.enqueue(ActorCommand::MutateAgentScope {
+            agent_id,
+            scope: scope.to_owned(),
+            access,
+            grant,
             reply: reply_tx,
         })?;
         let result = reply_rx

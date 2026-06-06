@@ -27,6 +27,7 @@ mod auth_capability;
 mod auth_policy_cells;
 mod auth_policy_io;
 mod auth_policy_store;
+mod auth_scope_admin;
 mod authz;
 mod context;
 mod dashboard;
@@ -673,81 +674,84 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
         &body_bytes,
     ) {
         Ok(Some(admin_response)) => {
-            let db = match state.get_db("default") {
-                Ok(db) => db,
-                Err(error) => {
-                    audit_http_response(
-                        &state,
-                        &audit_event,
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Some(ErrorCode::Internal),
-                    );
-                    return with_request_id(
-                        (
+            if admin_response.sync_policy_cells {
+                let db = match state.get_db("default") {
+                    Ok(db) => db,
+                    Err(error) => {
+                        audit_http_response(
+                            &state,
+                            &audit_event,
                             StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(error_response(ErrorCode::Internal, error.to_string())),
-                        )
-                            .into_response(),
-                        &request_id,
-                    );
-                }
-            };
-            let store_json = admin_response.policy_store_json;
-            let _queue_permit = match acquire_principal_queue_permit(&state, &auth_decision) {
-                Ok(permit) => permit,
-                Err(error) => {
-                    state.request_rejected.fetch_add(1, Ordering::Relaxed);
-                    let status = StatusCode::from_u16(error.status_code())
-                        .unwrap_or(StatusCode::TOO_MANY_REQUESTS);
-                    audit_http_response(&state, &audit_event, status, Some(error.code()));
-                    return with_request_id(
-                        (
-                            status,
-                            Json(error_response(
-                                error.code(),
-                                "principal queue quota exceeded",
-                            )),
-                        )
-                            .into_response(),
-                        &request_id,
-                    );
-                }
-            };
-            let sync_result =
-                tokio::task::spawn_blocking(move || db.sync_auth_policy_store(&store_json)).await;
-            match sync_result {
-                Ok(Ok(_)) => {}
-                Ok(Err(error)) => {
-                    let status = StatusCode::from_u16(error.status_code())
-                        .unwrap_or(StatusCode::BAD_REQUEST);
-                    audit_http_response(&state, &audit_event, status, Some(error.code()));
-                    return with_request_id(
-                        (
-                            status,
-                            Json(error_response(error.code(), error.to_string())),
-                        )
-                            .into_response(),
-                        &request_id,
-                    );
-                }
-                Err(_) => {
-                    audit_http_response(
-                        &state,
-                        &audit_event,
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Some(ErrorCode::Internal),
-                    );
-                    return with_request_id(
-                        (
+                            Some(ErrorCode::Internal),
+                        );
+                        return with_request_id(
+                            (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                Json(error_response(ErrorCode::Internal, error.to_string())),
+                            )
+                                .into_response(),
+                            &request_id,
+                        );
+                    }
+                };
+                let store_json = admin_response.policy_store_json;
+                let _queue_permit = match acquire_principal_queue_permit(&state, &auth_decision) {
+                    Ok(permit) => permit,
+                    Err(error) => {
+                        state.request_rejected.fetch_add(1, Ordering::Relaxed);
+                        let status = StatusCode::from_u16(error.status_code())
+                            .unwrap_or(StatusCode::TOO_MANY_REQUESTS);
+                        audit_http_response(&state, &audit_event, status, Some(error.code()));
+                        return with_request_id(
+                            (
+                                status,
+                                Json(error_response(
+                                    error.code(),
+                                    "principal queue quota exceeded",
+                                )),
+                            )
+                                .into_response(),
+                            &request_id,
+                        );
+                    }
+                };
+                let sync_result =
+                    tokio::task::spawn_blocking(move || db.sync_auth_policy_store(&store_json))
+                        .await;
+                match sync_result {
+                    Ok(Ok(_)) => {}
+                    Ok(Err(error)) => {
+                        let status = StatusCode::from_u16(error.status_code())
+                            .unwrap_or(StatusCode::BAD_REQUEST);
+                        audit_http_response(&state, &audit_event, status, Some(error.code()));
+                        return with_request_id(
+                            (
+                                status,
+                                Json(error_response(error.code(), error.to_string())),
+                            )
+                                .into_response(),
+                            &request_id,
+                        );
+                    }
+                    Err(_) => {
+                        audit_http_response(
+                            &state,
+                            &audit_event,
                             StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(error_response(
-                                ErrorCode::Internal,
-                                "auth policy cell sync task failed",
-                            )),
-                        )
-                            .into_response(),
-                        &request_id,
-                    );
+                            Some(ErrorCode::Internal),
+                        );
+                        return with_request_id(
+                            (
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                Json(error_response(
+                                    ErrorCode::Internal,
+                                    "auth policy cell sync task failed",
+                                )),
+                            )
+                                .into_response(),
+                            &request_id,
+                        );
+                    }
                 }
             }
             audit_http_response(&state, &audit_event, StatusCode::OK, None);
@@ -773,6 +777,116 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                     .into_response(),
                 &request_id,
             );
+        }
+    }
+
+    if method == "POST"
+        && matches!(
+            path.as_str(),
+            "/v1/admin/auth/scope/grant" | "/v1/admin/auth/scope/revoke"
+        )
+    {
+        let grant = path == "/v1/admin/auth/scope/grant";
+        let (agent_id, scope, access) =
+            match auth_scope_admin::parse_scope_mutation_body(&body_bytes) {
+                Ok(value) => value,
+                Err(error) => {
+                    let status = StatusCode::from_u16(error.status_code())
+                        .unwrap_or(StatusCode::BAD_REQUEST);
+                    audit_http_response(&state, &audit_event, status, Some(error.code()));
+                    return with_request_id(
+                        (
+                            status,
+                            Json(error_response(error.code(), error.to_string())),
+                        )
+                            .into_response(),
+                        &request_id,
+                    );
+                }
+            };
+        let db = match state.get_db("default") {
+            Ok(db) => db,
+            Err(error) => {
+                audit_http_response(
+                    &state,
+                    &audit_event,
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Some(ErrorCode::Internal),
+                );
+                return with_request_id(
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(error_response(ErrorCode::Internal, error.to_string())),
+                    )
+                        .into_response(),
+                    &request_id,
+                );
+            }
+        };
+        let _queue_permit = match acquire_principal_queue_permit(&state, &auth_decision) {
+            Ok(permit) => permit,
+            Err(error) => {
+                state.request_rejected.fetch_add(1, Ordering::Relaxed);
+                let status = StatusCode::from_u16(error.status_code())
+                    .unwrap_or(StatusCode::TOO_MANY_REQUESTS);
+                audit_http_response(&state, &audit_event, status, Some(error.code()));
+                return with_request_id(
+                    (
+                        status,
+                        Json(error_response(
+                            error.code(),
+                            "principal queue quota exceeded",
+                        )),
+                    )
+                        .into_response(),
+                    &request_id,
+                );
+            }
+        };
+        let result = tokio::task::spawn_blocking(move || {
+            db.mutate_agent_scope(agent_id, &scope, access, grant)
+        })
+        .await;
+        match result {
+            Ok(Ok(response)) => {
+                audit_http_response(&state, &audit_event, StatusCode::OK, None);
+                return with_request_id(
+                    (StatusCode::OK, Json(response)).into_response(),
+                    &request_id,
+                );
+            }
+            Ok(Err(error)) => {
+                let status =
+                    StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::BAD_REQUEST);
+                audit_http_response(&state, &audit_event, status, Some(error.code()));
+                return with_request_id(
+                    (
+                        status,
+                        Json(error_response(error.code(), error.to_string())),
+                    )
+                        .into_response(),
+                    &request_id,
+                );
+            }
+            Err(_) => {
+                audit_http_response(
+                    &state,
+                    &audit_event,
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Some(ErrorCode::Internal),
+                );
+                return with_request_id(
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(error_response(
+                            ErrorCode::Internal,
+                            "auth scope mutation task failed",
+                        )),
+                    )
+                        .into_response(),
+                    &request_id,
+                );
+            }
         }
     }
 

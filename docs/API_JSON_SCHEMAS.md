@@ -136,6 +136,64 @@ fail closed.
 
 `POST /v1/admin/auth/policy/rollback`
 
+`GET /v1/admin/auth/policies`
+
+Response:
+
+```json
+{
+  "schema_version": "cortexdb.auth_policy_list.v1",
+  "supported_roles": ["admin", "data"],
+  "principal_count": 1,
+  "active_principals": 1,
+  "disabled_principals": 0,
+  "principals": [
+    {
+      "principal_id": "agent-a",
+      "role": "data",
+      "agent_id": 7,
+      "disabled": false,
+      "request_quota_per_minute": 600,
+      "body_quota_bytes_per_minute": 1048576,
+      "queue_quota": 2,
+      "capabilities": ["read", "search"],
+      "tenants": ["default"],
+      "token_present": true,
+      "token_fingerprint": "fnv64:..."
+    }
+  ],
+  "token_redaction": "token omitted; token_fingerprint uses stable fnv64"
+}
+```
+
+`POST /v1/admin/auth/scope/grant`
+
+`POST /v1/admin/auth/scope/revoke`
+
+Request:
+
+```json
+{
+  "agent_id": 7,
+  "scope": "project:investments",
+  "access": "read_write"
+}
+```
+
+Response:
+
+```json
+{
+  "schema_version": "cortexdb.auth_scope_mutation.v1",
+  "action": "grant_scope",
+  "agent_id": 7,
+  "scope": "project:investments",
+  "access": "read_write",
+  "readable_scope_count": 2,
+  "writable_scope_count": 2
+}
+```
+
 Response:
 
 ```json

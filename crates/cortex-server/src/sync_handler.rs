@@ -4,8 +4,8 @@ use cortex_engine::Database;
 
 use crate::router::query_param_opt_decoded;
 use crate::{
-    auth, auth_policy_cells, auth_policy_store, dashboard, json_error, json_response, llm,
-    route_shared_with_agent, validate_tenant_id, ErrorCode, ServerOptions,
+    auth, auth_policy_cells, auth_policy_store, auth_scope_admin, dashboard, json_error,
+    json_response, llm, route_shared_with_agent, validate_tenant_id, ErrorCode, ServerOptions,
 };
 
 fn serve_dashboard() -> String {
@@ -79,27 +79,58 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
     let query = parts[1].split_once('?').map_or("", |(_, query)| query);
     match auth_policy_store::handle_admin_request(options, parts[0], path, query, body.as_bytes()) {
         Ok(Some(value)) => {
-            let sync_result = open_database(root, options)
-                .map_err(|_| ())
-                .and_then(|mut db| {
-                    auth_policy_cells::sync_store_json_to_database(
-                        &mut db,
-                        &value.policy_store_json,
-                    )
-                    .map(|_| ())
-                    .map_err(|_| ())
-                });
-            if sync_result.is_err() {
-                return json_error(
-                    500,
-                    ErrorCode::Internal,
-                    "auth policy store persisted but policy cell sync failed",
-                );
+            if value.sync_policy_cells {
+                let sync_result =
+                    open_database(root, options)
+                        .map_err(|_| ())
+                        .and_then(|mut db| {
+                            auth_policy_cells::sync_store_json_to_database(
+                                &mut db,
+                                &value.policy_store_json,
+                            )
+                            .map(|_| ())
+                            .map_err(|_| ())
+                        });
+                if sync_result.is_err() {
+                    return json_error(
+                        500,
+                        ErrorCode::Internal,
+                        "auth policy store persisted but policy cell sync failed",
+                    );
+                }
             }
             return json_response(200, &value.body);
         }
         Ok(None) => {}
         Err(error) => return json_error(error.status_code(), error.code(), &error.to_string()),
+    }
+
+    if parts[0] == "POST"
+        && matches!(
+            path,
+            "/v1/admin/auth/scope/grant" | "/v1/admin/auth/scope/revoke"
+        )
+    {
+        let grant = path == "/v1/admin/auth/scope/grant";
+        let (agent_id, scope, access) =
+            match auth_scope_admin::parse_scope_mutation_body(body.as_bytes()) {
+                Ok(value) => value,
+                Err(error) => {
+                    return json_error(error.status_code(), error.code(), &error.to_string())
+                }
+            };
+        let Ok(mut db) = open_database(root, options) else {
+            return json_error(500, ErrorCode::Internal, "failed to open database");
+        };
+        return match auth_scope_admin::apply_agent_scope_mutation(
+            &mut db, agent_id, &scope, access, grant,
+        ) {
+            Ok(response) => match serde_json::to_string(&response) {
+                Ok(body) => json_response(200, &body),
+                Err(error) => json_error(500, ErrorCode::Internal, &error.to_string()),
+            },
+            Err(error) => json_error(error.status_code(), error.code(), &error.to_string()),
+        };
     }
 
     if parts[0] == "POST" && path == "/v1/inference" {

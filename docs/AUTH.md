@@ -158,6 +158,38 @@ AgentView binding, disabled state, quota, capabilities, tenant allowlist, and a
 token fingerprint. It intentionally does not store the raw bearer token in the
 cell payload; the JSON policy store remains the credential source of truth.
 
+Admins can also review the redacted policy store through HTTP:
+
+```bash
+curl -H "Authorization: Bearer root-token" \
+  http://127.0.0.1:8181/v1/admin/auth/policies
+```
+
+The list response has schema `cortexdb.auth_policy_list.v1`, includes role,
+AgentView binding, quota, capabilities, tenant allowlist, disabled state, and a
+stable token fingerprint, and never returns raw bearer token values.
+
+Agent scope permissions are still stored in `AgentView`, not duplicated in the
+policy store. Admins can grant or revoke AgentView scopes through:
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer root-token" \
+  -H "Content-Type: application/json" \
+  http://127.0.0.1:8181/v1/admin/auth/scope/grant \
+  -d '{"agent_id":8,"scope":"project:investments","access":"read_write"}'
+
+curl -X POST \
+  -H "Authorization: Bearer root-token" \
+  -H "Content-Type: application/json" \
+  http://127.0.0.1:8181/v1/admin/auth/scope/revoke \
+  -d '{"agent_id":8,"scope":"project:investments","access":"read"}'
+```
+
+`access` accepts `read`, `write`, or `read_write`. These endpoints require an
+existing persisted AgentView. Core Alpha keeps roles static (`admin` and
+`data`); dynamic custom role definitions remain future work.
+
 ## Sending Requests with Auth
 
 Include the `Authorization: Bearer <token>` header in every request:

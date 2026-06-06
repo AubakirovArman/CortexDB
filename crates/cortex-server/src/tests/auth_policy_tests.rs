@@ -599,6 +599,130 @@ fn admin_upsert_syncs_redacted_policy_cells() {
 }
 
 #[test]
+fn admin_can_list_redacted_policy_store_principals() {
+    let dir = tempfile::tempdir().unwrap();
+    let policy_store = dir.path().join("auth-policy.json");
+    std::fs::write(
+        &policy_store,
+        r#"{
+          "schema_version": "cortexdb.auth_policy.v1",
+          "principals": [
+            {
+              "principal_id":"data-a",
+              "token":"data-secret",
+              "role":"data",
+              "agent_id":7,
+              "request_quota_per_minute":600,
+              "body_quota_bytes_per_minute":2048,
+              "queue_quota":2,
+              "capabilities":["search","read"],
+              "tenants":["default","alpha"]
+            },
+            {"principal_id":"disabled-admin","token":"admin-secret-2","role":"admin","disabled":true}
+          ]
+        }"#,
+    )
+    .unwrap();
+    let options = ServerOptions {
+        auth_tokens: vec![AuthTokenPolicy::new("admin-secret", AuthRole::Admin)],
+        auth_policy_store_file: Some(policy_store),
+        ..Default::default()
+    };
+
+    let response = handle_http_with_options(
+        dir.path(),
+        "GET /v1/admin/auth/policies HTTP/1.1\r\nAuthorization: Bearer admin-secret\r\n\r\n",
+        &options,
+    );
+    assert!(
+        response.contains("200 OK"),
+        "admin policy list should succeed: {response}"
+    );
+    assert!(
+        !response.contains("data-secret"),
+        "policy list must not disclose raw token: {response}"
+    );
+
+    let value = body_json(&response);
+    assert_eq!(value["schema_version"], "cortexdb.auth_policy_list.v1");
+    assert_eq!(value["principal_count"], 2);
+    assert_eq!(value["active_principals"], 1);
+    assert_eq!(value["disabled_principals"], 1);
+    assert_eq!(
+        value["supported_roles"],
+        serde_json::json!(["admin", "data"])
+    );
+    assert_eq!(value["principals"][0]["principal_id"], "data-a");
+    assert_eq!(value["principals"][0]["role"], "data");
+    assert_eq!(value["principals"][0]["agent_id"], 7);
+    assert_eq!(
+        value["principals"][0]["capabilities"],
+        serde_json::json!(["read", "search"])
+    );
+    assert_eq!(
+        value["principals"][0]["tenants"],
+        serde_json::json!(["alpha", "default"])
+    );
+    assert_eq!(value["principals"][0]["token_present"], true);
+    assert!(value["principals"][0]["token_fingerprint"]
+        .as_str()
+        .unwrap()
+        .starts_with("fnv64:"));
+}
+
+#[test]
+fn admin_can_grant_and_revoke_agent_scope() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let db = Database::open(dir.path()).unwrap();
+        db.save_agent_view(&agent_view(AgentId(7), "finance"))
+            .unwrap();
+    }
+    let options = ServerOptions {
+        auth_tokens: vec![AuthTokenPolicy::new("admin-secret", AuthRole::Admin)],
+        ..Default::default()
+    };
+
+    let grant_body = r#"{"agent_id":7,"scope":"project:alpha","access":"read_write"}"#;
+    let grant = handle_http_with_options(
+        dir.path(),
+        &post_with_body("/v1/admin/auth/scope/grant", "admin-secret", grant_body),
+        &options,
+    );
+    assert!(grant.contains("200 OK"), "grant should succeed: {grant}");
+    let value = body_json(&grant);
+    assert_eq!(value["schema_version"], "cortexdb.auth_scope_mutation.v1");
+    assert_eq!(value["action"], "grant_scope");
+    assert_eq!(value["agent_id"], 7);
+    assert_eq!(value["scope"], "project:alpha");
+    assert_eq!(value["access"], "read_write");
+
+    {
+        let db = Database::open(dir.path()).unwrap();
+        let view = db.load_agent_view(AgentId(7)).unwrap().unwrap();
+        let project_alpha = scope_id("project:alpha");
+        assert!(view.readable_scopes.contains(&project_alpha));
+        assert!(view.writable_scopes.contains(&project_alpha));
+    }
+
+    let revoke_body = r#"{"agent_id":7,"scope":"project:alpha","access":"read_write"}"#;
+    let revoke = handle_http_with_options(
+        dir.path(),
+        &post_with_body("/v1/admin/auth/scope/revoke", "admin-secret", revoke_body),
+        &options,
+    );
+    assert!(revoke.contains("200 OK"), "revoke should succeed: {revoke}");
+    let value = body_json(&revoke);
+    assert_eq!(value["action"], "revoke_scope");
+
+    let db = Database::open(dir.path()).unwrap();
+    let view = db.load_agent_view(AgentId(7)).unwrap().unwrap();
+    let project_alpha = scope_id("project:alpha");
+    assert!(!view.readable_scopes.contains(&project_alpha));
+    assert!(!view.writable_scopes.contains(&project_alpha));
+}
+
+#[test]
 fn auth_policy_store_tenants_restrict_database_realms() {
     let dir = tempfile::tempdir().unwrap();
     let policy_store = dir.path().join("auth-policy.json");
@@ -704,6 +828,20 @@ fn data_token_cannot_mutate_policy_store() {
     assert!(
         response.contains("403 Forbidden"),
         "data role must not mutate policy store: {response}"
+    );
+
+    let response = handle_http_with_options(
+        dir.path(),
+        &post_with_body(
+            "/v1/admin/auth/scope/grant",
+            "data-secret",
+            r#"{"agent_id":7,"scope":"finance","access":"read"}"#,
+        ),
+        &options,
+    );
+    assert!(
+        response.contains("403 Forbidden"),
+        "data role must not mutate agent scopes: {response}"
     );
 }
 
