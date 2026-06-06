@@ -79,6 +79,16 @@ stored text chunk writes `source_id`, `document_id`, and `chunk_id` in the
 payload header before the body, so `CellMetadata::from_payload` can expose it as
 a structured `SourceRef`.
 
+The deterministic ingestion policy is frozen in
+[`DETERMINISTIC_CHUNKING.md`](DETERMINISTIC_CHUNKING.md). In short:
+
+- text uses stable `<document>#chunk-000N` ids and fixed character overlap for
+  long paragraphs;
+- JSON emits sorted leaf `json_path` values with `.` separators and numeric
+  array components;
+- CSV/table ingestion treats row 1 as the header and emits data row provenance
+  as `row=<n>` and `cell_range=row-<n>`.
+
 `IngestionProgressTracker` provides a small synchronous progress surface for
 adapter jobs. The first tracked helper is `Database::ingest_csv_with_progress`,
 which records total rows, completed cells, status, and the last written

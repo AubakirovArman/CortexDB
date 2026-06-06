@@ -6,7 +6,7 @@ use crate::ingestion::cells::{
     document_metadata, entity_metadata, fact_metadata, offset_cell_id, put_source_ref_cell,
     put_text_chunk_cell, relation_metadata, SourceRefHeaders,
 };
-use crate::ingestion::chunking::{split_text_chunks, TextChunkPolicy};
+use crate::ingestion::chunking::{split_text_chunks, TableChunkPolicy, TextChunkPolicy};
 use crate::ingestion::extract_pdf_text;
 use crate::ingestion::formats::{csv_rows, flat_json_fields};
 
@@ -141,14 +141,14 @@ impl Database {
         let Some(headers) = rows.first() else {
             return Ok(Vec::new());
         };
+        let table_policy = TableChunkPolicy::default().validate()?;
         rows.iter()
             .skip(1)
             .enumerate()
             .map(|(index, row)| {
                 let cell_id = offset_cell_id(first_cell_id, index)?;
-                let source_row = u32::try_from(index + 2)
-                    .map_err(|_| EngineError::StorageInvariant("csv row overflow".to_owned()))?;
-                let cell_range = format!("row-{source_row}");
+                let source_row = table_policy.source_row_number(index)?;
+                let cell_range = table_policy.cell_range(source_row);
                 let body = headers
                     .iter()
                     .zip(row)

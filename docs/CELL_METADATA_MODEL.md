@@ -59,13 +59,16 @@ document_id=<source>
 chunk_id=<sanitized-source>#chunk-0001
 ```
 
-JSON ingestion writes `json_path=<flattened.path>` for every emitted fact. CSV
-ingestion writes `row=<1-based source row>` and `cell_range=row-<n>` for every
-data row. PDF text ingestion writes `page=<n>` when the caller provides a page.
+JSON ingestion writes sorted leaf `json_path=<flattened.path>` values for every
+emitted fact. CSV ingestion writes `row=<1-based source row>` and
+`cell_range=row-<n>` for every data row. PDF text ingestion writes `page=<n>`
+when the caller provides a page.
 
 The chunk id is deterministic for the same document id, text, and
 `TextChunkPolicy`. It is independent of `CellId`, so ContextPack citations stay
 stable across restarts and reimports that preserve the same chunk policy.
+The full deterministic ingestion contract is in
+[`DETERMINISTIC_CHUNKING.md`](DETERMINISTIC_CHUNKING.md).
 
 ---
 

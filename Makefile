@@ -27,6 +27,7 @@
 .PHONY: ingestion-jobs-v2-check
 .PHONY: ingestion-job-dashboard-check
 .PHONY: structured-source-ref-check
+.PHONY: deterministic-chunking-check
 .PHONY: distributed-consensus-research-check
 .PHONY: managed-cloud-feasibility-check
 .PHONY: next-60-epics-audit next-60-epics-completion-check
@@ -180,6 +181,7 @@ VERIFICATION_QUALITY_DASHBOARD_MD ?= target/verification-quality/dashboard.md
 INGESTION_JOBS_V2_REPORT ?= target/ingestion-jobs-v2/report.json
 INGESTION_JOB_DASHBOARD_REPORT ?= target/ingestion-job-dashboard/report.json
 STRUCTURED_SOURCE_REF_REPORT ?= target/structured-source-ref/report.json
+DETERMINISTIC_CHUNKING_REPORT ?= target/deterministic-chunking/report.json
 HTTP_CONTRACT_OPS_REPORT ?= target/http-contract-ops/report.json
 CLI_PRODUCT_REPORT ?= target/cli-product/report.json
 OPERATIONS_RUNBOOK_REPORT ?= target/operations-runbook/report.json
@@ -2707,6 +2709,12 @@ structured-source-ref-check: dashboard-standalone-smoke
 	cargo test -p cortex-engine --test ingestion_validation_report
 	cargo test -p cortex-server response_snapshot_tests
 	python3 scripts/structured_source_ref_check.py --report "$(STRUCTURED_SOURCE_REF_REPORT)"
+
+deterministic-chunking-check:
+	cargo test -p cortex-engine --test ingestion_chunking_policy
+	cargo test -p cortex-engine --test ingestion_adapters text_chunk_policy_produces_stable_ids_and_long_paragraph_chunks
+	cargo test -p cortex-engine --test ingestion_adapters csv_ingestion_writes_one_cell_per_row
+	python3 scripts/deterministic_chunking_check.py --report "$(DETERMINISTIC_CHUNKING_REPORT)"
 
 dashboard-smoke: dashboard-check
 	cargo build -p cortex-server

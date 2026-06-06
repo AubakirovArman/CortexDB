@@ -19,7 +19,10 @@ pub use adapters::{
     CsvIngestOptions, EntityIngestOptions, IngestedCell, JsonIngestOptions, PdfIngestOptions,
     RelationIngestOptions, TextIngestOptions,
 };
-pub use chunking::{split_text_chunks, stable_chunk_id, TextChunk, TextChunkPolicy};
+pub use chunking::{
+    split_text_chunks, stable_chunk_id, JsonChunkPolicy, TableChunkPolicy, TextChunk,
+    TextChunkPolicy, TextOverlapPolicy,
+};
 pub use pdf::{extract_pdf_text, PdfExtractionStats};
 pub use pdf_contracts::{
     validate_external_ocr_request, DigitalPdfTextExtractor, DisabledExternalOcrAdapter,

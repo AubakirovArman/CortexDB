@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 83 / 150
+- Done: 84 / 150
 - Partial: 1 / 150
-- Todo: 66 / 150
-- Current closed epic: Epic 83, Structured SourceRef v1
+- Todo: 65 / 150
+- Current closed epic: Epic 84, Deterministic Chunking v1
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2283,14 +2283,27 @@ Tasks:
 
 ### Epic 84. Deterministic Chunking v1
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/ingestion/chunking.rs`
+- `crates/cortex-engine/src/ingestion/formats.rs`
+- `crates/cortex-engine/tests/ingestion_chunking_policy.rs`
+- `docs/DETERMINISTIC_CHUNKING.md`
+- `scripts/deterministic_chunking_check.py`
+- `make deterministic-chunking-check`
 
 Tasks:
 
-- Add stable chunk IDs.
-- Define overlap policy.
-- Define JSON policy.
-- Define table policy.
+- Add stable chunk IDs. Done: text chunks use deterministic
+  `<sanitized-document>#chunk-000N` ids independent of `CellId`.
+- Define overlap policy. Done: `TextOverlapPolicy::FixedChars` is exposed from
+  `TextChunkPolicy` and long paragraphs split with fixed character overlap.
+- Define JSON policy. Done: `JsonChunkPolicy` uses `.` path separators,
+  numeric array path components, and sorted leaf paths before cell writes.
+- Define table policy. Done: `TableChunkPolicy` treats row 1 as headers and
+  emits 1-based data-row provenance with `cell_range=row-<n>`.
 
 ### Epic 85. Chunking Quality Benchmark
 

@@ -3,6 +3,9 @@ use crate::error::{EngineError, EngineResult};
 pub const DEFAULT_TEXT_CHUNK_MAX_CHARS: usize = 1_000;
 pub const DEFAULT_TEXT_CHUNK_OVERLAP_CHARS: usize = 120;
 pub const DEFAULT_TEXT_CHUNK_MIN_CHARS: usize = 1;
+pub const DEFAULT_JSON_CHUNK_PATH_SEPARATOR: char = '.';
+pub const DEFAULT_TABLE_CHUNK_FIRST_DATA_ROW: u32 = 2;
+pub const DEFAULT_TABLE_CHUNK_CELL_RANGE_PREFIX: &str = "row-";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TextChunkPolicy {
@@ -37,6 +40,89 @@ impl TextChunkPolicy {
             return Err(EngineError::InvalidOperation);
         }
         Ok(self)
+    }
+
+    pub fn overlap_policy(self) -> TextOverlapPolicy {
+        TextOverlapPolicy::FixedChars {
+            chars: self.overlap_chars,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TextOverlapPolicy {
+    FixedChars { chars: usize },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct JsonChunkPolicy {
+    pub path_separator: char,
+    pub sort_paths: bool,
+}
+
+impl Default for JsonChunkPolicy {
+    fn default() -> Self {
+        Self {
+            path_separator: DEFAULT_JSON_CHUNK_PATH_SEPARATOR,
+            sort_paths: true,
+        }
+    }
+}
+
+impl JsonChunkPolicy {
+    pub fn validate(self) -> EngineResult<Self> {
+        if matches!(self.path_separator, '\0' | '\n' | '\r') {
+            return Err(EngineError::InvalidOperation);
+        }
+        Ok(self)
+    }
+
+    pub fn join_path(self, prefix: &str, child: &str) -> String {
+        if prefix.is_empty() {
+            child.to_owned()
+        } else {
+            format!("{prefix}{}{child}", self.path_separator)
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TableChunkPolicy {
+    pub first_data_row: u32,
+    pub cell_range_prefix: &'static str,
+}
+
+impl Default for TableChunkPolicy {
+    fn default() -> Self {
+        Self {
+            first_data_row: DEFAULT_TABLE_CHUNK_FIRST_DATA_ROW,
+            cell_range_prefix: DEFAULT_TABLE_CHUNK_CELL_RANGE_PREFIX,
+        }
+    }
+}
+
+impl TableChunkPolicy {
+    pub fn validate(self) -> EngineResult<Self> {
+        if self.first_data_row == 0
+            || self.cell_range_prefix.is_empty()
+            || self.cell_range_prefix.contains('\n')
+            || self.cell_range_prefix.contains('\r')
+        {
+            return Err(EngineError::InvalidOperation);
+        }
+        Ok(self)
+    }
+
+    pub fn source_row_number(self, zero_based_data_index: usize) -> EngineResult<u32> {
+        let offset = u32::try_from(zero_based_data_index)
+            .map_err(|_| EngineError::StorageInvariant("table row overflow".to_owned()))?;
+        self.first_data_row
+            .checked_add(offset)
+            .ok_or_else(|| EngineError::StorageInvariant("table row overflow".to_owned()))
+    }
+
+    pub fn cell_range(self, source_row: u32) -> String {
+        format!("{}{source_row}", self.cell_range_prefix)
     }
 }
 

@@ -1,10 +1,22 @@
 use crate::error::{EngineError, EngineResult};
+use crate::ingestion::chunking::JsonChunkPolicy;
 
 pub(crate) fn flat_json_fields(json: &str) -> EngineResult<Vec<(String, String)>> {
+    flat_json_fields_with_policy(json, JsonChunkPolicy::default())
+}
+
+pub(crate) fn flat_json_fields_with_policy(
+    json: &str,
+    policy: JsonChunkPolicy,
+) -> EngineResult<Vec<(String, String)>> {
+    let policy = policy.validate()?;
     let parsed: serde_json::Value = serde_json::from_str(json)
         .map_err(|e| EngineError::StorageInvariant(format!("invalid json: {e}")))?;
     let mut out = Vec::new();
-    flatten_json_value(&parsed, "", &mut out);
+    flatten_json_value(&parsed, "", policy, &mut out);
+    if policy.sort_paths {
+        out.sort_by(|left, right| left.0.cmp(&right.0));
+    }
     Ok(out)
 }
 
@@ -21,21 +33,23 @@ pub(crate) fn csv_rows(csv: &str) -> EngineResult<Vec<Vec<String>>> {
     Ok(rows)
 }
 
-fn flatten_json_value(value: &serde_json::Value, prefix: &str, out: &mut Vec<(String, String)>) {
+fn flatten_json_value(
+    value: &serde_json::Value,
+    prefix: &str,
+    policy: JsonChunkPolicy,
+    out: &mut Vec<(String, String)>,
+) {
     match value {
         serde_json::Value::Object(map) => {
             for (key, child) in map {
-                let next_prefix = if prefix.is_empty() {
-                    key.clone()
-                } else {
-                    format!("{prefix}.{key}")
-                };
-                flatten_json_value(child, &next_prefix, out);
+                let next_prefix = policy.join_path(prefix, key);
+                flatten_json_value(child, &next_prefix, policy, out);
             }
         }
         serde_json::Value::Array(values) => {
             for (index, child) in values.iter().enumerate() {
-                flatten_json_value(child, &format!("{prefix}.{index}"), out);
+                let next_prefix = policy.join_path(prefix, &index.to_string());
+                flatten_json_value(child, &next_prefix, policy, out);
             }
         }
         serde_json::Value::String(value) => {
