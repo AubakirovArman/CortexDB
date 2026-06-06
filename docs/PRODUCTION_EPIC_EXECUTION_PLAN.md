@@ -389,7 +389,15 @@ Tasks:
 
 ### Epic 18. Compaction Fault Injection v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `cargo test -p cortex-engine --test crash_matrix`
+- `cargo test -p cortex-engine --test bundle_gc`
+- `crates/cortex-engine/tests/crash_matrix.rs`
+- `crates/cortex-engine/tests/bundle_gc.rs`
+- `docs/CRASH_SIMULATION.md`
 
 Tasks:
 
