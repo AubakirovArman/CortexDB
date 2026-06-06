@@ -569,6 +569,40 @@ fn backup_prune_command_removes_old_matching_backups() {
 }
 
 #[test]
+fn backup_prune_dry_run_reports_without_removing() {
+    let root = unique_path("cortexdb-cli-backup-prune-dry-run-root");
+    std::fs::create_dir_all(&root).unwrap();
+    for name in [
+        "cortexdb-20260528T000000Z",
+        "cortexdb-20260529T000000Z",
+        "cortexdb-20260530T000000Z",
+    ] {
+        let dir = root.join(name);
+        std::fs::create_dir(&dir).unwrap();
+        std::fs::write(dir.join("marker"), name.as_bytes()).unwrap();
+    }
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "backup-prune".to_owned(),
+        root.to_string_lossy().into_owned(),
+        "cortexdb-".to_owned(),
+        "2".to_owned(),
+        "--dry-run".to_owned(),
+    ])
+    .unwrap();
+
+    assert!(output.contains("dry_run=true"));
+    assert!(output.contains("backups_seen=3"));
+    assert!(output.contains("backups_removed=1"));
+    assert!(root.join("cortexdb-20260528T000000Z").exists());
+    assert!(root.join("cortexdb-20260529T000000Z").exists());
+    assert!(root.join("cortexdb-20260530T000000Z").exists());
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn backup_offsite_stage_command_validates_and_publishes_copy() {
     let root = unique_path("cortexdb-cli-backup-offsite-root");
     let source = root.join("source");

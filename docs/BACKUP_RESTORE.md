@@ -87,6 +87,7 @@ Use sortable backup names and prune only after a drill succeeds:
 ```bash
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 cortexdb backup-drill ./db "./backups/cortexdb-$stamp" "./drills/cortexdb-$stamp"
+cortexdb backup-prune ./backups cortexdb- 7 --dry-run
 cortexdb backup-prune ./backups cortexdb- 7
 ```
 
@@ -110,6 +111,7 @@ the final directory with atomic rename from `<backup_id>.staging`.
 
 The retention command reports:
 
+- `dry_run` — whether the command only previewed deletions;
 - `backups_seen` — matching backup directories under the root;
 - `backups_kept` — latest matching directories preserved;
 - `backups_removed` — older matching directories deleted;
@@ -119,8 +121,8 @@ The retention command reports:
 
 `make backup-drill-check` is the repeatable local evidence gate. It creates a
 temporary database under `target/backup-drill`, runs three restore drills,
-prunes old backup directories, validates the latest restored copy, reads back
-the latest payload, and writes:
+previews and applies backup pruning, validates the latest restored copy, reads
+back the latest payload, and writes:
 
 ```text
 target/backup-drill/report.json
@@ -128,9 +130,10 @@ target/backup-drill/report.json
 
 The report is a release artifact. Keep it with release evidence when promoting
 a build, because it contains the local git SHA, the backup prefix, the retained
-backup policy, readback output, and a `restore_drill_trend` array. The trend is
-local-current by default; release automation should archive each report so the
-restore drill trend across releases can be compared before beta promotion.
+backup policy, dry-run prune output, applied prune output, readback output, and
+a `restore_drill_trend` array. The trend is local-current by default; release
+automation should archive each report so the restore drill trend across
+releases can be compared before beta promotion.
 
 `make backup-offsite-check` is the repeatable offsite-staging evidence gate. It
 creates a local backup, runs a restore drill, stages the backup under an offsite

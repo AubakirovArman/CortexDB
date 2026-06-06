@@ -135,9 +135,11 @@ cortexdb backup-drill ./db ./db.backup ./db.drill-restored
 #### `backup-prune <backup_root> <prefix> <keep_latest>`
 Remove old backup directories after a successful drill. Matching is
 prefix-based and lexicographic, so use sortable names such as
-`cortexdb-20260530T220000Z`. `keep_latest` must be greater than zero.
+`cortexdb-20260530T220000Z`. `keep_latest` must be greater than zero. Add
+`--dry-run` to get the same prune report without deleting directories.
 
 ```bash
+cortexdb backup-prune ./backups cortexdb- 7 --dry-run
 cortexdb backup-prune ./backups cortexdb- 7
 ```
 

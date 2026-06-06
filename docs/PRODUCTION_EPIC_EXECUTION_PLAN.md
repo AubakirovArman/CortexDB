@@ -409,7 +409,17 @@ Tasks:
 
 ### Epic 19. Backup Prune Safety
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `make backup-drill-check`
+- `target/backup-drill/report.json`
+- `cargo test -p cortex-engine --test backup_restore backup_retention`
+- `cargo test -p cortex-cli backup_prune`
+- `crates/cortex-engine/src/backup/retention.rs`
+- `scripts/backup_drill_check.sh`
+- `docs/BACKUP_RESTORE.md`
 
 Tasks:
 

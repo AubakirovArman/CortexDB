@@ -112,6 +112,8 @@ enum Command {
         backup_root: String,
         prefix: String,
         keep_latest: usize,
+        #[arg(long)]
+        dry_run: bool,
     },
     BackupOffsiteStage {
         backup_path: String,
@@ -465,7 +467,8 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             backup_root,
             prefix,
             keep_latest,
-        } => ops::backup_prune(&backup_root, &prefix, keep_latest),
+            dry_run,
+        } => ops::backup_prune(&backup_root, &prefix, keep_latest, dry_run),
         Command::BackupOffsiteStage {
             backup_path,
             offsite_root,

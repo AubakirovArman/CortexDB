@@ -349,12 +349,25 @@ pub fn backup_drill(path: &str, backup_path: &str, restore_path: &str) -> Result
     ))
 }
 
-pub fn backup_prune(backup_root: &str, prefix: &str, keep_latest: usize) -> Result<String, String> {
-    let report = Database::prune_backup_retention(backup_root, prefix, keep_latest)
-        .map_err(fmt_engine_error)?;
+pub fn backup_prune(
+    backup_root: &str,
+    prefix: &str,
+    keep_latest: usize,
+    dry_run: bool,
+) -> Result<String, String> {
+    let report = if dry_run {
+        Database::prune_backup_retention_dry_run(backup_root, prefix, keep_latest)
+    } else {
+        Database::prune_backup_retention(backup_root, prefix, keep_latest)
+    }
+    .map_err(fmt_engine_error)?;
     Ok(format!(
-        "backups_seen={} backups_kept={} backups_removed={} bytes_removed={}",
-        report.backups_seen, report.backups_kept, report.backups_removed, report.bytes_removed
+        "dry_run={} backups_seen={} backups_kept={} backups_removed={} bytes_removed={}",
+        report.dry_run,
+        report.backups_seen,
+        report.backups_kept,
+        report.backups_removed,
+        report.bytes_removed
     ))
 }
 

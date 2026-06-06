@@ -160,6 +160,47 @@ fn backup_retention_prunes_oldest_matching_backups() {
 }
 
 #[test]
+fn backup_retention_dry_run_reports_without_deleting() {
+    let root = tempfile::tempdir().unwrap();
+    for name in [
+        "cortexdb-20260528T000000Z",
+        "cortexdb-20260529T000000Z",
+        "cortexdb-20260530T000000Z",
+    ] {
+        let dir = root.path().join(name);
+        std::fs::create_dir(&dir).unwrap();
+        std::fs::write(dir.join("marker"), name.as_bytes()).unwrap();
+    }
+
+    let report = Database::prune_backup_retention_dry_run(root.path(), "cortexdb-", 2).unwrap();
+
+    assert!(report.dry_run);
+    assert_eq!(report.backups_seen, 3);
+    assert_eq!(report.backups_kept, 2);
+    assert_eq!(report.backups_removed, 1);
+    assert!(report.bytes_removed > 0);
+    assert!(root.path().join("cortexdb-20260528T000000Z").exists());
+    assert!(root.path().join("cortexdb-20260529T000000Z").exists());
+    assert!(root.path().join("cortexdb-20260530T000000Z").exists());
+}
+
+#[test]
+fn backup_retention_never_deletes_only_matching_backup() {
+    let root = tempfile::tempdir().unwrap();
+    let backup = root.path().join("cortexdb-20260530T000000Z");
+    std::fs::create_dir(&backup).unwrap();
+    std::fs::write(backup.join("marker"), b"only").unwrap();
+
+    let report = Database::prune_backup_retention(root.path(), "cortexdb-", 1).unwrap();
+
+    assert!(!report.dry_run);
+    assert_eq!(report.backups_seen, 1);
+    assert_eq!(report.backups_kept, 1);
+    assert_eq!(report.backups_removed, 0);
+    assert!(backup.exists());
+}
+
+#[test]
 fn backup_retention_rejects_unsafe_plan() {
     let root = tempfile::tempdir().unwrap();
 

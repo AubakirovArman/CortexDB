@@ -9,6 +9,7 @@ pub struct BackupRetentionPlan {
     pub backup_root: PathBuf,
     pub prefix: String,
     pub keep_latest: usize,
+    pub dry_run: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -17,6 +18,7 @@ pub struct BackupRetentionReport {
     pub backups_kept: usize,
     pub backups_removed: usize,
     pub bytes_removed: u64,
+    pub dry_run: bool,
 }
 
 impl Database {
@@ -29,6 +31,21 @@ impl Database {
             backup_root: backup_root.as_ref().to_owned(),
             prefix: prefix.as_ref().to_owned(),
             keep_latest,
+            dry_run: false,
+        };
+        prune_backup_retention_plan(&plan)
+    }
+
+    pub fn prune_backup_retention_dry_run(
+        backup_root: impl AsRef<Path>,
+        prefix: impl AsRef<str>,
+        keep_latest: usize,
+    ) -> EngineResult<BackupRetentionReport> {
+        let plan = BackupRetentionPlan {
+            backup_root: backup_root.as_ref().to_owned(),
+            prefix: prefix.as_ref().to_owned(),
+            keep_latest,
+            dry_run: true,
         };
         prune_backup_retention_plan(&plan)
     }
@@ -44,11 +61,14 @@ fn prune_backup_retention_plan(plan: &BackupRetentionPlan) -> EngineResult<Backu
         backups_kept: backups.len().min(plan.keep_latest),
         backups_removed: 0,
         bytes_removed: 0,
+        dry_run: plan.dry_run,
     };
 
     for backup in backups.into_iter().skip(plan.keep_latest) {
         report.bytes_removed += directory_size(&backup.path)?;
-        fs::remove_dir_all(&backup.path)?;
+        if !plan.dry_run {
+            fs::remove_dir_all(&backup.path)?;
+        }
         report.backups_removed += 1;
     }
 

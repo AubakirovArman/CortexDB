@@ -49,6 +49,12 @@ status=ready
 backup drill payload 3"
 DRILL_3="$(run_drill 20260530T000003Z)"
 
+PRUNE_DRY_RUN_OUTPUT="$(run_cli backup-prune "$BACKUPS" "$PREFIX" "$KEEP_LATEST" --dry-run)"
+if [ ! -d "$BACKUPS/${PREFIX}20260530T000001Z" ]; then
+  echo "dry-run prune removed the oldest backup" >&2
+  exit 1
+fi
+
 PRUNE_OUTPUT="$(run_cli backup-prune "$BACKUPS" "$PREFIX" "$KEEP_LATEST")"
 LATEST_VALIDATE="$(run_cli validate "$DRILLS/${PREFIX}20260530T000003Z")"
 LATEST_PAYLOAD="$(run_cli get "$DRILLS/${PREFIX}20260530T000003Z" 3)"
@@ -80,7 +86,7 @@ if [ ! -d "$BACKUPS/${PREFIX}20260530T000003Z" ]; then
 fi
 
 export ROOT REPORT KEEP_LATEST PREFIX
-export DRILL_1 DRILL_2 DRILL_3 PRUNE_OUTPUT LATEST_VALIDATE LATEST_PAYLOAD
+export DRILL_1 DRILL_2 DRILL_3 PRUNE_DRY_RUN_OUTPUT PRUNE_OUTPUT LATEST_VALIDATE LATEST_PAYLOAD
 export OLDEST_BACKUP_PRUNED GIT_SHA
 
 python3 - <<'PY'
@@ -123,6 +129,7 @@ report = {
             "validated": True,
         },
     ],
+    "prune_dry_run": os.environ["PRUNE_DRY_RUN_OUTPUT"],
     "prune": os.environ["PRUNE_OUTPUT"],
     "latest_validate": os.environ["LATEST_VALIDATE"],
     "latest_payload": os.environ["LATEST_PAYLOAD"],
