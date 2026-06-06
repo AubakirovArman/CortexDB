@@ -163,6 +163,27 @@ It writes `target/versioning-policy/report.json` and validates
 [`VERSIONING_POLICY.json`](VERSIONING_POLICY.json). The policy binds HTTP API,
 SDK, storage format, and AQL grammar versioning to one breaking-change process.
 
+Storage soak history now has retained local 24-hour evidence:
+
+```text
+target/storage-soak-history/report.json
+status=passed
+run_count=981
+total_cycles=19584
+total_cells_written=979016
+total_duration_seconds=86476
+twenty_four_hour_evidence.met=true
+```
+
+The evidence-only check is:
+
+```bash
+make storage-soak-24h-evidence-check
+```
+
+When present, the storage soak history and campaign reports are included in the
+unified release evidence bundle.
+
 ## Public Release Artifact Audit
 
 The public artifact audit target is `v0.1.0-core-alpha.5`. It supersedes the

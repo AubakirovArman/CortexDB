@@ -34,6 +34,8 @@
     "target/versioning-policy/report.json",
     "target/ann/release-evidence/corpus-runs/history.json",
     "target/ann/real-embedding/runs/history.json",
+    "target/storage-soak-history/report.json",
+    "target/storage-soak-history/campaign.json",
     "target/chaos-restart/report.json",
     "target/crash-fault/report.json",
     "target/replication-lifecycle/report.json"

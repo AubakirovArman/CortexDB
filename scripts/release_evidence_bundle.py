@@ -52,6 +52,8 @@ OPTIONAL_ARTIFACTS: tuple[ArtifactSpec, ...] = (
     ArtifactSpec("versioning_policy", "release", "target/versioning-policy/report.json", required=False),
     ArtifactSpec("ann_release_history", "benchmark", "target/ann/release-evidence/corpus-runs/history.json", required=False, validate_report=False),
     ArtifactSpec("ann_real_embedding_history", "benchmark", "target/ann/real-embedding/runs/history.json", required=False, validate_report=False),
+    ArtifactSpec("storage_soak_history", "storage", "target/storage-soak-history/report.json", required=False),
+    ArtifactSpec("storage_soak_campaign", "storage", "target/storage-soak-history/campaign.json", required=False),
     ArtifactSpec("chaos_restart", "storage", "target/chaos-restart/report.json", required=False),
     ArtifactSpec("crash_fault", "storage", "target/crash-fault/report.json", required=False),
     ArtifactSpec("replication_lifecycle", "experimental", "target/replication-lifecycle/report.json", required=False),

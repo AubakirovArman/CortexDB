@@ -34,6 +34,17 @@ target/storage-soak-history/history.jsonl
 
 Latest local status: passed.
 
+Latest retained 24-hour storage soak status:
+
+```text
+target/storage-soak-history/report.json
+twenty_four_hour_evidence.met=true
+total_duration_seconds=86476
+run_count=981
+total_cycles=19584
+total_cells_written=979016
+```
+
 ## Matrix
 
 | Suite | Purpose |
@@ -66,6 +77,7 @@ The local gate proves:
 - repeated storage cycles preserve data across backup/restore and partial WAL
   repair;
 - storage soak history is accumulated in a de-duplicated local JSONL report.
+- retained local storage soak history has crossed the 24-hour threshold.
 
 The gate does not prove:
 
@@ -73,6 +85,4 @@ The gate does not prove:
 - in-place downgrade;
 - remote object-store restore;
 - KMS-backed encrypted backup custody;
-- 24-hour soak unless `target/storage-soak-history/report.json` reports
-  `twenty_four_hour_evidence.met=true`;
 - kill injection at every internal checkpoint byte boundary.

@@ -232,7 +232,19 @@ Acceptance: database has repeated storage evidence, restore fixtures, backup/res
 
 ### Epic 11. Storage Soak History v1
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `make storage-soak-check`
+- `make storage-soak-history-check`
+- `make storage-soak-24h-campaign`
+- `make storage-soak-24h-evidence-check`
+- `target/storage-soak/report.json`
+- `target/storage-soak-history/report.json`
+- Current retained local history reports `twenty_four_hour_evidence.met=true`,
+  `run_count=981`, `total_cycles=19584`, `total_cells_written=979016`, and
+  `total_duration_seconds=86476`.
 
 Tasks:
 

@@ -110,6 +110,26 @@ The finalizer refuses to update status documents unless
 `target/storage-soak-history/report.json` reports
 `twenty_four_hour_evidence.met=true`.
 
+Current retained local 24-hour evidence:
+
+```text
+status=passed
+run_count=981
+total_cycles=19584
+total_cells_written=979016
+total_duration_seconds=86476
+twenty_four_hour_evidence.met=true
+```
+
+The evidence-only gate is:
+
+```bash
+make storage-soak-24h-evidence-check
+```
+
+It does not run a new soak; it verifies that the retained history report has
+crossed the 24-hour threshold.
+
 The default history gate does not pretend to be a 24-hour proof. It records
 `twenty_four_hour_evidence.met=false` until accumulated local soak duration
 crosses 24 hours.
