@@ -63,6 +63,25 @@ answer five questions before maintenance or release evidence collection:
 `make single-node-slo-dashboard-check` validates the dashboard source wiring for
 these fields. `make dashboard-product-check` also includes the SLO dashboard
 markers, so the panel cannot disappear from release UI evidence unnoticed.
+
+### Operational Status View
+
+The Operational status view is the first triage panel on the Overview route. It
+keeps routine health checks and operator context in one place:
+
+- health and compatibility status;
+- storage stats such as current seq, checkpoint seq, live segments, MemTable
+  cells, and WAL bytes;
+- actor queue depth and capacity from `/v1/metrics`;
+- latest backup age when available, plus the backup evidence gate;
+- validation status for manifest and WAL integrity;
+- recent request errors and incident timeline events.
+
+`make dashboard-operational-status-check` validates these source markers. The
+view is intentionally read-only: it points operators to the matching CLI gates
+for backup, validation, and release evidence rather than running those workflows
+inside the browser.
+
 ### ContextPack Explorer
 
 ContextPack responses render a separate report view for token budget usage,

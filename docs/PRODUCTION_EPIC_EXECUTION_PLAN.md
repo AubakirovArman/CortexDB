@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 110 / 150
+- Done: 111 / 150
 - Partial: 1 / 150
-- Todo: 39 / 150
-- Current closed epic: Epic 110, Single-node SLO Dashboard
+- Todo: 38 / 150
+- Current closed epic: Epic 111, Dashboard Operational Status View
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3117,16 +3117,30 @@ Acceptance: dashboard becomes an operational tool, not just a developer demo.
 
 ### Epic 111. Dashboard Operational Status View
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `web/dashboard/src/index.html`
+- `web/dashboard/src/app.js`
+- `web/dashboard/src/reporting_operations.js`
+- `scripts/dashboard_operational_status_check.py`
+- `docs/DASHBOARD_UI.md`
+- `make dashboard-operational-status-check`
 
 Tasks:
 
-- Show health.
-- Show storage stats.
-- Show actor queue.
-- Show latest backup.
-- Show validation.
-- Show recent errors.
+- Show health. Done: Operational status renders health and compatibility cards.
+- Show storage stats. Done: current seq, checkpoint seq, live segments,
+  MemTable cells, and WAL bytes are shown in the details grid.
+- Show actor queue. Done: actor queue depth and capacity are shown in summary
+  and details from `/v1/metrics`.
+- Show latest backup. Done: latest backup age is shown when available and the
+  backup evidence gate is listed.
+- Show validation. Done: validation status, manifest status, WAL validation,
+  and validation error count are visible.
+- Show recent errors. Done: last request issue, incidents, and incident
+  timeline remain visible in the same view.
 
 ### Epic 112. ContextPack Explorer
 

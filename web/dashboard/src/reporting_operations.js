@@ -245,6 +245,13 @@
         const lastError = body.last_request_error || null;
         const validationErrors = validation.errors || [];
         const backupCommands = backup.commands || [];
+        const queueDepth = Number(metrics.actor_queue_depth || 0);
+        const queueCapacity = Number(metrics.actor_queue_capacity || 0);
+        const queueRatio = queueCapacity > 0 ? queueDepth / queueCapacity : 0;
+        const queueTone = queueRatio >= 1 ? "bad" : (queueRatio >= 0.8 ? "warn" : "good");
+        const backupAge = Number(metrics.backup_latest_age_seconds ?? -1);
+        const backupAgeKnown = Number.isFinite(backupAge) && backupAge >= 0;
+        const backupTone = backupAgeKnown ? (backupAge > 86400 ? "warn" : "good") : "warn";
 
         summary.replaceChildren(
             card("Tenant", body.tenant || "default"),
@@ -256,6 +263,8 @@
             card("Validation", validation.ok ? "ok" : validation.message || "not checked", validation.ok ? "good" : "bad"),
             card("Metrics", metrics.ok ? "ok" : metrics.message || "not checked", metrics.ok ? "good" : "warn"),
             card("Backup posture", backup.available ? backup.mode || "operator_cli" : "admin required", backup.available ? "warn" : "bad"),
+            card("Actor queue", queueCapacity > 0 ? `${queueDepth}/${queueCapacity}` : "n/a", queueTone),
+            card("Latest backup", backupAgeKnown ? formatAge(backupAge) : "unknown", backupTone),
             card("Checks", results.length),
             card("Incidents", incidents.length, incidents.length ? "bad" : "good"),
             card("Timeline events", timeline.length, timeline.length ? "warn" : "good"),
@@ -269,6 +278,10 @@
             card("Retired segments", stats.retired_segments ?? "n/a"),
             card("MemTable cells", stats.memtable_cells ?? "n/a"),
             card("WAL bytes", stats.wal_size_bytes ?? "n/a"),
+            card("Actor queue depth", metrics.actor_queue_depth ?? "n/a", queueTone),
+            card("Actor queue capacity", metrics.actor_queue_capacity ?? "n/a"),
+            card("Request count", metrics.request_count ?? "n/a"),
+            card("Latest backup age", backupAgeKnown ? `${backupAge}s` : "unknown", backupTone),
             card("Manifest", validation.manifest_ok === null ? "n/a" : yesNo(validation.manifest_ok), validation.manifest_ok === false ? "bad" : "good"),
             card("WAL validation", validation.wal_ok === null ? "n/a" : yesNo(validation.wal_ok), validation.wal_ok === false ? "bad" : "good"),
             card("API version", compatibility.api_version || "n/a"),
@@ -338,6 +351,13 @@
         ];
         list.replaceChildren(...rows);
         return list;
+    }
+
+    function formatAge(seconds) {
+        if (seconds < 60) return `${seconds}s`;
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+        return `${Math.floor(seconds / 86400)}d`;
     }
 
     function renderIncidentEvent(event) {
