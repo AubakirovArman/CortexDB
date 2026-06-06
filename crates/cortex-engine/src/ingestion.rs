@@ -12,6 +12,7 @@ mod formats;
 mod jobs;
 mod pdf;
 mod pdf_contracts;
+mod pdf_ingest;
 mod progress;
 mod report;
 
@@ -23,11 +24,12 @@ pub use chunking::{
     split_text_chunks, stable_chunk_id, JsonChunkPolicy, TableChunkPolicy, TextChunk,
     TextChunkPolicy, TextOverlapPolicy,
 };
-pub use pdf::{extract_pdf_text, PdfExtractionStats};
+pub use pdf::{extract_pdf_text, PdfExtractedPageText, PdfExtractionStats};
 pub use pdf_contracts::{
     validate_external_ocr_request, DigitalPdfTextExtractor, DisabledExternalOcrAdapter,
-    ExternalOcrAdapter, ExternalOcrOutput, ExternalOcrPageImage, ExternalOcrPageText,
-    ExternalOcrRequest, NativeDigitalPdfTextExtractor, PdfTextExtractionBoundary,
+    DisabledExternalPdfParserAdapter, ExternalOcrAdapter, ExternalOcrOutput, ExternalOcrPageImage,
+    ExternalOcrPageText, ExternalOcrRequest, ExternalPdfParserAdapter, ExternalPdfParserRequest,
+    NativeDigitalPdfTextExtractor, PdfTextExtractionBoundary,
 };
 pub use progress::{
     IngestionJobId, IngestionJobStatus, IngestionProgress, IngestionProgressTracker,

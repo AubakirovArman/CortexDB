@@ -5,7 +5,15 @@ use super::pdf::{extract_pdf_text, PdfExtractionStats};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PdfTextExtractionBoundary {
     NativeDigitalPdf,
+    ExternalParser,
     ExternalOcr,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExternalPdfParserRequest<'a> {
+    pub document_id: &'a str,
+    pub source: &'a str,
+    pub pdf_bytes: &'a [u8],
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -38,12 +46,22 @@ pub trait DigitalPdfTextExtractor {
     fn extract_text(&self, pdf_bytes: &[u8]) -> EngineResult<PdfExtractionStats>;
 }
 
+pub trait ExternalPdfParserAdapter {
+    fn extract_text(
+        &self,
+        request: &ExternalPdfParserRequest<'_>,
+    ) -> EngineResult<PdfExtractionStats>;
+}
+
 pub trait ExternalOcrAdapter {
     fn extract_text(&self, request: &ExternalOcrRequest<'_>) -> EngineResult<ExternalOcrOutput>;
 }
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct NativeDigitalPdfTextExtractor;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct DisabledExternalPdfParserAdapter;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct DisabledExternalOcrAdapter;
@@ -54,12 +72,36 @@ impl DigitalPdfTextExtractor for NativeDigitalPdfTextExtractor {
     }
 }
 
+impl ExternalPdfParserAdapter for DisabledExternalPdfParserAdapter {
+    fn extract_text(
+        &self,
+        request: &ExternalPdfParserRequest<'_>,
+    ) -> EngineResult<PdfExtractionStats> {
+        request.validate()?;
+        Err(EngineError::StorageInvariant(
+            "external PDF parser adapter is not configured".to_owned(),
+        ))
+    }
+}
+
 impl ExternalOcrAdapter for DisabledExternalOcrAdapter {
     fn extract_text(&self, request: &ExternalOcrRequest<'_>) -> EngineResult<ExternalOcrOutput> {
         validate_external_ocr_request(request)?;
         Err(EngineError::StorageInvariant(
             "external OCR adapter is not configured".to_owned(),
         ))
+    }
+}
+
+impl<'a> ExternalPdfParserRequest<'a> {
+    pub fn validate(&self) -> EngineResult<()> {
+        if self.document_id.trim().is_empty()
+            || self.source.trim().is_empty()
+            || !self.pdf_bytes.starts_with(b"%PDF-")
+        {
+            return Err(EngineError::InvalidOperation);
+        }
+        Ok(())
     }
 }
 

@@ -29,6 +29,7 @@
 .PHONY: structured-source-ref-check
 .PHONY: deterministic-chunking-check
 .PHONY: chunking-quality-benchmark-check
+.PHONY: pdf-digital-adapter-check
 .PHONY: distributed-consensus-research-check
 .PHONY: managed-cloud-feasibility-check
 .PHONY: next-60-epics-audit next-60-epics-completion-check
@@ -2721,6 +2722,10 @@ deterministic-chunking-check:
 
 chunking-quality-benchmark-check: deterministic-chunking-check
 	python3 scripts/chunking_quality_benchmark.py --settings "$(CHUNKING_QUALITY_SETTINGS)" --report "$(CHUNKING_QUALITY_REPORT)"
+
+pdf-digital-adapter-check:
+	cargo test -p cortex-engine --test ingestion_pdf_contracts
+	cargo test -p cortex-engine --test ingestion_pdf_digital
 
 dashboard-smoke: dashboard-check
 	cargo build -p cortex-server

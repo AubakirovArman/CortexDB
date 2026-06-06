@@ -5,22 +5,78 @@ use flate2::read::ZlibDecoder;
 use crate::error::{EngineError, EngineResult};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PdfExtractedPageText {
+    pub page: u32,
+    pub text: String,
+    pub literal_strings: usize,
+    pub hex_strings: usize,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PdfExtractionStats {
     pub text: String,
     pub literal_strings: usize,
     pub hex_strings: usize,
+    pub page_count: u32,
+    pub pages: Vec<PdfExtractedPageText>,
 }
 
 pub fn extract_pdf_text(bytes: &[u8]) -> EngineResult<PdfExtractionStats> {
     if !bytes.starts_with(b"%PDF-") {
         return Err(EngineError::InvalidOperation);
     }
-    let expanded = expand_pdf_streams(bytes)?;
-    let text = String::from_utf8_lossy(&expanded);
+    let mut pages = extract_stream_pages(bytes)?;
+    if pages.is_empty() {
+        let expanded = expand_pdf_streams(bytes)?;
+        let fallback = extract_text_from_content(&expanded)?;
+        if !fallback.text.is_empty() {
+            pages.push(PdfExtractedPageText {
+                page: 1,
+                text: fallback.text,
+                literal_strings: fallback.literal_strings,
+                hex_strings: fallback.hex_strings,
+            });
+        }
+    }
+    let stats = aggregate_pages(pages)?;
+    if stats.text.is_empty() {
+        return Err(EngineError::InvalidOperation);
+    }
+    Ok(stats)
+}
+
+fn extract_stream_pages(bytes: &[u8]) -> EngineResult<Vec<PdfExtractedPageText>> {
+    let mut pages = Vec::new();
+    for (dict, stream) in stream_sections(bytes) {
+        let content = if contains_bytes(dict, b"/FlateDecode") {
+            inflate_zlib(stream)?
+        } else {
+            stream.to_vec()
+        };
+        let page_stats = extract_text_from_content(&content)?;
+        if page_stats.text.is_empty() {
+            continue;
+        }
+        let page = u32::try_from(pages.len() + 1)
+            .map_err(|_| EngineError::StorageInvariant("PDF page count exceeds u32".to_owned()))?;
+        pages.push(PdfExtractedPageText {
+            page,
+            text: page_stats.text,
+            literal_strings: page_stats.literal_strings,
+            hex_strings: page_stats.hex_strings,
+        });
+    }
+    Ok(pages)
+}
+
+fn extract_text_from_content(bytes: &[u8]) -> EngineResult<PdfExtractedPageText> {
+    let text = String::from_utf8_lossy(bytes);
     let mut stats = PdfExtractionStats {
         text: String::new(),
         literal_strings: 0,
         hex_strings: 0,
+        page_count: 0,
+        pages: Vec::new(),
     };
     let mut in_text = false;
     for token in tokenize_pdf(&text) {
@@ -38,10 +94,30 @@ pub fn extract_pdf_text(bytes: &[u8]) -> EngineResult<PdfExtractionStats> {
             _ => {}
         }
     }
-    if stats.text.is_empty() {
-        return Err(EngineError::InvalidOperation);
-    }
-    Ok(stats)
+    Ok(PdfExtractedPageText {
+        page: 0,
+        text: stats.text,
+        literal_strings: stats.literal_strings,
+        hex_strings: stats.hex_strings,
+    })
+}
+
+fn aggregate_pages(pages: Vec<PdfExtractedPageText>) -> EngineResult<PdfExtractionStats> {
+    let page_count = u32::try_from(pages.len())
+        .map_err(|_| EngineError::StorageInvariant("PDF page count exceeds u32".to_owned()))?;
+    let text = pages
+        .iter()
+        .map(|page| page.text.trim().to_owned())
+        .filter(|text| !text.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    Ok(PdfExtractionStats {
+        text,
+        literal_strings: pages.iter().map(|page| page.literal_strings).sum(),
+        hex_strings: pages.iter().map(|page| page.hex_strings).sum(),
+        page_count,
+        pages,
+    })
 }
 
 fn expand_pdf_streams(bytes: &[u8]) -> EngineResult<Vec<u8>> {

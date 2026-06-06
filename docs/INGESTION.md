@@ -46,8 +46,12 @@ Minimal adapters now exist on `Database`:
 - `ingest_pdf_text`: external PDF extraction hook that stores extracted text
   with `source_format=pdf` and optional `page=<n>` SourceRef metadata.
 - `ingest_pdf_bytes`: native no-dependency extractor for simple uncompressed
-  PDF text objects and `/FlateDecode` zlib streams before storing the same
-  `source_format=pdf` cell.
+  PDF text objects and `/FlateDecode` zlib streams before storing one aggregate
+  `source_format=pdf` cell with extraction metadata.
+- `ingest_pdf_bytes_pages`: native digital-PDF extraction with one emitted
+  document block per extracted text-bearing page. Each cell writes
+  `page=<n>`, `cell_range=page-<n>`, `source_format=pdf`,
+  `extraction_boundary=native_digital_pdf`, and `pdf_page_count=<n>`.
 
 The native PDF extractor handles literal strings and hex strings inside
 `BT ... ET` text objects, including simple compressed Flate streams. It
@@ -55,10 +59,17 @@ intentionally rejects unsupported/empty PDFs instead of silently storing an
 empty document.
 
 PDF extraction has an explicit adapter boundary. `NativeDigitalPdfTextExtractor`
-is the local digital-PDF path for files that already contain text. Scanned PDFs
-and page images must use an external `ExternalOcrAdapter`; the default
-`DisabledExternalOcrAdapter` validates the OCR request shape and then fails
-closed. See [`PDF_TEXT_EXTRACTION.md`](PDF_TEXT_EXTRACTION.md).
+is the local digital-PDF path for files that already contain text. Production
+layout-aware digital parsing belongs behind `ExternalPdfParserAdapter`; scanned
+PDFs and page images must use an external `ExternalOcrAdapter`. The disabled
+adapters validate request shape and then fail closed. See
+[`PDF_TEXT_EXTRACTION.md`](PDF_TEXT_EXTRACTION.md).
+
+Focused gate:
+
+```bash
+make pdf-digital-adapter-check
+```
 
 ## Text Chunking Policy
 

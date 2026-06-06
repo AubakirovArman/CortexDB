@@ -1,6 +1,6 @@
 use cortex_core::CellId;
-use cortex_engine::{extract_pdf_text, scope_id, split_text_chunks, CellMetadata, TextChunkPolicy};
-use cortex_engine::{CsvIngestOptions, Database, JsonIngestOptions, PdfIngestOptions};
+use cortex_engine::{scope_id, split_text_chunks, CellMetadata, TextChunkPolicy};
+use cortex_engine::{CsvIngestOptions, Database, JsonIngestOptions};
 use cortex_engine::{IngestionJobStatus, IngestionProgressTracker, TextIngestOptions};
 
 #[test]
@@ -175,87 +175,6 @@ fn csv_ingestion_writes_one_cell_per_row() {
     let source_ref = CellMetadata::from_payload(&payload).source_ref.unwrap();
     assert_eq!(source_ref.row, Some(2));
     assert_eq!(source_ref.cell_range.as_deref(), Some("row-2"));
-}
-
-#[test]
-fn pdf_text_ingestion_marks_external_pdf_source() {
-    let dir = tempfile::tempdir().unwrap();
-    let mut db = Database::open(dir.path()).unwrap();
-
-    let result = db
-        .ingest_pdf_text(
-            CellId(30),
-            "Extracted table text",
-            PdfIngestOptions {
-                scope: "project:investments".to_owned(),
-                source: "report.pdf".to_owned(),
-                page: Some(7),
-            },
-        )
-        .unwrap();
-
-    let payload = db.get_latest_cell(result.cell_id).unwrap();
-    let text = String::from_utf8_lossy(&payload);
-    assert!(text.contains("source=report.pdf"));
-    assert!(text.contains("source_id=report.pdf"));
-    assert!(text.contains("document_id=report.pdf"));
-    assert!(text.contains("source_format=pdf"));
-    assert!(text.contains("page=7"));
-    let source_ref = CellMetadata::from_payload(&payload).source_ref.unwrap();
-    assert_eq!(source_ref.page, Some(7));
-}
-
-#[test]
-fn native_pdf_ingestion_extracts_simple_text_objects() {
-    let dir = tempfile::tempdir().unwrap();
-    let mut db = Database::open(dir.path()).unwrap();
-    let pdf = br#"%PDF-1.4
-1 0 obj
-<< /Length 64 >>
-stream
-BT /F1 12 Tf 72 720 Td (ABC budget) Tj <203132303030> Tj ET
-endstream
-endobj
-%%EOF"#;
-
-    let extracted = extract_pdf_text(pdf).unwrap();
-    assert_eq!(extracted.literal_strings, 1);
-    assert_eq!(extracted.hex_strings, 1);
-    assert!(extracted.text.contains("ABC budget"));
-    assert!(extracted.text.contains("12000"));
-
-    db.ingest_pdf_bytes(
-        CellId(40),
-        pdf,
-        PdfIngestOptions {
-            scope: "project:investments".to_owned(),
-            source: "native.pdf".to_owned(),
-            page: None,
-        },
-    )
-    .unwrap();
-    let payload = db.get_latest_cell(CellId(40)).unwrap();
-    assert!(String::from_utf8_lossy(&payload).contains("ABC budget"));
-}
-
-#[test]
-fn native_pdf_ingestion_extracts_flate_decode_streams() {
-    use flate2::write::ZlibEncoder;
-    use flate2::Compression;
-    use std::io::Write;
-
-    let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-    encoder
-        .write_all(b"BT (Compressed budget 12000) Tj ET")
-        .unwrap();
-    let compressed = encoder.finish().unwrap();
-    let mut pdf = b"%PDF-1.4\n1 0 obj\n<< /Filter /FlateDecode >>\nstream\n".to_vec();
-    pdf.extend_from_slice(&compressed);
-    pdf.extend_from_slice(b"\nendstream\nendobj\n%%EOF");
-
-    let extracted = extract_pdf_text(&pdf).unwrap();
-
-    assert!(extracted.text.contains("Compressed budget 12000"));
 }
 
 #[test]

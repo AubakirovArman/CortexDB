@@ -27,6 +27,7 @@ pub(crate) struct SourceRefHeaders<'a> {
     pub cell_range: Option<&'a str>,
     pub json_path: Option<&'a str>,
     pub confidence_q16: Option<u16>,
+    pub extra_headers: &'a [(&'a str, String)],
 }
 
 pub(crate) fn put_source_ref_cell(
@@ -148,6 +149,13 @@ fn source_ref_payload(
     }
     if let Some(confidence_q16) = source_ref.confidence_q16 {
         lines.push(format!("confidence_q16={confidence_q16}"));
+    }
+    for (key, value) in source_ref.extra_headers {
+        lines.push(format!(
+            "{}={}",
+            sanitize_header_value(key),
+            sanitize_header_value(value)
+        ));
     }
     lines.push(String::new());
     let mut payload = lines.join("\n").into_bytes();

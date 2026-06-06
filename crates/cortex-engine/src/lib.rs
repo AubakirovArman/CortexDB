@@ -83,14 +83,15 @@ pub use error::{EngineError, EngineErrorCategory, EngineErrorCode, EngineResult}
 pub use graph::{GraphEdge, GraphEntity, GraphSourceRef, KnowledgeGraphIndex, ToolCell};
 pub use ingestion::{
     extract_pdf_text, split_text_chunks, stable_chunk_id, validate_external_ocr_request,
-    CsvIngestOptions, DigitalPdfTextExtractor, DisabledExternalOcrAdapter, EntityIngestOptions,
-    ExternalOcrAdapter, ExternalOcrOutput, ExternalOcrPageImage, ExternalOcrPageText,
-    ExternalOcrRequest, IngestedCell, IngestionJobId, IngestionJobStatus, IngestionProgress,
+    CsvIngestOptions, DigitalPdfTextExtractor, DisabledExternalOcrAdapter,
+    DisabledExternalPdfParserAdapter, EntityIngestOptions, ExternalOcrAdapter, ExternalOcrOutput,
+    ExternalOcrPageImage, ExternalOcrPageText, ExternalOcrRequest, ExternalPdfParserAdapter,
+    ExternalPdfParserRequest, IngestedCell, IngestionJobId, IngestionJobStatus, IngestionProgress,
     IngestionProgressTracker, IngestionSkippedItem, IngestionSourceRefReport,
     IngestionValidationIssue, IngestionValidationReport, JsonChunkPolicy, JsonIngestOptions,
-    NativeDigitalPdfTextExtractor, PdfExtractionStats, PdfIngestOptions, PdfTextExtractionBoundary,
-    RelationIngestOptions, RememberedCell, TableChunkPolicy, TextChunk, TextChunkPolicy,
-    TextIngestOptions, TextOverlapPolicy,
+    NativeDigitalPdfTextExtractor, PdfExtractedPageText, PdfExtractionStats, PdfIngestOptions,
+    PdfTextExtractionBoundary, RelationIngestOptions, RememberedCell, TableChunkPolicy, TextChunk,
+    TextChunkPolicy, TextIngestOptions, TextOverlapPolicy,
 };
 pub use legal::{
     evaluate_legal_report_contract, evaluate_legal_verification_boundary, LegalOutputBoundary,

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 85 / 150
+- Done: 86 / 150
 - Partial: 1 / 150
-- Todo: 64 / 150
-- Current closed epic: Epic 85, Chunking Quality Benchmark
+- Todo: 63 / 150
+- Current closed epic: Epic 86, PDF Digital Text Adapter
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2328,13 +2328,28 @@ Tasks:
 
 ### Epic 86. PDF Digital Text Adapter
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/ingestion/pdf.rs`
+- `crates/cortex-engine/src/ingestion/pdf_contracts.rs`
+- `crates/cortex-engine/src/ingestion/pdf_ingest.rs`
+- `crates/cortex-engine/tests/ingestion_pdf_digital.rs`
+- `docs/PDF_TEXT_EXTRACTION.md`
+- `make pdf-digital-adapter-check`
 
 Tasks:
 
-- Define external parser boundary.
-- Capture text extraction metadata.
-- Add page source refs.
+- Define external parser boundary. Done: `ExternalPdfParserAdapter`,
+  `ExternalPdfParserRequest`, and `DisabledExternalPdfParserAdapter` define the
+  production parser extension point separately from OCR.
+- Capture text extraction metadata. Done: `PdfExtractionStats` now records
+  page count, page-level text blocks, literal-string counts, and hex-string
+  counts; PDF ingestion writes extraction boundary and count headers.
+- Add page source refs. Done: `Database::ingest_pdf_bytes_pages` emits one cell
+  per extracted digital-PDF text page with `page=<n>` and
+  `cell_range=page-<n>` SourceRef metadata.
 
 ### Epic 87. OCR Adapter Trait
 

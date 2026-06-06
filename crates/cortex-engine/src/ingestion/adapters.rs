@@ -7,7 +7,6 @@ use crate::ingestion::cells::{
     put_text_chunk_cell, relation_metadata, SourceRefHeaders,
 };
 use crate::ingestion::chunking::{split_text_chunks, TableChunkPolicy, TextChunkPolicy};
-use crate::ingestion::extract_pdf_text;
 use crate::ingestion::formats::{csv_rows, flat_json_fields};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -120,6 +119,7 @@ impl Database {
                         cell_range: None,
                         json_path: Some(&key),
                         confidence_q16: None,
+                        extra_headers: &[],
                     },
                 )?;
                 Ok(IngestedCell {
@@ -167,6 +167,7 @@ impl Database {
                         cell_range: Some(&cell_range),
                         json_path: None,
                         confidence_q16: None,
+                        extra_headers: &[],
                     },
                 )?;
                 Ok(IngestedCell {
@@ -176,45 +177,6 @@ impl Database {
                 })
             })
             .collect()
-    }
-
-    pub fn ingest_pdf_text(
-        &mut self,
-        cell_id: CellId,
-        extracted_text: &str,
-        options: PdfIngestOptions,
-    ) -> EngineResult<IngestedCell> {
-        let body = format!("source_format=pdf\n{extracted_text}");
-        let source = options.source;
-        let commit_seq = put_source_ref_cell(
-            self,
-            cell_id,
-            document_metadata(options.scope, source.clone()),
-            &body,
-            SourceRefHeaders {
-                document_id: &source,
-                page: options.page,
-                row: None,
-                cell_range: None,
-                json_path: None,
-                confidence_q16: None,
-            },
-        )?;
-        Ok(IngestedCell {
-            cell_id,
-            commit_seq,
-            chunk_id: None,
-        })
-    }
-
-    pub fn ingest_pdf_bytes(
-        &mut self,
-        cell_id: CellId,
-        pdf: &[u8],
-        options: PdfIngestOptions,
-    ) -> EngineResult<IngestedCell> {
-        let extracted = extract_pdf_text(pdf)?;
-        self.ingest_pdf_text(cell_id, &extracted.text, options)
     }
 }
 
