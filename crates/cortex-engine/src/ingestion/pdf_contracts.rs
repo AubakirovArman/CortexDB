@@ -31,10 +31,33 @@ pub struct ExternalOcrRequest<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ScannedPdfOcrRequest<'a> {
+    pub document_id: &'a str,
+    pub source: &'a str,
+    pub rendered_pages: Vec<ExternalOcrPageImage<'a>>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ExternalOcrBoundingBox {
+    pub x_q16: u16,
+    pub y_q16: u16,
+    pub width_q16: u16,
+    pub height_q16: u16,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExternalOcrTextBlock {
+    pub text: String,
+    pub confidence_q16: Option<u16>,
+    pub bbox: Option<ExternalOcrBoundingBox>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExternalOcrPageText {
     pub page: u32,
     pub text: String,
     pub confidence_q16: Option<u16>,
+    pub blocks: Vec<ExternalOcrTextBlock>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -111,7 +134,29 @@ impl<'a> ExternalOcrRequest<'a> {
     }
 }
 
+impl<'a> ScannedPdfOcrRequest<'a> {
+    pub fn validate(&self) -> EngineResult<()> {
+        validate_external_ocr_request(&ExternalOcrRequest {
+            document_id: self.document_id,
+            source: self.source,
+            pages: self.rendered_pages.clone(),
+        })
+    }
+
+    pub fn into_ocr_request(self) -> ExternalOcrRequest<'a> {
+        ExternalOcrRequest {
+            document_id: self.document_id,
+            source: self.source,
+            pages: self.rendered_pages,
+        }
+    }
+}
+
 impl ExternalOcrOutput {
+    pub fn validate(&self) -> EngineResult<()> {
+        validate_external_ocr_output(self)
+    }
+
     pub fn combined_text(&self) -> String {
         let mut pages = self.pages.clone();
         pages.sort_by_key(|page| page.page);
@@ -121,6 +166,21 @@ impl ExternalOcrOutput {
             .filter(|text| !text.is_empty())
             .collect::<Vec<_>>()
             .join("\n\n")
+    }
+}
+
+impl ExternalOcrBoundingBox {
+    pub fn validate(&self) -> EngineResult<()> {
+        let right = u32::from(self.x_q16) + u32::from(self.width_q16);
+        let bottom = u32::from(self.y_q16) + u32::from(self.height_q16);
+        if self.width_q16 == 0
+            || self.height_q16 == 0
+            || right > u32::from(u16::MAX)
+            || bottom > u32::from(u16::MAX)
+        {
+            return Err(EngineError::InvalidOperation);
+        }
+        Ok(())
     }
 }
 
@@ -134,6 +194,26 @@ pub fn validate_external_ocr_request(request: &ExternalOcrRequest<'_>) -> Engine
     for page in &request.pages {
         if page.page == 0 || page.bytes.is_empty() || !page.mime_type.starts_with("image/") {
             return Err(EngineError::InvalidOperation);
+        }
+    }
+    Ok(())
+}
+
+pub fn validate_external_ocr_output(output: &ExternalOcrOutput) -> EngineResult<()> {
+    if output.pages.is_empty() {
+        return Err(EngineError::InvalidOperation);
+    }
+    for page in &output.pages {
+        if page.page == 0 || (page.text.trim().is_empty() && page.blocks.is_empty()) {
+            return Err(EngineError::InvalidOperation);
+        }
+        for block in &page.blocks {
+            if block.text.trim().is_empty() {
+                return Err(EngineError::InvalidOperation);
+            }
+            if let Some(bbox) = block.bbox {
+                bbox.validate()?;
+            }
         }
     }
     Ok(())

@@ -62,13 +62,18 @@ PDF extraction has an explicit adapter boundary. `NativeDigitalPdfTextExtractor`
 is the local digital-PDF path for files that already contain text. Production
 layout-aware digital parsing belongs behind `ExternalPdfParserAdapter`; scanned
 PDFs and page images must use an external `ExternalOcrAdapter`. The disabled
-adapters validate request shape and then fail closed. See
+adapters validate request shape and then fail closed. Scanned PDFs must cross
+the explicit `ScannedPdfOcrRequest` boundary after their pages have been
+rendered to images. OCR output can carry page-level confidence plus block-level
+confidence and normalized bounding boxes, and invalid OCR output fails
+validation before it enters normal text chunking. See
 [`PDF_TEXT_EXTRACTION.md`](PDF_TEXT_EXTRACTION.md).
 
 Focused gate:
 
 ```bash
 make pdf-digital-adapter-check
+make ocr-adapter-trait-check
 ```
 
 ## Text Chunking Policy

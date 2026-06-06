@@ -26,10 +26,11 @@ pub use chunking::{
 };
 pub use pdf::{extract_pdf_text, PdfExtractedPageText, PdfExtractionStats};
 pub use pdf_contracts::{
-    validate_external_ocr_request, DigitalPdfTextExtractor, DisabledExternalOcrAdapter,
-    DisabledExternalPdfParserAdapter, ExternalOcrAdapter, ExternalOcrOutput, ExternalOcrPageImage,
-    ExternalOcrPageText, ExternalOcrRequest, ExternalPdfParserAdapter, ExternalPdfParserRequest,
-    NativeDigitalPdfTextExtractor, PdfTextExtractionBoundary,
+    validate_external_ocr_output, validate_external_ocr_request, DigitalPdfTextExtractor,
+    DisabledExternalOcrAdapter, DisabledExternalPdfParserAdapter, ExternalOcrAdapter,
+    ExternalOcrBoundingBox, ExternalOcrOutput, ExternalOcrPageImage, ExternalOcrPageText,
+    ExternalOcrRequest, ExternalOcrTextBlock, ExternalPdfParserAdapter, ExternalPdfParserRequest,
+    NativeDigitalPdfTextExtractor, PdfTextExtractionBoundary, ScannedPdfOcrRequest,
 };
 pub use progress::{
     IngestionJobId, IngestionJobStatus, IngestionProgress, IngestionProgressTracker,

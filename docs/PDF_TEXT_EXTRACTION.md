@@ -74,6 +74,12 @@ digital extractor, not the production parsing path for complicated PDFs.
 - image MIME type;
 - non-empty image bytes.
 
+Scanned PDFs are not parsed by the native digital extractor. The scanned-PDF
+boundary is explicit: callers must render PDF pages to images, build a
+`ScannedPdfOcrRequest`, validate it, and then convert it into an
+`ExternalOcrRequest` for a configured OCR adapter. The core does not execute an
+OCR model or page renderer by default.
+
 `DisabledExternalOcrAdapter` validates the request and then fails with
 `external OCR adapter is not configured`. This makes the alpha/beta boundary
 explicit: CortexDB can ingest OCR text through a configured adapter later, but
@@ -82,9 +88,19 @@ it does not silently pretend that scanned PDFs are supported today.
 ## Output Contract
 
 External OCR returns `ExternalOcrOutput` with page-level text and optional
-`confidence_q16`. `combined_text()` sorts pages by page number and joins
-non-empty page text with blank lines, producing a deterministic text body that
-can then flow through normal text chunking and SourceRef metadata.
+`confidence_q16`. Page text may also include `ExternalOcrTextBlock` entries
+with block-level confidence and optional normalized page-space bounding boxes:
+
+- `x_q16`;
+- `y_q16`;
+- `width_q16`;
+- `height_q16`.
+
+`ExternalOcrOutput::validate()` rejects empty output, page zero, empty text
+blocks, zero-sized bounding boxes, and bounding boxes that exceed the normalized
+page boundary. `combined_text()` sorts pages by page number and joins non-empty
+page text with blank lines, producing a deterministic text body that can then
+flow through normal text chunking and SourceRef metadata.
 
 ## Verification
 
@@ -92,6 +108,7 @@ Run the focused gate:
 
 ```bash
 make pdf-digital-adapter-check
+make ocr-adapter-trait-check
 ```
 
 ## Non-goals

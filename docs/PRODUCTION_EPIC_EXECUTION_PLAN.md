@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 86 / 150
+- Done: 87 / 150
 - Partial: 1 / 150
-- Todo: 63 / 150
-- Current closed epic: Epic 86, PDF Digital Text Adapter
+- Todo: 62 / 150
+- Current closed epic: Epic 87, OCR Adapter Trait
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2353,14 +2353,27 @@ Tasks:
 
 ### Epic 87. OCR Adapter Trait
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/ingestion/pdf_contracts.rs`
+- `crates/cortex-engine/tests/ingestion_pdf_contracts.rs`
+- `docs/PDF_TEXT_EXTRACTION.md`
+- `docs/INGESTION.md`
+- `make ocr-adapter-trait-check`
 
 Tasks:
 
-- Add external OCR interface.
-- Define scanned PDF boundary.
-- Capture confidence metadata.
-- Capture bbox metadata.
+- Add external OCR interface. Done: `ExternalOcrAdapter`,
+  `ExternalOcrRequest`, `ExternalOcrOutput`, and the fail-closed disabled
+  adapter define the extension point.
+- Define scanned PDF boundary. Done: `ScannedPdfOcrRequest` makes the
+  render-PDF-pages-to-images boundary explicit before OCR is invoked.
+- Capture confidence metadata. Done: OCR output supports page-level and
+  block-level `confidence_q16`.
+- Capture bbox metadata. Done: OCR text blocks support normalized bounding boxes
+  and validate zero-size/out-of-bounds coordinates.
 
 ### Epic 88. Ingestion Validation Report
 

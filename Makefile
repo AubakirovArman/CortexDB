@@ -29,7 +29,7 @@
 .PHONY: structured-source-ref-check
 .PHONY: deterministic-chunking-check
 .PHONY: chunking-quality-benchmark-check
-.PHONY: pdf-digital-adapter-check
+.PHONY: pdf-digital-adapter-check ocr-adapter-trait-check
 .PHONY: distributed-consensus-research-check
 .PHONY: managed-cloud-feasibility-check
 .PHONY: next-60-epics-audit next-60-epics-completion-check
@@ -2726,6 +2726,9 @@ chunking-quality-benchmark-check: deterministic-chunking-check
 pdf-digital-adapter-check:
 	cargo test -p cortex-engine --test ingestion_pdf_contracts
 	cargo test -p cortex-engine --test ingestion_pdf_digital
+
+ocr-adapter-trait-check:
+	cargo test -p cortex-engine --test ingestion_pdf_contracts
 
 dashboard-smoke: dashboard-check
 	cargo build -p cortex-server
