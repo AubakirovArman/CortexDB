@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 116 / 150
+- Done: 117 / 150
 - Partial: 1 / 150
-- Todo: 33 / 150
-- Current closed epic: Epic 116, Audit Viewer v2
+- Todo: 32 / 150
+- Current closed epic: Epic 117, Ingestion Jobs View
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3237,15 +3237,26 @@ Tasks:
 
 ### Epic 117. Ingestion Jobs View
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `web/dashboard/src/reporting_ingest.js`
+- `docs/DASHBOARD_UI.md`
+- `scripts/dashboard_product_check.py`
+- `make ingestion-job-dashboard-check`
 
 Tasks:
 
-- Show active jobs.
-- Show progress.
-- Show warnings.
-- Show failures.
-- Show retries.
+- Show active jobs. Done: the Ingest route can render the persisted job list
+  and counts queued/running jobs.
+- Show progress. Done: job detail and list rows show completed/total progress.
+- Show warnings. Done: ingestion validation warnings and skipped inputs render
+  in the report.
+- Show failures. Done: failed counts and failure reasons render in detail and
+  list views.
+- Show retries. Done: retry count and max retries render in job detail.
+- Evidence gate. Done: `make ingestion-job-dashboard-check`.
 
 ### Epic 118. Backup/Restore View
 
