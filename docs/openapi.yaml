@@ -261,7 +261,7 @@ paths:
                 $ref: '#/components/schemas/CheckpointResponse'
   /v1/aql:
     post:
-      summary: Run AQL retrieve
+      summary: Run AQL retrieve or explain retrieve
       parameters:
       - $ref: '#/components/parameters/Tenant'
       - $ref: '#/components/parameters/Scope'
@@ -1356,6 +1356,96 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Cell'
+        explain:
+          $ref: '#/components/schemas/AqlExplainResponse'
+    AqlExplainFilter:
+      type: object
+      required:
+      - kind
+      - expression
+      properties:
+        kind:
+          type: string
+          enum:
+          - policy
+          - liveness
+          - where
+        expression:
+          type: string
+    AqlCandidateCounts:
+      type: object
+      required:
+      - universe
+      - agent_allowed
+      - live
+      - after_bitmap
+      - after_quality
+      - returned_limit
+      properties:
+        universe:
+          type: integer
+          minimum: 0
+        agent_allowed:
+          type: integer
+          minimum: 0
+        live:
+          type: integer
+          minimum: 0
+        after_bitmap:
+          type: integer
+          minimum: 0
+        after_quality:
+          type: integer
+          minimum: 0
+        returned_limit:
+          type: integer
+          minimum: 0
+    AqlExplainResponse:
+      type: object
+      required:
+      - task
+      - brain_id
+      - selected_mode
+      - bitmap_plan
+      - bitmap_ops
+      - filters
+      - candidate_counts
+      - candidate_limit
+      - budget_tokens
+      - citations_required
+      properties:
+        task:
+          type: string
+        brain_id:
+          type: integer
+          minimum: 1
+        selected_mode:
+          type: string
+          enum:
+          - fast
+          - balanced
+          - semantic
+          - audit
+        bitmap_plan:
+          type: string
+        bitmap_ops:
+          type: array
+          items:
+            type: string
+        filters:
+          type: array
+          items:
+            $ref: '#/components/schemas/AqlExplainFilter'
+        candidate_counts:
+          $ref: '#/components/schemas/AqlCandidateCounts'
+        candidate_limit:
+          type: integer
+          minimum: 0
+        budget_tokens:
+          type: integer
+          minimum: 0
+        citations_required:
+          type: boolean
     SearchResponse:
       type: object
       required:

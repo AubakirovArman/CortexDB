@@ -195,8 +195,40 @@ pub struct AqlCellResponse {
 }
 
 #[derive(Serialize)]
+pub struct AqlExplainFilterResponse {
+    pub kind: String,
+    pub expression: String,
+}
+
+#[derive(Serialize)]
+pub struct AqlCandidateCountsResponse {
+    pub universe: usize,
+    pub agent_allowed: usize,
+    pub live: usize,
+    pub after_bitmap: usize,
+    pub after_quality: usize,
+    pub returned_limit: usize,
+}
+
+#[derive(Serialize)]
+pub struct AqlExplainResponse {
+    pub task: String,
+    pub brain_id: u64,
+    pub selected_mode: String,
+    pub bitmap_plan: String,
+    pub bitmap_ops: Vec<String>,
+    pub filters: Vec<AqlExplainFilterResponse>,
+    pub candidate_counts: AqlCandidateCountsResponse,
+    pub candidate_limit: u32,
+    pub budget_tokens: u32,
+    pub citations_required: bool,
+}
+
+#[derive(Serialize)]
 pub struct AqlResponse {
     pub cells: Vec<AqlCellResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub explain: Option<AqlExplainResponse>,
 }
 
 #[derive(Serialize)]

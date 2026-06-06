@@ -34,6 +34,47 @@ WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#,
 }
 
 #[test]
+fn explain_retrieve_aql_reports_plan_filters_counts_and_mode() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nsource=doc-a\n\nalpha budget".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=draft\nsource=doc-b\n\nbeta budget".to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .explain_retrieve_aql(
+            r#"EXPLAIN RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
+USING MODE balanced WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#,
+            &view(scope_id("project:investments")),
+        )
+        .unwrap();
+
+    assert_eq!(report.task, "budget");
+    assert_eq!(report.selected_mode, RetrievalMode::Balanced);
+    assert_eq!(report.candidate_counts.universe, 2);
+    assert_eq!(report.candidate_counts.agent_allowed, 2);
+    assert_eq!(report.candidate_counts.live, 2);
+    assert_eq!(report.candidate_counts.after_bitmap, 1);
+    assert_eq!(report.candidate_counts.after_quality, 1);
+    assert_eq!(report.candidate_counts.returned_limit, 1);
+    assert!(report
+        .bitmap_plan
+        .contains("BitmapProgram(max_stack_depth="));
+    assert!(report.bitmap_ops.iter().any(|op| op == "PushAgentAllowed"));
+    assert!(report
+        .filters
+        .iter()
+        .any(|filter| filter.expression.contains("status = \"ready\"")));
+}
+
+#[test]
 fn retrieve_aql_preserves_large_cell_ids_after_checkpoint_and_compact() {
     let dir = tempfile::tempdir().unwrap();
     {

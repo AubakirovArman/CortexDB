@@ -197,6 +197,28 @@ fn snapshot_aql_response_shape() {
 }
 
 #[test]
+fn snapshot_aql_explain_response_shape() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:test\nstatus=ready\nsource=doc-a\n\nalpha budget proposal"
+    );
+    handle_http(dir.path(), put);
+    let request = concat!(
+        "POST /v1/aql?scope=project:test HTTP/1.1\r\n\r\n",
+        "EXPLAIN RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN default ",
+        "WHERE space = project:test AND status = \"ready\" LIMIT 10 CANDIDATES;"
+    );
+    let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""cells":[]"#));
+    assert!(response.contains(r#""explain":"#));
+    assert!(response.contains(r#""selected_mode":"balanced""#));
+    assert!(response.contains(r#""bitmap_plan":"#));
+    assert!(response.contains(r#""candidate_counts":"#));
+    assert!(response.contains(r#""filters":"#));
+}
+
+#[test]
 fn snapshot_forget_response_shape() {
     let dir = tempfile::tempdir().unwrap();
     let put = concat!(

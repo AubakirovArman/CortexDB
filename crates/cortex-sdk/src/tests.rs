@@ -327,6 +327,43 @@ fn typed_search_explain_response_decodes_contribution_contract() {
 }
 
 #[test]
+fn typed_aql_explain_response_decodes_contract() {
+    let value = serde_json::json!({
+        "cells": [],
+        "explain": {
+            "task": "budget",
+            "brain_id": 1,
+            "selected_mode": "balanced",
+            "bitmap_plan": "BitmapProgram(max_stack_depth=3)\n0000: PushAgentAllowed",
+            "bitmap_ops": ["PushAgentAllowed", "PushLive", "And"],
+            "filters": [{
+                "kind": "where",
+                "expression": "status = \"ready\""
+            }],
+            "candidate_counts": {
+                "universe": 2,
+                "agent_allowed": 2,
+                "live": 2,
+                "after_bitmap": 1,
+                "after_quality": 1,
+                "returned_limit": 1
+            },
+            "candidate_limit": 10,
+            "budget_tokens": 2048,
+            "citations_required": false
+        }
+    });
+
+    let response: AqlResponse =
+        serde_json::from_value(value).expect("aql explain response should decode");
+    assert!(response.cells.is_empty());
+    let explain = response.explain.expect("explain report should decode");
+    assert_eq!(explain.selected_mode, "balanced");
+    assert_eq!(explain.candidate_counts.after_bitmap, 1);
+    assert_eq!(explain.filters[0].kind, "where");
+}
+
+#[test]
 fn ingest_path_encodes_source_contract() {
     let value = path(
         "/v1/ingest/text",

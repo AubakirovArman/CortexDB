@@ -1,7 +1,7 @@
 use clap::{error::ErrorKind, Parser, Subcommand, ValueEnum};
 
 use crate::{
-    cli_ann as ann, cli_audit as audit, cli_audit_siem as audit_siem,
+    cli_ann as ann, cli_aql as aql_cmd, cli_audit as audit, cli_audit_siem as audit_siem,
     cli_auth_review as auth_review, cli_ingest as ingest, cli_ops as ops,
 };
 
@@ -607,7 +607,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             format.as_str(),
         ),
         Command::Aql { path, scope, aql } => {
-            ops::aql(resolved(&path).to_str().unwrap(), &scope, &aql, cli.json)
+            aql_cmd::aql(resolved(&path).to_str().unwrap(), &scope, &aql, cli.json)
         }
         Command::Search {
             path,

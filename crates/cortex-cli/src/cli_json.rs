@@ -1,17 +1,16 @@
 use cortex_engine::{
-    CellMetadata, ContextPack, Database, DatabaseSearchResult, RememberedCell, RetrievedCell,
-    SearchRouteDecision, StorageStats, VerificationEvidence, VerificationReport,
-    VerificationStatus,
+    CellMetadata, ContextPack, Database, DatabaseSearchResult, RememberedCell, SearchRouteDecision,
+    StorageStats, VerificationEvidence, VerificationReport, VerificationStatus,
 };
 use serde_json::to_string;
 
 use crate::cli_json_types::{
-    AqlCellResponse, AqlResponse, CellResponse, CliAnnEvaluationResponse,
-    CliAnnSearchReportResponse, CliAnnValidateResponse, CliStatsResponse, CliValidateResponse,
-    ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackExplainResponse,
-    ContextPackResponse, ContextPackScoreComponentResponse, NumericConflictResponse,
-    RememberResponse, SearchResponse, SearchResultResponse, SearchRoutingDecisionResponse,
-    SourceRefResponse, VerificationEvidenceResponse, VerificationResponse,
+    CellResponse, CliAnnEvaluationResponse, CliAnnSearchReportResponse, CliAnnValidateResponse,
+    CliStatsResponse, CliValidateResponse, ContextPackAnomalyResponse, ContextPackCellResponse,
+    ContextPackExplainResponse, ContextPackResponse, ContextPackScoreComponentResponse,
+    NumericConflictResponse, RememberResponse, SearchResponse, SearchResultResponse,
+    SearchRoutingDecisionResponse, SourceRefResponse, VerificationEvidenceResponse,
+    VerificationResponse,
 };
 
 fn serialize_or_error<T: serde::Serialize>(value: &T) -> String {
@@ -65,18 +64,6 @@ pub(crate) fn cell_to_json(cell_id: u64, seq: u64, payload: &[u8]) -> String {
         cell_id,
         seq,
         payload: String::from_utf8_lossy(payload).into_owned(),
-    })
-}
-
-pub(crate) fn aql_to_json(cells: &[RetrievedCell]) -> String {
-    serialize_or_error(&AqlResponse {
-        cells: cells
-            .iter()
-            .map(|c| AqlCellResponse {
-                cell_id: c.cell_id.0,
-                payload: String::from_utf8_lossy(&c.payload).into_owned(),
-            })
-            .collect(),
     })
 }
 

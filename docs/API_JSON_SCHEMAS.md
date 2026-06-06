@@ -270,6 +270,39 @@ Response:
 }
 ```
 
+`EXPLAIN RETRIEVE CONTEXT ...` uses the same endpoint and returns an empty
+`cells` array plus an `explain` report. The report is diagnostic output for the
+bound AQL plan; it does not return payload rows.
+
+```json
+{
+  "cells": [],
+  "explain": {
+    "task": "budget",
+    "brain_id": 1,
+    "selected_mode": "balanced",
+    "bitmap_plan": "BitmapProgram(max_stack_depth=3)\n0000: PushAgentAllowed",
+    "bitmap_ops": ["PushAgentAllowed", "PushLive", "And"],
+    "filters": [
+      {"kind": "policy", "expression": "agent_allowed"},
+      {"kind": "liveness", "expression": "live"},
+      {"kind": "where", "expression": "status = \"ready\""}
+    ],
+    "candidate_counts": {
+      "universe": 2,
+      "agent_allowed": 2,
+      "live": 2,
+      "after_bitmap": 1,
+      "after_quality": 1,
+      "returned_limit": 1
+    },
+    "candidate_limit": 10,
+    "budget_tokens": 2048,
+    "citations_required": false
+  }
+}
+```
+
 ## Search
 
 `POST /v1/search?scope=<scope>&q=<term>` or

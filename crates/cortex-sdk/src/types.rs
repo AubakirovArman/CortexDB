@@ -231,8 +231,43 @@ pub struct AqlCellResponse {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct AqlExplainFilter {
+    pub kind: String,
+    pub expression: String,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct AqlCandidateCounts {
+    pub universe: usize,
+    pub agent_allowed: usize,
+    pub live: usize,
+    pub after_bitmap: usize,
+    pub after_quality: usize,
+    pub returned_limit: usize,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct AqlExplainResponse {
+    pub task: String,
+    pub brain_id: u64,
+    pub selected_mode: String,
+    pub bitmap_plan: String,
+    #[serde(default)]
+    pub bitmap_ops: Vec<String>,
+    #[serde(default)]
+    pub filters: Vec<AqlExplainFilter>,
+    pub candidate_counts: AqlCandidateCounts,
+    pub candidate_limit: u32,
+    pub budget_tokens: u32,
+    pub citations_required: bool,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct AqlResponse {
+    #[serde(default)]
     pub cells: Vec<AqlCellResponse>,
+    #[serde(default)]
+    pub explain: Option<AqlExplainResponse>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]

@@ -39,7 +39,8 @@ finished_at: 2026-05-31T19:35:50Z
 The local gate proves:
 
 - AQL v0.4 parser and binder compatibility tests pass;
-- `EXPLAIN RETRIEVE CONTEXT` parses and binds like its inner retrieve;
+- `EXPLAIN RETRIEVE CONTEXT` parses, binds, and exposes a stable HTTP/OpenAPI
+  explain shape;
 - malformed AQL, permission denied, unknown field, `LIMIT`, and `REQUIRE` are
   covered;
 - HTTP error codes remain distinguishable for SDK callers.

@@ -64,9 +64,15 @@ surface is `EXPLAIN RETRIEVE CONTEXT`.
 EXPLAIN RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects;
 ```
 
-The binder preserves the inner statement semantics. Explain output is produced
-by engine/server layers and may include bitmap bytecode, filter fields, and
-query diagnostics.
+The binder preserves the inner statement semantics. Engine/server explain
+output includes:
+
+- selected retrieval mode;
+- bitmap bytecode and debug plan;
+- policy, liveness, and `WHERE` filters;
+- candidate counts for universe, agent-allowed, live, after-bitmap,
+  after-quality, and returned-limit stages;
+- effective candidate limit, token budget, and citation requirement.
 
 ## WHERE
 

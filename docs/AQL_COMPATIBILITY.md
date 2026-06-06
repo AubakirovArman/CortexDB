@@ -37,6 +37,9 @@ target/aql-compat/*.log
 - LIMIT and REQUIRE parsing, policy clamp, and quality-threshold binding;
 - explain snapshots through `EXPLAIN RETRIEVE CONTEXT` parse and bind behavior.
 
+The runtime `EXPLAIN RETRIEVE CONTEXT` response shape is covered by
+`make openapi-contract-check`.
+
 The stable distinction for SDK callers is:
 
 | Client situation | Stable class |

@@ -2,6 +2,8 @@ use std::process::ExitCode;
 
 mod cli;
 mod cli_ann;
+mod cli_aql;
+mod cli_aql_json;
 mod cli_audit;
 mod cli_audit_chain;
 mod cli_audit_siem;

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 36 / 150
+- Done: 37 / 150
 - Partial: 1 / 150
-- Todo: 113 / 150
-- Current closed epic: Epic 36, AQL v0.4 Compatibility Pack
+- Todo: 112 / 150
+- Current closed epic: Epic 37, AQL Explain
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -974,15 +974,44 @@ Tasks:
 
 ### Epic 37. AQL Explain
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/query/explain.rs`
+- `crates/cortex-server/src/aql.rs`
+- `crates/cortex-cli/src/cli_aql.rs`
+- `crates/cortex-cli/src/cli_aql_json.rs`
+- `crates/cortex-sdk/src/types.rs`
+- `docs/openapi.yaml`
+- `docs/API_JSON_SCHEMAS.md`
+- `docs/AQL_COMPATIBILITY.md`
+- `docs/AQL_COMPATIBILITY_EVIDENCE.md`
+- `docs/AQL_V0_4.md`
+- `scripts/check_openapi_contract.py`
+- `cargo test -p cortex-engine --test query_search explain_retrieve_aql_reports_plan_filters_counts_and_mode`
+- `cargo test -p cortex-server aql_explain`
+- `cargo test -p cortex-cli aql_command_explain_reports_plan_filters_counts_and_mode`
+- `cargo test -p cortex-sdk typed_aql_explain_response_decodes_contract`
+- `make aql-compat-check`
+- `make openapi-contract-check`
+- `cargo test --workspace --all-features`
+- `cargo fmt --check`
+- `cargo clippy --workspace --all-targets -- -D warnings`
 
 Tasks:
 
-- Implement `EXPLAIN RETRIEVE`.
-- Output bitmap plan.
-- Output filters.
-- Output candidate counts.
-- Output selected retrieval mode.
+- Implement `EXPLAIN RETRIEVE`. Done: `Database::explain_retrieve_aql`
+  executes `EXPLAIN RETRIEVE CONTEXT` through the same parse/bind/index path
+  as retrieval and returns a typed explain report.
+- Output bitmap plan. Done: explain returns `bitmap_plan` and `bitmap_ops`
+  from the bound bitmap program.
+- Output filters. Done: explain returns policy, liveness, and rendered `WHERE`
+  filters.
+- Output candidate counts. Done: explain returns universe, agent-allowed,
+  live, after-bitmap, after-quality, and returned-limit counts.
+- Output selected retrieval mode. Done: engine, HTTP, CLI JSON, and SDK expose
+  `selected_mode`.
 
 ### Epic 38. AQL Error Taxonomy
 

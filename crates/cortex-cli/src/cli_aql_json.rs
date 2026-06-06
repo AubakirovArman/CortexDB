@@ -1,0 +1,75 @@
+use cortex_aql::RetrievalMode;
+use cortex_engine::{AqlExplainReport, RetrievedCell};
+use serde_json::to_string;
+
+use crate::cli_json_types::{
+    AqlCandidateCountsResponse, AqlCellResponse, AqlExplainFilterResponse, AqlExplainResponse,
+    AqlResponse,
+};
+
+pub(crate) fn aql_to_json(cells: &[RetrievedCell]) -> String {
+    serialize_or_error(&AqlResponse {
+        cells: cells
+            .iter()
+            .map(|c| AqlCellResponse {
+                cell_id: c.cell_id.0,
+                payload: String::from_utf8_lossy(&c.payload).into_owned(),
+            })
+            .collect(),
+        explain: None,
+    })
+}
+
+pub(crate) fn aql_explain_to_json(report: AqlExplainReport) -> String {
+    serialize_or_error(&AqlResponse {
+        cells: Vec::new(),
+        explain: Some(AqlExplainResponse {
+            task: report.task,
+            brain_id: report.brain_id.0,
+            selected_mode: retrieval_mode_name(report.selected_mode).to_owned(),
+            bitmap_plan: report.bitmap_plan,
+            bitmap_ops: report.bitmap_ops,
+            filters: report
+                .filters
+                .into_iter()
+                .map(|filter| AqlExplainFilterResponse {
+                    kind: filter.kind,
+                    expression: filter.expression,
+                })
+                .collect(),
+            candidate_counts: AqlCandidateCountsResponse {
+                universe: report.candidate_counts.universe,
+                agent_allowed: report.candidate_counts.agent_allowed,
+                live: report.candidate_counts.live,
+                after_bitmap: report.candidate_counts.after_bitmap,
+                after_quality: report.candidate_counts.after_quality,
+                returned_limit: report.candidate_counts.returned_limit,
+            },
+            candidate_limit: report.candidate_limit,
+            budget_tokens: report.budget_tokens,
+            citations_required: report.citations_required,
+        }),
+    })
+}
+
+fn retrieval_mode_name(mode: RetrievalMode) -> &'static str {
+    match mode {
+        RetrievalMode::Fast => "fast",
+        RetrievalMode::Balanced => "balanced",
+        RetrievalMode::Semantic => "semantic",
+        RetrievalMode::Audit => "audit",
+    }
+}
+
+fn serialize_or_error<T: serde::Serialize>(value: &T) -> String {
+    to_string(value).unwrap_or_else(|e| {
+        to_string(&crate::cli_json_types::ErrorResponse {
+            code: "internal".to_owned(),
+            error: "internal_error".to_owned(),
+            message: e.to_string(),
+        })
+        .unwrap_or_else(|_| {
+            "{\"code\":\"internal\",\"error\":\"internal_error\",\"message\":\"serialization failed\"}".to_owned()
+        })
+    })
+}

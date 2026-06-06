@@ -9,6 +9,10 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 ## Unreleased
 
 ### Added
+- **AQL Explain response** — `/v1/aql`, `cortexdb aql`, and the Rust SDK now
+  expose an optional `explain` object for `EXPLAIN RETRIEVE CONTEXT`, including
+  selected mode, bitmap plan, filters, candidate counts, limit, budget, and
+  citation requirement.
 - **Persisted contradiction relation cells** — engine users can now call
   `Database::persist_contradiction_relation` to write durable Relation cells
   with `predicate=contradicts`; `conflict_index` and `conflicts_for_fact` read

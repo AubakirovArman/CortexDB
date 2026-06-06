@@ -35,7 +35,8 @@ executor that returns a JSON breakdown of the retrieval plan:
 EXPLAIN RETRIEVE CONTEXT FOR TASK "x" IN BRAIN investment_projects;
 ```
 
-The server exposes this via `POST /v1/search/explain`.
+The server exposes this via `POST /v1/aql?scope=<scope>` when the request body
+starts with `EXPLAIN RETRIEVE CONTEXT`.
 
 Supported retrieval modes:
 

@@ -218,6 +218,21 @@ def main() -> int:
         )
         check("/v1/search", "POST", search_resp)
 
+        # AQL retrieve and explain
+        aql_resp = request(
+            "POST",
+            f"{base}/v1/aql?scope=default",
+            b'RETRIEVE CONTEXT FOR TASK "hello" IN BRAIN default WHERE space = default AND status = "ready" LIMIT 10 CANDIDATES;',
+        )
+        check("/v1/aql", "POST", aql_resp)
+
+        aql_explain_resp = request(
+            "POST",
+            f"{base}/v1/aql?scope=default",
+            b'EXPLAIN RETRIEVE CONTEXT FOR TASK "hello" IN BRAIN default WHERE space = default AND status = "ready" LIMIT 10 CANDIDATES;',
+        )
+        check("/v1/aql", "POST", aql_explain_resp)
+
         # Context
         context_resp = request(
             "POST",

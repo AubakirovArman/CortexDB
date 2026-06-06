@@ -198,6 +198,50 @@ fn aql_command_returns_retrieved_cells() {
 }
 
 #[test]
+fn aql_command_explain_reports_plan_filters_counts_and_mode() {
+    let path = unique_path("cortexdb-cli-aql-explain");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nalpha budget".to_owned(),
+    ])
+    .unwrap();
+
+    let statement = r#"EXPLAIN RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#;
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "aql".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        statement.to_owned(),
+    ])
+    .unwrap();
+    assert!(output.contains("aql_explain task=budget"));
+    assert!(output.contains("mode=Balanced"));
+    assert!(output.contains("after_bitmap=1"));
+    assert!(output.contains("filters=policy=agent_allowed"));
+    assert!(output.contains("BitmapProgram(max_stack_depth="));
+
+    let json = run(vec![
+        "cortexdb".to_owned(),
+        "--json".to_owned(),
+        "aql".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        statement.to_owned(),
+    ])
+    .unwrap();
+    assert!(json.contains(r#""cells":[]"#));
+    assert!(json.contains(r#""selected_mode":"balanced""#));
+    assert!(json.contains(r#""after_bitmap":1"#));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
 fn search_command_returns_scope_filtered_results() {
     let path = unique_path("cortexdb-cli-search");
     let path_arg = path.to_string_lossy().into_owned();

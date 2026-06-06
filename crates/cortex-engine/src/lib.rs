@@ -104,7 +104,10 @@ pub use operation::{
 pub use options::{
     DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
 };
-pub use query::{scope_id, CandidateId, CellMetadata, EngineAqlIndex};
+pub use query::{
+    scope_id, AqlCandidateCounts, AqlExplainFilter, AqlExplainReport, CandidateId, CellMetadata,
+    EngineAqlIndex,
+};
 pub use repair::RepairReport;
 pub use replay::{
     replay_wal, replay_wal_best_effort, replay_wal_best_effort_into, replay_wal_into,

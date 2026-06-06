@@ -24,13 +24,14 @@ mod types;
 
 use http::{append_query_param, parse_response, path};
 pub use types::{
-    AnnEvaluationResponse, AnnNoFallbackDecision, AnnSearchReport, AqlCellResponse, AqlResponse,
-    CellLookupResponse, CellResponse, ContextPackAnomalyResponse, ContextPackCellResponse,
-    ContextPackResponse, DeleteJobResponse, ErrorCode, ErrorResponse, EvidenceResponse,
-    ExplainResponse, GuardResponse, HealthResponse, HnswNoFallbackProfileResponse, IngestResponse,
-    IngestionJobResponse, IngestionJobStatus, IngestionSkippedItem, IngestionSourceRefReport,
-    IngestionValidationIssue, IngestionValidationReport, NumericConflictResponse, PutCellResponse,
-    RememberResponse, ScoreComponentResponse, SearchExplainItem, SearchExplainResponse,
+    AnnEvaluationResponse, AnnNoFallbackDecision, AnnSearchReport, AqlCandidateCounts,
+    AqlCellResponse, AqlExplainFilter, AqlExplainResponse, AqlResponse, CellLookupResponse,
+    CellResponse, ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
+    DeleteJobResponse, ErrorCode, ErrorResponse, EvidenceResponse, ExplainResponse, GuardResponse,
+    HealthResponse, HnswNoFallbackProfileResponse, IngestResponse, IngestionJobResponse,
+    IngestionJobStatus, IngestionSkippedItem, IngestionSourceRefReport, IngestionValidationIssue,
+    IngestionValidationReport, NumericConflictResponse, PutCellResponse, RememberResponse,
+    ScoreComponentResponse, SearchExplainItem, SearchExplainResponse,
     SearchExplainTermContribution, SearchResponse, SearchResult, SearchRoutingDecision,
     SourceRefResponse, StatsResponse, ValidationResponse, VectorAlgorithm,
     VerificationReportResponse,

@@ -378,7 +378,10 @@ impl Database {
     }
 }
 
-fn cell_meets_quality_thresholds(payload: &[u8], thresholds: &QualityThresholds) -> bool {
+pub(crate) fn cell_meets_quality_thresholds(
+    payload: &[u8],
+    thresholds: &QualityThresholds,
+) -> bool {
     let metadata = CellMetadata::from_payload(payload);
     let confidence_q16 = metadata
         .source_ref

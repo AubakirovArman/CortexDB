@@ -11,12 +11,12 @@ use crate::cli_json::{
     validation_to_json, verification_report_to_json,
 };
 use crate::context::{
-    format_context_pack, format_retrieved_cells, format_search_results, format_verification_report,
+    format_context_pack, format_search_results, format_verification_report,
     remember_view_for_scope, verify_view_for_scope, view_for_scope,
 };
 use crate::{manifest, wal};
 
-fn fmt_engine_error(e: EngineError) -> String {
+pub(crate) fn fmt_engine_error(e: EngineError) -> String {
     let message = e.to_string();
     match e.cli_hint() {
         Some(hint) => format!("{message}\n  -> {hint}"),
@@ -491,18 +491,6 @@ pub fn verify(
         other => Err(format!(
             "unsupported verify format '{other}' (expected summary, json, markdown, or audit)"
         )),
-    }
-}
-
-pub fn aql(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, String> {
-    let db = open_database(path, false)?;
-    let cells = db
-        .retrieve_aql(aql, &view_for_scope(scope))
-        .map_err(fmt_engine_error)?;
-    if json {
-        Ok(crate::cli_json::aql_to_json(&cells))
-    } else {
-        Ok(format_retrieved_cells(&cells))
     }
 }
 

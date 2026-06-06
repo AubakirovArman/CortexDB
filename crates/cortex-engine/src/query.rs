@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 mod candidates;
 mod catalog;
+mod explain;
 pub(crate) mod metadata;
 mod metadata_validation;
 mod provider;
@@ -18,6 +19,7 @@ use candidates::{
     candidate_from_ordinal, increment_candidate, next_candidate_after, reverse_candidate_map,
     validate_candidate,
 };
+pub use explain::{AqlCandidateCounts, AqlExplainFilter, AqlExplainReport};
 use metadata::{
     cell_type_handle, cell_type_id, memory_type_handle, scope_handle, status_handle, status_id,
 };

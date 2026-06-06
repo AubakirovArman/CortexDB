@@ -70,6 +70,28 @@ fn v1_aql_returns_retrieved_cells() {
 }
 
 #[test]
+fn v1_aql_explain_returns_plan_filters_counts_and_mode() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\nalpha budget"
+    );
+    assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+
+    let request = concat!(
+        "POST /v1/aql?scope=project:investments HTTP/1.1\r\n\r\n",
+        "EXPLAIN RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects ",
+        "USING MODE balanced WHERE space = project:investments AND status = \"ready\" LIMIT 10 CANDIDATES;"
+    );
+    let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""cells":[]"#));
+    assert!(response.contains(r#""selected_mode":"balanced""#));
+    assert!(response.contains(r#""after_bitmap":1"#));
+    assert!(response.contains(r#""kind":"where""#));
+    assert!(response.contains("BitmapProgram(max_stack_depth="));
+}
+
+#[test]
 fn v1_remember_and_verify_work() {
     let dir = tempfile::tempdir().unwrap();
     let remember = concat!(
