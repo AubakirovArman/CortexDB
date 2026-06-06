@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 31 / 150
+- Done: 32 / 150
 - Partial: 1 / 150
-- Todo: 118 / 150
-- Current closed epic: Epic 31, Engine Internal Boundary Audit
+- Todo: 117 / 150
+- Current closed epic: Epic 32, Engine Determinism Audit
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -806,13 +806,29 @@ Boundary:
 
 ### Epic 32. Engine Determinism Audit
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/ENGINE_DETERMINISM.md`
+- `scripts/engine_determinism_check.py`
+- `make engine-determinism-check`
+- `make engine-api-check`
+- `cargo test -p cortex-engine --test determinism`
+- `cargo test --workspace --all-features`
+- `cargo clippy --workspace --all-targets -- -D warnings`
 
 Tasks:
 
-- Verify deterministic ordering for search, context, and verify.
-- Add snapshot tests.
-- Avoid nondeterministic maps in public output.
+- Verify deterministic ordering for search, context, and verify. Done:
+  `tests/determinism.rs` repeats public calls before and after checkpoint and
+  asserts stable search, ContextPack, and VerificationReport output order.
+- Add snapshot tests. Done: the determinism test suite uses canonical string
+  snapshots for search result order, ContextPack cell/anomaly order, evidence
+  order, guard order, and numeric conflict order.
+- Avoid nondeterministic maps in public output. Done:
+  `engine_determinism_check.py` fails if public search/context/verify response
+  paths introduce `HashMap` or `HashSet`.
 
 ### Epic 33. Engine Memory Accounting
 
