@@ -6,6 +6,7 @@
 .PHONY: engine-api-compat-check engine-public-api-freeze-check engine-error-model-check engine-feature-flags-check module-ownership-check engine-internal-boundary-check engine-determinism-check engine-panic-audit-check
 .PHONY: migration-compatibility-v2-check
 .PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-retrieval-adapter-check longmemeval-v1-e2e-adapter-check longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check longmemeval-v1-deepseek-flash-diff longmemeval-v1-deepseek-flash-compact-50-check longmemeval-v1-deepseek-flash-compact-500-check longmemeval-v1-deepseek-flash-preference-check longmemeval-v1-deepseek-flash-single-session-user-check longmemeval-v1-deepseek-flash-multi-session-check longmemeval-v1-deepseek-flash-temporal-check
+.PHONY: locomo-official-data locomo-cortexdb-retrieval locomo-retrieval-adapter-check
 .PHONY: multihop-rag-official-repo multihop-rag-official-data multihop-rag-preflight multihop-rag-balanced-50 multihop-rag-local-50-check multihop-rag-cortexdb-retrieval-50 multihop-rag-official-retrieval-metrics-50 multihop-rag-cortexdb-retrieval-full multihop-rag-official-retrieval-metrics-full multihop-rag-retrieval-full-existing-check multihop-rag-qa-full-existing-check multihop-rag-qa-hybrid-full-retry-existing-check multihop-rag-qa-hybrid-full-retry-v4-existing-check multihop-rag-deepseek-qa-50 multihop-rag-deepseek-qa-50-cache-metrics multihop-rag-official-qa-metrics-50 multihop-rag-official-qa-metrics-existing-50 multihop-rag-qa-error-analysis-50 multihop-rag-deepseek-qa-full multihop-rag-deepseek-qa-temporal-50-v3 multihop-rag-official-qa-metrics-temporal-50-v3 multihop-rag-qa-error-analysis-temporal-50-v3 multihop-rag-deepseek-qa-temporal-50-v3-retry multihop-rag-official-qa-metrics-temporal-50-v3-retry multihop-rag-qa-error-analysis-temporal-50-v3-retry multihop-rag-deepseek-qa-temporal-50-v4-decompose-retry multihop-rag-official-qa-metrics-temporal-50-v4-decompose-retry multihop-rag-qa-error-analysis-temporal-50-v4-decompose-retry multihop-rag-deepseek-qa-temporal-chronology-50-v1 multihop-rag-official-qa-metrics-temporal-chronology-50-v1 multihop-rag-qa-error-analysis-temporal-chronology-50-v1 multihop-rag-deepseek-qa-temporal-chronology-yes-no-50-v1 multihop-rag-official-qa-metrics-temporal-chronology-yes-no-50-v1 multihop-rag-qa-error-analysis-temporal-chronology-yes-no-50-v1 multihop-rag-deepseek-qa-temporal-v3 multihop-rag-deepseek-qa-temporal-v3-retry multihop-rag-deepseek-qa-comparison-50-retry multihop-rag-official-qa-metrics-comparison-50-retry multihop-rag-qa-error-analysis-comparison-50-retry multihop-rag-deepseek-qa-comparison-50-decompose-retry multihop-rag-official-qa-metrics-comparison-50-decompose-retry multihop-rag-qa-error-analysis-comparison-50-decompose-retry multihop-rag-deepseek-qa-comparison-v2-retry multihop-rag-deepseek-qa-comparison-v3-decompose-retry multihop-rag-combine-qa-full-hybrid multihop-rag-combine-qa-full-hybrid-retry multihop-rag-combine-qa-full-hybrid-retry-v4 multihop-rag-postprocess-hybrid-full-retry-v5 multihop-rag-combine-qa-full-hybrid-retry-v6 multihop-rag-combine-qa-full-hybrid-retry-v7 multihop-rag-official-qa-metrics-hybrid-full multihop-rag-official-qa-metrics-hybrid-full-retry multihop-rag-official-qa-metrics-hybrid-full-retry-v4 multihop-rag-official-qa-metrics-hybrid-full-retry-v5 multihop-rag-official-qa-metrics-hybrid-full-retry-v6 multihop-rag-official-qa-metrics-hybrid-full-retry-v7 multihop-rag-official-qa-metrics-full multihop-rag-official-qa-metrics-existing-full multihop-rag-qa-error-analysis-full multihop-rag-qa-error-analysis-hybrid-full-retry multihop-rag-qa-error-analysis-hybrid-full-retry-v4 multihop-rag-qa-error-analysis-hybrid-full-retry-v5 multihop-rag-qa-error-analysis-hybrid-full-retry-v6 multihop-rag-qa-error-analysis-hybrid-full-retry-v7
 .PHONY: enterprise-rag-bench-official-repo enterprise-rag-bench-official-env enterprise-rag-bench-preflight enterprise-rag-bench-balanced-50 enterprise-rag-bench-cortexdb-retrieval-smoke enterprise-rag-bench-official-retrieval-only-metrics-smoke enterprise-rag-bench-cortexdb-retrieval-50 enterprise-rag-bench-official-retrieval-only-metrics-50 enterprise-rag-bench-official-retrieval-only-metrics-existing-50 enterprise-rag-bench-cortexdb-retrieval-existing-50-candidates enterprise-rag-bench-embedding-rerank-existing-50 enterprise-rag-bench-cortexdb-retrieval-existing-50-candidates-wide enterprise-rag-bench-embedding-rerank-wide-existing-50 enterprise-rag-bench-embedding-rerank-fused-existing-50 enterprise-rag-bench-embedding-rerank-fused-v6-lexical-existing-50 enterprise-rag-bench-routed-v8-selective-lexical-retrieval-50 enterprise-rag-bench-routed-v10-project-chain-retrieval-50 enterprise-rag-bench-routed-v10-project-chain-retrieval-existing-50 enterprise-rag-bench-official-retrieval-only-metrics-embedding-rerank-existing-50 enterprise-rag-bench-deepseek-answers-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-v2-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-v3-windowed-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v4-windowed-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v5-windowed-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v6-lexical-windowed-50 enterprise-rag-bench-deepseek-answers-routed-v8-selective-lexical-windowed-50 enterprise-rag-bench-deepseek-answers-routed-v9-type-aware-windowed-50 enterprise-rag-bench-deepseek-answers-routed-v10-project-chain-windowed-50 enterprise-rag-bench-routed-v7-selective-lexical-judge-50 enterprise-rag-bench-official-answer-metrics-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-v2-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-v3-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v4-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v5-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v6-lexical-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-routed-v8-selective-lexical-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-routed-v9-type-aware-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-routed-v10-project-chain-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-v2-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-v3-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v4-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v5-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v6-lexical-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v7-selective-lexical-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v8-selective-lexical-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v9-type-aware-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v10-project-chain-windowed-judge-50 enterprise-rag-bench-cortexdb-retrieval-full
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v11-evidence-audit-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v11-evidence-audit-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v11-evidence-audit-windowed-judge-50
@@ -336,6 +337,16 @@ LONGMEMEVAL_V1_TEMPORAL_ROOT ?= target/longmemeval-v1/temporal-reasoning-format-
 LONGMEMEVAL_V1_TEMPORAL_INPUT_ROOT ?= target/longmemeval-v1/temporal-reasoning-format-check-input
 LONGMEMEVAL_V1_TEMPORAL_RETRIEVAL ?= $(LONGMEMEVAL_V1_TEMPORAL_INPUT_ROOT)/temporal_retrieval.jsonl
 LONGMEMEVAL_V1_TEMPORAL_REFERENCE ?= $(LONGMEMEVAL_V1_TEMPORAL_INPUT_ROOT)/temporal_reference.json
+LOCOMO_ROOT ?= target/locomo
+LOCOMO_DATA_ROOT ?= $(LOCOMO_ROOT)/data
+LOCOMO_DATA_FILE ?= $(LOCOMO_DATA_ROOT)/locomo10.json
+LOCOMO_DATA_MANIFEST ?= $(LOCOMO_DATA_ROOT)/manifest.json
+LOCOMO_DB_ROOT ?= $(LOCOMO_ROOT)/cortexdb
+LOCOMO_RETRIEVAL_OUTPUT ?= $(LOCOMO_ROOT)/retrieval/cortexdb_locomo_retrieval.jsonl
+LOCOMO_RETRIEVAL_REPORT ?= $(LOCOMO_ROOT)/retrieval/cortexdb_locomo_report.json
+LOCOMO_ADAPTER_REPORT ?= $(LOCOMO_ROOT)/retrieval-adapter/report.json
+LOCOMO_TOPK ?= 10
+LOCOMO_MAX_QUESTIONS ?=
 MULTIHOP_RAG_ROOT ?= target/multihop-rag
 MULTIHOP_RAG_DATA_ROOT ?= $(MULTIHOP_RAG_ROOT)/data
 MULTIHOP_RAG_QUERY_FILE ?= $(MULTIHOP_RAG_DATA_ROOT)/MultiHopRAG.json
@@ -2028,6 +2039,31 @@ enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
 	  --answers-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/answers.jsonl" \
 	  --metrics-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_JUDGE_METRICS)" \
 	  --report "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_JUDGE_ANALYSIS)"
+
+locomo-official-data:
+	python3 scripts/locomo/download.py \
+	  --data-root "$(LOCOMO_DATA_ROOT)" \
+	  --manifest "$(LOCOMO_DATA_MANIFEST)"
+
+locomo-cortexdb-retrieval: locomo-official-data
+	cargo build --release -p cortex-engine --bin locomo_retrieval
+	@limit_args=""; \
+	if [ -n "$(LOCOMO_MAX_QUESTIONS)" ]; then limit_args="--max-questions $(LOCOMO_MAX_QUESTIONS)"; fi; \
+	./target/release/locomo_retrieval \
+	  --data-file "$(LOCOMO_DATA_FILE)" \
+	  --db-root "$(LOCOMO_DB_ROOT)" \
+	  --output "$(LOCOMO_RETRIEVAL_OUTPUT)" \
+	  --report "$(LOCOMO_RETRIEVAL_REPORT)" \
+	  --top-k "$(LOCOMO_TOPK)" \
+	  --reset-db \
+	  $$limit_args
+
+locomo-retrieval-adapter-check: locomo-cortexdb-retrieval
+	python3 scripts/locomo/check_retrieval_adapter.py \
+	  --data-manifest "$(LOCOMO_DATA_MANIFEST)" \
+	  --retrieval-report "$(LOCOMO_RETRIEVAL_REPORT)" \
+	  --retrieval-output "$(LOCOMO_RETRIEVAL_OUTPUT)" \
+	  --output "$(LOCOMO_ADAPTER_REPORT)"
 
 multihop-rag-official-repo:
 	@if [ ! -d "$(MULTIHOP_RAG_OFFICIAL_REPO)/.git" ]; then \

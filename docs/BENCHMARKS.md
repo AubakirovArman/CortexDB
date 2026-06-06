@@ -259,6 +259,29 @@ prior evidence. Leaderboard/list inclusion still requires submission to the
 official maintainers. See
 [`LONGMEMEVAL_OFFICIAL.md`](LONGMEMEVAL_OFFICIAL.md).
 
+## LoCoMo Adapter Evidence
+
+CortexDB includes a LoCoMo retrieval-only adapter for the official
+`snap-research/locomo` `data/locomo10.json` file:
+
+```bash
+make locomo-retrieval-adapter-check
+```
+
+Latest local full-run evidence:
+
+| Metric | Value |
+| --- | ---: |
+| `samples` | `10` |
+| `turns_indexed` | `5,882` |
+| `questions` | `1,986` |
+| `questions_with_evidence` | `1,982` |
+| `hit@1` | `0.3199` |
+| `hit@10` | `0.6312` |
+
+This is a retrieval-only adapter gate. It is not an end-to-end QA score and not
+a published leaderboard entry. See [`LOCOMO_ADAPTER.md`](LOCOMO_ADAPTER.md).
+
 ## MultiHop-RAG Benchmark Scaffold
 
 CortexDB also includes a MultiHop-RAG preparation scaffold:

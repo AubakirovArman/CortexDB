@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 50 / 150
+- Done: 51 / 150
 - Partial: 1 / 150
-- Todo: 99 / 150
-- Current closed epic: Epic 50, LongMemEval End-to-End Adapter
+- Todo: 98 / 150
+- Current closed epic: Epic 51, LoCoMo Adapter
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1397,13 +1397,36 @@ Tasks:
 
 ### Epic 51. LoCoMo Adapter
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `scripts/locomo/download.py`
+- `scripts/locomo/check_retrieval_adapter.py`
+- `crates/cortex-engine/src/bin/locomo_retrieval/main.rs`
+- `crates/cortex-engine/src/bin/locomo_retrieval/args.rs`
+- `crates/cortex-engine/src/bin/locomo_retrieval/model.rs`
+- `crates/cortex-engine/src/bin/locomo_retrieval/view.rs`
+- `make locomo-retrieval-adapter-check`
+- `target/locomo/data/manifest.json`
+- `target/locomo/retrieval/cortexdb_locomo_retrieval.jsonl`
+- `target/locomo/retrieval/cortexdb_locomo_report.json`
+- `target/locomo/retrieval-adapter/report.json`
+- Latest local retrieval-only report: `status=passed`, `samples=10`,
+  `turns_indexed=5,882`, `questions=1,986`, `rows_with_evidence=1,982`,
+  `hit@1=0.3199`, and `hit@10=0.6312`.
 
 Tasks:
 
-- Ingest conversational memory.
-- Start with retrieval-only evaluation.
-- Add optional end-to-end evaluation.
+- Ingest conversational memory. Done: `locomo_retrieval` writes LoCoMo
+  conversation turns into CortexDB as durable `document_block` cells with
+  sample-specific scopes.
+- Start with retrieval-only evaluation. Done: the adapter searches each
+  conversation scope and scores retrieved `dia_id` values against LoCoMo QA
+  evidence IDs.
+- Add optional end-to-end evaluation. Done as a documented boundary: the report
+  records `optional_e2e=not_run`; E2E answer scoring remains a separate future
+  gate because this epic closes the retrieval adapter without API keys.
 
 ### Epic 52. Search Explain API
 
