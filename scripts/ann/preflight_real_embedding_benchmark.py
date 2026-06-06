@@ -6,12 +6,21 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import shlex
 import tempfile
 import unittest
 from pathlib import Path
 from typing import Iterable
-from urllib.parse import urlparse
+
+from embedding_provider import (
+    DEFAULT_KEY_ENV,
+    DEFAULT_MODEL_ENV,
+    DEFAULT_URL_ENV,
+    EmbeddingProviderConfig,
+    endpoint_origin,
+    provider_profile,
+    validate_command as provider_validate_command,
+    validate_provider_config,
+)
 
 
 SKIP_DIRS = {"venv", ".venv", "__pycache__", ".git", "target", "cortex_db", "cortex_data"}
@@ -90,13 +99,7 @@ def validate_queries(path: Path) -> int:
 
 
 def validate_command(command: str) -> None:
-    if not command.strip():
-        raise ValueError("embedding command is required")
-    parts = shlex.split(command)
-    if not parts:
-        raise ValueError("embedding command is empty")
-    if any("hash-smoke" in part for part in parts):
-        raise ValueError("real embedding benchmark cannot use hash-smoke provider")
+    provider_validate_command(command)
 
 
 def validate_env(required: list[str]) -> None:
@@ -105,13 +108,29 @@ def validate_env(required: list[str]) -> None:
         raise ValueError("missing required environment variables: " + ", ".join(missing))
 
 
-def endpoint_origin(raw_url: str | None) -> str:
-    if not raw_url:
-        return ""
-    parsed = urlparse(raw_url)
-    if not parsed.scheme or not parsed.netloc:
-        return ""
-    return f"{parsed.scheme}://{parsed.netloc}"
+def embedding_config(args: argparse.Namespace) -> EmbeddingProviderConfig:
+    return EmbeddingProviderConfig(
+        provider=args.provider,
+        command=args.embedding_command or "",
+        url=args.url or "",
+        url_env=args.url_env,
+        model=args.model or "",
+        model_env=args.model_env,
+        api_key_env=args.api_key_env,
+        embedding_file=args.embedding_file,
+        timeout_seconds=args.timeout_seconds,
+        require_model=args.require_model,
+        dimension=args.dimension,
+        hash_dimension=args.hash_dimension,
+    )
+
+
+def validate_embedding_provider(args: argparse.Namespace) -> EmbeddingProviderConfig:
+    if args.provider == "hash-smoke":
+        raise ValueError("real embedding benchmark cannot use hash-smoke provider")
+    config = embedding_config(args)
+    validate_provider_config(config)
+    return config
 
 
 def preflight(args: argparse.Namespace) -> dict:
@@ -123,7 +142,7 @@ def preflight(args: argparse.Namespace) -> dict:
         raise ValueError("--limit must be greater than zero")
     if args.max_documents is not None and args.max_documents <= 0:
         raise ValueError("--max-documents must be greater than zero")
-    validate_command(args.embedding_command)
+    config = validate_embedding_provider(args)
     validate_env(args.require_env)
     source_file_count, source_row_count = validate_sources(args.source_root, args.max_documents)
     query_count = validate_queries(args.queries)
@@ -139,9 +158,11 @@ def preflight(args: argparse.Namespace) -> dict:
         "normalization": args.normalization,
         "limit": args.limit,
         "required_env": sorted(args.require_env),
-        "command": args.embedding_command,
-        "embedding_model": os.environ.get("CORTEXDB_EMBEDDING_MODEL", ""),
-        "embedding_endpoint_origin": endpoint_origin(os.environ.get("CORTEXDB_EMBEDDING_URL")),
+        "provider": args.provider,
+        "command": args.embedding_command if args.provider == "command" else "",
+        "embedding_model": provider_profile(config)["model"],
+        "embedding_endpoint_origin": provider_profile(config)["endpoint_origin"],
+        "embedding_provider": provider_profile(config),
     }
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -153,7 +174,22 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-root", type=Path, action="append", required=True)
     parser.add_argument("--queries", type=Path, required=True)
-    parser.add_argument("--embedding-command", required=True)
+    parser.add_argument(
+        "--provider",
+        choices=["command", "openai-compatible", "local", "file", "hash-smoke"],
+        default="command",
+    )
+    parser.add_argument("--embedding-command")
+    parser.add_argument("--url")
+    parser.add_argument("--url-env", default=DEFAULT_URL_ENV)
+    parser.add_argument("--model")
+    parser.add_argument("--model-env", default=DEFAULT_MODEL_ENV)
+    parser.add_argument("--api-key-env", default=DEFAULT_KEY_ENV)
+    parser.add_argument("--embedding-file", type=Path)
+    parser.add_argument("--timeout-seconds", type=float, default=30.0)
+    parser.add_argument("--dimension", type=int)
+    parser.add_argument("--hash-dimension", type=int, default=64)
+    parser.add_argument("--require-model", action="store_true")
     parser.add_argument("--metric", default="cosine")
     parser.add_argument("--normalization", choices=["unit", "max_abs", "none"], default="unit")
     parser.add_argument("--scale", type=int, default=32767)
@@ -188,6 +224,8 @@ class SelfTests(unittest.TestCase):
                 str(source),
                 "--queries",
                 str(queries),
+                "--provider",
+                "command",
                 "--embedding-command",
                 "python3 scripts/ann/embed_text_command.py",
             ])
@@ -206,6 +244,8 @@ class SelfTests(unittest.TestCase):
                 str(source),
                 "--queries",
                 str(queries),
+                "--provider",
+                "command",
                 "--embedding-command",
                 "hash-smoke",
                 "--require-env",
@@ -213,6 +253,33 @@ class SelfTests(unittest.TestCase):
             ])
             with self.assertRaises(ValueError):
                 preflight(args)
+
+    def test_preflight_accepts_file_provider_without_env(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_dir:
+            root = Path(raw_dir)
+            source = root / "source"
+            source.mkdir()
+            (source / "cells.jsonl").write_text('{"payload":"alpha"}\n', encoding="utf-8")
+            queries = root / "queries.jsonl"
+            queries.write_text('{"name":"q","text":"alpha","limit":1}\n', encoding="utf-8")
+            embeddings = root / "embeddings.jsonl"
+            embeddings.write_text(
+                json.dumps({"text": "alpha", "embedding": [1.0, 0.0]}) + "\n",
+                encoding="utf-8",
+            )
+            args = parse_args([
+                "--source-root",
+                str(source),
+                "--queries",
+                str(queries),
+                "--provider",
+                "file",
+                "--embedding-file",
+                str(embeddings),
+            ])
+            report = preflight(args)
+            self.assertEqual(report["provider"], "file")
+            self.assertEqual(report["embedding_provider"]["provider"], "file")
 
 
 if __name__ == "__main__":

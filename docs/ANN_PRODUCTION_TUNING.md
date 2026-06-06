@@ -66,21 +66,30 @@ Release tags package this run as a separate demo-domain baseline archive, so a
 tag carries public benchmark evidence and CortexDB-shaped domain evidence.
 
 For real embedding model output, use `make ann-embedding-domain-corpus-run`
-when the source corpus only has text. It calls an external embedding command,
-exports fixed-point vectors, and then runs the normal embedded-domain gate. Use
-`make ann-embedded-domain-corpus-run` when payload rows and query rows already
-contain fixed-point vectors. Both paths fail closed on missing vectors, which
-keeps production tuning honest: a real embedding baseline should never silently
-fall back to hashed demo vectors.
+when the source corpus only has text. It exports fixed-point vectors and then
+runs the normal embedded-domain gate. Use `make ann-embedded-domain-corpus-run`
+when payload rows and query rows already contain fixed-point vectors. Both paths
+fail closed on missing vectors, which keeps production tuning honest: a real
+embedding baseline should never silently fall back to hashed demo vectors.
 
-Production reports should record the embedding command identity and model
-version in the run notes or release artifact. The built-in `hash-smoke`
-provider is only a plumbing check; it is not evidence for semantic recall.
+The export path now supports four provider modes:
+
+| Provider | Use case | Secret handling |
+| --- | --- | --- |
+| `command` | Backward-compatible wrapper that reads text on stdin and prints a JSON vector. | The command should read keys from env, not argv. |
+| `openai-compatible` | Direct OpenAI-compatible `/embeddings` endpoint. | API key is read from `CORTEXDB_EMBEDDING_API_KEY` or the configured env var name. |
+| `local` | Local embedding gateways that may not require a model or API key. | Endpoint/model are config; key remains env-only if used. |
+| `file` | Offline fixture embeddings keyed by text or SHA-256. | No network or secrets. |
+
+Production reports should record provider identity, endpoint origin, model
+version, and whether a key env var was present, but never the key value. The
+built-in `hash-smoke` provider is only a plumbing check; it is not evidence for
+semantic recall and is rejected by real-embedding preflight/readiness gates.
 For OpenAI-compatible or local gateway endpoints, the checked-in
-`scripts/ann/embed_text_command.py` can be used as the command wrapper. It reads
-endpoint/model/key settings from environment variables and prints only the
-numeric vector to stdout, which keeps provider secrets out of committed corpus
-artifacts.
+`scripts/ann/embed_text_command.py` can still be used as the command wrapper.
+It reads endpoint/model/key settings from environment variables and prints only
+the numeric vector to stdout, which keeps provider secrets out of committed
+corpus artifacts.
 
 Before running an expensive real-embedding benchmark, run the preflight gate:
 

@@ -89,6 +89,10 @@ ANN_EMBEDDING_RUN_ROOT ?= target/ann/embedding-domain-corpus/runs
 ANN_EMBEDDING_RUN_ID ?= embedding-domain
 ANN_EMBEDDING_PROVIDER ?= command
 ANN_EMBEDDING_COMMAND ?=
+ANN_EMBEDDING_FILE ?=
+ANN_EMBEDDING_URL ?=
+ANN_EMBEDDING_MODEL ?=
+ANN_EMBEDDING_TIMEOUT_SECONDS ?= 30
 ANN_EMBEDDING_NORMALIZATION ?= unit
 ANN_EMBEDDING_SCALE ?= 32767
 ANN_EMBEDDING_METRIC ?= cosine
@@ -100,7 +104,12 @@ ANN_EMBEDDING_EF_CONSTRUCTION ?=
 ANN_EMBEDDING_LAYER_COUNT ?=
 ANN_REAL_EMBEDDING_SOURCE_ROOT ?=
 ANN_REAL_EMBEDDING_QUERIES ?=
+ANN_REAL_EMBEDDING_PROVIDER ?= command
 ANN_REAL_EMBEDDING_COMMAND ?= python3 scripts/ann/embed_text_command.py --require-model
+ANN_REAL_EMBEDDING_FILE ?=
+ANN_REAL_EMBEDDING_URL ?=
+ANN_REAL_EMBEDDING_MODEL ?=
+ANN_REAL_EMBEDDING_TIMEOUT_SECONDS ?= 30
 ANN_REAL_EMBEDDING_OUTPUT_DIR ?= target/ann/real-embedding/export
 ANN_REAL_EMBEDDING_RUN_ROOT ?= target/ann/real-embedding/runs
 ANN_REAL_EMBEDDING_RUN_ID ?= real-embedding
@@ -108,6 +117,7 @@ ANN_REAL_EMBEDDING_READINESS_REPORT ?= target/ann/real-embedding/readiness.json
 ANN_REAL_EMBEDDING_PREFLIGHT_REPORT ?= target/ann/real-embedding/preflight.json
 ANN_REAL_EMBEDDING_SOURCE_ARCHIVE_MANIFEST ?=
 ANN_REAL_EMBEDDING_REQUIRE_API_KEY ?= false
+ANN_REAL_EMBEDDING_REQUIRE_MODEL ?= false
 ANN_REAL_EMBEDDING_NORMALIZATION ?= unit
 ANN_REAL_EMBEDDING_SCALE ?= 32767
 ANN_REAL_EMBEDDING_METRIC ?= cosine
@@ -2718,7 +2728,8 @@ ann-embedding-domain-export:
 	@if [ -z "$(ANN_EMBEDDING_SOURCE_ROOT)" ]; then echo "Set ANN_EMBEDDING_SOURCE_ROOT to a JSONL payload directory without vectors" >&2; exit 2; fi
 	@if [ -z "$(ANN_EMBEDDING_QUERIES)" ]; then echo "Set ANN_EMBEDDING_QUERIES to a JSONL query text file" >&2; exit 2; fi
 	@if [ "$(ANN_EMBEDDING_PROVIDER)" = "command" ] && [ -z "$(ANN_EMBEDDING_COMMAND)" ]; then echo "Set ANN_EMBEDDING_COMMAND to a command that reads text on stdin and prints a JSON vector" >&2; exit 2; fi
-	python3 scripts/ann/export_embedding_domain_corpus.py --source-root $(ANN_EMBEDDING_SOURCE_ROOT) --queries $(ANN_EMBEDDING_QUERIES) --output-dir $(ANN_EMBEDDING_OUTPUT_DIR) --provider $(ANN_EMBEDDING_PROVIDER) --embedding-command "$(ANN_EMBEDDING_COMMAND)" --normalization $(ANN_EMBEDDING_NORMALIZATION) --scale $(ANN_EMBEDDING_SCALE) --limit $(ANN_EMBEDDING_LIMIT)
+	@if [ "$(ANN_EMBEDDING_PROVIDER)" = "file" ] && [ -z "$(ANN_EMBEDDING_FILE)" ]; then echo "Set ANN_EMBEDDING_FILE when ANN_EMBEDDING_PROVIDER=file" >&2; exit 2; fi
+	python3 scripts/ann/export_embedding_domain_corpus.py --source-root $(ANN_EMBEDDING_SOURCE_ROOT) --queries $(ANN_EMBEDDING_QUERIES) --output-dir $(ANN_EMBEDDING_OUTPUT_DIR) --provider $(ANN_EMBEDDING_PROVIDER) --embedding-command "$(ANN_EMBEDDING_COMMAND)" --embedding-file "$(ANN_EMBEDDING_FILE)" --url "$(ANN_EMBEDDING_URL)" --model "$(ANN_EMBEDDING_MODEL)" --timeout-seconds $(ANN_EMBEDDING_TIMEOUT_SECONDS) --normalization $(ANN_EMBEDDING_NORMALIZATION) --scale $(ANN_EMBEDDING_SCALE) --limit $(ANN_EMBEDDING_LIMIT)
 
 ann-embedding-domain-corpus-run: ann-embedding-domain-export
 	$(MAKE) ann-embedded-domain-corpus-run ANN_EMBEDDED_DOMAIN_SOURCE_ROOT=$(ANN_EMBEDDING_OUTPUT_DIR)/payloads ANN_EMBEDDED_DOMAIN_QUERIES=$(ANN_EMBEDDING_OUTPUT_DIR)/queries.jsonl ANN_EMBEDDED_DOMAIN_OUTPUT_DIR=$(ANN_EMBEDDING_OUTPUT_DIR)/converted ANN_EMBEDDED_DOMAIN_RUN_ROOT=$(ANN_EMBEDDING_RUN_ROOT) ANN_EMBEDDED_DOMAIN_RUN_ID=$(ANN_EMBEDDING_RUN_ID) ANN_EMBEDDED_DOMAIN_METRIC=$(ANN_EMBEDDING_METRIC) ANN_EMBEDDED_DOMAIN_LIMIT=$(ANN_EMBEDDING_LIMIT) ANN_EMBEDDED_DOMAIN_SLO_PROFILE=$(ANN_EMBEDDING_SLO_PROFILE) ANN_EMBEDDED_DOMAIN_MAX_NEIGHBORS=$(ANN_EMBEDDING_MAX_NEIGHBORS) ANN_EMBEDDED_DOMAIN_EF_SEARCH=$(ANN_EMBEDDING_EF_SEARCH) ANN_EMBEDDED_DOMAIN_EF_CONSTRUCTION=$(ANN_EMBEDDING_EF_CONSTRUCTION) ANN_EMBEDDED_DOMAIN_LAYER_COUNT=$(ANN_EMBEDDING_LAYER_COUNT)
@@ -2728,22 +2739,28 @@ ann-real-embedding-readiness:
 	if [ -n "$(ANN_REAL_EMBEDDING_SOURCE_ROOT)" ]; then source_args="$$source_args --source-root $(ANN_REAL_EMBEDDING_SOURCE_ROOT)"; fi; \
 	query_args=""; \
 	if [ -n "$(ANN_REAL_EMBEDDING_QUERIES)" ]; then query_args="--queries $(ANN_REAL_EMBEDDING_QUERIES)"; fi; \
-	required_env_args="--require-env CORTEXDB_EMBEDDING_URL --require-env CORTEXDB_EMBEDDING_MODEL"; \
+	required_env_args=""; \
+	if [ "$(ANN_REAL_EMBEDDING_PROVIDER)" = "command" ] || [ "$(ANN_REAL_EMBEDDING_PROVIDER)" = "openai-compatible" ]; then required_env_args="$$required_env_args --require-env CORTEXDB_EMBEDDING_URL --require-env CORTEXDB_EMBEDDING_MODEL"; fi; \
+	if [ "$(ANN_REAL_EMBEDDING_PROVIDER)" = "local" ]; then required_env_args="$$required_env_args --require-env CORTEXDB_EMBEDDING_URL"; fi; \
+	if [ "$(ANN_REAL_EMBEDDING_REQUIRE_MODEL)" = "true" ]; then required_env_args="$$required_env_args --require-env CORTEXDB_EMBEDDING_MODEL"; fi; \
 	if [ "$(ANN_REAL_EMBEDDING_REQUIRE_API_KEY)" = "true" ]; then required_env_args="$$required_env_args --require-env CORTEXDB_EMBEDDING_API_KEY"; fi; \
 	archive_args=""; \
 	if [ -n "$(ANN_REAL_EMBEDDING_SOURCE_ARCHIVE_MANIFEST)" ]; then archive_args="$$archive_args --source-archive-manifest $(ANN_REAL_EMBEDDING_SOURCE_ARCHIVE_MANIFEST)"; fi; \
 	if [ "$(ANN_REAL_EMBEDDING_REQUIRE_SOURCE_ARCHIVE)" = "true" ]; then archive_args="$$archive_args --require-source-archive"; fi; \
-	python3 scripts/ann/real_embedding_readiness.py $$source_args $$query_args --embedding-command "$(ANN_REAL_EMBEDDING_COMMAND)" --metric $(ANN_REAL_EMBEDDING_METRIC) --normalization $(ANN_REAL_EMBEDDING_NORMALIZATION) --scale $(ANN_REAL_EMBEDDING_SCALE) --limit $(ANN_REAL_EMBEDDING_LIMIT) $$required_env_args $$archive_args --output $(ANN_REAL_EMBEDDING_READINESS_REPORT)
+	python3 scripts/ann/real_embedding_readiness.py $$source_args $$query_args --provider $(ANN_REAL_EMBEDDING_PROVIDER) --embedding-command "$(ANN_REAL_EMBEDDING_COMMAND)" --embedding-file "$(ANN_REAL_EMBEDDING_FILE)" --url "$(ANN_REAL_EMBEDDING_URL)" --model "$(ANN_REAL_EMBEDDING_MODEL)" --timeout-seconds $(ANN_REAL_EMBEDDING_TIMEOUT_SECONDS) --metric $(ANN_REAL_EMBEDDING_METRIC) --normalization $(ANN_REAL_EMBEDDING_NORMALIZATION) --scale $(ANN_REAL_EMBEDDING_SCALE) --limit $(ANN_REAL_EMBEDDING_LIMIT) $$required_env_args $$archive_args --output $(ANN_REAL_EMBEDDING_READINESS_REPORT)
 
 ann-real-embedding-preflight:
 	@if [ -z "$(ANN_REAL_EMBEDDING_SOURCE_ROOT)" ]; then echo "Set ANN_REAL_EMBEDDING_SOURCE_ROOT to a JSONL payload directory" >&2; exit 2; fi
 	@if [ -z "$(ANN_REAL_EMBEDDING_QUERIES)" ]; then echo "Set ANN_REAL_EMBEDDING_QUERIES to a JSONL query text file" >&2; exit 2; fi
-	@required_env_args="--require-env CORTEXDB_EMBEDDING_URL --require-env CORTEXDB_EMBEDDING_MODEL"; \
+	@required_env_args=""; \
+	if [ "$(ANN_REAL_EMBEDDING_PROVIDER)" = "command" ] || [ "$(ANN_REAL_EMBEDDING_PROVIDER)" = "openai-compatible" ]; then required_env_args="$$required_env_args --require-env CORTEXDB_EMBEDDING_URL --require-env CORTEXDB_EMBEDDING_MODEL"; fi; \
+	if [ "$(ANN_REAL_EMBEDDING_PROVIDER)" = "local" ]; then required_env_args="$$required_env_args --require-env CORTEXDB_EMBEDDING_URL"; fi; \
+	if [ "$(ANN_REAL_EMBEDDING_REQUIRE_MODEL)" = "true" ]; then required_env_args="$$required_env_args --require-env CORTEXDB_EMBEDDING_MODEL"; fi; \
 	if [ "$(ANN_REAL_EMBEDDING_REQUIRE_API_KEY)" = "true" ]; then required_env_args="$$required_env_args --require-env CORTEXDB_EMBEDDING_API_KEY"; fi; \
-	python3 scripts/ann/preflight_real_embedding_benchmark.py --source-root $(ANN_REAL_EMBEDDING_SOURCE_ROOT) --queries $(ANN_REAL_EMBEDDING_QUERIES) --embedding-command "$(ANN_REAL_EMBEDDING_COMMAND)" --metric $(ANN_REAL_EMBEDDING_METRIC) --normalization $(ANN_REAL_EMBEDDING_NORMALIZATION) --scale $(ANN_REAL_EMBEDDING_SCALE) --limit $(ANN_REAL_EMBEDDING_LIMIT) $$required_env_args --output $(ANN_REAL_EMBEDDING_PREFLIGHT_REPORT)
+	python3 scripts/ann/preflight_real_embedding_benchmark.py --source-root $(ANN_REAL_EMBEDDING_SOURCE_ROOT) --queries $(ANN_REAL_EMBEDDING_QUERIES) --provider $(ANN_REAL_EMBEDDING_PROVIDER) --embedding-command "$(ANN_REAL_EMBEDDING_COMMAND)" --embedding-file "$(ANN_REAL_EMBEDDING_FILE)" --url "$(ANN_REAL_EMBEDDING_URL)" --model "$(ANN_REAL_EMBEDDING_MODEL)" --timeout-seconds $(ANN_REAL_EMBEDDING_TIMEOUT_SECONDS) --metric $(ANN_REAL_EMBEDDING_METRIC) --normalization $(ANN_REAL_EMBEDDING_NORMALIZATION) --scale $(ANN_REAL_EMBEDDING_SCALE) --limit $(ANN_REAL_EMBEDDING_LIMIT) $$required_env_args --output $(ANN_REAL_EMBEDDING_PREFLIGHT_REPORT)
 
 ann-real-embedding-benchmark: ann-real-embedding-preflight
-	$(MAKE) ann-embedding-domain-corpus-run ANN_EMBEDDING_SOURCE_ROOT=$(ANN_REAL_EMBEDDING_SOURCE_ROOT) ANN_EMBEDDING_QUERIES=$(ANN_REAL_EMBEDDING_QUERIES) ANN_EMBEDDING_OUTPUT_DIR=$(ANN_REAL_EMBEDDING_OUTPUT_DIR) ANN_EMBEDDING_RUN_ROOT=$(ANN_REAL_EMBEDDING_RUN_ROOT) ANN_EMBEDDING_RUN_ID=$(ANN_REAL_EMBEDDING_RUN_ID) ANN_EMBEDDING_PROVIDER=command ANN_EMBEDDING_COMMAND="$(ANN_REAL_EMBEDDING_COMMAND)" ANN_EMBEDDING_NORMALIZATION=$(ANN_REAL_EMBEDDING_NORMALIZATION) ANN_EMBEDDING_SCALE=$(ANN_REAL_EMBEDDING_SCALE) ANN_EMBEDDING_METRIC=$(ANN_REAL_EMBEDDING_METRIC) ANN_EMBEDDING_LIMIT=$(ANN_REAL_EMBEDDING_LIMIT) ANN_EMBEDDING_SLO_PROFILE=$(ANN_REAL_EMBEDDING_SLO_PROFILE) ANN_EMBEDDING_MAX_NEIGHBORS=$(ANN_REAL_EMBEDDING_MAX_NEIGHBORS) ANN_EMBEDDING_EF_SEARCH=$(ANN_REAL_EMBEDDING_EF_SEARCH) ANN_EMBEDDING_EF_CONSTRUCTION=$(ANN_REAL_EMBEDDING_EF_CONSTRUCTION) ANN_EMBEDDING_LAYER_COUNT=$(ANN_REAL_EMBEDDING_LAYER_COUNT)
+	$(MAKE) ann-embedding-domain-corpus-run ANN_EMBEDDING_SOURCE_ROOT=$(ANN_REAL_EMBEDDING_SOURCE_ROOT) ANN_EMBEDDING_QUERIES=$(ANN_REAL_EMBEDDING_QUERIES) ANN_EMBEDDING_OUTPUT_DIR=$(ANN_REAL_EMBEDDING_OUTPUT_DIR) ANN_EMBEDDING_RUN_ROOT=$(ANN_REAL_EMBEDDING_RUN_ROOT) ANN_EMBEDDING_RUN_ID=$(ANN_REAL_EMBEDDING_RUN_ID) ANN_EMBEDDING_PROVIDER=$(ANN_REAL_EMBEDDING_PROVIDER) ANN_EMBEDDING_COMMAND="$(ANN_REAL_EMBEDDING_COMMAND)" ANN_EMBEDDING_FILE="$(ANN_REAL_EMBEDDING_FILE)" ANN_EMBEDDING_URL="$(ANN_REAL_EMBEDDING_URL)" ANN_EMBEDDING_MODEL="$(ANN_REAL_EMBEDDING_MODEL)" ANN_EMBEDDING_TIMEOUT_SECONDS=$(ANN_REAL_EMBEDDING_TIMEOUT_SECONDS) ANN_EMBEDDING_NORMALIZATION=$(ANN_REAL_EMBEDDING_NORMALIZATION) ANN_EMBEDDING_SCALE=$(ANN_REAL_EMBEDDING_SCALE) ANN_EMBEDDING_METRIC=$(ANN_REAL_EMBEDDING_METRIC) ANN_EMBEDDING_LIMIT=$(ANN_REAL_EMBEDDING_LIMIT) ANN_EMBEDDING_SLO_PROFILE=$(ANN_REAL_EMBEDDING_SLO_PROFILE) ANN_EMBEDDING_MAX_NEIGHBORS=$(ANN_REAL_EMBEDDING_MAX_NEIGHBORS) ANN_EMBEDDING_EF_SEARCH=$(ANN_REAL_EMBEDDING_EF_SEARCH) ANN_EMBEDDING_EF_CONSTRUCTION=$(ANN_REAL_EMBEDDING_EF_CONSTRUCTION) ANN_EMBEDDING_LAYER_COUNT=$(ANN_REAL_EMBEDDING_LAYER_COUNT)
 	@if [ -n "$(ANN_REAL_EMBEDDING_SOURCE_ARCHIVE_MANIFEST)" ]; then \
 	  python3 scripts/ann/attach_real_embedding_metadata.py \
 	    --run-dir "$(ANN_REAL_EMBEDDING_RUN_ROOT)/$(ANN_REAL_EMBEDDING_RUN_ID)" \
@@ -2794,6 +2811,7 @@ ann-slo-profile:
 ann-scripts-check:
 	python3 scripts/ann/build_demo_domain_corpus.py --self-test
 	python3 scripts/ann/build_embedded_domain_corpus.py --self-test
+	python3 scripts/ann/embedding_provider_selftest.py
 	python3 scripts/ann/export_embedding_domain_corpus.py --self-test
 	python3 scripts/ann/embed_text_command.py --self-test
 	python3 scripts/ann/preflight_real_embedding_benchmark.py --self-test

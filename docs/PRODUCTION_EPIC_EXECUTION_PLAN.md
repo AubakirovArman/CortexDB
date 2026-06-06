@@ -1586,14 +1586,27 @@ Tasks:
 
 ### Epic 57. Embedding Provider Abstraction
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `scripts/ann/embedding_provider.py`
+- `scripts/ann/embed_text_command.py`
+- `scripts/ann/export_embedding_domain_corpus.py`
+- `scripts/ann/preflight_real_embedding_benchmark.py`
+- `scripts/ann/real_embedding_readiness.py`
+- `make ann-scripts-check`
 
 Tasks:
 
-- Support OpenAI-compatible providers.
-- Support local endpoints.
-- Support file-based embeddings.
-- Ensure no secrets are committed.
+- Support OpenAI-compatible providers. Done: direct provider mode and wrapper
+  mode both use env-only endpoint/model/key handling.
+- Support local endpoints. Done: `local` provider accepts endpoint config
+  without requiring an API key and can omit model unless explicitly required.
+- Support file-based embeddings. Done: `file` provider reads JSONL vectors keyed
+  by text or text SHA-256.
+- Ensure no secrets are committed. Done: provider reports expose endpoint origin,
+  env var name, and key-presence boolean, not the key value.
 
 ### Epic 58. Embedding Cache
 

@@ -13,10 +13,11 @@ import unittest
 from pathlib import Path
 from typing import Any
 
+from embedding_provider import DEFAULT_KEY_ENV, DEFAULT_MODEL_ENV, DEFAULT_URL_ENV, provider_profile
 from preflight_real_embedding_benchmark import (
     METRICS,
-    endpoint_origin,
-    validate_command,
+    embedding_config,
+    validate_embedding_provider,
     validate_queries,
     validate_sources,
 )
@@ -57,10 +58,11 @@ def collect_readiness(args: argparse.Namespace) -> dict[str, Any]:
     if args.max_documents is not None and args.max_documents <= 0:
         blockers.append(blocker("invalid_max_documents", "--max-documents must be greater than zero"))
 
+    config = embedding_config(args)
     try:
-        validate_command(args.embedding_command)
+        validate_embedding_provider(args)
     except ValueError as error:
-        blockers.append(blocker("invalid_embedding_command", str(error)))
+        blockers.append(blocker("invalid_embedding_provider", str(error)))
 
     missing_env = [name for name in args.require_env if not os.environ.get(name)]
     if missing_env:
@@ -102,9 +104,11 @@ def collect_readiness(args: argparse.Namespace) -> dict[str, Any]:
         "scale": args.scale,
         "limit": args.limit,
         "required_env": sorted(args.require_env),
-        "embedding_command": args.embedding_command,
-        "embedding_model": os.environ.get("CORTEXDB_EMBEDDING_MODEL", ""),
-        "embedding_endpoint_origin": endpoint_origin(os.environ.get("CORTEXDB_EMBEDDING_URL")),
+        "provider": args.provider,
+        "embedding_command": args.embedding_command if args.provider == "command" else "",
+        "embedding_model": provider_profile(config)["model"],
+        "embedding_endpoint_origin": provider_profile(config)["endpoint_origin"],
+        "embedding_provider": provider_profile(config),
         "source_archive_manifest": str(args.source_archive_manifest or ""),
     }
     if args.output:
@@ -117,7 +121,22 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-root", type=Path, action="append", default=[])
     parser.add_argument("--queries", type=Path)
+    parser.add_argument(
+        "--provider",
+        choices=["command", "openai-compatible", "local", "file", "hash-smoke"],
+        default="command",
+    )
     parser.add_argument("--embedding-command", default="python3 scripts/ann/embed_text_command.py --require-model")
+    parser.add_argument("--url")
+    parser.add_argument("--url-env", default=DEFAULT_URL_ENV)
+    parser.add_argument("--model")
+    parser.add_argument("--model-env", default=DEFAULT_MODEL_ENV)
+    parser.add_argument("--api-key-env", default=DEFAULT_KEY_ENV)
+    parser.add_argument("--embedding-file", type=Path)
+    parser.add_argument("--timeout-seconds", type=float, default=30.0)
+    parser.add_argument("--dimension", type=int)
+    parser.add_argument("--hash-dimension", type=int, default=64)
+    parser.add_argument("--require-model", action="store_true")
     parser.add_argument("--metric", default="cosine")
     parser.add_argument("--normalization", choices=["unit", "max_abs", "none"], default="unit")
     parser.add_argument("--scale", type=int, default=32767)
@@ -167,6 +186,8 @@ class SelfTests(unittest.TestCase):
                 str(source),
                 "--queries",
                 str(queries),
+                "--provider",
+                "command",
                 "--embedding-command",
                 "python3 scripts/ann/embed_text_command.py --require-model",
                 "--source-archive-manifest",
@@ -177,6 +198,33 @@ class SelfTests(unittest.TestCase):
             self.assertTrue(report["ready"])
             self.assertEqual(report["source_rows"], 1)
             self.assertEqual(report["query_rows"], 1)
+
+    def test_ready_with_file_provider(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_dir:
+            root = Path(raw_dir)
+            source = root / "source"
+            source.mkdir()
+            (source / "cells.jsonl").write_text('{"payload":"alpha"}\n', encoding="utf-8")
+            queries = root / "queries.jsonl"
+            queries.write_text('{"name":"q","text":"alpha","limit":1}\n', encoding="utf-8")
+            embeddings = root / "embeddings.jsonl"
+            embeddings.write_text(
+                json.dumps({"text": "alpha", "embedding": [1.0, 0.0]}) + "\n",
+                encoding="utf-8",
+            )
+            args = parse_args([
+                "--source-root",
+                str(source),
+                "--queries",
+                str(queries),
+                "--provider",
+                "file",
+                "--embedding-file",
+                str(embeddings),
+            ])
+            report = collect_readiness(args)
+            self.assertTrue(report["ready"])
+            self.assertEqual(report["embedding_provider"]["provider"], "file")
 
     def test_fail_if_blocked_returns_nonzero(self) -> None:
         with contextlib.redirect_stdout(io.StringIO()):
