@@ -535,7 +535,8 @@ Exact fallback is a correctness boundary, not an implementation detail.
 ANN should fall back to exact scan when:
 
 - graph is empty;
-- graph integrity fails;
+- graph integrity fails, including corrupt or truncated persisted `.ach` files;
+- graph is stale relative to the persisted vector index;
 - graph returns insufficient candidates;
 - visit budget is exceeded;
 - observed recall is below `min_recall_q16`;

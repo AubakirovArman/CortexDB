@@ -1554,6 +1554,7 @@ components:
             enum:
             - empty_graph
             - invalid_graph
+            - stale_graph
             - insufficient_results
             - low_recall
             - visit_budget_exceeded

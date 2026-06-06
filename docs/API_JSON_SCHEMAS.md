@@ -460,9 +460,12 @@ fields:
 ```
 
 `fallback_reason` may also be `low_recall` when the HNSW graph returns enough
-candidates but fails the exact top-k recall guard. It may be `hnsw_disabled`
-when production-safe defaults intentionally use exact persisted vector search
-instead of the experimental HNSW graph. In that case `production_safe=true`.
+candidates but fails the exact top-k recall guard. It may be `stale_graph`
+when the persisted vector index contains candidates missing from the persisted
+HNSW graph, and `invalid_graph` when the graph file is corrupt or truncated.
+It may be `hnsw_disabled` when production-safe defaults intentionally use exact
+persisted vector search instead of the experimental HNSW graph. In that case
+`production_safe=true`.
 With `require_slo=true`, callers should treat `production_safe=false` as an
 ANN/HNSW guardrail breach even when exact fallback returned correct results.
 The HNSW profile fields (`hnsw_max_neighbors`, `hnsw_ef_search`,

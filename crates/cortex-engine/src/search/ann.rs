@@ -25,6 +25,7 @@ impl AnnSearchPath {
 pub enum AnnFallbackReason {
     EmptyGraph,
     InvalidGraph,
+    StaleGraph,
     InsufficientResults,
     LowRecall,
     VisitBudgetExceeded,
@@ -38,6 +39,7 @@ impl AnnFallbackReason {
         match self {
             Self::EmptyGraph => "empty_graph",
             Self::InvalidGraph => "invalid_graph",
+            Self::StaleGraph => "stale_graph",
             Self::InsufficientResults => "insufficient_results",
             Self::LowRecall => "low_recall",
             Self::VisitBudgetExceeded => "visit_budget_exceeded",
@@ -52,6 +54,7 @@ impl AnnFallbackReason {
 pub enum AnnSloViolation {
     EmptyGraph,
     InvalidGraph,
+    StaleGraph,
     InsufficientResults,
     LowRecall,
     VisitBudgetExceeded,
@@ -67,6 +70,7 @@ impl AnnSloViolation {
         match self {
             Self::EmptyGraph => "empty_graph",
             Self::InvalidGraph => "invalid_graph",
+            Self::StaleGraph => "stale_graph",
             Self::InsufficientResults => "insufficient_results",
             Self::LowRecall => "low_recall",
             Self::VisitBudgetExceeded => "visit_budget_exceeded",
@@ -748,6 +752,7 @@ fn slo_violations(report: &AnnSearchReport, policy: AnnSearchPolicy) -> Vec<AnnS
         violations.push(match reason {
             AnnFallbackReason::EmptyGraph => AnnSloViolation::EmptyGraph,
             AnnFallbackReason::InvalidGraph => AnnSloViolation::InvalidGraph,
+            AnnFallbackReason::StaleGraph => AnnSloViolation::StaleGraph,
             AnnFallbackReason::InsufficientResults => AnnSloViolation::InsufficientResults,
             AnnFallbackReason::LowRecall => AnnSloViolation::LowRecall,
             AnnFallbackReason::VisitBudgetExceeded => AnnSloViolation::VisitBudgetExceeded,

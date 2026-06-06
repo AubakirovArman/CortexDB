@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 54 / 150
+- Done: 55 / 150
 - Partial: 1 / 150
-- Todo: 95 / 150
-- Current closed epic: Epic 54, HNSW SLO History
+- Todo: 94 / 150
+- Current closed epic: Epic 55, HNSW Failure Simulation
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1540,14 +1540,29 @@ Tasks:
 
 ### Epic 55. HNSW Failure Simulation
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/search/ann.rs`
+- `crates/cortex-engine/src/search/ann/tests.rs`
+- `crates/cortex-engine/src/search/database.rs`
+- `crates/cortex-engine/tests/hnsw_failure_simulation.rs`
+- `docs/API_JSON_SCHEMAS.md`
+- `docs/SEARCH.md`
+- `docs/openapi.yaml`
+- `cargo test -p cortex-engine --test hnsw_failure_simulation`
 
 Tasks:
 
-- Simulate corrupt graph.
-- Simulate missing trailer.
-- Simulate stale vector.
-- Verify fallback to exact.
+- Simulate corrupt graph. Done: corrupt `.ach` checksum now fails validation
+  but vector search returns exact fallback with `invalid_graph`.
+- Simulate missing trailer. Done: truncated `.ach` falls back to exact vector
+  search instead of failing the query.
+- Simulate stale vector. Done: a persisted vector candidate missing from the
+  HNSW graph returns exact fallback with `stale_graph`.
+- Verify fallback to exact. Done: integration tests assert the expected
+  `CellId` is returned from exact `.acv` search for all failure modes.
 
 ### Epic 56. Vector Index Rebuild Tool
 

@@ -173,23 +173,78 @@ impl Database {
                     ));
                     ranked
                 } else {
-                    let graph = self.persisted_hnsw_graph()?;
-                    let outcome = match policy {
-                        Some(policy) => search_persisted_ann_with_policy(
-                            &index.vectors,
-                            &graph,
-                            vector,
-                            &allowed,
-                            query.limit,
-                            policy,
-                        ),
-                        None => super::ann::search_persisted_ann(
-                            &index.vectors,
-                            &graph,
-                            vector,
-                            &allowed,
-                            query.limit,
-                        ),
+                    let outcome = match self.persisted_hnsw_graph() {
+                        Ok(graph) => {
+                            let effective_policy = policy.unwrap_or_default();
+                            if persisted_graph_is_stale(&index.vectors, &graph, vector, &allowed) {
+                                let metric = self
+                                    .manifest()
+                                    .vector_profile
+                                    .map(|profile| distance_metric_from_manifest(profile.metric))
+                                    .unwrap_or_default();
+                                let ranked = search_persisted_vectors(
+                                    &index.vectors,
+                                    vector,
+                                    &allowed,
+                                    query.limit,
+                                    &metric,
+                                );
+                                let report = persisted_hnsw_stale_fallback_report(
+                                    &graph,
+                                    query.limit,
+                                    allowed.len(),
+                                    ranked.len(),
+                                    effective_policy,
+                                );
+                                super::ann::AnnSearchOutcome {
+                                    results: ranked,
+                                    report,
+                                }
+                            } else {
+                                match policy {
+                                    Some(policy) => search_persisted_ann_with_policy(
+                                        &index.vectors,
+                                        &graph,
+                                        vector,
+                                        &allowed,
+                                        query.limit,
+                                        policy,
+                                    ),
+                                    None => super::ann::search_persisted_ann(
+                                        &index.vectors,
+                                        &graph,
+                                        vector,
+                                        &allowed,
+                                        query.limit,
+                                    ),
+                                }
+                            }
+                        }
+                        Err(_) => {
+                            let metric = self
+                                .manifest()
+                                .vector_profile
+                                .map(|profile| distance_metric_from_manifest(profile.metric))
+                                .unwrap_or_default();
+                            let ranked = search_persisted_vectors(
+                                &index.vectors,
+                                vector,
+                                &allowed,
+                                query.limit,
+                                &metric,
+                            );
+                            let policy = policy.unwrap_or_default();
+                            let report = persisted_hnsw_fault_fallback_report(
+                                query.limit,
+                                allowed.len(),
+                                ranked.len(),
+                                policy,
+                            );
+                            super::ann::AnnSearchOutcome {
+                                results: ranked,
+                                report,
+                            }
+                        }
                     };
                     ann_report = Some(outcome.report);
                     outcome.results
@@ -401,4 +456,87 @@ fn persisted_exact_fallback_report(
         },
         policy,
     )
+}
+
+fn persisted_hnsw_fault_fallback_report(
+    requested_limit: usize,
+    allowed_candidates: usize,
+    returned_candidates: usize,
+    policy: AnnSearchPolicy,
+) -> AnnSearchReport {
+    finalize_report(
+        AnnSearchReport {
+            path: AnnSearchPath::ExactFallback,
+            fallback_reason: Some(AnnFallbackReason::InvalidGraph),
+            fallback_performed: true,
+            requested_limit,
+            allowed_candidates,
+            graph_nodes: 0,
+            returned_candidates,
+            visited_candidates: 0,
+            max_visited_candidates: policy.max_visited_candidates,
+            recall_q16: None,
+            min_recall_q16: policy.min_recall_q16,
+            hnsw_max_neighbors: 0,
+            hnsw_ef_search: 0,
+            hnsw_layer_count: 0,
+            hnsw_ef_construction: 0,
+            upper_graph_edges: 0,
+            require_slo: policy.require_slo,
+            production_safe: true,
+            slo_violations: Vec::new(),
+        },
+        policy,
+    )
+}
+
+fn persisted_hnsw_stale_fallback_report(
+    graph: &cortex_storage::hnsw::HnswGraphIndex,
+    requested_limit: usize,
+    allowed_candidates: usize,
+    returned_candidates: usize,
+    policy: AnnSearchPolicy,
+) -> AnnSearchReport {
+    finalize_report(
+        AnnSearchReport {
+            path: AnnSearchPath::ExactFallback,
+            fallback_reason: Some(AnnFallbackReason::StaleGraph),
+            fallback_performed: true,
+            requested_limit,
+            allowed_candidates,
+            graph_nodes: graph.links.len(),
+            returned_candidates,
+            visited_candidates: 0,
+            max_visited_candidates: policy.max_visited_candidates,
+            recall_q16: None,
+            min_recall_q16: policy.min_recall_q16,
+            hnsw_max_neighbors: graph.max_neighbors as usize,
+            hnsw_ef_search: graph.ef_search as usize,
+            hnsw_layer_count: graph.layer_count as usize,
+            hnsw_ef_construction: graph.ef_construction as usize,
+            upper_graph_edges: graph
+                .upper_layers
+                .values()
+                .flat_map(|links| links.values())
+                .map(|neighbors| neighbors.len())
+                .sum(),
+            require_slo: policy.require_slo,
+            production_safe: true,
+            slo_violations: Vec::new(),
+        },
+        policy,
+    )
+}
+
+fn persisted_graph_is_stale(
+    vectors: &BTreeMap<u32, Vec<i16>>,
+    graph: &cortex_storage::hnsw::HnswGraphIndex,
+    query: &[i16],
+    allowed: &std::collections::BTreeSet<u32>,
+) -> bool {
+    vectors.iter().any(|(candidate, vector)| {
+        allowed.contains(candidate)
+            && vector.len() == query.len()
+            && !graph.links.contains_key(candidate)
+    })
 }
