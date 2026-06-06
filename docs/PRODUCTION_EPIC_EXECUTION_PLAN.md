@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 104 / 150
+- Done: 105 / 150
 - Partial: 1 / 150
-- Todo: 45 / 150
-- Current closed epic: Epic 104, Alert Rules Pack
+- Todo: 44 / 150
+- Current closed epic: Epic 105, Request ID and Trace Correlation
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2952,14 +2952,29 @@ Tasks:
 
 ### Epic 105. Request ID and Trace Correlation
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-server/src/lib.rs`
+- `crates/cortex-server/src/audit.rs`
+- `crates/cortex-server/src/tests/security_tests.rs`
+- `docs/API.md`
+- `docs/AUTH.md`
+- `docs/METRICS_CONTRACT_V2.md`
+- `make metrics-contract-v2-check`
 
 Tasks:
 
-- Add request ID header.
-- Add audit correlation.
-- Add logs.
-- Add metrics labels.
+- Add request ID header. Done: every HTTP response carries `x-request-id`,
+  echoing safe client IDs or generating `cortexdb-<n>`.
+- Add audit correlation. Done: audit records and tracing audit events include
+  `request_id`.
+- Add logs. Done: HTTP request spans include `request_id`, `method`, and
+  `path` for route-level correlation.
+- Add metrics labels. Done: `/v1/metrics` exposes client-provided and generated
+  request-id counters, plus the low-cardinality Prometheus label series
+  `cortexdb_request_id_source_total{source="client|generated"}`.
 
 ### Epic 106. Operations Runbook v1
 

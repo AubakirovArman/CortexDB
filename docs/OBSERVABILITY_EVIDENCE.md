@@ -37,7 +37,7 @@ routing.
 ## Latest Local Checks
 
 ```text
-metrics_fields_checked: 41
+metrics_fields_checked: 43
 ann_fields_checked: 7
 prometheus_scrape: true
 alerts: true

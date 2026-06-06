@@ -501,6 +501,8 @@ pub struct MetricsResponse {
     pub request_count: u64,
     pub request_rejected: u64,
     pub request_duration_ms_total: u64,
+    pub request_id_client_provided: u64,
+    pub request_id_generated: u64,
     pub validation_failures: u64,
     pub principal_quota_requests_allowed: u64,
     pub principal_quota_requests_rejected: u64,

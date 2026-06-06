@@ -20,7 +20,7 @@ This gate covers:
 
 - route-level auth role behavior;
 - typed error-code taxonomy and OpenAPI contract;
-- `x-request-id` response propagation and audit correlation;
+- `x-request-id` response propagation, audit correlation, and metrics counters;
 - rate-limit `429 rate_limited` behavior;
 - exact-origin CORS behavior;
 - audit redaction for route-level JSONL audit records.

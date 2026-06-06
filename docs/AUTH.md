@@ -386,7 +386,9 @@ not logged. Current route categories include `read`, `write`, `delete`, `aql`,
 
 Every HTTP response includes `x-request-id`. Clients may supply a safe
 `x-request-id` header to correlate their logs with CortexDB audit records. If
-they omit it, the server generates a `cortexdb-<n>` request id.
+they omit it, the server generates a `cortexdb-<n>` request id. Metrics expose
+`request_id_client_provided` and `request_id_generated` so operators can check
+whether clients are consistently sending correlation IDs.
 
 To persist route-level audit events to a local JSONL file, set:
 

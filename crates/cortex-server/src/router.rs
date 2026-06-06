@@ -321,6 +321,8 @@ pub(crate) fn route_database_with_auth(
                     request_count: 0,
                     request_rejected: 0,
                     request_duration_ms_total: 0,
+                    request_id_client_provided: 0,
+                    request_id_generated: 0,
                     validation_failures: 0,
                     principal_quota_requests_allowed: 0,
                     principal_quota_requests_rejected: 0,

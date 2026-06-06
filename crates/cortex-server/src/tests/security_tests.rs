@@ -305,6 +305,16 @@ fn x_request_id_is_propagated_or_generated() {
 
     let generated = request(local_addr, "GET /v1/health HTTP/1.1\r\n\r\n").to_ascii_lowercase();
     assert!(generated.contains("x-request-id: cortexdb-"));
+
+    let metrics = request(local_addr, "GET /v1/metrics HTTP/1.1\r\n\r\n");
+    assert!(
+        metrics.contains(r#""request_id_client_provided":1"#),
+        "client request-id counter missing from metrics: {metrics}"
+    );
+    assert!(
+        metrics.contains(r#""request_id_generated":2"#),
+        "generated request-id counter missing from metrics: {metrics}"
+    );
 }
 
 #[test]

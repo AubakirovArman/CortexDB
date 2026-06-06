@@ -80,6 +80,8 @@ fn snapshot_metrics_includes_actor_and_request_fields() {
     assert!(response.contains(r#""actor_queue_capacity":"#));
     assert!(response.contains(r#""request_count":"#));
     assert!(response.contains(r#""request_duration_ms_total":"#));
+    assert!(response.contains(r#""request_id_client_provided":"#));
+    assert!(response.contains(r#""request_id_generated":"#));
     assert!(response.contains(r#""ann_search_requests":"#));
     assert!(response.contains(r#""ann_fallbacks":"#));
     assert!(response.contains(r#""ann_no_fallback_requests":"#));
@@ -108,6 +110,9 @@ fn metrics_prometheus_output_contains_contract_series() {
         "cortexdb_wal_size_bytes",
         "cortexdb_actor_queue_depth",
         "cortexdb_request_count",
+        "cortexdb_request_id_client_provided",
+        "cortexdb_request_id_generated",
+        "cortexdb_request_id_source_total",
         "cortexdb_ann_search_requests",
         "cortexdb_ann_search_latency_ms_bucket",
         "cortexdb_validation_failures",

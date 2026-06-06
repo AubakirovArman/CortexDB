@@ -43,6 +43,8 @@ METRICS_FIELDS = [
     "request_count",
     "request_rejected",
     "request_duration_ms_total",
+    "request_id_client_provided",
+    "request_id_generated",
     "validation_failures",
     "principal_quota_requests_allowed",
     "principal_quota_requests_rejected",

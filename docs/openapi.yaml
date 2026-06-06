@@ -2602,6 +2602,8 @@ components:
       - request_count
       - request_rejected
       - request_duration_ms_total
+      - request_id_client_provided
+      - request_id_generated
       - validation_failures
       - principal_quota_requests_allowed
       - principal_quota_requests_rejected
@@ -2690,6 +2692,12 @@ components:
           type: integer
           format: uint64
         request_duration_ms_total:
+          type: integer
+          format: uint64
+        request_id_client_provided:
+          type: integer
+          format: uint64
+        request_id_generated:
           type: integer
           format: uint64
         validation_failures:

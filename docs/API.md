@@ -26,7 +26,9 @@ by schema checks, but it is not a production SLA.
   trusted browser origin when cross-origin browser calls are required.
 * **Request IDs:** responses include `x-request-id`. If the request provides a
   safe `x-request-id` header, the server echoes it; otherwise it generates a
-  `cortexdb-<n>` id for log and audit correlation.
+  `cortexdb-<n>` id for log and audit correlation. `/v1/metrics` reports
+  accepted client IDs and generated IDs through `request_id_client_provided`
+  and `request_id_generated`.
 
 ---
 

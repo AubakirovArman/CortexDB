@@ -45,6 +45,8 @@ expression: resp
   "request_count": 1000,
   "request_rejected": 3,
   "request_duration_ms_total": 120,
+  "request_id_client_provided": 700,
+  "request_id_generated": 300,
   "validation_failures": 1,
   "principal_quota_requests_allowed": 80,
   "principal_quota_requests_rejected": 4,
