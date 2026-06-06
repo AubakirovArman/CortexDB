@@ -187,7 +187,9 @@ The Permissions route is read-only and shows the local session posture:
 - read-only guard state and local write availability;
 - selected scope probes collected from the dashboard forms;
 - AgentView policy source and a reminder that the server remains the source of
-  truth for readable/writable scopes.
+  truth for readable/writable scopes;
+- active denials for public-only sessions, missing admin tokens, and local
+  read-only mode.
 Search, AQL, and Verify success responses also render compact report views for
 result count, top cells, verdict, evidence, contradictions, guards, and numeric
 conflicts.

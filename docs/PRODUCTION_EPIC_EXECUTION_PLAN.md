@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 114 / 150
+- Done: 115 / 150
 - Partial: 1 / 150
-- Todo: 35 / 150
-- Current closed epic: Epic 114, Retrieval Quality Explorer
+- Todo: 34 / 150
+- Current closed epic: Epic 115, Permissions View
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3197,16 +3197,21 @@ Tasks:
 
 ### Epic 115. Permissions View
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Show tenants.
-- Show tokens.
-- Show roles.
-- Show scopes.
-- Show AgentView.
-- Show denials.
+- Show tenants. Done: Permissions route renders the active tenant boundary.
+- Show tokens. Done: token active/storage/visibility cards show memory-only
+  token posture without rendering the bearer value.
+- Show roles. Done: role/access-level cards show public, data, or admin mode.
+- Show scopes. Done: selected scope probes are collected from visible dashboard
+  forms and rendered in the Permissions Explorer.
+- Show AgentView. Done: AgentView source, server enforcement, readable probe,
+  writable probe, and server-source-of-truth note are rendered.
+- Show denials. Done: public/data/admin/read-only denials render as an explicit
+  list for the current session posture.
+- Evidence gate. Done: `make permissions-view-check`.
 
 ### Epic 116. Audit Viewer v2
 

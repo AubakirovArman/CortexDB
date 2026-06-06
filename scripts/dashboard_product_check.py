@@ -79,10 +79,12 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/app.js", "selected_scopes"),
         ("web/dashboard/src/app.js", "server_token_policy"),
         ("web/dashboard/src/app.js", "anonymous_synthetic_view"),
+        ("web/dashboard/src/app.js", "denials"),
         ("web/dashboard/src/reporting_operations.js", "Permissions explorer"),
         ("web/dashboard/src/reporting_operations.js", "Token / role / scope / AgentView"),
         ("web/dashboard/src/reporting_operations.js", "Scope probes"),
         ("web/dashboard/src/reporting_operations.js", "AgentView policy"),
+        ("web/dashboard/src/reporting_operations.js", "Denials"),
         ("docs/DASHBOARD_UI.md", "Permissions Explorer"),
     ],
     "context_pack_explorer": [

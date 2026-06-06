@@ -89,6 +89,16 @@ function renderPermissionReport() {
 
 function permissionState() {
     const selectedScopes = collectScopeInputs();
+    const denials = [];
+    if (!canUse(ACCESS_DATA)) {
+        denials.push("Data routes denied until a data or admin bearer token is applied.");
+    }
+    if (!canUse(ACCESS_ADMIN)) {
+        denials.push("Admin routes denied until an admin bearer token is applied.");
+    }
+    if (readOnlyMode) {
+        denials.push("Mutating dashboard actions denied by local read-only mode.");
+    }
     return {
         schema_version: "dashboard_permissions.v1",
         tenant,
@@ -100,6 +110,7 @@ function permissionState() {
         token_visible: false,
         read_only: readOnlyMode,
         selected_scopes: selectedScopes,
+        denials,
         agent_view: {
             source: token.trim().length > 0 ? "server_token_policy" : "anonymous_synthetic_view",
             server_enforced: true,

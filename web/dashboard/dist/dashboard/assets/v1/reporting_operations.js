@@ -387,10 +387,13 @@
         const rules = document.createElement("ul");
         const scopeList = document.createElement("ul");
         const agentRules = document.createElement("ul");
+        const denialList = document.createElement("ul");
+        const denials = body.denials || [];
         cards.className = "report-grid";
         rules.className = "report-list compact";
         scopeList.className = "report-list compact";
         agentRules.className = "report-list compact";
+        denialList.className = "report-list compact";
         cards.replaceChildren(
             card("Tenant", body.tenant || "default"),
             card("Role", body.role || body.access_level || "limited"),
@@ -421,6 +424,11 @@
             textItem(`write probe: ${agentView.writable_scope_probe || "not checked"}`),
             textItem(agentView.note || "AgentView policy is evaluated on the server."),
         );
+        if (denials.length) {
+            denialList.replaceChildren(...denials.map((denial) => textItem(`denied: ${denial}`)));
+        } else {
+            denialList.replaceChildren(textItem("No dashboard denials for the current session posture"));
+        }
         container.replaceChildren(
             card("Permissions explorer", "Token / role / scope / AgentView", "good"),
             cards,
@@ -428,6 +436,8 @@
             scopeList,
             card("AgentView policy", agentView.source || "unknown"),
             agentRules,
+            card("Denials", `${denials.length} active`, denials.length ? "warn" : "good"),
+            denialList,
             rules,
         );
     }
