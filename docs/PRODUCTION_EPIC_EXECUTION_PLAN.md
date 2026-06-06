@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 45 / 150
+- Done: 46 / 150
 - Partial: 1 / 150
-- Todo: 104 / 150
-- Current closed epic: Epic 45, AQL Query Examples Pack
+- Todo: 103 / 150
+- Current closed epic: Epic 46, Multi-domain Retrieval Corpus v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1243,14 +1243,46 @@ Acceptance: retrieval is measurable, explainable, multi-domain, and has official
 
 ### Epic 46. Multi-domain Retrieval Corpus v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- Investment baseline corpus:
+  `examples/real_domains/investment_projects/corpus/documents.jsonl`,
+  `examples/real_domains/investment_projects/corpus/chunks.jsonl`,
+  `examples/real_domains/investment_projects/queries/queries.jsonl`,
+  `examples/real_domains/investment_projects/queries/ground_truth.jsonl`.
+- Legal policies corpus:
+  `examples/real_domains/legal_policies/corpus/documents.jsonl`,
+  `examples/real_domains/legal_policies/corpus/chunks.jsonl`,
+  `examples/real_domains/legal_policies/queries/queries.jsonl`,
+  `examples/real_domains/legal_policies/queries/ground_truth.jsonl`.
+- Support tickets corpus:
+  `examples/real_domains/support_tickets/corpus/documents.jsonl`,
+  `examples/real_domains/support_tickets/corpus/chunks.jsonl`,
+  `examples/real_domains/support_tickets/queries/queries.jsonl`,
+  `examples/real_domains/support_tickets/queries/ground_truth.jsonl`.
+- Technical docs corpus:
+  `examples/real_domains/technical_docs/corpus/documents.jsonl`,
+  `examples/real_domains/technical_docs/corpus/chunks.jsonl`,
+  `examples/real_domains/technical_docs/queries/queries.jsonl`,
+  `examples/real_domains/technical_docs/queries/ground_truth.jsonl`.
+- Validation/report gate:
+  `python3 scripts/retrieval_beta_report.py --domain-root examples/real_domains --output target/retrieval/retrieval_beta_report_epic46.json --min-domains 4 --repeat-runs 5`.
+- Result: 4 domains, 76 documents, 205 chunks, 70 queries, 70 ground-truth
+  rows, `production_safe=true`.
 
 Tasks:
 
-- Add `legal_policies`.
-- Add `support_tickets`.
-- Add `technical_docs`.
-- Add corpus, chunks, queries, and ground truth.
+- Add `legal_policies`. Done: documents, chunks, queries, ground truth, source
+  registry, README, and validators exist and pass.
+- Add `support_tickets`. Done: documents, chunks, queries, ground truth, source
+  registry, README, and validators exist and pass.
+- Add `technical_docs`. Done: documents, chunks, queries, ground truth, source
+  registry, README, and validators exist and pass.
+- Add corpus, chunks, queries, and ground truth. Done: four retrieval domains
+  are discoverable by `scripts/retrieval_beta_report.py` and the repeated local
+  lexical probe reports no regressions.
 
 ### Epic 47. Retrieval Quality History
 
