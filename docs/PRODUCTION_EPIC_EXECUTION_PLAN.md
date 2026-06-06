@@ -348,7 +348,14 @@ Tasks:
 
 ### Epic 16. Segment Corruption Matrix v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `cargo test -p cortex-engine --test corruption_matrix`
+- `crates/cortex-engine/tests/corruption_matrix.rs`
+- `docs/STORAGE_COMPATIBILITY.md`
+- `docs/CRASH_SIMULATION.md`
 
 Tasks:
 
