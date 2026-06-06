@@ -42,6 +42,33 @@ fn corrupt_manifest_tmp_after_checkpoint_is_removed_on_open() {
 }
 
 #[test]
+fn missing_manifest_with_persisted_segments_fails_closed() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"one".to_vec()).unwrap();
+        db.checkpoint().unwrap();
+    }
+    std::fs::remove_file(dir.path().join("manifest.acm")).unwrap();
+
+    let error = Database::open(dir.path()).unwrap_err().to_string();
+    assert!(error.contains("missing manifest.acm"));
+}
+
+#[test]
+fn partial_manifest_fails_closed() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"one".to_vec()).unwrap();
+        db.checkpoint().unwrap();
+    }
+    std::fs::write(dir.path().join("manifest.acm"), b"ACM0").unwrap();
+
+    assert!(Database::open(dir.path()).is_err());
+}
+
+#[test]
 fn interrupted_compact_without_manifest_switch_keeps_old_snapshot() {
     let dir = tempfile::tempdir().unwrap();
     {

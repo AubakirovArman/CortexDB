@@ -5,6 +5,7 @@ use std::path::Path;
 mod candidates;
 pub(crate) mod hnsw;
 mod index_merge;
+mod manifest_safety;
 mod paths;
 pub(crate) mod vector;
 
@@ -316,6 +317,7 @@ fn remove_candidates(
 }
 
 pub(crate) fn load_checkpoint(root: &Path) -> EngineResult<CheckpointLoad> {
+    manifest_safety::reject_missing_manifest_with_storage(root)?;
     let manifest = StorageManifest::load(manifest_path(root))?;
     let mut memtable = MemTable::default();
     for segment in &manifest.live_segments {

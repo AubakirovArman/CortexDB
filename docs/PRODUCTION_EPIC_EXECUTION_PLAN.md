@@ -368,7 +368,16 @@ Tasks:
 
 ### Epic 17. Manifest Rollback/Fallback Tests
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `cargo test -p cortex-engine --test crash_matrix`
+- `cargo test -p cortex-storage --test segment_index_tests manifest`
+- `crates/cortex-engine/tests/crash_matrix.rs`
+- `crates/cortex-storage/tests/segment_index_tests.rs`
+- `crates/cortex-engine/src/checkpoint/manifest_safety.rs`
+- `docs/CRASH_SIMULATION.md`
 
 Tasks:
 
