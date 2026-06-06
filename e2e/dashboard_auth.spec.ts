@@ -48,6 +48,7 @@ test('dashboard role-aware auth gating', async ({ page, request }) => {
     env: {
       ...process.env,
       RUST_LOG: 'warn',
+      CORTEXDB_DASHBOARD: 'true',
       CORTEXDB_AUTH_TOKENS: 'admin:adm,data:data-token',
     },
     stdio: ['ignore', 'pipe', 'pipe'],

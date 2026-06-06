@@ -224,7 +224,12 @@ async function main() {
   const stderr = [];
   const server = spawn(serverBin, [root, `127.0.0.1:${port}`], {
     cwd: process.cwd(),
-    env: { ...process.env, RUST_LOG: 'warn' },
+    env: {
+      ...process.env,
+      RUST_LOG: 'warn',
+      CORTEXDB_DASHBOARD: 'true',
+      CORTEXDB_EXPERIMENTAL_HNSW: 'true',
+    },
     stdio: ['ignore', 'ignore', 'pipe'],
   });
   server.stderr?.on('data', chunk => stderr.push(String(chunk)));

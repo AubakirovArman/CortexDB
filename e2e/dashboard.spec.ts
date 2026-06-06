@@ -44,7 +44,12 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
   const baseUrl = `http://127.0.0.1:${port}`;
   const server = spawn('target/debug/cortex-server', [root, `127.0.0.1:${port}`], {
     cwd: process.cwd(),
-    env: { ...process.env, RUST_LOG: 'warn' },
+    env: {
+      ...process.env,
+      RUST_LOG: 'warn',
+      CORTEXDB_DASHBOARD: 'true',
+      CORTEXDB_EXPERIMENTAL_HNSW: 'true',
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   const stderr: string[] = [];
