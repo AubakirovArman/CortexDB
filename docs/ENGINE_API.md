@@ -20,6 +20,8 @@ use cortex_engine::{
     ContextPackOptions,
     Database,
     DatabaseOptions,
+    EngineConfig,
+    EngineConfigError,
     DbOperation,
     EngineAqlIndex,
     EngineError,
@@ -65,13 +67,18 @@ The central entrypoints are:
 - `Database::repair_best_effort`;
 - `Database::repair_best_effort_dry_run`.
 
+`EngineConfig::from_env()` is the shared configuration loader for CLI/server
+entrypoints that need env-driven `DatabaseOptions`. Embedded callers may still
+construct `DatabaseOptions` directly for deterministic local setup.
+
 Production-safe feature defaults are documented in
 [`ENGINE_FEATURE_FLAGS.md`](ENGINE_FEATURE_FLAGS.md). Experimental HNSW,
 database-level replication, and dashboard surfaces must be enabled explicitly.
 
 The stable root-level types currently frozen are:
 
-- `Database`, `DatabaseOptions`, `RecoveryMode`, `StaleLockPolicy`;
+- `Database`, `DatabaseOptions`, `EngineConfig`, `EngineConfigError`,
+  `RecoveryMode`, `StaleLockPolicy`;
 - `EngineFeature`, `EngineFeatureFlags`;
 - `EngineError`, `EngineResult`;
 - `EngineErrorCode`, `EngineErrorCategory`;

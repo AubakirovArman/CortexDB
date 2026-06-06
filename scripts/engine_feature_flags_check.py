@@ -92,8 +92,16 @@ def main() -> int:
     contains(
         "crates/cortex-server/src/main.rs",
         [
+            "EngineConfig::from_env",
+        ],
+        errors,
+    )
+    contains(
+        "crates/cortex-engine/src/config.rs",
+        [
+            "CORTEXDB_EXPERIMENTAL_HNSW",
+            "CORTEXDB_EXPERIMENTAL_REPLICATION",
             "CORTEXDB_DASHBOARD",
-            "dashboard_enabled_from_env",
         ],
         errors,
     )
@@ -145,4 +153,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

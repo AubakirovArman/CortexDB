@@ -17,7 +17,7 @@ server, CLI, or SDK promises.
 | `cortex-sdk` packages | External client lifecycle | Preserve generated typed bindings and release policy when SDK contracts change. |
 
 The embedded Rust stable facade is the `cortex-engine` crate root, including
-`Database`, `DatabaseOptions`, `EngineFeatureFlags`, `EngineError`,
+`Database`, `DatabaseOptions`, `EngineConfig`, `EngineFeatureFlags`, `EngineError`,
 `EngineErrorCode`, `EngineResult`, `DbOperation`, `ContextPack`,
 `StorageStats`, `StorageValidationReport`, `RepairReport`, backup/restore
 reports, retrieval/search reports, and compatibility report structs.
@@ -56,6 +56,7 @@ in sync with the current top-level module list.
 | `checkpoint` | storage | Segment/index publication, compact, candidate mapping, profile safety. |
 | `cleanup` | storage | Private filesystem cleanup internals. |
 | `compatibility` | engine-facade | Public compatibility summaries and contract evidence. |
+| `config` | engine-facade | Private env-to-`DatabaseOptions` loader behind crate-root `EngineConfig`. |
 | `context` | context | ContextPack packing, explain, dedup, exports, citations, token budget. |
 | `database` | engine-facade | Main `Database` facade and public DB operations. |
 | `database_files` | storage | Private database path/file helpers. |

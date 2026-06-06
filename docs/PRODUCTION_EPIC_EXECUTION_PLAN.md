@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 33 / 150
+- Done: 34 / 150
 - Partial: 1 / 150
-- Todo: 116 / 150
-- Current closed epic: Epic 33, Engine Memory Accounting
+- Todo: 115 / 150
+- Current closed epic: Epic 34, Engine Config Model
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -864,14 +864,38 @@ Tasks:
 
 ### Epic 34. Engine Config Model
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/config.rs`
+- `docs/ENGINE_CONFIG.md`
+- `crates/cortex-engine/tests/public_api.rs`
+- `cargo test -p cortex-engine config`
+- `cargo test -p cortex-engine --test public_api`
+- `cargo test -p cortex-cli`
+- `cargo test -p cortex-server`
+- `make engine-api-check`
+- `make engine-feature-flags-check`
+- `make module-ownership-check`
+- `cargo test --workspace --all-features`
+- `cargo clippy --workspace --all-targets -- -D warnings`
 
 Tasks:
 
-- Add formal config struct.
-- Add env loading.
-- Align CLI/server config.
-- Document config.
+- Add formal config struct. Done: `EngineConfig` and `EngineConfigError`
+  are exported from the `cortex-engine` crate-root facade and covered by the
+  public API freeze fixture.
+- Add env loading. Done: `EngineConfig::from_env()` and
+  `EngineConfig::from_env_vars(...)` parse durability, recovery, stale lock,
+  HNSW profile, experimental HNSW, experimental replication, and dashboard
+  values with strict invalid-value errors.
+- Align CLI/server config. Done: CLI database opens and server actor opens use
+  the same `EngineConfig`/`DatabaseOptions` path, with command flags allowed to
+  opt into HNSW without disabling env-enabled features.
+- Document config. Done: `ENGINE_CONFIG.md`, `ENGINE_API.md`,
+  `ENGINE_FEATURE_FLAGS.md`, module ownership docs, and engine API fixtures now
+  describe the shared config boundary.
 
 ### Epic 35. Engine Panic Audit
 

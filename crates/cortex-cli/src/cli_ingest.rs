@@ -1,7 +1,7 @@
 use cortex_core::CellId;
-use cortex_engine::{
-    CsvIngestOptions, Database, IngestionProgress, JsonIngestOptions, TextIngestOptions,
-};
+use cortex_engine::{CsvIngestOptions, IngestionProgress, JsonIngestOptions, TextIngestOptions};
+
+use crate::cli_ops::open_database;
 
 pub fn load_fixture(path: &str, fixture_path: &str) -> Result<String, String> {
     let jsonl_file = std::path::Path::new(fixture_path).join("cells.jsonl");
@@ -9,7 +9,7 @@ pub fn load_fixture(path: &str, fixture_path: &str) -> Result<String, String> {
         return Err(format!("fixture file not found: {}", jsonl_file.display()));
     }
     let content = std::fs::read_to_string(&jsonl_file).map_err(|e| e.to_string())?;
-    let mut db = Database::open(path).map_err(|error| error.to_string())?;
+    let mut db = open_database(path, false)?;
     let mut count = 0;
     for line in content.lines() {
         let trimmed = line.trim();
@@ -37,7 +37,7 @@ pub fn load_fixture(path: &str, fixture_path: &str) -> Result<String, String> {
 
 pub fn text(path: &str, scope: &str, file: &str) -> Result<String, String> {
     let content = std::fs::read_to_string(file).map_err(|e| e.to_string())?;
-    let mut db = Database::open(path).map_err(|error| error.to_string())?;
+    let mut db = open_database(path, false)?;
     let results = db
         .ingest_text_chunks(
             CellId(1),
@@ -57,7 +57,7 @@ pub fn text(path: &str, scope: &str, file: &str) -> Result<String, String> {
 
 pub fn json(path: &str, scope: &str, file: &str) -> Result<String, String> {
     let content = std::fs::read_to_string(file).map_err(|e| e.to_string())?;
-    let mut db = Database::open(path).map_err(|error| error.to_string())?;
+    let mut db = open_database(path, false)?;
     let results = db
         .ingest_json(
             CellId(1),
@@ -77,7 +77,7 @@ pub fn json(path: &str, scope: &str, file: &str) -> Result<String, String> {
 
 pub fn csv(path: &str, scope: &str, file: &str) -> Result<String, String> {
     let content = std::fs::read_to_string(file).map_err(|e| e.to_string())?;
-    let mut db = Database::open(path).map_err(|error| error.to_string())?;
+    let mut db = open_database(path, false)?;
     let results = db
         .ingest_csv(
             CellId(1),
@@ -96,7 +96,7 @@ pub fn csv(path: &str, scope: &str, file: &str) -> Result<String, String> {
 }
 
 pub fn jobs(path: &str, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let db = open_database(path, false)?;
     let jobs = db
         .list_ingestion_jobs()
         .map_err(|error| error.to_string())?;
@@ -112,7 +112,7 @@ pub fn jobs(path: &str, json: bool) -> Result<String, String> {
 }
 
 pub fn job(path: &str, job_id: u64, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let db = open_database(path, false)?;
     let progress = db
         .load_ingestion_job(job_id)
         .map_err(|error| error.to_string())?
@@ -121,7 +121,7 @@ pub fn job(path: &str, job_id: u64, json: bool) -> Result<String, String> {
 }
 
 pub fn cancel_job(path: &str, job_id: u64, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let db = open_database(path, false)?;
     let progress = db
         .cancel_ingestion_job(job_id)
         .map_err(|error| error.to_string())?;
@@ -129,7 +129,7 @@ pub fn cancel_job(path: &str, job_id: u64, json: bool) -> Result<String, String>
 }
 
 pub fn retry_job(path: &str, job_id: u64, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let db = open_database(path, false)?;
     let progress = db
         .retry_ingestion_job(job_id)
         .map_err(|error| error.to_string())?;
@@ -137,7 +137,7 @@ pub fn retry_job(path: &str, job_id: u64, json: bool) -> Result<String, String> 
 }
 
 pub fn delete_job(path: &str, job_id: u64) -> Result<String, String> {
-    let db = Database::open(path).map_err(|error| error.to_string())?;
+    let db = open_database(path, false)?;
     let deleted = db
         .delete_ingestion_job(job_id)
         .map_err(|error| error.to_string())?;

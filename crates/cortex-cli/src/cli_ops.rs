@@ -1,10 +1,9 @@
 use cortex_core::CellId;
 use cortex_engine::{
     evaluate_hnsw_no_fallback_rollout, parse_vector_literal, route_search_query, AnnSearchPath,
-    AnnSearchPolicy, ContextPackExportFormat, ContextPackOptions, Database, DatabaseOptions,
-    DatabaseSearchResult, EngineError, EngineFeatureFlags, HnswNoFallbackRolloutPolicy,
-    SearchLimit, SearchMode, SearchQuery, SearchRouteInput, SearchRouteStrategy,
-    VerificationReportExportFormat,
+    AnnSearchPolicy, ContextPackExportFormat, ContextPackOptions, Database, DatabaseSearchResult,
+    EngineConfig, EngineError, HnswNoFallbackRolloutPolicy, SearchLimit, SearchMode, SearchQuery,
+    SearchRouteInput, SearchRouteStrategy, VerificationReportExportFormat,
 };
 
 use crate::cli_json::{
@@ -26,11 +25,12 @@ fn fmt_engine_error(e: EngineError) -> String {
 }
 
 pub(crate) fn open_database(path: &str, experimental_hnsw: bool) -> Result<Database, String> {
-    let options = DatabaseOptions {
-        feature_flags: EngineFeatureFlags::production_safe()
-            .with_experimental_hnsw(experimental_hnsw),
-        ..DatabaseOptions::default()
-    };
+    let mut options = EngineConfig::from_env()
+        .map_err(|error| error.to_string())?
+        .database_options();
+    options.feature_flags = options
+        .feature_flags
+        .with_experimental_hnsw(options.feature_flags.experimental_hnsw || experimental_hnsw);
     Database::open_with_options(path, options).map_err(fmt_engine_error)
 }
 
@@ -39,7 +39,7 @@ pub fn doctor(path: &str) -> Result<String, String> {
     let mut all_ok = true;
 
     // 1. Can we open the database?
-    let db = match Database::open(path) {
+    let db = match open_database(path, false) {
         Ok(db) => {
             checks.push(("open", true, "database opened successfully".to_owned()));
             db
@@ -127,7 +127,7 @@ pub fn run_demo() -> Result<String, String> {
 
 pub fn put(path: &str, cell_id: &str, payload: &str) -> Result<String, String> {
     let cell_id = parse_cell_id(cell_id)?;
-    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+    let mut db = open_database(path, false)?;
     let seq = db
         .put_cell(cell_id, payload.as_bytes().to_vec())
         .map_err(fmt_engine_error)?;
@@ -136,7 +136,7 @@ pub fn put(path: &str, cell_id: &str, payload: &str) -> Result<String, String> {
 
 pub fn get(path: &str, cell_id: &str, json: bool) -> Result<String, String> {
     let cell_id = parse_cell_id(cell_id)?;
-    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let db = open_database(path, false)?;
     match db.get_latest_cell(cell_id) {
         Some(payload) => {
             if json {
@@ -151,7 +151,7 @@ pub fn get(path: &str, cell_id: &str, json: bool) -> Result<String, String> {
 
 pub fn tombstone(path: &str, cell_id: &str) -> Result<String, String> {
     let cell_id = parse_cell_id(cell_id)?;
-    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+    let mut db = open_database(path, false)?;
     let seq = db.tombstone_cell(cell_id).map_err(fmt_engine_error)?;
     Ok(format!("seq={}", seq.0))
 }
@@ -175,7 +175,7 @@ pub fn compact(path: &str, experimental_hnsw: bool) -> Result<String, String> {
 }
 
 pub fn stats(path: &str, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let db = open_database(path, false)?;
     let stats = db.storage_stats().map_err(fmt_engine_error)?;
     if json {
         return Ok(stats_to_json(&stats));
@@ -202,7 +202,7 @@ pub fn stats(path: &str, json: bool) -> Result<String, String> {
 }
 
 pub fn validate(path: &str, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let db = open_database(path, false)?;
     let validation = db.validate_storage().map_err(fmt_engine_error)?;
     if json {
         return Ok(validation_to_json(
@@ -226,7 +226,7 @@ pub fn validate(path: &str, json: bool) -> Result<String, String> {
 }
 
 pub fn ann_validate(path: &str, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let db = open_database(path, false)?;
     let report = db.validate_storage_report();
     let ann_errors: Vec<String> = report
         .errors
@@ -409,7 +409,7 @@ pub fn backup_offsite_stage(
 }
 
 pub fn gc_retired(path: &str) -> Result<String, String> {
-    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+    let mut db = open_database(path, false)?;
     let report = db
         .garbage_collect_retired_segments()
         .map_err(fmt_engine_error)?;
@@ -426,7 +426,7 @@ pub fn context(
     json: bool,
     format: &str,
 ) -> Result<String, String> {
-    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let db = open_database(path, false)?;
     let pack = db
         .context_pack_from_aql(aql, &view_for_scope(scope), ContextPackOptions::default())
         .map_err(fmt_engine_error)?;
@@ -443,7 +443,7 @@ pub fn context(
 
 pub fn forget(path: &str, cell_id: &str, json: bool) -> Result<String, String> {
     let cell_id = parse_cell_id(cell_id)?;
-    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+    let mut db = open_database(path, false)?;
     db.forget_cell(cell_id).map_err(fmt_engine_error)?;
     if json {
         Ok(crate::cli_json::cell_to_json(cell_id.0, 0, b""))
@@ -453,7 +453,7 @@ pub fn forget(path: &str, cell_id: &str, json: bool) -> Result<String, String> {
 }
 
 pub fn remember(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, String> {
-    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+    let mut db = open_database(path, false)?;
     let result = db
         .remember_aql(aql, &remember_view_for_scope(scope))
         .map_err(fmt_engine_error)?;
@@ -479,7 +479,7 @@ pub fn verify(
     json: bool,
     format: &str,
 ) -> Result<String, String> {
-    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let db = open_database(path, false)?;
     let report = db
         .verify_fact_aql(aql, &verify_view_for_scope(scope))
         .map_err(fmt_engine_error)?;
@@ -495,7 +495,7 @@ pub fn verify(
 }
 
 pub fn aql(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let db = open_database(path, false)?;
     let cells = db
         .retrieve_aql(aql, &view_for_scope(scope))
         .map_err(fmt_engine_error)?;
@@ -515,7 +515,7 @@ pub fn search(
     vector: Option<&str>,
     algorithm: &str,
 ) -> Result<String, String> {
-    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let db = open_database(path, false)?;
     let route = route_search_query(SearchRouteInput {
         requested_mode: mode,
         algorithm,
@@ -574,7 +574,7 @@ pub fn search_explain(
     mode: &str,
     vector: Option<&str>,
 ) -> Result<String, String> {
-    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let db = open_database(path, false)?;
     let diagnostics = db.search_diagnostics(query).map_err(fmt_engine_error)?;
     let results = match mode {
         "keyword" => db.search_keyword(query, &view_for_scope(scope), SearchLimit(20)),
@@ -677,7 +677,7 @@ pub fn search_vector(options: SearchVectorOptions<'_>) -> Result<String, String>
 }
 
 pub fn hnsw_no_fallback_profile_show(path: &str, json: bool) -> Result<String, String> {
-    let db = Database::open(path).map_err(fmt_engine_error)?;
+    let db = open_database(path, false)?;
     let policy = db.hnsw_no_fallback_rollout_policy();
     if json {
         return Ok(no_fallback_profile_to_json(policy));
@@ -690,7 +690,7 @@ pub fn hnsw_no_fallback_profile_set(
     policy: HnswNoFallbackRolloutPolicy,
     json: bool,
 ) -> Result<String, String> {
-    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+    let mut db = open_database(path, false)?;
     db.set_hnsw_no_fallback_rollout_policy(policy)
         .map_err(fmt_engine_error)?;
     if json {
@@ -703,7 +703,7 @@ pub fn hnsw_no_fallback_profile_set(
 }
 
 pub fn hnsw_no_fallback_profile_clear(path: &str, json: bool) -> Result<String, String> {
-    let mut db = Database::open(path).map_err(fmt_engine_error)?;
+    let mut db = open_database(path, false)?;
     db.clear_hnsw_no_fallback_rollout_policy()
         .map_err(fmt_engine_error)?;
     if json {

@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use cortex_engine::{Database, DatabaseOptions};
+use cortex_engine::Database;
 
 use crate::{
     auth, auth_policy_cells, auth_policy_store, dashboard, json_error, json_response, llm,
@@ -132,11 +132,5 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
 }
 
 fn open_database(root: &Path, options: &ServerOptions) -> cortex_engine::EngineResult<Database> {
-    Database::open_with_options(
-        root,
-        DatabaseOptions {
-            feature_flags: options.engine_feature_flags,
-            ..DatabaseOptions::default()
-        },
-    )
+    Database::open_with_options(root, options.engine_database_options)
 }

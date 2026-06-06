@@ -6,6 +6,8 @@ enabled explicitly so the default single-node path remains production-safe.
 ## Engine Flags
 
 `EngineFeatureFlags::production_safe()` is the default for `DatabaseOptions`.
+CLI and server entrypoints load the same flags through
+[`ENGINE_CONFIG.md`](ENGINE_CONFIG.md).
 
 | Flag | Default | Scope |
 | --- | --- | --- |
@@ -26,10 +28,10 @@ let db = Database::open_with_options("./data", options)?;
 # Ok::<(), cortex_engine::EngineError>(())
 ```
 
-## Server Flags
+## Env Flags
 
-The server also defaults to production-safe engine flags. Enable experimental
-server surfaces explicitly through environment variables:
+CLI/server defaults remain production-safe. Enable experimental surfaces
+explicitly through environment variables:
 
 ```bash
 CORTEXDB_EXPERIMENTAL_HNSW=true cortex-server ./data 127.0.0.1:8080
@@ -37,8 +39,8 @@ CORTEXDB_EXPERIMENTAL_REPLICATION=true cortex-server ./data 127.0.0.1:8080
 CORTEXDB_DASHBOARD=true cortex-server ./data 127.0.0.1:8080
 ```
 
-`CORTEXDB_EXPERIMENTAL_HNSW=true` allows the server-opened database to build and
-use `.ach` graphs. `CORTEXDB_EXPERIMENTAL_REPLICATION=true` allows
+`CORTEXDB_EXPERIMENTAL_HNSW=true` allows CLI/server-opened databases to build
+and use `.ach` graphs. `CORTEXDB_EXPERIMENTAL_REPLICATION=true` allows
 database-level snapshot install APIs used by replication repair flows. Without
 `CORTEXDB_DASHBOARD=true`, `/dashboard` and dashboard assets are not served.
 

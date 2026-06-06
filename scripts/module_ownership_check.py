@@ -33,6 +33,7 @@ REQUIRED_CRATES = [
 REQUIRED_PUBLIC_FACADES = [
     "Database",
     "DatabaseOptions",
+    "EngineConfig",
     "EngineFeatureFlags",
     "EngineError",
     "EngineErrorCode",

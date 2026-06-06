@@ -1,10 +1,10 @@
 //! Embedded CortexDB engine facade.
 //!
 //! The stable embedded API is the crate-root facade: `Database`,
-//! `DatabaseOptions`, `EngineResult`, error/report structs, and typed operation
-//! structs. Implementation modules may remain public for current integration
-//! tests and internal tooling, but the documented compatibility boundary is the
-//! crate-root facade described in `docs/ENGINE_API.md`.
+//! `DatabaseOptions`, `EngineConfig`, `EngineResult`, error/report structs, and
+//! typed operation structs. Implementation modules may remain public for current
+//! integration tests and internal tooling, but the documented compatibility
+//! boundary is the crate-root facade described in `docs/ENGINE_API.md`.
 //!
 //! # Example
 //!
@@ -31,6 +31,7 @@ pub mod bundle;
 pub mod checkpoint;
 mod cleanup;
 pub mod compatibility;
+mod config;
 pub mod context;
 pub mod database;
 mod database_files;
@@ -68,6 +69,7 @@ pub use compatibility::{
     compatibility_summary, ApiCompatibility, CompatibilitySummary, MigrationCompatibility,
     SdkCompatibility, StorageFormatCompatibility,
 };
+pub use config::{EngineConfig, EngineConfigError};
 pub use context::{
     estimate_tokens, ContextExplain, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode,
     ContextPackCell, ContextPackExportFormat, ContextPackOptions, ContextScoreComponent,

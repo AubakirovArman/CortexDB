@@ -55,8 +55,11 @@ fn handle_hnsw(path: &std::path::Path, request: &str) -> String {
 
 fn hnsw_options() -> ServerOptions {
     ServerOptions {
-        engine_feature_flags: cortex_engine::EngineFeatureFlags::production_safe()
-            .with_experimental_hnsw(true),
+        engine_database_options: cortex_engine::DatabaseOptions {
+            feature_flags: cortex_engine::EngineFeatureFlags::production_safe()
+                .with_experimental_hnsw(true),
+            ..cortex_engine::DatabaseOptions::default()
+        },
         ..ServerOptions::default()
     }
 }

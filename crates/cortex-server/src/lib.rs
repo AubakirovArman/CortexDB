@@ -13,7 +13,7 @@ use std::time::Instant;
 use tower_http::cors::CorsLayer;
 use tower_http::limit::RequestBodyLimitLayer;
 
-use cortex_engine::EngineFeatureFlags;
+use cortex_engine::DatabaseOptions;
 use responses::{ErrorCode, ErrorResponse, MetricsResponse};
 
 mod actor;
@@ -125,12 +125,11 @@ pub struct ServerOptions {
     /// Disabled by default so production-safe server defaults expose only typed
     /// API routes. Enable explicitly for local admin consoles or demos.
     pub dashboard_enabled: bool,
-    /// Engine features enabled for databases opened by this server.
+    /// Engine database options used for databases opened by this server.
     ///
-    /// Defaults to production-safe behavior: experimental HNSW graphs,
-    /// experimental replication install surfaces, and dashboard features are off
-    /// unless explicitly enabled by configuration.
-    pub engine_feature_flags: EngineFeatureFlags,
+    /// Defaults to production-safe behavior through `DatabaseOptions::default()`.
+    /// Server startup may populate this from `EngineConfig::from_env()`.
+    pub engine_database_options: DatabaseOptions,
 }
 
 impl ServerOptions {
@@ -220,10 +219,7 @@ impl AppState {
         let db_shared = Arc::new(actor::DatabaseActor::open_with_capacity_and_options(
             &tenant_path,
             capacity,
-            cortex_engine::DatabaseOptions {
-                feature_flags: self.options.engine_feature_flags,
-                ..cortex_engine::DatabaseOptions::default()
-            },
+            self.options.engine_database_options,
         )?);
         dbs.insert(tenant.to_owned(), db_shared.clone());
         Ok(db_shared)

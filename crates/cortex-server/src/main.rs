@@ -66,6 +66,13 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    let engine_config = match cortex_engine::EngineConfig::from_env() {
+        Ok(config) => config,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
     let options = cortex_server::ServerOptions {
         auth_token,
         auth_agent_id,
@@ -78,8 +85,8 @@ fn main() -> ExitCode {
         audit_log_enabled: audit_log_enabled_from_env() || audit_log_path.is_some(),
         audit_log_path,
         llm_test_double_enabled: llm_test_double_enabled_from_env(),
-        dashboard_enabled: dashboard_enabled_from_env(),
-        engine_feature_flags: engine_feature_flags_from_env(),
+        dashboard_enabled: engine_config.database_options.feature_flags.dashboard,
+        engine_database_options: engine_config.database_options,
     };
     match cortex_server::serve_with_options(&PathBuf::from(root), addr, options) {
         Ok(()) => ExitCode::SUCCESS,
@@ -185,27 +192,6 @@ fn audit_log_enabled_from_env() -> bool {
 
 fn llm_test_double_enabled_from_env() -> bool {
     match env::var("CORTEXDB_LLM_TEST_DOUBLE") {
-        Ok(raw) => parse_bool_flag(&raw),
-        Err(_) => false,
-    }
-}
-
-fn dashboard_enabled_from_env() -> bool {
-    match env::var("CORTEXDB_DASHBOARD") {
-        Ok(raw) => parse_bool_flag(&raw),
-        Err(_) => false,
-    }
-}
-
-fn engine_feature_flags_from_env() -> cortex_engine::EngineFeatureFlags {
-    cortex_engine::EngineFeatureFlags::production_safe()
-        .with_experimental_hnsw(env_bool("CORTEXDB_EXPERIMENTAL_HNSW"))
-        .with_experimental_replication(env_bool("CORTEXDB_EXPERIMENTAL_REPLICATION"))
-        .with_dashboard(dashboard_enabled_from_env())
-}
-
-fn env_bool(name: &str) -> bool {
-    match env::var(name) {
         Ok(raw) => parse_bool_flag(&raw),
         Err(_) => false,
     }

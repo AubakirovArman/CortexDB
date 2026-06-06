@@ -1,9 +1,10 @@
 use cortex_core::CellId;
 use cortex_engine::{
     BackupReport, CandidateId, CheckpointStats, ContextPack, ContextPackOptions, Database,
-    DatabaseOptions, DbOperation, EngineAqlIndex, EngineError, EngineErrorCategory,
-    EngineErrorCode, EngineFeature, EngineFeatureFlags, EngineResult, RecoveryMode, RepairReport,
-    RestoreReport, RetrievedCell, StaleLockPolicy, StorageStats, StorageValidationReport,
+    DatabaseOptions, DbOperation, EngineAqlIndex, EngineConfig, EngineConfigError, EngineError,
+    EngineErrorCategory, EngineErrorCode, EngineFeature, EngineFeatureFlags, EngineResult,
+    RecoveryMode, RepairReport, RestoreReport, RetrievedCell, StaleLockPolicy, StorageStats,
+    StorageValidationReport,
 };
 
 #[test]
@@ -51,6 +52,9 @@ fn stable_public_types_are_importable() {
     let _ = EngineErrorCategory::UserInput.as_str();
     let _ = EngineFeature::ExperimentalHnsw.as_str();
     let _ = EngineFeatureFlags::production_safe();
+    let config = EngineConfig::from_env_vars([("CORTEXDB_DURABILITY_MODE", "strict")]).unwrap();
+    assert_eq!(config.database_options.recovery_mode, RecoveryMode::Strict);
+    let _ = std::mem::size_of::<EngineConfigError>();
     let _ = std::mem::size_of::<RestoreReport>();
     let _ = std::mem::size_of::<RetrievedCell>();
     let _ = std::mem::size_of::<StorageStats>();

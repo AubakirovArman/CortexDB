@@ -6,6 +6,8 @@
   "stable_facade_symbols": [
     "Database",
     "DatabaseOptions",
+    "EngineConfig",
+    "EngineConfigError",
     "RecoveryMode",
     "StaleLockPolicy",
     "EngineFeature",
@@ -29,6 +31,7 @@
   ],
   "private_modules": [
     "cleanup",
+    "config",
     "database_files",
     "lock",
     "options"
@@ -47,6 +50,7 @@
   },
   "required_docs": [
     "docs/ENGINE_API.md",
+    "docs/ENGINE_CONFIG.md",
     "docs/MODULE_OWNERSHIP.md",
     "docs/ENGINE_API_EVIDENCE.md"
   ],
