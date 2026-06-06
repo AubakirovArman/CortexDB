@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 74 / 150
+- Done: 75 / 150
 - Partial: 1 / 150
-- Todo: 75 / 150
-- Current closed epic: Epic 74, Date/Temporal Conflict Detection
+- Todo: 74 / 150
+- Current closed epic: Epic 75, Source Trust Model v1
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2034,13 +2034,29 @@ Tasks:
 
 ### Epic 75. Source Trust Model v1
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/source_trust.rs`
+- `crates/cortex-engine/src/context/pack.rs`
+- `crates/cortex-engine/src/verification.rs`
+- `crates/cortex-engine/tests/context_pack.rs`
+- `crates/cortex-engine/tests/verification_tests.rs`
+- `docs/SOURCE_TRUST_MODEL.md`
+- `docs/VERIFY_FACT.md`
 
 Tasks:
 
-- Add source trust categories.
-- Add trust score in ContextPack.
-- Add trust score in Verify.
+- Add source trust categories. Done: `SourceTrustCategory` maps absent
+  metadata to `unknown` and Q16 ranges to `low`, `medium`, `high`, and
+  `official`.
+- Add trust score in ContextPack. Done: ContextPack explain blocks include
+  `source_trust_q16`, `source_trust_category`, `source_trust_bonus`, and the
+  `source_trust_bonus` score component.
+- Add trust score in Verify. Done: `VERIFY FACT` reports source trust on
+  supporting and contradicting evidence and sorts equal matches by higher
+  trust first.
 
 ### Epic 76. Source Trust Calibration
 

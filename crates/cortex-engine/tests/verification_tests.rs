@@ -99,6 +99,48 @@ fn verify_fact_aql_orders_equal_matches_by_source_trust() {
 }
 
 #[test]
+fn verify_fact_aql_reports_source_trust_categories() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    for (cell_id, trust) in [
+        (CellId(1), None),
+        (CellId(2), Some(20_000)),
+        (CellId(3), Some(32_768)),
+        (CellId(4), Some(50_000)),
+        (CellId(5), Some(60_000)),
+    ] {
+        db.put_knowledge_cell(
+            cell_id,
+            fact_cell_with_trust("project:investments", "ABC budget approved", trust),
+        )
+        .unwrap();
+    }
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;"#,
+            &view("project:investments", true),
+        )
+        .unwrap();
+    let categories = report
+        .evidence
+        .iter()
+        .map(|item| (item.cell_id, item.source_trust_category))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        categories,
+        vec![
+            (CellId(5), SourceTrustCategory::Official),
+            (CellId(4), SourceTrustCategory::High),
+            (CellId(1), SourceTrustCategory::Unknown),
+            (CellId(3), SourceTrustCategory::Medium),
+            (CellId(2), SourceTrustCategory::Low),
+        ]
+    );
+}
+
+#[test]
 fn verify_fact_aql_reports_contradicted_from_contradicts_line() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();

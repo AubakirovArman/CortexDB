@@ -136,6 +136,20 @@ The Rust engine exposes this deterministic date contract through
 treated as a full-year range, while `valid_from=2025` and `valid_to=2025` are
 expanded to the beginning and end of the year respectively.
 
+## Source Trust
+
+Evidence cells may include deterministic provenance trust:
+
+```text
+source_trust_q16=60000
+```
+
+`VERIFY FACT` reports both `source_trust_q16` and
+`source_trust_category` for supporting and contradicting evidence. Equal text
+matches are sorted by higher source trust first, then by `cell_id`, so the most
+trusted evidence is visible without hiding lower-trust evidence. The category
+thresholds are documented in `SOURCE_TRUST_MODEL.md`.
+
 ## Contradiction Index
 
 `Database::conflict_index` exposes deterministic contradiction records from two
