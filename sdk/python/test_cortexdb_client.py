@@ -9,6 +9,62 @@ from cortexdb_client import (
 
 
 class CortexDBClientPathTests(unittest.TestCase):
+    def test_aql_builders_output_stable_statements(self) -> None:
+        retrieve = CortexDBClient.build_retrieve_context_aql(
+            'budget "audit"\nline',
+            "investment_projects",
+            mode="balanced",
+            budget_tokens=2048,
+            limit_candidates=10,
+            where_clause='space = project:investments AND status = "ready"',
+            require_citations=True,
+            min_confidence="0.80",
+            source_trust="0.90",
+            freshness_seconds=86400,
+        )
+        verify = CortexDBClient.build_verify_fact_aql(
+            "Solar Plant budget is 1.2B KZT",
+            "investment_projects",
+        )
+        remember = CortexDBClient.build_remember_aql(
+            "Use conservative budget assumptions",
+            "project:investments",
+            "decision",
+            ttl_seconds=3600,
+        )
+
+        self.assertEqual(
+            retrieve,
+            (
+                'RETRIEVE CONTEXT FOR TASK "budget \\"audit\\"\\nline" '
+                "IN BRAIN investment_projects USING MODE balanced BUDGET 2048 TOKENS "
+                'LIMIT 10 CANDIDATES WHERE space = project:investments AND status = "ready" '
+                "REQUIRE citations REQUIRE confidence >= 0.80 REQUIRE source_trust >= 0.90 "
+                "REQUIRE freshness <= 86400 SECONDS;"
+            ),
+        )
+        self.assertEqual(
+            verify,
+            'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;',
+        )
+        self.assertEqual(
+            remember,
+            (
+                'REMEMBER "Use conservative budget assumptions" '
+                "IN SCOPE project:investments AS TYPE decision TTL 3600 SECONDS;"
+            ),
+        )
+
+    def test_aql_builders_reject_invalid_inputs(self) -> None:
+        with self.assertRaises(ValueError):
+            CortexDBClient.build_verify_fact_aql("x", "bad brain")
+        with self.assertRaises(ValueError):
+            CortexDBClient.build_remember_aql("x", "project:investments", "bad type")
+        with self.assertRaises(ValueError):
+            CortexDBClient.build_retrieve_context_aql("x", "brain", where_clause=" ")
+        with self.assertRaises(ValueError):
+            CortexDBClient.build_retrieve_context_aql("x", "brain", min_confidence="0")
+
     def test_search_path_matches_http_api_contract(self) -> None:
         path = CortexDBClient._path(
             "/v1/search",

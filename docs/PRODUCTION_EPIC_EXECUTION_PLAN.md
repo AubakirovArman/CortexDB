@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 43 / 150
+- Done: 44 / 150
 - Partial: 1 / 150
-- Todo: 106 / 150
-- Current closed epic: Epic 43, AQL Security Fuzzing
+- Todo: 105 / 150
+- Current closed epic: Epic 44, AQL SDK Helpers
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1168,14 +1168,47 @@ Tasks:
 
 ### Epic 44. AQL SDK Helpers
 
-Status: todo
+Status: done
+
+Evidence:
+
+- Rust SDK AQL helpers: `crates/cortex-sdk/src/aql.rs`,
+  `crates/cortex-sdk/src/aql_support.rs`.
+- Python SDK AQL helpers: `sdk/python/cortexdb_client.py`.
+- TypeScript SDK AQL helpers:
+  `sdk/typescript/cortexdb-client.ts`,
+  `sdk/typescript/cortexdb-client.js`,
+  `sdk/typescript/cortexdb-client.cjs`,
+  `sdk/typescript/cortexdb-client.d.ts`.
+- Usage docs/examples:
+  `docs/SDK_QUICKSTART.md`,
+  `sdk/README.md`,
+  `sdk/python/README.md`,
+  `sdk/typescript/README.md`,
+  `sdk/python/examples/basic.py`,
+  `sdk/typescript/examples/basic.mjs`.
+- Checks:
+  `cargo test -p cortex-sdk`,
+  `python3 sdk/python/test_cortexdb_client.py`,
+  `node sdk/typescript/test.js`,
+  `make sdk-contract-check`,
+  `make sdk-check`,
+  `cargo fmt --check`,
+  `cargo test --workspace --all-features`,
+  `cargo clippy --workspace --all-targets -- -D warnings`,
+  `git diff --check`.
 
 Tasks:
 
-- Add SDK builder methods for retrieve.
-- Add SDK builder methods for verify.
-- Add SDK builder methods for remember.
-- Reduce string-only query usage.
+- Add SDK builder methods for retrieve. Done: Rust, Python, and TypeScript
+  expose builder helpers for `RETRIEVE CONTEXT`.
+- Add SDK builder methods for verify. Done: Rust, Python, and TypeScript
+  expose builder helpers for `VERIFY FACT`.
+- Add SDK builder methods for remember. Done: Rust, Python, and TypeScript
+  expose builder helpers for `REMEMBER`.
+- Reduce string-only query usage. Done: SDK quickstarts, README snippets, live
+  contract example, and Python/TypeScript basic examples use helpers for common
+  AQL statements.
 
 ### Epic 45. AQL Query Examples Pack
 

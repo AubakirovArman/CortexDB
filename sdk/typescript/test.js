@@ -1,6 +1,12 @@
 import test from "node:test";
 import assert from "node:assert";
-import { CortexDBClient, CortexDBError } from "./cortexdb-client.js";
+import {
+  CortexDBClient,
+  CortexDBError,
+  buildRememberAql,
+  buildRetrieveContextAql,
+  buildVerifyFactAql,
+} from "./cortexdb-client.js";
 
 test("CortexDBClient path helper", () => {
   const client = new CortexDBClient();
@@ -13,6 +19,64 @@ test("CortexDBClient path helper", () => {
   assert.strictEqual(
     path,
     "/v1/search?scope=project%3Ainvestments&mode=keyword&q=solar+budget&limit=10"
+  );
+});
+
+test("AQL builder helpers output stable statements", () => {
+  const retrieve = buildRetrieveContextAql('budget "audit"\nline', "investment_projects", {
+    mode: "balanced",
+    budgetTokens: 2048,
+    limitCandidates: 10,
+    whereClause: 'space = project:investments AND status = "ready"',
+    requireCitations: true,
+    minConfidence: "0.80",
+    sourceTrust: "0.90",
+    freshnessSeconds: 86400,
+  });
+  const client = new CortexDBClient();
+
+  assert.strictEqual(
+    retrieve,
+    [
+      'RETRIEVE CONTEXT FOR TASK "budget \\"audit\\"\\nline"',
+      "IN BRAIN investment_projects USING MODE balanced BUDGET 2048 TOKENS",
+      'LIMIT 10 CANDIDATES WHERE space = project:investments AND status = "ready"',
+      "REQUIRE citations REQUIRE confidence >= 0.80 REQUIRE source_trust >= 0.90",
+      "REQUIRE freshness <= 86400 SECONDS;",
+    ].join(" "),
+  );
+  assert.strictEqual(
+    buildVerifyFactAql("Solar Plant budget is 1.2B KZT", "investment_projects"),
+    'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;',
+  );
+  assert.strictEqual(
+    client.buildRememberAql(
+      "Use conservative budget assumptions",
+      "project:investments",
+      "decision",
+      3600,
+    ),
+    'REMEMBER "Use conservative budget assumptions" IN SCOPE project:investments AS TYPE decision TTL 3600 SECONDS;',
+  );
+});
+
+test("AQL builder helpers reject invalid inputs", () => {
+  assert.throws(() => buildVerifyFactAql("x", "bad brain"), /AQL identifier/);
+  assert.throws(
+    () => buildRememberAql("x", "project:investments", "bad type"),
+    /AQL identifier/,
+  );
+  assert.throws(
+    () => buildRetrieveContextAql("x", "brain", { whereClause: " " }),
+    /whereClause/,
+  );
+  assert.throws(
+    () => buildRetrieveContextAql("x", "brain", { minConfidence: "0" }),
+    /decimal/,
+  );
+  assert.throws(
+    () => buildRetrieveContextAql("x", "brain", { mode: "turbo" }),
+    /mode/,
   );
 });
 

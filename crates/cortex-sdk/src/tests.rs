@@ -2,6 +2,75 @@ use super::*;
 use crate::http::{append_query_param, path};
 
 #[test]
+fn aql_retrieve_builder_outputs_stable_statement() {
+    let statement = Aql::retrieve_context("budget \"audit\"\nline", "investment_projects")
+        .mode(AqlRetrievalMode::Balanced)
+        .budget_tokens(2048)
+        .limit_candidates(10)
+        .where_clause(r#"space = project:investments AND status = "ready""#)
+        .require_citations()
+        .require_confidence_at_least("0.80")
+        .require_source_trust_at_least("0.90")
+        .require_freshness_seconds(86400)
+        .build()
+        .expect("retrieve builder should generate valid AQL");
+
+    assert_eq!(
+        statement,
+        concat!(
+            "RETRIEVE CONTEXT FOR TASK \"budget \\\"audit\\\"\\nline\" ",
+            "IN BRAIN investment_projects USING MODE balanced BUDGET 2048 TOKENS ",
+            "LIMIT 10 CANDIDATES WHERE space = project:investments AND status = \"ready\" ",
+            "REQUIRE citations REQUIRE confidence >= 0.80 REQUIRE source_trust >= 0.90 ",
+            "REQUIRE freshness <= 86400 SECONDS;"
+        )
+    );
+}
+
+#[test]
+fn aql_verify_and_remember_builders_output_stable_statements() {
+    let verify = Aql::verify_fact("Solar Plant budget is 1.2B KZT", "investment_projects")
+        .build()
+        .expect("verify builder should generate valid AQL");
+    let remember = Aql::remember(
+        "Use conservative budget assumptions",
+        "project:investments",
+        "decision",
+    )
+    .ttl_seconds(3600)
+    .build()
+    .expect("remember builder should generate valid AQL");
+
+    assert_eq!(
+        verify,
+        "VERIFY FACT \"Solar Plant budget is 1.2B KZT\" IN BRAIN investment_projects;"
+    );
+    assert_eq!(
+        remember,
+        concat!(
+            "REMEMBER \"Use conservative budget assumptions\" ",
+            "IN SCOPE project:investments AS TYPE decision TTL 3600 SECONDS;"
+        )
+    );
+}
+
+#[test]
+fn aql_builders_reject_invalid_identifiers_and_empty_fragments() {
+    assert!(Aql::verify_fact("x", "tenant alpha").build().is_err());
+    assert!(Aql::remember("x", "project:investments", "bad type")
+        .build()
+        .is_err());
+    assert!(Aql::retrieve_context("x", "brain")
+        .where_clause("  ")
+        .build()
+        .is_err());
+    assert!(Aql::retrieve_context("x", "brain")
+        .require_confidence_at_least("0")
+        .build()
+        .is_err());
+}
+
+#[test]
 fn path_encodes_search_query_contract() {
     let value = path(
         "/v1/search",

@@ -28,9 +28,10 @@ def main() -> None:
     search = client.search_response("default", "hello")
     print(f"search_results={len(search.results)}")
 
+    aql = client.build_retrieve_context_aql("hello", "default", limit_candidates=10)
     context = client.context_response(
         "default",
-        'RETRIEVE CONTEXT FOR TASK "hello" IN BRAIN default LIMIT 10 CANDIDATES;',
+        aql,
     )
     print(f"context_tokens={context.estimated_tokens}")
 

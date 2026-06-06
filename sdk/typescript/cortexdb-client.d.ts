@@ -225,10 +225,42 @@ export interface RememberResponse {
   ttl_seconds: number | null;
 }
 
+export type AqlRetrievalMode = "fast" | "balanced" | "semantic" | "audit";
+
+export interface RetrieveContextAqlOptions {
+  mode?: AqlRetrievalMode;
+  budgetTokens?: number;
+  limitCandidates?: number;
+  whereClause?: string;
+  requireCitations?: boolean;
+  minConfidence?: string;
+  sourceTrust?: string;
+  freshnessSeconds?: number;
+  explain?: boolean;
+}
+
+export function buildRetrieveContextAql(
+  task: string,
+  brain: string,
+  options?: RetrieveContextAqlOptions,
+): string;
+
+export function buildVerifyFactAql(fact: string, brain: string): string;
+
+export function buildRememberAql(
+  content: string,
+  scope: string,
+  memoryType: string,
+  ttlSeconds?: number,
+): string;
+
 export class CortexDBClient {
   constructor(baseUrl?: string, token?: string, tenant?: string, maxRetries?: number, retryDelayMs?: number);
   withTenant(tenant: string): CortexDBClient;
   withRetries(maxRetries: number, retryDelayMs?: number): CortexDBClient;
+  buildRetrieveContextAql(task: string, brain: string, options?: RetrieveContextAqlOptions): string;
+  buildVerifyFactAql(fact: string, brain: string): string;
+  buildRememberAql(content: string, scope: string, memoryType: string, ttlSeconds?: number): string;
   health(): Promise<HealthResponse>;
   putCell(cellId: number, payload: string): Promise<PutCellResponse>;
   getCell(cellId: number): Promise<CellLookupResponse>;

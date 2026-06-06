@@ -60,9 +60,10 @@ print(f"Server version: {health.server_version}")
 
 put = client.put_cell_response(1, "hello world")
 search = client.search_response("default", "hello", limit=10)
-context = client.context_response("default", 'RETRIEVE CONTEXT FOR TASK "hello" IN BRAIN default LIMIT 10 CANDIDATES;')
-verify = client.verify_response("default", 'VERIFY FACT "hello world" IN BRAIN default;')
-remember = client.remember_response("default", 'REMEMBER "hello" IN SCOPE default AS TYPE decision TTL 3600 SECONDS;')
+retrieve = client.build_retrieve_context_aql("hello", "default", limit_candidates=10)
+context = client.context_response("default", retrieve)
+verify = client.verify_response("default", client.build_verify_fact_aql("hello world", "default"))
+remember = client.remember_response("default", client.build_remember_aql("hello", "default", "decision", ttl_seconds=3600))
 ```
 
 ## TypeScript
@@ -81,9 +82,10 @@ console.log(`Server version: ${health.server_version}`);
 
 const put = await client.putCell(1, "hello world");
 const search = await client.search("default", "hello", 10);
-const context = await client.retrieveContext("default", 'RETRIEVE CONTEXT FOR TASK "hello" IN BRAIN default LIMIT 10 CANDIDATES;');
-const verify = await client.verifyFact("default", 'VERIFY FACT "hello world" IN BRAIN default;');
-const remember = await client.remember("default", 'REMEMBER "hello" IN SCOPE default AS TYPE decision TTL 3600 SECONDS;');
+const retrieve = client.buildRetrieveContextAql("hello", "default", { limitCandidates: 10 });
+const context = await client.retrieveContext("default", retrieve);
+const verify = await client.verifyFact("default", client.buildVerifyFactAql("hello world", "default"));
+const remember = await client.remember("default", client.buildRememberAql("hello", "default", "decision", 3600));
 ```
 
 ### ESM / CJS Policy

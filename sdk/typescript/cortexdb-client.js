@@ -24,6 +24,68 @@ class CortexDBError extends Error {
     }
   }
 }
+function quoteAqlString(value) {
+  return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"').replaceAll("\n", "\\n").replaceAll("\r", "\\r").replaceAll("\t", "\\t")}"`;
+}
+function validateAqlIdentifier(field, value) {
+  if (!/^[A-Za-z_][A-Za-z0-9_:-]*$/.test(value)) {
+    throw new Error(`${field} must be an AQL identifier`);
+  }
+}
+function validateDecimal(field, value) {
+  if (value !== void 0 && !/^[0-9]+\.[0-9]+$/.test(value)) {
+    throw new Error(`${field} must be a decimal literal`);
+  }
+}
+function validateAqlMode(value) {
+  if (value !== void 0 && value !== "fast" && value !== "balanced" && value !== "semantic" && value !== "audit") {
+    throw new Error("mode must be fast, balanced, semantic, or audit");
+  }
+}
+function buildRetrieveContextAql(task, brain, options = {}) {
+  validateAqlIdentifier("brain", brain);
+  validateAqlMode(options.mode);
+  if (options.whereClause !== void 0 && options.whereClause.trim().length === 0) {
+    throw new Error("whereClause must not be empty");
+  }
+  validateDecimal("minConfidence", options.minConfidence);
+  validateDecimal("sourceTrust", options.sourceTrust);
+  const parts = [];
+  if (options.explain) parts.push("EXPLAIN");
+  parts.push("RETRIEVE CONTEXT FOR TASK", quoteAqlString(task), "IN BRAIN", brain);
+  if (options.mode) parts.push("USING MODE", options.mode);
+  if (options.budgetTokens !== void 0) {
+    parts.push("BUDGET", String(options.budgetTokens), "TOKENS");
+  }
+  if (options.limitCandidates !== void 0) {
+    parts.push("LIMIT", String(options.limitCandidates), "CANDIDATES");
+  }
+  if (options.whereClause !== void 0) {
+    parts.push("WHERE", options.whereClause.trim());
+  }
+  if (options.requireCitations) parts.push("REQUIRE", "citations");
+  if (options.minConfidence !== void 0) {
+    parts.push("REQUIRE", "confidence", ">=", options.minConfidence);
+  }
+  if (options.sourceTrust !== void 0) {
+    parts.push("REQUIRE", "source_trust", ">=", options.sourceTrust);
+  }
+  if (options.freshnessSeconds !== void 0) {
+    parts.push("REQUIRE", "freshness", "<=", String(options.freshnessSeconds), "SECONDS");
+  }
+  return `${parts.join(" ")};`;
+}
+function buildVerifyFactAql(fact, brain) {
+  validateAqlIdentifier("brain", brain);
+  return `VERIFY FACT ${quoteAqlString(fact)} IN BRAIN ${brain};`;
+}
+function buildRememberAql(content, scope, memoryType, ttlSeconds) {
+  validateAqlIdentifier("scope", scope);
+  validateAqlIdentifier("memoryType", memoryType);
+  let statement = `REMEMBER ${quoteAqlString(content)} IN SCOPE ${scope} AS TYPE ${memoryType}`;
+  if (ttlSeconds !== void 0) statement += ` TTL ${ttlSeconds} SECONDS`;
+  return `${statement};`;
+}
 class CortexDBClient {
   constructor(baseUrl = "http://127.0.0.1:8181", token, tenant, maxRetries = 0, retryDelayMs = 500) {
     this.baseUrl = baseUrl;
@@ -42,6 +104,15 @@ class CortexDBClient {
   }
   withRetries(maxRetries, retryDelayMs = 500) {
     return new CortexDBClient(this.baseUrl, this.token, this.tenant, maxRetries, retryDelayMs);
+  }
+  buildRetrieveContextAql(task, brain, options = {}) {
+    return buildRetrieveContextAql(task, brain, options);
+  }
+  buildVerifyFactAql(fact, brain) {
+    return buildVerifyFactAql(fact, brain);
+  }
+  buildRememberAql(content, scope, memoryType, ttlSeconds) {
+    return buildRememberAql(content, scope, memoryType, ttlSeconds);
   }
   health() {
     return this.request("GET", "/v1/health");
@@ -186,6 +257,9 @@ class CortexDBClient {
   }
 }
 export {
+  buildRememberAql,
+  buildRetrieveContextAql,
+  buildVerifyFactAql,
   CortexDBClient,
   CortexDBError
 };

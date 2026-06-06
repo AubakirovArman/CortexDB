@@ -19,9 +19,15 @@ use std::time::Duration;
 use serde::de::DeserializeOwned;
 use thiserror::Error;
 
+mod aql;
+mod aql_support;
 mod http;
 mod types;
 
+pub use aql::{
+    Aql, AqlBuildError, AqlRetrievalMode, RememberBuilder, RetrieveContextBuilder,
+    VerifyFactBuilder,
+};
 use http::{append_query_param, parse_response, path};
 pub use types::{
     AnnEvaluationResponse, AnnNoFallbackDecision, AnnSearchReport, AqlCandidateCounts,

@@ -17,8 +17,9 @@ console.log(`cell_found=${lookup.cell !== null}`);
 const search = await client.search("default", "hello");
 console.log(`search_results=${search.results.length}`);
 
+const aql = client.buildRetrieveContextAql("hello", "default", { limitCandidates: 10 });
 const context = await client.retrieveContext(
   "default",
-  'RETRIEVE CONTEXT FOR TASK "hello" IN BRAIN default LIMIT 10 CANDIDATES;',
+  aql,
 );
 console.log(`context_tokens=${context.estimated_tokens}`);

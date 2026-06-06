@@ -13,7 +13,7 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use cortex_sdk::{CortexDbClient, ErrorCode, SdkError};
+use cortex_sdk::{Aql, CortexDbClient, ErrorCode, SdkError};
 
 const SDK_AUTH_TOKEN: &str = "sdk-smoke-secret";
 
@@ -65,27 +65,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     assert!(validation.ok);
     println!("OK: validate_response");
 
-    let retrieve =
-        "RETRIEVE CONTEXT FOR TASK \"rust\" IN BRAIN default WHERE space = default AND status = \"ready\" LIMIT 10 CANDIDATES;";
-    let aql = client.aql_response("default", retrieve)?;
+    let retrieve = Aql::retrieve_context("rust", "default")
+        .where_clause(r#"space = default AND status = "ready""#)
+        .limit_candidates(10)
+        .build()?;
+    let aql = client.aql_response("default", &retrieve)?;
     assert!(!aql.cells.is_empty());
     println!("OK: aql_response");
 
-    let context = client.context_response("default", retrieve)?;
+    let context = client.context_response("default", &retrieve)?;
     assert_eq!(context.schema_version, "context_pack.v1");
     assert!(context.token_budget_tokens > 0);
     println!("OK: context_response");
 
     let verify = client.verify_response(
         "default",
-        "VERIFY FACT \"hello rust sdk\" IN BRAIN default;",
+        &Aql::verify_fact("hello rust sdk", "default").build()?,
     )?;
     assert_eq!(verify.fact, "hello rust sdk");
     println!("OK: verify_response");
 
     let remember = client.remember_response(
         "default",
-        "REMEMBER \"rust sdk memory\" IN SCOPE default AS TYPE decision TTL 3600 SECONDS;",
+        &Aql::remember("rust sdk memory", "default", "decision")
+            .ttl_seconds(3600)
+            .build()?,
     )?;
     assert!(remember.seq > 0);
     println!("OK: remember_response");

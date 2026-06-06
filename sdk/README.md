@@ -21,6 +21,9 @@ response with exact top-k, ANN top-k, overlap, and fixed-point `recall_q16`.
 and visit-budget guardrails.
 All clients support additive tenant/realm scoping so package users can target
 the same per-tenant database layout exposed by `cortex-server` and `/dashboard`.
+All clients also expose AQL builder helpers for `RETRIEVE CONTEXT`,
+`VERIFY FACT`, and `REMEMBER` so common integrations do not have to assemble
+query strings by hand.
 `publish/check.sh` validates Python bytecode/tests/wheel packaging, Rust tests
 and `cargo package`, SDK version consistency, tenant routing, ANN evaluation surface presence,
 and npm package dry-runs when npm is installed.
