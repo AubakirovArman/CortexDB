@@ -260,6 +260,7 @@ Status: partial
 Evidence:
 
 - `scripts/storage_soak_v2_gate.py`
+- `make storage-soak-72h-start`
 - `make storage-soak-72h-campaign`
 - `make storage-soak-72h-status`
 - `make storage-soak-72h-evidence-check`
