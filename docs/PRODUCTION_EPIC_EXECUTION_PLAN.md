@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 68 / 150
+- Done: 69 / 150
 - Partial: 1 / 150
-- Todo: 81 / 150
-- Current closed epic: Epic 68, ContextPack Token Estimator v2
+- Todo: 80 / 150
+- Current closed epic: Epic 69, ContextPack Large Cell Policy
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1876,14 +1876,31 @@ Tasks:
 
 ### Epic 69. ContextPack Large Cell Policy
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/context/large_cell.rs`
+- `crates/cortex-engine/tests/context_pack_large_cell_policy.rs`
+- `scripts/context_pack_large_cell_policy_check.py`
+- `make context-pack-large-cell-policy-check`
+- `target/context-pack-quality/large-cell-policy-report.json`
+- `docs/CONTEXT_PACK.md`
+- `docs/CONTEXT_PACK_TECHNOLOGY.md`
+- `docs/CONTEXT_PACK_QUALITY_EVIDENCE.md`
 
 Tasks:
 
-- Define truncate policy.
-- Define exclude policy.
-- Define summarize-placeholder policy.
-- Define source-only reference policy.
+- Define truncate policy. Done: `ContextLargeCellPolicy::Truncate` includes a
+  UTF-8-safe prefix plus a deterministic truncation marker when it fits.
+- Define exclude policy. Done: `ContextLargeCellPolicy::Exclude` omits
+  oversized cells and emits `token_overload` evidence.
+- Define summarize-placeholder policy. Done:
+  `ContextLargeCellPolicy::SummarizePlaceholder` emits deterministic metadata
+  and reference fields without calling an LLM.
+- Define source-only reference policy. Done:
+  `ContextLargeCellPolicy::SourceOnlyReference` keeps provenance-style metadata
+  while omitting the oversized body.
 
 ### Epic 70. ContextPack SDK Types v1
 

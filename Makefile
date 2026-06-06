@@ -169,6 +169,7 @@ CONTEXT_PACK_ANSWERABILITY_REPORT ?= target/context-pack-quality/answerability-r
 CONTEXT_PACK_CONFLICT_VISIBILITY_REPORT ?= target/context-pack-quality/conflict-visibility-report.json
 CONTEXT_PACK_PRIVATE_SCOPE_REPORT ?= target/context-pack-quality/private-scope-report.json
 CONTEXT_PACK_TOKEN_ESTIMATOR_REPORT ?= target/context-pack-quality/token-estimator-report.json
+CONTEXT_PACK_LARGE_CELL_POLICY_REPORT ?= target/context-pack-quality/large-cell-policy-report.json
 VERIFICATION_QUALITY_FIXTURE ?= examples/eval/verification_cases.jsonl
 VERIFICATION_QUALITY_REPORT ?= target/verification-quality/report.json
 HTTP_CONTRACT_OPS_REPORT ?= target/http-contract-ops/report.json
@@ -818,8 +819,14 @@ context-pack-quality-check:
 	$(MAKE) context-pack-conflict-visibility-check
 	$(MAKE) context-pack-private-scope-check
 	$(MAKE) context-pack-token-estimator-check
+	$(MAKE) context-pack-large-cell-policy-check
 	python3 scripts/context_pack_quality_check.py --fixture "$(CONTEXT_PACK_QUALITY_FIXTURE)" --report "$(CONTEXT_PACK_QUALITY_REPORT)"
 	$(MAKE) context-pack-quality-v3-check
+
+.PHONY: context-pack-large-cell-policy-check
+context-pack-large-cell-policy-check:
+	cargo test -p cortex-engine --test context_pack_large_cell_policy
+	python3 scripts/context_pack_large_cell_policy_check.py --root "." --report "$(CONTEXT_PACK_LARGE_CELL_POLICY_REPORT)"
 
 .PHONY: context-pack-token-estimator-check
 context-pack-token-estimator-check:

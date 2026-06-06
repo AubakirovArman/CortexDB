@@ -162,6 +162,7 @@ fn assert_context_quality(db: &Database) {
                 redundancy_threshold_q16: 10,
                 citation_overhead_tokens: cortex_engine::context::DEFAULT_CITATION_OVERHEAD_TOKENS,
                 token_profile: cortex_engine::ContextTokenProfile::default(),
+                large_cell_policy: cortex_engine::ContextLargeCellPolicy::default(),
             },
         )
         .unwrap();

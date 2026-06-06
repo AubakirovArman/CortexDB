@@ -7,11 +7,14 @@ mod conflicts;
 pub mod dedup;
 pub mod explain;
 pub mod export;
+mod large_cell;
 mod pack;
+mod scoring;
 mod token_estimator;
 
 pub use answerability::DEFAULT_ANSWERABILITY_THRESHOLD_Q16;
 pub use export::ContextPackExportFormat;
+pub use large_cell::ContextLargeCellPolicy;
 pub use token_estimator::{estimate_tokens, estimate_tokens_for_profile, ContextTokenProfile};
 
 pub const DEFAULT_REDUNDANCY_THRESHOLD_Q16: u16 = 32_768;
@@ -25,6 +28,7 @@ pub struct ContextPackOptions {
     pub redundancy_threshold_q16: u16,
     pub citation_overhead_tokens: u32,
     pub token_profile: ContextTokenProfile,
+    pub large_cell_policy: ContextLargeCellPolicy,
 }
 
 impl Default for ContextPackOptions {
@@ -36,6 +40,7 @@ impl Default for ContextPackOptions {
             redundancy_threshold_q16: DEFAULT_REDUNDANCY_THRESHOLD_Q16,
             citation_overhead_tokens: DEFAULT_CITATION_OVERHEAD_TOKENS,
             token_profile: ContextTokenProfile::default(),
+            large_cell_policy: ContextLargeCellPolicy::default(),
         }
     }
 }

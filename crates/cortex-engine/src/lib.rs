@@ -72,9 +72,10 @@ pub use compatibility::{
 };
 pub use config::{EngineConfig, EngineConfigError};
 pub use context::{
-    estimate_tokens, estimate_tokens_for_profile, ContextExplain, ContextPack, ContextPackAnomaly,
-    ContextPackAnomalyCode, ContextPackCell, ContextPackExportFormat, ContextPackOptions,
-    ContextScoreComponent, ContextTokenProfile, DEFAULT_CITATION_OVERHEAD_TOKENS,
+    estimate_tokens, estimate_tokens_for_profile, ContextExplain, ContextLargeCellPolicy,
+    ContextPack, ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell,
+    ContextPackExportFormat, ContextPackOptions, ContextScoreComponent, ContextTokenProfile,
+    DEFAULT_CITATION_OVERHEAD_TOKENS,
 };
 pub use database::{CandidateResolver, CheckpointStats, Database, RetrievedCell};
 pub use distributed::*;

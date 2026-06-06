@@ -28,6 +28,7 @@ Implemented in `cortex-engine`:
 - `estimate_tokens`
 - `estimate_tokens_for_profile`
 - `ContextTokenProfile`
+- `ContextLargeCellPolicy`
 - Optional sparse redundancy reduction using fixed-point Jaccard.
 - Optional dense-vector redundancy reduction when payloads include `vector=`.
 - Numeric guard coexistence: conflicting values for the same
@@ -38,6 +39,9 @@ Implemented in `cortex-engine`:
 - Model-specific token profiles: `ContextTokenProfile` supports Cortex default,
   GPT-4o-like, DeepSeek-chat-like, Gemma-it-like, and BGE-M3-like deterministic
   budget estimates without calling external tokenizers.
+- Large-cell policy: oversized cells can preserve the legacy first-cell
+  behavior, truncate to fit, exclude, emit a deterministic summarize-placeholder,
+  or emit a source-only reference.
 - Dedup-aware budget packing: redundant candidates are filtered before budget
   overload checks, and oversized middle candidates are skipped so smaller later
   candidates can still fit.
@@ -138,6 +142,8 @@ existing compact summary default unless `--json` or `--format` is passed.
     exports; `AgentView.readable_scopes` still constrains the runtime
     `AgentAllowed` mask after binding.
 11. No HNSW, reranking, or LLM calls run inside ContextPack v1 itself.
+12. Large-cell summarize-placeholder mode is deterministic metadata/reference
+    output, not an LLM-generated summary.
 
 ## Known Limits
 
@@ -163,6 +169,10 @@ existing compact summary default unless `--json` or `--format` is passed.
   checkpoint/restart path, a compact/restart path, and all ContextPack export
   formats. It proves that a forbidden scope is excluded even when the AQL query
   itself does not include a scope predicate.
+- `ContextLargeCellPolicy` is an explicit runtime option. `PreserveFirst`
+  remains the default for compatibility. `Truncate`, `Exclude`,
+  `SummarizePlaceholder`, and `SourceOnlyReference` keep reported token usage
+  within the available budget when they include a transformed large cell.
 
 ## Quality Gate
 
@@ -199,6 +209,7 @@ make context-pack-answerability-check
 make context-pack-conflict-visibility-check
 make context-pack-private-scope-check
 make context-pack-token-estimator-check
+make context-pack-large-cell-policy-check
 ```
 
 That gate runs the ContextPack behavior tests, the ContextPack/VERIFY fixture,
@@ -216,6 +227,8 @@ measured release metrics:
   prompt, and Markdown exports.
 - deterministic model-specific token profile coverage for multilingual payloads,
   citation overhead, model-name aliases, and invalid UTF-8 fallback behavior.
+- large-cell policy coverage for truncate, exclude, summarize-placeholder, and
+  source-only reference behavior.
 
 Latest local evidence is tracked in
 [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md).

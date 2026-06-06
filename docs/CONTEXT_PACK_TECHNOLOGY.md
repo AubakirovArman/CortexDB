@@ -95,6 +95,30 @@ smaller candidates. The first candidate can still be included even when it is
 larger than the requested budget, preserving the old "return at least one
 candidate" behavior.
 
+## Large Cell Policy
+
+Large cells are candidates whose estimated token cost exceeds the remaining
+ContextPack budget. Core Alpha keeps the legacy default policy:
+`preserve_first`. That policy still includes the first oversized cell and marks
+the pack as truncated, while later oversized candidates are skipped so smaller
+later cells can still fit.
+
+`ContextLargeCellPolicy` adds explicit alternatives:
+
+- `truncate`: include a UTF-8-safe prefix with a deterministic
+  `[context_pack_truncated=true]` marker when the transformed cell fits.
+- `exclude`: omit the oversized cell and report a `token_overload` anomaly.
+- `summarize_placeholder`: include deterministic metadata such as original
+  cell id, original estimated tokens, title, document ids, and source ids. This
+  is not an LLM summary.
+- `source_only_reference`: include only provenance-style metadata and omit the
+  oversized body; this is the source-only reference policy.
+
+All non-default policies report the selected policy in `why_excluded` so
+operators can distinguish a true budget exclusion from a transformed include.
+The include policies keep `estimated_tokens <= token_budget_tokens` when they
+can fit; otherwise they fall back to exclusion.
+
 ## Citations
 
 Context Pack treats citations as evidence markers extracted from payload

@@ -229,3 +229,14 @@ ContextPack model-specific token estimation is covered by:
   `target/context-pack-quality/token-estimator-report.json`;
 - `ContextTokenProfile` variants for Cortex default, GPT-4o-like,
   DeepSeek-chat-like, Gemma-it-like, and BGE-M3-like budgeting.
+
+## Large Cell Policy Evidence
+
+ContextPack large-cell handling is covered by:
+
+- `cargo test -p cortex-engine --test context_pack_large_cell_policy`, including
+  truncate, exclude, summarize-placeholder, and source-only reference behavior;
+- `make context-pack-large-cell-policy-check`, which writes
+  `target/context-pack-quality/large-cell-policy-report.json`;
+- `ContextLargeCellPolicy` default compatibility through `PreserveFirst`, plus
+  explicit deterministic alternatives for oversized candidates.

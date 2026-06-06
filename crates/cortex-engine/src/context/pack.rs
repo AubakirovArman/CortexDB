@@ -1,17 +1,19 @@
-use std::cmp::Reverse;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 use cortex_aql::{AgentView, BoundPlan};
-use cortex_core::CellId;
 
 use super::answerability;
 use super::conflicts;
 use super::dedup::{effective_redundancy_threshold, is_redundant, term_set, weighted_jaccard_q16};
 use super::explain::{extract_query_terms, generate_selection_reason};
-use super::token_estimator::estimate_tokens_for_profile;
+use super::large_cell::{
+    apply_large_cell_policy, estimate_cell_tokens, ContextLargeCellPolicy, LargeCellDecision,
+    LargeCellRequest,
+};
+use super::scoring::{order_by_feedback, score_components};
 use super::{
     ContextExplain, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell,
-    ContextPackOptions, ContextScoreComponent,
+    ContextPackOptions,
 };
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
@@ -111,28 +113,57 @@ impl ContextPack {
                 continue;
             }
 
-            let cell_tokens = estimate_cell_tokens(
-                &cell.payload,
+            let mut selected_payload = cell.payload;
+            let mut selected_tokens = estimate_cell_tokens(
+                &selected_payload,
                 citation.as_deref(),
                 citations_required,
                 options,
             );
-            let would_exceed = !pack_cells.is_empty()
-                && estimated_tokens.saturating_add(cell_tokens) > token_budget_tokens;
-            if would_exceed {
+            let remaining_tokens = token_budget_tokens.saturating_sub(estimated_tokens);
+            let would_exceed = selected_tokens > remaining_tokens;
+            if would_exceed
+                && (options.large_cell_policy != ContextLargeCellPolicy::PreserveFirst
+                    || !pack_cells.is_empty())
+            {
                 truncated = true;
-                anomalies.push(ContextPackAnomaly {
-                    cell_id: Some(cell.cell_id),
-                    code: ContextPackAnomalyCode::TokenOverload,
-                    message: "candidate would exceed the remaining token budget".to_owned(),
-                    why_excluded: Some(
-                        "excluded because estimated_tokens would exceed token_budget_tokens; skipped so later smaller candidates can still fit"
-                            .to_owned(),
-                    ),
-                });
-                continue;
+                if options.large_cell_policy == ContextLargeCellPolicy::PreserveFirst {
+                    anomalies.push(ContextPackAnomaly {
+                        cell_id: Some(cell.cell_id),
+                        code: ContextPackAnomalyCode::TokenOverload,
+                        message: "candidate would exceed the remaining token budget".to_owned(),
+                        why_excluded: Some(
+                            "excluded because estimated_tokens would exceed token_budget_tokens; skipped so later smaller candidates can still fit"
+                                .to_owned(),
+                        ),
+                    });
+                    continue;
+                }
+                match apply_large_cell_policy(LargeCellRequest {
+                    cell_id: cell.cell_id,
+                    payload: &selected_payload,
+                    citation: citation.as_deref(),
+                    citations_required,
+                    original_tokens: selected_tokens,
+                    remaining_tokens,
+                    options,
+                }) {
+                    LargeCellDecision::Include {
+                        payload,
+                        estimated_tokens,
+                        anomaly,
+                    } => {
+                        anomalies.push(anomaly);
+                        selected_payload = payload;
+                        selected_tokens = estimated_tokens;
+                    }
+                    LargeCellDecision::Exclude { anomaly } => {
+                        anomalies.push(anomaly);
+                        continue;
+                    }
+                }
             }
-            if pack_cells.is_empty() && cell_tokens > token_budget_tokens {
+            if pack_cells.is_empty() && selected_tokens > token_budget_tokens {
                 truncated = true;
             }
 
@@ -185,11 +216,11 @@ impl ContextPack {
                 redundancy_penalty,
             });
 
-            estimated_tokens = estimated_tokens.saturating_add(cell_tokens);
+            estimated_tokens = estimated_tokens.saturating_add(selected_tokens);
             pack_cells.push(ContextPackCell {
                 cell_id: cell.cell_id,
-                payload: cell.payload,
-                estimated_tokens: cell_tokens,
+                payload: selected_payload,
+                estimated_tokens: selected_tokens,
                 citation,
                 explain,
             });
@@ -213,62 +244,6 @@ impl ContextPack {
             anomalies,
         }
     }
-}
-
-fn score_components(
-    base_bm25: u32,
-    source_trust: SourceTrust,
-    redundancy_penalty: u32,
-) -> Vec<ContextScoreComponent> {
-    let source_trust_bonus = source_trust.score_bonus();
-    vec![
-        ContextScoreComponent {
-            name: "base_bm25".to_owned(),
-            value: base_bm25,
-            contribution: i32::try_from(base_bm25).unwrap_or(i32::MAX),
-            reason: "keyword overlap between query terms and cell body".to_owned(),
-        },
-        ContextScoreComponent {
-            name: "source_trust_bonus".to_owned(),
-            value: source_trust_bonus,
-            contribution: i32::try_from(source_trust_bonus).unwrap_or(i32::MAX),
-            reason: source_trust.score_reason(),
-        },
-        ContextScoreComponent {
-            name: "redundancy_penalty".to_owned(),
-            value: redundancy_penalty,
-            contribution: -i32::try_from(redundancy_penalty).unwrap_or(i32::MAX),
-            reason: "weighted Jaccard overlap with already packed cells".to_owned(),
-        },
-    ]
-}
-
-fn order_by_feedback(
-    cells: Vec<RetrievedCell>,
-    feedback_scores: &BTreeMap<CellId, i32>,
-) -> Vec<RetrievedCell> {
-    let mut indexed = cells.into_iter().enumerate().collect::<Vec<_>>();
-    indexed.sort_by_key(|(index, cell)| {
-        (
-            Reverse(*feedback_scores.get(&cell.cell_id).unwrap_or(&0)),
-            *index,
-        )
-    });
-    indexed.into_iter().map(|(_, cell)| cell).collect()
-}
-
-fn estimate_cell_tokens(
-    payload: &[u8],
-    citation: Option<&str>,
-    citations_required: bool,
-    options: &ContextPackOptions,
-) -> u32 {
-    let citation_overhead = if citations_required && citation.is_some() {
-        options.citation_overhead_tokens
-    } else {
-        0
-    };
-    estimate_tokens_for_profile(payload, options.token_profile).saturating_add(citation_overhead)
 }
 
 fn effective_budget(view: &AgentView, requested: u32, plan_budget: u32) -> u32 {
