@@ -20,7 +20,10 @@ use contradiction::{
 };
 pub use export::VerificationReportExportFormat;
 use guards::{citation_guard, numeric_mismatch, numeric_mismatch_conflict, numeric_mismatch_guard};
-pub use numeric::{format_scaled_value, Magnitude, NumericValue};
+pub use numeric::{
+    compare_numeric_values, format_scaled_value, normalized_numeric_equal, parse_currency_code,
+    parse_magnitude_suffix, parse_unit_code, Magnitude, NumericComparison, NumericValue,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VerificationStatus {

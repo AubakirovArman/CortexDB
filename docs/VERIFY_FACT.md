@@ -100,6 +100,13 @@ The `metric=budget` line helps VERIFY FACT label precise
 typed `NumericValue` pairs extracted from the fact and evidence body text, so
 CLI/server responses do not re-parse payloads independently.
 
+The Rust engine exposes the same deterministic contract through
+`parse_currency_code`, `parse_unit_code`, `parse_magnitude_suffix`,
+`compare_numeric_values`, and `normalized_numeric_equal`. These helpers keep
+currency/unit/magnitude handling in one integer-only implementation and return
+structured `VerificationNumericConflict` entries for API, CLI, SDK, markdown,
+and audit exports.
+
 ## Contradiction Index
 
 `Database::conflict_index` exposes deterministic contradiction records from two

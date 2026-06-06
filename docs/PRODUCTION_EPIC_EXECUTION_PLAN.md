@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 72 / 150
+- Done: 73 / 150
 - Partial: 1 / 150
-- Todo: 77 / 150
-- Current closed epic: Epic 72, Verification Dataset v3
+- Todo: 76 / 150
+- Current closed epic: Epic 73, Engine-native NumericValue
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -1980,15 +1980,31 @@ Tasks:
 
 ### Epic 73. Engine-native NumericValue
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/verification/numeric/mod.rs`
+- `crates/cortex-engine/src/verification/numeric/parse.rs`
+- `crates/cortex-engine/src/verification/numeric/value.rs`
+- `crates/cortex-engine/src/verification/numeric/tests.rs`
+- `crates/cortex-engine/tests/verification_guards.rs`
+- `docs/VERIFY_FACT.md`
 
 Tasks:
 
-- Add unit parser.
-- Add currency parser.
-- Add magnitude parser.
-- Add normalized comparison.
-- Add structured conflicts.
+- Add unit parser. Done: `parse_unit_code` normalizes units and aliases
+  such as `%`, `percent`, `hrs`, and `sec`.
+- Add currency parser. Done: `parse_currency_code` validates and normalizes
+  supported currency codes to uppercase.
+- Add magnitude parser. Done: `parse_magnitude_suffix` parses `B/M/K/%`
+  and multilingual suffixes used by deterministic verification.
+- Add normalized comparison. Done: `compare_numeric_values`,
+  `normalized_numeric_equal`, and `NumericValue` helper methods distinguish
+  equal, conflicting, and incomparable numeric contexts without floats.
+- Add structured conflicts. Done: `VerificationNumericConflict` continues to
+  carry metric, left/right display values, and typed `NumericValue` pairs, with
+  regression tests in `verification_guards`.
 
 ### Epic 74. Date/Temporal Conflict Detection
 
