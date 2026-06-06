@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 79 / 150
+- Done: 80 / 150
 - Partial: 1 / 150
-- Todo: 70 / 150
-- Current closed epic: Epic 79, Verification SDK Helpers
+- Todo: 69 / 150
+- Current closed epic: Epic 80, Verification Quality Dashboard
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -2159,14 +2159,25 @@ Tasks:
 
 ### Epic 80. Verification Quality Dashboard
 
-Status: todo
+Status: done
 
 Tasks:
 
-- Add confusion matrix.
-- Track false positives.
-- Track false negatives.
-- Track per-domain quality.
+- Add confusion matrix. Done: `scripts/verification_quality_dashboard.py`
+  converts the quality report into dashboard `confusion_rows` and a rendered
+  Markdown confusion table.
+- Track false positives. Done: dashboard JSON/Markdown carries
+  `false_positive_count`, and the gate fails closed when the source report
+  exposes non-zero false positives.
+- Track false negatives. Done: dashboard JSON/Markdown carries
+  `false_negative_count`, and the gate fails closed when the source report
+  exposes non-zero false negatives.
+- Track per-domain quality. Done: `per_domain_quality` summarizes domain-level
+  case counts, status counts, and accuracy q16 for each verification domain.
+- Evidence: `make verification-quality-check` now runs
+  `scripts/verification_quality_dashboard_self_test.py` and writes
+  `target/verification-quality/dashboard.json` plus
+  `target/verification-quality/dashboard.md`.
 
 ## H. Ingestion And Data Pipeline
 

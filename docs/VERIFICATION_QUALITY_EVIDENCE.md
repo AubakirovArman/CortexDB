@@ -13,6 +13,8 @@ Primary artifacts:
 ```text
 examples/eval/verification_cases.jsonl
 target/verification-quality/report.json
+target/verification-quality/dashboard.json
+target/verification-quality/dashboard.md
 ```
 
 ## Coverage
@@ -60,6 +62,15 @@ citation_guard_cases: 25
 false_positive_count: 0
 false_negative_count: 0
 ```
+
+## Dashboard
+
+`make verification-quality-check` also writes a dashboard-oriented summary:
+
+- `dashboard.json` exposes `confusion_rows`, `false_positive_count`,
+  `false_negative_count`, and `per_domain_quality` for release automation.
+- `dashboard.md` renders the confusion matrix and per-domain quality as reviewable
+  Markdown tables.
 
 ## Boundary
 

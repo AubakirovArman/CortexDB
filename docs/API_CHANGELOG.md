@@ -42,6 +42,9 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
   `VerifyRequest`, `VerifyResult`, and `VerifyConflict` helpers so agents can
   build VERIFY FACT requests, decode result states, and inspect contradicting
   evidence or numeric conflicts without ad-hoc string matching.
+- **Verification quality dashboard artifacts** — `make verification-quality-check`
+  now emits `target/verification-quality/dashboard.json` and `.md` with confusion
+  rows, false-positive/false-negative counters, and per-domain quality summaries.
 
 ### Changed
 - **Error taxonomy contract guard** — `make openapi-contract-check` now also

@@ -283,5 +283,8 @@ make verification-quality-check
 
 That gate executes `examples/eval/verification_cases.jsonl` through the engine
 and writes a confusion-matrix report to `target/verification-quality/report.json`.
+It also writes `target/verification-quality/dashboard.json` and
+`target/verification-quality/dashboard.md` with false-positive/false-negative
+counts and per-domain quality tables for release review.
 Latest local evidence is tracked in
 [`VERIFICATION_QUALITY_EVIDENCE.md`](VERIFICATION_QUALITY_EVIDENCE.md).

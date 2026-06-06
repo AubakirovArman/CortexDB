@@ -172,6 +172,8 @@ CONTEXT_PACK_TOKEN_ESTIMATOR_REPORT ?= target/context-pack-quality/token-estimat
 CONTEXT_PACK_LARGE_CELL_POLICY_REPORT ?= target/context-pack-quality/large-cell-policy-report.json
 VERIFICATION_QUALITY_FIXTURE ?= examples/eval/verification_cases.jsonl
 VERIFICATION_QUALITY_REPORT ?= target/verification-quality/report.json
+VERIFICATION_QUALITY_DASHBOARD_JSON ?= target/verification-quality/dashboard.json
+VERIFICATION_QUALITY_DASHBOARD_MD ?= target/verification-quality/dashboard.md
 HTTP_CONTRACT_OPS_REPORT ?= target/http-contract-ops/report.json
 CLI_PRODUCT_REPORT ?= target/cli-product/report.json
 OPERATIONS_RUNBOOK_REPORT ?= target/operations-runbook/report.json
@@ -868,6 +870,8 @@ verification-quality-check:
 	cargo test -p cortex-engine --test verification_natural_language
 	cargo test -p cortex-engine --test verification_evaluation
 	python3 scripts/verification_quality_check.py --fixture "$(VERIFICATION_QUALITY_FIXTURE)" --report "$(VERIFICATION_QUALITY_REPORT)"
+	python3 scripts/verification_quality_dashboard_self_test.py
+	python3 scripts/verification_quality_dashboard.py --report "$(VERIFICATION_QUALITY_REPORT)" --dashboard-json "$(VERIFICATION_QUALITY_DASHBOARD_JSON)" --dashboard-md "$(VERIFICATION_QUALITY_DASHBOARD_MD)"
 
 security-check:
 	cargo test -p cortex-server security_tests
