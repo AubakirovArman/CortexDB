@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 117 / 150
+- Done: 118 / 150
 - Partial: 1 / 150
-- Todo: 32 / 150
-- Current closed epic: Epic 117, Ingestion Jobs View
+- Todo: 31 / 150
+- Current closed epic: Epic 118, Backup/Restore View
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3260,14 +3260,26 @@ Tasks:
 
 ### Epic 118. Backup/Restore View
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `web/dashboard/src/app.js`
+- `web/dashboard/src/reporting_operations.js`
+- `scripts/backup_restore_view_check.py`
+- `make backup-restore-view-check`
 
 Tasks:
 
-- Show latest backup.
-- Show restore drill status.
-- Show offsite status.
-- Show RPO/RTO.
+- Show latest backup. Done: latest backup age/status renders from
+  `cortexdb_backup_latest_age_seconds`.
+- Show restore drill status. Done: restore-drill command and
+  `make backup-restore-production-pack-check` render in the operational panel.
+- Show offsite status. Done: offsite stage command and
+  `make backup-offsite-check` render in the operational panel.
+- Show RPO/RTO. Done: `dashboard_backup_restore.v1` exposes RPO budget/status
+  and RTO release evidence gate.
+- Evidence gate. Done: `make backup-restore-view-check`.
 
 ### Epic 119. Incident View
 

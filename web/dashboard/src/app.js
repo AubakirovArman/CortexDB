@@ -449,6 +449,7 @@ async function loadOperationalStatus() {
         validation,
         metrics,
         backup_posture: backup,
+        backup_restore_view: buildBackupRestoreView({ metrics, validation, backup }),
         slo_dashboard: buildSloDashboard({ health, compatibility, stats, validation, metrics, backup, incidents }),
         last_request_error: lastRequestIssue,
     };
@@ -717,6 +718,41 @@ function buildSloDashboard({ health, compatibility, stats, validation, metrics, 
             live_segments: stats.live_segments,
             wal_size_bytes: stats.wal_size_bytes,
         },
+    };
+}
+
+function buildBackupRestoreView({ metrics, validation, backup }) {
+    const backupAge = metrics.backup_latest_age_seconds;
+    const backupKnown = Number.isFinite(backupAge) && backupAge >= 0;
+    const rpoBudgetSeconds = 86400;
+    const rtoEvidenceGate = "make backup-restore-production-pack-check";
+    const validationOk = validation.ok === true;
+    const adminAvailable = backup.available === true;
+    return {
+        schema_version: "dashboard_backup_restore.v1",
+        latest_backup: {
+            available: backupKnown,
+            age_seconds: backupKnown ? backupAge : null,
+            status: backupKnown ? (backupAge <= rpoBudgetSeconds ? "within_rpo" : "stale") : "unknown",
+            evidence_source: "cortexdb_backup_latest_age_seconds",
+        },
+        restore_drill: {
+            status: adminAvailable && validationOk ? "operator_gate_ready" : "operator_gate_required",
+            evidence_gate: rtoEvidenceGate,
+            command: "cortexdb backup-drill",
+        },
+        offsite: {
+            status: adminAvailable && validationOk ? "operator_gate_ready" : "operator_gate_required",
+            evidence_gate: "make backup-offsite-check",
+            command: "cortexdb backup-offsite-stage",
+        },
+        rpo_rto: {
+            rpo_budget_seconds: rpoBudgetSeconds,
+            rpo_status: backupKnown ? (backupAge <= rpoBudgetSeconds ? "within_budget" : "stale") : "unknown",
+            rto_status: "drill_required_for_release",
+            rto_evidence_gate: rtoEvidenceGate,
+        },
+        note: "Dashboard shows backup/restore posture; backup, restore, and offsite publication remain operator CLI workflows.",
     };
 }
 

@@ -242,6 +242,7 @@
         const validation = body.validation || {};
         const metrics = body.metrics || {};
         const backup = body.backup_posture || {};
+        const backupRestore = body.backup_restore_view || {};
         const lastError = body.last_request_error || null;
         const validationErrors = validation.errors || [];
         const backupCommands = backup.commands || [];
@@ -265,6 +266,9 @@
             card("Backup posture", backup.available ? backup.mode || "operator_cli" : "admin required", backup.available ? "warn" : "bad"),
             card("Actor queue", queueCapacity > 0 ? `${queueDepth}/${queueCapacity}` : "n/a", queueTone),
             card("Latest backup", backupAgeKnown ? formatAge(backupAge) : "unknown", backupTone),
+            card("Restore drill", backupRestore.restore_drill?.status || "unknown", backupRestore.restore_drill?.status === "operator_gate_ready" ? "good" : "warn"),
+            card("Offsite status", backupRestore.offsite?.status || "unknown", backupRestore.offsite?.status === "operator_gate_ready" ? "good" : "warn"),
+            card("RPO/RTO", backupRestore.rpo_rto?.rpo_status || "unknown", backupRestore.rpo_rto?.rpo_status === "within_budget" ? "good" : "warn"),
             card("Checks", results.length),
             card("Incidents", incidents.length, incidents.length ? "bad" : "good"),
             card("Timeline events", timeline.length, timeline.length ? "warn" : "good"),
@@ -305,11 +309,20 @@
         if (backupCommands.length) {
             backupList.replaceChildren(
                 textItem(`${backup.evidence_gate || "backup evidence gate"} proves restore posture outside the browser.`),
+                textItem(`latest backup: ${backupRestore.latest_backup?.status || "unknown"} (${backupRestore.latest_backup?.age_seconds ?? "unknown"}s)`),
+                textItem(`restore drill: ${backupRestore.restore_drill?.command || "cortexdb backup-drill"} via ${backupRestore.restore_drill?.evidence_gate || "make backup-restore-production-pack-check"}`),
+                textItem(`offsite status: ${backupRestore.offsite?.command || "cortexdb backup-offsite-stage"} via ${backupRestore.offsite?.evidence_gate || "make backup-offsite-check"}`),
+                textItem(`RPO/RTO: RPO ${backupRestore.rpo_rto?.rpo_budget_seconds || 86400}s, RTO ${backupRestore.rpo_rto?.rto_status || "drill_required_for_release"}`),
                 ...backupCommands.map((item) => textItem(item)),
                 textItem(backup.message || "Backups are operator-controlled actions."),
             );
         } else {
-            backupList.replaceChildren(textItem(backup.message || "Backup posture not checked"));
+            backupList.replaceChildren(
+                textItem(backup.message || "Backup posture not checked"),
+                textItem(`restore drill: ${backupRestore.restore_drill?.evidence_gate || "make backup-restore-production-pack-check"}`),
+                textItem(`offsite status: ${backupRestore.offsite?.evidence_gate || "make backup-offsite-check"}`),
+                textItem(`RPO/RTO: RPO ${backupRestore.rpo_rto?.rpo_budget_seconds || 86400}s, RTO ${backupRestore.rpo_rto?.rto_status || "drill_required_for_release"}`),
+            );
         }
 
         if (validationErrors.length) {

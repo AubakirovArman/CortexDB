@@ -92,7 +92,8 @@ keeps routine health checks and operator context in one place:
 - storage stats such as current seq, checkpoint seq, live segments, MemTable
   cells, and WAL bytes;
 - actor queue depth and capacity from `/v1/metrics`;
-- latest backup age when available, plus the backup evidence gate;
+- backup/restore posture: latest backup age, restore-drill gate, offsite gate,
+  and RPO/RTO status;
 - validation status for manifest and WAL integrity;
 - recent request errors and incident timeline events.
 
@@ -143,6 +144,20 @@ Backups stay outside the browser as operator CLI workflows; the dashboard points
 to `make backup-restore-production-pack-check`, `cortexdb backup`,
 `cortexdb backup-drill`, `cortexdb backup-encrypted`, and
 `cortexdb backup-offsite-stage`.
+
+### Backup/Restore View
+
+The Backup/Restore View is rendered inside Operational status from
+`dashboard_backup_restore.v1`. It keeps destructive recovery actions outside the
+browser while making four release signals visible:
+
+- latest backup age from `cortexdb_backup_latest_age_seconds`;
+- restore drill status and `make backup-restore-production-pack-check`;
+- offsite status and `make backup-offsite-check`;
+- RPO/RTO posture, with RPO budget currently shown as 86400 seconds and RTO
+  tied to restore-drill evidence.
+
+`make backup-restore-view-check` validates this dashboard wiring.
 Cell, Ingest, and Cluster responses render their own report views for sequence
 numbers, lookup payload previews, ingest counts, job state, distributed mode,
 replication factor, and node list, so operators can review normal operations
