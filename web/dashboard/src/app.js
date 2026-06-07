@@ -443,6 +443,7 @@ async function loadOperationalStatus() {
         results,
         incidents,
         incident_timeline: buildIncidentTimeline({ results, incidents, validation, metrics, backup }),
+        incident_view: buildIncidentView({ incidents, validation, metrics, backup }),
         health,
         compatibility,
         stats,
@@ -582,6 +583,105 @@ function buildIncidentTimeline({ results, incidents, validation, metrics, backup
     return timeline;
 }
 
+function buildIncidentView({ incidents, validation, metrics, backup }) {
+    const requestErrors = incidents.filter((incident) => {
+        const status = Number(incident.status || 0);
+        return status !== 429 && incident.code !== "rate_limited";
+    });
+    const rateLimitEvents = incidents.filter((incident) => {
+        const status = Number(incident.status || 0);
+        return status === 429 || incident.code === "rate_limited";
+    });
+    const quotaRejected = metrics.quota_rejected || 0;
+    const queueDepth = Number(metrics.actor_queue_depth || 0);
+    const queueCapacity = Number(metrics.actor_queue_capacity || 0);
+    const queueRatio = queueCapacity > 0 ? queueDepth / queueCapacity : 0;
+    const backupAge = metrics.backup_latest_age_seconds;
+    const backupKnown = Number.isFinite(backupAge) && backupAge >= 0;
+    const backupStale = backupKnown && backupAge > 86400;
+    const storageWarnings = [];
+    const backupFailures = [];
+
+    if (validation.available && !validation.ok) {
+        storageWarnings.push({
+            code: "storage_validation_failed",
+            message: validation.message || "Storage validation reported errors.",
+            evidence: "cortexdb validate",
+        });
+    } else if (!validation.available && canUse(ACCESS_ADMIN)) {
+        storageWarnings.push({
+            code: "storage_validation_missing",
+            message: "Storage validation did not run.",
+            evidence: "GET /v1/validate",
+        });
+    }
+
+    if (backup.validation_ok === false) {
+        backupFailures.push({
+            code: "backup_blocked_by_validation",
+            message: "Backup posture is blocked by failed storage validation.",
+            evidence: "make backup-restore-production-pack-check",
+        });
+    }
+    if (backupStale) {
+        backupFailures.push({
+            code: "backup_stale",
+            message: `Latest backup evidence is ${backupAge}s old.`,
+            evidence: "cortexdb_backup_latest_age_seconds",
+        });
+    }
+    if (!backup.available) {
+        backupFailures.push({
+            code: "backup_admin_required",
+            message: "Backup posture needs admin access and operator CLI evidence.",
+            evidence: "make backup-restore-production-pack-check",
+        });
+    }
+
+    return {
+        schema_version: "dashboard_incident_view.v1",
+        errors: {
+            status: requestErrors.length ? "attention" : "clear",
+            count: requestErrors.length,
+            events: requestErrors,
+        },
+        rate_limits: {
+            status: rateLimitEvents.length || quotaRejected ? "attention" : (metrics.available ? "clear" : "unknown"),
+            request_rejected: metrics.request_rejected,
+            quota_rejected: quotaRejected,
+            principal_quota_requests_rejected: metrics.principal_quota_requests_rejected,
+            principal_quota_body_bytes_rejected: metrics.principal_quota_body_bytes_rejected,
+            principal_quota_queue_rejected: metrics.principal_quota_queue_rejected,
+            events: rateLimitEvents,
+        },
+        actor_busy: {
+            status: metrics.principal_quota_queue_rejected > 0 || (queueCapacity > 0 && queueDepth >= queueCapacity)
+                ? "busy"
+                : (queueRatio >= 0.8 ? "near_capacity" : (metrics.available ? "clear" : "unknown")),
+            queue_depth: queueDepth,
+            queue_capacity: queueCapacity,
+            queue_ratio: Number(queueRatio.toFixed(2)),
+            evidence_source: "cortexdb_actor_queue_depth",
+        },
+        storage_warnings: {
+            status: storageWarnings.length ? "attention" : "clear",
+            count: storageWarnings.length,
+            events: storageWarnings,
+        },
+        backup_failures: {
+            status: backupFailures.length ? "attention" : "clear",
+            count: backupFailures.length,
+            events: backupFailures,
+        },
+        operator_actions: [
+            "Check Request issue for the last failed API call.",
+            "Use /v1/metrics for quota and actor queue pressure.",
+            "Run cortexdb validate before checkpoint, compact, backup, or restore work.",
+            "Run make backup-restore-production-pack-check when backup evidence is stale or unknown.",
+        ],
+    };
+}
+
 function resultByLabel(results, label) {
     return results.find((result) => result.label === label) || null;
 }
@@ -647,6 +747,9 @@ function summarizeMetricsResult(results) {
         request_count: requestCount,
         request_rejected: requestRejected,
         quota_rejected: quotaRejected,
+        principal_quota_requests_rejected: Number(body.principal_quota_requests_rejected || 0),
+        principal_quota_body_bytes_rejected: Number(body.principal_quota_body_bytes_rejected || 0),
+        principal_quota_queue_rejected: Number(body.principal_quota_queue_rejected || 0),
         validation_failures: validationFailures,
         request_duration_ms_total: durationTotal,
         mean_latency_ms: requestCount > 0 ? durationTotal / requestCount : null,

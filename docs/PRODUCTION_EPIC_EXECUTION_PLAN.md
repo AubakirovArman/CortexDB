@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 118 / 150
+- Done: 119 / 150
 - Partial: 1 / 150
-- Todo: 31 / 150
-- Current closed epic: Epic 118, Backup/Restore View
+- Todo: 30 / 150
+- Current closed epic: Epic 119, Incident View
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3283,15 +3283,28 @@ Tasks:
 
 ### Epic 119. Incident View
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `web/dashboard/src/app.js`
+- `web/dashboard/src/reporting_operations.js`
+- `scripts/incident_view_check.py`
+- `make incident-view-check`
 
 Tasks:
 
-- Show errors.
-- Show rate limits.
-- Show actor busy status.
-- Show storage warnings.
-- Show backup failures.
+- Show errors. Done: `dashboard_incident_view.v1` summarizes failed dashboard
+  API calls separately from rate-limit shaped failures.
+- Show rate limits. Done: the view exposes request rejection, aggregate quota
+  rejection, and per-principal request/body/queue quota rejection counters.
+- Show actor busy status. Done: actor queue depth, capacity, ratio, and busy /
+  near-capacity state render from `/v1/metrics`.
+- Show storage warnings. Done: validation failures and missing admin validation
+  checks render as storage warning events with operator evidence.
+- Show backup failures. Done: validation-blocked backup posture, stale backup
+  evidence, and missing admin/operator evidence render as backup failure events.
+- Evidence gate. Done: `make incident-view-check`.
 
 ### Epic 120. Dashboard Role-based UI
 

@@ -223,15 +223,18 @@
         const results = body.results || [];
         const incidents = body.incidents || [];
         const timeline = body.incident_timeline || [];
+        const incidentView = body.incident_view || {};
         const summary = document.createElement("div");
         const details = document.createElement("div");
         const incidentList = document.createElement("ul");
+        const incidentViewList = document.createElement("ul");
         const timelineList = document.createElement("div");
         const backupList = document.createElement("ul");
         const checkList = document.createElement("ul");
         summary.className = "report-grid";
         details.className = "report-grid";
         incidentList.className = "report-list compact";
+        incidentViewList.className = "report-list compact";
         timelineList.className = "report-list";
         backupList.className = "report-list compact";
         checkList.className = "report-list compact";
@@ -269,6 +272,11 @@
             card("Restore drill", backupRestore.restore_drill?.status || "unknown", backupRestore.restore_drill?.status === "operator_gate_ready" ? "good" : "warn"),
             card("Offsite status", backupRestore.offsite?.status || "unknown", backupRestore.offsite?.status === "operator_gate_ready" ? "good" : "warn"),
             card("RPO/RTO", backupRestore.rpo_rto?.rpo_status || "unknown", backupRestore.rpo_rto?.rpo_status === "within_budget" ? "good" : "warn"),
+            card("Incident errors", incidentView.errors?.count ?? incidents.length, incidentView.errors?.count ? "bad" : "good"),
+            card("Rate limits", incidentView.rate_limits?.status || "unknown", incidentView.rate_limits?.status === "attention" ? "warn" : "good"),
+            card("Actor busy", incidentView.actor_busy?.status || "unknown", incidentView.actor_busy?.status === "busy" ? "bad" : (incidentView.actor_busy?.status === "near_capacity" ? "warn" : "good")),
+            card("Storage warnings", incidentView.storage_warnings?.count ?? validationErrors.length, incidentView.storage_warnings?.count ? "bad" : "good"),
+            card("Backup failures", incidentView.backup_failures?.count ?? 0, incidentView.backup_failures?.count ? "bad" : "good"),
             card("Checks", results.length),
             card("Incidents", incidents.length, incidents.length ? "bad" : "good"),
             card("Timeline events", timeline.length, timeline.length ? "warn" : "good"),
@@ -293,6 +301,8 @@
             card("Storage formats", compatibility.storage_formats?.length ?? "n/a"),
             card("Migration release", compatibility.migration_current_release || "n/a"),
         );
+
+        incidentViewList.replaceChildren(...incidentViewRows(incidentView).map(textItem));
 
         if (incidents.length) {
             incidentList.replaceChildren(...incidents.map((item) => textItem(`${item.label}: ${item.message}`)));
@@ -342,6 +352,8 @@
             compatibilityList,
             checkList,
             backupList,
+            card("Incident view", "errors / rate limits / actor busy / storage warnings / backup failures", incidentView.backup_failures?.count || incidentView.storage_warnings?.count ? "bad" : "good"),
+            incidentViewList,
             card("Incident timeline", "audit / rate / storage / backup", timeline.length ? "warn" : "good"),
             timelineList,
             incidentList,
@@ -364,6 +376,33 @@
         ];
         list.replaceChildren(...rows);
         return list;
+    }
+
+    function incidentViewRows(view) {
+        if (!view || view.schema_version !== "dashboard_incident_view.v1") {
+            return ["Incident view not available"];
+        }
+        const rate = view.rate_limits || {};
+        const actor = view.actor_busy || {};
+        const storage = view.storage_warnings || {};
+        const backup = view.backup_failures || {};
+        const rows = [
+            `errors: ${view.errors?.status || "unknown"} (${view.errors?.count ?? 0})`,
+            `rate limits: ${rate.status || "unknown"}; request rejected ${rate.request_rejected ?? 0}; quota rejected ${rate.quota_rejected ?? 0}`,
+            `actor busy: ${actor.status || "unknown"}; queue ${actor.queue_depth ?? 0}/${actor.queue_capacity ?? 0}`,
+            `storage warnings: ${storage.status || "unknown"} (${storage.count ?? 0})`,
+            `backup failures: ${backup.status || "unknown"} (${backup.count ?? 0})`,
+        ];
+        for (const event of storage.events || []) {
+            rows.push(`storage warning: ${event.code || "warning"} - ${event.message || "review storage validation"}`);
+        }
+        for (const event of backup.events || []) {
+            rows.push(`backup failure: ${event.code || "warning"} - ${event.message || "review backup evidence"}`);
+        }
+        for (const action of view.operator_actions || []) {
+            rows.push(`operator action: ${action}`);
+        }
+        return rows;
     }
 
     function formatAge(seconds) {

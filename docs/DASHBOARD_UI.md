@@ -95,7 +95,7 @@ keeps routine health checks and operator context in one place:
 - backup/restore posture: latest backup age, restore-drill gate, offsite gate,
   and RPO/RTO status;
 - validation status for manifest and WAL integrity;
-- recent request errors and incident timeline events.
+- recent request errors, incident summary, and incident timeline events.
 
 `make dashboard-operational-status-check` validates these source markers. The
 view is intentionally read-only: it points operators to the matching CLI gates
@@ -158,6 +158,26 @@ browser while making four release signals visible:
   tied to restore-drill evidence.
 
 `make backup-restore-view-check` validates this dashboard wiring.
+
+### Incident View
+
+The Incident View is rendered inside Operational status from
+`dashboard_incident_view.v1`. It is a category summary for current dashboard
+evidence, while the Incident Timeline remains the chronological triage list.
+The view shows errors, rate limits, actor busy status, storage warnings, and
+backup failures:
+
+- request errors from failed dashboard API calls;
+- rate-limit and quota pressure from request rejection and principal quota
+  metrics;
+- actor busy posture from `cortexdb_actor_queue_depth` and queue capacity;
+- storage warnings from validation status and validation errors;
+- backup failures from validation-blocked backup posture, stale backup evidence,
+  or missing admin/operator evidence.
+
+`make incident-view-check` validates this dashboard wiring. The view is read-only
+and points operators to `/v1/metrics`, `cortexdb validate`, and
+`make backup-restore-production-pack-check` for deeper evidence.
 Cell, Ingest, and Cluster responses render their own report views for sequence
 numbers, lookup payload previews, ingest counts, job state, distributed mode,
 replication factor, and node list, so operators can review normal operations
