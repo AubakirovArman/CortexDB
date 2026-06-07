@@ -10,11 +10,17 @@ from pathlib import Path
 
 REQUIRED_MARKERS = {
     "docs/COMPARISONS.md": [
+        "## Epic 138 Comparison Docs v2 Contract",
+        "Compare with vector DB",
+        "Compare with RAG storage",
+        "Compare with Postgres",
+        "Compare with memory frameworks",
+        "Compare with document search",
         "PostgreSQL / SQL databases",
         "Vector databases",
         "Classic RAG stacks",
         "Agent memory frameworks",
-        "Search engines",
+        "Document search engines",
         "ContextPack output",
         "VERIFY FACT",
         "does not claim",
@@ -56,7 +62,7 @@ def main() -> int:
                 failures.append(f"{file_name}: missing {marker!r}")
 
     report = {
-        "schema_version": "cortexdb.comparison_docs.report.v1",
+        "schema_version": "cortexdb.comparison_docs.report.v2",
         "status": "failed" if failures else "passed",
         "files_checked": sorted(REQUIRED_MARKERS),
         "failures": failures,

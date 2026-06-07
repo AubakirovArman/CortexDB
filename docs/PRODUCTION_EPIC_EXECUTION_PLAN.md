@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 137 / 150
+- Done: 138 / 150
 - Partial: 1 / 150
-- Todo: 12 / 150
-- Current closed epic: Epic 137, LongMemEval Evidence Page
+- Todo: 11 / 150
+- Current closed epic: Epic 138, Comparison Docs v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3928,15 +3928,36 @@ Boundary:
 
 ### Epic 138. Comparison Docs v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/COMPARISONS.md`
+- `docs/RAG_VS_CORTEXDB.md`
+- `docs/DOCUMENTATION_INDEX.md`
+- `scripts/comparison_docs_check.py`
+- `make comparison-docs-check`
+- `target/comparison-docs/report.json`
 
 Tasks:
 
-- Compare with vector DB.
-- Compare with RAG storage.
-- Compare with Postgres.
-- Compare with memory frameworks.
-- Compare with document search.
+- Compare with vector DB. Done: `COMPARISONS.md` distinguishes raw
+  ANN/vector retrieval from governed ContextPack and VERIFY output.
+- Compare with RAG storage. Done: the v2 contract compares chunk storage with a
+  durable context database and typed retrieval contracts.
+- Compare with Postgres. Done: the page positions CortexDB beside SQL for agent
+  context retrieval, not as an operational SQL replacement.
+- Compare with memory frameworks. Done: the page positions CortexDB as the
+  durable queryable memory backend under agent runtimes, not the orchestration
+  layer itself.
+- Compare with document search. Done: the page separates broad portal
+  search/faceting from cited context-pack workflows.
+
+Boundary:
+
+- This is a neutral fit guide. It does not claim CortexDB replaces SQL
+  databases, vector databases, RAG stacks, agent frameworks, or document search
+  engines.
 
 ### Epic 139. Contributor Onboarding v2
 

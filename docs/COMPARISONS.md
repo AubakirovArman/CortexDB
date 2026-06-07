@@ -13,6 +13,19 @@ Run the comparison-doc gate:
 make comparison-docs-check
 ```
 
+## Epic 138 Comparison Docs v2 Contract
+
+This page closes the comparison-docs epic by covering five adjacent stacks
+without replacement claims:
+
+| Epic task | Fit question | CortexDB boundary |
+| --- | --- | --- |
+| Compare with vector DB | Do you need raw ANN/vector retrieval or governed context output? | CortexDB includes vector foundations, but beta value is policy-filtered ContextPack and VERIFY output. |
+| Compare with RAG storage | Do you need a chunk store or a durable context database with explicit retrieval contracts? | CortexDB stores knowledge cells and emits typed, cited context packages; it is not a generic object store. |
+| Compare with Postgres | Do you need relational transactions/reporting or agent context assembly over curated cells? | CortexDB should sit beside SQL for agent retrieval, not replace operational SQL. |
+| Compare with memory frameworks | Do you need orchestration/session memory or a durable queryable memory backend? | CortexDB is the storage/retrieval layer under agent runtimes, not the agent runtime itself. |
+| Compare with document search | Do you need broad portal search/faceting or cited context packs for agent workflows? | CortexDB has search foundations, but dedicated search engines remain the better fit for general search portals. |
+
 ## Short Version
 
 | Stack | Strong fit | CortexDB difference | Practical guidance |
@@ -21,7 +34,7 @@ make comparison-docs-check
 | Vector databases | High-throughput nearest-neighbor retrieval and embedding-centric search. | CortexDB treats vectors as one retrieval signal behind policy, citations, verification, and token-budget packing. | Use vector DBs when raw ANN retrieval is the product; use CortexDB when the output must be a governed context package. |
 | Classic RAG stacks | Fast prototyping with chunking, embeddings, and prompt assembly. | CortexDB makes retrieval constraints, citations, anomalies, and verification explicit in typed outputs. | Use CortexDB when repeated agent workflows need durable memory, scoped retrieval, and deterministic evidence fields. |
 | Agent memory frameworks | Session memory, tool orchestration, and application-level memory flows. | CortexDB provides a durable database core and query/verification surface rather than agent orchestration. | Use CortexDB as the storage/retrieval layer under agent frameworks. |
-| Search engines | Lexical search, ranking, faceting, observability over large indexed corpora. | CortexDB has search foundations, but the beta product centers on ContextPack generation and verification. | Use dedicated search engines for broad search portals; use CortexDB for context DB workflows. |
+| Document search engines | Lexical search, ranking, faceting, observability over large indexed corpora. | CortexDB has search foundations, but the beta product centers on ContextPack generation and verification. | Use dedicated search engines for broad search portals; use CortexDB for context DB workflows. |
 
 ## What CortexDB Adds
 
