@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 146 / 150
+- Done: 147 / 150
 - Partial: 1 / 150
-- Todo: 3 / 150
-- Current closed epic: Epic 146, Graph Retrieval
+- Todo: 2 / 150
+- Current closed epic: Epic 147, Graph Verification
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -4222,12 +4222,29 @@ Boundary:
 
 ### Epic 147. Graph Verification
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/verification/graph.rs`
+- `crates/cortex-engine/tests/verification_graph_tests.rs`
+- `docs/VERIFY_FACT.md`
+- `make verification-quality-check`
 
 Tasks:
 
-- Make Verify use relation graph.
-- Make Verify use source support edges.
+- Make Verify use relation graph. Done: `verify_fact_aql` includes readable
+  contradiction relation cells from the graph/conflict layer and prevents those
+  relation cells from also being counted as supporting evidence.
+- Make Verify use source support edges. Done: readable
+  `source_supports_fact` edges enrich existing supporting evidence with
+  citation/source metadata and higher source-trust scores without creating
+  support by themselves.
+
+Boundary:
+
+- Graph verification is deterministic metadata enrichment over local visible
+  cells. It is not legal-grade verification or LLM-based reasoning.
 
 ### Epic 148. Agent Session Model
 

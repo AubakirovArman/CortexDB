@@ -203,6 +203,34 @@ the readable `source_cell_id` evidence cell. If the source cell is outside the
 caller's `AgentView`, the relation remains visible only through its own
 readable scope and does not leak hidden evidence facets.
 
+## Graph Verification
+
+`VERIFY FACT` also uses the local knowledge graph relation layer:
+
+- `predicate=contradicts`, `predicate=fact_contradicts_fact`, and compatible
+  aliases are treated as graph contradiction evidence and are not counted as
+  supporting evidence just because the relation object contains the fact text.
+- `predicate=source_supports_fact` edges can enrich existing supporting
+  evidence with citation/source metadata and a higher source-trust score.
+
+Example source-support edge:
+
+```text
+scope=project:investments
+status=ready
+type=relation
+source=ifc:disclosure-001
+source_trust_q16=60000
+
+subject=source:ifc:disclosure-001
+predicate=source_supports_fact
+object=cell:42
+```
+
+This edge does not create support by itself. The fact cell still needs to match
+the verified claim text. The relation only explains and strengthens provenance
+for evidence the caller can already read through `AgentView`.
+
 ## Report Exports
 
 `VerificationReport` has engine-level stable exports:

@@ -906,6 +906,7 @@ context-pack-quality-v3-check:
 
 verification-quality-check:
 	cargo test -p cortex-engine --test verification_tests
+	cargo test -p cortex-engine --test verification_graph_tests
 	cargo test -p cortex-engine --test verification_guards
 	cargo test -p cortex-engine --test verification_natural_language
 	cargo test -p cortex-engine --test verification_evaluation

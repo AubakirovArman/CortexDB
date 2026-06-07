@@ -11,6 +11,7 @@ use crate::source_trust::{SourceTrust, SourceTrustCategory};
 mod conflict_index;
 mod contradiction;
 pub mod export;
+mod graph;
 mod guards;
 pub mod numeric;
 pub mod temporal;
@@ -18,6 +19,10 @@ pub mod temporal;
 pub use conflict_index::{ConflictRecord, ContradictionRelationOptions};
 use contradiction::{contradiction_match, tokenize_support_text};
 pub use export::VerificationReportExportFormat;
+use graph::{
+    add_graph_relation_contradictions, enrich_evidence_from_source_support_edges,
+    is_graph_contradiction_payload,
+};
 use guards::{
     citation_guard, numeric_mismatch, numeric_mismatch_conflict, numeric_mismatch_guard,
     stale_fact_guard, temporal_stale,
@@ -178,6 +183,8 @@ impl Database {
                 contradicting_evidence.push(item);
             }
         }
+        add_graph_relation_contradictions(self, &plan.fact, view, &mut contradicting_evidence);
+        enrich_evidence_from_source_support_edges(self, view, &mut evidence);
         sort_evidence(&mut evidence);
         sort_evidence(&mut contradicting_evidence);
         evidence.truncate(8);
@@ -222,6 +229,9 @@ fn evidence_for_version(
     let metadata = CellMetadata::from_payload(payload);
     let fact_terms = tokenize(fact);
     if !view.can_read_scope(scope_id(&metadata.scope)) {
+        return None;
+    }
+    if is_graph_contradiction_payload(payload) {
         return None;
     }
     if has_matching_contradiction(payload, &fact_terms)
