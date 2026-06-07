@@ -1195,6 +1195,9 @@ comparison-docs-check:
 agent-memory-demo-check:
 	python3 scripts/agent_memory_demo_check.py --report "$(AGENT_MEMORY_DEMO_REPORT)"
 
+agent-session-check:
+	cargo test -p cortex-engine --test agent_session_tests
+
 memory-quality-benchmark-check:
 	python3 scripts/memory_quality_benchmark_check.py --report "$(MEMORY_QUALITY_BENCHMARK_REPORT)"
 

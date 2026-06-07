@@ -113,6 +113,10 @@ pub enum EngineError {
     Io(#[from] std::io::Error),
     #[error("invalid database operation")]
     InvalidOperation,
+    #[error("invalid agent session: {0}")]
+    InvalidAgentSession(String),
+    #[error("agent session expired: {0}")]
+    AgentSessionExpired(String),
     #[error("engine feature is disabled: {0}")]
     FeatureDisabled(&'static str),
     #[error("missing WAL section: {0}")]
@@ -170,6 +174,8 @@ impl EngineError {
             Self::AqlBind(BindError::UnsupportedComparator) => EngineErrorCode::UnsupportedOperator,
             Self::AqlBind(_) => EngineErrorCode::InvalidAql,
             Self::InvalidOperation
+            | Self::InvalidAgentSession(_)
+            | Self::AgentSessionExpired(_)
             | Self::FeatureDisabled(_)
             | Self::InvalidAnnFixture(_)
             | Self::InvalidAnnCorpus(_)

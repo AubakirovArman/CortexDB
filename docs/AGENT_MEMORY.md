@@ -73,6 +73,39 @@ model supports useful/not-useful votes, per-source-cell scores, and stats.
 
 ## Memory Classes
 
+### Agent Sessions
+
+Agent sessions are explicit short-lived memory cells with a shared
+`session_id`. They are useful for task-local context that should be queryable
+during an active workflow without becoming hidden global memory.
+
+```rust
+let session = db.start_agent_session(
+    &view,
+    "agent:finance",
+    b"review capex and schedule evidence first",
+    3600,
+    now,
+)?;
+db.remember_session_memory(&session, &view, b"temporary note", None, now + 60)?;
+let cells = db.retrieve_session_cells(&session.session_id, &view, now + 120);
+```
+
+Session cells are stored through the same WAL/MemTable path as other memory
+cells. Their payload header includes:
+
+```text
+type=memory
+memory_type=workflow_result | observation
+session_id=agent-7-session-42
+session_kind=context | temporary_memory
+ttl_seconds=3600
+created_unix_seconds=1760000000
+```
+
+Retrieval is scope-checked against `AgentView`, filtered by `session_id`, and
+excludes cells whose TTL has expired at the requested `now_unix_seconds`.
+
 ### Long-Term Memory
 
 Long-term memory is a durable memory cell with no TTL. It survives restart,
@@ -153,6 +186,9 @@ examples/demo/agent_memory/run.sh
   without floating-point scoring.
 - **Feedback ordering** — ContextPack candidate ordering uses durable feedback
   scores before packing.
+- **Agent sessions** — explicit `session_id` memory cells provide bounded
+  task-local context, temporary memory, TTL filtering, and session-scoped
+  retrieval through the normal WAL/replay path.
 - **End-to-end memory demo** — `examples/demo/agent_memory` exercises CLI
   remember, context, and verify flows, while the gate also runs TTL/decay and
   feedback regression tests.

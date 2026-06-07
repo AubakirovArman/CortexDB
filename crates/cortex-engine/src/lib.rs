@@ -53,6 +53,7 @@ pub mod repair;
 pub mod replay;
 pub mod replication;
 pub mod search;
+pub mod session;
 pub mod source_trust;
 pub mod tool_registry;
 pub mod typed_body;
@@ -126,6 +127,7 @@ pub use replay::{
 };
 pub use replication::*;
 pub use search::*;
+pub use session::{AgentSession, SessionMemory};
 pub use source_trust::{
     parse_source_trust_class, SourceTrust, SourceTrustBasis, SourceTrustCategory, SourceTrustClass,
     DEFAULT_SOURCE_TRUST_Q16, EXTRACTED_SOURCE_TRUST_Q16, INFERRED_SOURCE_TRUST_Q16,

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 147 / 150
+- Done: 148 / 150
 - Partial: 1 / 150
-- Todo: 2 / 150
-- Current closed epic: Epic 147, Graph Verification
+- Todo: 1 / 150
+- Current closed epic: Epic 148, Agent Session Model
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -4248,14 +4248,32 @@ Boundary:
 
 ### Epic 148. Agent Session Model
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/session.rs`
+- `crates/cortex-engine/tests/agent_session_tests.rs`
+- `docs/AGENT_MEMORY.md`
+- `make agent-session-check`
 
 Tasks:
 
-- Add session context.
-- Add temporary memory.
-- Add session TTL.
-- Add session-scoped retrieval.
+- Add session context. Done: `Database::start_agent_session` creates an
+  explicit durable `type=memory` context cell with `session_id` and
+  `session_kind=context`.
+- Add temporary memory. Done: `Database::remember_session_memory` writes
+  session-scoped temporary observation cells through WAL/MemTable.
+- Add session TTL. Done: session and temporary memory writes require positive
+  TTL, respect `AgentView.max_ttl_seconds`, and cannot outlive the session.
+- Add session-scoped retrieval. Done: `Database::retrieve_session_cells`
+  filters by `session_id`, readable scope, and TTL at the caller supplied
+  timestamp.
+
+Boundary:
+
+- This is explicit local session memory. It is not an external identity
+  session provider, browser session store, or autonomous hidden memory.
 
 ### Epic 149. Feedback Learning Loop
 
