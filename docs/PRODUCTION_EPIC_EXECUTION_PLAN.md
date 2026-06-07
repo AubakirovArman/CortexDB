@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 144 / 150
+- Done: 145 / 150
 - Partial: 1 / 150
-- Todo: 5 / 150
-- Current closed epic: Epic 144, Tool Recommendation in ContextPack
+- Todo: 4 / 150
+- Current closed epic: Epic 145, Knowledge Graph Layer v1
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -4163,14 +4163,34 @@ Boundary:
 
 ### Epic 145. Knowledge Graph Layer v1
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/graph.rs`
+- `crates/cortex-engine/tests/graph_tests.rs`
+- `docs/KNOWLEDGE_GRAPH.md`
+- `scripts/knowledge_graph_check.py`
+- `make knowledge-graph-check`
 
 Tasks:
 
-- Add entity cells.
-- Add relation cells.
-- Add source-supports-fact edges.
-- Add fact-contradicts-fact edges.
+- Add entity cells. Done: `type=entity` cells are indexed by exact `name` and
+  expose optional `kind` plus source metadata through `GraphEntity`.
+- Add relation cells. Done: `type=relation` cells are indexed by `subject` and
+  `object` and returned as deterministic `GraphEdge` values.
+- Add source-supports-fact edges. Done: `GraphEdgeKind::SourceSupportsFact`
+  classifies `source_supports_fact` relation cells, and the engine exposes
+  `graph_source_supports_fact_edges`.
+- Add fact-contradicts-fact edges. Done:
+  `GraphEdgeKind::FactContradictsFact` classifies
+  `fact_contradicts_fact` and legacy `contradicts` relation cells, and the
+  engine exposes `graph_fact_contradicts_fact_edges`.
+
+Boundary:
+
+- This is a local snapshot projection over visible cells. It is not a persisted
+  graph index, a multi-hop retrieval planner, or production GraphRAG.
 
 ### Epic 146. Graph Retrieval
 

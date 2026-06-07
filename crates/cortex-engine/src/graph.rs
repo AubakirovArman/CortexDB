@@ -24,6 +24,15 @@ pub struct GraphEdge {
     pub subject: String,
     pub predicate: String,
     pub object: String,
+    pub kind: GraphEdgeKind,
+}
+
+/// Stable graph edge categories used by higher-level retrieval and verification.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GraphEdgeKind {
+    SourceSupportsFact,
+    FactContradictsFact,
+    Other,
 }
 
 /// Cells grouped by a source identifier.
@@ -69,6 +78,16 @@ impl Database {
     /// Find visible cells associated with a source identifier.
     pub fn graph_cells_for_source(&self, source_id: &str) -> Vec<CellId> {
         self.knowledge_graph_index().cells_for_source(source_id)
+    }
+
+    /// Find visible relation cells that connect a source to a fact.
+    pub fn graph_source_supports_fact_edges(&self) -> Vec<GraphEdge> {
+        self.knowledge_graph_index().source_supports_fact_edges()
+    }
+
+    /// Find visible relation cells that mark one fact as contradicting another.
+    pub fn graph_fact_contradicts_fact_edges(&self) -> Vec<GraphEdge> {
+        self.knowledge_graph_index().fact_contradicts_fact_edges()
     }
 
     /// Find all Tool cells in the database.
@@ -143,6 +162,14 @@ impl KnowledgeGraphIndex {
             .collect()
     }
 
+    pub fn source_supports_fact_edges(&self) -> Vec<GraphEdge> {
+        self.edges_by_kind(GraphEdgeKind::SourceSupportsFact)
+    }
+
+    pub fn fact_contradicts_fact_edges(&self) -> Vec<GraphEdge> {
+        self.edges_by_kind(GraphEdgeKind::FactContradictsFact)
+    }
+
     fn index_entity(&mut self, cell_id: CellId, payload: &[u8], metadata: &CellMetadata) {
         let entity = EntityBody::parse(payload);
         let Some(name) = entity.name.filter(|name| !name.trim().is_empty()) else {
@@ -169,11 +196,13 @@ impl KnowledgeGraphIndex {
         if subject.trim().is_empty() || object.trim().is_empty() {
             return;
         }
+        let predicate = relation.predicate.unwrap_or_default();
         let edge = GraphEdge {
             relation_cell_id: cell_id,
             subject: subject.clone(),
-            predicate: relation.predicate.unwrap_or_default(),
+            predicate: predicate.clone(),
             object: object.clone(),
+            kind: GraphEdgeKind::from_predicate(&predicate),
         };
         self.edges_by_entity
             .entry(subject)
@@ -207,4 +236,42 @@ impl KnowledgeGraphIndex {
             });
         }
     }
+
+    fn edges_by_kind(&self, kind: GraphEdgeKind) -> Vec<GraphEdge> {
+        let mut edges = self
+            .edges_by_entity
+            .values()
+            .flat_map(|edges| edges.iter())
+            .filter(|edge| edge.kind == kind)
+            .cloned()
+            .collect::<Vec<_>>();
+        edges.sort_by_key(|edge| {
+            (
+                edge.relation_cell_id,
+                edge.subject.clone(),
+                edge.predicate.clone(),
+                edge.object.clone(),
+            )
+        });
+        edges.dedup_by_key(|edge| edge.relation_cell_id);
+        edges
+    }
+}
+
+impl GraphEdgeKind {
+    pub fn from_predicate(predicate: &str) -> Self {
+        match normalize_predicate(predicate).as_str() {
+            "source_supports_fact" | "supports_fact" | "source_supports" => {
+                Self::SourceSupportsFact
+            }
+            "fact_contradicts_fact" | "contradicts_fact" | "contradicts" => {
+                Self::FactContradictsFact
+            }
+            _ => Self::Other,
+        }
+    }
+}
+
+fn normalize_predicate(predicate: &str) -> String {
+    predicate.trim().to_lowercase().replace([' ', '-'], "_")
 }

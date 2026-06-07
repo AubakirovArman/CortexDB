@@ -1,5 +1,5 @@
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
-use cortex_engine::Database;
+use cortex_engine::{Database, GraphEdgeKind};
 
 fn entity_cell(name: &str, kind: &str, source: &str) -> KnowledgeCell {
     let body = format!("name={name}\nkind={kind}");
@@ -160,6 +160,67 @@ fn knowledge_graph_index_groups_entities_edges_and_sources() {
 
     let source_cells = index.cells_for_source("wb:solar-001");
     assert_eq!(source_cells, vec![CellId(1), CellId(2)]);
+}
+
+#[test]
+fn knowledge_graph_indexes_source_supports_fact_edges() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        relation_cell("source:ifc:solar-001", "source_supports_fact", "cell:42"),
+    )
+    .unwrap();
+    db.put_knowledge_cell(
+        CellId(2),
+        relation_cell("source:ifc:wind-001", "located_in", "Kazakhstan"),
+    )
+    .unwrap();
+
+    let edges = db.graph_source_supports_fact_edges();
+    assert_eq!(edges.len(), 1);
+    assert_eq!(edges[0].relation_cell_id, CellId(1));
+    assert_eq!(edges[0].subject, "source:ifc:solar-001");
+    assert_eq!(edges[0].predicate, "source_supports_fact");
+    assert_eq!(edges[0].object, "cell:42");
+    assert_eq!(edges[0].kind, GraphEdgeKind::SourceSupportsFact);
+}
+
+#[test]
+fn knowledge_graph_indexes_fact_contradicts_fact_edges() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        relation_cell("cell:42", "fact_contradicts_fact", "cell:43"),
+    )
+    .unwrap();
+    db.put_knowledge_cell(CellId(2), relation_cell("cell:44", "supports", "cell:45"))
+        .unwrap();
+
+    let edges = db.graph_fact_contradicts_fact_edges();
+    assert_eq!(edges.len(), 1);
+    assert_eq!(edges[0].relation_cell_id, CellId(1));
+    assert_eq!(edges[0].subject, "cell:42");
+    assert_eq!(edges[0].predicate, "fact_contradicts_fact");
+    assert_eq!(edges[0].object, "cell:43");
+    assert_eq!(edges[0].kind, GraphEdgeKind::FactContradictsFact);
+}
+
+#[test]
+fn graph_edge_kind_normalizes_predicate_aliases() {
+    assert_eq!(
+        GraphEdgeKind::from_predicate("source-supports-fact"),
+        GraphEdgeKind::SourceSupportsFact
+    );
+    assert_eq!(
+        GraphEdgeKind::from_predicate(" CONTRADICTS "),
+        GraphEdgeKind::FactContradictsFact
+    );
+    assert_eq!(
+        GraphEdgeKind::from_predicate("located_in"),
+        GraphEdgeKind::Other
+    );
 }
 
 #[test]
