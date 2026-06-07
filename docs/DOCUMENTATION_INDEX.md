@@ -14,6 +14,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`USE_CASE_PACKS.md`](USE_CASE_PACKS.md) - runnable legal, financial, and technical beta scenarios.
 - [`CONTRIBUTOR_ONBOARDING.md`](CONTRIBUTOR_ONBOARDING.md) - 15-minute first contributor path.
 - [`GOOD_FIRST_ISSUES.md`](GOOD_FIRST_ISSUES.md) - bounded starter issue map.
+- [`COMMUNITY_ROADMAP.md`](COMMUNITY_ROADMAP.md) - community roadmap board with milestones, blockers, and experimental tracks.
 - [`PUBLIC_BENCHMARKS.md`](PUBLIC_BENCHMARKS.md) - release-by-release public benchmark history.
 - [`PUBLIC_RETRIEVAL_BENCHMARKS.md`](PUBLIC_RETRIEVAL_BENCHMARKS.md) - public retrieval benchmark table, dataset sizes, exact-vs-ANN boundary, and limitations.
 - [`LOAD_TESTING_SUITE.md`](LOAD_TESTING_SUITE.md) - local read/write/context/verify/ingest/mixed-tenant HTTP load suite.

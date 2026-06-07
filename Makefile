@@ -24,7 +24,7 @@
 .PHONY: package-manager-feasibility-check
 .PHONY: beta-landing-check
 .PHONY: use-case-pack-check
-.PHONY: contributor-onboarding-check
+.PHONY: contributor-onboarding-check community-roadmap-check
 .PHONY: public-benchmarks-check public-retrieval-benchmark-page-check
 .PHONY: comparison-docs-check
 .PHONY: agent-memory-demo-check
@@ -695,6 +695,7 @@ BETA_RELEASE_ARCHIVE ?= $(BETA_RELEASE_ROOT)/evidence.tar.gz
 BETA_LANDING_REPORT ?= target/beta-landing/report.json
 USE_CASE_PACK_REPORT ?= target/use-case-packs/report.json
 CONTRIBUTOR_ONBOARDING_REPORT ?= target/contributor-onboarding/report.json
+COMMUNITY_ROADMAP_REPORT ?= target/community-roadmap/report.json
 PUBLIC_BENCHMARKS_REPORT ?= target/public-benchmarks/report.json
 PUBLIC_RETRIEVAL_BENCHMARKS_REPORT ?= target/public-retrieval-benchmarks/report.json
 COMPARISON_DOCS_REPORT ?= target/comparison-docs/report.json
@@ -1173,6 +1174,9 @@ use-case-pack-check:
 
 contributor-onboarding-check:
 	python3 scripts/contributor_onboarding_check.py --report "$(CONTRIBUTOR_ONBOARDING_REPORT)"
+
+community-roadmap-check:
+	python3 scripts/community_roadmap_check.py --report "$(COMMUNITY_ROADMAP_REPORT)"
 
 public-retrieval-benchmark-page-check:
 	python3 scripts/retrieval_beta_report.py --domain-root examples/real_domains --output "$(RETRIEVAL_BETA_REPORT)" --min-domains 4 --repeat-runs 5

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 139 / 150
+- Done: 140 / 150
 - Partial: 1 / 150
-- Todo: 10 / 150
-- Current closed epic: Epic 139, Contributor Onboarding v2
+- Todo: 9 / 150
+- Current closed epic: Epic 140, Community Roadmap Board
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3995,14 +3995,36 @@ Boundary:
 
 ### Epic 140. Community Roadmap Board
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/COMMUNITY_ROADMAP.md`
+- `docs/DOCUMENTATION_INDEX.md`
+- `scripts/community_roadmap_check.py`
+- `make community-roadmap-check`
 
 Tasks:
 
-- Add milestones.
-- Add beta blockers.
-- Add production blockers.
-- Add experimental tracks.
+- Add milestones. Done: `COMMUNITY_ROADMAP.md` defines beta contract freeze,
+  local Production v1 boundary, ANN guarded promotion, dashboard product
+  surface, and community contribution loop milestones with owner areas and
+  gates.
+- Add beta blockers. Done: the roadmap lists repeatable real-domain ANN
+  history, SDK publication discipline, product UI beta readiness, and consensus
+  beta evidence blockers.
+- Add production blockers. Done: the roadmap separates distributed production
+  HA, managed cloud, enterprise RBAC/compliance, and legal-grade verification
+  blockers from current claims.
+- Add experimental tracks. Done: the roadmap tracks distributed consensus,
+  managed cloud, enterprise RBAC/compliance, fallback-free HNSW, built-in LLM
+  inference, external identity, and legal-grade verification as experimental or
+  future tracks.
+
+Boundary:
+
+- This board is planning/governance evidence. It does not implement those
+  product tracks or promote experimental capabilities into shipped claims.
 
 ## N. Advanced Agent-native Layers
 
