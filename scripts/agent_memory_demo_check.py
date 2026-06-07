@@ -13,10 +13,21 @@ from pathlib import Path
 DOC_MARKERS = {
     "docs/AGENT_MEMORY.md": [
         "Agent Memory v2",
+        "## Epic 141 Agent Memory v2 Contract",
+        "Add long-term memory",
+        "Add working memory",
+        "Add private/shared memory",
+        "Add TTL/decay",
+        "Add feedback",
+        "## Memory Classes",
+        "Long-Term Memory",
+        "Working Memory",
+        "Private And Shared Memory",
         "make agent-memory-demo-check",
         "memory_decay_scores",
         "Feedback is stored",
         "examples/demo/agent_memory",
+        "not enterprise RBAC",
     ],
     "examples/demo/agent_memory/README.md": [
         "REMEMBER",
@@ -144,7 +155,7 @@ def main() -> int:
         run_cmd(["cargo", "test", "-p", "cortex-engine", "--test", "memory_tests", "--test", "feedback_tests"])
     demo = run_demo(failures) if not failures else {}
     report = {
-        "schema_version": "cortexdb.agent_memory_demo.report.v1",
+        "schema_version": "cortexdb.agent_memory_demo.report.v2",
         "status": "failed" if failures else "passed",
         "tests": tests,
         "demo": demo,

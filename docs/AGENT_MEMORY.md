@@ -61,6 +61,70 @@ Feedback is stored as durable `type=feedback` cells and is used as a
 deterministic pre-pack ordering signal for ContextPack selection. The current
 model supports useful/not-useful votes, per-source-cell scores, and stats.
 
+## Epic 141 Agent Memory v2 Contract
+
+| Plan task | Current implementation | Boundary |
+| --- | --- | --- |
+| Add long-term memory | Permanent memory is represented by `type=memory` cells without a TTL, written through `REMEMBER` and persisted through WAL/checkpoint/replay. | Long-term memory is durable local storage, not a learned profile or autonomous memory manager. |
+| Add working memory | Working memory is represented by scoped short-TTL memory cells that can be retrieved into ContextPacks during active tasks. | Working memory is explicit and policy checked; CortexDB does not infer hidden session memory. |
+| Add private/shared memory | Private and shared memory are modeled through scopes such as `agent:<id>`, `project:<name>`, and `tenant:<name>`, then enforced by `AgentView` read/write scope policy. | The current boundary is local AgentView enforcement, not enterprise RBAC. |
+| Add TTL/decay | TTL expiry uses `expired_memory_cells` / `expire_memory_cells`, and decay uses fixed-point `memory_decay_scores`. | Expiry is deterministic; semantic decay and learned importance are future ranking work. |
+| Add feedback | Feedback is stored as durable `type=feedback` cells and influences ContextPack pre-pack ordering. | Feedback is a deterministic signal, not a reinforcement-learning loop. |
+
+## Memory Classes
+
+### Long-Term Memory
+
+Long-term memory is a durable memory cell with no TTL. It survives restart,
+checkpoint, and replay like other knowledge cells:
+
+```text
+REMEMBER "Prefer cited budget evidence" IN SCOPE project:investments AS TYPE decision;
+```
+
+Use it for stable preferences, durable decisions, and reusable workflow facts.
+
+### Working Memory
+
+Working memory is an explicit short-lived memory cell. It is useful for an
+active task or session and is removed by the TTL expiry path:
+
+```text
+REMEMBER "For this review, compare capex and completion date first"
+IN SCOPE agent:finance
+AS TYPE workflow_result
+TTL 3600 SECONDS;
+```
+
+This keeps temporary context queryable while avoiding silent hidden memory.
+
+### Private And Shared Memory
+
+Private/shared behavior comes from scopes:
+
+```text
+agent:finance        private agent memory
+project:investments  shared project memory
+tenant:alpha         tenant-level memory
+```
+
+`AgentView` controls which scopes can be read and written, so AQL cannot use
+memory outside the caller's allowed boundary.
+
+### TTL, Decay, And Feedback
+
+TTL and decay keep stale memory visible as an explicit policy outcome instead
+of a hidden ranking heuristic:
+
+```rust
+let expired = db.expired_memory_cells(now_unix_seconds);
+let tombstoned = db.expire_memory_cells(now_unix_seconds)?;
+let scores = db.memory_decay_scores(now_unix_seconds);
+```
+
+Feedback is stored durably and can be audited because it is just another
+typed cell class linked to the source cell.
+
 Run the end-to-end local memory demo:
 
 ```bash
@@ -75,6 +139,12 @@ examples/demo/agent_memory/run.sh
 
 ## Implemented
 
+- **Long-term memory** — permanent `type=memory` cells are supported by omitting
+  TTL from `REMEMBER`.
+- **Working memory** — short-TTL memory cells provide explicit task/session
+  memory without hidden state.
+- **Private/shared memory** — scope names and `AgentView` policy enforce
+  private agent, shared project, and tenant memory boundaries.
 - **Automatic background TTL scheduling** — A background task runs every 60s on each
   active tenant database, scans for expired memory cells, and tombstones them via WAL.
   See `cortex-server/src/lib.rs` (background interval loop) and
@@ -91,3 +161,5 @@ examples/demo/agent_memory/run.sh
 
 - Natural-language contradiction extraction.
 - Production memory ranking beyond fixed-point decay and feedback ordering.
+- Enterprise RBAC-backed memory policy store.
+- Autonomous memory synthesis without explicit writes.

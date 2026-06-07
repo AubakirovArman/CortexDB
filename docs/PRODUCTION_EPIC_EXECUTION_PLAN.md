@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 140 / 150
+- Done: 141 / 150
 - Partial: 1 / 150
-- Todo: 9 / 150
-- Current closed epic: Epic 140, Community Roadmap Board
+- Todo: 8 / 150
+- Current closed epic: Epic 141, Agent Memory v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -4032,15 +4032,36 @@ Acceptance: CortexDB evolves beyond RAG into an agent-native memory and context 
 
 ### Epic 141. Agent Memory v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/AGENT_MEMORY.md`
+- `scripts/agent_memory_demo_check.py`
+- `examples/demo/agent_memory/README.md`
+- `examples/demo/agent_memory/run.sh`
+- `make agent-memory-demo-check`
+- `cargo test -p cortex-engine --test memory_tests --test feedback_tests`
 
 Tasks:
 
-- Add long-term memory.
-- Add working memory.
-- Add private/shared memory.
-- Add TTL/decay.
-- Add feedback.
+- Add long-term memory. Done: permanent `type=memory` cells are written through
+  `REMEMBER` without TTL and survive WAL/replay/checkpoint through the normal
+  database path.
+- Add working memory. Done: short-TTL memory cells provide explicit task/session
+  memory that can be retrieved into ContextPacks and expired deterministically.
+- Add private/shared memory. Done: private agent, shared project, and tenant
+  memory boundaries are represented by scopes and enforced through `AgentView`
+  read/write scope policy.
+- Add TTL/decay. Done: `expired_memory_cells`, `expire_memory_cells`, and
+  `memory_decay_scores` cover deterministic expiry and fixed-point freshness.
+- Add feedback. Done: durable `type=feedback` cells influence ContextPack
+  pre-pack ordering and are covered by feedback regression tests.
+
+Boundary:
+
+- Agent Memory v2 is explicit local memory. It does not claim autonomous memory
+  synthesis, enterprise RBAC policy storage, or learned production ranking.
 
 ### Epic 142. Memory Quality Benchmark
 
