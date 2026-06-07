@@ -15,7 +15,13 @@ REQUIRED_MARKERS = {
         "docs/GOOD_FIRST_ISSUES.md",
     ],
     "docs/CONTRIBUTOR_ONBOARDING.md": [
+        "## Epic 139 Contributor Onboarding v2 Contract",
+        "Add module map",
+        "Add good first issues",
+        "Add test commands",
+        "Add issue templates",
         "15-minute Path",
+        "## Module Map",
         "make contributor-onboarding-check",
         "make use-case-pack-check",
         "docs/MODULE_OWNERSHIP.md",
@@ -24,6 +30,10 @@ REQUIRED_MARKERS = {
         "cargo clippy --workspace --all-targets -- -D warnings",
         "make openapi-contract-check",
         "cargo test -p cortex-cli",
+        ".github/ISSUE_TEMPLATE/bug_report.md",
+        ".github/ISSUE_TEMPLATE/feature_request.md",
+        ".github/ISSUE_TEMPLATE/design_task.md",
+        ".github/ISSUE_TEMPLATE/good_first_issue.md",
         "docs/PUBLIC_CLAIMS_POLICY.md",
     ],
     "docs/GOOD_FIRST_ISSUES.md": [
@@ -42,6 +52,27 @@ REQUIRED_MARKERS = {
         "make contributor-onboarding-check",
         "cargo fmt --check",
         "docs/PUBLIC_CLAIMS_POLICY.md",
+    ],
+    ".github/ISSUE_TEMPLATE/bug_report.md": [
+        "Scope",
+        "Steps to Reproduce",
+        "Success Criteria",
+        "cargo fmt --check",
+        "should not include secrets",
+    ],
+    ".github/ISSUE_TEMPLATE/feature_request.md": [
+        "Scope",
+        "Motivation",
+        "Success Criteria",
+        "docs/PUBLIC_CLAIMS_POLICY.md",
+        "hosted credentials",
+    ],
+    ".github/ISSUE_TEMPLATE/design_task.md": [
+        "Decision Needed",
+        "Scope",
+        "Acceptance Criteria",
+        "docs/PUBLIC_CLAIMS_POLICY.md",
+        "production claims without evidence gates",
     ],
     "docs/DOCUMENTATION_INDEX.md": [
         "CONTRIBUTOR_ONBOARDING.md",
@@ -70,7 +101,7 @@ def main() -> int:
                 failures.append(f"{file_name}: missing {marker!r}")
 
     report = {
-        "schema_version": "cortexdb.contributor_onboarding.report.v1",
+        "schema_version": "cortexdb.contributor_onboarding.report.v2",
         "status": "failed" if failures else "passed",
         "files_checked": sorted(REQUIRED_MARKERS),
         "failures": failures,

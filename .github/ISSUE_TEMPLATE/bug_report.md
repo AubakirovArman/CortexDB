@@ -10,6 +10,10 @@ assignees: ''
 
 <!-- Clear description of the bug -->
 
+## Scope
+
+<!-- Files, module, command, endpoint, or workflow affected -->
+
 ## Steps to Reproduce
 
 1. 
@@ -35,3 +39,13 @@ assignees: ''
 ```
 <!-- Paste relevant logs -->
 ```
+
+## Success Criteria
+
+- [ ] The bug has a regression test or documented reproduction.
+- [ ] The smallest relevant gate is listed.
+- [ ] `cargo fmt --check` passes if code changed.
+
+## Boundaries
+
+This report should not include secrets, private tokens, or hosted credentials.

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 138 / 150
+- Done: 139 / 150
 - Partial: 1 / 150
-- Todo: 11 / 150
-- Current closed epic: Epic 138, Comparison Docs v2
+- Todo: 10 / 150
+- Current closed epic: Epic 139, Contributor Onboarding v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3961,14 +3961,37 @@ Boundary:
 
 ### Epic 139. Contributor Onboarding v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/CONTRIBUTOR_ONBOARDING.md`
+- `docs/GOOD_FIRST_ISSUES.md`
+- `docs/MODULE_OWNERSHIP.md`
+- `.github/ISSUE_TEMPLATE/bug_report.md`
+- `.github/ISSUE_TEMPLATE/feature_request.md`
+- `.github/ISSUE_TEMPLATE/design_task.md`
+- `.github/ISSUE_TEMPLATE/good_first_issue.md`
+- `scripts/contributor_onboarding_check.py`
+- `make contributor-onboarding-check`
+- `target/contributor-onboarding/report.json`
 
 Tasks:
 
-- Add module map.
-- Add good first issues.
-- Add test commands.
-- Add issue templates.
+- Add module map. Done: `CONTRIBUTOR_ONBOARDING.md` now includes a `Module Map`
+  with primary paths, ownership/contract docs, and first files to read.
+- Add good first issues. Done: `GOOD_FIRST_ISSUES.md` lists starter tasks,
+  affected files, labels, review checklist, and evidence gates.
+- Add test commands. Done: onboarding docs separate doc-only, behavior, API, and
+  CLI command gates.
+- Add issue templates. Done: bug, feature, design, and good-first templates all
+  include scope/success criteria or acceptance criteria, plus boundaries for
+  secrets and public claims.
+
+Boundary:
+
+- This is contributor onboarding for bounded local contributions. It does not
+  replace full maintainer review or release governance.
 
 ### Epic 140. Community Roadmap Board
 
