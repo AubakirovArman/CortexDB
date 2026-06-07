@@ -31,6 +31,21 @@ binary against that restored directory.
 
 5. Keep the backup immutable until the upgraded binary passes validation.
 
+The CLI can run the validation, backup, and restore-drill preflight as one
+operator command:
+
+```bash
+cortexdb upgrade prepare ./data ./backups/cortexdb-pre-upgrade ./drills/cortexdb-pre-upgrade
+```
+
+This command returns the follow-up `cortexdb upgrade validate` and
+`cortexdb upgrade rollback` commands. Use `--json` when automation needs a
+stable response shape:
+
+```bash
+cortexdb --json upgrade prepare ./data ./backups/cortexdb-pre-upgrade ./drills/cortexdb-pre-upgrade
+```
+
 ## Upgrade
 
 Install the new archive as described in [`INSTALL.md`](INSTALL.md):
@@ -47,8 +62,7 @@ install -m 0755 bin/cortex-server ~/.local/bin/cortex-server
 Open and validate:
 
 ```bash
-cortexdb validate ./data
-cortexdb stats ./data
+cortexdb upgrade validate ./data
 ```
 
 If running under systemd:
@@ -64,8 +78,7 @@ Do not run the old binary against an upgraded directory. Restore instead:
 
 ```bash
 mv ./data ./data.failed-upgrade
-cortexdb restore ./backups/cortexdb-pre-upgrade ./data.rollback
-cortexdb validate ./data.rollback
+cortexdb upgrade rollback ./backups/cortexdb-pre-upgrade ./data.rollback
 ```
 
 Install the previous binaries and start them against `./data.rollback`.

@@ -30,6 +30,9 @@ REQUIRED_DOC_MARKERS = {
     ],
     "docs/UPGRADE_ROLLBACK.md": [
         "Pre-Upgrade Checklist",
+        "cortexdb upgrade prepare",
+        "cortexdb upgrade validate",
+        "cortexdb upgrade rollback",
         "backup-drill",
         "Rollback",
         "make migration-policy-check",
@@ -115,6 +118,16 @@ def main() -> int:
     for marker in ("deployment-upgrade-check", "service-manager-smoke-check", "binary-release-check", "migration-policy-check"):
         if marker not in makefile:
             failures.append(f"Makefile: missing {marker}")
+
+    cli = read("crates/cortex-cli/src/cli.rs")
+    for marker in ("UpgradeCommand", "Prepare", "Validate", "Rollback"):
+        if marker not in cli:
+            failures.append(f"CLI upgrade flow missing {marker}")
+
+    cli_upgrade = read("crates/cortex-cli/src/cli_upgrade.rs")
+    for marker in ("upgrade_prepare", "upgrade_validate", "upgrade_rollback"):
+        if marker not in cli_upgrade:
+            failures.append(f"CLI upgrade implementation missing {marker}")
 
     report = {
         "schema_version": 1,

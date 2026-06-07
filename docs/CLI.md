@@ -6,7 +6,7 @@ The `cortexdb` binary is a local command-line tool that operates directly on the
 
 | Flag | Description |
 |------|-------------|
-| `--json` | Print machine-readable JSON when supported. Applies to `stats`, `validate`, `ann-validate`, `audit`, `context`, `verify`, and `search-vector-eval`. |
+| `--json` | Print machine-readable JSON when supported. Applies to `stats`, `validate`, `ann-validate`, `audit`, `context`, `verify`, `search-vector-eval`, and `upgrade`. |
 | `--help` | Show help for any subcommand. |
 | `--version` | Print version. |
 
@@ -172,6 +172,32 @@ cortexdb validate ./db.restored
 `--dry-run` inspects the backup without creating the restore target. It checks
 storage checksums, format compatibility, manifest segments, indexes, and WAL
 readability, then reports the target path that would be used.
+
+#### `upgrade prepare <path> <backup_path> <drill_restore_path>`
+Run the offline pre-upgrade preflight. It validates the source database, creates
+a pre-upgrade backup, restores that backup into a drill target, and prints the
+next validation and rollback commands.
+
+```bash
+cortexdb upgrade prepare ./db ./backups/cortexdb-pre-upgrade ./drills/cortexdb-pre-upgrade
+cortexdb --json upgrade prepare ./db ./backups/cortexdb-pre-upgrade ./drills/cortexdb-pre-upgrade
+```
+
+#### `upgrade validate <path>`
+Validate the database after installing the new binary.
+
+```bash
+cortexdb upgrade validate ./db
+```
+
+#### `upgrade rollback <backup_path> <rollback_path>`
+Dry-run restore the immutable pre-upgrade backup, restore it into a new
+rollback directory, validate the restored database, and report the directory to
+start with the previous binary.
+
+```bash
+cortexdb upgrade rollback ./backups/cortexdb-pre-upgrade ./db.rollback
+```
 
 #### `restore-encrypted <archive_path> <path>`
 Restore a passphrase-protected archive into a new target directory and validate

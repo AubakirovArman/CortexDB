@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 127 / 150
+- Done: 128 / 150
 - Partial: 1 / 150
-- Todo: 22 / 150
-- Current closed epic: Epic 127, Docker Compose Production Example
+- Todo: 21 / 150
+- Current closed epic: Epic 128, Upgrade/Rollback CLI Flow
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3581,14 +3581,41 @@ Tasks:
 
 ### Epic 128. Upgrade/Rollback CLI Flow
 
-Status: todo
+Status: done
+
+Evidence:
+
+- CLI surface:
+  `cortexdb upgrade prepare`,
+  `cortexdb upgrade validate`,
+  `cortexdb upgrade rollback`.
+- Implementation:
+  `crates/cortex-cli/src/cli_upgrade.rs`,
+  `crates/cortex-cli/src/cli.rs`.
+- Regression tests:
+  `crates/cortex-cli/src/tests.rs`.
+- Operator documentation:
+  `docs/CLI.md`,
+  `docs/UPGRADE_ROLLBACK.md`,
+  `docs/OPERATIONS_RUNBOOK_V1.md`.
+- Evidence gate:
+  `scripts/upgrade_rollback_cli_flow_check.py`,
+  `make upgrade-rollback-cli-flow-check`.
+- Latest local report:
+  `target/upgrade-rollback-cli-flow/report.json`
+  with `status=passed`.
 
 Tasks:
 
-- Add preflight.
-- Backup before upgrade.
-- Restore rollback.
-- Validate after upgrade.
+- Add preflight. Done: `cortexdb upgrade prepare` opens and validates the
+  source database before any upgrade action.
+- Backup before upgrade. Done: `upgrade prepare` runs the existing validated
+  backup/restore drill and reports the immutable pre-upgrade backup path.
+- Restore rollback. Done: `cortexdb upgrade rollback` dry-runs the restore,
+  restores into a new rollback directory, validates the restored database, and
+  reports the path to start with the previous binary.
+- Validate after upgrade. Done: `cortexdb upgrade validate` validates storage
+  and reports current/checkpoint sequence after installing the new binary.
 
 ### Epic 129. Release Artifact Manifest
 

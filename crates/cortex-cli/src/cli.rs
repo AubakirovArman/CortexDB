@@ -2,7 +2,7 @@ use clap::{error::ErrorKind, Parser, Subcommand, ValueEnum};
 
 use crate::{
     cli_ann as ann, cli_aql as aql_cmd, cli_audit as audit, cli_audit_siem as audit_siem,
-    cli_auth_review as auth_review, cli_ingest as ingest, cli_ops as ops,
+    cli_auth_review as auth_review, cli_ingest as ingest, cli_ops as ops, cli_upgrade as upgrade,
 };
 
 #[derive(Parser, Debug)]
@@ -127,6 +127,10 @@ enum Command {
         backup_path: String,
         offsite_root: String,
         backup_id: String,
+    },
+    Upgrade {
+        #[command(subcommand)]
+        command: UpgradeCommand,
     },
     Audit {
         path: String,
@@ -355,6 +359,22 @@ enum VectorCommand {
     },
 }
 
+#[derive(Subcommand, Debug)]
+enum UpgradeCommand {
+    Prepare {
+        path: String,
+        backup_path: String,
+        drill_restore_path: String,
+    },
+    Validate {
+        path: String,
+    },
+    Rollback {
+        backup_path: String,
+        rollback_path: String,
+    },
+}
+
 impl ContextOutputFormat {
     fn as_str(self) -> &'static str {
         match self {
@@ -523,6 +543,29 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             offsite_root,
             backup_id,
         } => ops::backup_offsite_stage(&backup_path, &offsite_root, &backup_id),
+        Command::Upgrade { command } => match command {
+            UpgradeCommand::Prepare {
+                path,
+                backup_path,
+                drill_restore_path,
+            } => upgrade::prepare(
+                resolved(&path).to_str().unwrap(),
+                &backup_path,
+                &drill_restore_path,
+                cli.json,
+            ),
+            UpgradeCommand::Validate { path } => {
+                upgrade::validate_after_upgrade(resolved(&path).to_str().unwrap(), cli.json)
+            }
+            UpgradeCommand::Rollback {
+                backup_path,
+                rollback_path,
+            } => upgrade::rollback(
+                &backup_path,
+                resolved(&rollback_path).to_str().unwrap(),
+                cli.json,
+            ),
+        },
         Command::Audit {
             path,
             verify_path,

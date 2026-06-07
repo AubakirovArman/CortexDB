@@ -20,6 +20,7 @@
 .PHONY: service-manager-smoke-check
 .PHONY: docker-hardening-check
 .PHONY: docker-production-compose-check
+.PHONY: upgrade-rollback-cli-flow-check
 .PHONY: beta-landing-check
 .PHONY: use-case-pack-check
 .PHONY: contributor-onboarding-check
@@ -242,6 +243,7 @@ DEPLOYMENT_UPGRADE_REPORT ?= target/deployment-upgrade/report.json
 SERVICE_MANAGER_REPORT ?= target/service-manager-smoke/report.json
 DOCKER_HARDENING_REPORT ?= target/docker-hardening/report.json
 DOCKER_PRODUCTION_COMPOSE_REPORT ?= target/docker-production-compose/report.json
+UPGRADE_ROLLBACK_CLI_FLOW_REPORT ?= target/upgrade-rollback-cli-flow/report.json
 ANN_BASELINE_REPORT ?= $(ANN_CORPUS_REPORT)
 ANN_CANDIDATE_REPORT ?= $(ANN_CORPUS_REPORT)
 ANN_REPORT_COMPARISON ?= target/ann/ann_report_comparison.json
@@ -971,6 +973,11 @@ docker-hardening-check:
 
 docker-production-compose-check:
 	python3 scripts/docker_production_compose_check.py --report "$(DOCKER_PRODUCTION_COMPOSE_REPORT)"
+
+upgrade-rollback-cli-flow-check:
+	cargo test -p cortex-cli upgrade_prepare_validate_and_rollback_flow
+	cargo test -p cortex-cli upgrade_prepare_json_reports_next_commands
+	python3 scripts/upgrade_rollback_cli_flow_check.py --report "$(UPGRADE_ROLLBACK_CLI_FLOW_REPORT)"
 
 deployment-upgrade-check: service-manager-smoke-check
 	python3 scripts/deployment_upgrade_check.py --report "$(DEPLOYMENT_UPGRADE_REPORT)"

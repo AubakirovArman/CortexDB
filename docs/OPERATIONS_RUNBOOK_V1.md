@@ -191,9 +191,10 @@ Offline upgrade sequence:
 
 1. Stop writers and the HTTP server.
 2. Run `cortexdb validate ./data` and `cortexdb stats ./data`.
-3. Create a validated backup and restore drill.
+3. Create a validated backup and restore drill with
+   `cortexdb upgrade prepare ./data ./backups/cortexdb-pre-upgrade ./drills/cortexdb-pre-upgrade`.
 4. Install the new binary archive.
-5. Run `cortexdb validate ./data`.
+5. Run `cortexdb upgrade validate ./data`.
 6. Restart the server.
 
 Compatibility evidence:
@@ -203,7 +204,12 @@ make deployment-upgrade-check
 make migration-compatibility-check
 ```
 
-Rollback requires restoring the pre-upgrade backup into a new directory.
+Rollback requires restoring the pre-upgrade backup into a new directory:
+
+```bash
+cortexdb upgrade rollback ./backups/cortexdb-pre-upgrade ./data.rollback
+```
+
 Supporting docs: [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md) and
 [`UPGRADE_MIGRATION.md`](UPGRADE_MIGRATION.md).
 
