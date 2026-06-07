@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 132 / 150
+- Done: 133 / 150
 - Partial: 1 / 150
-- Todo: 17 / 150
-- Current closed epic: Epic 132, Use-case Pack: Investment Projects
+- Todo: 16 / 150
+- Current closed epic: Epic 133, Use-case Pack: Legal Policies
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3744,15 +3744,38 @@ Boundary:
 
 ### Epic 133. Use-case Pack: Legal Policies
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `examples/use_cases/legal_policy_review/README.md`
+- `examples/demo/legal_policies/run.sh`
+- `examples/datasets/legal_policies/cells.jsonl`
+- `examples/real_domains/legal_policies/`
+- `examples/use_cases/packs.json`
+- `scripts/use_case_pack_check.py`
+- `scripts/use_case_pack_epic133.py`
+- `make use-case-pack-check`
 
 Tasks:
 
-- Add corpus.
-- Add search demo.
-- Add ContextPack demo.
-- Add Verify contradiction demo.
-- Add citation demo.
+- Add corpus. Done: the pack links the validated legal real-domain corpus with
+  documents, chunks, queries, and ground truth rows.
+- Add search demo. Done: the legal demo and pack README include scoped
+  `search --json` over `project:legal`.
+- Add ContextPack demo. Done: the pack includes a citation-required
+  `RETRIEVE CONTEXT` flow for affiliate approval policy evidence.
+- Add Verify contradiction demo. Done: the fixture includes a legacy POL-01
+  exception with structured `contradicts=` metadata, and the gate runs a
+  `verify_contradiction` smoke command that returns `mixed_evidence`.
+- Add citation demo. Done: the fixture includes explicit `source=` and
+  `citation=` metadata, and the pack README names
+  `policy_v2_appendix.pdf#page=3`.
+
+Boundary:
+
+- This pack is a developer scenario for policy retrieval and verification. It
+  is not legal advice, legal review, or legal-grade verification.
 
 ### Epic 134. Use-case Pack: Support Tickets
 

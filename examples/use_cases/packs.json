@@ -11,7 +11,12 @@
       "search_query": "affiliate contract approval",
       "context_aql": "RETRIEVE CONTEXT FOR TASK \"affiliate approval policy\" IN BRAIN default REQUIRE citations LIMIT 10 CANDIDATES;",
       "verify_aql": "VERIFY FACT \"All affiliate contracts must be approved by legal department before signature\" IN BRAIN default;",
-      "expected_markers": ["affiliate", "legal department", "POL-01"]
+      "expected_markers": ["affiliate", "legal department", "POL-01", "mixed_evidence"],
+      "contradiction_verify_aql": "VERIFY FACT \"Low-risk affiliate contracts below 50000 USD could be approved by procurement without legal department approval before signature\" IN BRAIN default;",
+      "demo_path": "examples/demo/legal_policies/run.sh",
+      "aql_examples_path": "examples/aql/legal_policies",
+      "corpus_path": "examples/real_domains/legal_policies",
+      "citation_marker": "policy_v2_appendix.pdf#page=3"
     },
     {
       "id": "financial_filing_review",

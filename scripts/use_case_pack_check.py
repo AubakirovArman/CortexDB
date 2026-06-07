@@ -10,6 +10,7 @@ import subprocess
 from pathlib import Path
 
 from use_case_pack_epic132 import investment_task_coverage
+from use_case_pack_epic133 import legal_task_coverage
 
 
 MANIFEST = Path("examples/use_cases/packs.json")
@@ -114,6 +115,8 @@ def validate_pack(pack: dict[str, object], failures: list[str]) -> dict[str, obj
     task_coverage = {}
     if pack_id == "investment_projects":
         task_coverage = investment_task_coverage(pack, readme_text, failures)
+    elif pack_id == "legal_policy_review":
+        task_coverage = legal_task_coverage(pack, readme_text, failures)
 
     return {
         "id": pack_id,
@@ -184,6 +187,24 @@ def smoke_pack(pack: dict[str, object], failures: list[str]) -> dict[str, object
             ]
         ),
     }
+    contradiction_aql = str(pack.get("contradiction_verify_aql", "")).strip()
+    if contradiction_aql:
+        outputs["verify_contradiction"] = run_cmd(
+            [
+                "cargo",
+                "run",
+                "-q",
+                "-p",
+                "cortex-cli",
+                "--",
+                "verify",
+                "--format",
+                "json",
+                str(db_path),
+                scope,
+                contradiction_aql,
+            ]
+        )
     combined = "\n".join(outputs.values())
     for marker in pack.get("expected_markers", []):
         if str(marker) not in combined:
