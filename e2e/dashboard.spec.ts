@@ -144,11 +144,13 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
       'Solar Plant budget is 1.2B KZT.',
       'Dashboard smoke budget note',
     ].join('\n'));
-    await page.getByRole('button', { name: 'Run Cell Operation' }).click();
-    await expect(page.locator('#request-status')).toContainText('ERR read-only');
-    await expect(page.locator('#error-report')).toContainText('Read-only mode blocks this local write action');
+    await expect(page.locator('#role-ui-report')).toContainText('dangerous hidden/disabled');
+    await expect(page.locator('#cell-op option[value="put"]')).toHaveJSProperty('hidden', true);
+    await expect(page.locator('#cell-op option[value="delete"]')).toHaveJSProperty('hidden', true);
+    await expect(page.locator('#cell-op')).toHaveValue('get');
     await page.locator('#read-only-mode').uncheck();
     await expect(page.locator('#session-role')).not.toContainText('read-only guard active');
+    await page.locator('#cell-op').selectOption('put');
     await page.getByRole('button', { name: 'Run Cell Operation' }).click();
     await expect(page.locator('#output')).toContainText('"seq"');
     await expect(page.locator('#cell-report-title')).toContainText('Cell report');
