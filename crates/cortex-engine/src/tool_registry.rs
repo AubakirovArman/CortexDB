@@ -1,3 +1,4 @@
+use std::cmp::Reverse;
 use std::collections::BTreeSet;
 
 use cortex_aql::AgentView;
@@ -6,6 +7,7 @@ use cortex_core::{CellId, CommitSeq, KnowledgeCell, KnowledgeCellMetadata, Knowl
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::query::{scope_id, CellMetadata};
+use crate::search::tokenize;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ToolPermission {
@@ -31,6 +33,13 @@ pub struct RegisteredTool {
     pub cell_id: CellId,
     pub commit_seq: CommitSeq,
     pub descriptor: ToolDescriptor,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ToolRecommendation {
+    pub tool: RegisteredTool,
+    pub matched_terms: Vec<String>,
+    pub score: u32,
 }
 
 impl ToolDescriptor {
@@ -156,6 +165,57 @@ impl Database {
             .collect::<Vec<_>>();
         tools.sort_by_key(|tool| tool.cell_id);
         tools
+    }
+
+    pub fn recommend_tools_for_task(
+        &self,
+        view: &AgentView,
+        task: &str,
+        limit: usize,
+    ) -> Vec<ToolRecommendation> {
+        if limit == 0 {
+            return Vec::new();
+        }
+        let task_terms = tokenize(task).into_iter().collect::<BTreeSet<_>>();
+        let mut recommendations = self
+            .list_tools(view)
+            .into_iter()
+            .filter_map(|tool| {
+                let descriptor_text = format!(
+                    "{} {} {} {}",
+                    tool.descriptor.name,
+                    tool.descriptor.description,
+                    tool.descriptor.input_schema.as_deref().unwrap_or(""),
+                    tool.descriptor.output_schema.as_deref().unwrap_or("")
+                );
+                let descriptor_terms = tokenize(&descriptor_text)
+                    .into_iter()
+                    .collect::<BTreeSet<_>>();
+                let matched_terms = task_terms
+                    .iter()
+                    .filter(|term| descriptor_terms.contains(*term))
+                    .cloned()
+                    .collect::<Vec<_>>();
+                if matched_terms.is_empty() {
+                    return None;
+                }
+                let score = u32::try_from(matched_terms.len()).unwrap_or(u32::MAX);
+                Some(ToolRecommendation {
+                    tool,
+                    matched_terms,
+                    score,
+                })
+            })
+            .collect::<Vec<_>>();
+        recommendations.sort_by_key(|recommendation| {
+            (
+                Reverse(recommendation.score),
+                recommendation.tool.cell_id,
+                recommendation.tool.descriptor.name.clone(),
+            )
+        });
+        recommendations.truncate(limit);
+        recommendations
     }
 }
 

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 142 / 150
+- Done: 143 / 150
 - Partial: 1 / 150
-- Todo: 7 / 150
-- Current closed epic: Epic 142, Memory Quality Benchmark
+- Todo: 6 / 150
+- Current closed epic: Epic 143, Tool Registry v1
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -4098,14 +4098,37 @@ Boundary:
 
 ### Epic 143. Tool Registry v1
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/TOOL_REGISTRY.md`
+- `crates/cortex-engine/src/tool_registry.rs`
+- `crates/cortex-engine/tests/tool_registry_tests.rs`
+- `scripts/tool_registry_check.py`
+- `make tool-registry-check`
+- `cargo test -p cortex-engine --test tool_registry_tests`
 
 Tasks:
 
-- Add tool cells.
-- Add permissions.
-- Add input/output schema.
-- Add tool retrieval by task.
+- Add tool cells. Done:
+  `ToolDescriptor` persists as `KnowledgeCellType::Tool` cells through
+  `Database::register_tool`.
+- Add permissions. Done:
+  `ToolPermission` stores read, execute, write, and approval-required markers.
+- Add input/output schema. Done:
+  optional `input_schema` and `output_schema` lines round-trip in the tool cell
+  payload.
+- Add tool retrieval by task. Done:
+  `Database::recommend_tools_for_task(view, task, limit)` ranks visible tool
+  cells by task-term overlap and is covered by
+  `tool_retrieval_by_task_returns_relevant_tool_cell`.
+
+Boundary:
+
+- Tool Registry v1 stores, retrieves, recommends, and explains tool metadata.
+  It does not execute tools, store remote credentials, provide enterprise RBAC,
+  or claim legal-grade tool verification.
 
 ### Epic 144. Tool Recommendation in ContextPack
 

@@ -127,7 +127,7 @@ pub use source_trust::{
     DEFAULT_SOURCE_TRUST_Q16, EXTRACTED_SOURCE_TRUST_Q16, INFERRED_SOURCE_TRUST_Q16,
     INTERNAL_SOURCE_TRUST_Q16, OFFICIAL_SOURCE_TRUST_Q16,
 };
-pub use tool_registry::{RegisteredTool, ToolDescriptor, ToolPermission};
+pub use tool_registry::{RegisteredTool, ToolDescriptor, ToolPermission, ToolRecommendation};
 pub use typed_body::{EntityBody, FactBody, RelationBody};
 pub use validation::{StorageStats, StorageValidation, StorageValidationReport};
 pub use vector_rebuild::VectorRebuildReport;

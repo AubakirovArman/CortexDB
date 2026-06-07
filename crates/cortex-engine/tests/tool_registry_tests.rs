@@ -22,6 +22,19 @@ fn descriptor(scope: &str, name: &str) -> ToolDescriptor {
     descriptor
 }
 
+fn task_descriptor(scope: &str, name: &str, description: &str) -> ToolDescriptor {
+    let mut descriptor = ToolDescriptor::new(
+        scope,
+        name,
+        description,
+        BTreeSet::from([ToolPermission::Read, ToolPermission::Execute]),
+    );
+    descriptor.input_schema = Some(r#"{"type":"object","required":["task"]}"#.to_owned());
+    descriptor.output_schema = Some(r#"{"type":"object","required":["result"]}"#.to_owned());
+    descriptor.source = Some("tool-registry-test".to_owned());
+    descriptor
+}
+
 #[test]
 fn register_tool_writes_tool_cell() {
     let dir = tempfile::tempdir().unwrap();
@@ -100,6 +113,56 @@ WHERE type = "tool" LIMIT 5 CANDIDATES;"#,
 
     assert!(result.cells.is_empty());
     assert!(db.list_tools(&view("project:legal")).is_empty());
+}
+
+#[test]
+fn tool_retrieval_by_task_returns_relevant_tool_cell() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.register_tool(
+        CellId(10),
+        task_descriptor(
+            "project:investments",
+            "budget_calculator",
+            "calculates investment budget variance and financial exposure",
+        ),
+    )
+    .unwrap();
+    db.register_tool(
+        CellId(11),
+        task_descriptor(
+            "project:investments",
+            "source_finder",
+            "finds source citations and evidence documents",
+        ),
+    )
+    .unwrap();
+    db.register_tool(
+        CellId(12),
+        task_descriptor(
+            "project:legal",
+            "legal_review",
+            "reviews contract clauses and legal obligations",
+        ),
+    )
+    .unwrap();
+
+    let recommendations = db.recommend_tools_for_task(
+        &view("project:investments"),
+        "investment budget analysis",
+        2,
+    );
+
+    assert_eq!(recommendations.len(), 1);
+    assert_eq!(recommendations[0].tool.cell_id, CellId(10));
+    assert_eq!(recommendations[0].tool.descriptor.name, "budget_calculator");
+    assert!(recommendations[0]
+        .matched_terms
+        .iter()
+        .any(|term| term == "budget"));
+    assert!(db
+        .recommend_tools_for_task(&view("project:legal"), "investment budget analysis", 2)
+        .is_empty());
 }
 
 fn view(scope: &str) -> AgentView {

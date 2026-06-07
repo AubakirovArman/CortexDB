@@ -1,6 +1,7 @@
 # CortexDB Tool Registry
 
-Status: Core Alpha extension, Epic 57 closed by local gate.
+Status: Core Alpha extension. Epic 57 closed the initial registry gate; Epic
+143 closes Tool Registry v1 for the production epic plan.
 
 The tool registry stores agent tool descriptions as durable CortexDB cells. It
 does not execute tools. Execution, remote credentials, external identity, and
@@ -21,6 +22,17 @@ ToolDescriptor
 -> AQL WHERE type = "tool"
 -> ContextPack
 ```
+
+## Epic 143 Tool Registry v1 Contract
+
+Epic 143 turns the earlier registry foundation into a small durable contract:
+
+| Plan task | Core Alpha behavior | Evidence |
+| --- | --- | --- |
+| Add tool cells | `ToolDescriptor` persists as `KnowledgeCellType::Tool` through WAL and MemTable. | `Database::register_tool` |
+| Add permissions | `ToolPermission` stores `read`, `execute`, `write`, and `approval_required` markers. | `ToolDescriptor::to_knowledge_cell` |
+| Add input/output schema | Optional `input_schema` and `output_schema` lines are preserved in the tool cell payload. | `ToolDescriptor::from_payload` |
+| Add tool retrieval by task | `Database::recommend_tools_for_task(view, task, limit)` ranks visible tool cells by task-term overlap. | `tool_retrieval_by_task_returns_relevant_tool_cell` |
 
 ## Cell Contract
 
@@ -82,6 +94,28 @@ LIMIT 5 CANDIDATES;
 An agent without `project:investments` cannot retrieve that tool through
 `ContextPack`.
 
+## Tool Retrieval By Task
+
+Agents can ask for tools that match the current task without executing them:
+
+```rust
+let tools = db.recommend_tools_for_task(
+    &agent_view,
+    "investment budget analysis",
+    5,
+);
+```
+
+The scorer is intentionally simple in Core Alpha:
+
+- tokenize the task;
+- tokenize visible tool name, description, and schemas;
+- keep tools with at least one matching term;
+- sort by descending match count, then by stable cell id.
+
+This gives deterministic local tool selection for demos, tests, and
+ContextPack planning. It is not a production tool-use policy engine.
+
 ## Local Gate
 
 Run:
@@ -94,6 +128,7 @@ The gate verifies:
 
 - tool registration writes a durable `type=tool` cell;
 - tool listing respects `AgentView` scope;
+- tool recommendation returns a relevant visible tool for a task;
 - AQL + ContextPack can include a tool cell;
 - an agent without the scope cannot retrieve the tool.
 
