@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 135 / 150
+- Done: 136 / 150
 - Partial: 1 / 150
-- Todo: 14 / 150
-- Current closed epic: Epic 135, Use-case Pack: Technical Docs
+- Todo: 13 / 150
+- Current closed epic: Epic 136, Public Benchmarks Page
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3850,16 +3850,45 @@ Boundary:
 
 ### Epic 136. Public Benchmarks Page
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/PUBLIC_BENCHMARKS.md`
+- `docs/PUBLIC_RETRIEVAL_BENCHMARKS.md`
+- `docs/BENCHMARKS.md`
+- `docs/CONTEXT_PACK_QUALITY_EVIDENCE.md`
+- `docs/VERIFICATION_QUALITY_EVIDENCE.md`
+- `docs/LONGMEMEVAL_OFFICIAL.md`
+- `docs/PERFORMANCE_TREND_HISTORY.md`
+- `scripts/public_benchmarks_check.py`
+- `scripts/public_retrieval_benchmark_check.py`
+- `make public-benchmarks-check`
+- `target/public-benchmarks/report.json`
 
 Tasks:
 
-- Publish storage benchmarks.
-- Publish retrieval benchmarks.
-- Publish ContextPack benchmarks.
-- Publish Verify benchmarks.
-- Publish LongMemEval results.
-- Publish release trends.
+- Publish storage benchmarks. Done: the page links local single-node storage
+  and lifecycle performance evidence through `make single-node-performance-check`
+  and `docs/BENCHMARKS.md`.
+- Publish retrieval benchmarks. Done: the page links
+  `PUBLIC_RETRIEVAL_BENCHMARKS.md`, whose gate refreshes multi-domain retrieval
+  sizes, recall, MRR, nDCG, latency fields, and exact-vs-ANN boundaries.
+- Publish ContextPack benchmarks. Done: the page links the 25-case,
+  five-domain ContextPack quality fixture and `make context-pack-quality-check`.
+- Publish Verify benchmarks. Done: the page links the 203-case deterministic
+  verification fixture and `make verification-quality-check`.
+- Publish LongMemEval results. Done: the page publishes official local
+  LongMemEval v1 retrieval metrics and separates local QA score from leaderboard
+  claims.
+- Publish release trends. Done: the page links `PERFORMANCE_TREND_HISTORY.md`
+  and `make performance-trend-check`, with p50/p95/p99 trend boundaries.
+
+Boundary:
+
+- This public page summarizes local reproducible evidence. It does not claim
+  production SLA, managed cloud readiness, official leaderboard placement,
+  legal-grade verification, or fallback-free production HNSW.
 
 ### Epic 137. LongMemEval Evidence Page
 

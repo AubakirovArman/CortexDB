@@ -34,6 +34,20 @@ Regenerate the source reports before cutting a release.
 | LongMemEval official local run | Official LongMemEval v1 small split: retrieval `session recall_all@10=0.9021`, `session ndcg_any@10=0.7873`; official GPT-4o QA accuracy `0.7660`. |
 | MultiHop-RAG local run | Official MultiHop-RAG retrieval evaluator over full 2556-query dataset: `Hits@10=0.9902`, `Hits@4=0.9295`, `MAP@10=0.4503`, `MRR@10=0.7906`; DeepSeek Flash QA with official `qa_evaluate.py`: overall `F1=0.75`, `Accuracy=0.67`; repeat 50-query prompt-cache hit rate `95.94%`; no leaderboard claim. |
 
+## Epic 136 Task Coverage
+
+This section is the public benchmark page contract. It maps each published
+benchmark category to its refresh command and source document.
+
+| Task | Published evidence | Refresh command | Source |
+| --- | --- | --- | --- |
+| Storage benchmarks | Single-node lifecycle matrix for put/get/search/ContextPack/Verify under local durability profiles; storage evidence is local, not an SLA. | `make single-node-performance-check` | [`BENCHMARKS.md`](BENCHMARKS.md) |
+| Retrieval benchmarks | Multi-domain retrieval table with dataset sizes, recall, MRR, nDCG, p95/p99/max latency fields, exact-vs-ANN boundary, and limitations. | `make public-retrieval-benchmark-page-check` | [`PUBLIC_RETRIEVAL_BENCHMARKS.md`](PUBLIC_RETRIEVAL_BENCHMARKS.md) |
+| ContextPack benchmarks | 25-case ContextPack quality fixture across 5 domains with evidence coverage, citation coverage, redundancy, anomaly, and deterministic ordering metrics. | `make context-pack-quality-check` | [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md) |
+| Verify benchmarks | 203-case deterministic verification fixture across 5 domains with supported/contradicted/mixed/insufficient labels and guard coverage; latest raw metric `case_count: 203`, `accuracy_q16=65535`. | `make verification-quality-check` | [`VERIFICATION_QUALITY_EVIDENCE.md`](VERIFICATION_QUALITY_EVIDENCE.md) |
+| LongMemEval results | Official local LongMemEval v1 retrieval metrics plus clearly separated local QA score; this is not a leaderboard entry. | `make longmemeval-v1-official-retrieval-metrics` | [`LONGMEMEVAL_OFFICIAL.md`](LONGMEMEVAL_OFFICIAL.md) |
+| Release trends | Release trend comparison for local smoke and single-node performance evidence, including p50/p95/p99 fields and regression boundaries. | `make performance-trend-check` | [`PERFORMANCE_TREND_HISTORY.md`](PERFORMANCE_TREND_HISTORY.md) |
+
 ## Evidence Sources
 
 | Evidence | Command | Document |
@@ -52,10 +66,11 @@ Regenerate the source reports before cutting a release.
 ## How To Refresh Before Release
 
 ```bash
+make single-node-performance-check
 make retrieval-quality-check
 make context-pack-quality-check
 make verification-quality-check
-make single-node-performance-check
+make longmemeval-v1-official-retrieval-metrics
 make performance-trend-check
 make public-benchmarks-check
 ```
