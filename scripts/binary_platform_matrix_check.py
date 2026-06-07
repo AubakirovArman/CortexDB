@@ -24,6 +24,11 @@ DOC_MARKERS = {
         "macos-x86_64",
         "Windows is unsupported",
         "Clean Install Smoke",
+        "Filesystem Requirements",
+        "file `fsync`",
+        "atomic `rename`",
+        "`db.lock`",
+        "network filesystems",
         "launchd",
     ],
     "docs/BINARY_RELEASES.md": [
@@ -208,6 +213,19 @@ def main(argv: list[str]) -> int:
             "platforms": ["linux-x86_64", "linux-aarch64", "macos-arm64", "macos-x86_64"],
             "upload": "gh release upload",
         },
+        "filesystem_requirements": [
+            "local_posix_style_filesystem",
+            "wal_file_fsync",
+            "atomic_same_directory_rename",
+            "parent_directory_durability",
+            "exclusive_lock_file_create",
+            "regular_executable_files",
+        ],
+        "filesystem_warnings": [
+            "network_filesystems_require_operator_validation",
+            "cloud_sync_folders_are_not_recommended_for_production_like_data",
+            "container_overlay_paths_require_operator_validation",
+        ],
         "clean_install_smoke": smoke,
         "failures": failures,
     }

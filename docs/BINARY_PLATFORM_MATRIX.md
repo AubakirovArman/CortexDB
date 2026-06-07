@@ -43,6 +43,30 @@ The smoke report is:
 target/binary-platform-matrix/report.json
 ```
 
+## Filesystem Requirements
+
+CortexDB release artifacts are validated for local single-node use on
+POSIX-style filesystems. Production-like local data directories must use a
+filesystem that supports:
+
+- append writes and file `fsync` for WAL durability;
+- atomic `rename` within the same directory for segment, index, manifest, and
+  dashboard/package artifact publication;
+- parent-directory durability after rename where the platform exposes it;
+- exclusive lock-file creation semantics for `db.lock`;
+- regular files and directories with executable bits for installed binaries.
+
+Recommended local filesystems:
+
+| Platform | Recommended filesystem | Notes |
+| --- | --- | --- |
+| Linux | ext4 or XFS | Primary validation target for local smoke and CI. |
+| macOS | APFS | Release workflow builds artifacts; operators should validate data on the target machine before upgrade. |
+
+Avoid network filesystems, cloud-sync folders, container overlay paths, and
+shared volumes for production-like data unless a separate operator validation
+run proves `fsync`, rename, and lock semantics for that environment.
+
 ## macOS launchd
 
 macOS is a serious local target for the binary tarball. The launchd example is

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 122 / 150
+- Done: 123 / 150
 - Partial: 1 / 150
-- Todo: 27 / 150
-- Current closed epic: Epic 122, Install Script
+- Todo: 26 / 150
+- Current closed epic: Epic 123, Platform Support Matrix
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3403,13 +3403,40 @@ Tasks:
 
 ### Epic 123. Platform Support Matrix
 
-Status: todo
+Status: done
+
+Evidence:
+
+- Platform matrix and filesystem contract:
+  `docs/BINARY_PLATFORM_MATRIX.md`.
+- Release/install references:
+  `docs/BINARY_RELEASES.md`,
+  `docs/INSTALL.md`.
+- Release workflow matrix:
+  `.github/workflows/release.yml`.
+- Evidence gate:
+  `scripts/binary_platform_matrix_check.py`,
+  `make binary-platform-matrix-check`.
+- Latest local report:
+  `target/binary-platform-matrix/report.json`
+  with `status=passed`, supported `linux-x86_64`, `linux-aarch64`,
+  `macos-arm64`, `macos-x86_64`, unsupported `windows`, and filesystem
+  requirements for local POSIX-style filesystems, WAL `fsync`, atomic
+  same-directory `rename`, parent-directory durability, exclusive `db.lock`
+  creation, and regular executable files.
 
 Tasks:
 
-- Document supported OS/arch.
-- Document unsupported Windows statement.
-- Document filesystem requirements.
+- Document supported OS/arch. Done: Linux x86_64, Linux aarch64, macOS arm64,
+  and macOS x86_64 are documented and checked against the release workflow.
+- Document unsupported Windows statement. Done: Windows remains explicitly
+  unsupported until native path, service, package, smoke, backup/restore, and
+  server lifecycle gates exist.
+- Document filesystem requirements. Done: local production-like data paths must
+  provide WAL `fsync`, atomic same-directory rename, parent-directory
+  durability where exposed, exclusive `db.lock` creation, and executable
+  regular files; network filesystems, cloud-sync folders, container overlay
+  paths, and shared volumes require separate operator validation.
 
 ### Epic 124. Systemd Unit
 
