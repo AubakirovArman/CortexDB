@@ -7,6 +7,9 @@ __pycache__/
 .env
 .env.*
 !.env.example
+/data/
+/backups/
+/secrets/
 examples/kimi_rag
 examples/engine_api_compat/Cargo.lock
 examples/engine_api_compat/target/

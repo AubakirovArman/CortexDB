@@ -135,7 +135,9 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`BINARY_PLATFORM_MATRIX.md`](BINARY_PLATFORM_MATRIX.md) - supported binary platforms and clean-install smoke.
 - [`RELEASE_ARTIFACT_MANIFEST.md`](RELEASE_ARTIFACT_MANIFEST.md) - machine-readable release evidence manifest.
 - [`INSTALL.md`](INSTALL.md) - local binary/source install and first database checks.
-- [`DOCKER.md`](DOCKER.md) - local single-node Docker hardening boundary.
+- [`DOCKER.md`](DOCKER.md) - local single-node Docker hardening boundary,
+  `docker-compose.production.yml`, `auth.tokens.example`, and nginx
+  `cortexdb.conf` production-like compose example.
 - [`SYSTEMD.md`](SYSTEMD.md) - single-node systemd service example.
 - [`LAUNCHD.md`](LAUNCHD.md) - single-node macOS launchd service example.
 - [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md) - offline upgrade and restore-based rollback workflow.

@@ -56,8 +56,8 @@ def check_launchd(failures: list[str]) -> dict[str, object]:
     require(plist.get("KeepAlive") is True, "launchd KeepAlive must be true", failures)
     require(env.get("CORTEXDB_AUTH_TOKENS_FILE") == "/usr/local/etc/cortexdb/auth.tokens", "launchd auth token env missing", failures)
     require(env.get("CORTEXDB_ACTOR_QUEUE_CAPACITY") == "1024", "launchd actor queue env missing", failures)
-    require(env.get("CORTEXDB_REQUEST_RATE_LIMIT_PER_SECOND") == "100", "launchd rate limit env missing", failures)
-    require(env.get("CORTEXDB_AUDIT_LOG_PATH") == "/usr/local/var/log/cortexdb/audit.jsonl", "launchd audit log env missing", failures)
+    require(env.get("CORTEXDB_RATE_LIMIT_PER_MINUTE") == "6000", "launchd rate limit env missing", failures)
+    require(env.get("CORTEXDB_AUDIT_LOG_FILE") == "/usr/local/var/log/cortexdb/audit.jsonl", "launchd audit log env missing", failures)
     require(plist.get("StandardOutPath") == "/usr/local/var/log/cortexdb/server.log", "launchd stdout log path mismatch", failures)
     require(plist.get("StandardErrorPath") == "/usr/local/var/log/cortexdb/server.error.log", "launchd stderr log path mismatch", failures)
     return {"path": str(LAUNCHD_PLIST), "program_arguments": args}
@@ -70,7 +70,7 @@ def check_docs(failures: list[str]) -> dict[str, object]:
             "/v1/validate",
             "Environment File",
             "journalctl -u cortexdb",
-            "CORTEXDB_AUDIT_LOG_PATH=/var/lib/cortexdb/audit.jsonl",
+            "CORTEXDB_AUDIT_LOG_FILE=/var/lib/cortexdb/audit.jsonl",
         ],
         "docs/LAUNCHD.md": [
             "launchctl bootstrap",
@@ -78,8 +78,8 @@ def check_docs(failures: list[str]) -> dict[str, object]:
             "launchctl bootout",
             "/v1/validate",
             "CORTEXDB_ACTOR_QUEUE_CAPACITY=1024",
-            "CORTEXDB_REQUEST_RATE_LIMIT_PER_SECOND=100",
-            "CORTEXDB_AUDIT_LOG_PATH=/usr/local/var/log/cortexdb/audit.jsonl",
+            "CORTEXDB_RATE_LIMIT_PER_MINUTE=6000",
+            "CORTEXDB_AUDIT_LOG_FILE=/usr/local/var/log/cortexdb/audit.jsonl",
             "StandardOutPath=/usr/local/var/log/cortexdb/server.log",
             "StandardErrorPath=/usr/local/var/log/cortexdb/server.error.log",
         ],

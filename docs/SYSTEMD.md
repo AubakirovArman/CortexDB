@@ -31,8 +31,8 @@ install -d -o root -g cortexdb -m 0750 /etc/cortexdb
 ```bash
 CORTEXDB_AUTH_TOKENS_FILE=/etc/cortexdb/auth.tokens
 CORTEXDB_ACTOR_QUEUE_CAPACITY=1024
-CORTEXDB_REQUEST_RATE_LIMIT_PER_SECOND=100
-CORTEXDB_AUDIT_LOG_PATH=/var/lib/cortexdb/audit.jsonl
+CORTEXDB_RATE_LIMIT_PER_MINUTE=6000
+CORTEXDB_AUDIT_LOG_FILE=/var/lib/cortexdb/audit.jsonl
 ```
 
 `/etc/cortexdb/auth.tokens`:
@@ -106,7 +106,7 @@ journalctl -u cortexdb
 Security/audit events are written separately through the configured audit sink:
 
 ```text
-CORTEXDB_AUDIT_LOG_PATH=/var/lib/cortexdb/audit.jsonl
+CORTEXDB_AUDIT_LOG_FILE=/var/lib/cortexdb/audit.jsonl
 ```
 
 ## Health And Validation

@@ -1,0 +1,86 @@
+services:
+  cortexdb:
+    build: .
+    image: cortexdb:local
+    container_name: cortexdb-production
+    user: "10001:10001"
+    read_only: true
+    expose:
+      - "8181"
+    volumes:
+      - cortexdb-data:/data:rw
+      - ./secrets/auth.tokens:/run/secrets/cortexdb-auth.tokens:ro
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      RUST_LOG: info
+      CORTEXDB_AUTH_TOKENS_FILE: /run/secrets/cortexdb-auth.tokens
+      CORTEXDB_ACTOR_QUEUE_CAPACITY: "1024"
+      CORTEXDB_RATE_LIMIT_PER_MINUTE: "6000"
+      CORTEXDB_AUDIT_LOG_FILE: /data/audit.jsonl
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "token=$$(awk -F: '/^(admin|data):/ { print $$2; exit }' /run/secrets/cortexdb-auth.tokens) && curl -sf -H \"Authorization: Bearer $${token}\" http://localhost:8181/v1/health",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  reverse-proxy:
+    image: nginx:1.27-alpine
+    container_name: cortexdb-reverse-proxy
+    depends_on:
+      cortexdb:
+        condition: service_healthy
+    ports:
+      - "8181:8080"
+    volumes:
+      - ./docs/deployment/nginx/cortexdb.conf:/etc/nginx/nginx.conf:ro
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /var/cache/nginx:rw,noexec,nosuid,size=64m
+      - /var/run:rw,noexec,nosuid,size=16m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  backup-sidecar:
+    image: cortexdb:local
+    profiles:
+      - maintenance
+    user: "10001:10001"
+    read_only: true
+    volumes:
+      - cortexdb-data:/data:rw
+      - cortexdb-backups:/backups:rw
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    entrypoint: ["/bin/sh", "-lc"]
+    command:
+      - 'stamp=$$(date -u +%Y%m%dT%H%M%SZ); cortexdb backup /data /backups/cortexdb-$$stamp && cortexdb validate /backups/cortexdb-$$stamp'
+    restart: "no"
+
+volumes:
+  cortexdb-data:
+  cortexdb-backups:

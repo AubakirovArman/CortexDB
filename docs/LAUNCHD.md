@@ -61,8 +61,8 @@ The plist uses:
 ProgramArguments=/usr/local/bin/cortex-server /usr/local/var/cortexdb 127.0.0.1:8181
 EnvironmentVariables.CORTEXDB_AUTH_TOKENS_FILE=/usr/local/etc/cortexdb/auth.tokens
 EnvironmentVariables.CORTEXDB_ACTOR_QUEUE_CAPACITY=1024
-EnvironmentVariables.CORTEXDB_REQUEST_RATE_LIMIT_PER_SECOND=100
-EnvironmentVariables.CORTEXDB_AUDIT_LOG_PATH=/usr/local/var/log/cortexdb/audit.jsonl
+EnvironmentVariables.CORTEXDB_RATE_LIMIT_PER_MINUTE=6000
+EnvironmentVariables.CORTEXDB_AUDIT_LOG_FILE=/usr/local/var/log/cortexdb/audit.jsonl
 StandardOutPath=/usr/local/var/log/cortexdb/server.log
 StandardErrorPath=/usr/local/var/log/cortexdb/server.error.log
 RunAtLoad=true
@@ -81,7 +81,7 @@ The launchd example writes process stdout/stderr to:
 Security/audit events are written separately through the configured audit sink:
 
 ```text
-CORTEXDB_AUDIT_LOG_PATH=/usr/local/var/log/cortexdb/audit.jsonl
+CORTEXDB_AUDIT_LOG_FILE=/usr/local/var/log/cortexdb/audit.jsonl
 ```
 
 ## Lifecycle
@@ -103,7 +103,8 @@ sudo launchctl bootout system/com.cortexdb.server
 ## Health And Validation
 
 ```bash
-curl http://127.0.0.1:8181/v1/health
+curl -H 'authorization: Bearer replace-admin-token' \
+  http://127.0.0.1:8181/v1/health
 curl -H 'authorization: Bearer replace-admin-token' \
   http://127.0.0.1:8181/v1/validate
 ```

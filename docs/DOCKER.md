@@ -70,3 +70,67 @@ The report is written to:
 ```text
 target/docker-hardening/report.json
 ```
+
+## Production Compose Example
+
+`docker-compose.production.yml` is the checked-in production-like local
+topology example. It keeps the database server unexposed on the host and puts a
+reverse proxy in front:
+
+```text
+host:8181 -> reverse-proxy:8080 -> cortexdb:8181
+```
+
+The production example includes:
+
+```text
+reverse-proxy: nginx:1.27-alpine
+auth: CORTEXDB_AUTH_TOKENS_FILE=/run/secrets/cortexdb-auth.tokens
+data volume: cortexdb-data:/data:rw
+backup sidecar: backup-sidecar profile maintenance
+backup volume: cortexdb-backups:/backups:rw
+```
+
+Before starting it, create a local token file. Do not commit real token values:
+
+```bash
+mkdir -p ./secrets
+cp docs/deployment/auth.tokens.example ./secrets/auth.tokens
+chmod 0600 ./secrets/auth.tokens
+$EDITOR ./secrets/auth.tokens
+```
+
+Start the server and reverse proxy:
+
+```bash
+docker compose -f docker-compose.production.yml up -d cortexdb reverse-proxy
+```
+
+Call the API through the reverse proxy with a token from `./secrets/auth.tokens`:
+
+```bash
+curl -H "Authorization: Bearer <token>" http://127.0.0.1:8181/v1/health
+```
+
+The backup sidecar is a maintenance example. It uses the same database volume
+and a separate backup volume. Stop the main server first so the backup command
+can acquire the database lock:
+
+```bash
+docker compose -f docker-compose.production.yml stop cortexdb
+docker compose -f docker-compose.production.yml run --rm backup-sidecar
+docker compose -f docker-compose.production.yml start cortexdb
+```
+
+The production compose gate is daemon-free and validates the checked-in
+topology contract:
+
+```bash
+make docker-production-compose-check
+```
+
+The report is written to:
+
+```text
+target/docker-production-compose/report.json
+```

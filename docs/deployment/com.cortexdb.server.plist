@@ -18,9 +18,9 @@
         <string>/usr/local/etc/cortexdb/auth.tokens</string>
         <key>CORTEXDB_ACTOR_QUEUE_CAPACITY</key>
         <string>1024</string>
-        <key>CORTEXDB_REQUEST_RATE_LIMIT_PER_SECOND</key>
-        <string>100</string>
-        <key>CORTEXDB_AUDIT_LOG_PATH</key>
+        <key>CORTEXDB_RATE_LIMIT_PER_MINUTE</key>
+        <string>6000</string>
+        <key>CORTEXDB_AUDIT_LOG_FILE</key>
         <string>/usr/local/var/log/cortexdb/audit.jsonl</string>
     </dict>
     <key>RunAtLoad</key>

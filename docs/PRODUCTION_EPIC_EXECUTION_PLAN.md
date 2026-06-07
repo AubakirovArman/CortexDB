@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 126 / 150
+- Done: 127 / 150
 - Partial: 1 / 150
-- Todo: 23 / 150
-- Current closed epic: Epic 126, Docker Hardening v2
+- Todo: 22 / 150
+- Current closed epic: Epic 127, Docker Compose Production Example
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3542,14 +3542,42 @@ Tasks:
 
 ### Epic 127. Docker Compose Production Example
 
-Status: todo
+Status: done
+
+Evidence:
+
+- Production-like compose topology:
+  `docker-compose.production.yml`.
+- Reverse proxy config:
+  `docs/deployment/nginx/cortexdb.conf`.
+- Auth token file example:
+  `docs/deployment/auth.tokens.example`.
+- Operator documentation:
+  `docs/DOCKER.md`,
+  `docs/SDK_DOCKER_OBSERVABILITY.md`,
+  `docs/DOCUMENTATION_INDEX.md`.
+- Evidence gate:
+  `scripts/docker_production_compose_check.py`,
+  `make docker-production-compose-check`.
+- Latest local report:
+  `target/docker-production-compose/report.json`
+  with `status=passed`.
 
 Tasks:
 
-- Add reverse proxy.
-- Add auth token.
-- Add volume.
-- Add backup sidecar example.
+- Add reverse proxy. Done: `reverse-proxy` uses `nginx:1.27-alpine`, listens
+  on host port `8181`, proxies to `cortexdb:8181`, forwards the bearer
+  `Authorization` header, and uses read-only root plus tmpfs runtime paths.
+- Add auth token. Done: `cortexdb` reads
+  `CORTEXDB_AUTH_TOKENS_FILE=/run/secrets/cortexdb-auth.tokens`, mounted from
+  `./secrets/auth.tokens`, and `docs/deployment/auth.tokens.example` documents
+  the `role:token[:agent_id]` shape without committing real secrets.
+- Add volume. Done: production compose uses `cortexdb-data:/data:rw` for the
+  database and `cortexdb-backups:/backups:rw` for backup outputs.
+- Add backup sidecar example. Done: `backup-sidecar` is scoped to the
+  `maintenance` profile and runs `cortexdb backup` plus `cortexdb validate`;
+  docs require stopping the main server first so the backup can acquire the
+  database lock.
 
 ### Epic 128. Upgrade/Rollback CLI Flow
 

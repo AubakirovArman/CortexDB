@@ -1,0 +1,4 @@
+# Example only. Copy to ./secrets/auth.tokens and replace all token values.
+# Format: role:token[:agent_id]
+admin:replace-with-random-admin-token
+data:replace-with-random-data-token

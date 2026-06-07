@@ -6,11 +6,14 @@ This is a thin integration surface for Core Alpha smoke paths.
 
 `Dockerfile` builds `cortex-server` and `cortexdb` in a Rust builder image and
 runs the server as a non-root user. The hardened local container contract is in
-[`DOCKER.md`](DOCKER.md):
+[`DOCKER.md`](DOCKER.md). The production-like compose example adds an nginx
+reverse proxy, `CORTEXDB_AUTH_TOKENS_FILE`, persistent data and backup volumes,
+and a maintenance `backup-sidecar` profile:
 
 ```bash
 docker build -t cortexdb:core-alpha .
 docker run --rm -p 8181:8181 -v "$PWD/data:/data" cortexdb:core-alpha
+make docker-production-compose-check
 ```
 
 ## SDK Clients
