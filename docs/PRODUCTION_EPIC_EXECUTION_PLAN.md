@@ -20,7 +20,7 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 - Done: 148 / 150
 - Partial: 1 / 150
 - Todo: 1 / 150
-- Current closed epic: Epic 148, Agent Session Model
+- Current closed epic: Epic 149, Feedback Learning Loop
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -4277,14 +4277,32 @@ Boundary:
 
 ### Epic 149. Feedback Learning Loop
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/feedback.rs`
+- `crates/cortex-engine/tests/feedback_tests.rs`
+- `crates/cortex-engine/tests/context_pack.rs`
+- `docs/FEEDBACK.md`
+- `make feedback-learning-check`
 
 Tasks:
 
-- Add feedback cells.
-- Let feedback influence ranking.
-- Add feedback decay.
-- Explain feedback contribution.
+- Add feedback cells. Done: `record_context_feedback` writes durable
+  `type=feedback` cells through the normal WAL/MemTable path.
+- Let feedback influence ranking. Done: `context_pack_from_aql` orders
+  candidates by decayed feedback scores before ContextPack packing.
+- Add feedback decay. Done: `feedback_scores_at` applies a deterministic
+  fixed-window integer decay, and `feedback_score_report_at` exposes raw and
+  decayed scores.
+- Explain feedback contribution. Done: ContextPack explain output includes a
+  `feedback_bonus` component whenever feedback affects a selected cell.
+
+Boundary:
+
+- This is deterministic local feedback scoring. It is not reinforcement
+  learning, online model training, or cross-tenant personalization.
 
 ### Epic 150. Future Managed Cloud Feasibility Track
 

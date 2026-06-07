@@ -297,6 +297,11 @@ fn context_pack_orders_cells_by_feedback_score() {
         .context_pack_from_aql(query(), &view(false), ContextPackOptions::default())
         .unwrap();
     assert_eq!(pack.cells[0].cell_id, CellId(2));
+    let explain = pack.cells[0].explain.as_ref().unwrap();
+    assert!(explain
+        .score_components
+        .iter()
+        .any(|component| { component.name == "feedback_bonus" && component.contribution > 0 }));
 }
 
 #[test]

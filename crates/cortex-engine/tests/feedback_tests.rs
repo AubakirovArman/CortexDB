@@ -1,6 +1,8 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
-use cortex_core::CellId;
-use cortex_engine::feedback::ContextFeedback;
+use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
+use cortex_engine::feedback::{
+    ContextFeedback, FEEDBACK_DECAY_WINDOW_SECONDS, FEEDBACK_FULL_VOTE_BONUS,
+};
 use cortex_engine::{scope_id, Database};
 use std::collections::BTreeSet;
 
@@ -117,12 +119,77 @@ fn feedback_stats_reports_totals_and_per_cell_breakdown() {
     assert_eq!(stats.by_source_cell[&CellId(43)].score, 1);
 }
 
+#[test]
+fn feedback_scores_at_decay_with_fixed_window() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(CellId(10), feedback_cell(CellId(42), true, 100))
+        .unwrap();
+    db.put_knowledge_cell(CellId(11), feedback_cell(CellId(43), false, 100))
+        .unwrap();
+
+    let half_window = 100 + (FEEDBACK_DECAY_WINDOW_SECONDS / 2);
+    let scores = db.feedback_scores_at(half_window);
+    assert_eq!(
+        scores.get(&CellId(42)),
+        Some(&(FEEDBACK_FULL_VOTE_BONUS / 2))
+    );
+    assert_eq!(
+        scores.get(&CellId(43)),
+        Some(&(-(FEEDBACK_FULL_VOTE_BONUS / 2)))
+    );
+
+    let expired = db.feedback_scores_at(100 + FEEDBACK_DECAY_WINDOW_SECONDS);
+    assert_eq!(expired.get(&CellId(42)), Some(&0));
+    assert_eq!(expired.get(&CellId(43)), Some(&0));
+}
+
+#[test]
+fn feedback_score_report_explains_raw_and_decayed_contribution() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(CellId(10), feedback_cell(CellId(42), true, 100))
+        .unwrap();
+    db.put_knowledge_cell(CellId(11), feedback_cell(CellId(42), false, 100))
+        .unwrap();
+    db.put_knowledge_cell(CellId(12), feedback_cell(CellId(42), true, 100))
+        .unwrap();
+
+    let report = db.feedback_score_report_at(100);
+    assert_eq!(report.len(), 1);
+    assert_eq!(report[0].source_cell_id, CellId(42));
+    assert_eq!(report[0].useful, 2);
+    assert_eq!(report[0].not_useful, 1);
+    assert_eq!(report[0].raw_score, 1);
+    assert_eq!(report[0].decayed_score, FEEDBACK_FULL_VOTE_BONUS);
+    assert_eq!(
+        report[0].decay_window_seconds,
+        FEEDBACK_DECAY_WINDOW_SECONDS
+    );
+}
+
 fn feedback(source_cell_id: CellId, useful: bool) -> ContextFeedback {
     ContextFeedback {
         source_cell_id,
         useful,
         note: None,
     }
+}
+
+fn feedback_cell(source_cell_id: CellId, useful: bool, created: u64) -> KnowledgeCell {
+    KnowledgeCell::new(
+        KnowledgeCellMetadata {
+            scope: "agent:7".to_owned(),
+            status: "ready".to_owned(),
+            cell_type: KnowledgeCellType::Feedback,
+            memory_type: None,
+            ttl_seconds: None,
+            created_unix_seconds: Some(created),
+            source_trust_q16: None,
+            source: Some(format!("cell:{}", source_cell_id.0)),
+        },
+        format!("source_cell_id={}\nuseful={}\n", source_cell_id.0, useful),
+    )
 }
 
 fn view() -> AgentView {

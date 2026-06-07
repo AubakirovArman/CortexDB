@@ -1198,6 +1198,9 @@ agent-memory-demo-check:
 agent-session-check:
 	cargo test -p cortex-engine --test agent_session_tests
 
+feedback-learning-check:
+	cargo test -p cortex-engine --test feedback_tests --test context_pack
+
 memory-quality-benchmark-check:
 	python3 scripts/memory_quality_benchmark_check.py --report "$(MEMORY_QUALITY_BENCHMARK_REPORT)"
 

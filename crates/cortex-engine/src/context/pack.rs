@@ -1,6 +1,7 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_aql::{AgentView, BoundPlan};
+use cortex_core::CellId;
 
 use super::answerability;
 use super::conflicts;
@@ -10,13 +11,14 @@ use super::large_cell::{
     apply_large_cell_policy, estimate_cell_tokens, ContextLargeCellPolicy, LargeCellDecision,
     LargeCellRequest,
 };
-use super::scoring::{order_by_feedback, score_components};
+use super::scoring::{apply_feedback_bonus, order_by_feedback, score_components};
 use super::{
     ContextExplain, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell,
     ContextPackOptions, ContextPackWithTools,
 };
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
+use crate::feedback::current_unix_seconds;
 use crate::query::{cache::AqlStatementKind, CellMetadata, EngineAqlProvider};
 use crate::search::tokenize;
 use crate::source_trust::SourceTrust;
@@ -40,22 +42,22 @@ impl Database {
             return Err(EngineError::InvalidOperation);
         };
         let provider = EngineAqlProvider::new(index, view);
-        let budget = effective_budget(
-            view,
-            options.token_budget_tokens,
-            plan.context_policy.budget_tokens,
-        );
+        let requested_budget = if options.token_budget_tokens == 0 {
+            plan.context_policy.budget_tokens
+        } else {
+            options.token_budget_tokens
+        };
+        let budget = view.effective_budget(requested_budget);
         let citations_required = options.require_citations || plan.context_policy.require_citations;
-        let cells = order_by_feedback(
-            self.retrieve_cells(&plan, &provider)?,
-            &self.feedback_scores(),
-        );
-        Ok(ContextPack::from_retrieved_with_options(
+        let feedback_scores = self.feedback_scores_at(current_unix_seconds());
+        let cells = order_by_feedback(self.retrieve_cells(&plan, &provider)?, &feedback_scores);
+        Ok(ContextPack::from_retrieved_with_feedback_options(
             cells,
             budget,
             citations_required,
             &options,
             aql,
+            &feedback_scores,
         ))
     }
 
@@ -100,6 +102,24 @@ impl ContextPack {
         citations_required: bool,
         options: &ContextPackOptions,
         query: &str,
+    ) -> Self {
+        Self::from_retrieved_with_feedback_options(
+            cells,
+            token_budget_tokens,
+            citations_required,
+            options,
+            query,
+            &BTreeMap::new(),
+        )
+    }
+
+    pub fn from_retrieved_with_feedback_options(
+        cells: Vec<RetrievedCell>,
+        token_budget_tokens: u32,
+        citations_required: bool,
+        options: &ContextPackOptions,
+        query: &str,
+        feedback_scores: &BTreeMap<CellId, i32>,
     ) -> Self {
         let mut pack_cells = Vec::new();
         let mut estimated_tokens = 0u32;
@@ -216,13 +236,16 @@ impl ContextPack {
             }
             let redundancy_penalty = (max_jaccard_similarity_q16 * 10_000) / 65536;
 
-            let score = base_bm25
+            let base_score = base_bm25
                 .saturating_add(source_trust_bonus)
                 .saturating_sub(redundancy_penalty);
+            let feedback_bonus = *feedback_scores.get(&cell.cell_id).unwrap_or(&0);
+            let score = apply_feedback_bonus(base_score, feedback_bonus);
 
             let why_selected =
                 generate_selection_reason(score, base_bm25, source_trust_bonus, redundancy_penalty);
-            let score_components = score_components(base_bm25, source_trust, redundancy_penalty);
+            let score_components =
+                score_components(base_bm25, source_trust, redundancy_penalty, feedback_bonus);
 
             let explain = Some(ContextExplain {
                 score,
@@ -264,15 +287,6 @@ impl ContextPack {
             anomalies,
         }
     }
-}
-
-fn effective_budget(view: &AgentView, requested: u32, plan_budget: u32) -> u32 {
-    let budget = if requested == 0 {
-        plan_budget
-    } else {
-        requested
-    };
-    view.effective_budget(budget)
 }
 
 fn extract_citation(payload: &[u8]) -> Option<String> {

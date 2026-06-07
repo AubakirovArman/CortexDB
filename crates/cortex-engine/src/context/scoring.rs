@@ -11,9 +11,10 @@ pub(crate) fn score_components(
     base_bm25: u32,
     source_trust: SourceTrust,
     redundancy_penalty: u32,
+    feedback_bonus: i32,
 ) -> Vec<ContextScoreComponent> {
     let source_trust_bonus = source_trust.score_bonus();
-    vec![
+    let mut components = vec![
         ContextScoreComponent {
             name: "base_bm25".to_owned(),
             value: base_bm25,
@@ -32,7 +33,16 @@ pub(crate) fn score_components(
             contribution: -i32::try_from(redundancy_penalty).unwrap_or(i32::MAX),
             reason: "weighted Jaccard overlap with already packed cells".to_owned(),
         },
-    ]
+    ];
+    if feedback_bonus != 0 {
+        components.push(ContextScoreComponent {
+            name: "feedback_bonus".to_owned(),
+            value: feedback_bonus.unsigned_abs(),
+            contribution: feedback_bonus,
+            reason: "decayed useful/not-useful context feedback signal".to_owned(),
+        });
+    }
+    components
 }
 
 pub(crate) fn order_by_feedback(
@@ -47,4 +57,12 @@ pub(crate) fn order_by_feedback(
         )
     });
     indexed.into_iter().map(|(_, cell)| cell).collect()
+}
+
+pub(crate) fn apply_feedback_bonus(score: u32, feedback_bonus: i32) -> u32 {
+    if feedback_bonus >= 0 {
+        score.saturating_add(feedback_bonus as u32)
+    } else {
+        score.saturating_sub(feedback_bonus.unsigned_abs())
+    }
 }

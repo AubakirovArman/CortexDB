@@ -59,7 +59,8 @@ TTL window, and becomes `Q16_ZERO` after expiry.
 
 Feedback is stored as durable `type=feedback` cells and is used as a
 deterministic pre-pack ordering signal for ContextPack selection. The current
-model supports useful/not-useful votes, per-source-cell scores, and stats.
+model supports useful/not-useful votes, per-source-cell scores, fixed-window
+decay, stats, and explainable `feedback_bonus` ContextPack score components.
 
 ## Epic 141 Agent Memory v2 Contract
 
@@ -69,7 +70,7 @@ model supports useful/not-useful votes, per-source-cell scores, and stats.
 | Add working memory | Working memory is represented by scoped short-TTL memory cells that can be retrieved into ContextPacks during active tasks. | Working memory is explicit and policy checked; CortexDB does not infer hidden session memory. |
 | Add private/shared memory | Private and shared memory are modeled through scopes such as `agent:<id>`, `project:<name>`, and `tenant:<name>`, then enforced by `AgentView` read/write scope policy. | The current boundary is local AgentView enforcement, not enterprise RBAC. |
 | Add TTL/decay | TTL expiry uses `expired_memory_cells` / `expire_memory_cells`, and decay uses fixed-point `memory_decay_scores`. | Expiry is deterministic; semantic decay and learned importance are future ranking work. |
-| Add feedback | Feedback is stored as durable `type=feedback` cells and influences ContextPack pre-pack ordering. | Feedback is a deterministic signal, not a reinforcement-learning loop. |
+| Add feedback | Feedback is stored as durable `type=feedback` cells, influences ContextPack pre-pack ordering, decays deterministically, and appears as `feedback_bonus` in ContextPack explain output. | Feedback is a deterministic signal, not a reinforcement-learning loop. |
 
 ## Memory Classes
 
