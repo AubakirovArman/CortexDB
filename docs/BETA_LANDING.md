@@ -2,11 +2,21 @@
 
 Status: concise external landing path for `v0.2.0-beta.1`.
 
-CortexDB is a local single-node, agent-native context database for building
-evidence-aware Context Packs. It combines durable local storage, AQL retrieval,
-search, verification, and typed HTTP/CLI/SDK surfaces for developer testing.
+## One-liner
 
-## What You Can Try Now
+CortexDB is a local single-node, agent-native context database for building
+evidence-aware Context Packs.
+
+## Value Proposition
+
+For local developer and API evaluation, CortexDB combines durable local storage,
+AQL retrieval, search, deterministic verification, and typed HTTP/CLI/SDK
+surfaces. The goal is to return compact, cited, permission-aware context for an
+agent instead of raw rows or unverified text fragments.
+
+## Quickstart
+
+Clone the repo and run the beta evidence and demo gates:
 
 ```bash
 git clone https://github.com/AubakirovArman/CortexDB.git
@@ -14,6 +24,8 @@ cd CortexDB
 make beta-release-check
 make demo
 ```
+
+## Demo
 
 Minimal local loop:
 
@@ -34,6 +46,22 @@ curl http://127.0.0.1:8181/v1/health
 curl http://127.0.0.1:8181/v1/compatibility
 ```
 
+## Architecture Diagram
+
+```text
+CLI / HTTP / SDK
+      |
+      v
+Database actor
+      |
+      +--> AQL parser/binder --> bitmap filters
+      +--> retrieval/search --> ContextPack builder
+      +--> VERIFY FACT --> citation and numeric checks
+      |
+      v
+WAL -> MemTable MVCC -> checkpoint/compact -> segments + indexes
+```
+
 ## Beta Scope
 
 The beta is for local developer/API evaluation:
@@ -46,7 +74,7 @@ The beta is for local developer/API evaluation:
 - typed HTTP API, CLI, Rust SDK, Python SDK, and TypeScript SDK examples;
 - guarded exact/vector/HNSW foundations with recall gates and fallback policy.
 
-## What This Is Not Yet
+## Limitations
 
 CortexDB beta does not claim:
 

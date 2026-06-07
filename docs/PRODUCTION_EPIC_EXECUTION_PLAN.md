@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 130 / 150
+- Done: 131 / 150
 - Partial: 1 / 150
-- Todo: 19 / 150
-- Current closed epic: Epic 130, Homebrew/Package Manager Feasibility
+- Todo: 18 / 150
+- Current closed epic: Epic 131, Official Beta Landing Page
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3678,16 +3678,34 @@ Acceptance: external developer understands the value, can run demos, and can con
 
 ### Epic 131. Official Beta Landing Page
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/BETA_LANDING.md`
+- `scripts/beta_landing_check.py`
+- `make beta-landing-check`
+- `target/beta-landing/report.json`
+- Latest local beta landing report: `status=passed`
+- Report `task_coverage` proves one-liner, demo, value proposition,
+  limitations, quickstart, and architecture diagram are present.
 
 Tasks:
 
-- Add one-liner.
-- Add demo.
-- Add value proposition.
-- Add limitations.
-- Add quickstart.
-- Add architecture diagram.
+- Add one-liner. Done: landing page opens with a concise single-sentence
+  description of CortexDB as a local single-node agent-native context database.
+- Add demo. Done: landing page includes a minimal local CLI loop and HTTP
+  surface commands.
+- Add value proposition. Done: landing page explains compact, cited,
+  permission-aware context for agents.
+- Add limitations. Done: landing page lists non-goals including production
+  multi-node consensus, managed cloud, enterprise compliance, fallback-free
+  HNSW, built-in LLM inference, and legal-grade verification.
+- Add quickstart. Done: landing page starts with clone plus
+  `make beta-release-check` and `make demo`.
+- Add architecture diagram. Done: landing page includes an ASCII architecture
+  diagram from CLI/HTTP/SDK through Database actor, AQL/retrieval/verification,
+  WAL, MemTable, checkpoint, segments, and indexes.
 
 ### Epic 132. Use-case Pack: Investment Projects
 
