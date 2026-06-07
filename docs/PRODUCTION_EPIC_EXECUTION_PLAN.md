@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 124 / 150
+- Done: 125 / 150
 - Partial: 1 / 150
-- Todo: 25 / 150
-- Current closed epic: Epic 124, Systemd Unit
+- Todo: 24 / 150
+- Current closed epic: Epic 125, Launchd Plist
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3474,14 +3474,37 @@ Tasks:
 
 ### Epic 125. Launchd Plist
 
-Status: todo
+Status: done
+
+Evidence:
+
+- macOS launchd plist:
+  `docs/deployment/com.cortexdb.server.plist`.
+- Operator documentation:
+  `docs/LAUNCHD.md`,
+  `docs/OPERATIONS.md`,
+  `docs/DOCUMENTATION_INDEX.md`.
+- Evidence gate:
+  `scripts/service_manager_smoke_check.py`,
+  `make service-manager-smoke-check`.
+- Latest local report:
+  `target/service-manager-smoke/report.json`
+  with `status=passed`.
 
 Tasks:
 
-- Add macOS service config.
-- Define paths.
-- Define logs.
-- Define environment.
+- Add macOS service config. Done: checked-in plist starts
+  `/usr/local/bin/cortex-server /usr/local/var/cortexdb 127.0.0.1:8181` with
+  `RunAtLoad=true` and `KeepAlive=true`.
+- Define paths. Done: data, config, token, and log paths use the documented
+  Homebrew-style `/usr/local/...` layout.
+- Define logs. Done: process stdout/stderr write to
+  `/usr/local/var/log/cortexdb/server.log` and
+  `/usr/local/var/log/cortexdb/server.error.log`; audit events write to
+  `/usr/local/var/log/cortexdb/audit.jsonl`.
+- Define environment. Done: launchd environment includes auth token file, actor
+  queue capacity, request rate limit, and audit log path; all are checked by
+  the service manager smoke gate.
 
 ### Epic 126. Docker Hardening v2
 

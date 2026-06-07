@@ -55,9 +55,11 @@ def check_launchd(failures: list[str]) -> dict[str, object]:
     require(plist.get("RunAtLoad") is True, "launchd RunAtLoad must be true", failures)
     require(plist.get("KeepAlive") is True, "launchd KeepAlive must be true", failures)
     require(env.get("CORTEXDB_AUTH_TOKENS_FILE") == "/usr/local/etc/cortexdb/auth.tokens", "launchd auth token env missing", failures)
+    require(env.get("CORTEXDB_ACTOR_QUEUE_CAPACITY") == "1024", "launchd actor queue env missing", failures)
+    require(env.get("CORTEXDB_REQUEST_RATE_LIMIT_PER_SECOND") == "100", "launchd rate limit env missing", failures)
     require(env.get("CORTEXDB_AUDIT_LOG_PATH") == "/usr/local/var/log/cortexdb/audit.jsonl", "launchd audit log env missing", failures)
-    require(str(plist.get("StandardOutPath", "")).startswith("/usr/local/var/log/cortexdb/"), "launchd stdout log path mismatch", failures)
-    require(str(plist.get("StandardErrorPath", "")).startswith("/usr/local/var/log/cortexdb/"), "launchd stderr log path mismatch", failures)
+    require(plist.get("StandardOutPath") == "/usr/local/var/log/cortexdb/server.log", "launchd stdout log path mismatch", failures)
+    require(plist.get("StandardErrorPath") == "/usr/local/var/log/cortexdb/server.error.log", "launchd stderr log path mismatch", failures)
     return {"path": str(LAUNCHD_PLIST), "program_arguments": args}
 
 
@@ -70,7 +72,17 @@ def check_docs(failures: list[str]) -> dict[str, object]:
             "journalctl -u cortexdb",
             "CORTEXDB_AUDIT_LOG_PATH=/var/lib/cortexdb/audit.jsonl",
         ],
-        "docs/LAUNCHD.md": ["launchctl bootstrap", "launchctl kickstart", "launchctl bootout", "/v1/validate"],
+        "docs/LAUNCHD.md": [
+            "launchctl bootstrap",
+            "launchctl kickstart",
+            "launchctl bootout",
+            "/v1/validate",
+            "CORTEXDB_ACTOR_QUEUE_CAPACITY=1024",
+            "CORTEXDB_REQUEST_RATE_LIMIT_PER_SECOND=100",
+            "CORTEXDB_AUDIT_LOG_PATH=/usr/local/var/log/cortexdb/audit.jsonl",
+            "StandardOutPath=/usr/local/var/log/cortexdb/server.log",
+            "StandardErrorPath=/usr/local/var/log/cortexdb/server.error.log",
+        ],
         "docs/DOCUMENTATION_INDEX.md": ["LAUNCHD.md", "SYSTEMD.md"],
         "docs/OPERATIONS.md": ["SYSTEMD.md", "LAUNCHD.md"],
     }
