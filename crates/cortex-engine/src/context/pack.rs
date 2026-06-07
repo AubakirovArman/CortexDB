@@ -13,7 +13,7 @@ use super::large_cell::{
 use super::scoring::{order_by_feedback, score_components};
 use super::{
     ContextExplain, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell,
-    ContextPackOptions,
+    ContextPackOptions, ContextPackWithTools,
 };
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
@@ -57,6 +57,25 @@ impl Database {
             &options,
             aql,
         ))
+    }
+
+    pub fn context_pack_with_tool_recommendations_from_aql(
+        &self,
+        aql: &str,
+        view: &AgentView,
+        options: ContextPackOptions,
+        tool_limit: usize,
+    ) -> EngineResult<ContextPackWithTools> {
+        let pack = self.context_pack_from_aql(aql, view, options)?;
+        let (cached, _) = self.bind_aql_cached(aql, view)?;
+        let BoundPlan::Retrieve(plan) = cached.bound_plan else {
+            return Err(EngineError::InvalidOperation);
+        };
+        let tool_recommendations = self.recommend_tools_for_task(view, &plan.task, tool_limit);
+        Ok(ContextPackWithTools {
+            pack,
+            tool_recommendations,
+        })
     }
 }
 

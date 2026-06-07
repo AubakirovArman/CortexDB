@@ -22,6 +22,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`COMPARISONS.md`](COMPARISONS.md) - neutral comparison with SQL databases, vector databases, RAG stacks, and memory frameworks.
 - [`SDK_PRODUCTIZATION.md`](SDK_PRODUCTIZATION.md) - local Rust, Python, and TypeScript SDK productization gate.
 - [`TOOL_REGISTRY.md`](TOOL_REGISTRY.md) - durable tool cells, schemas, permissions, and ContextPack inclusion.
+- [`CONTEXT_PACK_TOOL_RECOMMENDATION.md`](CONTEXT_PACK_TOOL_RECOMMENDATION.md) - ContextPack plus deterministic tool recommendations and selection explanations.
 - [`KNOWLEDGE_GRAPH.md`](KNOWLEDGE_GRAPH.md) - entity, relation, and source-reference graph projection.
 - [`BETA_OPERATIONS.md`](BETA_OPERATIONS.md) - beta operator runbook for install, auth, backup, validation, repair, metrics, and known limits.
 - [`RELEASE_NOTES_v0.2.0-beta.1.md`](RELEASE_NOTES_v0.2.0-beta.1.md) - planned beta release notes and checklist.
@@ -67,6 +68,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`CONTEXT_PACK.md`](CONTEXT_PACK.md) - Context Pack v1 contract.
 - [`CONTEXT_PACK_TECHNOLOGY.md`](CONTEXT_PACK_TECHNOLOGY.md) - Context Pack technology overview.
 - [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md) - local Epic 11 evidence gate.
+- [`CONTEXT_PACK_TOOL_RECOMMENDATION.md`](CONTEXT_PACK_TOOL_RECOMMENDATION.md) - tool recommendations returned beside ContextPack evidence.
 - [`VERIFY_FACT.md`](VERIFY_FACT.md) - deterministic verification behavior.
 - [`VERIFICATION_QUALITY_EVIDENCE.md`](VERIFICATION_QUALITY_EVIDENCE.md) - local Epic 12 evidence gate.
 - [`FEEDBACK.md`](FEEDBACK.md) - feedback scoring signal.

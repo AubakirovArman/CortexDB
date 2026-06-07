@@ -28,7 +28,7 @@
 .PHONY: public-benchmarks-check public-retrieval-benchmark-page-check
 .PHONY: comparison-docs-check
 .PHONY: agent-memory-demo-check memory-quality-benchmark-check
-.PHONY: tool-registry-check
+.PHONY: tool-registry-check context-pack-tool-recommendation-check
 .PHONY: knowledge-graph-check
 .PHONY: ingestion-jobs-v2-check
 .PHONY: ingestion-job-dashboard-check
@@ -702,6 +702,7 @@ COMPARISON_DOCS_REPORT ?= target/comparison-docs/report.json
 AGENT_MEMORY_DEMO_REPORT ?= target/agent-memory-demo/report.json
 MEMORY_QUALITY_BENCHMARK_REPORT ?= target/memory-quality-benchmark/report.json
 TOOL_REGISTRY_REPORT ?= target/tool-registry/report.json
+CONTEXT_PACK_TOOL_RECOMMENDATION_REPORT ?= target/context-pack-tool-recommendation/report.json
 KNOWLEDGE_GRAPH_REPORT ?= target/knowledge-graph/report.json
 CONSENSUS_RESEARCH_REPORT ?= target/consensus/research-summary.json
 PRODUCTION_HARDENING_ROOT ?= target/production-hardening
@@ -1198,6 +1199,9 @@ memory-quality-benchmark-check:
 
 tool-registry-check:
 	python3 scripts/tool_registry_check.py --report "$(TOOL_REGISTRY_REPORT)"
+
+context-pack-tool-recommendation-check:
+	python3 scripts/context_pack_tool_recommendation_check.py --report "$(CONTEXT_PACK_TOOL_RECOMMENDATION_REPORT)"
 
 knowledge-graph-check:
 	python3 scripts/knowledge_graph_check.py --report "$(KNOWLEDGE_GRAPH_REPORT)"

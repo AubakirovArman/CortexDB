@@ -1,6 +1,7 @@
 use cortex_core::CellId;
 
 use crate::source_trust::SourceTrustCategory;
+use crate::tool_registry::ToolRecommendation;
 
 mod answerability;
 mod conflicts;
@@ -86,6 +87,12 @@ pub struct ContextPack {
     pub conflict_visibility_q16: u16,
     pub visible_conflict_count: u32,
     pub anomalies: Vec<ContextPackAnomaly>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ContextPackWithTools {
+    pub pack: ContextPack,
+    pub tool_recommendations: Vec<ToolRecommendation>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

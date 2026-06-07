@@ -40,6 +40,7 @@ pub struct ToolRecommendation {
     pub tool: RegisteredTool,
     pub matched_terms: Vec<String>,
     pub score: u32,
+    pub why_selected: String,
 }
 
 impl ToolDescriptor {
@@ -200,10 +201,15 @@ impl Database {
                     return None;
                 }
                 let score = u32::try_from(matched_terms.len()).unwrap_or(u32::MAX);
+                let why_selected = format!(
+                    "selected because task terms matched tool metadata: {}",
+                    matched_terms.join(", ")
+                );
                 Some(ToolRecommendation {
                     tool,
                     matched_terms,
                     score,
+                    why_selected,
                 })
             })
             .collect::<Vec<_>>();

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 143 / 150
+- Done: 144 / 150
 - Partial: 1 / 150
-- Todo: 6 / 150
-- Current closed epic: Epic 143, Tool Registry v1
+- Todo: 5 / 150
+- Current closed epic: Epic 144, Tool Recommendation in ContextPack
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -4132,12 +4132,34 @@ Boundary:
 
 ### Epic 144. Tool Recommendation in ContextPack
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/CONTEXT_PACK_TOOL_RECOMMENDATION.md`
+- `crates/cortex-engine/src/context/mod.rs`
+- `crates/cortex-engine/src/context/pack.rs`
+- `crates/cortex-engine/src/tool_registry.rs`
+- `crates/cortex-engine/tests/context_pack_tool_recommendation.rs`
+- `scripts/context_pack_tool_recommendation_check.py`
+- `make context-pack-tool-recommendation-check`
+- `cargo test -p cortex-engine --test context_pack_tool_recommendation`
 
 Tasks:
 
-- Include relevant tools with context.
-- Explain why each tool was selected.
+- Include relevant tools with context. Done:
+  `context_pack_with_tool_recommendations_from_aql` returns
+  `ContextPackWithTools`, pairing normal ContextPack evidence with visible tool
+  recommendations for the same AQL task.
+- Explain why each tool was selected. Done:
+  `ToolRecommendation` includes `matched_terms`, deterministic `score`, and
+  `why_selected`.
+
+Boundary:
+
+- Tool recommendations are metadata-only. They do not execute tools, store
+  remote credentials, infer enterprise RBAC, or provide LLM-driven tool
+  planning.
 
 ### Epic 145. Knowledge Graph Layer v1
 
