@@ -31,6 +31,22 @@
       "expected_markers": ["Tesla", "96.77B USD", "revenue"]
     },
     {
+      "id": "support_ticket_triage",
+      "title": "Support Ticket Triage",
+      "domain": "support",
+      "scope": "support:tickets",
+      "fixture_path": "examples/datasets/support_tickets/cells.jsonl",
+      "readme_path": "examples/use_cases/support_ticket_triage/README.md",
+      "search_query": "authentication outage signing key drift",
+      "context_aql": "RETRIEVE CONTEXT FOR TASK \"Find repeated authentication incidents and successful remediation steps\" IN BRAIN default REQUIRE citations LIMIT 10 CANDIDATES;",
+      "verify_aql": "VERIFY FACT \"The authentication outage was mitigated by rotating the signing key\" IN BRAIN default;",
+      "expected_markers": ["authentication outage", "signing key", "workflow_result"],
+      "remember_aql": "REMEMBER \"For repeated authentication failures, check token issuer drift before cache invalidation\" IN SCOPE support:tickets AS TYPE workflow_result TTL 1209600 SECONDS;",
+      "demo_path": "examples/demo/support_tickets/run.sh",
+      "aql_examples_path": "examples/aql/support_tickets",
+      "corpus_path": "examples/real_domains/support_tickets"
+    },
+    {
       "id": "technical_runbook_triage",
       "title": "Technical Runbook Triage",
       "domain": "technical",

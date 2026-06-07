@@ -31,6 +31,14 @@ pub(crate) fn remember_view_for_scope(scope: &str) -> AgentView {
     let mut view = view_for_scope(scope);
     view.allow_remember = true;
     view.writable_scopes = std::collections::BTreeSet::from([scope_id(scope)]);
+    view.allowed_memory_types = std::collections::BTreeSet::from([
+        MemoryType::Decision,
+        MemoryType::Preference,
+        MemoryType::WorkflowResult,
+        MemoryType::ErrorLog,
+        MemoryType::Observation,
+    ]);
+    view.max_ttl_seconds = Some(2_592_000);
     view
 }
 

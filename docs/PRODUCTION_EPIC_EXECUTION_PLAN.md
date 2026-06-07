@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 133 / 150
+- Done: 134 / 150
 - Partial: 1 / 150
-- Todo: 16 / 150
-- Current closed epic: Epic 133, Use-case Pack: Legal Policies
+- Todo: 15 / 150
+- Current closed epic: Epic 134, Use-case Pack: Support Tickets
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3779,13 +3779,37 @@ Boundary:
 
 ### Epic 134. Use-case Pack: Support Tickets
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `examples/use_cases/support_ticket_triage/README.md`
+- `examples/demo/support_tickets/run.sh`
+- `examples/datasets/support_tickets/cells.jsonl`
+- `examples/real_domains/support_tickets/`
+- `examples/use_cases/packs.json`
+- `scripts/use_case_pack_check.py`
+- `scripts/use_case_pack_epic134.py`
+- `make use-case-pack-check`
+- `./examples/demo/support_tickets/run.sh`
 
 Tasks:
 
-- Add customer issue retrieval.
-- Add memory updates.
-- Add resolution verification.
+- Add customer issue retrieval. Done: the fixture includes T-3003
+  authentication outage evidence, and both the demo and use-case smoke run
+  scoped `search --json` for signing-key drift.
+- Add memory updates. Done: the demo and smoke run `REMEMBER ... AS TYPE
+  workflow_result`, and the CLI remember view now permits workflow-result
+  memory with a bounded 30-day TTL cap.
+- Add resolution verification. Done: the fixture includes a documented
+  resolution, and the demo and smoke run `VERIFY FACT` for the signing-key
+  mitigation claim.
+
+Boundary:
+
+- This pack is a developer scenario for support-ticket retrieval, memory, and
+  verification. It is not customer-support SLA compliance, incident-response
+  certification, or production operations assurance.
 
 ### Epic 135. Use-case Pack: Technical Docs
 

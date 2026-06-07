@@ -11,6 +11,7 @@ from pathlib import Path
 
 from use_case_pack_epic132 import investment_task_coverage
 from use_case_pack_epic133 import legal_task_coverage
+from use_case_pack_epic134 import support_ticket_task_coverage
 
 
 MANIFEST = Path("examples/use_cases/packs.json")
@@ -19,6 +20,7 @@ REQUIRED_PACK_IDS = {
     "financial_filing_review",
     "technical_runbook_triage",
     "investment_projects",
+    "support_ticket_triage",
 }
 
 
@@ -117,6 +119,8 @@ def validate_pack(pack: dict[str, object], failures: list[str]) -> dict[str, obj
         task_coverage = investment_task_coverage(pack, readme_text, failures)
     elif pack_id == "legal_policy_review":
         task_coverage = legal_task_coverage(pack, readme_text, failures)
+    elif pack_id == "support_ticket_triage":
+        task_coverage = support_ticket_task_coverage(pack, readme_text, failures)
 
     return {
         "id": pack_id,
@@ -203,6 +207,23 @@ def smoke_pack(pack: dict[str, object], failures: list[str]) -> dict[str, object
                 str(db_path),
                 scope,
                 contradiction_aql,
+            ]
+        )
+    remember_aql = str(pack.get("remember_aql", "")).strip()
+    if remember_aql:
+        outputs["remember"] = run_cmd(
+            [
+                "cargo",
+                "run",
+                "-q",
+                "-p",
+                "cortex-cli",
+                "--",
+                "--json",
+                "remember",
+                str(db_path),
+                scope,
+                remember_aql,
             ]
         )
     combined = "\n".join(outputs.values())
