@@ -736,6 +736,79 @@ answers, but answers that omit required facts even when the expected documents
 were retrieved. That points to targeted evidence extraction and answer assembly,
 not another broad prompt rewrite.
 
+### Current scorecard and token accounting
+
+Use the calibration target when you need the current local 50-question score in
+the same labels requested by the EnterpriseRAG-Bench product page:
+
+```bash
+make enterprise-rag-bench-calibration-50
+```
+
+Current best prior v16 score summary:
+
+```text
+target/enterprise-rag-bench/qa/routed-v16-conflict-coverage/score_summary.json
+```
+
+| Metric | Value |
+| --- | ---: |
+| Overall Score | `46.44` |
+| Answer Correctness | `66.0` |
+| Answer Completeness | `70.36` |
+| Document Recall | `84.93` |
+| Invalid Extra Docs | `8.72` |
+
+To measure judge-token usage per question without regenerating answers, run:
+
+```bash
+make enterprise-rag-bench-token-tracked-judge-routed-v16-50
+```
+
+This writes:
+
+```text
+target/enterprise-rag-bench/qa/routed-v16-conflict-coverage/official_metrics_judge_token_tracked.json
+target/enterprise-rag-bench/qa/routed-v16-conflict-coverage/deepseek_judgments_token_tracked.jsonl
+target/enterprise-rag-bench/qa/routed-v16-conflict-coverage/score_summary_token_tracked.json
+target/enterprise-rag-bench/qa/routed-v16-conflict-coverage/score_summary_token_tracked.md
+```
+
+Latest token-tracked judge rerun:
+
+| Metric | Value |
+| --- | ---: |
+| Overall Score | `44.97` |
+| Answer Correctness | `64.0` |
+| Answer Completeness | `70.26` |
+| Document Recall | `84.93` |
+| Invalid Extra Docs | `8.72` |
+| Judge prompt tokens | `27,000` |
+| Judge completion tokens | `2,672` |
+| Judge total tokens | `29,672` |
+| Judge avg tokens/question | `593.44` |
+
+The token-tracked score differs slightly from the prior v16 score because the
+local DeepSeek judge rerun is not bit-for-bit deterministic. Treat `46.44` as
+the current best prior 50-question score and the token-tracked artifact as the
+current cost trace. The existing v16 `answers.jsonl` was generated before
+per-question generation token fields were added; future fresh generation runs
+will record generation prompt/completion/total tokens per question too.
+
+The 100-question prep target creates a larger balanced subset without spending
+LLM tokens:
+
+```bash
+make enterprise-rag-bench-calibration-100-prep
+```
+
+It writes:
+
+```text
+target/enterprise-rag-bench/subsets/balanced_100/balanced_100_questions.jsonl
+target/enterprise-rag-bench/subsets/balanced_100/balanced_100_subset_report.json
+```
+
 Judge-backed answer error analysis:
 
 ```bash

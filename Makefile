@@ -13,6 +13,7 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v12-type-aware-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v12-type-aware-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v12-type-aware-digest-windowed-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
+.PHONY: enterprise-rag-bench-balanced-100 enterprise-rag-bench-score-summary-routed-v16-50 enterprise-rag-bench-token-tracked-judge-routed-v16-50 enterprise-rag-bench-calibration-50 enterprise-rag-bench-calibration-100-prep
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check dashboard-operational-status-check context-pack-explorer-check verification-explorer-check retrieval-quality-explorer-check permissions-view-check audit-viewer-v2-check backup-restore-view-check incident-view-check dashboard-role-ui-check
 .PHONY: doctor-check
@@ -483,6 +484,7 @@ ENTERPRISE_RAG_BENCH_SUBSET_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/subsets
 ENTERPRISE_RAG_BENCH_SUBSET_LIMIT ?= 50
 ENTERPRISE_RAG_BENCH_SUBSET_PREFIX ?= balanced_50
 ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_SUBSET_ROOT)/$(ENTERPRISE_RAG_BENCH_SUBSET_PREFIX)/$(ENTERPRISE_RAG_BENCH_SUBSET_PREFIX)_questions.jsonl
+ENTERPRISE_RAG_BENCH_SUBSET_100_PREFIX ?= balanced_100
 ENTERPRISE_RAG_BENCH_DB_50 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/cortexdb-50
 ENTERPRISE_RAG_BENCH_DB_FULL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/cortexdb-full
 ENTERPRISE_RAG_BENCH_SMOKE_MAX_DOCUMENTS ?= 500
@@ -614,6 +616,12 @@ ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/q
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_JUDGE_METRICS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/official_metrics_judge.json
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_REPORT ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/routed_answer_report.json
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_JUDGE_ANALYSIS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/answer_error_analysis_judge.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_SCORE_SUMMARY ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/score_summary.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_SCORE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/score_summary.md
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_JUDGE_METRICS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/official_metrics_judge_token_tracked.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_JUDGE_ROWS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/deepseek_judgments_token_tracked.jsonl
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_SCORE_SUMMARY ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/score_summary_token_tracked.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_SCORE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/score_summary_token_tracked.md
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_ROUTE_TYPES ?= conflicting_info
 ENTERPRISE_RAG_BENCH_JUDGE_MODEL ?= deepseek-v4-flash
 ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL ?= https://api.deepseek.com
@@ -1463,6 +1471,13 @@ enterprise-rag-bench-balanced-50: enterprise-rag-bench-preflight
 	  --output-root "$(ENTERPRISE_RAG_BENCH_SUBSET_ROOT)" \
 	  --output-prefix "$(ENTERPRISE_RAG_BENCH_SUBSET_PREFIX)"
 
+enterprise-rag-bench-balanced-100: enterprise-rag-bench-preflight
+	python3 scripts/enterprise_rag_bench/build_balanced_subset.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --limit "100" \
+	  --output-root "$(ENTERPRISE_RAG_BENCH_SUBSET_ROOT)" \
+	  --output-prefix "$(ENTERPRISE_RAG_BENCH_SUBSET_100_PREFIX)"
+
 enterprise-rag-bench-cortexdb-retrieval-smoke: enterprise-rag-bench-balanced-50
 	cargo build -p cortex-engine --bin enterprise_rag_bench_retrieval
 	./target/debug/enterprise_rag_bench_retrieval \
@@ -2086,6 +2101,37 @@ enterprise-rag-bench-routed-v16-conflict-coverage-judge-50:
 	  --output-report-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_REPORT)" \
 	  --policy-name v16_conflict_coverage \
 	  --routed-question-types "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_ROUTE_TYPES)"
+
+enterprise-rag-bench-score-summary-routed-v16-50: enterprise-rag-bench-routed-v16-conflict-coverage-judge-50
+	python3 scripts/enterprise_rag_bench/summarize_score.py \
+	  --metrics-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_JUDGE_METRICS)" \
+	  --answers-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/answers.jsonl" \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_SCORE_SUMMARY)" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_SCORE_MARKDOWN)" \
+	  --run-label "routed-v16-conflict-coverage-50"
+
+enterprise-rag-bench-token-tracked-judge-routed-v16-50: enterprise-rag-bench-routed-v16-conflict-coverage-judge-50
+	python3 scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py \
+	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/answers.jsonl)" \
+	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
+	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_JUDGE_METRICS))" \
+	  --judgments-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_JUDGE_ROWS))" \
+	  --api-key-file "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL)" \
+	  --model "$(ENTERPRISE_RAG_BENCH_JUDGE_MODEL)" \
+	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS)"
+	python3 scripts/enterprise_rag_bench/summarize_score.py \
+	  --metrics-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_JUDGE_METRICS)" \
+	  --answers-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/answers.jsonl" \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_SCORE_SUMMARY)" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_SCORE_MARKDOWN)" \
+	  --run-label "routed-v16-conflict-coverage-50-token-tracked-judge"
+
+enterprise-rag-bench-calibration-50: enterprise-rag-bench-score-summary-routed-v16-50
+
+enterprise-rag-bench-calibration-100-prep: enterprise-rag-bench-balanced-100
 
 enterprise-rag-bench-routed-v7-selective-lexical-judge-50:
 	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V5_50_ROOT)/answers.jsonl"

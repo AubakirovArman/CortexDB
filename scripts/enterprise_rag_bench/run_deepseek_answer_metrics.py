@@ -231,6 +231,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "invalid_extra_docs": invalid_extra,
             "corrected": False,
             "elapsed_ms": elapsed_ms,
+            "prompt_tokens": int(usage.get("prompt_tokens", 0) or 0),
+            "completion_tokens": int(usage.get("completion_tokens", 0) or 0),
+            "total_tokens": int(usage.get("total_tokens", 0) or 0),
         }
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
