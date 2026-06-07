@@ -36,5 +36,21 @@ The validator fails closed when:
 - storage format inventory cannot be read;
 - `docs/openapi.yaml` does not expose an `info.version`.
 
+The report includes `requirement_coverage` so release automation can directly
+check the Epic 129 contract:
+
+```json
+{
+  "binary_checksums": true,
+  "evidence_checksums": true,
+  "sdk_versions": true,
+  "openapi_version": true,
+  "storage_format_versions": true
+}
+```
+
+The lightweight local gate treats the release evidence bundle as optional. The
+production gate requires it and fails if `evidence_checksums` is false.
+
 This manifest is not a package manager index and does not prove public registry
 publication. It is a local, machine-readable bill of release evidence.

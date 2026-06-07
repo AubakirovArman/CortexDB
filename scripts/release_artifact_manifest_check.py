@@ -241,6 +241,53 @@ def build_manifest(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def requirement_coverage(manifest: dict[str, Any] | None) -> dict[str, Any]:
+    if not manifest:
+        return {
+            "binary_checksums": False,
+            "evidence_checksums": False,
+            "sdk_versions": False,
+            "openapi_version": False,
+            "storage_format_versions": False,
+        }
+    artifacts = manifest.get("artifacts", [])
+    artifact_kinds = {item.get("kind") for item in artifacts if isinstance(item, dict)}
+    binary_archives = [
+        item for item in artifacts if isinstance(item, dict) and item.get("kind") == "binary_archive"
+    ]
+    evidence_bundles = [
+        item
+        for item in artifacts
+        if isinstance(item, dict) and item.get("kind") == "release_evidence_bundle"
+    ]
+    sdk = manifest.get("sdk_versions", {})
+    openapi = manifest.get("openapi", {})
+    storage_formats = manifest.get("storage_format_versions", [])
+    return {
+        "binary_checksums": bool(
+            binary_archives
+            and binary_archives[0].get("sha256")
+            and binary_archives[0].get("sidecar", {}).get("archive_sha256")
+            and "binary_archive_sha256" in artifact_kinds
+        ),
+        "evidence_checksums": bool(
+            evidence_bundles
+            and evidence_bundles[0].get("sha256")
+            and evidence_bundles[0].get("sidecar", {}).get("archive_sha256")
+            and "release_evidence_bundle_sha256" in artifact_kinds
+        ),
+        "sdk_versions": bool(
+            isinstance(sdk, dict)
+            and sdk.get("workspace")
+            and sdk.get("rust", {}).get("version")
+            and sdk.get("python", {}).get("version")
+            and sdk.get("typescript", {}).get("version")
+        ),
+        "openapi_version": bool(openapi.get("version") and openapi.get("sha256")),
+        "storage_format_versions": isinstance(storage_formats, list) and len(storage_formats) >= 7,
+    }
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", default="dev")
@@ -259,6 +306,13 @@ def main(argv: list[str]) -> int:
     manifest: dict[str, Any] | None = None
     try:
         manifest = build_manifest(args)
+        coverage = requirement_coverage(manifest)
+        required_coverage = dict(coverage)
+        if not args.require_evidence_bundle:
+            required_coverage.pop("evidence_checksums", None)
+        missing = [name for name, covered in required_coverage.items() if not covered]
+        if missing:
+            raise ValueError(f"release artifact manifest missing requirement coverage: {missing}")
         manifest_path = repo / args.manifest
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
         manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -270,6 +324,7 @@ def main(argv: list[str]) -> int:
         "status": "passed" if not failures else "failed",
         "manifest": args.manifest,
         "artifact_count": manifest.get("artifact_count", 0) if manifest else 0,
+        "requirement_coverage": requirement_coverage(manifest),
         "failures": failures,
     }
     report_path = repo / args.report

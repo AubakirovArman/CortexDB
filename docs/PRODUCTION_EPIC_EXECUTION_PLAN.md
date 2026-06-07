@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 128 / 150
+- Done: 129 / 150
 - Partial: 1 / 150
-- Todo: 21 / 150
-- Current closed epic: Epic 128, Upgrade/Rollback CLI Flow
+- Todo: 20 / 150
+- Current closed epic: Epic 129, Release Artifact Manifest
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3619,15 +3619,32 @@ Tasks:
 
 ### Epic 129. Release Artifact Manifest
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/RELEASE_ARTIFACT_MANIFEST.md`
+- `scripts/release_artifact_manifest_check.py`
+- `make release-artifact-manifest-check`
+- `make release-artifact-manifest-production-check`
+- `target/release-artifact-manifest/manifest.json`
+- `target/release-artifact-manifest/report.json`
+- Latest production manifest report: `status=passed`, `artifact_count=15`
+- Report `requirement_coverage` proves binary checksums, evidence checksums,
+  SDK versions, OpenAPI version, and storage format versions are present.
 
 Tasks:
 
-- Include binary checksums.
-- Include evidence checksums.
-- Include SDK versions.
-- Include OpenAPI version.
-- Include storage format versions.
+- Include binary checksums. Done: binary archive entries include SHA-256 and
+  validated external `.sha256` sidecars.
+- Include evidence checksums. Done: the production manifest gate requires the
+  release evidence bundle archive and its validated `.sha256` sidecar.
+- Include SDK versions. Done: manifest records Rust, Python, and TypeScript SDK
+  versions and fails if they drift from the workspace version.
+- Include OpenAPI version. Done: manifest records `docs/openapi.yaml` version
+  and SHA-256.
+- Include storage format versions. Done: manifest records the 7 current storage
+  format rows from `docs/STORAGE_FORMATS.md`.
 
 ### Epic 130. Homebrew/Package Manager Feasibility
 
