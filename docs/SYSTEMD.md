@@ -65,6 +65,8 @@ User=cortexdb
 Group=cortexdb
 EnvironmentFile=/etc/cortexdb/cortexdb.env
 ExecStart=/usr/local/bin/cortex-server /var/lib/cortexdb 127.0.0.1:8181
+StandardOutput=journal
+StandardError=journal
 Restart=on-failure
 RestartSec=2s
 NoNewPrivileges=true
@@ -91,6 +93,20 @@ Enable and start:
 systemctl daemon-reload
 systemctl enable --now cortexdb
 systemctl status cortexdb
+```
+
+## Logs
+
+The systemd example uses journald for process stdout/stderr:
+
+```bash
+journalctl -u cortexdb
+```
+
+Security/audit events are written separately through the configured audit sink:
+
+```text
+CORTEXDB_AUDIT_LOG_PATH=/var/lib/cortexdb/audit.jsonl
 ```
 
 ## Health And Validation

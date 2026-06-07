@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 123 / 150
+- Done: 124 / 150
 - Partial: 1 / 150
-- Todo: 26 / 150
-- Current closed epic: Epic 123, Platform Support Matrix
+- Todo: 25 / 150
+- Current closed epic: Epic 124, Systemd Unit
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3440,15 +3440,37 @@ Tasks:
 
 ### Epic 124. Systemd Unit
 
-Status: todo
+Status: done
+
+Evidence:
+
+- Systemd unit:
+  `docs/deployment/cortexdb.service`.
+- Operator documentation:
+  `docs/SYSTEMD.md`,
+  `docs/OPERATIONS.md`,
+  `docs/DOCUMENTATION_INDEX.md`.
+- Evidence gate:
+  `scripts/service_manager_smoke_check.py`,
+  `make service-manager-smoke-check`.
+- Latest local report:
+  `target/service-manager-smoke/report.json`
+  with `status=passed`.
 
 Tasks:
 
-- Add service file.
-- Add env file.
-- Add data dir convention.
-- Add token file convention.
-- Add log convention.
+- Add service file. Done: checked-in systemd unit starts
+  `/usr/local/bin/cortex-server /var/lib/cortexdb 127.0.0.1:8181` as the
+  `cortexdb` user and fails closed on all-interface binding.
+- Add env file. Done: unit uses `/etc/cortexdb/cortexdb.env`, documented with
+  actor queue, request rate limit, auth token file, and audit log settings.
+- Add data dir convention. Done: `/var/lib/cortexdb` is the working directory,
+  database root, and only writable systemd path.
+- Add token file convention. Done: `/etc/cortexdb/auth.tokens` is documented
+  with ownership and `0640` permissions.
+- Add log convention. Done: stdout/stderr go to journald and audit events go to
+  `/var/lib/cortexdb/audit.jsonl`; both are checked by the service manager
+  smoke gate.
 
 ### Epic 125. Launchd Plist
 

@@ -30,6 +30,8 @@ def check_systemd(failures: list[str]) -> dict[str, object]:
         "[Install]",
         "ExecStart=/usr/local/bin/cortex-server /var/lib/cortexdb 127.0.0.1:8181",
         "EnvironmentFile=/etc/cortexdb/cortexdb.env",
+        "StandardOutput=journal",
+        "StandardError=journal",
         "Restart=on-failure",
         "NoNewPrivileges=true",
         "ProtectSystem=strict",
@@ -61,7 +63,13 @@ def check_launchd(failures: list[str]) -> dict[str, object]:
 
 def check_docs(failures: list[str]) -> dict[str, object]:
     docs = {
-        "docs/SYSTEMD.md": ["systemctl enable --now cortexdb", "/v1/validate", "Environment File"],
+        "docs/SYSTEMD.md": [
+            "systemctl enable --now cortexdb",
+            "/v1/validate",
+            "Environment File",
+            "journalctl -u cortexdb",
+            "CORTEXDB_AUDIT_LOG_PATH=/var/lib/cortexdb/audit.jsonl",
+        ],
         "docs/LAUNCHD.md": ["launchctl bootstrap", "launchctl kickstart", "launchctl bootout", "/v1/validate"],
         "docs/DOCUMENTATION_INDEX.md": ["LAUNCHD.md", "SYSTEMD.md"],
         "docs/OPERATIONS.md": ["SYSTEMD.md", "LAUNCHD.md"],
