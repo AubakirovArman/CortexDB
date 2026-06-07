@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 148 / 150
+- Done: 149 / 150
 - Partial: 1 / 150
-- Todo: 1 / 150
-- Current closed epic: Epic 149, Feedback Learning Loop
+- Todo: 0 / 150
+- Current closed epic: Epic 150, Future Managed Cloud Feasibility Track
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -4306,11 +4306,27 @@ Boundary:
 
 ### Epic 150. Future Managed Cloud Feasibility Track
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/MANAGED_CLOUD_FEASIBILITY.md`
+- `docs/MANAGED_CLOUD_DESIGN.md`
+- `scripts/managed_cloud_feasibility_check.py`
+- `scripts/managed_cloud_gate_check.py`
+- `make managed-cloud-feasibility-check`
 
 Tasks:
 
-- Evaluate hosted model. This remains out of scope for the current local single-node release boundary.
+- Evaluate hosted model. Done: the feasibility gate aggregates local tenant
+  lifecycle, backup/restore, and upgrade prerequisite reports, while preserving
+  `managed_cloud_ready=false`.
+
+Boundary:
+
+- This closes feasibility evidence only. CortexDB still does not claim hosted
+  control plane, tenant provisioning/deletion automation, cloud object-store
+  backup, billing, support access, or managed-cloud production SLOs.
 - Evaluate tenant isolation.
 - Evaluate billing and quotas.
 - Evaluate remote backup.
