@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 120 / 150
+- Done: 121 / 150
 - Partial: 1 / 150
-- Todo: 29 / 150
-- Current closed epic: Epic 120, Dashboard Role-based UI
+- Todo: 28 / 150
+- Current closed epic: Epic 121, Linux/macOS Binary Release Pipeline
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3337,15 +3337,40 @@ Acceptance: user can install, run, and upgrade CortexDB on Linux/macOS without R
 
 ### Epic 121. Linux/macOS Binary Release Pipeline
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `.github/workflows/release.yml`
+- `scripts/package_binaries.py`
+- `scripts/binary_platform_matrix_check.py`
+- `scripts/install.sh`
+- `scripts/install_script_check.py`
+- `docs/BINARY_RELEASES.md`
+- `docs/BINARY_PLATFORM_MATRIX.md`
+- `make binary-release-check`
+- `target/release-artifacts/cortexdb-dev-linux-x86_64.tar.gz`
+- `target/release-artifacts/cortexdb-dev-linux-x86_64.tar.gz.sha256`
+- `target/binary-platform-matrix/report.json`
+- Latest local report: `status=passed`; supported release workflow platforms
+  are `linux-x86_64`, `linux-aarch64`, `macos-arm64`, and `macos-x86_64`;
+  clean-install smoke ran `version`, fixture load, validate, search, backup,
+  restore, server health, and server query from the packaged binaries.
 
 Tasks:
 
-- Build Linux x86_64 binary.
-- Build macOS arm64 binary.
-- Build macOS x86_64 binary.
-- Add checksums.
-- Add smoke tests.
+- Build Linux x86_64 binary. Done: local `make binary-release-check` builds
+  `cortexdb` and `cortex-server` release binaries and packages
+  `cortexdb-dev-linux-x86_64.tar.gz`.
+- Build macOS arm64 binary. Done: release workflow matrix builds
+  `macos-arm64` on `macos-latest` for tag releases.
+- Build macOS x86_64 binary. Done: release workflow matrix builds
+  `macos-x86_64` on `macos-13` for tag releases.
+- Add checksums. Done: archives include internal `SHA256SUMS`,
+  `package_manifest.json`, and an external `.tar.gz.sha256` checksum file.
+- Add smoke tests. Done: `binary_platform_matrix_check.py` extracts the
+  archive and runs the packaged CLI/server through fixture load, validate,
+  search, backup, restore, health, and HTTP query.
 
 ### Epic 122. Install Script
 
