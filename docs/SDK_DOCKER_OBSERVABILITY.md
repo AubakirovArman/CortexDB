@@ -5,7 +5,8 @@ This is a thin integration surface for Core Alpha smoke paths.
 ## Docker
 
 `Dockerfile` builds `cortex-server` and `cortexdb` in a Rust builder image and
-runs the server as a non-root user:
+runs the server as a non-root user. The hardened local container contract is in
+[`DOCKER.md`](DOCKER.md):
 
 ```bash
 docker build -t cortexdb:core-alpha .

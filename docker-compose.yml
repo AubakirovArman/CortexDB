@@ -4,12 +4,20 @@ services:
   cortexdb:
     build: .
     container_name: cortexdb
+    user: "10001:10001"
+    read_only: true
     ports:
       - "8181:8181"
     volumes:
-      - cortexdb-data:/data
+      - cortexdb-data:/data:rw
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     environment:
       - RUST_LOG=info
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8181/v1/health"]
       interval: 30s

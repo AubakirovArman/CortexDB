@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 125 / 150
+- Done: 126 / 150
 - Partial: 1 / 150
-- Todo: 24 / 150
-- Current closed epic: Epic 125, Launchd Plist
+- Todo: 23 / 150
+- Current closed epic: Epic 126, Docker Hardening v2
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3508,14 +3508,37 @@ Tasks:
 
 ### Epic 126. Docker Hardening v2
 
-Status: todo
+Status: done
+
+Evidence:
+
+- Container build/runtime:
+  `Dockerfile`.
+- Compose hardening example:
+  `docker-compose.yml`.
+- Operator documentation:
+  `docs/DOCKER.md`,
+  `docs/SDK_DOCKER_OBSERVABILITY.md`,
+  `docs/DOCUMENTATION_INDEX.md`.
+- Evidence gate:
+  `scripts/docker_hardening_check.py`,
+  `make docker-hardening-check`.
+- Latest local report:
+  `target/docker-hardening/report.json`
+  with `status=passed`.
 
 Tasks:
 
-- Add read-only root option.
-- Ensure non-root runtime.
-- Add healthcheck.
-- Validate volume permissions.
+- Add read-only root option. Done: compose sets `read_only: true`, with `/tmp`
+  mounted as tmpfs and `/data` as the only intended writable database volume.
+- Ensure non-root runtime. Done: runtime image creates UID/GID `10001:10001`,
+  pre-creates `/data` with owner `cortexdb:cortexdb`, and runs as
+  `USER 10001:10001`; compose also pins `user: "10001:10001"`.
+- Add healthcheck. Done: Dockerfile and compose healthchecks call
+  `curl -sf http://localhost:8181/v1/health`.
+- Validate volume permissions. Done: `docs/DOCKER.md` documents bind-mount
+  ownership checks for UID/GID `10001:10001`, and the docker hardening gate
+  validates the `/data:rw` volume contract.
 
 ### Epic 127. Docker Compose Production Example
 

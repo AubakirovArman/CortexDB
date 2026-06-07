@@ -18,6 +18,7 @@
 .PHONY: doctor-check
 .PHONY: metrics-contract-v2-check
 .PHONY: service-manager-smoke-check
+.PHONY: docker-hardening-check
 .PHONY: beta-landing-check
 .PHONY: use-case-pack-check
 .PHONY: contributor-onboarding-check
@@ -238,6 +239,7 @@ OBSERVABILITY_REPORT ?= target/observability/report.json
 METRICS_CONTRACT_V2_REPORT ?= target/observability/metrics-contract-v2.json
 DEPLOYMENT_UPGRADE_REPORT ?= target/deployment-upgrade/report.json
 SERVICE_MANAGER_REPORT ?= target/service-manager-smoke/report.json
+DOCKER_HARDENING_REPORT ?= target/docker-hardening/report.json
 ANN_BASELINE_REPORT ?= $(ANN_CORPUS_REPORT)
 ANN_CANDIDATE_REPORT ?= $(ANN_CORPUS_REPORT)
 ANN_REPORT_COMPARISON ?= target/ann/ann_report_comparison.json
@@ -961,6 +963,9 @@ observability-check: metrics-contract-v2-check
 
 service-manager-smoke-check:
 	python3 scripts/service_manager_smoke_check.py --report "$(SERVICE_MANAGER_REPORT)"
+
+docker-hardening-check:
+	python3 scripts/docker_hardening_check.py --report "$(DOCKER_HARDENING_REPORT)"
 
 deployment-upgrade-check: service-manager-smoke-check
 	python3 scripts/deployment_upgrade_check.py --report "$(DEPLOYMENT_UPGRADE_REPORT)"
