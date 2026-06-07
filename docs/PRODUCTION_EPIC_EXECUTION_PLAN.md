@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 141 / 150
+- Done: 142 / 150
 - Partial: 1 / 150
-- Todo: 8 / 150
-- Current closed epic: Epic 141, Agent Memory v2
+- Todo: 7 / 150
+- Current closed epic: Epic 142, Memory Quality Benchmark
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -4065,14 +4065,36 @@ Boundary:
 
 ### Epic 142. Memory Quality Benchmark
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/MEMORY_QUALITY_BENCHMARK.md`
+- `crates/cortex-engine/tests/memory_quality_benchmark.rs`
+- `scripts/memory_quality_benchmark_check.py`
+- `make memory-quality-benchmark-check`
+- `cargo test -p cortex-engine --test memory_quality_benchmark`
 
 Tasks:
 
-- Benchmark update handling.
-- Benchmark stale memory detection.
-- Benchmark preference retrieval.
-- Benchmark temporal changes.
+- Benchmark update handling. Done:
+  `memory_quality_update_handling_prefers_latest_payload` verifies updated
+  memory replaces stale visible payload for the same cell.
+- Benchmark stale memory detection. Done:
+  `memory_quality_stale_memory_detection_expires_and_scores_memory` verifies
+  TTL expiry, fixed-point decay, tombstone, and retrieval exclusion behavior.
+- Benchmark preference retrieval. Done:
+  `memory_quality_preference_retrieval_uses_feedback_signal` verifies useful
+  feedback moves preferred memory first in ContextPack selection.
+- Benchmark temporal changes. Done:
+  `memory_quality_temporal_changes_preserve_snapshot_visibility` verifies old
+  read transactions keep old memory while latest reads see the update.
+
+Boundary:
+
+- This is a deterministic local memory-quality benchmark. It does not claim
+  learned memory synthesis, long-running human preference quality, or external
+  benchmark parity.
 
 ### Epic 143. Tool Registry v1
 

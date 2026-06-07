@@ -146,6 +146,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`INGESTION.md`](INGESTION.md) - ingestion behavior.
 - [`PDF_TEXT_EXTRACTION.md`](PDF_TEXT_EXTRACTION.md) - digital PDF and external OCR adapter boundary.
 - [`AGENT_MEMORY.md`](AGENT_MEMORY.md) - local agent memory, TTL, decay, feedback, and demo gate.
+- [`MEMORY_QUALITY_BENCHMARK.md`](MEMORY_QUALITY_BENCHMARK.md) - deterministic update, stale-memory, preference, and temporal-change memory benchmark.
 - [`METRICS.md`](METRICS.md) - metrics endpoint and fields.
 - [`OBSERVABILITY_EVIDENCE.md`](OBSERVABILITY_EVIDENCE.md) - local Epic 18 observability evidence gate.
 - [`OBSERVABILITY_ALERTS.md`](OBSERVABILITY_ALERTS.md) - alert rules and operator actions.

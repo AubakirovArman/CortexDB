@@ -27,7 +27,7 @@
 .PHONY: contributor-onboarding-check community-roadmap-check
 .PHONY: public-benchmarks-check public-retrieval-benchmark-page-check
 .PHONY: comparison-docs-check
-.PHONY: agent-memory-demo-check
+.PHONY: agent-memory-demo-check memory-quality-benchmark-check
 .PHONY: tool-registry-check
 .PHONY: knowledge-graph-check
 .PHONY: ingestion-jobs-v2-check
@@ -700,6 +700,7 @@ PUBLIC_BENCHMARKS_REPORT ?= target/public-benchmarks/report.json
 PUBLIC_RETRIEVAL_BENCHMARKS_REPORT ?= target/public-retrieval-benchmarks/report.json
 COMPARISON_DOCS_REPORT ?= target/comparison-docs/report.json
 AGENT_MEMORY_DEMO_REPORT ?= target/agent-memory-demo/report.json
+MEMORY_QUALITY_BENCHMARK_REPORT ?= target/memory-quality-benchmark/report.json
 TOOL_REGISTRY_REPORT ?= target/tool-registry/report.json
 KNOWLEDGE_GRAPH_REPORT ?= target/knowledge-graph/report.json
 CONSENSUS_RESEARCH_REPORT ?= target/consensus/research-summary.json
@@ -1191,6 +1192,9 @@ comparison-docs-check:
 
 agent-memory-demo-check:
 	python3 scripts/agent_memory_demo_check.py --report "$(AGENT_MEMORY_DEMO_REPORT)"
+
+memory-quality-benchmark-check:
+	python3 scripts/memory_quality_benchmark_check.py --report "$(MEMORY_QUALITY_BENCHMARK_REPORT)"
 
 tool-registry-check:
 	python3 scripts/tool_registry_check.py --report "$(TOOL_REGISTRY_REPORT)"
