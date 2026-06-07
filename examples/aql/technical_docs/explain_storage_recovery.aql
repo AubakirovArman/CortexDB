@@ -1,6 +1,6 @@
 EXPLAIN RETRIEVE CONTEXT
 FOR TASK "Explain WAL recovery and checkpoint safety invariants"
 IN BRAIN technical_docs
-WHERE scope = technical:docs AND status IN ["ready", "verified"]
+WHERE scope = docs:technical AND status IN ["ready", "verified"]
 REQUIRE citations
 LIMIT 15 CANDIDATES;

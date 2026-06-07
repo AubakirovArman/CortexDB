@@ -56,7 +56,10 @@
       "search_query": "compatibility endpoint",
       "context_aql": "RETRIEVE CONTEXT FOR TASK \"compatibility endpoint\" IN BRAIN default REQUIRE citations LIMIT 10 CANDIDATES;",
       "verify_aql": "VERIFY FACT \"The /v1/compatibility endpoint exposes API version and SDK contract version\" IN BRAIN default;",
-      "expected_markers": ["/v1/compatibility", "SDK contract", "migration matrix"]
+      "expected_markers": ["/v1/compatibility", "SDK contract", "migration matrix", "Tool hint", "Version conflict"],
+      "demo_path": "examples/demo/technical_docs/run.sh",
+      "aql_examples_path": "examples/aql/technical_docs",
+      "corpus_path": "examples/real_domains/technical_docs"
     },
     {
       "id": "investment_projects",

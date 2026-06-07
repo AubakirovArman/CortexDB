@@ -2,6 +2,6 @@ RETRIEVE CONTEXT
 FOR TASK "Find SDK contract requirements for AQL, ContextPack, and typed errors"
 IN BRAIN technical_docs
 USING MODE semantic
-WHERE scope = technical:docs AND status = "ready" AND type = "document_block"
+WHERE scope = docs:technical AND status = "ready" AND type = "fact"
 REQUIRE citations, confidence >= 0.75
 LIMIT 18 CANDIDATES;

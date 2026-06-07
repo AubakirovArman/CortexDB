@@ -12,6 +12,7 @@ from pathlib import Path
 from use_case_pack_epic132 import investment_task_coverage
 from use_case_pack_epic133 import legal_task_coverage
 from use_case_pack_epic134 import support_ticket_task_coverage
+from use_case_pack_epic135 import technical_docs_task_coverage
 
 
 MANIFEST = Path("examples/use_cases/packs.json")
@@ -121,6 +122,8 @@ def validate_pack(pack: dict[str, object], failures: list[str]) -> dict[str, obj
         task_coverage = legal_task_coverage(pack, readme_text, failures)
     elif pack_id == "support_ticket_triage":
         task_coverage = support_ticket_task_coverage(pack, readme_text, failures)
+    elif pack_id == "technical_runbook_triage":
+        task_coverage = technical_docs_task_coverage(pack, readme_text, failures)
 
     return {
         "id": pack_id,

@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 134 / 150
+- Done: 135 / 150
 - Partial: 1 / 150
-- Todo: 15 / 150
-- Current closed epic: Epic 134, Use-case Pack: Support Tickets
+- Todo: 14 / 150
+- Current closed epic: Epic 135, Use-case Pack: Technical Docs
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3813,14 +3813,40 @@ Boundary:
 
 ### Epic 135. Use-case Pack: Technical Docs
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `examples/use_cases/technical_runbook_triage/README.md`
+- `examples/demo/technical_docs/run.sh`
+- `examples/datasets/technical_docs/cells.jsonl`
+- `examples/real_domains/technical_docs/`
+- `examples/aql/technical_docs/`
+- `examples/use_cases/packs.json`
+- `scripts/use_case_pack_check.py`
+- `scripts/use_case_pack_epic135.py`
+- `make use-case-pack-check`
+- `./examples/demo/technical_docs/run.sh`
 
 Tasks:
 
-- Add docs retrieval.
-- Add tool hints.
-- Add version conflicts.
-- Add source refs.
+- Add docs retrieval. Done: the fixture and demo retrieve
+  `/v1/compatibility`, SDK contract, release-gate, and search-explain
+  documentation from the `docs:technical` scope.
+- Add tool hints. Done: the fixture includes a compatibility diagnostic tool
+  hint for `cortexdb compatibility --json` and `cortexdb validate`, and the
+  demo retrieves it through ContextPack.
+- Add version conflicts. Done: the fixture includes an SDK v1.4 versus API
+  v1.3 incompatibility case, and the demo verifies that claim.
+- Add source refs. Done: every fixture cell includes `source=` metadata, and
+  the ContextPack commands require citations so selected cells carry source
+  refs.
+
+Boundary:
+
+- This pack is a local documentation triage scenario. It is not migration
+  certification, production incident-management workflow, or operational
+  approval.
 
 ### Epic 136. Public Benchmarks Page
 

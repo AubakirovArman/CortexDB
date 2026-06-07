@@ -24,7 +24,7 @@ runs CLI smoke flows for each pack.
 | Legal Policy Review | `project:legal` | `examples/datasets/legal_policies/cells.jsonl` | Retrieve cited policy context and verify policy-update facts without claiming legal advice. |
 | Financial Filing Review | `sec:filings` | `examples/datasets/sec_financial_facts/cells.jsonl` | Retrieve filing facts and verify revenue statements with normalized numeric values. |
 | Support Ticket Triage | `support:tickets` | `examples/datasets/support_tickets/cells.jsonl` | Retrieve customer issues, remember workflow results, and verify documented support resolutions. |
-| Technical Runbook Triage | `docs:technical` | `examples/datasets/technical_docs/cells.jsonl` | Retrieve operational docs for compatibility, beta release, and search explain workflows. |
+| Technical Runbook Triage | `docs:technical` | `examples/datasets/technical_docs/cells.jsonl` | Retrieve operational docs, surface tool hints, verify version conflicts, and preserve source refs for compatibility runbooks. |
 
 ## Manual Smoke
 
@@ -53,6 +53,10 @@ cargo run -p cortex-cli -- verify --format json target/use-case-packs/support-ti
 
 cargo run -p cortex-cli -- load-fixture target/use-case-packs/technical-runbook-triage/db examples/datasets/technical_docs
 cargo run -p cortex-cli -- search --json target/use-case-packs/technical-runbook-triage/db docs:technical "compatibility endpoint"
+cargo run -p cortex-cli -- context --format json target/use-case-packs/technical-runbook-triage/db docs:technical \
+  'RETRIEVE CONTEXT FOR TASK "Find tool hints for compatibility diagnostics" IN BRAIN default REQUIRE citations LIMIT 10 CANDIDATES;'
+cargo run -p cortex-cli -- verify --format json target/use-case-packs/technical-runbook-triage/db docs:technical \
+  'VERIFY FACT "SDK contract v1.4 is incompatible with API contract v1.3" IN BRAIN default;'
 ```
 
 ## Boundary
@@ -68,6 +72,8 @@ These packs prove:
   benchmark report and `production_safe=true` embedding evidence.
 - the support-ticket pack records a workflow memory update and verifies a
   documented resolution from ticket evidence.
+- the technical-docs pack retrieves docs, exposes tool hints, verifies version
+  conflicts, and carries source refs for compatibility evidence.
 
 These packs do not prove:
 
@@ -76,6 +82,7 @@ These packs do not prove:
 - investment advice, project diligence, or source-freshness certification;
 - customer-support SLA compliance or incident-response certification;
 - production incident-management readiness;
+- migration certification or operational approval from technical docs examples;
 - private customer-domain quality.
 
 ## Files
