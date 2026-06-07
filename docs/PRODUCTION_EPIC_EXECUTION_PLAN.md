@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 121 / 150
+- Done: 122 / 150
 - Partial: 1 / 150
-- Todo: 28 / 150
-- Current closed epic: Epic 121, Linux/macOS Binary Release Pipeline
+- Todo: 27 / 150
+- Current closed epic: Epic 122, Install Script
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3374,14 +3374,32 @@ Tasks:
 
 ### Epic 122. Install Script
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `scripts/install.sh`
+- `scripts/install_script_check.py`
+- `docs/INSTALL.md`
+- `docs/BINARY_RELEASES.md`
+- `make install-script-check`
+- `target/install-script/report.json`
+- Latest local report: `status=passed`; checked flows are `download_url`,
+  `external_checksum`, `internal_checksums`, `dry_run`, `install`,
+  `next_steps`, and `corrupt_checksum_rejected`.
 
 Tasks:
 
-- Download release artifact.
-- Verify checksum.
-- Install binaries.
-- Print next steps.
+- Download release artifact. Done: `scripts/install.sh` accepts local tarballs
+  and `http://`, `https://`, or `file://` release artifact URLs, downloading
+  the archive and default `.sha256` file before verification.
+- Verify checksum. Done: the script verifies the external `.tar.gz.sha256`
+  file, package-internal `SHA256SUMS`, and executable bits before install.
+- Install binaries. Done: the script installs `bin/cortexdb` and
+  `bin/cortex-server` into `<prefix>/bin` with executable mode.
+- Print next steps. Done: dry-run and install output now include follow-up
+  commands for PATH setup, version check, database validation, and server
+  startup with explicit auth token.
 
 ### Epic 123. Platform Support Matrix
 

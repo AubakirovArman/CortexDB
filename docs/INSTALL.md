@@ -38,15 +38,19 @@ install -m 0755 bin/cortexdb ~/.local/bin/cortexdb
 install -m 0755 bin/cortex-server ~/.local/bin/cortex-server
 ```
 
-Or use the checksum-verifying install script from a checkout:
+Or use the checksum-verifying install script from a checkout. It accepts either
+a local tarball or a release artifact URL:
 
 ```bash
 scripts/install.sh cortexdb-<version>-<platform>.tar.gz --prefix "$HOME/.local"
+scripts/install.sh https://github.com/AubakirovArman/CortexDB/releases/download/<version>/cortexdb-<version>-<platform>.tar.gz --prefix "$HOME/.local"
 ```
 
 The script verifies the external `.sha256` file, extracts the tarball, verifies
 the internal `SHA256SUMS`, checks both binaries, and then installs them into
-`<prefix>/bin`. Use `--dry-run` to verify without installing:
+`<prefix>/bin`. When given a URL, it downloads both the archive and the default
+`<archive>.sha256` file before verifying anything. Use `--dry-run` to verify
+without installing:
 
 ```bash
 scripts/install.sh cortexdb-<version>-<platform>.tar.gz --dry-run
@@ -58,6 +62,10 @@ Confirm the commands are available:
 cortexdb --version
 cortex-server --help
 ```
+
+After install, the script prints next steps: add `<prefix>/bin` to `PATH`, run
+`cortexdb --version`, validate an existing database before use, and start the
+server with an explicit `CORTEXDB_AUTH_TOKEN`.
 
 ## Source Build
 

@@ -59,13 +59,33 @@ def main() -> int:
         dry_output = run([str(script), str(archive), "--prefix", str(dry_prefix), "--dry-run"], repo)
         if "verified" not in dry_output:
             raise RuntimeError(f"dry run did not verify archive: {dry_output}")
+        if "next steps" not in dry_output:
+            raise RuntimeError(f"dry run did not print next steps: {dry_output}")
         if dry_prefix.exists():
             raise RuntimeError("dry run must not create install prefix")
+
+        url_prefix = root / "url-prefix"
+        url_output = run(
+            [
+                str(script),
+                f"file://{archive}",
+                "--sha256",
+                f"file://{archive}.sha256",
+                "--prefix",
+                str(url_prefix),
+                "--dry-run",
+            ],
+            repo,
+        )
+        if "verified" not in url_output or "next steps" not in url_output:
+            raise RuntimeError(f"URL dry run did not verify archive and print next steps: {url_output}")
 
         prefix = root / "prefix"
         install_output = run([str(script), str(archive), "--prefix", str(prefix)], repo)
         if "installed cortexdb binaries" not in install_output:
             raise RuntimeError(f"install output missing success marker: {install_output}")
+        if "next steps" not in install_output or "cortexdb validate ./data" not in install_output:
+            raise RuntimeError(f"install output missing next steps: {install_output}")
 
         installed_cli = prefix / "bin" / "cortexdb"
         installed_server = prefix / "bin" / "cortex-server"
@@ -97,7 +117,15 @@ def main() -> int:
     report = {
         "schema_version": "cortexdb.install_script_check.v1",
         "status": "passed",
-        "flows": ["external_checksum", "internal_checksums", "dry_run", "install", "corrupt_checksum_rejected"],
+        "flows": [
+            "download_url",
+            "external_checksum",
+            "internal_checksums",
+            "dry_run",
+            "install",
+            "next_steps",
+            "corrupt_checksum_rejected",
+        ],
     }
     report_path = repo / "target" / "install-script" / "report.json"
     report_path.parent.mkdir(parents=True, exist_ok=True)

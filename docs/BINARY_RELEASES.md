@@ -61,15 +61,19 @@ install -m 0755 bin/cortexdb ~/.local/bin/cortexdb
 install -m 0755 bin/cortex-server ~/.local/bin/cortex-server
 ```
 
-From a checkout, the same flow can be run with checksum verification:
+From a checkout, the same flow can be run with checksum verification. The
+installer accepts local archives and release artifact URLs:
 
 ```bash
 scripts/install.sh cortexdb-<version>-<platform>.tar.gz --prefix "$HOME/.local"
+scripts/install.sh https://github.com/AubakirovArman/CortexDB/releases/download/<version>/cortexdb-<version>-<platform>.tar.gz --prefix "$HOME/.local"
 ```
 
 `scripts/install.sh` verifies the external `.tar.gz.sha256` file, the
 package-internal `SHA256SUMS`, and the executable bits for `bin/cortexdb` and
-`bin/cortex-server` before it installs anything. The release gate runs:
+`bin/cortex-server` before it installs anything. On success, it prints the
+post-install commands for PATH setup, version checks, database validation, and
+server startup. The release gate runs:
 
 ```bash
 make install-script-check

@@ -5,7 +5,7 @@ set -eu
 
 usage() {
   cat <<'EOF'
-Usage: scripts/install.sh <archive.tar.gz> [--sha256 <archive.tar.gz.sha256>] [--prefix <dir>] [--dry-run]
+Usage: scripts/install.sh <archive.tar.gz-or-url> [--sha256 <archive.tar.gz.sha256-or-url>] [--prefix <dir>] [--dry-run]
 
 Verifies:
   1. the external <archive>.sha256 file;
@@ -19,6 +19,10 @@ Installs to:
 Defaults:
   --sha256 <archive>.sha256
   --prefix $HOME/.local
+
+Examples:
+  scripts/install.sh ./cortexdb-v0.2.0-beta.1-linux-x86_64.tar.gz
+  scripts/install.sh https://example.com/cortexdb-v0.2.0-beta.1-linux-x86_64.tar.gz --prefix /usr/local
 EOF
 }
 
@@ -63,12 +67,6 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-[ -n "$archive" ] || { usage >&2; exit 2; }
-[ -f "$archive" ] || fail "archive not found: $archive"
-[ -n "$sha256_file" ] || sha256_file="${archive}.sha256"
-[ -f "$sha256_file" ] || fail "checksum file not found: $sha256_file"
-[ -n "$prefix" ] || fail "prefix must not be empty"
-
 checksum_tool() {
   if command -v sha256sum >/dev/null 2>&1; then
     printf 'sha256sum'
@@ -76,6 +74,39 @@ checksum_tool() {
     printf 'shasum'
   else
     fail "sha256sum or shasum is required"
+  fi
+}
+
+is_url() {
+  case "$1" in
+    http://*|https://*|file://*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+url_basename() {
+  without_query=${1%%\?*}
+  base=${without_query##*/}
+  [ -n "$base" ] || base="cortexdb-release.tar.gz"
+  printf '%s' "$base"
+}
+
+download_file() {
+  source="$1"
+  destination="$2"
+  if command -v curl >/dev/null 2>&1; then
+    curl --fail --location --silent --show-error --output "$destination" "$source"
+  elif command -v wget >/dev/null 2>&1; then
+    wget --quiet --output-document="$destination" "$source"
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 - "$source" "$destination" <<'PY'
+import sys
+import urllib.request
+
+urllib.request.urlretrieve(sys.argv[1], sys.argv[2])
+PY
+  else
+    fail "curl, wget, or python3 is required to download release artifacts"
   fi
 }
 
@@ -91,11 +122,33 @@ verify_checksum_file() {
   fi
 }
 
+[ -n "$archive" ] || { usage >&2; exit 2; }
+[ -n "$prefix" ] || fail "prefix must not be empty"
+
 tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/cortexdb-install.XXXXXX")
 cleanup() {
   rm -rf "$tmp_dir"
 }
 trap cleanup EXIT INT TERM
+
+if is_url "$archive"; then
+  archive_name=$(url_basename "$archive")
+  archive_url="$archive"
+  archive="$tmp_dir/$archive_name"
+  download_file "$archive_url" "$archive"
+elif [ ! -f "$archive" ]; then
+  fail "archive not found: $archive"
+fi
+
+[ -n "$sha256_file" ] || sha256_file="${archive_url:-$archive}.sha256"
+if is_url "$sha256_file"; then
+  checksum_name=$(url_basename "$sha256_file")
+  sha256_url="$sha256_file"
+  sha256_file="$tmp_dir/$checksum_name"
+  download_file "$sha256_url" "$sha256_file"
+elif [ ! -f "$sha256_file" ]; then
+  fail "checksum file not found: $sha256_file"
+fi
 
 verify_checksum_file "$sha256_file"
 tar -xzf "$archive" -C "$tmp_dir"
@@ -114,6 +167,7 @@ server="$package_root/bin/cortex-server"
 
 if [ "$dry_run" = "true" ]; then
   printf 'verified %s for prefix %s\n' "$archive" "$prefix"
+  printf 'next steps: rerun without --dry-run, then run %s/bin/cortexdb --version\n' "$prefix"
   exit 0
 fi
 
@@ -123,3 +177,8 @@ install -m 0755 "$cortexdb" "$install_dir/cortexdb"
 install -m 0755 "$server" "$install_dir/cortex-server"
 
 printf 'installed cortexdb binaries to %s\n' "$install_dir"
+printf 'next steps:\n'
+printf '  1. Ensure %s is on PATH.\n' "$install_dir"
+printf '  2. Run %s/cortexdb --version.\n' "$install_dir"
+printf '  3. Run %s/cortexdb validate ./data before using an existing database.\n' "$install_dir"
+printf '  4. Start the server with CORTEXDB_AUTH_TOKEN=change-me %s/cortex-server ./data 127.0.0.1:8181.\n' "$install_dir"
