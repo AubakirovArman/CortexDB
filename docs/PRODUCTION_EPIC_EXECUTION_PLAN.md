@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 136 / 150
+- Done: 137 / 150
 - Partial: 1 / 150
-- Todo: 13 / 150
-- Current closed epic: Epic 136, Public Benchmarks Page
+- Todo: 12 / 150
+- Current closed epic: Epic 137, LongMemEval Evidence Page
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3892,14 +3892,39 @@ Boundary:
 
 ### Epic 137. LongMemEval Evidence Page
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/LONGMEMEVAL_OFFICIAL.md`
+- `scripts/longmemeval_evidence_page_check.py`
+- `scripts/longmemeval/check_v1_retrieval_adapter.py`
+- `make longmemeval-evidence-page-check`
+- `make longmemeval-v1-retrieval-adapter-check`
+- `target/longmemeval-v1/evidence-page/report.json`
+- `target/longmemeval-v1/retrieval-adapter/report.json`
+- `target/longmemeval-v1/cortexdb/official_retrieval_metrics.txt`
 
 Tasks:
 
-- Publish retrieval-only results.
-- Include official evaluator command.
-- Include log format.
-- Include limitations.
+- Publish retrieval-only results. Done: the evidence page publishes official
+  local LongMemEval v1 session retrieval metrics for the 500-row small split:
+  `recall_all@10 = 0.9021` and `ndcg_any@10 = 0.7873`.
+- Include official evaluator command. Done: the page records
+  `make longmemeval-v1-official-retrieval-metrics`, the official
+  `LongMemEval/src/evaluation/print_retrieval_metrics.py` script path, and the
+  retrieval-adapter acceptance gate.
+- Include log format. Done: the page documents the JSONL retrieval log path,
+  required row fields, and ranked item shape consumed by the official metric
+  script.
+- Include limitations. Done: the page separates retrieval-only evidence from
+  QA accuracy, marks DeepSeek Flash runs as local diagnostics, states that large
+  logs remain under `target/`, and makes no official leaderboard/list claim.
+
+Boundary:
+
+- This is local LongMemEval v1 evidence using the official retrieval evaluator.
+  It is not a public LongMemEval leaderboard/list placement.
 
 ### Epic 138. Comparison Docs v2
 

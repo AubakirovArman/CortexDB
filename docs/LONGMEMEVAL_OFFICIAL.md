@@ -20,6 +20,18 @@ CortexDB uses the official LongMemEval v1 assets:
 The local CortexDB harness only builds a retrieval log from CortexDB results.
 All printed retrieval metrics come from the official LongMemEval script.
 
+## Epic 137 Evidence Page Contract
+
+This page is the LongMemEval evidence page for the production epic plan. It
+publishes four bounded pieces of evidence:
+
+| Task | Evidence on this page | Boundary |
+| --- | --- | --- |
+| Retrieval-only results | Official local LongMemEval v1 session retrieval metrics for the 500-row small split. | Retrieval quality only; not a QA leaderboard score. |
+| Official evaluator command | The exact `make longmemeval-v1-official-retrieval-metrics` flow that invokes `LongMemEval/src/evaluation/print_retrieval_metrics.py`. | Uses the official retrieval metric script after CortexDB produces the retrieval log. |
+| Log format | The JSONL retrieval log path and row shape expected by the official metric script. | The log carries ranked retrieval IDs and text context; it is not committed because it is large. |
+| Limitations | Submission gap, local-only boundary, QA/retrieval separation, and DeepSeek diagnostic boundary. | No official leaderboard/list placement claim until maintainers accept a submission. |
+
 ## Commands
 
 Download the official small cleaned split:
@@ -61,6 +73,34 @@ target/longmemeval-v1/retrieval-adapter/report.json
 target/longmemeval-v1/e2e-adapter/report.json
 ```
 
+## Official Evaluator Command
+
+The official retrieval evaluator command is run through:
+
+```bash
+make longmemeval-v1-official-retrieval-metrics
+```
+
+That target runs:
+
+```text
+LongMemEval/src/evaluation/print_retrieval_metrics.py \
+  target/longmemeval-v1/cortexdb/longmemeval_s_cleaned_cortexdb_session_retrieval.jsonl
+```
+
+and writes:
+
+```text
+target/longmemeval-v1/cortexdb/official_retrieval_metrics.txt
+```
+
+The adapter gate then validates the official data manifest, retrieval report,
+retrieval log row count, and official metrics:
+
+```bash
+make longmemeval-v1-retrieval-adapter-check
+```
+
 Run official QA scoring after official generation has produced a hypothesis
 JSONL file:
 
@@ -70,7 +110,7 @@ make longmemeval-v1-official-qa-score \
   LONGMEMEVAL_V1_HYPOTHESIS_FILE=target/longmemeval-v1/generation/<file>.jsonl
 ```
 
-## Current Official Local Evidence
+## Retrieval-only Results
 
 Local full-run retrieval evidence on the official `longmemeval_s_cleaned.json`
 split:
@@ -91,6 +131,40 @@ sha256: d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442
 ```
 
 These are retrieval metrics. They are not the final QA leaderboard score.
+
+## Retrieval Log Format
+
+CortexDB writes the retrieval log consumed by the official metric script at:
+
+```text
+target/longmemeval-v1/cortexdb/longmemeval_s_cleaned_cortexdb_session_retrieval.jsonl
+```
+
+The log is JSONL. Each non-empty line is a JSON object with:
+
+```json
+{
+  "question_id": "string",
+  "question": "string",
+  "answer": "string",
+  "question_type": "string",
+  "retrieval_results": {
+    "ranked_items": [
+      {
+        "id": "string",
+        "session_id": "string",
+        "turn_id": "string",
+        "text": "string",
+        "score": 0
+      }
+    ]
+  }
+}
+```
+
+The retrieval-adapter checker validates that every row has `question_id`,
+`retrieval_results`, and `ranked_items`, and that the JSONL row count matches
+the CortexDB retrieval report.
 
 Retrieval adapter acceptance evidence:
 
@@ -151,6 +225,18 @@ target/longmemeval-v1/generation/longmemeval_s_cleaned_cortexdb_session_retrieva
 target/longmemeval-v1/logs/official_generation_gpt4o_20260602-034241.log
 target/longmemeval-v1/logs/official_eval_gpt4o_20260602-042609.log
 ```
+
+## Limitations
+
+- The official local retrieval metrics are retrieval-only evidence.
+- The historical QA accuracy is a local official-run artifact, not a public
+  score and not a public LongMemEval leaderboard/list placement.
+- DeepSeek Flash runs are local diagnostics and are not official LongMemEval
+  scores.
+- The large retrieval log and generated hypotheses are retained under `target/`
+  and are not committed to the repository.
+- To publish an official claim, the packaged v1 artifacts must be submitted to the LongMemEval maintainers.
+  LongMemEval-V2 must be run under its separate web/enterprise benchmark process.
 
 ## Error Analysis
 
