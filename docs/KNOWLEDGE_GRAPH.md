@@ -104,6 +104,27 @@ db.graph_source_supports_fact_edges();
 db.graph_fact_contradicts_fact_edges();
 ```
 
+## Graph Retrieval v1
+
+Epic 146 adds a local multi-hop retrieval helper over the same snapshot graph:
+
+```rust
+let hits = db.graph_retrieve_related("Solar Plant", 2);
+```
+
+Each `GraphRetrievalHit` contains:
+
+- `cell_id`: the entity or relation cell reached by traversal;
+- `matched_entity`: the entity endpoint that made the hit relevant;
+- `depth`: graph distance from the seed entity;
+- `proximity_score_q16`: deterministic proximity score, where depth `0` has
+  the highest score and farther hops decay by distance;
+- `explaining_edges`: the ordered relation edge path used to reach the hit.
+
+The helper traverses breadth-first and returns deterministic results ordered by
+depth, proximity, and `CellId`. It is intended as a small retrieval primitive for
+future Graph Verification and ContextPack explain flows.
+
 ## Persistence Boundary
 
 Because the graph index is built from visible cells, it works before and after:
@@ -132,6 +153,9 @@ The gate verifies:
 - `GraphEdgeKind` classification for provenance and contradiction relations;
 - `graph_source_supports_fact_edges`;
 - `graph_fact_contradicts_fact_edges`;
+- `GraphRetrievalHit` multi-hop retrieval;
+- graph proximity score ordering;
+- graph edge explanations;
 - checkpoint and reopen behavior.
 
 ## Non-Goals
@@ -139,6 +163,6 @@ The gate verifies:
 - Graph query language.
 - Persisted graph index files.
 - Entity extraction from natural language.
-- Multi-hop ranking.
+- Production multi-hop ranking.
 - Production GraphRAG planning.
 - Distributed graph traversal.

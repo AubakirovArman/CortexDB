@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 145 / 150
+- Done: 146 / 150
 - Partial: 1 / 150
-- Todo: 4 / 150
-- Current closed epic: Epic 145, Knowledge Graph Layer v1
+- Todo: 3 / 150
+- Current closed epic: Epic 146, Graph Retrieval
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -4194,13 +4194,31 @@ Boundary:
 
 ### Epic 146. Graph Retrieval
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `crates/cortex-engine/src/graph_retrieval.rs`
+- `crates/cortex-engine/tests/graph_retrieval_tests.rs`
+- `docs/KNOWLEDGE_GRAPH.md`
+- `scripts/knowledge_graph_check.py`
+- `make knowledge-graph-check`
 
 Tasks:
 
-- Add multi-hop retrieval.
-- Add graph proximity score.
-- Explain graph edges.
+- Add multi-hop retrieval. Done: `Database::graph_retrieve_related` and
+  `KnowledgeGraphIndex::retrieve_related_cells` traverse relation edges
+  breadth-first from a seed entity with a bounded hop count.
+- Add graph proximity score. Done: every `GraphRetrievalHit` includes
+  deterministic `proximity_score_q16`, with direct seed hits scoring highest and
+  farther hops decaying by distance.
+- Explain graph edges. Done: every hit carries `explaining_edges`, the ordered
+  relation path used to reach that cell.
+
+Boundary:
+
+- This is local snapshot graph retrieval. It is not a persisted graph index,
+  learned graph ranking, or production GraphRAG planner.
 
 ### Epic 147. Graph Verification
 
