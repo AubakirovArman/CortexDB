@@ -1,6 +1,7 @@
 # CortexDB Use-case Packs
 
-Status: runnable beta scenarios for legal, financial, and technical use cases.
+Status: runnable beta scenarios for investment-project, legal, financial, and
+technical use cases.
 
 Use-case packs are small local scenarios that show how CortexDB moves from raw
 cells to search, ContextPack generation, and deterministic verification. They
@@ -19,11 +20,20 @@ runs CLI smoke flows for each pack.
 
 | Pack | Scope | Fixture | Purpose |
 | --- | --- | --- | --- |
+| Investment Projects | `project:investments` | `examples/datasets/investment_projects/cells.jsonl` | Retrieve project evidence, build cited ContextPacks, verify budget/battery facts, and connect to the local real-domain benchmark. |
 | Legal Policy Review | `project:legal` | `examples/datasets/legal_policies/cells.jsonl` | Retrieve cited policy context and verify policy-update facts without claiming legal advice. |
 | Financial Filing Review | `sec:filings` | `examples/datasets/sec_financial_facts/cells.jsonl` | Retrieve filing facts and verify revenue statements with normalized numeric values. |
 | Technical Runbook Triage | `docs:technical` | `examples/datasets/technical_docs/cells.jsonl` | Retrieve operational docs for compatibility, beta release, and search explain workflows. |
 
 ## Manual Smoke
+
+```bash
+cargo run -p cortex-cli -- load-fixture target/use-case-packs/investment-projects/db examples/datasets/investment_projects
+cargo run -p cortex-cli -- context --format json target/use-case-packs/investment-projects/db project:investments \
+  'RETRIEVE CONTEXT FOR TASK "Mirny wind farm battery evidence" IN BRAIN default REQUIRE citations LIMIT 10 CANDIDATES;'
+cargo run -p cortex-cli -- verify --format json target/use-case-packs/investment-projects/db project:investments \
+  'VERIFY FACT "Mirny wind farm includes a 600 MWh battery system" IN BRAIN default;'
+```
 
 ```bash
 cargo run -p cortex-cli -- load-fixture target/use-case-packs/legal-policy-review/db examples/datasets/legal_policies
@@ -47,18 +57,23 @@ These packs prove:
 - VERIFY FACT returns deterministic JSON over legal, financial, and technical
   scenarios;
 - search can retrieve the expected scoped examples.
+- the investment-project pack links demo queries to the local real-domain
+  benchmark report and `production_safe=true` embedding evidence.
 
 These packs do not prove:
 
 - legal advice, legal-grade verification, or compliance certification;
 - audited financial assurance;
+- investment advice, project diligence, or source-freshness certification;
 - production incident-management readiness;
 - private customer-domain quality.
 
 ## Files
 
 - Manifest: [`../examples/use_cases/packs.json`](../examples/use_cases/packs.json)
+- Investment pack: [`../examples/use_cases/investment_projects/README.md`](../examples/use_cases/investment_projects/README.md)
 - Legal pack: [`../examples/use_cases/legal_policy_review/README.md`](../examples/use_cases/legal_policy_review/README.md)
 - Financial pack: [`../examples/use_cases/financial_filing_review/README.md`](../examples/use_cases/financial_filing_review/README.md)
 - Technical pack: [`../examples/use_cases/technical_runbook_triage/README.md`](../examples/use_cases/technical_runbook_triage/README.md)
+- Investment benchmark report: [`../examples/use_cases/investment_projects/benchmark_report.md`](../examples/use_cases/investment_projects/benchmark_report.md)
 - Gate script: [`../scripts/use_case_pack_check.py`](../scripts/use_case_pack_check.py)

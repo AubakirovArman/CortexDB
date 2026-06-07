@@ -9,12 +9,15 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from use_case_pack_epic132 import investment_task_coverage
+
 
 MANIFEST = Path("examples/use_cases/packs.json")
 REQUIRED_PACK_IDS = {
     "legal_policy_review",
     "financial_filing_review",
     "technical_runbook_triage",
+    "investment_projects",
 }
 
 
@@ -95,6 +98,7 @@ def validate_pack(pack: dict[str, object], failures: list[str]) -> dict[str, obj
         require_marker(payload, "type=fact", failures, f"{pack_id}: row {index}")
         require_marker(payload, "source=", failures, f"{pack_id}: row {index}")
 
+    readme_text = ""
     if not readme.is_file():
         failures.append(f"{pack_id}: missing readme {readme}")
     else:
@@ -107,6 +111,10 @@ def validate_pack(pack: dict[str, object], failures: list[str]) -> dict[str, obj
         failures.append(f"{pack_id}: expected_markers must be a non-empty list")
         markers = []
 
+    task_coverage = {}
+    if pack_id == "investment_projects":
+        task_coverage = investment_task_coverage(pack, readme_text, failures)
+
     return {
         "id": pack_id,
         "domain": pack.get("domain"),
@@ -114,6 +122,7 @@ def validate_pack(pack: dict[str, object], failures: list[str]) -> dict[str, obj
         "fixture": str(fixture),
         "cell_count": len(rows),
         "marker_count": len(markers),
+        "task_coverage": task_coverage,
     }
 
 

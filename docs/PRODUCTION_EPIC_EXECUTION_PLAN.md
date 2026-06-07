@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 131 / 150
+- Done: 132 / 150
 - Partial: 1 / 150
-- Todo: 18 / 150
-- Current closed epic: Epic 131, Official Beta Landing Page
+- Todo: 17 / 150
+- Current closed epic: Epic 132, Use-case Pack: Investment Projects
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3709,15 +3709,38 @@ Tasks:
 
 ### Epic 132. Use-case Pack: Investment Projects
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `examples/use_cases/investment_projects/README.md`
+- `examples/use_cases/investment_projects/benchmark_report.md`
+- `examples/datasets/investment_projects/cells.jsonl`
+- `examples/use_cases/packs.json`
+- `scripts/use_case_pack_check.py`
+- `scripts/use_case_pack_epic132.py`
+- `docs/USE_CASE_PACKS.md`
+- `make use-case-pack-check`
 
 Tasks:
 
-- Polish demo.
-- Add queries.
-- Add ContextPack examples.
-- Add Verify examples.
-- Add benchmark report.
+- Polish demo. Done: the investment pack README points to the existing local
+  demo and explains the search, ContextPack, VERIFY, validation, and cleanup
+  flow.
+- Add queries. Done: the pack manifest includes search, ContextPack, and VERIFY
+  queries and links the real-domain query set.
+- Add ContextPack examples. Done: the pack includes a cited ContextPack command
+  for Mirny wind farm battery evidence.
+- Add Verify examples. Done: the pack includes a `VERIFY FACT` command for the
+  600 MWh battery claim.
+- Add benchmark report. Done: the pack has a local benchmark report that links
+  the investment-project corpus, query counts, `production_safe=true` embedding
+  evidence, and repeatable checks.
+
+Boundary:
+
+- This pack is a runnable developer scenario and local benchmark fixture. It is
+  not investment advice, project diligence, or source-freshness certification.
 
 ### Epic 133. Use-case Pack: Legal Policies
 

@@ -36,6 +36,22 @@
       "context_aql": "RETRIEVE CONTEXT FOR TASK \"compatibility endpoint\" IN BRAIN default REQUIRE citations LIMIT 10 CANDIDATES;",
       "verify_aql": "VERIFY FACT \"The /v1/compatibility endpoint exposes API version and SDK contract version\" IN BRAIN default;",
       "expected_markers": ["/v1/compatibility", "SDK contract", "migration matrix"]
+    },
+    {
+      "id": "investment_projects",
+      "title": "Investment Projects",
+      "domain": "investment",
+      "scope": "project:investments",
+      "fixture_path": "examples/datasets/investment_projects/cells.jsonl",
+      "readme_path": "examples/use_cases/investment_projects/README.md",
+      "search_query": "Kazakhstan renewable energy battery",
+      "context_aql": "RETRIEVE CONTEXT FOR TASK \"Mirny wind farm battery evidence\" IN BRAIN default REQUIRE citations LIMIT 10 CANDIDATES;",
+      "verify_aql": "VERIFY FACT \"Mirny wind farm includes a 600 MWh battery system\" IN BRAIN default;",
+      "expected_markers": ["Mirny", "600 MWh", "TotalEnergies"],
+      "demo_path": "examples/demo/investment_projects/run.sh",
+      "aql_examples_path": "examples/aql/investment_projects",
+      "domain_queries_path": "examples/real_domains/investment_projects/queries/queries.jsonl",
+      "benchmark_report_path": "examples/use_cases/investment_projects/benchmark_report.md"
     }
   ]
 }
