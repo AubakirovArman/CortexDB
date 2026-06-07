@@ -134,6 +134,7 @@ This index covers project-owned markdown. Dependency, generated, virtualenv,
 - [`BINARY_RELEASES.md`](BINARY_RELEASES.md) - binary tarball packaging and install flow.
 - [`BINARY_PLATFORM_MATRIX.md`](BINARY_PLATFORM_MATRIX.md) - supported binary platforms and clean-install smoke.
 - [`RELEASE_ARTIFACT_MANIFEST.md`](RELEASE_ARTIFACT_MANIFEST.md) - machine-readable release evidence manifest.
+- [`PACKAGE_MANAGER_FEASIBILITY.md`](PACKAGE_MANAGER_FEASIBILITY.md) - Homebrew, deb, and rpm packaging readiness decision.
 - [`INSTALL.md`](INSTALL.md) - local binary/source install and first database checks.
 - [`DOCKER.md`](DOCKER.md) - local single-node Docker hardening boundary,
   `docker-compose.production.yml`, `auth.tokens.example`, and nginx

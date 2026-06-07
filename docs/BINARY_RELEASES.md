@@ -153,9 +153,21 @@ See [`RELEASE_ARTIFACT_MANIFEST.md`](RELEASE_ARTIFACT_MANIFEST.md) for the
 binary, SDK, OpenAPI, evidence, and git metadata that are bound into the
 machine-readable manifest.
 
+## Package Manager Feasibility
+
+Package-manager publication is tracked separately from tarball releases. The
+current decision is documented in
+[`PACKAGE_MANAGER_FEASIBILITY.md`](PACKAGE_MANAGER_FEASIBILITY.md):
+
+- Homebrew tap packaging is feasible after adding a checked formula template.
+- Linux `.deb` and `.rpm` packaging is feasible after adding package metadata
+  templates and install/upgrade smoke tests.
+- Official package-manager publication is not claimed by the current beta
+  artifacts.
+
 ## Limits
 
 - No Windows binary artifact is produced yet.
-- No installer, package manager formula, or service unit is generated.
+- No package manager formula or `.deb`/`.rpm` package is generated yet.
 - No in-place downgrade guarantee; use the restore workflow in
   [`UPGRADE_MIGRATION.md`](UPGRADE_MIGRATION.md).

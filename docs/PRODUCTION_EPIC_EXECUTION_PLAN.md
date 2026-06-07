@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 129 / 150
+- Done: 130 / 150
 - Partial: 1 / 150
-- Todo: 20 / 150
-- Current closed epic: Epic 129, Release Artifact Manifest
+- Todo: 19 / 150
+- Current closed epic: Epic 130, Homebrew/Package Manager Feasibility
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3648,13 +3648,29 @@ Tasks:
 
 ### Epic 130. Homebrew/Package Manager Feasibility
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `docs/PACKAGE_MANAGER_FEASIBILITY.md`
+- `docs/BINARY_RELEASES.md`
+- `docs/DOCUMENTATION_INDEX.md`
+- `scripts/package_manager_feasibility_check.py`
+- `make package-manager-feasibility-check`
+- `target/package-manager-feasibility/report.json`
+- Latest local feasibility report: `status=passed`
 
 Tasks:
 
-- Evaluate Homebrew formula.
-- Evaluate Linux package.
-- Write decision doc.
+- Evaluate Homebrew formula. Done: Homebrew tap is feasible after a
+  checked formula template, with tarball URL, SHA-256, CLI smoke test, and
+  launchd conventions documented.
+- Evaluate Linux package. Done: Linux `.deb` and `.rpm` packaging is feasible
+  after adding package metadata templates and install/upgrade smoke tests;
+  official distro repository submission remains deferred.
+- Write decision doc. Done: `PACKAGE_MANAGER_FEASIBILITY.md` records current
+  inputs, go/no-go decisions, readiness tables, and official packaging
+  references.
 
 ## M. Product Demos And Adoption
 
