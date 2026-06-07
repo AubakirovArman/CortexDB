@@ -4,6 +4,7 @@ const history = document.querySelector("#history");
 const sessionStatus = document.querySelector("#session-status");
 const roleStatus = document.querySelector("#session-role");
 const permissionReport = document.querySelector("#permission-report");
+const roleUiReport = document.querySelector("#role-ui-report");
 const requestStatus = document.querySelector("#request-status");
 const content = document.querySelector("#content");
 const routeLinks = Array.from(document.querySelectorAll("[data-route]"));
@@ -64,6 +65,7 @@ function renderSessionStatus() {
     const hint = accessHint ? ` (${accessHint})` : "";
     roleStatus.textContent = `Access level: ${accessLabel(accessLevel)}${tokenHint}${readOnlyHint}${hint}`;
     renderPermissionReport();
+    renderRoleUiReport();
     window.CortexDashboardReports?.renderPermissionsView?.(permissionState());
 }
 
@@ -85,6 +87,59 @@ function renderPermissionReport() {
 
     permissionReport.dataset.access = tone;
     permissionReport.textContent = text;
+}
+
+function roleUiState() {
+    const visibleRoutes = routeLinks.filter((link) => !link.hidden).map((link) => link.dataset.route).filter(Boolean);
+    const hiddenRoutes = routeLinks.filter((link) => link.hidden).map((link) => link.dataset.route).filter(Boolean);
+    const dangerousControls = Array.from(document.querySelectorAll("[data-dangerous='true']"));
+    const hiddenDangerous = dangerousControls
+        .filter((node) => node.hidden || node.disabled)
+        .map((node) => node.dataset.action || node.value || node.textContent.trim())
+        .filter(Boolean);
+    const visibleDangerous = dangerousControls
+        .filter((node) => !node.hidden && !node.disabled)
+        .map((node) => node.dataset.action || node.value || node.textContent.trim())
+        .filter(Boolean);
+    const mode = readOnlyMode
+        ? "read_only"
+        : (canUse(ACCESS_ADMIN) ? "admin" : (canUse(ACCESS_DATA) ? "data_user" : "limited"));
+    return {
+        schema_version: "dashboard_role_ui.v1",
+        mode,
+        admin_ui: {
+            available: canUse(ACCESS_ADMIN) && !readOnlyMode,
+            visible_routes: visibleRoutes.filter((route) => route === "storage" || route === "ann-eval"),
+            maintenance_visible: canUse(ACCESS_ADMIN),
+        },
+        data_user_ui: {
+            available: canUse(ACCESS_DATA) && !readOnlyMode,
+            visible_routes: visibleRoutes.filter((route) => route !== "storage"),
+            retrieval_visible: canUse(ACCESS_DATA),
+        },
+        read_only_ui: {
+            active: readOnlyMode,
+            blocked_actions: readOnlyMode ? ["put", "tombstone", "ingest", "flush", "compact"] : [],
+            guard: "client_side_before_request",
+        },
+        visible_routes: visibleRoutes,
+        hidden_routes: hiddenRoutes,
+        dangerous_operations: {
+            visible: visibleDangerous,
+            hidden_or_disabled: hiddenDangerous,
+            hide_policy: "hidden unless role allows it; disabled when read-only guard is active",
+        },
+    };
+}
+
+function renderRoleUiReport() {
+    if (!roleUiReport) return;
+    const state = roleUiState();
+    const hiddenDangerous = state.dangerous_operations.hidden_or_disabled.length;
+    const visibleDangerous = state.dangerous_operations.visible.length;
+    const text = `Role UI: ${state.mode}; visible routes ${state.visible_routes.length}; hidden routes ${state.hidden_routes.length}; dangerous visible ${visibleDangerous}; dangerous hidden/disabled ${hiddenDangerous}`;
+    roleUiReport.dataset.mode = state.mode;
+    roleUiReport.textContent = text;
 }
 
 function permissionState() {
@@ -111,6 +166,7 @@ function permissionState() {
         read_only: readOnlyMode,
         selected_scopes: selectedScopes,
         denials,
+        role_ui: roleUiState(),
         agent_view: {
             source: token.trim().length > 0 ? "server_token_policy" : "anonymous_synthetic_view",
             server_enforced: true,
@@ -295,6 +351,7 @@ function refreshAccessVisibility() {
             }
         }
     }
+    refreshDangerousOperationVisibility();
 
     const requested = routeFromLocation();
     const panel = routes.get(requested);
@@ -302,6 +359,27 @@ function refreshAccessVisibility() {
         const fallback = firstAllowedRoute();
         if (fallback !== requested) {
             setRoute(fallback, false);
+        }
+    }
+    renderRoleUiReport();
+    window.CortexDashboardReports?.renderPermissionsView?.(permissionState());
+}
+
+function refreshDangerousOperationVisibility() {
+    for (const node of document.querySelectorAll("[data-dangerous='true']")) {
+        const minAccess = node.getAttribute("data-access") || ACCESS_DATA;
+        const allowedByRole = canUse(minAccess);
+        const blockedByReadOnly = readOnlyMode && node.dataset.write === "true";
+        node.hidden = !allowedByRole || blockedByReadOnly;
+        if (node instanceof HTMLOptionElement && node.hidden && node.selected) {
+            const select = node.closest("select");
+            const safeOption = select?.querySelector("option:not([hidden])");
+            if (safeOption) select.value = safeOption.value;
+        }
+        if (node instanceof HTMLButtonElement || node instanceof HTMLInputElement || node instanceof HTMLSelectElement) {
+            node.disabled = !allowedByRole || blockedByReadOnly;
+            if (node.disabled) node.setAttribute("aria-disabled", "true");
+            else node.removeAttribute("aria-disabled");
         }
     }
 }

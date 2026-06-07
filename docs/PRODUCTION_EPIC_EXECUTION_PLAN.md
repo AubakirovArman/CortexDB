@@ -17,10 +17,10 @@ CortexDB is currently evidence-backed for Beta Foundation and local single-node 
 
 ## Current Progress Snapshot
 
-- Done: 119 / 150
+- Done: 120 / 150
 - Partial: 1 / 150
-- Todo: 30 / 150
-- Current closed epic: Epic 119, Incident View
+- Todo: 29 / 150
+- Current closed epic: Epic 120, Dashboard Role-based UI
 - Long-running partial: Epic 12, 72h storage soak evidence accumulation
 
 ## Recommended Order
@@ -3308,14 +3308,28 @@ Tasks:
 
 ### Epic 120. Dashboard Role-based UI
 
-Status: todo
+Status: done
+
+Evidence:
+
+- `web/dashboard/src/app.js`
+- `web/dashboard/src/index.html`
+- `web/dashboard/src/reporting_operations.js`
+- `scripts/dashboard_role_ui_check.py`
+- `make dashboard-role-ui-check`
 
 Tasks:
 
-- Add admin UI.
-- Add data user UI.
-- Add read-only UI.
-- Hide dangerous operations by role.
+- Add admin UI. Done: `dashboard_role_ui.v1` reports admin route/control
+  visibility and admin maintenance availability.
+- Add data user UI. Done: the same schema reports data-user retrieval, cell,
+  ingest, AQL, ContextPack, Verify, ANN, and cluster route visibility.
+- Add read-only UI. Done: read-only mode reports blocked mutating actions and
+  uses the client-side before-request guard.
+- Hide dangerous operations by role. Done: put, tombstone, ingest, flush, and
+  compact controls are marked `data-dangerous="true"` and are hidden or disabled
+  when role or read-only state disallows them.
+- Evidence gate. Done: `make dashboard-role-ui-check`.
 
 ## L. Packaging, Install, Deployment
 

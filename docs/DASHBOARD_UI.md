@@ -231,6 +231,25 @@ server authorization; it prevents accidental cell writes, tombstones, ingest,
 flush, and compact actions from being sent while an operator is inspecting the
 database.
 
+### Role-based Dashboard UI
+
+The dashboard exposes `dashboard_role_ui.v1` inside the Permissions route and
+top-level role status. This browser-side state makes the UI boundary explicit:
+
+- Admin UI shows storage maintenance, metrics, validation, ANN metrics, flush,
+  and compact controls when an admin token is accepted.
+- Data user UI shows cells, search, ANN evaluation, AQL, ContextPack, Verify,
+  Ingest, and Cluster routes while hiding admin-only storage maintenance.
+- Read-only UI keeps data/admin routes visible when the token allows them, but
+  blocks local write controls before requests are sent.
+- Hide dangerous operations by role: put, tombstone, ingest, flush, and compact
+  are marked with `data-dangerous="true"` and hidden or disabled when the role
+  or read-only guard does not allow them.
+
+`make dashboard-role-ui-check` validates the role UI schema, dangerous-operation
+markers, and documentation wiring. Server-side auth remains authoritative; the
+dashboard role UI is only a client-side safety and clarity layer.
+
 ### Permissions Explorer
 
 The Permissions route is read-only and shows the local session posture:

@@ -58,6 +58,9 @@
             <div id="permission-report" class="notice permission-report" role="status">
                 Limited access: public health only. Apply a bearer token to enable data/admin actions.
             </div>
+            <div id="role-ui-report" class="notice role-ui-report" role="status">
+                Role UI: limited; dangerous operations hidden until the session allows them.
+            </div>
             <section id="overview" class="panel active" data-title="Overview">
                 <h2 id="overview-title">Overview</h2>
                 <div class="status" id="metrics"></div>
@@ -133,7 +136,7 @@
                             <input id="cell-id" name="cell_id" inputmode="numeric" pattern="[0-9]+" required value="1" aria-errormessage="cell-id-error">
                             <span id="cell-id-error" class="field-error">Use digits only.</span>
                         </div>
-                        <div class="field"><label for="cell-op">Operation</label><select id="cell-op" name="op"><option value="put">Put</option><option value="get">Get</option><option value="delete">Tombstone</option></select></div>
+                        <div class="field"><label for="cell-op">Operation</label><select id="cell-op" name="op"><option value="put" data-access="data" data-write="true" data-dangerous="true">Put</option><option value="get">Get</option><option value="delete" data-access="data" data-write="true" data-dangerous="true">Tombstone</option></select></div>
                     </div>
                     <div class="field"><label for="cell-payload">Payload</label><textarea id="cell-payload" name="payload">scope=project:investments
 status=ready
@@ -252,7 +255,7 @@ Solar budget note</textarea></div>
                     </div>
                     <div class="field"><label for="ingest-document">Document</label><textarea id="ingest-document" name="document">Solar Plant budget approved.
 Wind Farm status ready.</textarea></div>
-                    <button type="submit" data-access="data" data-write="true">Ingest</button>
+                    <button type="submit" data-access="data" data-write="true" data-dangerous="true">Ingest</button>
                 </form>
                 <form id="ingest-job-form" action="/v1/ingest/jobs/1" method="get" data-access="data">
                     <div class="field">
@@ -278,8 +281,8 @@ Wind Farm status ready.</textarea></div>
                     <button type="button" data-action="stats" data-access="admin">Stats</button>
                     <button type="button" data-action="metrics" data-access="admin">Metrics</button>
                     <button type="button" data-action="validate" data-access="admin">Validate</button>
-                    <button type="button" data-action="flush" class="secondary" data-access="admin" data-write="true">Flush</button>
-                    <button type="button" data-action="compact" class="secondary" data-access="admin" data-write="true">Compact</button>
+                    <button type="button" data-action="flush" class="secondary" data-access="admin" data-write="true" data-dangerous="true">Flush</button>
+                    <button type="button" data-action="compact" class="secondary" data-access="admin" data-write="true" data-dangerous="true">Compact</button>
                 </div>
                 <section class="report-panel" aria-labelledby="storage-report-title">
                     <h3 id="storage-report-title">Storage validation report</h3>
