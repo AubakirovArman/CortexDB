@@ -25,7 +25,7 @@ top10-focused document recall
 Current best retrieval artifact:
 
 ```text
-target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v61_github_semantic_query_expansion_top10.jsonl
+target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v62_basic_google_drive_tail_rescue_top10.jsonl
 ```
 
 ## Current Local Gate
@@ -33,8 +33,8 @@ target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v61_github_semantic
 Latest local calibration gate:
 
 ```text
-target/enterprise-rag-bench/analysis/local_calibration_gate_v61.json
-target/enterprise-rag-bench/analysis/local_calibration_gate_v61.md
+target/enterprise-rag-bench/analysis/local_calibration_gate_v62.json
+target/enterprise-rag-bench/analysis/local_calibration_gate_v62.md
 ```
 
 Result:
@@ -42,11 +42,11 @@ Result:
 | Metric | Value |
 | --- | ---: |
 | local gate passed | `true` |
-| top10 document recall | `71.66%` |
-| top10 full-recall questions | `317` |
-| top10 hit questions | `355` |
+| top10 document recall | `71.87%` |
+| top10 full-recall questions | `318` |
+| top10 hit questions | `356` |
 | average invalid extra docs | `8.01` |
-| fact token coverage proxy | `74.24%` |
+| fact token coverage proxy | `74.23%` |
 | fact full coverage proxy | `83.89%` |
 
 Gate thresholds:
@@ -126,6 +126,7 @@ ordinary document recall or invalid-extra-doc counts.
 | `doc_view_v51` | `71.29%` | `314` | `352` | semantic pass over v46 using candidate pool v48 |
 | `doc_view_v56` | `71.44%` | `316` | `354` | project-related wide rerank over v55 neighbor-tail candidate pool |
 | `doc_view_v61` | `71.66%` | `317` | `355` | GitHub-only semantic query expansion over v58 source-link candidate pool |
+| `doc_view_v62` | `71.87%` | `318` | `356` | basic Google Drive tail rescue over v58 source-link candidate pool |
 
 ## What Improved
 
@@ -189,21 +190,43 @@ ordinary document recall or invalid-extra-doc counts.
   `qst_0207`, raises global top10 recall from `71.44%` to `71.66%`, raises
   semantic recall from `45.6%` to `46.4%`, and has zero regressions against
   v56.
+- Basic Google Drive tail rescue v62 handles a near-duplicate case where the
+  v58 candidate pool already had the needed Google Drive document, but the
+  final top10 kept an adjacent document variant. It routes only `basic` Google
+  Drive questions, replaces one tail slot, recovers `qst_0112`, raises global
+  top10 recall from `71.66%` to `71.87%`, raises full-recall questions from
+  `317` to `318`, and has zero regressions against v61.
 
 Regression comparison against `extra_reducer_v19`:
 
 ```text
-target/enterprise-rag-bench/analysis/v19_vs_v61_retrieval_comparison_report.json
-target/enterprise-rag-bench/analysis/v19_vs_v61_retrieval_comparison_report.md
+target/enterprise-rag-bench/analysis/v19_vs_v62_retrieval_comparison_report.json
+target/enterprise-rag-bench/analysis/v19_vs_v62_retrieval_comparison_report.md
 ```
 
 | Metric | Delta |
 | --- | ---: |
-| average recall | `+1.80` |
-| full-recall questions | `+8` |
-| hit questions | `+8` |
-| improved questions | `21` |
+| average recall | `+2.01` |
+| full-recall questions | `+9` |
+| hit questions | `+9` |
+| improved questions | `22` |
 | regressed questions | `1` |
+
+Incremental comparison against `doc_view_v61`:
+
+```text
+target/enterprise-rag-bench/analysis/v61_vs_v62_retrieval_comparison_report.json
+target/enterprise-rag-bench/analysis/v61_vs_v62_retrieval_comparison_report.md
+```
+
+| Metric | Delta |
+| --- | ---: |
+| average recall | `+0.21` |
+| basic recall | `+0.57` |
+| full-recall questions | `+1` |
+| hit questions | `+1` |
+| improved questions | `1` |
+| regressed questions | `0` |
 
 Incremental comparison against `doc_view_v56`:
 
@@ -256,8 +279,8 @@ target/enterprise-rag-bench/analysis/v46_vs_v51_retrieval_comparison_report.md
 Missing gold reason classifier:
 
 ```text
-target/enterprise-rag-bench/analysis/gold_missing_reasons_v61_report.json
-target/enterprise-rag-bench/analysis/gold_missing_reasons_v61_report.md
+target/enterprise-rag-bench/analysis/gold_missing_reasons_v62_report.json
+target/enterprise-rag-bench/analysis/gold_missing_reasons_v62_report.md
 ```
 
 Largest current missing-gold buckets:
@@ -265,8 +288,8 @@ Largest current missing-gold buckets:
 | Reason | Missing Gold Docs |
 | --- | ---: |
 | `not_in_top1000` | `57` |
-| `near_duplicate_confusion` | `52` |
 | `in_top500_not_top100` | `51` |
+| `near_duplicate_confusion` | `51` |
 | `lost_by_embedding_rerank` | `39` |
 
 ## What Was Tested And Not Promoted
@@ -314,8 +337,8 @@ they regressed local top10 recall or evidence coverage:
   `jira,gmail,confluence,google_drive,hubspot,slack,linear,fireflies,github`
   against the current v61 baseline. No source type produced a promotion
   candidate. `slack` was rejected because it improved `qst_0176` but regressed
-  `qst_0295`; every other source type was neutral. Current best therefore
-  remains v61.
+  `qst_0295`; every other source type was neutral. v62 was promoted separately
+  by a basic Google Drive tail-rescue route, not by this semantic source sweep.
 
 Semantic source-route sweep:
 
@@ -403,6 +426,12 @@ Run GitHub semantic query expansion over the source-link candidate pool:
 make enterprise-rag-bench-github-semantic-query-expansion
 ```
 
+Run basic Google Drive tail rescue over the source-link candidate pool:
+
+```bash
+make enterprise-rag-bench-basic-google-drive-tail-rescue
+```
+
 Run semantic source-route sweep against the current best:
 
 ```bash
@@ -421,10 +450,10 @@ Depth audit:
 ```bash
 python scripts/enterprise_rag_bench/candidate_depth_audit.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v61_github_semantic_query_expansion_top10.jsonl \
-  --output-jsonl target/enterprise-rag-bench/analysis/doc_view_v61_depth_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/doc_view_v61_depth_report.json \
-  --markdown target/enterprise-rag-bench/analysis/doc_view_v61_depth_report.md
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v62_basic_google_drive_tail_rescue_top10.jsonl \
+  --output-jsonl target/enterprise-rag-bench/analysis/doc_view_v62_depth_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/doc_view_v62_depth_report.json \
+  --markdown target/enterprise-rag-bench/analysis/doc_view_v62_depth_report.md
 ```
 
 Evidence pack proxy:
@@ -432,24 +461,24 @@ Evidence pack proxy:
 ```bash
 python scripts/enterprise_rag_bench/evaluate_evidence_pack.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v61_github_semantic_query_expansion_top10.jsonl \
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v62_basic_google_drive_tail_rescue_top10.jsonl \
   --uuid-index target/external-benchmarks/EnterpriseRAG-Bench/generated_data/uuid_index.json \
   --sources-dir target/external-benchmarks/EnterpriseRAG-Bench/generated_data/sources \
   --mode leading \
   --top-k 10 \
   --max-chars-per-doc 5000 \
-  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v61_leading_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v61_leading_report.json
+  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v62_leading_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v62_leading_report.json
 ```
 
 Calibration gate:
 
 ```bash
 python scripts/enterprise_rag_bench/summarize_local_calibration.py \
-  --depth-report target/enterprise-rag-bench/analysis/doc_view_v61_depth_report.json \
-  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v61_leading_report.json \
-  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v61.json \
-  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v61.md \
+  --depth-report target/enterprise-rag-bench/analysis/doc_view_v62_depth_report.json \
+  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v62_leading_report.json \
+  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v62.json \
+  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v62.md \
   --min-top10-recall-pct 70.1 \
   --max-invalid-extra-docs 8.1
 ```
