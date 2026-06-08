@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from evidence_digest import evidence_digest_score
+from question_decomposition import covered_unit_ids, evidence_units
 from rerank_with_embeddings import extract_document_content
 
 
@@ -170,7 +171,7 @@ def score_doc(
     embeddings: dict[str, list[float]],
     idf: dict[str, float],
     weights: dict[str, float],
-) -> dict[str, float]:
+) -> dict[str, Any]:
     question_text = str(question.get("question", ""))
     q_tokens = [token for token in tokens(question_text) if token not in STOPWORDS]
     q_unique = set(q_tokens)
@@ -186,12 +187,20 @@ def score_doc(
     phrase_hits = sum(1 for phrase in phrases if phrase in doc["normalized"])
     title_hits = len(q_unique & set(tokens(str(doc["title"]))))
     path_hits = len(q_unique & set(tokens(str(doc["rel_path"]))))
-    digest = evidence_digest_score(str(doc["content"]), question_text)
+    digest = (
+        evidence_digest_score(str(doc["content"]), question_text)
+        if weights.get("digest", 0.0) > 0.0
+        else 0.0
+    )
     source_boost = (
         1.0
         if doc["source_type"] in {str(item) for item in question.get("source_types", [])}
         else 0.0
     )
+    units = evidence_units(question_text)
+    covered_units = covered_unit_ids(units, doc["normalized"], doc["token_set"])
+    evidence_unit_hits = float(len(covered_units))
+    evidence_unit_coverage = len(covered_units) / len(units) if units else 0.0
     embedding = cosine(
         embeddings.get(f"q:{question.get('question_id')}"),
         embeddings.get(f"d:{doc['doc_id']}"),
@@ -209,6 +218,8 @@ def score_doc(
         + path_hits * weights["path"]
         + digest * weights["digest"]
         + source_boost * weights["source"]
+        + evidence_unit_hits * weights.get("evidence_unit_hits", 0.0)
+        + evidence_unit_coverage * weights.get("evidence_unit_coverage", 0.0)
         + embedding * weights["embedding"]
         + raw_rank * weights["raw_rank"]
         + top20_rank * weights["top20_rank"]
@@ -225,6 +236,9 @@ def score_doc(
         "path_hits": float(path_hits),
         "digest": digest,
         "source": source_boost,
+        "evidence_unit_hits": evidence_unit_hits,
+        "evidence_unit_coverage": evidence_unit_coverage,
+        "covered_evidence_units": covered_units,
         "embedding": embedding,
         "raw_rank": raw_rank,
         "top20_rank": top20_rank,
