@@ -292,6 +292,39 @@ Largest current missing-gold buckets:
 | `near_duplicate_confusion` | `51` |
 | `lost_by_embedding_rerank` | `39` |
 
+Missing-gold bottleneck summary:
+
+```text
+target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v62_report.json
+target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v62_report.md
+```
+
+Largest type/source/reason buckets:
+
+| Question Type | Source | Reason | Missing Gold Docs |
+| --- | --- | --- | ---: |
+| `completeness` | `confluence` | `near_duplicate_confusion` | `16` |
+| `completeness` | `confluence` | `in_top500_not_top100` | `11` |
+| `project_related` | `confluence` | `near_duplicate_confusion` | `9` |
+| `completeness` | `confluence` | `lost_by_embedding_rerank` | `9` |
+| `completeness` | `confluence` | `in_top100_not_top50` | `8` |
+| `semantic` | `slack` | `not_in_top1000` | `7` |
+
+Candidate-rank buckets for currently missing gold docs:
+
+| Candidate Rank Bucket | Missing Gold Docs |
+| --- | ---: |
+| `top500` | `70` |
+| `missing` | `69` |
+| `top50` | `56` |
+| `top100` | `35` |
+| `top10` | `11` |
+| `top1000` | `4` |
+
+This makes the next focused route clear: start with Confluence completeness
+composition, because it is the largest remaining cluster and includes both
+near-duplicate confusion and rerank-depth failures.
+
 ## What Was Tested And Not Promoted
 
 The following were measured and kept out of the default retrieval path because
@@ -430,6 +463,12 @@ Run basic Google Drive tail rescue over the source-link candidate pool:
 
 ```bash
 make enterprise-rag-bench-basic-google-drive-tail-rescue
+```
+
+Run the v62 missing-gold bottleneck report:
+
+```bash
+make enterprise-rag-bench-gold-missing-bottlenecks
 ```
 
 Run semantic source-route sweep against the current best:
