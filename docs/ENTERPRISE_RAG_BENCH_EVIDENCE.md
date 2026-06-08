@@ -70,6 +70,24 @@ target/enterprise-rag-bench/analysis/candidate_v55_top1000_gate.json
 | candidate full-recall@1000 | `421` |
 | candidate hit questions@1000 | `436` |
 
+Source-link candidate experiment:
+
+```text
+target/enterprise-rag-bench/analysis/candidate_v58_top1000_gate.json
+target/enterprise-rag-bench/analysis/v55_vs_v58_candidate_comparison_report.json
+```
+
+| Metric | Value |
+| --- | ---: |
+| gate passed | `true` |
+| candidate recall@500 | `91.45%` |
+| candidate recall@1000 | `92.15%` |
+| candidate full-recall@1000 | `426` |
+| candidate hit questions@1000 | `439` |
+| delta vs v55 recall@500 | `+0.55` |
+| delta vs v55 recall@1000 | `+0.68` |
+| delta vs v55 full-recall@1000 | `+5` |
+
 High-level coverage gate:
 
 ```text
@@ -157,6 +175,13 @@ ordinary document recall or invalid-extra-doc counts.
   to `71.44%`, full-recall questions from `314` to `316`, hit questions from
   `352` to `354`, and project-related recall from `74.34%` to `76.09%`, while
   reducing average invalid extra docs from `8.02` to `8.01`.
+- Source-link neighbor candidate generation v58 indexes source-specific link
+  fields such as `linked_jira`, `linked_linear`, `related_github_prs`,
+  `linked_gmail_threads`, `linked_drive_docs`, `dependencies`, `parent_issue`,
+  and `related_links`. It is not the current final top10 path, but it raises
+  candidate recall@1000 from `91.47%` to `92.15%`, full-recall@1000 from `421`
+  to `426`, hit questions@1000 from `436` to `439`, semantic candidate recall
+  by `2.4` points, and project-related candidate recall by `0.7` points.
 
 Regression comparison against `extra_reducer_v19`:
 
@@ -253,6 +278,12 @@ they regressed local top10 recall or evidence coverage:
   for semantic/completeness, but dropped back to `71.08%` top10 recall.
 - v52 candidate pool with completeness rerank v53: it preserved v51 exactly
   (`changed_rows=0`), so v52 is promoted only as a candidate-generator gate.
+- semantic/completeness wide tail v57 over the v55 candidate pool: it changed
+  `62` rows but kept global recall and full-recall flat, with one semantic
+  improvement and one semantic regression.
+- source-link v58 with project-related final rerank v59: v58 improves the
+  candidate pool, but the v59 final top10 rerank dropped global recall from
+  `71.44%` to `71.37%`, so the final current best remains v56.
 
 ## Reproduction Commands
 
@@ -275,6 +306,12 @@ Run promoted neighbor-aware candidate coverage:
 make enterprise-rag-bench-anchor-candidate-coverage
 make enterprise-rag-bench-candidate-depth-check
 make enterprise-rag-bench-neighbor-candidate-coverage
+```
+
+Run source-link candidate coverage:
+
+```bash
+make enterprise-rag-bench-source-link-candidate-coverage
 ```
 
 Run targeted doc-view rerank:

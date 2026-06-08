@@ -14,7 +14,7 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
 .PHONY: enterprise-rag-bench-balanced-100 enterprise-rag-bench-score-summary-routed-v16-50 enterprise-rag-bench-token-tracked-judge-routed-v16-50 enterprise-rag-bench-calibration-50 enterprise-rag-bench-calibration-100-prep
-.PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-high-level-coverage
+.PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-source-link-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-high-level-coverage
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check dashboard-operational-status-check context-pack-explorer-check verification-explorer-check retrieval-quality-explorer-check permissions-view-check audit-viewer-v2-check backup-restore-view-check incident-view-check dashboard-role-ui-check
 .PHONY: doctor-check
@@ -488,6 +488,7 @@ ENTERPRISE_RAG_BENCH_CANDIDATES_V48 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/co
 ENTERPRISE_RAG_BENCH_CANDIDATES_V52 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_multi_index_v52_uncapped_anchor_candidates_top1000.jsonl
 ENTERPRISE_RAG_BENCH_CANDIDATES_V54 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_multi_index_v54_neighbor_candidates_top1000.jsonl
 ENTERPRISE_RAG_BENCH_CANDIDATES_V55 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_multi_index_v55_neighbor_tail_candidates_top1000.jsonl
+ENTERPRISE_RAG_BENCH_CANDIDATES_V58 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_multi_index_v58_source_links_candidates_top1000.jsonl
 ENTERPRISE_RAG_BENCH_CANDIDATES_1000 ?= $(ENTERPRISE_RAG_BENCH_CANDIDATES_V55)
 ENTERPRISE_RAG_BENCH_CANDIDATE_DEPTH_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v55_top1000_depth_report.json
 ENTERPRISE_RAG_BENCH_CANDIDATE_DEPTH_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v55_top1000_depth_details.jsonl
@@ -1673,6 +1674,52 @@ enterprise-rag-bench-neighbor-candidate-coverage:
 	  --output-jsonl "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v52_vs_v55_candidate_comparison_details.jsonl" \
 	  --report "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v52_vs_v55_candidate_comparison_report.json" \
 	  --markdown "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v52_vs_v55_candidate_comparison_report.md" \
+	  --limit 1000
+
+enterprise-rag-bench-source-link-candidate-coverage:
+	python3 scripts/enterprise_rag_bench/multi_index_candidate_generation.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --base-retrieval-file "$(ENTERPRISE_RAG_BENCH_BASE_CANDIDATES_500)" \
+	  --extra-retrieval-file "$(ENTERPRISE_RAG_BENCH_HYBRID_TOP5)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_CANDIDATES_V58)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_multi_index_v58_source_links_candidates_top1000_report.json" \
+	  --top-k 1000 \
+	  --base-limit 500 \
+	  --extra-limit 500 \
+	  --path-candidate-limit 1200 \
+	  --content-candidate-limit 1600 \
+	  --content-boost-limit 120 \
+	  --content-preview-chars 2200 \
+	  --max-posting 12000 \
+	  --neighbor-expansion-limit 1200 \
+	  --neighbor-seed-limit 40 \
+	  --neighbor-max-per-seed 16 \
+	  --neighbor-max-posting 250 \
+	  --weight-neighbor 0.05 \
+	  --enable-source-link-neighbors \
+	  --diagnostics-top-k 0
+	python3 scripts/enterprise_rag_bench/candidate_depth_audit.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_CANDIDATES_V58)" \
+	  --output-jsonl "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v58_top1000_depth_details.jsonl" \
+	  --report "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v58_top1000_depth_report.json" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v58_top1000_depth_report.md" \
+	  --depths 10,50,100,500,1000
+	python3 scripts/enterprise_rag_bench/candidate_generator_gate.py \
+	  --depth-report "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v58_top1000_depth_report.json" \
+	  --output "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v58_top1000_gate.json" \
+	  --min-recall-500 85 \
+	  --min-recall-1000 90 \
+	  --min-full-recall-1000 400
+	python3 scripts/enterprise_rag_bench/compare_retrieval_runs.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --baseline-retrieval-file "$(ENTERPRISE_RAG_BENCH_CANDIDATES_V55)" \
+	  --candidate-retrieval-file "$(ENTERPRISE_RAG_BENCH_CANDIDATES_V58)" \
+	  --output-jsonl "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v55_vs_v58_candidate_comparison_details.jsonl" \
+	  --report "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v55_vs_v58_candidate_comparison_report.json" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v55_vs_v58_candidate_comparison_report.md" \
 	  --limit 1000
 
 enterprise-rag-bench-semantic-coverage: enterprise-rag-bench-completeness-coverage

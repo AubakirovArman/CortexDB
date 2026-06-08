@@ -330,6 +330,7 @@ class ContentPreviewIndex:
         max_posting: int,
         phrase_max_posting: int,
         preview_chars: int,
+        include_source_links: bool,
     ) -> None:
         self.uuid_index = uuid_index
         self.sources_dir = sources_dir
@@ -339,6 +340,7 @@ class ContentPreviewIndex:
         self.max_posting = max_posting
         self.phrase_max_posting = phrase_max_posting
         self.preview_chars = preview_chars
+        self.include_source_links = include_source_links
         self.doc_tokens: dict[str, set[str]] = {}
         self.doc_phrases: dict[str, set[str]] = {}
         self.title_tokens: dict[str, set[str]] = {}
@@ -367,7 +369,11 @@ class ContentPreviewIndex:
             except (OSError, json.JSONDecodeError, UnicodeDecodeError):
                 self.skipped_files += 1
                 continue
-            neighbor_keys = enterprise_neighbor_keys(document, rel_path)
+            neighbor_keys = enterprise_neighbor_keys(
+                document,
+                rel_path,
+                include_source_links=self.include_source_links,
+            )
             if neighbor_keys:
                 self.neighbor_indexed_docs += 1
                 self.doc_neighbor_keys[doc_id] = neighbor_keys
@@ -595,6 +601,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             max_posting=args.max_posting,
             phrase_max_posting=args.phrase_max_posting,
             preview_chars=args.content_preview_chars,
+            include_source_links=args.enable_source_link_neighbors,
         )
         if args.sources_dir
         else None
@@ -787,6 +794,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "neighbor_max_per_seed": args.neighbor_max_per_seed,
         "neighbor_max_posting": args.neighbor_max_posting,
         "weight_neighbor": args.weight_neighbor,
+        "enable_source_link_neighbors": args.enable_source_link_neighbors,
         "max_posting": args.max_posting,
         "average_recall_pct": round(sum(recall_values) / len(recall_values), 2) if recall_values else 0.0,
         "full_recall_questions": sum(1 for value in recall_values if value == 100.0),
@@ -828,6 +836,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--neighbor-seed-limit", type=int, default=40)
     parser.add_argument("--neighbor-max-per-seed", type=int, default=6)
     parser.add_argument("--neighbor-max-posting", type=int, default=400)
+    parser.add_argument("--enable-source-link-neighbors", action="store_true")
     parser.add_argument(
         "--content-existing-only-question-type",
         action="append",

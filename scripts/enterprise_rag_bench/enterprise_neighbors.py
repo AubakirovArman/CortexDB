@@ -11,12 +11,39 @@ SAFE_FIELD_NAMES = (
     "thread_ts",
     "repo",
     "project",
+    "team",
+    "space",
+    "channel",
+    "meeting_id",
+    "pr_number",
     "company_id",
+    "company_name",
     "customer_company",
     "related_account",
+    "deal_id",
     "crm_deal_id",
     "crm_account_id",
     "key",
+)
+
+LINK_FIELD_NAMES = (
+    "attachments",
+    "dependencies",
+    "linked_artifacts",
+    "linked_drive_docs",
+    "linked_fireflies",
+    "linked_gmail_threads",
+    "linked_github_prs",
+    "linked_issues",
+    "linked_jira",
+    "linked_linear",
+    "linked_support_tickets",
+    "links",
+    "parent_issue",
+    "related_confluence_pages",
+    "related_github_prs",
+    "related_links",
+    "related_pages",
 )
 
 
@@ -53,7 +80,28 @@ def path_ref_keys(rel_path: str) -> set[str]:
     return {key for key in keys if key}
 
 
-def enterprise_neighbor_keys(document: dict[str, Any], rel_path: str) -> set[str]:
+def link_ref_keys(value: str) -> set[str]:
+    normalized = normalize_path_ref(value)
+    if not normalized:
+        return set()
+    keys = {normalized}
+    if "://" in value:
+        tail = value.rsplit("/", 1)[-1]
+        tail_key = normalize_path_ref(tail)
+        if tail_key:
+            keys.add(tail_key)
+    for separator in ("#", "?"):
+        if separator in normalized:
+            keys.add(normalized.split(separator, 1)[0])
+    return {key for key in keys if key}
+
+
+def enterprise_neighbor_keys(
+    document: dict[str, Any],
+    rel_path: str,
+    *,
+    include_source_links: bool = False,
+) -> set[str]:
     keys: set[str] = set()
     src = source_type(rel_path)
     for field in SAFE_FIELD_NAMES:
@@ -66,6 +114,13 @@ def enterprise_neighbor_keys(document: dict[str, Any], rel_path: str) -> set[str
         normalized = normalize_path_ref(value)
         if normalized:
             keys.add(f"pathref:{normalized}")
+
+    if include_source_links:
+        for field in LINK_FIELD_NAMES:
+            for value in string_values(document.get(field)):
+                for normalized in link_ref_keys(value):
+                    keys.add(f"{field}:{normalized}")
+                    keys.add(f"pathref:{normalized}")
     for value in path_ref_keys(rel_path):
         keys.add(f"pathref:{value}")
 
