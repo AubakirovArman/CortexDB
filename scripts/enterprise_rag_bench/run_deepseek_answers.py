@@ -17,6 +17,7 @@ from typing import Any
 from answer_prompts import build_prompt
 from context_windows import question_aware_snippet
 from evidence_digest import evidence_digest, evidence_digest_score
+from evidence_spans import evidence_span_context
 
 
 DEFAULT_BASE_URL = "https://api.deepseek.com"
@@ -85,6 +86,8 @@ def load_context(
         title, content = extract_document_content(read_json(sources_dir / rel_path))
         if context_mode == "question-window":
             snippet = question_aware_snippet(content, question, max_chars_per_doc)
+        elif context_mode == "evidence-spans":
+            snippet = evidence_span_context(content, title, question, max_chars_per_doc)
         elif context_mode == "question-window-digest":
             digest = evidence_digest(content, title, question)
             snippet_budget = max(1200, max_chars_per_doc - len(digest) - 160)
@@ -262,6 +265,7 @@ def main() -> int:
             "type-aware-v9",
             "type-aware-v13",
             "type-aware-v15",
+            "type-aware-v17",
             "evidence-audit-v11",
         ],
         default="baseline",
@@ -270,6 +274,7 @@ def main() -> int:
         "--context-mode",
         choices=[
             "leading",
+            "evidence-spans",
             "question-window",
             "question-window-digest",
             "question-window-digest-ranked",
