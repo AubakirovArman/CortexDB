@@ -25,7 +25,7 @@ top10-focused document recall
 Current best retrieval artifact:
 
 ```text
-target/enterprise-rag-bench/retrieval/cortexdb_full_type_topk_v27.jsonl
+target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v30_top10.jsonl
 ```
 
 ## Current Local Gate
@@ -33,8 +33,8 @@ target/enterprise-rag-bench/retrieval/cortexdb_full_type_topk_v27.jsonl
 Latest local calibration gate:
 
 ```text
-target/enterprise-rag-bench/analysis/local_calibration_gate_v27.json
-target/enterprise-rag-bench/analysis/local_calibration_gate_v27.md
+target/enterprise-rag-bench/analysis/local_calibration_gate_v30.json
+target/enterprise-rag-bench/analysis/local_calibration_gate_v30.md
 ```
 
 Result:
@@ -42,12 +42,12 @@ Result:
 | Metric | Value |
 | --- | ---: |
 | local gate passed | `true` |
-| top10 document recall | `70.13%` |
-| top10 full-recall questions | `310` |
-| top10 hit questions | `348` |
-| average invalid extra docs | `8.04` |
-| fact token coverage proxy | `73.99%` |
-| fact full coverage proxy | `83.26%` |
+| top10 document recall | `71.06%` |
+| top10 full-recall questions | `313` |
+| top10 hit questions | `351` |
+| average invalid extra docs | `8.02` |
+| fact token coverage proxy | `74.08%` |
+| fact full coverage proxy | `83.57%` |
 
 Gate thresholds:
 
@@ -83,6 +83,7 @@ target/enterprise-rag-bench/analysis/candidate_v22_top1000_gate.json
 | `semantic_route_v24` | `70.07%` | `310` | `348` | semantic-only hybrid route |
 | `coverage_route_v25` | `70.13%` | `310` | `348` | completeness candidate injection |
 | `type_topk_v27` | `70.13%` | `310` | `348` | type-specific noise caps |
+| `doc_view_v30` | `71.06%` | `313` | `351` | multi-view rerank for semantic/completeness/project-related only |
 
 ## What Improved
 
@@ -101,21 +102,25 @@ target/enterprise-rag-bench/analysis/candidate_v22_top1000_gate.json
   completeness recall from `44.1%` to `45.55%`.
 - Type-specific top-k caps kept recall at `70.13%` while reducing average
   invalid extra docs from `8.45` to `8.04`.
+- Multi-view document discovery v30 raised global top10 recall to `71.06%`
+  while keeping average invalid extra docs inside the local gate at `8.02`.
+  The promoted route is intentionally limited to `semantic`, `completeness`,
+  and `project_related` questions.
 
 Regression comparison against `extra_reducer_v19`:
 
 ```text
-target/enterprise-rag-bench/analysis/v19_vs_v27_retrieval_comparison_report.json
-target/enterprise-rag-bench/analysis/v19_vs_v27_retrieval_comparison_report.md
+target/enterprise-rag-bench/analysis/v19_vs_v30_retrieval_comparison_report.json
+target/enterprise-rag-bench/analysis/v19_vs_v30_retrieval_comparison_report.md
 ```
 
 | Metric | Delta |
 | --- | ---: |
-| average recall | `+0.27` |
-| full-recall questions | `+1` |
-| hit questions | `+1` |
-| improved questions | `5` |
-| regressed questions | `2` |
+| average recall | `+1.20` |
+| full-recall questions | `+4` |
+| hit questions | `+4` |
+| improved questions | `15` |
+| regressed questions | `1` |
 
 Missing gold reason classifier:
 
@@ -148,18 +153,54 @@ they regressed local top10 recall or evidence coverage:
   overall recall and increased invalid extra docs;
 - high-level v26 as default: it improved high-level fact coverage proxy but
   raised average invalid extra docs above the current local gate.
+- wide doc-view v29 route: it raised recall to `71.16%` and had zero recall
+  regressions against v27, but average invalid extra docs rose to `8.38`, above
+  the `8.1` local gate threshold.
 
 ## Reproduction Commands
+
+Build candidate doc views:
+
+```bash
+python scripts/enterprise_rag_bench/build_doc_view_subset.py \
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_multi_index_v22_candidates_top1000.jsonl \
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_type_topk_v27.jsonl \
+  --uuid-index target/external-benchmarks/EnterpriseRAG-Bench/generated_data/uuid_index.json \
+  --sources-dir target/external-benchmarks/EnterpriseRAG-Bench/generated_data/sources \
+  --candidate-limit 50 \
+  --output target/enterprise-rag-bench/index/doc_views_candidates_v28_top50.jsonl \
+  --report target/enterprise-rag-bench/index/doc_views_candidates_v28_top50_report.json
+```
+
+Run targeted doc-view rerank:
+
+```bash
+python scripts/enterprise_rag_bench/doc_view_rerank.py \
+  --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_multi_index_v22_candidates_top1000.jsonl \
+  --baseline-retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_type_topk_v27.jsonl \
+  --uuid-index target/external-benchmarks/EnterpriseRAG-Bench/generated_data/uuid_index.json \
+  --sources-dir target/external-benchmarks/EnterpriseRAG-Bench/generated_data/sources \
+  --doc-views-file target/enterprise-rag-bench/index/doc_views_candidates_v28_top50.jsonl \
+  --embedding-cache target/enterprise-rag-bench/retrieval/embedding_cache.jsonl \
+  --output target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v30_top10.jsonl \
+  --report target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v30_top10_report.json \
+  --score-candidate-limit 50 \
+  --limit 10 \
+  --seed-count 3 \
+  --protect-baseline-prefix 9 \
+  --route-question-types semantic,completeness,project_related
+```
 
 Depth audit:
 
 ```bash
 python scripts/enterprise_rag_bench/candidate_depth_audit.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_type_topk_v27.jsonl \
-  --output-jsonl target/enterprise-rag-bench/analysis/type_topk_v27_depth_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/type_topk_v27_depth_report.json \
-  --markdown target/enterprise-rag-bench/analysis/type_topk_v27_depth_report.md
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v30_top10.jsonl \
+  --output-jsonl target/enterprise-rag-bench/analysis/doc_view_v30_depth_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/doc_view_v30_depth_report.json \
+  --markdown target/enterprise-rag-bench/analysis/doc_view_v30_depth_report.md
 ```
 
 Evidence pack proxy:
@@ -167,24 +208,24 @@ Evidence pack proxy:
 ```bash
 python scripts/enterprise_rag_bench/evaluate_evidence_pack.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_type_topk_v27.jsonl \
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v30_top10.jsonl \
   --uuid-index target/external-benchmarks/EnterpriseRAG-Bench/generated_data/uuid_index.json \
   --sources-dir target/external-benchmarks/EnterpriseRAG-Bench/generated_data/sources \
   --mode leading \
   --top-k 10 \
   --max-chars-per-doc 5000 \
-  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_type_topk_v27_leading_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/evidence_pack_type_topk_v27_leading_report.json
+  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v30_leading_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v30_leading_report.json
 ```
 
 Calibration gate:
 
 ```bash
 python scripts/enterprise_rag_bench/summarize_local_calibration.py \
-  --depth-report target/enterprise-rag-bench/analysis/type_topk_v27_depth_report.json \
-  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_type_topk_v27_leading_report.json \
-  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v27.json \
-  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v27.md \
+  --depth-report target/enterprise-rag-bench/analysis/doc_view_v30_depth_report.json \
+  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v30_leading_report.json \
+  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v30.json \
+  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v30.md \
   --min-top10-recall-pct 70.1 \
   --max-invalid-extra-docs 8.1
 ```
