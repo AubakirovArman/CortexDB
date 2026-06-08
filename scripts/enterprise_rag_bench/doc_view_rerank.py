@@ -446,6 +446,36 @@ def merge_with_baseline(
     return selected[:limit]
 
 
+def inject_raw_tail_candidates(
+    *,
+    selected: list[str],
+    candidate_ids: list[str],
+    limit: int,
+    tail_slots: int,
+    rank_limit: int,
+) -> list[str]:
+    if tail_slots <= 0:
+        return selected[:limit]
+    protected = selected[: max(0, limit - tail_slots)]
+    seen = set(protected)
+    tail: list[str] = []
+    for doc_id in candidate_ids[:rank_limit]:
+        if doc_id in seen:
+            continue
+        tail.append(doc_id)
+        seen.add(doc_id)
+        if len(tail) >= tail_slots:
+            break
+    for doc_id in selected:
+        if len(protected) + len(tail) >= limit:
+            break
+        if doc_id in seen:
+            continue
+        tail.append(doc_id)
+        seen.add(doc_id)
+    return (protected + tail)[:limit]
+
+
 def route_enabled(question: dict[str, Any], route_types: set[str]) -> bool:
     if not route_types:
         return True
@@ -521,6 +551,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             limit=args.limit,
             protect_prefix=args.protect_baseline_prefix,
         )
+        if str(question.get("question_type") or "") in args.raw_tail_question_types:
+            selected = inject_raw_tail_candidates(
+                selected=selected,
+                candidate_ids=candidate_ids,
+                limit=args.limit,
+                tail_slots=args.raw_candidate_tail_slots,
+                rank_limit=args.raw_candidate_tail_rank_limit,
+            )
         output = dict(baseline_row if baseline_row is not None else row)
         if selected != original_ids:
             changed_rows += 1
@@ -533,6 +571,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "score_candidate_limit": args.score_candidate_limit,
             "seed_count": args.seed_count,
             "protect_baseline_prefix": args.protect_baseline_prefix,
+            "raw_candidate_tail_slots": args.raw_candidate_tail_slots
+            if str(question.get("question_type") or "") in args.raw_tail_question_types
+            else 0,
+            "raw_candidate_tail_rank_limit": args.raw_candidate_tail_rank_limit,
             "question_type": question.get("question_type"),
         }
         output_rows.append(output)
@@ -606,6 +648,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed-count", type=int, default=4)
     parser.add_argument("--protect-baseline-prefix", type=int, default=8)
     parser.add_argument("--route-question-types", default="")
+    parser.add_argument("--raw-tail-question-types", default="")
+    parser.add_argument("--raw-candidate-tail-slots", type=int, default=0)
+    parser.add_argument("--raw-candidate-tail-rank-limit", type=int, default=50)
     parser.add_argument("--diagnostics-top-k", type=int, default=5)
     args = parser.parse_args()
     for name in ("limit", "score_candidate_limit"):
@@ -615,11 +660,20 @@ def parse_args() -> argparse.Namespace:
         parser.error("--seed-count must be non-negative")
     if args.protect_baseline_prefix < 0:
         parser.error("--protect-baseline-prefix must be non-negative")
+    if args.raw_candidate_tail_slots < 0:
+        parser.error("--raw-candidate-tail-slots must be non-negative")
+    if args.raw_candidate_tail_rank_limit <= 0:
+        parser.error("--raw-candidate-tail-rank-limit must be positive")
     if args.diagnostics_top_k < 0:
         parser.error("--diagnostics-top-k must be non-negative")
     args.route_question_types = {
         value.strip()
         for value in args.route_question_types.split(",")
+        if value.strip()
+    }
+    args.raw_tail_question_types = {
+        value.strip()
+        for value in args.raw_tail_question_types.split(",")
         if value.strip()
     }
     return args

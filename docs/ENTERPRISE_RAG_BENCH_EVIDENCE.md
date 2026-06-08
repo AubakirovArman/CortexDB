@@ -70,6 +70,26 @@ target/enterprise-rag-bench/analysis/candidate_v22_top1000_gate.json
 | candidate full-recall@1000 | `415` |
 | candidate hit questions@1000 | `433` |
 
+High-level coverage gate:
+
+```text
+target/enterprise-rag-bench/analysis/high_level_coverage_v31_report.json
+target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_high_level_v31_top10.jsonl
+```
+
+| Metric | Value |
+| --- | ---: |
+| gate passed | `true` |
+| high-level questions | `10` |
+| questions with docs | `10` |
+| average retrieved docs | `10.0` |
+| fact token coverage proxy | `73.0%` |
+| fact full coverage proxy | `87.5%` |
+
+High-level questions have no `expected_doc_ids` in the benchmark file. The
+separate high-level gate therefore reports answer-fact coverage instead of
+ordinary document recall or invalid-extra-doc counts.
+
 ## Progression
 
 | Stage | Top10 Recall | Full Recall | Hit Questions | Notes |
@@ -106,6 +126,9 @@ target/enterprise-rag-bench/analysis/candidate_v22_top1000_gate.json
   while keeping average invalid extra docs inside the local gate at `8.02`.
   The promoted route is intentionally limited to `semantic`, `completeness`,
   and `project_related` questions.
+- Separate high-level coverage v31 retrieves documents for all `10`
+  high-level questions and reaches `73.0%` fact token coverage without changing
+  the default v30 retrieval gate.
 
 Regression comparison against `extra_reducer_v19`:
 
@@ -156,6 +179,12 @@ they regressed local top10 recall or evidence coverage:
 - wide doc-view v29 route: it raised recall to `71.16%` and had zero recall
   regressions against v27, but average invalid extra docs rose to `8.38`, above
   the `8.1` local gate threshold.
+- raw-candidate tail v33: it tested adding two raw candidate slots for
+  semantic/completeness questions, but average recall dropped to `71.00%` and
+  project-related regressions appeared.
+- lower-protection doc-view v34: it tested replacing two tail slots for
+  semantic/completeness/project-related questions, but average recall dropped
+  to `70.88%`.
 
 ## Reproduction Commands
 
@@ -230,6 +259,12 @@ python scripts/enterprise_rag_bench/summarize_local_calibration.py \
   --max-invalid-extra-docs 8.1
 ```
 
+High-level coverage gate:
+
+```bash
+make enterprise-rag-bench-high-level-coverage
+```
+
 ## Limitations
 
 - These numbers are not the official EnterpriseRAG answer score.
@@ -237,5 +272,7 @@ python scripts/enterprise_rag_bench/summarize_local_calibration.py \
   official evaluator/judge path.
 - The local evidence proxy uses benchmark gold facts to measure coverage. It is
   an analysis tool, not a production scoring signal.
-- `high_level` questions are currently abstained in the local extra-doc reducer
-  because the current top10 pipeline has `0%` recall for that type.
+- `high_level` questions are abstained in the default local retrieval gate
+  because they have no `expected_doc_ids`; use
+  `enterprise-rag-bench-high-level-coverage` for their separate fact-coverage
+  evidence.
