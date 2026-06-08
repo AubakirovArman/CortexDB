@@ -310,9 +310,25 @@ they regressed local top10 recall or evidence coverage:
 - all-source semantic query expansion v60: it recovered `qst_0207` and raised
   recall to `71.66%`, but it regressed Slack-only `qst_0295`; v61 keeps the
   improvement by routing the expansion only to GitHub semantic questions.
-- semantic source-route sweep smoke for `jira`: the route changed `7` rows but
-  remained neutral against v61 (`0.0` recall delta, `0` full-recall delta,
-  `0` regressions), so it was not promoted.
+- full semantic source-route sweep v61 tested
+  `jira,gmail,confluence,google_drive,hubspot,slack,linear,fireflies,github`
+  against the current v61 baseline. No source type produced a promotion
+  candidate. `slack` was rejected because it improved `qst_0176` but regressed
+  `qst_0295`; every other source type was neutral. Current best therefore
+  remains v61.
+
+Semantic source-route sweep:
+
+```text
+target/enterprise-rag-bench/analysis/semantic_source_route_sweep_v61_report.json
+target/enterprise-rag-bench/analysis/semantic_source_route_sweep_v61_report.md
+```
+
+| Decision | Source Types |
+| --- | --- |
+| `promote_candidate` | none |
+| `neutral` | `jira`, `gmail`, `confluence`, `google_drive`, `hubspot`, `linear`, `fireflies`, `github` |
+| `reject_regression` | `slack` |
 
 ## Reproduction Commands
 
