@@ -148,11 +148,12 @@ fn policy_store_principal_queue_quota_reports_actor_queue_metrics() {
         "queue quota should allow a single actor command: {search}"
     );
 
-    let metrics = request(
+    let value = wait_for_metric_value(
         local_addr,
         "GET /v1/metrics HTTP/1.1\r\nAuthorization: Bearer admin-token\r\n\r\n",
+        "principal_quota_queue_acquired",
+        1,
     );
-    let value = body_json(&metrics);
     assert_eq!(value["principal_quota_queue_acquired"], 1);
     assert_eq!(value["principal_quota_queue_rejected"], 0);
 }
@@ -215,4 +216,22 @@ fn spawn_server(
 fn body_json(response: &str) -> serde_json::Value {
     let (_, body) = response.split_once("\r\n\r\n").unwrap();
     serde_json::from_str(body).unwrap()
+}
+
+fn wait_for_metric_value(
+    addr: std::net::SocketAddr,
+    request_line: &str,
+    key: &str,
+    expected: u64,
+) -> serde_json::Value {
+    let mut latest = serde_json::Value::Null;
+    for _ in 0..20 {
+        let metrics = request(addr, request_line);
+        latest = body_json(&metrics);
+        if latest[key].as_u64() == Some(expected) {
+            return latest;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    latest
 }
