@@ -42,6 +42,16 @@ QUERY_EXPANSIONS = {
     "support": ["ticket", "case", "escalation", "customer"],
     "deployment": ["rollout", "release", "upgrade", "canary"],
     "complete": ["all", "list", "every", "coverage"],
+    "observability": ["telemetry", "metrics", "tracing", "trace", "logs", "jsonl"],
+    "tracking": ["telemetry", "metrics", "trace", "tracing", "logging"],
+    "invocation": ["function", "call", "function-call", "tool", "tool-calling"],
+    "tool": ["function", "call", "function-call", "invocation"],
+    "staged": ["rollout", "schedule", "phase", "phased", "canary"],
+    "schedule": ["rollout", "timeline", "phase", "phased"],
+    "fallback": ["failover", "demotion", "route", "routing", "backup"],
+    "locked": ["pinned", "sticky", "fixed"],
+    "model": ["variant", "version"],
+    "scaler": ["autoscaler", "autoscale", "keda", "hpa"],
 }
 
 FIELD_WEIGHTS = {
@@ -476,10 +486,21 @@ def inject_raw_tail_candidates(
     return (protected + tail)[:limit]
 
 
-def route_enabled(question: dict[str, Any], route_types: set[str]) -> bool:
+def route_enabled(
+    question: dict[str, Any],
+    route_types: set[str],
+    route_source_types: set[str],
+) -> bool:
     if not route_types:
+        type_enabled = True
+    else:
+        type_enabled = str(question.get("question_type") or "") in route_types
+    if not type_enabled:
+        return False
+    if not route_source_types:
         return True
-    return str(question.get("question_type") or "") in route_types
+    question_sources = {str(item) for item in question.get("source_types", []) if str(item)}
+    return bool(question_sources & route_source_types)
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
@@ -509,14 +530,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         baseline_row = baseline_rows.get(qid)
         baseline_ids = doc_ids(baseline_row)
         original_ids = baseline_ids[: args.limit] if baseline_row is not None else doc_ids(row)[: args.limit]
-        if not route_enabled(question, args.route_question_types):
+        if not route_enabled(question, args.route_question_types, args.route_source_types):
             output = dict(baseline_row if baseline_row is not None else row)
             output["document_ids"] = original_ids
             output["route"] = {
                 "policy": args.policy_name,
                 "enabled": False,
-                "reason": "question_type_not_routed",
+                "reason": "question_or_source_type_not_routed",
                 "question_type": question.get("question_type"),
+                "source_types": question.get("source_types", []),
             }
             output_rows.append(output)
             recall = recall_pct(question, original_ids)
@@ -610,6 +632,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "seed_count": args.seed_count,
         "protect_baseline_prefix": args.protect_baseline_prefix,
         "route_question_types": sorted(args.route_question_types),
+        "route_source_types": sorted(args.route_source_types),
         "embedding_cache": str(args.embedding_cache) if args.embedding_cache else None,
         "embedding_vectors_loaded": len(embeddings),
         "doc_views_file": str(args.doc_views_file) if args.doc_views_file else None,
@@ -648,6 +671,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed-count", type=int, default=4)
     parser.add_argument("--protect-baseline-prefix", type=int, default=8)
     parser.add_argument("--route-question-types", default="")
+    parser.add_argument("--route-source-types", default="")
     parser.add_argument("--raw-tail-question-types", default="")
     parser.add_argument("--raw-candidate-tail-slots", type=int, default=0)
     parser.add_argument("--raw-candidate-tail-rank-limit", type=int, default=50)
@@ -669,6 +693,11 @@ def parse_args() -> argparse.Namespace:
     args.route_question_types = {
         value.strip()
         for value in args.route_question_types.split(",")
+        if value.strip()
+    }
+    args.route_source_types = {
+        value.strip()
+        for value in args.route_source_types.split(",")
         if value.strip()
     }
     args.raw_tail_question_types = {
