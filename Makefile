@@ -14,7 +14,7 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
 .PHONY: enterprise-rag-bench-balanced-100 enterprise-rag-bench-score-summary-routed-v16-50 enterprise-rag-bench-token-tracked-judge-routed-v16-50 enterprise-rag-bench-calibration-50 enterprise-rag-bench-calibration-100-prep
-.PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-completeness-coverage enterprise-rag-bench-high-level-coverage
+.PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-high-level-coverage
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check dashboard-operational-status-check context-pack-explorer-check verification-explorer-check retrieval-quality-explorer-check permissions-view-check audit-viewer-v2-check backup-restore-view-check incident-view-check dashboard-role-ui-check
 .PHONY: doctor-check
@@ -481,24 +481,28 @@ ENTERPRISE_RAG_BENCH_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)/question
 ENTERPRISE_RAG_BENCH_UUID_INDEX ?= $(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)/generated_data/uuid_index.json
 ENTERPRISE_RAG_BENCH_SOURCES_DIR ?= $(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)/generated_data/sources
 ENTERPRISE_RAG_BENCH_PREFLIGHT_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/preflight_report.json
-ENTERPRISE_RAG_BENCH_CANDIDATES_1000 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_multi_index_v22_candidates_top1000.jsonl
-ENTERPRISE_RAG_BENCH_CANDIDATE_DEPTH_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v22_top1000_depth_report.json
-ENTERPRISE_RAG_BENCH_CANDIDATE_DEPTH_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v22_top1000_depth_details.jsonl
-ENTERPRISE_RAG_BENCH_CANDIDATE_DEPTH_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v22_top1000_depth_report.md
-ENTERPRISE_RAG_BENCH_CANDIDATE_GATE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v22_top1000_gate.json
+ENTERPRISE_RAG_BENCH_BASE_CANDIDATES_500 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_candidates_top500.jsonl
+ENTERPRISE_RAG_BENCH_HYBRID_TOP5 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_hybrid_v3_top5_official500.jsonl
+ENTERPRISE_RAG_BENCH_CANDIDATES_V22 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_multi_index_v22_candidates_top1000.jsonl
+ENTERPRISE_RAG_BENCH_CANDIDATES_1000 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_multi_index_v48_candidates_top1000.jsonl
+ENTERPRISE_RAG_BENCH_CANDIDATE_DEPTH_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v48_top1000_depth_report.json
+ENTERPRISE_RAG_BENCH_CANDIDATE_DEPTH_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v48_top1000_depth_details.jsonl
+ENTERPRISE_RAG_BENCH_CANDIDATE_DEPTH_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v48_top1000_depth_report.md
+ENTERPRISE_RAG_BENCH_CANDIDATE_GATE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/candidate_v48_top1000_gate.json
 ENTERPRISE_RAG_BENCH_BASELINE_BEST ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_extra_reducer_v19_top10.jsonl
 ENTERPRISE_RAG_BENCH_DOC_VIEW_V30 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_v30_top10.jsonl
-ENTERPRISE_RAG_BENCH_CURRENT_BEST ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_v46_top10.jsonl
-ENTERPRISE_RAG_BENCH_CURRENT_DEPTH_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/doc_view_v46_depth_report.json
-ENTERPRISE_RAG_BENCH_CURRENT_DEPTH_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/doc_view_v46_depth_details.jsonl
-ENTERPRISE_RAG_BENCH_CURRENT_DEPTH_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/doc_view_v46_depth_report.md
-ENTERPRISE_RAG_BENCH_CURRENT_EVIDENCE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_pack_doc_view_v46_leading_report.json
-ENTERPRISE_RAG_BENCH_CURRENT_EVIDENCE_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_pack_doc_view_v46_leading_details.jsonl
-ENTERPRISE_RAG_BENCH_CURRENT_GATE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/local_calibration_gate_v46.json
-ENTERPRISE_RAG_BENCH_CURRENT_GATE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/local_calibration_gate_v46.md
-ENTERPRISE_RAG_BENCH_CURRENT_COMPARISON_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v19_vs_v46_retrieval_comparison_report.json
-ENTERPRISE_RAG_BENCH_CURRENT_COMPARISON_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v19_vs_v46_retrieval_comparison_details.jsonl
-ENTERPRISE_RAG_BENCH_CURRENT_COMPARISON_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v19_vs_v46_retrieval_comparison_report.md
+ENTERPRISE_RAG_BENCH_DOC_VIEW_V46 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_v46_top10.jsonl
+ENTERPRISE_RAG_BENCH_CURRENT_BEST ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_v51_top10.jsonl
+ENTERPRISE_RAG_BENCH_CURRENT_DEPTH_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/doc_view_v51_depth_report.json
+ENTERPRISE_RAG_BENCH_CURRENT_DEPTH_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/doc_view_v51_depth_details.jsonl
+ENTERPRISE_RAG_BENCH_CURRENT_DEPTH_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/doc_view_v51_depth_report.md
+ENTERPRISE_RAG_BENCH_CURRENT_EVIDENCE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_pack_doc_view_v51_leading_report.json
+ENTERPRISE_RAG_BENCH_CURRENT_EVIDENCE_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_pack_doc_view_v51_leading_details.jsonl
+ENTERPRISE_RAG_BENCH_CURRENT_GATE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/local_calibration_gate_v51.json
+ENTERPRISE_RAG_BENCH_CURRENT_GATE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/local_calibration_gate_v51.md
+ENTERPRISE_RAG_BENCH_CURRENT_COMPARISON_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v19_vs_v51_retrieval_comparison_report.json
+ENTERPRISE_RAG_BENCH_CURRENT_COMPARISON_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v19_vs_v51_retrieval_comparison_details.jsonl
+ENTERPRISE_RAG_BENCH_CURRENT_COMPARISON_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v19_vs_v51_retrieval_comparison_report.md
 ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES ?= $(ENTERPRISE_RAG_BENCH_ROOT)/index/doc_views_candidates_v28_top50.jsonl
 ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/index/doc_views_candidates_v28_top50_report.json
 ENTERPRISE_RAG_BENCH_HIGH_LEVEL_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_high_level_v31_top10.jsonl
@@ -1571,7 +1575,7 @@ enterprise-rag-bench-candidate-depth-check:
 
 enterprise-rag-bench-completeness-coverage:
 	python3 scripts/enterprise_rag_bench/build_doc_view_subset.py \
-	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_CANDIDATES_1000)" \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_CANDIDATES_V22)" \
 	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_DOC_VIEW_V30)" \
 	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
 	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
@@ -1580,19 +1584,61 @@ enterprise-rag-bench-completeness-coverage:
 	  --report "$(ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES_REPORT)"
 	python3 scripts/enterprise_rag_bench/doc_view_rerank.py \
 	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
-	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_CANDIDATES_1000)" \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_CANDIDATES_V22)" \
 	  --baseline-retrieval-file "$(ENTERPRISE_RAG_BENCH_DOC_VIEW_V30)" \
 	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
 	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
 	  --doc-views-file "$(ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES)" \
 	  --embedding-cache "$(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/embedding_cache.jsonl" \
-	  --output "$(ENTERPRISE_RAG_BENCH_CURRENT_BEST)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_DOC_VIEW_V46)" \
 	  --report "$(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_v46_top10_report.json" \
 	  --score-candidate-limit 100 \
 	  --limit 10 \
 	  --seed-count 3 \
 	  --protect-baseline-prefix 9 \
 	  --route-question-types completeness
+
+enterprise-rag-bench-semantic-coverage: enterprise-rag-bench-completeness-coverage
+	python3 scripts/enterprise_rag_bench/multi_index_candidate_generation.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --base-retrieval-file "$(ENTERPRISE_RAG_BENCH_BASE_CANDIDATES_500)" \
+	  --extra-retrieval-file "$(ENTERPRISE_RAG_BENCH_HYBRID_TOP5)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_CANDIDATES_1000)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_multi_index_v48_candidates_top1000_report.json" \
+	  --top-k 1000 \
+	  --base-limit 500 \
+	  --extra-limit 500 \
+	  --path-candidate-limit 1200 \
+	  --content-candidate-limit 1600 \
+	  --content-boost-limit 120 \
+	  --content-preview-chars 2200 \
+	  --max-posting 12000 \
+	  --diagnostics-top-k 0
+	python3 scripts/enterprise_rag_bench/build_doc_view_subset.py \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_CANDIDATES_1000)" \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_DOC_VIEW_V46)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --candidate-limit 50 \
+	  --output "$(ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES_REPORT)"
+	python3 scripts/enterprise_rag_bench/doc_view_rerank.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_CANDIDATES_1000)" \
+	  --baseline-retrieval-file "$(ENTERPRISE_RAG_BENCH_DOC_VIEW_V46)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --doc-views-file "$(ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES)" \
+	  --embedding-cache "$(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/embedding_cache.jsonl" \
+	  --output "$(ENTERPRISE_RAG_BENCH_CURRENT_BEST)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_v51_top10_report.json" \
+	  --score-candidate-limit 100 \
+	  --limit 10 \
+	  --seed-count 3 \
+	  --protect-baseline-prefix 9 \
+	  --route-question-types semantic
 
 enterprise-rag-bench-local-retrieval-gate:
 	python3 scripts/enterprise_rag_bench/candidate_depth_audit.py \
