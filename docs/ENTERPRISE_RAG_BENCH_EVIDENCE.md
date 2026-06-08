@@ -59,16 +59,16 @@ Gate thresholds:
 Candidate generator gate:
 
 ```text
-target/enterprise-rag-bench/analysis/candidate_v48_top1000_gate.json
+target/enterprise-rag-bench/analysis/candidate_v52_top1000_gate.json
 ```
 
 | Metric | Value |
 | --- | ---: |
 | gate passed | `true` |
-| candidate recall@500 | `90.68%` |
-| candidate recall@1000 | `90.89%` |
-| candidate full-recall@1000 | `417` |
-| candidate hit questions@1000 | `435` |
+| candidate recall@500 | `90.72%` |
+| candidate recall@1000 | `91.15%` |
+| candidate full-recall@1000 | `418` |
+| candidate hit questions@1000 | `436` |
 
 High-level coverage gate:
 
@@ -139,6 +139,11 @@ ordinary document recall or invalid-extra-doc counts.
 - Semantic pass v51 raises final top10 recall from `71.08%` to `71.29%`, raises
   semantic recall from `44.8%` to `45.6%`, and adds one full-recall question
   without increasing average invalid extra docs.
+- Uncapped strong-anchor candidate generation v52 keeps the current top10 best
+  at v51, but raises candidate recall@1000 from `90.89%` to `91.15%`, raises
+  candidate full-recall@1000 from `417` to `418`, and reduces missing
+  candidate questions from `65` to `64`. This is first-stage discovery progress,
+  not yet a promoted final top10 rerank.
 
 Regression comparison against `extra_reducer_v19`:
 
@@ -217,6 +222,8 @@ they regressed local top10 recall or evidence coverage:
   to `51.25%`, but reduced full-recall questions from `313` to `312`.
 - wider v48 candidate semantic scoring v50: it tested `score_candidate_limit=140`
   for semantic/completeness, but dropped back to `71.08%` top10 recall.
+- v52 candidate pool with completeness rerank v53: it preserved v51 exactly
+  (`changed_rows=0`), so v52 is promoted only as a candidate-generator gate.
 
 ## Reproduction Commands
 
@@ -231,6 +238,13 @@ python scripts/enterprise_rag_bench/build_doc_view_subset.py \
   --candidate-limit 50 \
   --output target/enterprise-rag-bench/index/doc_views_candidates_v28_top50.jsonl \
   --report target/enterprise-rag-bench/index/doc_views_candidates_v28_top50_report.json
+```
+
+Run uncapped-anchor candidate coverage:
+
+```bash
+make enterprise-rag-bench-anchor-candidate-coverage
+make enterprise-rag-bench-candidate-depth-check
 ```
 
 Run targeted doc-view rerank:

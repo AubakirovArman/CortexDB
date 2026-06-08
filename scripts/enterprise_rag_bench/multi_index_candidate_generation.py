@@ -15,7 +15,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from question_decomposition import precise_anchors, tokens
+from question_decomposition import evidence_units, precise_anchors, tokens
 
 
 PATH_STOPWORDS = {
@@ -194,6 +194,54 @@ def query_terms(question: dict[str, Any]) -> list[str]:
     return sorted(set(values), key=lambda value: (-len(value), value))
 
 
+def strong_uncapped_terms(question: dict[str, Any]) -> set[str]:
+    strong: set[str] = set()
+    question_text = str(question.get("question", ""))
+    for anchor in precise_anchors(question_text):
+        for token in tokens(anchor):
+            if "-" in token or any(char.isdigit() for char in token):
+                strong.add(token)
+    for token in tokens(question_text):
+        if "-" in token or any(char.isdigit() for char in token):
+            strong.add(token)
+        elif token in {"p50", "p90", "p95", "p99", "rpo", "rto"}:
+            strong.add(token)
+    return strong
+
+
+def phrase_ngrams(values: list[str], *, widths: tuple[int, ...] = (2, 3, 4)) -> set[str]:
+    phrases: set[str] = set()
+    for width in widths:
+        for index in range(0, max(0, len(values) - width + 1)):
+            phrase_tokens = values[index : index + width]
+            if not phrase_tokens:
+                continue
+            if not any(
+                "-" in token or any(char.isdigit() for char in token) or len(token) >= 6
+                for token in phrase_tokens
+            ):
+                continue
+            phrases.add(" ".join(phrase_tokens))
+    return phrases
+
+
+def query_phrases(question: dict[str, Any]) -> list[str]:
+    question_text = str(question.get("question", ""))
+    phrases = phrase_ngrams(tokens(question_text))
+    for unit in evidence_units(question_text):
+        unit_tokens = [str(token) for token in unit.get("tokens", []) if str(token)]
+        phrases.update(phrase_ngrams(unit_tokens))
+    for anchor in precise_anchors(question_text):
+        anchor_tokens = tokens(anchor)
+        if anchor_tokens and (
+            len(anchor_tokens) > 1
+            or "-" in anchor
+            or any(char.isdigit() for char in anchor)
+        ):
+            phrases.add(" ".join(anchor_tokens))
+    return sorted(phrases, key=lambda value: (-len(value), value))
+
+
 def path_query_terms(question: dict[str, Any]) -> list[str]:
     question_text = str(question.get("question", ""))
     values: list[str] = []
@@ -276,18 +324,26 @@ class ContentPreviewIndex:
         sources_dir: Path,
         *,
         target_terms: set[str],
+        target_phrases: set[str],
+        uncapped_terms: set[str],
         max_posting: int,
+        phrase_max_posting: int,
         preview_chars: int,
     ) -> None:
         self.uuid_index = uuid_index
         self.sources_dir = sources_dir
         self.target_terms = target_terms
+        self.target_phrases = target_phrases
+        self.uncapped_terms = uncapped_terms
         self.max_posting = max_posting
+        self.phrase_max_posting = phrase_max_posting
         self.preview_chars = preview_chars
         self.doc_tokens: dict[str, set[str]] = {}
+        self.doc_phrases: dict[str, set[str]] = {}
         self.title_tokens: dict[str, set[str]] = {}
         self.doc_source: dict[str, str] = {}
         self.token_to_docs: dict[str, list[str]] = defaultdict(list)
+        self.phrase_to_docs: dict[str, list[str]] = defaultdict(list)
         self.skipped_files = 0
         self.indexed_docs = 0
         self._build()
@@ -308,21 +364,29 @@ class ContentPreviewIndex:
                 continue
             title_terms = set(tokens(title)) & self.target_terms
             preview = f"{title}\n{content[: self.preview_chars]}"
-            doc_terms = set(tokens(preview)) & self.target_terms
+            preview_tokens = tokens(preview)
+            doc_terms = set(preview_tokens) & self.target_terms
+            doc_phrases = phrase_ngrams(preview_tokens) & self.target_phrases if self.target_phrases else set()
             if not doc_terms:
                 continue
             self.indexed_docs += 1
             self.doc_tokens[doc_id] = doc_terms
+            self.doc_phrases[doc_id] = doc_phrases
             self.title_tokens[doc_id] = title_terms
             for token in doc_terms:
-                if token in capped_tokens:
+                is_uncapped = token in self.uncapped_terms
+                if not is_uncapped and token in capped_tokens:
                     continue
                 posting = self.token_to_docs[token]
-                if len(posting) >= self.max_posting:
+                if not is_uncapped and len(posting) >= self.max_posting:
                     capped_tokens.add(token)
                     posting.clear()
                     continue
                 posting.append(doc_id)
+            for phrase in doc_phrases:
+                posting = self.phrase_to_docs[phrase]
+                if len(posting) < self.phrase_max_posting:
+                    posting.append(doc_id)
 
     def candidate_ids_for_terms(
         self,
@@ -364,10 +428,49 @@ class ContentPreviewIndex:
             + source_boost
         )
 
+    def candidate_ids_for_phrases(
+        self,
+        phrases: list[str],
+        source_types: set[str],
+        *,
+        max_docs: int,
+    ) -> set[str]:
+        counts: Counter[str] = Counter()
+        for phrase in phrases:
+            docs = self.phrase_to_docs.get(phrase, [])
+            if not docs:
+                continue
+            for doc_id in docs:
+                if source_types and self.doc_source.get(doc_id) not in source_types:
+                    continue
+                counts[doc_id] += 1
+        return {doc_id for doc_id, _count in counts.most_common(max_docs)}
+
+    def phrase_score(self, question_phrases: set[str], source_types: set[str], doc_id: str) -> float:
+        phrases = self.doc_phrases.get(doc_id, set())
+        if not phrases:
+            return 0.0
+        overlap = question_phrases & phrases
+        if not overlap:
+            return 0.0
+        src = self.doc_source.get(doc_id, "")
+        source_boost = 24.0 if source_types and src in source_types else 0.0
+        rare_bonus = 0.0
+        specificity = 0.0
+        for phrase in overlap:
+            posting_len = len(self.phrase_to_docs.get(phrase, []))
+            if posting_len:
+                rare_bonus += math.log((len(self.uuid_index) + 1) / (posting_len + 1))
+            specificity += len(phrase.split()) * 10.0
+            if "-" in phrase or any(char.isdigit() for char in phrase):
+                specificity += 18.0
+        return len(overlap) * 30.0 + specificity + rare_bonus * 8.0 + source_boost
+
     def report(self) -> dict[str, Any]:
         return {
             "indexed_docs": self.indexed_docs,
             "posting_terms": len(self.token_to_docs),
+            "posting_phrases": len(self.phrase_to_docs),
             "skipped_files": self.skipped_files,
         }
 
@@ -426,12 +529,30 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         for term in query_terms(question)
         if len(term) > 1
     }
+    all_uncapped_terms = {
+        term
+        for question in questions.values()
+        for term in strong_uncapped_terms(question)
+    }
+    all_query_phrases = (
+        {
+            phrase
+            for question in questions.values()
+            for phrase in query_phrases(question)
+            if len(phrase) > 3
+        }
+        if args.phrase_candidate_limit > 0 and args.phrase_boost_limit > 0
+        else set()
+    )
     content_index = (
         ContentPreviewIndex(
             uuid_index,
             args.sources_dir,
             target_terms=all_query_terms,
+            target_phrases=all_query_phrases,
+            uncapped_terms=all_uncapped_terms,
             max_posting=args.max_posting,
+            phrase_max_posting=args.phrase_max_posting,
             preview_chars=args.content_preview_chars,
         )
         if args.sources_dir
@@ -451,6 +572,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         source_types = {str(item) for item in question.get("source_types", []) if str(item)}
         terms = query_terms(question)
         term_set = set(terms)
+        phrases = query_phrases(question)
+        phrase_set = set(phrases)
         path_terms = path_query_terms(question) if args.path_terms_mode == "entity" else terms
         path_term_set = set(path_terms)
         scores: dict[str, float] = {}
@@ -500,6 +623,23 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             for score, doc_id in scored_content[: int(settings["content_boost_limit"])]:
                 scores[doc_id] = scores.get(doc_id, 0.0) + score * float(settings["content_weight"])
                 score_sources[doc_id].add("content_preview")
+
+            if args.phrase_candidate_limit > 0 and args.phrase_boost_limit > 0 and phrases:
+                phrase_docs = content_index.candidate_ids_for_phrases(
+                    phrases,
+                    source_types,
+                    max_docs=args.phrase_candidate_limit,
+                )
+                scored_phrases: list[tuple[float, str]] = []
+                for doc_id in phrase_docs:
+                    score = content_index.phrase_score(phrase_set, source_types, doc_id)
+                    if score <= 0.0:
+                        continue
+                    scored_phrases.append((score, doc_id))
+                scored_phrases.sort(key=lambda item: (-item[0], path_index.uuid_index.get(item[1], ""), item[1]))
+                for score, doc_id in scored_phrases[: args.phrase_boost_limit]:
+                    scores[doc_id] = scores.get(doc_id, 0.0) + score * args.weight_phrase
+                    score_sources[doc_id].add("source_phrase")
 
         if source_types and args.source_match_boost != 0.0:
             for doc_id in list(scores):
@@ -578,6 +718,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "content_boost_limit": args.content_boost_limit,
         "content_preview_chars": args.content_preview_chars,
         "content_score_threshold": args.content_score_threshold,
+        "phrase_candidate_limit": args.phrase_candidate_limit,
+        "phrase_boost_limit": args.phrase_boost_limit,
+        "phrase_max_posting": args.phrase_max_posting,
+        "weight_phrase": args.weight_phrase,
         "max_posting": args.max_posting,
         "average_recall_pct": round(sum(recall_values) / len(recall_values), 2) if recall_values else 0.0,
         "full_recall_questions": sum(1 for value in recall_values if value == 100.0),
@@ -612,6 +756,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--content-boost-limit", type=int, default=40)
     parser.add_argument("--content-preview-chars", type=int, default=1800)
     parser.add_argument("--content-score-threshold", type=float, default=0.0)
+    parser.add_argument("--phrase-candidate-limit", type=int, default=0)
+    parser.add_argument("--phrase-boost-limit", type=int, default=0)
+    parser.add_argument("--phrase-max-posting", type=int, default=50000)
     parser.add_argument(
         "--content-existing-only-question-type",
         action="append",
@@ -624,6 +771,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--weight-extra-rrf", type=float, default=500.0)
     parser.add_argument("--weight-path", type=float, default=1.0)
     parser.add_argument("--weight-content", type=float, default=0.01)
+    parser.add_argument("--weight-phrase", type=float, default=1.0)
     parser.add_argument("--source-match-boost", type=float, default=0.0)
     parser.add_argument("--enable-query-type-router", action="store_true")
     parser.add_argument("--diagnostics-top-k", type=int, default=5)
@@ -638,9 +786,13 @@ def parse_args() -> argparse.Namespace:
         "content_preview_chars",
         "max_posting",
         "rrf_k",
+        "phrase_max_posting",
     ):
         if getattr(args, name) <= 0:
             parser.error(f"--{name.replace('_', '-')} must be positive")
+    for name in ("phrase_candidate_limit", "phrase_boost_limit"):
+        if getattr(args, name) < 0:
+            parser.error(f"--{name.replace('_', '-')} must be non-negative")
     if args.diagnostics_top_k < 0:
         parser.error("--diagnostics-top-k must be non-negative")
     return args
