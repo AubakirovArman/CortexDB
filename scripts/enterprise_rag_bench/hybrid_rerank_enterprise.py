@@ -98,7 +98,7 @@ def rerank_row(
     output_row = {
         **row,
         "document_ids": selected,
-        "route": {"policy": "hybrid_enterprise_v2", "selected_count": limit},
+        "route": {"policy": "hybrid_enterprise_v3", "selected_count": limit},
     }
     recall = recall_pct(question, selected)
     diagnostic = {
@@ -142,7 +142,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     write_jsonl(args.output, output_rows)
     report = {
-        "schema_version": "cortexdb.enterprise_rag_bench.hybrid_rerank_report.v2",
+        "schema_version": "cortexdb.enterprise_rag_bench.hybrid_rerank_report.v3",
         "questions": len(output_rows),
         "input": str(args.retrieval_file),
         "output": str(args.output),
@@ -181,13 +181,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--weight-anchor", type=float, default=18.0)
     parser.add_argument("--weight-anchor-ratio", type=float, default=35.0)
     parser.add_argument("--weight-phrase", type=float, default=2.5)
-    parser.add_argument("--weight-title", type=float, default=5.0)
+    parser.add_argument("--weight-title", type=float, default=10.0)
     parser.add_argument("--weight-path", type=float, default=4.0)
     parser.add_argument("--weight-digest", type=float, default=0.8)
     parser.add_argument("--weight-source", type=float, default=14.0)
-    parser.add_argument("--weight-embedding", type=float, default=18.0)
-    parser.add_argument("--weight-raw-rank", type=float, default=35.0)
-    parser.add_argument("--weight-top20-rank", type=float, default=18.0)
+    parser.add_argument("--weight-embedding", type=float, default=60.0)
+    parser.add_argument("--weight-raw-rank", type=float, default=0.0)
+    parser.add_argument("--weight-top20-rank", type=float, default=25.0)
     args = parser.parse_args()
     if args.top_k <= 0 or args.basic_top_k <= 0 or args.multi_doc_top_k <= 0:
         parser.error("top-k values must be positive")

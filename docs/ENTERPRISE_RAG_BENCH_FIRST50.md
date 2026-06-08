@@ -4,7 +4,7 @@ This note tracks the current local first-50 EnterpriseRAG-Bench optimization loo
 
 ## Current Best Local Run
 
-- Retrieval: `cortexdb_first_50_hybrid_v2_top5.jsonl`
+- Retrieval: `cortexdb_first_50_hybrid_v3_top5.jsonl`
 - Answer model: `google/gemma-4-31B-it` through local vLLM
 - Prompt style: `type-aware-v17`
 - Context mode: `leading`
@@ -15,13 +15,13 @@ Local Gemma-judge metrics:
 
 | Metric | Value |
 |---|---:|
-| Answer Correctness | 78.0 |
-| Answer Completeness | 74.7 |
-| Combined Correctness/Completeness | 58.27 |
-| Document Recall | 84.0 |
-| Invalid Extra Docs | 4.16 |
-| Generation tokens | 444,326 |
-| Generation wall time | 93,454 ms |
+| Answer Correctness | 82.0 |
+| Answer Completeness | 79.06 |
+| Combined Correctness/Completeness | 64.83 |
+| Document Recall | 90.0 |
+| Invalid Extra Docs | 4.1 |
+| Generation tokens | 447,026 |
+| Generation wall time | 79,509 ms |
 
 ## Compared Runs
 
@@ -37,6 +37,8 @@ Local Gemma-judge metrics:
 | top5 v17 evidence-spans8000 | 56.0 | 59.22 | 33.16 | 84.0 | 4.16 |
 | top5 v17 evidence-spans8000-v2 | 72.0 | 67.45 | 48.56 | 84.0 | 4.16 |
 | top5 v17 leading8000 max_tokens360 | 76.0 | 74.28 | 56.45 | 84.0 | 4.16 |
+| top5 v17 span-plus-fallback8000 | 78.0 | 72.72 | 56.72 | 84.0 | 4.16 |
+| top5 v17 hybrid-v3 leading8000 | 82.0 | 79.06 | 64.83 | 90.0 | 4.1 |
 
 The previous official Gemma-50 result was scored through the official evaluator path,
 while the new rows above use the local Gemma-compatible judge wrapper. Treat them as
@@ -59,6 +61,12 @@ directional until the official judge path is configured for the same judge model
   from 56 to 72, but standalone spans still lost completeness versus `leading8000`.
 - Increasing output `max_tokens` did not beat the current best run. That points to
   evidence packaging and retrieval misses as the next bottleneck, not answer length.
+- Reweighting reranking toward embedding similarity and away from raw-rank inertia
+  improved first-50 top5 document recall from 84 to 90 percent without increasing
+  top-k. That raised the local Overall/Combined score from 58.27 to 64.83.
+- `span-plus-fallback` reduced generation tokens versus leading windows, but still
+  lost completeness. It should remain an experimental ContextPack policy until
+  dynamic coverage checks can decide when spans are safe.
 
 ## Architecture Implication
 
@@ -85,13 +93,18 @@ for ContextPack, not as the default EnterpriseRAG answer context yet.
   anchor-centered span-only run.
 - `target/enterprise-rag-bench/qa/vllm-gemma-first50-hybrid-v2-top5-v17-leading8000-maxtok360/`:
   higher answer-token-budget control run.
+- `target/enterprise-rag-bench/retrieval/cortexdb_first_50_hybrid_v3_top5.jsonl`:
+  reranker v3 output with 90 percent first-50 top5 recall.
+- `target/enterprise-rag-bench/qa/vllm-gemma-first50-hybrid-v3-top5-v17-leading8000/`:
+  current best local Gemma first-50 answer run.
 
 ## Next Work
 
-1. Add a dynamic document budget policy instead of fixed top3/top5/top10.
-2. Add a span-plus-fallback context mode: evidence spans first, then source windows
-   when span confidence is weak or coverage is incomplete.
-3. Improve reranking for remaining misses where gold is in raw top50 but outside final top5.
+1. Improve the remaining retrieval misses: `qst_0007`, `qst_0016`, `qst_0025`,
+   `qst_0030`, and `qst_0043`.
+2. Add a dynamic document budget policy instead of fixed top3/top5/top10.
+3. Promote `span-plus-fallback` only when coverage signals indicate it will not
+   lose list/procedure completeness.
 4. Add an OpenAI-compatible official judge adapter only for local vLLM if official-score parity
    is required without using OpenAI keys.
 5. Re-run first-50 after each change, then expand to 100 and 500 only after a real first-50 gain.
