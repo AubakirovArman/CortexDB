@@ -25,7 +25,7 @@ top10-focused document recall
 Current best retrieval artifact:
 
 ```text
-target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v51_top10.jsonl
+target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v56_v55_wide_top10.jsonl
 ```
 
 ## Current Local Gate
@@ -33,8 +33,8 @@ target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v51_top10.jsonl
 Latest local calibration gate:
 
 ```text
-target/enterprise-rag-bench/analysis/local_calibration_gate_v51.json
-target/enterprise-rag-bench/analysis/local_calibration_gate_v51.md
+target/enterprise-rag-bench/analysis/local_calibration_gate_v56.json
+target/enterprise-rag-bench/analysis/local_calibration_gate_v56.md
 ```
 
 Result:
@@ -42,12 +42,12 @@ Result:
 | Metric | Value |
 | --- | ---: |
 | local gate passed | `true` |
-| top10 document recall | `71.29%` |
-| top10 full-recall questions | `314` |
-| top10 hit questions | `352` |
-| average invalid extra docs | `8.02` |
-| fact token coverage proxy | `74.15%` |
-| fact full coverage proxy | `83.70%` |
+| top10 document recall | `71.44%` |
+| top10 full-recall questions | `316` |
+| top10 hit questions | `354` |
+| average invalid extra docs | `8.01` |
+| fact token coverage proxy | `74.19%` |
+| fact full coverage proxy | `83.89%` |
 
 Gate thresholds:
 
@@ -106,6 +106,7 @@ ordinary document recall or invalid-extra-doc counts.
 | `doc_view_v30` | `71.06%` | `313` | `351` | multi-view rerank for semantic/completeness/project-related only |
 | `doc_view_v46` | `71.08%` | `313` | `351` | completeness-only coverage pass over v30 |
 | `doc_view_v51` | `71.29%` | `314` | `352` | semantic pass over v46 using candidate pool v48 |
+| `doc_view_v56` | `71.44%` | `316` | `354` | project-related wide rerank over v55 neighbor-tail candidate pool |
 
 ## What Improved
 
@@ -151,20 +152,41 @@ ordinary document recall or invalid-extra-doc counts.
   It improves candidate-pool completeness recall by `4.42` points with zero
   regressions against v52 at depth 1000. Aggressive v54 was rejected as the
   default because it improved tail recall while damaging early depth.
+- Project-related wide rerank v56 uses the v55 neighbor-tail candidate pool for
+  `project_related` questions only. It raises global top10 recall from `71.29%`
+  to `71.44%`, full-recall questions from `314` to `316`, hit questions from
+  `352` to `354`, and project-related recall from `74.34%` to `76.09%`, while
+  reducing average invalid extra docs from `8.02` to `8.01`.
 
 Regression comparison against `extra_reducer_v19`:
 
 ```text
-target/enterprise-rag-bench/analysis/v19_vs_v51_retrieval_comparison_report.json
-target/enterprise-rag-bench/analysis/v19_vs_v51_retrieval_comparison_report.md
+target/enterprise-rag-bench/analysis/v19_vs_v56_retrieval_comparison_report.json
+target/enterprise-rag-bench/analysis/v19_vs_v56_retrieval_comparison_report.md
 ```
 
 | Metric | Delta |
 | --- | ---: |
-| average recall | `+1.43` |
-| full-recall questions | `+5` |
-| hit questions | `+5` |
-| improved questions | `17` |
+| average recall | `+1.58` |
+| full-recall questions | `+7` |
+| hit questions | `+7` |
+| improved questions | `20` |
+| regressed questions | `1` |
+
+Incremental comparison against `doc_view_v51`:
+
+```text
+target/enterprise-rag-bench/analysis/v51_vs_v56_retrieval_comparison_report.json
+target/enterprise-rag-bench/analysis/v51_vs_v56_retrieval_comparison_report.md
+```
+
+| Metric | Delta |
+| --- | ---: |
+| average recall | `+0.15` |
+| project-related recall | `+1.75` |
+| full-recall questions | `+2` |
+| hit questions | `+2` |
+| improved questions | `4` |
 | regressed questions | `1` |
 
 Incremental comparison against `doc_view_v46`:
@@ -186,18 +208,18 @@ target/enterprise-rag-bench/analysis/v46_vs_v51_retrieval_comparison_report.md
 Missing gold reason classifier:
 
 ```text
-target/enterprise-rag-bench/analysis/gold_missing_reasons_v21_report.json
-target/enterprise-rag-bench/analysis/gold_missing_reasons_v21_report.md
+target/enterprise-rag-bench/analysis/gold_missing_reasons_v56_report.json
+target/enterprise-rag-bench/analysis/gold_missing_reasons_v56_report.md
 ```
 
 Largest current missing-gold buckets:
 
 | Reason | Missing Gold Docs |
 | --- | ---: |
-| `not_in_top1000` | `66` |
-| `near_duplicate_confusion` | `57` |
-| `in_top500_not_top100` | `56` |
-| `lost_by_embedding_rerank` | `40` |
+| `not_in_top1000` | `60` |
+| `in_top500_not_top100` | `54` |
+| `near_duplicate_confusion` | `52` |
+| `lost_by_embedding_rerank` | `36` |
 
 ## What Was Tested And Not Promoted
 
@@ -287,15 +309,21 @@ Run semantic coverage pass over v46:
 make enterprise-rag-bench-semantic-coverage
 ```
 
+Run project-related wide rerank over the promoted v55 candidate pool:
+
+```bash
+make enterprise-rag-bench-project-related-coverage
+```
+
 Depth audit:
 
 ```bash
 python scripts/enterprise_rag_bench/candidate_depth_audit.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v51_top10.jsonl \
-  --output-jsonl target/enterprise-rag-bench/analysis/doc_view_v51_depth_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/doc_view_v51_depth_report.json \
-  --markdown target/enterprise-rag-bench/analysis/doc_view_v51_depth_report.md
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v56_v55_wide_top10.jsonl \
+  --output-jsonl target/enterprise-rag-bench/analysis/doc_view_v56_depth_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/doc_view_v56_depth_report.json \
+  --markdown target/enterprise-rag-bench/analysis/doc_view_v56_depth_report.md
 ```
 
 Evidence pack proxy:
@@ -303,24 +331,24 @@ Evidence pack proxy:
 ```bash
 python scripts/enterprise_rag_bench/evaluate_evidence_pack.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v51_top10.jsonl \
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v56_v55_wide_top10.jsonl \
   --uuid-index target/external-benchmarks/EnterpriseRAG-Bench/generated_data/uuid_index.json \
   --sources-dir target/external-benchmarks/EnterpriseRAG-Bench/generated_data/sources \
   --mode leading \
   --top-k 10 \
   --max-chars-per-doc 5000 \
-  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v51_leading_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v51_leading_report.json
+  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v56_leading_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v56_leading_report.json
 ```
 
 Calibration gate:
 
 ```bash
 python scripts/enterprise_rag_bench/summarize_local_calibration.py \
-  --depth-report target/enterprise-rag-bench/analysis/doc_view_v51_depth_report.json \
-  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v51_leading_report.json \
-  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v51.json \
-  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v51.md \
+  --depth-report target/enterprise-rag-bench/analysis/doc_view_v56_depth_report.json \
+  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v56_leading_report.json \
+  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v56.json \
+  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v56.md \
   --min-top10-recall-pct 70.1 \
   --max-invalid-extra-docs 8.1
 ```
