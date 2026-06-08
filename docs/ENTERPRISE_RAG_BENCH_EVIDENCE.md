@@ -310,6 +310,9 @@ they regressed local top10 recall or evidence coverage:
 - all-source semantic query expansion v60: it recovered `qst_0207` and raised
   recall to `71.66%`, but it regressed Slack-only `qst_0295`; v61 keeps the
   improvement by routing the expansion only to GitHub semantic questions.
+- semantic source-route sweep smoke for `jira`: the route changed `7` rows but
+  remained neutral against v61 (`0.0` recall delta, `0` full-recall delta,
+  `0` regressions), so it was not promoted.
 
 ## Reproduction Commands
 
@@ -382,6 +385,19 @@ Run GitHub semantic query expansion over the source-link candidate pool:
 
 ```bash
 make enterprise-rag-bench-github-semantic-query-expansion
+```
+
+Run semantic source-route sweep against the current best:
+
+```bash
+make enterprise-rag-bench-semantic-source-route-sweep
+```
+
+For a cheaper smoke pass:
+
+```bash
+ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_TYPES=jira \
+make enterprise-rag-bench-semantic-source-route-sweep
 ```
 
 Depth audit:

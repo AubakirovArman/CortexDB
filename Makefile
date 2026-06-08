@@ -14,7 +14,7 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
 .PHONY: enterprise-rag-bench-balanced-100 enterprise-rag-bench-score-summary-routed-v16-50 enterprise-rag-bench-token-tracked-judge-routed-v16-50 enterprise-rag-bench-calibration-50 enterprise-rag-bench-calibration-100-prep
-.PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-source-link-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-github-semantic-query-expansion enterprise-rag-bench-high-level-coverage
+.PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-source-link-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-github-semantic-query-expansion enterprise-rag-bench-semantic-source-route-sweep enterprise-rag-bench-high-level-coverage
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check dashboard-operational-status-check context-pack-explorer-check verification-explorer-check retrieval-quality-explorer-check permissions-view-check audit-viewer-v2-check backup-restore-view-check incident-view-check dashboard-role-ui-check
 .PHONY: doctor-check
@@ -517,6 +517,10 @@ ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES_V55 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/in
 ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES_V55_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/index/doc_views_candidates_v55_top800_report.json
 ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES_V58 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/index/doc_views_candidates_v58_top800.jsonl
 ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES_V58_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/index/doc_views_candidates_v58_top800_report.json
+ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_TYPES ?= jira,gmail,confluence,google_drive,hubspot,slack,linear,fireflies,github
+ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_DIR ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/source_route_sweep_v61
+ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/semantic_source_route_sweep_v61_report.json
+ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/semantic_source_route_sweep_v61_report.md
 ENTERPRISE_RAG_BENCH_HIGH_LEVEL_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_high_level_v31_top10.jsonl
 ENTERPRISE_RAG_BENCH_HIGH_LEVEL_RETRIEVAL_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_high_level_v31_top10_report.json
 ENTERPRISE_RAG_BENCH_HIGH_LEVEL_COVERAGE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/high_level_coverage_v31_report.json
@@ -1835,6 +1839,26 @@ enterprise-rag-bench-github-semantic-query-expansion:
 	  --report "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v56_vs_v61_retrieval_comparison_report.json" \
 	  --markdown "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v56_vs_v61_retrieval_comparison_report.md" \
 	  --limit 10
+
+enterprise-rag-bench-semantic-source-route-sweep:
+	python3 scripts/enterprise_rag_bench/source_route_sweep.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --candidate-retrieval-file "$(ENTERPRISE_RAG_BENCH_CANDIDATES_V58)" \
+	  --baseline-retrieval-file "$(ENTERPRISE_RAG_BENCH_CURRENT_BEST)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --doc-views-file "$(ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES_V58)" \
+	  --embedding-cache "$(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/embedding_cache.jsonl" \
+	  --output-dir "$(ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_DIR)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_REPORT)" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_MARKDOWN)" \
+	  --run-id semantic_source_route_v61 \
+	  --source-types "$(ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_TYPES)" \
+	  --route-question-types semantic \
+	  --score-candidate-limit 800 \
+	  --limit 10 \
+	  --seed-count 3 \
+	  --protect-baseline-prefix 9
 
 enterprise-rag-bench-local-retrieval-gate:
 	python3 scripts/enterprise_rag_bench/candidate_depth_audit.py \
