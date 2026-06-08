@@ -15,6 +15,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from enterprise_neighbors import enterprise_neighbor_keys
 from question_decomposition import evidence_units, precise_anchors, tokens
 
 
@@ -342,10 +343,13 @@ class ContentPreviewIndex:
         self.doc_phrases: dict[str, set[str]] = {}
         self.title_tokens: dict[str, set[str]] = {}
         self.doc_source: dict[str, str] = {}
+        self.doc_neighbor_keys: dict[str, set[str]] = {}
         self.token_to_docs: dict[str, list[str]] = defaultdict(list)
         self.phrase_to_docs: dict[str, list[str]] = defaultdict(list)
+        self.neighbor_to_docs: dict[str, list[str]] = defaultdict(list)
         self.skipped_files = 0
         self.indexed_docs = 0
+        self.neighbor_indexed_docs = 0
         self._build()
 
     def _build(self) -> None:
@@ -358,10 +362,17 @@ class ContentPreviewIndex:
                 self.skipped_files += 1
                 continue
             try:
-                title, content = extract_document_content(read_json(path))
+                document = read_json(path)
+                title, content = extract_document_content(document)
             except (OSError, json.JSONDecodeError, UnicodeDecodeError):
                 self.skipped_files += 1
                 continue
+            neighbor_keys = enterprise_neighbor_keys(document, rel_path)
+            if neighbor_keys:
+                self.neighbor_indexed_docs += 1
+                self.doc_neighbor_keys[doc_id] = neighbor_keys
+                for key in neighbor_keys:
+                    self.neighbor_to_docs[key].append(doc_id)
             title_terms = set(tokens(title)) & self.target_terms
             preview = f"{title}\n{content[: self.preview_chars]}"
             preview_tokens = tokens(preview)
@@ -466,11 +477,41 @@ class ContentPreviewIndex:
                 specificity += 18.0
         return len(overlap) * 30.0 + specificity + rare_bonus * 8.0 + source_boost
 
+    def neighbor_scores(
+        self,
+        seed_doc_ids: list[str],
+        source_types: set[str],
+        *,
+        max_docs: int,
+        max_per_seed: int,
+        max_posting: int,
+    ) -> list[tuple[float, str]]:
+        scores: Counter[str] = Counter()
+        for seed_rank, seed_doc_id in enumerate(seed_doc_ids, 1):
+            seed_weight = 1.0 / math.sqrt(seed_rank)
+            seed_neighbors: Counter[str] = Counter()
+            for key in self.doc_neighbor_keys.get(seed_doc_id, set()):
+                docs = self.neighbor_to_docs.get(key, [])
+                if not docs or len(docs) > max_posting:
+                    continue
+                rarity = math.log((len(self.uuid_index) + 1) / (len(docs) + 1))
+                for doc_id in docs:
+                    if doc_id == seed_doc_id:
+                        continue
+                    if source_types and self.doc_source.get(doc_id) not in source_types:
+                        continue
+                    seed_neighbors[doc_id] += seed_weight * (8.0 + rarity * 3.0)
+            for doc_id, score in seed_neighbors.most_common(max_per_seed):
+                scores[doc_id] += score
+        return [(score, doc_id) for doc_id, score in scores.most_common(max_docs)]
+
     def report(self) -> dict[str, Any]:
         return {
             "indexed_docs": self.indexed_docs,
+            "neighbor_indexed_docs": self.neighbor_indexed_docs,
             "posting_terms": len(self.token_to_docs),
             "posting_phrases": len(self.phrase_to_docs),
+            "posting_neighbor_keys": len(self.neighbor_to_docs),
             "skipped_files": self.skipped_files,
         }
 
@@ -641,6 +682,25 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                     scores[doc_id] = scores.get(doc_id, 0.0) + score * args.weight_phrase
                     score_sources[doc_id].add("source_phrase")
 
+            if args.neighbor_expansion_limit > 0 and scores:
+                seed_ids = sorted(
+                    scores,
+                    key=lambda doc_id: (
+                        -scores[doc_id],
+                        path_index.uuid_index.get(doc_id, ""),
+                        doc_id,
+                    ),
+                )[: args.neighbor_seed_limit]
+                for score, doc_id in content_index.neighbor_scores(
+                    seed_ids,
+                    source_types,
+                    max_docs=args.neighbor_expansion_limit,
+                    max_per_seed=args.neighbor_max_per_seed,
+                    max_posting=args.neighbor_max_posting,
+                ):
+                    scores[doc_id] = scores.get(doc_id, 0.0) + score * args.weight_neighbor
+                    score_sources[doc_id].add("neighbor")
+
         if source_types and args.source_match_boost != 0.0:
             for doc_id in list(scores):
                 doc_source = source_type(path_index.uuid_index.get(doc_id, ""))
@@ -722,6 +782,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "phrase_boost_limit": args.phrase_boost_limit,
         "phrase_max_posting": args.phrase_max_posting,
         "weight_phrase": args.weight_phrase,
+        "neighbor_expansion_limit": args.neighbor_expansion_limit,
+        "neighbor_seed_limit": args.neighbor_seed_limit,
+        "neighbor_max_per_seed": args.neighbor_max_per_seed,
+        "neighbor_max_posting": args.neighbor_max_posting,
+        "weight_neighbor": args.weight_neighbor,
         "max_posting": args.max_posting,
         "average_recall_pct": round(sum(recall_values) / len(recall_values), 2) if recall_values else 0.0,
         "full_recall_questions": sum(1 for value in recall_values if value == 100.0),
@@ -759,6 +824,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--phrase-candidate-limit", type=int, default=0)
     parser.add_argument("--phrase-boost-limit", type=int, default=0)
     parser.add_argument("--phrase-max-posting", type=int, default=50000)
+    parser.add_argument("--neighbor-expansion-limit", type=int, default=0)
+    parser.add_argument("--neighbor-seed-limit", type=int, default=40)
+    parser.add_argument("--neighbor-max-per-seed", type=int, default=6)
+    parser.add_argument("--neighbor-max-posting", type=int, default=400)
     parser.add_argument(
         "--content-existing-only-question-type",
         action="append",
@@ -772,6 +841,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--weight-path", type=float, default=1.0)
     parser.add_argument("--weight-content", type=float, default=0.01)
     parser.add_argument("--weight-phrase", type=float, default=1.0)
+    parser.add_argument("--weight-neighbor", type=float, default=1.0)
     parser.add_argument("--source-match-boost", type=float, default=0.0)
     parser.add_argument("--enable-query-type-router", action="store_true")
     parser.add_argument("--diagnostics-top-k", type=int, default=5)
@@ -787,10 +857,13 @@ def parse_args() -> argparse.Namespace:
         "max_posting",
         "rrf_k",
         "phrase_max_posting",
+        "neighbor_seed_limit",
+        "neighbor_max_per_seed",
+        "neighbor_max_posting",
     ):
         if getattr(args, name) <= 0:
             parser.error(f"--{name.replace('_', '-')} must be positive")
-    for name in ("phrase_candidate_limit", "phrase_boost_limit"):
+    for name in ("phrase_candidate_limit", "phrase_boost_limit", "neighbor_expansion_limit"):
         if getattr(args, name) < 0:
             parser.error(f"--{name.replace('_', '-')} must be non-negative")
     if args.diagnostics_top_k < 0:

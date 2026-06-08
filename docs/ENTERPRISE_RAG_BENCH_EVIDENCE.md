@@ -59,15 +59,15 @@ Gate thresholds:
 Candidate generator gate:
 
 ```text
-target/enterprise-rag-bench/analysis/candidate_v52_top1000_gate.json
+target/enterprise-rag-bench/analysis/candidate_v55_top1000_gate.json
 ```
 
 | Metric | Value |
 | --- | ---: |
 | gate passed | `true` |
-| candidate recall@500 | `90.72%` |
-| candidate recall@1000 | `91.15%` |
-| candidate full-recall@1000 | `418` |
+| candidate recall@500 | `90.90%` |
+| candidate recall@1000 | `91.47%` |
+| candidate full-recall@1000 | `421` |
 | candidate hit questions@1000 | `436` |
 
 High-level coverage gate:
@@ -144,6 +144,13 @@ ordinary document recall or invalid-extra-doc counts.
   candidate full-recall@1000 from `417` to `418`, and reduces missing
   candidate questions from `65` to `64`. This is first-stage discovery progress,
   not yet a promoted final top10 rerank.
+- Source-aware neighbor-tail candidate generation v55 keeps the current top10
+  best at v51, but raises candidate recall@100 from `81.67%` to `82.08%`,
+  candidate recall@500 from `90.72%` to `90.90%`, candidate recall@1000 from
+  `91.15%` to `91.47%`, and candidate full-recall@1000 from `418` to `421`.
+  It improves candidate-pool completeness recall by `4.42` points with zero
+  regressions against v52 at depth 1000. Aggressive v54 was rejected as the
+  default because it improved tail recall while damaging early depth.
 
 Regression comparison against `extra_reducer_v19`:
 
@@ -240,11 +247,12 @@ python scripts/enterprise_rag_bench/build_doc_view_subset.py \
   --report target/enterprise-rag-bench/index/doc_views_candidates_v28_top50_report.json
 ```
 
-Run uncapped-anchor candidate coverage:
+Run promoted neighbor-aware candidate coverage:
 
 ```bash
 make enterprise-rag-bench-anchor-candidate-coverage
 make enterprise-rag-bench-candidate-depth-check
+make enterprise-rag-bench-neighbor-candidate-coverage
 ```
 
 Run targeted doc-view rerank:
