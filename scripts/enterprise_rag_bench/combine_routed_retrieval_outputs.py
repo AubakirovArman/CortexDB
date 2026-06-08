@@ -84,6 +84,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         selected = routed_rows[qid] if source == "routed" else default_rows[qid]
         baseline = default_rows[qid]
         row = dict(selected)
+        if args.limit is not None:
+            row["document_ids"] = doc_ids(row)[: args.limit]
         row["route"] = {
             "policy": args.policy_name,
             "source": source,
@@ -123,11 +125,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--policy-name", default="v8_selective_lexical_generation")
+    parser.add_argument("--limit", type=int)
     parser.add_argument(
         "--routed-question-types",
         default="basic,completeness,conflicting_info,constrained,project_related",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.limit is not None and args.limit <= 0:
+        parser.error("--limit must be positive")
+    return args
 
 
 def main() -> int:
