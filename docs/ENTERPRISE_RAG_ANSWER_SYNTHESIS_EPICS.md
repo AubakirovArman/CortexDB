@@ -77,6 +77,35 @@ Acceptance:
 
 Goal: reduce cost and noise by sending evidence first, not long document windows first.
 
+Status: partial. Cost profile implemented and validated, but not promoted as
+default because answer quality regressed on the local Gemma balanced-50 gate.
+
+Implemented:
+- `scripts/enterprise_rag_bench/answer_context.py` owns answer context
+  construction and adds `context_mode = evidence-first`.
+- `evidence-first` keeps the evidence slot plan and evidence table ahead of
+  compact per-document digests and short supporting snippets.
+- `scripts/enterprise_rag_bench/filter_retrieval_to_questions.py` prevents
+  mismatched answer/judge runs by ordering retrieval rows to the active question
+  subset.
+- `make enterprise-rag-bench-deepseek-answers-routed-v17-evidence-first-50`
+  runs the reproducible 50-question evidence-first answer generation path.
+
+Local Gemma balanced-50 evidence:
+- Previous evidence-table baseline:
+  `Overall=35.52`, `Correctness=58.0`, `Completeness=61.24`,
+  generation `417958` tokens.
+- Evidence-first v1, `900 chars/doc`, `24 table rows`:
+  `Overall=26.81`, generation `229354` tokens.
+- Evidence-first v3, `1200 chars/doc`, `32 table rows`,
+  `evidence-first-v18` prompt:
+  `Overall=28.55`, generation `280510` tokens.
+
+Decision:
+- Keep `evidence-first` as a cost-saving experimental context mode.
+- Do not promote it as the default answer mode until span-level reranking or
+  completeness planning restores answer quality.
+
 Tasks:
 - Add `context_mode = evidence_first`.
 - Order prompt context as question, required slots, evidence table, short snippets, and full windows only when needed.

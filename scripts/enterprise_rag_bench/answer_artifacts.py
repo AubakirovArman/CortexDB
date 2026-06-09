@@ -46,12 +46,15 @@ def evidence_table_for_row(
     uuid_index: dict[str, str],
     sources_dir: Path,
     max_facts_per_doc: int,
+    max_table_rows: int,
 ) -> dict[str, Any] | None:
     if not include:
         return None
     qid = str(row.get("question_id"))
     if qid in tables:
-        return tables[qid]
+        table = dict(tables[qid])
+        table["facts"] = list(table.get("facts", []))[:max_table_rows]
+        return table
     facts: list[dict[str, Any]] = []
     question = str(row.get("question") or "")
     for doc_id in doc_ids:
@@ -69,7 +72,7 @@ def evidence_table_for_row(
             )
         )
     facts.sort(key=lambda item: (-float(item["score"]), str(item["doc_id"]), int(item["line"])))
-    return {"question_id": row.get("question_id"), "facts": facts}
+    return {"question_id": row.get("question_id"), "facts": facts[:max_table_rows]}
 
 
 def with_evidence_artifacts(

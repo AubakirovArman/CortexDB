@@ -5,22 +5,16 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
-import http.client
 import json
-import urllib.parse
 import threading
 import time
-import urllib.error
-import urllib.request
 from pathlib import Path
 from typing import Any
 
+from answer_chat import chat
+from answer_context import load_context
 from answer_artifacts import evidence_plan_for_row, evidence_table_for_row, maps_by_id
 from answer_prompts import build_prompt
-from context_windows import question_aware_snippet
-from evidence_digest import evidence_digest, evidence_digest_score
-from evidence_span_fallback import evidence_span_plus_fallback_context
-from evidence_spans import evidence_span_context
 
 
 DEFAULT_BASE_URL = "https://api.deepseek.com"
@@ -50,203 +44,6 @@ def write_json(path: Path, payload: Any) -> None:
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-
-
-def extract_document_content(doc: dict[str, Any]) -> tuple[str, str]:
-    title_field = doc.get("title_field_name")
-    content_fields = doc.get("content_field_names")
-    if not isinstance(title_field, str) or title_field not in doc:
-        return ("", json.dumps(doc, ensure_ascii=False))
-    title = str(doc.get(title_field, ""))
-    if not isinstance(content_fields, list) or not content_fields:
-        return (title, json.dumps(doc, ensure_ascii=False))
-    parts: list[str] = []
-    for field in content_fields:
-        if not isinstance(field, str) or field not in doc:
-            continue
-        value = doc[field]
-        if isinstance(value, list):
-            value = "\n".join(str(item) for item in value)
-        elif isinstance(value, dict):
-            value = json.dumps(value, ensure_ascii=False)
-        parts.append(f"{field}:\n{value}" if len(content_fields) > 1 else str(value))
-    return (title, "\n\n".join(parts))
-
-
-def load_context(
-    doc_ids: list[str],
-    uuid_index: dict[str, str],
-    sources_dir: Path,
-    max_chars_per_doc: int,
-    question: str,
-    context_mode: str,
-) -> str:
-    docs: list[tuple[float, int, str]] = []
-    for rank, doc_id in enumerate(doc_ids, 1):
-        rel_path = uuid_index.get(doc_id)
-        if not rel_path:
-            continue
-        title, content = extract_document_content(read_json(sources_dir / rel_path))
-        if context_mode == "question-window":
-            snippet = question_aware_snippet(content, question, max_chars_per_doc)
-        elif context_mode == "evidence-spans":
-            snippet = evidence_span_context(content, title, question, max_chars_per_doc)
-        elif context_mode == "span-plus-fallback":
-            snippet = evidence_span_plus_fallback_context(content, title, question, max_chars_per_doc)
-        elif context_mode == "question-window-digest":
-            digest = evidence_digest(content, title, question)
-            snippet_budget = max(1200, max_chars_per_doc - len(digest) - 160)
-            snippet = question_aware_snippet(content, question, snippet_budget)
-            if digest:
-                snippet = f"{digest}\n\nQuestion-aware windows:\n{snippet}"
-        elif context_mode == "question-window-digest-ranked":
-            digest = evidence_digest(content, title, question)
-            snippet_budget = max(1200, max_chars_per_doc - len(digest) - 160)
-            snippet = question_aware_snippet(content, question, snippet_budget)
-            if digest:
-                snippet = f"{digest}\n\nQuestion-aware windows:\n{snippet}"
-        else:
-            snippet = content[:max_chars_per_doc]
-        score = evidence_digest_score(content, question) if "digest-ranked" in context_mode else 0.0
-        docs.append((
-            score,
-            rank,
-            f"--- Document {rank} (ID: {doc_id}) ---\n"
-            f"Title: {title}\n\n{snippet}",
-        ))
-    if "digest-ranked" in context_mode:
-        docs.sort(key=lambda item: (-item[0], item[1]))
-    return "\n\n".join(text for _, _, text in docs)
-
-
-def chat(
-    *,
-    api_key: str,
-    base_url: str,
-    model: str,
-    prompt: str,
-    max_tokens: int,
-    retries: int,
-    omit_thinking_field: bool,
-    gemini_native: bool,
-    gemini_thinking_budget: int,
-) -> tuple[str, dict[str, Any], int]:
-    if gemini_native:
-        return chat_gemini_native(
-            api_key=api_key,
-            base_url=base_url,
-            model=model,
-            prompt=prompt,
-            max_tokens=max_tokens,
-            retries=retries,
-            thinking_budget=gemini_thinking_budget,
-        )
-    payload = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": max_tokens,
-        "temperature": 0,
-    }
-    if not omit_thinking_field:
-        payload["thinking"] = {"type": "disabled"}
-    data = json.dumps(payload).encode("utf-8")
-    url = base_url.rstrip("/") + "/chat/completions"
-    for attempt in range(retries + 1):
-        request = urllib.request.Request(
-            url,
-            data=data,
-            headers={
-                "Authorization": "Bearer " + api_key,
-                "Content-Type": "application/json",
-            },
-        )
-        try:
-            started = time.perf_counter()
-            with urllib.request.urlopen(request, timeout=180) as response:
-                body = json.loads(response.read().decode("utf-8"))
-            elapsed_ms = int((time.perf_counter() - started) * 1000)
-            answer = body["choices"][0]["message"].get("content", "")
-            return (str(answer).strip(), body.get("usage", {}), elapsed_ms)
-        except urllib.error.HTTPError as error:
-            if error.code not in {429, 500, 502, 503, 504} or attempt >= retries:
-                detail = error.read().decode("utf-8", errors="replace")[:500]
-                raise RuntimeError(f"chat request failed: http={error.code} {detail}") from error
-            time.sleep(min(30, 2**attempt))
-        except (
-            TimeoutError,
-            urllib.error.URLError,
-            http.client.IncompleteRead,
-            http.client.RemoteDisconnected,
-            json.JSONDecodeError,
-        ) as error:
-            if attempt >= retries:
-                raise RuntimeError(f"chat request failed: {error}") from error
-            time.sleep(min(30, 2**attempt))
-    raise RuntimeError("unreachable retry state")
-
-
-def chat_gemini_native(
-    *,
-    api_key: str,
-    base_url: str,
-    model: str,
-    prompt: str,
-    max_tokens: int,
-    retries: int,
-    thinking_budget: int,
-) -> tuple[str, dict[str, Any], int]:
-    model_name = model.removeprefix("models/")
-    payload = {
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0,
-            "maxOutputTokens": max_tokens,
-            "thinkingConfig": {"thinkingBudget": thinking_budget},
-        },
-    }
-    data = json.dumps(payload).encode("utf-8")
-    url = (
-        base_url.rstrip("/")
-        + f"/models/{urllib.parse.quote(model_name, safe='')}:generateContent"
-        + "?key="
-        + urllib.parse.quote(api_key)
-    )
-    for attempt in range(retries + 1):
-        request = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
-        try:
-            started = time.perf_counter()
-            with urllib.request.urlopen(request, timeout=180) as response:
-                body = json.loads(response.read().decode("utf-8"))
-            elapsed_ms = int((time.perf_counter() - started) * 1000)
-            answer = "".join(
-                str(part.get("text", ""))
-                for candidate in body.get("candidates", [])
-                for part in candidate.get("content", {}).get("parts", [])
-            )
-            usage = body.get("usageMetadata", {})
-            normalized_usage = {
-                "prompt_tokens": int(usage.get("promptTokenCount", 0) or 0),
-                "completion_tokens": int(usage.get("candidatesTokenCount", 0) or 0),
-                "total_tokens": int(usage.get("totalTokenCount", 0) or 0),
-                "thoughts_tokens": int(usage.get("thoughtsTokenCount", 0) or 0),
-            }
-            return (answer.strip(), normalized_usage, elapsed_ms)
-        except urllib.error.HTTPError as error:
-            if error.code not in {429, 500, 502, 503, 504} or attempt >= retries:
-                detail = error.read().decode("utf-8", errors="replace")[:500]
-                raise RuntimeError(f"gemini request failed: http={error.code} {detail}") from error
-            time.sleep(min(30, 2**attempt))
-        except (
-            TimeoutError,
-            urllib.error.URLError,
-            http.client.IncompleteRead,
-            http.client.RemoteDisconnected,
-            json.JSONDecodeError,
-        ) as error:
-            if attempt >= retries:
-                raise RuntimeError(f"gemini request failed: {error}") from error
-            time.sleep(min(30, 2**attempt))
-    raise RuntimeError("unreachable retry state")
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
@@ -288,6 +85,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             uuid_index=uuid_index,
             sources_dir=args.sources_dir,
             max_facts_per_doc=args.max_evidence_facts_per_doc,
+            max_table_rows=args.max_evidence_table_rows,
         )
         answer, usage, elapsed_ms = chat(
             api_key=api_key,
@@ -376,6 +174,7 @@ def main() -> int:
             "type-aware-v13",
             "type-aware-v15",
             "type-aware-v17",
+            "evidence-first-v18",
             "evidence-audit-v11",
         ],
         default="baseline",
@@ -386,6 +185,7 @@ def main() -> int:
             "leading",
             "evidence-spans",
             "span-plus-fallback",
+            "evidence-first",
             "question-window",
             "question-window-digest",
             "question-window-digest-ranked",
@@ -404,6 +204,7 @@ def main() -> int:
     )
     parser.add_argument("--evidence-table-file", type=Path)
     parser.add_argument("--max-evidence-facts-per-doc", type=int, default=6)
+    parser.add_argument("--max-evidence-table-rows", type=int, default=40)
     parser.add_argument(
         "--include-evidence-table",
         action="store_true",

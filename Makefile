@@ -13,7 +13,7 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v12-type-aware-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v12-type-aware-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v12-type-aware-digest-windowed-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
-.PHONY: enterprise-rag-bench-balanced-100 enterprise-rag-bench-score-summary-routed-v16-50 enterprise-rag-bench-token-tracked-judge-routed-v16-50 enterprise-rag-bench-calibration-50 enterprise-rag-bench-calibration-100-prep
+.PHONY: enterprise-rag-bench-balanced-100 enterprise-rag-bench-score-summary-routed-v16-50 enterprise-rag-bench-token-tracked-judge-routed-v16-50 enterprise-rag-bench-current-best-balanced-50 enterprise-rag-bench-deepseek-answers-routed-v17-evidence-first-50 enterprise-rag-bench-calibration-50 enterprise-rag-bench-calibration-100-prep
 .PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-source-link-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-github-semantic-query-expansion enterprise-rag-bench-basic-google-drive-tail-rescue enterprise-rag-bench-confluence-completeness-selector enterprise-rag-bench-confluence-collection-selector enterprise-rag-bench-jira-project-source-selector enterprise-rag-bench-jira-completeness-source-selector enterprise-rag-bench-confluence-content-completeness-selector enterprise-rag-bench-confluence-project-source-selector enterprise-rag-bench-confluence-process-completeness-selector enterprise-rag-bench-slack-gmail-source-selector enterprise-rag-bench-hubspot-drive-anchor-selector enterprise-rag-bench-github-project-source-selector enterprise-rag-bench-sdk-auth-completeness-selector enterprise-rag-bench-confluence-postmortem-variant-selector enterprise-rag-bench-slack-basic-promotion-selector enterprise-rag-bench-jira-semantic-promotion-selector enterprise-rag-bench-confluence-semantic-variant-selector enterprise-rag-bench-linear-semantic-promotion-selector enterprise-rag-bench-jira-project-evidence-selector enterprise-rag-bench-gmail-project-evidence-selector enterprise-rag-bench-confluence-project-discovery-selector enterprise-rag-bench-gold-missing-bottlenecks enterprise-rag-bench-semantic-source-route-sweep enterprise-rag-bench-high-level-coverage
 .PHONY: enterprise-rag-bench-evidence-plan-check enterprise-rag-bench-evidence-table-check
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
@@ -563,6 +563,7 @@ ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_SUBSET_Q
 ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_CURRENT_BEST)
 ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_JSONL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_table_balanced_50.jsonl
 ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_table_balanced_50_report.json
+ENTERPRISE_RAG_BENCH_CURRENT_BEST_BALANCED_50 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_v81_confluence_project_discovery_balanced_50.jsonl
 ENTERPRISE_RAG_BENCH_DB_50 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/cortexdb-50
 ENTERPRISE_RAG_BENCH_DB_FULL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/cortexdb-full
 ENTERPRISE_RAG_BENCH_SMOKE_MAX_DOCUMENTS ?= 500
@@ -701,6 +702,11 @@ ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_JUDGE_ROWS ?= $(ENTERPRISE_RAG_B
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_SCORE_SUMMARY ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/score_summary_token_tracked.json
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_SCORE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/score_summary_token_tracked.md
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_ROUTE_TYPES ?= conflicting_info
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/qa/deepseek-balanced-50-routed-v17-evidence-first
+ENTERPRISE_RAG_BENCH_QA_V17_TOPK_CONTEXT ?= 6
+ENTERPRISE_RAG_BENCH_QA_V17_MAX_CHARS_PER_DOC ?= 900
+ENTERPRISE_RAG_BENCH_QA_V17_MAX_EVIDENCE_TABLE_ROWS ?= 24
+ENTERPRISE_RAG_BENCH_QA_V17_MAX_TOKENS ?= 900
 ENTERPRISE_RAG_BENCH_JUDGE_MODEL ?= deepseek-v4-flash
 ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL ?= https://api.deepseek.com
 ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE ?= $(DEEPSEEK_KEY_FILE)
@@ -1573,6 +1579,13 @@ enterprise-rag-bench-evidence-table-check: enterprise-rag-bench-balanced-50
 	  --report "$(ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_REPORT)" \
 	  --top-docs 10 \
 	  --max-facts-per-doc 6
+
+enterprise-rag-bench-current-best-balanced-50: enterprise-rag-bench-balanced-50
+	test -f "$(ENTERPRISE_RAG_BENCH_CURRENT_BEST)"
+	python3 scripts/enterprise_rag_bench/filter_retrieval_to_questions.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_CURRENT_BEST)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_CURRENT_BEST_BALANCED_50)"
 
 enterprise-rag-bench-cortexdb-retrieval-smoke: enterprise-rag-bench-balanced-50
 	cargo build -p cortex-engine --bin enterprise_rag_bench_retrieval
@@ -2754,6 +2767,28 @@ enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50: en
 	  --context-mode question-window-digest-ranked \
 	  --prompt-style type-aware-v15 \
 	  --workers "$(ENTERPRISE_RAG_BENCH_QA_WORKERS)"
+
+enterprise-rag-bench-deepseek-answers-routed-v17-evidence-first-50: enterprise-rag-bench-current-best-balanced-50 enterprise-rag-bench-evidence-plan-check enterprise-rag-bench-evidence-table-check
+	python3 scripts/enterprise_rag_bench/run_deepseek_answers.py \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_CURRENT_BEST_BALANCED_50)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output-root "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)" \
+	  --api-key-file "$(DEEPSEEK_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_QA_BASE_URL)" \
+	  --model "$(ENTERPRISE_RAG_BENCH_QA_MODEL)" \
+	  --top-k-context "$(ENTERPRISE_RAG_BENCH_QA_V17_TOPK_CONTEXT)" \
+	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_QA_V17_MAX_CHARS_PER_DOC)" \
+	  --max-tokens "$(ENTERPRISE_RAG_BENCH_QA_V17_MAX_TOKENS)" \
+	  --context-mode evidence-first \
+	  --prompt-style evidence-first-v18 \
+	  --include-evidence-plan \
+	  --evidence-plan-file "$(ENTERPRISE_RAG_BENCH_EVIDENCE_PLAN_JSONL)" \
+	  --include-evidence-table \
+	  --evidence-table-file "$(ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_JSONL)" \
+	  --max-evidence-table-rows "$(ENTERPRISE_RAG_BENCH_QA_V17_MAX_EVIDENCE_TABLE_ROWS)" \
+	  --workers "$(ENTERPRISE_RAG_BENCH_QA_WORKERS)" \
+	  --omit-thinking-field
 
 enterprise-rag-bench-official-answer-metrics-50: enterprise-rag-bench-official-env enterprise-rag-bench-deepseek-answers-50
 	cd "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" && "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" -m src.scripts.answer_evaluation.metrics_based_eval \

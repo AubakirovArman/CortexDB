@@ -7,6 +7,7 @@ from typing import Any
 from answer_artifacts import with_evidence_artifacts
 from answer_prompts_coverage import evidence_coverage_v15
 from answer_prompts_exact import exact_basic_v17
+from answer_prompts_evidence_first import evidence_first_v18
 
 
 def evidence_selection_v5(row: dict[str, Any], context: str) -> str:
@@ -282,6 +283,8 @@ def build_prompt(
         return with_evidence_artifacts(type_aware_v15(row, context), evidence_plan, evidence_table)
     if prompt_style == "type-aware-v17":
         return with_evidence_artifacts(type_aware_v17(row, context), evidence_plan, evidence_table)
+    if prompt_style == "evidence-first-v18":
+        return with_evidence_artifacts(evidence_first_v18(row, context), evidence_plan, evidence_table)
     if prompt_style == "evidence-audit-v11":
         return with_evidence_artifacts(evidence_audit_v11(row, context), evidence_plan, evidence_table)
     if prompt_style == "fact-focused-v2":
