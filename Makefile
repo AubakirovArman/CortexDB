@@ -14,7 +14,7 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
 .PHONY: enterprise-rag-bench-balanced-100 enterprise-rag-bench-score-summary-routed-v16-50 enterprise-rag-bench-token-tracked-judge-routed-v16-50 enterprise-rag-bench-calibration-50 enterprise-rag-bench-calibration-100-prep
-.PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-source-link-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-github-semantic-query-expansion enterprise-rag-bench-basic-google-drive-tail-rescue enterprise-rag-bench-confluence-completeness-selector enterprise-rag-bench-confluence-collection-selector enterprise-rag-bench-jira-project-source-selector enterprise-rag-bench-jira-completeness-source-selector enterprise-rag-bench-confluence-content-completeness-selector enterprise-rag-bench-confluence-project-source-selector enterprise-rag-bench-confluence-process-completeness-selector enterprise-rag-bench-slack-gmail-source-selector enterprise-rag-bench-hubspot-drive-anchor-selector enterprise-rag-bench-github-project-source-selector enterprise-rag-bench-sdk-auth-completeness-selector enterprise-rag-bench-confluence-postmortem-variant-selector enterprise-rag-bench-slack-basic-promotion-selector enterprise-rag-bench-gold-missing-bottlenecks enterprise-rag-bench-semantic-source-route-sweep enterprise-rag-bench-high-level-coverage
+.PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-source-link-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-github-semantic-query-expansion enterprise-rag-bench-basic-google-drive-tail-rescue enterprise-rag-bench-confluence-completeness-selector enterprise-rag-bench-confluence-collection-selector enterprise-rag-bench-jira-project-source-selector enterprise-rag-bench-jira-completeness-source-selector enterprise-rag-bench-confluence-content-completeness-selector enterprise-rag-bench-confluence-project-source-selector enterprise-rag-bench-confluence-process-completeness-selector enterprise-rag-bench-slack-gmail-source-selector enterprise-rag-bench-hubspot-drive-anchor-selector enterprise-rag-bench-github-project-source-selector enterprise-rag-bench-sdk-auth-completeness-selector enterprise-rag-bench-confluence-postmortem-variant-selector enterprise-rag-bench-slack-basic-promotion-selector enterprise-rag-bench-jira-semantic-promotion-selector enterprise-rag-bench-gold-missing-bottlenecks enterprise-rag-bench-semantic-source-route-sweep enterprise-rag-bench-high-level-coverage
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check dashboard-operational-status-check context-pack-explorer-check verification-explorer-check retrieval-quality-explorer-check permissions-view-check audit-viewer-v2-check backup-restore-view-check incident-view-check dashboard-role-ui-check
 .PHONY: doctor-check
@@ -514,17 +514,18 @@ ENTERPRISE_RAG_BENCH_DOC_VIEW_V72 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cort
 ENTERPRISE_RAG_BENCH_DOC_VIEW_V73 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_v73_sdk_auth_completeness_top10.jsonl
 ENTERPRISE_RAG_BENCH_DOC_VIEW_V74 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_v74_confluence_postmortem_variant_top10.jsonl
 ENTERPRISE_RAG_BENCH_DOC_VIEW_V75 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_v75_slack_basic_promotion_top10.jsonl
-ENTERPRISE_RAG_BENCH_CURRENT_BEST ?= $(ENTERPRISE_RAG_BENCH_DOC_VIEW_V75)
-ENTERPRISE_RAG_BENCH_CURRENT_DEPTH_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/doc_view_v75_depth_report.json
-ENTERPRISE_RAG_BENCH_CURRENT_DEPTH_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/doc_view_v75_depth_details.jsonl
-ENTERPRISE_RAG_BENCH_CURRENT_DEPTH_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/doc_view_v75_depth_report.md
-ENTERPRISE_RAG_BENCH_CURRENT_EVIDENCE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_pack_doc_view_v75_leading_report.json
-ENTERPRISE_RAG_BENCH_CURRENT_EVIDENCE_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_pack_doc_view_v75_leading_details.jsonl
-ENTERPRISE_RAG_BENCH_CURRENT_GATE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/local_calibration_gate_v75.json
-ENTERPRISE_RAG_BENCH_CURRENT_GATE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/local_calibration_gate_v75.md
-ENTERPRISE_RAG_BENCH_CURRENT_COMPARISON_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v19_vs_v75_retrieval_comparison_report.json
-ENTERPRISE_RAG_BENCH_CURRENT_COMPARISON_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v19_vs_v75_retrieval_comparison_details.jsonl
-ENTERPRISE_RAG_BENCH_CURRENT_COMPARISON_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v19_vs_v75_retrieval_comparison_report.md
+ENTERPRISE_RAG_BENCH_DOC_VIEW_V76 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_v76_jira_semantic_promotion_top10.jsonl
+ENTERPRISE_RAG_BENCH_CURRENT_BEST ?= $(ENTERPRISE_RAG_BENCH_DOC_VIEW_V76)
+ENTERPRISE_RAG_BENCH_CURRENT_DEPTH_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/doc_view_v76_depth_report.json
+ENTERPRISE_RAG_BENCH_CURRENT_DEPTH_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/doc_view_v76_depth_details.jsonl
+ENTERPRISE_RAG_BENCH_CURRENT_DEPTH_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/doc_view_v76_depth_report.md
+ENTERPRISE_RAG_BENCH_CURRENT_EVIDENCE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_pack_doc_view_v76_leading_report.json
+ENTERPRISE_RAG_BENCH_CURRENT_EVIDENCE_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_pack_doc_view_v76_leading_details.jsonl
+ENTERPRISE_RAG_BENCH_CURRENT_GATE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/local_calibration_gate_v76.json
+ENTERPRISE_RAG_BENCH_CURRENT_GATE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/local_calibration_gate_v76.md
+ENTERPRISE_RAG_BENCH_CURRENT_COMPARISON_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v19_vs_v76_retrieval_comparison_report.json
+ENTERPRISE_RAG_BENCH_CURRENT_COMPARISON_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v19_vs_v76_retrieval_comparison_details.jsonl
+ENTERPRISE_RAG_BENCH_CURRENT_COMPARISON_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v19_vs_v76_retrieval_comparison_report.md
 ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES ?= $(ENTERPRISE_RAG_BENCH_ROOT)/index/doc_views_candidates_v28_top50.jsonl
 ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/index/doc_views_candidates_v28_top50_report.json
 ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES_V55 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/index/doc_views_candidates_v55_top800.jsonl
@@ -532,14 +533,14 @@ ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES_V55_REPORT ?= $(ENTERPRISE_RAG_BENCH_R
 ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES_V58 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/index/doc_views_candidates_v58_top800.jsonl
 ENTERPRISE_RAG_BENCH_DOC_VIEWS_CANDIDATES_V58_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/index/doc_views_candidates_v58_top800_report.json
 ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_TYPES ?= jira,gmail,confluence,google_drive,hubspot,slack,linear,fireflies,github
-ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_DIR ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/source_route_sweep_v75
-ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/semantic_source_route_sweep_v75_report.json
-ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/semantic_source_route_sweep_v75_report.md
-ENTERPRISE_RAG_BENCH_GOLD_MISSING_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/gold_missing_reasons_v75_details.jsonl
-ENTERPRISE_RAG_BENCH_GOLD_MISSING_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/gold_missing_reasons_v75_report.json
-ENTERPRISE_RAG_BENCH_GOLD_MISSING_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/gold_missing_reasons_v75_report.md
-ENTERPRISE_RAG_BENCH_GOLD_MISSING_BOTTLENECK_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/gold_missing_bottlenecks_v75_report.json
-ENTERPRISE_RAG_BENCH_GOLD_MISSING_BOTTLENECK_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/gold_missing_bottlenecks_v75_report.md
+ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_DIR ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/source_route_sweep_v76
+ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/semantic_source_route_sweep_v76_report.json
+ENTERPRISE_RAG_BENCH_SOURCE_ROUTE_SWEEP_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/semantic_source_route_sweep_v76_report.md
+ENTERPRISE_RAG_BENCH_GOLD_MISSING_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/gold_missing_reasons_v76_details.jsonl
+ENTERPRISE_RAG_BENCH_GOLD_MISSING_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/gold_missing_reasons_v76_report.json
+ENTERPRISE_RAG_BENCH_GOLD_MISSING_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/gold_missing_reasons_v76_report.md
+ENTERPRISE_RAG_BENCH_GOLD_MISSING_BOTTLENECK_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/gold_missing_bottlenecks_v76_report.json
+ENTERPRISE_RAG_BENCH_GOLD_MISSING_BOTTLENECK_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/gold_missing_bottlenecks_v76_report.md
 ENTERPRISE_RAG_BENCH_HIGH_LEVEL_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_high_level_v31_top10.jsonl
 ENTERPRISE_RAG_BENCH_HIGH_LEVEL_RETRIEVAL_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_high_level_v31_top10_report.json
 ENTERPRISE_RAG_BENCH_HIGH_LEVEL_COVERAGE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/high_level_coverage_v31_report.json
@@ -2134,6 +2135,25 @@ enterprise-rag-bench-slack-basic-promotion-selector:
 	  --markdown "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v74_vs_v75_retrieval_comparison_report.md" \
 	  --limit 10
 
+enterprise-rag-bench-jira-semantic-promotion-selector:
+	python3 scripts/enterprise_rag_bench/jira_semantic_promotion_selector.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --baseline-retrieval-file "$(ENTERPRISE_RAG_BENCH_DOC_VIEW_V75)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_DOC_VIEW_V76)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_v76_jira_semantic_promotion_top10_report.json" \
+	  --policy-name jira_semantic_promotion_selector_v76 \
+	  --limit 10
+	python3 scripts/enterprise_rag_bench/compare_retrieval_runs.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --baseline-retrieval-file "$(ENTERPRISE_RAG_BENCH_DOC_VIEW_V75)" \
+	  --candidate-retrieval-file "$(ENTERPRISE_RAG_BENCH_DOC_VIEW_V76)" \
+	  --output-jsonl "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v75_vs_v76_retrieval_comparison_details.jsonl" \
+	  --report "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v75_vs_v76_retrieval_comparison_report.json" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_ROOT)/analysis/v75_vs_v76_retrieval_comparison_report.md" \
+	  --limit 10
+
 enterprise-rag-bench-gold-missing-bottlenecks:
 	python3 scripts/enterprise_rag_bench/gold_missing_reason_classifier.py \
 	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
@@ -2143,6 +2163,7 @@ enterprise-rag-bench-gold-missing-bottlenecks:
 	  --output-jsonl "$(ENTERPRISE_RAG_BENCH_GOLD_MISSING_DETAILS)" \
 	  --report "$(ENTERPRISE_RAG_BENCH_GOLD_MISSING_REPORT)" \
 	  --markdown "$(ENTERPRISE_RAG_BENCH_GOLD_MISSING_MARKDOWN)" \
+	  --compare-retrieval-file v75="$(ENTERPRISE_RAG_BENCH_DOC_VIEW_V75)" \
 	  --compare-retrieval-file v74="$(ENTERPRISE_RAG_BENCH_DOC_VIEW_V74)" \
 	  --compare-retrieval-file v73="$(ENTERPRISE_RAG_BENCH_DOC_VIEW_V73)" \
 	  --compare-retrieval-file v72="$(ENTERPRISE_RAG_BENCH_DOC_VIEW_V72)" \
