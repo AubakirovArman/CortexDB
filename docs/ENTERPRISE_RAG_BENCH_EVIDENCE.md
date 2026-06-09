@@ -25,7 +25,7 @@ top10-focused document recall
 Current best retrieval artifact:
 
 ```text
-target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v62_basic_google_drive_tail_rescue_top10.jsonl
+target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v63_confluence_completeness_top10.jsonl
 ```
 
 ## Current Local Gate
@@ -33,8 +33,8 @@ target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v62_basic_google_dr
 Latest local calibration gate:
 
 ```text
-target/enterprise-rag-bench/analysis/local_calibration_gate_v62.json
-target/enterprise-rag-bench/analysis/local_calibration_gate_v62.md
+target/enterprise-rag-bench/analysis/local_calibration_gate_v63.json
+target/enterprise-rag-bench/analysis/local_calibration_gate_v63.md
 ```
 
 Result:
@@ -42,12 +42,12 @@ Result:
 | Metric | Value |
 | --- | ---: |
 | local gate passed | `true` |
-| top10 document recall | `71.87%` |
+| top10 document recall | `72.06%` |
 | top10 full-recall questions | `318` |
-| top10 hit questions | `356` |
-| average invalid extra docs | `8.01` |
-| fact token coverage proxy | `74.23%` |
-| fact full coverage proxy | `83.89%` |
+| top10 hit questions | `357` |
+| average invalid extra docs | `8.00` |
+| fact token coverage proxy | `74.24%` |
+| fact full coverage proxy | `83.93%` |
 
 Gate thresholds:
 
@@ -127,6 +127,7 @@ ordinary document recall or invalid-extra-doc counts.
 | `doc_view_v56` | `71.44%` | `316` | `354` | project-related wide rerank over v55 neighbor-tail candidate pool |
 | `doc_view_v61` | `71.66%` | `317` | `355` | GitHub-only semantic query expansion over v58 source-link candidate pool |
 | `doc_view_v62` | `71.87%` | `318` | `356` | basic Google Drive tail rescue over v58 source-link candidate pool |
+| `doc_view_v63` | `72.06%` | `318` | `357` | Confluence-only completeness path/title selector over v58 source-link candidate pool |
 
 ## What Improved
 
@@ -196,21 +197,45 @@ ordinary document recall or invalid-extra-doc counts.
   Drive questions, replaces one tail slot, recovers `qst_0112`, raises global
   top10 recall from `71.66%` to `71.87%`, raises full-recall questions from
   `317` to `318`, and has zero regressions against v61.
+- Confluence completeness selector v63 uses only question text plus Confluence
+  path/title anchors and deterministic enterprise synonyms such as
+  `communications -> comms`, `gate -> go-no-go`, and `approval -> signoff`.
+  It routes only completeness questions whose expected source type is exactly
+  Confluence, recovers or improves `qst_0440`, `qst_0442`, `qst_0444`,
+  `qst_0445`, and `qst_0447`, raises global top10 recall from `71.87%` to
+  `72.06%`, raises hit questions from `356` to `357`, and has zero regressions
+  against v62.
 
 Regression comparison against `extra_reducer_v19`:
 
 ```text
-target/enterprise-rag-bench/analysis/v19_vs_v62_retrieval_comparison_report.json
-target/enterprise-rag-bench/analysis/v19_vs_v62_retrieval_comparison_report.md
+target/enterprise-rag-bench/analysis/v19_vs_v63_retrieval_comparison_report.json
+target/enterprise-rag-bench/analysis/v19_vs_v63_retrieval_comparison_report.md
 ```
 
 | Metric | Delta |
 | --- | ---: |
-| average recall | `+2.01` |
+| average recall | `+2.20` |
 | full-recall questions | `+9` |
-| hit questions | `+9` |
-| improved questions | `22` |
+| hit questions | `+10` |
+| improved questions | `24` |
 | regressed questions | `1` |
+
+Incremental comparison against `doc_view_v62`:
+
+```text
+target/enterprise-rag-bench/analysis/v62_vs_v63_retrieval_comparison_report.json
+target/enterprise-rag-bench/analysis/v62_vs_v63_retrieval_comparison_report.md
+```
+
+| Metric | Delta |
+| --- | ---: |
+| average recall | `+0.19` |
+| completeness recall | `+4.58` |
+| full-recall questions | `0` |
+| hit questions | `+1` |
+| improved questions | `5` |
+| regressed questions | `0` |
 
 Incremental comparison against `doc_view_v61`:
 
@@ -279,8 +304,8 @@ target/enterprise-rag-bench/analysis/v46_vs_v51_retrieval_comparison_report.md
 Missing gold reason classifier:
 
 ```text
-target/enterprise-rag-bench/analysis/gold_missing_reasons_v62_report.json
-target/enterprise-rag-bench/analysis/gold_missing_reasons_v62_report.md
+target/enterprise-rag-bench/analysis/gold_missing_reasons_v63_report.json
+target/enterprise-rag-bench/analysis/gold_missing_reasons_v63_report.md
 ```
 
 Largest current missing-gold buckets:
@@ -288,27 +313,27 @@ Largest current missing-gold buckets:
 | Reason | Missing Gold Docs |
 | --- | ---: |
 | `not_in_top1000` | `57` |
-| `in_top500_not_top100` | `51` |
-| `near_duplicate_confusion` | `51` |
-| `lost_by_embedding_rerank` | `39` |
+| `near_duplicate_confusion` | `55` |
+| `in_top500_not_top100` | `50` |
+| `lost_by_embedding_rerank` | `33` |
 
 Missing-gold bottleneck summary:
 
 ```text
-target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v62_report.json
-target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v62_report.md
+target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v63_report.json
+target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v63_report.md
 ```
 
 Largest type/source/reason buckets:
 
 | Question Type | Source | Reason | Missing Gold Docs |
 | --- | --- | --- | ---: |
-| `completeness` | `confluence` | `near_duplicate_confusion` | `16` |
-| `completeness` | `confluence` | `in_top500_not_top100` | `11` |
+| `completeness` | `confluence` | `near_duplicate_confusion` | `20` |
+| `completeness` | `confluence` | `in_top500_not_top100` | `10` |
 | `project_related` | `confluence` | `near_duplicate_confusion` | `9` |
-| `completeness` | `confluence` | `lost_by_embedding_rerank` | `9` |
-| `completeness` | `confluence` | `in_top100_not_top50` | `8` |
 | `semantic` | `slack` | `not_in_top1000` | `7` |
+| `project_related` | `jira` | `filtered_by_source` | `6` |
+| `completeness` | `jira` | `filtered_by_source` | `6` |
 
 Candidate-rank buckets for currently missing gold docs:
 
@@ -316,14 +341,14 @@ Candidate-rank buckets for currently missing gold docs:
 | --- | ---: |
 | `top500` | `70` |
 | `missing` | `69` |
-| `top50` | `56` |
+| `top50` | `49` |
 | `top100` | `35` |
-| `top10` | `11` |
+| `top10` | `12` |
 | `top1000` | `4` |
 
-This makes the next focused route clear: start with Confluence completeness
-composition, because it is the largest remaining cluster and includes both
-near-duplicate confusion and rerank-depth failures.
+This keeps the next focused route clear: continue Confluence completeness
+composition, because it remains the largest cluster and still includes both
+near-duplicate confusion and rerank-depth failures after the safe v63 pass.
 
 ## What Was Tested And Not Promoted
 
@@ -465,7 +490,13 @@ Run basic Google Drive tail rescue over the source-link candidate pool:
 make enterprise-rag-bench-basic-google-drive-tail-rescue
 ```
 
-Run the v62 missing-gold bottleneck report:
+Run Confluence completeness selector over the source-link candidate pool:
+
+```bash
+make enterprise-rag-bench-confluence-completeness-selector
+```
+
+Run the current missing-gold bottleneck report:
 
 ```bash
 make enterprise-rag-bench-gold-missing-bottlenecks
@@ -489,10 +520,10 @@ Depth audit:
 ```bash
 python scripts/enterprise_rag_bench/candidate_depth_audit.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v62_basic_google_drive_tail_rescue_top10.jsonl \
-  --output-jsonl target/enterprise-rag-bench/analysis/doc_view_v62_depth_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/doc_view_v62_depth_report.json \
-  --markdown target/enterprise-rag-bench/analysis/doc_view_v62_depth_report.md
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v63_confluence_completeness_top10.jsonl \
+  --output-jsonl target/enterprise-rag-bench/analysis/doc_view_v63_depth_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/doc_view_v63_depth_report.json \
+  --markdown target/enterprise-rag-bench/analysis/doc_view_v63_depth_report.md
 ```
 
 Evidence pack proxy:
@@ -500,24 +531,24 @@ Evidence pack proxy:
 ```bash
 python scripts/enterprise_rag_bench/evaluate_evidence_pack.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v62_basic_google_drive_tail_rescue_top10.jsonl \
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v63_confluence_completeness_top10.jsonl \
   --uuid-index target/external-benchmarks/EnterpriseRAG-Bench/generated_data/uuid_index.json \
   --sources-dir target/external-benchmarks/EnterpriseRAG-Bench/generated_data/sources \
   --mode leading \
   --top-k 10 \
   --max-chars-per-doc 5000 \
-  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v62_leading_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v62_leading_report.json
+  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v63_leading_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v63_leading_report.json
 ```
 
 Calibration gate:
 
 ```bash
 python scripts/enterprise_rag_bench/summarize_local_calibration.py \
-  --depth-report target/enterprise-rag-bench/analysis/doc_view_v62_depth_report.json \
-  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v62_leading_report.json \
-  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v62.json \
-  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v62.md \
+  --depth-report target/enterprise-rag-bench/analysis/doc_view_v63_depth_report.json \
+  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v63_leading_report.json \
+  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v63.json \
+  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v63.md \
   --min-top10-recall-pct 70.1 \
   --max-invalid-extra-docs 8.1
 ```
