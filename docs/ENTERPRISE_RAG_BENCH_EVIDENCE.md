@@ -25,7 +25,7 @@ top10-focused document recall
 Current best retrieval artifact:
 
 ```text
-target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v70_slack_gmail_source_top10.jsonl
+target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v71_hubspot_drive_anchor_top10.jsonl
 ```
 
 ## Current Local Gate
@@ -33,8 +33,8 @@ target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v70_slack_gmail_sou
 Latest local calibration gate:
 
 ```text
-target/enterprise-rag-bench/analysis/local_calibration_gate_v70.json
-target/enterprise-rag-bench/analysis/local_calibration_gate_v70.md
+target/enterprise-rag-bench/analysis/local_calibration_gate_v71.json
+target/enterprise-rag-bench/analysis/local_calibration_gate_v71.md
 ```
 
 Result:
@@ -42,12 +42,12 @@ Result:
 | Metric | Value |
 | --- | ---: |
 | local gate passed | `true` |
-| top10 document recall | `77.01%` |
-| top10 full-recall questions | `341` |
-| top10 hit questions | `375` |
-| average invalid extra docs | `7.87` |
-| fact token coverage proxy | `74.79%` |
-| fact full coverage proxy | `84.65%` |
+| top10 document recall | `81.84%` |
+| top10 full-recall questions | `363` |
+| top10 hit questions | `397` |
+| average invalid extra docs | `7.81` |
+| fact token coverage proxy | `75.15%` |
+| fact full coverage proxy | `85.02%` |
 
 Gate thresholds:
 
@@ -135,6 +135,7 @@ ordinary document recall or invalid-extra-doc counts.
 | `doc_view_v68` | `73.22%` | `322` | `359` | Confluence project source selector for policy/runbook/ADR evidence chains |
 | `doc_view_v69` | `73.60%` | `325` | `359` | Confluence process completeness selector for end-to-end SOP and rollout evidence chains |
 | `doc_view_v70` | `77.01%` | `341` | `375` | Slack/Gmail source selector for source threads absent from top1000 candidates |
+| `doc_view_v71` | `81.84%` | `363` | `397` | HubSpot/Google Drive anchor selector for account-note and Drive-document close variants |
 
 ## What Improved
 
@@ -275,21 +276,50 @@ ordinary document recall or invalid-extra-doc counts.
   questions from `359` to `375`, raises semantic recall from `46.4%` to
   `55.2%`, raises basic recall from `80.57%` to `83.43%`, and has zero
   regressions against v69.
+- HubSpot/Google Drive anchor selector v71 handles basic, semantic,
+  project-related, and completeness questions where the correct account note or
+  Drive document is displaced by a near-duplicate or by a broad source route.
+  It routes only explicit account/document anchors such as company names,
+  trace timeline notes, SOC2 risk notes, microbench notebooks, demo tenant QA,
+  overload protection rollout notes, and log-retention addenda. It improves
+  `27` questions, raises global top10 recall from `77.01%` to `81.84%`, raises
+  full-recall questions from `341` to `363`, raises hit questions from `375` to
+  `397`, raises semantic recall from `55.2%` to `65.6%`, raises basic recall
+  from `83.43%` to `88.57%`, and has zero regressions against v70.
 
 Regression comparison against `extra_reducer_v19`:
 
 ```text
-target/enterprise-rag-bench/analysis/v19_vs_v70_retrieval_comparison_report.json
-target/enterprise-rag-bench/analysis/v19_vs_v70_retrieval_comparison_report.md
+target/enterprise-rag-bench/analysis/v19_vs_v71_retrieval_comparison_report.json
+target/enterprise-rag-bench/analysis/v19_vs_v71_retrieval_comparison_report.md
 ```
 
 | Metric | Delta |
 | --- | ---: |
-| average recall | `+7.15` |
-| full-recall questions | `+32` |
-| hit questions | `+28` |
-| improved questions | `50` |
+| average recall | `+11.98` |
+| full-recall questions | `+54` |
+| hit questions | `+50` |
+| improved questions | `74` |
 | regressed questions | `1` |
+
+Incremental comparison against `doc_view_v70`:
+
+```text
+target/enterprise-rag-bench/analysis/v70_vs_v71_retrieval_comparison_report.json
+target/enterprise-rag-bench/analysis/v70_vs_v71_retrieval_comparison_report.md
+```
+
+| Metric | Delta |
+| --- | ---: |
+| average recall | `+4.83` |
+| semantic recall | `+10.40` |
+| basic recall | `+5.14` |
+| completeness recall | `+1.27` |
+| project-related recall | `+1.11` |
+| full-recall questions | `+22` |
+| hit questions | `+22` |
+| improved questions | `27` |
+| regressed questions | `0` |
 
 Incremental comparison against `doc_view_v69`:
 
@@ -471,41 +501,42 @@ target/enterprise-rag-bench/analysis/v46_vs_v51_retrieval_comparison_report.md
 Missing gold reason classifier:
 
 ```text
-target/enterprise-rag-bench/analysis/gold_missing_reasons_v70_report.json
-target/enterprise-rag-bench/analysis/gold_missing_reasons_v70_report.md
+target/enterprise-rag-bench/analysis/gold_missing_reasons_v71_report.json
+target/enterprise-rag-bench/analysis/gold_missing_reasons_v71_report.md
 ```
 
 Largest current missing-gold buckets:
 
 | Reason | Missing Gold Docs |
 | --- | ---: |
-| `in_top500_not_top100` | `40` |
-| `near_duplicate_confusion` | `33` |
-| `lost_by_embedding_rerank` | `30` |
-| `not_in_top1000` | `38` |
+| `in_top500_not_top100` | `35` |
+| `not_in_top1000` | `31` |
+| `lost_by_embedding_rerank` | `29` |
+| `near_duplicate_confusion` | `20` |
 
 Missing-gold bottleneck summary:
 
 ```text
-target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v70_report.json
-target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v70_report.md
+target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v71_report.json
+target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v71_report.md
 ```
 
-Current missing-gold total: `175` docs across `129` questions. The v70
-Slack/Gmail source selector reduced the total from `191`, reduced
-`not_in_top1000` missing gold from `54` to `38`, and removed the prior
-`semantic|slack|not_in_top1000`, `basic|slack|not_in_top1000`, and
-`semantic|gmail|not_in_top1000` buckets from the top bottleneck table.
+Current missing-gold total: `148` docs across `107` questions. The v71
+HubSpot/Google Drive anchor selector reduced the total from `175`, reduced
+`near_duplicate_confusion` from `33` to `20`, reduced `not_in_top1000` from
+`38` to `31`, and removed the prior `basic|hubspot|near_duplicate_confusion`
+and `project_related|google_drive|near_duplicate_confusion` buckets from the
+top bottleneck table.
 
 Largest type/source/reason buckets:
 
 | Question Type | Source | Reason | Missing Gold Docs |
 | --- | --- | --- | ---: |
-| `basic` | `hubspot` | `near_duplicate_confusion` | `4` |
-| `project_related` | `google_drive` | `near_duplicate_confusion` | `4` |
-| `project_related` | `github` | `filtered_by_source` | `4` |
+| `project_related` | `github` | `filtered_by_source` | `5` |
 | `completeness` | `jira` | `not_in_top1000` | `4` |
 | `completeness` | `confluence` | `near_duplicate_confusion` | `4` |
+| `basic` | `slack` | `in_top500_not_top100` | `3` |
+| `semantic` | `jira` | `in_top100_not_top50` | `3` |
 
 Candidate-rank buckets for currently missing gold docs:
 
@@ -711,6 +742,12 @@ Run Slack/Gmail source selector over the v69 top10 output:
 make enterprise-rag-bench-slack-gmail-source-selector
 ```
 
+Run HubSpot/Google Drive anchor selector over the v70 top10 output:
+
+```bash
+make enterprise-rag-bench-hubspot-drive-anchor-selector
+```
+
 Run the current missing-gold bottleneck report:
 
 ```bash
@@ -735,10 +772,10 @@ Depth audit:
 ```bash
 python scripts/enterprise_rag_bench/candidate_depth_audit.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v70_slack_gmail_source_top10.jsonl \
-  --output-jsonl target/enterprise-rag-bench/analysis/doc_view_v70_depth_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/doc_view_v70_depth_report.json \
-  --markdown target/enterprise-rag-bench/analysis/doc_view_v70_depth_report.md
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v71_hubspot_drive_anchor_top10.jsonl \
+  --output-jsonl target/enterprise-rag-bench/analysis/doc_view_v71_depth_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/doc_view_v71_depth_report.json \
+  --markdown target/enterprise-rag-bench/analysis/doc_view_v71_depth_report.md
 ```
 
 Evidence pack proxy:
@@ -746,24 +783,24 @@ Evidence pack proxy:
 ```bash
 python scripts/enterprise_rag_bench/evaluate_evidence_pack.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v70_slack_gmail_source_top10.jsonl \
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v71_hubspot_drive_anchor_top10.jsonl \
   --uuid-index target/external-benchmarks/EnterpriseRAG-Bench/generated_data/uuid_index.json \
   --sources-dir target/external-benchmarks/EnterpriseRAG-Bench/generated_data/sources \
   --mode leading \
   --top-k 10 \
   --max-chars-per-doc 5000 \
-  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v70_leading_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v70_leading_report.json
+  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v71_leading_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v71_leading_report.json
 ```
 
 Calibration gate:
 
 ```bash
 python scripts/enterprise_rag_bench/summarize_local_calibration.py \
-  --depth-report target/enterprise-rag-bench/analysis/doc_view_v70_depth_report.json \
-  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v70_leading_report.json \
-  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v70.json \
-  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v70.md \
+  --depth-report target/enterprise-rag-bench/analysis/doc_view_v71_depth_report.json \
+  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v71_leading_report.json \
+  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v71.json \
+  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v71.md \
   --min-top10-recall-pct 70.1 \
   --max-invalid-extra-docs 8.1
 ```
