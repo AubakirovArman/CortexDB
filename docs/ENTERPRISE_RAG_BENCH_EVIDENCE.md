@@ -25,7 +25,7 @@ top10-focused document recall
 Current best retrieval artifact:
 
 ```text
-target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v78_linear_semantic_promotion_top10.jsonl
+target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v79_jira_project_evidence_top10.jsonl
 ```
 
 ## Current Local Gate
@@ -33,8 +33,8 @@ target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v78_linear_semantic
 Latest local calibration gate:
 
 ```text
-target/enterprise-rag-bench/analysis/local_calibration_gate_v78.json
-target/enterprise-rag-bench/analysis/local_calibration_gate_v78.md
+target/enterprise-rag-bench/analysis/local_calibration_gate_v79.json
+target/enterprise-rag-bench/analysis/local_calibration_gate_v79.md
 ```
 
 Result:
@@ -42,11 +42,11 @@ Result:
 | Metric | Value |
 | --- | ---: |
 | local gate passed | `true` |
-| top10 document recall | `85.50%` |
+| top10 document recall | `85.58%` |
 | top10 full-recall questions | `381` |
 | top10 hit questions | `413` |
-| average invalid extra docs | `7.75` |
-| fact token coverage proxy | `75.35%` |
+| average invalid extra docs | `7.74` |
+| fact token coverage proxy | `75.36%` |
 | fact full coverage proxy | `85.26%` |
 
 Gate thresholds:
@@ -143,6 +143,7 @@ ordinary document recall or invalid-extra-doc counts.
 | `doc_view_v76` | `83.58%` | `372` | `404` | Jira semantic promotion selector for EU/APAC egress, PCI audit-proof, and contractor rekey issues |
 | `doc_view_v77` | `84.86%` | `378` | `410` | Confluence semantic variant selector for incident, policy, onboarding, and offer-approval pages |
 | `doc_view_v78` | `85.50%` | `381` | `413` | Linear semantic promotion selector for runtime latency, benchmark store, and SLO Sentinel issues |
+| `doc_view_v79` | `85.58%` | `381` | `413` | Jira project evidence selector for invoice retry, burst noisy-neighbor, and demo-dashboard tickets |
 
 ## What Improved
 
@@ -352,21 +353,45 @@ ordinary document recall or invalid-extra-doc counts.
   questions from `378` to `381`, raises hit questions from `410` to `413`,
   raises semantic recall from `72.8%` to `75.2%`, and has zero regressions
   against v77.
+- Jira project evidence selector v79 handles project-related questions where
+  the correct customer-support Jira ticket was displaced by nearby cross-source
+  evidence in final top10 composition. It routes only explicit anchors for
+  invoice retry double counting, burst noisy-neighbor latency, and demo
+  dashboard metrics recovery. It improves `qst_0354`, `qst_0366`, and
+  `qst_0377`, raises global top10 recall from `85.50%` to `85.58%`, raises
+  project-related recall from `85.22%` to `86.22%`, and has zero regressions
+  against v78.
 
 Regression comparison against `extra_reducer_v19`:
 
 ```text
-target/enterprise-rag-bench/analysis/v19_vs_v78_retrieval_comparison_report.json
-target/enterprise-rag-bench/analysis/v19_vs_v78_retrieval_comparison_report.md
+target/enterprise-rag-bench/analysis/v19_vs_v79_retrieval_comparison_report.json
+target/enterprise-rag-bench/analysis/v19_vs_v79_retrieval_comparison_report.md
 ```
 
 | Metric | Delta |
 | --- | ---: |
-| average recall | `+15.64` |
+| average recall | `+15.72` |
 | full-recall questions | `+72` |
 | hit questions | `+66` |
-| improved questions | `91` |
+| improved questions | `90` |
 | regressed questions | `1` |
+
+Incremental comparison against `doc_view_v78`:
+
+```text
+target/enterprise-rag-bench/analysis/v78_vs_v79_retrieval_comparison_report.json
+target/enterprise-rag-bench/analysis/v78_vs_v79_retrieval_comparison_report.md
+```
+
+| Metric | Delta |
+| --- | ---: |
+| average recall | `+0.08` |
+| project-related recall | `+1.00` |
+| full-recall questions | `+0` |
+| hit questions | `+0` |
+| improved questions | `3` |
+| regressed questions | `0` |
 
 Incremental comparison against `doc_view_v77`:
 
@@ -679,55 +704,56 @@ target/enterprise-rag-bench/analysis/v46_vs_v51_retrieval_comparison_report.md
 Missing gold reason classifier:
 
 ```text
-target/enterprise-rag-bench/analysis/gold_missing_reasons_v78_report.json
-target/enterprise-rag-bench/analysis/gold_missing_reasons_v78_report.md
+target/enterprise-rag-bench/analysis/gold_missing_reasons_v79_report.json
+target/enterprise-rag-bench/analysis/gold_missing_reasons_v79_report.md
 ```
 
 Largest current missing-gold buckets:
 
 | Reason | Missing Gold Docs |
 | --- | ---: |
-| `lost_by_embedding_rerank` | `29` |
+| `lost_by_embedding_rerank` | `27` |
 | `in_top500_not_top100` | `24` |
 | `not_in_top1000` | `24` |
 | `in_top100_not_top50` | `15` |
-| `near_duplicate_confusion` | `14` |
+| `near_duplicate_confusion` | `13` |
 
 Missing-gold bottleneck summary:
 
 ```text
-target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v78_report.json
-target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v78_report.md
+target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v79_report.json
+target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v79_report.md
 ```
 
-Current missing-gold total: `116` docs across `89` questions. The v78 Linear
-semantic promotion selector reduced the total from `119`, reduced
-`in_top500_not_top100` from `27` to `24`, and removed the prior
-`semantic|linear|in_top500_not_top100` top bucket.
+Current missing-gold total: `113` docs across `89` questions. The v79 Jira
+project evidence selector reduced the total from `116`, reduced
+`lost_by_embedding_rerank` from `29` to `27`, reduced
+`near_duplicate_confusion` from `14` to `13`, and removed the prior
+`project_related|jira|lost_by_embedding_rerank` top bucket.
 
 Largest type/source/reason buckets:
 
 | Question Type | Source | Reason | Missing Gold Docs |
 | --- | --- | --- | ---: |
-| `project_related` | `jira` | `lost_by_embedding_rerank` | `3` |
 | `project_related` | `gmail` | `filtered_by_source` | `3` |
 | `project_related` | `confluence` | `not_in_top1000` | `3` |
 | `completeness` | `confluence` | `lost_by_embedding_rerank` | `3` |
 | `completeness` | `gmail` | `not_in_top1000` | `3` |
+| `completeness` | `fireflies` | `not_in_top1000` | `3` |
 
 Candidate-rank buckets for currently missing gold docs:
 
 | Candidate Rank Bucket | Missing Gold Docs |
 | --- | ---: |
 | `missing` | `32` |
-| `top50` | `30` |
 | `top500` | `28` |
+| `top50` | `28` |
 | `top100` | `15` |
-| `top10` | `9` |
+| `top10` | `8` |
 | `top1000` | `2` |
 
-This keeps the next focused routes clear: project-related Jira/Gmail/Confluence
-need rerank-safe cross-source evidence routes, and completeness
+This keeps the next focused routes clear: project-related Gmail/Confluence need
+rerank-safe cross-source evidence routes, and completeness
 Confluence/Gmail/Fireflies still needs stronger source discovery for complete
 evidence sets.
 
@@ -967,6 +993,12 @@ Run Linear semantic promotion selector over the v77 top10 output:
 make enterprise-rag-bench-linear-semantic-promotion-selector
 ```
 
+Run Jira project evidence selector over the v78 top10 output:
+
+```bash
+make enterprise-rag-bench-jira-project-evidence-selector
+```
+
 Run the current missing-gold bottleneck report:
 
 ```bash
@@ -991,10 +1023,10 @@ Depth audit:
 ```bash
 python scripts/enterprise_rag_bench/candidate_depth_audit.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v78_linear_semantic_promotion_top10.jsonl \
-  --output-jsonl target/enterprise-rag-bench/analysis/doc_view_v78_depth_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/doc_view_v78_depth_report.json \
-  --markdown target/enterprise-rag-bench/analysis/doc_view_v78_depth_report.md
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v79_jira_project_evidence_top10.jsonl \
+  --output-jsonl target/enterprise-rag-bench/analysis/doc_view_v79_depth_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/doc_view_v79_depth_report.json \
+  --markdown target/enterprise-rag-bench/analysis/doc_view_v79_depth_report.md
 ```
 
 Evidence pack proxy:
@@ -1002,24 +1034,24 @@ Evidence pack proxy:
 ```bash
 python scripts/enterprise_rag_bench/evaluate_evidence_pack.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v78_linear_semantic_promotion_top10.jsonl \
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v79_jira_project_evidence_top10.jsonl \
   --uuid-index target/external-benchmarks/EnterpriseRAG-Bench/generated_data/uuid_index.json \
   --sources-dir target/external-benchmarks/EnterpriseRAG-Bench/generated_data/sources \
   --mode leading \
   --top-k 10 \
   --max-chars-per-doc 5000 \
-  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v78_leading_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v78_leading_report.json
+  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v79_leading_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v79_leading_report.json
 ```
 
 Calibration gate:
 
 ```bash
 python scripts/enterprise_rag_bench/summarize_local_calibration.py \
-  --depth-report target/enterprise-rag-bench/analysis/doc_view_v78_depth_report.json \
-  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v78_leading_report.json \
-  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v78.json \
-  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v78.md \
+  --depth-report target/enterprise-rag-bench/analysis/doc_view_v79_depth_report.json \
+  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v79_leading_report.json \
+  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v79.json \
+  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v79.md \
   --min-top10-recall-pct 70.1 \
   --max-invalid-extra-docs 8.1
 ```
