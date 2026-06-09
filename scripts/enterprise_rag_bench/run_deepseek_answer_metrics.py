@@ -10,6 +10,7 @@ import json
 import re
 import threading
 import time
+import urllib.parse
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -112,14 +113,28 @@ def chat_json(
     prompt: str,
     timeout: float,
     retries: int,
+    omit_thinking_field: bool,
+    gemini_native: bool,
+    gemini_thinking_budget: int,
 ) -> tuple[dict[str, Any], dict[str, Any], int]:
+    if gemini_native:
+        return chat_json_gemini_native(
+            api_key=api_key,
+            base_url=base_url,
+            model=model,
+            prompt=prompt,
+            timeout=timeout,
+            retries=retries,
+            thinking_budget=gemini_thinking_budget,
+        )
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0,
         "max_tokens": 220,
-        "thinking": {"type": "disabled"},
     }
+    if not omit_thinking_field:
+        payload["thinking"] = {"type": "disabled"}
     data = json.dumps(payload).encode("utf-8")
     url = base_url.rstrip("/") + "/chat/completions"
     for attempt in range(retries + 1):
@@ -152,6 +167,70 @@ def chat_json(
         ) as error:
             if attempt >= retries:
                 raise RuntimeError(f"deepseek judge request failed: {error}") from error
+            time.sleep(min(30, 2**attempt))
+    raise RuntimeError("unreachable retry state")
+
+
+def chat_json_gemini_native(
+    *,
+    api_key: str,
+    base_url: str,
+    model: str,
+    prompt: str,
+    timeout: float,
+    retries: int,
+    thinking_budget: int,
+) -> tuple[dict[str, Any], dict[str, Any], int]:
+    model_name = model.removeprefix("models/")
+    payload = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0,
+            "maxOutputTokens": 220,
+            "thinkingConfig": {"thinkingBudget": thinking_budget},
+        },
+    }
+    data = json.dumps(payload).encode("utf-8")
+    url = (
+        base_url.rstrip("/")
+        + f"/models/{urllib.parse.quote(model_name, safe='')}:generateContent"
+        + "?key="
+        + urllib.parse.quote(api_key)
+    )
+    for attempt in range(retries + 1):
+        request = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+        try:
+            started = time.perf_counter()
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                body = json.loads(response.read().decode("utf-8"))
+            elapsed_ms = int((time.perf_counter() - started) * 1000)
+            content = "".join(
+                str(part.get("text", ""))
+                for candidate in body.get("candidates", [])
+                for part in candidate.get("content", {}).get("parts", [])
+            )
+            usage = body.get("usageMetadata", {})
+            normalized_usage = {
+                "prompt_tokens": int(usage.get("promptTokenCount", 0) or 0),
+                "completion_tokens": int(usage.get("candidatesTokenCount", 0) or 0),
+                "total_tokens": int(usage.get("totalTokenCount", 0) or 0),
+                "thoughts_tokens": int(usage.get("thoughtsTokenCount", 0) or 0),
+            }
+            return parse_judge_json(content), normalized_usage, elapsed_ms
+        except urllib.error.HTTPError as error:
+            if error.code not in {429, 500, 502, 503, 504} or attempt >= retries:
+                detail = error.read().decode("utf-8", errors="replace")[:500]
+                raise RuntimeError(f"gemini judge HTTP {error.code}: {detail}") from error
+            time.sleep(min(30, 2**attempt))
+        except (
+            TimeoutError,
+            urllib.error.URLError,
+            http.client.IncompleteRead,
+            http.client.RemoteDisconnected,
+            json.JSONDecodeError,
+        ) as error:
+            if attempt >= retries:
+                raise RuntimeError(f"gemini judge request failed: {error}") from error
             time.sleep(min(30, 2**attempt))
     raise RuntimeError("unreachable retry state")
 
@@ -217,6 +296,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             prompt=build_prompt(question, answer),
             timeout=args.timeout_seconds,
             retries=args.retries,
+            omit_thinking_field=args.omit_thinking_field,
+            gemini_native=args.gemini_native,
+            gemini_thinking_budget=args.gemini_thinking_budget,
         )
         with usage_lock:
             for key in usage_totals:
@@ -249,8 +331,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     report = {
         "schema_version": "cortexdb.enterprise_rag_bench.deepseek_judge_metrics.v1",
         "judge_model": args.model,
-        "judge_provider": "deepseek",
-        "thinking": "disabled",
+        "judge_provider": "gemini" if args.gemini_native else "deepseek",
+        "thinking": (
+            f"gemini_budget_{args.gemini_thinking_budget}"
+            if args.gemini_native
+            else "omitted"
+            if args.omit_thinking_field
+            else "disabled"
+        ),
         "answers_file": str(args.answers_file),
         "questions_file": str(args.questions_file),
         "judgments_file": str(args.judgments_file),
@@ -277,6 +365,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--retries", type=int, default=3)
     parser.add_argument("--timeout-seconds", type=float, default=180.0)
     parser.add_argument("--progress-every", type=int, default=10)
+    parser.add_argument(
+        "--omit-thinking-field",
+        action="store_true",
+        help="Do not send the DeepSeek-specific thinking field; required by some OpenAI-compatible APIs.",
+    )
+    parser.add_argument("--gemini-native", action="store_true", help="Use Gemini native generateContent API.")
+    parser.add_argument("--gemini-thinking-budget", type=int, default=0)
     args = parser.parse_args()
     if args.limit is not None and args.limit <= 0:
         parser.error("--limit must be positive")
