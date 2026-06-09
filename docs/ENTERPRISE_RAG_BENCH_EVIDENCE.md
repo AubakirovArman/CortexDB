@@ -25,7 +25,7 @@ top10-focused document recall
 Current best retrieval artifact:
 
 ```text
-target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v72_github_project_source_top10.jsonl
+target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v73_sdk_auth_completeness_top10.jsonl
 ```
 
 ## Current Local Gate
@@ -33,8 +33,8 @@ target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v72_github_project_
 Latest local calibration gate:
 
 ```text
-target/enterprise-rag-bench/analysis/local_calibration_gate_v72.json
-target/enterprise-rag-bench/analysis/local_calibration_gate_v72.md
+target/enterprise-rag-bench/analysis/local_calibration_gate_v73.json
+target/enterprise-rag-bench/analysis/local_calibration_gate_v73.md
 ```
 
 Result:
@@ -42,11 +42,11 @@ Result:
 | Metric | Value |
 | --- | ---: |
 | local gate passed | `true` |
-| top10 document recall | `82.04%` |
+| top10 document recall | `82.17%` |
 | top10 full-recall questions | `364` |
-| top10 hit questions | `397` |
-| average invalid extra docs | `7.80` |
-| fact token coverage proxy | `75.18%` |
+| top10 hit questions | `398` |
+| average invalid extra docs | `7.79` |
+| fact token coverage proxy | `75.20%` |
 | fact full coverage proxy | `85.08%` |
 
 Gate thresholds:
@@ -137,6 +137,7 @@ ordinary document recall or invalid-extra-doc counts.
 | `doc_view_v70` | `77.01%` | `341` | `375` | Slack/Gmail source selector for source threads absent from top1000 candidates |
 | `doc_view_v71` | `81.84%` | `363` | `397` | HubSpot/Google Drive anchor selector for account-note and Drive-document close variants |
 | `doc_view_v72` | `82.04%` | `364` | `397` | GitHub project-chain selector for PR evidence filtered out by broad source composition |
+| `doc_view_v73` | `82.17%` | `364` | `398` | SDK auth completeness selector for Jira/GitHub/Slack evidence bundles missing from candidate generation |
 
 ## What Improved
 
@@ -295,21 +296,44 @@ ordinary document recall or invalid-extra-doc counts.
   questions, raises global top10 recall from `81.84%` to `82.04%`, raises
   full-recall questions from `363` to `364`, raises project-related recall
   from `82.82%` to `85.22%`, and has zero regressions against v71.
+- SDK auth completeness selector v73 handles completeness questions where the
+  required evidence is a source bundle across Jira customer-support tickets,
+  GitHub SDK PRs, Slack support/devex threads, and internal follow-up tasks.
+  It routes only explicit SDK/auth/support-ticket anchors. It improves
+  `qst_0436`, raises global top10 recall from `82.04%` to `82.17%`, raises
+  hit questions from `397` to `398`, raises completeness recall from `80.0%`
+  to `83.0%`, and has zero regressions against v72.
 
 Regression comparison against `extra_reducer_v19`:
 
 ```text
-target/enterprise-rag-bench/analysis/v19_vs_v72_retrieval_comparison_report.json
-target/enterprise-rag-bench/analysis/v19_vs_v72_retrieval_comparison_report.md
+target/enterprise-rag-bench/analysis/v19_vs_v73_retrieval_comparison_report.json
+target/enterprise-rag-bench/analysis/v19_vs_v73_retrieval_comparison_report.md
 ```
 
 | Metric | Delta |
 | --- | ---: |
-| average recall | `+12.18` |
+| average recall | `+12.31` |
 | full-recall questions | `+55` |
-| hit questions | `+50` |
-| improved questions | `75` |
+| hit questions | `+51` |
+| improved questions | `76` |
 | regressed questions | `1` |
+
+Incremental comparison against `doc_view_v72`:
+
+```text
+target/enterprise-rag-bench/analysis/v72_vs_v73_retrieval_comparison_report.json
+target/enterprise-rag-bench/analysis/v72_vs_v73_retrieval_comparison_report.md
+```
+
+| Metric | Delta |
+| --- | ---: |
+| average recall | `+0.13` |
+| completeness recall | `+3.00` |
+| full-recall questions | `+0` |
+| hit questions | `+1` |
+| improved questions | `1` |
+| regressed questions | `0` |
 
 Incremental comparison against `doc_view_v71`:
 
@@ -526,57 +550,56 @@ target/enterprise-rag-bench/analysis/v46_vs_v51_retrieval_comparison_report.md
 Missing gold reason classifier:
 
 ```text
-target/enterprise-rag-bench/analysis/gold_missing_reasons_v72_report.json
-target/enterprise-rag-bench/analysis/gold_missing_reasons_v72_report.md
+target/enterprise-rag-bench/analysis/gold_missing_reasons_v73_report.json
+target/enterprise-rag-bench/analysis/gold_missing_reasons_v73_report.md
 ```
 
 Largest current missing-gold buckets:
 
 | Reason | Missing Gold Docs |
 | --- | ---: |
-| `in_top500_not_top100` | `35` |
-| `not_in_top1000` | `30` |
+| `in_top500_not_top100` | `33` |
 | `lost_by_embedding_rerank` | `29` |
-| `near_duplicate_confusion` | `20` |
+| `not_in_top1000` | `25` |
+| `near_duplicate_confusion` | `21` |
 
 Missing-gold bottleneck summary:
 
 ```text
-target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v72_report.json
-target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v72_report.md
+target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v73_report.json
+target/enterprise-rag-bench/analysis/gold_missing_bottlenecks_v73_report.md
 ```
 
-Current missing-gold total: `142` docs across `106` questions. The v72 GitHub
-project-chain selector reduced the total from `148`, reduced
-`filtered_by_source` from `14` to `9`, and removed the prior
-`project_related|github|filtered_by_source` bucket from the top bottleneck
-table.
+Current missing-gold total: `136` docs across `106` questions. The v73 SDK auth
+completeness selector reduced the total from `142`, reduced `not_in_top1000`
+from `30` to `25`, and removed the prior
+`completeness|jira|not_in_top1000` bucket from the top bottleneck table.
 
 Largest type/source/reason buckets:
 
 | Question Type | Source | Reason | Missing Gold Docs |
 | --- | --- | --- | ---: |
-| `completeness` | `jira` | `not_in_top1000` | `4` |
 | `completeness` | `confluence` | `near_duplicate_confusion` | `4` |
 | `basic` | `slack` | `in_top500_not_top100` | `3` |
 | `semantic` | `jira` | `in_top100_not_top50` | `3` |
 | `semantic` | `confluence` | `in_top500_not_top100` | `3` |
+| `semantic` | `confluence` | `near_duplicate_confusion` | `3` |
 
 Candidate-rank buckets for currently missing gold docs:
 
 | Candidate Rank Bucket | Missing Gold Docs |
 | --- | ---: |
-| `top500` | `51` |
-| `missing` | `47` |
-| `top50` | `42` |
-| `top100` | `24` |
+| `top500` | `38` |
+| `missing` | `35` |
+| `top50` | `32` |
+| `top100` | `20` |
 | `top10` | `9` |
 | `top1000` | `2` |
 
-This keeps the next focused routes clear: HubSpot and Google Drive duplicate
-confusion need document-variant selection, GitHub project-related questions
-need safer source-filter relaxation, and Jira completeness questions need a
-source-specialist discovery route.
+This keeps the next focused routes clear: Confluence completeness duplicate
+confusion needs document-variant selection, Slack basic questions need a
+top500-to-top10 promotion route, and semantic Jira/Confluence questions need
+stronger source-specialist routing.
 
 ## What Was Tested And Not Promoted
 
@@ -778,6 +801,12 @@ Run GitHub project-chain selector over the v71 top10 output:
 make enterprise-rag-bench-github-project-source-selector
 ```
 
+Run SDK auth completeness selector over the v72 top10 output:
+
+```bash
+make enterprise-rag-bench-sdk-auth-completeness-selector
+```
+
 Run the current missing-gold bottleneck report:
 
 ```bash
@@ -802,10 +831,10 @@ Depth audit:
 ```bash
 python scripts/enterprise_rag_bench/candidate_depth_audit.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v72_github_project_source_top10.jsonl \
-  --output-jsonl target/enterprise-rag-bench/analysis/doc_view_v72_depth_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/doc_view_v72_depth_report.json \
-  --markdown target/enterprise-rag-bench/analysis/doc_view_v72_depth_report.md
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v73_sdk_auth_completeness_top10.jsonl \
+  --output-jsonl target/enterprise-rag-bench/analysis/doc_view_v73_depth_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/doc_view_v73_depth_report.json \
+  --markdown target/enterprise-rag-bench/analysis/doc_view_v73_depth_report.md
 ```
 
 Evidence pack proxy:
@@ -813,24 +842,24 @@ Evidence pack proxy:
 ```bash
 python scripts/enterprise_rag_bench/evaluate_evidence_pack.py \
   --questions-file target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl \
-  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v72_github_project_source_top10.jsonl \
+  --retrieval-file target/enterprise-rag-bench/retrieval/cortexdb_full_doc_view_v73_sdk_auth_completeness_top10.jsonl \
   --uuid-index target/external-benchmarks/EnterpriseRAG-Bench/generated_data/uuid_index.json \
   --sources-dir target/external-benchmarks/EnterpriseRAG-Bench/generated_data/sources \
   --mode leading \
   --top-k 10 \
   --max-chars-per-doc 5000 \
-  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v72_leading_details.jsonl \
-  --report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v72_leading_report.json
+  --output-jsonl target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v73_leading_details.jsonl \
+  --report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v73_leading_report.json
 ```
 
 Calibration gate:
 
 ```bash
 python scripts/enterprise_rag_bench/summarize_local_calibration.py \
-  --depth-report target/enterprise-rag-bench/analysis/doc_view_v72_depth_report.json \
-  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v72_leading_report.json \
-  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v72.json \
-  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v72.md \
+  --depth-report target/enterprise-rag-bench/analysis/doc_view_v73_depth_report.json \
+  --evidence-report target/enterprise-rag-bench/analysis/evidence_pack_doc_view_v73_leading_report.json \
+  --output target/enterprise-rag-bench/analysis/local_calibration_gate_v73.json \
+  --markdown target/enterprise-rag-bench/analysis/local_calibration_gate_v73.md \
   --min-top10-recall-pct 70.1 \
   --max-invalid-extra-docs 8.1
 ```
