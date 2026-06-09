@@ -19,6 +19,7 @@ from answer_prompts import build_prompt
 from context_windows import question_aware_snippet
 from evidence_digest import evidence_digest, evidence_digest_score
 from evidence_span_fallback import evidence_span_plus_fallback_context
+from evidence_slot_planner import build_evidence_plan, read_jsonl as read_plan_jsonl
 from evidence_spans import evidence_span_context
 
 
@@ -49,6 +50,16 @@ def write_json(path: Path, payload: Any) -> None:
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def plans_by_id(path: Path | None) -> dict[str, dict[str, Any]]:
+    if path is None:
+        return {}
+    return {
+        str(row.get("question_id")): row
+        for row in read_plan_jsonl(path)
+        if row.get("question_id") is not None
+    }
 
 
 def extract_document_content(doc: dict[str, Any]) -> tuple[str, str]:
@@ -257,6 +268,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     output_jsonl = args.output_root / "answers.jsonl"
     output_report = args.output_root / "answer_generation_report.json"
     existing = {row.get("question_id"): row for row in read_jsonl(output_jsonl)}
+    evidence_plans = plans_by_id(args.evidence_plan_file)
     output_lock = threading.Lock()
     usage_lock = threading.Lock()
     usage_totals = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
@@ -276,11 +288,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             question,
             args.context_mode,
         )
+        evidence_plan = None
+        if args.include_evidence_plan:
+            qid = str(row.get("question_id"))
+            evidence_plan = evidence_plans.get(qid) or build_evidence_plan(row)
         answer, usage, elapsed_ms = chat(
             api_key=api_key,
             base_url=args.base_url,
             model=args.model,
-            prompt=build_prompt(row, context, args.prompt_style),
+            prompt=build_prompt(row, context, args.prompt_style, evidence_plan),
             max_tokens=args.max_tokens,
             retries=args.retries,
             omit_thinking_field=args.omit_thinking_field,
@@ -301,6 +317,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "model": args.model,
             "context_mode": args.context_mode,
             "prompt_style": args.prompt_style,
+            "evidence_plan": "included" if evidence_plan else "none",
         }
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
@@ -325,6 +342,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         ),
         "context_mode": args.context_mode,
         "prompt_style": args.prompt_style,
+        "include_evidence_plan": args.include_evidence_plan,
+        "evidence_plan_file": str(args.evidence_plan_file) if args.evidence_plan_file else None,
         "questions": len(ordered),
         "retrieval_file": str(args.retrieval_file),
         "answers_file": str(output_jsonl),
@@ -377,6 +396,12 @@ def main() -> int:
     parser.add_argument("--retries", type=int, default=3)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--progress-every", type=int, default=10)
+    parser.add_argument("--evidence-plan-file", type=Path)
+    parser.add_argument(
+        "--include-evidence-plan",
+        action="store_true",
+        help="Inject deterministic evidence slots into the answer prompt.",
+    )
     parser.add_argument(
         "--omit-thinking-field",
         action="store_true",

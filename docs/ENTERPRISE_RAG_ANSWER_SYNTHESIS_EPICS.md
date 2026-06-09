@@ -25,6 +25,18 @@ Generation tokens:      <= 4.0M / 500 questions
 
 Goal: identify the exact facts each question requires before answer generation.
 
+Status: initial implementation landed.
+
+Implemented:
+- `scripts/enterprise_rag_bench/evidence_slot_planner.py` builds deterministic
+  evidence-slot plans from question text and `question_type`.
+- `scripts/enterprise_rag_bench/evidence_slot_plan_check.py` writes per-question
+  JSONL plans and an aggregate report.
+- `scripts/enterprise_rag_bench/run_deepseek_answers.py` can inject plans with
+  `--include-evidence-plan` and optional `--evidence-plan-file`.
+- `make enterprise-rag-bench-evidence-plan-check` validates the balanced-50 plan
+  generation path without LLM/API usage.
+
 Tasks:
 - Define expected slots per EnterpriseRAG question type.
 - Generate `evidence_plan.json` per question.

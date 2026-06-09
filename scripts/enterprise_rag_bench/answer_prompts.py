@@ -6,6 +6,17 @@ from typing import Any
 
 from answer_prompts_coverage import evidence_coverage_v15
 from answer_prompts_exact import exact_basic_v17
+from evidence_slot_planner import format_evidence_plan_for_prompt
+
+
+def with_evidence_plan(prompt: str, evidence_plan: dict[str, Any] | None) -> str:
+    if not evidence_plan:
+        return prompt
+    plan_text = format_evidence_plan_for_prompt(evidence_plan)
+    marker = "\nRetrieved documents:"
+    if marker not in prompt:
+        return f"{plan_text}\n\n{prompt}"
+    return prompt.replace(marker, f"\n{plan_text}\n{marker}", 1)
 
 
 def evidence_selection_v5(row: dict[str, Any], context: str) -> str:
@@ -264,19 +275,24 @@ Retrieved documents:
 Answer:"""
 
 
-def build_prompt(row: dict[str, Any], context: str, prompt_style: str) -> str:
+def build_prompt(
+    row: dict[str, Any],
+    context: str,
+    prompt_style: str,
+    evidence_plan: dict[str, Any] | None = None,
+) -> str:
     if prompt_style == "evidence-selection-v5":
-        return evidence_selection_v5(row, context)
+        return with_evidence_plan(evidence_selection_v5(row, context), evidence_plan)
     if prompt_style == "type-aware-v9":
-        return type_aware_v9(row, context)
+        return with_evidence_plan(type_aware_v9(row, context), evidence_plan)
     if prompt_style == "type-aware-v13":
-        return type_aware_v13(row, context)
+        return with_evidence_plan(type_aware_v13(row, context), evidence_plan)
     if prompt_style == "type-aware-v15":
-        return type_aware_v15(row, context)
+        return with_evidence_plan(type_aware_v15(row, context), evidence_plan)
     if prompt_style == "type-aware-v17":
-        return type_aware_v17(row, context)
+        return with_evidence_plan(type_aware_v17(row, context), evidence_plan)
     if prompt_style == "evidence-audit-v11":
-        return evidence_audit_v11(row, context)
+        return with_evidence_plan(evidence_audit_v11(row, context), evidence_plan)
     if prompt_style == "fact-focused-v2":
-        return fact_focused_v2(row, context)
-    return baseline(row, context)
+        return with_evidence_plan(fact_focused_v2(row, context), evidence_plan)
+    return with_evidence_plan(baseline(row, context), evidence_plan)
