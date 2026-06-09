@@ -51,6 +51,19 @@ Acceptance:
 
 Goal: extract exact facts from retrieved documents before the LLM writes an answer.
 
+Status: initial implementation landed.
+
+Implemented:
+- `scripts/enterprise_rag_bench/evidence_table_extractor.py` extracts candidate
+  numeric facts, dates, literals, status/cause/mitigation/owner markers, and
+  table rows from retrieved documents.
+- `scripts/enterprise_rag_bench/evidence_table_check.py` writes per-question
+  evidence tables and an aggregate report.
+- `scripts/enterprise_rag_bench/run_deepseek_answers.py` can inject tables with
+  `--include-evidence-table` and optional `--evidence-table-file`.
+- `make enterprise-rag-bench-evidence-table-check` validates balanced-50 table
+  generation without LLM/API usage.
+
 Tasks:
 - Extract numeric facts, dates, thresholds, names, statuses, table rows, headers, and source ids.
 - Emit compact evidence rows with `doc_id`, `fact_type`, `text`, and optional line/span metadata.

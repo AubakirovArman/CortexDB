@@ -15,7 +15,7 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
 .PHONY: enterprise-rag-bench-balanced-100 enterprise-rag-bench-score-summary-routed-v16-50 enterprise-rag-bench-token-tracked-judge-routed-v16-50 enterprise-rag-bench-calibration-50 enterprise-rag-bench-calibration-100-prep
 .PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-source-link-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-github-semantic-query-expansion enterprise-rag-bench-basic-google-drive-tail-rescue enterprise-rag-bench-confluence-completeness-selector enterprise-rag-bench-confluence-collection-selector enterprise-rag-bench-jira-project-source-selector enterprise-rag-bench-jira-completeness-source-selector enterprise-rag-bench-confluence-content-completeness-selector enterprise-rag-bench-confluence-project-source-selector enterprise-rag-bench-confluence-process-completeness-selector enterprise-rag-bench-slack-gmail-source-selector enterprise-rag-bench-hubspot-drive-anchor-selector enterprise-rag-bench-github-project-source-selector enterprise-rag-bench-sdk-auth-completeness-selector enterprise-rag-bench-confluence-postmortem-variant-selector enterprise-rag-bench-slack-basic-promotion-selector enterprise-rag-bench-jira-semantic-promotion-selector enterprise-rag-bench-confluence-semantic-variant-selector enterprise-rag-bench-linear-semantic-promotion-selector enterprise-rag-bench-jira-project-evidence-selector enterprise-rag-bench-gmail-project-evidence-selector enterprise-rag-bench-confluence-project-discovery-selector enterprise-rag-bench-gold-missing-bottlenecks enterprise-rag-bench-semantic-source-route-sweep enterprise-rag-bench-high-level-coverage
-.PHONY: enterprise-rag-bench-evidence-plan-check
+.PHONY: enterprise-rag-bench-evidence-plan-check enterprise-rag-bench-evidence-table-check
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check dashboard-operational-status-check context-pack-explorer-check verification-explorer-check retrieval-quality-explorer-check permissions-view-check audit-viewer-v2-check backup-restore-view-check incident-view-check dashboard-role-ui-check
 .PHONY: doctor-check
@@ -559,6 +559,10 @@ ENTERPRISE_RAG_BENCH_SUBSET_100_PREFIX ?= balanced_100
 ENTERPRISE_RAG_BENCH_EVIDENCE_PLAN_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)
 ENTERPRISE_RAG_BENCH_EVIDENCE_PLAN_JSONL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_slot_plan_balanced_50.jsonl
 ENTERPRISE_RAG_BENCH_EVIDENCE_PLAN_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_slot_plan_balanced_50_report.json
+ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)
+ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_CURRENT_BEST)
+ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_JSONL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_table_balanced_50.jsonl
+ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_table_balanced_50_report.json
 ENTERPRISE_RAG_BENCH_DB_50 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/cortexdb-50
 ENTERPRISE_RAG_BENCH_DB_FULL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/cortexdb-full
 ENTERPRISE_RAG_BENCH_SMOKE_MAX_DOCUMENTS ?= 500
@@ -1557,6 +1561,18 @@ enterprise-rag-bench-evidence-plan-check: enterprise-rag-bench-balanced-50
 	  --questions-file "$(ENTERPRISE_RAG_BENCH_EVIDENCE_PLAN_QUESTIONS)" \
 	  --output-jsonl "$(ENTERPRISE_RAG_BENCH_EVIDENCE_PLAN_JSONL)" \
 	  --report "$(ENTERPRISE_RAG_BENCH_EVIDENCE_PLAN_REPORT)"
+
+enterprise-rag-bench-evidence-table-check: enterprise-rag-bench-balanced-50
+	test -f "$(ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_RETRIEVAL)"
+	python3 scripts/enterprise_rag_bench/evidence_table_check.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_QUESTIONS)" \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_RETRIEVAL)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output-jsonl "$(ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_JSONL)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_REPORT)" \
+	  --top-docs 10 \
+	  --max-facts-per-doc 6
 
 enterprise-rag-bench-cortexdb-retrieval-smoke: enterprise-rag-bench-balanced-50
 	cargo build -p cortex-engine --bin enterprise_rag_bench_retrieval
