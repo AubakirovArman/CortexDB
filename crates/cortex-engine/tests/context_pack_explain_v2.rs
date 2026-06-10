@@ -1,6 +1,7 @@
 use cortex_core::CellId;
 use cortex_engine::{
-    ContextPack, ContextPackAnomalyCode, ContextPackOptions, RetrievedCell, SourceTrustCategory,
+    ContextPack, ContextPackAnomalyCode, ContextPackOptions, RetrievedCell,
+    SourceFreshnessCategory, SourceTrustCategory,
 };
 
 fn retrieved(cell_id: u64, payload: &str) -> RetrievedCell {
@@ -15,11 +16,11 @@ fn context_pack_explain_v2_reports_selection_source_trust_and_score_components()
     let cells = vec![
         retrieved(
             1,
-            "scope=project:investments\nstatus=ready\nsource_trust_q16=60000\n\nsolar budget financing official disclosure",
+            "scope=project:investments\nstatus=ready\nsource_trust_q16=60000\ncreated_unix_seconds=100\n\nsolar budget financing official disclosure",
         ),
         retrieved(
             2,
-            "scope=project:investments\nstatus=ready\nsource_trust_q16=60000\n\nsolar budget financing official disclosure update",
+            "scope=project:investments\nstatus=ready\nsource_trust_q16=60000\ncreated_unix_seconds=200\n\nsolar budget financing official disclosure update",
         ),
     ];
     let pack = ContextPack::from_retrieved_with_options(
@@ -35,6 +36,10 @@ fn context_pack_explain_v2_reports_selection_source_trust_and_score_components()
     assert_eq!(first.matched_terms, vec!["solar", "budget"]);
     assert_eq!(first.source_trust_q16, 60_000);
     assert_eq!(first.source_trust_category, SourceTrustCategory::Official);
+    assert_eq!(
+        first.source_freshness_category,
+        SourceFreshnessCategory::Stale
+    );
     assert!(first.why_selected.contains("high provenance source trust"));
 
     let components = first
@@ -44,10 +49,20 @@ fn context_pack_explain_v2_reports_selection_source_trust_and_score_components()
         .collect::<Vec<_>>();
     assert_eq!(
         components,
-        vec!["base_bm25", "source_trust_bonus", "redundancy_penalty"]
+        vec![
+            "base_bm25",
+            "source_trust_bonus",
+            "source_freshness_bonus",
+            "redundancy_penalty"
+        ]
     );
 
     let second = pack.cells[1].explain.as_ref().unwrap();
+    assert_eq!(
+        second.source_freshness_category,
+        SourceFreshnessCategory::Current
+    );
+    assert!(second.source_freshness_bonus > first.source_freshness_bonus);
     assert!(second.redundancy_penalty > 0);
     assert!(second.score_components.iter().any(|component| {
         component.name == "redundancy_penalty"

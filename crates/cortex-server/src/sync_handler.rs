@@ -163,7 +163,7 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
         );
     }
 
-    let Ok(db) = open_database(root, options) else {
+    let Ok(db) = open_tenant_database(root, options, &tenant) else {
         return json_error(500, ErrorCode::Internal, "failed to open database");
     };
     let db = std::sync::RwLock::new(db);
@@ -181,4 +181,17 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
 
 fn open_database(root: &Path, options: &ServerOptions) -> cortex_engine::EngineResult<Database> {
     Database::open_with_options(root, options.engine_database_options)
+}
+
+fn open_tenant_database(
+    root: &Path,
+    options: &ServerOptions,
+    tenant: &str,
+) -> cortex_engine::EngineResult<Database> {
+    if tenant == "default" {
+        return open_database(root, options);
+    }
+    let tenant_path = root.join("realms").join(tenant);
+    std::fs::create_dir_all(&tenant_path)?;
+    open_database(&tenant_path, options)
 }

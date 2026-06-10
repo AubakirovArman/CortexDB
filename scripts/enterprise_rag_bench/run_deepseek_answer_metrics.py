@@ -16,9 +16,15 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from progress_logging import ProgressLogger
 
 DEFAULT_BASE_URL = "https://api.deepseek.com"
 DEFAULT_MODEL = "deepseek-v4-flash"
+LOGGER = ProgressLogger("judge-runner")
+
+
+def log(message: str) -> None:
+    LOGGER.log(message)
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -91,17 +97,46 @@ Candidate answer:
 
 def parse_judge_json(text: str) -> dict[str, Any]:
     cleaned = text.strip()
+    if not cleaned:
+        return {
+            "answer_correct": False,
+            "completeness_pct": 0.0,
+            "correctness_reasoning": "judge returned empty response",
+        }
+
     if cleaned.startswith("```"):
         cleaned = re.sub(r"^```(?:json)?", "", cleaned).strip()
         cleaned = re.sub(r"```$", "", cleaned).strip()
-    match = re.search(r"\{.*\}", cleaned, flags=re.S)
-    if match:
-        cleaned = match.group(0)
-    payload = json.loads(cleaned)
+
+    candidates = re.findall(r"\{.*?\}", cleaned, flags=re.S)
+    if not candidates:
+        return {
+            "answer_correct": False,
+            "completeness_pct": 0.0,
+            "correctness_reasoning": "judge response had no JSON object",
+        }
+
+    last_error: Exception | None = None
+    for candidate in candidates:
+        try:
+            payload = json.loads(candidate)
+            return {
+                "answer_correct": bool(payload.get("answer_correct")),
+                "completeness_pct": max(0.0, min(100.0, float(payload.get("completeness_pct", 0.0)))),
+                "correctness_reasoning": str(payload.get("correctness_reasoning", "")).strip()[:500],
+            }
+        except json.JSONDecodeError as error:
+            last_error = error
+            continue
+
     return {
-        "answer_correct": bool(payload.get("answer_correct")),
-        "completeness_pct": max(0.0, min(100.0, float(payload.get("completeness_pct", 0.0)))),
-        "correctness_reasoning": str(payload.get("correctness_reasoning", "")).strip()[:500],
+        "answer_correct": False,
+        "completeness_pct": 0.0,
+        "correctness_reasoning": (
+            f"judge response parse error: {last_error}; raw={cleaned[:500]!r}"
+            if last_error is not None
+            else "judge response parse error"
+        ),
     }
 
 
@@ -116,6 +151,7 @@ def chat_json(
     omit_thinking_field: bool,
     gemini_native: bool,
     gemini_thinking_budget: int,
+    openai_reasoning: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any], int]:
     if gemini_native:
         return chat_json_gemini_native(
@@ -127,14 +163,26 @@ def chat_json(
             retries=retries,
             thinking_budget=gemini_thinking_budget,
         )
-    payload = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0,
-        "max_tokens": 220,
-    }
-    if not omit_thinking_field:
-        payload["thinking"] = {"type": "disabled"}
+    if openai_reasoning:
+        # GPT-5 reasoning models require max_completion_tokens, reject a custom
+        # temperature, and bill reasoning tokens against the completion budget.
+        # Use minimal reasoning for a cheap, near-deterministic JSON verdict and
+        # leave generous headroom so the JSON is not truncated by reasoning.
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_completion_tokens": 3000,
+            "reasoning_effort": "none",
+        }
+    else:
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0,
+            "max_tokens": 220,
+        }
+        if not omit_thinking_field:
+            payload["thinking"] = {"type": "disabled"}
     data = json.dumps(payload).encode("utf-8")
     url = base_url.rstrip("/") + "/chat/completions"
     for attempt in range(retries + 1):
@@ -251,10 +299,16 @@ def aggregate_stats(rows: list[dict[str, Any]], *, include_total: bool = True) -
     invalid_values = [float(row["invalid_extra_docs"]) for row in rows if row.get("invalid_extra_docs") is not None]
     correct_pct = sum(1 for row in rows if row.get("answer_correct")) / len(rows) * 100.0 if rows else 0.0
     completeness = mean([float(row.get("completeness_pct") or 0.0) for row in rows])
+    combined = mean(
+        [
+            float(row.get("completeness_pct") or 0.0) if row.get("answer_correct") else 0.0
+            for row in rows
+        ]
+    )
     stats: dict[str, Any] = {
         "average_correctness_pct": round(correct_pct, 2),
         "average_completeness_pct": completeness,
-        "combined_correctness_completeness_score": round(correct_pct * completeness / 100.0, 2),
+        "combined_correctness_completeness_score": combined,
         "average_recall_pct": mean(recall_values),
         "average_invalid_extra_docs": mean(invalid_values),
     }
@@ -271,6 +325,12 @@ def aggregate_stats(rows: list[dict[str, Any]], *, include_total: bool = True) -
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    global LOGGER
+    LOGGER = ProgressLogger(
+        "judge-runner",
+        log_file=getattr(args, "log_file", None),
+        status_file=getattr(args, "status_file", None),
+    )
     api_key = args.api_key_file.read_text(encoding="utf-8").strip()
     questions = by_question_id(read_jsonl(args.questions_file))
     answers = by_question_id(read_jsonl(args.answers_file))
@@ -280,29 +340,113 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     existing = by_question_id(read_jsonl(args.judgments_file))
     output_lock = threading.Lock()
     usage_lock = threading.Lock()
+    progress_lock = threading.Lock()
+    completed_counter = {"value": len(existing)}
     usage_totals = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+    started = time.perf_counter()
     pending = [qid for qid in qids if qid not in existing]
+    log(
+        "loaded judge run "
+        f"questions={len(qids)} existing={len(existing)} pending={len(pending)} "
+        f"workers={args.workers} model={args.model}"
+    )
+    LOGGER.progress(
+        stage="judging",
+        state="running",
+        completed=len(existing),
+        total=len(qids),
+        unit="questions",
+        total_questions=len(qids),
+        existing_questions=len(existing),
+        pending_questions=len(pending),
+        completed_questions=len(existing),
+        prompt_tokens=0,
+        completion_tokens=0,
+        total_tokens=0,
+        results_file=str(args.results_file),
+        judgments_file=str(args.judgments_file),
+    )
     if not pending and args.results_file.exists():
+        log(f"nothing pending; reuse results {args.results_file}")
+        LOGGER.progress(
+            stage="judging",
+            state="done",
+            completed=len(existing),
+            total=len(qids),
+            unit="questions",
+            total_questions=len(qids),
+            completed_questions=len(existing),
+            pending_questions=0,
+            results_file=str(args.results_file),
+            judgments_file=str(args.judgments_file),
+        )
         return read_json(args.results_file)
+
+    def completed_count() -> int:
+        with progress_lock:
+            return completed_counter["value"]
 
     def judge(qid: str) -> dict[str, Any]:
         question = questions[qid]
         answer = answers.get(qid, {"question_id": qid, "answer": "", "document_ids": []})
         recall, invalid_extra = document_metrics(question, answer)
-        judged, usage, elapsed_ms = chat_json(
-            api_key=api_key,
-            base_url=args.base_url,
-            model=args.model,
-            prompt=build_prompt(question, answer),
-            timeout=args.timeout_seconds,
-            retries=args.retries,
-            omit_thinking_field=args.omit_thinking_field,
-            gemini_native=args.gemini_native,
-            gemini_thinking_budget=args.gemini_thinking_budget,
+        log(
+            "question start judge "
+            f"question_id={qid} doc_recall={recall} invalid_extra_docs={invalid_extra}"
         )
+        LOGGER.status(
+            stage="judging",
+            state="running",
+            active_step="judge_question",
+            active_question_id=qid,
+            active_document_recall_pct=recall,
+            active_invalid_extra_docs=invalid_extra,
+            model=args.model,
+            completed_questions=completed_count(),
+            total_questions=len(qids),
+            pending_questions=max(0, len(qids) - completed_count()),
+            prompt_tokens=usage_totals["prompt_tokens"],
+            completion_tokens=usage_totals["completion_tokens"],
+            total_tokens=usage_totals["total_tokens"],
+        )
+        try:
+            judged, usage, elapsed_ms = chat_json(
+                api_key=api_key,
+                base_url=args.base_url,
+                model=args.model,
+                prompt=build_prompt(question, answer),
+                timeout=args.timeout_seconds,
+                retries=args.retries,
+                omit_thinking_field=args.omit_thinking_field,
+                gemini_native=args.gemini_native,
+                gemini_thinking_budget=args.gemini_thinking_budget,
+                openai_reasoning=getattr(args, "openai_reasoning", False),
+            )
+        except Exception as error:
+            log(f"question failed judge question_id={qid} error={error}")
+            LOGGER.status(
+                stage="judging",
+                state="failed",
+                active_step="judge_question",
+                active_question_id=qid,
+                failed_question_id=qid,
+                error=str(error),
+                completed_questions=completed_count(),
+                total_questions=len(qids),
+                pending_questions=max(0, len(qids) - completed_count()),
+            )
+            raise
         with usage_lock:
             for key in usage_totals:
                 usage_totals[key] += int(usage.get(key, 0) or 0)
+        log(
+            "question done judge "
+            f"question_id={qid} answer_correct={judged['answer_correct']} "
+            f"completeness_pct={judged['completeness_pct']} elapsed_ms={elapsed_ms} "
+            f"prompt_tokens={int(usage.get('prompt_tokens', 0) or 0)} "
+            f"completion_tokens={int(usage.get('completion_tokens', 0) or 0)} "
+            f"total_tokens={int(usage.get('total_tokens', 0) or 0)}"
+        )
         return {
             "question_id": qid,
             "question_type": question.get("question_type"),
@@ -320,18 +464,62 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = [executor.submit(judge, qid) for qid in pending]
+        log(f"queued judge jobs pending={len(pending)} workers={args.workers}")
+        LOGGER.status(
+            stage="judging",
+            state="running",
+            active_step="queued_judge_jobs",
+            queued_questions=len(pending),
+            workers=args.workers,
+            completed_questions=completed_count(),
+            total_questions=len(qids),
+            pending_questions=max(0, len(qids) - completed_count()),
+        )
         for future in concurrent.futures.as_completed(futures):
             row = future.result()
             existing[row["question_id"]] = row
             append_jsonl(args.judgments_file, row, output_lock)
-            if args.progress_every and len(existing) % args.progress_every == 0:
-                print(f"judged {len(existing)}/{len(qids)}")
+            with progress_lock:
+                completed_counter["value"] = len(existing)
+                completed = completed_counter["value"]
+            should_log = (
+                (args.progress_every and completed % args.progress_every == 0)
+                or completed == len(qids)
+            )
+            if should_log:
+                LOGGER.progress(
+                    stage="judging",
+                    state="running",
+                    completed=completed,
+                    total=len(qids),
+                    unit="questions",
+                    total_questions=len(qids),
+                    completed_questions=completed,
+                    pending_questions=max(0, len(qids) - completed),
+                    prompt_tokens=usage_totals["prompt_tokens"],
+                    completion_tokens=usage_totals["completion_tokens"],
+                    total_tokens=usage_totals["total_tokens"],
+                    last_question_id=str(row["question_id"]),
+                )
+            else:
+                LOGGER.status(
+                    stage="judging",
+                    state="running",
+                    total_questions=len(qids),
+                    completed_questions=completed,
+                    pending_questions=max(0, len(qids) - completed),
+                    prompt_tokens=usage_totals["prompt_tokens"],
+                    completion_tokens=usage_totals["completion_tokens"],
+                    total_tokens=usage_totals["total_tokens"],
+                    elapsed_seconds=round(time.perf_counter() - started, 1),
+                    last_question_id=str(row["question_id"]),
+                )
 
     rows = [existing[qid] for qid in qids if qid in existing]
     report = {
-        "schema_version": "cortexdb.enterprise_rag_bench.deepseek_judge_metrics.v1",
+        "schema_version": "cortexdb.enterprise_rag_bench.local_judge_metrics.v2",
         "judge_model": args.model,
-        "judge_provider": "gemini" if args.gemini_native else "deepseek",
+        "judge_provider": "gemini" if args.gemini_native else "openai_compatible",
         "thinking": (
             f"gemini_budget_{args.gemini_thinking_budget}"
             if args.gemini_native
@@ -348,6 +536,22 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         **usage_totals,
     }
     write_json(args.results_file, report)
+    LOGGER.progress(
+        stage="judging",
+        state="done",
+        completed=len(rows),
+        total=len(qids),
+        unit="questions",
+        total_questions=len(qids),
+        completed_questions=len(rows),
+        pending_questions=max(0, len(qids) - len(rows)),
+        prompt_tokens=usage_totals["prompt_tokens"],
+        completion_tokens=usage_totals["completion_tokens"],
+        total_tokens=usage_totals["total_tokens"],
+        results_file=str(args.results_file),
+        judgments_file=str(args.judgments_file),
+        overall=report["aggregate_stats"].get("combined_correctness_completeness_score"),
+    )
     return report
 
 
@@ -372,6 +576,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--gemini-native", action="store_true", help="Use Gemini native generateContent API.")
     parser.add_argument("--gemini-thinking-budget", type=int, default=0)
+    parser.add_argument("--log-file", type=Path)
+    parser.add_argument("--status-file", type=Path)
     args = parser.parse_args()
     if args.limit is not None and args.limit <= 0:
         parser.error("--limit must be positive")
@@ -381,8 +587,12 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    print(json.dumps(run(parse_args()), sort_keys=True))
-    return 0
+    try:
+        print(json.dumps(run(parse_args()), sort_keys=True))
+        return 0
+    except Exception as error:
+        LOGGER.status(stage="judging", state="failed", error=str(error))
+        raise
 
 
 if __name__ == "__main__":

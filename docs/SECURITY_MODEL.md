@@ -24,11 +24,19 @@ anchored around:
    - Token roles are currently `admin` and `data`.
    - Token policies are role-scoped (`admin`/`data`) and can be rotated from a file.
    - Tenant ID is validated and used for filesystem realm isolation.
+   - Tenant allowlists are enforced before realm open/create, so a forbidden
+     tenant data route cannot create or mutate that tenant directory.
+   - Both the Axum `DatabaseActor` path and the legacy synchronous test harness
+     route non-default tenants to `root/realms/<tenant>/`.
    - `make tenant-recovery-check` verifies tenant payload boundaries before
      and after backup/restore using a real HTTP server.
 
 3. **Authorization in query execution**
    - AQL policies and runtime `AgentAllowed` masks prevent scope privilege expansion.
+   - ContextPack JSON includes a per-cell `access_decision` trail linking each
+     selected `cell_id` to the AgentView readable-scope decision that allowed it
+     into the pack. HTTP responses attach the authenticated `principal_id` and
+     `auth_role` when bearer-token policy store auth is configured.
 
 4. **Error hardening**
    - Public API errors use stable machine-readable codes.
@@ -45,7 +53,8 @@ not production security guarantees yet.
 
 The following are not production guarantees in Core Alpha:
 
-- per-user identity, fine-grained RBAC, and distributed policy service,
+- production IAM federation, distributed policy service, and external identity
+  lifecycle,
 - TLS/MTLS lifecycle in-process (use reverse proxy for HTTPS/TLS offload),
 - encrypted at-rest backups and secret management integrations,
 - tamper-evident audit export,

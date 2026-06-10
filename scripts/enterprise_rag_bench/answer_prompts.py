@@ -85,6 +85,8 @@ def type_aware_v13(row: dict[str, Any], context: str) -> str:
 
 def type_aware_v15(row: dict[str, Any], context: str) -> str:
     question_type = str(row.get("question_type") or "")
+    if question_type == "high_level":
+        return high_level_v1(row, context)
     if question_type in {
         "basic",
         "conflicting_info",
@@ -206,6 +208,42 @@ Retrieved documents:
 Final answer:"""
 
 
+def high_level_v1(row: dict[str, Any], context: str) -> str:
+    return f"""You answer EnterpriseRAG-Bench high-level company overview questions using only the retrieved documents.
+
+This is a high-level company question, not an unavailable-information question.
+If the retrieved documents contain any directly relevant overview, strategy,
+organization, business model, security, reliability, routing, or product facts,
+synthesize the answer from those facts. Do not answer "Insufficient information."
+when at least one retrieved document supports part of the requested answer.
+
+High-level answer rules:
+- Prefer company overview, strategy, organization, product, platform, security,
+  reliability, pricing, and go-to-market documents.
+- For mission, thesis, differentiation, and strategy questions, give the direct
+  company-level statement and include the concrete dimensions named in evidence.
+- For list questions such as revenue streams, departments, add-ons, policy
+  dimensions, or runtime optimizations, enumerate every visible item. Do not stop
+  after the first few items.
+- Do not add numbers, departments, revenue streams, add-ons, or policy dimensions
+  unless they are visible in the retrieved documents.
+- Answer exactly "Insufficient information." only when none of the retrieved
+  documents supports the high-level question.
+
+Output rules:
+- Write the final answer directly.
+- Do not include document IDs or citations.
+- Use one compact paragraph or a short list if the answer is naturally a list.
+
+Question:
+{row.get("question", "")}
+
+Retrieved documents:
+{context}
+
+Final answer:"""
+
+
 def evidence_audit_v11(row: dict[str, Any], context: str) -> str:
     return f"""You answer EnterpriseRAG-Bench questions using only the retrieved documents.
 
@@ -266,6 +304,41 @@ Retrieved documents:
 Answer:"""
 
 
+def official_clean_v1(row: dict[str, Any], context: str) -> str:
+    return f"""You answer enterprise knowledge-base questions using only the retrieved documents.
+
+Clean-run rules:
+- You do not know benchmark labels, expected documents, source filters, or answer facts.
+- Infer the user's intent only from the question text and the provided evidence.
+- Answer with every concrete fact supported by the evidence: names, IDs, dates,
+  paths, numbers, regions, owners, policy conditions, steps, and caveats.
+- If the question asks for a list, enumerate all supported items instead of
+  giving a generic summary.
+- If the evidence conflicts, explain the conflict and prefer the most specific,
+  current, or directly relevant source.
+- If the evidence supports only part of the answer, answer the supported part
+  and say what is not available.
+- Answer exactly "Insufficient information." only when the retrieved documents
+  do not contain evidence for the question.
+- Do not invent facts, thresholds, departments, source names, or product details
+  that are not visible in the retrieved documents.
+
+Output rules:
+- Write the final answer directly.
+- Do not mention benchmark internals, hidden labels, gold facts, or evaluator
+  expectations.
+- Do not include document IDs or citations.
+- Be compact but complete.
+
+Question:
+{row.get("question", "")}
+
+Retrieved documents:
+{context}
+
+Final answer:"""
+
+
 def build_prompt(
     row: dict[str, Any],
     context: str,
@@ -273,6 +346,8 @@ def build_prompt(
     evidence_plan: dict[str, Any] | None = None,
     evidence_table: dict[str, Any] | None = None,
 ) -> str:
+    if prompt_style == "official-clean-v1":
+        return with_evidence_artifacts(official_clean_v1(row, context), evidence_plan, evidence_table)
     if prompt_style == "evidence-selection-v5":
         return with_evidence_artifacts(evidence_selection_v5(row, context), evidence_plan, evidence_table)
     if prompt_style == "type-aware-v9":

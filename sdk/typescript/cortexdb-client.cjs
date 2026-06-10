@@ -19,9 +19,11 @@ var cortexdb_client_exports = {};
 __export(cortexdb_client_exports, {
   CortexDBClient: () => CortexDBClient,
   CortexDBError: () => CortexDBError,
+  buildGroundedAnswerResponse: () => buildGroundedAnswerResponse,
   buildRememberAql: () => buildRememberAql,
   buildRetrieveContextAql: () => buildRetrieveContextAql,
-  buildVerifyFactAql: () => buildVerifyFactAql
+  buildVerifyFactAql: () => buildVerifyFactAql,
+  groundAnswer: () => groundAnswer
 });
 module.exports = __toCommonJS(cortexdb_client_exports);
 class CortexDBError extends Error {
@@ -112,6 +114,137 @@ function buildRememberAql(content, scope, memoryType, ttlSeconds) {
   if (ttlSeconds !== void 0) statement += ` TTL ${ttlSeconds} SECONDS`;
   return `${statement};`;
 }
+function uniqueValues(values) {
+  const seen = /* @__PURE__ */ new Set();
+  const out = [];
+  for (const value of values) {
+    if (!seen.has(value)) {
+      seen.add(value);
+      out.push(value);
+    }
+  }
+  return out;
+}
+function tokenize(text) {
+  const stopwords = /* @__PURE__ */ new Set(["a", "an", "and", "the", "or", "of", "to", "in"]);
+  const terms = text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((term) => term.length > 0 && !stopwords.has(term));
+  return [...new Set(terms)].sort();
+}
+function splitAnswerSpans(answer) {
+  const spans = [];
+  let start = 0;
+  for (let index = 0; index < answer.length; index += 1) {
+    const ch = answer[index];
+    const decimalDot = ch === "." && /\d/.test(answer[index - 1] ?? "") && /\d/.test(answer[index + 1] ?? "");
+    if (ch === "!" || ch === "?" || ch === "\n" || ch === "." && !decimalDot) {
+      pushAnswerSpan(answer, start, index + 1, spans);
+      start = index + 1;
+    }
+  }
+  pushAnswerSpan(answer, start, answer.length, spans);
+  return spans;
+}
+function pushAnswerSpan(answer, start, end, spans) {
+  const raw = answer.slice(start, end);
+  const text = raw.trim();
+  if (text.length === 0) return;
+  const leading = raw.length - raw.trimStart().length;
+  const trailing = raw.length - raw.trimEnd().length;
+  spans.push([text, start + leading, end - trailing]);
+}
+function q16Ratio(numerator, denominator) {
+  if (denominator === 0) return 65535;
+  return Math.floor(numerator * 65535 / denominator);
+}
+function groundAnswer(context, answer, options = {}) {
+  const minSpanSupportQ16 = options.minSpanSupportQ16 ?? 65535;
+  const requireCitations = options.requireCitations ?? false;
+  const rejectUnsupported = options.rejectUnsupported ?? false;
+  const spans = splitAnswerSpans(answer).map(([text, start, end]) => {
+    const spanTerms = tokenize(text);
+    if (spanTerms.length === 0) {
+      return {
+        text,
+        start_byte: start,
+        end_byte: end,
+        support_q16: 65535,
+        supported: true,
+        covered_terms: [],
+        missing_terms: [],
+        supported_by_cell_ids: [],
+        citations: []
+      };
+    }
+    const covered = /* @__PURE__ */ new Set();
+    const cellIds = [];
+    const citations = [];
+    for (const cell of context.cells) {
+      const cellTerms = new Set(tokenize(cell.payload_text));
+      let matched = false;
+      for (const term of spanTerms) {
+        if (cellTerms.has(term)) {
+          covered.add(term);
+          matched = true;
+        }
+      }
+      if (matched) {
+        cellIds.push(cell.cell_id);
+        if (cell.citation) citations.push(cell.citation);
+      }
+    }
+    const support = q16Ratio(covered.size, spanTerms.length);
+    const supported = support >= minSpanSupportQ16 && (!requireCitations || citations.length > 0);
+    return {
+      text,
+      start_byte: start,
+      end_byte: end,
+      support_q16: support,
+      supported,
+      covered_terms: [...covered].sort(),
+      missing_terms: spanTerms.filter((term) => !covered.has(term)),
+      supported_by_cell_ids: uniqueValues(cellIds),
+      citations: uniqueValues(citations)
+    };
+  });
+  const supportedSpanCount = spans.filter((span) => span.supported).length;
+  const unsupportedSpanCount = spans.length - supportedSpanCount;
+  const support = spans.length === 0 ? 65535 : Math.floor(spans.reduce((total, span) => total + span.support_q16, 0) / spans.length);
+  return {
+    answer_supported: unsupportedSpanCount === 0,
+    rejected: rejectUnsupported && unsupportedSpanCount > 0,
+    support_q16: support,
+    supported_span_count: supportedSpanCount,
+    unsupported_span_count: unsupportedSpanCount,
+    spans
+  };
+}
+function buildGroundedAnswerResponse(params) {
+  const grounding = groundAnswer(params.context, params.answer, {
+    requireCitations: params.requireCitations,
+    minSpanSupportQ16: params.minSpanSupportQ16,
+    rejectUnsupported: params.rejectUnsupported
+  });
+  const citations = uniqueValues([
+    ...grounding.spans.flatMap((span) => span.citations),
+    ...params.context.cells.flatMap((cell) => cell.citation ? [cell.citation] : [])
+  ]);
+  const usedContextCellIds = uniqueValues([
+    ...grounding.spans.flatMap((span) => span.supported_by_cell_ids),
+    ...params.context.cells.map((cell) => cell.cell_id)
+  ]);
+  return {
+    question: params.question,
+    answer: params.answer,
+    retrieve_statement: params.retrieveStatement,
+    verify_statement: params.verifyStatement ?? null,
+    context: params.context,
+    grounding,
+    verification: params.verification ?? null,
+    citations,
+    used_context_cell_ids: usedContextCellIds,
+    rejected: grounding.rejected
+  };
+}
 class CortexDBClient {
   constructor(baseUrl = "http://127.0.0.1:8181", token, tenant, maxRetries = 0, retryDelayMs = 500) {
     this.baseUrl = baseUrl;
@@ -187,6 +320,29 @@ class CortexDBClient {
   }
   retrieveContext(scope, statement) {
     return this.request("POST", this.path("/v1/context", { scope }), statement);
+  }
+  async answerWithGroundedContext(scope, brain, question, answerer, options = {}) {
+    const requireCitations = options.requireCitations ?? true;
+    const retrieveStatement = buildRetrieveContextAql(question, brain, {
+      ...options,
+      requireCitations
+    });
+    const context = await this.retrieveContext(scope, retrieveStatement);
+    const answer = await answerer(context);
+    const verifyAnswer = options.verifyAnswer ?? true;
+    const verifyStatement = verifyAnswer && answer.trim().length > 0 ? buildVerifyFactAql(answer, brain) : null;
+    const verification = verifyStatement ? await this.verifyFact(scope, verifyStatement) : null;
+    return buildGroundedAnswerResponse({
+      question,
+      answer,
+      retrieveStatement,
+      verifyStatement,
+      context,
+      verification,
+      requireCitations,
+      minSpanSupportQ16: options.minSpanSupportQ16,
+      rejectUnsupported: options.rejectUnsupported
+    });
   }
   verifyFact(scope, statement) {
     return this.request("POST", this.path("/v1/verify", { scope }), statement);

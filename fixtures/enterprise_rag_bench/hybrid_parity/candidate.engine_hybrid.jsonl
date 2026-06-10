@@ -1,0 +1,4 @@
+{"answer":"","document_ids":["doc_api_runbook","doc_api_notes","doc_slack_noise"],"question":"Which runbook does Project Atlas use for API gateway rollback?","question_id":"q_parity_001"}
+{"answer":"","document_ids":["doc_phoenix_redis","doc_phoenix_status","doc_release_noise"],"question":"What is blocking the Phoenix release?","question_id":"q_parity_002"}
+{"answer":"","document_ids":["doc_security_policy","doc_security_archive","doc_policy_noise"],"question":"Where is the 2026 compliance checklist documented?","question_id":"q_parity_003"}
+{"answer":"","document_ids":["doc_incident_summary","doc_current_runbook","doc_old_runbook"],"question":"Which documents explain the database failover incident and the current mitigation?","question_id":"q_parity_004"}

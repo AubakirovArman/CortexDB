@@ -14,10 +14,13 @@ REQUIRED_MARKERS = {
         "Prepare",
         "Validate",
         "Rollback",
+        "Migrate",
     ],
     "crates/cortex-cli/src/cli_upgrade.rs": [
         "upgrade_prepare",
         "ready_for_offline_upgrade",
+        "migrate_preflight",
+        "ready_for_offline_migration",
         "upgrade_validate",
         "validated_after_upgrade",
         "upgrade_rollback",
@@ -26,16 +29,19 @@ REQUIRED_MARKERS = {
     "crates/cortex-cli/src/tests.rs": [
         "upgrade_prepare_validate_and_rollback_flow",
         "upgrade_prepare_json_reports_next_commands",
+        "migrate_preflight_creates_backup_drill_and_preserves_data",
     ],
     "docs/CLI.md": [
         "upgrade prepare",
         "upgrade validate",
         "upgrade rollback",
+        "migrate <path> <backup_path> <drill_restore_path>",
     ],
     "docs/UPGRADE_ROLLBACK.md": [
         "cortexdb upgrade prepare",
         "cortexdb upgrade validate",
         "cortexdb upgrade rollback",
+        "cortexdb migrate",
     ],
     "docs/OPERATIONS_RUNBOOK_V1.md": [
         "cortexdb upgrade prepare",
@@ -43,7 +49,8 @@ REQUIRED_MARKERS = {
         "cortexdb upgrade rollback",
     ],
     "docs/PRODUCTION_EPIC_EXECUTION_PLAN.md": [
-        "Epic 128, Upgrade/Rollback CLI Flow",
+        "Epic 128. Upgrade/Rollback CLI Flow",
+        "cortexdb migrate",
         "target/upgrade-rollback-cli-flow/report.json",
     ],
 }

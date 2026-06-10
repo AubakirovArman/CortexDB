@@ -238,6 +238,15 @@ Response:
   "estimated_index_bytes": 8192,
   "estimated_context_pack_bytes": 16384,
   "estimated_total_memory_bytes": 28672,
+  "live_segment_bytes": 65536,
+  "retired_segment_bytes": 0,
+  "total_segment_bytes": 65536,
+  "durable_storage_bytes": 65664,
+  "live_segment_payload_bytes": 2048,
+  "logical_payload_bytes": 2048,
+  "space_amplification_q16": 2101248,
+  "write_amplification_q16": 2117632,
+  "compaction_pressure_q16": 0,
   "wal_size_bytes": 128,
   "wal_writer_records": 3,
   "wal_writer_bytes": 512,
@@ -284,6 +293,15 @@ Response:
   "estimated_index_bytes": 8192,
   "estimated_context_pack_bytes": 16384,
   "estimated_total_memory_bytes": 28672,
+  "live_segment_bytes": 65536,
+  "retired_segment_bytes": 0,
+  "total_segment_bytes": 65536,
+  "durable_storage_bytes": 65664,
+  "live_segment_payload_bytes": 2048,
+  "logical_payload_bytes": 2048,
+  "space_amplification_q16": 2101248,
+  "write_amplification_q16": 2117632,
+  "compaction_pressure_q16": 0,
   "wal_size_bytes": 128,
   "wal_writer_records": 3,
   "wal_writer_bytes": 512,
@@ -384,6 +402,11 @@ the available query text and vector:
 POST /v1/search?scope=<scope>&mode=auto&q=solar+budget&vector=1,2,3
 ```
 
+Use `rerank=weighted` to run the engine's deterministic pluggable reranker over
+an expanded candidate set before the final top-k is returned. This reranker uses
+the query text, lexical/vector scores, source hints and payload anchors; it does
+not read benchmark gold metadata.
+
 ```json
 {
   "search_mode": "keyword",
@@ -394,6 +417,7 @@ POST /v1/search?scope=<scope>&mode=auto&q=solar+budget&vector=1,2,3
     "text_available": true,
     "vector_available": false
   },
+  "rerank": "weighted",
   "ann_report": null,
   "results": [
     {
@@ -616,6 +640,12 @@ stable Markdown export.
             "reason": "default provenance trust because source_trust_q16 is absent"
           },
           {
+            "name": "source_freshness_bonus",
+            "value": 0,
+            "contribution": 0,
+            "reason": "no source freshness because created_unix_seconds metadata is absent"
+          },
+          {
             "name": "redundancy_penalty",
             "value": 0,
             "contribution": 0,
@@ -626,6 +656,9 @@ stable Markdown export.
         "source_trust_q16": 32768,
         "source_trust_category": "unknown",
         "source_trust_bonus": 32768,
+        "source_freshness_q16": 0,
+        "source_freshness_category": "unknown",
+        "source_freshness_bonus": 0,
         "redundancy_penalty": 0
       },
       "source_ref": {
@@ -633,9 +666,38 @@ stable Markdown export.
         "source_url": "https://example.test/doc-a",
         "document_id": null,
         "page": null,
+        "row": null,
         "cell_range": null,
         "json_path": null,
         "confidence_q16": 65535
+      },
+      "provenance": {
+        "source_cell_id": 1,
+        "source_byte_start": 96,
+        "source_byte_end": 160,
+        "source_line_start": 4,
+        "source_line_end": 4,
+        "source_ref": {
+          "source_id": "doc-a",
+          "source_url": "https://example.test/doc-a",
+          "document_id": null,
+          "page": null,
+          "row": null,
+          "cell_range": null,
+          "json_path": null,
+          "confidence_q16": 65535
+        }
+      },
+      "access_decision": {
+        "cell_id": 1,
+        "decision": "allowed",
+        "policy": "agent_view_readable_scope",
+        "reason": "cell scope was present in AgentView.readable_scopes before ContextPack packing",
+        "scope": "project:investments",
+        "scope_id": 1001,
+        "agent_id": 7,
+        "principal_id": "agent-a",
+        "auth_role": "data"
       }
     }
   ],
@@ -707,6 +769,26 @@ retrieves context internally, and must not receive provider API keys.
   "output": "Test-double answer from explicit ContextPack only: ...",
   "used_context_cell_ids": [101],
   "citations": ["doc://investment-risk#p1"],
+  "grounding": {
+    "answer_supported": false,
+    "rejected": false,
+    "support_q16": 32767,
+    "supported_span_count": 0,
+    "unsupported_span_count": 1,
+    "spans": [
+      {
+        "text": "Test-double answer from explicit ContextPack only: ...",
+        "start_byte": 0,
+        "end_byte": 56,
+        "support_q16": 32767,
+        "supported": false,
+        "covered_terms": ["project"],
+        "missing_terms": ["test", "double"],
+        "supported_by_cell_ids": [101],
+        "citations": ["doc://investment-risk#p1"]
+      }
+    ]
+  },
   "audit": {
     "context_pack_only": true,
     "prompt_body_logged": false,
@@ -742,6 +824,8 @@ Supported fact:
     {
       "cell_id": 1,
       "matched_terms": 5,
+      "match_score_q16": 65535,
+      "match_kind": "exact_text",
       "source_trust_q16": 32768,
       "source_trust_category": "unknown",
       "citation": "doc-a",
@@ -754,6 +838,8 @@ Supported fact:
     {
       "cell_id": 1,
       "matched_terms": 5,
+      "match_score_q16": 65535,
+      "match_kind": "exact_text",
       "source_trust_q16": 32768,
       "source_trust_category": "unknown",
       "citation": "doc-a",
@@ -776,6 +862,8 @@ Mixed evidence with numeric conflict:
     {
       "cell_id": 1,
       "matched_terms": 5,
+      "match_score_q16": 65535,
+      "match_kind": "exact_text",
       "source_trust_q16": 32768,
       "source_trust_category": "unknown",
       "citation": "doc-a",
@@ -786,6 +874,8 @@ Mixed evidence with numeric conflict:
     {
       "cell_id": 2,
       "matched_terms": 2,
+      "match_score_q16": 65535,
+      "match_kind": "numeric_contradiction",
       "source_trust_q16": 32768,
       "source_trust_category": "unknown",
       "citation": "doc-b",
@@ -803,6 +893,8 @@ Mixed evidence with numeric conflict:
     {
       "cell_id": 1,
       "matched_terms": 5,
+      "match_score_q16": 65535,
+      "match_kind": "exact_text",
       "source_trust_q16": 32768,
       "source_trust_category": "unknown",
       "citation": "doc-a",
@@ -813,6 +905,8 @@ Mixed evidence with numeric conflict:
     {
       "cell_id": 2,
       "matched_terms": 2,
+      "match_score_q16": 65535,
+      "match_kind": "numeric_contradiction",
       "source_trust_q16": 32768,
       "source_trust_category": "unknown",
       "citation": "doc-b",

@@ -18,6 +18,8 @@ mod hnsw_no_fallback;
 mod hnsw_policy;
 mod persisted;
 mod quality_tests;
+mod query_understanding;
+mod rerank;
 mod routing;
 mod tokenizer;
 pub(crate) mod vector;
@@ -59,6 +61,10 @@ pub use hnsw_policy::{
     HnswBuildConfig, HnswBuildProfile, HnswMaintenancePolicy, HnswMaintenanceReport,
     HnswRebuildPolicy,
 };
+pub use query_understanding::{
+    analyze_search_query, QueryAnchor, QueryAnchorKind, SearchQueryUnderstanding,
+};
+pub use rerank::{SearchRerankInput, SearchReranker, WeightedScoreReranker};
 pub use routing::{route_search_query, SearchRouteDecision, SearchRouteInput, SearchRouteStrategy};
 pub use tokenizer::tokenize;
 pub use vector::parse_vector_literal;
@@ -153,11 +159,12 @@ impl Bm25Index {
     }
 
     pub fn search(&self, query: &str, limit: usize) -> Vec<ScoredCandidate> {
-        let query_terms = tokenize(query);
+        let analyzed = query_understanding::analyze_search_query(query);
+        let query_terms = analyzed.weighted_terms;
         let doc_count = self.docs.len() as u64;
         let avg_len_q10 = self.average_len_q10();
         let mut scores = BTreeMap::<u32, u64>::new();
-        for term in query_terms {
+        for (term, query_weight) in query_terms {
             let Some(posting) = self.postings.get(&term) else {
                 continue;
             };
@@ -169,7 +176,8 @@ impl Bm25Index {
                 let norm_q10 = 256 + (768 * len_q10 / avg_len_q10.max(1));
                 let denom_q10 = (tf * 1024) + norm_q10;
                 let tf_norm_q10 = (tf * 2048 * 1024) / denom_q10.max(1);
-                *scores.entry(*cell_id).or_default() += idf_q10 * tf_norm_q10;
+                *scores.entry(*cell_id).or_default() +=
+                    idf_q10 * tf_norm_q10 * u64::from(query_weight);
             }
         }
         ranked(scores, limit)
@@ -226,6 +234,20 @@ impl SearchIndexes {
         }
     }
 
+    pub fn search_with_reranker(
+        &self,
+        query: SearchQuery<'_>,
+        reranker: &dyn SearchReranker,
+    ) -> Vec<SearchResult> {
+        let mut results = self.search(SearchQuery {
+            limit: query.limit.max(32),
+            ..query
+        });
+        rerank_results(&mut results, query, reranker);
+        results.truncate(query.limit);
+        results
+    }
+
     fn hybrid_search(&self, query: SearchQuery<'_>) -> Vec<SearchResult> {
         let Some(vector) = query.vector else {
             return self.search(SearchQuery {
@@ -243,6 +265,25 @@ impl SearchIndexes {
         values.truncate(query.limit);
         values
     }
+}
+
+fn rerank_results(
+    results: &mut [SearchResult],
+    query: SearchQuery<'_>,
+    reranker: &dyn SearchReranker,
+) {
+    for result in results.iter_mut() {
+        result.score = reranker.rerank_score(SearchRerankInput {
+            query_text: query.text,
+            query_vector: query.vector,
+            candidate_id: u64::from(result.cell_id),
+            lexical_score: result.lexical_score,
+            vector_score: result.vector_score,
+            base_score: result.score,
+            payload: None,
+        });
+    }
+    rerank::sort_reranked(results, |result| result.cell_id, |result| result.score);
 }
 
 impl SearchResult {

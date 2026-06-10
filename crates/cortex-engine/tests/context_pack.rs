@@ -392,6 +392,60 @@ fn context_pack_keeps_redundant_cells_by_default() {
     assert!(pack.anomalies.is_empty());
 }
 
+#[test]
+fn context_pack_span_level_packing_selects_relevant_window_under_budget() {
+    let payload = format!(
+        "scope=project:investments\nstatus=ready\nsource=doc-a\ntitle=Project Apollo\n\n{}\nApollo blocker: database migration is owned by Maya and due Friday.\n{}",
+        "intro background ".repeat(120),
+        "appendix notes ".repeat(120)
+    );
+    let pack = ContextPack::from_retrieved_with_options(
+        vec![retrieved(1, &payload)],
+        128,
+        false,
+        &ContextPackOptions {
+            span_level_packing: true,
+            span_context_lines: 0,
+            ..ContextPackOptions::default()
+        },
+        r#"RETRIEVE CONTEXT FOR TASK "Apollo database migration blocker" IN BRAIN investment_projects;"#,
+    );
+
+    assert_eq!(pack.cells.len(), 1);
+    assert!(pack.truncated);
+    assert!(pack.estimated_tokens <= pack.token_budget_tokens);
+    let packed = String::from_utf8_lossy(&pack.cells[0].payload);
+    assert!(packed.contains("Apollo blocker: database migration"));
+    assert!(packed.contains("[context_pack_span=true"));
+    assert!(!packed.contains("intro background intro background intro background"));
+    assert!(pack.anomalies.iter().any(|anomaly| {
+        anomaly
+            .why_excluded
+            .as_deref()
+            .unwrap_or_default()
+            .contains("span_level_packing")
+    }));
+}
+
+#[test]
+fn context_pack_span_level_packing_is_opt_in() {
+    let payload = format!(
+        "scope=project:investments\nstatus=ready\nsource=doc-a\n\n{}\nApollo blocker: database migration is owned by Maya.",
+        "intro background ".repeat(80)
+    );
+    let pack = ContextPack::from_retrieved_with_options(
+        vec![retrieved(1, &payload)],
+        48,
+        false,
+        &ContextPackOptions::default(),
+        r#"RETRIEVE CONTEXT FOR TASK "Apollo database migration blocker" IN BRAIN investment_projects;"#,
+    );
+
+    let packed = String::from_utf8_lossy(&pack.cells[0].payload);
+    assert!(packed.contains("intro background intro background"));
+    assert!(!packed.contains("[context_pack_span=true"));
+}
+
 fn query() -> &'static str {
     r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
 WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#
@@ -490,7 +544,7 @@ fn test_context_pack_scoring_and_explain() {
     assert_eq!(exp.base_bm25, 10_000);
     assert!(exp.score > 0);
     assert!(!exp.why_selected.is_empty());
-    assert_eq!(exp.score_components.len(), 3);
+    assert_eq!(exp.score_components.len(), 4);
     let component_names = exp
         .score_components
         .iter()
@@ -498,10 +552,17 @@ fn test_context_pack_scoring_and_explain() {
         .collect::<Vec<_>>();
     assert_eq!(
         component_names,
-        vec!["base_bm25", "source_trust_bonus", "redundancy_penalty"]
+        vec![
+            "base_bm25",
+            "source_trust_bonus",
+            "source_freshness_bonus",
+            "redundancy_penalty"
+        ]
     );
     assert_eq!(exp.source_trust_q16, 32_768);
     assert_eq!(exp.source_trust_category, SourceTrustCategory::Unknown);
+    assert_eq!(exp.source_freshness_q16, 0);
+    assert_eq!(exp.source_freshness_category.as_str(), "unknown");
     assert!(exp
         .score_components
         .iter()

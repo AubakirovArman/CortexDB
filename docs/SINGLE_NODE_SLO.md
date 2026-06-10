@@ -10,7 +10,7 @@ enterprise guarantees.
 
 | Signal | Gate | Artifact |
 | --- | --- | --- |
-| Lifecycle duration | `make single-node-performance-check` | `target/single-node-performance/report.json` |
+| Lifecycle duration, embedded latency, ingest throughput, RSS | `make single-node-performance-check` | `target/single-node-performance/report.json` |
 | Load smoke | `make load-smoke-check` | `target/load-smoke/report.json` |
 | Load suite | `make load-suite-check` | `target/load-suite/report.json` |
 | Performance trends | `make performance-trend-check` | `target/performance-trends/report.json` |
@@ -33,10 +33,14 @@ Default inputs:
 ```text
 SINGLE_NODE_PERF_CELLS=500
 SINGLE_NODE_PERF_MAX_TOTAL_MS=30000
+SINGLE_NODE_PERF_MIN_INGEST_CELLS_PER_SEC=1
+SINGLE_NODE_PERF_MAX_RSS_BYTES=1073741824
 ```
 
 The gate exercises strict and balanced lifecycle paths and fails if the total
-local duration exceeds the configured budget.
+local duration exceeds the configured budget, if profile-level ingest throughput
+falls below the configured minimum, or if observed process peak RSS exceeds the
+configured RSS budget.
 
 `make load-smoke-check` also records p50/p95/p99 latency for write, read,
 search, ContextPack, and VerifyFact flows. It records actor queue saturation
@@ -45,7 +49,9 @@ requests.
 
 `make single-node-performance-check` records p50/p95/p99 latency for embedded
 `put_single`, `get_latest`, `keyword_search`, `context_pack`, and
-`verify_fact` flows in both Strict and Balanced durability profiles.
+`verify_fact` flows in both Strict and Balanced durability profiles. The same
+report records `put_batch` throughput as the embedded ingest proxy and process
+`rss_bytes` / `peak_rss_bytes` from the local process status.
 
 `make performance-trend-check` compares current p50/p95/p99 values with
 checked-in release history under `fixtures/performance/history/` and writes:
@@ -54,8 +60,57 @@ checked-in release history under `fixtures/performance/history/` and writes:
 target/performance-trends/report.json
 ```
 
+It also validates that the current single-node report contains profile-level
+SLO status, ingest throughput, and RSS evidence. Older release fixtures may not
+contain those fields, so the trend comparison only treats them as mandatory for
+the current report.
+
 Workload classes and local RPO/RTO expectations are defined in
 `fixtures/performance/workload_classes.json`.
+
+## EnterpriseRAG Full-Corpus Evidence
+
+EPIC-16 also tracks a larger full-corpus retrieval path over the local
+EnterpriseRAG fixture. This is not part of the small default release smoke gate,
+but it is the current scale evidence for the 500k+ document path.
+
+Latest local evidence:
+
+```text
+command:
+python3 scripts/enterprise_rag_bench/run_official_clean_benchmark.py \
+  --size 50 \
+  --run-label epic16-full-corpus-slo \
+  --answer-provider deepseek \
+  --judge-provider deepseek \
+  --stage retrieval \
+  --top-k 10 \
+  --batch-size 1000 \
+  --retrieval-progress-every 50000
+
+artifact:
+target/enterprise-rag-bench/official-clean/50/epic16-full-corpus-slo/retrieval_report.json
+```
+
+Observed on the local machine:
+
+| Signal | Value |
+| --- | ---: |
+| Documents indexed | 511,958 |
+| Ingest duration | 31.480s |
+| Ingest throughput | 16,262.927 docs/sec |
+| Checkpoint duration | 686.543s |
+| Retrieval questions | 50 |
+| Retrieval duration | 217.994s |
+| Retrieval throughput | 0.229 questions/sec |
+| Final RSS | 18,062,696,448 bytes |
+| Peak RSS | 20,210,786,304 bytes |
+| Total retrieval-stage duration | 936.918s |
+
+Interpretation: the full-corpus ingest path is fast enough for local evidence,
+while checkpoint publication, cached lexical index loading, and per-question
+retrieval are the current EPIC-16 bottlenecks to optimize before treating the
+500k+ path as a strong production SLO.
 
 ## Dashboard SLO View
 

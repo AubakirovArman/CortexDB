@@ -241,6 +241,19 @@ def main() -> int:
         )
         check("/v1/context", "POST", context_resp)
 
+        context_trace_resp = request(
+            "POST",
+            f"{base}/v1/context/trace?scope=default",
+            json.dumps(
+                {
+                    "retrieve_aql": 'RETRIEVE CONTEXT FOR TASK "hello" IN BRAIN default WHERE space = default AND status = "ready" LIMIT 10 CANDIDATES;',
+                    "verify_aql": 'VERIFY FACT "hello world" IN BRAIN default;',
+                }
+            ).encode("utf-8"),
+            content_type="application/json",
+        )
+        check("/v1/context/trace", "POST", context_trace_resp)
+
         inference_body = (
             repo / "crates/cortex-engine/fixtures/llm_inference_smoke_request_v1.json"
         ).read_bytes()

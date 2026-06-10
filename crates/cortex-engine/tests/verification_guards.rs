@@ -1,7 +1,8 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 use cortex_engine::verification::{
-    VerificationGuardCode, VerificationReportExportFormat, VerificationStatus,
+    VerificationGuardCode, VerificationMatchKind, VerificationReportExportFormat,
+    VerificationStatus,
 };
 use cortex_engine::{scope_id, Database};
 use std::collections::BTreeSet;
@@ -77,6 +78,10 @@ fn verify_fact_accepts_matching_normalized_numbers() {
         .unwrap();
 
     assert_eq!(report.status, VerificationStatus::Supported);
+    assert_eq!(
+        report.evidence[0].match_kind,
+        VerificationMatchKind::NumericEntailment
+    );
     assert!(report.guards.is_empty());
 }
 

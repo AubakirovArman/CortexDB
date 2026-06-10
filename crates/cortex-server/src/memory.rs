@@ -59,7 +59,7 @@ fn verify_output_format(query: &str) -> String {
         .to_ascii_lowercase()
 }
 
-fn map_verification_report(
+pub(crate) fn map_verification_report(
     report: &VerificationReport,
     db: &Database,
 ) -> VerificationReportResponse {
@@ -89,6 +89,8 @@ fn map_verification_report(
                 EvidenceResponse {
                     cell_id: ev.cell_id.0,
                     matched_terms: ev.matched_terms,
+                    match_score_q16: ev.match_score_q16,
+                    match_kind: ev.match_kind.as_str().to_owned(),
                     source_trust_q16: ev.source_trust_q16,
                     source_trust_category: ev.source_trust_category.as_str().to_owned(),
                     citation: ev.citation.clone(),
@@ -125,6 +127,7 @@ fn map_verification_report(
         fact: report.fact.clone(),
         status: status_str,
         verdict,
+        confidence_q16: report.confidence_q16,
         evidence: evidence.clone(),
         contradicting_evidence: contradicting_evidence.clone(),
         guards,

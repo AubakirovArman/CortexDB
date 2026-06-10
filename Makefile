@@ -2,20 +2,22 @@
 .PHONY: encrypted-backup-check
 .PHONY: encrypted-backup-rotation-check
 .PHONY: backup-restore-production-pack-check
-.PHONY: storage-format-freeze-check
+.PHONY: storage-format-freeze-check storage-format-change-note-check
 .PHONY: engine-api-compat-check engine-public-api-freeze-check engine-error-model-check engine-feature-flags-check module-ownership-check engine-internal-boundary-check engine-determinism-check engine-panic-audit-check
 .PHONY: migration-compatibility-v2-check
 .PHONY: longmemeval-v1-official-repo longmemeval-v1-official-lite-env longmemeval-v1-official-data longmemeval-v1-cortexdb-retrieval longmemeval-v1-official-retrieval-metrics longmemeval-v1-retrieval-adapter-check longmemeval-v1-e2e-adapter-check longmemeval-evidence-page-check longmemeval-v1-official-generate longmemeval-v1-official-qa-score longmemeval-v1-official-score longmemeval-v1-package-submission longmemeval-v1-error-analysis longmemeval-v1-deepseek-flash-falsecase-check longmemeval-v1-deepseek-flash-diff longmemeval-v1-deepseek-flash-compact-50-check longmemeval-v1-deepseek-flash-compact-500-check longmemeval-v1-deepseek-flash-preference-check longmemeval-v1-deepseek-flash-single-session-user-check longmemeval-v1-deepseek-flash-multi-session-check longmemeval-v1-deepseek-flash-temporal-check
 .PHONY: locomo-official-data locomo-cortexdb-retrieval locomo-retrieval-adapter-check
 .PHONY: multihop-rag-official-repo multihop-rag-official-data multihop-rag-preflight multihop-rag-balanced-50 multihop-rag-local-50-check multihop-rag-cortexdb-retrieval-50 multihop-rag-official-retrieval-metrics-50 multihop-rag-cortexdb-retrieval-full multihop-rag-official-retrieval-metrics-full multihop-rag-retrieval-full-existing-check multihop-rag-qa-full-existing-check multihop-rag-qa-hybrid-full-retry-existing-check multihop-rag-qa-hybrid-full-retry-v4-existing-check multihop-rag-deepseek-qa-50 multihop-rag-deepseek-qa-50-cache-metrics multihop-rag-official-qa-metrics-50 multihop-rag-official-qa-metrics-existing-50 multihop-rag-qa-error-analysis-50 multihop-rag-deepseek-qa-full multihop-rag-deepseek-qa-temporal-50-v3 multihop-rag-official-qa-metrics-temporal-50-v3 multihop-rag-qa-error-analysis-temporal-50-v3 multihop-rag-deepseek-qa-temporal-50-v3-retry multihop-rag-official-qa-metrics-temporal-50-v3-retry multihop-rag-qa-error-analysis-temporal-50-v3-retry multihop-rag-deepseek-qa-temporal-50-v4-decompose-retry multihop-rag-official-qa-metrics-temporal-50-v4-decompose-retry multihop-rag-qa-error-analysis-temporal-50-v4-decompose-retry multihop-rag-deepseek-qa-temporal-chronology-50-v1 multihop-rag-official-qa-metrics-temporal-chronology-50-v1 multihop-rag-qa-error-analysis-temporal-chronology-50-v1 multihop-rag-deepseek-qa-temporal-chronology-yes-no-50-v1 multihop-rag-official-qa-metrics-temporal-chronology-yes-no-50-v1 multihop-rag-qa-error-analysis-temporal-chronology-yes-no-50-v1 multihop-rag-deepseek-qa-temporal-v3 multihop-rag-deepseek-qa-temporal-v3-retry multihop-rag-deepseek-qa-comparison-50-retry multihop-rag-official-qa-metrics-comparison-50-retry multihop-rag-qa-error-analysis-comparison-50-retry multihop-rag-deepseek-qa-comparison-50-decompose-retry multihop-rag-official-qa-metrics-comparison-50-decompose-retry multihop-rag-qa-error-analysis-comparison-50-decompose-retry multihop-rag-deepseek-qa-comparison-v2-retry multihop-rag-deepseek-qa-comparison-v3-decompose-retry multihop-rag-combine-qa-full-hybrid multihop-rag-combine-qa-full-hybrid-retry multihop-rag-combine-qa-full-hybrid-retry-v4 multihop-rag-postprocess-hybrid-full-retry-v5 multihop-rag-combine-qa-full-hybrid-retry-v6 multihop-rag-combine-qa-full-hybrid-retry-v7 multihop-rag-official-qa-metrics-hybrid-full multihop-rag-official-qa-metrics-hybrid-full-retry multihop-rag-official-qa-metrics-hybrid-full-retry-v4 multihop-rag-official-qa-metrics-hybrid-full-retry-v5 multihop-rag-official-qa-metrics-hybrid-full-retry-v6 multihop-rag-official-qa-metrics-hybrid-full-retry-v7 multihop-rag-official-qa-metrics-full multihop-rag-official-qa-metrics-existing-full multihop-rag-qa-error-analysis-full multihop-rag-qa-error-analysis-hybrid-full-retry multihop-rag-qa-error-analysis-hybrid-full-retry-v4 multihop-rag-qa-error-analysis-hybrid-full-retry-v5 multihop-rag-qa-error-analysis-hybrid-full-retry-v6 multihop-rag-qa-error-analysis-hybrid-full-retry-v7
-.PHONY: enterprise-rag-bench-official-repo enterprise-rag-bench-official-env enterprise-rag-bench-preflight enterprise-rag-bench-balanced-50 enterprise-rag-bench-cortexdb-retrieval-smoke enterprise-rag-bench-official-retrieval-only-metrics-smoke enterprise-rag-bench-cortexdb-retrieval-50 enterprise-rag-bench-official-retrieval-only-metrics-50 enterprise-rag-bench-official-retrieval-only-metrics-existing-50 enterprise-rag-bench-cortexdb-retrieval-existing-50-candidates enterprise-rag-bench-embedding-rerank-existing-50 enterprise-rag-bench-cortexdb-retrieval-existing-50-candidates-wide enterprise-rag-bench-embedding-rerank-wide-existing-50 enterprise-rag-bench-embedding-rerank-fused-existing-50 enterprise-rag-bench-embedding-rerank-fused-v6-lexical-existing-50 enterprise-rag-bench-routed-v8-selective-lexical-retrieval-50 enterprise-rag-bench-routed-v10-project-chain-retrieval-50 enterprise-rag-bench-routed-v10-project-chain-retrieval-existing-50 enterprise-rag-bench-official-retrieval-only-metrics-embedding-rerank-existing-50 enterprise-rag-bench-deepseek-answers-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-v2-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-v3-windowed-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v4-windowed-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v5-windowed-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v6-lexical-windowed-50 enterprise-rag-bench-deepseek-answers-routed-v8-selective-lexical-windowed-50 enterprise-rag-bench-deepseek-answers-routed-v9-type-aware-windowed-50 enterprise-rag-bench-deepseek-answers-routed-v10-project-chain-windowed-50 enterprise-rag-bench-routed-v7-selective-lexical-judge-50 enterprise-rag-bench-official-answer-metrics-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-v2-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-v3-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v4-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v5-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v6-lexical-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-routed-v8-selective-lexical-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-routed-v9-type-aware-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-routed-v10-project-chain-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-v2-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-v3-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v4-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v5-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v6-lexical-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v7-selective-lexical-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v8-selective-lexical-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v9-type-aware-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v10-project-chain-windowed-judge-50 enterprise-rag-bench-cortexdb-retrieval-full
+.PHONY: enterprise-rag-bench-official-repo enterprise-rag-bench-official-env enterprise-rag-bench-preflight enterprise-rag-bench-balanced-50 enterprise-rag-bench-cortexdb-retrieval-smoke enterprise-rag-bench-official-retrieval-only-metrics-smoke enterprise-rag-bench-cortexdb-retrieval-50 enterprise-rag-bench-official-retrieval-only-metrics-50 enterprise-rag-bench-official-retrieval-only-metrics-existing-50 enterprise-rag-bench-cortexdb-retrieval-existing-50-candidates enterprise-rag-bench-embedding-rerank-existing-50 enterprise-rag-bench-cortexdb-retrieval-existing-50-candidates-wide enterprise-rag-bench-embedding-rerank-wide-existing-50 enterprise-rag-bench-embedding-rerank-fused-existing-50 enterprise-rag-bench-embedding-rerank-fused-v6-lexical-existing-50 enterprise-rag-bench-routed-v8-selective-lexical-retrieval-50 enterprise-rag-bench-routed-v10-project-chain-retrieval-50 enterprise-rag-bench-routed-v10-project-chain-retrieval-existing-50 enterprise-rag-bench-official-retrieval-only-metrics-embedding-rerank-existing-50 enterprise-rag-bench-deepseek-answers-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-v2-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-v3-windowed-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v4-windowed-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v5-windowed-50 enterprise-rag-bench-deepseek-answers-embedding-rerank-fused-v6-lexical-windowed-50 enterprise-rag-bench-deepseek-answers-routed-v8-selective-lexical-windowed-50 enterprise-rag-bench-deepseek-answers-routed-v9-type-aware-windowed-50 enterprise-rag-bench-deepseek-answers-routed-v10-project-chain-windowed-50 enterprise-rag-bench-routed-v7-selective-lexical-judge-50 enterprise-rag-bench-official-answer-metrics-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-smoke enterprise-rag-bench-official-answer-metrics-embedding-rerank-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-v2-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-v3-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v4-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v5-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-embedding-rerank-fused-v6-lexical-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-routed-v8-selective-lexical-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-routed-v9-type-aware-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-routed-v10-project-chain-windowed-judge-50 enterprise-rag-bench-official-answer-metrics-routed-v11-evidence-audit-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-v2-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-v3-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v4-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v5-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-embedding-rerank-fused-v6-lexical-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v7-selective-lexical-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v8-selective-lexical-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v9-type-aware-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v10-project-chain-windowed-judge-50 enterprise-rag-bench-cortexdb-retrieval-full
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v11-evidence-audit-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v11-evidence-audit-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v11-evidence-audit-windowed-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v12-type-aware-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v12-type-aware-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v12-type-aware-digest-windowed-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
-.PHONY: enterprise-rag-bench-balanced-100 enterprise-rag-bench-score-summary-routed-v16-50 enterprise-rag-bench-token-tracked-judge-routed-v16-50 enterprise-rag-bench-current-best-balanced-50 enterprise-rag-bench-deepseek-answers-routed-v17-evidence-first-50 enterprise-rag-bench-calibration-50 enterprise-rag-bench-calibration-100-prep
-.PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-source-link-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-github-semantic-query-expansion enterprise-rag-bench-basic-google-drive-tail-rescue enterprise-rag-bench-confluence-completeness-selector enterprise-rag-bench-confluence-collection-selector enterprise-rag-bench-jira-project-source-selector enterprise-rag-bench-jira-completeness-source-selector enterprise-rag-bench-confluence-content-completeness-selector enterprise-rag-bench-confluence-project-source-selector enterprise-rag-bench-confluence-process-completeness-selector enterprise-rag-bench-slack-gmail-source-selector enterprise-rag-bench-hubspot-drive-anchor-selector enterprise-rag-bench-github-project-source-selector enterprise-rag-bench-sdk-auth-completeness-selector enterprise-rag-bench-confluence-postmortem-variant-selector enterprise-rag-bench-slack-basic-promotion-selector enterprise-rag-bench-jira-semantic-promotion-selector enterprise-rag-bench-confluence-semantic-variant-selector enterprise-rag-bench-linear-semantic-promotion-selector enterprise-rag-bench-jira-project-evidence-selector enterprise-rag-bench-gmail-project-evidence-selector enterprise-rag-bench-confluence-project-discovery-selector enterprise-rag-bench-gold-missing-bottlenecks enterprise-rag-bench-semantic-source-route-sweep enterprise-rag-bench-high-level-coverage
+.PHONY: enterprise-rag-bench-balanced-100 enterprise-rag-bench-score-summary-routed-v16-50 enterprise-rag-bench-token-tracked-judge-routed-v16-50 enterprise-rag-bench-score-summary-routed-v17-50 enterprise-rag-bench-token-tracked-judge-routed-v17-50 enterprise-rag-bench-official-answer-metrics-routed-v17-evidence-first-judge-50 enterprise-rag-bench-current-best-balanced-50 enterprise-rag-bench-deepseek-answers-routed-v17-evidence-first-50 enterprise-rag-bench-calibration-50 enterprise-rag-bench-calibration-100-prep
+.PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-retrieval-quality-fixture-check enterprise-rag-bench-hybrid-parity-fixture-check enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-source-link-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-github-semantic-query-expansion enterprise-rag-bench-basic-google-drive-tail-rescue enterprise-rag-bench-confluence-completeness-selector enterprise-rag-bench-confluence-collection-selector enterprise-rag-bench-jira-project-source-selector enterprise-rag-bench-jira-completeness-source-selector enterprise-rag-bench-confluence-content-completeness-selector enterprise-rag-bench-confluence-project-source-selector enterprise-rag-bench-confluence-process-completeness-selector enterprise-rag-bench-slack-gmail-source-selector enterprise-rag-bench-hubspot-drive-anchor-selector enterprise-rag-bench-github-project-source-selector enterprise-rag-bench-sdk-auth-completeness-selector enterprise-rag-bench-confluence-postmortem-variant-selector enterprise-rag-bench-slack-basic-promotion-selector enterprise-rag-bench-jira-semantic-promotion-selector enterprise-rag-bench-confluence-semantic-variant-selector enterprise-rag-bench-linear-semantic-promotion-selector enterprise-rag-bench-jira-project-evidence-selector enterprise-rag-bench-gmail-project-evidence-selector enterprise-rag-bench-confluence-project-discovery-selector enterprise-rag-bench-gold-missing-bottlenecks enterprise-rag-bench-semantic-source-route-sweep enterprise-rag-bench-high-level-coverage
 .PHONY: enterprise-rag-bench-evidence-plan-check enterprise-rag-bench-evidence-table-check
+.PHONY: enterprise-rag-bench-official-clean-vectors-50 enterprise-rag-bench-official-clean-vectors-500 enterprise-rag-bench-official-clean-retrieval-smoke-50 enterprise-rag-bench-official-clean-retrieval-50-cached enterprise-rag-bench-official-clean-retrieval-50-engine-keyword enterprise-rag-bench-official-clean-retrieval-50-engine-keyword-rerank enterprise-rag-bench-official-clean-retrieval-50-engine-hybrid enterprise-rag-bench-official-clean-compare-retrieval enterprise-rag-bench-official-clean-heldout-smoke-check enterprise-rag-bench-official-clean-heldout-retrieval-quality-check enterprise-rag-bench-official-clean-status enterprise-rag-bench-official-clean-50 enterprise-rag-bench-official-clean-500 enterprise-rag-bench-official-clean-heldout enterprise-rag-bench-official-clean-50-gemma enterprise-rag-bench-official-clean-500-gemma enterprise-rag-bench-official-clean-heldout-gemma enterprise-rag-bench-official-clean-50-gemini enterprise-rag-bench-official-clean-500-gemini enterprise-rag-bench-official-clean-heldout-gemini enterprise-rag-bench-official-clean-50-deepseek enterprise-rag-bench-official-clean-500-deepseek enterprise-rag-bench-official-clean-heldout-deepseek
+.PHONY: enterprise-rag-bench-query-understanding-lift-check
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check dashboard-operational-status-check context-pack-explorer-check verification-explorer-check retrieval-quality-explorer-check permissions-view-check audit-viewer-v2-check backup-restore-view-check incident-view-check dashboard-role-ui-check
 .PHONY: doctor-check
@@ -43,7 +45,7 @@
 .PHONY: distributed-consensus-research-check
 .PHONY: managed-cloud-feasibility-check
 .PHONY: next-60-epics-audit next-60-epics-completion-check
-.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check sdk-release-artifacts-check sdk-registry-gate-check sdk-productization-check openapi-check openapi-contract-check sdk-contract-check sdk-e2e-release-check migration-policy-check migration-compatibility-check storage-compat-check engine-api-check aql-compat-check retrieval-quality-check retrieval-quality-history-check search-quality-gate-v2-check context-pack-quality-check verification-quality-check security-check rbac-policy-store-check quota-policy-check audit-chain-check audit-export-retention-check security-hardening-check security-gate-v2-check security-release-report-check compliance-boundary-check observability-check deployment-upgrade-check http-contract-ops-check cli-product-check future-epic-design-check distributed-consensus-design-check managed-cloud-design-check enterprise-rbac-design-check hnsw-no-fallback-design-check llm-inference-design-check external-identity-design-check legal-verification-design-check distributed-consensus-check consensus-partition-soak-check consensus-failover-slo-check consensus-rejoin-check cloud-tenant-lifecycle-check cloud-backup-restore-check cloud-upgrade-check ann-production-no-fallback-check ann-production-slo-history-check ann-real-domain-history-check ann-public-corpus-history-check ann-graph-freshness-check llm-inference-contract-check llm-inference-safety-check llm-inference-smoke-check secrets-check oidc-auth-contract-check identity-policy-mapping-check auth-rotation-check legal-verification-dataset-check legal-verification-quality-check legal-citation-policy-check binary-release-package binary-release-validate binary-platform-matrix-check install-script-check binary-release-check beta-delta-check beta-foundation-check beta-rc-check beta-release-check production-hardening-check production-candidate-check production-v1-check public-claims-check load-smoke-check single-node-performance-check performance-trend-check tenant-recovery-check context-verify-quality-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-product-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-recall-probe-check ann-recall-probe-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-readiness ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-real-embedding-release-check ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-history-fixture-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check backup-rpo-rto-profile-check crash-fault-check chaos-restart-check storage-soak-check storage-soak-history-check storage-soak-24h-campaign storage-soak-campaign-status storage-soak-campaign-watchdog storage-soak-campaign-status-check storage-soak-24h-evidence-check storage-soak-72h-start storage-soak-72h-campaign storage-soak-72h-status storage-soak-72h-status-report storage-soak-72h-watchdog storage-soak-72h-evidence-check storage-soak-epic-finalize replication-partition-check replication-lifecycle-check production-evidence-sweep smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
+.PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check sdk-release-artifacts-check sdk-registry-gate-check sdk-productization-check openapi-check openapi-contract-check sdk-contract-check sdk-e2e-release-check migration-policy-check migration-compatibility-check storage-compat-check engine-api-check aql-compat-check retrieval-quality-check retrieval-quality-history-check search-quality-gate-v2-check context-pack-quality-check verification-quality-check security-check rbac-policy-store-check quota-policy-check audit-chain-check audit-export-retention-check security-hardening-check security-gate-v2-check security-release-report-check compliance-boundary-check observability-check deployment-upgrade-check http-contract-ops-check cli-product-check future-epic-design-check distributed-consensus-design-check managed-cloud-design-check enterprise-rbac-design-check hnsw-no-fallback-design-check llm-inference-design-check external-identity-design-check legal-verification-design-check distributed-consensus-check consensus-partition-soak-check consensus-failover-slo-check consensus-rejoin-check cloud-tenant-lifecycle-check cloud-backup-restore-check cloud-upgrade-check ann-production-no-fallback-check ann-production-slo-history-check ann-real-domain-history-check ann-public-corpus-history-check ann-graph-freshness-check llm-inference-contract-check llm-inference-safety-check llm-inference-smoke-check secrets-check oidc-auth-contract-check identity-policy-mapping-check auth-rotation-check legal-verification-dataset-check legal-verification-quality-check legal-citation-policy-check binary-release-package binary-release-validate binary-platform-matrix-check install-script-check binary-release-check beta-delta-check beta-foundation-check beta-rc-check beta-release-check production-hardening-check production-candidate-check production-v1-check public-claims-check load-smoke-check single-node-performance-check performance-trend-check tenant-recovery-check context-verify-quality-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-product-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-reference-suite-check ann-reference-suite-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-recall-probe-check ann-recall-probe-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-readiness ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-real-embedding-release-check ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-history-fixture-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check backup-rpo-rto-profile-check crash-fault-check chaos-restart-check storage-soak-check storage-soak-history-check storage-soak-24h-campaign storage-soak-campaign-status storage-soak-campaign-watchdog storage-soak-campaign-status-check storage-soak-24h-evidence-check storage-soak-72h-start storage-soak-72h-campaign storage-soak-72h-status storage-soak-72h-status-report storage-soak-72h-watchdog storage-soak-72h-evidence-check storage-soak-epic-finalize replication-partition-check replication-lifecycle-check production-evidence-sweep smoke-test sdk-smoke-test rag-demo-smoke alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
 ANN_FIXTURE_REPORT ?= target/ann/ann_fixture_report.json
@@ -53,6 +55,8 @@ ANN_EXTERNAL_BASELINE ?= crates/cortex-engine/fixtures/ann_external_baseline_v1.
 ANN_EXTERNAL_REPORT ?= target/ann/ann_external_fixture_report.json
 ANN_METRIC_MATRIX_BASELINE ?= crates/cortex-engine/fixtures/ann_metric_matrix_baseline_v1.json
 ANN_METRIC_MATRIX_REPORT ?= target/ann/ann_metric_matrix_report.json
+ANN_REFERENCE_SUITE ?= crates/cortex-engine/fixtures/ann_reference_suite_v1.json
+ANN_REFERENCE_SUITE_REPORT ?= target/ann/ann_reference_suite_report.json
 ANN_CORPUS_VECTORS ?= crates/cortex-engine/fixtures/ann_corpus_vectors_v1.jsonl
 ANN_CORPUS_QUERIES ?= crates/cortex-engine/fixtures/ann_corpus_queries_v1.jsonl
 ANN_CORPUS_GROUND_TRUTH ?= crates/cortex-engine/fixtures/ann_corpus_ground_truth_v1.jsonl
@@ -186,6 +190,7 @@ CONTEXT_PACK_CONFLICT_VISIBILITY_REPORT ?= target/context-pack-quality/conflict-
 CONTEXT_PACK_PRIVATE_SCOPE_REPORT ?= target/context-pack-quality/private-scope-report.json
 CONTEXT_PACK_TOKEN_ESTIMATOR_REPORT ?= target/context-pack-quality/token-estimator-report.json
 CONTEXT_PACK_LARGE_CELL_POLICY_REPORT ?= target/context-pack-quality/large-cell-policy-report.json
+CONTEXT_PACK_SPAN_PACKING_REPORT ?= target/context-pack-quality/span-packing-report.json
 VERIFICATION_QUALITY_FIXTURE ?= examples/eval/verification_cases.jsonl
 VERIFICATION_QUALITY_REPORT ?= target/verification-quality/report.json
 VERIFICATION_QUALITY_DASHBOARD_JSON ?= target/verification-quality/dashboard.json
@@ -333,6 +338,7 @@ ENCRYPTED_BACKUP_REPORT ?= $(ENCRYPTED_BACKUP_ROOT)/report.json
 ENCRYPTED_BACKUP_ROTATION_ROOT ?= target/encrypted-backup-rotation
 ENCRYPTED_BACKUP_ROTATION_REPORT ?= $(ENCRYPTED_BACKUP_ROTATION_ROOT)/report.json
 STORAGE_FORMAT_FREEZE_REPORT ?= target/storage-format-freeze/report.json
+STORAGE_FORMAT_CHANGE_NOTE_REPORT ?= target/storage-format-change-notes/report.json
 LOAD_SMOKE_ROOT ?= target/load-smoke
 LOAD_SMOKE_REPORT ?= $(LOAD_SMOKE_ROOT)/report.json
 LOAD_SMOKE_CELLS ?= 100
@@ -479,6 +485,7 @@ ENTERPRISE_RAG_BENCH_OFFICIAL_REPO ?= target/external-benchmarks/EnterpriseRAG-B
 ENTERPRISE_RAG_BENCH_VENV ?= $(ENTERPRISE_RAG_BENCH_ROOT)/.venv
 ENTERPRISE_RAG_BENCH_PYTHON ?= $(ENTERPRISE_RAG_BENCH_VENV)/bin/python
 ENTERPRISE_RAG_BENCH_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)/questions.jsonl
+ENTERPRISE_RAG_BENCH_EXTRA_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)/extra_questions.jsonl
 ENTERPRISE_RAG_BENCH_UUID_INDEX ?= $(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)/generated_data/uuid_index.json
 ENTERPRISE_RAG_BENCH_SOURCES_DIR ?= $(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)/generated_data/sources
 ENTERPRISE_RAG_BENCH_PREFLIGHT_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/preflight_report.json
@@ -703,6 +710,21 @@ ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_SCORE_SUMMARY ?= $(ENTERPRISE_RA
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_SCORE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_ROOT)/score_summary_token_tracked.md
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_ROUTE_TYPES ?= conflicting_info
 ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/qa/deepseek-balanced-50-routed-v17-evidence-first
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_JUDGE_METRICS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/official_metrics_judge.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_JUDGE_ROWS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/deepseek_judgments.jsonl
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_JUDGE_ANALYSIS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/answer_error_analysis_judge.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_SCORE_SUMMARY ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/score_summary.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_SCORE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/score_summary.md
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_TOKEN_JUDGE_METRICS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/official_metrics_judge_token_tracked.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_TOKEN_JUDGE_ROWS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/deepseek_judgments_token_tracked.jsonl
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_TOKEN_SCORE_SUMMARY ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/score_summary_token_tracked.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_TOKEN_SCORE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/score_summary_token_tracked.md
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_LOG ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/answer_progress.log
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_STATUS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/answer_status.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_JUDGE_LOG ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/judge_progress.log
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_JUDGE_STATUS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/judge_status.json
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_TOKEN_JUDGE_LOG ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/judge_token_progress.log
+ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_TOKEN_JUDGE_STATUS ?= $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/judge_token_status.json
 ENTERPRISE_RAG_BENCH_QA_V17_TOPK_CONTEXT ?= 6
 ENTERPRISE_RAG_BENCH_QA_V17_MAX_CHARS_PER_DOC ?= 900
 ENTERPRISE_RAG_BENCH_QA_V17_MAX_EVIDENCE_TABLE_ROWS ?= 24
@@ -720,11 +742,73 @@ ENTERPRISE_RAG_BENCH_QA_BASE_URL ?= https://api.deepseek.com
 ENTERPRISE_RAG_BENCH_QA_TOPK_CONTEXT ?= 6
 ENTERPRISE_RAG_BENCH_QA_MAX_CHARS_PER_DOC ?= 1600
 ENTERPRISE_RAG_BENCH_QA_WORKERS ?= 2
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER ?= gemma
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER ?= gemini
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL ?=
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE ?= all
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_TOPK_CONTEXT ?= 8
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_CHARS_PER_DOC ?= 2200
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_TOKENS ?= 420
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_WORKERS ?= 2
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_WORKERS ?= 2
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_TIMEOUT_SECONDS ?= 180
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROGRESS_EVERY ?= 10
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_PROGRESS_EVERY ?= 50000
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE ?= cached-lexical
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK ?= none
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS ?=
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS ?=
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS ?=
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_CACHE ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/vector_cache.jsonl
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/vector_report.json
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_LOG ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/vector_progress.log
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_STATUS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/vector_status.json
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS_50 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/50/query_vectors.jsonl
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS_50 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/50/document_vectors.jsonl
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS_500 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/500/query_vectors.jsonl
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS_500 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/500/document_vectors.jsonl
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_BASELINE_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/50/cached-lexical/retrieval.clean.jsonl
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_CANDIDATE_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/50/engine-hybrid/retrieval.clean.jsonl
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_COMPARISON_JSONL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/retrieval_comparison.jsonl
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_COMPARISON_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/retrieval_comparison.json
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_COMPARISON_MD ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/retrieval_comparison.md
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_GATE_LOG ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/2/heldout-smoke-check/official_clean_gate.log
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_GATE_STATUS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/2/heldout-smoke-check/official_clean_gate_status.json
+ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_GATE_LOG ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/100/epic17-heldout-retrieval/retrieval_quality_gate.log
+ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_GATE_STATUS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/100/epic17-heldout-retrieval/retrieval_quality_gate_status.json
+ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_GATE_PROGRESS_EVERY ?= 25
+ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_ROOT ?= fixtures/enterprise_rag_bench/retrieval_quality_gate
+ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_OUTPUT_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/quality-gate-fixture
+ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_REPORT ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_OUTPUT_ROOT)/report.json
+ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_OUTPUT_ROOT)/report.md
+ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_LOG ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_OUTPUT_ROOT)/progress.log
+ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_STATUS ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_OUTPUT_ROOT)/status.json
+ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_ROOT ?= fixtures/enterprise_rag_bench/hybrid_parity
+ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_OUTPUT_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/hybrid-parity-fixture
+ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_JSONL ?= $(ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_OUTPUT_ROOT)/details.jsonl
+ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_REPORT ?= $(ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_OUTPUT_ROOT)/report.json
+ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_OUTPUT_ROOT)/report.md
+ENTERPRISE_RAG_BENCH_QUERY_UNDERSTANDING_LIFT_FIXTURE_ROOT ?= fixtures/enterprise_rag_bench/query_understanding_lift
+ENTERPRISE_RAG_BENCH_QUERY_UNDERSTANDING_LIFT_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/query-understanding-lift/report.json
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_SIZE ?= 500
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_RUN_LABEL ?= $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL)
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_WATCH ?= 0
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_INTERVAL_SECONDS ?= 5
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_TAIL_LINES ?= 0
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_ENV_FILE ?= .env
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_BATCH_SIZE ?= 16
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_PROGRESS_EVERY ?= 128
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_MAX_CHARS_PER_DOC ?= 1800
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_DOCUMENT_LIMIT ?=
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT ?=
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_REUSE_DB ?= 0
 DEEPSEEK_KEY_FILE ?= /mnt/hf_model_weights/arman/3bit/.deepseek
 SINGLE_NODE_PERF_ROOT ?= target/single-node-performance
 SINGLE_NODE_PERF_REPORT ?= $(SINGLE_NODE_PERF_ROOT)/report.json
 SINGLE_NODE_PERF_CELLS ?= 500
 SINGLE_NODE_PERF_MAX_TOTAL_MS ?= 30000
+SINGLE_NODE_PERF_MIN_INGEST_CELLS_PER_SEC ?= 1
+SINGLE_NODE_PERF_MAX_RSS_BYTES ?= 1073741824
 PERFORMANCE_TREND_ROOT ?= target/performance-trends
 PERFORMANCE_TREND_REPORT ?= $(PERFORMANCE_TREND_ROOT)/report.json
 PERFORMANCE_HISTORY_ROOT ?= fixtures/performance/history
@@ -771,6 +855,9 @@ STORAGE_SOAK_V2_MAX_RUNS ?= 100000
 STORAGE_SOAK_V2_CYCLES ?= 50
 STORAGE_SOAK_V2_CELLS_PER_CYCLE ?= 100
 STORAGE_SOAK_V2_MIN_THROUGHPUT_RATIO ?= 0.75
+STORAGE_SOAK_V2_MAX_SPACE_AMPLIFICATION_Q16 ?= 67108864
+STORAGE_SOAK_V2_MAX_WRITE_AMPLIFICATION_Q16 ?= 67108864
+STORAGE_SOAK_V2_MAX_COMPACTION_PRESSURE_Q16 ?= 65536
 REPLICATION_PARTITION_ROOT ?= target/replication-partition
 REPLICATION_PARTITION_REPORT ?= $(REPLICATION_PARTITION_ROOT)/report.json
 REPLICATION_LIFECYCLE_ROOT ?= target/replication-lifecycle
@@ -886,6 +973,10 @@ storage-format-freeze-check:
 	cargo test -p cortex-storage --test hnsw_graph_tests
 	cargo test -p cortex-storage --test manifest_profile_tests
 	python3 scripts/storage_format_freeze_check.py --report "$(STORAGE_FORMAT_FREEZE_REPORT)"
+	$(MAKE) storage-format-change-note-check
+
+storage-format-change-note-check:
+	python3 scripts/check_storage_format_change_notes.py --report "$(STORAGE_FORMAT_CHANGE_NOTE_REPORT)"
 
 storage-compat-check:
 	python3 scripts/storage_compat_check.py --root "$(STORAGE_COMPAT_ROOT)" --report "$(STORAGE_COMPAT_REPORT)"
@@ -954,8 +1045,14 @@ context-pack-quality-check:
 	$(MAKE) context-pack-private-scope-check
 	$(MAKE) context-pack-token-estimator-check
 	$(MAKE) context-pack-large-cell-policy-check
+	$(MAKE) context-pack-span-packing-check
 	python3 scripts/context_pack_quality_check.py --fixture "$(CONTEXT_PACK_QUALITY_FIXTURE)" --report "$(CONTEXT_PACK_QUALITY_REPORT)"
 	$(MAKE) context-pack-quality-v3-check
+
+.PHONY: context-pack-span-packing-check
+context-pack-span-packing-check:
+	cargo test -p cortex-engine --test context_pack_span_packing
+	python3 scripts/context_pack_span_packing_check.py --root "." --report "$(CONTEXT_PACK_SPAN_PACKING_REPORT)"
 
 .PHONY: context-pack-large-cell-policy-check
 context-pack-large-cell-policy-check:
@@ -1075,6 +1172,7 @@ docker-production-compose-check:
 upgrade-rollback-cli-flow-check:
 	cargo test -p cortex-cli upgrade_prepare_validate_and_rollback_flow
 	cargo test -p cortex-cli upgrade_prepare_json_reports_next_commands
+	cargo test -p cortex-cli migrate_preflight_creates_backup_drill_and_preserves_data
 	python3 scripts/upgrade_rollback_cli_flow_check.py --report "$(UPGRADE_ROLLBACK_CLI_FLOW_REPORT)"
 
 package-manager-feasibility-check:
@@ -1158,9 +1256,9 @@ cloud-upgrade-check: deployment-upgrade-check migration-policy-check migration-c
 managed-cloud-feasibility-check: cloud-tenant-lifecycle-check cloud-backup-restore-check cloud-upgrade-check
 	python3 scripts/managed_cloud_feasibility_check.py --report "$(MANAGED_CLOUD_FEASIBILITY_REPORT)"
 
-ann-production-no-fallback-check: ann-fixture-report ann-external-report ann-metric-matrix-report ann-domain-corpus-report ann-recall-probe-report
+ann-production-no-fallback-check: ann-fixture-report ann-external-report ann-metric-matrix-report ann-domain-corpus-report ann-recall-probe-report ann-reference-suite-report
 	cargo test -p cortex-engine hnsw_no_fallback
-	python3 scripts/hnsw_no_fallback_gate_check.py --gate production-no-fallback --evidence fixture="$(ANN_FIXTURE_REPORT)" --evidence external="$(ANN_EXTERNAL_REPORT)" --evidence metric_matrix="$(ANN_METRIC_MATRIX_REPORT)" --evidence domain="$(ANN_DOMAIN_REPORT)" --evidence recall_probe="$(ANN_RECALL_PROBE_REPORT)" --report "$(HNSW_PRODUCTION_NO_FALLBACK_REPORT)"
+	python3 scripts/hnsw_no_fallback_gate_check.py --gate production-no-fallback --evidence fixture="$(ANN_FIXTURE_REPORT)" --evidence external="$(ANN_EXTERNAL_REPORT)" --evidence metric_matrix="$(ANN_METRIC_MATRIX_REPORT)" --evidence domain="$(ANN_DOMAIN_REPORT)" --evidence recall_probe="$(ANN_RECALL_PROBE_REPORT)" --evidence reference_suite="$(ANN_REFERENCE_SUITE_REPORT)" --report "$(HNSW_PRODUCTION_NO_FALLBACK_REPORT)"
 
 ann-real-domain-history-check: ann-domain-corpus-report ann-history-fixture-check
 	python3 scripts/hnsw_no_fallback_gate_check.py --gate real-domain-history --evidence domain="$(ANN_DOMAIN_REPORT)" --history "$(ANN_HISTORY_CLEAN_FIXTURE)" --report "$(HNSW_REAL_DOMAIN_HISTORY_REPORT)"
@@ -1637,6 +1735,274 @@ enterprise-rag-bench-cortexdb-retrieval-full: enterprise-rag-bench-preflight
 	  --top-k "$(ENTERPRISE_RAG_BENCH_TOPK)" \
 	  --batch-size "$(ENTERPRISE_RAG_BENCH_INGEST_BATCH_SIZE)" \
 	  --reset-db
+
+enterprise-rag-bench-official-clean-vectors-50: enterprise-rag-bench-official-repo
+	python3 scripts/enterprise_rag_bench/build_official_clean_vectors.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output-query-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS_50)" \
+	  --output-document-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS_50)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_REPORT)" \
+	  --cache-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_CACHE)" \
+	  --env-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_ENV_FILE)" \
+	  --limit-questions 50 \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_DOCUMENT_LIMIT),--limit-documents "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_DOCUMENT_LIMIT)",) \
+	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_MAX_CHARS_PER_DOC)" \
+	  --batch-size "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_BATCH_SIZE)" \
+	  --progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_PROGRESS_EVERY)" \
+	  --log-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_LOG)" \
+	  --status-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_STATUS)"
+
+enterprise-rag-bench-official-clean-vectors-500: enterprise-rag-bench-official-repo
+	python3 scripts/enterprise_rag_bench/build_official_clean_vectors.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output-query-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS_500)" \
+	  --output-document-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS_500)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_REPORT)" \
+	  --cache-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_CACHE)" \
+	  --env-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_ENV_FILE)" \
+	  --limit-questions 500 \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_DOCUMENT_LIMIT),--limit-documents "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_DOCUMENT_LIMIT)",) \
+	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_MAX_CHARS_PER_DOC)" \
+	  --batch-size "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_BATCH_SIZE)" \
+	  --progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_PROGRESS_EVERY)" \
+	  --log-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_LOG)" \
+	  --status-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_STATUS)"
+
+enterprise-rag-bench-official-clean-compare-retrieval:
+	python3 scripts/enterprise_rag_bench/compare_retrieval_runs.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
+	  --baseline-retrieval-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_BASELINE_RETRIEVAL)" \
+	  --candidate-retrieval-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_CANDIDATE_RETRIEVAL)" \
+	  --output-jsonl "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_COMPARISON_JSONL)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_COMPARISON_REPORT)" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_COMPARISON_MD)" \
+	  --limit "$(ENTERPRISE_RAG_BENCH_TOPK)"
+
+enterprise-rag-bench-official-clean-retrieval-smoke-50:
+	$(MAKE) enterprise-rag-bench-official-clean-50 \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE=retrieval \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL=smoke-maxdocs-50 \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE=cached-lexical \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS=50 \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_PROGRESS_EVERY=10
+
+enterprise-rag-bench-official-clean-retrieval-50-cached:
+	$(MAKE) enterprise-rag-bench-official-clean-50 \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE=retrieval \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL=cached-lexical \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE=cached-lexical
+
+enterprise-rag-bench-official-clean-retrieval-50-engine-keyword:
+	$(MAKE) enterprise-rag-bench-official-clean-50 \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE=retrieval \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL=engine-keyword \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE=engine-keyword
+
+enterprise-rag-bench-official-clean-retrieval-50-engine-keyword-rerank:
+	$(MAKE) enterprise-rag-bench-official-clean-50 \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE=retrieval \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL=engine-keyword-rerank \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE=engine-keyword \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK=weighted
+
+enterprise-rag-bench-official-clean-retrieval-50-engine-hybrid:
+	$(MAKE) enterprise-rag-bench-official-clean-50 \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE=retrieval \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL=engine-hybrid \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE=engine-hybrid \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS="$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS_50)" \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS="$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS_50)"
+
+enterprise-rag-bench-official-clean-50: enterprise-rag-bench-official-repo
+	python3 scripts/enterprise_rag_bench/run_official_clean_benchmark.py \
+	  --size 50 \
+	  --split-name primary \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL),--run-label "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL)",) \
+	  --stage "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE)" \
+	  --answer-provider "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER)" \
+	  --judge-provider "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER)" \
+	  --top-k-context "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_TOPK_CONTEXT)" \
+	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_CHARS_PER_DOC)" \
+	  --max-tokens "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_TOKENS)" \
+	  --answer-workers "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_WORKERS)" \
+	  --judge-workers "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_WORKERS)" \
+	  --judge-timeout-seconds "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_TIMEOUT_SECONDS)" \
+	  --progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROGRESS_EVERY)" \
+	  --retrieval-progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_PROGRESS_EVERY)" \
+	  --retrieval-mode "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE)" \
+	  --rerank "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK)" \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS),--max-documents "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS)",) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS),--query-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS)",) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS),--document-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS)",) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT),--db-root "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT)",) \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_REUSE_DB)),--reuse-db,)
+
+enterprise-rag-bench-official-clean-500: enterprise-rag-bench-official-repo
+	python3 scripts/enterprise_rag_bench/run_official_clean_benchmark.py \
+	  --size 500 \
+	  --split-name primary \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL),--run-label "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL)",) \
+	  --stage "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE)" \
+	  --answer-provider "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER)" \
+	  --judge-provider "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER)" \
+	  --top-k-context "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_TOPK_CONTEXT)" \
+	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_CHARS_PER_DOC)" \
+	  --max-tokens "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_TOKENS)" \
+	  --answer-workers "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_WORKERS)" \
+	  --judge-workers "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_WORKERS)" \
+	  --judge-timeout-seconds "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_TIMEOUT_SECONDS)" \
+	  --progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROGRESS_EVERY)" \
+	  --retrieval-progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_PROGRESS_EVERY)" \
+	  --retrieval-mode "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE)" \
+	  --rerank "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK)" \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS),--max-documents "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS)",) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS),--query-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS)",) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS),--document-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS)",) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT),--db-root "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT)",) \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_REUSE_DB)),--reuse-db,)
+
+enterprise-rag-bench-official-clean-heldout: enterprise-rag-bench-official-repo
+	python3 scripts/enterprise_rag_bench/run_official_clean_benchmark.py \
+	  --size 100 \
+	  --split-name heldout \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL),--run-label "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL)",) \
+	  --stage "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE)" \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_EXTRA_QUESTIONS)" \
+	  --answer-provider "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER)" \
+	  --judge-provider "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER)" \
+	  --top-k-context "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_TOPK_CONTEXT)" \
+	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_CHARS_PER_DOC)" \
+	  --max-tokens "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_TOKENS)" \
+	  --answer-workers "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_WORKERS)" \
+	  --judge-workers "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_WORKERS)" \
+	  --judge-timeout-seconds "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_TIMEOUT_SECONDS)" \
+	  --progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROGRESS_EVERY)" \
+	  --retrieval-progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_PROGRESS_EVERY)" \
+	  --retrieval-mode "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE)" \
+	  --rerank "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK)" \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS),--max-documents "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS)",) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS),--query-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS)",) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS),--document-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS)",) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT),--db-root "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT)",) \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_REUSE_DB)),--reuse-db,)
+
+enterprise-rag-bench-official-clean-heldout-smoke-check: enterprise-rag-bench-official-repo
+	python3 scripts/enterprise_rag_bench/run_official_clean_benchmark.py \
+	  --size 2 \
+	  --split-name heldout \
+	  --run-label heldout-smoke-check \
+	  --stage prepare \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_EXTRA_QUESTIONS)" \
+	  --answer-provider deepseek \
+	  --judge-provider deepseek
+	python3 scripts/enterprise_rag_bench/official_clean_gate.py \
+	  --run-report "$(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/2/heldout-smoke-check/answer-deepseek/official_clean_run_report.json" \
+	  --report "$(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/2/heldout-smoke-check/official_clean_gate_report.json" \
+	  --expected-split heldout \
+	  --expected-questions-file "$(ENTERPRISE_RAG_BENCH_EXTRA_QUESTIONS)" \
+	  --log-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_GATE_LOG)" \
+	  --status-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_GATE_STATUS)"
+
+enterprise-rag-bench-official-clean-heldout-retrieval-quality-check: enterprise-rag-bench-official-repo
+	python3 scripts/enterprise_rag_bench/retrieval_quality_gate.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_EXTRA_QUESTIONS)" \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/100/epic17-heldout-retrieval/retrieval.clean.jsonl" \
+	  --report "$(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/100/epic17-heldout-retrieval/retrieval_quality_gate_report.json" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/100/epic17-heldout-retrieval/retrieval_quality_gate_report.md" \
+	  --top-k "$(ENTERPRISE_RAG_BENCH_TOPK)" \
+	  --min-average-recall-pct 33 \
+	  --min-hit-questions 33 \
+	  --min-full-recall-questions 33 \
+	  --max-average-invalid-extra-docs 9.67 \
+	  --min-mrr 0.08 \
+	  --min-ndcg 0.12 \
+	  --progress-every "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_GATE_PROGRESS_EVERY)" \
+	  --log-file "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_GATE_LOG)" \
+	  --status-file "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_GATE_STATUS)"
+
+enterprise-rag-bench-official-clean-status:
+	@run_dir="$(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_SIZE)"; \
+	if [ -n "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_RUN_LABEL)" ]; then \
+	  run_dir="$$run_dir/$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_RUN_LABEL)"; \
+	fi; \
+	extra=""; \
+	if [ "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_WATCH)" = "1" ]; then \
+	  extra="--watch --interval-seconds $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_INTERVAL_SECONDS)"; \
+	fi; \
+	python3 scripts/enterprise_rag_bench/show_official_clean_status.py --run-dir "$$run_dir" --tail-lines "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_TAIL_LINES)" $$extra
+
+enterprise-rag-bench-official-clean-50-gemma:
+	$(MAKE) enterprise-rag-bench-official-clean-50 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER=gemma ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER=gemma
+
+enterprise-rag-bench-official-clean-500-gemma:
+	$(MAKE) enterprise-rag-bench-official-clean-500 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER=gemma ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER=gemma
+
+enterprise-rag-bench-official-clean-heldout-gemma:
+	$(MAKE) enterprise-rag-bench-official-clean-heldout ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER=gemma ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER=gemma
+
+enterprise-rag-bench-official-clean-50-gemini:
+	$(MAKE) enterprise-rag-bench-official-clean-50 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER=gemini ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER=gemini
+
+enterprise-rag-bench-official-clean-500-gemini:
+	$(MAKE) enterprise-rag-bench-official-clean-500 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER=gemini ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER=gemini
+
+enterprise-rag-bench-official-clean-heldout-gemini:
+	$(MAKE) enterprise-rag-bench-official-clean-heldout ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER=gemini ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER=gemini
+
+enterprise-rag-bench-official-clean-50-deepseek:
+	$(MAKE) enterprise-rag-bench-official-clean-50 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER=deepseek ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER=deepseek
+
+enterprise-rag-bench-official-clean-500-deepseek:
+	$(MAKE) enterprise-rag-bench-official-clean-500 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER=deepseek ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER=deepseek
+
+enterprise-rag-bench-official-clean-heldout-deepseek:
+	$(MAKE) enterprise-rag-bench-official-clean-heldout ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER=deepseek ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER=deepseek
+
+enterprise-rag-bench-retrieval-quality-fixture-check:
+	python3 scripts/enterprise_rag_bench/retrieval_quality_gate.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_ROOT)/questions.jsonl" \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_ROOT)/retrieval.clean.jsonl" \
+	  --report "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_REPORT)" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_MARKDOWN)" \
+	  --top-k 3 \
+	  --min-average-recall-pct 83 \
+	  --min-hit-questions 3 \
+	  --min-full-recall-questions 2 \
+	  --max-average-invalid-extra-docs 1.34 \
+	  --min-mrr 0.61 \
+	  --min-ndcg 0.60 \
+	  --include-details \
+	  --progress-every 1 \
+	  --log-file "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_LOG)" \
+	  --status-file "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_STATUS)"
+
+enterprise-rag-bench-hybrid-parity-fixture-check:
+	python3 scripts/enterprise_rag_bench/compare_retrieval_runs.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_ROOT)/questions.jsonl" \
+	  --baseline-retrieval-file "$(ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_ROOT)/reference.python_fusion.jsonl" \
+	  --candidate-retrieval-file "$(ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_ROOT)/candidate.engine_hybrid.jsonl" \
+	  --output-jsonl "$(ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_JSONL)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_REPORT)" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_MARKDOWN)" \
+	  --limit 3 \
+	  --min-average-recall-delta-pct 0 \
+	  --min-full-recall-delta 0 \
+	  --min-hit-delta 0 \
+	  --max-regressed-questions 0
+
+enterprise-rag-bench-query-understanding-lift-check:
+	cargo run -p cortex-engine --bin query_understanding_lift_check -- \
+	  --documents "$(ENTERPRISE_RAG_BENCH_QUERY_UNDERSTANDING_LIFT_FIXTURE_ROOT)/documents.jsonl" \
+	  --questions "$(ENTERPRISE_RAG_BENCH_QUERY_UNDERSTANDING_LIFT_FIXTURE_ROOT)/questions.jsonl" \
+	  --output "$(ENTERPRISE_RAG_BENCH_QUERY_UNDERSTANDING_LIFT_REPORT)" \
+	  --top-k 1 \
+	  --min-average-recall-delta-pct 50 \
+	  --min-full-recall-delta 3 \
+	  --min-engine-average-recall-pct 100
 
 enterprise-rag-bench-candidate-depth-check:
 	python3 scripts/enterprise_rag_bench/candidate_depth_audit.py \
@@ -2788,7 +3154,9 @@ enterprise-rag-bench-deepseek-answers-routed-v17-evidence-first-50: enterprise-r
 	  --evidence-table-file "$(ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_JSONL)" \
 	  --max-evidence-table-rows "$(ENTERPRISE_RAG_BENCH_QA_V17_MAX_EVIDENCE_TABLE_ROWS)" \
 	  --workers "$(ENTERPRISE_RAG_BENCH_QA_WORKERS)" \
-	  --omit-thinking-field
+	  --omit-thinking-field \
+	  --log-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_LOG)" \
+	  --status-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_STATUS)"
 
 enterprise-rag-bench-official-answer-metrics-50: enterprise-rag-bench-official-env enterprise-rag-bench-deepseek-answers-50
 	cd "$(ENTERPRISE_RAG_BENCH_OFFICIAL_REPO)" && "$(abspath $(ENTERPRISE_RAG_BENCH_PYTHON))" -m src.scripts.answer_evaluation.metrics_based_eval \
@@ -3039,6 +3407,49 @@ enterprise-rag-bench-token-tracked-judge-routed-v16-50: enterprise-rag-bench-rou
 	  --output "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_SCORE_SUMMARY)" \
 	  --markdown "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V16_50_TOKEN_SCORE_MARKDOWN)" \
 	  --run-label "routed-v16-conflict-coverage-50-token-tracked-judge"
+
+enterprise-rag-bench-official-answer-metrics-routed-v17-evidence-first-judge-50: enterprise-rag-bench-deepseek-answers-routed-v17-evidence-first-50
+	test -f "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/answers.jsonl"
+	python3 scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py \
+	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/answers.jsonl)" \
+	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
+	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_JUDGE_METRICS))" \
+	  --judgments-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_JUDGE_ROWS))" \
+	  --api-key-file "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL)" \
+	  --model "$(ENTERPRISE_RAG_BENCH_JUDGE_MODEL)" \
+	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS)" \
+	  --log-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_JUDGE_LOG)" \
+	  --status-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_JUDGE_STATUS)"
+
+enterprise-rag-bench-score-summary-routed-v17-50: enterprise-rag-bench-official-answer-metrics-routed-v17-evidence-first-judge-50
+	python3 scripts/enterprise_rag_bench/summarize_score.py \
+	  --metrics-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_JUDGE_METRICS)" \
+	  --answers-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/answers.jsonl" \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_SCORE_SUMMARY)" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_SCORE_MARKDOWN)" \
+	  --run-label "routed-v17-evidence-first-50"
+
+enterprise-rag-bench-token-tracked-judge-routed-v17-50: enterprise-rag-bench-official-answer-metrics-routed-v17-evidence-first-judge-50
+	python3 scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py \
+	  --answers-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/answers.jsonl)" \
+	  --questions-file "$(abspath $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS))" \
+	  --results-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_TOKEN_JUDGE_METRICS))" \
+	  --judgments-file "$(abspath $(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_TOKEN_JUDGE_ROWS))" \
+	  --api-key-file "$(ENTERPRISE_RAG_BENCH_JUDGE_API_KEY_FILE)" \
+	  --base-url "$(ENTERPRISE_RAG_BENCH_JUDGE_BASE_URL)" \
+	  --model "$(ENTERPRISE_RAG_BENCH_JUDGE_MODEL)" \
+	  --timeout-seconds "$(ENTERPRISE_RAG_BENCH_JUDGE_TIMEOUT_SECONDS)" \
+	  --log-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_TOKEN_JUDGE_LOG)" \
+	  --status-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_TOKEN_JUDGE_STATUS)"
+	python3 scripts/enterprise_rag_bench/summarize_score.py \
+	  --metrics-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_TOKEN_JUDGE_METRICS)" \
+	  --answers-file "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_ROOT)/answers.jsonl" \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_TOKEN_SCORE_SUMMARY)" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_RERANK_ANSWER_V17_50_TOKEN_SCORE_MARKDOWN)" \
+	  --run-label "routed-v17-evidence-first-50-token-tracked-judge"
 
 enterprise-rag-bench-calibration-50: enterprise-rag-bench-score-summary-routed-v16-50
 
@@ -3704,7 +4115,7 @@ multihop-rag-temporal-subtype-analysis-v6:
 	  --output-md "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_ROOT)/temporal_subtype_analysis.md"
 
 single-node-performance-check:
-	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)"
+	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)" --min-ingest-cells-per-sec "$(SINGLE_NODE_PERF_MIN_INGEST_CELLS_PER_SEC)" --max-rss-bytes "$(SINGLE_NODE_PERF_MAX_RSS_BYTES)"
 
 performance-trend-check:
 	python3 scripts/performance_trend_check.py --load-report "$(LOAD_SMOKE_REPORT)" --single-node-report "$(SINGLE_NODE_PERF_REPORT)" --history-root "$(PERFORMANCE_HISTORY_ROOT)" --report "$(PERFORMANCE_TREND_REPORT)"
@@ -3856,6 +4267,11 @@ ann-metric-matrix-check:
 
 ann-metric-matrix-report:
 	cargo run --release -p cortex-engine --bin ann_metric_matrix_check -- --baseline $(ANN_METRIC_MATRIX_BASELINE) --output $(ANN_METRIC_MATRIX_REPORT)
+
+ann-reference-suite-check: ann-fixture-report ann-external-report ann-domain-corpus-report
+	python3 scripts/ann/reference_suite_gate.py --suite "$(ANN_REFERENCE_SUITE)" --report "$(ANN_REFERENCE_SUITE_REPORT)"
+
+ann-reference-suite-report: ann-reference-suite-check
 
 ann-corpus-smoke-check:
 	cargo run --release -p cortex-engine --bin ann_corpus_check -- --vectors $(ANN_CORPUS_VECTORS) --queries $(ANN_CORPUS_QUERIES) --ground-truth $(ANN_CORPUS_GROUND_TRUTH)
@@ -4178,7 +4594,7 @@ storage-soak-72h-watchdog:
 	python3 scripts/storage_soak_campaign_status.py --pid-file "$(STORAGE_SOAK_V2_PID_FILE)" --campaign "$(STORAGE_SOAK_V2_CAMPAIGN_REPORT)" --history "$(STORAGE_SOAK_V2_HISTORY_REPORT)" --soak-root "$(STORAGE_SOAK_V2_ROOT)" --target-hours "$(STORAGE_SOAK_V2_TARGET_HOURS)" --require-active --output "$(STORAGE_SOAK_V2_STATUS_REPORT)" --format text
 
 storage-soak-72h-evidence-check:
-	python3 scripts/storage_soak_v2_gate.py --report "$(STORAGE_SOAK_V2_HISTORY_REPORT)" --output "$(STORAGE_SOAK_V2_GATE_REPORT)" --min-hours "$(STORAGE_SOAK_V2_TARGET_HOURS)" --min-avg-cells-per-cycle "$(STORAGE_SOAK_V2_CELLS_PER_CYCLE)" --min-throughput-ratio "$(STORAGE_SOAK_V2_MIN_THROUGHPUT_RATIO)"
+	python3 scripts/storage_soak_v2_gate.py --report "$(STORAGE_SOAK_V2_HISTORY_REPORT)" --output "$(STORAGE_SOAK_V2_GATE_REPORT)" --min-hours "$(STORAGE_SOAK_V2_TARGET_HOURS)" --min-avg-cells-per-cycle "$(STORAGE_SOAK_V2_CELLS_PER_CYCLE)" --min-throughput-ratio "$(STORAGE_SOAK_V2_MIN_THROUGHPUT_RATIO)" --max-space-amplification-q16 "$(STORAGE_SOAK_V2_MAX_SPACE_AMPLIFICATION_Q16)" --max-write-amplification-q16 "$(STORAGE_SOAK_V2_MAX_WRITE_AMPLIFICATION_Q16)" --max-compaction-pressure-q16 "$(STORAGE_SOAK_V2_MAX_COMPACTION_PRESSURE_Q16)"
 
 storage-soak-epic-finalize:
 	python3 scripts/storage_soak_epic_finalize.py
@@ -4217,6 +4633,7 @@ alpha-check:
 	$(MAKE) openapi-contract-check
 	$(MAKE) sdk-contract-check
 	$(MAKE) migration-policy-check
+	$(MAKE) storage-format-change-note-check
 	$(MAKE) migration-compatibility-check
 	$(MAKE) beta-delta-check
 	$(MAKE) public-claims-check

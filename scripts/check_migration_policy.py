@@ -13,10 +13,14 @@ REQUIRED_POLICY_TERMS = (
     "backup-drill",
     "restore",
     "rollback",
+    "cortexdb migrate",
     "migration note",
     "read-only compatible",
     "make migration-policy-check",
     "make migration-compatibility-check",
+    "make storage-format-change-note-check",
+    "storage_format_change_notes_v1.json",
+    "release fixture",
     "ACLOGv0",
     "ACS1",
     "ACB0",
@@ -31,6 +35,8 @@ REQUIRED_POLICY_TERMS = (
 REQUIRED_STORAGE_LINK_TERMS = (
     "UPGRADE_MIGRATION.md",
     "migration note",
+    "storage_format_change_notes_v1.json",
+    "storage-format-change-note-check",
 )
 
 
@@ -61,10 +67,16 @@ def main() -> int:
         errors.append("Makefile: missing migration-policy-check target")
     if "migration-compatibility-check:" not in makefile:
         errors.append("Makefile: missing migration-compatibility-check target")
+    if "storage-format-change-note-check:" not in makefile:
+        errors.append("Makefile: missing storage-format-change-note-check target")
     if "$(MAKE) migration-policy-check" not in makefile:
         errors.append("Makefile: release/alpha gates must run migration-policy-check")
+    if "$(MAKE) storage-format-change-note-check" not in makefile:
+        errors.append("Makefile: release/alpha gates must run storage-format-change-note-check")
     if "make migration-policy-check" not in workflow:
         errors.append(".github/workflows/rust.yml: CI must run migration-policy-check")
+    if "make storage-format-change-note-check" not in workflow:
+        errors.append(".github/workflows/rust.yml: CI must run storage-format-change-note-check")
 
     if errors:
         print("MIGRATION POLICY CHECK FAILED:")

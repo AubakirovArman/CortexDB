@@ -18,6 +18,7 @@ run_test() {
 }
 
 run_test crash_matrix cargo test -p cortex-engine --test crash_matrix -- --nocapture
+run_test crash_consistency_fault_injection cargo test -p cortex-engine --test crash_consistency_fault_injection -- --nocapture
 run_test restart_matrix cargo test -p cortex-engine --test restart_matrix -- --nocapture
 run_test corruption_matrix cargo test -p cortex-engine --test corruption_matrix -- --nocapture
 run_test repair_tests cargo test -p cortex-engine --test repair_tests -- --nocapture
@@ -84,6 +85,12 @@ report = {
     "root": os.environ["ROOT"],
     "targeted_tests": [
         {"name": "crash_matrix", "log": "crash_matrix.log"},
+        {
+            "name": "crash_consistency_fault_injection",
+            "log": "crash_consistency_fault_injection.log",
+            "scenarios": 1000,
+            "invariant": "restart visible state equals last committed seq or fails closed for published torn files"
+        },
         {"name": "restart_matrix", "log": "restart_matrix.log"},
         {"name": "corruption_matrix", "log": "corruption_matrix.log"},
         {"name": "repair_tests", "log": "repair_tests.log"},

@@ -50,3 +50,47 @@ fn storage_stats_exposes_memory_accounting_estimates() {
     assert!(checkpointed.estimated_index_bytes > 0);
     assert!(checkpointed.estimated_total_memory_bytes >= checkpointed.estimated_index_bytes);
 }
+
+#[test]
+fn storage_stats_tracks_compaction_pressure_and_amplification() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+
+    db.put_cell(CellId(1), b"alpha payload for compaction stats".to_vec())
+        .unwrap();
+    db.checkpoint().unwrap();
+    let checkpointed = db.storage_stats().unwrap();
+    assert!(checkpointed.live_segment_bytes > 0);
+    assert_eq!(checkpointed.retired_segment_bytes, 0);
+    assert_eq!(checkpointed.compaction_pressure_q16, 0);
+    assert!(checkpointed.live_segment_payload_bytes > 0);
+    assert!(checkpointed.logical_payload_bytes > 0);
+    assert!(checkpointed.space_amplification_q16 > 0);
+    assert!(checkpointed.write_amplification_q16 > 0);
+
+    db.put_cell(CellId(2), b"beta payload for compaction stats".to_vec())
+        .unwrap();
+    db.checkpoint().unwrap();
+    db.compact().unwrap();
+    let compacted = db.storage_stats().unwrap();
+    assert!(compacted.live_segment_bytes > 0);
+    assert!(compacted.retired_segment_bytes > 0);
+    assert_eq!(
+        compacted.total_segment_bytes,
+        compacted
+            .live_segment_bytes
+            .saturating_add(compacted.retired_segment_bytes)
+    );
+    assert!(compacted.durable_storage_bytes >= compacted.total_segment_bytes);
+    assert!(compacted.compaction_pressure_q16 > 0);
+    assert!(compacted.logical_payload_bytes > 0);
+    assert!(compacted.space_amplification_q16 > 0);
+    assert!(compacted.write_amplification_q16 > 0);
+
+    db.garbage_collect_retired_segments().unwrap();
+    let collected = db.storage_stats().unwrap();
+    assert!(collected.live_segment_bytes > 0);
+    assert_eq!(collected.retired_segments, 0);
+    assert_eq!(collected.retired_segment_bytes, 0);
+    assert_eq!(collected.compaction_pressure_q16, 0);
+}

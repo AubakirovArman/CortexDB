@@ -20,6 +20,7 @@ impl VerificationReport {
             String::new(),
             format!("- fact: `{}`", escape_inline(&self.fact)),
             format!("- status: `{}`", self.status.as_str()),
+            format!("- confidence_q16: `{}`", self.confidence_q16),
             format!("- supporting_evidence: `{}`", self.evidence.len()),
             format!(
                 "- contradicting_evidence: `{}`",
@@ -33,6 +34,7 @@ impl VerificationReport {
             "| --- | --- |".to_owned(),
             format!("| Fact | `{}` |", escape_table_cell(&self.fact)),
             format!("| Status | `{}` |", self.status.as_str()),
+            format!("| Confidence Q16 | `{}` |", self.confidence_q16),
             format!("| Supporting evidence | `{}` |", self.evidence.len()),
             format!(
                 "| Contradicting evidence | `{}` |",
@@ -48,9 +50,11 @@ impl VerificationReport {
         } else {
             for evidence in &self.evidence {
                 lines.push(format!(
-                    "- cell_id=`{}` matched_terms=`{}` source_trust=`{}` (`{}`) citation=`{}`",
+                    "- cell_id=`{}` matched_terms=`{}` match_kind=`{}` match_score_q16=`{}` source_trust=`{}` (`{}`) citation=`{}`",
                     evidence.cell_id.0,
                     evidence.matched_terms,
+                    evidence.match_kind.as_str(),
+                    evidence.match_score_q16,
                     evidence.source_trust_category.as_str(),
                     evidence.source_trust_q16,
                     option_or_null(evidence.citation.as_deref())
@@ -64,9 +68,11 @@ impl VerificationReport {
         } else {
             for evidence in &self.contradicting_evidence {
                 lines.push(format!(
-                    "- cell_id=`{}` matched_terms=`{}` source_trust=`{}` (`{}`) citation=`{}`",
+                    "- cell_id=`{}` matched_terms=`{}` match_kind=`{}` match_score_q16=`{}` source_trust=`{}` (`{}`) citation=`{}`",
                     evidence.cell_id.0,
                     evidence.matched_terms,
+                    evidence.match_kind.as_str(),
+                    evidence.match_score_q16,
                     evidence.source_trust_category.as_str(),
                     evidence.source_trust_q16,
                     option_or_null(evidence.citation.as_deref())
@@ -84,6 +90,7 @@ impl VerificationReport {
             "CortexDB Verification Audit v1".to_owned(),
             format!("fact={}", escape_value(&self.fact)),
             format!("status={}", self.status.as_str()),
+            format!("confidence_q16={}", self.confidence_q16),
             format!("supporting_count={}", self.evidence.len()),
             format!("contradicting_count={}", self.contradicting_evidence.len()),
             format!("guard_count={}", self.guards.len()),
@@ -94,6 +101,14 @@ impl VerificationReport {
             lines.push(format!(
                 "supporting.{index}.matched_terms={}",
                 evidence.matched_terms
+            ));
+            lines.push(format!(
+                "supporting.{index}.match_kind={}",
+                evidence.match_kind.as_str()
+            ));
+            lines.push(format!(
+                "supporting.{index}.match_score_q16={}",
+                evidence.match_score_q16
             ));
             lines.push(format!(
                 "supporting.{index}.source_trust_q16={}",
@@ -116,6 +131,14 @@ impl VerificationReport {
             lines.push(format!(
                 "contradicting.{index}.matched_terms={}",
                 evidence.matched_terms
+            ));
+            lines.push(format!(
+                "contradicting.{index}.match_kind={}",
+                evidence.match_kind.as_str()
+            ));
+            lines.push(format!(
+                "contradicting.{index}.match_score_q16={}",
+                evidence.match_score_q16
             ));
             lines.push(format!(
                 "contradicting.{index}.source_trust_q16={}",

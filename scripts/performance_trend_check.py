@@ -73,6 +73,13 @@ def check_engine_report(errors: list[str], report: dict[str, Any]) -> None:
         errors.append("single-node report is not ok")
     if report.get("workload_class") != "local_single_node_lifecycle":
         errors.append("single-node report missing local_single_node_lifecycle workload_class")
+    thresholds = report.get("slo_thresholds", {})
+    if not isinstance(thresholds, dict):
+        errors.append("single-node report missing slo_thresholds")
+    else:
+        for field in ("min_ingest_cells_per_sec", "max_rss_bytes"):
+            if not isinstance(thresholds.get(field), (int, float)):
+                errors.append(f"single-node report missing numeric slo_thresholds.{field}")
     for profile in report.get("profiles", []):
         profile_name = str(profile.get("name", "unknown"))
         phases = {
@@ -84,6 +91,46 @@ def check_engine_report(errors: list[str], report: dict[str, Any]) -> None:
         thresholds = profile.get("latency_thresholds", {})
         if isinstance(thresholds, dict):
             check_thresholds(errors, f"single-node:{profile_name}", phases, thresholds)
+        check_engine_profile_slo(errors, profile_name, profile)
+
+
+def check_engine_profile_slo(errors: list[str], profile_name: str, profile: dict[str, Any]) -> None:
+    slo = profile.get("slo")
+    if not isinstance(slo, dict):
+        errors.append(f"single-node:{profile_name} missing profile slo block")
+    elif slo.get("passed") is not True:
+        errors.append(f"single-node:{profile_name} profile slo did not pass")
+    ingest = profile.get("ingest")
+    if not isinstance(ingest, dict):
+        errors.append(f"single-node:{profile_name} missing ingest throughput block")
+    else:
+        throughput = ingest.get("throughput_per_sec")
+        minimum = ingest.get("min_throughput_per_sec")
+        if not isinstance(throughput, (int, float)):
+            errors.append(f"single-node:{profile_name} missing numeric ingest.throughput_per_sec")
+        if not isinstance(minimum, (int, float)):
+            errors.append(f"single-node:{profile_name} missing numeric ingest.min_throughput_per_sec")
+        if isinstance(throughput, (int, float)) and isinstance(minimum, (int, float)):
+            if float(throughput) < float(minimum):
+                errors.append(
+                    f"single-node:{profile_name} ingest throughput below threshold "
+                    f"{float(throughput):.3f}<{float(minimum):.3f}"
+                )
+    resources = profile.get("resource_usage")
+    if not isinstance(resources, dict):
+        errors.append(f"single-node:{profile_name} missing resource_usage block")
+    else:
+        for field in ("rss_bytes", "peak_rss_bytes"):
+            if not isinstance(resources.get(field), (int, float)):
+                errors.append(f"single-node:{profile_name} missing numeric resource_usage.{field}")
+        max_rss = profile.get("slo_thresholds", {}).get("max_rss_bytes", None)
+        peak = resources.get("peak_rss_bytes", None)
+        if isinstance(max_rss, (int, float)) and isinstance(peak, (int, float)):
+            if float(peak) > float(max_rss):
+                errors.append(
+                    f"single-node:{profile_name} peak RSS exceeded threshold "
+                    f"{float(peak):.0f}>{float(max_rss):.0f}"
+                )
 
 
 def check_load_report(errors: list[str], report: dict[str, Any]) -> None:
@@ -159,6 +206,19 @@ def compare_engine(current: dict[str, Any], previous: dict[str, Any]) -> dict[st
     return comparisons
 
 
+def current_engine_slo_summary(current: dict[str, Any]) -> dict[str, Any]:
+    profiles: dict[str, Any] = {}
+    for profile in current.get("profiles", []):
+        name = str(profile.get("name", "unknown"))
+        profiles[name] = {
+            "slo_passed": profile.get("slo", {}).get("passed"),
+            "ingest_throughput_per_sec": profile.get("ingest", {}).get("throughput_per_sec"),
+            "rss_bytes": profile.get("resource_usage", {}).get("rss_bytes"),
+            "peak_rss_bytes": profile.get("resource_usage", {}).get("peak_rss_bytes"),
+        }
+    return profiles
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--load-report", default="target/load-smoke/report.json")
@@ -197,6 +257,7 @@ def main() -> int:
             if latest
             else {},
         },
+        "single_node_slo_summary": current_engine_slo_summary(single_node_report),
         "errors": errors,
     }
     report_path = Path(args.report)

@@ -6,7 +6,7 @@ The `cortexdb` binary is a local command-line tool that operates directly on the
 
 | Flag | Description |
 |------|-------------|
-| `--json` | Print machine-readable JSON when supported. Applies to `stats`, `validate`, `ann-validate`, `audit`, `context`, `verify`, `search-vector-eval`, and `upgrade`. |
+| `--json` | Print machine-readable JSON when supported. Applies to `stats`, `validate`, `ann-validate`, `audit`, `context`, `verify`, `search-vector-eval`, `upgrade`, and `migrate`. |
 | `--help` | Show help for any subcommand. |
 | `--version` | Print version. |
 
@@ -197,6 +197,19 @@ start with the previous binary.
 
 ```bash
 cortexdb upgrade rollback ./backups/cortexdb-pre-upgrade ./db.rollback
+```
+
+#### `migrate <path> <backup_path> <drill_restore_path>`
+Run the offline migration preflight for a release-to-release storage/API
+transition. In Core Alpha this command intentionally does not rewrite storage
+in place: it validates the source database, creates an immutable backup, restores
+that backup into a drill target, and prints the follow-up validation and rollback
+commands. It is the operator-facing migration alias for the safe upgrade
+workflow.
+
+```bash
+cortexdb migrate ./db ./backups/cortexdb-pre-migration ./drills/cortexdb-pre-migration
+cortexdb --json migrate ./db ./backups/cortexdb-pre-migration ./drills/cortexdb-pre-migration
 ```
 
 #### `restore-encrypted <archive_path> <path>`

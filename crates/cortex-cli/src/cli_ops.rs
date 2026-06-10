@@ -106,7 +106,7 @@ pub fn stats(path: &str, json: bool) -> Result<String, String> {
         return Ok(stats_to_json(&stats));
     }
     Ok(format!(
-        "current_seq={} checkpoint_seq={} live_segments={} retired_segments={} memtable_cells={} memtable_versions={} memtable_payload_bytes={} estimated_memtable_bytes={} estimated_index_bytes={} estimated_context_pack_bytes={} estimated_total_memory_bytes={} wal_size_bytes={} wal_writer_records={} wal_writer_bytes={} wal_writer_fsyncs={} wal_writer_batches={}",
+        "current_seq={} checkpoint_seq={} live_segments={} retired_segments={} memtable_cells={} memtable_versions={} memtable_payload_bytes={} estimated_memtable_bytes={} estimated_index_bytes={} estimated_context_pack_bytes={} estimated_total_memory_bytes={} live_segment_bytes={} retired_segment_bytes={} total_segment_bytes={} durable_storage_bytes={} live_segment_payload_bytes={} logical_payload_bytes={} space_amplification_q16={} write_amplification_q16={} compaction_pressure_q16={} wal_size_bytes={} wal_writer_records={} wal_writer_bytes={} wal_writer_fsyncs={} wal_writer_batches={}",
         stats.current_seq.0,
         stats.checkpoint_seq.0,
         stats.live_segments,
@@ -118,6 +118,15 @@ pub fn stats(path: &str, json: bool) -> Result<String, String> {
         stats.estimated_index_bytes,
         stats.estimated_context_pack_bytes,
         stats.estimated_total_memory_bytes,
+        stats.live_segment_bytes,
+        stats.retired_segment_bytes,
+        stats.total_segment_bytes,
+        stats.durable_storage_bytes,
+        stats.live_segment_payload_bytes,
+        stats.logical_payload_bytes,
+        stats.space_amplification_q16,
+        stats.write_amplification_q16,
+        stats.compaction_pressure_q16,
         stats.wal_size_bytes,
         stats.wal_writer.records_written,
         stats.wal_writer.bytes_written,

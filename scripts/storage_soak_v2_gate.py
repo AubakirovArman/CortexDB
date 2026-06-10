@@ -75,6 +75,40 @@ def validate(report: dict[str, Any], args: argparse.Namespace) -> list[str]:
     missing = sorted(REQUIRED_KILL_PHASES - phase_union)
     require(not missing, f"missing kill injection phases: {missing}", failures)
     failures.extend(trend_failures([e for e in entries if isinstance(e, dict)], args.min_throughput_ratio))
+
+    require(
+        "max_space_amplification_q16" in report,
+        "missing space amplification evidence",
+        failures,
+    )
+    require(
+        "max_write_amplification_q16" in report,
+        "missing write amplification evidence",
+        failures,
+    )
+    require(
+        "max_compaction_pressure_q16" in report,
+        "missing compaction pressure evidence",
+        failures,
+    )
+    max_space_amp = int(report.get("max_space_amplification_q16", 0) or 0)
+    max_write_amp = int(report.get("max_write_amplification_q16", 0) or 0)
+    max_pressure = int(report.get("max_compaction_pressure_q16", 0) or 0)
+    require(
+        max_space_amp <= args.max_space_amplification_q16,
+        f"max space amplification q16 {max_space_amp} above {args.max_space_amplification_q16}",
+        failures,
+    )
+    require(
+        max_write_amp <= args.max_write_amplification_q16,
+        f"max write amplification q16 {max_write_amp} above {args.max_write_amplification_q16}",
+        failures,
+    )
+    require(
+        max_pressure <= args.max_compaction_pressure_q16,
+        f"max compaction pressure q16 {max_pressure} above {args.max_compaction_pressure_q16}",
+        failures,
+    )
     return failures
 
 
@@ -87,6 +121,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--min-cells", type=int, default=1)
     parser.add_argument("--min-avg-cells-per-cycle", type=float, default=100.0)
     parser.add_argument("--min-throughput-ratio", type=float, default=0.75)
+    parser.add_argument("--max-space-amplification-q16", type=int, default=1024 * 65536)
+    parser.add_argument("--max-write-amplification-q16", type=int, default=1024 * 65536)
+    parser.add_argument("--max-compaction-pressure-q16", type=int, default=65536)
     return parser.parse_args(argv)
 
 
@@ -96,6 +133,7 @@ def main(argv: list[str]) -> int:
         report = load_json(Path(args.report))
         failures = validate(report, args)
     except Exception as error:  # noqa: BLE001 - gate writes structured failure report.
+        report = {}
         failures = [str(error)]
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -106,6 +144,18 @@ def main(argv: list[str]) -> int:
         "min_hours": args.min_hours,
         "min_avg_cells_per_cycle": args.min_avg_cells_per_cycle,
         "min_throughput_ratio": args.min_throughput_ratio,
+        "max_space_amplification_q16": args.max_space_amplification_q16,
+        "max_write_amplification_q16": args.max_write_amplification_q16,
+        "max_compaction_pressure_q16": args.max_compaction_pressure_q16,
+        "observed_max_space_amplification_q16": int(
+            report.get("max_space_amplification_q16", 0) or 0
+        ),
+        "observed_max_write_amplification_q16": int(
+            report.get("max_write_amplification_q16", 0) or 0
+        ),
+        "observed_max_compaction_pressure_q16": int(
+            report.get("max_compaction_pressure_q16", 0) or 0
+        ),
         "failures": failures,
     }
     output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

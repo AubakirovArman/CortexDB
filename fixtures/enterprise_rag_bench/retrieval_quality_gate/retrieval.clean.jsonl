@@ -1,0 +1,3 @@
+{"answer":"","document_ids":["doc_alpha_rollout","doc_unrelated_budget","doc_alpha_runbook"],"question":"Which documents are needed for the Alpha launch?","question_id":"q_fixture_001"}
+{"answer":"","document_ids":["doc_unrelated_owner","doc_beta_notes","doc_beta_owner"],"question":"Who owns Beta?","question_id":"q_fixture_002"}
+{"answer":"","document_ids":["doc_unrelated_gamma","doc_gamma_schema"],"question":"What blocks Gamma?","question_id":"q_fixture_003"}

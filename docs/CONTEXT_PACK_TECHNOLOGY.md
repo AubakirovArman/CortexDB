@@ -95,6 +95,21 @@ smaller candidates. The first candidate can still be included even when it is
 larger than the requested budget, preserving the old "return at least one
 candidate" behavior.
 
+When `ContextPackOptions.span_level_packing` is enabled, that first oversized
+candidate can instead be reduced to a query-relevant body span before the
+large-cell policy runs. The selector is deterministic: it scores body lines
+against explicit query terms, keeps a configurable number of neighboring lines,
+preserves header/source metadata, and appends a
+`[context_pack_span=true line_start=... line_end=...]` marker. It does not call
+an embedding model, LLM, reranker, or benchmark oracle metadata.
+
+Span-packed cells also carry structured provenance in JSON, prompt, and
+Markdown exports. The provenance records the readable `source_cell_id`,
+UTF-8-safe byte offsets, 1-based body line range, and the original structured
+SourceRef when present. This lets an agent or UI quote the compact span while
+still tracing it back to the full source cell that already passed AQL and
+AgentView visibility checks.
+
 ## Large Cell Policy
 
 Large cells are candidates whose estimated token cost exceeds the remaining
@@ -118,6 +133,10 @@ All non-default policies report the selected policy in `why_excluded` so
 operators can distinguish a true budget exclusion from a transformed include.
 The include policies keep `estimated_tokens <= token_budget_tokens` when they
 can fit; otherwise they fall back to exclusion.
+
+Span-level packing is separate from `ContextLargeCellPolicy`: it is an opt-in
+pre-pass for relevant evidence windows, while large-cell policy remains the
+fallback for oversized candidates that still cannot fit.
 
 ## Citations
 
@@ -163,6 +182,9 @@ Each selected cell can include explain fields such as:
 - `source_trust_q16`;
 - `source_trust_category`;
 - `source_trust_bonus`;
+- `source_freshness_q16`;
+- `source_freshness_category`;
+- `source_freshness_bonus`;
 - `redundancy_penalty`.
 
 Excluded candidates are reported through anomalies. `why_excluded` explains
@@ -174,6 +196,13 @@ Source trust categories are deterministic q16 bands: missing metadata is
 `unknown`, then explicit values classify as `low`, `medium`, `high`, or
 `official`. The category is explanatory; the numeric bonus remains the q16 value
 so ranking stays deterministic and backward compatible.
+
+Source freshness categories are deterministic relative-recency bands derived
+from `created_unix_seconds` metadata across the retrieved candidate set:
+`unknown`, `stale`, `older`, `recent`, and `current`. Missing timestamps receive
+no freshness bonus. The signal is meant to help conflicting packs expose which
+source is newer; it is not a wall-clock freshness check or compliance
+certification.
 
 This is meant for debugging and UI display. It is not a legal proof or a
 production-grade factual-certification score.

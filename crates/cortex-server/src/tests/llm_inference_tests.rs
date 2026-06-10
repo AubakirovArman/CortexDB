@@ -65,6 +65,12 @@ fn inference_test_double_uses_explicit_context_pack_only() {
         body["citations"],
         serde_json::json!(["doc://investment-risk#p1"])
     );
+    assert_eq!(body["grounding"]["answer_supported"], false);
+    assert_eq!(body["grounding"]["unsupported_span_count"], 1);
+    assert_eq!(
+        body["grounding"]["spans"][0]["supported_by_cell_ids"],
+        serde_json::json!([101])
+    );
     assert_eq!(body["audit"]["context_pack_only"], true);
     assert_eq!(body["audit"]["prompt_body_logged"], false);
     assert_eq!(body["audit"]["secrets_logged"], false);

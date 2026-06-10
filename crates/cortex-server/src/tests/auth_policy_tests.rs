@@ -770,6 +770,14 @@ fn policy_store_context_budget_clamps_agent_view_context_pack_budget() {
     );
     let value = body_json(&response);
     assert_eq!(value["token_budget_tokens"], 500);
+    let decision = &value["cells"][0]["access_decision"];
+    assert_eq!(decision["cell_id"], 1);
+    assert_eq!(decision["decision"], "allowed");
+    assert_eq!(decision["policy"], "agent_view_readable_scope");
+    assert_eq!(decision["scope"], "finance");
+    assert_eq!(decision["agent_id"], 7);
+    assert_eq!(decision["principal_id"], "finance-agent");
+    assert_eq!(decision["auth_role"], "data");
 }
 
 #[test]
@@ -814,6 +822,45 @@ fn auth_policy_store_tenants_restrict_database_realms() {
         denied.contains("token tenant policy is not allowed"),
         "denial should explain tenant policy: {denied}"
     );
+
+    let alpha_write = handle_http_with_options(
+        dir.path(),
+        concat!(
+            "POST /v1/cell?tenant=alpha&cell_id=1 HTTP/1.1\r\n",
+            "Authorization: Bearer alpha-secret\r\n\r\n",
+            "scope=project:investments\nstatus=ready\nalpha policy payload"
+        ),
+        &options,
+    );
+    assert!(
+        alpha_write.contains("200 OK"),
+        "tenant allowlist should allow alpha data write: {alpha_write}"
+    );
+
+    let beta_write = handle_http_with_options(
+        dir.path(),
+        concat!(
+            "POST /v1/cell?tenant=beta&cell_id=1 HTTP/1.1\r\n",
+            "Authorization: Bearer alpha-secret\r\n\r\n",
+            "scope=project:investments\nstatus=ready\nbeta policy payload"
+        ),
+        &options,
+    );
+    assert!(
+        beta_write.contains("403 Forbidden"),
+        "tenant allowlist should deny beta data write: {beta_write}"
+    );
+    assert!(
+        !dir.path().join("realms").join("beta").exists(),
+        "denied tenant data route must not create the beta realm"
+    );
+
+    let alpha_read = handle_http_with_options(
+        dir.path(),
+        "GET /v1/cell?tenant=alpha&cell_id=1 HTTP/1.1\r\nAuthorization: Bearer alpha-secret\r\n\r\n",
+        &options,
+    );
+    assert!(alpha_read.contains("alpha policy payload"));
 }
 
 #[test]

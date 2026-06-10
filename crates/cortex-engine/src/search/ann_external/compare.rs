@@ -62,6 +62,12 @@ pub(super) fn compare_external_baseline(
     if baseline.require_production_safe && !report.production_safe {
         failures.push("production_safe: expected true, observed false".to_owned());
     }
+    if report.fallback_count != 0 {
+        failures.push(format!(
+            "fallback_count: expected 0, observed {}",
+            report.fallback_count
+        ));
+    }
     failures
 }
 

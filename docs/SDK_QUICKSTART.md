@@ -88,6 +88,73 @@ const verify = await client.verifyFact("default", client.buildVerifyFactAql("hel
 const remember = await client.remember("default", client.buildRememberAql("hello", "default", "decision", 3600));
 ```
 
+## Grounded Answer Primitive
+
+All SDKs expose one higher-level agent primitive:
+
+```text
+question -> RETRIEVE CONTEXT -> answerer(context) -> VERIFY FACT -> grounded citations
+```
+
+The SDK does not call an LLM by itself. You provide the `answerer` callback so
+the same primitive can be used with a local model, a hosted model, or a test
+double. The response includes the original ContextPack, grounding spans,
+citations, used `cell_id`s, and optional verification output.
+
+### Rust
+
+```rust
+use cortex_sdk::{AqlRetrievalMode, CortexDbClient, GroundedAnswerRequest, SdkResult};
+
+let client = CortexDbClient::new("http://127.0.0.1:8181");
+let request = GroundedAnswerRequest::new(
+    "project:investments",
+    "investment_projects",
+    "Was the solar budget approved?",
+)
+.mode(AqlRetrievalMode::Audit)
+.budget_tokens(2048)
+.limit_candidates(10);
+
+let grounded = client.answer_with_grounded_context(request, |context| -> SdkResult<String> {
+    Ok(context.cells.first()
+        .map(|cell| cell.payload_text.clone())
+        .unwrap_or_else(|| "Not enough information.".to_owned()))
+})?;
+
+println!("{:?}", grounded.citations);
+```
+
+### Python
+
+```python
+grounded = client.answer_with_grounded_context(
+    "project:investments",
+    "investment_projects",
+    "Was the solar budget approved?",
+    lambda context: context.cells[0].payload_text if context.cells else "Not enough information.",
+    mode="audit",
+    budget_tokens=2048,
+    limit_candidates=10,
+)
+
+print(grounded.citations, grounded.grounding.answer_supported)
+```
+
+### TypeScript
+
+```typescript
+const grounded = await client.answerWithGroundedContext(
+  "project:investments",
+  "investment_projects",
+  "Was the solar budget approved?",
+  (context) => context.cells[0]?.payload_text ?? "Not enough information.",
+  { mode: "audit", budgetTokens: 2048, limitCandidates: 10 },
+);
+
+console.log(grounded.citations, grounded.grounding.answer_supported);
+```
+
 ### ESM / CJS Policy
 
 `@cortexdb/client` ships both ESM (`.js`) and CommonJS (`.cjs`) builds.

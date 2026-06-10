@@ -38,6 +38,8 @@ fn external_fixture_evaluates_jsonl() {
     assert_eq!(report.vector_count, 4);
     assert_eq!(report.query_count, 2);
     assert_eq!(report.dimension, 4);
+    assert_eq!(report.fallback_count, 0);
+    assert_eq!(report.fallback_rate_q16, 0);
 }
 
 #[test]
@@ -52,6 +54,7 @@ fn external_fixture_file_baseline_is_production_safe() {
 
     assert!(report.passed, "{:?}", report.failures);
     assert!(report.production_safe);
+    assert_eq!(report.fallback_count, 0);
 }
 
 #[test]

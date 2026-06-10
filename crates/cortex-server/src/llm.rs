@@ -1,6 +1,12 @@
 use serde::Deserialize;
 
-use crate::responses::{LlmInferenceAuditResponse, LlmInferenceResponse, RouterError};
+use cortex_core::CellId;
+use cortex_engine::{AnswerGroundingOptions, AnswerGroundingReport, ContextPack, ContextPackCell};
+
+use crate::responses::{
+    AnswerGroundingReportResponse, AnswerGroundingSpanResponse, LlmInferenceAuditResponse,
+    LlmInferenceResponse, RouterError,
+};
 pub(crate) use audit::{LlmInferenceDecisionAudit, LlmInferenceRejection, LlmInferenceResult};
 use safety::{validate_llm_runtime_safety_config, LlmRuntimeSafetyConfig};
 
@@ -171,6 +177,15 @@ pub(crate) fn handle_inference_test_double(
     } else {
         summarize_from_context(first_text)
     };
+    let grounding_pack = grounding_context_pack(&request);
+    let grounding = grounding_pack.ground_answer(
+        &output,
+        AnswerGroundingOptions {
+            require_citations: true,
+            reject_unsupported: false,
+            ..AnswerGroundingOptions::default()
+        },
+    );
     let response = LlmInferenceResponse {
         schema_version: RESPONSE_SCHEMA_VERSION,
         provider: TEST_DOUBLE_PROVIDER.to_owned(),
@@ -180,6 +195,7 @@ pub(crate) fn handle_inference_test_double(
         output,
         used_context_cell_ids,
         citations,
+        grounding: map_answer_grounding_report(&grounding),
         audit: LlmInferenceAuditResponse {
             context_pack_only: true,
             prompt_body_logged: false,
@@ -233,6 +249,68 @@ fn citation_count(request: &LlmInferenceRequest) -> usize {
 fn summarize_from_context(text: &str) -> String {
     let snippet = text.chars().take(180).collect::<String>();
     format!("Test-double answer from explicit ContextPack only: {snippet}")
+}
+
+fn grounding_context_pack(request: &LlmInferenceRequest) -> ContextPack {
+    ContextPack {
+        cells: request
+            .context_pack
+            .cells
+            .iter()
+            .map(|cell| ContextPackCell {
+                cell_id: CellId(cell.cell_id),
+                payload: cell
+                    .text
+                    .as_deref()
+                    .or(cell.payload_text.as_deref())
+                    .unwrap_or("")
+                    .as_bytes()
+                    .to_vec(),
+                estimated_tokens: 0,
+                citation: cell.citation.clone().or_else(|| cell.source_ref.clone()),
+                provenance: None,
+                explain: None,
+                access_decision: None,
+            })
+            .collect(),
+        token_budget_tokens: 0,
+        estimated_tokens: 0,
+        truncated: false,
+        citations_required: true,
+        answerability_q16: u16::MAX,
+        conflict_visibility_q16: 0,
+        visible_conflict_count: 0,
+        anomalies: Vec::new(),
+    }
+}
+
+fn map_answer_grounding_report(report: &AnswerGroundingReport) -> AnswerGroundingReportResponse {
+    AnswerGroundingReportResponse {
+        answer_supported: report.answer_supported,
+        rejected: report.rejected,
+        support_q16: report.support_q16,
+        supported_span_count: report.supported_span_count,
+        unsupported_span_count: report.unsupported_span_count,
+        spans: report
+            .spans
+            .iter()
+            .map(|span| AnswerGroundingSpanResponse {
+                text: span.text.clone(),
+                start_byte: span.start_byte,
+                end_byte: span.end_byte,
+                support_q16: span.support_q16,
+                supported: span.supported,
+                covered_terms: span.covered_terms.clone(),
+                missing_terms: span.missing_terms.clone(),
+                supported_by_cell_ids: span
+                    .supported_by_cell_ids
+                    .iter()
+                    .map(|cell_id| cell_id.0)
+                    .collect(),
+                citations: span.citations.clone(),
+            })
+            .collect(),
+    }
 }
 
 fn test_double_runtime_safety_config(enabled: bool) -> LlmRuntimeSafetyConfig {

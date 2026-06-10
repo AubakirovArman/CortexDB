@@ -20,6 +20,15 @@ pub struct CliStatsResponse {
     pub estimated_index_bytes: usize,
     pub estimated_context_pack_bytes: usize,
     pub estimated_total_memory_bytes: usize,
+    pub live_segment_bytes: u64,
+    pub retired_segment_bytes: u64,
+    pub total_segment_bytes: u64,
+    pub durable_storage_bytes: u64,
+    pub live_segment_payload_bytes: u64,
+    pub logical_payload_bytes: u64,
+    pub space_amplification_q16: u32,
+    pub write_amplification_q16: u32,
+    pub compaction_pressure_q16: u32,
     pub wal_size_bytes: u64,
     pub wal_writer_records: u64,
     pub wal_writer_bytes: u64,
@@ -126,6 +135,17 @@ pub struct ContextPackCellResponse {
     pub payload_text: String,
     pub explain: Option<ContextPackExplainResponse>,
     pub source_ref: Option<SourceRefResponse>,
+    pub provenance: Option<ContextSpanProvenanceResponse>,
+}
+
+#[derive(Serialize)]
+pub struct ContextSpanProvenanceResponse {
+    pub source_cell_id: u64,
+    pub source_byte_start: usize,
+    pub source_byte_end: usize,
+    pub source_line_start: u32,
+    pub source_line_end: u32,
+    pub source_ref: Option<SourceRefResponse>,
 }
 
 #[derive(Serialize)]
@@ -138,6 +158,9 @@ pub struct ContextPackExplainResponse {
     pub source_trust_q16: u16,
     pub source_trust_category: String,
     pub source_trust_bonus: u32,
+    pub source_freshness_q16: u16,
+    pub source_freshness_category: String,
+    pub source_freshness_bonus: u32,
     pub redundancy_penalty: u32,
 }
 
@@ -181,6 +204,8 @@ pub struct VerificationResponse {
 pub struct VerificationEvidenceResponse {
     pub cell_id: u64,
     pub matched_terms: u32,
+    pub match_score_q16: u16,
+    pub match_kind: String,
     pub source_trust_q16: u16,
     pub source_trust_category: String,
     pub citation: Option<String>,

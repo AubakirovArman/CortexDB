@@ -22,6 +22,7 @@ def chat(
     omit_thinking_field: bool,
     gemini_native: bool,
     gemini_thinking_budget: int,
+    openai_reasoning: bool = False,
 ) -> tuple[str, dict[str, Any], int]:
     if gemini_native:
         return chat_gemini_native(
@@ -33,14 +34,25 @@ def chat(
             retries=retries,
             thinking_budget=gemini_thinking_budget,
         )
-    payload: dict[str, Any] = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": max_tokens,
-        "temperature": 0,
-    }
-    if not omit_thinking_field:
-        payload["thinking"] = {"type": "disabled"}
+    if openai_reasoning:
+        # GPT-5 reasoning models: max_completion_tokens (not max_tokens), no
+        # custom temperature; reasoning disabled for a fair, cheap extractive
+        # answer comparable to a plain chat model. Leave headroom for the answer.
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_completion_tokens": max(max_tokens * 3, 2000),
+            "reasoning_effort": "none",
+        }
+    else:
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": max_tokens,
+            "temperature": 0,
+        }
+        if not omit_thinking_field:
+            payload["thinking"] = {"type": "disabled"}
     data = json.dumps(payload).encode("utf-8")
     url = base_url.rstrip("/") + "/chat/completions"
     for attempt in range(retries + 1):

@@ -28,6 +28,8 @@ fn observed_from_baseline(baseline: &AnnDriftBaseline) -> AnnRecallLatencyReport
         p95_latency_nanos: baseline.reference_p95_latency_nanos,
         p99_latency_nanos: baseline.reference_p99_latency_nanos(),
         max_latency_nanos: baseline.reference_max_latency_nanos,
+        fallback_count: 0,
+        fallback_rate_q16: 0,
         production_safe: true,
     }
 }

@@ -46,6 +46,26 @@ fn v1_search_auto_reports_selected_routing_strategy() {
 }
 
 #[test]
+fn v1_hybrid_search_uses_persisted_indexes_after_flush() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\nvector=1,0,0\n\nbudget investment"
+    );
+    assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+    assert!(handle_http(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n")
+        .contains(r#""checkpoint_seq":1"#));
+
+    let request = "POST /v1/search?scope=project:investments&mode=hybrid&q=budget&vector=1,0,0&limit=5 HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), request);
+
+    assert!(response.contains(r#""search_mode":"hybrid""#));
+    assert!(response.contains(r#""cell_id":1"#));
+    assert!(response.contains(r#""lexical_score":"#));
+    assert!(response.contains(r#""vector_score":"#));
+}
+
+#[test]
 fn v1_search_explain_reports_term_and_fusion_contributions() {
     let dir = tempfile::tempdir().unwrap();
     let put = concat!(
@@ -73,6 +93,48 @@ fn v1_search_explain_reports_term_and_fusion_contributions() {
     assert!(response.contains(r#""matched_fields":["body_text","vector"]"#));
     assert!(response.contains(r#""fusion_rank_score":"#));
     assert!(response.contains(r#""contribution_summary":"hybrid rrf_score="#));
+}
+
+#[test]
+fn v1_search_weighted_rerank_is_available_through_api() {
+    let dir = tempfile::tempdir().unwrap();
+    let put_a = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\nbudget update"
+    );
+    let put_b = concat!(
+        "POST /v1/cell?cell_id=2 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\nsource=slack\nbudget update"
+    );
+    assert!(handle_http(dir.path(), put_a).contains(r#""seq":1"#));
+    assert!(handle_http(dir.path(), put_b).contains(r#""seq":2"#));
+
+    let plain =
+        "POST /v1/search?scope=project:investments&q=budget+channel&limit=1 HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), plain);
+    assert!(response.contains(r#""search_mode":"keyword""#));
+    assert!(!response.contains(r#""rerank":"#));
+    assert!(response.contains(r#""cell_id":1"#));
+    assert!(!response.contains(r#""cell_id":2"#));
+
+    let reranked =
+        "POST /v1/search?scope=project:investments&q=budget+channel&limit=1&rerank=weighted HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), reranked);
+    assert!(response.contains(r#""search_mode":"keyword""#));
+    assert!(response.contains(r#""rerank":"weighted""#));
+    assert!(response.contains(r#""cell_id":2"#));
+    assert!(!response.contains(r#""cell_id":1"#));
+}
+
+#[test]
+fn v1_search_rejects_unknown_rerank_mode() {
+    let dir = tempfile::tempdir().unwrap();
+    let request =
+        "POST /v1/search?scope=project:investments&q=budget&rerank=oracle HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), request);
+    assert!(response.contains("400 Bad Request"));
+    assert!(response.contains(r#""error":"bad_request""#));
+    assert!(response.contains("rerank must be none or weighted"));
 }
 
 #[test]

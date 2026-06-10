@@ -56,8 +56,8 @@ fn verification_report_output_is_repeatable_and_snapshotted() {
         before,
         [
             "status=mixed_evidence",
-            "evidence=10:9:50000:doc-a;30:9:50000:doc-c",
-            "contradicting=20:6:50000:doc-b",
+            "evidence=10:9:exact_text:65535:50000:doc-a;30:9:exact_text:65535:50000:doc-c",
+            "contradicting=20:6:numeric_contradiction:65535:50000:doc-b",
             "guards=20:numeric_mismatch",
             "numeric_conflicts=20:budget:1.2B KZT:1.4B KZT",
         ]
@@ -198,9 +198,11 @@ fn evidence_snapshot(evidence: &[VerificationEvidence]) -> String {
         .iter()
         .map(|item| {
             format!(
-                "{}:{}:{}:{}",
+                "{}:{}:{}:{}:{}:{}",
                 item.cell_id.0,
                 item.matched_terms,
+                item.match_kind.as_str(),
+                item.match_score_q16,
                 item.source_trust_q16,
                 item.citation.as_deref().unwrap_or("")
             )

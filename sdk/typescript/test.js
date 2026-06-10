@@ -3,6 +3,7 @@ import assert from "node:assert";
 import {
   CortexDBClient,
   CortexDBError,
+  groundAnswer,
   buildRememberAql,
   buildRetrieveContextAql,
   buildVerifyFactAql,
@@ -78,6 +79,85 @@ test("AQL builder helpers reject invalid inputs", () => {
     () => buildRetrieveContextAql("x", "brain", { mode: "turbo" }),
     /mode/,
   );
+});
+
+test("grounded answer helper builds context verify and citations", async () => {
+  const context = {
+    schema_version: "context_pack.v1",
+    token_budget_tokens: 2048,
+    estimated_tokens: 18,
+    truncated: false,
+    citations_required: true,
+    cells: [
+      {
+        cell_id: 7,
+        estimated_tokens: 18,
+        citation: "doc://solar#1",
+        payload_text: "Solar budget was approved by finance.",
+        explain: null,
+        source_ref: null,
+      },
+    ],
+    anomalies: [],
+  };
+
+  const grounding = groundAnswer(context, "Solar budget was approved.", {
+    requireCitations: true,
+  });
+  assert.strictEqual(grounding.answer_supported, true);
+  assert.deepStrictEqual(grounding.spans[0].supported_by_cell_ids, [7]);
+  assert.deepStrictEqual(grounding.spans[0].citations, ["doc://solar#1"]);
+
+  class FakeClient extends CortexDBClient {
+    calls = [];
+
+    async retrieveContext(scope, statement) {
+      this.calls.push(["context", scope, statement]);
+      return context;
+    }
+
+    async verifyFact(scope, statement) {
+      this.calls.push(["verify", scope, statement]);
+      return {
+        fact: "Solar budget was approved.",
+        status: "supported",
+        verdict: "supported",
+        confidence_q16: 60000,
+        evidence: [],
+        contradicting_evidence: [],
+        guards: [],
+        supporting: [],
+        contradicting: [],
+        numeric_conflicts: [],
+      };
+    }
+  }
+
+  const client = new FakeClient();
+  const response = await client.answerWithGroundedContext(
+    "project:investments",
+    "investment_projects",
+    "Was the solar budget approved?",
+    (ctx) => `${ctx.cells[0].payload_text}`,
+    {
+      mode: "audit",
+      budgetTokens: 2048,
+      limitCandidates: 5,
+    },
+  );
+
+  assert.strictEqual(response.answer, "Solar budget was approved by finance.");
+  assert.strictEqual(response.context, context);
+  assert.strictEqual(response.verification.status, "supported");
+  assert.strictEqual(response.verification.confidence_q16, 60000);
+  assert.strictEqual(response.grounding.answer_supported, true);
+  assert.deepStrictEqual(response.citations, ["doc://solar#1"]);
+  assert.deepStrictEqual(response.used_context_cell_ids, [7]);
+  assert.strictEqual(response.calls, undefined);
+  assert.strictEqual(client.calls.length, 2);
+  assert.strictEqual(client.calls[0][0], "context");
+  assert.match(client.calls[0][2], /RETRIEVE CONTEXT FOR TASK/);
+  assert.match(client.calls[1][2], /VERIFY FACT/);
 });
 
 test("CortexDBClient scoped helper", () => {

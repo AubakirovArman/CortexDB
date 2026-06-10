@@ -16,6 +16,23 @@ pub(super) fn to_json(pack: &ContextPack) -> String {
                 "citation": cell.citation.as_ref(),
                 "payload_text": String::from_utf8_lossy(&cell.payload),
                 "source_ref": metadata.source_ref.as_ref().map(source_ref_json),
+                "provenance": cell.provenance.as_ref().map(|provenance| json!({
+                    "source_cell_id": provenance.source_cell_id.0,
+                    "source_byte_start": provenance.source_byte_start,
+                    "source_byte_end": provenance.source_byte_end,
+                    "source_line_start": provenance.source_line_start,
+                    "source_line_end": provenance.source_line_end,
+                    "source_ref": provenance.source_ref.as_ref().map(source_ref_json),
+                })),
+                "access_decision": cell.access_decision.as_ref().map(|decision| json!({
+                    "cell_id": decision.cell_id.0,
+                    "decision": decision.decision.as_str(),
+                    "policy": &decision.policy,
+                    "reason": &decision.reason,
+                    "scope": &decision.scope,
+                    "scope_id": decision.scope_id,
+                    "agent_id": decision.agent_id,
+                })),
                 "explain": cell.explain.as_ref().map(|explain| json!({
                     "score": explain.score,
                     "matched_terms": &explain.matched_terms,
@@ -30,6 +47,9 @@ pub(super) fn to_json(pack: &ContextPack) -> String {
                     "source_trust_q16": explain.source_trust_q16,
                     "source_trust_category": explain.source_trust_category.as_str(),
                     "source_trust_bonus": explain.source_trust_bonus,
+                    "source_freshness_q16": explain.source_freshness_q16,
+                    "source_freshness_category": explain.source_freshness_category.as_str(),
+                    "source_freshness_bonus": explain.source_freshness_bonus,
                     "redundancy_penalty": explain.redundancy_penalty,
                 })),
             })

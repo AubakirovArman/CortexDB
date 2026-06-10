@@ -39,6 +39,14 @@ The frozen machine-readable storage contract lives in
 make storage-format-freeze-check
 ```
 
+The required migration-note and release-fixture policy for every frozen marker
+lives in `fixtures/migration/storage_format_change_notes_v1.json` and is
+checked by:
+
+```bash
+make storage-format-change-note-check
+```
+
 This is a freeze of the current storage markers, not a forced renumbering of
 every marker to `v1`.
 
@@ -52,6 +60,13 @@ For Core Alpha, upgrades are offline and single-node:
 
    ```bash
    cortexdb backup-drill ./db ./backups/cortexdb-pre-upgrade ./drills/cortexdb-pre-upgrade
+   ```
+
+   Automation can use the migration alias for the same guarded workflow:
+
+   ```bash
+   cortexdb migrate ./db ./backups/cortexdb-pre-migration ./drills/cortexdb-pre-migration
+   cortexdb --json migrate ./db ./backups/cortexdb-pre-migration ./drills/cortexdb-pre-migration
    ```
 
 4. Keep the pre-upgrade backup immutable until the upgraded database has passed
@@ -107,6 +122,12 @@ both the historical cells and the marker cell. This proves the offline upgrade
 path covers both historical backup restore and previous-release direct database
 open/write behavior.
 
+`cortexdb migrate` is the operator-facing migration preflight command for this
+policy. In Core Alpha it does not perform an automatic data rewrite. It validates
+the source, creates the immutable backup, restores the drill target, and reports
+the `cortexdb upgrade validate` plus `cortexdb upgrade rollback` commands that
+complete the offline workflow.
+
 Downgrade remains restore-only: restore the immutable pre-upgrade backup and run
 the previous binary against that restored directory. CortexDB does not support
 in-place downgrade across this pair.
@@ -146,8 +167,16 @@ For storage changes, update:
 
 - `docs/STORAGE_FORMATS.md`;
 - this document;
+- `fixtures/migration/storage_format_change_notes_v1.json`;
+- `fixtures/migration/compatibility_matrix_v1.json`;
 - `docs/API_CHANGELOG.md` if an API or SDK response changes;
 - release notes for the target version.
+
+Every storage format marker or version change also requires a release fixture:
+either an updated historical restore fixture or direct-upgrade fixture that is
+validated by `make migration-compatibility-check`. The storage change-note gate
+requires the relevant entry to declare `release_fixture_required=true`, name the
+fixture path, and list the compatibility gates that must pass before merge.
 
 For API changes, update:
 
@@ -165,7 +194,19 @@ make migration-policy-check
 ```
 
 It verifies that this policy exists, names the current storage markers, includes
-backup/restore/rollback instructions, and remains wired into the release check.
+backup/restore/rollback and `cortexdb migrate` instructions, and remains wired
+into the release check.
+
+The storage format change-note gate is:
+
+```bash
+make storage-format-change-note-check
+```
+
+It verifies that every marker in `fixtures/storage/storage_format_freeze_v1.json`
+and every legacy read-only marker has a machine-readable migration-note policy,
+required docs, required gates, and release fixture path before storage format
+changes can be merged.
 
 The compatibility fixture gate is:
 

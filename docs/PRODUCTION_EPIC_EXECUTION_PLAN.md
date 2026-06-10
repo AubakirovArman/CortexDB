@@ -3588,7 +3588,8 @@ Evidence:
 - CLI surface:
   `cortexdb upgrade prepare`,
   `cortexdb upgrade validate`,
-  `cortexdb upgrade rollback`.
+  `cortexdb upgrade rollback`,
+  `cortexdb migrate`.
 - Implementation:
   `crates/cortex-cli/src/cli_upgrade.rs`,
   `crates/cortex-cli/src/cli.rs`.
@@ -3611,6 +3612,10 @@ Tasks:
   source database before any upgrade action.
 - Backup before upgrade. Done: `upgrade prepare` runs the existing validated
   backup/restore drill and reports the immutable pre-upgrade backup path.
+- Migration preflight. Done: `cortexdb migrate` exposes the same guarded
+  offline migration shape for release-to-release changes: validate source,
+  create backup, drill restore, then report validate/rollback commands without
+  rewriting storage in place.
 - Restore rollback. Done: `cortexdb upgrade rollback` dry-runs the restore,
   restores into a new rollback directory, validates the restored database, and
   reports the path to start with the previous binary.

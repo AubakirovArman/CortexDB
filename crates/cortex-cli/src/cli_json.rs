@@ -2,9 +2,9 @@ use crate::cli_json_types::{
     CellResponse, CliAnnEvaluationResponse, CliAnnSearchReportResponse, CliAnnValidateResponse,
     CliStatsResponse, CliValidateResponse, CliVectorRebuildResponse, ContextPackAnomalyResponse,
     ContextPackCellResponse, ContextPackExplainResponse, ContextPackResponse,
-    ContextPackScoreComponentResponse, NumericConflictResponse, RememberResponse, SearchResponse,
-    SearchResultResponse, SearchRoutingDecisionResponse, SourceRefResponse,
-    VerificationEvidenceResponse, VerificationResponse,
+    ContextPackScoreComponentResponse, ContextSpanProvenanceResponse, NumericConflictResponse,
+    RememberResponse, SearchResponse, SearchResultResponse, SearchRoutingDecisionResponse,
+    SourceRefResponse, VerificationEvidenceResponse, VerificationResponse,
 };
 use cortex_engine::{
     CellMetadata, ContextPack, Database, DatabaseSearchResult, RememberedCell, SearchRouteDecision,
@@ -114,6 +114,15 @@ pub(crate) fn stats_to_json(stats: &StorageStats) -> String {
         estimated_index_bytes: stats.estimated_index_bytes,
         estimated_context_pack_bytes: stats.estimated_context_pack_bytes,
         estimated_total_memory_bytes: stats.estimated_total_memory_bytes,
+        live_segment_bytes: stats.live_segment_bytes,
+        retired_segment_bytes: stats.retired_segment_bytes,
+        total_segment_bytes: stats.total_segment_bytes,
+        durable_storage_bytes: stats.durable_storage_bytes,
+        live_segment_payload_bytes: stats.live_segment_payload_bytes,
+        logical_payload_bytes: stats.logical_payload_bytes,
+        space_amplification_q16: stats.space_amplification_q16,
+        write_amplification_q16: stats.write_amplification_q16,
+        compaction_pressure_q16: stats.compaction_pressure_q16,
         wal_size_bytes: stats.wal_size_bytes,
         wal_writer_records: stats.wal_writer.records_written,
         wal_writer_bytes: stats.wal_writer.bytes_written,
@@ -227,6 +236,9 @@ fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> ContextPackCellRe
         source_trust_q16: exp.source_trust_q16,
         source_trust_category: exp.source_trust_category.as_str().to_owned(),
         source_trust_bonus: exp.source_trust_bonus,
+        source_freshness_q16: exp.source_freshness_q16,
+        source_freshness_category: exp.source_freshness_category.as_str().to_owned(),
+        source_freshness_bonus: exp.source_freshness_bonus,
         redundancy_penalty: exp.redundancy_penalty,
     });
     let source_ref = metadata.source_ref.as_ref().map(|sr| SourceRefResponse {
@@ -238,6 +250,25 @@ fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> ContextPackCellRe
         json_path: sr.json_path.clone(),
         confidence_q16: sr.confidence_q16,
     });
+    let provenance = cell
+        .provenance
+        .as_ref()
+        .map(|provenance| ContextSpanProvenanceResponse {
+            source_cell_id: provenance.source_cell_id.0,
+            source_byte_start: provenance.source_byte_start,
+            source_byte_end: provenance.source_byte_end,
+            source_line_start: provenance.source_line_start,
+            source_line_end: provenance.source_line_end,
+            source_ref: provenance.source_ref.as_ref().map(|sr| SourceRefResponse {
+                source_id: sr.source_id.clone(),
+                source_url: sr.source_url.clone(),
+                document_id: sr.document_id.clone(),
+                page: sr.page,
+                cell_range: sr.cell_range.clone(),
+                json_path: sr.json_path.clone(),
+                confidence_q16: sr.confidence_q16,
+            }),
+        });
 
     ContextPackCellResponse {
         cell_id: cell.cell_id.0,
@@ -246,6 +277,7 @@ fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> ContextPackCellRe
         payload_text: String::from_utf8_lossy(&cell.payload).into_owned(),
         explain,
         source_ref,
+        provenance,
     }
 }
 
@@ -283,6 +315,8 @@ fn evidence_response(
     VerificationEvidenceResponse {
         cell_id: evidence.cell_id.0,
         matched_terms: evidence.matched_terms,
+        match_score_q16: evidence.match_score_q16,
+        match_kind: evidence.match_kind.as_str().to_owned(),
         source_trust_q16: evidence.source_trust_q16,
         source_trust_category: evidence.source_trust_category.as_str().to_owned(),
         citation: evidence.citation.clone(),

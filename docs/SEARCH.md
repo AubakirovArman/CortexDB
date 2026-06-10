@@ -15,6 +15,14 @@ The database path filters cells through `AgentView.readable_scopes`, assigns
 compact candidate ids internally, and returns full `CellId` values in
 `DatabaseSearchResult`.
 
+Permission filtering is a pre-ranking predicate, not a result post-filter.
+Snapshot search builds its temporary index only from cells readable by the
+provided `AgentView`. Persisted search derives an allowed candidate set from the
+checkpointed bitmap scope index and passes it into lexical, vector, and HNSW
+search before scoring, fusion, reranking, or top-k truncation. This prevents an
+unreadable high-scoring candidate from consuming a result slot or entering
+ContextPack.
+
 When live segments exist and there are no uncheckpointed changes after the
 manifest checkpoint sequence, keyword search reads the persisted `.aci` postings
 directly and vector search reads persisted `.acv` vectors plus `.ach` graph
@@ -31,6 +39,24 @@ MRR checks, and built-in English/Russian/Kazakh analyzer packs. The language
 packs include light suffix stemmers and stopword lists. Custom lemma overrides
 can map normalized terms into domain dictionaries. The packs are deterministic
 and dependency-light, not full morphological analyzers.
+
+`analyze_search_query` is the engine-side query understanding primitive. It
+reads only the user query text and extracts enterprise anchors such as ticket
+ids, PR numbers, file paths, versions, dates, numeric values, quoted phrases,
+and source hints like GitHub/Jira/Gmail/Slack when they are explicitly present
+in the question. Keyword and hybrid search use its weighted query terms, so
+domain expansions such as `blocked -> dependency/risk` and
+`owner -> assignee/DRI` affect retrieval without relying on benchmark
+`question_type`, `source_types`, expected document ids, or other oracle labels.
+
+`SearchReranker` is the engine-side rerank hook. `SearchIndexes` and
+`Database::search_cells_with_reranker` can collect a wider candidate pool,
+compute an additional rerank score, and then apply the requested limit. The
+built-in `WeightedScoreReranker` is deterministic and dependency-free. Custom
+implementations receive query text/vector, original lexical/vector scores, the
+candidate id, and, at the database layer, the candidate payload. Scope/ACL
+filtering happens before reranking, so a reranker cannot promote unreadable
+cells into the result set.
 
 `HnswIndex::apply_maintenance` reports deleted-vector pressure and rebuilds the
 graph when `HnswMaintenancePolicy` thresholds are reached. This gives the engine
@@ -52,6 +78,8 @@ cortexdb vector rebuild <path> [--experimental-hnsw]
 cortexdb search-vector <path> <scope> <i16-vector>
 cortexdb search-vector-eval <path> <scope> <i16-vector>
 POST /v1/search?scope=<scope>&q=<query>
+POST /v1/search?scope=<scope>&mode=hybrid&q=<query>&vector=<i16-vector>
+POST /v1/search/explain?scope=<scope>&mode=hybrid&q=<query>&vector=<i16-vector>
 POST /v1/search?scope=<scope>&mode=vector&vector=<i16-vector>
 POST /v1/search?scope=<scope>&mode=vector&algorithm=exact&vector=<i16-vector>
 POST /v1/search?scope=<scope>&mode=vector&algorithm=ann&vector=<i16-vector>
@@ -198,5 +226,6 @@ decisions:
 - **Profile-aware graph construction:** `DatabaseOptions::hnsw_build_config` controls the HNSW shape written by checkpoint/compact. Use wider profiles for semantic/audit workloads and compact after a profile change to rebuild existing `.ach` files.
 - **Exact fallback guardrails:** If a graph is empty, structurally invalid, corrupt/truncated on disk, stale relative to the persisted vector index, returns insufficient candidates, or fails the 75% recall guard, the system automatically degrades to exact scan. Fallback reasons are exposed in `ann_report.path` and `ann_report.fallback_reason`.
 - **Recall benchmark fixtures:** Unit fixture gates assert that checkpointed ANN evaluation meets `MIN_ANN_RECALL_Q16`, and the `core_baseline` benchmark includes an ANN recall section (`ann_recall_q16_1k`, `ann_graph_nodes_1k`, `ann_eval_latency_1k`) for regression tracking.
-- **Repeatable ANN gate:** `make ann-fixture-check` runs the deterministic synthetic corpus in release mode and compares recall, graph shape, upper-layer shape, p95/p99/max latency ceilings, and `production_safe` against `crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json`. `make ann-drift-check` compares the current report against `ann_drift_baseline_v1.json` to catch recall, graph-shape, p99 tail-latency, and max-latency regressions. `make ann-external-check` runs a checked-in JSONL corpus fixture so HNSW is also tested against explicit non-generated vectors and named queries. `make ann-metric-matrix-check` evaluates dot-product, cosine, and L2 rows against exact top-k with the same metric. `ann_corpus_check` accepts external vectors/queries/ground-truth JSONL files for larger recall suites; the file contract is documented in [`ANN_CORPUS_FORMAT.md`](ANN_CORPUS_FORMAT.md). CI uploads all checked-in ANN reports as `ann-regression-reports`.
+- **Repeatable ANN gate:** `make ann-fixture-check` runs the deterministic synthetic corpus in release mode and compares recall, graph shape, upper-layer shape, p95/p99/max latency ceilings, `production_safe`, and zero fallback against `crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json`. `make ann-drift-check` compares the current report against `ann_drift_baseline_v1.json` to catch recall, graph-shape, p99 tail-latency, and max-latency regressions. `make ann-external-check` runs a checked-in JSONL corpus fixture so HNSW is also tested against explicit non-generated vectors and named queries. `make ann-metric-matrix-check` evaluates dot-product, cosine, and L2 rows against exact top-k with the same metric. `make ann-reference-suite-check` validates synthetic, explicit JSONL, and domain reports against checked-in external-reference SLO fixtures with recall-ratio, latency-ratio, upper-layer, `production_safe`, and zero-fallback requirements. `ann_corpus_check` accepts external vectors/queries/ground-truth JSONL files for larger recall suites; the file contract is documented in [`ANN_CORPUS_FORMAT.md`](ANN_CORPUS_FORMAT.md). CI uploads all checked-in ANN reports as `ann-regression-reports`.
+- **Query understanding lift gate:** `make enterprise-rag-bench-query-understanding-lift-check` runs a clean fixture with only documents, questions, and expected document ids. It compares a plain lexical baseline with real engine keyword search, so query expansion and anchor handling must improve recall without reading benchmark oracle fields such as `question_type` or `source_types`.
 - **Guarded production mode:** ANN/HNSW exposes recall, fallback, visit-budget, and graph-validity SLO signals through `ann_report`. Checkpoint and compact now build deterministic multi-layer `.ach` graphs, and `core_baseline` emits `ann_repeatable_report_json` for recall/latency history. Production tuning policy is documented in [`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md). `make ann-recall-probe-report` repeats the local domain corpus gate, and `make ann-production-slo-history-check` builds a fresh 10-run local SLO history to catch recall, latency, or graph-shape regressions before no-fallback rollout. Large external corpora and real production traffic history remain future work. Exact vector scan remains the most predictable default for critical workloads.

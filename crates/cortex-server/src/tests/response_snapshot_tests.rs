@@ -1,12 +1,17 @@
 use crate::responses::{AnnMetricsResponse, AnnNoFallbackDecisionResponse};
 use crate::responses::{
-    CheckpointResponse, ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
-    ErrorCode, ErrorResponse, EvidenceResponse, ExplainResponse, GuardResponse, HealthResponse,
-    IngestResponse, LatencyHistogramResponse, MetricsResponse, NumericConflictResponse,
-    PutCellResponse, ScoreComponentResponse, SearchResultResponse, SourceRefResponse,
-    StatsResponse, ValidationResponse, VerificationReportResponse,
+    CheckpointResponse, ContextAccessDecisionResponse, ContextPackAnomalyResponse,
+    ContextPackCellResponse, ContextPackResponse, ContextSpanProvenanceResponse,
+    ContextTraceResponse, ErrorCode, ErrorResponse, EvidenceResponse, ExplainResponse,
+    GuardResponse, HealthResponse, IngestResponse, LatencyHistogramResponse, MetricsResponse,
+    NumericConflictResponse, PutCellResponse, ScoreComponentResponse, SearchResultResponse,
+    SourceRefResponse, StatsResponse, ValidationResponse, VerificationReportResponse,
 };
-use cortex_engine::{IngestionSkippedItem, IngestionSourceRefReport, IngestionValidationReport};
+use cortex_engine::{
+    ContextPipelineCellTrace, ContextPipelineStageTrace, ContextPipelineTrace,
+    ContextPipelineVerificationTrace, ContextScoreComponentTrace, IngestionSkippedItem,
+    IngestionSourceRefReport, IngestionValidationReport,
+};
 
 #[test]
 fn snapshot_health_response() {
@@ -32,6 +37,15 @@ fn snapshot_stats_response() {
         estimated_index_bytes: 8192,
         estimated_context_pack_bytes: 16384,
         estimated_total_memory_bytes: 28672,
+        live_segment_bytes: 65536,
+        retired_segment_bytes: 8192,
+        total_segment_bytes: 73728,
+        durable_storage_bytes: 77824,
+        live_segment_payload_bytes: 20480,
+        logical_payload_bytes: 22528,
+        space_amplification_q16: 226_395,
+        write_amplification_q16: 238_718,
+        compaction_pressure_q16: 7_281,
         wal_size_bytes: 4096,
         wal_writer_records: 100,
         wal_writer_bytes: 8192,
@@ -74,6 +88,15 @@ fn snapshot_metrics_response() {
         estimated_index_bytes: 8192,
         estimated_context_pack_bytes: 16384,
         estimated_total_memory_bytes: 28672,
+        live_segment_bytes: 65536,
+        retired_segment_bytes: 8192,
+        total_segment_bytes: 73728,
+        durable_storage_bytes: 77824,
+        live_segment_payload_bytes: 20480,
+        logical_payload_bytes: 22528,
+        space_amplification_q16: 226_395,
+        write_amplification_q16: 238_718,
+        compaction_pressure_q16: 7_281,
         wal_size_bytes: 4096,
         wal_writer_records: 100,
         wal_writer_bytes: 8192,
@@ -191,6 +214,9 @@ fn snapshot_context_pack_response() {
                 source_trust_q16: 60_000,
                 source_trust_category: "official".to_owned(),
                 source_trust_bonus: 10,
+                source_freshness_q16: 65_535,
+                source_freshness_category: "current".to_owned(),
+                source_freshness_bonus: 32_767,
                 redundancy_penalty: 0,
             }),
             source_ref: Some(SourceRefResponse {
@@ -202,6 +228,36 @@ fn snapshot_context_pack_response() {
                 cell_range: None,
                 json_path: None,
                 confidence_q16: 65535,
+            }),
+            provenance: Some(ContextSpanProvenanceResponse {
+                source_cell_id: 1,
+                source_byte_start: 64,
+                source_byte_end: 98,
+                source_line_start: 3,
+                source_line_end: 3,
+                source_ref: Some(SourceRefResponse {
+                    source_id: "report_q1.pdf".to_owned(),
+                    source_url: None,
+                    document_id: Some("doc-1".to_owned()),
+                    page: Some(3),
+                    row: None,
+                    cell_range: None,
+                    json_path: None,
+                    confidence_q16: 65535,
+                }),
+            }),
+            access_decision: Some(ContextAccessDecisionResponse {
+                cell_id: 1,
+                decision: "allowed".to_owned(),
+                policy: "agent_view_readable_scope".to_owned(),
+                reason:
+                    "cell scope was present in AgentView.readable_scopes before ContextPack packing"
+                        .to_owned(),
+                scope: "project:investments".to_owned(),
+                scope_id: 1001,
+                agent_id: Some(7),
+                principal_id: Some("analyst-7".to_owned()),
+                auth_role: Some("data".to_owned()),
             }),
         }],
         anomalies: vec![
@@ -225,14 +281,109 @@ fn snapshot_context_pack_response() {
 }
 
 #[test]
+fn snapshot_context_trace_response() {
+    let context = ContextPackResponse {
+        schema_version: "context_pack.v1",
+        token_budget_tokens: 4000,
+        estimated_tokens: 120,
+        truncated: false,
+        citations_required: true,
+        answerability_q16: 65535,
+        conflict_visibility_q16: 65535,
+        visible_conflict_count: 0,
+        cells: vec![ContextPackCellResponse {
+            cell_id: 1,
+            estimated_tokens: 120,
+            citation: Some("report_q1.pdf#page=3".to_owned()),
+            payload_text: "Solar Plant budget is 1.2B KZT".to_owned(),
+            explain: None,
+            source_ref: None,
+            provenance: None,
+            access_decision: None,
+        }],
+        anomalies: Vec::new(),
+    };
+    let verification = VerificationReportResponse {
+        fact: "Solar Plant budget is 1.2B KZT".to_owned(),
+        status: "supported".to_owned(),
+        verdict: "supported".to_owned(),
+        confidence_q16: 65_535,
+        evidence: Vec::new(),
+        contradicting_evidence: Vec::new(),
+        guards: Vec::new(),
+        supporting: Vec::new(),
+        contradicting: Vec::new(),
+        numeric_conflicts: Vec::new(),
+    };
+    let resp = ContextTraceResponse {
+        schema_version: "context_trace.v1",
+        context,
+        verification: Some(verification),
+        trace: ContextPipelineTrace {
+            schema_version: "context_pipeline_trace.v1",
+            total_duration_ms: Some(7),
+            stages: vec![
+                ContextPipelineStageTrace::new("retrieve", None, 0, 2, vec!["bitmap".to_owned()]),
+                ContextPipelineStageTrace::new("pack", Some(5), 2, 1, vec!["budget".to_owned()]),
+                ContextPipelineStageTrace::new("verify", Some(2), 1, 1, vec!["fact".to_owned()]),
+            ],
+            cells: vec![ContextPipelineCellTrace {
+                cell_id: 1,
+                packed_rank: 1,
+                estimated_tokens: 120,
+                score: Some(95),
+                matched_terms: vec!["budget".to_owned()],
+                score_components: vec![ContextScoreComponentTrace {
+                    name: "base_bm25".to_owned(),
+                    value: 80,
+                    contribution: 80,
+                    reason: "lexical relevance before bonuses and penalties".to_owned(),
+                }],
+                why_selected: Some("high lexical match".to_owned()),
+                citation_present: true,
+                provenance_present: false,
+                access_decision: Some("allowed".to_owned()),
+            }],
+            verification: Some(ContextPipelineVerificationTrace {
+                fact: "Solar Plant budget is 1.2B KZT".to_owned(),
+                status: "supported".to_owned(),
+                evidence_count: 1,
+                contradicting_evidence_count: 0,
+                guard_count: 0,
+                numeric_conflict_count: 0,
+                evidence_cell_ids: vec![1],
+                contradicting_cell_ids: Vec::new(),
+            }),
+        },
+    };
+    let value = serde_json::to_value(resp).unwrap();
+    assert_eq!(value["schema_version"], "context_trace.v1");
+    assert_eq!(value["context"]["schema_version"], "context_pack.v1");
+    assert_eq!(value["verification"]["status"], "supported");
+    assert_eq!(
+        value["trace"]["schema_version"],
+        "context_pipeline_trace.v1"
+    );
+    assert_eq!(value["trace"]["stages"][0]["name"], "retrieve");
+    assert_eq!(value["trace"]["stages"][1]["duration_ms"], 5);
+    assert_eq!(
+        value["trace"]["cells"][0]["score_components"][0]["name"],
+        "base_bm25"
+    );
+}
+
+#[test]
 fn snapshot_verification_report_response() {
     let resp = VerificationReportResponse {
         fact: "Solar Plant budget is 1.2B KZT".to_owned(),
         status: "mixed_evidence".to_owned(),
         verdict: "mixed_evidence".to_owned(),
+        confidence_q16: 65_535,
         evidence: vec![EvidenceResponse {
             cell_id: 1,
             matched_terms: 3,
+            match_score_q16: 65_535,
+            match_kind: "exact_text".to_owned(),
             source_trust_q16: 65535,
             source_trust_category: "official".to_owned(),
             citation: Some("report_q1.pdf#page=3".to_owned()),
@@ -241,6 +392,8 @@ fn snapshot_verification_report_response() {
         contradicting_evidence: vec![EvidenceResponse {
             cell_id: 2,
             matched_terms: 3,
+            match_score_q16: 65_535,
+            match_kind: "numeric_contradiction".to_owned(),
             source_trust_q16: 65535,
             source_trust_category: "official".to_owned(),
             citation: Some("report_q2.pdf#page=5".to_owned()),
@@ -261,6 +414,8 @@ fn snapshot_verification_report_response() {
         supporting: vec![EvidenceResponse {
             cell_id: 1,
             matched_terms: 3,
+            match_score_q16: 65_535,
+            match_kind: "exact_text".to_owned(),
             source_trust_q16: 65535,
             source_trust_category: "official".to_owned(),
             citation: Some("report_q1.pdf#page=3".to_owned()),
@@ -269,6 +424,8 @@ fn snapshot_verification_report_response() {
         contradicting: vec![EvidenceResponse {
             cell_id: 2,
             matched_terms: 3,
+            match_score_q16: 65_535,
+            match_kind: "numeric_contradiction".to_owned(),
             source_trust_q16: 65535,
             source_trust_category: "official".to_owned(),
             citation: Some("report_q2.pdf#page=5".to_owned()),
@@ -288,6 +445,7 @@ fn snapshot_search_result_response() {
     let resp = crate::responses::SearchResponse {
         search_mode: "keyword".to_owned(),
         routing: None,
+        rerank: None,
         ann_report: None,
         no_fallback_decision: None,
         results: vec![SearchResultResponse {

@@ -1,15 +1,19 @@
 ---
 source: crates/cortex-server/src/tests/response_snapshot_tests.rs
+assertion_line: 440
 expression: resp
 ---
 {
   "fact": "Solar Plant budget is 1.2B KZT",
   "status": "mixed_evidence",
   "verdict": "mixed_evidence",
+  "confidence_q16": 65535,
   "evidence": [
     {
       "cell_id": 1,
       "matched_terms": 3,
+      "match_score_q16": 65535,
+      "match_kind": "exact_text",
       "source_trust_q16": 65535,
       "source_trust_category": "official",
       "citation": "report_q1.pdf#page=3",
@@ -20,6 +24,8 @@ expression: resp
     {
       "cell_id": 2,
       "matched_terms": 3,
+      "match_score_q16": 65535,
+      "match_kind": "numeric_contradiction",
       "source_trust_q16": 65535,
       "source_trust_category": "official",
       "citation": "report_q2.pdf#page=5",
@@ -42,6 +48,8 @@ expression: resp
     {
       "cell_id": 1,
       "matched_terms": 3,
+      "match_score_q16": 65535,
+      "match_kind": "exact_text",
       "source_trust_q16": 65535,
       "source_trust_category": "official",
       "citation": "report_q1.pdf#page=3",
@@ -52,6 +60,8 @@ expression: resp
     {
       "cell_id": 2,
       "matched_terms": 3,
+      "match_score_q16": 65535,
+      "match_kind": "numeric_contradiction",
       "source_trust_q16": 65535,
       "source_trust_category": "official",
       "citation": "report_q2.pdf#page=5",

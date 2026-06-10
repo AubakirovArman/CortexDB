@@ -52,6 +52,35 @@ Current classes:
 These are release smoke workloads. They are intentionally small and repeatable;
 they do not replace deployment-specific stress tests.
 
+## Full-Corpus Scale Evidence
+
+The default trend gate stays small, but EPIC-16 has a separate local
+EnterpriseRAG full-corpus retrieval artifact for scale tracking:
+
+```text
+target/enterprise-rag-bench/official-clean/50/epic16-full-corpus-slo/retrieval_report.json
+```
+
+That artifact is produced by the official-clean retrieval-only path. It strips
+oracle fields from the question input, ingests the full 511,958-document corpus,
+checkpoints it, loads the cached lexical retrieval index, and retrieves 50
+questions without invoking an answer or judge model.
+
+Latest local values:
+
+| Metric | Value |
+| --- | ---: |
+| Ingest throughput | 16,262.927 docs/sec |
+| Checkpoint duration | 686.543s |
+| Retrieval throughput | 0.229 questions/sec |
+| Peak RSS | 20,210,786,304 bytes |
+| Total retrieval-stage duration | 936.918s |
+
+This artifact is evidence, not a passing release gate. The current release trend
+gate remains `make performance-trend-check`; the full-corpus report identifies
+the next performance work: checkpoint/index publication, cached index load time,
+and per-question retrieval latency.
+
 ## Percentile Gates
 
 `load-smoke-check` records p50/p95/p99 latency and gates p95/p99 latency for:
@@ -71,8 +100,16 @@ latency for:
 - `context_pack`;
 - `verify_fact`.
 
+It also records and gates:
+
+- `put_batch` ingest throughput through `ingest.throughput_per_sec`;
+- process `rss_bytes` and `peak_rss_bytes` through `resource_usage`;
+- profile-level `slo.passed` and `slo.errors`.
+
 The trend report compares current p50/p95/p99 values against the latest release
 fixture and keeps ratios in `target/performance-trends/report.json`.
+The current report must include ingest and RSS evidence even when older release
+fixtures predate those fields.
 
 ## Actor Pressure
 

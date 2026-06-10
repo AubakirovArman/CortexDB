@@ -34,15 +34,15 @@ fn run() -> Result<(), String> {
         return args::self_test();
     }
 
-    let root = args.root;
-    let report_path = args.report;
+    let root = args.root.clone();
+    let report_path = args.report.clone();
     fs::remove_dir_all(&root).ok();
     fs::create_dir_all(&root)
         .map_err(|error| format!("failed to create {}: {error}", root.display()))?;
 
     let started = Instant::now();
-    let strict = run_profile("strict", DurabilityMode::Strict, args.cells, &root)?;
-    let balanced = run_profile("balanced", DurabilityMode::Balanced, args.cells, &root)?;
+    let strict = run_profile("strict", DurabilityMode::Strict, &args, &root)?;
+    let balanced = run_profile("balanced", DurabilityMode::Balanced, &args, &root)?;
     let elapsed_ms = started.elapsed().as_secs_f64() * 1000.0;
 
     let mut errors = Vec::new();
@@ -51,11 +51,18 @@ fn run() -> Result<(), String> {
             "single-node matrix exceeded max-total-ms: {elapsed_ms:.3}"
         ));
     }
+    collect_profile_errors(&strict, &mut errors);
+    collect_profile_errors(&balanced, &mut errors);
     let report = json!({
         "schema_version": "cortexdb.single_node_performance.v1",
         "ok": errors.is_empty(),
         "cells": args.cells,
         "workload_class": "local_single_node_lifecycle",
+        "slo_thresholds": {
+            "max_total_ms": args.max_total_ms,
+            "min_ingest_cells_per_sec": args.min_ingest_cells_per_sec,
+            "max_rss_bytes": args.max_rss_bytes,
+        },
         "duration_ms": round_ms(elapsed_ms),
         "profiles": [strict, balanced],
         "errors": errors,
@@ -85,15 +92,17 @@ fn run() -> Result<(), String> {
 fn run_profile(
     label: &str,
     durability_mode: DurabilityMode,
-    cells: usize,
+    args: &Args,
     root: &std::path::Path,
 ) -> Result<Value, String> {
+    let cells = args.cells;
     let db_path = root.join(format!("{label}-{}", unique_id()));
     let options = DatabaseOptions {
         durability_mode,
         ..DatabaseOptions::default()
     };
     let mut phases = Vec::new();
+    let mut errors = Vec::new();
     let view = perf_view();
     let query = r#"RETRIEVE CONTEXT FOR TASK "performance budget" IN BRAIN default WHERE space = perf AND status = "ready" LIMIT 10 CANDIDATES;"#;
 
@@ -106,6 +115,13 @@ fn run_profile(
         .map(|index| (CellId(index as u64), payload(index)))
         .collect::<Vec<_>>();
     let (_, phase) = measure("put_batch", cells, || db.put_cells(payloads))?;
+    let ingest_throughput = phase["throughput_per_sec"].as_f64().unwrap_or(0.0);
+    if ingest_throughput < args.min_ingest_cells_per_sec {
+        errors.push(format!(
+            "{label} ingest throughput below threshold: {ingest_throughput:.3} < {:.3}",
+            args.min_ingest_cells_per_sec
+        ));
+    }
     phases.push(phase);
 
     let write_samples = 10;
@@ -163,7 +179,9 @@ fn run_profile(
     })?;
     phases.push(phase);
 
-    check_phase_thresholds(&phases)?;
+    if let Err(error) = check_phase_thresholds(&phases) {
+        errors.push(format!("{label} {error}"));
+    }
 
     let (_, phase) = measure("checkpoint", total_cells, || db.checkpoint())?;
     phases.push(phase);
@@ -192,10 +210,33 @@ fn run_profile(
     db.close()
         .map_err(|error| format!("{label} final close failed: {error}"))?;
 
+    let resource_usage = process_memory_report();
+    let peak_rss_bytes = resource_usage["peak_rss_bytes"].as_u64().unwrap_or(0);
+    if peak_rss_bytes > args.max_rss_bytes {
+        errors.push(format!(
+            "{label} peak RSS exceeded threshold: {peak_rss_bytes} > {}",
+            args.max_rss_bytes
+        ));
+    }
+
     Ok(json!({
         "name": label,
         "durability_mode": format!("{durability_mode:?}").to_lowercase(),
         "latency_thresholds": single_node_latency_thresholds(),
+        "slo_thresholds": {
+            "min_ingest_cells_per_sec": args.min_ingest_cells_per_sec,
+            "max_rss_bytes": args.max_rss_bytes,
+        },
+        "slo": {
+            "passed": errors.is_empty(),
+            "errors": errors,
+        },
+        "ingest": {
+            "cells": cells,
+            "throughput_per_sec": round_ms(ingest_throughput),
+            "min_throughput_per_sec": args.min_ingest_cells_per_sec,
+        },
+        "resource_usage": resource_usage,
         "phases": phases,
         "validation": {
             "manifest_ok": validation.manifest_ok,
@@ -208,8 +249,19 @@ fn run_profile(
             "checkpoint_seq": stats.checkpoint_seq.0,
             "live_segments": stats.live_segments,
             "wal_size_bytes": stats.wal_size_bytes,
+            "durable_storage_bytes": stats.durable_storage_bytes,
+            "live_segment_bytes": stats.live_segment_bytes,
+            "total_segment_bytes": stats.total_segment_bytes,
         }
     }))
+}
+
+fn collect_profile_errors(profile: &Value, errors: &mut Vec<String>) {
+    for error in profile["slo"]["errors"].as_array().into_iter().flatten() {
+        if let Some(text) = error.as_str() {
+            errors.push(text.to_owned());
+        }
+    }
 }
 
 fn measure<T, E, F>(name: &str, units: usize, call: F) -> Result<(T, Value), String>
@@ -281,4 +333,42 @@ fn unique_id() -> u128 {
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_nanos())
         .unwrap_or(0)
+}
+
+fn process_memory_report() -> Value {
+    let (rss_bytes, peak_rss_bytes) = linux_proc_status_memory_bytes().unwrap_or((0, 0));
+    json!({
+        "rss_bytes": rss_bytes,
+        "peak_rss_bytes": peak_rss_bytes,
+    })
+}
+
+fn linux_proc_status_memory_bytes() -> Option<(u64, u64)> {
+    let status = fs::read_to_string("/proc/self/status").ok()?;
+    let mut rss_bytes = 0;
+    let mut peak_rss_bytes = 0;
+    for line in status.lines() {
+        if let Some(value) = line.strip_prefix("VmRSS:") {
+            rss_bytes = parse_status_kib(value).unwrap_or(0);
+        } else if let Some(value) = line.strip_prefix("VmHWM:") {
+            peak_rss_bytes = parse_status_kib(value).unwrap_or(0);
+        }
+    }
+    Some((rss_bytes, peak_rss_bytes.max(rss_bytes)))
+}
+
+fn parse_status_kib(value: &str) -> Option<u64> {
+    let kib = value.split_whitespace().next()?.parse::<u64>().ok()?;
+    kib.checked_mul(1024)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_status_kib;
+
+    #[test]
+    fn parses_linux_status_kib_as_bytes() {
+        assert_eq!(parse_status_kib(" 123 kB"), Some(125_952));
+        assert_eq!(parse_status_kib("invalid"), None);
+    }
 }

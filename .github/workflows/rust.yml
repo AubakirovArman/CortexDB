@@ -27,7 +27,15 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: make migration-policy-check
         if: matrix.toolchain == 'stable'
+      - run: make storage-format-change-note-check
+        if: matrix.toolchain == 'stable'
       - run: make load-smoke-check
+        if: matrix.toolchain == 'stable'
+      - run: make enterprise-rag-bench-retrieval-quality-fixture-check
+        if: matrix.toolchain == 'stable'
+      - run: make enterprise-rag-bench-hybrid-parity-fixture-check
+        if: matrix.toolchain == 'stable'
+      - run: make enterprise-rag-bench-query-understanding-lift-check
         if: matrix.toolchain == 'stable'
       - run: make crash-fault-check
         if: matrix.toolchain == 'stable'

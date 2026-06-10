@@ -4,7 +4,8 @@ use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, ScopeId
 use cortex_core::CellId;
 use cortex_engine::{
     scope_id, tokenize, Bm25Index, ClusterConfig, ConsensusState, Database, HnswIndex, LogIndex,
-    NodeId, ReplicatedEntry, SearchIndexes, SearchMode, SearchQuery, Term, VectorIndex,
+    NodeId, ReplicatedEntry, SearchIndexes, SearchMode, SearchQuery, SearchRerankInput,
+    SearchReranker, Term, VectorIndex,
 };
 
 #[test]
@@ -311,6 +312,38 @@ fn rrf_truncate_respects_limit() {
         mode: SearchMode::Hybrid,
     });
     assert_eq!(results.len(), 3);
+}
+
+#[test]
+fn search_indexes_support_pluggable_reranker() {
+    struct PromoteCandidate(u64);
+
+    impl SearchReranker for PromoteCandidate {
+        fn rerank_score(&self, input: SearchRerankInput<'_>) -> u64 {
+            if input.candidate_id == self.0 {
+                input.base_score.saturating_add(10_000_000)
+            } else {
+                input.base_score
+            }
+        }
+    }
+
+    let mut indexes = SearchIndexes::default();
+    indexes.add_document(1, "budget budget budget");
+    indexes.add_document(2, "budget");
+
+    let results = indexes.search_with_reranker(
+        SearchQuery {
+            text: "budget",
+            vector: None,
+            limit: 1,
+            mode: SearchMode::Keyword,
+        },
+        &PromoteCandidate(2),
+    );
+
+    assert_eq!(results[0].cell_id, 2);
+    assert!(results[0].score > results[0].lexical_score);
 }
 
 #[test]

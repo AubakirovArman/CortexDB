@@ -132,6 +132,7 @@ fn cli_golden_outputs_are_stable() {
         "context",
         "verify",
         "search-vector-eval",
+        "migrate",
     ] {
         assert!(help.contains(marker), "missing help marker: {marker}");
     }
@@ -221,6 +222,10 @@ fn stats_and_validate_commands_work() {
     ])
     .unwrap();
     assert!(stats.contains("current_seq=1"));
+    assert!(stats.contains("logical_payload_bytes="));
+    assert!(stats.contains("space_amplification_q16="));
+    assert!(stats.contains("write_amplification_q16="));
+    assert!(stats.contains("compaction_pressure_q16=0"));
     assert!(stats.contains("wal_writer_records=0"));
 
     let validation = run(vec![
@@ -432,6 +437,47 @@ fn search_command_auto_mode_reports_routing_json() {
     assert!(output.contains(r#""search_mode":"hybrid""#));
     assert!(output.contains(r#""selected_strategy":"hybrid""#));
     assert!(output.contains(r#""reason":"auto_text_and_vector_available""#));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
+fn search_command_hybrid_uses_persisted_indexes_after_flush() {
+    let path = unique_path("cortexdb-cli-search-hybrid-persisted");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nvector=1,0,0\n\nbudget investment".to_owned(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "flush".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "--json".to_owned(),
+        "search".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        "budget".to_owned(),
+        "--mode".to_owned(),
+        "hybrid".to_owned(),
+        "--vector".to_owned(),
+        "1,0,0".to_owned(),
+    ])
+    .unwrap();
+
+    assert!(output.contains(r#""search_mode":"hybrid""#));
+    assert!(output.contains(r#""cell_id":1"#));
+    assert!(output.contains(r#""lexical_score":"#));
+    assert!(output.contains(r#""vector_score":"#));
 
     let _ = std::fs::remove_dir_all(path);
 }
@@ -809,6 +855,60 @@ fn upgrade_prepare_json_reports_next_commands() {
     assert!(output.contains(r#""status":"ready_for_offline_upgrade""#));
     assert!(output.contains(r#""validate_after_upgrade_command""#));
     assert!(output.contains(r#""rollback_command""#));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn migrate_preflight_creates_backup_drill_and_preserves_data() {
+    let root = unique_path("cortexdb-cli-migrate-root");
+    let source = root.join("source");
+    let backup = root.join("migration-backup");
+    let drill = root.join("migration-drill");
+    let source_arg = source.to_string_lossy().into_owned();
+    let backup_arg = backup.to_string_lossy().into_owned();
+    let drill_arg = drill.to_string_lossy().into_owned();
+
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        source_arg.clone(),
+        "46".to_owned(),
+        "migration payload".to_owned(),
+    ])
+    .unwrap();
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "--json".to_owned(),
+        "migrate".to_owned(),
+        source_arg.clone(),
+        backup_arg,
+        drill_arg.clone(),
+    ])
+    .unwrap();
+    assert!(output.contains(r#""phase":"migrate_preflight""#));
+    assert!(output.contains(r#""status":"ready_for_offline_migration""#));
+    assert!(output.contains(r#""validate_after_migration_command""#));
+    assert!(output.contains(r#""rollback_command""#));
+
+    let source_payload = run(vec![
+        "cortexdb".to_owned(),
+        "get".to_owned(),
+        source_arg,
+        "46".to_owned(),
+    ])
+    .unwrap();
+    assert_eq!(source_payload, "migration payload");
+
+    let drill_payload = run(vec![
+        "cortexdb".to_owned(),
+        "get".to_owned(),
+        drill_arg,
+        "46".to_owned(),
+    ])
+    .unwrap();
+    assert_eq!(drill_payload, "migration payload");
 
     let _ = std::fs::remove_dir_all(root);
 }

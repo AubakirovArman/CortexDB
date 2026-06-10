@@ -32,12 +32,17 @@ cortexdb verify ./db project:investments \
 
 ```json
 {
+  "fact": "Solar Plant budget is 1.2B KZT",
+  "status": "mixed_evidence",
   "verdict": "mixed_evidence",
+  "confidence_q16": 32768,
   "supporting": [
     {
       "cell_id": 1,
       "citation": "report_q1.pdf#page=3",
       "matched_terms": 7,
+      "match_score_q16": 65535,
+      "match_kind": "exact_text",
       "payload_text": "Solar Plant budget is 1.2B KZT in Q1.",
       "source_trust_q16": 32768,
       "source_trust_category": "unknown"
@@ -48,6 +53,8 @@ cortexdb verify ./db project:investments \
       "cell_id": 2,
       "citation": "report_q2.pdf#page=5",
       "matched_terms": 4,
+      "match_score_q16": 65535,
+      "match_kind": "numeric_contradiction",
       "payload_text": "Solar Plant budget is 1.4B KZT in Q2.",
       "source_trust_q16": 32768,
       "source_trust_category": "unknown"
@@ -107,6 +114,34 @@ The Rust engine exposes the same deterministic contract through
 currency/unit/magnitude handling in one integer-only implementation and return
 structured `VerificationNumericConflict` entries for API, CLI, SDK, markdown,
 and audit exports.
+
+## Evidence Match Kinds
+
+Every supporting or contradicting evidence item reports:
+
+- `match_kind`: deterministic match class;
+- `match_score_q16`: fixed-point confidence-like score used for stable sorting.
+
+The report-level `confidence_q16` is a deterministic verdict confidence. For a
+supported verdict it is the best supporting evidence score capped by source
+trust; for a contradicted verdict it is the best contradicting evidence score
+capped by source trust; for mixed evidence it is the weaker of the two best
+sides; for insufficient evidence it is `0`.
+
+Current match kinds are:
+
+| Match Kind | Meaning |
+|------------|---------|
+| `exact_text` | The normalized fact text appears directly in the evidence body. |
+| `semantic_entailment` | All non-numeric fact terms are covered by the evidence body. |
+| `numeric_entailment` | Numeric values match after magnitude/unit/currency normalization, with required non-numeric terms present. |
+| `semantic_contradiction` | The evidence body or inline marker contradicts the fact text. |
+| `numeric_contradiction` | A comparable numeric value conflicts with the fact value. |
+| `graph_contradiction` | A readable graph relation marks the fact as contradicted. |
+
+This is deterministic lexical/numeric/graph matching, not LLM-based semantic
+judgement. Partial term overlap is intentionally not counted as supporting
+evidence.
 
 ## Temporal Validity Detection
 

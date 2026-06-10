@@ -15,7 +15,9 @@ by schema checks, but it is not a production SLA.
 * **Stable error taxonomy:** [`API_ERROR_TAXONOMY.md`](API_ERROR_TAXONOMY.md)
 * **Tenant routing:** database endpoints accept optional `tenant=<realm>`. Omit
   it or use `tenant=default` for the root database; any other value routes to a
-  per-tenant realm under the server data directory.
+  per-tenant realm under the server data directory. Tenant names are
+  path-validated before filesystem access, and token tenant allowlists are
+  checked before the server opens or creates the target realm.
 * **Backpressure:** each tenant uses a bounded `DatabaseActor` queue. Set
   `CORTEXDB_ACTOR_QUEUE_CAPACITY` to override the default `1024`; full queues
   return `503 database_busy`.
@@ -103,6 +105,15 @@ Retrieves detailed storage, segment, and WAL engine metrics.
     "estimated_index_bytes": 8192,
     "estimated_context_pack_bytes": 16384,
     "estimated_total_memory_bytes": 28672,
+    "live_segment_bytes": 65536,
+    "retired_segment_bytes": 0,
+    "total_segment_bytes": 65536,
+    "durable_storage_bytes": 66560,
+    "live_segment_payload_bytes": 2048,
+    "logical_payload_bytes": 2048,
+    "space_amplification_q16": 2129920,
+    "write_amplification_q16": 2170880,
+    "compaction_pressure_q16": 0,
     "wal_size_bytes": 1024,
     "wal_writer_records": 15,
     "wal_writer_bytes": 1280,
@@ -292,12 +303,84 @@ Executes an AQL query and compiles a budgeted, deduplicated, and scored `Context
           "cell_range": null,
           "json_path": null,
           "confidence_q16": 32768
+        },
+        "access_decision": {
+          "cell_id": 1,
+          "decision": "allowed",
+          "policy": "agent_view_readable_scope",
+          "reason": "cell scope was present in AgentView.readable_scopes before ContextPack packing",
+          "scope": "project:investments",
+          "scope_id": 1001,
+          "agent_id": 7,
+          "principal_id": "agent-a",
+          "auth_role": "data"
         }
       }
     ],
     "anomalies": []
   }
   ```
+
+`access_decision` links each selected cell to the readable-scope policy decision
+used before packing. When bearer-token policy store auth is configured, HTTP
+JSON responses also include the request `principal_id` and `auth_role`; bearer
+tokens are never serialized.
+
+---
+
+### 2.7.1. POST `/v1/context/trace?scope=<scope>`
+Builds the same ContextPack as `/v1/context`, then returns an explainability
+trace for the pipeline stages. This endpoint is intended for debugging agent
+answers and quality regressions.
+
+* **Request Body:** Either raw `RETRIEVE CONTEXT` AQL or JSON:
+  ```json
+  {
+    "retrieve_aql": "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN default LIMIT 10 CANDIDATES;",
+    "verify_aql": "VERIFY FACT \"Solar Plant budget is 1.2B KZT\" IN BRAIN default;"
+  }
+  ```
+* **Response (200 OK):**
+  ```json
+  {
+    "schema_version": "context_trace.v1",
+    "context": { "schema_version": "context_pack.v1", "cells": [] },
+    "verification": { "fact": "Solar Plant budget is 1.2B KZT", "status": "supported" },
+    "trace": {
+      "schema_version": "context_pipeline_trace.v1",
+      "total_duration_ms": 7,
+      "stages": [
+        { "name": "retrieve", "duration_ms": null, "input_items": 0, "output_items": 2, "notes": [] },
+        { "name": "pack", "duration_ms": 5, "input_items": 2, "output_items": 1, "notes": [] },
+        { "name": "verify", "duration_ms": 2, "input_items": 1, "output_items": 1, "notes": [] }
+      ],
+      "cells": [
+        {
+          "cell_id": 1,
+          "packed_rank": 1,
+          "score": 42768,
+          "matched_terms": ["budget"],
+          "score_components": [
+            { "name": "base_bm25", "value": 10000, "contribution": 10000, "reason": "lexical relevance before bonuses and penalties" }
+          ],
+          "why_selected": "Selected due to strong keyword relevance match",
+          "citation_present": true,
+          "provenance_present": true,
+          "access_decision": "allowed"
+        }
+      ],
+      "verification": {
+        "status": "supported",
+        "evidence_count": 1,
+        "contradicting_evidence_count": 0
+      }
+    }
+  }
+  ```
+
+When `verify_aql` is present, authenticated agents must have `allow_verify_fact`.
+Without `verify_aql`, the response still includes retrieve/pack stages and a
+cell-level contribution trace.
 
 ---
 
@@ -316,6 +399,8 @@ Verifies a specific factual claim against the available database knowledge using
       {
         "cell_id": 1,
         "matched_terms": 7,
+        "match_score_q16": 65535,
+        "match_kind": "exact_text",
         "source_trust_q16": 32768,
         "source_trust_category": "unknown",
         "citation": "report_q1.pdf#page=3",
@@ -326,6 +411,8 @@ Verifies a specific factual claim against the available database knowledge using
       {
         "cell_id": 2,
         "matched_terms": 4,
+        "match_score_q16": 65535,
+        "match_kind": "numeric_contradiction",
         "source_trust_q16": 32768,
         "source_trust_category": "unknown",
         "citation": "report_q2.pdf#page=5",
@@ -358,6 +445,10 @@ Runs keyword, vector, ANN, or hybrid search.
 * **Auto routing:** `mode=auto` selects `hybrid` when both text and vector are
   present, selected vector strategy when only vector is present, and `keyword`
   otherwise.
+* **Rerank:** pass `rerank=weighted` to apply the engine's deterministic
+  pluggable reranker over an expanded candidate set before final top-k
+  truncation. The weighted reranker uses only query text, lexical/vector scores,
+  source hints and payload anchors.
 * **Response (200 OK):**
   ```json
   {
@@ -369,6 +460,7 @@ Runs keyword, vector, ANN, or hybrid search.
       "text_available": true,
       "vector_available": true
     },
+    "rerank": "weighted",
     "ann_report": null,
     "results": [
       {

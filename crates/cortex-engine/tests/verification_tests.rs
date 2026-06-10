@@ -1,7 +1,7 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 use cortex_engine::verification::ContradictionRelationOptions;
-use cortex_engine::verification::VerificationStatus;
+use cortex_engine::verification::{VerificationMatchKind, VerificationStatus};
 use cortex_engine::{scope_id, Database, SourceTrustCategory, INFERRED_SOURCE_TRUST_Q16};
 use std::collections::BTreeSet;
 
@@ -23,6 +23,60 @@ fn verify_fact_aql_reports_supported_evidence() {
         .unwrap();
     assert_eq!(report.status, VerificationStatus::Supported);
     assert_eq!(report.evidence[0].cell_id, CellId(1));
+    assert_eq!(
+        report.evidence[0].match_kind,
+        VerificationMatchKind::ExactText
+    );
+    assert_eq!(report.evidence[0].match_score_q16, u16::MAX);
+}
+
+#[test]
+fn verify_fact_aql_rejects_partial_overlap_as_support() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        fact_cell("project:investments", "ABC budget delayed by committee"),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;"#,
+            &view("project:investments", true),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Insufficient);
+    assert!(report.evidence.is_empty());
+}
+
+#[test]
+fn verify_fact_aql_reports_semantic_entailment_match_kind() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        fact_cell(
+            "project:investments",
+            "Delta project remains active in registry",
+        ),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "Delta project active" IN BRAIN investment_projects;"#,
+            &view("project:investments", true),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Supported);
+    assert_eq!(
+        report.evidence[0].match_kind,
+        VerificationMatchKind::SemanticEntailment
+    );
+    assert_eq!(report.evidence[0].match_score_q16, 60_000);
 }
 
 #[test]
@@ -96,6 +150,29 @@ fn verify_fact_aql_orders_equal_matches_by_source_trust() {
         report.evidence[0].source_trust_category,
         SourceTrustCategory::Official
     );
+}
+
+#[test]
+fn verify_fact_aql_reports_calibrated_report_confidence() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        fact_cell_with_trust("project:investments", "ABC budget approved", Some(60_000)),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;"#,
+            &view("project:investments", true),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Supported);
+    assert_eq!(report.evidence[0].match_score_q16, u16::MAX);
+    assert_eq!(report.evidence[0].source_trust_q16, 60_000);
+    assert_eq!(report.confidence_q16, 60_000);
 }
 
 #[test]

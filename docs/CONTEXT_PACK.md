@@ -42,18 +42,42 @@ Implemented in `cortex-engine`:
 - Large-cell policy: oversized cells can preserve the legacy first-cell
   behavior, truncate to fit, exclude, emit a deterministic summarize-placeholder,
   or emit a source-only reference.
+- Span-level packing: when explicitly enabled through
+  `ContextPackOptions.span_level_packing`, an oversized first candidate can be
+  reduced to the query-relevant body span instead of preserving the full leading
+  document text. The selector is deterministic, uses only query terms and cell
+  text, preserves source metadata above the selected span, and records explicit
+  span provenance with the source cell id, byte range, line range, and optional
+  structured SourceRef.
 - Dedup-aware budget packing: redundant candidates are filtered before budget
   overload checks, and oversized middle candidates are skipped so smaller later
   candidates can still fit.
 - Source trust categories: explain metadata includes `source_trust_q16` and
   `source_trust_category` (`unknown`, `low`, `medium`, `high`, `official`) so
   UI/SDK consumers can see provenance contribution without reinterpreting q16.
+- Source freshness categories: explain metadata includes
+  `source_freshness_q16` and `source_freshness_category` (`unknown`, `stale`,
+  `older`, `recent`, `current`) derived from `created_unix_seconds` relative to
+  the retrieved candidate set. It is deterministic and does not call wall-clock
+  time during packing.
 - Answerability score: `answerability_q16` estimates whether selected cells
   cover explicit query terms. If coverage is incomplete, ContextPack emits an
   `insufficient_context` anomaly instead of implying that an answer is safe.
 - Conflict visibility score: `conflict_visibility_q16` and
   `visible_conflict_count` report whether selected cells contain visible
   conflicting `project` + `metric` values that survived packing.
+- Answer grounding guard: `ContextPack::ground_answer` checks a generated answer
+  against the selected pack cells, splits the answer into spans, reports
+  `supported`/`unsupported` spans, matched/missing terms, supporting `cell_id`s,
+  citations, and an optional `rejected` flag when callers enable
+  `reject_unsupported`. This is a post-answer guard; it does not read benchmark
+  gold labels or judge answers with an LLM.
+- Access-decision trail: every AQL-built ContextPack cell records the readable
+  scope decision that allowed it into the pack (`cell_id`, `scope`, `scope_id`,
+  `agent_id`, `decision`, `policy`, and `reason`). HTTP JSON responses attach
+  `principal_id` and `auth_role` from the authenticated request when present, so
+  enterprise audit tooling can answer why a user saw a specific fact without
+  exposing bearer tokens.
 
 Public JSON responses include:
 
@@ -76,6 +100,23 @@ Public JSON responses include:
       "why_excluded": "covered_terms=[]; missing_terms=[budget]"
     }
   ]
+}
+```
+
+For selected cells, `cells[].access_decision` is the per-cell RBAC trail. A
+typical HTTP response includes:
+
+```json
+{
+  "cell_id": 1,
+  "decision": "allowed",
+  "policy": "agent_view_readable_scope",
+  "reason": "cell scope was present in AgentView.readable_scopes before ContextPack packing",
+  "scope": "project:investments",
+  "scope_id": 1001,
+  "agent_id": 7,
+  "principal_id": "agent-a",
+  "auth_role": "data"
 }
 ```
 
@@ -141,9 +182,25 @@ existing compact summary default unless `--json` or `--format` is passed.
 10. A forbidden scope cannot enter ContextPack through broad queries or public
     exports; `AgentView.readable_scopes` still constrains the runtime
     `AgentAllowed` mask after binding.
-11. No HNSW, reranking, or LLM calls run inside ContextPack v1 itself.
-12. Large-cell summarize-placeholder mode is deterministic metadata/reference
+11. `AgentAllowed` is part of the bitmap candidate set before
+    `LIMIT ... CANDIDATES` is applied. ContextPack must never retrieve a broad
+    top-k set and then post-filter unreadable cells.
+12. Span-level packing, when enabled, is derived from query text and cell text;
+    it does not read benchmark gold labels or call an external model.
+13. Span provenance always points back to the readable source cell that already
+    passed AQL and AgentView checks; it cannot introduce a new source outside
+    the retrieved candidate set.
+14. No HNSW, reranking, or LLM calls run inside ContextPack v1 itself.
+15. Large-cell summarize-placeholder mode is deterministic metadata/reference
     output, not an LLM-generated summary.
+16. Answer grounding only checks against the cells already present in the pack.
+    It cannot use hidden cells, source-type labels, question-type labels, or
+    evaluator gold facts.
+17. AQL-built ContextPack cells must expose an access-decision trail that links
+    the selected `cell_id` to the readable scope decision used before packing.
+    If a pack is manually constructed without an `AgentView`, the trail is
+    explicitly absent or `not_recorded`; it must not pretend an RBAC decision
+    happened.
 
 ## Known Limits
 
@@ -165,14 +222,30 @@ existing compact summary default unless `--json` or `--format` is passed.
 - `conflict_visibility_q16` is a visibility metric for conflicts already
   selected into the pack. It is not a full contradiction detector; use VERIFY
   FACT for fact-level contradiction analysis.
+- `source_freshness_q16` is a relative recency signal over the retrieved
+  candidate set. Missing `created_unix_seconds` metadata maps to `unknown` with
+  no freshness bonus. This is not a legal source-freshness certification.
 - The private scope leak gate checks a broad `WHERE status = "ready"` query, a
   checkpoint/restart path, a compact/restart path, and all ContextPack export
   formats. It proves that a forbidden scope is excluded even when the AQL query
   itself does not include a scope predicate.
+- The candidate-limit leak gate checks `LIMIT 1 CANDIDATES` with an unreadable
+  lower candidate id ahead of the visible cell. It proves that the
+  `AgentAllowed` bitmap is applied before candidate limiting and before
+  ContextPack JSON, prompt, or Markdown export.
 - `ContextLargeCellPolicy` is an explicit runtime option. `PreserveFirst`
   remains the default for compatibility. `Truncate`, `Exclude`,
   `SummarizePlaceholder`, and `SourceOnlyReference` keep reported token usage
   within the available budget when they include a transformed large cell.
+- `ContextPackOptions.span_level_packing` remains disabled by default for
+  compatibility. When enabled, it can select a relevant body span from an
+  oversized first cell and records a deterministic
+  `[context_pack_span=true line_start=... line_end=...]` marker in the packed
+  payload. The public JSON, prompt, and Markdown exports also expose a
+  `provenance` object for that selected span, including `source_cell_id`,
+  `source_byte_start`, `source_byte_end`, `source_line_start`,
+  `source_line_end`, and nested `source_ref` when the original cell had
+  structured SourceRef metadata.
 
 ## Quality Gate
 
@@ -210,6 +283,7 @@ make context-pack-conflict-visibility-check
 make context-pack-private-scope-check
 make context-pack-token-estimator-check
 make context-pack-large-cell-policy-check
+make context-pack-span-packing-check
 ```
 
 That gate runs the ContextPack behavior tests, the ContextPack/VERIFY fixture,

@@ -180,6 +180,32 @@ fn snapshot_context_response_shape() {
 }
 
 #[test]
+fn snapshot_context_trace_response_shape() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:test\nstatus=ready\nsource=doc-a\n\nalpha budget proposal"
+    );
+    handle_http(dir.path(), put);
+    handle_http(dir.path(), "POST /v1/flush HTTP/1.1\r\n\r\n");
+    let request = concat!(
+        "POST /v1/context/trace?scope=project:test HTTP/1.1\r\n",
+        "Content-Type: application/json\r\n\r\n",
+        "{\"retrieve_aql\":\"RETRIEVE CONTEXT FOR TASK \\\"budget\\\" IN BRAIN default LIMIT 10 CANDIDATES;\",",
+        "\"verify_aql\":\"VERIFY FACT \\\"alpha budget proposal\\\" IN BRAIN default;\"}"
+    );
+    let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""schema_version":"context_trace.v1""#));
+    assert!(response.contains(r#""context":{"schema_version":"context_pack.v1""#));
+    assert!(response.contains(r#""verification":{"fact":"alpha budget proposal""#));
+    assert!(response.contains(r#""trace":{"schema_version":"context_pipeline_trace.v1""#));
+    assert!(response.contains(r#""name":"retrieve""#));
+    assert!(response.contains(r#""name":"pack""#));
+    assert!(response.contains(r#""name":"verify""#));
+    assert!(response.contains(r#""cells":[{"#));
+}
+
+#[test]
 fn snapshot_aql_response_shape() {
     let dir = tempfile::tempdir().unwrap();
     let put = concat!(

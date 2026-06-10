@@ -28,8 +28,14 @@ pub fn extract_document_content(document: &Value) -> (String, String) {
     (title, parts.join("\n\n"))
 }
 
-pub fn build_payload(doc_id: &str, rel_path: &str, title: &str, content: &str) -> String {
-    [
+pub fn build_payload(
+    doc_id: &str,
+    rel_path: &str,
+    title: &str,
+    content: &str,
+    vector: Option<&[i16]>,
+) -> String {
+    let mut lines = vec![
         "scope=bench:enterprise_rag".to_owned(),
         "status=ready".to_owned(),
         "type=document_block".to_owned(),
@@ -40,11 +46,19 @@ pub fn build_payload(doc_id: &str, rel_path: &str, title: &str, content: &str) -
         ),
         format!("rel_path={}", clean_line(rel_path)),
         format!("title={}", clean_line(title)),
-        String::new(),
-        title.to_owned(),
-        content.to_owned(),
-    ]
-    .join("\n")
+    ];
+    if let Some(vector) = vector {
+        lines.push(format!(
+            "vector={}",
+            vector
+                .iter()
+                .map(i16::to_string)
+                .collect::<Vec<_>>()
+                .join(",")
+        ));
+    }
+    lines.extend([String::new(), title.to_owned(), content.to_owned()]);
+    lines.join("\n")
 }
 
 fn clean_line(value: &str) -> String {
@@ -62,5 +76,18 @@ fn value_to_text(value: &Value) -> String {
         Value::Object(_) => value.to_string(),
         Value::Null => String::new(),
         _ => value.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::build_payload;
+
+    #[test]
+    fn build_payload_writes_optional_vector_metadata() {
+        let payload = build_payload("doc-1", "slack/a.json", "Title", "Body", Some(&[1, -2, 3]));
+
+        assert!(payload.contains("\nvector=1,-2,3\n\n"));
+        assert!(payload.contains("\ndoc_id=doc-1\n"));
     }
 }

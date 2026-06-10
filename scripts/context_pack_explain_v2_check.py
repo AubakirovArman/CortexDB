@@ -15,12 +15,16 @@ REQUIRED_ENGINE_EXPLAIN_FIELDS = [
     "source_trust_q16",
     "source_trust_category",
     "source_trust_bonus",
+    "source_freshness_q16",
+    "source_freshness_category",
+    "source_freshness_bonus",
     "redundancy_penalty",
 ]
 
 REQUIRED_SCORE_COMPONENTS = [
     "base_bm25",
     "source_trust_bonus",
+    "source_freshness_bonus",
     "redundancy_penalty",
 ]
 
@@ -36,6 +40,9 @@ REQUIRED_OPENAPI_FIELDS = [
     "source_trust_q16",
     "source_trust_category",
     "source_trust_bonus",
+    "source_freshness_q16",
+    "source_freshness_category",
+    "source_freshness_bonus",
     "redundancy_penalty",
     "ContextPackAnomalyResponse",
     "why_excluded",
@@ -46,6 +53,8 @@ REQUIRED_DOC_TERMS = [
     "score_components",
     "source_trust_q16",
     "source_trust_category",
+    "source_freshness_q16",
+    "source_freshness_category",
     "redundancy_penalty",
     "why_excluded",
     "token_budget_tokens",

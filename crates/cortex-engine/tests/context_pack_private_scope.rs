@@ -46,6 +46,60 @@ fn explicit_forbidden_scope_query_is_denied_before_packing() {
     assert_eq!(error, "requested scope is not readable");
 }
 
+#[test]
+fn context_pack_records_access_decision_trail_per_cell() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    seed_public_and_private_ready_cells(&mut db);
+
+    let pack = db
+        .context_pack_from_aql(
+            broad_ready_query(),
+            &public_agent_view(),
+            ContextPackOptions {
+                token_budget_tokens: 256,
+                ..ContextPackOptions::default()
+            },
+        )
+        .unwrap();
+
+    assert_eq!(pack.cells.len(), 1);
+    let decision = pack.cells[0]
+        .access_decision
+        .as_ref()
+        .expect("AQL ContextPack cells should carry access decisions");
+    assert_eq!(decision.cell_id, CellId(1));
+    assert_eq!(decision.decision.as_str(), "allowed");
+    assert_eq!(decision.policy, "agent_view_readable_scope");
+    assert_eq!(decision.scope, PUBLIC_SCOPE);
+    assert_eq!(decision.scope_id, scope_id(PUBLIC_SCOPE).0);
+    assert_eq!(decision.agent_id, Some(1));
+}
+
+#[test]
+fn context_pack_acl_is_applied_before_candidate_limit() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        format!("scope={FORBIDDEN_SCOPE}\nstatus=ready\nsource=private-source\n{PRIVATE_SECRET}")
+            .into_bytes(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        format!(
+            "scope={PUBLIC_SCOPE}\nstatus=ready\nsource=public-source\npublic investment budget"
+        )
+        .into_bytes(),
+    )
+    .unwrap();
+
+    assert_limit_one_returns_only_public_cell(&db);
+    db.checkpoint().unwrap();
+    assert_limit_one_returns_only_public_cell(&db);
+}
+
 fn seed_public_and_private_ready_cells(db: &mut Database) {
     db.put_cell(
         CellId(1),
@@ -61,6 +115,46 @@ fn seed_public_and_private_ready_cells(db: &mut Database) {
             .into_bytes(),
     )
     .unwrap();
+}
+
+fn assert_limit_one_returns_only_public_cell(db: &Database) {
+    let retrieved = db
+        .retrieve_aql(broad_ready_limit_one_query(), &public_agent_view())
+        .unwrap();
+    let ids = retrieved
+        .iter()
+        .map(|cell| cell.cell_id)
+        .collect::<Vec<_>>();
+    assert_eq!(ids, vec![CellId(2)]);
+
+    let pack = db
+        .context_pack_from_aql(
+            broad_ready_limit_one_query(),
+            &public_agent_view(),
+            ContextPackOptions {
+                token_budget_tokens: 256,
+                ..ContextPackOptions::default()
+            },
+        )
+        .unwrap();
+    let pack_ids = pack
+        .cells
+        .iter()
+        .map(|cell| cell.cell_id)
+        .collect::<Vec<_>>();
+    assert_eq!(pack_ids, vec![CellId(2)]);
+
+    let surfaces = [
+        pack.export(ContextPackExportFormat::Json),
+        pack.export(ContextPackExportFormat::Prompt),
+        pack.export(ContextPackExportFormat::Markdown),
+    ];
+    for surface in surfaces {
+        assert!(surface.contains("public investment budget"));
+        assert!(!surface.contains(PRIVATE_SECRET));
+        assert!(!surface.contains(FORBIDDEN_SCOPE));
+        assert!(!surface.contains("private-source"));
+    }
 }
 
 fn assert_no_private_scope_leak(db: &Database) {
@@ -106,6 +200,11 @@ fn assert_no_private_scope_leak(db: &Database) {
 fn broad_ready_query() -> &'static str {
     r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
 WHERE status = "ready" LIMIT 10 CANDIDATES;"#
+}
+
+fn broad_ready_limit_one_query() -> &'static str {
+    r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
+WHERE status = "ready" LIMIT 1 CANDIDATES;"#
 }
 
 fn private_scope_query() -> &'static str {

@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+"""Generate EnterpriseRAG-Bench answers in oracle-free mode."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from types import SimpleNamespace
+
+from official_clean import (
+    assert_clean_retrieval,
+    model_profile,
+    read_jsonl,
+    require_profile_key,
+    write_temp_key,
+)
+from progress_logging import ProgressLogger
+from run_deepseek_answers import run as run_answers
+
+
+LOGGER = ProgressLogger("official-clean-answer")
+
+
+def log(message: str) -> None:
+    LOGGER.log(message)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--retrieval-file", type=Path, required=True)
+    parser.add_argument("--uuid-index", type=Path, required=True)
+    parser.add_argument("--sources-dir", type=Path, required=True)
+    parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument(
+        "--provider", choices=["gemma", "gemini", "deepseek", "openai"], required=True
+    )
+    parser.add_argument("--top-k-context", type=int, default=8)
+    parser.add_argument("--max-chars-per-doc", type=int, default=2200)
+    parser.add_argument("--max-tokens", type=int, default=420)
+    parser.add_argument("--context-mode", default="question-window-digest-ranked")
+    parser.add_argument("--workers", type=int, default=2)
+    parser.add_argument("--retries", type=int, default=3)
+    parser.add_argument("--limit", type=int)
+    parser.add_argument("--progress-every", type=int, default=10)
+    parser.add_argument("--log-file", type=Path)
+    parser.add_argument("--status-file", type=Path)
+    args = parser.parse_args()
+    global LOGGER
+    LOGGER = ProgressLogger(
+        "official-clean-answer",
+        log_file=args.log_file,
+        status_file=args.status_file,
+    )
+
+    rows = read_jsonl(args.retrieval_file)
+    pending_limit = args.limit if args.limit is not None else len(rows)
+    log(
+        "loaded retrieval "
+        f"rows={len(rows)} limit={pending_limit} file={args.retrieval_file}"
+    )
+    LOGGER.status(
+        stage="answer_wrapper",
+        state="running",
+        step=1,
+        total_steps=3,
+        retrieval_rows=len(rows),
+        limit=pending_limit,
+        retrieval_file=str(args.retrieval_file),
+    )
+    assert_clean_retrieval(rows)
+    log("clean retrieval guard passed")
+    profile = model_profile(args.provider)
+    require_profile_key(profile)
+    log(
+        "selected provider="
+        f"{args.provider} model={profile['model']} output_root={args.output_root}"
+    )
+    LOGGER.status(
+        stage="answer_wrapper",
+        state="running",
+        step=2,
+        total_steps=3,
+        provider=args.provider,
+        model=str(profile["model"]),
+        output_root=str(args.output_root),
+    )
+    key_file = write_temp_key(args.provider, str(profile["api_key"]))
+
+    log("begin answer generation")
+    try:
+        report = run_answers(
+            SimpleNamespace(
+                retrieval_file=args.retrieval_file,
+                uuid_index=args.uuid_index,
+                sources_dir=args.sources_dir,
+                output_root=args.output_root,
+                api_key_file=key_file,
+                base_url=profile["base_url"],
+                model=profile["model"],
+                top_k_context=args.top_k_context,
+                max_chars_per_doc=args.max_chars_per_doc,
+                max_tokens=args.max_tokens,
+                high_level_top_k_context=args.top_k_context,
+                high_level_max_chars_per_doc=args.max_chars_per_doc,
+                high_level_reference_file=None,
+                high_level_reference_max_chars=0,
+                high_level_max_tokens=args.max_tokens,
+                high_level_context_mode=args.context_mode,
+                prompt_style="official-clean-v1",
+                context_mode=args.context_mode,
+                workers=args.workers,
+                retries=args.retries,
+                limit=args.limit,
+                progress_every=args.progress_every,
+                evidence_plan_file=None,
+                include_evidence_plan=False,
+                evidence_table_file=None,
+                max_evidence_facts_per_doc=0,
+                max_evidence_table_rows=0,
+                include_evidence_table=False,
+                omit_thinking_field=bool(profile["omit_thinking_field"]),
+                gemini_native=bool(profile["gemini_native"]),
+                gemini_thinking_budget=0,
+                openai_reasoning=bool(profile.get("openai_reasoning", False)),
+                log_file=args.log_file,
+                status_file=args.status_file,
+            )
+        )
+    except Exception as error:
+        LOGGER.status(stage="answer_wrapper", state="failed", error=str(error))
+        raise
+    log(
+        "done answer generation "
+        f"questions={report.get('questions')} prompt_tokens={report.get('prompt_tokens')} "
+        f"completion_tokens={report.get('completion_tokens')} total_tokens={report.get('total_tokens')}"
+    )
+    log(f"wrote answers {args.output_root / 'answers.jsonl'}")
+    log(f"wrote answer report {args.output_root / 'answer_generation_report.json'}")
+    LOGGER.status(
+        stage="answer_wrapper",
+        state="done",
+        step=3,
+        total_steps=3,
+        questions=report.get("questions"),
+        prompt_tokens=report.get("prompt_tokens"),
+        completion_tokens=report.get("completion_tokens"),
+        total_tokens=report.get("total_tokens"),
+        answers_file=str(args.output_root / "answers.jsonl"),
+        report=str(args.output_root / "answer_generation_report.json"),
+    )
+    print(json.dumps(report, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

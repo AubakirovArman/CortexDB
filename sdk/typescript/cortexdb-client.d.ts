@@ -160,6 +160,46 @@ export interface ContextPackResponse {
   anomalies: ContextPackAnomalyResponse[];
 }
 
+export interface AnswerGroundingSpanResponse {
+  text: string;
+  start_byte: number;
+  end_byte: number;
+  support_q16: number;
+  supported: boolean;
+  covered_terms: string[];
+  missing_terms: string[];
+  supported_by_cell_ids: number[];
+  citations: string[];
+}
+
+export interface AnswerGroundingReportResponse {
+  answer_supported: boolean;
+  rejected: boolean;
+  support_q16: number;
+  supported_span_count: number;
+  unsupported_span_count: number;
+  spans: AnswerGroundingSpanResponse[];
+}
+
+export interface GroundedAnswerOptions extends RetrieveContextAqlOptions {
+  minSpanSupportQ16?: number;
+  rejectUnsupported?: boolean;
+  verifyAnswer?: boolean;
+}
+
+export interface GroundedAnswerResponse {
+  question: string;
+  answer: string;
+  retrieve_statement: string;
+  verify_statement: string | null;
+  context: ContextPackResponse;
+  grounding: AnswerGroundingReportResponse;
+  verification: VerificationReportResponse | null;
+  citations: string[];
+  used_context_cell_ids: number[];
+  rejected: boolean;
+}
+
 export interface EvidenceResponse {
   cell_id: number;
   matched_terms: number;
@@ -184,6 +224,7 @@ export interface VerificationReportResponse {
   fact: string;
   status: string;
   verdict: string;
+  confidence_q16: number;
   evidence: EvidenceResponse[];
   contradicting_evidence: EvidenceResponse[];
   guards: GuardResponse[];
@@ -254,6 +295,28 @@ export function buildRememberAql(
   ttlSeconds?: number,
 ): string;
 
+export function groundAnswer(
+  context: ContextPackResponse,
+  answer: string,
+  options?: {
+    minSpanSupportQ16?: number;
+    requireCitations?: boolean;
+    rejectUnsupported?: boolean;
+  },
+): AnswerGroundingReportResponse;
+
+export function buildGroundedAnswerResponse(params: {
+  question: string;
+  answer: string;
+  retrieveStatement: string;
+  verifyStatement?: string | null;
+  context: ContextPackResponse;
+  verification?: VerificationReportResponse | null;
+  requireCitations?: boolean;
+  minSpanSupportQ16?: number;
+  rejectUnsupported?: boolean;
+}): GroundedAnswerResponse;
+
 export class CortexDBClient {
   constructor(baseUrl?: string, token?: string, tenant?: string, maxRetries?: number, retryDelayMs?: number);
   withTenant(tenant: string): CortexDBClient;
@@ -272,6 +335,13 @@ export class CortexDBClient {
   evaluateAnn(scope: string, vector: number[], limit?: number): Promise<AnnEvaluationResponse>;
   aql(scope: string, statement: string): Promise<AqlResponse>;
   retrieveContext(scope: string, statement: string): Promise<ContextPackResponse>;
+  answerWithGroundedContext(
+    scope: string,
+    brain: string,
+    question: string,
+    answerer: (context: ContextPackResponse) => string | Promise<string>,
+    options?: GroundedAnswerOptions,
+  ): Promise<GroundedAnswerResponse>;
   verifyFact(scope: string, statement: string): Promise<VerificationReportResponse>;
   remember(scope: string, statement: string): Promise<RememberResponse>;
   ingestText(scope: string, text: string, source?: string): Promise<IngestResponse>;

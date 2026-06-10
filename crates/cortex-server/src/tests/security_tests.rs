@@ -1,4 +1,5 @@
 use std::collections::BTreeSet;
+use std::thread;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, ScopeId, Q16_ZERO};
 use cortex_engine::{scope_id, Database};
@@ -115,6 +116,100 @@ fn auth_agent_view_blocks_unwritable_cell_scope_over_http() {
         allowed.contains("200 OK"),
         "writable payload scope should be allowed: {allowed}"
     );
+}
+
+#[test]
+fn tenant_realms_isolate_cell_data_over_http() {
+    let dir = tempfile::tempdir().unwrap();
+
+    let alpha_put = concat!(
+        "POST /v1/cell?tenant=alpha&cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\nalpha-only-payload"
+    );
+    let beta_put = concat!(
+        "POST /v1/cell?tenant=beta&cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\nbeta-only-payload"
+    );
+    assert!(
+        handle_http_with_options(dir.path(), alpha_put, &ServerOptions::default())
+            .contains(r#""seq":1"#)
+    );
+    assert!(
+        handle_http_with_options(dir.path(), beta_put, &ServerOptions::default())
+            .contains(r#""seq":1"#)
+    );
+
+    let alpha_get = handle_http_with_options(
+        dir.path(),
+        "GET /v1/cell?tenant=alpha&cell_id=1 HTTP/1.1\r\n\r\n",
+        &ServerOptions::default(),
+    );
+    assert!(alpha_get.contains("alpha-only-payload"));
+    assert!(!alpha_get.contains("beta-only-payload"));
+
+    let beta_get = handle_http_with_options(
+        dir.path(),
+        "GET /v1/cell?tenant=beta&cell_id=1 HTTP/1.1\r\n\r\n",
+        &ServerOptions::default(),
+    );
+    assert!(beta_get.contains("beta-only-payload"));
+    assert!(!beta_get.contains("alpha-only-payload"));
+
+    let default_get = handle_http_with_options(
+        dir.path(),
+        "GET /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        &ServerOptions::default(),
+    );
+    assert!(default_get.contains(r#""cell":null"#));
+
+    assert!(dir.path().join("realms").join("alpha").is_dir());
+    assert!(dir.path().join("realms").join("beta").is_dir());
+}
+
+#[test]
+fn parallel_tenant_realms_do_not_share_state() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().to_path_buf();
+    let mut handles = Vec::new();
+
+    for index in 0..8u64 {
+        let root = root.clone();
+        handles.push(thread::spawn(move || {
+            let tenant = format!("tenant_{index}");
+            let payload = format!("tenant-{index}-payload");
+            let put = format!(
+                "POST /v1/cell?tenant={tenant}&cell_id=1 HTTP/1.1\r\n\r\nscope=project:investments\nstatus=ready\n{payload}"
+            );
+            let put_response = handle_http_with_options(&root, &put, &ServerOptions::default());
+            assert!(
+                put_response.contains(r#""seq":1"#),
+                "put failed for {tenant}: {put_response}"
+            );
+
+            let get = format!("GET /v1/cell?tenant={tenant}&cell_id=1 HTTP/1.1\r\n\r\n");
+            let get_response = handle_http_with_options(&root, &get, &ServerOptions::default());
+            assert!(
+                get_response.contains(&payload),
+                "get failed for {tenant}: {get_response}"
+            );
+            (tenant, payload)
+        }));
+    }
+
+    let completed = handles
+        .into_iter()
+        .map(|handle| handle.join().unwrap())
+        .collect::<Vec<_>>();
+
+    for (tenant, payload) in completed {
+        assert!(dir.path().join("realms").join(&tenant).is_dir());
+        let response = handle_http_with_options(
+            dir.path(),
+            &format!("GET /v1/cell?tenant={tenant}&cell_id=1 HTTP/1.1\r\n\r\n"),
+            &ServerOptions::default(),
+        );
+        assert!(response.contains(&payload));
+    }
 }
 
 #[test]

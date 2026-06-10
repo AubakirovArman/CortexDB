@@ -120,4 +120,30 @@ mod tests {
             .any(|format| format.current_magic == "ACLOGv0"));
         assert_eq!(summary.migration.gate, "make migration-compatibility-check");
     }
+
+    #[test]
+    fn compatibility_summary_exposes_all_storage_format_markers() {
+        let summary = compatibility_summary();
+        let markers = summary
+            .storage_formats
+            .iter()
+            .map(|format| format.current_magic.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            markers,
+            vec!["ACLOGv0", "ACS1", "ACB0", "ACI2", "ACV0", "ACH0", "ACM0"]
+        );
+
+        let lexical = summary
+            .storage_formats
+            .iter()
+            .find(|format| format.extension == "aci")
+            .expect("lexical index compatibility should be public");
+        assert_eq!(lexical.current_version, 2);
+        assert_eq!(lexical.legacy_magics, vec!["ACI0", "ACI1"]);
+        assert_eq!(
+            lexical.compatibility_rule,
+            "ACI0 and ACI1 remain read-only compatible"
+        );
+    }
 }

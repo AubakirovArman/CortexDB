@@ -21,6 +21,23 @@ struct UpgradePrepareResponse {
 }
 
 #[derive(Serialize)]
+struct MigrationPreflightResponse {
+    phase: &'static str,
+    status: &'static str,
+    source_path: String,
+    backup_path: String,
+    drill_restore_path: String,
+    preflight_live_segments_checked: usize,
+    preflight_cells_checked: usize,
+    preflight_wal_records_checked: usize,
+    backup_files_copied: usize,
+    backup_bytes_copied: u64,
+    drill_restored_cells_checked: usize,
+    validate_after_migration_command: String,
+    rollback_command: String,
+}
+
+#[derive(Serialize)]
 struct UpgradeValidateResponse {
     phase: &'static str,
     status: &'static str,
@@ -98,6 +115,51 @@ pub(crate) fn prepare(
         response.backup_bytes_copied,
         response.drill_restored_cells_checked,
         response.validate_after_upgrade_command,
+        response.rollback_command
+    ))
+}
+
+pub(crate) fn migrate(
+    path: &str,
+    backup_path: &str,
+    drill_restore_path: &str,
+    json: bool,
+) -> Result<String, String> {
+    let validation = {
+        let db = open_database(path, false)?;
+        db.validate_storage().map_err(fmt_engine_error)?
+    };
+    let drill = Database::backup_restore_drill_path(path, backup_path, drill_restore_path)
+        .map_err(fmt_engine_error)?;
+    let response = MigrationPreflightResponse {
+        phase: "migrate_preflight",
+        status: "ready_for_offline_migration",
+        source_path: path.to_owned(),
+        backup_path: backup_path.to_owned(),
+        drill_restore_path: drill_restore_path.to_owned(),
+        preflight_live_segments_checked: validation.live_segments_checked,
+        preflight_cells_checked: validation.cells_checked,
+        preflight_wal_records_checked: validation.wal_records_checked,
+        backup_files_copied: drill.backup.files_copied,
+        backup_bytes_copied: drill.backup.bytes_copied,
+        drill_restored_cells_checked: drill.restore.restored_validation.cells_checked,
+        validate_after_migration_command: format!("cortexdb upgrade validate {path}"),
+        rollback_command: format!("cortexdb upgrade rollback {backup_path} {path}.rollback"),
+    };
+    if json {
+        return Ok(to_json(&response));
+    }
+    Ok(format!(
+        "phase={} status={} preflight_live_segments_checked={} preflight_cells_checked={} preflight_wal_records_checked={} backup_files_copied={} backup_bytes_copied={} drill_restored_cells_checked={} validate_after_migration_command=\"{}\" rollback_command=\"{}\"",
+        response.phase,
+        response.status,
+        response.preflight_live_segments_checked,
+        response.preflight_cells_checked,
+        response.preflight_wal_records_checked,
+        response.backup_files_copied,
+        response.backup_bytes_copied,
+        response.drill_restored_cells_checked,
+        response.validate_after_migration_command,
         response.rollback_command
     ))
 }

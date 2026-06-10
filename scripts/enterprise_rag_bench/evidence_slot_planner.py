@@ -47,6 +47,10 @@ def add_slot(
     )
 
 
+def normalize_question_type(question_type: Any) -> str:
+    return str(question_type or "unknown").lower().strip()
+
+
 def add_question_word_slots(slots: list[dict[str, Any]], seen: set[str], question: str) -> None:
     lower = question.lower()
     if lower.startswith("who ") or " who " in lower:
@@ -151,15 +155,32 @@ def add_type_slots(slots: list[dict[str, Any]], seen: set[str], question_type: s
             kind="project_state",
             label="project status, owner, blocker, deadline, and action",
             instruction="Extract status, owner, blockers, deadlines, remediation, and next actions when present.",
-            required=False,
+            required=True,
         )
-    elif question_type == "conflicting_info":
+        add_slot(
+            slots,
+            seen,
+            kind="project_chain",
+            label="related tickets, PRs, docs, and linked artifacts",
+            instruction="Collect linked artifacts (tickets, threads, pages, commits) and evidence that belongs to the same project chain.",
+        )
+        return
+    if question_type == "conflicting_info":
         add_slot(
             slots,
             seen,
             kind="conflict_pair",
             label="conflicting values and sources",
             instruction="Extract both conflicting claims, their source context, and which one is newer or authoritative.",
+        )
+    elif question_type == "constrained":
+        add_slot(
+            slots,
+            seen,
+            kind="constraint",
+            label="hard filters, scope, and qualification conditions",
+            instruction="Apply every explicit filter before answering: source type, dates, project scope, status, owner, and scope limitations.",
+            required=True,
         )
     elif question_type == "completeness":
         add_slot(
@@ -185,6 +206,29 @@ def add_type_slots(slots: list[dict[str, Any]], seen: set[str], question_type: s
             label="answerability evidence",
             instruction="Confirm whether any retrieved document directly supports the answer; otherwise abstain.",
         )
+    elif question_type in {"miscellaneous"}:
+        add_slot(
+            slots,
+            seen,
+            kind="topic_summary",
+            label="all requested themes and outcomes",
+            instruction="Collect all distinct themes the question implies and summarize evidence for each theme with concrete details.",
+        )
+    elif question_type == "intra_document_reasoning":
+        add_slot(
+            slots,
+            seen,
+            kind="argument_chain",
+            label="linked causes, dependencies, and evidence chain",
+            instruction="Build a cause->effect->resolution chain from the same document set and keep links explicit.",
+        )
+        add_slot(
+            slots,
+            seen,
+            kind="risk_chain",
+            label="risk, condition, and scope",
+            instruction="Capture explicit risks, conditions, and scope statements tied to the same incident or request.",
+        )
     elif question_type == "semantic":
         add_slot(
             slots,
@@ -193,13 +237,27 @@ def add_type_slots(slots: list[dict[str, Any]], seen: set[str], question_type: s
             label="exact semantic match plus concrete anchors",
             instruction="Use meaning plus concrete anchors; avoid similarly worded but different scenarios.",
         )
-    elif question_type == "constrained":
         add_slot(
             slots,
             seen,
-            kind="constraint",
-            label="constraint, filter, or qualifying condition",
-            instruction="Apply the exact constraint from the question before selecting answer evidence.",
+            kind="direct_answer",
+            label="single best matched answer candidate",
+            instruction="Select the strongest direct answer candidate and cite its exact factual details from evidence.",
+        )
+        add_slot(
+            slots,
+            seen,
+            kind="semantic_coverage",
+            label="entity/term aliases and variants",
+            instruction="Prefer entities and aliases that exactly match question wording before fallback semantic matches.",
+        )
+    elif question_type in {"basic", "miscellaneous"}:
+        add_slot(
+            slots,
+            seen,
+            kind="basic_fact",
+            label="directly asked fact(s)",
+            instruction="Extract the direct fact(s) that answer the question and keep literal names/values.",
         )
 
 
@@ -207,18 +265,28 @@ def answer_policy(question_type: str, question: str) -> str:
     lower = question.lower()
     if question_type in {"info_not_found", "unavailable", "null_query"}:
         return "abstain_if_no_direct_support"
+    if question_type in {"constrained", "miscellaneous"}:
+        return "strict_constraint_first"
+    if question_type == "completeness":
+        return "fill_all_subparts_first"
+    if question_type == "project_related":
+        return "fill_project_chain_and_slots"
     if question_type == "high_level":
-        return "source_grounded_synthesis"
+        return "synthesize_representative_coverage"
+    if question_type == "semantic":
+        return "fill_all_required_slots"
     if question_type == "conflicting_info":
         return "compare_conflicting_evidence"
-    if question_type in {"completeness", "project_related"} or has_any(lower, ("all ", "every ", "list")):
+    if question_type == "intra_document_reasoning":
+        return "build_and_compare_evidence_chain"
+    if has_any(lower, ("all ", "every ", "list")):
         return "fill_all_required_slots"
     return "fill_required_slots_compactly"
 
 
 def build_evidence_plan(row: dict[str, Any]) -> dict[str, Any]:
     question = str(row.get("question") or "")
-    question_type = str(row.get("question_type") or "unknown")
+    question_type = normalize_question_type(row.get("question_type"))
     slots: list[dict[str, Any]] = []
     seen: set[str] = set()
 

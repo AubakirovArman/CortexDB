@@ -66,6 +66,13 @@ def require(condition: bool, message: str, errors: list[str]) -> None:
         errors.append(message)
 
 
+def int_value(value: Any, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def validate_soak_report(report: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     cycles = report.get("cycles", [])
@@ -79,6 +86,27 @@ def validate_soak_report(report: dict[str, Any]) -> list[str]:
     )
     require(isinstance(kills, list) and len(kills) >= 4, "kill injection evidence missing", errors)
     require(bool(report.get("final_validation", {}).get("ok")), "final validation is not ok", errors)
+    final_stats = report.get("final_stats", {})
+    require(isinstance(final_stats, dict), "final storage stats are missing", errors)
+    if isinstance(final_stats, dict):
+        for field in [
+            "durable_storage_bytes",
+            "logical_payload_bytes",
+            "space_amplification_q16",
+            "write_amplification_q16",
+            "compaction_pressure_q16",
+        ]:
+            require(field in final_stats, f"final storage stats missing {field}", errors)
+        require(
+            int_value(final_stats.get("compaction_pressure_q16")) == 0,
+            "final compaction pressure is not zero after GC",
+            errors,
+        )
+        require(
+            int_value(final_stats.get("retired_segment_bytes")) == 0,
+            "final retired segment bytes are not zero after GC",
+            errors,
+        )
     fixture = report.get("versioned_restore_fixture", {})
     require(bool(fixture.get("validation_ok")), "versioned restore fixture did not validate", errors)
     for cycle in cycles if isinstance(cycles, list) else []:
@@ -96,6 +124,27 @@ def validate_soak_report(report: dict[str, Any]) -> list[str]:
             f"{prefix} partial WAL tail was not truncated",
             errors,
         )
+        pre_gc_stats = cycle.get("pre_gc_stats", {})
+        post_gc_stats = cycle.get("post_gc_stats", {})
+        require(isinstance(pre_gc_stats, dict), f"{prefix} pre-GC stats missing", errors)
+        require(isinstance(post_gc_stats, dict), f"{prefix} post-GC stats missing", errors)
+        if isinstance(pre_gc_stats, dict):
+            require(
+                int_value(pre_gc_stats.get("write_amplification_q16")) > 0,
+                f"{prefix} write amplification was not measured",
+                errors,
+            )
+            require(
+                int_value(pre_gc_stats.get("space_amplification_q16")) > 0,
+                f"{prefix} space amplification was not measured",
+                errors,
+            )
+        if isinstance(post_gc_stats, dict):
+            require(
+                int_value(post_gc_stats.get("compaction_pressure_q16")) == 0,
+                f"{prefix} post-GC compaction pressure is not zero",
+                errors,
+            )
     for item in kills if isinstance(kills, list) else []:
         phase = item.get("phase", "unknown")
         recovery_ok = bool(item.get("validation_ok", item.get("final_restore_validation_ok", False)))
@@ -122,6 +171,12 @@ def entry_id(entry: dict[str, Any]) -> str:
 def build_entry(report: dict[str, Any]) -> dict[str, Any]:
     cycles = report.get("cycles", [])
     kills = report.get("kill_injections", [])
+    final_stats = report.get("final_stats", {})
+    cycle_stats = [
+        cycle.get("pre_gc_stats", {})
+        for cycle in cycles
+        if isinstance(cycle, dict) and isinstance(cycle.get("pre_gc_stats"), dict)
+    ]
     entry = {
         "schema_version": 1,
         "git_sha": git_sha(),
@@ -132,6 +187,22 @@ def build_entry(report: dict[str, Any]) -> dict[str, Any]:
         "cells_written": sum(len(cycle.get("cells_written", [])) for cycle in cycles),
         "kill_injection_phases": [item.get("phase", "unknown") for item in kills],
         "versioned_restore_fixture": report.get("versioned_restore_fixture", {}).get("release_tag"),
+        "final_space_amplification_q16": int_value(final_stats.get("space_amplification_q16")),
+        "final_write_amplification_q16": int_value(final_stats.get("write_amplification_q16")),
+        "final_compaction_pressure_q16": int_value(final_stats.get("compaction_pressure_q16")),
+        "final_durable_storage_bytes": int_value(final_stats.get("durable_storage_bytes")),
+        "max_cycle_space_amplification_q16": max(
+            (int_value(stats.get("space_amplification_q16")) for stats in cycle_stats),
+            default=0,
+        ),
+        "max_cycle_write_amplification_q16": max(
+            (int_value(stats.get("write_amplification_q16")) for stats in cycle_stats),
+            default=0,
+        ),
+        "max_cycle_compaction_pressure_q16": max(
+            (int_value(stats.get("compaction_pressure_q16")) for stats in cycle_stats),
+            default=0,
+        ),
     }
     entry["entry_id"] = entry_id(entry)
     return entry
@@ -164,6 +235,18 @@ def aggregate(entries: list[dict[str, Any]], min_runs: int, min_hours: float) ->
     total_seconds = sum(int(entry.get("duration_seconds", 0)) for entry in entries)
     total_cycles = sum(int(entry.get("cycles_completed", 0)) for entry in entries)
     total_cells = sum(int(entry.get("cells_written", 0)) for entry in entries)
+    max_space_amp = max(
+        (int_value(entry.get("max_cycle_space_amplification_q16")) for entry in entries),
+        default=0,
+    )
+    max_write_amp = max(
+        (int_value(entry.get("max_cycle_write_amplification_q16")) for entry in entries),
+        default=0,
+    )
+    max_pressure = max(
+        (int_value(entry.get("max_cycle_compaction_pressure_q16")) for entry in entries),
+        default=0,
+    )
     errors: list[str] = []
     require(len(entries) >= min_runs, f"history has fewer than {min_runs} runs", errors)
     require(
@@ -181,6 +264,9 @@ def aggregate(entries: list[dict[str, Any]], min_runs: int, min_hours: float) ->
         "total_duration_seconds": total_seconds,
         "total_duration_hours": round(total_seconds / 3600, 6),
         "longest_run_seconds": max((int(e.get("duration_seconds", 0)) for e in entries), default=0),
+        "max_space_amplification_q16": max_space_amp,
+        "max_write_amplification_q16": max_write_amp,
+        "max_compaction_pressure_q16": max_pressure,
         "twenty_four_hour_evidence": {
             "met": total_seconds >= 24 * 3600,
             "required_seconds": 24 * 3600,

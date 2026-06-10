@@ -2,8 +2,10 @@ import unittest
 
 from cortexdb_client import (
     AnnEvaluationResponse,
+    ContextPackResponse,
     CortexDBClient,
     CortexDBError,
+    VerificationReportResponse,
     SearchResponse,
 )
 
@@ -230,6 +232,74 @@ class CortexDBClientPathTests(unittest.TestCase):
             path,
             "/v1/ingest/text?scope=project%3Ainvestments&source=python+sdk",
         )
+
+    def test_grounded_answer_helper_builds_context_verify_and_citations(self) -> None:
+        class FakeClient(CortexDBClient):
+            context_calls: list[tuple[str, str]] = []
+            verify_calls: list[tuple[str, str]] = []
+
+            def context_response(self, scope: str, statement: str) -> ContextPackResponse:
+                type(self).context_calls.append((scope, statement))
+                return ContextPackResponse.from_json(
+                    {
+                        "schema_version": "context_pack.v1",
+                        "token_budget_tokens": 256,
+                        "estimated_tokens": 40,
+                        "truncated": False,
+                        "citations_required": True,
+                        "cells": [
+                            {
+                                "cell_id": 7,
+                                "estimated_tokens": 40,
+                                "citation": "doc://project-risk#p1",
+                                "payload_text": "The migration blocker is the audit export dependency.",
+                                "explain": None,
+                                "source_ref": None,
+                            }
+                        ],
+                        "anomalies": [],
+                    }
+                )
+
+            def verify_response(self, scope: str, statement: str) -> VerificationReportResponse:
+                type(self).verify_calls.append((scope, statement))
+                return VerificationReportResponse.from_json(
+                    {
+                        "fact": "The migration blocker is the audit export dependency.",
+                        "status": "supported",
+                        "verdict": "supported",
+                        "confidence_q16": 60000,
+                        "evidence": [],
+                        "contradicting_evidence": [],
+                        "guards": [],
+                        "supporting": [],
+                        "contradicting": [],
+                        "numeric_conflicts": [],
+                    }
+                )
+
+        response = FakeClient().answer_with_grounded_context(
+            "project:alpha",
+            "default",
+            "migration blocker",
+            lambda context: "The migration blocker is the audit export dependency.",
+            mode="balanced",
+            limit_candidates=5,
+            where_clause='space = project:alpha AND status = "ready"',
+            require_citations=True,
+            reject_unsupported=True,
+        )
+        assert response.verification is not None
+        assert response.verification.confidence_q16 == 60000
+
+        self.assertEqual(response.citations, ("doc://project-risk#p1",))
+        self.assertEqual(response.used_context_cell_ids, (7,))
+        self.assertTrue(response.grounding.answer_supported)
+        self.assertFalse(response.rejected)
+        self.assertEqual(response.verification.status if response.verification else None, "supported")
+        self.assertIn("LIMIT 5 CANDIDATES", response.retrieve_statement)
+        self.assertEqual(len(FakeClient.context_calls), 1)
+        self.assertEqual(len(FakeClient.verify_calls), 1)
 
 
 if __name__ == "__main__":

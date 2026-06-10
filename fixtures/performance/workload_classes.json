@@ -24,6 +24,10 @@
     "local_single_node_lifecycle": {
       "description": "Embedded engine lifecycle matrix for strict and balanced durability.",
       "default_cells": 500,
+      "resource_thresholds": {
+        "min_ingest_cells_per_sec": 1,
+        "max_rss_bytes": 1073741824
+      },
       "latency_thresholds_ms": {
         "put_single": { "p95": 1000, "p99": 2000 },
         "get_latest": { "p95": 100, "p99": 250 },

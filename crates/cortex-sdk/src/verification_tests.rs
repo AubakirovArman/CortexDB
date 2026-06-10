@@ -72,10 +72,13 @@ fn verification_report_helpers_surface_result_and_conflicts() {
         "fact": "Solar Plant budget is 1.2B KZT",
         "status": "mixed",
         "verdict": "mixed_evidence",
+        "confidence_q16": 60000,
         "evidence": [],
         "contradicting_evidence": [{
             "cell_id": 7,
             "matched_terms": 3,
+            "match_score_q16": 65535,
+            "match_kind": "numeric_contradiction",
             "source_trust_q16": 60000,
             "source_trust_category": "official",
             "citation": "ifc:project-7",
@@ -95,6 +98,7 @@ fn verification_report_helpers_surface_result_and_conflicts() {
         serde_json::from_value(value).expect("verification report should decode");
 
     assert_eq!(report.result(), VerifyResult::MixedEvidence);
+    assert_eq!(report.confidence_q16, 60_000);
     assert!(report.result().is_actionable_conflict());
     assert!(report.has_conflicts());
 
@@ -103,7 +107,9 @@ fn verification_report_helpers_surface_result_and_conflicts() {
     assert!(matches!(
         &conflicts[0],
         VerifyConflict::ContradictingEvidence(conflict)
-            if conflict.cell_id == 7 && conflict.source_trust_category == "official"
+            if conflict.cell_id == 7
+                && conflict.source_trust_category == "official"
+                && conflict.match_kind == "numeric_contradiction"
     ));
     assert!(matches!(
         &conflicts[1],

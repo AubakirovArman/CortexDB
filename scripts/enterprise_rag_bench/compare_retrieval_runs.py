@@ -35,6 +35,7 @@ def write_markdown(path: Path, report: dict[str, Any]) -> None:
     lines = [
         "# EnterpriseRAG Retrieval Run Comparison",
         "",
+        f"- status: `{report['status']}`",
         f"- baseline: `{report['baseline_retrieval_file']}`",
         f"- candidate: `{report['candidate_retrieval_file']}`",
         f"- questions: `{report['questions']}`",
@@ -66,6 +67,9 @@ def write_markdown(path: Path, report: dict[str, Any]) -> None:
             f"{stats['candidate_average_recall_pct']} | {stats['delta_average_recall_pct']} | "
             f"{stats['improved_questions']} | {stats['regressed_questions']} |"
         )
+    if report["errors"]:
+        lines.extend(["", "## Errors", ""])
+        lines.extend(f"- {error}" for error in report["errors"])
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -105,6 +109,28 @@ def metric_block(baseline: float | int, candidate: float | int) -> dict[str, flo
     if isinstance(baseline, int) and isinstance(candidate, int):
         return {"baseline": baseline, "candidate": candidate, "delta": int(delta)}
     return {"baseline": baseline, "candidate": candidate, "delta": round(float(delta), 2)}
+
+
+def build_gate_errors(args: argparse.Namespace, metrics: dict[str, Any], regressed: list[str]) -> list[str]:
+    errors: list[str] = []
+    average_delta = float(metrics["average_recall_pct"]["delta"])
+    full_delta = int(metrics["full_recall_questions"]["delta"])
+    hit_delta = int(metrics["hit_questions"]["delta"])
+    if args.min_average_recall_delta_pct is not None and average_delta < args.min_average_recall_delta_pct:
+        errors.append(
+            "average_recall_delta_pct "
+            f"{average_delta} < {args.min_average_recall_delta_pct}"
+        )
+    if args.min_full_recall_delta is not None and full_delta < args.min_full_recall_delta:
+        errors.append(f"full_recall_delta {full_delta} < {args.min_full_recall_delta}")
+    if args.min_hit_delta is not None and hit_delta < args.min_hit_delta:
+        errors.append(f"hit_delta {hit_delta} < {args.min_hit_delta}")
+    if args.max_regressed_questions is not None and len(regressed) > args.max_regressed_questions:
+        errors.append(
+            "regressed_questions "
+            f"{len(regressed)} > {args.max_regressed_questions}: {regressed}"
+        )
+    return errors
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
@@ -172,23 +198,33 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "regressed_questions": int(values["regressed"]),
         }
 
+    metrics = {
+        "average_recall_pct": metric_block(mean(baseline_values), mean(candidate_values)),
+        "full_recall_questions": metric_block(baseline_full, candidate_full),
+        "hit_questions": metric_block(baseline_hits, candidate_hits),
+    }
+    errors = build_gate_errors(args, metrics, regressed)
     report = {
         "schema_version": "cortexdb.enterprise_rag_bench.retrieval_comparison.v1",
+        "status": "passed" if not errors else "failed",
         "questions_file": str(args.questions_file),
         "baseline_retrieval_file": str(args.baseline_retrieval_file),
         "candidate_retrieval_file": str(args.candidate_retrieval_file),
         "details_file": str(args.output_jsonl),
         "questions": len(details),
         "limit": args.limit,
-        "metrics": {
-            "average_recall_pct": metric_block(mean(baseline_values), mean(candidate_values)),
-            "full_recall_questions": metric_block(baseline_full, candidate_full),
-            "hit_questions": metric_block(baseline_hits, candidate_hits),
+        "metrics": metrics,
+        "thresholds": {
+            "min_average_recall_delta_pct": args.min_average_recall_delta_pct,
+            "min_full_recall_delta": args.min_full_recall_delta,
+            "min_hit_delta": args.min_hit_delta,
+            "max_regressed_questions": args.max_regressed_questions,
         },
         "improved_question_ids": improved,
         "regressed_question_ids": regressed,
         "unchanged_question_ids": unchanged,
         "per_type": per_type,
+        "errors": errors,
     }
     write_jsonl(args.output_jsonl, details)
     write_json(args.report, report)
@@ -206,15 +242,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--markdown", type=Path)
     parser.add_argument("--limit", type=int, default=10)
+    parser.add_argument("--min-average-recall-delta-pct", type=float)
+    parser.add_argument("--min-full-recall-delta", type=int)
+    parser.add_argument("--min-hit-delta", type=int)
+    parser.add_argument("--max-regressed-questions", type=int)
     args = parser.parse_args()
     if args.limit <= 0:
         parser.error("--limit must be positive")
+    if args.max_regressed_questions is not None and args.max_regressed_questions < 0:
+        parser.error("--max-regressed-questions must be non-negative")
     return args
 
 
 def main() -> int:
-    print(json.dumps(run(parse_args()), sort_keys=True))
-    return 0
+    report = run(parse_args())
+    print(json.dumps(report, sort_keys=True))
+    return 0 if report["status"] == "passed" else 1
 
 
 if __name__ == "__main__":

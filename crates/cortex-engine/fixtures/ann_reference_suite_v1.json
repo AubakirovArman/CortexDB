@@ -1,0 +1,61 @@
+{
+  "schema_version": "cortexdb.ann_reference_suite.v1",
+  "suite_id": "ann-reference-suite-v1-local-gate",
+  "boundary": "Local deterministic external-reference gate for EPIC-02; reference values are checked-in SLO fixtures, not a public hnswlib/FAISS leaderboard claim.",
+  "min_corpora": 3,
+  "default_min_mean_recall_ratio_q16": 62258,
+  "default_min_min_recall_ratio_q16": 62258,
+  "default_max_p95_latency_ratio_q16": 131070,
+  "default_max_p99_latency_ratio_q16": 131070,
+  "default_max_max_latency_ratio_q16": 131070,
+  "corpora": [
+    {
+      "name": "synthetic-ann-corpus-v1",
+      "cortexdb_report": "target/ann/ann_fixture_report.json",
+      "require_production_safe": true,
+      "require_zero_fallback": true,
+      "min_upper_layers": 1,
+      "min_upper_graph_edges": 1,
+      "reference": {
+        "reference_id": "hnswlib-style-synthetic-reference-v1",
+        "min_observed_recall_q16": 65535,
+        "mean_recall_q16": 65535,
+        "p95_latency_nanos": 5000000,
+        "p99_latency_nanos": 6000000,
+        "max_latency_nanos": 8000000
+      }
+    },
+    {
+      "name": "explicit-jsonl-axis-fixture-v1",
+      "cortexdb_report": "target/ann/ann_external_fixture_report.json",
+      "require_production_safe": true,
+      "require_zero_fallback": true,
+      "min_upper_layers": 1,
+      "min_upper_graph_edges": 1,
+      "reference": {
+        "reference_id": "hnswlib-style-explicit-jsonl-reference-v1",
+        "min_observed_recall_q16": 65535,
+        "mean_recall_q16": 65535,
+        "p95_latency_nanos": 50000,
+        "p99_latency_nanos": 50000,
+        "max_latency_nanos": 80000
+      }
+    },
+    {
+      "name": "domain-ann-corpus-v1",
+      "cortexdb_report": "target/ann/ann_domain_corpus_report.json",
+      "require_production_safe": true,
+      "require_zero_fallback": true,
+      "min_upper_layers": 1,
+      "min_upper_graph_edges": 1,
+      "reference": {
+        "reference_id": "hnswlib-style-domain-reference-v1",
+        "min_observed_recall_q16": 65535,
+        "mean_recall_q16": 65535,
+        "p95_latency_nanos": 50000,
+        "p99_latency_nanos": 50000,
+        "max_latency_nanos": 80000
+      }
+    }
+  ]
+}

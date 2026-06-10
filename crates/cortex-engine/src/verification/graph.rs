@@ -12,7 +12,7 @@ use crate::search::tokenize;
 use crate::source_trust::{SourceTrust, SourceTrustCategory};
 use crate::typed_body::RelationBody;
 
-use super::VerificationEvidence;
+use super::{support::term_coverage_q16, VerificationEvidence, VerificationMatchKind};
 
 #[derive(Clone, Debug)]
 struct SourceSupport {
@@ -40,9 +40,12 @@ pub(super) fn add_graph_relation_contradictions(
         if !existing.insert(relation_cell_id) {
             continue;
         }
+        let matched_terms = matched_terms(&record.fact, &fact_terms);
         contradicting_evidence.push(VerificationEvidence {
             cell_id: relation_cell_id,
-            matched_terms: matched_terms(&record.fact, &fact_terms),
+            matched_terms,
+            match_score_q16: term_coverage_q16(matched_terms, &fact_terms),
+            match_kind: VerificationMatchKind::GraphContradiction,
             source_trust_q16: record.source_trust_q16,
             source_trust_category: record.source_trust_category,
             citation: record.source.or_else(|| {

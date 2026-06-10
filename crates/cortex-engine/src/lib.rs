@@ -74,10 +74,14 @@ pub use compatibility::{
 };
 pub use config::{EngineConfig, EngineConfigError};
 pub use context::{
-    estimate_tokens, estimate_tokens_for_profile, ContextExplain, ContextLargeCellPolicy,
-    ContextPack, ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell,
-    ContextPackExportFormat, ContextPackOptions, ContextPackWithTools, ContextScoreComponent,
-    ContextTokenProfile, DEFAULT_CITATION_OVERHEAD_TOKENS,
+    estimate_tokens, estimate_tokens_for_profile, AnswerGroundingOptions, AnswerGroundingReport,
+    AnswerGroundingSpan, ContextAccessDecision, ContextAccessDecisionOutcome, ContextExplain,
+    ContextLargeCellPolicy, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode,
+    ContextPackCell, ContextPackExportFormat, ContextPackOptions, ContextPackWithTools,
+    ContextPipelineCellTrace, ContextPipelineStageTrace, ContextPipelineTrace,
+    ContextPipelineVerificationTrace, ContextScoreComponent, ContextScoreComponentTrace,
+    ContextSpanProvenance, ContextTokenProfile, SourceFreshnessCategory,
+    DEFAULT_CITATION_OVERHEAD_TOKENS, DEFAULT_GROUNDING_THRESHOLD_Q16,
 };
 pub use database::{CandidateResolver, CheckpointStats, Database, RetrievedCell};
 pub use distributed::*;
@@ -118,7 +122,7 @@ pub use options::{
 };
 pub use query::{
     scope_id, AqlCandidateCounts, AqlExplainFilter, AqlExplainReport, AqlQueryCacheStats,
-    CandidateId, CellMetadata, EngineAqlIndex,
+    CandidateId, CellMetadata, EngineAqlIndex, SourceRef,
 };
 pub use repair::RepairReport;
 pub use replay::{
@@ -142,6 +146,7 @@ pub use verification::{
     normalized_numeric_equal, parse_currency_code, parse_magnitude_suffix, parse_temporal_date,
     parse_unit_code, ConflictRecord, ContradictionRelationOptions, Magnitude, NumericComparison,
     NumericValue, TemporalDate, TemporalQueryRange, TemporalStaleReason, TemporalValidity,
-    VerificationEvidence, VerificationGuard, VerificationGuardCode, VerificationNumericConflict,
-    VerificationReport, VerificationReportExportFormat, VerificationStatus,
+    VerificationEvidence, VerificationGuard, VerificationGuardCode, VerificationMatchKind,
+    VerificationNumericConflict, VerificationReport, VerificationReportExportFormat,
+    VerificationStatus,
 };

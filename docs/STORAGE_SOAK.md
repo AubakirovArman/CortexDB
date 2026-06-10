@@ -146,6 +146,9 @@ target_hours=72
 cycles_per_run=50
 cells_per_cycle=100
 min_throughput_ratio=0.75
+max_space_amplification_q16=67108864
+max_write_amplification_q16=67108864
+max_compaction_pressure_q16=65536
 ```
 
 V2 writes separate artifacts so it does not overwrite the v1 24-hour evidence:
@@ -204,8 +207,21 @@ make storage-soak-72h-evidence-check
 ```
 
 The v2 gate checks accumulated duration, higher average cells per cycle,
-representative kill phases, and latest-run throughput regression. Until the
-72-hour report exists and passes, Storage Soak History v2 remains open.
+representative kill phases, latest-run throughput regression, and bounded
+storage growth. Each soak cycle records pre-GC and post-GC `storage_stats()`;
+history entries retain:
+
+```text
+max_space_amplification_q16
+max_write_amplification_q16
+max_compaction_pressure_q16
+```
+
+`space_amplification_q16` is a durable-storage/logical-payload proxy,
+`write_amplification_q16` is a local durable-write/logical-payload proxy, and
+`compaction_pressure_q16` is retired-segment/total-segment pressure. Until the
+72-hour report exists and passes these bounds, Storage Soak History v2 remains
+open.
 
 The default history gate does not pretend to be a 24-hour proof. It records
 `twenty_four_hour_evidence.met=false` until accumulated local soak duration

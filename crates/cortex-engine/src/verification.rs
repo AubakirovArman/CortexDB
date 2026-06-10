@@ -14,10 +14,11 @@ pub mod export;
 mod graph;
 mod guards;
 pub mod numeric;
+mod support;
 pub mod temporal;
 
 pub use conflict_index::{ConflictRecord, ContradictionRelationOptions};
-use contradiction::{contradiction_match, tokenize_support_text};
+use contradiction::contradiction_match;
 pub use export::VerificationReportExportFormat;
 use graph::{
     add_graph_relation_contradictions, enrich_evidence_from_source_support_edges,
@@ -31,6 +32,7 @@ pub use numeric::{
     compare_numeric_values, format_scaled_value, normalized_numeric_equal, parse_currency_code,
     parse_magnitude_suffix, parse_unit_code, Magnitude, NumericComparison, NumericValue,
 };
+use support::{support_match, term_coverage_q16};
 pub use temporal::{
     extract_temporal_query_range, parse_temporal_date, TemporalDate, TemporalQueryRange,
     TemporalStaleReason, TemporalValidity,
@@ -42,6 +44,29 @@ pub enum VerificationStatus {
     Insufficient,
     Contradicted,
     Mixed,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VerificationMatchKind {
+    ExactText,
+    SemanticEntailment,
+    NumericEntailment,
+    SemanticContradiction,
+    NumericContradiction,
+    GraphContradiction,
+}
+
+impl VerificationMatchKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ExactText => "exact_text",
+            Self::SemanticEntailment => "semantic_entailment",
+            Self::NumericEntailment => "numeric_entailment",
+            Self::SemanticContradiction => "semantic_contradiction",
+            Self::NumericContradiction => "numeric_contradiction",
+            Self::GraphContradiction => "graph_contradiction",
+        }
+    }
 }
 
 impl VerificationStatus {
@@ -59,6 +84,8 @@ impl VerificationStatus {
 pub struct VerificationEvidence {
     pub cell_id: CellId,
     pub matched_terms: u32,
+    pub match_score_q16: Q16,
+    pub match_kind: VerificationMatchKind,
     pub source_trust_q16: Q16,
     pub source_trust_category: SourceTrustCategory,
     pub citation: Option<String>,
@@ -68,6 +95,7 @@ pub struct VerificationEvidence {
 pub struct VerificationReport {
     pub fact: String,
     pub status: VerificationStatus,
+    pub confidence_q16: Q16,
     pub evidence: Vec<VerificationEvidence>,
     pub contradicting_evidence: Vec<VerificationEvidence>,
     pub guards: Vec<VerificationGuard>,
@@ -190,9 +218,12 @@ impl Database {
         evidence.truncate(8);
         contradicting_evidence.truncate(8);
         let status = verification_status(!evidence.is_empty(), !contradicting_evidence.is_empty());
+        let confidence_q16 =
+            verification_confidence_q16(status, &evidence, &contradicting_evidence);
         Ok(VerificationReport {
             fact: plan.fact,
             status,
+            confidence_q16,
             evidence,
             contradicting_evidence,
             guards,
@@ -210,10 +241,34 @@ fn verification_status(has_support: bool, has_contradiction: bool) -> Verificati
     }
 }
 
+fn verification_confidence_q16(
+    status: VerificationStatus,
+    evidence: &[VerificationEvidence],
+    contradicting_evidence: &[VerificationEvidence],
+) -> Q16 {
+    let support = best_evidence_score_q16(evidence);
+    let contradiction = best_evidence_score_q16(contradicting_evidence);
+    match status {
+        VerificationStatus::Supported => support,
+        VerificationStatus::Contradicted => contradiction,
+        VerificationStatus::Mixed => support.min(contradiction),
+        VerificationStatus::Insufficient => 0,
+    }
+}
+
+fn best_evidence_score_q16(evidence: &[VerificationEvidence]) -> Q16 {
+    evidence
+        .iter()
+        .map(|item| item.match_score_q16.min(item.source_trust_q16))
+        .max()
+        .unwrap_or(0)
+}
+
 fn sort_evidence(evidence: &mut [VerificationEvidence]) {
     evidence.sort_by_key(|item| {
         (
             std::cmp::Reverse(item.matched_terms),
+            std::cmp::Reverse(item.match_score_q16),
             std::cmp::Reverse(item.source_trust_q16),
             item.cell_id,
         )
@@ -240,15 +295,13 @@ fn evidence_for_version(
     {
         return None;
     }
-    let payload_terms = tokenize_support_text(payload);
-    let matched_terms = fact_terms
-        .iter()
-        .filter(|term| payload_terms.contains(term))
-        .count();
     let source_trust = source_trust(payload);
-    (matched_terms > 0).then_some(VerificationEvidence {
+    let support = support_match(fact, payload)?;
+    Some(VerificationEvidence {
         cell_id,
-        matched_terms: matched_terms as u32,
+        matched_terms: support.matched_terms,
+        match_score_q16: support.match_score_q16,
+        match_kind: support.match_kind,
         source_trust_q16: source_trust.q16,
         source_trust_category: source_trust.category,
         citation: metadata.citation().map(str::to_owned),
@@ -270,15 +323,26 @@ fn contradiction_for_version(
         return None;
     }
     let source_trust = source_trust(payload);
-    numeric_mismatch(fact, payload)
-        .or_else(|| contradiction_match(payload, &fact_terms))
-        .map(|matched_terms| VerificationEvidence {
+    if let Some(matched_terms) = numeric_mismatch(fact, payload) {
+        return Some(VerificationEvidence {
             cell_id,
             matched_terms,
+            match_score_q16: u16::MAX,
+            match_kind: VerificationMatchKind::NumericContradiction,
             source_trust_q16: source_trust.q16,
             source_trust_category: source_trust.category,
             citation: metadata.citation().map(str::to_owned),
-        })
+        });
+    }
+    contradiction_match(payload, &fact_terms).map(|matched_terms| VerificationEvidence {
+        cell_id,
+        matched_terms,
+        match_score_q16: term_coverage_q16(matched_terms, &fact_terms),
+        match_kind: VerificationMatchKind::SemanticContradiction,
+        source_trust_q16: source_trust.q16,
+        source_trust_category: source_trust.category,
+        citation: metadata.citation().map(str::to_owned),
+    })
 }
 
 fn has_matching_contradiction(payload: &[u8], fact_terms: &[String]) -> bool {

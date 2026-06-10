@@ -9,6 +9,9 @@ change requires a migration note there and in the target release notes.
 Machine-readable release compatibility is tracked in
 `fixtures/migration/compatibility_matrix_v1.json` and checked by
 `make migration-compatibility-check`.
+Machine-readable migration-note requirements for every frozen marker are tracked
+in `fixtures/migration/storage_format_change_notes_v1.json` and checked by
+`make storage-format-change-note-check`.
 
 ## Version Policy
 
@@ -28,7 +31,12 @@ make storage-format-freeze-check
 ```
 
 Breaking changes to any frozen marker require a new magic or WAL version, an
-upgrade/migration note, updated fixtures, and release notes.
+upgrade/migration note, updated fixtures, release fixture evidence, and release
+notes. The per-marker note registry is enforced by:
+
+```bash
+make storage-format-change-note-check
+```
 
 | Format | File | Magic | Version state | Compatibility rule |
 | --- | --- | --- | --- | --- |

@@ -22,6 +22,7 @@ use thiserror::Error;
 mod aql;
 mod aql_support;
 mod context_pack;
+mod grounded_answer;
 mod http;
 mod types;
 mod verification;
@@ -31,19 +32,22 @@ pub use aql::{
     VerifyFactBuilder,
 };
 pub use context_pack::{
-    ContextPackAnomalyV1, ContextPackCellV1, ContextPackExplainV1, ContextPackSourceRefV1,
-    ContextPackV1,
+    AnswerGroundingOptionsV1, AnswerGroundingReportV1, AnswerGroundingSpanV1,
+    ContextPackAccessDecisionV1, ContextPackAnomalyV1, ContextPackCellV1, ContextPackExplainV1,
+    ContextPackProvenanceV1, ContextPackSourceRefV1, ContextPackV1,
 };
+pub use grounded_answer::{GroundedAnswerRequest, GroundedAnswerResponse};
 use http::{append_query_param, parse_response, path};
 pub use types::{
-    AnnEvaluationResponse, AnnNoFallbackDecision, AnnSearchReport, AqlCandidateCounts,
+    AnnEvaluationResponse, AnnNoFallbackDecision, AnnSearchReport, AnswerGroundingOptionsResponse,
+    AnswerGroundingReportResponse, AnswerGroundingSpanResponse, AqlCandidateCounts,
     AqlCellResponse, AqlExplainFilter, AqlExplainResponse, AqlResponse, CellLookupResponse,
     CellResponse, ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
-    DeleteJobResponse, ErrorCode, ErrorResponse, EvidenceResponse, ExplainResponse, GuardResponse,
-    HealthResponse, HnswNoFallbackProfileResponse, IngestResponse, IngestionJobResponse,
-    IngestionJobStatus, IngestionSkippedItem, IngestionSourceRefReport, IngestionValidationIssue,
-    IngestionValidationReport, NumericConflictResponse, PutCellResponse, RememberResponse,
-    ScoreComponentResponse, SearchExplainItem, SearchExplainResponse,
+    ContextSpanProvenanceResponse, DeleteJobResponse, ErrorCode, ErrorResponse, EvidenceResponse,
+    ExplainResponse, GuardResponse, HealthResponse, HnswNoFallbackProfileResponse, IngestResponse,
+    IngestionJobResponse, IngestionJobStatus, IngestionSkippedItem, IngestionSourceRefReport,
+    IngestionValidationIssue, IngestionValidationReport, NumericConflictResponse, PutCellResponse,
+    RememberResponse, ScoreComponentResponse, SearchExplainItem, SearchExplainResponse,
     SearchExplainTermContribution, SearchResponse, SearchResult, SearchRoutingDecision,
     SourceRefResponse, StatsResponse, ValidationResponse, VectorAlgorithm,
     VerificationReportResponse,
@@ -56,12 +60,16 @@ pub use verification::{
 #[cfg(test)]
 mod context_pack_tests;
 #[cfg(test)]
+mod grounded_answer_tests;
+#[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod verification_tests;
 
 #[derive(Debug, Error)]
 pub enum SdkError {
+    #[error("aql build error: {0}")]
+    AqlBuild(#[from] AqlBuildError),
     #[error("transport error: {0}")]
     Transport(String),
     #[error("http status {status}: {body}")]
@@ -399,6 +407,29 @@ impl CortexDbClient {
 
     pub fn verify_request_export(&self, request: &VerifyRequest) -> SdkResult<String> {
         self.post_text(&request.path(), request.statement())
+    }
+
+    pub fn answer_with_grounded_context(
+        &self,
+        request: GroundedAnswerRequest,
+        answerer: impl FnOnce(&ContextPackResponse) -> SdkResult<String>,
+    ) -> SdkResult<GroundedAnswerResponse> {
+        let retrieve_statement = request.retrieve_statement()?;
+        let context = self.context_response(request.scope(), &retrieve_statement)?;
+        let answer = answerer(&context)?;
+        let verify_statement = request.verify_statement(&answer)?;
+        let verification = match verify_statement.as_deref() {
+            Some(statement) => Some(self.verify_response(request.scope(), statement)?),
+            None => None,
+        };
+        Ok(GroundedAnswerResponse::from_context_answer(
+            &request,
+            retrieve_statement,
+            verify_statement,
+            context,
+            answer,
+            verification,
+        ))
     }
 
     pub fn remember(&self, scope: &str, statement: &str) -> SdkResult<serde_json::Value> {

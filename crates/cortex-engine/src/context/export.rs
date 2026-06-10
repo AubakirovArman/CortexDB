@@ -160,11 +160,26 @@ fn push_prompt_cell(out: &mut String, index: usize, cell: &ContextPackCell) {
             &format!("source_ref={}", source_ref_inline(source_ref)),
         );
     }
+    if let Some(provenance) = &cell.provenance {
+        push_line(
+            out,
+            &format!("provenance={}", provenance_inline(provenance)),
+        );
+    }
     if let Some(explain) = &cell.explain {
         push_line(out, &format!("why_selected={}", explain.why_selected));
         push_line(
             out,
             &format!("matched_terms={}", explain.matched_terms.join(",")),
+        );
+        push_line(
+            out,
+            &format!(
+                "source_freshness={} q16={} bonus={}",
+                explain.source_freshness_category.as_str(),
+                explain.source_freshness_q16,
+                explain.source_freshness_bonus
+            ),
         );
     }
     push_line(out, "text:");
@@ -207,15 +222,22 @@ fn push_markdown_cell(out: &mut String, index: usize, cell: &ContextPackCell) {
             &format!("- source_ref: `{}`", source_ref_inline(source_ref)),
         );
     }
+    if let Some(provenance) = &cell.provenance {
+        push_line(
+            out,
+            &format!("- provenance: `{}`", provenance_inline(provenance)),
+        );
+    }
     if let Some(explain) = &cell.explain {
         push_line(out, &format!("- why_selected: {}", explain.why_selected));
         push_line(
             out,
             &format!(
-                "- score: `{}` (base_bm25=`{}`, source_trust_bonus=`{}`, redundancy_penalty=`{}`)",
+                "- score: `{}` (base_bm25=`{}`, source_trust_bonus=`{}`, source_freshness_bonus=`{}`, redundancy_penalty=`{}`)",
                 explain.score,
                 explain.base_bm25,
                 explain.source_trust_bonus,
+                explain.source_freshness_bonus,
                 explain.redundancy_penalty
             ),
         );
@@ -229,6 +251,14 @@ fn push_markdown_cell(out: &mut String, index: usize, cell: &ContextPackCell) {
                 "- source_trust: `{}` (`{}`)",
                 explain.source_trust_category.as_str(),
                 explain.source_trust_q16
+            ),
+        );
+        push_line(
+            out,
+            &format!(
+                "- source_freshness: `{}` (`{}`)",
+                explain.source_freshness_category.as_str(),
+                explain.source_freshness_q16
             ),
         );
     }
@@ -278,5 +308,19 @@ fn source_ref_inline(source_ref: &SourceRef) -> String {
         parts.push(format!("json_path={json_path}"));
     }
     parts.push(format!("confidence_q16={}", source_ref.confidence_q16));
+    parts.join(";")
+}
+
+fn provenance_inline(provenance: &super::ContextSpanProvenance) -> String {
+    let mut parts = vec![
+        format!("source_cell_id={}", provenance.source_cell_id.0),
+        format!("source_byte_start={}", provenance.source_byte_start),
+        format!("source_byte_end={}", provenance.source_byte_end),
+        format!("source_line_start={}", provenance.source_line_start),
+        format!("source_line_end={}", provenance.source_line_end),
+    ];
+    if let Some(source_ref) = &provenance.source_ref {
+        parts.push(format!("source_ref={}", source_ref_inline(source_ref)));
+    }
     parts.join(";")
 }

@@ -7,19 +7,23 @@ use super::answerability;
 use super::conflicts;
 use super::dedup::{effective_redundancy_threshold, is_redundant, term_set, weighted_jaccard_q16};
 use super::explain::{extract_query_terms, generate_selection_reason};
+use super::freshness::{SourceFreshness, SourceFreshnessRange};
+use super::grounding::{ground_answer, AnswerGroundingOptions, AnswerGroundingReport};
 use super::large_cell::{
     apply_large_cell_policy, estimate_cell_tokens, ContextLargeCellPolicy, LargeCellDecision,
     LargeCellRequest,
 };
 use super::scoring::{apply_feedback_bonus, order_by_feedback, score_components};
+use super::span::{select_relevant_span, ContextSpanRequest};
 use super::{
-    ContextExplain, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell,
-    ContextPackOptions, ContextPackWithTools,
+    ContextAccessDecision, ContextAccessDecisionOutcome, ContextExplain, ContextPack,
+    ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell, ContextPackOptions,
+    ContextPackWithTools,
 };
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
 use crate::feedback::current_unix_seconds;
-use crate::query::{cache::AqlStatementKind, CellMetadata, EngineAqlProvider};
+use crate::query::{cache::AqlStatementKind, scope_id, CellMetadata, EngineAqlProvider};
 use crate::search::tokenize;
 use crate::source_trust::SourceTrust;
 
@@ -51,13 +55,14 @@ impl Database {
         let citations_required = options.require_citations || plan.context_policy.require_citations;
         let feedback_scores = self.feedback_scores_at(current_unix_seconds());
         let cells = order_by_feedback(self.retrieve_cells(&plan, &provider)?, &feedback_scores);
-        Ok(ContextPack::from_retrieved_with_feedback_options(
+        Ok(ContextPack::from_retrieved_with_feedback_options_and_view(
             cells,
             budget,
             citations_required,
             &options,
             aql,
             &feedback_scores,
+            Some(view),
         ))
     }
 
@@ -82,6 +87,14 @@ impl Database {
 }
 
 impl ContextPack {
+    pub fn ground_answer(
+        &self,
+        answer: &str,
+        options: AnswerGroundingOptions,
+    ) -> AnswerGroundingReport {
+        ground_answer(&self.cells, answer, options)
+    }
+
     pub fn from_retrieved(
         cells: Vec<RetrievedCell>,
         token_budget_tokens: u32,
@@ -121,15 +134,37 @@ impl ContextPack {
         query: &str,
         feedback_scores: &BTreeMap<CellId, i32>,
     ) -> Self {
+        Self::from_retrieved_with_feedback_options_and_view(
+            cells,
+            token_budget_tokens,
+            citations_required,
+            options,
+            query,
+            feedback_scores,
+            None,
+        )
+    }
+
+    pub fn from_retrieved_with_feedback_options_and_view(
+        cells: Vec<RetrievedCell>,
+        token_budget_tokens: u32,
+        citations_required: bool,
+        options: &ContextPackOptions,
+        query: &str,
+        feedback_scores: &BTreeMap<CellId, i32>,
+        access_view: Option<&AgentView>,
+    ) -> Self {
         let mut pack_cells = Vec::new();
         let mut estimated_tokens = 0u32;
         let mut truncated = false;
         let mut anomalies = Vec::new();
         let query_terms = extract_query_terms(query);
+        let source_freshness_range = SourceFreshnessRange::from_cells(&cells);
 
         for cell in cells {
             let citation = extract_citation(&cell.payload);
             let metadata = CellMetadata::from_payload(&cell.payload);
+            let access_decision = context_access_decision(cell.cell_id, &metadata, access_view);
             let cell_body_terms = tokenize(&metadata.body_text)
                 .into_iter()
                 .collect::<BTreeSet<_>>();
@@ -159,7 +194,24 @@ impl ContextPack {
                 citations_required,
                 options,
             );
+            let mut selected_provenance = None;
             let remaining_tokens = token_budget_tokens.saturating_sub(estimated_tokens);
+            if let Some(selection) = select_relevant_span(ContextSpanRequest {
+                cell_id: cell.cell_id,
+                payload: &selected_payload,
+                citation: citation.as_deref(),
+                citations_required,
+                original_tokens: selected_tokens,
+                remaining_tokens,
+                query_terms: &query_terms,
+                options,
+            }) {
+                truncated = true;
+                anomalies.push(selection.anomaly);
+                selected_payload = selection.payload;
+                selected_tokens = selection.estimated_tokens;
+                selected_provenance = Some(selection.provenance);
+            }
             let would_exceed = selected_tokens > remaining_tokens;
             if would_exceed
                 && (options.large_cell_policy != ContextLargeCellPolicy::PreserveFirst
@@ -225,6 +277,11 @@ impl ContextPack {
             let source_trust =
                 SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class);
             let source_trust_bonus = source_trust.score_bonus();
+            let source_freshness = SourceFreshness::from_created_unix_seconds(
+                metadata.created_unix_seconds,
+                source_freshness_range,
+            );
+            let source_freshness_bonus = source_freshness.score_bonus();
 
             let mut max_jaccard_similarity_q16 = 0u32;
             for packed in &pack_cells {
@@ -238,14 +295,20 @@ impl ContextPack {
 
             let base_score = base_bm25
                 .saturating_add(source_trust_bonus)
+                .saturating_add(source_freshness_bonus)
                 .saturating_sub(redundancy_penalty);
             let feedback_bonus = *feedback_scores.get(&cell.cell_id).unwrap_or(&0);
             let score = apply_feedback_bonus(base_score, feedback_bonus);
 
             let why_selected =
                 generate_selection_reason(score, base_bm25, source_trust_bonus, redundancy_penalty);
-            let score_components =
-                score_components(base_bm25, source_trust, redundancy_penalty, feedback_bonus);
+            let score_components = score_components(
+                base_bm25,
+                source_trust,
+                source_freshness,
+                redundancy_penalty,
+                feedback_bonus,
+            );
 
             let explain = Some(ContextExplain {
                 score,
@@ -256,6 +319,9 @@ impl ContextPack {
                 source_trust_q16: source_trust.q16,
                 source_trust_category: source_trust.category,
                 source_trust_bonus,
+                source_freshness_q16: source_freshness.q16,
+                source_freshness_category: source_freshness.category,
+                source_freshness_bonus,
                 redundancy_penalty,
             });
 
@@ -265,7 +331,9 @@ impl ContextPack {
                 payload: selected_payload,
                 estimated_tokens: selected_tokens,
                 citation,
+                provenance: selected_provenance,
                 explain,
+                access_decision: Some(access_decision),
             });
         }
 
@@ -293,4 +361,44 @@ fn extract_citation(payload: &[u8]) -> Option<String> {
     CellMetadata::from_payload(payload)
         .citation()
         .map(str::to_owned)
+}
+
+fn context_access_decision(
+    cell_id: CellId,
+    metadata: &CellMetadata,
+    view: Option<&AgentView>,
+) -> ContextAccessDecision {
+    let scope_id = scope_id(&metadata.scope);
+    match view {
+        Some(view) if view.can_read_scope(scope_id) => ContextAccessDecision {
+            cell_id,
+            decision: ContextAccessDecisionOutcome::Allowed,
+            policy: "agent_view_readable_scope".to_owned(),
+            reason: "cell scope was present in AgentView.readable_scopes before ContextPack packing"
+                .to_owned(),
+            scope: metadata.scope.clone(),
+            scope_id: scope_id.0,
+            agent_id: Some(view.agent_id.0),
+        },
+        Some(view) => ContextAccessDecision {
+            cell_id,
+            decision: ContextAccessDecisionOutcome::NotRecorded,
+            policy: "agent_view_readable_scope".to_owned(),
+            reason: "cell was packed without a positive readable-scope decision; this indicates a policy accounting gap"
+                .to_owned(),
+            scope: metadata.scope.clone(),
+            scope_id: scope_id.0,
+            agent_id: Some(view.agent_id.0),
+        },
+        None => ContextAccessDecision {
+            cell_id,
+            decision: ContextAccessDecisionOutcome::NotRecorded,
+            policy: "no_agent_view".to_owned(),
+            reason: "ContextPack was built without an AgentView, so per-cell RBAC attribution was not recorded"
+                .to_owned(),
+            scope: metadata.scope.clone(),
+            scope_id: scope_id.0,
+            agent_id: None,
+        },
+    }
 }

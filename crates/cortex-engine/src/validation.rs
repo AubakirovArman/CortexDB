@@ -1,12 +1,15 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io::ErrorKind;
+use std::path::Path;
 
 use cortex_core::memtable::MemTableStats;
 use cortex_core::CommitSeq;
 use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
-use cortex_storage::manifest::{ManifestHnswProfile, ManifestVectorProfile, StorageManifest};
+use cortex_storage::manifest::{
+    ManifestHnswProfile, ManifestSegment, ManifestVectorProfile, StorageManifest,
+};
 use cortex_storage::segment::SegmentReader;
 use cortex_storage::vectors::VectorIndex;
 use cortex_storage::wal::{WalReader, WalWriterMetrics};
@@ -29,6 +32,15 @@ pub struct StorageStats {
     pub estimated_index_bytes: usize,
     pub estimated_context_pack_bytes: usize,
     pub estimated_total_memory_bytes: usize,
+    pub live_segment_bytes: u64,
+    pub retired_segment_bytes: u64,
+    pub total_segment_bytes: u64,
+    pub durable_storage_bytes: u64,
+    pub live_segment_payload_bytes: u64,
+    pub logical_payload_bytes: u64,
+    pub space_amplification_q16: u32,
+    pub write_amplification_q16: u32,
+    pub compaction_pressure_q16: u32,
     pub wal_size_bytes: u64,
     pub wal_writer: WalWriterMetrics,
 }
@@ -59,6 +71,19 @@ pub struct StorageValidationReport {
 impl Database {
     pub fn storage_stats(&self) -> EngineResult<StorageStats> {
         let memory = estimate_database_memory(self)?;
+        let live_usage = segment_usage(&self.segments_path, &self.manifest.live_segments, true)?;
+        let retired_usage =
+            segment_usage(&self.segments_path, &self.manifest.retired_segments, false)?;
+        let total_segment_bytes = live_usage
+            .bundle_bytes
+            .saturating_add(retired_usage.bundle_bytes);
+        let wal_size_bytes = file_len_or_zero(&self.wal_path)?;
+        let wal_writer = self.writer.metrics()?;
+        let durable_storage_bytes = total_segment_bytes.saturating_add(wal_size_bytes);
+        let logical_payload_bytes = live_usage
+            .payload_bytes
+            .max(memory.memtable_payload_bytes as u64);
+        let write_bytes = total_segment_bytes.saturating_add(wal_writer.bytes_written);
         Ok(StorageStats {
             current_seq: self.current_seq,
             checkpoint_seq: CommitSeq(self.manifest.checkpoint_seq),
@@ -70,8 +95,17 @@ impl Database {
             estimated_index_bytes: memory.estimated_index_bytes,
             estimated_context_pack_bytes: memory.estimated_context_pack_bytes,
             estimated_total_memory_bytes: memory.estimated_total_memory_bytes,
-            wal_size_bytes: file_len_or_zero(&self.wal_path)?,
-            wal_writer: self.writer.metrics()?,
+            live_segment_bytes: live_usage.bundle_bytes,
+            retired_segment_bytes: retired_usage.bundle_bytes,
+            total_segment_bytes,
+            durable_storage_bytes,
+            live_segment_payload_bytes: live_usage.payload_bytes,
+            logical_payload_bytes,
+            space_amplification_q16: ratio_q16(durable_storage_bytes, logical_payload_bytes),
+            write_amplification_q16: ratio_q16(write_bytes, logical_payload_bytes),
+            compaction_pressure_q16: ratio_q16(retired_usage.bundle_bytes, total_segment_bytes),
+            wal_size_bytes,
+            wal_writer,
         })
     }
 
@@ -364,4 +398,52 @@ fn file_len_or_zero(path: &std::path::Path) -> EngineResult<u64> {
         Err(error) if error.kind() == ErrorKind::NotFound => Ok(0),
         Err(error) => Err(error.into()),
     }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct SegmentUsage {
+    bundle_bytes: u64,
+    payload_bytes: u64,
+}
+
+fn segment_usage(
+    segments_path: &Path,
+    segments: &[ManifestSegment],
+    read_payloads: bool,
+) -> EngineResult<SegmentUsage> {
+    let mut usage = SegmentUsage::default();
+    for segment in segments {
+        let segment_file = segment_path(segments_path, segment.id);
+        let bundle_paths = [
+            segment_file.clone(),
+            bitmap_path(segments_path, segment.id),
+            lexical_path(segments_path, segment.id),
+            vector_path(segments_path, segment.id),
+            hnsw_path(segments_path, segment.id),
+        ];
+        for path in bundle_paths {
+            usage.bundle_bytes = usage.bundle_bytes.saturating_add(file_len_or_zero(&path)?);
+        }
+        if read_payloads {
+            for cell in SegmentReader::read(&segment_file)? {
+                if cell.deleted_seq.is_none() {
+                    usage = SegmentUsage {
+                        bundle_bytes: usage.bundle_bytes,
+                        payload_bytes: usage
+                            .payload_bytes
+                            .saturating_add(cell.payload.len() as u64),
+                    };
+                }
+            }
+        }
+    }
+    Ok(usage)
+}
+
+fn ratio_q16(numerator: u64, denominator: u64) -> u32 {
+    if denominator == 0 {
+        return 0;
+    }
+    let scaled = (u128::from(numerator) << 16) / u128::from(denominator);
+    scaled.min(u128::from(u32::MAX)) as u32
 }

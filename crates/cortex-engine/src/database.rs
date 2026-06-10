@@ -7,7 +7,7 @@ use cortex_core::{CellId, CommitSeq};
 use cortex_storage::manifest::StorageManifest;
 use cortex_storage::wal::{DurabilityMode, WalWriter, WalWriterHandle};
 
-use crate::checkpoint::{load_checkpoint, manifest_path, segments_path};
+use crate::checkpoint::{load_checkpoint, manifest_path, segments_path, PersistedIndexCache};
 use crate::cleanup::{cleanup_orphans, remove_lock_file};
 use crate::database_files::find_wal_files;
 pub(crate) use crate::database_files::truncate_wal_tail;
@@ -44,6 +44,7 @@ pub struct Database {
     pub(crate) ingestion_backpressure_policy: crate::ingestion::IngestionBackpressurePolicy,
     pub(crate) ingestion_rate_state: Mutex<crate::ingestion::IngestionRateState>,
     pub(crate) aql_query_cache: Mutex<AqlQueryCache>,
+    pub(crate) persisted_index_cache: Mutex<Option<PersistedIndexCache>>,
     pub(crate) _lock: DatabaseLock,
     closed: bool,
 }
@@ -150,6 +151,7 @@ impl Database {
             ingestion_backpressure_policy: options.ingestion_backpressure,
             ingestion_rate_state: crate::ingestion::default_ingestion_rate_state(),
             aql_query_cache: Mutex::new(AqlQueryCache::default()),
+            persisted_index_cache: Mutex::new(None),
             _lock: lock,
             closed: false,
         };

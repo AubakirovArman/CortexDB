@@ -79,18 +79,22 @@ pub(crate) fn format_verification_report(report: &VerificationReport) -> String 
     )];
     lines.extend(report.evidence.iter().map(|evidence| {
         format!(
-            "cell_id={} matched_terms={} source_trust_q16={} source_trust_category={}",
+            "cell_id={} matched_terms={} match_kind={} match_score_q16={} source_trust_q16={} source_trust_category={}",
             evidence.cell_id.0,
             evidence.matched_terms,
+            evidence.match_kind.as_str(),
+            evidence.match_score_q16,
             evidence.source_trust_q16,
             evidence.source_trust_category.as_str()
         )
     }));
     lines.extend(report.contradicting_evidence.iter().map(|evidence| {
         format!(
-            "contradiction_cell_id={} matched_terms={} source_trust_q16={} source_trust_category={}",
+            "contradiction_cell_id={} matched_terms={} match_kind={} match_score_q16={} source_trust_q16={} source_trust_category={}",
             evidence.cell_id.0,
             evidence.matched_terms,
+            evidence.match_kind.as_str(),
+            evidence.match_score_q16,
             evidence.source_trust_q16,
             evidence.source_trust_category.as_str()
         )

@@ -34,6 +34,8 @@ pub struct AnnRecallLatencyReport {
     pub hnsw_layer_count: usize,
     pub hnsw_ef_construction: usize,
     pub graph_signature: String,
+    pub fallback_count: usize,
+    pub fallback_rate_q16: u16,
     pub production_safe: bool,
 }
 
@@ -73,6 +75,7 @@ pub fn synthetic_ann_recall_latency_report(
     let mut recalls = Vec::with_capacity(query_count);
     let mut latencies = Vec::with_capacity(query_count);
     let mut production_safe = true;
+    let mut fallback_count = 0usize;
     for query_index in 0..query_count {
         let candidate = (((query_index as u128 * 37) % u128::from(vector_count_u32)) + 1) as u32;
         let query = synthetic_vector(candidate, dimension);
@@ -81,6 +84,9 @@ pub fn synthetic_ann_recall_latency_report(
             evaluate_persisted_ann_with_policy(&vectors, &graph, &query, &allowed, limit, policy);
         latencies.push(started.elapsed().as_nanos());
         recalls.push(report.recall_q16);
+        if report.search.fallback_performed {
+            fallback_count += 1;
+        }
         production_safe &= report.search.production_safe;
     }
     latencies.sort_unstable();
@@ -135,8 +141,17 @@ pub fn synthetic_ann_recall_latency_report(
             graph.ef_construction as usize
         },
         graph_signature: graph_signature(&graph),
+        fallback_count,
+        fallback_rate_q16: ratio_q16(fallback_count, query_count),
         production_safe,
     })
+}
+
+fn ratio_q16(numerator: usize, denominator: usize) -> u16 {
+    if denominator == 0 {
+        return 65_535;
+    }
+    ((numerator as u64 * 65_535) / denominator as u64) as u16
 }
 
 fn graph_signature(graph: &HnswGraphIndex) -> String {

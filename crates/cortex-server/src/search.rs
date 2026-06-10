@@ -3,8 +3,10 @@ use cortex_engine::{
     evaluate_hnsw_no_fallback_rollout, parse_vector_literal, route_search_query, tokenize,
     AnnSearchPolicy, AnnSearchReport, CellMetadata, Database, DatabaseSearchResult,
     HnswNoFallbackDecision, HnswNoFallbackRolloutPolicy, SearchLimit, SearchMode, SearchQuery,
-    SearchRouteDecision, SearchRouteInput, SearchRouteStrategy,
+    SearchRerankInput, SearchReranker, SearchRouteDecision, SearchRouteInput, SearchRouteStrategy,
+    WeightedScoreReranker,
 };
+use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::authz;
@@ -31,6 +33,7 @@ pub fn handle_search_explain_shared(
         .unwrap_or(20);
     let mode = query_param_decoded(query, "mode").unwrap_or_else(|_| "keyword".to_owned());
     let algorithm = query_param_decoded(query, "algorithm").unwrap_or_else(|_| "ann".to_owned());
+    let rerank = parse_rerank_mode(query).map_err(RouterError::BadRequest)?;
     let q = query_param_decoded(query, "q")
         .unwrap_or_else(|_| String::from_utf8_lossy(body).into_owned());
     let vector_literal = query_param_opt_decoded(query, "vector");
@@ -47,17 +50,18 @@ pub fn handle_search_explain_shared(
 
     let query_terms = tokenize(&q);
 
-    let results = match route.selected_strategy {
-        SearchRouteStrategy::Keyword => db.search_keyword(&q, &view, SearchLimit(limit)),
+    let candidate_limit = rerank.candidate_limit(limit);
+    let mut results = match route.selected_strategy {
+        SearchRouteStrategy::Keyword => db.search_keyword(&q, &view, SearchLimit(candidate_limit)),
         SearchRouteStrategy::VectorExact => {
             let vector = vector_literal.clone().unwrap_or_else(|| q.clone());
             let v = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
-            db.search_vector_exact(&v, &view, SearchLimit(limit))
+            db.search_vector_exact(&v, &view, SearchLimit(candidate_limit))
         }
         SearchRouteStrategy::VectorAnn => {
             let vector = vector_literal.clone().unwrap_or_else(|| q.clone());
             let v = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
-            db.search_vector(&v, &view, SearchLimit(limit))
+            db.search_vector(&v, &view, SearchLimit(candidate_limit))
         }
         SearchRouteStrategy::Hybrid => {
             let vector = vector_literal.ok_or_else(|| {
@@ -68,13 +72,14 @@ pub fn handle_search_explain_shared(
                 SearchQuery {
                     text: &q,
                     vector: Some(&v),
-                    limit,
+                    limit: candidate_limit,
                     mode: SearchMode::Hybrid,
                 },
                 &view,
             )
         }
     }?;
+    rerank.apply(&mut results, &q, None, limit);
 
     let explain_results = results
         .iter()
@@ -226,6 +231,7 @@ pub fn handle_search_shared(
         .unwrap_or(20);
     let mode = query_param_decoded(query, "mode").unwrap_or_else(|_| "keyword".to_owned());
     let algorithm = query_param_decoded(query, "algorithm").unwrap_or_else(|_| "ann".to_owned());
+    let rerank = parse_rerank_mode(query).map_err(RouterError::BadRequest)?;
     let ann_policy = parse_ann_policy(query).map_err(RouterError::BadRequest)?;
     let rollout_policy =
         resolve_no_fallback_rollout_policy(db, query).map_err(RouterError::BadRequest)?;
@@ -243,9 +249,11 @@ pub fn handle_search_shared(
     })
     .map_err(RouterError::BadRequest)?;
 
-    let (results, ann_report, no_fallback_decision) = match decision.selected_strategy {
+    let candidate_limit = rerank.candidate_limit(limit);
+    let mut rerank_vector: Option<Vec<i16>> = None;
+    let (mut results, ann_report, no_fallback_decision) = match decision.selected_strategy {
         SearchRouteStrategy::Keyword => (
-            db.search_keyword(&q, &view, SearchLimit(limit))?,
+            db.search_keyword(&q, &view, SearchLimit(candidate_limit))?,
             None,
             None,
         ),
@@ -254,7 +262,7 @@ pub fn handle_search_shared(
                 vector_literal.unwrap_or_else(|| String::from_utf8_lossy(body).into_owned());
             let vector = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
             (
-                db.search_vector_exact(&vector, &view, SearchLimit(limit))?,
+                db.search_vector_exact(&vector, &view, SearchLimit(candidate_limit))?,
                 None,
                 None,
             )
@@ -263,10 +271,11 @@ pub fn handle_search_shared(
             let vector =
                 vector_literal.unwrap_or_else(|| String::from_utf8_lossy(body).into_owned());
             let vector = parse_vector_literal(&vector).map_err(RouterError::BadRequest)?;
+            rerank_vector = Some(vector.clone());
             let outcome = db.search_vector_with_report_with_policy(
                 &vector,
                 &view,
-                SearchLimit(limit),
+                SearchLimit(candidate_limit),
                 ann_policy,
             )?;
             let no_fallback_decision = outcome
@@ -280,12 +289,13 @@ pub fn handle_search_shared(
                 RouterError::BadRequest("mode=hybrid requires vector=<i16,...>".to_owned())
             })?;
             let vector = parse_vector_literal(vector).map_err(RouterError::BadRequest)?;
+            rerank_vector = Some(vector.clone());
             (
                 db.search_cells(
                     SearchQuery {
                         text: &q,
                         vector: Some(&vector),
-                        limit,
+                        limit: candidate_limit,
                         mode: SearchMode::Hybrid,
                     },
                     &view,
@@ -295,10 +305,12 @@ pub fn handle_search_shared(
             )
         }
     };
+    rerank.apply(&mut results, &q, rerank_vector.as_deref(), limit);
 
     encode_response(
         decision.search_mode(),
         Some(decision),
+        rerank.response_label(),
         results,
         ann_report,
         no_fallback_decision,
@@ -358,6 +370,7 @@ pub fn handle_ann_evaluate_shared(
 fn encode_response(
     search_mode: &str,
     routing: Option<SearchRouteDecision>,
+    rerank: Option<String>,
     results: Vec<cortex_engine::DatabaseSearchResult>,
     ann_report: Option<AnnSearchReport>,
     no_fallback_decision: Option<AnnNoFallbackDecisionResponse>,
@@ -365,6 +378,7 @@ fn encode_response(
     let response = SearchResponse {
         search_mode: search_mode.to_owned(),
         routing: routing.map(routing_response),
+        rerank,
         ann_report: ann_report.map(report_response),
         no_fallback_decision,
         results: results
@@ -379,6 +393,53 @@ fn encode_response(
             .collect(),
     };
     Ok(serde_json::to_string(&response)?)
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SearchRerankMode {
+    None,
+    Weighted,
+}
+
+impl SearchRerankMode {
+    fn candidate_limit(self, requested_limit: usize) -> usize {
+        match self {
+            Self::None => requested_limit,
+            Self::Weighted => requested_limit.max(32),
+        }
+    }
+
+    fn response_label(self) -> Option<String> {
+        match self {
+            Self::None => None,
+            Self::Weighted => Some("weighted".to_owned()),
+        }
+    }
+
+    fn apply(
+        self,
+        results: &mut Vec<DatabaseSearchResult>,
+        query_text: &str,
+        query_vector: Option<&[i16]>,
+        requested_limit: usize,
+    ) {
+        if self == Self::Weighted {
+            let reranker = WeightedScoreReranker::default();
+            for result in results.iter_mut() {
+                result.score = reranker.rerank_score(SearchRerankInput {
+                    query_text,
+                    query_vector,
+                    candidate_id: result.cell_id.0,
+                    lexical_score: result.lexical_score,
+                    vector_score: result.vector_score,
+                    base_score: result.score,
+                    payload: Some(&result.payload),
+                });
+            }
+            results.sort_by_key(|result| (Reverse(result.score), result.cell_id.0));
+        }
+        results.truncate(requested_limit);
+    }
 }
 
 fn routing_response(decision: SearchRouteDecision) -> SearchRoutingDecisionResponse {
@@ -484,6 +545,17 @@ fn parse_ann_policy(query: &str) -> Result<AnnSearchPolicy, String> {
         max_visited_candidates,
         require_slo,
     })
+}
+
+fn parse_rerank_mode(query: &str) -> Result<SearchRerankMode, String> {
+    let Some(value) = parse_optional_query_param(query, "rerank")? else {
+        return Ok(SearchRerankMode::None);
+    };
+    match value.to_ascii_lowercase().as_str() {
+        "" | "none" | "false" | "0" | "off" => Ok(SearchRerankMode::None),
+        "weighted" | "true" | "1" | "on" => Ok(SearchRerankMode::Weighted),
+        _ => Err("rerank must be none or weighted".to_owned()),
+    }
 }
 
 fn resolve_no_fallback_rollout_policy(

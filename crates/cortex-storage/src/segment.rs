@@ -14,6 +14,16 @@ pub struct SegmentCell {
     pub payload: Vec<u8>,
 }
 
+/// Lightweight per-cell entry that omits the payload. Index-rebuild paths only
+/// need the candidate/cell identity and liveness, so decoding this avoids
+/// copying multi-gigabyte payload bytes for large checkpointed corpora.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SegmentCandidateEntry {
+    pub candidate_id: u32,
+    pub cell_id: u64,
+    pub deleted: bool,
+}
+
 #[derive(Clone, Debug)]
 pub struct SegmentWriter;
 
@@ -56,6 +66,14 @@ impl SegmentReader {
 
     pub fn read_lookup(path: impl AsRef<Path>) -> StorageResult<SegmentLookup> {
         SegmentLookup::new(Self::read(path)?)
+    }
+
+    /// Read only candidate/cell identity and liveness, skipping payload bytes.
+    pub fn read_candidate_entries(
+        path: impl AsRef<Path>,
+    ) -> StorageResult<Vec<SegmentCandidateEntry>> {
+        let bytes = std::fs::read(path)?;
+        decode_segment_candidate_entries(&bytes)
     }
 }
 
@@ -126,6 +144,34 @@ fn decode_segment(bytes: &[u8]) -> StorageResult<Vec<SegmentCell>> {
     Ok(cells)
 }
 
+fn decode_segment_candidate_entries(bytes: &[u8]) -> StorageResult<Vec<SegmentCandidateEntry>> {
+    let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidSegmentFile)?;
+    if bytes.len() < 8 || bytes[..4] != SEGMENT_MAGIC {
+        return Err(StorageError::InvalidSegmentFile);
+    }
+    let mut cursor = 4;
+    let count = read_u32(bytes, &mut cursor)? as usize;
+    let mut entries = Vec::with_capacity(count);
+    for _ in 0..count {
+        let cell_id = read_u64(bytes, &mut cursor)?;
+        let candidate_id = read_u32(bytes, &mut cursor)?;
+        let _created_seq = read_u64(bytes, &mut cursor)?;
+        let deleted = read_u64(bytes, &mut cursor)? != 0;
+        let len = read_u32(bytes, &mut cursor)? as usize;
+        // Skip the payload without copying it.
+        read_bytes(bytes, &mut cursor, len)?;
+        entries.push(SegmentCandidateEntry {
+            candidate_id,
+            cell_id,
+            deleted,
+        });
+    }
+    if cursor != bytes.len() {
+        return Err(StorageError::InvalidSegmentFile);
+    }
+    Ok(entries)
+}
+
 fn put_u32(out: &mut Vec<u8>, value: u32) {
     out.extend_from_slice(&value.to_le_bytes());
 }
@@ -158,4 +204,48 @@ fn read_bytes<'a>(bytes: &'a [u8], cursor: &mut usize, len: usize) -> StorageRes
     let value = &bytes[*cursor..end];
     *cursor = end;
     Ok(value)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{SegmentCandidateEntry, SegmentCell, SegmentReader, SegmentWriter};
+
+    fn sample_cells() -> Vec<SegmentCell> {
+        vec![
+            SegmentCell {
+                candidate_id: 1,
+                cell_id: 10,
+                created_seq: 1,
+                deleted_seq: None,
+                payload: b"first payload body".to_vec(),
+            },
+            SegmentCell {
+                candidate_id: 2,
+                cell_id: 20,
+                created_seq: 2,
+                deleted_seq: Some(5),
+                payload: b"second, tombstoned".to_vec(),
+            },
+        ]
+    }
+
+    #[test]
+    fn read_candidate_entries_matches_full_read_without_payload() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("segment.acs");
+        SegmentWriter::write(&path, &sample_cells()).unwrap();
+
+        let full = SegmentReader::read(&path).unwrap();
+        let entries = SegmentReader::read_candidate_entries(&path).unwrap();
+
+        let expected: Vec<SegmentCandidateEntry> = full
+            .iter()
+            .map(|cell| SegmentCandidateEntry {
+                candidate_id: cell.candidate_id,
+                cell_id: cell.cell_id,
+                deleted: cell.deleted_seq.is_some(),
+            })
+            .collect();
+        assert_eq!(entries, expected);
+    }
 }

@@ -107,6 +107,15 @@ pub(crate) fn route_database_with_auth(
                 estimated_index_bytes: stats.estimated_index_bytes,
                 estimated_context_pack_bytes: stats.estimated_context_pack_bytes,
                 estimated_total_memory_bytes: stats.estimated_total_memory_bytes,
+                live_segment_bytes: stats.live_segment_bytes,
+                retired_segment_bytes: stats.retired_segment_bytes,
+                total_segment_bytes: stats.total_segment_bytes,
+                durable_storage_bytes: stats.durable_storage_bytes,
+                live_segment_payload_bytes: stats.live_segment_payload_bytes,
+                logical_payload_bytes: stats.logical_payload_bytes,
+                space_amplification_q16: stats.space_amplification_q16,
+                write_amplification_q16: stats.write_amplification_q16,
+                compaction_pressure_q16: stats.compaction_pressure_q16,
                 wal_size_bytes: stats.wal_size_bytes,
                 wal_writer_records: stats.wal_writer.records_written,
                 wal_writer_bytes: stats.wal_writer.bytes_written,
@@ -185,9 +194,20 @@ pub(crate) fn route_database_with_auth(
             };
             Ok(serde_json::to_string(&response)?)
         }
-        ("POST", "/v1/context") => {
-            context::handle_context_shared(db, query, body, authenticated_view.as_ref())
-        }
+        ("POST", "/v1/context") => context::handle_context_shared(
+            db,
+            query,
+            body,
+            authenticated_view.as_ref(),
+            Some(&auth_context),
+        ),
+        ("POST", "/v1/context/trace") => context::handle_context_trace_shared(
+            db,
+            query,
+            body,
+            authenticated_view.as_ref(),
+            Some(&auth_context),
+        ),
         ("POST", "/v1/aql") => aql::handle_aql_shared(db, query, body, authenticated_view.as_ref()),
         ("POST", "/v1/search") => {
             search::handle_search_shared(db, query, body, authenticated_view.as_ref())
@@ -241,6 +261,33 @@ pub(crate) fn route_database_with_auth(
                      # HELP cortexdb_estimated_total_memory_bytes Estimated total engine memory across tracked categories.\n\
                      # TYPE cortexdb_estimated_total_memory_bytes gauge\n\
                      cortexdb_estimated_total_memory_bytes {}\n\
+                     # HELP cortexdb_live_segment_bytes Durable bytes held by live segment bundles.\n\
+                     # TYPE cortexdb_live_segment_bytes gauge\n\
+                     cortexdb_live_segment_bytes {}\n\
+                     # HELP cortexdb_retired_segment_bytes Durable bytes held by retired segment bundles waiting for GC.\n\
+                     # TYPE cortexdb_retired_segment_bytes gauge\n\
+                     cortexdb_retired_segment_bytes {}\n\
+                     # HELP cortexdb_total_segment_bytes Durable bytes held by all segment bundles.\n\
+                     # TYPE cortexdb_total_segment_bytes gauge\n\
+                     cortexdb_total_segment_bytes {}\n\
+                     # HELP cortexdb_durable_storage_bytes Durable segment bytes plus active WAL bytes.\n\
+                     # TYPE cortexdb_durable_storage_bytes gauge\n\
+                     cortexdb_durable_storage_bytes {}\n\
+                     # HELP cortexdb_live_segment_payload_bytes Payload bytes inside live segment cells.\n\
+                     # TYPE cortexdb_live_segment_payload_bytes gauge\n\
+                     cortexdb_live_segment_payload_bytes {}\n\
+                     # HELP cortexdb_logical_payload_bytes Logical payload proxy used for amplification ratios.\n\
+                     # TYPE cortexdb_logical_payload_bytes gauge\n\
+                     cortexdb_logical_payload_bytes {}\n\
+                     # HELP cortexdb_space_amplification_q16 Q16 durable-storage/logical-payload space amplification proxy.\n\
+                     # TYPE cortexdb_space_amplification_q16 gauge\n\
+                     cortexdb_space_amplification_q16 {}\n\
+                     # HELP cortexdb_write_amplification_q16 Q16 local durable-write/logical-payload amplification proxy.\n\
+                     # TYPE cortexdb_write_amplification_q16 gauge\n\
+                     cortexdb_write_amplification_q16 {}\n\
+                     # HELP cortexdb_compaction_pressure_q16 Q16 retired-segment/total-segment compaction pressure.\n\
+                     # TYPE cortexdb_compaction_pressure_q16 gauge\n\
+                     cortexdb_compaction_pressure_q16 {}\n\
                      # HELP cortexdb_wal_size_bytes Total WAL size in bytes.\n\
                      # TYPE cortexdb_wal_size_bytes gauge\n\
                      cortexdb_wal_size_bytes {}\n\
@@ -276,6 +323,15 @@ pub(crate) fn route_database_with_auth(
                     stats.estimated_index_bytes,
                     stats.estimated_context_pack_bytes,
                     stats.estimated_total_memory_bytes,
+                    stats.live_segment_bytes,
+                    stats.retired_segment_bytes,
+                    stats.total_segment_bytes,
+                    stats.durable_storage_bytes,
+                    stats.live_segment_payload_bytes,
+                    stats.logical_payload_bytes,
+                    stats.space_amplification_q16,
+                    stats.write_amplification_q16,
+                    stats.compaction_pressure_q16,
                     stats.wal_size_bytes,
                     stats.wal_writer.records_written,
                     stats.wal_writer.bytes_written,
@@ -299,6 +355,15 @@ pub(crate) fn route_database_with_auth(
                     estimated_index_bytes: stats.estimated_index_bytes,
                     estimated_context_pack_bytes: stats.estimated_context_pack_bytes,
                     estimated_total_memory_bytes: stats.estimated_total_memory_bytes,
+                    live_segment_bytes: stats.live_segment_bytes,
+                    retired_segment_bytes: stats.retired_segment_bytes,
+                    total_segment_bytes: stats.total_segment_bytes,
+                    durable_storage_bytes: stats.durable_storage_bytes,
+                    live_segment_payload_bytes: stats.live_segment_payload_bytes,
+                    logical_payload_bytes: stats.logical_payload_bytes,
+                    space_amplification_q16: stats.space_amplification_q16,
+                    write_amplification_q16: stats.write_amplification_q16,
+                    compaction_pressure_q16: stats.compaction_pressure_q16,
                     wal_size_bytes: stats.wal_size_bytes,
                     wal_writer_records: stats.wal_writer.records_written,
                     wal_writer_bytes: stats.wal_writer.bytes_written,
@@ -520,6 +585,7 @@ fn is_agent_scoped_route(method: &str, path: &str) -> bool {
             | ("POST", "/tombstone")
             | ("DELETE", "/v1/cell")
             | ("POST", "/v1/context")
+            | ("POST", "/v1/context/trace")
             | ("POST", "/v1/aql")
             | ("POST", "/v1/search")
             | ("POST", "/v1/search/explain")

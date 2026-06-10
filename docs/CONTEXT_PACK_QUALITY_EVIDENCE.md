@@ -91,8 +91,10 @@ target/context-pack-quality/explain-v2-report.json
 
 It proves that selected cells expose `why_selected`, structured
 `score_components`, `source_trust_q16`, `source_trust_category`,
-`source_trust_bonus`, and `redundancy_penalty`. It also proves that excluded
-candidates expose `why_excluded` for redundancy control and
+`source_trust_bonus`, `source_freshness_q16`,
+`source_freshness_category`, `source_freshness_bonus`, and
+`redundancy_penalty`. It also proves that excluded candidates expose
+`why_excluded` for redundancy control and
 `token_budget_tokens` pressure, and that engine structs, server response
 structs, OpenAPI, and docs keep the same explain contract.
 
@@ -135,7 +137,7 @@ This gate proves:
   external real-domain datasets, at least 5 failure categories, and per-domain
   thresholds;
 - the Explain v2 gate keeps `why_selected`, score components, source trust,
-  redundancy penalty, `why_excluded`, and token-budget exclusion reasons
+  source freshness, redundancy penalty, `why_excluded`, and token-budget exclusion reasons
   present across engine, server, OpenAPI, and docs;
 - the prompt export gate keeps JSON, prompt, and Markdown exports available
   and keeps citation/conflict instructions visible to downstream agents;
@@ -240,3 +242,24 @@ ContextPack large-cell handling is covered by:
   `target/context-pack-quality/large-cell-policy-report.json`;
 - `ContextLargeCellPolicy` default compatibility through `PreserveFirst`, plus
   explicit deterministic alternatives for oversized candidates.
+
+## Span-Level Packing Evidence
+
+ContextPack span-level packing is covered by:
+
+- `cargo test -p cortex-engine --test context_pack_span_packing`, including
+  coverage lift over prefix truncation under the same token budget and citation
+  metadata preservation;
+- `cargo test -p cortex-engine --test context_pack`, including default
+  compatibility when `span_level_packing` is disabled;
+- `make context-pack-span-packing-check`, which writes
+  `target/context-pack-quality/span-packing-report.json`;
+- `examples/eval/context_pack_span_packing.jsonl`, which records span coverage
+  lift and token savings versus prefix truncation;
+- deterministic payload markers of the form
+  `[context_pack_span=true line_start=... line_end=...]`;
+- preserved source/header metadata so citations continue to work after the body
+  is reduced to a relevant span;
+- structured span provenance in engine, JSON, prompt, Markdown, CLI, server,
+  SDK, and OpenAPI surfaces, including source cell id, byte offsets, line
+  range, and nested SourceRef metadata when available.

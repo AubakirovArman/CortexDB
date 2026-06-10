@@ -2,6 +2,10 @@ use std::collections::BTreeSet;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
+use cortex_engine::search::{
+    analyze_search_query, QueryAnchorKind, SearchMode, SearchQuery, SearchRerankInput,
+    SearchReranker,
+};
 use cortex_engine::{scope_id, Database, SearchLimit};
 use cortex_storage::indexes::LexicalIndex;
 use cortex_storage::vectors::VectorIndex;
@@ -27,6 +31,63 @@ fn database_keyword_search_returns_visible_cells() {
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].cell_id, CellId(1));
     assert!(String::from_utf8_lossy(&results[0].payload).contains("approved"));
+}
+
+#[test]
+fn database_keyword_search_applies_acl_before_topk_snapshot() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    seed_private_stronger_keyword_cell(&mut db);
+
+    assert_keyword_limit_one_returns_public_cell(&db);
+}
+
+#[test]
+fn database_keyword_search_applies_acl_before_topk_persisted() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    seed_private_stronger_keyword_cell(&mut db);
+    db.checkpoint().unwrap();
+
+    assert_keyword_limit_one_returns_public_cell(&db);
+}
+
+#[test]
+fn database_vector_search_applies_acl_before_topk_snapshot() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    seed_private_stronger_vector_cell(&mut db);
+
+    assert_vector_limit_one_returns_public_cell(&db);
+}
+
+#[test]
+fn database_vector_search_applies_acl_before_topk_persisted() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    seed_private_stronger_vector_cell(&mut db);
+    db.checkpoint().unwrap();
+
+    assert_vector_limit_one_returns_public_cell(&db);
+}
+
+#[test]
+fn database_hybrid_search_applies_acl_before_topk_snapshot() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    seed_private_stronger_hybrid_cell(&mut db);
+
+    assert_hybrid_limit_one_returns_public_cell(&db);
+}
+
+#[test]
+fn database_hybrid_search_applies_acl_before_topk_persisted() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    seed_private_stronger_hybrid_cell(&mut db);
+    db.checkpoint().unwrap();
+
+    assert_hybrid_limit_one_returns_public_cell(&db);
 }
 
 #[test]
@@ -124,6 +185,48 @@ fn database_vector_search_reads_persisted_acv_without_wal_tail_changes() {
 }
 
 #[test]
+fn database_hybrid_search_reads_persisted_aci_and_acv_without_snapshot_rebuild() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(
+            CellId(1),
+            b"scope=project:investments\nstatus=ready\nvector=1,0,0\n\nbudget investment".to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(2),
+            b"scope=project:investments\nstatus=ready\nvector=5,0,0\n\nbudget workflow".to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(3),
+            b"scope=project:investments\nstatus=ready\nvector=9,0,0\n\nunrelated".to_vec(),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+    }
+
+    let db = Database::open(dir.path()).unwrap();
+    let results = db
+        .search_cells(
+            SearchQuery {
+                text: "budget investment",
+                vector: Some(&[9, 0, 0]),
+                limit: 3,
+                mode: SearchMode::Hybrid,
+            },
+            &view("project:investments"),
+        )
+        .unwrap();
+
+    assert_eq!(results[0].cell_id, CellId(1));
+    assert!(results[0].lexical_score > 0);
+    assert!(results[0].vector_score > 0);
+    assert!(results.iter().any(|result| result.vector_score > 0));
+}
+
+#[test]
 fn database_vector_search_falls_back_to_snapshot_for_uncheckpointed_changes() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
@@ -217,6 +320,108 @@ fn database_keyword_search_uses_persisted_title_weighting() {
 }
 
 #[test]
+fn search_query_understanding_extracts_anchors_without_oracle_metadata() {
+    let analyzed = analyze_search_query(
+        "Find the GitHub PR #77 for AUTH-456 in src/server/auth.rs before v2.1.0",
+    );
+
+    assert!(analyzed.source_hints.contains(&"github".to_owned()));
+    assert!(analyzed
+        .anchors
+        .iter()
+        .any(|anchor| anchor.kind == QueryAnchorKind::PullRequest && anchor.text == "#77"));
+    assert!(analyzed
+        .anchors
+        .iter()
+        .any(|anchor| anchor.kind == QueryAnchorKind::TicketId && anchor.text == "AUTH-456"));
+    assert!(analyzed
+        .anchors
+        .iter()
+        .any(|anchor| anchor.kind == QueryAnchorKind::FilePath));
+}
+
+#[test]
+fn database_keyword_search_uses_query_expansion_from_question_text() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\n\nrelease dependency assigned to DRI".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\n\nlaunch celebration notes".to_vec(),
+    )
+    .unwrap();
+
+    let results = db
+        .search_keyword(
+            "Who owns the blocker?",
+            &view("project:investments"),
+            SearchLimit(2),
+        )
+        .unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].cell_id, CellId(1));
+    assert!(results[0].lexical_score > 0);
+}
+
+#[test]
+fn database_search_reranker_can_use_payload_without_bypassing_scope_filter() {
+    struct PayloadNeedleReranker(&'static str);
+
+    impl SearchReranker for PayloadNeedleReranker {
+        fn rerank_score(&self, input: SearchRerankInput<'_>) -> u64 {
+            let payload = input
+                .payload
+                .map(String::from_utf8_lossy)
+                .unwrap_or_default();
+            if payload.contains(self.0) {
+                input.base_score.saturating_add(10_000_000)
+            } else {
+                input.base_score
+            }
+        }
+    }
+
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\n\nbudget ordinary".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\n\nbudget preferred-answer".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(3),
+        b"scope=tenant:private\nstatus=ready\n\nbudget preferred-answer".to_vec(),
+    )
+    .unwrap();
+
+    let results = db
+        .search_cells_with_reranker(
+            SearchQuery {
+                text: "budget",
+                vector: None,
+                limit: 2,
+                mode: SearchMode::Keyword,
+            },
+            &view("project:investments"),
+            &PayloadNeedleReranker("preferred-answer"),
+        )
+        .unwrap();
+
+    assert_eq!(results[0].cell_id, CellId(2));
+    assert!(!results.iter().any(|result| result.cell_id == CellId(3)));
+}
+
+#[test]
 fn checkpoint_vector_index_persists_payload_vectors() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
@@ -230,6 +435,90 @@ fn checkpoint_vector_index_persists_payload_vectors() {
     let index = VectorIndex::read(dir.path().join("segments").join("segment-1.acv")).unwrap();
     assert_eq!(index.vectors.get(&1), Some(&vec![3, 4]));
     assert!(!dir.path().join("segments").join("segment-1.ach").exists());
+}
+
+fn seed_private_stronger_keyword_cell(db: &mut Database) {
+    db.put_cell(
+        CellId(1),
+        b"scope=tenant:private\nstatus=ready\n\nbudget budget budget budget budget hidden".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\n\nbudget approved".to_vec(),
+    )
+    .unwrap();
+}
+
+fn assert_keyword_limit_one_returns_public_cell(db: &Database) {
+    let results = db
+        .search_keyword("budget", &view("project:investments"), SearchLimit(1))
+        .unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].cell_id, CellId(2));
+    let payload = String::from_utf8_lossy(&results[0].payload);
+    assert!(payload.contains("approved"));
+    assert!(!payload.contains("hidden"));
+}
+
+fn seed_private_stronger_vector_cell(db: &mut Database) {
+    db.put_cell(
+        CellId(1),
+        b"scope=tenant:private\nstatus=ready\nvector=100,0\n\nhidden exact vector".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\nvector=1,0\n\napproved vector".to_vec(),
+    )
+    .unwrap();
+}
+
+fn assert_vector_limit_one_returns_public_cell(db: &Database) {
+    let results = db
+        .search_vector(&[100, 0], &view("project:investments"), SearchLimit(1))
+        .unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].cell_id, CellId(2));
+    let payload = String::from_utf8_lossy(&results[0].payload);
+    assert!(payload.contains("approved"));
+    assert!(!payload.contains("hidden"));
+}
+
+fn seed_private_stronger_hybrid_cell(db: &mut Database) {
+    db.put_cell(
+        CellId(1),
+        b"scope=tenant:private\nstatus=ready\nvector=100,0\n\nbudget budget budget hidden exact vector"
+            .to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\nvector=1,0\n\nbudget approved vector".to_vec(),
+    )
+    .unwrap();
+}
+
+fn assert_hybrid_limit_one_returns_public_cell(db: &Database) {
+    let results = db
+        .search_cells(
+            SearchQuery {
+                text: "budget",
+                vector: Some(&[100, 0]),
+                limit: 1,
+                mode: SearchMode::Hybrid,
+            },
+            &view("project:investments"),
+        )
+        .unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].cell_id, CellId(2));
+    let payload = String::from_utf8_lossy(&results[0].payload);
+    assert!(payload.contains("approved"));
+    assert!(!payload.contains("hidden"));
 }
 
 fn view(scope: &str) -> AgentView {

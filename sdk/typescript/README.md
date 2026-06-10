@@ -20,6 +20,15 @@ const verify = await client.verifyFact("default", client.buildVerifyFactAql("hel
 const remember = await client.remember("default", client.buildRememberAql("hello", "default", "decision", 3600));
 console.log(context.token_budget_tokens, verify.status, remember.cell_id);
 console.log(await client.ingestText("default", "hello from sdk"));
+
+const grounded = await client.answerWithGroundedContext(
+  "default",
+  "default",
+  "What does the context say about hello?",
+  (pack) => pack.cells[0]?.payload_text ?? "Not enough information.",
+  { mode: "audit", limitCandidates: 10 },
+);
+console.log(grounded.citations, grounded.grounding.answer_supported);
 ```
 
 The npm package publishes `cortexdb-client.js` plus `cortexdb-client.d.ts`.

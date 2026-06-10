@@ -30,6 +30,9 @@ Companion Epic 4.1 soak artifact:
 target/storage-soak/report.json
 target/storage-soak-history/report.json
 target/storage-soak-history/history.jsonl
+target/storage-soak-v2/report.json
+target/storage-soak-history-v2/report.json
+target/storage-soak-history-v2/v2-gate.json
 ```
 
 Latest local status: passed.
@@ -54,10 +57,11 @@ total_cells_written=979016
 | migration upgrade matrix v2 | Opens the previous-release direct database fixture, writes with the current binary, backs it up, restores it, and validates old plus new cells. |
 | backup drill | Proves a current-version backup can be restored and validated by the checkout under test. |
 | backup archive corruption | Proves corrupted backup segment and manifest archives are rejected on restore. |
-| crash/fault | Runs interrupted checkpoint/compact, restart tail, corruption, and repair tests. |
+| crash/fault | Runs interrupted checkpoint/compact, 1000 deterministic WAL/checkpoint file-publication fault-injection scenarios, restart tail, corruption, and repair tests. |
 | chaos restart | Kills/restarts the real server around writes, flushes, and compacts. |
 | storage soak | Repeats write/flush/compact/backup/restore cycles and representative kill attempts. |
 | storage soak history | Aggregates repeatable soak runs and reports whether accumulated 24-hour evidence exists. |
+| storage soak v2 | Adds 72-hour accumulation, heavier write/compact cycles, retained `storage_stats()` amplification metrics, and bounded space/write/compaction-pressure gates. |
 | repair dry-run | Proves repair dry-run reports planned cleanup without mutating files. |
 | CLI repair dry-run | Proves the CLI exposes dry-run and apply paths. |
 
@@ -73,11 +77,17 @@ The local gate proves:
 - corrupted backup archives are rejected during restore;
 - known storage file corruption is detected;
 - interrupted checkpoint/compact aftermath is covered by tests;
+- a deterministic 1000-scenario WAL/checkpoint/compact fault-injection matrix
+  preserves the last committed sequence after restart, or fails closed for
+  published torn checkpoint files;
 - repair dry-run and apply behavior are both covered.
 - repeated storage cycles preserve data across backup/restore and partial WAL
   repair;
 - storage soak history is accumulated in a de-duplicated local JSONL report.
 - retained local storage soak history has crossed the 24-hour threshold.
+- storage soak v2 records `space_amplification_q16`,
+  `write_amplification_q16`, and `compaction_pressure_q16` evidence for
+  compaction/GC bounded-growth gates.
 
 The gate does not prove:
 
@@ -85,4 +95,5 @@ The gate does not prove:
 - in-place downgrade;
 - remote object-store restore;
 - KMS-backed encrypted backup custody;
-- kill injection at every internal checkpoint byte boundary.
+- kill injection at every internal checkpoint byte boundary below the modeled
+  durable file-publication boundaries.

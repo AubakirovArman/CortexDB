@@ -1,0 +1,6 @@
+{"doc_id":"doc_release_owner","title":"Release dependency DRI note","path":"jira/launch/dependency.md","body":"The rollout dependency is assigned to the DRI. Waiting on auth service creates delayed risk for the release."}
+{"doc_id":"doc_outage_root_cause","title":"Checkout outage postmortem","path":"fireflies/checkout/postmortem.md","body":"The outage postmortem records root cause as permission cache invalidation during checkout deployment."}
+{"doc_id":"doc_auth_rbac_requirement","title":"Auth RBAC requirement","path":"confluence/admin/auth-rbac.md","body":"Auth permission requirement procedure for admin control plane access. RBAC review is mandatory."}
+{"doc_id":"doc_client_arr_summary","title":"Client ARR account summary","path":"hubspot/accounts/enterprise-arr.md","body":"The client account income summary tracks ARR and MRR movement for strategic accounts."}
+{"doc_id":"doc_eta_migration_timeline","title":"Migration ETA timeline","path":"drive/plans/migration-eta.md","body":"The upgrade migration ETA is 2026-07-15. Timeline risk is low after dependency removal."}
+{"doc_id":"doc_plain_distractor","title":"Plain question word distractor","path":"notes/plain-words.md","body":"This unrelated note contains words like owner, blocker, deadline, security, customer, and revenue without the operational answer."}

@@ -609,6 +609,36 @@ paths:
                 description: Stable Markdown export when `format=markdown`.
         '400': *id001
         '500': *id002
+  /v1/context/trace:
+    post:
+      summary: Explain retrieve to ContextPack to verify pipeline
+      description: |
+        Builds a ContextPack and returns a trace of the retrieve, pack, and
+        optional verify stages. The body can be either plain retrieve AQL or a
+        JSON object with `retrieve_aql` and optional `verify_aql`.
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/Scope'
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              description: RETRIEVE CONTEXT AQL statement.
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContextTraceRequest'
+      responses:
+        '200':
+          description: Context pipeline trace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContextTraceResponse'
+        '400': *id001
+        '403': *id005
+        '500': *id002
   /v1/inference:
     post:
       summary: Run deterministic LLM inference test-double
@@ -1464,6 +1494,15 @@ components:
       - estimated_index_bytes
       - estimated_context_pack_bytes
       - estimated_total_memory_bytes
+      - live_segment_bytes
+      - retired_segment_bytes
+      - total_segment_bytes
+      - durable_storage_bytes
+      - live_segment_payload_bytes
+      - logical_payload_bytes
+      - space_amplification_q16
+      - write_amplification_q16
+      - compaction_pressure_q16
       - wal_size_bytes
       - wal_writer_records
       - wal_writer_bytes
@@ -1494,6 +1533,33 @@ components:
           type: integer
         estimated_total_memory_bytes:
           type: integer
+        live_segment_bytes:
+          type: integer
+          format: uint64
+        retired_segment_bytes:
+          type: integer
+          format: uint64
+        total_segment_bytes:
+          type: integer
+          format: uint64
+        durable_storage_bytes:
+          type: integer
+          format: uint64
+        live_segment_payload_bytes:
+          type: integer
+          format: uint64
+        logical_payload_bytes:
+          type: integer
+          format: uint64
+        space_amplification_q16:
+          type: integer
+          format: uint32
+        write_amplification_q16:
+          type: integer
+          format: uint32
+        compaction_pressure_q16:
+          type: integer
+          format: uint32
         wal_size_bytes:
           type: integer
           format: uint64
@@ -1716,6 +1782,11 @@ components:
           anyOf:
           - $ref: '#/components/schemas/SearchRoutingDecision'
           - type: 'null'
+        rerank:
+          type: string
+          enum:
+          - weighted
+          description: Present when request query parameter rerank=weighted enabled weighted reranking.
         ann_report:
           anyOf:
           - $ref: '#/components/schemas/AnnSearchReport'
@@ -1981,6 +2052,8 @@ components:
       - payload_text
       - explain
       - source_ref
+      - provenance
+      - access_decision
       properties:
         cell_id:
           type: integer
@@ -2002,6 +2075,80 @@ components:
           anyOf:
           - $ref: '#/components/schemas/SourceRefResponse'
           - type: 'null'
+        provenance:
+          anyOf:
+          - $ref: '#/components/schemas/ContextSpanProvenanceResponse'
+          - type: 'null'
+        access_decision:
+          anyOf:
+          - $ref: '#/components/schemas/ContextAccessDecisionResponse'
+          - type: 'null'
+    ContextAccessDecisionResponse:
+      type: object
+      required:
+      - cell_id
+      - decision
+      - policy
+      - reason
+      - scope
+      - scope_id
+      - agent_id
+      properties:
+        cell_id:
+          type: integer
+          format: uint64
+        decision:
+          type: string
+          enum:
+          - allowed
+          - not_recorded
+        policy:
+          type: string
+        reason:
+          type: string
+        scope:
+          type: string
+        scope_id:
+          type: integer
+          format: uint64
+        agent_id:
+          anyOf:
+          - type: integer
+            format: uint64
+          - type: 'null'
+        principal_id:
+          type: string
+        auth_role:
+          type: string
+    ContextSpanProvenanceResponse:
+      type: object
+      required:
+      - source_cell_id
+      - source_byte_start
+      - source_byte_end
+      - source_line_start
+      - source_line_end
+      - source_ref
+      properties:
+        source_cell_id:
+          type: integer
+          format: uint64
+        source_byte_start:
+          type: integer
+          minimum: 0
+        source_byte_end:
+          type: integer
+          minimum: 0
+        source_line_start:
+          type: integer
+          minimum: 1
+        source_line_end:
+          type: integer
+          minimum: 1
+        source_ref:
+          anyOf:
+          - $ref: '#/components/schemas/SourceRefResponse'
+          - type: 'null'
     ContextPackExplainResponse:
       type: object
       required:
@@ -2013,6 +2160,9 @@ components:
       - source_trust_q16
       - source_trust_category
       - source_trust_bonus
+      - source_freshness_q16
+      - source_freshness_category
+      - source_freshness_bonus
       - redundancy_penalty
       properties:
         score:
@@ -2044,6 +2194,21 @@ components:
           - high
           - official
         source_trust_bonus:
+          type: integer
+          minimum: 0
+        source_freshness_q16:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        source_freshness_category:
+          type: string
+          enum:
+          - unknown
+          - stale
+          - older
+          - recent
+          - current
+        source_freshness_bonus:
           type: integer
           minimum: 0
         redundancy_penalty:
@@ -2133,6 +2298,210 @@ components:
           anyOf:
           - type: string
           - type: 'null'
+    ContextTraceRequest:
+      type: object
+      required:
+      - retrieve_aql
+      properties:
+        retrieve_aql:
+          type: string
+          minLength: 1
+        verify_aql:
+          anyOf:
+          - type: string
+            minLength: 1
+          - type: 'null'
+    ContextTraceResponse:
+      type: object
+      required:
+      - schema_version
+      - context
+      - verification
+      - trace
+      properties:
+        schema_version:
+          type: string
+          enum:
+          - context_trace.v1
+        context:
+          $ref: '#/components/schemas/ContextPackResponse'
+        verification:
+          anyOf:
+          - $ref: '#/components/schemas/VerificationReportResponse'
+          - type: 'null'
+        trace:
+          $ref: '#/components/schemas/ContextPipelineTrace'
+    ContextPipelineTrace:
+      type: object
+      required:
+      - schema_version
+      - total_duration_ms
+      - stages
+      - cells
+      - verification
+      properties:
+        schema_version:
+          type: string
+          enum:
+          - context_pipeline_trace.v1
+        total_duration_ms:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+        stages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContextPipelineStageTrace'
+        cells:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContextPipelineCellTrace'
+        verification:
+          anyOf:
+          - $ref: '#/components/schemas/ContextPipelineVerificationTrace'
+          - type: 'null'
+    ContextPipelineStageTrace:
+      type: object
+      required:
+      - name
+      - duration_ms
+      - input_items
+      - output_items
+      - notes
+      properties:
+        name:
+          type: string
+          enum:
+          - retrieve
+          - pack
+          - verify
+        duration_ms:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+        input_items:
+          type: integer
+          minimum: 0
+        output_items:
+          type: integer
+          minimum: 0
+        notes:
+          type: array
+          items:
+            type: string
+    ContextPipelineCellTrace:
+      type: object
+      required:
+      - cell_id
+      - packed_rank
+      - estimated_tokens
+      - score
+      - matched_terms
+      - score_components
+      - why_selected
+      - citation_present
+      - provenance_present
+      - access_decision
+      properties:
+        cell_id:
+          type: integer
+          format: uint64
+        packed_rank:
+          type: integer
+          minimum: 1
+        estimated_tokens:
+          type: integer
+          minimum: 0
+        score:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+        matched_terms:
+          type: array
+          items:
+            type: string
+        score_components:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContextPipelineScoreComponentTrace'
+        why_selected:
+          anyOf:
+          - type: string
+          - type: 'null'
+        citation_present:
+          type: boolean
+        provenance_present:
+          type: boolean
+        access_decision:
+          anyOf:
+          - type: string
+            enum:
+            - allowed
+            - not_recorded
+          - type: 'null'
+    ContextPipelineScoreComponentTrace:
+      type: object
+      required:
+      - name
+      - value
+      - contribution
+      - reason
+      properties:
+        name:
+          type: string
+        value:
+          type: integer
+          minimum: 0
+        contribution:
+          type: integer
+        reason:
+          type: string
+    ContextPipelineVerificationTrace:
+      type: object
+      required:
+      - fact
+      - status
+      - evidence_count
+      - contradicting_evidence_count
+      - guard_count
+      - numeric_conflict_count
+      - evidence_cell_ids
+      - contradicting_cell_ids
+      properties:
+        fact:
+          type: string
+        status:
+          type: string
+          enum:
+          - supported
+          - insufficient
+          - contradicted
+          - mixed_evidence
+        evidence_count:
+          type: integer
+          minimum: 0
+        contradicting_evidence_count:
+          type: integer
+          minimum: 0
+        guard_count:
+          type: integer
+          minimum: 0
+        numeric_conflict_count:
+          type: integer
+          minimum: 0
+        evidence_cell_ids:
+          type: array
+          items:
+            type: integer
+            format: uint64
+        contradicting_cell_ids:
+          type: array
+          items:
+            type: integer
+            format: uint64
     LlmInferenceRequest:
       type: object
       additionalProperties: true
@@ -2221,6 +2590,7 @@ components:
       - output
       - used_context_cell_ids
       - citations
+      - grounding
       - audit
       properties:
         schema_version:
@@ -2246,8 +2616,78 @@ components:
           type: array
           items:
             type: string
+        grounding:
+          $ref: '#/components/schemas/AnswerGroundingReportResponse'
         audit:
           $ref: '#/components/schemas/LlmInferenceAuditResponse'
+    AnswerGroundingReportResponse:
+      type: object
+      required:
+      - answer_supported
+      - rejected
+      - support_q16
+      - supported_span_count
+      - unsupported_span_count
+      - spans
+      properties:
+        answer_supported:
+          type: boolean
+        rejected:
+          type: boolean
+        support_q16:
+          type: integer
+          format: uint16
+        supported_span_count:
+          type: integer
+          format: uint32
+        unsupported_span_count:
+          type: integer
+          format: uint32
+        spans:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnswerGroundingSpanResponse'
+    AnswerGroundingSpanResponse:
+      type: object
+      required:
+      - text
+      - start_byte
+      - end_byte
+      - support_q16
+      - supported
+      - covered_terms
+      - missing_terms
+      - supported_by_cell_ids
+      - citations
+      properties:
+        text:
+          type: string
+        start_byte:
+          type: integer
+        end_byte:
+          type: integer
+        support_q16:
+          type: integer
+          format: uint16
+        supported:
+          type: boolean
+        covered_terms:
+          type: array
+          items:
+            type: string
+        missing_terms:
+          type: array
+          items:
+            type: string
+        supported_by_cell_ids:
+          type: array
+          items:
+            type: integer
+            format: uint64
+        citations:
+          type: array
+          items:
+            type: string
     GuardResponse:
       type: object
       required:
@@ -2290,6 +2730,7 @@ components:
       - fact
       - status
       - verdict
+      - confidence_q16
       - evidence
       - contradicting_evidence
       - guards
@@ -2301,14 +2742,18 @@ components:
           type: string
         verdict:
           type: string
+        confidence_q16:
+          type: integer
+          minimum: 0
+          maximum: 65535
         evidence:
           type: array
           items:
-            type: object
+            $ref: '#/components/schemas/VerificationEvidenceResponse'
         contradicting_evidence:
           type: array
           items:
-            type: object
+            $ref: '#/components/schemas/VerificationEvidenceResponse'
         guards:
           type: array
           items:
@@ -2316,11 +2761,11 @@ components:
         supporting:
           type: array
           items:
-            type: object
+            $ref: '#/components/schemas/VerificationEvidenceResponse'
         contradicting:
           type: array
           items:
-            type: object
+            $ref: '#/components/schemas/VerificationEvidenceResponse'
         numeric_conflicts:
           type: array
           items:
@@ -2336,6 +2781,55 @@ components:
                 type: string
               right:
                 type: string
+    VerificationEvidenceResponse:
+      type: object
+      required:
+      - cell_id
+      - matched_terms
+      - match_score_q16
+      - match_kind
+      - source_trust_q16
+      - source_trust_category
+      - citation
+      - payload_text
+      properties:
+        cell_id:
+          type: integer
+          format: uint64
+        matched_terms:
+          type: integer
+          minimum: 0
+        match_score_q16:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        match_kind:
+          type: string
+          enum:
+          - exact_text
+          - semantic_entailment
+          - numeric_entailment
+          - semantic_contradiction
+          - numeric_contradiction
+          - graph_contradiction
+        source_trust_q16:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        source_trust_category:
+          type: string
+          enum:
+          - unknown
+          - low
+          - medium
+          - high
+          - official
+        citation:
+          anyOf:
+          - type: string
+          - type: 'null'
+        payload_text:
+          type: string
     IngestResponse:
       type: object
       required:
@@ -2580,6 +3074,15 @@ components:
       - estimated_index_bytes
       - estimated_context_pack_bytes
       - estimated_total_memory_bytes
+      - live_segment_bytes
+      - retired_segment_bytes
+      - total_segment_bytes
+      - durable_storage_bytes
+      - live_segment_payload_bytes
+      - logical_payload_bytes
+      - space_amplification_q16
+      - write_amplification_q16
+      - compaction_pressure_q16
       - wal_size_bytes
       - wal_writer_records
       - wal_writer_bytes
@@ -2636,6 +3139,33 @@ components:
           type: integer
         estimated_total_memory_bytes:
           type: integer
+        live_segment_bytes:
+          type: integer
+          format: uint64
+        retired_segment_bytes:
+          type: integer
+          format: uint64
+        total_segment_bytes:
+          type: integer
+          format: uint64
+        durable_storage_bytes:
+          type: integer
+          format: uint64
+        live_segment_payload_bytes:
+          type: integer
+          format: uint64
+        logical_payload_bytes:
+          type: integer
+          format: uint64
+        space_amplification_q16:
+          type: integer
+          format: uint32
+        write_amplification_q16:
+          type: integer
+          format: uint32
+        compaction_pressure_q16:
+          type: integer
+          format: uint32
         wal_size_bytes:
           type: integer
           format: uint64

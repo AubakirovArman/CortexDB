@@ -132,6 +132,11 @@ enum Command {
         #[command(subcommand)]
         command: UpgradeCommand,
     },
+    Migrate {
+        path: String,
+        backup_path: String,
+        drill_restore_path: String,
+    },
     Audit {
         path: String,
         verify_path: Option<String>,
@@ -566,6 +571,16 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
                 cli.json,
             ),
         },
+        Command::Migrate {
+            path,
+            backup_path,
+            drill_restore_path,
+        } => upgrade::migrate(
+            resolved(&path).to_str().unwrap(),
+            &backup_path,
+            &drill_restore_path,
+            cli.json,
+        ),
         Command::Audit {
             path,
             verify_path,

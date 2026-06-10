@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
+use std::sync::Arc;
 
 mod candidates;
 pub(crate) mod hnsw;
@@ -33,10 +34,21 @@ pub(crate) struct CheckpointLoad {
     pub memtable: MemTable,
 }
 
+#[derive(Debug)]
 pub(crate) struct PersistedIndexState {
     pub bitmap: BitmapIndex,
     pub lexical: LexicalIndex,
     pub candidate_to_cell: BTreeMap<u32, CellId>,
+}
+
+/// Cached `PersistedIndexState` plus the live-segment fingerprint it was built
+/// from. The fingerprint `(id, generation, checkpoint_seq)` changes whenever a
+/// checkpoint or compaction rewrites the segment set, so a stale cache entry can
+/// never be reused after the persisted data changes.
+#[derive(Debug)]
+pub(crate) struct PersistedIndexCache {
+    key: Vec<(u64, u64, u64)>,
+    state: Arc<PersistedIndexState>,
 }
 
 impl Database {
@@ -166,19 +178,24 @@ impl Database {
         let mut tombstoned = BTreeSet::new();
         let mut candidate_to_cell = BTreeMap::new();
         for segment in &self.manifest.live_segments {
-            let cells = SegmentReader::read(segment_path(&self.segments_path, segment.id))?;
-            let segment_candidates = cells
+            // Index rebuild only needs candidate/cell identity and liveness, so
+            // read the lightweight entries instead of copying every payload.
+            let entries = SegmentReader::read_candidate_entries(segment_path(
+                &self.segments_path,
+                segment.id,
+            ))?;
+            let segment_candidates = entries
                 .iter()
-                .map(|cell| cell.candidate_id)
+                .map(|entry| entry.candidate_id)
                 .collect::<BTreeSet<_>>();
             remove_candidates(&mut bitmap, &mut lexical, &segment_candidates);
-            for cell in cells {
-                if cell.deleted_seq.is_some() {
-                    tombstoned.insert(cell.candidate_id);
-                    candidate_to_cell.remove(&cell.candidate_id);
+            for entry in entries {
+                if entry.deleted {
+                    tombstoned.insert(entry.candidate_id);
+                    candidate_to_cell.remove(&entry.candidate_id);
                 } else {
-                    tombstoned.remove(&cell.candidate_id);
-                    candidate_to_cell.insert(cell.candidate_id, CellId(cell.cell_id));
+                    tombstoned.remove(&entry.candidate_id);
+                    candidate_to_cell.insert(entry.candidate_id, CellId(entry.cell_id));
                 }
             }
             let segment_bitmap = BitmapIndex::read(bitmap_path(&self.segments_path, segment.id))?;
@@ -193,6 +210,39 @@ impl Database {
             lexical,
             candidate_to_cell,
         })
+    }
+
+    /// Return the persisted index, reusing a cached copy when the live-segment
+    /// set is unchanged.
+    ///
+    /// `persisted_index_state` rereads and re-decodes every live segment (the
+    /// `.acs`, `.acb`, and `.aci` files), which for a large checkpointed corpus
+    /// is multi-gigabyte work. Without caching, a reopened database paid that
+    /// cost on every search call. The cache key is the live-segment fingerprint,
+    /// so a checkpoint or compaction that rewrites segments transparently forces
+    /// a rebuild while a steady-state read corpus is decoded only once.
+    pub(crate) fn persisted_index_state_cached(&self) -> EngineResult<Arc<PersistedIndexState>> {
+        let key: Vec<(u64, u64, u64)> = self
+            .manifest
+            .live_segments
+            .iter()
+            .map(|segment| (segment.id, segment.generation, segment.checkpoint_seq))
+            .collect();
+        let mut cache = self
+            .persisted_index_cache
+            .lock()
+            .expect("persisted index cache mutex poisoned");
+        if let Some(entry) = cache.as_ref() {
+            if entry.key == key {
+                return Ok(Arc::clone(&entry.state));
+            }
+        }
+        let state = Arc::new(self.persisted_index_state()?);
+        *cache = Some(PersistedIndexCache {
+            key,
+            state: Arc::clone(&state),
+        });
+        Ok(state)
     }
 
     fn persisted_candidate_map(&self) -> EngineResult<BTreeMap<CellId, u32>> {
@@ -347,4 +397,77 @@ pub(crate) fn load_checkpoint(root: &Path) -> EngineResult<CheckpointLoad> {
         }
     }
     Ok(CheckpointLoad { manifest, memtable })
+}
+
+#[cfg(test)]
+mod persisted_index_cache_tests {
+    use std::sync::Arc;
+
+    use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
+
+    use crate::Database;
+
+    fn cell(body: &str) -> KnowledgeCell {
+        KnowledgeCell::new(
+            KnowledgeCellMetadata {
+                scope: "project:cache".to_owned(),
+                status: "ready".to_owned(),
+                cell_type: KnowledgeCellType::Fact,
+                memory_type: None,
+                ttl_seconds: None,
+                created_unix_seconds: None,
+                source_trust_q16: None,
+                source: Some("cache-test".to_owned()),
+            },
+            body,
+        )
+    }
+
+    #[test]
+    fn reopened_checkpointed_db_reuses_persisted_index_state_across_calls() {
+        let dir = tempfile::tempdir().unwrap();
+        {
+            let mut db = Database::open(dir.path()).unwrap();
+            db.put_knowledge_cell(CellId(1), cell("solar plant budget approved"))
+                .unwrap();
+            db.put_knowledge_cell(CellId(2), cell("wind farm budget approved"))
+                .unwrap();
+            db.checkpoint().unwrap();
+        }
+
+        // Reopen: WAL is truncated and the memtable is empty, so searches take
+        // the persisted fast path. The decoded index must be cached, not rebuilt
+        // from the multi-gigabyte segment files on every call.
+        let db = Database::open(dir.path()).unwrap();
+        let first = db.persisted_index_state_cached().unwrap();
+        let second = db.persisted_index_state_cached().unwrap();
+        assert!(
+            Arc::ptr_eq(&first, &second),
+            "second call must reuse the cached persisted index, not rebuild it"
+        );
+        assert!(!first.candidate_to_cell.is_empty());
+    }
+
+    #[test]
+    fn checkpoint_that_changes_segments_invalidates_cached_persisted_index() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_knowledge_cell(CellId(1), cell("solar plant budget approved"))
+            .unwrap();
+        db.checkpoint().unwrap();
+        let before = db.persisted_index_state_cached().unwrap();
+
+        // A new checkpoint that writes another segment changes the live-segment
+        // fingerprint, so the cache key no longer matches and the state is rebuilt.
+        db.put_knowledge_cell(CellId(2), cell("wind farm budget approved"))
+            .unwrap();
+        db.checkpoint().unwrap();
+        let after = db.persisted_index_state_cached().unwrap();
+
+        assert!(
+            !Arc::ptr_eq(&before, &after),
+            "a checkpoint that rewrites segments must invalidate the cached index"
+        );
+        assert_eq!(after.candidate_to_cell.len(), 2);
+    }
 }

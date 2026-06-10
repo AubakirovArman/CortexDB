@@ -1,5 +1,6 @@
 use cortex_core::CellId;
 
+use crate::query::metadata::SourceRef;
 use crate::source_trust::SourceTrustCategory;
 use crate::tool_registry::ToolRecommendation;
 
@@ -8,15 +9,28 @@ mod conflicts;
 pub mod dedup;
 pub mod explain;
 pub mod export;
+mod freshness;
+mod grounding;
 mod large_cell;
 mod pack;
 mod scoring;
+mod span;
 mod token_estimator;
+mod trace;
 
 pub use answerability::DEFAULT_ANSWERABILITY_THRESHOLD_Q16;
 pub use export::ContextPackExportFormat;
+pub use freshness::SourceFreshnessCategory;
+pub use grounding::{
+    AnswerGroundingOptions, AnswerGroundingReport, AnswerGroundingSpan,
+    DEFAULT_GROUNDING_THRESHOLD_Q16,
+};
 pub use large_cell::ContextLargeCellPolicy;
 pub use token_estimator::{estimate_tokens, estimate_tokens_for_profile, ContextTokenProfile};
+pub use trace::{
+    ContextPipelineCellTrace, ContextPipelineStageTrace, ContextPipelineTrace,
+    ContextPipelineVerificationTrace, ContextScoreComponentTrace,
+};
 
 pub const DEFAULT_REDUNDANCY_THRESHOLD_Q16: u16 = 32_768;
 pub const DEFAULT_CITATION_OVERHEAD_TOKENS: u32 = 8;
@@ -30,6 +44,8 @@ pub struct ContextPackOptions {
     pub citation_overhead_tokens: u32,
     pub token_profile: ContextTokenProfile,
     pub large_cell_policy: ContextLargeCellPolicy,
+    pub span_level_packing: bool,
+    pub span_context_lines: usize,
 }
 
 impl Default for ContextPackOptions {
@@ -42,6 +58,8 @@ impl Default for ContextPackOptions {
             citation_overhead_tokens: DEFAULT_CITATION_OVERHEAD_TOKENS,
             token_profile: ContextTokenProfile::default(),
             large_cell_policy: ContextLargeCellPolicy::default(),
+            span_level_packing: false,
+            span_context_lines: 2,
         }
     }
 }
@@ -64,6 +82,9 @@ pub struct ContextExplain {
     pub source_trust_q16: u16,
     pub source_trust_category: SourceTrustCategory,
     pub source_trust_bonus: u32,
+    pub source_freshness_q16: u16,
+    pub source_freshness_category: SourceFreshnessCategory,
+    pub source_freshness_bonus: u32,
     pub redundancy_penalty: u32,
 }
 
@@ -73,7 +94,45 @@ pub struct ContextPackCell {
     pub payload: Vec<u8>,
     pub estimated_tokens: u32,
     pub citation: Option<String>,
+    pub provenance: Option<ContextSpanProvenance>,
     pub explain: Option<ContextExplain>,
+    pub access_decision: Option<ContextAccessDecision>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ContextAccessDecision {
+    pub cell_id: CellId,
+    pub decision: ContextAccessDecisionOutcome,
+    pub policy: String,
+    pub reason: String,
+    pub scope: String,
+    pub scope_id: u64,
+    pub agent_id: Option<u64>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ContextAccessDecisionOutcome {
+    Allowed,
+    NotRecorded,
+}
+
+impl ContextAccessDecisionOutcome {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Allowed => "allowed",
+            Self::NotRecorded => "not_recorded",
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ContextSpanProvenance {
+    pub source_cell_id: CellId,
+    pub source_byte_start: usize,
+    pub source_byte_end: usize,
+    pub source_line_start: u32,
+    pub source_line_end: u32,
+    pub source_ref: Option<SourceRef>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

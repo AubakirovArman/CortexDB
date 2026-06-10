@@ -61,6 +61,8 @@ pub struct AnnExternalFixtureReport {
     pub p95_latency_nanos: u128,
     pub p99_latency_nanos: u128,
     pub max_latency_nanos: u128,
+    pub fallback_count: usize,
+    pub fallback_rate_q16: u16,
     pub production_safe: bool,
 }
 
@@ -101,6 +103,7 @@ pub fn evaluate_ann_external_fixture(
     let mut recalls = Vec::with_capacity(fixture.queries.len());
     let mut latencies = Vec::with_capacity(fixture.queries.len());
     let mut production_safe = true;
+    let mut fallback_count = 0usize;
     for query in &fixture.queries {
         let started = Instant::now();
         let report = evaluate_persisted_ann_with_policy(
@@ -117,6 +120,9 @@ pub fn evaluate_ann_external_fixture(
         );
         latencies.push(started.elapsed().as_nanos());
         recalls.push(report.recall_q16);
+        if report.search.fallback_performed {
+            fallback_count += 1;
+        }
         production_safe &= report.search.production_safe;
     }
     latencies.sort_unstable();
@@ -146,6 +152,8 @@ pub fn evaluate_ann_external_fixture(
         p95_latency_nanos: percentile(&latencies, 95),
         p99_latency_nanos: percentile(&latencies, 99),
         max_latency_nanos: *latencies.last().unwrap_or(&0),
+        fallback_count,
+        fallback_rate_q16: ratio_q16(fallback_count, fixture.queries.len()),
         production_safe,
     };
     report.failures = compare_external_baseline(baseline, &report);
@@ -247,6 +255,13 @@ fn percentile(values: &[u128], percentile: usize) -> u128 {
         return 0;
     }
     values[((values.len() - 1) * percentile.min(100)) / 100]
+}
+
+fn ratio_q16(numerator: usize, denominator: usize) -> u16 {
+    if denominator == 0 {
+        return 65_535;
+    }
+    ((numerator as u64 * 65_535) / denominator as u64) as u16
 }
 
 mod compare;

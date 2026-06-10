@@ -180,6 +180,12 @@ pub fn compare_ann_fixture_baseline(
     if baseline.require_production_safe && !observed.production_safe {
         failures.push("production_safe: expected true, observed false".to_owned());
     }
+    if observed.fallback_count != 0 {
+        failures.push(format!(
+            "fallback_count: expected 0, observed {}",
+            observed.fallback_count
+        ));
+    }
     failures
 }
 
@@ -256,6 +262,8 @@ mod tests {
             hnsw_layer_count: 4,
             hnsw_ef_construction: 64,
             graph_signature: String::new(),
+            fallback_count: 0,
+            fallback_rate_q16: 0,
             production_safe: true,
         };
         let mut baseline = AnnRecallLatencyBaseline::synthetic_v1();
@@ -266,5 +274,32 @@ mod tests {
 
         assert!(failures.iter().any(|value| value.contains("vector_count")));
         assert!(failures.iter().any(|value| value.contains("graph_edges")));
+    }
+
+    #[test]
+    fn baseline_gate_rejects_hidden_fallback() {
+        let mut observed = synthetic_ann_recall_latency_report(
+            64,
+            8,
+            4,
+            5,
+            AnnSearchPolicy {
+                require_slo: true,
+                ..AnnSearchPolicy::default()
+            },
+        )
+        .unwrap();
+        observed.fallback_count = 1;
+        let mut baseline = AnnRecallLatencyBaseline::synthetic_v1();
+        baseline.vector_count = 64;
+        baseline.query_count = 4;
+        baseline.min_graph_nodes = 64;
+        baseline.min_graph_edges = 64;
+
+        let failures = compare_ann_fixture_baseline(&baseline, &observed);
+
+        assert!(failures
+            .iter()
+            .any(|value| value.contains("fallback_count")));
     }
 }

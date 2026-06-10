@@ -26,7 +26,7 @@ pub use explain::{AqlCandidateCounts, AqlExplainFilter, AqlExplainReport};
 use metadata::{
     cell_type_handle, cell_type_id, memory_type_handle, scope_handle, status_handle, status_id,
 };
-pub use metadata::{scope_id, CellMetadata};
+pub use metadata::{scope_id, CellMetadata, SourceRef};
 pub use provider::EngineAqlProvider;
 
 const DEFAULT_BRAIN: BrainId = BrainId(1);

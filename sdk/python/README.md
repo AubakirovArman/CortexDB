@@ -20,6 +20,16 @@ verify = client.verify_response("default", client.build_verify_fact_aql("hello",
 remember = client.remember_response("default", client.build_remember_aql("hello", "default", "decision", ttl_seconds=3600))
 print(context.token_budget_tokens, verify.status, remember.cell_id)
 print(client.ingest_text("default", "hello from sdk"))
+
+grounded = client.answer_with_grounded_context(
+    "default",
+    "default",
+    "What does the context say about hello?",
+    lambda pack: pack.cells[0].payload_text if pack.cells else "Not enough information.",
+    mode="audit",
+    limit_candidates=10,
+)
+print(grounded.citations, grounded.grounding.answer_supported)
 ```
 
 The package metadata is prepared for PyPI as `cortexdb-client`. Publication is

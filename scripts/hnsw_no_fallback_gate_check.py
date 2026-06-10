@@ -14,7 +14,14 @@ MIN_RECALL_Q16 = 49_151
 GATES: dict[str, dict[str, object]] = {
     "production-no-fallback": {
         "schema": "cortexdb.hnsw_no_fallback.production_gate.v1",
-        "required_evidence": ["fixture", "external", "metric_matrix", "domain", "recall_probe"],
+        "required_evidence": [
+            "fixture",
+            "external",
+            "metric_matrix",
+            "domain",
+            "recall_probe",
+            "reference_suite",
+        ],
         "markers": [
             ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "Serving Guardrails"),
             ("docs/HNSW_NO_FALLBACK_PRODUCTION_DESIGN.md", "Runtime Rollout Policy"),
@@ -30,6 +37,7 @@ GATES: dict[str, dict[str, object]] = {
             ("crates/cortex-server/src/lib.rs", "cortexdb_ann_search_latency_ms_bucket"),
             ("crates/cortex-server/src/lib.rs", "cortexdb_ann_no_fallback_blocked"),
             ("scripts/ann/recall_probe.py", "cortexdb.ann_recall_probe.v1"),
+            ("scripts/ann/reference_suite_gate.py", "cortexdb.ann_reference_suite_report.v1"),
             ("crates/cortex-engine/src/search/hnsw_no_fallback.rs", "HnswNoFallbackRolloutPolicy"),
             ("crates/cortex-engine/src/search/hnsw_no_fallback.rs", "RolloutDisabled"),
             ("crates/cortex-engine/src/search/hnsw_no_fallback.rs", "FallbackEnabled"),
@@ -200,6 +208,30 @@ def recall_probe_failures(report: dict[str, Any]) -> list[str]:
         failures.append("recall_probe: graph_shape must be present")
     return failures
 
+def reference_suite_failures(report: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    if report.get("schema_version") != "cortexdb.ann_reference_suite_report.v1":
+        failures.append("reference_suite: invalid schema_version")
+    if report.get("status") != "passed":
+        failures.append("reference_suite: status must be passed")
+    if (int_value(report, "corpus_count") or 0) < 3:
+        failures.append("reference_suite: expected at least three corpora")
+    corpora = report.get("corpora")
+    if not isinstance(corpora, list) or not corpora:
+        return failures + ["reference_suite: corpora must be non-empty"]
+    for corpus in corpora:
+        if not isinstance(corpus, dict):
+            failures.append("reference_suite: corpus entry must be object")
+            continue
+        name = corpus.get("name", "<unknown>")
+        if corpus.get("status") != "passed":
+            failures.append(f"reference_suite:{name}: status must be passed")
+        if int_value(corpus, "fallback_count") != 0:
+            failures.append(f"reference_suite:{name}: fallback_count must be zero")
+        if bool_value(corpus, "production_safe") is not True:
+            failures.append(f"reference_suite:{name}: production_safe must be true")
+    return failures
+
 def history_failures(history: dict[str, Any], *, min_runs: int) -> list[str]:
     failures: list[str] = []
     if int_value(history, "run_count") is None or int(history["run_count"]) < min_runs:
@@ -236,6 +268,8 @@ def validate(gate: str, evidence: dict[str, Path], history_path: Path | None) ->
             failures.extend(metric_matrix_failures(reports["metric_matrix"]))
         if "recall_probe" in reports:
             failures.extend(recall_probe_failures(reports["recall_probe"]))
+        if "reference_suite" in reports:
+            failures.extend(reference_suite_failures(reports["reference_suite"]))
     elif gate == "real-domain-history":
         if "domain" in reports:
             failures.extend(report_failures("domain", reports["domain"]))

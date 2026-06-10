@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 
 use cortex_core::CellId;
 
+use super::freshness::SourceFreshness;
 use super::ContextScoreComponent;
 use crate::database::RetrievedCell;
 use crate::source_trust::SourceTrust;
@@ -10,10 +11,12 @@ use crate::source_trust::SourceTrust;
 pub(crate) fn score_components(
     base_bm25: u32,
     source_trust: SourceTrust,
+    source_freshness: SourceFreshness,
     redundancy_penalty: u32,
     feedback_bonus: i32,
 ) -> Vec<ContextScoreComponent> {
     let source_trust_bonus = source_trust.score_bonus();
+    let source_freshness_bonus = source_freshness.score_bonus();
     let mut components = vec![
         ContextScoreComponent {
             name: "base_bm25".to_owned(),
@@ -26,6 +29,12 @@ pub(crate) fn score_components(
             value: source_trust_bonus,
             contribution: i32::try_from(source_trust_bonus).unwrap_or(i32::MAX),
             reason: source_trust.score_reason(),
+        },
+        ContextScoreComponent {
+            name: "source_freshness_bonus".to_owned(),
+            value: source_freshness_bonus,
+            contribution: i32::try_from(source_freshness_bonus).unwrap_or(i32::MAX),
+            reason: source_freshness.score_reason(),
         },
         ContextScoreComponent {
             name: "redundancy_penalty".to_owned(),

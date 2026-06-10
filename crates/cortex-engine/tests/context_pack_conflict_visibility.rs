@@ -1,5 +1,8 @@
 use cortex_core::CellId;
-use cortex_engine::{ContextPack, ContextPackExportFormat, ContextPackOptions, RetrievedCell};
+use cortex_engine::{
+    ContextPack, ContextPackExportFormat, ContextPackOptions, RetrievedCell,
+    SourceFreshnessCategory,
+};
 
 #[test]
 fn conflict_visibility_is_zero_without_conflicting_values() {
@@ -81,6 +84,46 @@ fn conflict_visibility_is_exported_in_json_prompt_and_markdown() {
         .contains("Conflict visibility: conflict_visibility_q16=65535 visible_conflict_count=1"));
     assert!(markdown.contains("- conflict_visibility_q16: `65535`"));
     assert!(markdown.contains("- visible_conflict_count: `1`"));
+}
+
+#[test]
+fn conflicting_values_explain_source_freshness_for_current_source() {
+    let pack = pack_from_cells(vec![
+        retrieved(
+            1,
+            "created_unix_seconds=100\nsource_trust_class=internal\nproject=Solar\nmetric=budget\nvalue=1200000000\n\nSolar budget is 1.2B",
+        ),
+        retrieved(
+            2,
+            "created_unix_seconds=200\nsource_trust_class=official\nproject=Solar\nmetric=budget\nvalue=1400000000\n\nSolar budget is 1.4B",
+        ),
+    ]);
+
+    assert_eq!(pack.visible_conflict_count, 1);
+    let stale = pack.cells[0].explain.as_ref().unwrap();
+    let current = pack.cells[1].explain.as_ref().unwrap();
+
+    assert_eq!(
+        stale.source_freshness_category,
+        SourceFreshnessCategory::Stale
+    );
+    assert_eq!(
+        current.source_freshness_category,
+        SourceFreshnessCategory::Current
+    );
+    assert!(current.source_freshness_bonus > stale.source_freshness_bonus);
+    assert!(current
+        .score_components
+        .iter()
+        .any(|component| component.name == "source_freshness_bonus"
+            && component.reason.contains("current source freshness")));
+
+    let json = pack.export(ContextPackExportFormat::Json);
+    assert!(json.contains(r#""source_freshness_category":"current""#));
+    let prompt = pack.export(ContextPackExportFormat::Prompt);
+    assert!(prompt.contains("source_freshness=current"));
+    let markdown = pack.export(ContextPackExportFormat::Markdown);
+    assert!(markdown.contains("- source_freshness: `current`"));
 }
 
 fn pack_from_cells(cells: Vec<RetrievedCell>) -> ContextPack {

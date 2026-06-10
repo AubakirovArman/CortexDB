@@ -1,0 +1,5 @@
+{"question_id":"qu_lift_001","question":"Who owns the blocker?","expected_doc_ids":["doc_release_owner"]}
+{"question_id":"qu_lift_002","question":"What caused the incident?","expected_doc_ids":["doc_outage_root_cause"]}
+{"question_id":"qu_lift_003","question":"What is the security policy?","expected_doc_ids":["doc_auth_rbac_requirement"]}
+{"question_id":"qu_lift_004","question":"Which customer revenue summary should we use?","expected_doc_ids":["doc_client_arr_summary"]}
+{"question_id":"qu_lift_005","question":"When is the deadline?","expected_doc_ids":["doc_eta_migration_timeline"]}

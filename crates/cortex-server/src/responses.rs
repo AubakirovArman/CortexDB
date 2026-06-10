@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use cortex_engine::IngestionValidationReport;
+use cortex_engine::{ContextPipelineTrace, IngestionValidationReport};
 
 #[derive(Serialize, Debug, Clone)]
 pub struct HealthResponse {
@@ -50,6 +50,24 @@ pub struct StatsResponse {
     pub estimated_context_pack_bytes: usize,
     /// Estimated total engine memory across tracked categories.
     pub estimated_total_memory_bytes: usize,
+    /// Durable bytes held by live segment bundles.
+    pub live_segment_bytes: u64,
+    /// Durable bytes held by retired segment bundles waiting for GC.
+    pub retired_segment_bytes: u64,
+    /// Durable bytes held by all segment bundles.
+    pub total_segment_bytes: u64,
+    /// Durable segment bytes plus active WAL bytes.
+    pub durable_storage_bytes: u64,
+    /// Payload bytes inside live segment cells.
+    pub live_segment_payload_bytes: u64,
+    /// Logical payload proxy used as the denominator for amplification metrics.
+    pub logical_payload_bytes: u64,
+    /// Q16 durable-storage/logical-payload space amplification proxy.
+    pub space_amplification_q16: u32,
+    /// Q16 local durable-write/logical-payload amplification proxy.
+    pub write_amplification_q16: u32,
+    /// Q16 retired-segment/total-segment compaction pressure.
+    pub compaction_pressure_q16: u32,
     /// Total size of the active Write-Ahead Log (.aclog) files in bytes.
     pub wal_size_bytes: u64,
     /// Total number of transaction log records appended.
@@ -129,6 +147,9 @@ pub struct ExplainResponse {
     pub source_trust_q16: u16,
     pub source_trust_category: String,
     pub source_trust_bonus: u32,
+    pub source_freshness_q16: u16,
+    pub source_freshness_category: String,
+    pub source_freshness_bonus: u32,
     pub redundancy_penalty: u32,
 }
 
@@ -152,6 +173,33 @@ pub struct ContextPackCellResponse {
     pub citation: Option<String>,
     pub payload_text: String,
     pub explain: Option<ExplainResponse>,
+    pub source_ref: Option<SourceRefResponse>,
+    pub provenance: Option<ContextSpanProvenanceResponse>,
+    pub access_decision: Option<ContextAccessDecisionResponse>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct ContextAccessDecisionResponse {
+    pub cell_id: u64,
+    pub decision: String,
+    pub policy: String,
+    pub reason: String,
+    pub scope: String,
+    pub scope_id: u64,
+    pub agent_id: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auth_role: Option<String>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct ContextSpanProvenanceResponse {
+    pub source_cell_id: u64,
+    pub source_byte_start: usize,
+    pub source_byte_end: usize,
+    pub source_line_start: u32,
+    pub source_line_end: u32,
     pub source_ref: Option<SourceRefResponse>,
 }
 
@@ -177,10 +225,26 @@ pub struct ContextPackResponse {
     pub anomalies: Vec<ContextPackAnomalyResponse>,
 }
 
+#[derive(Deserialize, Debug, Clone)]
+pub struct ContextTraceRequest {
+    pub retrieve_aql: String,
+    pub verify_aql: Option<String>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct ContextTraceResponse {
+    pub schema_version: &'static str,
+    pub context: ContextPackResponse,
+    pub verification: Option<VerificationReportResponse>,
+    pub trace: ContextPipelineTrace,
+}
+
 #[derive(Serialize, Debug, Clone)]
 pub struct EvidenceResponse {
     pub cell_id: u64,
     pub matched_terms: u32,
+    pub match_score_q16: u16,
+    pub match_kind: String,
     pub source_trust_q16: u16,
     pub source_trust_category: String,
     pub citation: Option<String>,
@@ -206,6 +270,7 @@ pub struct VerificationReportResponse {
     pub fact: String,
     pub status: String,
     pub verdict: String,
+    pub confidence_q16: u16,
     pub evidence: Vec<EvidenceResponse>,
     pub contradicting_evidence: Vec<EvidenceResponse>,
     pub guards: Vec<GuardResponse>,
@@ -274,6 +339,8 @@ pub struct SearchResponse {
     pub search_mode: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub routing: Option<SearchRoutingDecisionResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rerank: Option<String>,
     pub ann_report: Option<AnnSearchReportResponse>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub no_fallback_decision: Option<AnnNoFallbackDecisionResponse>,
@@ -333,6 +400,29 @@ pub struct LlmInferenceAuditResponse {
 }
 
 #[derive(Serialize, Debug, Clone)]
+pub struct AnswerGroundingSpanResponse {
+    pub text: String,
+    pub start_byte: usize,
+    pub end_byte: usize,
+    pub support_q16: u16,
+    pub supported: bool,
+    pub covered_terms: Vec<String>,
+    pub missing_terms: Vec<String>,
+    pub supported_by_cell_ids: Vec<u64>,
+    pub citations: Vec<String>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct AnswerGroundingReportResponse {
+    pub answer_supported: bool,
+    pub rejected: bool,
+    pub support_q16: u16,
+    pub supported_span_count: u32,
+    pub unsupported_span_count: u32,
+    pub spans: Vec<AnswerGroundingSpanResponse>,
+}
+
+#[derive(Serialize, Debug, Clone)]
 pub struct LlmInferenceResponse {
     pub schema_version: &'static str,
     pub provider: String,
@@ -340,6 +430,7 @@ pub struct LlmInferenceResponse {
     pub output: String,
     pub used_context_cell_ids: Vec<u64>,
     pub citations: Vec<String>,
+    pub grounding: AnswerGroundingReportResponse,
     pub audit: LlmInferenceAuditResponse,
 }
 
@@ -479,6 +570,15 @@ pub struct MetricsResponse {
     pub estimated_index_bytes: usize,
     pub estimated_context_pack_bytes: usize,
     pub estimated_total_memory_bytes: usize,
+    pub live_segment_bytes: u64,
+    pub retired_segment_bytes: u64,
+    pub total_segment_bytes: u64,
+    pub durable_storage_bytes: u64,
+    pub live_segment_payload_bytes: u64,
+    pub logical_payload_bytes: u64,
+    pub space_amplification_q16: u32,
+    pub write_amplification_q16: u32,
+    pub compaction_pressure_q16: u32,
     pub wal_size_bytes: u64,
     pub wal_writer_records: u64,
     pub wal_writer_bytes: u64,

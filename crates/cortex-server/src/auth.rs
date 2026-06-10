@@ -78,10 +78,12 @@ impl AuthTokenPolicy {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AuthRouteContext {
     pub agent_id: Option<u64>,
     pub context_budget_tokens: Option<u32>,
+    pub principal_id: Option<String>,
+    pub role: Option<AuthRole>,
 }
 
 impl AuthRouteContext {
@@ -89,6 +91,8 @@ impl AuthRouteContext {
         Self {
             agent_id,
             context_budget_tokens: None,
+            principal_id: None,
+            role: None,
         }
     }
 }
@@ -111,6 +115,8 @@ impl AuthDecision {
         AuthRouteContext {
             agent_id: self.agent_id,
             context_budget_tokens: self.context_budget_tokens,
+            principal_id: self.principal_id.clone(),
+            role: self.role,
         }
     }
 }

@@ -56,6 +56,9 @@ def get_cell(repo: Path, db: Path, cell_id: int) -> str:
 def validate_db(repo: Path, db: Path) -> dict[str, Any]:
     return run_json([str(cli(repo)), "--json", "validate", str(db)], repo)
 
+def stats_db(repo: Path, db: Path) -> dict[str, Any]:
+    return run_json([str(cli(repo)), "--json", "stats", str(db)], repo)
+
 def payload(cell_id: int, cycle: int) -> str:
     return f"scope=soak\nstatus=ready\ncycle={cycle}\nsoak payload {cell_id}"
 def backup_restore_cycle(repo: Path, db: Path, root: Path, cycle: int, expected: dict[int, str]) -> dict[str, Any]:
@@ -253,7 +256,10 @@ def run_storage_soak(options: SoakOptions) -> dict[str, Any]:
         kill_during_restore(repo, db, root, options.kill_delay_ms),
     ]
     versioned_fixture = run_versioned_fixture(repo, root)
+    final_pre_gc_stats = stats_db(repo, db)
+    final_gc_output = run([str(cli(repo)), "gc-retired", str(db)], repo).strip()
     final_validation = validate_db(repo, db)
+    final_stats = stats_db(repo, db)
     cycle_ok = all(c["validation_ok"] and c["backup_restore"]["validation_ok"] and c["partial_wal_repair"]["validation_ok"] and c["partial_wal_repair"]["partial_tail_truncated"] for c in cycles)
     kill_ok = all(item.get("validation_ok", item.get("final_restore_validation_ok", False)) and item.get("sentinel_readable", True) for item in kill_injections)
     status = "passed" if final_validation.get("ok") and versioned_fixture["validation_ok"] and cycle_ok and kill_ok else "failed"
@@ -267,9 +273,14 @@ def run_storage_soak(options: SoakOptions) -> dict[str, Any]:
         "cycles": cycles,
         "kill_injections": kill_injections,
         "versioned_restore_fixture": versioned_fixture,
+        "final_pre_gc_stats": final_pre_gc_stats,
+        "final_gc_output": final_gc_output,
         "final_validation": final_validation,
+        "final_stats": final_stats,
         "tracked_outcomes": [
             "write/checkpoint/compact loops",
+            "retired segment GC",
+            "write/space amplification stats",
             "backup/restore loops",
             "partial WAL repair",
             "kill attempt during checkpoint",
@@ -290,11 +301,19 @@ def run_cycle(repo: Path, root: Path, db: Path, cycle: int, cells_per_cycle: int
     run([str(cli(repo)), "flush", str(db)], repo)
     run([str(cli(repo)), "compact", str(db)], repo)
     validation = validate_db(repo, db)
+    pre_gc_stats = stats_db(repo, db)
+    backup_restore = backup_restore_cycle(repo, db, root, cycle, expected)
+    partial_wal_repair = repair_partial_wal(repo, db, cycle_cells[-1])
+    gc_output = run([str(cli(repo)), "gc-retired", str(db)], repo).strip()
+    post_gc_stats = stats_db(repo, db)
     return {
         "cycle": cycle,
         "cells_written": cycle_cells,
         "total_cells_expected": len(expected),
         "validation_ok": bool(validation.get("ok")),
-        "backup_restore": backup_restore_cycle(repo, db, root, cycle, expected),
-        "partial_wal_repair": repair_partial_wal(repo, db, cycle_cells[-1]),
+        "pre_gc_stats": pre_gc_stats,
+        "backup_restore": backup_restore,
+        "partial_wal_repair": partial_wal_repair,
+        "gc_output": gc_output,
+        "post_gc_stats": post_gc_stats,
     }

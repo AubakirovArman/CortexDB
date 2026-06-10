@@ -1,5 +1,6 @@
 ---
 source: crates/cortex-server/src/tests/response_snapshot_tests.rs
+assertion_line: 257
 expression: resp
 ---
 {
@@ -48,6 +49,9 @@ expression: resp
         "source_trust_q16": 60000,
         "source_trust_category": "official",
         "source_trust_bonus": 10,
+        "source_freshness_q16": 65535,
+        "source_freshness_category": "current",
+        "source_freshness_bonus": 32767,
         "redundancy_penalty": 0
       },
       "source_ref": {
@@ -58,6 +62,33 @@ expression: resp
         "cell_range": null,
         "json_path": null,
         "confidence_q16": 65535
+      },
+      "provenance": {
+        "source_cell_id": 1,
+        "source_byte_start": 64,
+        "source_byte_end": 98,
+        "source_line_start": 3,
+        "source_line_end": 3,
+        "source_ref": {
+          "source_id": "report_q1.pdf",
+          "document_id": "doc-1",
+          "page": 3,
+          "row": null,
+          "cell_range": null,
+          "json_path": null,
+          "confidence_q16": 65535
+        }
+      },
+      "access_decision": {
+        "cell_id": 1,
+        "decision": "allowed",
+        "policy": "agent_view_readable_scope",
+        "reason": "cell scope was present in AgentView.readable_scopes before ContextPack packing",
+        "scope": "project:investments",
+        "scope_id": 1001,
+        "agent_id": 7,
+        "principal_id": "analyst-7",
+        "auth_role": "data"
       }
     }
   ],

@@ -132,6 +132,8 @@ pub enum VerifyConflict {
 pub struct VerifyEvidenceConflict {
     pub cell_id: u64,
     pub matched_terms: u32,
+    pub match_score_q16: u16,
+    pub match_kind: String,
     pub source_trust_q16: u16,
     pub source_trust_category: String,
     pub citation: Option<String>,
@@ -150,6 +152,8 @@ impl From<EvidenceResponse> for VerifyEvidenceConflict {
         Self {
             cell_id: value.cell_id,
             matched_terms: value.matched_terms,
+            match_score_q16: value.match_score_q16,
+            match_kind: value.match_kind,
             source_trust_q16: value.source_trust_q16,
             source_trust_category: value.source_trust_category,
             citation: value.citation,

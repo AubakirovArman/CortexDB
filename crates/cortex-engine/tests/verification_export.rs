@@ -1,7 +1,7 @@
 use cortex_core::CellId;
 use cortex_engine::{
     Magnitude, NumericValue, SourceTrustCategory, VerificationEvidence, VerificationGuard,
-    VerificationGuardCode, VerificationNumericConflict, VerificationReport,
+    VerificationGuardCode, VerificationMatchKind, VerificationNumericConflict, VerificationReport,
     VerificationReportExportFormat, VerificationStatus,
 };
 
@@ -10,9 +10,12 @@ fn verification_markdown_export_includes_table_evidence_guards_and_limitations()
     let report = VerificationReport {
         fact: "ABC Airport budget | approved".to_owned(),
         status: VerificationStatus::Mixed,
+        confidence_q16: 52_000,
         evidence: vec![VerificationEvidence {
             cell_id: CellId(1),
             matched_terms: 4,
+            match_score_q16: u16::MAX,
+            match_kind: VerificationMatchKind::ExactText,
             source_trust_q16: 60_000,
             source_trust_category: SourceTrustCategory::Official,
             citation: Some("ifc-disclosure".to_owned()),
@@ -20,6 +23,8 @@ fn verification_markdown_export_includes_table_evidence_guards_and_limitations()
         contradicting_evidence: vec![VerificationEvidence {
             cell_id: CellId(2),
             matched_terms: 4,
+            match_score_q16: 60_000,
+            match_kind: VerificationMatchKind::SemanticContradiction,
             source_trust_q16: 52_000,
             source_trust_category: SourceTrustCategory::High,
             citation: Some("internal-review".to_owned()),
@@ -39,14 +44,18 @@ fn verification_markdown_export_includes_table_evidence_guards_and_limitations()
     assert!(markdown.contains("| Field | Value |"));
     assert!(markdown.contains("| Fact | `ABC Airport budget \\| approved` |"));
     assert!(markdown.contains("| Status | `mixed_evidence` |"));
+    assert!(markdown.contains("| Confidence Q16 | `52000` |"));
     assert!(markdown.contains("## Supporting Evidence"));
-    assert!(markdown.contains("cell_id=`1` matched_terms=`4`"));
+    assert!(markdown.contains("cell_id=`1` matched_terms=`4` match_kind=`exact_text`"));
     assert!(markdown.contains("## Contradicting Evidence"));
-    assert!(markdown.contains("cell_id=`2` matched_terms=`4`"));
+    assert!(markdown.contains("cell_id=`2` matched_terms=`4` match_kind=`semantic_contradiction`"));
     assert!(markdown.contains("## Guards"));
     assert!(markdown.contains("code=`numeric_mismatch`"));
     assert!(markdown.contains("## Limitations"));
     assert!(markdown.contains("limited to evidence visible through the caller's AgentView"));
+
+    let audit = report.export(VerificationReportExportFormat::Audit);
+    assert!(audit.contains("confidence_q16=52000"));
 }
 
 fn numeric_conflict() -> VerificationNumericConflict {

@@ -69,6 +69,12 @@ metadata, status, provider/model ids, ContextPack cell count, citation count,
 and whether a request-body API key was present. They intentionally do not store
 the prompt body, ContextPack text, citation strings, or secret values.
 
+The response also includes an `grounding` report produced from the supplied
+ContextPack. It splits the generated answer into spans and reports whether each
+span is supported by packed context terms and citations. This guard is
+deterministic and intentionally flags unsupported system-added text as
+unsupported instead of trusting the model output.
+
 ## Prompt Visibility
 
 The runtime must not log full prompt bodies by default. Audit records may include

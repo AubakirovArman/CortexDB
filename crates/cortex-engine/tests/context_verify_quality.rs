@@ -163,6 +163,8 @@ fn assert_context_quality(db: &Database) {
                 citation_overhead_tokens: cortex_engine::context::DEFAULT_CITATION_OVERHEAD_TOKENS,
                 token_profile: cortex_engine::ContextTokenProfile::default(),
                 large_cell_policy: cortex_engine::ContextLargeCellPolicy::default(),
+                span_level_packing: false,
+                span_context_lines: 2,
             },
         )
         .unwrap();

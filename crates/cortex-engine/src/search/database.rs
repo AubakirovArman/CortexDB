@@ -1,3 +1,4 @@
+use std::cmp::Reverse;
 use std::collections::BTreeMap;
 
 use cortex_aql::AgentView;
@@ -15,7 +16,37 @@ use super::ann::{
 use super::hnsw::DistanceMetric;
 use super::persisted::{search_persisted_lexical, search_persisted_vectors};
 use super::vector::vector_from_payload;
-use super::{SearchIndexes, SearchMode, SearchQuery};
+use super::{
+    ScoredCandidate, SearchIndexes, SearchMode, SearchQuery, SearchRerankInput, SearchReranker,
+};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PersistedSearchCandidate {
+    candidate_id: u32,
+    score: u64,
+    lexical_score: u64,
+    vector_score: u64,
+}
+
+impl PersistedSearchCandidate {
+    fn from_lexical(candidate: ScoredCandidate) -> Self {
+        Self {
+            candidate_id: candidate.cell_id,
+            score: candidate.score,
+            lexical_score: candidate.score,
+            vector_score: 0,
+        }
+    }
+
+    fn from_vector(candidate: ScoredCandidate) -> Self {
+        Self {
+            candidate_id: candidate.cell_id,
+            score: candidate.score,
+            lexical_score: 0,
+            vector_score: candidate.score,
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SearchLimit(pub usize);
@@ -132,7 +163,7 @@ impl Database {
         {
             return Ok(None);
         }
-        let state = self.persisted_index_state()?;
+        let state = self.persisted_index_state_cached()?;
         let allowed = allowed_candidates(&state.bitmap, view);
         let mut ann_report = None;
         let ranked = match query.mode {
@@ -143,7 +174,10 @@ impl Database {
                 query.text,
                 &allowed,
                 query.limit,
-            ),
+            )
+            .into_iter()
+            .map(PersistedSearchCandidate::from_lexical)
+            .collect(),
             SearchMode::Vector => {
                 let Some(vector) = query.vector else {
                     return Ok(Some(DatabaseSearchOutcome {
@@ -249,6 +283,9 @@ impl Database {
                     ann_report = Some(outcome.report);
                     outcome.results
                 }
+                .into_iter()
+                .map(PersistedSearchCandidate::from_vector)
+                .collect()
             }
             SearchMode::VectorExact => {
                 let Some(vector) = query.vector else {
@@ -264,29 +301,59 @@ impl Database {
                     .map(|profile| distance_metric_from_manifest(profile.metric))
                     .unwrap_or_default();
                 search_persisted_vectors(&index.vectors, vector, &allowed, query.limit, &metric)
+                    .into_iter()
+                    .map(PersistedSearchCandidate::from_vector)
+                    .collect()
             }
-            SearchMode::Hybrid => return Ok(None),
+            SearchMode::Hybrid => {
+                if let Some(vector) = query.vector {
+                    let index = self.persisted_vector_index()?;
+                    let metric = self
+                        .manifest()
+                        .vector_profile
+                        .map(|profile| distance_metric_from_manifest(profile.metric))
+                        .unwrap_or_default();
+                    let depth = query.limit.max(32);
+                    let lexical = search_persisted_lexical(
+                        &state.lexical.terms,
+                        &state.lexical.doc_lengths,
+                        &state.lexical.term_frequencies,
+                        query.text,
+                        &allowed,
+                        depth,
+                    );
+                    let vector =
+                        search_persisted_vectors(&index.vectors, vector, &allowed, depth, &metric);
+                    fuse_persisted_rrf(lexical, vector, query.limit)
+                } else {
+                    search_persisted_lexical(
+                        &state.lexical.terms,
+                        &state.lexical.doc_lengths,
+                        &state.lexical.term_frequencies,
+                        query.text,
+                        &allowed,
+                        query.limit,
+                    )
+                    .into_iter()
+                    .map(PersistedSearchCandidate::from_lexical)
+                    .collect()
+                }
+            }
         };
         let txn = self.read_txn();
         Ok(Some(DatabaseSearchOutcome {
             results: ranked
                 .into_iter()
                 .filter_map(|candidate| {
-                    let cell_id = state.candidate_to_cell.get(&candidate.cell_id)?;
-                    self.get_cell(txn, *cell_id).map(|payload| {
-                        let (lexical_score, vector_score) = match query.mode {
-                            SearchMode::Keyword => (candidate.score, 0),
-                            SearchMode::Vector | SearchMode::VectorExact => (0, candidate.score),
-                            SearchMode::Hybrid => (0, 0),
-                        };
-                        DatabaseSearchResult {
+                    let cell_id = state.candidate_to_cell.get(&candidate.candidate_id)?;
+                    self.get_cell(txn, *cell_id)
+                        .map(|payload| DatabaseSearchResult {
                             cell_id: *cell_id,
                             score: candidate.score,
-                            lexical_score,
-                            vector_score,
+                            lexical_score: candidate.lexical_score,
+                            vector_score: candidate.vector_score,
                             payload,
-                        }
-                    })
+                        })
                 })
                 .collect(),
             ann_report,
@@ -299,6 +366,26 @@ impl Database {
         view: &AgentView,
     ) -> EngineResult<Vec<DatabaseSearchResult>> {
         Ok(self.search_cells_with_report(query, view)?.results)
+    }
+
+    pub fn search_cells_with_reranker(
+        &self,
+        query: SearchQuery<'_>,
+        view: &AgentView,
+        reranker: &dyn SearchReranker,
+    ) -> EngineResult<Vec<DatabaseSearchResult>> {
+        let mut results = self
+            .search_cells_with_report(
+                SearchQuery {
+                    limit: query.limit.max(32),
+                    ..query
+                },
+                view,
+            )?
+            .results;
+        rerank_database_results(&mut results, query, reranker);
+        results.truncate(query.limit);
+        Ok(results)
     }
 
     pub fn search_cells_with_report(
@@ -377,11 +464,68 @@ impl Database {
     }
 }
 
+fn rerank_database_results(
+    results: &mut [DatabaseSearchResult],
+    query: SearchQuery<'_>,
+    reranker: &dyn SearchReranker,
+) {
+    for result in results.iter_mut() {
+        result.score = reranker.rerank_score(SearchRerankInput {
+            query_text: query.text,
+            query_vector: query.vector,
+            candidate_id: result.cell_id.0,
+            lexical_score: result.lexical_score,
+            vector_score: result.vector_score,
+            base_score: result.score,
+            payload: Some(&result.payload),
+        });
+    }
+    results.sort_by_key(|result| (Reverse(result.score), result.cell_id.0));
+}
+
 fn distance_metric_from_manifest(value: u32) -> DistanceMetric {
     match value {
         1 => DistanceMetric::Cosine,
         2 => DistanceMetric::L2,
         _ => DistanceMetric::DotProduct,
+    }
+}
+
+fn fuse_persisted_rrf(
+    lexical: Vec<ScoredCandidate>,
+    vector: Vec<ScoredCandidate>,
+    limit: usize,
+) -> Vec<PersistedSearchCandidate> {
+    let mut results = BTreeMap::<u32, PersistedSearchCandidate>::new();
+    apply_persisted_rrf(&mut results, lexical, true);
+    apply_persisted_rrf(&mut results, vector, false);
+    let mut values = results.into_values().collect::<Vec<_>>();
+    values.sort_by_key(|candidate| (Reverse(candidate.score), candidate.candidate_id));
+    values.truncate(limit);
+    values
+}
+
+fn apply_persisted_rrf(
+    results: &mut BTreeMap<u32, PersistedSearchCandidate>,
+    ranked: Vec<ScoredCandidate>,
+    lexical: bool,
+) {
+    for (rank, candidate) in ranked.into_iter().enumerate() {
+        let rrf = 1_000_000 / (60 + rank as u64 + 1);
+        let result = results
+            .entry(candidate.cell_id)
+            .or_insert(PersistedSearchCandidate {
+                candidate_id: candidate.cell_id,
+                score: 0,
+                lexical_score: 0,
+                vector_score: 0,
+            });
+        result.score += rrf;
+        if lexical {
+            result.lexical_score = candidate.score;
+        } else {
+            result.vector_score = candidate.score;
+        }
     }
 }
 
