@@ -71,30 +71,13 @@ pub(crate) fn extract_project_metric_value(
 
 pub(crate) fn is_redundant(payload: &[u8], packed: &[ContextPackCell], threshold_q16: u16) -> bool {
     let (cur_proj, cur_metric, cur_val) = extract_project_metric_value(payload);
+    let current_vec = crate::search::vector::vector_from_payload(payload);
+    let current_terms = term_set(payload);
 
-    if let Some(current_vec) = crate::search::vector::vector_from_payload(payload) {
-        return packed.iter().any(|cell| {
-            let (cell_proj, cell_metric, cell_val) = extract_project_metric_value(&cell.payload);
-            if cur_proj.is_some()
-                && cur_proj == cell_proj
-                && cur_metric.is_some()
-                && cur_metric == cell_metric
-                && cur_val != cell_val
-            {
-                return false;
-            }
-            if let Some(cell_vec) = crate::search::vector::vector_from_payload(&cell.payload) {
-                cosine_similarity_q16(&current_vec, &cell_vec) >= threshold_q16
-            } else {
-                false
-            }
-        });
-    }
-
-    let current = term_set(payload);
-    if current.is_empty() {
+    if current_vec.is_none() && current_terms.is_empty() {
         return false;
     }
+
     packed.iter().any(|cell| {
         let (cell_proj, cell_metric, cell_val) = extract_project_metric_value(&cell.payload);
         if cur_proj.is_some()
@@ -105,7 +88,12 @@ pub(crate) fn is_redundant(payload: &[u8], packed: &[ContextPackCell], threshold
         {
             return false;
         }
-        weighted_jaccard_q16(&current, &term_set(&cell.payload)) >= threshold_q16
+        if let Some(current_vec) = current_vec.as_deref() {
+            if let Some(cell_vec) = crate::search::vector::vector_from_payload(&cell.payload) {
+                return cosine_similarity_q16(current_vec, &cell_vec) >= threshold_q16;
+            }
+        }
+        weighted_jaccard_q16(&current_terms, &term_set(&cell.payload)) >= threshold_q16
     })
 }
 

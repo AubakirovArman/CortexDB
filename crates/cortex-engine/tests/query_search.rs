@@ -35,6 +35,34 @@ WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#,
 }
 
 #[test]
+fn retrieve_aql_with_allowed_cells_restricts_candidate_pool() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nalpha budget".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\nbeta budget".to_vec(),
+    )
+    .unwrap();
+
+    let cells = db
+        .retrieve_aql_with_allowed_cells(
+            r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
+WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#,
+            &view(scope_id("project:investments")),
+            &BTreeSet::from([CellId(2)]),
+        )
+        .unwrap();
+
+    assert_eq!(cells.len(), 1);
+    assert_eq!(cells[0].cell_id, CellId(2));
+}
+
+#[test]
 fn explain_retrieve_aql_reports_plan_filters_counts_and_mode() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();

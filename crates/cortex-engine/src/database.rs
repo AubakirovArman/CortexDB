@@ -1,3 +1,5 @@
+use std::cmp::Reverse;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -22,7 +24,8 @@ use crate::options::{
 use crate::query::cache::AqlQueryCache;
 use crate::query::CellMetadata;
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
-use crate::search::HnswBuildConfig;
+use crate::search::{analyze_search_query, HnswBuildConfig};
+use crate::source_trust::SourceTrust;
 
 pub trait CandidateResolver: BitmapProvider {
     fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId>;
@@ -256,7 +259,7 @@ impl Database {
     ) -> EngineResult<Vec<RetrievedCell>> {
         let candidates = eval_bitmap_program(&plan.bitmap_program, provider)?;
         let txn = self.read_txn();
-        Ok(candidates
+        let cells = candidates
             .into_iter()
             .filter_map(|candidate| provider.cell_id_for_candidate(candidate))
             .filter_map(|cell_id| {
@@ -264,8 +267,20 @@ impl Database {
                     .map(|payload| RetrievedCell { cell_id, payload })
             })
             .filter(|cell| cell_meets_quality_thresholds(&cell.payload, &plan.quality_thresholds))
+            .collect::<Vec<_>>();
+        Ok(rank_retrieved_cells(cells, &plan.task, &plan.weights)
+            .into_iter()
             .take(plan.context_policy.candidate_limit as usize)
             .collect())
+    }
+
+    pub fn rerank_retrieved_cells_for_task(
+        &self,
+        cells: Vec<RetrievedCell>,
+        task: &str,
+        weights: &cortex_aql::RetrievalWeights,
+    ) -> Vec<RetrievedCell> {
+        rank_retrieved_cells(cells, task, weights)
     }
 
     pub fn current_seq(&self) -> CommitSeq {
@@ -427,10 +442,284 @@ fn unix_now_seconds() -> u64 {
     }
 }
 
+fn rank_retrieved_cells(
+    mut cells: Vec<RetrievedCell>,
+    task: &str,
+    weights: &cortex_aql::RetrievalWeights,
+) -> Vec<RetrievedCell> {
+    if cells.len() <= 1 {
+        return cells;
+    }
+
+    let lexical_scores = lexical_bm25_scores(&cells, task);
+    let query_vector = query_vector_from_task(task);
+    let recency_scores = recency_scores_q16(&cells);
+    let mut indexed = cells.drain(..).enumerate().collect::<Vec<_>>();
+
+    indexed.sort_by_key(|(index, cell)| {
+        let lexical = lexical_scores.get(*index).copied().unwrap_or(0);
+        let semantic = query_vector
+            .as_deref()
+            .map(|query| semantic_dot_score(&cell.payload, query))
+            .unwrap_or(0);
+        let recency = recency_scores.get(*index).copied().unwrap_or(0);
+        let metadata = CellMetadata::from_payload(&cell.payload);
+        let trust = u64::from(
+            SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class).q16,
+        );
+        let score = weighted_retrieval_score(lexical, semantic, recency, trust, weights);
+        (Reverse(score), *index)
+    });
+
+    indexed.into_iter().map(|(_, cell)| cell).collect()
+}
+
+fn lexical_bm25_scores(cells: &[RetrievedCell], query: &str) -> Vec<u64> {
+    let query_terms = analyze_search_query(query).weighted_terms;
+    if query_terms.is_empty() || cells.is_empty() {
+        return vec![0; cells.len()];
+    }
+
+    let docs = cells
+        .iter()
+        .map(|cell| CellMetadata::from_payload(&cell.payload).weighted_lexical_terms())
+        .collect::<Vec<_>>();
+    let doc_lengths = docs
+        .iter()
+        .map(|terms| terms.values().copied().sum::<u32>().max(1))
+        .collect::<Vec<_>>();
+    let avg_len_q10 = average_len_q10(&doc_lengths);
+    let doc_count = docs.len() as u64;
+    let mut doc_frequency = BTreeMap::<String, u64>::new();
+    for term in query_terms.keys() {
+        let count = docs
+            .iter()
+            .filter(|doc| doc.contains_key(term))
+            .count()
+            .try_into()
+            .unwrap_or(u64::MAX);
+        doc_frequency.insert(term.clone(), count);
+    }
+
+    docs.iter()
+        .enumerate()
+        .map(|(index, doc)| {
+            let len_q10 = u64::from(doc_lengths[index]) * 1024;
+            let norm_q10 = 256 + (768 * len_q10 / avg_len_q10.max(1));
+            query_terms
+                .iter()
+                .map(|(term, query_weight)| {
+                    let tf = u64::from(*doc.get(term).unwrap_or(&0));
+                    if tf == 0 {
+                        return 0;
+                    }
+                    let df = *doc_frequency.get(term).unwrap_or(&0);
+                    let idf_q10 = ((doc_count + 1) * 1024) / (df + 1);
+                    let denom_q10 = (tf * 1024) + norm_q10;
+                    let tf_norm_q10 = (tf * 2048 * 1024) / denom_q10.max(1);
+                    idf_q10
+                        .saturating_mul(tf_norm_q10)
+                        .saturating_mul(u64::from(*query_weight))
+                })
+                .sum()
+        })
+        .collect()
+}
+
+fn average_len_q10(doc_lengths: &[u32]) -> u64 {
+    if doc_lengths.is_empty() {
+        return 1024;
+    }
+    let total = doc_lengths.iter().copied().map(u64::from).sum::<u64>();
+    total * 1024 / doc_lengths.len() as u64
+}
+
+fn recency_scores_q16(cells: &[RetrievedCell]) -> Vec<u64> {
+    let created = cells
+        .iter()
+        .map(|cell| CellMetadata::from_payload(&cell.payload).created_unix_seconds)
+        .collect::<Vec<_>>();
+    let mut timestamps = created.iter().filter_map(|value| *value);
+    let Some(first) = timestamps.next() else {
+        return vec![0; cells.len()];
+    };
+    let (min, max) = timestamps.fold((first, first), |(min, max), value| {
+        (min.min(value), max.max(value))
+    });
+    if max <= min {
+        return created
+            .into_iter()
+            .map(|value| value.map(|_| u64::from(u16::MAX)).unwrap_or(0))
+            .collect();
+    }
+    let span = max - min;
+    created
+        .into_iter()
+        .map(|value| {
+            value
+                .map(|created| (created.saturating_sub(min).min(span) * u64::from(u16::MAX)) / span)
+                .unwrap_or(0)
+        })
+        .collect()
+}
+
+fn query_vector_from_task(task: &str) -> Option<Vec<i16>> {
+    task.lines().find_map(|line| {
+        let value = line
+            .trim()
+            .strip_prefix("query_vector=")
+            .or_else(|| line.trim().strip_prefix("vector="))?;
+        crate::search::parse_vector_literal(value).ok()
+    })
+}
+
+fn semantic_dot_score(payload: &[u8], query: &[i16]) -> u64 {
+    let Some(vector) = crate::search::vector::vector_from_payload(payload) else {
+        return 0;
+    };
+    if vector.len() != query.len() {
+        return 0;
+    }
+    vector
+        .iter()
+        .zip(query)
+        .map(|(left, right)| i64::from(*left) * i64::from(*right))
+        .sum::<i64>()
+        .max(0) as u64
+}
+
+fn weighted_retrieval_score(
+    lexical: u64,
+    semantic: u64,
+    recency_q16: u64,
+    trust_q16: u64,
+    weights: &cortex_aql::RetrievalWeights,
+) -> u64 {
+    weighted_component(lexical, weights.lexical_q16)
+        .saturating_add(weighted_component(semantic, weights.semantic_q16))
+        .saturating_add(weighted_component(recency_q16 * 1024, weights.recency_q16))
+        .saturating_add(weighted_component(trust_q16 * 1024, weights.trust_q16))
+}
+
+fn weighted_component(value: u64, weight_q16: u16) -> u64 {
+    value.saturating_mul(u64::from(weight_q16)) / u64::from(u16::MAX)
+}
+
 impl Drop for Database {
     fn drop(&mut self) {
         if !self.closed {
             let _ = self.writer.shutdown();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeSet;
+
+    use cortex_aql::{AgentId, AgentView, BrainId, RetrievalMode, Q16_ZERO};
+
+    use super::*;
+    use crate::query::scope_id;
+
+    fn test_view(modes: impl IntoIterator<Item = RetrievalMode>) -> AgentView {
+        AgentView {
+            agent_id: AgentId(1),
+            label: Some("database-test".to_owned()),
+            readable_brains: BTreeSet::from([BrainId(1)]),
+            readable_scopes: BTreeSet::from([scope_id("default")]),
+            writable_scopes: BTreeSet::new(),
+            allowed_modes: modes.into_iter().collect(),
+            allowed_memory_types: BTreeSet::new(),
+            max_context_budget_tokens: 4000,
+            default_context_budget_tokens: 1000,
+            max_candidate_limit: 100,
+            default_candidate_limit: 20,
+            min_required_confidence_q16: Q16_ZERO,
+            max_ttl_seconds: None,
+            allow_remember: false,
+            allow_verify_fact: false,
+            allow_audit_mode: true,
+            require_citations_by_default: false,
+            private_scope: None,
+        }
+    }
+
+    #[test]
+    fn retrieve_aql_orders_by_lexical_relevance_before_candidate_id() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(
+            CellId(1),
+            b"title=unrelated\n\ncommon body without the important term".to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(2),
+            b"title=needle migration policy\n\ncommon body".to_vec(),
+        )
+        .unwrap();
+
+        let view = test_view([RetrievalMode::Balanced]);
+        let results = db
+            .retrieve_aql(
+                r#"RETRIEVE CONTEXT FOR TASK "needle" IN BRAIN default LIMIT 2 CANDIDATES;"#,
+                &view,
+            )
+            .unwrap();
+
+        assert_eq!(results[0].cell_id, CellId(2));
+    }
+
+    #[test]
+    fn audit_mode_uses_trust_weight_in_retrieval_ordering() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(
+            CellId(1),
+            b"source_trust_q16=1000\n\nbudget policy".to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(2),
+            b"source_trust_q16=65000\n\nbudget policy".to_vec(),
+        )
+        .unwrap();
+
+        let view = test_view([RetrievalMode::Audit]);
+        let results = db
+            .retrieve_aql(
+                r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN default USING MODE audit LIMIT 2 CANDIDATES;"#,
+                &view,
+            )
+            .unwrap();
+
+        assert_eq!(results[0].cell_id, CellId(2));
+    }
+
+    #[test]
+    fn semantic_mode_uses_query_vector_for_retrieval_ordering() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(
+            CellId(1),
+            b"title=vector alpha\nvector=100,0\n\nshared context".to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(2),
+            b"title=vector beta\nvector=0,100\n\nshared context".to_vec(),
+        )
+        .unwrap();
+
+        let view = test_view([RetrievalMode::Semantic]);
+        let results = db
+            .retrieve_aql(
+                r#"RETRIEVE CONTEXT FOR TASK "query_vector=0,100" IN BRAIN default USING MODE semantic LIMIT 2 CANDIDATES;"#,
+                &view,
+            )
+            .unwrap();
+
+        assert_eq!(results[0].cell_id, CellId(2));
     }
 }

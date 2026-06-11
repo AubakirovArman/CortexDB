@@ -79,6 +79,33 @@ impl Database {
             _ => Err(EngineError::InvalidOperation),
         }
     }
+
+    pub fn retrieve_aql_with_allowed_cells(
+        &self,
+        aql: &str,
+        view: &AgentView,
+        allowed_cells: &BTreeSet<CellId>,
+    ) -> EngineResult<Vec<RetrievedCell>> {
+        let (cached, index) = self.bind_aql_cached(aql, view)?;
+        if cached.statement_kind != cache::AqlStatementKind::Retrieve {
+            return Err(EngineError::InvalidOperation);
+        }
+        let allowed_candidates = allowed_cells
+            .iter()
+            .filter_map(|cell_id| index.cell_to_candidate.get(cell_id).copied())
+            .collect::<BTreeSet<_>>();
+        match cached.bound_plan {
+            BoundPlan::Retrieve(plan) => {
+                let provider = EngineAqlProvider::new_with_allowed_candidates(
+                    index,
+                    view,
+                    &allowed_candidates,
+                );
+                self.retrieve_cells(&plan, &provider)
+            }
+            _ => Err(EngineError::InvalidOperation),
+        }
+    }
 }
 
 impl EngineAqlIndex {

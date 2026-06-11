@@ -27,6 +27,18 @@ impl EngineAqlProvider {
             agent_allowed,
         }
     }
+
+    pub fn new_with_allowed_candidates(
+        index: EngineAqlIndex,
+        view: &AgentView,
+        allowed_candidates: &BTreeSet<u32>,
+    ) -> Self {
+        let mut provider = Self::new(index, view);
+        provider
+            .agent_allowed
+            .retain(|candidate| allowed_candidates.contains(candidate));
+        provider
+    }
 }
 
 impl BitmapProvider for EngineAqlProvider {

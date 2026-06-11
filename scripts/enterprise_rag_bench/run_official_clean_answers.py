@@ -123,6 +123,7 @@ def main() -> int:
                 gemini_native=bool(profile["gemini_native"]),
                 gemini_thinking_budget=0,
                 openai_reasoning=bool(profile.get("openai_reasoning", False)),
+                strict_clean_input=True,
                 log_file=args.log_file,
                 status_file=args.status_file,
             )

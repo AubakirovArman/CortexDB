@@ -26,6 +26,7 @@ pub struct Args {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BenchmarkRetrievalMode {
     CachedLexical,
+    EngineAql,
     EngineKeyword,
     EngineHybrid,
 }
@@ -34,10 +35,11 @@ impl BenchmarkRetrievalMode {
     pub fn parse(value: &str) -> Result<Self, String> {
         match value {
             "cached-lexical" => Ok(Self::CachedLexical),
+            "engine-aql" => Ok(Self::EngineAql),
             "engine-keyword" => Ok(Self::EngineKeyword),
             "engine-hybrid" => Ok(Self::EngineHybrid),
             _ => Err(
-                "retrieval mode must be cached-lexical, engine-keyword, or engine-hybrid"
+                "retrieval mode must be cached-lexical, engine-aql, engine-keyword, or engine-hybrid"
                     .to_owned(),
             ),
         }
@@ -46,6 +48,7 @@ impl BenchmarkRetrievalMode {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::CachedLexical => "cached-lexical",
+            Self::EngineAql => "engine-aql",
             Self::EngineKeyword => "engine-keyword",
             Self::EngineHybrid => "engine-hybrid",
         }
@@ -237,7 +240,7 @@ fn usage() -> String {
         "--db-root <path> --output <jsonl> [--report <json>] ",
         "[--top-k <n>] [--batch-size <n>] [--max-documents <n>] ",
         "[--reset-db] [--skip-ingest] [--official-clean] ",
-        "[--retrieval-mode <cached-lexical|engine-keyword|engine-hybrid>] ",
+        "[--retrieval-mode <cached-lexical|engine-aql|engine-keyword|engine-hybrid>] ",
         "[--rerank <none|weighted>] ",
         "[--query-vectors <jsonl>] [--document-vectors <jsonl>] ",
         "[--log-file <path>] [--status-file <path>]"
@@ -310,6 +313,20 @@ mod tests {
             parsed.document_vectors.unwrap(),
             std::path::PathBuf::from("document_vectors.jsonl")
         );
+    }
+
+    #[test]
+    fn parses_engine_aql_mode() {
+        let mut args = required_args();
+        args.extend(["--retrieval-mode".to_owned(), "engine-aql".to_owned()]);
+
+        let parsed = Args::parse(args).expect("parse args");
+
+        assert_eq!(
+            parsed.retrieval_mode,
+            super::BenchmarkRetrievalMode::EngineAql
+        );
+        assert_eq!(parsed.retrieval_mode.as_str(), "engine-aql");
     }
 
     #[test]

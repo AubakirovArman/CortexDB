@@ -34,7 +34,7 @@ fn context_pack_output_is_repeatable_and_snapshotted() {
     assert_eq!(
         before,
         [
-            "cells=10:doc-a:solar+plant+budget;20:doc-b:solar+plant+budget;30:doc-c:solar+plant+budget",
+            "cells=20:doc-b:solar+plant+budget;10:doc-a:solar+plant+budget;30:doc-c:solar+plant+budget",
             "anomalies=",
         ]
         .join("\n")

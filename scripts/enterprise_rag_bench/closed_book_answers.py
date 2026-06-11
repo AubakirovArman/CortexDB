@@ -38,6 +38,20 @@ Question:
 
 Answer:"""
 
+# HyDE: write a plausible passage as if it were the document that answers the
+# question. Used as a dense-retrieval query (embedding of a hypothetical answer
+# is closer to the real source doc than the bare question). Never refuse.
+HYDE_PROMPT = """Write a short, specific passage (2-4 sentences) that would plausibly
+appear in an internal company document and that directly answers the question
+below. Invent concrete-sounding details (names, dates, metrics, paths) in the
+style of a real enterprise doc. Do NOT say you lack information — always write a
+passage.
+
+Question:
+{q}
+
+Passage:"""
+
 
 def normalize_base(url: str) -> str:
     base = url.strip().rstrip("/")
@@ -72,7 +86,9 @@ def main() -> int:
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--timeout-seconds", type=float, default=120.0)
     ap.add_argument("--progress-every", type=int, default=10)
+    ap.add_argument("--mode", choices=["closed-book", "hyde"], default="closed-book")
     args = ap.parse_args()
+    prompt_template = HYDE_PROMPT if args.mode == "hyde" else PROMPT
 
     load_env_file(args.env_file)
     url = os.environ.get("VLLM_URL", "").strip().rstrip("/")
@@ -90,12 +106,12 @@ def main() -> int:
     def work(q: dict) -> dict:
         qid = str(q["question_id"])
         try:
-            ans = chat(PROMPT.format(q=q.get("question", "")), url=url, key=key, model=model, timeout=args.timeout_seconds)
+            ans = chat(prompt_template.format(q=q.get("question", "")), url=url, key=key, model=model, timeout=args.timeout_seconds)
         except Exception as error:  # noqa: BLE001
             ans = "Insufficient information."
             print(f"  warn {qid}: {error}", flush=True)
         return {"answer": ans, "document_ids": [], "question": str(q.get("question", "")), "question_id": qid,
-                "model": model, "context_mode": "closed-book", "prompt_style": "closed-book-v1"}
+                "model": model, "context_mode": args.mode, "prompt_style": f"{args.mode}-v1"}
 
     rows: list[dict] = []
     with ThreadPoolExecutor(max_workers=args.workers) as ex:

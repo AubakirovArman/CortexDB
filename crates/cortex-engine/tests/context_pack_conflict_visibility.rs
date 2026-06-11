@@ -33,7 +33,7 @@ fn conflict_visibility_reports_conflicting_project_metric_values() {
 
     assert_eq!(pack.cells.len(), 2);
     assert_eq!(pack.visible_conflict_count, 1);
-    assert_eq!(pack.conflict_visibility_q16, u16::MAX);
+    assert_eq!(pack.conflict_visibility_q16, 32_767);
 }
 
 #[test]
@@ -58,7 +58,7 @@ fn conflict_visibility_counts_distinct_conflict_groups() {
     ]);
 
     assert_eq!(pack.visible_conflict_count, 2);
-    assert_eq!(pack.conflict_visibility_q16, u16::MAX);
+    assert_eq!(pack.conflict_visibility_q16, 43_690);
 }
 
 #[test]
@@ -78,11 +78,11 @@ fn conflict_visibility_is_exported_in_json_prompt_and_markdown() {
     let prompt = pack.export(ContextPackExportFormat::Prompt);
     let markdown = pack.export(ContextPackExportFormat::Markdown);
 
-    assert!(json.contains(r#""conflict_visibility_q16":65535"#));
+    assert!(json.contains(r#""conflict_visibility_q16":32767"#));
     assert!(json.contains(r#""visible_conflict_count":1"#));
     assert!(prompt
-        .contains("Conflict visibility: conflict_visibility_q16=65535 visible_conflict_count=1"));
-    assert!(markdown.contains("- conflict_visibility_q16: `65535`"));
+        .contains("Conflict visibility: conflict_visibility_q16=32767 visible_conflict_count=1"));
+    assert!(markdown.contains("- conflict_visibility_q16: `32767`"));
     assert!(markdown.contains("- visible_conflict_count: `1`"));
 }
 

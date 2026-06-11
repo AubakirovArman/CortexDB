@@ -221,7 +221,51 @@ fn truncate_bytes(payload: &[u8], len: usize, marker: &[u8]) -> Vec<u8> {
     while end > 0 && std::str::from_utf8(&payload[..end]).is_err() {
         end -= 1;
     }
+    end = semantic_boundary_end(payload, end);
     let mut out = payload[..end].to_vec();
     out.extend_from_slice(marker);
     out
+}
+
+fn semantic_boundary_end(payload: &[u8], end: usize) -> usize {
+    let Ok(text) = std::str::from_utf8(&payload[..end]) else {
+        return end;
+    };
+    let minimum_boundary = end / 2;
+    text.char_indices()
+        .rev()
+        .find_map(|(index, character)| {
+            let boundary = index + character.len_utf8();
+            if boundary < minimum_boundary {
+                return None;
+            }
+            if matches!(character, '.' | '!' | '?' | '\n') {
+                Some(boundary)
+            } else {
+                None
+            }
+        })
+        .unwrap_or(end)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::truncate_bytes;
+
+    #[test]
+    fn truncate_bytes_prefers_sentence_boundary_when_available() {
+        let payload = b"scope=docs\n\nFirst sentence has budget evidence. Second sentence should not be cut halfway.";
+        let marker = b"\n[context_pack_truncated=true]\n";
+        let cut_inside_second_sentence = payload
+            .windows(b"not be cut".len())
+            .position(|window| window == b"not be cut")
+            .expect("test payload should contain second sentence marker");
+
+        let output = truncate_bytes(payload, cut_inside_second_sentence, marker);
+        let text = String::from_utf8(output).expect("truncated payload should stay utf8");
+
+        assert!(text.contains("First sentence has budget evidence."));
+        assert!(!text.contains("Second sentence should"));
+        assert!(text.ends_with("[context_pack_truncated=true]\n"));
+    }
 }

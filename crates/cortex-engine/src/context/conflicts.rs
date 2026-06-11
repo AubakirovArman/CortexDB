@@ -36,12 +36,17 @@ pub(crate) fn measure(cells: &[ContextPackCell]) -> ContextConflictVisibility {
         .unwrap_or(u32::MAX);
     ContextConflictVisibility {
         visible_conflict_count,
-        conflict_visibility_q16: if visible_conflict_count > 0 {
-            u16::MAX
-        } else {
-            0
-        },
+        conflict_visibility_q16: conflict_intensity_q16(visible_conflict_count),
     }
+}
+
+fn conflict_intensity_q16(visible_conflict_count: u32) -> u16 {
+    if visible_conflict_count == 0 {
+        return 0;
+    }
+
+    let count = u64::from(visible_conflict_count);
+    ((count * u64::from(u16::MAX)) / (count + 1)) as u16
 }
 
 fn normalized(value: Option<String>) -> Option<String> {

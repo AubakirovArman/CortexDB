@@ -1,0 +1,12 @@
+{
+  "clean_question_count": 500,
+  "clean_questions": "target/enterprise-rag-bench/official-clean/500/gemini35-fresh3-official/questions.clean.jsonl",
+  "clean_retrieval": "target/enterprise-rag-bench/official-clean/500/gemini35-fresh3-official/retrieval.clean.jsonl",
+  "clean_retrieval_count": 500,
+  "errors": [],
+  "questions_file": "target/external-benchmarks/EnterpriseRAG-Bench/questions.jsonl",
+  "run_report": "target/enterprise-rag-bench/official-clean/500/gemini35-fresh3-official/run_report.json",
+  "schema_version": "cortexdb.enterprise_rag_bench.official_clean_gate.v1",
+  "split_name": "official_500_gemini35_fresh3",
+  "status": "passed"
+}

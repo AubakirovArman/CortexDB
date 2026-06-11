@@ -228,6 +228,61 @@ fn context_pack_applies_redundancy_before_budget_overload() {
 }
 
 #[test]
+fn context_pack_mmr_prefers_coverage_over_nearby_duplicate() {
+    let alpha = format!("alpha launch owner {}", "detail ".repeat(20));
+    let alpha_duplicate = format!("alpha launch adjacent {}", "detail ".repeat(20));
+    let gamma = format!("gamma schedule deadline {}", "detail ".repeat(20));
+    let pack = ContextPack::from_retrieved_with_options(
+        vec![
+            retrieved(1, &alpha),
+            retrieved(2, &alpha_duplicate),
+            retrieved(3, &gamma),
+        ],
+        96,
+        false,
+        &ContextPackOptions {
+            reduce_redundancy: true,
+            redundancy_threshold_q16: u16::MAX,
+            ..ContextPackOptions::default()
+        },
+        r#"RETRIEVE CONTEXT FOR TASK "alpha gamma" IN BRAIN investment_projects;"#,
+    );
+
+    assert_eq!(
+        pack.cells
+            .iter()
+            .map(|cell| cell.cell_id)
+            .collect::<Vec<_>>(),
+        vec![CellId(1), CellId(3)]
+    );
+}
+
+#[test]
+fn context_pack_redundancy_uses_lexical_fallback_when_only_one_cell_has_vector() {
+    let pack = ContextPack::from_retrieved_with_options(
+        vec![
+            retrieved(1, "alpha budget project"),
+            retrieved(2, "vector=1,2,3\n\nalpha budget project duplicate"),
+        ],
+        1_000,
+        false,
+        &ContextPackOptions {
+            reduce_redundancy: true,
+            redundancy_threshold_q16: 10,
+            ..ContextPackOptions::default()
+        },
+        r#"RETRIEVE CONTEXT FOR TASK "alpha budget" IN BRAIN investment_projects;"#,
+    );
+
+    assert_eq!(pack.cells.len(), 1);
+    assert_eq!(pack.cells[0].cell_id, CellId(1));
+    assert!(pack
+        .anomalies
+        .iter()
+        .any(|anomaly| anomaly.code == ContextPackAnomalyCode::RedundantCell));
+}
+
+#[test]
 fn context_pack_exports_stable_prompt_and_markdown() {
     let cells = vec![retrieved(
         7,
@@ -523,7 +578,7 @@ fn test_numeric_guard_coexistence() {
     // Both are kept together because they represent different values for same project+metric (Numeric Guard!)
     assert_eq!(pack.cells.len(), 2);
     assert_eq!(pack.visible_conflict_count, 1);
-    assert_eq!(pack.conflict_visibility_q16, u16::MAX);
+    assert_eq!(pack.conflict_visibility_q16, 32_767);
 }
 
 #[test]

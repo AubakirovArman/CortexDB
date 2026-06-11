@@ -1,0 +1,18 @@
+{
+  "answers_file": "target/enterprise-rag-bench/official-clean/500/gemini35-fresh3-official/answer-gemini/answers.jsonl",
+  "completion_tokens": 79152,
+  "context_mode": "question-window-digest-ranked",
+  "evidence_plan_file": null,
+  "evidence_table_file": null,
+  "include_evidence_plan": false,
+  "include_evidence_table": false,
+  "model": "gemini-3.5-flash",
+  "prompt_style": "official-clean-v1",
+  "prompt_tokens": 2836175,
+  "questions": 500,
+  "retrieval_file": "target/enterprise-rag-bench/official-clean/500/gemini35-fresh3-official/retrieval.clean.jsonl",
+  "schema_version": "cortexdb.enterprise_rag_bench.deepseek_answers_report.v1",
+  "thinking": "gemini_budget_0",
+  "total_tokens": 2915327,
+  "wall_elapsed_ms": 314835
+}

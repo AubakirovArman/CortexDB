@@ -15,6 +15,7 @@ from answer_chat import chat
 from answer_context import load_context
 from answer_artifacts import evidence_plan_for_row, evidence_table_for_row, maps_by_id
 from answer_prompts import build_prompt
+from official_clean import assert_clean_retrieval
 from progress_logging import ProgressLogger
 
 
@@ -72,6 +73,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     rows = read_jsonl(args.retrieval_file)
     if args.limit is not None:
         rows = rows[: args.limit]
+    if getattr(args, "strict_clean_input", False):
+        assert_clean_retrieval(rows)
     uuid_index = read_json(args.uuid_index)
     output_jsonl = args.output_root / "answers.jsonl"
     output_report = args.output_root / "answer_generation_report.json"

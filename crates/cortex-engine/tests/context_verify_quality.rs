@@ -57,7 +57,7 @@ WHERE space = project:investments AND status = "ready"
 LIMIT 4 CANDIDATES;"#,
             &agent_view(true, false),
             ContextPackOptions {
-                token_budget_tokens: 1_000,
+                token_budget_tokens: 2_000,
                 require_citations: true,
                 reduce_redundancy: false,
                 ..ContextPackOptions::default()

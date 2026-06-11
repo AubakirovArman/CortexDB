@@ -646,7 +646,8 @@ def run_summary(p: dict[str, Path]) -> dict[str, object]:
             "overall": judge_stats.get("combined_correctness_completeness_score"),
             "answer_correctness_pct": judge_stats.get("average_correctness_pct"),
             "answer_completeness_pct": judge_stats.get("average_completeness_pct"),
-            "document_recall_pct": judge_stats.get("average_document_recall_pct"),
+            "document_recall_pct": judge_stats.get("average_recall_pct")
+            or judge_stats.get("average_document_recall_pct"),
             "invalid_extra_docs": judge_stats.get("average_invalid_extra_docs"),
             "prompt_tokens": judge_report.get("prompt_tokens"),
             "completion_tokens": judge_report.get("completion_tokens"),
@@ -722,8 +723,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--retrieval-mode",
-        choices=["cached-lexical", "engine-keyword", "engine-hybrid"],
-        default="cached-lexical",
+        choices=["cached-lexical", "engine-aql", "engine-keyword", "engine-hybrid"],
+        default="engine-aql",
     )
     parser.add_argument(
         "--rerank",

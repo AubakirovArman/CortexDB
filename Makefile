@@ -16,7 +16,7 @@
 .PHONY: enterprise-rag-bench-balanced-100 enterprise-rag-bench-score-summary-routed-v16-50 enterprise-rag-bench-token-tracked-judge-routed-v16-50 enterprise-rag-bench-score-summary-routed-v17-50 enterprise-rag-bench-token-tracked-judge-routed-v17-50 enterprise-rag-bench-official-answer-metrics-routed-v17-evidence-first-judge-50 enterprise-rag-bench-current-best-balanced-50 enterprise-rag-bench-deepseek-answers-routed-v17-evidence-first-50 enterprise-rag-bench-calibration-50 enterprise-rag-bench-calibration-100-prep
 .PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-retrieval-quality-fixture-check enterprise-rag-bench-hybrid-parity-fixture-check enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-source-link-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-github-semantic-query-expansion enterprise-rag-bench-basic-google-drive-tail-rescue enterprise-rag-bench-confluence-completeness-selector enterprise-rag-bench-confluence-collection-selector enterprise-rag-bench-jira-project-source-selector enterprise-rag-bench-jira-completeness-source-selector enterprise-rag-bench-confluence-content-completeness-selector enterprise-rag-bench-confluence-project-source-selector enterprise-rag-bench-confluence-process-completeness-selector enterprise-rag-bench-slack-gmail-source-selector enterprise-rag-bench-hubspot-drive-anchor-selector enterprise-rag-bench-github-project-source-selector enterprise-rag-bench-sdk-auth-completeness-selector enterprise-rag-bench-confluence-postmortem-variant-selector enterprise-rag-bench-slack-basic-promotion-selector enterprise-rag-bench-jira-semantic-promotion-selector enterprise-rag-bench-confluence-semantic-variant-selector enterprise-rag-bench-linear-semantic-promotion-selector enterprise-rag-bench-jira-project-evidence-selector enterprise-rag-bench-gmail-project-evidence-selector enterprise-rag-bench-confluence-project-discovery-selector enterprise-rag-bench-gold-missing-bottlenecks enterprise-rag-bench-semantic-source-route-sweep enterprise-rag-bench-high-level-coverage
 .PHONY: enterprise-rag-bench-evidence-plan-check enterprise-rag-bench-evidence-table-check
-.PHONY: enterprise-rag-bench-official-clean-vectors-50 enterprise-rag-bench-official-clean-vectors-500 enterprise-rag-bench-official-clean-retrieval-smoke-50 enterprise-rag-bench-official-clean-retrieval-50-cached enterprise-rag-bench-official-clean-retrieval-50-engine-keyword enterprise-rag-bench-official-clean-retrieval-50-engine-keyword-rerank enterprise-rag-bench-official-clean-retrieval-50-engine-hybrid enterprise-rag-bench-official-clean-compare-retrieval enterprise-rag-bench-official-clean-heldout-smoke-check enterprise-rag-bench-official-clean-heldout-retrieval-quality-check enterprise-rag-bench-official-clean-status enterprise-rag-bench-official-clean-50 enterprise-rag-bench-official-clean-500 enterprise-rag-bench-official-clean-heldout enterprise-rag-bench-official-clean-50-gemma enterprise-rag-bench-official-clean-500-gemma enterprise-rag-bench-official-clean-heldout-gemma enterprise-rag-bench-official-clean-50-gemini enterprise-rag-bench-official-clean-500-gemini enterprise-rag-bench-official-clean-heldout-gemini enterprise-rag-bench-official-clean-50-deepseek enterprise-rag-bench-official-clean-500-deepseek enterprise-rag-bench-official-clean-heldout-deepseek
+.PHONY: enterprise-rag-bench-official-clean-vectors-50 enterprise-rag-bench-official-clean-vectors-500 enterprise-rag-bench-official-clean-retrieval-smoke-50 enterprise-rag-bench-official-clean-retrieval-50-cached enterprise-rag-bench-official-clean-retrieval-50-engine-aql enterprise-rag-bench-official-clean-retrieval-50-engine-keyword enterprise-rag-bench-official-clean-retrieval-50-engine-keyword-rerank enterprise-rag-bench-official-clean-retrieval-50-engine-hybrid enterprise-rag-bench-official-clean-compare-retrieval enterprise-rag-bench-official-clean-heldout-smoke-check enterprise-rag-bench-official-clean-heldout-retrieval-quality-check enterprise-rag-bench-official-clean-status enterprise-rag-bench-official-clean-50 enterprise-rag-bench-official-clean-500 enterprise-rag-bench-official-clean-heldout enterprise-rag-bench-official-clean-50-gemma enterprise-rag-bench-official-clean-500-gemma enterprise-rag-bench-official-clean-heldout-gemma enterprise-rag-bench-official-clean-50-gemini enterprise-rag-bench-official-clean-500-gemini enterprise-rag-bench-official-clean-heldout-gemini enterprise-rag-bench-official-clean-50-deepseek enterprise-rag-bench-official-clean-500-deepseek enterprise-rag-bench-official-clean-heldout-deepseek
 .PHONY: enterprise-rag-bench-query-understanding-lift-check
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check dashboard-operational-status-check context-pack-explorer-check verification-explorer-check retrieval-quality-explorer-check permissions-view-check audit-viewer-v2-check backup-restore-view-check incident-view-check dashboard-role-ui-check
@@ -754,8 +754,8 @@ ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_WORKERS ?= 2
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_TIMEOUT_SECONDS ?= 180
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROGRESS_EVERY ?= 10
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_PROGRESS_EVERY ?= 50000
-ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE ?= cached-lexical
-ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK ?= none
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE ?= engine-aql
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK ?= weighted
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS ?=
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS ?=
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS ?=
@@ -772,6 +772,7 @@ ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_CANDIDATE_RETRIEVAL ?= $(ENTERPRISE_RAG_BENC
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_COMPARISON_JSONL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/retrieval_comparison.jsonl
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_COMPARISON_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/retrieval_comparison.json
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_COMPARISON_MD ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/retrieval_comparison.md
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ORACLE_AUDIT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/oracle_usage_audit.json
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_GATE_LOG ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/2/heldout-smoke-check/official_clean_gate.log
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_GATE_STATUS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/2/heldout-smoke-check/official_clean_gate_status.json
 ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_GATE_LOG ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/100/epic17-heldout-retrieval/retrieval_quality_gate.log
@@ -1794,7 +1795,15 @@ enterprise-rag-bench-official-clean-retrieval-50-cached:
 	$(MAKE) enterprise-rag-bench-official-clean-50 \
 	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE=retrieval \
 	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL=cached-lexical \
-	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE=cached-lexical
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE=cached-lexical \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK=none
+
+enterprise-rag-bench-official-clean-retrieval-50-engine-aql:
+	$(MAKE) enterprise-rag-bench-official-clean-50 \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE=retrieval \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL=engine-aql \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE=engine-aql \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK=weighted
 
 enterprise-rag-bench-official-clean-retrieval-50-engine-keyword:
 	$(MAKE) enterprise-rag-bench-official-clean-50 \
@@ -1906,6 +1915,11 @@ enterprise-rag-bench-official-clean-heldout-smoke-check: enterprise-rag-bench-of
 	  --expected-questions-file "$(ENTERPRISE_RAG_BENCH_EXTRA_QUESTIONS)" \
 	  --log-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_GATE_LOG)" \
 	  --status-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_GATE_STATUS)"
+
+.PHONY: enterprise-rag-bench-official-clean-oracle-audit
+enterprise-rag-bench-official-clean-oracle-audit:
+	python3 scripts/enterprise_rag_bench/oracle_usage_audit.py \
+	  --report "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ORACLE_AUDIT)"
 
 enterprise-rag-bench-official-clean-heldout-retrieval-quality-check: enterprise-rag-bench-official-repo
 	python3 scripts/enterprise_rag_bench/retrieval_quality_gate.py \

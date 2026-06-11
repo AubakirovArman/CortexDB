@@ -34,6 +34,43 @@ The runner passes `--official-clean` into the Rust retrieval binary. In that
 mode the binary rejects any question row containing oracle fields, disables
 `source_types` filtering, and emits only clean retrieval rows.
 
+## No-Oracle Development Rule
+
+Use question categories, source labels, expected documents, gold answers, and
+answer facts only after a run, as diagnostics. They are not allowed to route,
+filter, rank, prompt, or abstain during inference.
+
+Allowed improvements:
+
+```text
+question-text intent inference
+query expansion derived from the user question
+hybrid retrieval over the full corpus
+document metadata that is part of the corpus
+span/evidence extraction from retrieved documents
+generic answer prompts that do not read gold labels
+```
+
+Forbidden improvements:
+
+```text
+routing by question_type from the dataset
+hard filtering by source_types from the dataset
+promoting expected_doc_ids or answer_facts
+special-casing question_id
+using gold_answer during retrieval, packing, or answer generation
+```
+
+Run the local oracle-boundary audit before treating a result as submission-safe:
+
+```bash
+make enterprise-rag-bench-official-clean-oracle-audit
+```
+
+The audit classifies old selector/routed scripts as `analysis_or_legacy`.
+Those scripts can be useful to understand failures, but they are not a valid
+submission path.
+
 ## Commands
 
 Run 50 questions:
@@ -156,16 +193,25 @@ Retrieval mode selection:
 
 ```bash
 make enterprise-rag-bench-official-clean-50-deepseek \
-  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE=engine-keyword
+  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE=engine-aql \
+  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK=weighted
 ```
 
 Supported modes:
 
 ```text
 cached-lexical  existing cached `.aci` BM25-like benchmark path
+engine-aql      product AQL RETRIEVE CONTEXT path with bitmap filter + core rerank
 engine-keyword  native Database::search_keyword path
 engine-hybrid   native Database::search_cells(SearchMode::Hybrid) path
 ```
+
+`engine-aql` is the default official-clean path. It constructs an AQL
+`RETRIEVE CONTEXT` statement from the clean question text, filters only on
+metadata already stored in CortexDB (`scope=bench:enterprise_rag`,
+`status=ready`, `type=document_block`), and returns `document_ids` from the
+retrieved cells. It does not read `question_type`, `source_types`,
+`expected_doc_ids`, `answer_facts`, or `gold_answer`.
 
 `engine-hybrid` requires query vectors generated from the clean question text,
 not from gold fields. It also needs document vectors at ingest time unless the
@@ -219,6 +265,7 @@ different retrieval modes side by side:
 
 ```bash
 make enterprise-rag-bench-official-clean-retrieval-50-cached
+make enterprise-rag-bench-official-clean-retrieval-50-engine-aql
 make enterprise-rag-bench-official-clean-retrieval-50-engine-keyword
 make enterprise-rag-bench-official-clean-retrieval-50-engine-hybrid
 ```

@@ -1,0 +1,694 @@
+{
+  "artifacts": [
+    {
+      "path": "target/enterprise-rag-bench/official-clean/500/gemini35-fresh3-official/questions.clean.jsonl",
+      "rows": 500,
+      "violation_count": 0,
+      "violations": []
+    },
+    {
+      "path": "target/enterprise-rag-bench/official-clean/500/gemini35-fresh3-official/retrieval.clean.jsonl",
+      "rows": 500,
+      "violation_count": 0,
+      "violations": []
+    },
+    {
+      "path": "target/enterprise-rag-bench/official-clean/500/gemini35-fresh3-official/answer-gemini/answers.jsonl",
+      "rows": 500,
+      "violation_count": 0,
+      "violations": []
+    }
+  ],
+  "errors": [],
+  "oracle_fields": [
+    "answer_facts",
+    "expected_doc_ids",
+    "gold_answer",
+    "question_type",
+    "source_types"
+  ],
+  "schema_version": "cortexdb.enterprise_rag_bench.oracle_usage_audit.v1",
+  "script_category_counts": {
+    "analysis_or_legacy": 49,
+    "guard": 2,
+    "judge_only": 2,
+    "no_oracle_reference": 38,
+    "official_clean": 5
+  },
+  "scripts": [
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/analyze_answer_errors.py",
+      "oracle_fields": [
+        "answer_facts",
+        "expected_doc_ids",
+        "gold_answer",
+        "question_type"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/analyze_full_recall.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/analyze_question_decomposition.py",
+      "oracle_fields": [
+        "answer_facts",
+        "expected_doc_ids",
+        "question_type"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/answer_artifacts.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/answer_chat.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/answer_context.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/answer_prompts.py",
+      "oracle_fields": [
+        "question_type"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/answer_prompts_coverage.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/answer_prompts_evidence_first.py",
+      "oracle_fields": [
+        "question_type"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/answer_prompts_exact.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/build_balanced_subset.py",
+      "oracle_fields": [
+        "question_type"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/build_doc_view_subset.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/build_doc_views.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "official_clean",
+      "file": "scripts/enterprise_rag_bench/build_official_clean_vectors.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/candidate_depth_audit.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/candidate_generator_gate.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/candidate_tail_rescue.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/chunk_embed.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/closed_book_answers.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/combine_routed_answer_outputs.py",
+      "oracle_fields": [
+        "question_type"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/combine_routed_retrieval_outputs.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/compare_retrieval_runs.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/confluence_collection_selector.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/confluence_completeness_selector.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/confluence_content_completeness_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/confluence_postmortem_variant_modes.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/confluence_postmortem_variant_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/confluence_process_completeness_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/confluence_project_discovery_modes.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/confluence_project_discovery_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/confluence_project_source_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/confluence_semantic_variant_modes.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/confluence_semantic_variant_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/context_windows.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/coverage_route_retrieval.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/dense_candidates.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/doc_view_rerank.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/embed_corpus.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/enterprise_neighbors.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/evaluate_evidence_pack.py",
+      "oracle_fields": [
+        "answer_facts",
+        "expected_doc_ids",
+        "question_type"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/evaluate_high_level_coverage.py",
+      "oracle_fields": [
+        "answer_facts",
+        "expected_doc_ids",
+        "question_type"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/evidence_digest.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/evidence_slot_plan_check.py",
+      "oracle_fields": [
+        "question_type"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/evidence_slot_planner.py",
+      "oracle_fields": [
+        "question_type"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/evidence_span_fallback.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/evidence_spans.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/evidence_table_check.py",
+      "oracle_fields": [
+        "question_type"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/evidence_table_extractor.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/filter_retrieval_to_questions.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/fuse_retrieval_outputs.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/github_project_modes.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/github_project_source_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/gmail_project_evidence_modes.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/gmail_project_evidence_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/gold_missing_bottleneck_report.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/gold_missing_reason_classifier.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/hubspot_drive_anchor_modes.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/hubspot_drive_anchor_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/hybrid_rerank_enterprise.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/hybrid_rerank_features.py",
+      "oracle_fields": [
+        "source_types"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/jira_completeness_source_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/jira_project_evidence_modes.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/jira_project_evidence_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/jira_project_source_selector.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/jira_semantic_promotion_modes.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/jira_semantic_promotion_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/linear_semantic_promotion_modes.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/linear_semantic_promotion_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/multi_index_candidate_generation.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "guard",
+      "file": "scripts/enterprise_rag_bench/official_clean.py",
+      "oracle_fields": [
+        "answer_facts",
+        "expected_doc_ids",
+        "gold_answer",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "official_clean",
+      "file": "scripts/enterprise_rag_bench/official_clean_gate.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/oracle_usage_audit.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/postprocess_retrieval_modes.py",
+      "oracle_fields": [
+        "question_type"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/preflight.py",
+      "oracle_fields": [
+        "answer_facts",
+        "expected_doc_ids",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "official_clean",
+      "file": "scripts/enterprise_rag_bench/prepare_official_clean_inputs.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/progress_logging.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/project_chain_rerank.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/question_decomposition.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/rerank_with_embeddings.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/retrieval_quality_gate.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type"
+      ]
+    },
+    {
+      "category": "judge_only",
+      "file": "scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py",
+      "oracle_fields": [
+        "answer_facts",
+        "expected_doc_ids",
+        "gold_answer",
+        "question_type"
+      ]
+    },
+    {
+      "category": "guard",
+      "file": "scripts/enterprise_rag_bench/run_deepseek_answers.py",
+      "oracle_fields": [
+        "question_type"
+      ]
+    },
+    {
+      "category": "official_clean",
+      "file": "scripts/enterprise_rag_bench/run_official_clean_answers.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "official_clean",
+      "file": "scripts/enterprise_rag_bench/run_official_clean_benchmark.py",
+      "oracle_fields": [
+        "answer_facts",
+        "expected_doc_ids",
+        "gold_answer",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "judge_only",
+      "file": "scripts/enterprise_rag_bench/run_official_clean_judge.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/run_official_clean_regression.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/sdk_auth_completeness_modes.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/sdk_auth_completeness_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/show_official_clean_status.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/slack_basic_promotion_modes.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/slack_basic_promotion_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/slack_gmail_source_selector.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/source_route_sweep.py",
+      "oracle_fields": [
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/summarize_local_calibration.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/summarize_score.py",
+      "oracle_fields": [
+        "question_type"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/type_topk_policy.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type"
+      ]
+    }
+  ],
+  "status": "passed"
+}

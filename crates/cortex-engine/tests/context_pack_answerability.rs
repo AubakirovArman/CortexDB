@@ -46,6 +46,23 @@ fn answerability_reports_missing_query_terms() {
 }
 
 #[test]
+fn answerability_allows_partial_context_above_default_threshold() {
+    let pack = pack_for_query(
+        vec![retrieved(
+            1,
+            "scope=project:investments\nstatus=ready\nalpha beta gamma evidence",
+        )],
+        r#"RETRIEVE CONTEXT FOR TASK "alpha beta gamma delta" IN BRAIN investment_projects;"#,
+    );
+
+    assert!(pack.answerability_q16 > cortex_engine::context::DEFAULT_ANSWERABILITY_THRESHOLD_Q16);
+    assert!(pack
+        .anomalies
+        .iter()
+        .all(|anomaly| anomaly.code != ContextPackAnomalyCode::InsufficientContext));
+}
+
+#[test]
 fn answerability_reports_empty_context() {
     let pack = pack_for_query(
         Vec::new(),

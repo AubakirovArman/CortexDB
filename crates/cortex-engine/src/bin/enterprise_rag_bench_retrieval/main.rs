@@ -7,10 +7,12 @@ use std::process::ExitCode;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use args::{Args, BenchmarkRetrievalMode};
-use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
+use cortex_aql::{
+    default_weights, AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO,
+};
 use cortex_core::CellId;
 use cortex_engine::search::{parse_vector_literal, SearchMode, SearchQuery, WeightedScoreReranker};
-use cortex_engine::{scope_id, Database};
+use cortex_engine::{scope_id, Database, RetrievedCell};
 use document::{build_payload, extract_document_content};
 use io::{read_json, read_jsonl, read_uuid_index, write_json, write_jsonl};
 use retrieval::BenchmarkRetrievalIndex;
@@ -191,8 +193,21 @@ fn run() -> Result<(), String> {
             );
             retrieve_cached_questions(&retrieval_index, &questions, &args, &logger)?
         }
+        BenchmarkRetrievalMode::EngineAql => {
+            logger.log("load cached lexical prefilter index for AQL retrieval");
+            let retrieval_index = BenchmarkRetrievalIndex::load(&db, &uuid_index)?;
+            retrieve_aql_questions(
+                &db,
+                &retrieval_index,
+                &uuid_index,
+                &questions,
+                &query_vectors,
+                &args,
+                &logger,
+            )?
+        }
         BenchmarkRetrievalMode::EngineKeyword | BenchmarkRetrievalMode::EngineHybrid => {
-            retrieve_engine_questions(&db, &questions, &query_vectors, &args, &logger)?
+            retrieve_search_questions(&db, &questions, &query_vectors, &args, &logger)?
         }
     };
     report_metrics.retrieval_duration_ms =
@@ -490,7 +505,78 @@ fn retrieve_cached_questions(
     Ok(rows)
 }
 
-fn retrieve_engine_questions(
+fn retrieve_aql_questions(
+    db: &Database,
+    retrieval_index: &BenchmarkRetrievalIndex,
+    uuid_index: &BTreeMap<String, String>,
+    questions: &[Value],
+    query_vectors: &BTreeMap<String, Vec<i16>>,
+    args: &Args,
+    logger: &RunLogger,
+) -> Result<Vec<Value>, String> {
+    let mut rows = Vec::with_capacity(questions.len());
+    let doc_to_cell = doc_id_to_cell_id(uuid_index)?;
+    for (index, question) in questions.iter().enumerate() {
+        let qid = required_str(question, "question_id", index)?;
+        let query = required_str(question, "question", index)?;
+        let vector = query_vectors.get(qid);
+        let cells = retrieval_index
+            .search_doc_ids(query, &[], args.top_k.max(64))
+            .iter()
+            .filter_map(|doc_id| doc_to_cell.get(doc_id).copied())
+            .filter_map(|cell_id| {
+                db.get_latest_cell(cell_id)
+                    .map(|payload| RetrievedCell { cell_id, payload })
+            })
+            .collect::<Vec<_>>();
+        let mode = if vector.is_some() {
+            RetrievalMode::Semantic
+        } else {
+            RetrievalMode::Balanced
+        };
+        let task = benchmark_task(query, vector);
+        let results = db
+            .rerank_retrieved_cells_for_task(cells, &task, &default_weights(mode))
+            .into_iter()
+            .take(args.top_k)
+            .collect::<Vec<_>>();
+        rows.push(retrieval_row(
+            qid,
+            query,
+            results.into_iter().map(|result| result.payload),
+        ));
+        if args.progress_every > 0
+            && ((index + 1).is_multiple_of(args.progress_every)
+                || questions.len() <= args.progress_every)
+        {
+            logger.log(&format!("retrieved {}/{}", index + 1, questions.len()));
+            logger.status(
+                "retrieve_questions",
+                "running",
+                "retrieve AQL question rows",
+                Some(index + 1),
+                Some(questions.len()),
+                &[("last_question_id", json!(qid))],
+            );
+        }
+    }
+    Ok(rows)
+}
+
+fn doc_id_to_cell_id(
+    uuid_index: &BTreeMap<String, String>,
+) -> Result<BTreeMap<String, CellId>, String> {
+    uuid_index
+        .keys()
+        .enumerate()
+        .map(|(index, doc_id)| {
+            let id = u64::try_from(index + 1).map_err(|_| "cell id overflow".to_owned())?;
+            Ok((doc_id.clone(), CellId(id)))
+        })
+        .collect()
+}
+
+fn retrieve_search_questions(
     db: &Database,
     questions: &[Value],
     query_vectors: &BTreeMap<String, Vec<i16>>,
@@ -511,7 +597,9 @@ fn retrieve_engine_questions(
                 })?;
                 (SearchMode::Hybrid, Some(vector.as_slice()))
             }
-            BenchmarkRetrievalMode::CachedLexical => unreachable!("cached mode handled separately"),
+            BenchmarkRetrievalMode::CachedLexical | BenchmarkRetrievalMode::EngineAql => {
+                unreachable!("cached and AQL modes handled separately")
+            }
         };
         let search_query = SearchQuery {
             text: query,
@@ -529,19 +617,11 @@ fn retrieve_engine_questions(
             db.search_cells(search_query, &view)
                 .map_err(|error| format!("engine {mode_label} search failed for {qid}: {error}"))?
         };
-        let mut seen = BTreeSet::new();
-        let document_ids = results
-            .into_iter()
-            .filter_map(|result| doc_id_from_payload(&result.payload))
-            .filter(|doc_id| seen.insert(doc_id.clone()))
-            .map(Value::String)
-            .collect::<Vec<_>>();
-        rows.push(json!({
-            "question_id": qid,
-            "question": query,
-            "answer": "",
-            "document_ids": document_ids,
-        }));
+        rows.push(retrieval_row(
+            qid,
+            query,
+            results.into_iter().map(|result| result.payload),
+        ));
         if args.progress_every > 0
             && ((index + 1).is_multiple_of(args.progress_every)
                 || questions.len() <= args.progress_every)
@@ -558,6 +638,74 @@ fn retrieve_engine_questions(
         }
     }
     Ok(rows)
+}
+
+fn retrieval_row(qid: &str, query: &str, payloads: impl IntoIterator<Item = Vec<u8>>) -> Value {
+    let mut seen = BTreeSet::new();
+    let document_ids = payloads
+        .into_iter()
+        .filter_map(|payload| doc_id_from_payload(&payload))
+        .filter(|doc_id| seen.insert(doc_id.clone()))
+        .map(Value::String)
+        .collect::<Vec<_>>();
+    json!({
+        "question_id": qid,
+        "question": query,
+        "answer": "",
+        "document_ids": document_ids,
+    })
+}
+
+#[cfg(test)]
+fn build_benchmark_aql(query: &str, query_vector: Option<&Vec<i16>>, limit: usize) -> String {
+    let task = benchmark_task(query, query_vector);
+    let mode = if let Some(vector) = query_vector {
+        let _ = vector;
+        "semantic"
+    } else {
+        "balanced"
+    };
+    format!(
+        "RETRIEVE CONTEXT FOR TASK {} IN BRAIN enterprise_rag USING MODE {mode} WHERE space = bench:enterprise_rag AND status = \"ready\" AND type = \"document_block\" LIMIT {} CANDIDATES;",
+        quote_aql_string(&task),
+        limit.max(1)
+    )
+}
+
+fn benchmark_task(query: &str, query_vector: Option<&Vec<i16>>) -> String {
+    let mut task = query.to_owned();
+    if let Some(vector) = query_vector {
+        task.push('\n');
+        task.push_str("query_vector=");
+        task.push_str(&vector_literal(vector));
+    }
+    task
+}
+
+fn vector_literal(vector: &[i16]) -> String {
+    vector
+        .iter()
+        .map(i16::to_string)
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+#[cfg(test)]
+fn quote_aql_string(value: &str) -> String {
+    let mut quoted = String::with_capacity(value.len() + 2);
+    quoted.push('"');
+    for ch in value.chars() {
+        match ch {
+            '\\' => quoted.push_str("\\\\"),
+            '"' => quoted.push_str("\\\""),
+            '\n' => quoted.push_str("\\n"),
+            '\r' => quoted.push_str("\\r"),
+            '\t' => quoted.push_str("\\t"),
+            ch => quoted.push(ch),
+        }
+    }
+    quoted.push('"');
+    quoted
 }
 
 fn report_payload(
@@ -609,7 +757,7 @@ fn report_payload(
         "by_question_type": by_type,
         "output": args.output,
         "db_root": args.db_root,
-        "runner": "cortex-engine-keyword-source-aware-retrieval",
+        "runner": "cortex-engine-official-clean-retrieval",
     })
 }
 
@@ -732,7 +880,7 @@ fn bench_view() -> AgentView {
         readable_brains: BTreeSet::from([BrainId(1)]),
         readable_scopes: BTreeSet::from([scope_id("bench:enterprise_rag")]),
         writable_scopes: BTreeSet::new(),
-        allowed_modes: BTreeSet::from([RetrievalMode::Balanced]),
+        allowed_modes: BTreeSet::from([RetrievalMode::Balanced, RetrievalMode::Semantic]),
         allowed_memory_types: BTreeSet::from([MemoryType::Decision]),
         max_context_budget_tokens: 1_000,
         default_context_budget_tokens: 400,
@@ -760,14 +908,17 @@ fn source_types(row: &Value) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
 
+    use cortex_core::CellId;
     use serde_json::json;
 
     use super::{
-        doc_id_from_payload, load_id_vectors, parse_query_vector, parse_status_kib,
-        reject_oracle_fields, throughput_per_sec,
+        build_benchmark_aql, doc_id_from_payload, doc_id_to_cell_id, load_id_vectors,
+        parse_query_vector, parse_status_kib, quote_aql_string, reject_oracle_fields,
+        throughput_per_sec,
     };
 
     #[test]
@@ -831,6 +982,52 @@ mod tests {
         assert_eq!(
             doc_id_from_payload(b"scope=bench:enterprise_rag\ndoc_id=abc-123\n\nbody"),
             Some("abc-123".to_owned())
+        );
+    }
+
+    #[test]
+    fn doc_id_to_cell_id_uses_ingest_order() {
+        let uuid_index = BTreeMap::from([
+            ("doc-a".to_owned(), "slack/a.json".to_owned()),
+            ("doc-b".to_owned(), "gmail/b.json".to_owned()),
+        ]);
+
+        let mapped = doc_id_to_cell_id(&uuid_index).expect("mapping");
+
+        assert_eq!(mapped.get("doc-a"), Some(&CellId(1)));
+        assert_eq!(mapped.get("doc-b"), Some(&CellId(2)));
+    }
+
+    #[test]
+    fn benchmark_aql_uses_question_text_and_clean_filters() {
+        let aql = build_benchmark_aql("What did \"Apollo\" ship?", None, 10);
+
+        assert!(aql.contains("RETRIEVE CONTEXT FOR TASK"));
+        assert!(aql.contains("\\\"Apollo\\\""));
+        assert!(aql.contains("USING MODE balanced"));
+        assert!(aql.contains("space = bench:enterprise_rag"));
+        assert!(aql.contains("status = \"ready\""));
+        assert!(aql.contains("type = \"document_block\""));
+        assert!(aql.contains("LIMIT 10 CANDIDATES"));
+        assert!(!aql.contains("question_type"));
+        assert!(!aql.contains("source_types"));
+        assert!(!aql.contains("expected_doc_ids"));
+    }
+
+    #[test]
+    fn benchmark_aql_can_carry_query_vector_without_gold_fields() {
+        let aql = build_benchmark_aql("semantic lookup", Some(&vec![1, -2, 3]), 5);
+
+        assert!(aql.contains("USING MODE semantic"));
+        assert!(aql.contains("query_vector=1,-2,3"));
+        assert!(aql.contains("LIMIT 5 CANDIDATES"));
+    }
+
+    #[test]
+    fn quote_aql_string_escapes_control_characters() {
+        assert_eq!(
+            quote_aql_string("a \"b\"\nnext\\tail"),
+            r#""a \"b\"\nnext\\tail""#
         );
     }
 

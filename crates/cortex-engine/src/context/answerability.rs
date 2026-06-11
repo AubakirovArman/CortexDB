@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use crate::context::{ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell};
 use crate::search::tokenize;
 
-pub const DEFAULT_ANSWERABILITY_THRESHOLD_Q16: u16 = u16::MAX;
+pub const DEFAULT_ANSWERABILITY_THRESHOLD_Q16: u16 = 45_000;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct ContextAnswerability {
