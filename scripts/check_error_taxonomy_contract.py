@@ -58,7 +58,9 @@ def taxonomy_rows() -> dict[str, int]:
 
 
 def server_codes() -> set[str]:
-    return set(re.findall(r'=>\s*"([a-z_]+)"', read("crates/cortex-server/src/responses.rs")))
+    return set(
+        re.findall(r'=>\s*"([a-z_]+)"', read("crates/cortex-server/src/responses/errors.rs"))
+    )
 
 
 def sdk_test_codes() -> set[str]:

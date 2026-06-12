@@ -3860,7 +3860,42 @@
     "crates/cortex-server/src/search.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 661,
+      "lines": 8,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/search/explain.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 216,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/search/handlers.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 166,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/search/params.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 157,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/search/rerank.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 53,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/search/response.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 102,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -4987,7 +5022,7 @@
     "scripts/check_error_taxonomy_contract.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 145,
+      "lines": 147,
       "soft_limit": 300,
       "warning_limit": 600
     },
