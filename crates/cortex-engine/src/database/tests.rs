@@ -4,6 +4,8 @@ use std::time::Instant;
 use cortex_aql::{
     AgentId, AgentView, BoundPlan, BrainId, MemoryType, QualityThresholds, RetrievalMode, Q16_ZERO,
 };
+use cortex_core::memtable::CellVersion;
+use cortex_core::{CellId, CommitSeq};
 
 use super::*;
 use crate::query::{scope_id, EngineAqlProvider};

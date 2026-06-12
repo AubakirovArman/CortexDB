@@ -1305,16 +1305,44 @@
     "crates/cortex-engine/src/database.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 559,
+      "lines": 14,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/database/open.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 119,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/database/read.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 210,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-engine/src/database/tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 433,
+      "lines": 435,
       "soft_limit": 600,
       "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/database/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 117,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/database/write.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 139,
+      "soft_limit": 300,
+      "warning_limit": 600
     },
     "crates/cortex-engine/src/database_files.rs": {
       "hard_limit": 1000,

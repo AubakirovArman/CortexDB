@@ -1,0 +1,210 @@
+use std::path::Path;
+use std::sync::Arc;
+
+#[cfg(test)]
+use cortex_aql::eval_bitmap_program;
+use cortex_aql::BoundRetrievePlan;
+use cortex_core::memtable::{CellVersion, ReadTxn};
+use cortex_core::{CellDescriptor, CellId, CommitSeq};
+use cortex_storage::manifest::StorageManifest;
+
+use super::{CandidateResolver, Database, PinnedReadTxn, RetrievedCell};
+use crate::error::EngineResult;
+use crate::exec::{execute_retrieve, RetrieveExecutionReport};
+#[cfg(test)]
+use crate::retrieval_quality::cell_version_meets_quality_thresholds;
+use crate::retrieval_rank::rank_retrieved_cells;
+#[cfg(test)]
+use crate::retrieval_rank::{expand_parent_context, suppress_duplicate_content};
+
+impl Database {
+    pub fn read_txn(&self) -> ReadTxn {
+        ReadTxn {
+            read_seq: self.current_seq,
+        }
+    }
+
+    /// Pin a read transaction so that GC does not remove versions visible to
+    /// this snapshot until the returned handle is dropped.
+    pub fn pin_read_txn(&self) -> PinnedReadTxn {
+        let read_txn = self.read_txn();
+        let mut pins = self
+            .active_read_pins
+            .lock()
+            .expect("read pin lock poisoned");
+        *pins.entry(read_txn.read_seq).or_insert(0) += 1;
+        PinnedReadTxn {
+            read_txn,
+            registry: Arc::clone(&self.active_read_pins),
+        }
+    }
+
+    /// The oldest snapshot that must be preserved. GC may remove versions
+    /// older than this sequence.
+    pub fn gc_horizon(&self) -> CommitSeq {
+        let pins = self
+            .active_read_pins
+            .lock()
+            .expect("read pin lock poisoned");
+        pins.keys().next().copied().unwrap_or(self.current_seq)
+    }
+
+    pub fn get_cell(&self, txn: ReadTxn, cell_id: CellId) -> Option<Vec<u8>> {
+        self.memtable
+            .read(txn, cell_id)
+            .map(|version| version.payload.clone())
+    }
+
+    /// Read the latest visible payload for a cell.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use cortex_engine::Database;
+    /// # use cortex_core::CellId;
+    /// # let dir = tempfile::tempdir().unwrap();
+    /// # let mut db = Database::open(dir.path()).unwrap();
+    /// db.put_cell(CellId(1), b"hello world".to_vec()).unwrap();
+    /// let payload = db.get_latest_cell(CellId(1)).unwrap();
+    /// assert_eq!(payload, b"hello world");
+    /// ```
+    pub fn get_latest_cell(&self, cell_id: CellId) -> Option<Vec<u8>> {
+        self.get_cell(self.read_txn(), cell_id)
+    }
+
+    pub fn get_latest_cell_with_descriptor(
+        &self,
+        cell_id: CellId,
+    ) -> Option<(Vec<u8>, CellDescriptor)> {
+        self.memtable
+            .read(self.read_txn(), cell_id)
+            .map(|version| (version.payload.clone(), version.descriptor.clone()))
+    }
+
+    pub fn retrieve_cells<P: CandidateResolver>(
+        &self,
+        plan: &BoundRetrievePlan,
+        provider: &P,
+    ) -> EngineResult<Vec<RetrievedCell>> {
+        self.retrieve_cells_with_execution_trace(plan, provider)
+            .map(|report| report.cells)
+    }
+
+    pub(crate) fn retrieve_cells_with_execution_trace<P: CandidateResolver>(
+        &self,
+        plan: &BoundRetrievePlan,
+        provider: &P,
+    ) -> EngineResult<RetrieveExecutionReport> {
+        execute_retrieve(self, plan, provider)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn retrieve_cells_direct<P: CandidateResolver>(
+        &self,
+        plan: &BoundRetrievePlan,
+        provider: &P,
+    ) -> EngineResult<Vec<RetrievedCell>> {
+        let candidates = eval_bitmap_program(&plan.bitmap_program, provider)?;
+        let txn = self.read_txn();
+        let cells = candidates
+            .into_iter()
+            .filter_map(|candidate| provider.cell_id_for_candidate(candidate))
+            .filter_map(|cell_id| {
+                self.memtable
+                    .read(txn, cell_id)
+                    .filter(|version| {
+                        cell_version_meets_quality_thresholds(version, &plan.quality_thresholds)
+                    })
+                    .map(RetrievedCell::from_version)
+            })
+            .collect::<Vec<_>>();
+        let ranked =
+            suppress_duplicate_content(rank_retrieved_cells(cells, &plan.task, &plan.weights));
+        Ok(expand_parent_context(ranked)
+            .into_iter()
+            .take(plan.context_policy.candidate_limit as usize)
+            .collect())
+    }
+
+    pub fn rerank_retrieved_cells_for_task(
+        &self,
+        cells: Vec<RetrievedCell>,
+        task: &str,
+        weights: &cortex_aql::RetrievalWeights,
+    ) -> Vec<RetrievedCell> {
+        rank_retrieved_cells(cells, task, weights)
+    }
+
+    pub fn current_seq(&self) -> CommitSeq {
+        self.current_seq
+    }
+
+    pub fn root_path(&self) -> &Path {
+        &self.root_path
+    }
+
+    pub fn enterprise_system_check(&self) -> EngineResult<bool> {
+        let report = self.validate_storage_report();
+        if !report.manifest_ok || !report.wal_ok {
+            return Ok(false);
+        }
+        Ok(true)
+    }
+
+    pub fn wal_path(&self) -> &Path {
+        &self.wal_path
+    }
+
+    pub fn manifest(&self) -> &StorageManifest {
+        &self.manifest
+    }
+
+    pub fn hnsw_no_fallback_rollout_policy(
+        &self,
+    ) -> Option<crate::search::HnswNoFallbackRolloutPolicy> {
+        self.manifest
+            .hnsw_no_fallback_profile
+            .map(crate::search::HnswNoFallbackRolloutPolicy::from_manifest)
+    }
+
+    pub fn set_hnsw_no_fallback_rollout_policy(
+        &mut self,
+        policy: crate::search::HnswNoFallbackRolloutPolicy,
+    ) -> EngineResult<()> {
+        let mut manifest = self.manifest.clone();
+        manifest.generation += 1;
+        manifest.hnsw_no_fallback_profile = Some(policy.to_manifest());
+        manifest.store(&self.manifest_path)?;
+        self.manifest = manifest;
+        Ok(())
+    }
+
+    pub fn clear_hnsw_no_fallback_rollout_policy(&mut self) -> EngineResult<()> {
+        let mut manifest = self.manifest.clone();
+        manifest.generation += 1;
+        manifest.hnsw_no_fallback_profile = None;
+        manifest.store(&self.manifest_path)?;
+        self.manifest = manifest;
+        Ok(())
+    }
+
+    /// Gracefully shut down the database, flushing WAL and releasing the lock.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use cortex_engine::Database;
+    /// # let dir = tempfile::tempdir().unwrap();
+    /// # let db = Database::open(dir.path()).unwrap();
+    /// db.close().unwrap();
+    /// ```
+    pub fn close(mut self) -> EngineResult<()> {
+        self.writer.shutdown()?;
+        self.closed = true;
+        Ok(())
+    }
+
+    pub(crate) fn snapshot_versions(&self) -> Vec<CellVersion> {
+        self.memtable.visible_cells(self.read_txn())
+    }
+}
