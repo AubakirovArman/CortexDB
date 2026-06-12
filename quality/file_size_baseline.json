@@ -6174,10 +6174,52 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "sdk/python/_cortexdb_client/__init__.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 69,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/python/_cortexdb_client/aql.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 106,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/python/_cortexdb_client/client.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 308,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/python/_cortexdb_client/errors.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 34,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/python/_cortexdb_client/grounding.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 197,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/python/_cortexdb_client/models.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 540,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "sdk/python/cortexdb_client.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 1135,
+      "lines": 73,
       "soft_limit": 300,
       "warning_limit": 600
     },
