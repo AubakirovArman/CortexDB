@@ -507,7 +507,42 @@
     "crates/cortex-core/src/cell.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 521,
+      "lines": 10,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-core/src/cell/descriptor.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 183,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-core/src/cell/metadata.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 98,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-core/src/cell/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 87,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-core/src/cell/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 81,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-core/src/cell/wire.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 75,
       "soft_limit": 300,
       "warning_limit": 600
     },
