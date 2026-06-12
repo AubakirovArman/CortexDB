@@ -1,5 +1,5 @@
 use cortex_aql::{AgentId, AgentView};
-use cortex_core::CellId;
+use cortex_core::{CellDescriptor, CellId};
 use cortex_engine::ClusterConfig;
 use cortex_engine::{
     Database, IngestedCell, IngestionBackpressureRequest, IngestionJobId, IngestionProgressTracker,
@@ -158,7 +158,8 @@ pub(crate) fn route_database_with_auth(
         }
         ("POST", "/put") | ("POST", "/v1/cell") => {
             let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
-            authz::require_payload_write(authenticated_view.as_ref(), body)?;
+            let descriptor = CellDescriptor::from_payload_lossy(body);
+            authz::require_descriptor_write(authenticated_view.as_ref(), &descriptor)?;
             let seq = db.put_cell(cell_id, body.to_vec())?;
             let response = PutCellResponse {
                 seq: seq.0,
