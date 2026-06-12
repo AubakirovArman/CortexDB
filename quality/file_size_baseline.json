@@ -2236,7 +2236,63 @@
     "crates/cortex-engine/tests/database_search.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 1333,
+      "lines": 16,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/database_search/acl.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 117,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/database_search/graph_context.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 67,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/database_search/helpers.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 300,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/database_search/lexical_index.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 182,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/database_search/persistence.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 178,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/database_search/query_expansion.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 136,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/database_search/rerank.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 281,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/database_search/view_vectors.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 84,
       "soft_limit": 600,
       "warning_limit": 1200
     },
