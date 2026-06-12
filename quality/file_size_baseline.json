@@ -3846,7 +3846,42 @@
     "crates/cortex-server/src/tests/security_tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 749,
+      "lines": 5,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/security_tests/audit.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 128,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/security_tests/auth.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 209,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/security_tests/helpers.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 103,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/security_tests/http_controls.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 144,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/security_tests/tenancy.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 202,
       "soft_limit": 600,
       "warning_limit": 1200
     },
