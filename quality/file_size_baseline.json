@@ -1536,7 +1536,49 @@
     "crates/cortex-engine/src/query/metadata.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 681,
+      "lines": 15,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/metadata/fields.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 33,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/metadata/ids.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 43,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/metadata/lexical.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 73,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/metadata/parser.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 366,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/metadata/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 126,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/query/metadata/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 56,
       "soft_limit": 300,
       "warning_limit": 600
     },
