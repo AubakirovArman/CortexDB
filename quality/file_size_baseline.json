@@ -1067,7 +1067,7 @@
     "crates/cortex-engine/src/checkpoint.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 613,
+      "lines": 21,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1085,6 +1085,13 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-engine/src/checkpoint/database.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 234,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-engine/src/checkpoint/hnsw.rs": {
       "hard_limit": 1000,
       "kind": "source",
@@ -1099,6 +1106,20 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-engine/src/checkpoint/indexes.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 146,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/checkpoint/load.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 53,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-engine/src/checkpoint/manifest_safety.rs": {
       "hard_limit": 1000,
       "kind": "source",
@@ -1107,6 +1128,27 @@
       "warning_limit": 600
     },
     "crates/cortex-engine/src/checkpoint/paths.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 29,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/checkpoint/profiles.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 46,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/checkpoint/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 129,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/checkpoint/types.rs": {
       "hard_limit": 1000,
       "kind": "source",
       "lines": 29,
