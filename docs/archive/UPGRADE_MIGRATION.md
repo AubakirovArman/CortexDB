@@ -31,7 +31,7 @@ production Raft migration support.
 | HNSW graph `.ach` | `ACH0` | Breaking changes require a new graph magic and migration note. |
 | Manifest `.acm` | `ACM0` | Breaking changes require a new manifest magic and migration note. |
 
-The detailed binary layouts live in [`STORAGE_FORMATS.md`](STORAGE_FORMATS.md).
+The detailed binary layouts live in [`STORAGE_FORMATS.md`](../STORAGE_FORMATS.md).
 The frozen machine-readable storage contract lives in
 `fixtures/storage/storage_format_freeze_v1.json` and is checked by:
 

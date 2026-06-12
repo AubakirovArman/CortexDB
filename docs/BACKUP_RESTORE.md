@@ -239,7 +239,7 @@ passphrase archive format for workflow validation; it is not a KMS-backed,
 externally audited, or compliance-certified encryption system. KMS-backed
 envelope encryption, remote object restore, and compliance-grade custody remain
 future work documented in
-[`ENCRYPTED_BACKUPS_DESIGN.md`](ENCRYPTED_BACKUPS_DESIGN.md).
+[`ENCRYPTED_BACKUPS_DESIGN.md`](archive/ENCRYPTED_BACKUPS_DESIGN.md).
 
 Passphrase rotation is also MVP-scoped: create a fresh archive with the new
 passphrase, keep old passphrases only for retained old archives, and prove

@@ -23,7 +23,7 @@ implicitly across README, architecture notes, API schemas, and
 
 The repository now has an explicit Context Pack documentation pair:
 
-- [`CONTEXT_PACK.md`](CONTEXT_PACK.md) - v1 contract, invariants, API shape, and quality gate.
+- [`CONTEXT_PACK.md`](../CONTEXT_PACK.md) - v1 contract, invariants, API shape, and quality gate.
 - [`CONTEXT_PACK_TECHNOLOGY.md`](CONTEXT_PACK_TECHNOLOGY.md) - technology overview, pipeline, security model, budget/citation/redundancy behavior, and boundaries.
 
 ## Stale Items Fixed In This Pass
@@ -46,11 +46,11 @@ The repository now has an explicit Context Pack documentation pair:
 
 ## Current Source-Of-Truth Docs
 
-- Overall status: [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
+- Overall status: [`PROJECT_STATUS.md`](../PROJECT_STATUS.md)
 - Beta delta: [`BETA_DELTA.md`](BETA_DELTA.md)
-- Public claims: [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md)
+- Public claims: [`PUBLIC_CLAIMS_POLICY.md`](../PUBLIC_CLAIMS_POLICY.md)
 - Current cycle: [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md)
-- Docs map: [`DOCUMENTATION_INDEX.md`](DOCUMENTATION_INDEX.md)
+- Docs map: [`DOCUMENTATION_INDEX.md`](../DOCUMENTATION_INDEX.md)
 - Context Pack technology: [`CONTEXT_PACK_TECHNOLOGY.md`](CONTEXT_PACK_TECHNOLOGY.md)
 - Normalized external plan tasks: [`PL_IMPLEMENTATION_TASKS.md`](PL_IMPLEMENTATION_TASKS.md)
 

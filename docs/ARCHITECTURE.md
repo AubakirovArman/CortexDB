@@ -213,7 +213,7 @@ does not call an LLM inside the database core.
 
 The contract is documented in [`CONTEXT_PACK.md`](CONTEXT_PACK.md), and the
 technology overview is documented in
-[`CONTEXT_PACK_TECHNOLOGY.md`](CONTEXT_PACK_TECHNOLOGY.md).
+[`CONTEXT_PACK_TECHNOLOGY.md`](archive/CONTEXT_PACK_TECHNOLOGY.md).
 
 ## VERIFY FACT
 

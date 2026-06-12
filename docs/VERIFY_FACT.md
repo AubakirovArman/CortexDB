@@ -350,4 +350,4 @@ It also writes `target/verification-quality/dashboard.json` and
 `target/verification-quality/dashboard.md` with false-positive/false-negative
 counts and per-domain quality tables for release review.
 Latest local evidence is tracked in
-[`VERIFICATION_QUALITY_EVIDENCE.md`](VERIFICATION_QUALITY_EVIDENCE.md).
+[`VERIFICATION_QUALITY_EVIDENCE.md`](archive/VERIFICATION_QUALITY_EVIDENCE.md).

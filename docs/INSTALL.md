@@ -121,8 +121,8 @@ cortexdb stats ./data
 
 ## Related Docs
 
-- Binary package format: [`BINARY_RELEASES.md`](BINARY_RELEASES.md).
-- Binary platform matrix: [`BINARY_PLATFORM_MATRIX.md`](BINARY_PLATFORM_MATRIX.md).
-- Systemd service example: [`SYSTEMD.md`](SYSTEMD.md).
-- Upgrade and rollback: [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md).
-- Storage migration policy: [`UPGRADE_MIGRATION.md`](UPGRADE_MIGRATION.md).
+- Binary package format: [`BINARY_RELEASES.md`](archive/BINARY_RELEASES.md).
+- Binary platform matrix: [`BINARY_PLATFORM_MATRIX.md`](archive/BINARY_PLATFORM_MATRIX.md).
+- Systemd service example: [`SYSTEMD.md`](archive/SYSTEMD.md).
+- Upgrade and rollback: [`UPGRADE_ROLLBACK.md`](archive/UPGRADE_ROLLBACK.md).
+- Storage migration policy: [`UPGRADE_MIGRATION.md`](archive/UPGRADE_MIGRATION.md).

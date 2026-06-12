@@ -24,8 +24,8 @@ shortest route from clone or release archive to a validated local database.
    ```
 
    Release binary install steps are in [`INSTALL.md`](INSTALL.md). Linux
-   systemd and macOS launchd service examples are in [`SYSTEMD.md`](SYSTEMD.md)
-   and [`LAUNCHD.md`](LAUNCHD.md).
+   systemd and macOS launchd service examples are in [`SYSTEMD.md`](archive/SYSTEMD.md)
+   and [`LAUNCHD.md`](archive/LAUNCHD.md).
 
 2. Create one local database root and start the HTTP server:
 
@@ -137,17 +137,17 @@ The beta RC operator path is split by activity:
 
 | Activity | Primary doc | Local gate or command |
 | --- | --- | --- |
-| full runbook | [`OPERATIONS_RUNBOOK_V1.md`](OPERATIONS_RUNBOOK_V1.md) | `make operations-runbook-check` |
+| full runbook | [`OPERATIONS_RUNBOOK_V1.md`](archive/OPERATIONS_RUNBOOK_V1.md) | `make operations-runbook-check` |
 | install | [`INSTALL.md`](INSTALL.md) | `make binary-release-check` |
-| service setup | [`SYSTEMD.md`](SYSTEMD.md), [`LAUNCHD.md`](LAUNCHD.md) | `make service-manager-smoke-check` and `/v1/validate` health probe |
+| service setup | [`SYSTEMD.md`](archive/SYSTEMD.md), [`LAUNCHD.md`](archive/LAUNCHD.md) | `make service-manager-smoke-check` and `/v1/validate` health probe |
 | validate | [`CLI.md`](CLI.md), [`API.md`](API.md) | `cortexdb validate ./data` |
 | backup | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | `make backup-drill-check` |
 | restore | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | `cortexdb restore <backup> <target>` |
-| backup pack | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md), [`RPO_RTO.md`](RPO_RTO.md) | `make backup-restore-production-pack-check` |
-| repair | [`CLI.md`](CLI.md), [`FAILURE_SCENARIOS.md`](FAILURE_SCENARIOS.md) | `cortexdb repair ./data --dry-run` |
-| metrics | [`METRICS.md`](METRICS.md), [`OBSERVABILITY_ALERTS.md`](OBSERVABILITY_ALERTS.md) | `make observability-check` |
-| upgrade | [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md), [`UPGRADE_MIGRATION.md`](UPGRADE_MIGRATION.md) | `make deployment-upgrade-check` |
-| rollback | [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md) | restore previous backup and validate |
+| backup pack | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md), [`RPO_RTO.md`](archive/RPO_RTO.md) | `make backup-restore-production-pack-check` |
+| repair | [`CLI.md`](CLI.md), [`FAILURE_SCENARIOS.md`](archive/FAILURE_SCENARIOS.md) | `cortexdb repair ./data --dry-run` |
+| metrics | [`METRICS.md`](METRICS.md), [`OBSERVABILITY_ALERTS.md`](archive/OBSERVABILITY_ALERTS.md) | `make observability-check` |
+| upgrade | [`UPGRADE_ROLLBACK.md`](archive/UPGRADE_ROLLBACK.md), [`UPGRADE_MIGRATION.md`](archive/UPGRADE_MIGRATION.md) | `make deployment-upgrade-check` |
+| rollback | [`UPGRADE_ROLLBACK.md`](archive/UPGRADE_ROLLBACK.md) | restore previous backup and validate |
 
 ## 5) Backup and recovery
 
@@ -241,7 +241,7 @@ Then verify [`AUTH.md`](AUTH.md), `CORTEXDB_AUTH_TOKEN`,
 
 Symptom: `400 invalid_tenant`.
 
-Action: check [`TENANT_NAMING_RULES.md`](TENANT_NAMING_RULES.md). Tenant names
+Action: check [`TENANT_NAMING_RULES.md`](archive/TENANT_NAMING_RULES.md). Tenant names
 must be path-safe and must not contain traversal, slash, empty, or reserved
 segments.
 

@@ -63,9 +63,9 @@ The engine-level structures are implemented in `crates/cortex-engine`:
 
 The HTTP/API shape is documented in:
 
-- [`CONTEXT_PACK.md`](CONTEXT_PACK.md)
-- [`API_JSON_SCHEMAS.md`](API_JSON_SCHEMAS.md)
-- [`openapi.yaml`](openapi.yaml)
+- [`CONTEXT_PACK.md`](../CONTEXT_PACK.md)
+- [`API_JSON_SCHEMAS.md`](../API_JSON_SCHEMAS.md)
+- [`openapi.yaml`](../openapi.yaml)
 
 ## Token Budget
 

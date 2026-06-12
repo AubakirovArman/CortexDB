@@ -43,4 +43,4 @@ Public docs that describe product status must include the relevant qualifier:
 
 The release gate is `make public-claims-check`. It writes
 `target/public-claims/report.json` and is paired with the release-facing freeze
-checklist in [`PUBLIC_CLAIMS_FREEZE.md`](PUBLIC_CLAIMS_FREEZE.md).
+checklist in [`PUBLIC_CLAIMS_FREEZE.md`](archive/PUBLIC_CLAIMS_FREEZE.md).

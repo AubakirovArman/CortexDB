@@ -5,9 +5,9 @@ Version: `v0.1.0-core-alpha`
 The HTTP API serializes response bodies from typed Rust structs with
 `serde::Serialize`.
 
-The OpenAPI 3.1 contract lives in [`docs/openapi.yaml`](docs/openapi.yaml).
+The OpenAPI 3.1 contract lives in [`docs/openapi.yaml`](openapi.yaml).
 The stable error taxonomy is frozen in
-[`docs/API_ERROR_TAXONOMY.md`](docs/API_ERROR_TAXONOMY.md).
+[`docs/API_ERROR_TAXONOMY.md`](archive/API_ERROR_TAXONOMY.md).
 
 All database endpoints accept optional query parameter `tenant=<realm>`.
 Omitting it or sending `tenant=default` targets the root database. Other values

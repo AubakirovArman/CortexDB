@@ -10,7 +10,7 @@ This document unifies the versioning rules for CortexDB public surfaces:
 - AQL grammar and diagnostics.
 
 The machine-readable source is
-[`VERSIONING_POLICY.json`](VERSIONING_POLICY.json).
+[`VERSIONING_POLICY.json`](../VERSIONING_POLICY.json).
 
 ## Versioning Principle
 

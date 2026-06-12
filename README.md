@@ -8,22 +8,22 @@
 >
 > The current beta target is `v0.2.0-beta.1`: a local single-node developer/API
 > beta. Promotion requires `make beta-release-check` and the evidence bundle
-> described in [`docs/BETA_RELEASE.md`](docs/BETA_RELEASE.md).
+> described in [`docs/BETA_RELEASE.md`](docs/archive/BETA_RELEASE.md).
 
 For the short external beta overview, start with
-[`docs/BETA_LANDING.md`](docs/BETA_LANDING.md).
+[`docs/BETA_LANDING.md`](docs/archive/BETA_LANDING.md).
 For runnable domain scenarios, see
-[`docs/USE_CASE_PACKS.md`](docs/USE_CASE_PACKS.md).
+[`docs/USE_CASE_PACKS.md`](docs/archive/USE_CASE_PACKS.md).
 For public benchmark history, see
-[`docs/PUBLIC_BENCHMARKS.md`](docs/PUBLIC_BENCHMARKS.md).
+[`docs/PUBLIC_BENCHMARKS.md`](docs/archive/PUBLIC_BENCHMARKS.md).
 For neutral comparison with adjacent stacks, see
 [`docs/COMPARISONS.md`](docs/COMPARISONS.md).
 For agent-memory TTL/feedback demo, see
 [`examples/demo/agent_memory/README.md`](examples/demo/agent_memory/README.md).
 For durable tool registry cells and ContextPack inclusion, see
-[`docs/TOOL_REGISTRY.md`](docs/TOOL_REGISTRY.md).
+[`docs/TOOL_REGISTRY.md`](docs/archive/TOOL_REGISTRY.md).
 For typed entity/relation/source graph traversal, see
-[`docs/KNOWLEDGE_GRAPH.md`](docs/KNOWLEDGE_GRAPH.md).
+[`docs/KNOWLEDGE_GRAPH.md`](docs/archive/KNOWLEDGE_GRAPH.md).
 For the knowledge cell, MVCC, scope, lifecycle, and metadata contract, see
 [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md).
 
@@ -50,7 +50,7 @@ CortexDB has a full local LongMemEval v1 run on the official cleaned
 The run uses the official LongMemEval v1 data, official retrieval metric script,
 official generation format, and official `evaluate_qa.py gpt-4o` evaluator.
 Artifacts and packaging commands are documented in
-[`docs/LONGMEMEVAL_OFFICIAL.md`](docs/LONGMEMEVAL_OFFICIAL.md).
+[`docs/LONGMEMEVAL_OFFICIAL.md`](docs/archive/LONGMEMEVAL_OFFICIAL.md).
 
 Current interpretation: CortexDB is not claiming SOTA. The result shows that a
 beta-stage local context database can already run a real long-memory benchmark
@@ -118,10 +118,10 @@ Or run the full demo: `make demo`
 - **Guarded HNSW Approximate Search:** Fixed-point distance metrics (DotProduct, Cosine, L2) with deterministic multi-layer graphs, exact fallback, recall gates, visit-budget limits, SLO reporting, repeatable recall/latency reports, release-mode synthetic/drift/external/metric-matrix fixture gates, an external-corpus harness, gate-policy validation for release packages, and CI report artifacts. Long-running benchmark history remains future work.
 
 Distributed consensus evidence is tracked as research in
-[`docs/DISTRIBUTED_CONSENSUS_RESEARCH.md`](docs/DISTRIBUTED_CONSENSUS_RESEARCH.md);
+[`docs/DISTRIBUTED_CONSENSUS_RESEARCH.md`](docs/archive/DISTRIBUTED_CONSENSUS_RESEARCH.md);
 it is not a production HA claim.
 Managed-cloud feasibility is tracked in
-[`docs/MANAGED_CLOUD_FEASIBILITY.md`](docs/MANAGED_CLOUD_FEASIBILITY.md);
+[`docs/MANAGED_CLOUD_FEASIBILITY.md`](docs/archive/MANAGED_CLOUD_FEASIBILITY.md);
 it is not a hosted-service claim.
 
 ---
@@ -139,7 +139,7 @@ it is not a hosted-service claim.
 The current AQL query contract is frozen in [`docs/AQL_V0_4.md`](docs/AQL_V0_4.md).
 Context Pack behavior is documented in [`docs/CONTEXT_PACK.md`](docs/CONTEXT_PACK.md),
 with the technology overview in
-[`docs/CONTEXT_PACK_TECHNOLOGY.md`](docs/CONTEXT_PACK_TECHNOLOGY.md).
+[`docs/CONTEXT_PACK_TECHNOLOGY.md`](docs/archive/CONTEXT_PACK_TECHNOLOGY.md).
 The full documentation map is maintained in
 [`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md).
 
@@ -193,21 +193,21 @@ cargo run -p cortex-cli -- load-fixture examples/datasets/legal_policies ./data
 Backup and restore behavior is documented in
 [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md).
 The beta release boundary and target version are documented in
-[`docs/BETA_RELEASE.md`](docs/BETA_RELEASE.md).
+[`docs/BETA_RELEASE.md`](docs/archive/BETA_RELEASE.md).
 The planned beta release notes are documented in
 [`docs/RELEASE_NOTES_v0.2.0-beta.1.md`](docs/RELEASE_NOTES_v0.2.0-beta.1.md).
 The beta operations runbook is documented in
-[`docs/BETA_OPERATIONS.md`](docs/BETA_OPERATIONS.md).
+[`docs/BETA_OPERATIONS.md`](docs/archive/BETA_OPERATIONS.md).
 The current Core Alpha vs beta-readiness delta is documented in
-[`docs/BETA_DELTA.md`](docs/BETA_DELTA.md).
+[`docs/BETA_DELTA.md`](docs/archive/BETA_DELTA.md).
 Public product-claim boundaries are documented in
 [`docs/PUBLIC_CLAIMS_POLICY.md`](docs/PUBLIC_CLAIMS_POLICY.md) and
-[`docs/PUBLIC_CLAIMS_FREEZE.md`](docs/PUBLIC_CLAIMS_FREEZE.md).
+[`docs/PUBLIC_CLAIMS_FREEZE.md`](docs/archive/PUBLIC_CLAIMS_FREEZE.md).
 Offline upgrade, rollback, and format migration policy is documented in
-[`docs/UPGRADE_MIGRATION.md`](docs/UPGRADE_MIGRATION.md).
+[`docs/UPGRADE_MIGRATION.md`](docs/archive/UPGRADE_MIGRATION.md).
 Install, systemd, and operator rollback guides are documented in
-[`docs/INSTALL.md`](docs/INSTALL.md), [`docs/SYSTEMD.md`](docs/SYSTEMD.md),
-and [`docs/UPGRADE_ROLLBACK.md`](docs/UPGRADE_ROLLBACK.md).
+[`docs/INSTALL.md`](docs/INSTALL.md), [`docs/SYSTEMD.md`](docs/archive/SYSTEMD.md),
+and [`docs/UPGRADE_ROLLBACK.md`](docs/archive/UPGRADE_ROLLBACK.md).
 Use `make load-smoke-check` for a fast live HTTP write/read/search/context load
 gate that writes `target/load-smoke/report.json`.
 Use `make single-node-performance-check` for a repeatable local engine
@@ -378,12 +378,12 @@ make sdk-productization-check
 
 The productization gate is local evidence only. Public registry publication is
 not claimed until a manual tag-gated publishing workflow runs. That boundary is
-documented in [`docs/SDK_PRODUCTIZATION.md`](docs/SDK_PRODUCTIZATION.md), and
+documented in [`docs/SDK_PRODUCTIZATION.md`](docs/archive/SDK_PRODUCTIZATION.md), and
 manual tag-gated package publishing is documented in
-[`docs/SDK_RELEASE.md`](docs/SDK_RELEASE.md).
+[`docs/SDK_RELEASE.md`](docs/archive/SDK_RELEASE.md).
 
 Binary tarball packaging for `cortexdb` and `cortex-server` is documented in
-[`docs/BINARY_RELEASES.md`](docs/BINARY_RELEASES.md):
+[`docs/BINARY_RELEASES.md`](docs/archive/BINARY_RELEASES.md):
 
 ```bash
 make binary-release-check

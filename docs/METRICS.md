@@ -4,10 +4,10 @@ Version: `v0.1.0-core-alpha`
 
 This document defines the Core Alpha observability surface. It complements
 [`OPERATIONS.md`](OPERATIONS.md), [`API.md`](API.md), and
-[`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md).
+[`ANN_PRODUCTION_TUNING.md`](archive/ANN_PRODUCTION_TUNING.md).
 
 The stable field-name contract is frozen in
-[`METRICS_CONTRACT_V2.md`](METRICS_CONTRACT_V2.md) and checked by
+[`METRICS_CONTRACT_V2.md`](archive/METRICS_CONTRACT_V2.md) and checked by
 `make metrics-contract-v2-check`.
 
 ## Scope
@@ -207,7 +207,7 @@ Treat these as Core Alpha operator heuristics, not production SLA guarantees:
   reliable default for that query; inspect `slo_violations`.
 
 More detailed alert examples and first-response actions are in
-[`OBSERVABILITY_ALERTS.md`](OBSERVABILITY_ALERTS.md).
+[`OBSERVABILITY_ALERTS.md`](archive/OBSERVABILITY_ALERTS.md).
 
 ## Release Evidence
 
@@ -217,7 +217,7 @@ restart evidence, and replication evidence. These files are local artifacts and
 are not committed by default.
 
 Current documented release evidence is summarized in
-[`RELEASE_NOTES_v0.1.0-core-alpha.md`](RELEASE_NOTES_v0.1.0-core-alpha.md).
+[`RELEASE_NOTES_v0.1.0-core-alpha.md`](archive/RELEASE_NOTES_v0.1.0-core-alpha.md).
 
 ## Future Work
 

@@ -5,7 +5,7 @@ plan. This is not a managed-cloud, multi-node, or enterprise compliance
 runbook.
 
 Use this document when you need a direct operational sequence. Use
-[`OPERATIONS.md`](OPERATIONS.md) for the broader guide and links.
+[`OPERATIONS.md`](../OPERATIONS.md) for the broader guide and links.
 
 ## 1. Install
 
@@ -25,7 +25,7 @@ Source checkout path:
 cargo build --workspace
 ```
 
-Supporting docs: [`INSTALL.md`](INSTALL.md), [`SYSTEMD.md`](SYSTEMD.md), and
+Supporting docs: [`INSTALL.md`](../INSTALL.md), [`SYSTEMD.md`](SYSTEMD.md), and
 [`LAUNCHD.md`](LAUNCHD.md).
 
 ## 2. Startup
@@ -110,7 +110,7 @@ curl http://127.0.0.1:8181/v1/health
 curl -H "Authorization: Bearer dev-token" http://127.0.0.1:8181/v1/validate
 ```
 
-Supporting docs: [`CLI.md`](CLI.md), [`API.md`](API.md), [`METRICS.md`](METRICS.md),
+Supporting docs: [`CLI.md`](../CLI.md), [`API.md`](../API.md), [`METRICS.md`](../METRICS.md),
 and [`OBSERVABILITY_ALERTS.md`](OBSERVABILITY_ALERTS.md).
 
 ## 5. Backup
@@ -144,7 +144,7 @@ Production evidence gate:
 make backup-restore-production-pack-check
 ```
 
-Supporting docs: [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) and
+Supporting docs: [`BACKUP_RESTORE.md`](../BACKUP_RESTORE.md) and
 [`RPO_RTO.md`](RPO_RTO.md).
 
 ## 6. Restore

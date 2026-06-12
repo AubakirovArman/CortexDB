@@ -186,7 +186,7 @@ Acceptance:
 
 Evidence:
 
-- Boundary: [`ENGINE_API.md`](ENGINE_API.md).
+- Boundary: [`ENGINE_API.md`](../ENGINE_API.md).
 - Module map: [`MODULE_OWNERSHIP.md`](MODULE_OWNERSHIP.md).
 - Focused local gate: [`ENGINE_API_EVIDENCE.md`](ENGINE_API_EVIDENCE.md).
 
@@ -243,7 +243,7 @@ Acceptance:
 
 Evidence:
 
-- Benchmark contract: [`BENCHMARKS.md`](BENCHMARKS.md).
+- Benchmark contract: [`BENCHMARKS.md`](../BENCHMARKS.md).
 - Focused local gate: [`RETRIEVAL_QUALITY_EVIDENCE.md`](RETRIEVAL_QUALITY_EVIDENCE.md).
 - Gate command: `make retrieval-quality-check`.
 
@@ -270,7 +270,7 @@ Acceptance:
 
 Evidence:
 
-- Contract and gate: [`CONTEXT_PACK.md`](CONTEXT_PACK.md).
+- Contract and gate: [`CONTEXT_PACK.md`](../CONTEXT_PACK.md).
 - Focused local gate: [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md).
 - Fixture: `examples/eval/context_pack_quality.jsonl`.
 
@@ -294,7 +294,7 @@ Acceptance:
 
 Evidence:
 
-- Contract and gate: [`VERIFY_FACT.md`](VERIFY_FACT.md).
+- Contract and gate: [`VERIFY_FACT.md`](../VERIFY_FACT.md).
 - Focused local gate: [`VERIFICATION_QUALITY_EVIDENCE.md`](VERIFICATION_QUALITY_EVIDENCE.md).
 - Fixture: `examples/eval/verification_cases.jsonl`.
 
@@ -321,8 +321,8 @@ Acceptance:
 Evidence:
 
 - Contract gate: [`HTTP_SERVER_CONTRACT_EVIDENCE.md`](HTTP_SERVER_CONTRACT_EVIDENCE.md).
-- API contract: [`API.md`](API.md), [`openapi.yaml`](openapi.yaml).
-- Auth and audit docs: [`AUTH.md`](AUTH.md).
+- API contract: [`API.md`](../API.md), [`openapi.yaml`](../openapi.yaml).
+- Auth and audit docs: [`AUTH.md`](../AUTH.md).
 
 ### Epic 14 - CLI Productization
 
@@ -343,7 +343,7 @@ Acceptance:
 
 Evidence:
 
-- CLI contract: [`CLI.md`](CLI.md).
+- CLI contract: [`CLI.md`](../CLI.md).
 - Local gate: [`CLI_PRODUCT_EVIDENCE.md`](CLI_PRODUCT_EVIDENCE.md).
 
 ### Epic 15 - SDK E2E And Release Train
@@ -369,7 +369,7 @@ Acceptance:
 Evidence:
 
 - Release process: [`SDK_RELEASE.md`](SDK_RELEASE.md).
-- Quickstart: [`SDK_QUICKSTART.md`](SDK_QUICKSTART.md).
+- Quickstart: [`SDK_QUICKSTART.md`](../SDK_QUICKSTART.md).
 - Local gate: [`SDK_E2E_RELEASE_EVIDENCE.md`](SDK_E2E_RELEASE_EVIDENCE.md).
 
 ### Epic 16 - Dashboard Product UI
@@ -445,7 +445,7 @@ Acceptance:
 Evidence:
 
 - Observability gate: [`OBSERVABILITY_EVIDENCE.md`](OBSERVABILITY_EVIDENCE.md).
-- Metrics contract: [`METRICS.md`](METRICS.md).
+- Metrics contract: [`METRICS.md`](../METRICS.md).
 - Alert examples: [`OBSERVABILITY_ALERTS.md`](OBSERVABILITY_ALERTS.md).
 
 ### Epic 19 - Deployment And Upgrade
@@ -470,7 +470,7 @@ Acceptance:
 Evidence:
 
 - Deployment gate: [`DEPLOYMENT_UPGRADE_EVIDENCE.md`](DEPLOYMENT_UPGRADE_EVIDENCE.md).
-- Install guide: [`INSTALL.md`](INSTALL.md).
+- Install guide: [`INSTALL.md`](../INSTALL.md).
 - Systemd guide: [`SYSTEMD.md`](SYSTEMD.md).
 - Rollback guide: [`UPGRADE_ROLLBACK.md`](UPGRADE_ROLLBACK.md).
 

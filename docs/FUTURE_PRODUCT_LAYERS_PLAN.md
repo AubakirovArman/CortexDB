@@ -1,8 +1,8 @@
 # CortexDB Future Product Plan (Post-Core Alpha)
 
 > Status note: this is a future-product planning document. For current status
-> and beta blockers, use [`BETA_DELTA.md`](BETA_DELTA.md) and
-> [`REMAINING_EXECUTION_PLAN.md`](REMAINING_EXECUTION_PLAN.md).
+> and beta blockers, use [`BETA_DELTA.md`](archive/BETA_DELTA.md) and
+> [`REMAINING_EXECUTION_PLAN.md`](archive/REMAINING_EXECUTION_PLAN.md).
 
 Status: Core Alpha is stabilized and published. The following are the next execution layers.
 

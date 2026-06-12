@@ -16,4 +16,4 @@ Pack manifest:
 examples/use_cases/packs.json
 ```
 
-The public overview is in [`../../docs/USE_CASE_PACKS.md`](../../docs/USE_CASE_PACKS.md).
+The public overview is in [`../../docs/USE_CASE_PACKS.md`](../../docs/archive/USE_CASE_PACKS.md).

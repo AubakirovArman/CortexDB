@@ -147,7 +147,7 @@ make evidence-artifact-retention-check
 ```
 
 It writes `target/evidence-artifact-retention/report.json` and validates
-[`EVIDENCE_ARTIFACT_RETENTION_POLICY.json`](EVIDENCE_ARTIFACT_RETENTION_POLICY.json)
+[`EVIDENCE_ARTIFACT_RETENTION_POLICY.json`](../EVIDENCE_ARTIFACT_RETENTION_POLICY.json)
 against the current release evidence bundle and release artifact manifest.
 The policy defines GitHub Release assets, bundle artifacts, manifest-only
 artifacts, and local-only patterns for raw logs, prompts, provider responses,
@@ -160,7 +160,7 @@ make versioning-policy-check
 ```
 
 It writes `target/versioning-policy/report.json` and validates
-[`VERSIONING_POLICY.json`](VERSIONING_POLICY.json). The policy binds HTTP API,
+[`VERSIONING_POLICY.json`](../VERSIONING_POLICY.json). The policy binds HTTP API,
 SDK, storage format, and AQL grammar versioning to one breaking-change process.
 
 Storage soak history now has retained local 24-hour evidence:

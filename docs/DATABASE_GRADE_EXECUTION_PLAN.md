@@ -6,7 +6,7 @@ Execution rule: close epics in order. Use the dependency-aware order from the so
 
 Status values: `next`, `in_progress`, `partial`, `done`, `blocked`, `frozen`.
 
-Current pointer: `EPIC-D12`.
+Current pointer: `EPIC-D01 + EPIC-D03 + EPIC-D04`.
 
 ## First Execution Queue
 
@@ -1260,18 +1260,19 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-D12 — Документация: 206 → ~30 core + archive
 
-- status: `pending`
+- status: `done`
 - meta: Категория: docs · P0 · 30 days · remove
 - tasks:
-  - [ ] 1) core-набор (~30: README, GETTING_STARTED, DATA_MODEL, ARCHITECTURE, MEMORY_MODEL, CONTEXT_PACK, AQL, VERIFY_FACT, AUTH, API, CLI, SDK, OPERATIONS, BENCHMARKS, CLAIMS, COMPARISONS, ROADMAP…)
-  - [ ] 2) остальное → docs/archive/ + один индекс
-  - [ ] 3) починить ссылки (link-checker в CI).
+  - [x] 1) core-набор (~30: README, GETTING_STARTED, DATA_MODEL, ARCHITECTURE, MEMORY_MODEL, CONTEXT_PACK, AQL, VERIFY_FACT, AUTH, API, CLI, SDK, OPERATIONS, BENCHMARKS, CLAIMS, COMPARISONS, ROADMAP…) — root `docs/` now has 35 core markdown files.
+  - [x] 2) остальное → docs/archive/ + один индекс — 170 docs moved to `docs/archive/`; `docs/archive/INDEX.md` added.
+  - [x] 3) починить ссылки (link-checker в CI) — `scripts/docs_link_check.py` and `make docs-link-check` added.
 - acceptance:
-  - [ ] 1) `ls docs/*.md | wc -l` ≤ 35
-  - [ ] 2) link-check зелёный
-  - [ ] 3) make-таргеты доков живы.
+  - [x] 1) `ls docs/*.md | wc -l` ≤ 35
+  - [x] 2) link-check зелёный
+  - [x] 3) make-таргеты доков живы.
 - files: docs/.
 - risks: ссылки из кода/CI — grep. Зависимости: нет. Эффект: проект становится читаемым.
+- evidence: `find docs -maxdepth 1 -type f -name '*.md' | wc -l` returns `35`; `docs/archive/INDEX.md` indexes archived documents; `make docs-link-check` reports `markdown links ok: 244 files`.
 
 ### EPIC-D13 — mdBook docs-сайт
 

@@ -8,7 +8,7 @@ prompt `type-aware-v15`, context `question-window-digest-ranked`, retrieval v81.
 
 ## 0. Как считается счёт (это определяет приоритеты)
 
-Официальная формула — [metrics_based_eval.py:457](../target/external-benchmarks/EnterpriseRAG-Bench/src/scripts/answer_evaluation/metrics_based_eval.py):
+Официальная формула — [metrics_based_eval.py:457](../../target/external-benchmarks/EnterpriseRAG-Bench/src/scripts/answer_evaluation/metrics_based_eval.py):
 
 ```
 overall = mean_over_questions( completeness_pct  если answer_correct  иначе 0 )

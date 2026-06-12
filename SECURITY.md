@@ -46,10 +46,10 @@ CortexDB Core Alpha currently provides:
 
 See:
 
-- [`docs/SECURITY_THREAT_MODEL.md`](docs/SECURITY_THREAT_MODEL.md)
+- [`docs/SECURITY_THREAT_MODEL.md`](docs/archive/SECURITY_THREAT_MODEL.md)
 - [`docs/AUTH.md`](docs/AUTH.md)
-- [`docs/TENANT_NAMING_RULES.md`](docs/TENANT_NAMING_RULES.md)
-- [`docs/SAFETY_INVARIANTS.md`](docs/SAFETY_INVARIANTS.md)
+- [`docs/TENANT_NAMING_RULES.md`](docs/archive/TENANT_NAMING_RULES.md)
+- [`docs/SAFETY_INVARIANTS.md`](docs/archive/SAFETY_INVARIANTS.md)
 - [`docs/CORE_INVARIANTS.md`](docs/CORE_INVARIANTS.md)
 
 ## Non-Goals In Core Alpha

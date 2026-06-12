@@ -72,7 +72,7 @@ The chunk id is deterministic for the same document id, text, and
 `TextChunkPolicy`. It is independent of `CellId`, so ContextPack citations stay
 stable across restarts and reimports that preserve the same chunk policy.
 The full deterministic ingestion contract is in
-[`DETERMINISTIC_CHUNKING.md`](DETERMINISTIC_CHUNKING.md).
+[`DETERMINISTIC_CHUNKING.md`](archive/DETERMINISTIC_CHUNKING.md).
 
 ---
 

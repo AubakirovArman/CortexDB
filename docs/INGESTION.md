@@ -67,7 +67,7 @@ the explicit `ScannedPdfOcrRequest` boundary after their pages have been
 rendered to images. OCR output can carry page-level confidence plus block-level
 confidence and normalized bounding boxes, and invalid OCR output fails
 validation before it enters normal text chunking. See
-[`PDF_TEXT_EXTRACTION.md`](PDF_TEXT_EXTRACTION.md).
+[`PDF_TEXT_EXTRACTION.md`](archive/PDF_TEXT_EXTRACTION.md).
 
 Focused gate:
 
@@ -96,7 +96,7 @@ payload header before the body, so `CellMetadata::from_payload` can expose it as
 a structured `SourceRef`.
 
 The deterministic ingestion policy is frozen in
-[`DETERMINISTIC_CHUNKING.md`](DETERMINISTIC_CHUNKING.md). In short:
+[`DETERMINISTIC_CHUNKING.md`](archive/DETERMINISTIC_CHUNKING.md). In short:
 
 - text uses stable `<document>#chunk-000N` ids and fixed character overlap for
   long paragraphs;
@@ -106,7 +106,7 @@ The deterministic ingestion policy is frozen in
   as `row=<n>` and `cell_range=row-<n>`.
 
 Chunk size defaults are also tracked by a retrieval-quality benchmark. See
-[`CHUNKING_QUALITY_BENCHMARK.md`](CHUNKING_QUALITY_BENCHMARK.md) and run:
+[`CHUNKING_QUALITY_BENCHMARK.md`](archive/CHUNKING_QUALITY_BENCHMARK.md) and run:
 
 ```bash
 make chunking-quality-benchmark-check

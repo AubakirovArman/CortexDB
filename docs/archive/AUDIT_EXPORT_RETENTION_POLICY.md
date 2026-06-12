@@ -3,7 +3,7 @@
 Status: local production-boundary policy for Epic 95.
 
 Machine-readable policy:
-[`AUDIT_EXPORT_RETENTION_POLICY.json`](AUDIT_EXPORT_RETENTION_POLICY.json).
+[`AUDIT_EXPORT_RETENTION_POLICY.json`](../AUDIT_EXPORT_RETENTION_POLICY.json).
 
 ## Export Path
 

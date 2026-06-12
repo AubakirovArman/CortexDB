@@ -41,7 +41,7 @@ benchmark category to its refresh command and source document.
 
 | Task | Published evidence | Refresh command | Source |
 | --- | --- | --- | --- |
-| Storage benchmarks | Single-node lifecycle matrix for put/get/search/ContextPack/Verify under local durability profiles; storage evidence is local, not an SLA. | `make single-node-performance-check` | [`BENCHMARKS.md`](BENCHMARKS.md) |
+| Storage benchmarks | Single-node lifecycle matrix for put/get/search/ContextPack/Verify under local durability profiles; storage evidence is local, not an SLA. | `make single-node-performance-check` | [`BENCHMARKS.md`](../BENCHMARKS.md) |
 | Retrieval benchmarks | Multi-domain retrieval table with dataset sizes, recall, MRR, nDCG, p95/p99/max latency fields, exact-vs-ANN boundary, and limitations. | `make public-retrieval-benchmark-page-check` | [`PUBLIC_RETRIEVAL_BENCHMARKS.md`](PUBLIC_RETRIEVAL_BENCHMARKS.md) |
 | ContextPack benchmarks | 25-case ContextPack quality fixture across 5 domains with evidence coverage, citation coverage, redundancy, anomaly, and deterministic ordering metrics. | `make context-pack-quality-check` | [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md) |
 | Verify benchmarks | 203-case deterministic verification fixture across 5 domains with supported/contradicted/mixed/insufficient labels and guard coverage; latest raw metric `case_count: 203`, `accuracy_q16=65535`. | `make verification-quality-check` | [`VERIFICATION_QUALITY_EVIDENCE.md`](VERIFICATION_QUALITY_EVIDENCE.md) |
@@ -57,11 +57,11 @@ benchmark category to its refresh command and source document.
 | Retrieval quality | `make retrieval-quality-check` | [`RETRIEVAL_QUALITY_EVIDENCE.md`](RETRIEVAL_QUALITY_EVIDENCE.md) |
 | ContextPack quality | `make context-pack-quality-check` | [`CONTEXT_PACK_QUALITY_EVIDENCE.md`](CONTEXT_PACK_QUALITY_EVIDENCE.md) |
 | Verification quality | `make verification-quality-check` | [`VERIFICATION_QUALITY_EVIDENCE.md`](VERIFICATION_QUALITY_EVIDENCE.md) |
-| Single-node performance | `make single-node-performance-check` | [`BENCHMARKS.md`](BENCHMARKS.md) |
+| Single-node performance | `make single-node-performance-check` | [`BENCHMARKS.md`](../BENCHMARKS.md) |
 | LongMemEval official local run | `make longmemeval-v1-official-retrieval-metrics`, then official generation/eval | [`LONGMEMEVAL_OFFICIAL.md`](LONGMEMEVAL_OFFICIAL.md) |
 | MultiHop-RAG local preparation | `make multihop-rag-local-50-check` | [`MULTIHOP_RAG_BENCHMARK.md`](MULTIHOP_RAG_BENCHMARK.md) |
 | Performance trend | `make performance-trend-check` | [`PERFORMANCE_TREND_HISTORY.md`](PERFORMANCE_TREND_HISTORY.md) |
-| Public claims | `make public-claims-check` | [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md) |
+| Public claims | `make public-claims-check` | [`PUBLIC_CLAIMS_POLICY.md`](../PUBLIC_CLAIMS_POLICY.md) |
 
 ## How To Refresh Before Release
 
@@ -94,4 +94,4 @@ This page does not claim:
 - fallback-free production HNSW;
 - quality on private customer datasets.
 
-Public wording must stay aligned with [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md).
+Public wording must stay aligned with [`PUBLIC_CLAIMS_POLICY.md`](../PUBLIC_CLAIMS_POLICY.md).

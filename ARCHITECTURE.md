@@ -209,7 +209,7 @@ ContextPack is evidence-aware but not an LLM. It prepares source-grounded
 context for an external agent or model.
 
 See [`docs/CONTEXT_PACK.md`](docs/CONTEXT_PACK.md) for the v1 contract and
-[`docs/CONTEXT_PACK_TECHNOLOGY.md`](docs/CONTEXT_PACK_TECHNOLOGY.md) for the
+[`docs/CONTEXT_PACK_TECHNOLOGY.md`](docs/archive/CONTEXT_PACK_TECHNOLOGY.md) for the
 technology overview.
 
 ## VERIFY FACT

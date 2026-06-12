@@ -58,7 +58,7 @@ commands. It does not rewrite the database in place in Core Alpha.
 
 ## Upgrade
 
-Install the new archive as described in [`INSTALL.md`](INSTALL.md):
+Install the new archive as described in [`INSTALL.md`](../INSTALL.md):
 
 ```bash
 sha256sum -c cortexdb-<version>-<platform>.tar.gz.sha256

@@ -48,7 +48,7 @@ Binder defaults:
 - missing `LIMIT` becomes `AgentView.default_candidate_limit`.
 
 Runtime limit and budget semantics are frozen in
-[`AQL_LIMIT_BUDGET_SEMANTICS.md`](AQL_LIMIT_BUDGET_SEMANTICS.md): `LIMIT`
+[`AQL_LIMIT_BUDGET_SEMANTICS.md`](archive/AQL_LIMIT_BUDGET_SEMANTICS.md): `LIMIT`
 bounds direct retrieval and ContextPack candidates, while `BUDGET` is the
 default ContextPack token budget unless an explicit runtime option overrides it.
 
@@ -61,7 +61,7 @@ Policy remains fail-closed:
 - `audit` requires explicit `AgentView.allow_audit_mode`.
 
 Security fuzzing for nested `WHERE`/`NOT`/`AND`/`OR` scope-bypass attempts is
-tracked in [`AQL_SECURITY_FUZZING.md`](AQL_SECURITY_FUZZING.md).
+tracked in [`AQL_SECURITY_FUZZING.md`](archive/AQL_SECURITY_FUZZING.md).
 
 ## EXPLAIN
 
@@ -130,7 +130,7 @@ Decimal thresholds are deterministic decimal literals. They are converted to
 Q16 during binding. Values greater than `1.0` are bind errors, not silent clamps.
 
 Runtime semantics are frozen in
-[`AQL_REQUIRE_SEMANTICS.md`](AQL_REQUIRE_SEMANTICS.md): citation requirements
+[`AQL_REQUIRE_SEMANTICS.md`](archive/AQL_REQUIRE_SEMANTICS.md): citation requirements
 flow into `ContextPack`, while confidence, source-trust, and freshness are hard
 candidate filters.
 

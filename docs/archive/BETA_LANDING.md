@@ -92,12 +92,12 @@ Those topics remain future milestones with explicit design gates.
 | Area | Local gate or doc |
 | --- | --- |
 | Beta release | `make beta-release-check`, [`BETA_RELEASE.md`](BETA_RELEASE.md) |
-| API contract | `make openapi-contract-check`, [`openapi.yaml`](openapi.yaml) |
+| API contract | `make openapi-contract-check`, [`openapi.yaml`](../openapi.yaml) |
 | SDK contract | `make sdk-e2e-release-check`, [`SDK_RELEASE.md`](SDK_RELEASE.md) |
 | Context quality | `make context-pack-quality-check` |
 | Verification quality | `make verification-quality-check` |
 | Retrieval quality | `make retrieval-quality-check` |
-| Operations | `make operations-runbook-check`, [`OPERATIONS.md`](OPERATIONS.md) |
+| Operations | `make operations-runbook-check`, [`OPERATIONS.md`](../OPERATIONS.md) |
 | Dashboard | `make dashboard-product-check`, [`DASHBOARD_UI.md`](DASHBOARD_UI.md) |
 
 ## First Contribution Path
@@ -106,12 +106,12 @@ Those topics remain future milestones with explicit design gates.
 2. Pick one bounded surface: AQL, ContextPack, verification, SDKs, docs, or
    dashboard.
 3. Add or update the matching evidence gate.
-4. Keep public claims aligned with [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md).
+4. Keep public claims aligned with [`PUBLIC_CLAIMS_POLICY.md`](../PUBLIC_CLAIMS_POLICY.md).
 
 ## Links
 
-- Architecture: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+- Architecture: [`ARCHITECTURE.md`](../ARCHITECTURE.md)
 - Context Packs: [`CONTEXT_PACK_TECHNOLOGY.md`](CONTEXT_PACK_TECHNOLOGY.md)
-- API schemas: [`API_JSON_SCHEMAS.md`](API_JSON_SCHEMAS.md)
-- Release notes: [`RELEASE_NOTES_v0.2.0-beta.1.md`](RELEASE_NOTES_v0.2.0-beta.1.md)
-- Documentation map: [`DOCUMENTATION_INDEX.md`](DOCUMENTATION_INDEX.md)
+- API schemas: [`API_JSON_SCHEMAS.md`](../API_JSON_SCHEMAS.md)
+- Release notes: [`RELEASE_NOTES_v0.2.0-beta.1.md`](../RELEASE_NOTES_v0.2.0-beta.1.md)
+- Documentation map: [`DOCUMENTATION_INDEX.md`](../DOCUMENTATION_INDEX.md)

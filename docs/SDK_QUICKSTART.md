@@ -6,7 +6,7 @@ All SDKs share the same typed response models and support tenant + Bearer token 
 ## Version Alignment
 
 For public registry availability and beta publication status, see
-[`SDK_PUBLICATION_STATUS.md`](SDK_PUBLICATION_STATUS.md). The local release
+[`SDK_PUBLICATION_STATUS.md`](archive/SDK_PUBLICATION_STATUS.md). The local release
 gates prove package construction and live local server e2e behavior even before
 public registry publication.
 

@@ -20,7 +20,7 @@ make binary-release-check
 
 See also:
 
-- [`INSTALL.md`](INSTALL.md)
+- [`INSTALL.md`](../INSTALL.md)
 - [`BINARY_RELEASES.md`](BINARY_RELEASES.md)
 
 ## Run Server
@@ -54,7 +54,7 @@ Review configured policy without printing raw token values:
 cortexdb auth-review --tokens-file ./auth.tokens
 ```
 
-See [`AUTH.md`](AUTH.md) and [`SECURITY_THREAT_MODEL.md`](SECURITY_THREAT_MODEL.md).
+See [`AUTH.md`](../AUTH.md) and [`SECURITY_THREAT_MODEL.md`](SECURITY_THREAT_MODEL.md).
 
 ## Tenants
 
@@ -99,7 +99,7 @@ cortexdb restore ./backups/db-001 ./restore/db-001
 cortexdb validate ./restore/db-001
 ```
 
-See [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
+See [`BACKUP_RESTORE.md`](../BACKUP_RESTORE.md).
 
 ## Validate
 
@@ -173,7 +173,7 @@ Prometheus text output is available with:
 /v1/metrics?format=prometheus
 ```
 
-See [`METRICS.md`](METRICS.md).
+See [`METRICS.md`](../METRICS.md).
 
 ## Logs And Audit
 

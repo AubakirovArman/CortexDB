@@ -468,7 +468,7 @@ local single-node evidence:
 7. Legal-grade verification.
 
 These future items are tracked as separate promotion epics in
-[`FUTURE_NON_GOAL_EPICS.md`](FUTURE_NON_GOAL_EPICS.md).
+[`FUTURE_NON_GOAL_EPICS.md`](../FUTURE_NON_GOAL_EPICS.md).
 
 ## Immediate Operating Rule
 

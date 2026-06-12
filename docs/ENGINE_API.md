@@ -73,7 +73,7 @@ entrypoints that need env-driven `DatabaseOptions`. Embedded callers may still
 construct `DatabaseOptions` directly for deterministic local setup.
 
 Production-safe feature defaults are documented in
-[`ENGINE_FEATURE_FLAGS.md`](ENGINE_FEATURE_FLAGS.md). Experimental HNSW,
+[`ENGINE_FEATURE_FLAGS.md`](archive/ENGINE_FEATURE_FLAGS.md). Experimental HNSW,
 database-level replication, and dashboard surfaces must be enabled explicitly.
 
 The stable root-level types currently frozen are:

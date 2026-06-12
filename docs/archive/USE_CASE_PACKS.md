@@ -87,11 +87,11 @@ These packs do not prove:
 
 ## Files
 
-- Manifest: [`../examples/use_cases/packs.json`](../examples/use_cases/packs.json)
-- Investment pack: [`../examples/use_cases/investment_projects/README.md`](../examples/use_cases/investment_projects/README.md)
-- Legal pack: [`../examples/use_cases/legal_policy_review/README.md`](../examples/use_cases/legal_policy_review/README.md)
-- Financial pack: [`../examples/use_cases/financial_filing_review/README.md`](../examples/use_cases/financial_filing_review/README.md)
-- Support pack: [`../examples/use_cases/support_ticket_triage/README.md`](../examples/use_cases/support_ticket_triage/README.md)
-- Technical pack: [`../examples/use_cases/technical_runbook_triage/README.md`](../examples/use_cases/technical_runbook_triage/README.md)
-- Investment benchmark report: [`../examples/use_cases/investment_projects/benchmark_report.md`](../examples/use_cases/investment_projects/benchmark_report.md)
-- Gate script: [`../scripts/use_case_pack_check.py`](../scripts/use_case_pack_check.py)
+- Manifest: [`../examples/use_cases/packs.json`](../../examples/use_cases/packs.json)
+- Investment pack: [`../examples/use_cases/investment_projects/README.md`](../../examples/use_cases/investment_projects/README.md)
+- Legal pack: [`../examples/use_cases/legal_policy_review/README.md`](../../examples/use_cases/legal_policy_review/README.md)
+- Financial pack: [`../examples/use_cases/financial_filing_review/README.md`](../../examples/use_cases/financial_filing_review/README.md)
+- Support pack: [`../examples/use_cases/support_ticket_triage/README.md`](../../examples/use_cases/support_ticket_triage/README.md)
+- Technical pack: [`../examples/use_cases/technical_runbook_triage/README.md`](../../examples/use_cases/technical_runbook_triage/README.md)
+- Investment benchmark report: [`../examples/use_cases/investment_projects/benchmark_report.md`](../../examples/use_cases/investment_projects/benchmark_report.md)
+- Gate script: [`../scripts/use_case_pack_check.py`](../../scripts/use_case_pack_check.py)

@@ -55,6 +55,6 @@ make demo
 ## Getting Help
 
 - Open an issue for bugs or feature requests.
-- Use [`docs/GOOD_FIRST_ISSUES.md`](docs/GOOD_FIRST_ISSUES.md) to choose a
+- Use [`docs/GOOD_FIRST_ISSUES.md`](docs/archive/GOOD_FIRST_ISSUES.md) to choose a
   bounded first task.
 - Check `docs/` for deeper architecture and design documents.

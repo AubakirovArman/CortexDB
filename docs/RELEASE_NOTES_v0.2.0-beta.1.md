@@ -87,7 +87,7 @@ make sdk-release-artifacts-check
 make sdk-e2e-release-check
 ```
 
-See [`SDK_PUBLICATION_STATUS.md`](SDK_PUBLICATION_STATUS.md). These gates prove
+See [`SDK_PUBLICATION_STATUS.md`](archive/SDK_PUBLICATION_STATUS.md). These gates prove
 local dry-run/package/e2e readiness; they do not claim public registry
 publication unless the release job publishes from the tag.
 

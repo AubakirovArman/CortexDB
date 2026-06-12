@@ -18,7 +18,7 @@ Put/Patch/Tombstone
 ```
 
 The release checklist for tagging this scope is
-[`CORE_ALPHA_RELEASE_CHECKLIST.md`](CORE_ALPHA_RELEASE_CHECKLIST.md).
+[`CORE_ALPHA_RELEASE_CHECKLIST.md`](archive/CORE_ALPHA_RELEASE_CHECKLIST.md).
 
 ## Included
 

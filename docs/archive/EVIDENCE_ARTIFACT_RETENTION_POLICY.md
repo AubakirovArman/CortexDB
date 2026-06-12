@@ -5,7 +5,7 @@ Status: Core Alpha release governance policy.
 This policy defines which CortexDB release evidence artifacts are published,
 which artifacts are attached to GitHub Releases, and which artifacts stay
 local-only. The machine-readable source is
-[`EVIDENCE_ARTIFACT_RETENTION_POLICY.json`](EVIDENCE_ARTIFACT_RETENTION_POLICY.json).
+[`EVIDENCE_ARTIFACT_RETENTION_POLICY.json`](../EVIDENCE_ARTIFACT_RETENTION_POLICY.json).
 
 ## Why This Exists
 

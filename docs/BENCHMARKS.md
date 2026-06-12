@@ -228,7 +228,7 @@ production_safe
 fixture so CI verifies the contract. Real recall quality should be tracked by
 running `ann_corpus_check` against larger sift/glove-style corpora and archiving
 the resulting JSON reports. The JSONL contract is documented in
-[`ANN_CORPUS_FORMAT.md`](ANN_CORPUS_FORMAT.md).
+[`ANN_CORPUS_FORMAT.md`](archive/ANN_CORPUS_FORMAT.md).
 
 `make ann-domain-corpus-check` runs the same harness against a small domain-like
 fixture shaped around investment-project, legal-risk, operations-error, and
@@ -274,7 +274,7 @@ dataset manifest, retrieval adapter report, and claim boundary, then writes
 defaults use DeepSeek flash; the historical QA row above is retained only as
 prior evidence. Leaderboard/list inclusion still requires submission to the
 official maintainers. See
-[`LONGMEMEVAL_OFFICIAL.md`](LONGMEMEVAL_OFFICIAL.md).
+[`LONGMEMEVAL_OFFICIAL.md`](archive/LONGMEMEVAL_OFFICIAL.md).
 
 ## LoCoMo Adapter Evidence
 
@@ -297,7 +297,7 @@ Latest local full-run evidence:
 | `hit@10` | `0.6312` |
 
 This is a retrieval-only adapter gate. It is not an end-to-end QA score and not
-a published leaderboard entry. See [`LOCOMO_ADAPTER.md`](LOCOMO_ADAPTER.md).
+a published leaderboard entry. See [`LOCOMO_ADAPTER.md`](archive/LOCOMO_ADAPTER.md).
 
 ## MultiHop-RAG Benchmark Scaffold
 
@@ -570,7 +570,7 @@ combined score to `44.26` without making another LLM call. v16 reuses v14/v15
 artifacts and routes only `conflicting_info` through v15, lifting the combined
 score to `46.44`.
 
-See [`ENTERPRISE_RAG_BENCHMARK.md`](ENTERPRISE_RAG_BENCHMARK.md) for commands,
+See [`ENTERPRISE_RAG_BENCHMARK.md`](archive/ENTERPRISE_RAG_BENCHMARK.md) for commands,
 artifacts, and current limitations. No leaderboard score is claimed until a
 full official-compatible run is produced and packaged reproducibly.
 
@@ -723,7 +723,7 @@ Latest DeepSeek prompt-cache evidence on a repeat 50-query run:
 | ---: | ---: | ---: | ---: | ---: |
 | 71,513 | 68,608 | 2,905 | 95.94% | 93.71% |
 
-See [`MULTIHOP_RAG_BENCHMARK.md`](MULTIHOP_RAG_BENCHMARK.md).
+See [`MULTIHOP_RAG_BENCHMARK.md`](archive/MULTIHOP_RAG_BENCHMARK.md).
 
 `make ann-demo-domain-corpus-run` builds a repeatable corpus from the checked-in
 demo payloads under `examples/datasets` and `examples/rag_demo/data`, generates
@@ -876,10 +876,10 @@ the same corpus URL, metric, conversion, SLO, and HNSW tuning inputs, then
 uploads converted JSONL files plus `report.json`, `history.json`, and optional
 baseline packages as artifacts.
 The first hosted public run is recorded in
-[`ANN_PUBLIC_CORPUS_RUNS.md`](ANN_PUBLIC_CORPUS_RUNS.md).
+[`ANN_PUBLIC_CORPUS_RUNS.md`](archive/ANN_PUBLIC_CORPUS_RUNS.md).
 
 For threshold selection, fallback policy, and report-history rules, see
-[`ANN_PRODUCTION_TUNING.md`](ANN_PRODUCTION_TUNING.md).
+[`ANN_PRODUCTION_TUNING.md`](archive/ANN_PRODUCTION_TUNING.md).
 
 ## Chunking Quality Benchmark
 

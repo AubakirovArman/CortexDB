@@ -45,4 +45,4 @@ Use `make sdk-check` for the local gate. The GitHub `SDK Release` workflow runs
 the same preflight on SDK changes and can publish all three packages manually
 from a version-matching `v*` tag through the protected `sdk-release`
 environment after registry credentials are configured. See
-[`docs/SDK_RELEASE.md`](../docs/SDK_RELEASE.md).
+[`docs/SDK_RELEASE.md`](../docs/archive/SDK_RELEASE.md).

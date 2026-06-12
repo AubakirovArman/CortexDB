@@ -12,7 +12,7 @@ by schema checks, but it is not a production SLA.
 * **Content-Type:** `application/json`
 * **Max Payload Boundary:** 2MB (Requests exceeding 2MB will return `413 Payload Too Large`)
 * **OpenAPI contract:** [`openapi.yaml`](openapi.yaml)
-* **Stable error taxonomy:** [`API_ERROR_TAXONOMY.md`](API_ERROR_TAXONOMY.md)
+* **Stable error taxonomy:** [`API_ERROR_TAXONOMY.md`](archive/API_ERROR_TAXONOMY.md)
 * **Tenant routing:** database endpoints accept optional `tenant=<realm>`. Omit
   it or use `tenant=default` for the root database; any other value routes to a
   per-tenant realm under the server data directory. Tenant names are

@@ -31,7 +31,7 @@
 .PHONY: use-case-pack-check
 .PHONY: contributor-onboarding-check community-roadmap-check
 .PHONY: public-benchmarks-check public-retrieval-benchmark-page-check
-.PHONY: comparison-docs-check
+.PHONY: comparison-docs-check docs-link-check
 .PHONY: agent-memory-demo-check memory-quality-benchmark-check
 .PHONY: tool-registry-check context-pack-tool-recommendation-check
 .PHONY: knowledge-graph-check
@@ -1515,6 +1515,9 @@ public-benchmarks-check: public-retrieval-benchmark-page-check
 
 comparison-docs-check:
 	python3 scripts/comparison_docs_check.py --report "$(COMPARISON_DOCS_REPORT)"
+
+docs-link-check:
+	python3 scripts/docs_link_check.py
 
 agent-memory-demo-check:
 	python3 scripts/agent_memory_demo_check.py --report "$(AGENT_MEMORY_DEMO_REPORT)"

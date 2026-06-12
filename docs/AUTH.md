@@ -437,7 +437,7 @@ request IDs, status, duration, and audit-chain fields, but does not add request
 bodies, query strings, or bearer tokens. Use `--redaction-check` and
 `--verify-chain` before exporting to fail closed on unsafe local audit input.
 The local export, retention, and redaction boundary is defined in
-[`AUDIT_EXPORT_RETENTION_POLICY.md`](AUDIT_EXPORT_RETENTION_POLICY.md) and
+[`AUDIT_EXPORT_RETENTION_POLICY.md`](archive/AUDIT_EXPORT_RETENTION_POLICY.md) and
 validated by `make audit-export-retention-check`.
 
 ## RBAC Roadmap
@@ -446,8 +446,8 @@ Core Alpha keeps route authorization intentionally small: static `admin` and
 `data` roles plus optional AgentView binding. The JSON policy-store file adds a
 durable local principal list and disabled-principal lifecycle, while the broader
 enterprise design remains tracked in
-[`RBAC_POLICY_STORE_DESIGN.md`](RBAC_POLICY_STORE_DESIGN.md) and
-[`ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md`](ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md).
+[`RBAC_POLICY_STORE_DESIGN.md`](archive/RBAC_POLICY_STORE_DESIGN.md) and
+[`ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md`](archive/ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md).
 Until that layer is complete, do not treat CortexDB as a full multi-user RBAC or
 compliance system.
 
