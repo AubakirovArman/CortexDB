@@ -752,9 +752,51 @@
     "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/retrieval.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 867,
+      "lines": 11,
       "soft_limit": 300,
       "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/retrieval/cache.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 61,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/retrieval/index.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 274,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/retrieval/metadata.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 45,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/retrieval/overview.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 195,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/retrieval/scoring.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 105,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/retrieval/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 205,
+      "soft_limit": 600,
+      "warning_limit": 1200
     },
     "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/tests.rs": {
       "hard_limit": 2000,
@@ -4788,6 +4830,55 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "scripts/enterprise_rag_bench/_multi_index_candidate_generation/__init__.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 5,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/_multi_index_candidate_generation/cli.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 94,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/_multi_index_candidate_generation/indexes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 272,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/_multi_index_candidate_generation/io.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 69,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/_multi_index_candidate_generation/query.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 185,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/_multi_index_candidate_generation/runner.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 265,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/_multi_index_candidate_generation/scoring.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 39,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "scripts/enterprise_rag_bench/analyze_answer_errors.py": {
       "hard_limit": 1000,
       "kind": "source",
@@ -5337,7 +5428,7 @@
     "scripts/enterprise_rag_bench/multi_index_candidate_generation.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 900,
+      "lines": 14,
       "soft_limit": 300,
       "warning_limit": 600
     },
