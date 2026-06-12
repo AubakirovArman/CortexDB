@@ -4189,9 +4189,30 @@
     "crates/cortex-server/src/actor.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 449,
+      "lines": 109,
       "soft_limit": 300,
       "warning_limit": 600
+    },
+    "crates/cortex-server/src/actor/operations.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 90,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/actor/routing.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 86,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/actor/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 183,
+      "soft_limit": 600,
+      "warning_limit": 1200
     },
     "crates/cortex-server/src/aql.rs": {
       "hard_limit": 1000,
