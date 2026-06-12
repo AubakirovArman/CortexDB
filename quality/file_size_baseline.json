@@ -1361,7 +1361,49 @@
     "crates/cortex-engine/src/graph.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 627,
+      "lines": 13,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/graph/ackg.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 206,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/graph/database.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 85,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/graph/edge_kind.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 35,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/graph/index.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 197,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/graph/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 64,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/graph/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 53,
       "soft_limit": 300,
       "warning_limit": 600
     },
