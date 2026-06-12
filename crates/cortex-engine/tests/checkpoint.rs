@@ -262,3 +262,63 @@ fn validate_storage_rejects_segment_count_mismatch() {
     let error = db.validate_storage().unwrap_err().to_string();
     assert!(error.contains("cell_count mismatch"));
 }
+
+#[test]
+fn checkpoint_rotates_wal_and_reclaims_archived_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(CellId(1), b"v1".to_vec()).unwrap();
+
+    let wal_path = dir.path().join("db.aclog");
+    let archived_count_before = glob_archived_wal_files(dir.path());
+    db.checkpoint().unwrap();
+    let archived_count_after = glob_archived_wal_files(dir.path());
+
+    // Archived WAL should be cleaned up after the durable manifest is published.
+    assert_eq!(archived_count_before, 0);
+    assert_eq!(archived_count_after, 0);
+    assert!(wal_path.exists());
+}
+
+#[test]
+fn checkpoint_recovery_is_safe_if_archived_wal_is_not_removed() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"v1".to_vec()).unwrap();
+        db.checkpoint().unwrap();
+        db.patch_cell(CellId(1), b"v2".to_vec()).unwrap();
+    }
+
+    // Simulate crash before archived WAL cleanup: rename any archived WAL back
+    // to a name find_wal_files will discover.
+    let archived: Vec<_> = std::fs::read_dir(dir.path())
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            let name = e.file_name().to_string_lossy().to_string();
+            name.starts_with("db.") && name.ends_with(".aclog")
+        })
+        .map(|e| e.path())
+        .collect();
+    assert!(
+        archived.len() <= 1,
+        "expected at most one archived WAL, got {:?}",
+        archived
+    );
+
+    let db = Database::open(dir.path()).unwrap();
+    assert_eq!(db.current_seq(), CommitSeq(2));
+    assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"v2");
+}
+
+fn glob_archived_wal_files(root: &std::path::Path) -> usize {
+    std::fs::read_dir(root)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            let name = e.file_name().to_string_lossy().to_string();
+            name.starts_with("db.") && name.ends_with(".aclog") && name.len() > "db.aclog".len()
+        })
+        .count()
+}

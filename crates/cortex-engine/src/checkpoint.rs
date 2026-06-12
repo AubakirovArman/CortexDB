@@ -17,7 +17,6 @@ use cortex_storage::manifest::{
     ManifestHnswProfile, ManifestSegment, ManifestVectorProfile, StorageManifest,
 };
 use cortex_storage::segment::{SegmentCellRef, SegmentReader, SegmentWriter};
-use cortex_storage::wal::WalWriter;
 
 use crate::database::{CheckpointStats, Database};
 use crate::error::{EngineError, EngineResult};
@@ -81,7 +80,11 @@ impl Database {
         }?;
         ensure_checkpoint_profiles(&self.manifest, hnsw_profile, vector_profile)?;
 
-        self.writer.shutdown()?;
+        let archived_wal = self.writer.rotate().map_err(|e| {
+            EngineError::Storage(cortex_storage::StorageError::Io(std::io::Error::other(
+                format!("failed to rotate WAL before checkpoint: {e}"),
+            )))
+        })?;
         fs::create_dir_all(&self.segments_path)?;
         let segment_id = self.manifest.generation + 1;
         let segment_path = segment_path(&self.segments_path, segment_id);
@@ -117,8 +120,7 @@ impl Database {
             self.manifest.vector_profile = Some(profile);
         }
         self.manifest.store(&self.manifest_path)?;
-        super::database::truncate_wal_tail(&self.wal_path, 0)?;
-        self.writer = WalWriter::start(&self.wal_path, self.durability_mode)?;
+        let _ = std::fs::remove_file(&archived_wal);
         self.memtable.gc_versions_before(self.gc_horizon());
         Ok(CheckpointStats {
             segment_id: Some(segment_id),
@@ -146,7 +148,11 @@ impl Database {
             vector::vector_profile_for_cell_refs(&cells, self.hnsw_build_config)
         }?;
 
-        self.writer.shutdown()?;
+        let archived_wal = self.writer.rotate().map_err(|e| {
+            EngineError::Storage(cortex_storage::StorageError::Io(std::io::Error::other(
+                format!("failed to rotate WAL before compact: {e}"),
+            )))
+        })?;
         fs::create_dir_all(&self.segments_path)?;
         let segment_id = self.manifest.generation + 1;
         let segment_path = segment_path(&self.segments_path, segment_id);
@@ -180,8 +186,7 @@ impl Database {
         self.manifest.hnsw_profile = hnsw_profile;
         self.manifest.vector_profile = vector_profile;
         self.manifest.store(&self.manifest_path)?;
-        super::database::truncate_wal_tail(&self.wal_path, 0)?;
-        self.writer = WalWriter::start(&self.wal_path, self.durability_mode)?;
+        let _ = std::fs::remove_file(&archived_wal);
         self.memtable.gc_versions_before(self.gc_horizon());
         Ok(CheckpointStats {
             segment_id: Some(segment_id),

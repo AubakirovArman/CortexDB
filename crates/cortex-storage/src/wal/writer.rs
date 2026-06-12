@@ -10,7 +10,7 @@ use crate::error::{StorageError, StorageResult};
 use super::codec::WalCodec;
 use super::record::WalRecord;
 use super::writer_append::{append_balanced_batch, append_record_batch, append_strict_record};
-use super::writer_rotation::rotate_if_needed;
+use super::writer_rotation::{rotate_if_needed, rotate_now};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DurabilityMode {
@@ -71,6 +71,9 @@ pub(super) enum WalWriterCommand {
     },
     Metrics {
         reply: Sender<StorageResult<WalWriterMetrics>>,
+    },
+    Rotate {
+        reply: Sender<StorageResult<PathBuf>>,
     },
 }
 
@@ -136,6 +139,26 @@ impl WalWriterHandle {
             .send(WalWriterCommand::Metrics { reply })
             .map_err(|_| StorageError::WalWriterClosed)?;
         rx.recv().map_err(|_| StorageError::WalWriterClosed)?
+    }
+
+    /// Rotate the active WAL to a timestamped archive and open a fresh active
+    /// WAL. Returns the path of the archived file.
+    pub fn rotate(&self) -> StorageResult<PathBuf> {
+        let (reply, rx) = bounded(1);
+        self.tx
+            .send(WalWriterCommand::Rotate { reply })
+            .map_err(|_| StorageError::WalWriterClosed)?;
+        rx.recv()
+            .map_err(|_| StorageError::WalWriterClosed)?
+            .and_then(|path| {
+                if path.as_os_str().is_empty() {
+                    Err(StorageError::Io(std::io::Error::other(
+                        "WAL rotation produced empty archive path",
+                    )))
+                } else {
+                    Ok(path)
+                }
+            })
     }
 }
 
@@ -211,6 +234,11 @@ fn run_writer(path: PathBuf, options: WalWriterOptions, rx: Receiver<WalWriterCo
             }
             WalWriterCommand::Metrics { reply } => {
                 let _ = reply.send(Ok(metrics));
+            }
+            WalWriterCommand::Rotate { reply } => {
+                let result = rotate_now(&path, &mut file_opt, &mut next_lsn)
+                    .ok_or_else(|| StorageError::Io(std::io::Error::other("failed to rotate WAL")));
+                let _ = reply.send(result);
             }
         }
     }

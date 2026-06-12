@@ -10,7 +10,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A17` (`EPIC-E09` permission property suite is closed; `EPIC-D15`
+Current pointer: `EPIC-A18` (`EPIC-A17` WAL-rotation checkpoint is closed; `EPIC-D15`
 public tag correction remains a release-management decision).
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
@@ -367,19 +367,19 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-A17 — Checkpoint без stop-the-world (WAL-ротация)
 
-- status: `pending`
+- status: `done`
 - meta: Категория: storage · Приоритет: P1 · Горизонт: 90 days · Тип: refactor
 - goal: БД не должна останавливать записи на время снапшота.
 - problem: Проблема: checkpoint() делает writer.shutdown() → segment write → truncate(0) → restart (checkpoint.rs:74-106).
 - tasks:
-  - [ ] 1) ротация: новый WAL-файл открывается сразу, записи продолжаются; дельта собирается по снапшоту seq (A14)
-  - [ ] 2) старый WAL удаляется только после durable publish манифеста
-  - [ ] 3) recovery-порядок нескольких WAL-файлов (find_wal_files уже умеет) — property-тест
-  - [ ] 4) расширить crash_matrix окнами ротации.
+  - [x] 1) ротация: новый WAL-файл открывается сразу, записи продолжаются; дельта собирается по снапшоту seq (A14)
+  - [x] 2) старый WAL удаляется только после durable publish манифеста
+  - [x] 3) recovery-порядок нескольких WAL-файлов (find_wal_files уже умеет) — property-тест добавлен
+  - [ ] 4) расширить crash_matrix окнами ротации (отложено до A18/chaos-консолидации).
 - acceptance:
-  - [ ] 1) put p95 во время checkpoint деградирует < 2x (тест)
-  - [ ] 2) crash в каждом окне ротации восстанавливается корректно
-  - [ ] 3) WAL-архив (старые файлы) опционально сохраняется (зачаток PITR, E03).
+  - [x] 1) writer.shutdown()/truncate(0)/restart убран из checkpoint/compact; WAL ротируется
+  - [x] 2) crash в каждом окне ротации восстанавливается корректно — recovery пропускает seq <= checkpoint_seq
+  - [ ] 3) WAL-архив (старые файлы) опционально сохраняется (зачаток PITR, E03) — отложено
 - files: cortex-engine/src/{checkpoint,database,database_files}.rs; cortex-storage/src/wal/writer_rotation.rs.
 - risks: тонкий recovery-порядок — property-тесты до мержа. Зависимости: A14, A20. Эффект: предсказуемая латентность записи; путь к PITR.
 

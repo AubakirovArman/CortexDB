@@ -66,6 +66,7 @@ pub(super) fn append_balanced_batch(
             Ok(WalWriterCommand::Metrics { reply }) => {
                 let _ = reply.send(Ok(*metrics));
             }
+            Ok(WalWriterCommand::Rotate { .. }) => break,
             Err(TryRecvError::Empty) => break,
             Err(TryRecvError::Disconnected) => break,
         }
