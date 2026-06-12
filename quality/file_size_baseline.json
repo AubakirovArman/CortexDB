@@ -6461,6 +6461,41 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "scripts/enterprise_rag_bench/judge_metrics/clients.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 172,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/judge_metrics/io.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 32,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/judge_metrics/prompts.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 88,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/judge_metrics/reporting.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 212,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/judge_metrics/stats.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 69,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "scripts/enterprise_rag_bench/linear_semantic_promotion_modes.py": {
       "hard_limit": 1000,
       "kind": "source",
@@ -6646,7 +6681,7 @@
     "scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 599,
+      "lines": 213,
       "soft_limit": 300,
       "warning_limit": 600
     },
