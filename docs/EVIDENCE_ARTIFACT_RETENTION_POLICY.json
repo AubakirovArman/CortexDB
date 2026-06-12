@@ -3,6 +3,8 @@
   "github_release_assets": [
     "target/release-artifacts/cortexdb-dev-linux-x86_64.tar.gz",
     "target/release-artifacts/cortexdb-dev-linux-x86_64.tar.gz.sha256",
+    "target/release-artifacts/cortexdb-v0.2.0-beta.1-local.tar.gz",
+    "target/release-artifacts/cortexdb-v0.2.0-beta.1-local.tar.gz.sha256",
     "target/dashboard/dashboard-v1.tar.gz",
     "target/release-evidence-bundle/release-evidence.tar.gz",
     "target/release-evidence-bundle/release-evidence.tar.gz.sha256",
@@ -48,7 +50,7 @@
     "target/binary-platform-matrix/report.json",
     "target/install-script/report.json",
     "target/retrieval-quality/beta-report.json",
-    "target/sdk-release-artifacts/cortexdb-sdk-examples-0.1.0.tar.gz"
+    "target/sdk-release-artifacts/cortexdb-sdk-examples-0.2.0-beta.1.tar.gz"
   ],
   "local_only_patterns": [
     "target/**/raw.log",

@@ -1,6 +1,6 @@
 # CortexDB SDK Surface
 
-This directory contains Core Alpha HTTP clients for early integrations and
+This directory contains Beta HTTP clients for early integrations and
 package publication dry-runs. They target the stable `/v1/*` `cortex-server`
 surface and intentionally keep runtime dependencies small.
 
@@ -10,7 +10,7 @@ surface and intentionally keep runtime dependencies small.
 - `typescript/cortexdb-client.ts`: TypeScript source reference.
 - `crates/cortex-sdk`: blocking Rust HTTP client with crates.io metadata.
 
-The SDK APIs are Core Alpha contracts and may still receive additive changes.
+The SDK APIs are Beta contracts and may still receive additive changes.
 Search clients expose a typed response shape with `search_mode`, `ann_report`,
 and ranked `results` so ANN fallback behavior is visible to callers.
 ANN evaluation clients expose the `/v1/search/ann-evaluate` contract as a typed

@@ -50,6 +50,14 @@ def parse_python_version(repo: Path) -> str:
     return match.group(1)
 
 
+def pep440_version_for_workspace(workspace_version: str) -> str:
+    """Return the Python distribution spelling for the canonical workspace version."""
+    match = re.fullmatch(r"(\d+\.\d+\.\d+)-beta\.(\d+)", workspace_version)
+    if match:
+        return f"{match.group(1)}b{match.group(2)}"
+    return workspace_version
+
+
 def parse_package_name(repo: Path, path: str) -> str:
     text = read_text(repo / path)
     match = re.search(r"(?m)^name = \"([^\"]+)\"", text)
@@ -100,6 +108,7 @@ def validate_manifest(repo: Path, errors: list[str]) -> dict[str, Any]:
         else:
             for field in (
                 "package_versions_must_match_workspace",
+                "python_prerelease_uses_pep440_spelling",
                 "openapi_version_must_start_with_workspace_version",
                 "tag_must_match_workspace_version",
             ):
@@ -166,14 +175,16 @@ def validate_manifest(repo: Path, errors: list[str]) -> dict[str, Any]:
 
 def validate_versions(repo: Path, errors: list[str]) -> str:
     root_version = parse_root_version(repo)
+    python_expected = pep440_version_for_workspace(root_version)
     versions = {
         "python": parse_python_version(repo),
         "typescript": load_json(repo / "sdk/typescript/package.json").get("version"),
         "rust": root_version,
     }
     for language, version in versions.items():
-        if version != root_version:
-            errors.append(f"{language} SDK version {version!r} != workspace version {root_version!r}")
+        expected = python_expected if language == "python" else root_version
+        if version != expected:
+            errors.append(f"{language} SDK version {version!r} != expected release version {expected!r}")
     openapi_version = parse_openapi_version(repo)
     if not openapi_version.startswith(root_version):
         errors.append(f"OpenAPI version {openapi_version!r} does not start with workspace version {root_version!r}")

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: CortexDB Core Alpha API
-  version: 0.1.0-core-alpha
+  version: 0.2.0-beta.1
   description: 'Experimental Core Alpha HTTP API for the local single-node CortexDB
     engine. The HTTP layer is async, while the database core is a local blocking engine
     executed through a blocking task boundary.

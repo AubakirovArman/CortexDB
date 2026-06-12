@@ -100,7 +100,7 @@ def validate_policy(repo: Path, policy: dict[str, Any], markdown: Path) -> list[
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--policy", default="docs/VERSIONING_POLICY.json")
-    parser.add_argument("--markdown", default="docs/VERSIONING_POLICY.md")
+    parser.add_argument("--markdown", default="docs/archive/VERSIONING_POLICY.md")
     parser.add_argument("--report", default="target/versioning-policy/report.json")
     return parser.parse_args(argv)
 

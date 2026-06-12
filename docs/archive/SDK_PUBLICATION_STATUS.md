@@ -36,7 +36,8 @@ job actually runs from the tag and the registry pages exist.
 - Deprecated API aliases must be listed in `docs/SDK_DEPRECATION_POLICY.md`.
 - Changelog entries are required for breaking changes and deprecations.
 - SDKs must keep Rust, Python, and TypeScript package versions aligned with the
-  workspace version.
+  workspace release; Python may use the PEP 440 prerelease spelling required by
+  PyPI, for example `0.2.0b1` for workspace `0.2.0-beta.1`.
 
 ## Non-Claims
 

@@ -12,7 +12,16 @@ cleanup
 ROOT_VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' "$REPO_ROOT/Cargo.toml" | head -1)"
 PY_VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' "$ROOT/python/pyproject.toml" | head -1)"
 TS_VERSION="$(sed -n 's/.*"version": "\(.*\)".*/\1/p' "$ROOT/typescript/package.json" | head -1)"
-test "$ROOT_VERSION" = "$PY_VERSION"
+PY_EXPECTED_VERSION="$(python3 - "$ROOT_VERSION" <<'PY'
+import re
+import sys
+
+version = sys.argv[1]
+match = re.fullmatch(r"(\d+\.\d+\.\d+)-beta\.(\d+)", version)
+print(f"{match.group(1)}b{match.group(2)}" if match else version)
+PY
+)"
+test "$PY_EXPECTED_VERSION" = "$PY_VERSION"
 test "$ROOT_VERSION" = "$TS_VERSION"
 
 python3 "$REPO_ROOT/scripts/check_sdk_release_contract.py"

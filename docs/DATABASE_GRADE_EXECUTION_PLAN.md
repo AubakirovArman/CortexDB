@@ -6,7 +6,7 @@ Execution rule: close epics in order. Use the dependency-aware order from the so
 
 Status values: `next`, `in_progress`, `partial`, `done`, `blocked`, `frozen`.
 
-Current pointer: `EPIC-D15` (beta release gate is green; version bump/tag/public release remain).
+Current pointer: `EPIC-D15` (version bump and local release gates are green; tag/public release remain).
 
 Impact measurement rule: after each meaningful retrieval, ContextPack, or answer
 pipeline change, run `make enterprise-rag-bench-impact-gemini-50`. The target
@@ -1318,15 +1318,15 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 - meta: Категория: product · P0 · 30 days · productize
 - goal: workspace 0.1.0 при бета-цели 0.2.0-beta.1; гейты есть, релиза нет.
 - tasks:
-  - [ ] 1) bump версий — pending because Rust/TypeScript can use `0.2.0-beta.1`, while Python package publication needs an explicit PEP 440-compatible mapping such as `0.2.0b1` or an updated release policy.
+  - [x] 1) bump версий — workspace/Rust/TypeScript/OpenAPI now use `0.2.0-beta.1`; Python uses the documented PEP 440 spelling `0.2.0b1`; SDK/release gates validate this mapping.
   - [x] 2) `make beta-release-check` + бинарники (binary-release-check) — passed after aligning release gates with archived documentation paths and fixing a VERIFY numeric false-positive in the RAG demo smoke.
-  - [ ] 3) тег+GitHub release; release notes сверить с реальностью (после repositioning).
+  - [ ] 3) тег+GitHub release; release notes сверить с реальностью (после repositioning) — release notes and local artifacts are verified; public tag/release remains.
 - acceptance:
   - [ ] 1) тег с артефактами
   - [ ] 2) README-статус соответствует.
 - dependencies: A01, D12, D05 (желательно). Эффект: точка отсчёта «бета».
-- evidence: `make beta-release-check` passed and produced `target/beta-release/report.json` plus `target/beta-release/evidence.tar.gz`; `make binary-release-check BINARY_RELEASE_VERSION=v0.2.0-beta.1 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local` passed; `make rag-demo-smoke` passed after VERIFY stopped cross-comparing matched year and amount values as numeric contradictions.
-- remaining: choose and document package-version mapping, bump workspace/OpenAPI/SDK versions, then create the tag and GitHub release after explicit release approval.
+- evidence: `make sdk-check`, `make sdk-e2e-release-check`, `make openapi-contract-check`, `make beta-release-check`, `make binary-release-check BINARY_RELEASE_VERSION=v0.2.0-beta.1 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local`, `make release-artifact-manifest-check BINARY_RELEASE_VERSION=v0.2.0-beta.1 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local BINARY_RELEASE_ARCHIVE=target/release-artifacts/cortexdb-v0.2.0-beta.1-local.tar.gz`, `make evidence-artifact-retention-check`, and `make versioning-policy-check` passed after the version bump. Earlier `make rag-demo-smoke` passed after VERIFY stopped cross-comparing matched year and amount values as numeric contradictions.
+- remaining: create the tag and GitHub release after explicit release approval; public SDK registry publication remains governed by `EPIC-D05`.
 
 ## Block E — Reliability, security, and operations
 

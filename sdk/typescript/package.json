@@ -1,7 +1,7 @@
 {
   "name": "@cortexdb/client",
-  "version": "0.1.0",
-  "description": "Core Alpha CortexDB HTTP client",
+  "version": "0.2.0-beta.1",
+  "description": "Beta CortexDB HTTP client",
   "type": "module",
   "main": "./cortexdb-client.cjs",
   "module": "./cortexdb-client.js",

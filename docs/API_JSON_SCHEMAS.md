@@ -1,6 +1,6 @@
 # CortexDB API JSON Schemas
 
-Version: `v0.1.0-core-alpha`
+Version: `v0.2.0-beta.1`
 
 The HTTP API serializes response bodies from typed Rust structs with
 `serde::Serialize`.

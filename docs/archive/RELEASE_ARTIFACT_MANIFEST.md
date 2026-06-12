@@ -32,7 +32,8 @@ The validator fails closed when:
 - the binary archive is missing `package_manifest.json`;
 - the production manifest gate requires a release evidence bundle and it is
   missing or its sidecar checksum does not match;
-- SDK package versions drift from the workspace version;
+- SDK package versions drift from the workspace version, except for the
+  documented Python PEP 440 prerelease spelling of the same release;
 - storage format inventory cannot be read;
 - `docs/openapi.yaml` does not expose an `info.version`.
 

@@ -1,7 +1,7 @@
 [project]
 name = "cortexdb-client"
-version = "0.1.0"
-description = "Core Alpha CortexDB HTTP client"
+version = "0.2.0b1"
+description = "Beta CortexDB HTTP client"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "CortexDB" }]

@@ -27,7 +27,7 @@ REQUIRED_REPORTS = [
 
 OPTIONAL_ARTIFACTS = [
     ("retrieval_dashboard", "target/retrieval-quality/dashboard.html"),
-    ("sdk_examples_archive", "target/sdk-release-artifacts/cortexdb-sdk-examples-0.1.0.tar.gz"),
+    ("sdk_examples_archive", "target/sdk-release-artifacts/cortexdb-sdk-examples-0.2.0-beta.1.tar.gz"),
 ]
 
 
@@ -101,18 +101,35 @@ def package_json_version(path: Path) -> str:
     return version
 
 
+def pep440_version_for_workspace(workspace_version: str) -> str:
+    match = re.fullmatch(r"(\d+\.\d+\.\d+)-beta\.(\d+)", workspace_version)
+    if match:
+        return f"{match.group(1)}b{match.group(2)}"
+    return workspace_version
+
+
 def sdk_versions(repo: Path) -> dict[str, Any]:
     workspace_version = toml_version(repo / "Cargo.toml")
+    python_expected = pep440_version_for_workspace(workspace_version)
     versions = {
         "workspace": workspace_version,
         "rust": {"name": "cortex-sdk", "version": toml_version(repo / "crates/cortex-sdk/Cargo.toml", workspace_version), "manifest": "crates/cortex-sdk/Cargo.toml"},
         "python": {"name": "cortexdb-client", "version": toml_version(repo / "sdk/python/pyproject.toml"), "manifest": "sdk/python/pyproject.toml"},
         "typescript": {"name": "@cortexdb/client", "version": package_json_version(repo / "sdk/typescript/package.json"), "manifest": "sdk/typescript/package.json"},
+        "python_pep440_expected": python_expected,
         "source": "sdk/release-manifest.json",
     }
-    package_versions = [versions["rust"]["version"], versions["python"]["version"], versions["typescript"]["version"]]
-    if any(version != workspace_version for version in package_versions):
-        raise ValueError(f"SDK versions do not match workspace version {workspace_version}: {package_versions}")
+    expected_versions = {
+        "rust": workspace_version,
+        "python": python_expected,
+        "typescript": workspace_version,
+    }
+    for language, expected in expected_versions.items():
+        version = versions[language]["version"]
+        if version != expected:
+            raise ValueError(
+                f"{language} SDK version {version!r} != expected release version {expected!r}"
+            )
     return versions
 
 

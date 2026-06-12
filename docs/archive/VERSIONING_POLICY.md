@@ -95,8 +95,11 @@ green in the same release candidate.
 | Beta | minor/prerelease bump plus migration notes | patch/prerelease | patch/prerelease |
 | 1.0+ | major version only | minor | patch |
 
-For SDK packages, Python, TypeScript, Rust, and the workspace version must stay
-aligned unless a future policy explicitly separates their release trains.
+For SDK packages, Rust and TypeScript use the canonical workspace version.
+Python must stay aligned to the same release but may use the PEP 440 prerelease
+spelling required by PyPI; for example, workspace `0.2.0-beta.1` maps to
+Python `0.2.0b1`. This is a registry spelling difference, not a separate
+release train.
 
 ## Release Evidence
 
