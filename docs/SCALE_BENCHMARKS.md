@@ -56,7 +56,7 @@ This profile is intentionally heavier than tiny synthetic payloads.
 
 Run date: 2026-06-12
 
-Source state: A19 scale-benchmark harness worktree, after base commit `a9fa826`.
+Source state: A19 scale-benchmark runner commit `94fbf92`.
 
 Command:
 
@@ -87,11 +87,46 @@ Summary:
 
 Validation status: `ok=true`, no storage validation errors.
 
+## 1M Core Baseline
+
+Run date: 2026-06-12
+
+Source state: A19 scale-benchmark runner commit `94fbf92`.
+
+Command:
+
+```bash
+make scale-bench-1m
+```
+
+Report:
+
+```text
+target/scale-bench/1m/report.json
+```
+
+Summary:
+
+| Phase | Result |
+| --- | ---: |
+| cells | 1000000 |
+| total duration | 704416.326 ms |
+| put_batches | 10892.097 ms |
+| checkpoint | 378042.066 ms |
+| get_latest p95 | 1.165 ms |
+| restart_open | 2879.535 ms |
+| after_put RSS | 8606552064 bytes |
+| after_checkpoint RSS | 8748335104 bytes |
+| peak RSS | 11147628544 bytes |
+| estimated total memory | 8946879838 bytes |
+
+Validation status: `ok=true`, no storage validation errors.
+
 ## Current Interpretation
 
-The core single-node write/read/restart path is reproducible at 100K cells.
-The run also confirms that realistic payloads produce high RSS and a costly
-checkpoint phase before lazy payload work lands.
+The core single-node write/read/restart path is reproducible at 100K and 1M
+cells. The runs also confirm that realistic payloads produce high RSS and a
+costly checkpoint phase before lazy payload work lands.
 
 Search, ContextPack, and VerifyFact at 100K are deliberately kept outside the
 default target. A low-sample exploratory run reached those phases but did not

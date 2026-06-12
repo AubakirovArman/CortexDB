@@ -122,7 +122,7 @@ checkpoint, sampled latest reads, close, and restart open. Expensive broad
 search, ContextPack, and VerifyFact phases are opt-in via
 `SCALE_BENCH_SEARCH_SAMPLES`, `SCALE_BENCH_CONTEXT_SAMPLES`, and
 `SCALE_BENCH_VERIFY_SAMPLES`. See `docs/SCALE_BENCHMARKS.md` for the current
-100K baseline and known heavy-phase bottlenecks.
+100K/1M baseline and known heavy-phase bottlenecks.
 
 To compare the current reports with release history:
 
