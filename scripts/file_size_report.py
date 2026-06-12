@@ -12,7 +12,18 @@ from typing import Any
 
 
 SCHEMA_VERSION = "cortexdb.file_size_report.v1"
-CODE_EXTENSIONS = {".rs", ".py", ".sh", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"}
+CODE_EXTENSIONS = {
+    ".rs",
+    ".py",
+    ".sh",
+    ".mk",
+    ".js",
+    ".jsx",
+    ".ts",
+    ".tsx",
+    ".mjs",
+    ".cjs",
+}
 EXCLUDED_DIRS = {".git", ".venv", "__pycache__", "node_modules", "target", "test-results", "erb-submission"}
 EXCLUDED_PARTS = {"dist", "snapshots", "golden", "generated"}
 EXCLUDED_FILES = {"Cargo.lock", "package-lock.json"}
@@ -41,7 +52,7 @@ def skip_path(path: Path) -> bool:
 def should_scan(path: Path) -> bool:
     if path.name in EXCLUDED_FILES or skip_path(path):
         return False
-    if path.name == "Makefile":
+    if path.name == "Makefile" or path.suffix == ".mk":
         return True
     return path.suffix in CODE_EXTENSIONS and path.suffix != ".snap"
 

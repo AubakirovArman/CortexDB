@@ -3,7 +3,7 @@
     "Makefile": {
       "hard_limit": 1000,
       "kind": "makefile",
-      "lines": 5125,
+      "lines": 20,
       "soft_limit": 150,
       "warning_limit": 600
     },
@@ -3437,6 +3437,111 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "mk/ann.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 282,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/core.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 532,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-core.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 487,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-quality.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 920,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-runs.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 812,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/external-benchmarks.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 518,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/longmemeval.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 200,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/performance-dashboard.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 152,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/phony.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 53,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/release.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 71,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/storage-ops.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 94,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/vars-core.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 300,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/vars-enterprise-rag.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 434,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/vars-external-benchmarks.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 133,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/vars-ops-release.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 137,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "playwright.config.ts": {
       "hard_limit": 1000,
       "kind": "source",
@@ -4966,7 +5071,7 @@
     "scripts/file_size_report.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 248,
+      "lines": 259,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5198,6 +5303,13 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 96,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/make_target_list_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 83,
       "soft_limit": 300,
       "warning_limit": 600
     },
