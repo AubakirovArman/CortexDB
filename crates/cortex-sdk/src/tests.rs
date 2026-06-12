@@ -427,6 +427,24 @@ fn typed_aql_explain_response_decodes_contract() {
             "task": "budget",
             "brain_id": 1,
             "selected_mode": "balanced",
+            "logical_plan": {
+                "nodes": [{
+                    "id": 0,
+                    "kind": "scan",
+                    "detail": "brain_id=1 predicate=bitmap_candidates",
+                    "permission_predicate": null
+                }],
+                "policy_complete": false
+            },
+            "policy_rewritten_plan": {
+                "nodes": [{
+                    "id": 0,
+                    "kind": "scan",
+                    "detail": "brain_id=1 predicate=bitmap_candidates",
+                    "permission_predicate": "agent_allowed"
+                }],
+                "policy_complete": true
+            },
             "bitmap_plan": "BitmapProgram(max_stack_depth=3)\n0000: PushAgentAllowed",
             "bitmap_ops": ["PushAgentAllowed", "PushLive", "And"],
             "filters": [{
@@ -454,6 +472,8 @@ fn typed_aql_explain_response_decodes_contract() {
     assert_eq!(explain.selected_mode, "balanced");
     assert_eq!(explain.candidate_counts.after_bitmap, 1);
     assert_eq!(explain.filters[0].kind, "where");
+    assert!(!explain.logical_plan.policy_complete);
+    assert!(explain.policy_rewritten_plan.policy_complete);
 }
 
 #[test]

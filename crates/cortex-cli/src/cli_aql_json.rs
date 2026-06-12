@@ -4,7 +4,7 @@ use serde_json::to_string;
 
 use crate::cli_json_types::{
     AqlCandidateCountsResponse, AqlCellResponse, AqlExplainFilterResponse, AqlExplainResponse,
-    AqlResponse,
+    AqlLogicalPlanNodeResponse, AqlLogicalPlanResponse, AqlResponse,
 };
 
 pub(crate) fn aql_to_json(cells: &[RetrievedCell]) -> String {
@@ -27,6 +27,8 @@ pub(crate) fn aql_explain_to_json(report: AqlExplainReport) -> String {
             task: report.task,
             brain_id: report.brain_id.0,
             selected_mode: retrieval_mode_name(report.selected_mode).to_owned(),
+            logical_plan: logical_plan_response(report.logical_plan),
+            policy_rewritten_plan: logical_plan_response(report.policy_rewritten_plan),
             bitmap_plan: report.bitmap_plan,
             bitmap_ops: report.bitmap_ops,
             filters: report
@@ -50,6 +52,22 @@ pub(crate) fn aql_explain_to_json(report: AqlExplainReport) -> String {
             citations_required: report.citations_required,
         }),
     })
+}
+
+fn logical_plan_response(report: cortex_engine::LogicalPlanReport) -> AqlLogicalPlanResponse {
+    AqlLogicalPlanResponse {
+        nodes: report
+            .nodes
+            .into_iter()
+            .map(|node| AqlLogicalPlanNodeResponse {
+                id: node.id,
+                kind: node.kind,
+                detail: node.detail,
+                permission_predicate: node.permission_predicate,
+            })
+            .collect(),
+        policy_complete: report.policy_complete,
+    }
 }
 
 fn retrieval_mode_name(mode: RetrievalMode) -> &'static str {

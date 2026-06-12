@@ -2,6 +2,7 @@ use cortex_aql::{eval_bitmap_program, AgentView, BitmapProvider, BrainId, Retrie
 
 use crate::database::{cell_version_meets_quality_thresholds, CandidateResolver, Database};
 use crate::error::{EngineError, EngineResult};
+use crate::plan::{LogicalPlan, LogicalPlanReport, PolicyRewrite};
 
 use super::cache::AqlStatementKind;
 use super::EngineAqlProvider;
@@ -11,6 +12,8 @@ pub struct AqlExplainReport {
     pub task: String,
     pub brain_id: BrainId,
     pub selected_mode: RetrievalMode,
+    pub logical_plan: LogicalPlanReport,
+    pub policy_rewritten_plan: LogicalPlanReport,
     pub bitmap_plan: String,
     pub bitmap_ops: Vec<String>,
     pub filters: Vec<AqlExplainFilter>,
@@ -49,6 +52,11 @@ impl Database {
         let cortex_aql::BoundPlan::Retrieve(plan) = cached.bound_plan else {
             return Err(EngineError::InvalidOperation);
         };
+        let logical_plan = LogicalPlan::from_bound_plan(
+            &cortex_aql::BoundPlan::Retrieve(plan.clone()),
+            cached.where_expression.as_deref(),
+        );
+        let policy_rewritten_plan = PolicyRewrite::new(view).rewrite(&logical_plan);
         let provider = EngineAqlProvider::new(index, view);
         let bitmap_candidates = eval_bitmap_program(&plan.bitmap_program, &provider)?;
         let txn = self.read_txn();
@@ -81,6 +89,8 @@ impl Database {
             task: plan.task.clone(),
             brain_id: plan.brain_id,
             selected_mode: plan.mode,
+            logical_plan: logical_plan.to_report(),
+            policy_rewritten_plan: policy_rewritten_plan.to_report(),
             bitmap_plan: plan.bitmap_program.explain(),
             bitmap_ops: plan
                 .bitmap_program

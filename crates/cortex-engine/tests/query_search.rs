@@ -125,6 +125,19 @@ USING MODE balanced WHERE space = project:investments AND status = "ready" LIMIT
 
     assert_eq!(report.task, "budget");
     assert_eq!(report.selected_mode, RetrievalMode::Balanced);
+    assert!(!report.logical_plan.policy_complete);
+    assert!(report.policy_rewritten_plan.policy_complete);
+    assert!(report
+        .logical_plan
+        .nodes
+        .iter()
+        .any(|node| node.kind == "scan" && node.permission_predicate.is_none()));
+    assert!(report
+        .policy_rewritten_plan
+        .nodes
+        .iter()
+        .any(|node| node.kind == "scan"
+            && node.permission_predicate.as_deref() == Some("agent_allowed")));
     assert_eq!(report.candidate_counts.universe, 2);
     assert_eq!(report.candidate_counts.agent_allowed, 2);
     assert_eq!(report.candidate_counts.live, 2);

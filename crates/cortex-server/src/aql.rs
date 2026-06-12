@@ -4,7 +4,7 @@ use cortex_engine::{AqlExplainReport, Database};
 use crate::authz;
 use crate::responses::{
     AqlCandidateCountsResponse, AqlCellResponse, AqlExplainFilterResponse, AqlExplainResponse,
-    AqlResponse, RouterError,
+    AqlLogicalPlanNodeResponse, AqlLogicalPlanResponse, AqlResponse, RouterError,
 };
 use crate::router::query_param_decoded;
 
@@ -58,6 +58,8 @@ fn explain_response(report: AqlExplainReport) -> AqlExplainResponse {
         task: report.task,
         brain_id: report.brain_id.0,
         selected_mode: retrieval_mode_name(report.selected_mode).to_owned(),
+        logical_plan: logical_plan_response(report.logical_plan),
+        policy_rewritten_plan: logical_plan_response(report.policy_rewritten_plan),
         bitmap_plan: report.bitmap_plan,
         bitmap_ops: report.bitmap_ops,
         filters: report
@@ -79,6 +81,22 @@ fn explain_response(report: AqlExplainReport) -> AqlExplainResponse {
         candidate_limit: report.candidate_limit,
         budget_tokens: report.budget_tokens,
         citations_required: report.citations_required,
+    }
+}
+
+fn logical_plan_response(report: cortex_engine::LogicalPlanReport) -> AqlLogicalPlanResponse {
+    AqlLogicalPlanResponse {
+        nodes: report
+            .nodes
+            .into_iter()
+            .map(|node| AqlLogicalPlanNodeResponse {
+                id: node.id,
+                kind: node.kind,
+                detail: node.detail,
+                permission_predicate: node.permission_predicate,
+            })
+            .collect(),
+        policy_complete: report.policy_complete,
     }
 }
 

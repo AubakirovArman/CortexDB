@@ -49,6 +49,7 @@ mod memory_accounting;
 pub use memory::{ExpiredMemoryCell, MemoryDecayScore};
 pub mod operation;
 mod options;
+pub mod plan;
 pub mod query;
 pub mod repair;
 pub mod replay;
@@ -130,6 +131,7 @@ pub use operation::{
 pub use options::{
     DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
 };
+pub use plan::{LogicalPlan, LogicalPlanNode, LogicalPlanReport, PolicyRewrite};
 pub use query::{
     scope_id, AqlCandidateCounts, AqlExplainFilter, AqlExplainReport, AqlQueryCacheStats,
     CandidateId, CellMetadata, EngineAqlIndex, SourceRef,

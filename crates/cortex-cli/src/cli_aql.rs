@@ -47,13 +47,15 @@ fn format_aql_explain(report: &AqlExplainReport) -> String {
         .collect::<Vec<_>>()
         .join(", ");
     format!(
-        "aql_explain task={} mode={:?} brain_id={} candidate_limit={} budget_tokens={} citations_required={}\ncounts universe={} agent_allowed={} live={} after_bitmap={} after_quality={} returned_limit={}\nfilters={}\n{}",
+        "aql_explain task={} mode={:?} brain_id={} candidate_limit={} budget_tokens={} citations_required={}\nlogical_plan_policy_complete={} policy_rewritten_plan_policy_complete={}\ncounts universe={} agent_allowed={} live={} after_bitmap={} after_quality={} returned_limit={}\nfilters={}\n{}",
         report.task,
         report.selected_mode,
         report.brain_id.0,
         report.candidate_limit,
         report.budget_tokens,
         report.citations_required,
+        report.logical_plan.policy_complete,
+        report.policy_rewritten_plan.policy_complete,
         report.candidate_counts.universe,
         report.candidate_counts.agent_allowed,
         report.candidate_counts.live,

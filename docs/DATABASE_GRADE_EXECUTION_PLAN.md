@@ -10,7 +10,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A10` (`EPIC-A02` typed descriptor is closed; `EPIC-D15`
+Current pointer: `EPIC-A11` (`EPIC-A10` logical plan is closed; `EPIC-D15`
 public tag correction remains a release-management decision).
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
@@ -243,20 +243,22 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-A10 — LogicalPlan IR + формальный Policy Rewrite этап
 
-- status: `pending`
+- status: `done`
 - meta: Категория: query-engine · Приоритет: P0 · Горизонт: 60 days · Тип: build
 - goal: без promежуточного представления нет планировщика; policy-этап делает permission свойством плана.
 - problem: Проблема: binder выдаёт BoundPlan, дальше — захардкоженные функции.
 - tasks:
-  - [ ] 1) `LogicalPlan` (Scan{brain, predicate}, Filter, Rank{mode,weights}, Limit, Budget, Pack, Verify) — binder транслирует AST в него
-  - [ ] 2) PolicyRewrite-проход: вшивает permission-маску в каждый Scan, клампит budget/limit (логика PolicyValidator переезжает сюда)
-  - [ ] 3) сериализация плана в JSON для EXPLAIN.
+  - [x] 1) `LogicalPlan` (Scan{brain, predicate}, Filter, Rank{mode,weights}, Limit, Budget, Pack, Verify) — bound AQL plans now materialize inspectable logical nodes before execution.
+  - [x] 2) PolicyRewrite-проход: вшивает permission-маску в каждый Scan, клампит budget/limit defensively against the `AgentView` effective limits.
+  - [x] 3) сериализация плана в JSON для EXPLAIN.
 - acceptance:
-  - [ ] 1) существующее поведение байт-в-байт сохранено (golden AQL-тесты v0.4 зелёные)
-  - [ ] 2) EXPLAIN выводит logical plan до/после policy rewrite
-  - [ ] 3) тест: ни один Scan в плане после rewrite не существует без permission-предиката (структурная проверка).
+  - [x] 1) существующее поведение байт-в-байт сохранено (golden AQL-тесты v0.4 зелёные)
+  - [x] 2) EXPLAIN выводит logical plan до/после policy rewrite
+  - [x] 3) тест: ни один Scan в плане после rewrite не существует без permission-предиката (структурная проверка).
 - files: cortex-aql/src/binder/plan.rs (расширение), новый cortex-engine/src/plan/.
 - risks: переусложнить IR — держать 7-8 узлов, не 30. Зависимости: нет (можно параллельно A05/A06). Эффект: скелет настоящего query engine; вход для A11-A13.
+- latest evidence: Added `cortex-engine/src/plan/` with `LogicalPlan` nodes for scan/filter/rank/limit/budget/pack/verify and a `PolicyRewrite` pass that injects `agent_allowed` into every scan and clamps limit/budget through the current `AgentView`. AQL EXPLAIN now returns both `logical_plan` and `policy_rewritten_plan` on engine, CLI JSON, server JSON, and SDK decode models while preserving existing bitmap/filter/count fields. Added structural tests proving rewritten scans have permission predicates and updated the existing AQL explain integration test. Checks passed: `cargo fmt --check`, `cargo test -p cortex-engine plan --all-features`, `cargo test -p cortex-engine --test query_search explain_retrieve_aql_reports_plan_filters_counts_and_mode --all-features`, `cargo test -p cortex-aql --test aql_v0_4_golden_tests --all-features`, `cargo test -p cortex-cli aql_command_explain_reports_plan_filters_counts_and_mode --all-features`, `cargo test -p cortex-server v1_aql_explain_returns_plan_filters_counts_and_mode --all-features`, `cargo test -p cortex-server snapshot_aql_explain_response_shape --all-features`, `cargo test -p cortex-sdk typed_aql_explain_response_decodes_contract --all-features`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, `make check`, and `make openapi-contract-check`.
+- remaining: executor still runs the existing direct retrieve path; using the logical plan as the physical execution input is explicitly carried forward to A11.
 
 ### EPIC-A11 — Operator-based executor
 

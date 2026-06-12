@@ -255,10 +255,31 @@ pub struct AqlCandidateCounts {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct AqlLogicalPlanNode {
+    pub id: usize,
+    pub kind: String,
+    pub detail: String,
+    #[serde(default)]
+    pub permission_predicate: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq)]
+pub struct AqlLogicalPlan {
+    #[serde(default)]
+    pub nodes: Vec<AqlLogicalPlanNode>,
+    #[serde(default)]
+    pub policy_complete: bool,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct AqlExplainResponse {
     pub task: String,
     pub brain_id: u64,
     pub selected_mode: String,
+    #[serde(default)]
+    pub logical_plan: AqlLogicalPlan,
+    #[serde(default)]
+    pub policy_rewritten_plan: AqlLogicalPlan,
     pub bitmap_plan: String,
     #[serde(default)]
     pub bitmap_ops: Vec<String>,

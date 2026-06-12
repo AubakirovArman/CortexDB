@@ -249,10 +249,26 @@ pub struct AqlCandidateCountsResponse {
 }
 
 #[derive(Serialize)]
+pub struct AqlLogicalPlanNodeResponse {
+    pub id: usize,
+    pub kind: String,
+    pub detail: String,
+    pub permission_predicate: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct AqlLogicalPlanResponse {
+    pub nodes: Vec<AqlLogicalPlanNodeResponse>,
+    pub policy_complete: bool,
+}
+
+#[derive(Serialize)]
 pub struct AqlExplainResponse {
     pub task: String,
     pub brain_id: u64,
     pub selected_mode: String,
+    pub logical_plan: AqlLogicalPlanResponse,
+    pub policy_rewritten_plan: AqlLogicalPlanResponse,
     pub bitmap_plan: String,
     pub bitmap_ops: Vec<String>,
     pub filters: Vec<AqlExplainFilterResponse>,
