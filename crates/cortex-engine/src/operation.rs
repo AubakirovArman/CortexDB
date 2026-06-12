@@ -75,6 +75,19 @@ pub fn wal_record_from_operation_with_metadata(
 ) -> WalRecord {
     let mut record = wal_record_from_operation_inner(seq, operation);
     if !metadata.is_empty() {
+        let descriptor = CellDescriptor::from_metadata_section_lossy(&metadata);
+        if let Some(section) = record
+            .sections
+            .iter_mut()
+            .find(|section| section.tag == SectionTag::CellDescriptor)
+        {
+            section.data = descriptor.encode_section_v1();
+        } else {
+            record.sections.push(WalSection::new(
+                SectionTag::CellDescriptor,
+                descriptor.encode_section_v1(),
+            ));
+        }
         record
             .sections
             .push(WalSection::new(SectionTag::CellMetadata, metadata));

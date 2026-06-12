@@ -146,6 +146,25 @@ impl CellDescriptor {
         descriptor
     }
 
+    pub fn from_metadata_section_lossy(metadata: &[u8]) -> Self {
+        let text = String::from_utf8_lossy(metadata);
+        let mut descriptor = Self::default();
+        for (line_index, line) in text.lines().enumerate() {
+            let line = line.trim();
+            if line.is_empty() {
+                break;
+            }
+            if line_index == 0 && line == "cortexdb.cell_metadata.v1" {
+                continue;
+            }
+            let Some((key, value)) = line.split_once('=') else {
+                break;
+            };
+            descriptor.apply_header(key.trim(), value.trim());
+        }
+        descriptor
+    }
+
     pub fn encode_section_v1(&self) -> Vec<u8> {
         let mut out = Vec::new();
         out.extend_from_slice(&Self::SECTION_MAGIC_V1);
@@ -451,6 +470,25 @@ mod tests {
 
         let descriptor = CellDescriptor::from_payload_lossy(&cell.encode_payload());
         assert_eq!(descriptor, CellDescriptor::from_metadata(&cell.metadata));
+    }
+
+    #[test]
+    fn descriptor_decodes_cell_metadata_section() {
+        let metadata = KnowledgeCellMetadata {
+            scope: "tenant:private".to_owned(),
+            status: "ready".to_owned(),
+            cell_type: KnowledgeCellType::Fact,
+            memory_type: Some("decision".to_owned()),
+            ttl_seconds: Some(600),
+            created_unix_seconds: Some(1_710_000_001),
+            source_trust_q16: Some(61_000),
+            source: Some("source-b".to_owned()),
+        };
+
+        let descriptor =
+            CellDescriptor::from_metadata_section_lossy(&metadata.encode_wal_section());
+
+        assert_eq!(descriptor, CellDescriptor::from_metadata(&metadata));
     }
 
     #[test]

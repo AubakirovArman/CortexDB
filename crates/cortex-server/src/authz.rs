@@ -1,4 +1,5 @@
 use cortex_aql::{AgentId, AgentView};
+use cortex_core::CellDescriptor;
 use cortex_engine::{scope_id, CellMetadata, Database};
 
 use crate::context::view_for_scope;
@@ -77,13 +78,12 @@ pub(crate) fn remember_view_for_scope(
     }
 }
 
-pub(crate) fn require_payload_read(
+pub(crate) fn require_descriptor_read(
     authenticated: Option<&AgentView>,
-    payload: &[u8],
+    descriptor: &CellDescriptor,
 ) -> Result<(), RouterError> {
     if let Some(view) = authenticated {
-        let metadata = CellMetadata::from_payload(payload);
-        require_read_scope(view, &metadata.scope)?;
+        require_read_scope(view, &descriptor.scope)?;
     }
     Ok(())
 }
@@ -95,6 +95,16 @@ pub(crate) fn require_payload_write(
     if let Some(view) = authenticated {
         let metadata = CellMetadata::from_payload(payload);
         require_write_scope(view, &metadata.scope)?;
+    }
+    Ok(())
+}
+
+pub(crate) fn require_descriptor_write(
+    authenticated: Option<&AgentView>,
+    descriptor: &CellDescriptor,
+) -> Result<(), RouterError> {
+    if let Some(view) = authenticated {
+        require_write_scope(view, &descriptor.scope)?;
     }
     Ok(())
 }

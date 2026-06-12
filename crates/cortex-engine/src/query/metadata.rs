@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use cortex_aql::{BitmapHandle, CellTypeId, MemoryType, ScopeId, StatusId};
+use cortex_core::CellDescriptor;
 
 use crate::search::tokenize;
 use crate::source_trust::{parse_source_trust_class, SourceTrust, SourceTrustClass};
@@ -331,6 +332,27 @@ impl CellMetadata {
             terms,
             source_ref,
         }
+    }
+
+    pub fn from_payload_with_descriptor(payload: &[u8], descriptor: &CellDescriptor) -> Self {
+        let mut metadata = Self::from_payload(payload);
+        metadata.scope = descriptor.scope.clone();
+        metadata.status = descriptor.status.clone();
+        metadata.cell_type = descriptor.cell_type.as_str().to_owned();
+        metadata.memory_type = descriptor
+            .memory_type
+            .as_deref()
+            .and_then(|value| value.parse().ok());
+        metadata.ttl_seconds = descriptor.ttl_seconds;
+        metadata.created_unix_seconds = descriptor.created_unix_seconds;
+        metadata.source_trust_q16 = descriptor.source_trust_q16;
+        metadata.source = descriptor.source.clone();
+        metadata.citation = descriptor.citation.clone();
+        metadata.content_hash = descriptor.content_hash.clone();
+        metadata.parent_id = descriptor.parent_id.clone();
+        metadata.valid_from = descriptor.valid_from.clone();
+        metadata.valid_to = descriptor.valid_to.clone();
+        metadata
     }
 
     pub fn citation(&self) -> Option<&str> {

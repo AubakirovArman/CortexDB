@@ -11,7 +11,7 @@ mod render;
 
 use cortex_aql::{AgentView, BitmapHandle, BoundPlan, BrainId};
 use cortex_core::memtable::CellVersion;
-use cortex_core::{CellId, CommitSeq};
+use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::segment::{SegmentCell, SegmentCellRef};
 
@@ -120,7 +120,10 @@ impl EngineAqlIndex {
             .map(|(index, version)| {
                 Ok((
                     candidate_from_ordinal(index)?,
-                    version.payload.as_slice(),
+                    CellMetadata::from_payload_with_descriptor(
+                        &version.payload,
+                        &version.descriptor,
+                    ),
                     version.cell_id,
                 ))
             })
@@ -132,7 +135,7 @@ impl EngineAqlIndex {
         Self::try_from_cells(cells.iter().filter_map(|cell| {
             cell.deleted_seq.is_none().then_some((
                 cell.candidate_id,
-                cell.payload.as_slice(),
+                CellMetadata::from_payload(&cell.payload),
                 CellId(cell.cell_id),
             ))
         }))
@@ -140,9 +143,17 @@ impl EngineAqlIndex {
 
     pub fn try_from_segment_cell_refs(cells: &[SegmentCellRef<'_>]) -> EngineResult<Self> {
         Self::try_from_cells(cells.iter().filter_map(|cell| {
+            let metadata = cell
+                .descriptor
+                .as_deref()
+                .and_then(CellDescriptor::decode_section_v1)
+                .map(|descriptor| {
+                    CellMetadata::from_payload_with_descriptor(cell.payload, &descriptor)
+                })
+                .unwrap_or_else(|| CellMetadata::from_payload(cell.payload));
             cell.deleted_seq.is_none().then_some((
                 cell.candidate_id,
-                cell.payload,
+                metadata,
                 CellId(cell.cell_id),
             ))
         }))
@@ -199,7 +210,11 @@ impl EngineAqlIndex {
                 next_candidate = Some(increment_candidate(value)?);
                 value
             };
-            changed_current.push((candidate, version.payload.as_slice(), version.cell_id));
+            changed_current.push((
+                candidate,
+                CellMetadata::from_payload_with_descriptor(&version.payload, &version.descriptor),
+                version.cell_id,
+            ));
         }
         index.extend_cells(changed_current)?;
         index.rebuild_universe();
@@ -226,19 +241,19 @@ impl EngineAqlIndex {
         }
     }
 
-    fn try_from_cells<'a>(
-        cells: impl IntoIterator<Item = (u32, &'a [u8], CellId)>,
+    fn try_from_cells(
+        cells: impl IntoIterator<Item = (u32, CellMetadata, CellId)>,
     ) -> EngineResult<Self> {
         let mut index = Self::default();
         index.extend_cells(cells)?;
         Ok(index)
     }
 
-    fn extend_cells<'a>(
+    fn extend_cells(
         &mut self,
-        cells: impl IntoIterator<Item = (u32, &'a [u8], CellId)>,
+        cells: impl IntoIterator<Item = (u32, CellMetadata, CellId)>,
     ) -> EngineResult<()> {
-        for (candidate, payload, cell_id) in cells {
+        for (candidate, metadata, cell_id) in cells {
             validate_candidate(candidate)?;
             if let Some(mapped) = self.candidate_to_cell.get(&candidate) {
                 if *mapped != cell_id {
@@ -255,7 +270,6 @@ impl EngineAqlIndex {
                     )));
                 }
             }
-            let metadata = CellMetadata::from_payload(payload);
             self.candidate_to_cell.insert(candidate, cell_id);
             self.cell_to_candidate.insert(cell_id, candidate);
             self.universe.insert(candidate);

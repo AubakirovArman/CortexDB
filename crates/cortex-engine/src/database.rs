@@ -5,7 +5,7 @@ use std::sync::Mutex;
 
 use cortex_aql::{eval_bitmap_program, BitmapProvider, BoundRetrievePlan, QualityThresholds};
 use cortex_core::memtable::{CellVersion, MemTable, ReadTxn};
-use cortex_core::{CellId, CommitSeq};
+use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::manifest::StorageManifest;
 use cortex_storage::wal::{DurabilityMode, WalWriter, WalWriterHandle};
 
@@ -252,6 +252,15 @@ impl Database {
         self.get_cell(self.read_txn(), cell_id)
     }
 
+    pub fn get_latest_cell_with_descriptor(
+        &self,
+        cell_id: CellId,
+    ) -> Option<(Vec<u8>, CellDescriptor)> {
+        self.memtable
+            .read(self.read_txn(), cell_id)
+            .map(|version| (version.payload.clone(), version.descriptor.clone()))
+    }
+
     pub fn retrieve_cells<P: CandidateResolver>(
         &self,
         plan: &BoundRetrievePlan,
@@ -379,23 +388,46 @@ impl Database {
         metadata: Vec<u8>,
     ) -> EngineResult<CommitSeq> {
         let next_seq = CommitSeq(self.current_seq.0 + 1);
+        let descriptor =
+            (!metadata.is_empty()).then(|| CellDescriptor::from_metadata_section_lossy(&metadata));
         let record = wal_record_from_operation_with_metadata(next_seq, &operation, metadata);
         self.writer.append(record)?;
-        self.apply_operation(next_seq, operation)?;
+        self.apply_operation_with_descriptor(next_seq, operation, descriptor)?;
         self.current_seq = next_seq;
         Ok(next_seq)
     }
 
     fn apply_operation(&mut self, seq: CommitSeq, operation: DbOperation) -> EngineResult<()> {
+        self.apply_operation_with_descriptor(seq, operation, None)
+    }
+
+    fn apply_operation_with_descriptor(
+        &mut self,
+        seq: CommitSeq,
+        operation: DbOperation,
+        descriptor: Option<CellDescriptor>,
+    ) -> EngineResult<()> {
         match operation {
             DbOperation::PutCell { cell_id, payload } => {
-                self.memtable.put_cell(cell_id, seq, payload);
+                if let Some(descriptor) = descriptor {
+                    self.memtable
+                        .put_cell_with_descriptor(cell_id, seq, payload, descriptor);
+                } else {
+                    self.memtable.put_cell(cell_id, seq, payload);
+                }
                 Ok(())
             }
-            DbOperation::PatchCell { cell_id, payload } => self
-                .memtable
-                .patch_cell(cell_id, seq, payload)
-                .map_err(EngineError::from),
+            DbOperation::PatchCell { cell_id, payload } => {
+                if let Some(descriptor) = descriptor {
+                    self.memtable
+                        .patch_cell_with_descriptor(cell_id, seq, payload, descriptor)
+                        .map_err(EngineError::from)
+                } else {
+                    self.memtable
+                        .patch_cell(cell_id, seq, payload)
+                        .map_err(EngineError::from)
+                }
+            }
             DbOperation::TombstoneCell { cell_id } => {
                 self.memtable.record_tombstone(cell_id, seq);
                 Ok(())

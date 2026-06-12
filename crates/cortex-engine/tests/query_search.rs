@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, ScopeId, Q16_ZERO};
-use cortex_core::CellId;
+use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 use cortex_engine::{
     scope_id, tokenize, Bm25Index, ClusterConfig, ConsensusState, Database, HnswIndex, LogIndex,
     NodeId, ReplicatedEntry, SearchIndexes, SearchMode, SearchQuery, SearchRerankInput,
@@ -60,6 +60,44 @@ WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#,
 
     assert_eq!(cells.len(), 1);
     assert_eq!(cells[0].cell_id, CellId(2));
+}
+
+#[test]
+fn retrieve_aql_uses_descriptor_scope_for_persisted_bitmap_acl() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        KnowledgeCell::new(
+            KnowledgeCellMetadata {
+                scope: "tenant:private".to_owned(),
+                status: "ready".to_owned(),
+                cell_type: KnowledgeCellType::Raw,
+                ..Default::default()
+            },
+            b"scope=project:investments\nstatus=ready\n\nhidden spoof budget".to_vec(),
+        ),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\n\nvisible budget".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+
+    let cells = db
+        .retrieve_aql(
+            r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
+WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#,
+            &view(scope_id("project:investments")),
+        )
+        .unwrap();
+
+    assert_eq!(
+        cells.iter().map(|cell| cell.cell_id).collect::<Vec<_>>(),
+        vec![CellId(2)]
+    );
 }
 
 #[test]

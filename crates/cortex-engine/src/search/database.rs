@@ -2,6 +2,7 @@ use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_aql::AgentView;
+use cortex_core::memtable::CellVersion;
 use cortex_core::CellId;
 
 use crate::database::Database;
@@ -36,6 +37,10 @@ struct PersistedSearchCandidate {
     score: u64,
     lexical_score: u64,
     vector_score: u64,
+}
+
+fn metadata_for_version(version: &CellVersion) -> CellMetadata {
+    CellMetadata::from_payload_with_descriptor(&version.payload, &version.descriptor)
 }
 
 impl PersistedSearchCandidate {
@@ -498,7 +503,7 @@ impl Database {
             .snapshot_versions()
             .into_iter()
             .filter_map(|version| {
-                let metadata = CellMetadata::from_payload(&version.payload);
+                let metadata = metadata_for_version(&version);
                 view.can_read_scope(scope_id(&metadata.scope))
                     .then_some((version, metadata))
             })
@@ -749,7 +754,7 @@ impl Database {
             .snapshot_versions()
             .into_iter()
             .filter_map(|version| {
-                let metadata = CellMetadata::from_payload(&version.payload);
+                let metadata = metadata_for_version(&version);
                 if !view.can_read_scope(scope_id(&metadata.scope))
                     || !metadata
                         .project
@@ -777,7 +782,7 @@ impl Database {
             .snapshot_versions()
             .into_iter()
             .filter_map(|version| {
-                let metadata = CellMetadata::from_payload(&version.payload);
+                let metadata = metadata_for_version(&version);
                 if !view.can_read_scope(scope_id(&metadata.scope)) {
                     return None;
                 }
@@ -801,7 +806,7 @@ impl Database {
     ) -> BTreeMap<String, DatabaseSearchResult> {
         let mut parents = BTreeMap::new();
         for version in self.snapshot_versions() {
-            let metadata = CellMetadata::from_payload(&version.payload);
+            let metadata = metadata_for_version(&version);
             if !view.can_read_scope(scope_id(&metadata.scope))
                 || !is_search_parent_context_metadata(&metadata)
             {

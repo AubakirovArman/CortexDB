@@ -144,12 +144,12 @@ pub(crate) fn route_database_with_auth(
         }
         ("GET", "/get") | ("GET", "/v1/cell") => {
             let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
-            let cell = db.get_latest_cell(cell_id);
-            if let Some(payload) = &cell {
-                authz::require_payload_read(authenticated_view.as_ref(), payload)?;
+            let cell = db.get_latest_cell_with_descriptor(cell_id);
+            if let Some((_, descriptor)) = &cell {
+                authz::require_descriptor_read(authenticated_view.as_ref(), descriptor)?;
             }
             let response = CellLookupResponse {
-                cell: cell.map(|payload| CellResponse {
+                cell: cell.map(|(payload, _)| CellResponse {
                     cell_id: cell_id.0,
                     payload: String::from_utf8_lossy(&payload).into_owned(),
                 }),
@@ -168,8 +168,8 @@ pub(crate) fn route_database_with_auth(
         }
         ("POST", "/tombstone") | ("DELETE", "/v1/cell") => {
             let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
-            if let Some(payload) = db.get_latest_cell(cell_id) {
-                authz::require_payload_write(authenticated_view.as_ref(), &payload)?;
+            if let Some((_, descriptor)) = db.get_latest_cell_with_descriptor(cell_id) {
+                authz::require_descriptor_write(authenticated_view.as_ref(), &descriptor)?;
             }
             let seq = db.tombstone_cell(cell_id)?;
             let response = PutCellResponse {
@@ -417,8 +417,8 @@ pub(crate) fn route_database_with_auth(
         }
         ("POST", "/v1/forget") => {
             let cell_id = cell_id(query)?;
-            if let Some(payload) = db.get_latest_cell(cell_id) {
-                authz::require_payload_write(authenticated_view.as_ref(), &payload)?;
+            if let Some((_, descriptor)) = db.get_latest_cell_with_descriptor(cell_id) {
+                authz::require_descriptor_write(authenticated_view.as_ref(), &descriptor)?;
             }
             db.forget_cell(cell_id)?;
             Ok(serde_json::to_string(&PutCellResponse {

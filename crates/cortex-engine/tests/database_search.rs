@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
-use cortex_core::CellId;
+use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 use cortex_engine::search::{
     analyze_search_query, CorpusSynonymOptions, DatabaseSearchResult, QueryAnchorKind, SearchMode,
     SearchQuery, SearchRerankInput, SearchReranker,
@@ -40,6 +40,42 @@ fn database_keyword_search_applies_acl_before_topk_snapshot() {
     seed_private_stronger_keyword_cell(&mut db);
 
     assert_keyword_limit_one_returns_public_cell(&db);
+}
+
+#[test]
+fn database_keyword_search_uses_descriptor_scope_for_snapshot_acl() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(
+        CellId(1),
+        KnowledgeCell::new(
+            KnowledgeCellMetadata {
+                scope: "tenant:private".to_owned(),
+                status: "ready".to_owned(),
+                cell_type: KnowledgeCellType::Raw,
+                ..Default::default()
+            },
+            b"scope=project:investments\nstatus=ready\n\nbudget hidden spoof".to_vec(),
+        ),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\n\nbudget approved".to_vec(),
+    )
+    .unwrap();
+
+    let results = db
+        .search_keyword("budget", &view("project:investments"), SearchLimit(10))
+        .unwrap();
+
+    assert_eq!(
+        results
+            .iter()
+            .map(|result| result.cell_id)
+            .collect::<Vec<_>>(),
+        vec![CellId(2)]
+    );
 }
 
 #[test]

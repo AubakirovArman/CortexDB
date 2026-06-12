@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 use std::thread;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, ScopeId, Q16_ZERO};
+use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 use cortex_engine::{scope_id, Database};
 
 use crate::{handle_http_with_options, ServerOptions};
@@ -116,6 +117,45 @@ fn auth_agent_view_blocks_unwritable_cell_scope_over_http() {
         allowed.contains("200 OK"),
         "writable payload scope should be allowed: {allowed}"
     );
+}
+
+#[test]
+fn auth_agent_view_uses_descriptor_scope_for_cell_read_over_http() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.save_agent_view(&agent_view(AgentId(7), "project:investments", true))
+            .unwrap();
+        db.put_knowledge_cell(
+            CellId(9),
+            KnowledgeCell::new(
+                KnowledgeCellMetadata {
+                    scope: "tenant:private".to_owned(),
+                    status: "ready".to_owned(),
+                    cell_type: KnowledgeCellType::Raw,
+                    ..Default::default()
+                },
+                b"scope=project:investments\nstatus=ready\n\nhidden spoof".to_vec(),
+            ),
+        )
+        .unwrap();
+    }
+    let options = ServerOptions {
+        auth_token: Some("secret".to_owned()),
+        auth_agent_id: Some(7),
+        ..Default::default()
+    };
+
+    let denied = handle_http_with_options(
+        dir.path(),
+        "GET /v1/cell?cell_id=9 HTTP/1.1\r\nAuthorization: Bearer secret\r\n\r\n",
+        &options,
+    );
+    assert!(
+        denied.contains("403 Forbidden"),
+        "descriptor scope should deny spoofed payload reads: {denied}"
+    );
+    assert!(denied.contains("permission_denied"));
 }
 
 #[test]
