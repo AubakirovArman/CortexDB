@@ -6,7 +6,7 @@ Execution rule: close epics in order. Use the dependency-aware order from the so
 
 Status values: `next`, `in_progress`, `partial`, `done`, `blocked`, `frozen`.
 
-Current pointer: `EPIC-A04`.
+Current pointer: `EPIC-A05`.
 
 ## First Execution Queue
 
@@ -104,21 +104,22 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-A04 — MemTable-итераторы без клонирования
 
-- status: `pending`
+- status: `done`
 - meta: Категория: storage · Приоритет: P0 · Горизонт: 30 days · Тип: refactor
 - goal: БД не имеет права клонировать все payload'ы ради чтения.
 - problem: Проблема: `snapshot_versions()` → `visible_cells()` клонирует каждый `CellVersion` с payload (memtable/mod.rs:105-110); ~25 call sites.
 - tasks:
-  - [ ] 1) `MemTable::visible_iter(txn) -> impl Iterator<Item = &CellVersion>`
-  - [ ] 2) классифицировать call sites: cold (checkpoint/validate/export — итератор), hot (verify/feedback/graph/dedup — индексные пути, отдельные эпики)
-  - [ ] 3) аллокационный регресс-тест (dhat-счётчик payload-клонов на стандартном сценарии).
+  - [x] 1) `MemTable::visible_iter(txn) -> impl Iterator<Item = &CellVersion>`
+  - [x] 2) классифицировать call sites: cold (checkpoint/validate/export — итератор), hot (verify/feedback/graph/dedup — индексные пути, отдельные эпики)
+  - [x] 3) аллокационный регресс-тест (dhat-счётчик payload-клонов на стандартном сценарии).
 - acceptance:
-  - [ ] 1) cold-пути не клонируют payload
-  - [ ] 2) полный тест-набор зелёный
-  - [ ] 3) regression-гейт на клоны в CI.
+  - [x] 1) cold-пути не клонируют payload
+  - [x] 2) полный тест-набор зелёный
+  - [x] 3) regression-гейт на клоны в CI.
 - files: cortex-core/src/memtable/mod.rs; checkpoint.rs, validation.rs, backup.rs.
 - dependencies: A01. Эффект: основа для A05, A06, C-блока.
-- risks: borrow-ограничения вынудят локальные клоны — допустимо для cold-путей.
+- evidence: Added borrowed MemTable iterators (`visible_iter`, `range_iter`, `visible_created_after_iter`) and borrowed storage segment views (`SegmentCellRef`, `SegmentWriter::write_refs`). `checkpoint` and `compact` now build segment/index/vector/HNSW outputs through borrowed refs instead of `snapshot_versions()` and owned `SegmentWriter::write(&segment_path, ...)`. Added `scripts/memtable_clone_gate_check.py` and wired it into `make check` as a static clone regression gate. Full `cargo test --workspace --all-features` is green.
+- risks: the clone gate is static rather than a `dhat` allocator counter to avoid adding a new dependency; hot full-scan paths intentionally remain for later indexed epics A05/A06/C-block.
 
 ### EPIC-A05 — Indexed VERIFY FACT (кандидаты вместо full scan)
 

@@ -14,6 +14,27 @@ pub struct SegmentCell {
     pub payload: Vec<u8>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SegmentCellRef<'a> {
+    pub candidate_id: u32,
+    pub cell_id: u64,
+    pub created_seq: u64,
+    pub deleted_seq: Option<u64>,
+    pub payload: &'a [u8],
+}
+
+impl<'a> From<&'a SegmentCell> for SegmentCellRef<'a> {
+    fn from(cell: &'a SegmentCell) -> Self {
+        Self {
+            candidate_id: cell.candidate_id,
+            cell_id: cell.cell_id,
+            created_seq: cell.created_seq,
+            deleted_seq: cell.deleted_seq,
+            payload: &cell.payload,
+        }
+    }
+}
+
 /// Lightweight per-cell entry that omits the payload. Index-rebuild paths only
 /// need the candidate/cell identity and liveness, so decoding this avoids
 /// copying multi-gigabyte payload bytes for large checkpointed corpora.
@@ -39,10 +60,15 @@ pub struct SegmentLookup {
 
 impl SegmentWriter {
     pub fn write(path: impl AsRef<Path>, cells: &[SegmentCell]) -> StorageResult<()> {
+        let refs = cells.iter().map(SegmentCellRef::from).collect::<Vec<_>>();
+        Self::write_refs(path, &refs)
+    }
+
+    pub fn write_refs(path: impl AsRef<Path>, cells: &[SegmentCellRef<'_>]) -> StorageResult<()> {
         let mut out = Vec::new();
         out.extend_from_slice(&SEGMENT_MAGIC);
         put_u32(&mut out, cells.len() as u32);
-        let mut ordered = cells.iter().collect::<Vec<_>>();
+        let mut ordered = cells.to_vec();
         ordered.sort_by_key(|cell| cell.candidate_id);
         for cell in ordered {
             put_u64(&mut out, cell.cell_id);
@@ -50,7 +76,7 @@ impl SegmentWriter {
             put_u64(&mut out, cell.created_seq);
             put_u64(&mut out, cell.deleted_seq.unwrap_or(0));
             put_u32(&mut out, cell.payload.len() as u32);
-            out.extend_from_slice(&cell.payload);
+            out.extend_from_slice(cell.payload);
         }
         append_crc32c(&mut out);
         write_atomic(path.as_ref(), &out)?;

@@ -155,6 +155,42 @@ fn live_deleted_iterators_are_deterministic() {
 }
 
 #[test]
+fn visible_iterators_borrow_visible_versions_without_cloning() {
+    let mut table = MemTable::default();
+    table.put_cell(CellId(1), CommitSeq(10), b"a1".to_vec());
+    table
+        .patch_cell(CellId(1), CommitSeq(20), b"a2".to_vec())
+        .unwrap();
+    table.put_cell(CellId(2), CommitSeq(21), b"b".to_vec());
+
+    let txn = ReadTxn::at(CommitSeq(21));
+    let visible = table.visible_iter(txn).collect::<Vec<_>>();
+    assert_eq!(
+        visible
+            .iter()
+            .map(|version| version.payload.as_slice())
+            .collect::<Vec<_>>(),
+        vec![b"a2".as_slice(), b"b".as_slice()]
+    );
+    assert!(std::ptr::eq(
+        visible[0],
+        table.read(txn, CellId(1)).expect("visible cell 1")
+    ));
+
+    let changed = table
+        .visible_created_after_iter(txn, CommitSeq(20))
+        .map(|version| version.cell_id)
+        .collect::<Vec<_>>();
+    assert_eq!(changed, vec![CellId(2)]);
+
+    let ranged = table
+        .range_iter(txn, CellId(1), CellId(1))
+        .map(|version| version.cell_id)
+        .collect::<Vec<_>>();
+    assert_eq!(ranged, vec![CellId(1)]);
+}
+
+#[test]
 fn range_scan_obeys_mvcc_and_cell_order() {
     let mut table = MemTable::default();
     table.put_cell(CellId(1), CommitSeq(10), b"a".to_vec());

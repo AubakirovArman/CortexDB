@@ -16,7 +16,7 @@ use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::{
     ManifestHnswProfile, ManifestSegment, ManifestVectorProfile, StorageManifest,
 };
-use cortex_storage::segment::{SegmentCell, SegmentReader, SegmentWriter};
+use cortex_storage::segment::{SegmentCell, SegmentCellRef, SegmentReader, SegmentWriter};
 use cortex_storage::wal::WalWriter;
 
 use crate::database::{CheckpointStats, Database};
@@ -57,8 +57,13 @@ impl Database {
     pub fn checkpoint(&mut self) -> EngineResult<CheckpointStats> {
         let base_seq = CommitSeq(self.manifest.checkpoint_seq);
         let candidate_map = self.persisted_candidate_map()?;
-        let cells = self.checkpoint_delta_cells(base_seq, &candidate_map)?;
-        if cells.is_empty() && self.current_seq == base_seq {
+        let txn = self.read_txn();
+        let tombstones = self.memtable.tombstones_after(base_seq);
+        let live_delta_count = self
+            .memtable
+            .visible_created_after_iter(txn, base_seq)
+            .count();
+        if live_delta_count == 0 && tombstones.is_empty() && self.current_seq == base_seq {
             return Ok(CheckpointStats {
                 segment_id: None,
                 cells_flushed: 0,
@@ -70,35 +75,42 @@ impl Database {
             .experimental_hnsw
             .then(|| manifest_hnsw_profile(self.hnsw_build_config))
             .transpose()?;
-        let vector_profile = vector::vector_profile_for_cells(&cells, self.hnsw_build_config)?;
+        let vector_profile = {
+            let cells = self.checkpoint_delta_cell_refs(base_seq, &candidate_map, &tombstones)?;
+            vector::vector_profile_for_cell_refs(&cells, self.hnsw_build_config)
+        }?;
         ensure_checkpoint_profiles(&self.manifest, hnsw_profile, vector_profile)?;
 
         self.writer.shutdown()?;
         fs::create_dir_all(&self.segments_path)?;
         let segment_id = self.manifest.generation + 1;
         let segment_path = segment_path(&self.segments_path, segment_id);
-        SegmentWriter::write(&segment_path, &cells)?;
+        let cells_flushed = {
+            let cells = self.checkpoint_delta_cell_refs(base_seq, &candidate_map, &tombstones)?;
+            SegmentWriter::write_refs(&segment_path, &cells)?;
 
-        let index = EngineAqlIndex::try_from_segment_cells(&cells)?;
-        index
-            .bitmap_index()
-            .write(bitmap_path(&self.segments_path, segment_id))?;
-        index
-            .lexical_index()
-            .write(lexical_path(&self.segments_path, segment_id))?;
-        vector::vector_index_for_cells(&cells)
-            .write(vector_path(&self.segments_path, segment_id))?;
-        if self.feature_flags.experimental_hnsw {
-            hnsw::hnsw_graph_for_cells_with_config(&cells, self.hnsw_build_config)?
-                .write(hnsw_path(&self.segments_path, segment_id))?;
-        }
+            let index = EngineAqlIndex::try_from_segment_cell_refs(&cells)?;
+            index
+                .bitmap_index()
+                .write(bitmap_path(&self.segments_path, segment_id))?;
+            index
+                .lexical_index()
+                .write(lexical_path(&self.segments_path, segment_id))?;
+            vector::vector_index_for_cell_refs(&cells)
+                .write(vector_path(&self.segments_path, segment_id))?;
+            if self.feature_flags.experimental_hnsw {
+                hnsw::hnsw_graph_for_cell_refs_with_config(&cells, self.hnsw_build_config)?
+                    .write(hnsw_path(&self.segments_path, segment_id))?;
+            }
+            cells.len()
+        };
         self.publish_checkpoint_corpus_synonym_dictionary()?;
 
         self.manifest.checkpoint_segment(ManifestSegment {
             id: segment_id,
             generation: self.manifest.generation + 1,
             checkpoint_seq: self.current_seq.0,
-            cell_count: segment_cell_count(cells.len())?,
+            cell_count: segment_cell_count(cells_flushed)?,
         });
         self.manifest.hnsw_profile = hnsw_profile;
         if let Some(profile) = vector_profile {
@@ -110,20 +122,18 @@ impl Database {
         self.memtable.gc_versions_before(self.current_seq);
         Ok(CheckpointStats {
             segment_id: Some(segment_id),
-            cells_flushed: cells.len(),
+            cells_flushed,
             checkpoint_seq: self.current_seq,
         })
     }
 
     pub fn compact(&mut self) -> EngineResult<CheckpointStats> {
-        let cells = self.full_snapshot_cells()?;
         let hnsw_profile = self
             .feature_flags
             .experimental_hnsw
             .then(|| manifest_hnsw_profile(self.hnsw_build_config))
             .transpose()?;
-        let vector_profile = vector::vector_profile_for_cells(&cells, self.hnsw_build_config)?;
-        if cells.is_empty() {
+        if self.memtable.visible_iter(self.read_txn()).next().is_none() {
             self.publish_checkpoint_corpus_synonym_dictionary()?;
             return Ok(CheckpointStats {
                 segment_id: None,
@@ -131,33 +141,41 @@ impl Database {
                 checkpoint_seq: self.current_seq,
             });
         }
+        let vector_profile = {
+            let cells = self.full_snapshot_cell_refs()?;
+            vector::vector_profile_for_cell_refs(&cells, self.hnsw_build_config)
+        }?;
 
         self.writer.shutdown()?;
         fs::create_dir_all(&self.segments_path)?;
         let segment_id = self.manifest.generation + 1;
         let segment_path = segment_path(&self.segments_path, segment_id);
-        SegmentWriter::write(&segment_path, &cells)?;
+        let cells_flushed = {
+            let cells = self.full_snapshot_cell_refs()?;
+            SegmentWriter::write_refs(&segment_path, &cells)?;
 
-        let index = EngineAqlIndex::try_from_segment_cells(&cells)?;
-        index
-            .bitmap_index()
-            .write(bitmap_path(&self.segments_path, segment_id))?;
-        index
-            .lexical_index()
-            .write(lexical_path(&self.segments_path, segment_id))?;
-        vector::vector_index_for_cells(&cells)
-            .write(vector_path(&self.segments_path, segment_id))?;
-        if self.feature_flags.experimental_hnsw {
-            hnsw::hnsw_graph_for_cells_with_config(&cells, self.hnsw_build_config)?
-                .write(hnsw_path(&self.segments_path, segment_id))?;
-        }
+            let index = EngineAqlIndex::try_from_segment_cell_refs(&cells)?;
+            index
+                .bitmap_index()
+                .write(bitmap_path(&self.segments_path, segment_id))?;
+            index
+                .lexical_index()
+                .write(lexical_path(&self.segments_path, segment_id))?;
+            vector::vector_index_for_cell_refs(&cells)
+                .write(vector_path(&self.segments_path, segment_id))?;
+            if self.feature_flags.experimental_hnsw {
+                hnsw::hnsw_graph_for_cell_refs_with_config(&cells, self.hnsw_build_config)?
+                    .write(hnsw_path(&self.segments_path, segment_id))?;
+            }
+            cells.len()
+        };
         self.publish_checkpoint_corpus_synonym_dictionary()?;
 
         self.manifest.compact_to_segment(ManifestSegment {
             id: segment_id,
             generation: self.manifest.generation + 1,
             checkpoint_seq: self.current_seq.0,
-            cell_count: segment_cell_count(cells.len())?,
+            cell_count: segment_cell_count(cells_flushed)?,
         });
         self.manifest.hnsw_profile = hnsw_profile;
         self.manifest.vector_profile = vector_profile;
@@ -167,7 +185,7 @@ impl Database {
         self.memtable.gc_versions_before(self.current_seq);
         Ok(CheckpointStats {
             segment_id: Some(segment_id),
-            cells_flushed: cells.len(),
+            cells_flushed,
             checkpoint_seq: self.current_seq,
         })
     }
@@ -264,30 +282,31 @@ impl Database {
         Ok(map)
     }
 
-    fn checkpoint_delta_cells(
-        &self,
+    fn checkpoint_delta_cell_refs<'a>(
+        &'a self,
         base_seq: CommitSeq,
         existing: &BTreeMap<CellId, u32>,
-    ) -> EngineResult<Vec<SegmentCell>> {
+        tombstones: &[(CellId, CommitSeq)],
+    ) -> EngineResult<Vec<SegmentCellRef<'a>>> {
         let txn = self.read_txn();
         let mut allocator = CandidateAllocator::new(existing)?;
         let mut cells = Vec::new();
-        for version in self.memtable.visible_cells_created_after(txn, base_seq) {
-            cells.push(SegmentCell {
+        for version in self.memtable.visible_created_after_iter(txn, base_seq) {
+            cells.push(SegmentCellRef {
                 candidate_id: allocator.candidate_for(version.cell_id)?,
                 cell_id: version.cell_id.0,
                 created_seq: version.created_seq.0,
                 deleted_seq: None,
-                payload: version.payload,
+                payload: version.payload.as_slice(),
             });
         }
-        for (cell_id, deleted) in self.memtable.tombstones_after(base_seq) {
-            cells.push(SegmentCell {
-                candidate_id: allocator.candidate_for(cell_id)?,
+        for (cell_id, deleted) in tombstones {
+            cells.push(SegmentCellRef {
+                candidate_id: allocator.candidate_for(*cell_id)?,
                 cell_id: cell_id.0,
                 created_seq: 0,
                 deleted_seq: Some(deleted.0),
-                payload: Vec::new(),
+                payload: &[],
             });
         }
         cells.sort_by_key(|cell| {
@@ -301,16 +320,31 @@ impl Database {
     }
 
     pub(crate) fn full_snapshot_cells(&self) -> EngineResult<Vec<SegmentCell>> {
-        self.snapshot_versions()
-            .into_iter()
+        self.full_snapshot_cell_refs().map(|cells| {
+            cells
+                .into_iter()
+                .map(|cell| SegmentCell {
+                    candidate_id: cell.candidate_id,
+                    cell_id: cell.cell_id,
+                    created_seq: cell.created_seq,
+                    deleted_seq: cell.deleted_seq,
+                    payload: cell.payload.to_vec(),
+                })
+                .collect()
+        })
+    }
+
+    fn full_snapshot_cell_refs(&self) -> EngineResult<Vec<SegmentCellRef<'_>>> {
+        self.memtable
+            .visible_iter(self.read_txn())
             .enumerate()
             .map(|version| {
-                Ok(SegmentCell {
+                Ok(SegmentCellRef {
                     candidate_id: candidate_from_ordinal(version.0)?,
                     cell_id: version.1.cell_id.0,
                     created_seq: version.1.created_seq.0,
                     deleted_seq: None,
-                    payload: version.1.payload,
+                    payload: version.1.payload.as_slice(),
                 })
             })
             .collect()

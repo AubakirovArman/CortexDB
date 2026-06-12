@@ -1021,8 +1021,13 @@ AQL_COMPAT_REPORT ?= $(AQL_COMPAT_ROOT)/report.json
 FUTURE_EPIC_REPORT ?= target/future-epics/report.json
 FUTURE_EPIC_ROOT ?= target/future-epics
 
-check:
+.PHONY: memtable-clone-gate-check
+
+check: memtable-clone-gate-check
 	cargo check --workspace
+
+memtable-clone-gate-check:
+	python3 scripts/memtable_clone_gate_check.py
 
 test:
 	cargo test --workspace

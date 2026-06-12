@@ -103,10 +103,13 @@ impl MemTable {
     }
 
     pub fn visible_cells(&self, txn: ReadTxn) -> Vec<CellVersion> {
+        self.visible_iter(txn).cloned().collect()
+    }
+
+    pub fn visible_iter(&self, txn: ReadTxn) -> impl Iterator<Item = &CellVersion> + '_ {
         self.versions
             .keys()
-            .filter_map(|cell_id| self.read(txn, *cell_id).cloned())
-            .collect()
+            .filter_map(move |cell_id| self.read(txn, *cell_id))
     }
 
     pub fn live_cell_ids(&self, txn: ReadTxn) -> Vec<CellId> {
@@ -130,17 +133,31 @@ impl MemTable {
     }
 
     pub fn range_scan(&self, txn: ReadTxn, start: CellId, end: CellId) -> Vec<CellVersion> {
+        self.range_iter(txn, start, end).cloned().collect()
+    }
+
+    pub fn range_iter(
+        &self,
+        txn: ReadTxn,
+        start: CellId,
+        end: CellId,
+    ) -> impl Iterator<Item = &CellVersion> + '_ {
         self.versions
             .range(start..=end)
-            .filter_map(|(cell_id, _)| self.read(txn, *cell_id).cloned())
-            .collect()
+            .filter_map(move |(cell_id, _)| self.read(txn, *cell_id))
     }
 
     pub fn visible_cells_created_after(&self, txn: ReadTxn, seq: CommitSeq) -> Vec<CellVersion> {
-        self.visible_cells(txn)
-            .into_iter()
-            .filter(|version| version.created_seq > seq)
-            .collect()
+        self.visible_created_after_iter(txn, seq).cloned().collect()
+    }
+
+    pub fn visible_created_after_iter(
+        &self,
+        txn: ReadTxn,
+        seq: CommitSeq,
+    ) -> impl Iterator<Item = &CellVersion> + '_ {
+        self.visible_iter(txn)
+            .filter(move |version| version.created_seq > seq)
     }
 
     pub fn tombstones_after(&self, seq: CommitSeq) -> Vec<(CellId, CommitSeq)> {

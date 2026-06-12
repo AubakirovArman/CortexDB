@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use cortex_storage::hnsw::HnswGraphIndex;
-use cortex_storage::segment::{SegmentCell, SegmentReader};
+use cortex_storage::segment::{SegmentCell, SegmentCellRef, SegmentReader};
 
 use crate::database::Database;
 use crate::error::EngineResult;
@@ -14,6 +14,14 @@ pub(crate) fn hnsw_graph_for_cells_with_config(
     cells: &[SegmentCell],
     config: HnswBuildConfig,
 ) -> crate::error::EngineResult<HnswGraphIndex> {
+    let refs = cells.iter().map(SegmentCellRef::from).collect::<Vec<_>>();
+    hnsw_graph_for_cell_refs_with_config(&refs, config)
+}
+
+pub(crate) fn hnsw_graph_for_cell_refs_with_config(
+    cells: &[SegmentCellRef<'_>],
+    config: HnswBuildConfig,
+) -> crate::error::EngineResult<HnswGraphIndex> {
     let config = config.normalized();
     let mut index =
         HnswIndex::new_multilayer(config.max_neighbors, config.ef_search, config.layer_count);
@@ -24,7 +32,7 @@ pub(crate) fn hnsw_graph_for_cells_with_config(
     });
     let mut dimension = 0usize;
     for cell in cells.iter().filter(|cell| cell.deleted_seq.is_none()) {
-        if let Some(vector) = vector_from_payload(&cell.payload) {
+        if let Some(vector) = vector_from_payload(cell.payload) {
             if dimension == 0 {
                 dimension = vector.len();
                 index.set_config(VectorCollectionConfig {

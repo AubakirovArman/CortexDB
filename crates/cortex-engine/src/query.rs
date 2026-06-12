@@ -13,7 +13,7 @@ use cortex_aql::{AgentView, BitmapHandle, BoundPlan, BrainId};
 use cortex_core::memtable::CellVersion;
 use cortex_core::{CellId, CommitSeq};
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
-use cortex_storage::segment::SegmentCell;
+use cortex_storage::segment::{SegmentCell, SegmentCellRef};
 
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
@@ -133,6 +133,16 @@ impl EngineAqlIndex {
             cell.deleted_seq.is_none().then_some((
                 cell.candidate_id,
                 cell.payload.as_slice(),
+                CellId(cell.cell_id),
+            ))
+        }))
+    }
+
+    pub fn try_from_segment_cell_refs(cells: &[SegmentCellRef<'_>]) -> EngineResult<Self> {
+        Self::try_from_cells(cells.iter().filter_map(|cell| {
+            cell.deleted_seq.is_none().then_some((
+                cell.candidate_id,
+                cell.payload,
                 CellId(cell.cell_id),
             ))
         }))

@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use cortex_storage::manifest::ManifestVectorProfile;
-use cortex_storage::segment::{SegmentCell, SegmentReader};
+use cortex_storage::segment::{SegmentCell, SegmentCellRef, SegmentReader};
 use cortex_storage::vectors::VectorIndex;
 
 use crate::database::Database;
@@ -12,11 +12,16 @@ use crate::search::HnswBuildConfig;
 use super::{segment_path, vector_path};
 
 pub(crate) fn vector_index_for_cells(cells: &[SegmentCell]) -> VectorIndex {
+    let refs = cells.iter().map(SegmentCellRef::from).collect::<Vec<_>>();
+    vector_index_for_cell_refs(&refs)
+}
+
+pub(crate) fn vector_index_for_cell_refs(cells: &[SegmentCellRef<'_>]) -> VectorIndex {
     let vectors = cells
         .iter()
         .filter(|cell| cell.deleted_seq.is_none())
         .filter_map(|cell| {
-            vector_from_payload(&cell.payload).map(|vector| (cell.candidate_id, vector))
+            vector_from_payload(cell.payload).map(|vector| (cell.candidate_id, vector))
         })
         .collect();
     VectorIndex { vectors }
@@ -26,9 +31,17 @@ pub(crate) fn vector_profile_for_cells(
     cells: &[SegmentCell],
     config: HnswBuildConfig,
 ) -> EngineResult<Option<ManifestVectorProfile>> {
+    let refs = cells.iter().map(SegmentCellRef::from).collect::<Vec<_>>();
+    vector_profile_for_cell_refs(&refs, config)
+}
+
+pub(crate) fn vector_profile_for_cell_refs(
+    cells: &[SegmentCellRef<'_>],
+    config: HnswBuildConfig,
+) -> EngineResult<Option<ManifestVectorProfile>> {
     let mut dimension = None;
     for cell in cells.iter().filter(|cell| cell.deleted_seq.is_none()) {
-        let Some(vector) = vector_from_payload(&cell.payload) else {
+        let Some(vector) = vector_from_payload(cell.payload) else {
             continue;
         };
         match dimension {

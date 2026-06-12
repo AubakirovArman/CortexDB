@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::{ManifestSegment, StorageManifest};
-use cortex_storage::segment::{SegmentCell, SegmentReader, SegmentWriter};
+use cortex_storage::segment::{SegmentCell, SegmentCellRef, SegmentReader, SegmentWriter};
 use cortex_storage::vectors::VectorIndex;
 use cortex_storage::StorageError;
 
@@ -51,6 +51,52 @@ fn acs_segment_persists_cells_in_candidate_order() {
         .map(|cell| cell.candidate_id)
         .collect::<Vec<_>>();
     assert_eq!(candidates, vec![1, 2, 3]);
+}
+
+#[test]
+fn acs_segment_writes_borrowed_cells_without_owned_payloads() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("borrowed.acs");
+    let first = b"one".to_vec();
+    let second = b"two".to_vec();
+    let cells = [
+        SegmentCellRef {
+            candidate_id: 2,
+            cell_id: 20,
+            created_seq: 8,
+            deleted_seq: None,
+            payload: &second,
+        },
+        SegmentCellRef {
+            candidate_id: 1,
+            cell_id: 10,
+            created_seq: 7,
+            deleted_seq: None,
+            payload: &first,
+        },
+    ];
+
+    SegmentWriter::write_refs(&path, &cells).unwrap();
+
+    assert_eq!(
+        SegmentReader::read(&path).unwrap(),
+        vec![
+            SegmentCell {
+                candidate_id: 1,
+                cell_id: 10,
+                created_seq: 7,
+                deleted_seq: None,
+                payload: b"one".to_vec(),
+            },
+            SegmentCell {
+                candidate_id: 2,
+                cell_id: 20,
+                created_seq: 8,
+                deleted_seq: None,
+                payload: b"two".to_vec(),
+            },
+        ]
+    );
 }
 
 #[test]
