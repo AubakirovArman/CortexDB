@@ -56,6 +56,8 @@ pub mod query;
 pub mod repair;
 pub mod replay;
 pub mod replication;
+mod retrieval_quality;
+mod retrieval_rank;
 pub mod search;
 pub mod session;
 pub mod source_trust;
