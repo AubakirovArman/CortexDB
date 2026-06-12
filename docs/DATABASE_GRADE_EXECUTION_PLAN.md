@@ -15,7 +15,7 @@ uses official-clean 50 questions, Gemini 3.5 Flash as answerer and judge,
 with `reuse_db=1` so the corpus is not reingested. Current baseline:
 `overall=41.36`, `correctness=42.0`, `completeness=44.76`, `document_recall=56.0`,
 `invalid_extra_docs=9.44`, `answer_tokens=302372`, `judge_tokens=27312`
-from `target/enterprise-rag-bench/official-clean/50/impact-gemini50-20260612T095537Z/answer-gemini/official_clean_run_report.json`.
+from `target/enterprise-rag-bench/official-clean/50/impact-gemini50-20260612T105301Z/answer-gemini/official_clean_run_report.json`.
 
 ## First Execution Queue
 
@@ -92,7 +92,7 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 - dependencies: A01, A20 (property-тесты до начала).
 - risks: САМЫЙ ОПАСНЫЙ рефакторинг блока — формат данных; строго version-gated, dual-read, ни одного big-bang.
 - expected effect: модель данных перестаёт быть «текстом с конвенциями»; разблокирует B06, B10, C13, C14.
-- evidence: Added `cortex_core::CellDescriptor`, lossy legacy payload header materialization, `CellVersion.descriptor`, and core tests for descriptor decode/cache. `Database::retrieve_cells` now uses the cached descriptor for the source-trust/freshness quality fast path and falls back to legacy payload parsing when source-ref confidence is required. Targeted checks passed: `cargo test -p cortex-core --all-features`, `cargo test -p cortex-engine quality_threshold_fast_path_uses_materialized_descriptor --all-features`, and targeted retrieval ranking tests.
+- evidence: Added `cortex_core::CellDescriptor`, lossy legacy payload header materialization, `CellVersion.descriptor`, and core tests for descriptor decode/cache. `Database::retrieve_cells` now uses the cached descriptor for the source-trust/freshness quality fast path and falls back to legacy payload parsing when source-ref confidence is required. Checks passed: `cargo fmt --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, targeted descriptor/retrieval tests, and Gemini-50 impact on the existing DB stayed at the current baseline (`overall=41.36`, `document_recall=56.0`).
 - remaining: typed descriptor is not yet persisted as a WAL/segment binary section; permission/index hot paths still mostly parse legacy payload metadata; migration CLI remains pending.
 
 ### EPIC-A03 — DATA_MODEL.md — контракт модели данных
