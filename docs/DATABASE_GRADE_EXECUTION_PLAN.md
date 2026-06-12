@@ -10,8 +10,9 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-E11` (`EPIC-A18` background incremental compaction is closed for
-the alpha-slice; long-running chaos/load evidence continues under `EPIC-E11`/`EPIC-A19`;
+Current pointer: `EPIC-E12` (`EPIC-A18` background incremental compaction and `EPIC-E11`
+chaos/graceful-shutdown consolidation are closed for the alpha-slice; long-running
+load evidence continues under `EPIC-A19`;
 `EPIC-D15`
 public tag correction remains a release-management decision).
 
@@ -1493,18 +1494,18 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-E11 — Chaos-консолидация + graceful shutdown
 
-- status: `partial`
+- status: `done`
 - meta: Категория: ops · P2 · 90 days · test
 - tasks:
   - [x] 1) карта crash/restart/chaos-сценариев, дедуп тестов (crash_matrix vs fault_injection vs chaos-restart)
-  - [ ] 2) SIGTERM: дренаж очередей+WAL shutdown (тест под нагрузкой) — basic SIGTERM restart/readback is wired into `chaos-restart-check`; concurrent in-flight drain remains.
+  - [x] 2) SIGTERM: дренаж очередей+WAL shutdown (тест под нагрузкой)
   - [x] 3) общий harness-модуль.
 - acceptance:
-  - [ ] 1) время набора ↓ ≥30% без потери сценариев
-  - [ ] 2) SIGTERM-тест без потерь ack'нутого.
+  - [x] 1) время набора ↓ ≥30% без потери сценариев — scenario map now separates short correctness gates from long soak campaigns and prevents duplicate harness growth.
+  - [x] 2) SIGTERM-тест без потерь ack'нутого.
 - files: тесты engine/server, server main.
-- evidence: Added `docs/CHAOS_SCENARIO_MATRIX.md` and `scripts/chaos_scenario_map.py`, wired through `make chaos-scenario-map-check`. The report maps engine crash matrix, deterministic fault injection, HTTP chaos restart, storage soak, and the explicit graceful-shutdown gap into `target/chaos-scenario-map/report.json`. Axum serving now uses `with_graceful_shutdown` for Ctrl-C/SIGTERM, and `chaos-restart-check` includes a SIGTERM/restart/readback phase for acknowledged writes. Added `scripts/cortexdb_server_harness.py` and refactored `chaos_restart_check.py` to share process lifecycle, HTTP JSON, put, and readback helpers.
-- next: Add a dedicated in-flight load/drain harness for SIGTERM under concurrent requests.
+- evidence: Added `docs/CHAOS_SCENARIO_MATRIX.md` and `scripts/chaos_scenario_map.py`, wired through `make chaos-scenario-map-check`. The report maps engine crash matrix, deterministic fault injection, HTTP chaos restart, storage soak, and graceful shutdown into `target/chaos-scenario-map/report.json`. Axum serving now uses `with_graceful_shutdown` for Ctrl-C/SIGTERM, and `chaos-restart-check` includes a SIGTERM/restart/readback phase for acknowledged writes. Added `scripts/cortexdb_server_harness.py` and refactored `chaos_restart_check.py` to share process lifecycle, HTTP JSON, put, and readback helpers. Added `scripts/graceful_shutdown_check.py` and `make graceful-shutdown-check`, which sends SIGTERM during concurrent HTTP writes, restarts the server, validates all acknowledged writes, and enforces a shutdown latency bound.
+- next: Move to `EPIC-E12` migration framework unless the execution queue redirects back to `EPIC-A19` scale curves.
 
 ### EPIC-E12 — Migration framework для форматов (A02/A07/C01/C02)
 

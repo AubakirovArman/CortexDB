@@ -12,7 +12,7 @@ not duplicate an existing test path.
 | Engine fault injection | `cargo test -p cortex-engine --test crash_consistency_fault_injection` | 1000 deterministic WAL/checkpoint/compact interruption scenarios. |
 | HTTP chaos restart | `make chaos-restart-check` | Real server process, API writes, flush, compact, forced kill/restart, repair, readback. |
 | Storage soak | `make storage-soak-check` | Repeated write/flush/compact/validate cycles with kill-delay process interruption. |
-| Graceful shutdown | `make chaos-restart-check` plus pending load harness | SIGTERM restart/readback is covered; in-flight drain under concurrent load is still open. |
+| Graceful shutdown | `make graceful-shutdown-check` | SIGTERM under concurrent HTTP writes, no acknowledged write loss, and shutdown latency bound. |
 
 ## Current Coverage
 
@@ -24,12 +24,13 @@ not duplicate an existing test path.
 - corrupt persisted files fail-closed or validate bad;
 - server kill/restart around acknowledged HTTP writes;
 - server SIGTERM/restart/readback around acknowledged HTTP writes;
+- server SIGTERM during concurrent HTTP writes, preserving all acknowledged writes;
 - post-kill unlock, repair, validate, and readback.
 
 ## Known Gaps
 
-- SIGTERM restart/readback is covered by `make chaos-restart-check`, but there
-  is not yet a dedicated concurrent in-flight drain harness.
+- Long-running randomized shutdown campaigns are still future soak work; the
+  short E11 gate covers deterministic correctness.
 - Process-level reliability scripts share server lifecycle and HTTP helpers
   through `scripts/cortexdb_server_harness.py`.
 - Long-running 24h/72h evidence belongs to soak campaigns, not the short E11

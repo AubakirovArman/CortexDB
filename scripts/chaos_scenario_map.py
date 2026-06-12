@@ -76,11 +76,12 @@ SCENARIO_GROUPS = [
     },
     {
         "id": "graceful_shutdown",
-        "kind": "shutdown_partial",
-        "command": "make chaos-restart-check",
+        "kind": "shutdown_harness",
+        "command": "make graceful-shutdown-check",
         "source": "EPIC-E11",
         "scenarios": [
-            "sigterm_drains_inflight_requests_pending",
+            "sigterm_drains_inflight_requests",
+            "sigterm_no_acknowledged_write_loss",
             "server_shutdown_latency_bound",
         ],
     },
