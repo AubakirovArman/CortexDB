@@ -5,8 +5,7 @@ use crate::query::CellMetadata;
 use super::{
     analyze_search_query, classify_enterprise_rag_question_type, condition_payload_bonus,
     covered_requirement_ids, decompose_enterprise_rag_question, extract_query_conditions,
-    map_query_to_scope, scope_mapping_metadata_bonus, scope_mapping_payload_bonus, tokenize,
-    EnterpriseRagQuestionType,
+    map_query_to_scope, scope_mapping_metadata_bonus, tokenize, EnterpriseRagQuestionType,
 };
 
 const REQUIREMENT_PAYLOAD_BONUS: u64 = 2_500;
@@ -71,7 +70,7 @@ pub struct WeightedScoreReranker {
     pub vector_weight: u32,
     pub anchor_payload_bonus: u64,
     pub source_hint_payload_bonus: u64,
-    pub scope_mapping_payload_bonus: u64,
+    pub scope_mapping_metadata_bonus: u64,
     pub condition_payload_bonus: u64,
     pub no_evidence_overlap_score_q16: u16,
 }
@@ -84,7 +83,7 @@ impl Default for WeightedScoreReranker {
             vector_weight: 2,
             anchor_payload_bonus: 25_000,
             source_hint_payload_bonus: 10_000,
-            scope_mapping_payload_bonus: 1,
+            scope_mapping_metadata_bonus: 1,
             condition_payload_bonus: 1,
             no_evidence_overlap_score_q16: 16_384,
         }
@@ -159,7 +158,7 @@ pub fn rerank_calibration_profile(
         EnterpriseRagQuestionType::ProjectRelated => {
             reranker.lexical_weight = 2;
             reranker.vector_weight = 3;
-            reranker.scope_mapping_payload_bonus = 2;
+            reranker.scope_mapping_metadata_bonus = 2;
             reranker.anchor_payload_bonus = 30_000;
             HybridRrfWeights {
                 lexical_q16: 24_000,
@@ -270,47 +269,46 @@ pub(crate) fn sort_reranked<T>(
 }
 
 fn payload_signal_bonus(input: SearchRerankInput<'_>, reranker: &WeightedScoreReranker) -> u64 {
-    let Some(payload) = input.payload else {
-        return 0;
-    };
-    let payload = String::from_utf8_lossy(payload).to_lowercase();
     let analyzed = analyze_search_query(input.query_text);
     let mut bonus = 0u64;
-    for anchor in analyzed.anchors {
-        for term in anchor.terms {
-            if payload.contains(&term) {
-                bonus = bonus.saturating_add(reranker.anchor_payload_bonus);
+    if let Some(payload) = input.payload {
+        let payload = String::from_utf8_lossy(payload).to_lowercase();
+        for anchor in analyzed.anchors {
+            for term in anchor.terms {
+                if payload.contains(&term) {
+                    bonus = bonus.saturating_add(reranker.anchor_payload_bonus);
+                }
             }
         }
-    }
-    for source in analyzed.source_hints {
-        if payload.contains(&source) {
-            bonus = bonus.saturating_add(reranker.source_hint_payload_bonus);
+        for source in analyzed.source_hints {
+            if payload.contains(&source) {
+                bonus = bonus.saturating_add(reranker.source_hint_payload_bonus);
+            }
         }
-    }
-    let decomposition = decompose_enterprise_rag_question(input.query_text);
-    let covered = covered_requirement_ids(&decomposition, &payload);
-    bonus = bonus.saturating_add(
-        u64::try_from(covered.len())
-            .unwrap_or(u64::MAX)
-            .saturating_mul(REQUIREMENT_PAYLOAD_BONUS),
-    );
+        let decomposition = decompose_enterprise_rag_question(input.query_text);
+        let covered = covered_requirement_ids(&decomposition, &payload);
+        bonus = bonus.saturating_add(
+            u64::try_from(covered.len())
+                .unwrap_or(u64::MAX)
+                .saturating_mul(REQUIREMENT_PAYLOAD_BONUS),
+        );
+        let conditions = extract_query_conditions(input.query_text);
+        bonus = bonus.saturating_add(
+            condition_payload_bonus(&conditions, payload.as_bytes())
+                .saturating_mul(reranker.condition_payload_bonus),
+        );
+        for term in tokenize(input.query_text) {
+            if payload.contains(&term) {
+                bonus = bonus.saturating_add(1_000);
+            }
+        }
+    };
     let scope_mapping = map_query_to_scope(input.query_text);
-    let scope_mapping_bonus = input.metadata.map_or_else(
-        || scope_mapping_payload_bonus(&scope_mapping, payload.as_bytes()),
-        |metadata| scope_mapping_metadata_bonus(&scope_mapping, metadata),
-    );
-    bonus = bonus
-        .saturating_add(scope_mapping_bonus.saturating_mul(reranker.scope_mapping_payload_bonus));
-    let conditions = extract_query_conditions(input.query_text);
-    bonus = bonus.saturating_add(
-        condition_payload_bonus(&conditions, payload.as_bytes())
-            .saturating_mul(reranker.condition_payload_bonus),
-    );
-    for term in tokenize(input.query_text) {
-        if payload.contains(&term) {
-            bonus = bonus.saturating_add(1_000);
-        }
+    if let Some(metadata) = input.metadata {
+        bonus = bonus.saturating_add(
+            scope_mapping_metadata_bonus(&scope_mapping, metadata)
+                .saturating_mul(reranker.scope_mapping_metadata_bonus),
+        );
     }
     bonus
 }
@@ -347,10 +345,6 @@ fn evidence_overlap_score(query_text: &str, payload: &[u8]) -> u32 {
         .iter()
         .any(|source| payload.contains(source))
     {
-        score = score.saturating_add(2);
-    }
-    let scope_mapping = map_query_to_scope(query_text);
-    if scope_mapping_payload_bonus(&scope_mapping, payload.as_bytes()) > 0 {
         score = score.saturating_add(2);
     }
     let conditions = extract_query_conditions(query_text);
@@ -526,7 +520,7 @@ mod tests {
     }
 
     #[test]
-    fn weighted_reranker_rewards_query_scope_mapping_matches() {
+    fn weighted_reranker_does_not_use_payload_scope_mapping_without_descriptor_metadata() {
         let reranker = WeightedScoreReranker::default();
         let matched = reranker.rerank_score(SearchRerankInput {
             query_text: "What did Slack say about the Apollo rollout?",
@@ -536,7 +530,7 @@ mod tests {
             vector_score: 0,
             base_score: 1,
             metadata: None,
-            payload: Some(b"source=slack\nproject=Apollo\ntopic=rollout\n\nLaunch update."),
+            payload: Some(b"source=slack\nproject=Apollo\n\nSlack Apollo rollout update."),
         });
         let weak = reranker.rerank_score(SearchRerankInput {
             query_text: "What did Slack say about the Apollo rollout?",
@@ -546,17 +540,18 @@ mod tests {
             vector_score: 0,
             base_score: 1,
             metadata: None,
-            payload: Some(b"source=gmail\nproject=Hermes\n\nOffice schedule."),
+            payload: Some(b"source=gmail\nproject=Hermes\n\nSlack Apollo rollout update."),
         });
 
-        assert!(matched > weak);
+        assert_eq!(matched, weak);
     }
 
     #[test]
-    fn weighted_reranker_uses_descriptor_metadata_before_payload_scope_mapping() {
+    fn weighted_reranker_uses_descriptor_metadata_for_scope_mapping() {
         let reranker = WeightedScoreReranker::default();
         let descriptor_metadata =
             CellMetadata::from_payload(b"source=jira\nproject=Apollo\n\nLaunch update.");
+        let spoofed_payload = b"source=gmail\nproject=Hermes\n\nJira Apollo rollout update.";
         let matched = reranker.rerank_score(SearchRerankInput {
             query_text: "What did Jira say about the Apollo rollout?",
             query_vector: None,
@@ -565,7 +560,7 @@ mod tests {
             vector_score: 0,
             base_score: 1,
             metadata: Some(&descriptor_metadata),
-            payload: Some(b"source=gmail\nproject=Hermes\n\nLaunch update."),
+            payload: Some(spoofed_payload),
         });
         let weak = reranker.rerank_score(SearchRerankInput {
             query_text: "What did Jira say about the Apollo rollout?",
@@ -575,7 +570,7 @@ mod tests {
             vector_score: 0,
             base_score: 1,
             metadata: None,
-            payload: Some(b"source=gmail\nproject=Hermes\n\nLaunch update."),
+            payload: Some(spoofed_payload),
         });
 
         assert!(matched > weak);

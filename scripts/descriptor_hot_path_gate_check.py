@@ -151,6 +151,16 @@ def main() -> None:
         "rerank scope mapping from metadata when available",
     )
     require(
+        search_rerank,
+        "scope_mapping_metadata_bonus: u64",
+        "rerank scope mapping multiplier is metadata-scoped",
+    )
+    forbid(
+        search_rerank,
+        "scope_mapping_payload_bonus",
+        "rerank scope mapping payload fallback",
+    )
+    require(
         search_scope_mapping,
         "pub fn scope_mapping_metadata_bonus(mapping: &QueryScopeMapping, metadata: &CellMetadata)",
         "scope mapping metadata scoring helper",

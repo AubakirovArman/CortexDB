@@ -278,7 +278,7 @@ fn detail(row: &QuestionRow, profile: &RerankCalibrationProfile, calibrated: boo
         "lexical_weight": profile.reranker.lexical_weight,
         "vector_weight": profile.reranker.vector_weight,
         "condition_payload_bonus": profile.reranker.condition_payload_bonus,
-        "scope_mapping_payload_bonus": profile.reranker.scope_mapping_payload_bonus,
+        "scope_mapping_metadata_bonus": profile.reranker.scope_mapping_metadata_bonus,
         "no_evidence_overlap_score_q16": profile.reranker.no_evidence_overlap_score_q16,
     })
 }
