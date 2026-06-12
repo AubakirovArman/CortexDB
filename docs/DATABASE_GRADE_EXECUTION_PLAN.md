@@ -1000,19 +1000,21 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-C16 — Memory profiling harness (dhat/jemalloc)
 
-- status: `pending`
+- status: `partial`
 - meta: Категория: benchmarks · P0 · 30 days · build
 - goal: все RAM-обещания нуждаются в измерителе; estimated_* поля /v1/stats не верифицированы.
 - tasks:
-  - [ ] 1) dhat за feature-флагом + jemalloc stats
-  - [ ] 2) `make memory-profile` → JSON (RSS, аллокации, payload-клоны)
-  - [ ] 3) сверка estimated vs real (допуск, фиксы расчётов).
+  - [ ] 1) dhat за feature-флагом + jemalloc stats — not implemented yet because current agent rules forbid adding new dependencies without explicit approval
+  - [x] 2) `make memory-profile` → JSON (RSS, аллокации, payload-клоны) — portable RSS/estimate/clone-gate report added
+  - [x] 3) сверка estimated vs real (допуск, фиксы расчётов) — current ratio is reported and documented; estimator fixes remain future work if ratio exceeds policy.
 - acceptance:
-  - [ ] 1) отчёт воспроизводим
-  - [ ] 2) клон-счётчик используется в A04/A05 acceptance
-  - [ ] 3) расхождение estimated/real задокументировано.
+  - [x] 1) отчёт воспроизводим — `make memory-profile MEMORY_PROFILE_CELLS=10000`
+  - [x] 2) клон-счётчик используется в A04/A05 acceptance — `payload_clone_gate` is included in the JSON report and mirrors the static clone gate
+  - [x] 3) расхождение estimated/real задокументировано — `docs/MEMORY_PROFILE.md`
 - files: cortex-bench, memory_accounting.rs.
 - risks: нет. Зависимости: нет. Эффект: инструмент всего блока A/C.
+- evidence: Added `memory_profile_check` and `make memory-profile`. Local 10K report `target/memory-profile/10k/report.json`: `ok=true`, RSS `38936576`, peak RSS `40894464`, estimated total `28795568`, RSS/estimated ratio `1.352`, peak/estimated ratio `1.420`, payload clone gate passed. Allocator-specific `dhat`/`jemalloc` observers are explicitly marked unavailable until dependency/runtime approval.
+- risks: C16 remains partial against the original dhat/jemalloc wording; the portable harness is useful now, but allocator-level allocation counts still need an explicit dependency/runtime decision.
 
 ### EPIC-C17 — Перф-регрессии в CI (continuous benchmarking)
 

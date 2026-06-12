@@ -925,6 +925,10 @@ VERIFY_PERF_CELLS ?= 10000
 VERIFY_PERF_WARMUP_SAMPLES ?= 1
 VERIFY_PERF_SAMPLES ?= 25
 VERIFY_PERF_MAX_P95_MS ?= 250
+MEMORY_PROFILE_ROOT ?= target/memory-profile
+MEMORY_PROFILE_REPORT ?= $(MEMORY_PROFILE_ROOT)/report.json
+MEMORY_PROFILE_CELLS ?= 10000
+MEMORY_PROFILE_MAX_RSS_TO_ESTIMATED_TOTAL_RATIO ?= 128
 PERFORMANCE_TREND_ROOT ?= target/performance-trends
 PERFORMANCE_TREND_REPORT ?= $(PERFORMANCE_TREND_ROOT)/report.json
 PERFORMANCE_HISTORY_ROOT ?= fixtures/performance/history
@@ -4479,6 +4483,10 @@ single-node-performance-check:
 .PHONY: verify-performance-check
 verify-performance-check:
 	cargo run --release -p cortex-engine --bin verify_performance_check -- --root "$(VERIFY_PERF_ROOT)" --report "$(VERIFY_PERF_REPORT)" --cells "$(VERIFY_PERF_CELLS)" --warmup-samples "$(VERIFY_PERF_WARMUP_SAMPLES)" --samples "$(VERIFY_PERF_SAMPLES)" --max-p95-ms "$(VERIFY_PERF_MAX_P95_MS)"
+
+.PHONY: memory-profile
+memory-profile:
+	cargo run --release -p cortex-engine --bin memory_profile_check -- --root "$(MEMORY_PROFILE_ROOT)" --report "$(MEMORY_PROFILE_REPORT)" --cells "$(MEMORY_PROFILE_CELLS)" --max-rss-to-estimated-total-ratio "$(MEMORY_PROFILE_MAX_RSS_TO_ESTIMATED_TOTAL_RATIO)"
 
 performance-trend-check:
 	python3 scripts/performance_trend_check.py --load-report "$(LOAD_SMOKE_REPORT)" --single-node-report "$(SINGLE_NODE_PERF_REPORT)" --history-root "$(PERFORMANCE_HISTORY_ROOT)" --report "$(PERFORMANCE_TREND_REPORT)"
