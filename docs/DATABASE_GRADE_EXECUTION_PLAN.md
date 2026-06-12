@@ -6,7 +6,7 @@ Execution rule: close epics in order. Use the dependency-aware order from the so
 
 Status values: `next`, `in_progress`, `partial`, `done`, `blocked`, `frozen`.
 
-Current pointer: `EPIC-C16`.
+Current pointer: `EPIC-A19`.
 
 ## First Execution Queue
 
@@ -373,21 +373,23 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-A19 — Scale-бенчмарки 100K/1M/10M + кривые RAM/латентности
 
-- status: `pending`
+- status: `partial`
 - meta: Категория: benchmarks · Приоритет: P0 · Горизонт: 30 days (100K/1M baseline) / 90 days (10M) · Тип: benchmark
 - goal: слово database требует чисел на масштабе, а не 10K из BENCHMARKS.md.
 - problem: Проблема: перф-матрица заканчивается на 10K; линейный рост уже виден.
 - tasks:
-  - [ ] 1) генератор корпуса (0.5-4KB payload, реалистичное распределение scope/термов) в cortex-bench
-  - [ ] 2) матрица: open time, RSS, put/get/search/context/verify p50/p95, checkpoint time — на 100K/1M (10M — после A08)
-  - [ ] 3) baseline ДО оптимизаций и кривая ПОСЛЕ каждой (A05, A06, A08, A09)
-  - [ ] 4) публикация в BENCHMARKS.md, включая некрасивые цифры.
+  - [x] 1) генератор корпуса (0.5-4KB payload, реалистичное распределение scope/термов) в cortex-bench — implemented as `scale_benchmark_check` with realistic 0.5KB-4KB payloads, mixed scopes, and operational terms.
+  - [ ] 2) матрица: open time, RSS, put/get/search/context/verify p50/p95, checkpoint time — на 100K/1M (10M — после A08) — 100K core lifecycle matrix is reproducible; 1M and heavy search/context/verify p95 remain open.
+  - [ ] 3) baseline ДО оптимизаций и кривая ПОСЛЕ каждой (A05, A06, A08, A09) — first 100K core baseline captured; trend curves remain open.
+  - [x] 4) публикация в BENCHMARKS.md, включая некрасивые цифры — `docs/SCALE_BENCHMARKS.md` and `docs/BENCHMARKS.md`.
 - acceptance:
-  - [ ] 1) `make scale-bench-{100k,1m}` воспроизводимы
-  - [ ] 2) кривые в доках с датой и коммитом
+  - [ ] 1) `make scale-bench-{100k,1m}` воспроизводимы — `make scale-bench-100k` passes; `make scale-bench-1m` target exists but has not yet been run to completion.
+  - [ ] 2) кривые в доках с датой и коммитом — 100K baseline documented with date/source state; multi-point curves remain open.
   - [ ] 3) 10M-прогон после A08 (lazy) с RSS-сравнением.
-- files: crates/cortex-bench (новый, см. D-блок), docs/BENCHMARKS.md.
+- files: crates/cortex-engine/src/bin/scale_benchmark_check.rs, Makefile, docs/SCALE_BENCHMARKS.md, docs/BENCHMARKS.md.
 - risks: страшные baseline-цифры — публиковать: это и есть claims-policy. Зависимости: A01, C16. Эффект: фундамент честности всего «database»-нарратива.
+- evidence: Added `scale_benchmark_check`, `make scale-bench-100k`, and `make scale-bench-1m`. Local 100K core report `target/scale-bench/100k/report.json`: `ok=true`, cells `100000`, duration `71185.262ms`, put batches `960.891ms`, checkpoint `38416.460ms`, get_latest p95 `0.003ms`, restart open `219.172ms`, after-checkpoint RSS `890494976`, peak RSS `1123278848`, estimated total memory `894553484`, no validation errors.
+- risks: Heavy broad search/context/verify at 100K are not hidden behind the default pass. An exploratory low-sample run reached those phases but did not complete in a practical window; this remains an A19/A06/A11 optimization target.
 
 ### EPIC-A20 — Property-based тесты ядра (MVCC, WAL, recovery, индексы)
 

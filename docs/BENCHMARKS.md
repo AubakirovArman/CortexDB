@@ -107,6 +107,23 @@ artifact that proves the local single-node engine path still has a complete
 machine-readable performance matrix before consensus or distributed rollout work
 expands the runtime.
 
+For larger database-scale baselines:
+
+```bash
+make scale-bench-100k
+make scale-bench-1m
+```
+
+These targets create isolated test databases under `target/scale-bench/` and
+write machine-readable reports such as `target/scale-bench/100k/report.json`.
+The default profile measures the core single-node lifecycle with realistic
+0.5KB-4KB payloads: batch put, memory after put, checkpoint, memory after
+checkpoint, sampled latest reads, close, and restart open. Expensive broad
+search, ContextPack, and VerifyFact phases are opt-in via
+`SCALE_BENCH_SEARCH_SAMPLES`, `SCALE_BENCH_CONTEXT_SAMPLES`, and
+`SCALE_BENCH_VERIFY_SAMPLES`. See `docs/SCALE_BENCHMARKS.md` for the current
+100K baseline and known heavy-phase bottlenecks.
+
 To compare the current reports with release history:
 
 ```bash
