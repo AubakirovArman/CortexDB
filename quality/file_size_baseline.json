@@ -2481,7 +2481,49 @@
     "crates/cortex-engine/src/search/scope_mapping.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 580,
+      "lines": 71,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/scope_mapping/builder.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 51,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/scope_mapping/hints.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 168,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/scope_mapping/normalize.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 82,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/scope_mapping/scoring.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 114,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/scope_mapping/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 49,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/search/scope_mapping/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 76,
       "soft_limit": 300,
       "warning_limit": 600
     },
