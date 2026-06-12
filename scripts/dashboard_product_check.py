@@ -9,6 +9,23 @@ import sys
 from pathlib import Path
 
 
+
+APP_SOURCE_FILES = (
+    Path("web/dashboard/src/app_state.js"),
+    Path("web/dashboard/src/app_api.js"),
+    Path("web/dashboard/src/app_access.js"),
+    Path("web/dashboard/src/app_status.js"),
+    Path("web/dashboard/src/app_incidents.js"),
+    Path("web/dashboard/src/app_status_summaries.js"),
+    Path("web/dashboard/src/app_slo_backup.js"),
+    Path("web/dashboard/src/app_bindings.js"),
+    Path("web/dashboard/src/app.js"),
+)
+
+
+def read_app_sources() -> str:
+    return "\n".join(path.read_text(encoding="utf-8") for path in APP_SOURCE_FILES)
+
 REQUIRED_MARKERS = {
     "read_only_mode": [
         ("web/dashboard/src/index.html", "id=\"read-only-mode\""),
@@ -81,7 +98,7 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_slo.js", "Validation status"),
         ("web/dashboard/src/reporting_slo.js", "Error budget"),
         ("docs/archive/DASHBOARD_UI.md", "Single-node SLO Dashboard"),
-        ("docs/SINGLE_NODE_SLO.md", "dashboard_slo.v1"),
+        ("docs/archive/SINGLE_NODE_SLO.md", "dashboard_slo.v1"),
     ],
     "audit_readiness": [
         ("web/dashboard/src/index.html", "id=\"audit-report\""),
@@ -153,13 +170,15 @@ REQUIRED_MARKERS = {
     "release_artifacts": [
         ("e2e/dashboard_screenshots.mjs", "permissions"),
         ("docs/archive/DASHBOARD_UI.md", "dashboard-screenshots"),
-        ("docs/DASHBOARD_PRODUCT_UI_EVIDENCE.md", "make dashboard-product-check"),
+        ("docs/archive/DASHBOARD_PRODUCT_UI_EVIDENCE.md", "make dashboard-product-check"),
     ],
 }
 
 
 def read(path: Path) -> str:
     try:
+        if path == Path("web/dashboard/src/app.js"):
+            return read_app_sources()
         return path.read_text(encoding="utf-8")
     except OSError as error:
         raise RuntimeError(f"failed to read {path}: {error}") from error

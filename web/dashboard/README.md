@@ -84,6 +84,9 @@ Current coverage:
   `reporting_retrieval.js`, `reporting_operations.js`, and a small
   `reporting.js` facade so typed API views can evolve without growing one
   monolithic script;
+- dashboard app behavior is split into focused `app_*.js` files for state,
+  access, API helpers, operational status, SLO/backup posture, and bindings
+  while preserving the dependency-free static asset model;
 - numeric form fields use native constraints, visible field errors, and
   synchronized `aria-invalid` state before malformed requests reach the API;
 - Playwright smoke covers asset loading, route switching, session controls,

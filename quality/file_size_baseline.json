@@ -2852,7 +2852,63 @@
     "crates/cortex-server/assets/dashboard/v1/app.js": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 1186,
+      "lines": 2,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/app_access.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 181,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/app_api.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 35,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/app_bindings.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 227,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/app_incidents.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 202,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/app_slo_backup.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 118,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/app_state.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 265,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/app_status.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 74,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/app_status_summaries.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 77,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3013,14 +3069,14 @@
     "crates/cortex-server/src/dashboard.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 74,
+      "lines": 106,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-server/src/dashboard_tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 360,
+      "lines": 405,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -4105,7 +4161,7 @@
     "scripts/backup_restore_view_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 107,
+      "lines": 126,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -4399,28 +4455,28 @@
     "scripts/dashboard_build.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 166,
+      "lines": 182,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "scripts/dashboard_dist_smoke.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 115,
+      "lines": 131,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "scripts/dashboard_operational_status_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 94,
+      "lines": 113,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "scripts/dashboard_product_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 213,
+      "lines": 232,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -4434,7 +4490,7 @@
     "scripts/dashboard_role_ui_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 112,
+      "lines": 131,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5526,7 +5582,7 @@
     "scripts/incident_view_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 114,
+      "lines": 133,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5883,7 +5939,7 @@
     "scripts/permissions_view_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 99,
+      "lines": 118,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -6114,7 +6170,7 @@
     "scripts/single_node_slo_dashboard_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 101,
+      "lines": 120,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -6415,7 +6471,63 @@
     "web/dashboard/src/app.js": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 1186,
+      "lines": 2,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/app_access.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 181,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/app_api.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 35,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/app_bindings.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 227,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/app_incidents.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 202,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/app_slo_backup.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 118,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/app_state.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 265,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/app_status.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 74,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/app_status_summaries.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 77,
       "soft_limit": 300,
       "warning_limit": 600
     },

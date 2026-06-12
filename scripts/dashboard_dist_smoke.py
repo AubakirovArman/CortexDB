@@ -12,6 +12,17 @@ from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST_DIR = ROOT / "web" / "dashboard" / "dist"
+APP_ASSETS = (
+    "app_state.js",
+    "app_api.js",
+    "app_access.js",
+    "app_status.js",
+    "app_incidents.js",
+    "app_status_summaries.js",
+    "app_slo_backup.js",
+    "app_bindings.js",
+    "app.js",
+)
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -57,7 +68,9 @@ def main() -> int:
         reporting_operations = fetch_text(f"{base}/dashboard/assets/v1/reporting_operations.js")
         reporting_ingest = fetch_text(f"{base}/dashboard/assets/v1/reporting_ingest.js")
         reporting = fetch_text(f"{base}/dashboard/assets/v1/reporting.js")
-        script = fetch_text(f"{base}/dashboard/assets/v1/app.js")
+        script = "\n".join(
+            fetch_text(f"{base}/dashboard/assets/v1/{asset}") for asset in APP_ASSETS
+        )
         manifest = fetch_text(f"{base}/dashboard/assets/v1/dashboard_manifest.json")
     required = [
         ("index title", "CortexDB Console" in index),
@@ -68,6 +81,9 @@ def main() -> int:
         ("reporting operations script link", "/dashboard/assets/v1/reporting_operations.js" in index),
         ("reporting ingest script link", "/dashboard/assets/v1/reporting_ingest.js" in index),
         ("reporting script link", "/dashboard/assets/v1/reporting.js" in index),
+        ("app state script link", "/dashboard/assets/v1/app_state.js" in index),
+        ("app bindings script link", "/dashboard/assets/v1/app_bindings.js" in index),
+        ("app script link", "/dashboard/assets/v1/app.js" in index),
         ("route link", 'href="/dashboard/search"' in index),
         ("permissions route link", 'href="/dashboard/permissions"' in index),
         ("route page", "CortexDB Console" in route_index),

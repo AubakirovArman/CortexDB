@@ -22,7 +22,7 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "make crash-fault-check",
         "target/crash-fault/report.json",
     ),
-    "docs/SINGLE_NODE_SLO.md": (
+    "docs/archive/SINGLE_NODE_SLO.md": (
         "make performance-trend-check",
         "target/performance-trends/report.json",
         "p95",

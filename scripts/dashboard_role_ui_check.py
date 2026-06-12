@@ -9,6 +9,23 @@ import sys
 from pathlib import Path
 
 
+
+APP_SOURCE_FILES = (
+    Path("web/dashboard/src/app_state.js"),
+    Path("web/dashboard/src/app_api.js"),
+    Path("web/dashboard/src/app_access.js"),
+    Path("web/dashboard/src/app_status.js"),
+    Path("web/dashboard/src/app_incidents.js"),
+    Path("web/dashboard/src/app_status_summaries.js"),
+    Path("web/dashboard/src/app_slo_backup.js"),
+    Path("web/dashboard/src/app_bindings.js"),
+    Path("web/dashboard/src/app.js"),
+)
+
+
+def read_app_sources() -> str:
+    return "\n".join(path.read_text(encoding="utf-8") for path in APP_SOURCE_FILES)
+
 REQUIRED_MARKERS = {
     "role_ui_schema": [
         ("web/dashboard/src/index.html", "id=\"role-ui-report\""),
@@ -60,6 +77,8 @@ REQUIRED_MARKERS = {
 
 def read(path: Path) -> str:
     try:
+        if path == Path("web/dashboard/src/app.js"):
+            return read_app_sources()
         return path.read_text(encoding="utf-8")
     except OSError as error:
         raise RuntimeError(f"failed to read {path}: {error}") from error

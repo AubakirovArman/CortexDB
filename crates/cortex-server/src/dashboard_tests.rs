@@ -5,6 +5,30 @@ fn dashboard_options() -> super::ServerOptions {
     }
 }
 
+const DASHBOARD_APP_ASSETS: &[&str] = &[
+    "/dashboard/assets/v1/app_state.js",
+    "/dashboard/assets/v1/app_api.js",
+    "/dashboard/assets/v1/app_access.js",
+    "/dashboard/assets/v1/app_status.js",
+    "/dashboard/assets/v1/app_incidents.js",
+    "/dashboard/assets/v1/app_status_summaries.js",
+    "/dashboard/assets/v1/app_slo_backup.js",
+    "/dashboard/assets/v1/app_bindings.js",
+    "/dashboard/assets/v1/app.js",
+];
+
+fn dashboard_app_script() -> String {
+    DASHBOARD_APP_ASSETS
+        .iter()
+        .map(|path| {
+            super::dashboard::asset(path)
+                .unwrap_or_else(|| panic!("missing dashboard app asset: {path}"))
+                .body
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 #[test]
 fn dashboard_endpoint_returns_html() {
     let tmp = std::env::temp_dir().join(format!("cortex-dashboard-test-{}", std::process::id()));
@@ -78,9 +102,7 @@ fn dashboard_route_pages_return_html() {
 #[test]
 fn dashboard_html_exposes_admin_console_surfaces() {
     let html = super::dashboard::html();
-    let script = super::dashboard::asset("/dashboard/assets/v1/app.js")
-        .expect("dashboard script asset")
-        .body;
+    let script = dashboard_app_script();
 
     for marker in [
         "CortexDB Console",
@@ -92,6 +114,14 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "/dashboard/assets/v1/reporting_ingest.js",
         "/dashboard/assets/v1/reporting_audit.js",
         "/dashboard/assets/v1/reporting.js",
+        "/dashboard/assets/v1/app_state.js",
+        "/dashboard/assets/v1/app_api.js",
+        "/dashboard/assets/v1/app_access.js",
+        "/dashboard/assets/v1/app_status.js",
+        "/dashboard/assets/v1/app_incidents.js",
+        "/dashboard/assets/v1/app_status_summaries.js",
+        "/dashboard/assets/v1/app_slo_backup.js",
+        "/dashboard/assets/v1/app_bindings.js",
         "/dashboard/assets/v1/app.js",
         "href=\"/dashboard/cells\"",
         "href=\"/dashboard/permissions\"",
@@ -200,8 +230,8 @@ fn dashboard_forms_have_accessible_labels_and_live_output() {
 fn dashboard_static_assets_are_versioned_and_typed() {
     let style =
         super::dashboard::asset("/dashboard/assets/v1/style.css").expect("dashboard style asset");
-    let script =
-        super::dashboard::asset("/dashboard/assets/v1/app.js").expect("dashboard script asset");
+    let script = super::dashboard::asset("/dashboard/assets/v1/app_bindings.js")
+        .expect("dashboard app bindings asset");
     let common = super::dashboard::asset("/dashboard/assets/v1/reporting_common.js")
         .expect("dashboard reporting common asset");
     let retrieval = super::dashboard::asset("/dashboard/assets/v1/reporting_retrieval.js")
@@ -235,6 +265,11 @@ fn dashboard_static_assets_are_versioned_and_typed() {
         reporting.content_type,
         "application/javascript; charset=utf-8"
     );
+    for path in DASHBOARD_APP_ASSETS {
+        let asset = super::dashboard::asset(path)
+            .unwrap_or_else(|| panic!("missing dashboard app asset: {path}"));
+        assert_eq!(asset.content_type, "application/javascript; charset=utf-8");
+    }
     assert!(style.body.contains(".tab[aria-current=\"page\"]"));
     assert!(script.body.contains("addEventListener(\"submit\""));
     assert!(script.body.contains("pushState"));
@@ -308,9 +343,19 @@ fn dashboard_asset_endpoint_serves_css_and_js() {
             ".panel.active",
         ),
         (
-            "/dashboard/assets/v1/app.js",
+            "/dashboard/assets/v1/app_bindings.js",
             "Content-Type: application/javascript; charset=utf-8",
             "run(\"stats\"",
+        ),
+        (
+            "/dashboard/assets/v1/app_status.js",
+            "Content-Type: application/javascript; charset=utf-8",
+            "dashboard_status.v1",
+        ),
+        (
+            "/dashboard/assets/v1/app_slo_backup.js",
+            "Content-Type: application/javascript; charset=utf-8",
+            "dashboard_slo.v1",
         ),
         (
             "/dashboard/assets/v1/reporting_common.js",

@@ -19,7 +19,7 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "make backup-drill-check",
         "single-node",
     ),
-    "docs/SINGLE_NODE_SLO.md": (
+    "docs/archive/SINGLE_NODE_SLO.md": (
         "SLO",
         "make single-node-performance-check",
         "target/single-node-performance/report.json",

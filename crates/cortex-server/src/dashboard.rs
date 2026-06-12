@@ -69,6 +69,38 @@ pub fn asset(path: &str) -> Option<DashboardAsset> {
             content_type: "application/javascript; charset=utf-8",
             body: include_str!("../assets/dashboard/v1/reporting.js"),
         }),
+        "/dashboard/assets/v1/app_state.js" => Some(DashboardAsset {
+            content_type: "application/javascript; charset=utf-8",
+            body: include_str!("../assets/dashboard/v1/app_state.js"),
+        }),
+        "/dashboard/assets/v1/app_api.js" => Some(DashboardAsset {
+            content_type: "application/javascript; charset=utf-8",
+            body: include_str!("../assets/dashboard/v1/app_api.js"),
+        }),
+        "/dashboard/assets/v1/app_access.js" => Some(DashboardAsset {
+            content_type: "application/javascript; charset=utf-8",
+            body: include_str!("../assets/dashboard/v1/app_access.js"),
+        }),
+        "/dashboard/assets/v1/app_status.js" => Some(DashboardAsset {
+            content_type: "application/javascript; charset=utf-8",
+            body: include_str!("../assets/dashboard/v1/app_status.js"),
+        }),
+        "/dashboard/assets/v1/app_incidents.js" => Some(DashboardAsset {
+            content_type: "application/javascript; charset=utf-8",
+            body: include_str!("../assets/dashboard/v1/app_incidents.js"),
+        }),
+        "/dashboard/assets/v1/app_status_summaries.js" => Some(DashboardAsset {
+            content_type: "application/javascript; charset=utf-8",
+            body: include_str!("../assets/dashboard/v1/app_status_summaries.js"),
+        }),
+        "/dashboard/assets/v1/app_slo_backup.js" => Some(DashboardAsset {
+            content_type: "application/javascript; charset=utf-8",
+            body: include_str!("../assets/dashboard/v1/app_slo_backup.js"),
+        }),
+        "/dashboard/assets/v1/app_bindings.js" => Some(DashboardAsset {
+            content_type: "application/javascript; charset=utf-8",
+            body: include_str!("../assets/dashboard/v1/app_bindings.js"),
+        }),
         _ => None,
     }
 }
