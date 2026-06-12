@@ -1,12 +1,13 @@
 use std::collections::BTreeSet;
 
-use cortex_core::{CellId, CommitSeq};
+use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_engine::{
     decode_snapshot_segment, encode_snapshot_segment, plan_replication_recovery,
     AppendEntriesRequest, ConsensusState, Database, DatabaseOptions, ElectionRole, ElectionState,
     EngineFeatureFlags, InMemoryReplicationTransport, LogIndex, NodeId, ReplicationPeerServer,
     ReplicationPeerState, ReplicationRecoveryAction, ReplicationRecoveryPolicy,
-    ReplicationTransport, SnapshotChunk, SnapshotSegment, TcpReplicationTransport, Term,
+    ReplicationTransport, SnapshotCell, SnapshotChunk, SnapshotSegment, TcpReplicationTransport,
+    Term,
 };
 use cortex_storage::segment::SegmentCell;
 use std::collections::BTreeMap;
@@ -216,7 +217,8 @@ fn snapshot_segment_roundtrips_and_installs_durably() {
             created_seq: 7,
             deleted_seq: None,
             payload: b"scope=project:investments\nstatus=ready\n\nsnapshot cell".to_vec(),
-        }],
+        }
+        .into()],
     };
     let encoded = encode_snapshot_segment(&snapshot).unwrap();
     let decoded = decode_snapshot_segment(&encoded).unwrap();
@@ -231,6 +233,45 @@ fn snapshot_segment_roundtrips_and_installs_durably() {
         snapshot.cells[0].payload
     );
     assert_eq!(db.manifest().live_segments.len(), 1);
+}
+
+#[test]
+fn snapshot_install_preserves_descriptor_over_payload_metadata_after_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = open_replication_db(dir.path());
+    let descriptor = CellDescriptor {
+        scope: "agent:finance".to_owned(),
+        status: "verified".to_owned(),
+        source: Some("descriptor-source".to_owned()),
+        ..CellDescriptor::default()
+    };
+    let payload = b"scope=agent:private\nstatus=ready\nsource=payload-source\n\nsnapshot cell";
+    let snapshot = SnapshotSegment {
+        checkpoint_seq: CommitSeq(8),
+        cells: vec![SnapshotCell {
+            candidate_id: 1,
+            cell_id: 101,
+            created_seq: 8,
+            deleted_seq: None,
+            descriptor: Some(descriptor.encode_section_v1()),
+            payload: payload.to_vec(),
+        }],
+    };
+    let decoded = decode_snapshot_segment(&encode_snapshot_segment(&snapshot).unwrap()).unwrap();
+
+    db.install_snapshot_segment(decoded).unwrap();
+    db.close().unwrap();
+    let db = Database::open(dir.path()).unwrap();
+    let (stored_payload, stored_descriptor) =
+        db.get_latest_cell_with_descriptor(CellId(101)).unwrap();
+
+    assert_eq!(stored_payload, payload);
+    assert_eq!(stored_descriptor.scope, "agent:finance");
+    assert_eq!(stored_descriptor.status, "verified");
+    assert_eq!(
+        stored_descriptor.source.as_deref(),
+        Some("descriptor-source")
+    );
 }
 
 fn open_replication_db(path: &std::path::Path) -> Database {

@@ -196,7 +196,8 @@ fn real_peer_transport_streams_chunked_snapshot_payload() {
             created_seq: 17,
             deleted_seq: None,
             payload: b"scope=project:investments\nstatus=ready\n\ntransport snapshot".to_vec(),
-        }],
+        }
+        .into()],
     };
     let encoded = encode_snapshot_segment(&snapshot).unwrap();
     let split_at = encoded.len() / 2;
@@ -274,7 +275,8 @@ fn peer_snapshot_transport_installs_durable_follower_snapshot() {
             created_seq: 23,
             deleted_seq: None,
             payload: b"scope=project:investments\nstatus=ready\n\ninstalled over peer".to_vec(),
-        }],
+        }
+        .into()],
     };
     let encoded = encode_snapshot_segment(&snapshot).unwrap();
     let split_at = encoded.len() / 2;

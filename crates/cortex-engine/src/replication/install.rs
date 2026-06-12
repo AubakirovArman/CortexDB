@@ -1,28 +1,33 @@
 use std::fs;
 
 use cortex_core::memtable::MemTable;
-use cortex_core::{CellId, CommitSeq};
+use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::manifest::ManifestSegment;
-use cortex_storage::segment::{SegmentCell, SegmentWriter};
+use cortex_storage::segment::{SegmentCellRef, SegmentWriter};
 use cortex_storage::wal::WalWriter;
 
-use crate::checkpoint::hnsw::hnsw_graph_for_cells_with_config;
+use crate::checkpoint::hnsw::hnsw_graph_for_cell_refs_with_config;
 use crate::checkpoint::manifest_hnsw_profile;
-use crate::checkpoint::vector::vector_index_for_cells;
+use crate::checkpoint::vector::vector_index_for_cell_refs;
 use crate::checkpoint::{bitmap_path, hnsw_path, lexical_path, segment_path, vector_path};
 use crate::database::{CheckpointStats, Database};
 use crate::error::{EngineError, EngineResult};
 use crate::options::EngineFeature;
 use crate::query::EngineAqlIndex;
 
-use super::SnapshotSegment;
+use super::{SnapshotCell, SnapshotSegment};
 
 impl Database {
     pub fn replication_snapshot_segment(&self) -> EngineResult<SnapshotSegment> {
         self.require_feature(EngineFeature::ExperimentalReplication)?;
+        let cells = self
+            .full_snapshot_cell_refs()?
+            .into_iter()
+            .map(SnapshotCell::from_segment_cell_ref)
+            .collect();
         Ok(SnapshotSegment {
             checkpoint_seq: self.current_seq,
-            cells: self.full_snapshot_cells()?,
+            cells,
         })
     }
 
@@ -35,22 +40,20 @@ impl Database {
         self.writer.shutdown()?;
         fs::create_dir_all(&self.segments_path)?;
         let segment_id = self.manifest.generation + 1;
-        SegmentWriter::write(
-            segment_path(&self.segments_path, segment_id),
-            &snapshot.cells,
-        )?;
+        let cell_refs = snapshot_cell_refs(&snapshot);
+        SegmentWriter::write_refs(segment_path(&self.segments_path, segment_id), &cell_refs)?;
 
-        let index = EngineAqlIndex::try_from_segment_cells(&snapshot.cells)?;
+        let index = EngineAqlIndex::try_from_segment_cell_refs(&cell_refs)?;
         index
             .bitmap_index()
             .write(bitmap_path(&self.segments_path, segment_id))?;
         index
             .lexical_index()
             .write(lexical_path(&self.segments_path, segment_id))?;
-        vector_index_for_cells(&snapshot.cells)
+        vector_index_for_cell_refs(&cell_refs)
             .write(vector_path(&self.segments_path, segment_id))?;
         if self.feature_flags.experimental_hnsw {
-            hnsw_graph_for_cells_with_config(&snapshot.cells, self.hnsw_build_config)?
+            hnsw_graph_for_cell_refs_with_config(&cell_refs, self.hnsw_build_config)?
                 .write(hnsw_path(&self.segments_path, segment_id))?;
         }
 
@@ -84,21 +87,35 @@ fn memtable_from_snapshot(snapshot: &SnapshotSegment) -> MemTable {
         if let Some(deleted) = cell.deleted_seq {
             memtable.record_tombstone(CellId(cell.cell_id), CommitSeq(deleted));
         } else {
-            memtable.put_cell(
+            let descriptor = cell
+                .descriptor
+                .as_deref()
+                .and_then(CellDescriptor::decode_section_v1)
+                .unwrap_or_else(|| CellDescriptor::from_payload_lossy(&cell.payload));
+            memtable.put_cell_with_descriptor(
                 CellId(cell.cell_id),
                 CommitSeq(cell.created_seq),
                 cell.payload.clone(),
+                descriptor,
             );
         }
     }
     memtable
 }
 
-fn validate_snapshot_cells(cells: &[SegmentCell]) -> EngineResult<()> {
+fn validate_snapshot_cells(cells: &[SnapshotCell]) -> EngineResult<()> {
     if cells.iter().any(|cell| cell.candidate_id == 0) {
         return Err(EngineError::InvalidCandidateId(0));
     }
     Ok(())
+}
+
+fn snapshot_cell_refs(snapshot: &SnapshotSegment) -> Vec<SegmentCellRef<'_>> {
+    snapshot
+        .cells
+        .iter()
+        .map(SnapshotCell::segment_cell_ref)
+        .collect()
 }
 
 fn cell_count(len: usize) -> EngineResult<u32> {

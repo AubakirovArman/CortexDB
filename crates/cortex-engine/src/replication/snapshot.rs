@@ -2,12 +2,13 @@ use crate::error::{EngineError, EngineResult};
 
 use crate::distributed::NodeId;
 use cortex_core::CommitSeq;
-use cortex_storage::segment::SegmentCell;
+use cortex_storage::segment::{SegmentCell, SegmentCellRef};
 use cortex_storage::wal::checksum::crc32c;
 
 use super::{LogIndex, Term};
 
-const SNAPSHOT_SEGMENT_MAGIC: &[u8; 4] = b"CSP1";
+const LEGACY_SNAPSHOT_SEGMENT_MAGIC: &[u8; 4] = b"CSP1";
+const SNAPSHOT_SEGMENT_MAGIC: &[u8; 4] = b"CSP2";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SnapshotChunk {
@@ -22,7 +23,54 @@ pub struct SnapshotChunk {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SnapshotSegment {
     pub checkpoint_seq: CommitSeq,
-    pub cells: Vec<SegmentCell>,
+    pub cells: Vec<SnapshotCell>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SnapshotCell {
+    pub candidate_id: u32,
+    pub cell_id: u64,
+    pub created_seq: u64,
+    pub deleted_seq: Option<u64>,
+    pub descriptor: Option<Vec<u8>>,
+    pub payload: Vec<u8>,
+}
+
+impl SnapshotCell {
+    pub fn from_segment_cell_ref(cell: SegmentCellRef<'_>) -> Self {
+        Self {
+            candidate_id: cell.candidate_id,
+            cell_id: cell.cell_id,
+            created_seq: cell.created_seq,
+            deleted_seq: cell.deleted_seq,
+            descriptor: cell.descriptor,
+            payload: cell.payload.to_vec(),
+        }
+    }
+
+    pub fn segment_cell_ref(&self) -> SegmentCellRef<'_> {
+        SegmentCellRef {
+            candidate_id: self.candidate_id,
+            cell_id: self.cell_id,
+            created_seq: self.created_seq,
+            deleted_seq: self.deleted_seq,
+            descriptor: self.descriptor.clone(),
+            payload: &self.payload,
+        }
+    }
+}
+
+impl From<SegmentCell> for SnapshotCell {
+    fn from(cell: SegmentCell) -> Self {
+        Self {
+            candidate_id: cell.candidate_id,
+            cell_id: cell.cell_id,
+            created_seq: cell.created_seq,
+            deleted_seq: cell.deleted_seq,
+            descriptor: None,
+            payload: cell.payload,
+        }
+    }
 }
 
 pub fn assemble_snapshot_chunks(chunks: &[SnapshotChunk]) -> EngineResult<Vec<u8>> {
@@ -93,6 +141,9 @@ pub fn encode_snapshot_segment(snapshot: &SnapshotSegment) -> EngineResult<Vec<u
         put_u64(&mut out, cell.cell_id);
         put_u64(&mut out, cell.created_seq);
         put_u64(&mut out, cell.deleted_seq.unwrap_or(0));
+        let descriptor = cell.descriptor.as_deref().unwrap_or(&[]);
+        put_u32(&mut out, checked_count(descriptor.len())?);
+        out.extend_from_slice(descriptor);
         put_u32(&mut out, checked_count(cell.payload.len())?);
         out.extend_from_slice(&cell.payload);
     }
@@ -103,9 +154,16 @@ pub fn encode_snapshot_segment(snapshot: &SnapshotSegment) -> EngineResult<Vec<u
 
 pub fn decode_snapshot_segment(bytes: &[u8]) -> EngineResult<SnapshotSegment> {
     let body = verify_snapshot_crc(bytes)?;
-    if body.len() < 16 || &body[..4] != SNAPSHOT_SEGMENT_MAGIC {
+    if body.len() < 16 {
         return Err(EngineError::InvalidOperation);
     }
+    let has_descriptor = if &body[..4] == SNAPSHOT_SEGMENT_MAGIC {
+        true
+    } else if &body[..4] == LEGACY_SNAPSHOT_SEGMENT_MAGIC {
+        false
+    } else {
+        return Err(EngineError::InvalidOperation);
+    };
     let mut cursor = 4;
     let checkpoint_seq = CommitSeq(read_u64(body, &mut cursor)?);
     let count = read_u32(body, &mut cursor)? as usize;
@@ -118,13 +176,21 @@ pub fn decode_snapshot_segment(bytes: &[u8]) -> EngineResult<SnapshotSegment> {
             0 => None,
             value => Some(value),
         };
+        let descriptor = if has_descriptor {
+            let descriptor_len = read_u32(body, &mut cursor)? as usize;
+            let descriptor = read_bytes(body, &mut cursor, descriptor_len)?.to_vec();
+            (!descriptor.is_empty()).then_some(descriptor)
+        } else {
+            None
+        };
         let payload_len = read_u32(body, &mut cursor)? as usize;
         let payload = read_bytes(body, &mut cursor, payload_len)?.to_vec();
-        cells.push(SegmentCell {
+        cells.push(SnapshotCell {
             candidate_id,
             cell_id,
             created_seq,
             deleted_seq,
+            descriptor,
             payload,
         });
     }

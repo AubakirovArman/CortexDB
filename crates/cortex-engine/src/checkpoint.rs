@@ -16,7 +16,7 @@ use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::{
     ManifestHnswProfile, ManifestSegment, ManifestVectorProfile, StorageManifest,
 };
-use cortex_storage::segment::{SegmentCell, SegmentCellRef, SegmentReader, SegmentWriter};
+use cortex_storage::segment::{SegmentCellRef, SegmentReader, SegmentWriter};
 use cortex_storage::wal::WalWriter;
 
 use crate::database::{CheckpointStats, Database};
@@ -321,22 +321,7 @@ impl Database {
         Ok(cells)
     }
 
-    pub(crate) fn full_snapshot_cells(&self) -> EngineResult<Vec<SegmentCell>> {
-        self.full_snapshot_cell_refs().map(|cells| {
-            cells
-                .into_iter()
-                .map(|cell| SegmentCell {
-                    candidate_id: cell.candidate_id,
-                    cell_id: cell.cell_id,
-                    created_seq: cell.created_seq,
-                    deleted_seq: cell.deleted_seq,
-                    payload: cell.payload.to_vec(),
-                })
-                .collect()
-        })
-    }
-
-    fn full_snapshot_cell_refs(&self) -> EngineResult<Vec<SegmentCellRef<'_>>> {
+    pub(crate) fn full_snapshot_cell_refs(&self) -> EngineResult<Vec<SegmentCellRef<'_>>> {
         self.memtable
             .visible_iter(self.read_txn())
             .enumerate()

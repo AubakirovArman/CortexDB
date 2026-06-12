@@ -130,7 +130,8 @@ fn chunked_snapshot_resync_installs_follower_and_survives_restart() {
             created_seq: 11,
             deleted_seq: None,
             payload: b"scope=project:investments\nstatus=ready\n\nresynced cell".to_vec(),
-        }],
+        }
+        .into()],
     };
     let encoded = encode_snapshot_segment(&snapshot).unwrap();
     let split_at = encoded.len() / 2;

@@ -18,6 +18,8 @@ QUERY_EXPLAIN = ROOT / "crates/cortex-engine/src/query/explain.rs"
 SESSION = ROOT / "crates/cortex-engine/src/session.rs"
 SESSION_PAYLOAD = ROOT / "crates/cortex-engine/src/session/payload.rs"
 INGESTION_REPORT = ROOT / "crates/cortex-engine/src/ingestion/report.rs"
+REPLICATION_SNAPSHOT = ROOT / "crates/cortex-engine/src/replication/snapshot.rs"
+REPLICATION_INSTALL = ROOT / "crates/cortex-engine/src/replication/install.rs"
 
 
 def require(text: str, needle: str, label: str) -> None:
@@ -44,6 +46,8 @@ def main() -> None:
     session = SESSION.read_text()
     session_payload = SESSION_PAYLOAD.read_text()
     ingestion_report = INGESTION_REPORT.read_text()
+    replication_snapshot = REPLICATION_SNAPSHOT.read_text()
+    replication_install = REPLICATION_INSTALL.read_text()
 
     require(
         server_authz,
@@ -185,6 +189,46 @@ def main() -> None:
         ingestion_report,
         "CellMetadata::from_payload(&payload)",
         "ingestion validation payload-only metadata",
+    )
+    require(
+        replication_snapshot,
+        "pub struct SnapshotCell",
+        "replication snapshot descriptor-aware cell model",
+    )
+    require(
+        replication_snapshot,
+        "pub descriptor: Option<Vec<u8>>",
+        "replication snapshot descriptor bytes",
+    )
+    require(
+        replication_snapshot,
+        "const SNAPSHOT_SEGMENT_MAGIC: &[u8; 4] = b\"CSP2\";",
+        "replication snapshot descriptor format version",
+    )
+    require(
+        replication_install,
+        "SegmentWriter::write_refs",
+        "replication snapshot install descriptor-aware segment write",
+    )
+    require(
+        replication_install,
+        "EngineAqlIndex::try_from_segment_cell_refs(&cell_refs)",
+        "replication snapshot install descriptor-backed AQL index",
+    )
+    require(
+        replication_install,
+        "memtable.put_cell_with_descriptor",
+        "replication snapshot install descriptor-backed memtable",
+    )
+    forbid(
+        replication_install,
+        "SegmentWriter::write(\n            segment_path",
+        "replication snapshot install payload-only segment write",
+    )
+    forbid(
+        replication_install,
+        "EngineAqlIndex::try_from_segment_cells(&snapshot.cells)",
+        "replication snapshot install payload-only AQL index",
     )
 
     print("descriptor hot path gate passed")

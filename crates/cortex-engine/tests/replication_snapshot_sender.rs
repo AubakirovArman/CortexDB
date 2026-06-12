@@ -155,7 +155,8 @@ fn snapshot_with_payload(seq: u64, cell_id: u64, payload: &[u8]) -> SnapshotSegm
             created_seq: seq,
             deleted_seq: None,
             payload: payload.to_vec(),
-        }],
+        }
+        .into()],
     }
 }
 
