@@ -731,7 +731,14 @@
     "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/prefilter.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 788,
+      "lines": 29,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/prefilter/candidate.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 29,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -739,6 +746,55 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 254,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/prefilter/external.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 13,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/prefilter/retrieval.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 211,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/prefilter/scoring.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 90,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/prefilter/search_index.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 97,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/prefilter/selection.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 191,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/prefilter/source_hints.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 72,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/prefilter/source_payload.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 122,
       "soft_limit": 300,
       "warning_limit": 600
     },

@@ -6,7 +6,7 @@ use cortex_engine::search::{
 };
 use cortex_engine::CellMetadata;
 
-use super::{push_unique_prefilter_candidates, PrefilterCandidate};
+use super::{candidate::PrefilterCandidate, selection::push_unique_prefilter_candidates};
 
 pub(crate) struct PrefilterDiverseSelection {
     pub(crate) candidates: Vec<PrefilterCandidate>,
