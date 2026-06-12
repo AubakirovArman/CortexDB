@@ -101,7 +101,7 @@ fn explain_item(
     query_terms: &[String],
     mode: &str,
 ) -> SearchExplainItemResponse {
-    let metadata = CellMetadata::from_payload(&result.payload);
+    let metadata = &result.metadata;
     let payload_terms = metadata.weighted_lexical_terms();
     let matched_terms = query_terms
         .iter()
@@ -109,7 +109,7 @@ fn explain_item(
         .cloned()
         .collect::<Vec<_>>();
     let term_contributions = term_contributions(&matched_terms, &payload_terms, result);
-    let matched_fields = matched_fields(&metadata, query_terms, result);
+    let matched_fields = matched_fields(metadata, query_terms, result);
     SearchExplainItemResponse {
         cell_id: result.cell_id.0,
         rank,

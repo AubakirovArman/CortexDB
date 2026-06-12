@@ -196,8 +196,7 @@ pub(crate) fn map_context_pack(
         .cells
         .iter()
         .map(|cell| {
-            let metadata = cortex_engine::CellMetadata::from_payload(&cell.payload);
-            let source_ref = metadata.source_ref.as_ref().map(map_source_ref);
+            let source_ref = cell.metadata.source_ref.as_ref().map(map_source_ref);
             let provenance =
                 cell.provenance
                     .as_ref()

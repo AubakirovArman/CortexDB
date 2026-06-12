@@ -7,9 +7,8 @@ use crate::cli_json_types::{
     SourceRefResponse, VerificationEvidenceResponse, VerificationResponse,
 };
 use cortex_engine::{
-    CellMetadata, ContextPack, Database, DatabaseSearchResult, RememberedCell, SearchRouteDecision,
-    StorageStats, VectorRebuildReport, VerificationEvidence, VerificationReport,
-    VerificationStatus,
+    ContextPack, Database, DatabaseSearchResult, RememberedCell, SearchRouteDecision, StorageStats,
+    VectorRebuildReport, VerificationEvidence, VerificationReport, VerificationStatus,
 };
 use serde_json::to_string;
 fn serialize_or_error<T: serde::Serialize>(value: &T) -> String {
@@ -217,7 +216,6 @@ pub(crate) fn ann_evaluation_to_json(input: CliAnnEvaluationJsonInput) -> String
 }
 
 fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> ContextPackCellResponse {
-    let metadata = CellMetadata::from_payload(&cell.payload);
     let explain = cell.explain.as_ref().map(|exp| ContextPackExplainResponse {
         score: exp.score,
         matched_terms: exp.matched_terms.clone(),
@@ -241,15 +239,19 @@ fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> ContextPackCellRe
         source_freshness_bonus: exp.source_freshness_bonus,
         redundancy_penalty: exp.redundancy_penalty,
     });
-    let source_ref = metadata.source_ref.as_ref().map(|sr| SourceRefResponse {
-        source_id: sr.source_id.clone(),
-        source_url: sr.source_url.clone(),
-        document_id: sr.document_id.clone(),
-        page: sr.page,
-        cell_range: sr.cell_range.clone(),
-        json_path: sr.json_path.clone(),
-        confidence_q16: sr.confidence_q16,
-    });
+    let source_ref = cell
+        .metadata
+        .source_ref
+        .as_ref()
+        .map(|sr| SourceRefResponse {
+            source_id: sr.source_id.clone(),
+            source_url: sr.source_url.clone(),
+            document_id: sr.document_id.clone(),
+            page: sr.page,
+            cell_range: sr.cell_range.clone(),
+            json_path: sr.json_path.clone(),
+            confidence_q16: sr.confidence_q16,
+        });
     let provenance = cell
         .provenance
         .as_ref()

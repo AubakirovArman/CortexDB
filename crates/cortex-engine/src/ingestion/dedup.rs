@@ -25,7 +25,8 @@ impl Database {
         content_hash: &str,
     ) -> Option<CellId> {
         self.snapshot_versions().into_iter().find_map(|version| {
-            let metadata = CellMetadata::from_payload(&version.payload);
+            let metadata =
+                CellMetadata::from_payload_with_descriptor(&version.payload, &version.descriptor);
             let same_source = metadata.source_hash.as_deref() == Some(source_hash);
             let same_content = metadata.content_hash.as_deref() == Some(content_hash);
             (same_source && same_content).then_some(version.cell_id)
@@ -36,7 +37,8 @@ impl Database {
         let mut groups =
             std::collections::BTreeMap::<String, (CellId, Vec<CellId>, Vec<String>)>::new();
         for version in self.snapshot_versions() {
-            let metadata = CellMetadata::from_payload(&version.payload);
+            let metadata =
+                CellMetadata::from_payload_with_descriptor(&version.payload, &version.descriptor);
             let Some(content_hash) = metadata.content_hash else {
                 continue;
             };

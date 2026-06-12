@@ -349,7 +349,10 @@ impl CellMetadata {
         metadata.source_trust_q16 = descriptor.source_trust_q16;
         metadata.source = descriptor.source.clone();
         metadata.citation = descriptor.citation.clone();
-        metadata.content_hash = descriptor.content_hash.clone();
+        metadata.content_hash = descriptor
+            .content_hash
+            .clone()
+            .or_else(|| metadata.content_hash.take());
         metadata.parent_id = descriptor.parent_id.clone();
         metadata.valid_from = descriptor.valid_from.clone();
         metadata.valid_to = descriptor.valid_to.clone();
@@ -567,6 +570,30 @@ mod tests {
         assert!(!metadata.terms.contains(&"vector".to_owned()));
         assert!(!metadata.terms.contains(&"bge".to_owned()));
         assert!(!metadata.terms.contains(&"title".to_owned()));
+    }
+
+    #[test]
+    fn descriptor_metadata_preserves_legacy_content_hash_when_descriptor_omits_it() {
+        let payload = b"scope=payload\nstatus=ready\ncontent_hash=legacy-hash\n\nbody";
+        let descriptor = cortex_core::CellDescriptor {
+            scope: "descriptor".to_owned(),
+            content_hash: None,
+            ..cortex_core::CellDescriptor::default()
+        };
+
+        let metadata = CellMetadata::from_payload_with_descriptor(payload, &descriptor);
+
+        assert_eq!(metadata.scope, "descriptor");
+        assert_eq!(metadata.content_hash.as_deref(), Some("legacy-hash"));
+
+        let descriptor = cortex_core::CellDescriptor {
+            scope: "descriptor".to_owned(),
+            content_hash: Some("descriptor-hash".to_owned()),
+            ..cortex_core::CellDescriptor::default()
+        };
+        let metadata = CellMetadata::from_payload_with_descriptor(payload, &descriptor);
+
+        assert_eq!(metadata.content_hash.as_deref(), Some("descriptor-hash"));
     }
 
     #[test]

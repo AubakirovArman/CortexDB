@@ -72,6 +72,7 @@ pub struct DatabaseSearchResult {
     pub score: u64,
     pub lexical_score: u64,
     pub vector_score: u64,
+    pub metadata: CellMetadata,
     pub payload: Vec<u8>,
 }
 
@@ -413,14 +414,17 @@ impl Database {
             .into_iter()
             .filter_map(|candidate| {
                 let cell_id = state.candidate_to_cell.get(&candidate.candidate_id)?;
-                self.get_cell(txn, *cell_id)
-                    .map(|payload| DatabaseSearchResult {
+                self.memtable.read(txn, *cell_id).map(|version| {
+                    let metadata = metadata_for_version(version);
+                    DatabaseSearchResult {
                         cell_id: *cell_id,
                         score: candidate.score,
                         lexical_score: candidate.lexical_score,
                         vector_score: candidate.vector_score,
-                        payload,
-                    })
+                        metadata,
+                        payload: version.payload.clone(),
+                    }
+                })
             })
             .collect::<Vec<_>>();
         let mut diversity_diagnostics = None;
@@ -496,7 +500,7 @@ impl Database {
             query.mode, query.limit
         ));
         let mut indexes = SearchIndexes::default();
-        let mut cells = BTreeMap::<u32, (CellId, Vec<u8>)>::new();
+        let mut cells = BTreeMap::<u32, (CellId, Vec<u8>, CellMetadata)>::new();
         let mut traces = BTreeMap::<u32, SearchViewTrace>::new();
         let mut vector_candidates = 0usize;
         for (index, (version, metadata)) in self
@@ -525,7 +529,7 @@ impl Database {
                 indexes.add_vector(candidate, best.vector);
                 vector_candidates += 1;
             }
-            cells.insert(candidate, (version.cell_id, version.payload));
+            cells.insert(candidate, (version.cell_id, version.payload, metadata));
         }
         let expanded_query_text = self.corpus_synonym_expanded_query_text(query.text)?;
         let index_query_text = expanded_query_text.as_deref().unwrap_or(query.text);
@@ -543,7 +547,7 @@ impl Database {
             .into_iter()
             .filter_map(|result| {
                 let candidate_id = result.cell_id;
-                let (cell_id, payload) = cells.remove(&candidate_id)?;
+                let (cell_id, payload, metadata) = cells.remove(&candidate_id)?;
                 Some((
                     candidate_id,
                     DatabaseSearchResult {
@@ -551,6 +555,7 @@ impl Database {
                         score: result.score,
                         lexical_score: result.lexical_score,
                         vector_score: result.vector_score,
+                        metadata,
                         payload,
                     },
                 ))
@@ -640,14 +645,13 @@ impl Database {
         let mut expanded = Vec::with_capacity(limit);
         let mut emitted = BTreeSet::<CellId>::new();
         for result in results {
-            let result_metadata = CellMetadata::from_payload(&result.payload);
             if emitted.insert(result.cell_id) {
                 expanded.push(result.clone());
             }
             if expanded.len() >= limit {
                 break;
             }
-            for key in search_parent_lookup_keys(&result_metadata) {
+            for key in search_parent_lookup_keys(&result.metadata) {
                 let Some(parent) = parents.get(&key) else {
                     continue;
                 };
@@ -717,7 +721,7 @@ impl Database {
         }
         let projects = results
             .iter()
-            .filter_map(|result| CellMetadata::from_payload(&result.payload).project)
+            .filter_map(|result| result.metadata.project.clone())
             .collect::<BTreeSet<_>>();
         if projects.is_empty() {
             return results.into_iter().take(query.limit).collect();
@@ -769,6 +773,7 @@ impl Database {
                     score,
                     lexical_score: score,
                     vector_score: 0,
+                    metadata,
                     payload: version.payload,
                 })
             })
@@ -792,6 +797,7 @@ impl Database {
                     score,
                     lexical_score: score,
                     vector_score: 0,
+                    metadata,
                     payload: version.payload,
                 })
             })
@@ -817,6 +823,7 @@ impl Database {
                 score: 0,
                 lexical_score: 0,
                 vector_score: 0,
+                metadata: metadata.clone(),
                 payload: version.payload,
             };
             if let Some(chunk_id) = &metadata.chunk_id {
@@ -975,7 +982,7 @@ fn diversity_similarity_q16(
         .iter()
         .map(|existing| DiversitySimilarity {
             payload_q16: payload_jaccard_q16(&candidate.payload, &existing.payload),
-            cluster_q16: metadata_cluster_similarity_q16(&candidate.payload, &existing.payload),
+            cluster_q16: metadata_cluster_similarity_q16(&candidate.metadata, &existing.metadata),
         })
         .max_by_key(|similarity| similarity.max_q16())
         .unwrap_or_default()
@@ -1000,9 +1007,7 @@ fn payload_terms(payload: &[u8]) -> BTreeSet<String> {
         .collect()
 }
 
-fn metadata_cluster_similarity_q16(left: &[u8], right: &[u8]) -> u64 {
-    let left = CellMetadata::from_payload(left);
-    let right = CellMetadata::from_payload(right);
+fn metadata_cluster_similarity_q16(left: &CellMetadata, right: &CellMetadata) -> u64 {
     let mut score = 0;
     score = score.max(matching_cluster_score(
         left.content_hash.as_deref(),
@@ -1179,7 +1184,7 @@ fn rerank_database_results(
             })
             .saturating_add(search_metadata_rerank_bonus(
                 query.text,
-                &result.payload,
+                &result.metadata,
                 recency_scores.get(index).copied().unwrap_or(0),
             ));
     }
@@ -1189,7 +1194,7 @@ fn rerank_database_results(
 fn search_result_recency_scores_q16(results: &[DatabaseSearchResult]) -> Vec<u64> {
     let created = results
         .iter()
-        .map(|result| CellMetadata::from_payload(&result.payload).created_unix_seconds)
+        .map(|result| result.metadata.created_unix_seconds)
         .collect::<Vec<_>>();
     let mut timestamps = created.iter().filter_map(|value| *value);
     let Some(first) = timestamps.next() else {
@@ -1215,8 +1220,11 @@ fn search_result_recency_scores_q16(results: &[DatabaseSearchResult]) -> Vec<u64
         .collect()
 }
 
-fn search_metadata_rerank_bonus(query_text: &str, payload: &[u8], recency_q16: u64) -> u64 {
-    let metadata = CellMetadata::from_payload(payload);
+fn search_metadata_rerank_bonus(
+    query_text: &str,
+    metadata: &CellMetadata,
+    recency_q16: u64,
+) -> u64 {
     let trust_q16 = u64::from(
         SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class).q16,
     );
@@ -1466,4 +1474,103 @@ fn persisted_graph_is_stale(
             && vector.len() == query.len()
             && !graph.links.contains_key(candidate)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeSet;
+
+    use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
+    use cortex_core::{CellId, KnowledgeCellMetadata, KnowledgeCellType};
+
+    use crate::database::Database;
+    use crate::operation::DbOperation;
+    use crate::query::scope_id;
+    use crate::search::SearchLimit;
+
+    #[test]
+    fn search_result_metadata_prefers_descriptor_for_snapshot_and_persisted_paths() {
+        let dir = tempfile::tempdir().unwrap();
+        {
+            let mut db = Database::open(dir.path()).unwrap();
+            put_spoofed_payload_with_descriptor(&mut db);
+            assert_descriptor_metadata(&db);
+            db.checkpoint().unwrap();
+        }
+
+        let db = Database::open(dir.path()).unwrap();
+        assert_descriptor_metadata(&db);
+    }
+
+    fn put_spoofed_payload_with_descriptor(db: &mut Database) {
+        let descriptor_metadata = KnowledgeCellMetadata {
+            scope: "project:investments".to_owned(),
+            status: "ready".to_owned(),
+            cell_type: KnowledgeCellType::Fact,
+            created_unix_seconds: Some(1_717_171_717),
+            source_trust_q16: Some(54_321),
+            source: Some("descriptor-source".to_owned()),
+            ..KnowledgeCellMetadata::default()
+        };
+        let spoofed_payload = concat!(
+            "scope=tenant:spoofed\n",
+            "status=draft\n",
+            "type=memory\n",
+            "created_unix_seconds=1\n",
+            "source_trust_q16=1\n",
+            "source=payload-source\n",
+            "\n",
+            "budget descriptor evidence"
+        )
+        .as_bytes()
+        .to_vec();
+
+        db.append_then_apply_with_metadata(
+            DbOperation::PutCell {
+                cell_id: CellId(44),
+                payload: spoofed_payload,
+            },
+            descriptor_metadata.encode_wal_section(),
+        )
+        .unwrap();
+    }
+
+    fn assert_descriptor_metadata(db: &Database) {
+        let results = db
+            .search_keyword("budget", &view("project:investments"), SearchLimit(10))
+            .unwrap();
+
+        assert_eq!(results.len(), 1);
+        let result = &results[0];
+        assert_eq!(result.cell_id, CellId(44));
+        assert_eq!(result.metadata.scope, "project:investments");
+        assert_eq!(result.metadata.status, "ready");
+        assert_eq!(result.metadata.cell_type, "fact");
+        assert_eq!(result.metadata.created_unix_seconds, Some(1_717_171_717));
+        assert_eq!(result.metadata.source_trust_q16, Some(54_321));
+        assert_eq!(result.metadata.source.as_deref(), Some("descriptor-source"));
+    }
+
+    fn view(scope: &str) -> AgentView {
+        AgentView {
+            agent_id: AgentId(1),
+            label: None,
+            readable_brains: BTreeSet::from([BrainId(1)]),
+            readable_scopes: BTreeSet::from([scope_id(scope)]),
+            writable_scopes: BTreeSet::new(),
+            allowed_modes: BTreeSet::from([RetrievalMode::Balanced]),
+            allowed_memory_types: BTreeSet::from([MemoryType::Decision]),
+            max_context_budget_tokens: 1_000,
+            default_context_budget_tokens: 400,
+            max_candidate_limit: 100,
+            default_candidate_limit: 20,
+            min_required_confidence_q16: Q16_ZERO,
+            max_ttl_seconds: Some(3_600),
+            allow_remember: false,
+            allow_verify_fact: false,
+            allow_audit_mode: false,
+            require_citations_by_default: false,
+            private_scope: None,
+        }
+    }
 }
