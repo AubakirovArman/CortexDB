@@ -1122,6 +1122,12 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                          # HELP cortexdb_actor_queue_capacity Actor command queue capacity.\n\
                          # TYPE cortexdb_actor_queue_capacity gauge\n\
                          cortexdb_actor_queue_capacity {}\n\
+                         # HELP cortexdb_active_readers Number of threads currently holding a database read lock.\n\
+                         # TYPE cortexdb_active_readers gauge\n\
+                         cortexdb_active_readers {}\n\
+                         # HELP cortexdb_waiting_writers Number of writers waiting for the database lock.\n\
+                         # TYPE cortexdb_waiting_writers gauge\n\
+                         cortexdb_waiting_writers {}\n\
                          # HELP cortexdb_request_count Total HTTP requests served.\n\
                          # TYPE cortexdb_request_count counter\n\
                          cortexdb_request_count {}\n\
@@ -1192,6 +1198,8 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                          cortexdb_backup_latest_age_seconds {}\n",
                         db.queue_depth(),
                         db.queue_capacity(),
+                        db.active_readers(),
+                        db.waiting_writers(),
                         state.request_count.load(Ordering::Relaxed),
                         state.request_rejected.load(Ordering::Relaxed),
                         state.request_duration_ms_total.load(Ordering::Relaxed),
@@ -1241,6 +1249,8 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                 if let Ok(mut metrics) = serde_json::from_str::<MetricsResponse>(&body_str) {
                     metrics.actor_queue_depth = db.queue_depth();
                     metrics.actor_queue_capacity = db.queue_capacity();
+                    metrics.active_readers = db.active_readers();
+                    metrics.waiting_writers = db.waiting_writers();
                     metrics.request_count = state.request_count.load(Ordering::Relaxed);
                     metrics.request_rejected = state.request_rejected.load(Ordering::Relaxed);
                     metrics.request_duration_ms_total =

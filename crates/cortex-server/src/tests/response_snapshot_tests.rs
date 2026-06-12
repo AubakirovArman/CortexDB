@@ -125,6 +125,8 @@ fn snapshot_metrics_response() {
         },
         actor_queue_depth: 2,
         actor_queue_capacity: 16,
+        active_readers: 0,
+        waiting_writers: 0,
         request_count: 1000,
         request_rejected: 3,
         request_duration_ms_total: 120,

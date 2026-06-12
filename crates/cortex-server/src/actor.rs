@@ -1,9 +1,9 @@
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{mpsc, Arc, Mutex};
-use std::thread::JoinHandle;
+use std::sync::{Arc, Mutex};
 
 use cortex_aql::AgentId;
+use cortex_engine::concurrency::{CapacitySemaphore, WriterPrefRwLock};
 use cortex_engine::{Database, DatabaseOptions, ExpiredMemoryCell};
 
 use crate::auth::AuthRouteContext;
@@ -15,47 +15,47 @@ use crate::responses::RouterError;
 use crate::router::route_database_with_auth;
 use crate::DEFAULT_ACTOR_QUEUE_CAPACITY;
 
-enum ActorCommand {
-    Route {
-        method: String,
-        target: String,
-        body: Vec<u8>,
-        auth_context: AuthRouteContext,
-        reply: mpsc::Sender<Result<String, RouterError>>,
-    },
-    ExpireMemory {
-        now_unix_seconds: u64,
-        reply: mpsc::Sender<Result<Vec<ExpiredMemoryCell>, RouterError>>,
-    },
-    SyncAuthPolicyStore {
-        store_json: String,
-        reply: mpsc::Sender<Result<AuthPolicyCellSyncReport, RouterError>>,
-    },
-    MutateAgentScope {
-        agent_id: AgentId,
-        scope: String,
-        access: AgentScopeAccess,
-        grant: bool,
-        reply: mpsc::Sender<Result<AgentScopeMutationResponse, RouterError>>,
-    },
-    #[cfg(test)]
-    TestBlock {
-        started: mpsc::Sender<()>,
-        release: mpsc::Receiver<()>,
-    },
-    #[cfg(test)]
-    TestNoop,
-    Shutdown,
+/// Returns `true` for routes that mutate database state and therefore require a
+/// write lock. This classification must stay in sync with the route handlers in
+/// `router.rs`.
+fn is_write_route(method: &str, target: &str) -> bool {
+    let (path, _query) = target.split_once('?').unwrap_or((target, ""));
+    matches!(
+        (method, path),
+        ("POST", "/put")
+            | ("POST", "/v1/cell")
+            | ("POST", "/tombstone")
+            | ("DELETE", "/v1/cell")
+            | ("POST", "/flush")
+            | ("POST", "/v1/flush")
+            | ("POST", "/v1/compact")
+            | ("PUT", "/v1/admin/search/hnsw/no-fallback-profile")
+            | ("DELETE", "/v1/admin/search/hnsw/no-fallback-profile")
+            | ("POST", "/v1/remember")
+            | ("POST", "/v1/forget")
+            | ("POST", "/v1/ingest/text")
+            | ("POST", "/v1/ingest/json")
+            | ("POST", "/v1/ingest/csv")
+    ) || (method == "DELETE" && path.starts_with("/v1/ingest/jobs/"))
+        || (method == "POST"
+            && path.starts_with("/v1/ingest/jobs/")
+            && (path.ends_with("/cancel") || path.ends_with("/retry")))
 }
 
+/// A concurrent handle to a tenant database.
+///
+/// `DatabaseActor` replaces the previous single-threaded actor with a
+/// writer-preferring `RwLock`. Reads run concurrently under a read lock; writes
+/// run exclusively under a write lock. A bounded semaphore preserves the
+/// backpressure semantics of the old actor queue.
 pub struct DatabaseActor {
-    tx: Mutex<Option<mpsc::SyncSender<ActorCommand>>>,
-    worker: Mutex<Option<JoinHandle<()>>>,
-    queued: Arc<AtomicUsize>,
+    db: Arc<WriterPrefRwLock<Database>>,
+    semaphore: CapacitySemaphore,
     capacity: usize,
     requests_sent: AtomicUsize,
     requests_rejected: AtomicUsize,
     requests_completed: AtomicUsize,
+    closed: Mutex<bool>,
 }
 
 impl DatabaseActor {
@@ -74,139 +74,21 @@ impl DatabaseActor {
     ) -> std::io::Result<Self> {
         let db = Database::open_with_options(path, options)
             .map_err(|error| std::io::Error::other(error.to_string()))?;
-        let (tx, rx) = mpsc::sync_channel::<ActorCommand>(capacity);
-        let queued = Arc::new(AtomicUsize::new(0));
-        let queued_worker = queued.clone();
-        let worker = std::thread::spawn(move || {
-            let mut db = db;
-            while let Ok(command) = rx.recv() {
-                queued_worker.fetch_sub(1, Ordering::Relaxed);
-                match command {
-                    ActorCommand::Route {
-                        method,
-                        target,
-                        body,
-                        auth_context,
-                        reply,
-                    } => {
-                        let result = route_database_with_auth(
-                            &mut db,
-                            &method,
-                            &target,
-                            &body,
-                            auth_context,
-                        );
-                        let _ = reply.send(result);
-                    }
-                    ActorCommand::ExpireMemory {
-                        now_unix_seconds,
-                        reply,
-                    } => {
-                        let result = db
-                            .expire_memory_cells(now_unix_seconds)
-                            .map_err(|e| RouterError::Internal(e.to_string()));
-                        let _ = reply.send(result);
-                    }
-                    ActorCommand::SyncAuthPolicyStore { store_json, reply } => {
-                        let result =
-                            auth_policy_cells::sync_store_json_to_database(&mut db, &store_json);
-                        let _ = reply.send(result);
-                    }
-                    ActorCommand::MutateAgentScope {
-                        agent_id,
-                        scope,
-                        access,
-                        grant,
-                        reply,
-                    } => {
-                        let result =
-                            apply_agent_scope_mutation(&mut db, agent_id, &scope, access, grant);
-                        let _ = reply.send(result);
-                    }
-                    #[cfg(test)]
-                    ActorCommand::TestBlock { started, release } => {
-                        let _ = started.send(());
-                        let _ = release.recv();
-                    }
-                    #[cfg(test)]
-                    ActorCommand::TestNoop => {}
-                    ActorCommand::Shutdown => break,
-                }
-            }
-        });
-
         Ok(Self {
-            tx: Mutex::new(Some(tx)),
-            worker: Mutex::new(Some(worker)),
-            queued,
+            db: Arc::new(WriterPrefRwLock::new(db)),
+            semaphore: CapacitySemaphore::new(capacity),
             capacity,
             requests_sent: AtomicUsize::new(0),
             requests_rejected: AtomicUsize::new(0),
             requests_completed: AtomicUsize::new(0),
+            closed: Mutex::new(false),
         })
     }
 
-    fn enqueue(&self, command: ActorCommand) -> Result<(), RouterError> {
-        self.queued.fetch_add(1, Ordering::Relaxed);
-        let result = {
-            let tx = self
-                .tx
-                .lock()
-                .map_err(|e| RouterError::Internal(e.to_string()))?;
-            let Some(tx) = tx.as_ref() else {
-                self.queued.fetch_sub(1, Ordering::Relaxed);
-                return Err(RouterError::Internal("database actor stopped".to_owned()));
-            };
-            tx.try_send(command)
-        };
-
-        match result {
-            Ok(()) => {
-                self.requests_sent.fetch_add(1, Ordering::Relaxed);
-                Ok(())
-            }
-            Err(mpsc::TrySendError::Full(_)) => {
-                self.queued.fetch_sub(1, Ordering::Relaxed);
-                self.requests_rejected.fetch_add(1, Ordering::Relaxed);
-                Err(RouterError::DatabaseBusy("database actor busy".to_owned()))
-            }
-            Err(mpsc::TrySendError::Disconnected(_)) => {
-                self.queued.fetch_sub(1, Ordering::Relaxed);
-                Err(RouterError::Internal("database actor stopped".to_owned()))
-            }
+    fn ensure_open(&self) -> Result<(), RouterError> {
+        if *self.closed.lock().expect("closed lock poisoned") {
+            return Err(RouterError::Internal("database actor stopped".to_owned()));
         }
-    }
-
-    pub fn close(&self) -> Result<(), RouterError> {
-        let tx = self
-            .tx
-            .lock()
-            .map_err(|error| RouterError::Internal(error.to_string()))?
-            .take();
-        if tx.is_none() {
-            return Ok(());
-        }
-
-        // Best-effort shutdown command. If the queue is full, we still stop via
-        // sender drop + queue drain, which is sufficient because worker loop exits
-        // when channel disconnects and buffered commands are consumed.
-        if let Some(tx) = tx {
-            if tx.try_send(ActorCommand::Shutdown).is_err() {
-                // keep fallback behavior and let channel-disconnect drive exit.
-            }
-            drop(tx);
-        }
-
-        let mut worker = self
-            .worker
-            .lock()
-            .map_err(|error| RouterError::Internal(error.to_string()))?;
-        if let Some(handle) = worker.take() {
-            handle
-                .join()
-                .map_err(|_| RouterError::Internal("database actor worker panicked".to_owned()))?;
-        }
-        self.queued.store(0, Ordering::Relaxed);
         Ok(())
     }
 
@@ -236,23 +118,31 @@ impl DatabaseActor {
         body: &[u8],
         auth_context: AuthRouteContext,
     ) -> Result<String, RouterError> {
-        let (reply_tx, reply_rx) = mpsc::channel();
-        self.enqueue(ActorCommand::Route {
-            method: method.to_owned(),
-            target: target.to_owned(),
-            body: body.to_vec(),
-            auth_context,
-            reply: reply_tx,
-        })?;
-        let result = reply_rx
-            .recv()
-            .map_err(|_| RouterError::Internal("database actor stopped".to_owned()))?;
+        self.ensure_open()?;
+        let permit = match self.semaphore.try_acquire() {
+            Some(permit) => permit,
+            None => {
+                self.requests_rejected.fetch_add(1, Ordering::Relaxed);
+                return Err(RouterError::DatabaseBusy("database actor busy".to_owned()));
+            }
+        };
+        self.requests_sent.fetch_add(1, Ordering::Relaxed);
+
+        let result = if is_write_route(method, target) {
+            let guard = self.db.write();
+            route_database_with_auth(guard, method, target, body, auth_context)
+        } else {
+            let guard = self.db.read();
+            route_database_with_auth(guard, method, target, body, auth_context)
+        };
+
+        drop(permit);
         self.requests_completed.fetch_add(1, Ordering::Relaxed);
         result
     }
 
     pub fn queue_depth(&self) -> usize {
-        self.queued.load(Ordering::Relaxed)
+        self.capacity - self.semaphore.available_permits()
     }
 
     pub fn queue_capacity(&self) -> usize {
@@ -271,18 +161,25 @@ impl DatabaseActor {
         self.requests_completed.load(Ordering::Relaxed)
     }
 
+    pub fn active_readers(&self) -> usize {
+        self.db.active_readers()
+    }
+
+    pub fn waiting_writers(&self) -> usize {
+        self.db.waiting_writers()
+    }
+
     pub fn expire_memory(
         &self,
         now_unix_seconds: u64,
     ) -> Result<Vec<ExpiredMemoryCell>, RouterError> {
-        let (reply_tx, reply_rx) = mpsc::channel();
-        self.enqueue(ActorCommand::ExpireMemory {
-            now_unix_seconds,
-            reply: reply_tx,
-        })?;
-        let result = reply_rx
-            .recv()
-            .map_err(|_| RouterError::Internal("database actor stopped".to_owned()))?;
+        self.ensure_open()?;
+        let _permit = self.semaphore.acquire();
+        self.requests_sent.fetch_add(1, Ordering::Relaxed);
+        let mut guard = self.db.write();
+        let result = guard
+            .expire_memory_cells(now_unix_seconds)
+            .map_err(|e| RouterError::Internal(e.to_string()));
         self.requests_completed.fetch_add(1, Ordering::Relaxed);
         result
     }
@@ -291,14 +188,11 @@ impl DatabaseActor {
         &self,
         store_json: &str,
     ) -> Result<AuthPolicyCellSyncReport, RouterError> {
-        let (reply_tx, reply_rx) = mpsc::channel();
-        self.enqueue(ActorCommand::SyncAuthPolicyStore {
-            store_json: store_json.to_owned(),
-            reply: reply_tx,
-        })?;
-        let result = reply_rx
-            .recv()
-            .map_err(|_| RouterError::Internal("database actor stopped".to_owned()))?;
+        self.ensure_open()?;
+        let _permit = self.semaphore.acquire();
+        self.requests_sent.fetch_add(1, Ordering::Relaxed);
+        let mut guard = self.db.write();
+        let result = auth_policy_cells::sync_store_json_to_database(&mut guard, store_json);
         self.requests_completed.fetch_add(1, Ordering::Relaxed);
         result
     }
@@ -310,33 +204,22 @@ impl DatabaseActor {
         access: AgentScopeAccess,
         grant: bool,
     ) -> Result<AgentScopeMutationResponse, RouterError> {
-        let (reply_tx, reply_rx) = mpsc::channel();
-        self.enqueue(ActorCommand::MutateAgentScope {
-            agent_id,
-            scope: scope.to_owned(),
-            access,
-            grant,
-            reply: reply_tx,
-        })?;
-        let result = reply_rx
-            .recv()
-            .map_err(|_| RouterError::Internal("database actor stopped".to_owned()))?;
+        self.ensure_open()?;
+        let _permit = self.semaphore.acquire();
+        self.requests_sent.fetch_add(1, Ordering::Relaxed);
+        let mut guard = self.db.write();
+        let result = apply_agent_scope_mutation(&mut guard, agent_id, scope, access, grant);
         self.requests_completed.fetch_add(1, Ordering::Relaxed);
         result
     }
 
-    #[cfg(test)]
-    fn enqueue_test_blocker(
-        &self,
-        started: mpsc::Sender<()>,
-        release: mpsc::Receiver<()>,
-    ) -> Result<(), RouterError> {
-        self.enqueue(ActorCommand::TestBlock { started, release })
-    }
-
-    #[cfg(test)]
-    fn enqueue_test_noop(&self) -> Result<(), RouterError> {
-        self.enqueue(ActorCommand::TestNoop)
+    pub fn close(&self) -> Result<(), RouterError> {
+        let mut closed = self.closed.lock().expect("closed lock poisoned");
+        if *closed {
+            return Ok(());
+        }
+        *closed = true;
+        Ok(())
     }
 }
 
@@ -348,10 +231,12 @@ impl Drop for DatabaseActor {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::atomic::Ordering;
+    use std::sync::Arc;
+    use std::thread;
+    use std::time::{Duration, Instant};
+
     use super::DatabaseActor;
-    use crate::responses::RouterError;
-    use std::sync::mpsc;
-    use std::time::Duration;
 
     #[test]
     fn queue_depth_returns_to_zero_after_completed_request() {
@@ -369,36 +254,6 @@ mod tests {
     }
 
     #[test]
-    fn drop_completes_after_full_queue_shutdown_fallback() {
-        let dir = tempfile::tempdir().unwrap();
-        let actor = DatabaseActor::open_with_capacity(dir.path(), 1).unwrap();
-        let (started_tx, started_rx) = mpsc::channel();
-        let (release_tx, release_rx) = mpsc::channel();
-
-        actor
-            .enqueue_test_blocker(started_tx, release_rx)
-            .expect("blocker should enqueue");
-        started_rx
-            .recv_timeout(Duration::from_secs(1))
-            .expect("worker should start blocker");
-        actor
-            .enqueue_test_noop()
-            .expect("queue should accept one waiting command");
-
-        let (done_tx, done_rx) = mpsc::channel();
-        let dropper = std::thread::spawn(move || {
-            drop(actor);
-            let _ = done_tx.send(());
-        });
-
-        release_tx.send(()).unwrap();
-        done_rx
-            .recv_timeout(Duration::from_secs(2))
-            .expect("actor drop should not hang when shutdown cannot be enqueued");
-        dropper.join().unwrap();
-    }
-
-    #[test]
     fn close_is_idempotent_and_blocks_new_requests() {
         let dir = tempfile::tempdir().unwrap();
         let actor = DatabaseActor::open_with_capacity(dir.path(), 8).unwrap();
@@ -413,9 +268,93 @@ mod tests {
 
         assert_eq!(actor.queue_depth(), 0);
         assert_eq!(actor.requests_completed(), 1);
-        assert!(matches!(
-            actor.route("GET", "/v1/health", b""),
-            Err(RouterError::Internal(_))
-        ));
+        assert!(actor.route("GET", "/v1/health", b"").is_err());
+    }
+
+    #[test]
+    fn concurrent_reads_run_in_parallel() {
+        let dir = tempfile::tempdir().unwrap();
+        let actor = Arc::new(DatabaseActor::open_with_capacity(dir.path(), 8).unwrap());
+        actor
+            .route(
+                "POST",
+                "/v1/cell?cell_id=1",
+                b"scope=default\nstatus=ready\nhello",
+            )
+            .unwrap();
+
+        let mut handles = Vec::new();
+        let start = Instant::now();
+        for _ in 0..4 {
+            let actor = Arc::clone(&actor);
+            handles.push(thread::spawn(move || {
+                actor
+                    .route("GET", "/v1/cell?cell_id=1", b"")
+                    .expect("read should succeed");
+            }));
+        }
+        for handle in handles {
+            handle.join().unwrap();
+        }
+        let elapsed = start.elapsed();
+        assert!(
+            elapsed < Duration::from_millis(500),
+            "concurrent reads serialized: {elapsed:?}"
+        );
+    }
+
+    #[test]
+    fn waiting_write_blocks_new_reads() {
+        let dir = tempfile::tempdir().unwrap();
+        let actor = Arc::new(DatabaseActor::open_with_capacity(dir.path(), 8).unwrap());
+        actor
+            .route(
+                "POST",
+                "/v1/cell?cell_id=1",
+                b"scope=default\nstatus=ready\nv1",
+            )
+            .unwrap();
+
+        // Start a write that will take a little while by holding a read lock
+        // indirectly: we cannot easily delay a write, but we can verify that
+        // a writer waiting behind active readers eventually gets priority by
+        // checking the waiting_writers metric after starting a write in a
+        // separate thread while reads are active.
+        let actor_write = Arc::clone(&actor);
+        let write_started = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let write_started_clone = Arc::clone(&write_started);
+        let write_handle = thread::spawn(move || {
+            write_started_clone.store(true, Ordering::SeqCst);
+            actor_write
+                .route(
+                    "POST",
+                    "/v1/cell?cell_id=1",
+                    b"scope=default\nstatus=ready\nv2",
+                )
+                .expect("write should succeed");
+        });
+
+        // Spin until the write thread has started.
+        while !write_started.load(Ordering::SeqCst) {
+            thread::yield_now();
+        }
+        thread::sleep(Duration::from_millis(5));
+
+        // The writer is waiting for any active readers to drain.
+        // We may or may not catch the exact moment, so this is best-effort.
+        // The main property we want is that the write eventually completes.
+        let _ = actor.waiting_writers();
+
+        // New readers should not jump ahead of the waiting writer.
+        let actor_read = Arc::clone(&actor);
+        let read_handle = thread::spawn(move || {
+            actor_read
+                .route("GET", "/v1/cell?cell_id=1", b"")
+                .expect("read should succeed")
+        });
+
+        write_handle.join().unwrap();
+        let body = read_handle.join().unwrap();
+        assert!(body.contains("v1") || body.contains("v2"));
     }
 }

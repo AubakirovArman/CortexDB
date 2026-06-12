@@ -1,9 +1,11 @@
 use cortex_aql::{AgentId, AgentView};
 use cortex_core::{CellDescriptor, CellId};
+use cortex_engine::concurrency::{ReadGuard, WriteGuard};
 use cortex_engine::ClusterConfig;
 use cortex_engine::{
     Database, IngestedCell, IngestionBackpressureRequest, IngestionJobId, IngestionProgressTracker,
 };
+use std::ops::Deref;
 
 use crate::aql;
 use crate::auth::AuthRouteContext;
@@ -19,9 +21,42 @@ use crate::responses::{
 };
 use crate::search;
 
+/// Internal trait that lets `route_database_with_auth` run against either a
+/// read guard or a write guard. Write routes call `as_write` and fail if the
+/// caller only holds a read lock.
+pub(crate) trait DatabaseAccess: Deref<Target = Database> {
+    fn as_read(&self) -> &Database;
+    fn as_write(&mut self) -> Option<&mut Database>;
+}
+
+impl DatabaseAccess for &mut Database {
+    fn as_read(&self) -> &Database {
+        self
+    }
+    fn as_write(&mut self) -> Option<&mut Database> {
+        Some(self)
+    }
+}
+
+impl<'a> DatabaseAccess for ReadGuard<'a, Database> {
+    fn as_read(&self) -> &Database {
+        self
+    }
+    fn as_write(&mut self) -> Option<&mut Database> {
+        None
+    }
+}
+
+impl<'a> DatabaseAccess for WriteGuard<'a, Database> {
+    fn as_read(&self) -> &Database {
+        self
+    }
+    fn as_write(&mut self) -> Option<&mut Database> {
+        Some(&mut *self)
+    }
+}
+
 /// Production route entrypoint used by `DatabaseActor`.
-/// Operates directly on `&mut Database` because the actor guarantees
-/// single-threaded sequential access, eliminating the need for an inner `RwLock`.
 pub fn route_database(
     db: &mut Database,
     method: &str,
@@ -47,8 +82,8 @@ pub fn route_database_with_agent(
     )
 }
 
-pub(crate) fn route_database_with_auth(
-    db: &mut Database,
+pub(crate) fn route_database_with_auth<A: DatabaseAccess>(
+    mut db: A,
     method: &str,
     target: &str,
     body: &[u8],
@@ -56,7 +91,7 @@ pub(crate) fn route_database_with_auth(
 ) -> Result<String, RouterError> {
     let (path, query) = target.split_once('?').unwrap_or((target, ""));
     let mut authenticated_view = if is_agent_scoped_route(method, path) {
-        authz::load_agent_view(db, auth_context.agent_id.map(AgentId))?
+        authz::load_agent_view(&db, auth_context.agent_id.map(AgentId))?
     } else {
         None
     };
@@ -157,6 +192,9 @@ pub(crate) fn route_database_with_auth(
             Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/put") | ("POST", "/v1/cell") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
             let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
             let descriptor = CellDescriptor::from_payload_lossy(body);
             authz::require_descriptor_write(authenticated_view.as_ref(), &descriptor)?;
@@ -168,6 +206,9 @@ pub(crate) fn route_database_with_auth(
             Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/tombstone") | ("DELETE", "/v1/cell") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
             let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
             if let Some((_, descriptor)) = db.get_latest_cell_with_descriptor(cell_id) {
                 authz::require_descriptor_write(authenticated_view.as_ref(), &descriptor)?;
@@ -180,6 +221,9 @@ pub(crate) fn route_database_with_auth(
             Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/flush") | ("POST", "/v1/flush") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
             let stats = db.checkpoint()?;
             let response = CheckpointResponse {
                 checkpoint_seq: stats.checkpoint_seq.0,
@@ -188,6 +232,9 @@ pub(crate) fn route_database_with_auth(
             Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/v1/compact") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
             let stats = db.compact()?;
             let response = CheckpointResponse {
                 checkpoint_seq: stats.checkpoint_seq.0,
@@ -195,33 +242,58 @@ pub(crate) fn route_database_with_auth(
             };
             Ok(serde_json::to_string(&response)?)
         }
-        ("POST", "/v1/context") => context::handle_context_shared(
-            db,
-            query,
-            body,
-            authenticated_view.as_ref(),
-            Some(&auth_context),
-        ),
-        ("POST", "/v1/context/trace") => context::handle_context_trace_shared(
-            db,
-            query,
-            body,
-            authenticated_view.as_ref(),
-            Some(&auth_context),
-        ),
-        ("POST", "/v1/aql") => aql::handle_aql_shared(db, query, body, authenticated_view.as_ref()),
+        ("POST", "/v1/context") => {
+            let db = db.as_read();
+            context::handle_context_shared(
+                db,
+                query,
+                body,
+                authenticated_view.as_ref(),
+                Some(&auth_context),
+            )
+        }
+        ("POST", "/v1/context/trace") => {
+            let db = db.as_read();
+            context::handle_context_trace_shared(
+                db,
+                query,
+                body,
+                authenticated_view.as_ref(),
+                Some(&auth_context),
+            )
+        }
+        ("POST", "/v1/aql") => {
+            let db = db.as_read();
+            aql::handle_aql_shared(db, query, body, authenticated_view.as_ref())
+        }
         ("POST", "/v1/search") => {
+            let db = db.as_read();
             search::handle_search_shared(db, query, body, authenticated_view.as_ref())
         }
         ("POST", "/v1/search/explain") => {
+            let db = db.as_read();
             search::handle_search_explain_shared(db, query, body, authenticated_view.as_ref())
         }
         ("POST", "/v1/search/ann-evaluate") => {
+            let db = db.as_read();
             search::handle_ann_evaluate_shared(db, query, body, authenticated_view.as_ref())
         }
-        ("GET", "/v1/admin/search/hnsw/no-fallback-profile") => hnsw_profile::handle_get(db),
-        ("PUT", "/v1/admin/search/hnsw/no-fallback-profile") => hnsw_profile::handle_put(db, body),
-        ("DELETE", "/v1/admin/search/hnsw/no-fallback-profile") => hnsw_profile::handle_delete(db),
+        ("GET", "/v1/admin/search/hnsw/no-fallback-profile") => {
+            let db = db.as_read();
+            hnsw_profile::handle_get(db)
+        }
+        ("PUT", "/v1/admin/search/hnsw/no-fallback-profile") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
+            hnsw_profile::handle_put(db, body)
+        }
+        ("DELETE", "/v1/admin/search/hnsw/no-fallback-profile") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
+            hnsw_profile::handle_delete(db)
+        }
         ("GET", "/v1/metrics") => {
             let stats = db.storage_stats()?;
             let ann = db.ann_metrics();
@@ -384,6 +456,8 @@ pub(crate) fn route_database_with_auth(
                     ann_search_latency_ms: LatencyHistogramResponse::default(),
                     actor_queue_depth: 0,
                     actor_queue_capacity: 0,
+                    active_readers: 0,
+                    waiting_writers: 0,
                     request_count: 0,
                     request_rejected: 0,
                     request_duration_ms_total: 0,
@@ -414,9 +488,15 @@ pub(crate) fn route_database_with_auth(
             Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/v1/remember") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
             memory::handle_remember_shared(db, query, body, authenticated_view.as_ref())
         }
         ("POST", "/v1/forget") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
             let cell_id = cell_id(query)?;
             if let Some((_, descriptor)) = db.get_latest_cell_with_descriptor(cell_id) {
                 authz::require_descriptor_write(authenticated_view.as_ref(), &descriptor)?;
@@ -428,9 +508,13 @@ pub(crate) fn route_database_with_auth(
             })?)
         }
         ("POST", "/v1/verify") => {
+            let db = db.as_read();
             memory::handle_verify_shared(db, query, body, authenticated_view.as_ref())
         }
         ("POST", "/v1/ingest/text") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
             let scope =
                 query_param_opt_decoded(query, "scope").unwrap_or_else(|| "default".to_owned());
             authz::require_write_scope_for_optional_view(authenticated_view.as_ref(), &scope)?;
@@ -459,6 +543,9 @@ pub(crate) fn route_database_with_auth(
             Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/v1/ingest/json") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
             let scope =
                 query_param_opt_decoded(query, "scope").unwrap_or_else(|| "default".to_owned());
             authz::require_write_scope_for_optional_view(authenticated_view.as_ref(), &scope)?;
@@ -487,6 +574,9 @@ pub(crate) fn route_database_with_auth(
             Ok(serde_json::to_string(&response)?)
         }
         ("POST", "/v1/ingest/csv") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
             let scope =
                 query_param_opt_decoded(query, "scope").unwrap_or_else(|| "default".to_owned());
             authz::require_write_scope_for_optional_view(authenticated_view.as_ref(), &scope)?;
@@ -534,6 +624,9 @@ pub(crate) fn route_database_with_auth(
             }
         }
         _ if method == "DELETE" && path.starts_with("/v1/ingest/jobs/") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
             let id_str = path.strip_prefix("/v1/ingest/jobs/").unwrap();
             let id = id_str
                 .parse::<u64>()
@@ -550,6 +643,9 @@ pub(crate) fn route_database_with_auth(
             && path.starts_with("/v1/ingest/jobs/")
             && path.ends_with("/cancel") =>
         {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
             let prefix = "/v1/ingest/jobs/";
             let suffix = "/cancel";
             let id_str = &path[prefix.len()..path.len() - suffix.len()];
@@ -563,6 +659,9 @@ pub(crate) fn route_database_with_auth(
             && path.starts_with("/v1/ingest/jobs/")
             && path.ends_with("/retry") =>
         {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
             let prefix = "/v1/ingest/jobs/";
             let suffix = "/retry";
             let id_str = &path[prefix.len()..path.len() - suffix.len()];
@@ -635,7 +734,7 @@ pub(crate) fn route_shared_with_auth(
     let mut db = db
         .write()
         .map_err(|e| RouterError::Internal(e.to_string()))?;
-    route_database_with_auth(&mut db, method, target, body, auth_context)
+    route_database_with_auth(&mut *db, method, target, body, auth_context)
 }
 
 fn clamp_view_context_budget(view: &mut AgentView, limit: u32) {

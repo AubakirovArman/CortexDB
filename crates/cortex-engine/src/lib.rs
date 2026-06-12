@@ -31,6 +31,7 @@ pub mod bundle;
 pub mod checkpoint;
 mod cleanup;
 pub mod compatibility;
+pub mod concurrency;
 mod config;
 pub mod context;
 pub mod database;

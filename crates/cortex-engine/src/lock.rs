@@ -2,6 +2,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::ErrorKind;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::cleanup::lock_path;
@@ -10,7 +11,7 @@ use crate::error::{EngineError, EngineResult};
 #[derive(Debug)]
 pub(crate) struct DatabaseLock {
     path: PathBuf,
-    _file: File,
+    _file: Mutex<File>,
 }
 
 impl DatabaseLock {
@@ -26,7 +27,10 @@ impl DatabaseLock {
                     let _ = fs::remove_file(&path);
                     return Err(error.into());
                 }
-                Ok(Self { path, _file: file })
+                Ok(Self {
+                    path,
+                    _file: Mutex::new(file),
+                })
             }
             Err(error) if error.kind() == ErrorKind::AlreadyExists => {
                 Err(EngineError::DatabaseAlreadyOpen(path))
