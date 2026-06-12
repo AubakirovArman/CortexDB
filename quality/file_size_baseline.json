@@ -5579,6 +5579,62 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "scripts/enterprise_rag_bench/deepseek_answers_lib/__init__.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 1,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/deepseek_answers_lib/budget.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 148,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/deepseek_answers_lib/cli.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 133,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/deepseek_answers_lib/constants.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 4,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/deepseek_answers_lib/files.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 31,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/deepseek_answers_lib/log_state.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 16,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/deepseek_answers_lib/runner.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 235,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/deepseek_answers_lib/worker.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 237,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "scripts/enterprise_rag_bench/dense_candidates.py": {
       "hard_limit": 1000,
       "kind": "source",
@@ -6065,7 +6121,7 @@
     "scripts/enterprise_rag_bench/run_deepseek_answers.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 713,
+      "lines": 10,
       "soft_limit": 300,
       "warning_limit": 600
     },
