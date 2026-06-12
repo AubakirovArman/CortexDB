@@ -1823,7 +1823,7 @@
     "crates/cortex-engine/src/search/database.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 861,
+      "lines": 20,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1831,6 +1831,13 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 164,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/database/api.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 137,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1848,10 +1855,31 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-engine/src/search/database/expansion.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 228,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/database/persisted.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 291,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-engine/src/search/database/persisted_rrf.rs": {
       "hard_limit": 1000,
       "kind": "source",
       "lines": 55,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/database/query_expansion.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 24,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1862,12 +1890,33 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-engine/src/search/database/snapshot.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 138,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-engine/src/search/database/tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
       "lines": 95,
       "soft_limit": 600,
       "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/search/database/trace.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 5,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/database/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 81,
+      "soft_limit": 300,
+      "warning_limit": 600
     },
     "crates/cortex-engine/src/search/decomposition.rs": {
       "hard_limit": 1000,
