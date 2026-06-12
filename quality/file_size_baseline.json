@@ -5054,6 +5054,83 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "scripts/enterprise_rag_bench/official_clean_benchmark/__init__.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 5,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_benchmark/args.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 175,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_benchmark/artifacts.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 165,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_benchmark/cli.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 177,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_benchmark/constants.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 11,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_benchmark/stage_answer.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 97,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_benchmark/stage_judge.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 54,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_benchmark/stage_prepare.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 43,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_benchmark/stage_retrieve.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 165,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_benchmark/stages.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 26,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_benchmark/status.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 249,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "scripts/enterprise_rag_bench/official_clean_gate.py": {
       "hard_limit": 1000,
       "kind": "source",
@@ -5162,7 +5239,7 @@
     "scripts/enterprise_rag_bench/run_official_clean_benchmark.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 1049,
+      "lines": 10,
       "soft_limit": 300,
       "warning_limit": 600
     },
