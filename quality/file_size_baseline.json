@@ -5236,10 +5236,45 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "mk/external-benchmarks-locomo.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 24,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/external-benchmarks-multihop-metrics.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 129,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/external-benchmarks-multihop-qa-variants.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 240,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/external-benchmarks-multihop-qa.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 54,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/external-benchmarks-multihop-retrieval.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 68,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "mk/external-benchmarks.mk": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 518,
+      "lines": 5,
       "soft_limit": 300,
       "warning_limit": 600
     },
