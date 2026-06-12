@@ -30,8 +30,8 @@ not duplicate an existing test path.
 
 - SIGTERM restart/readback is covered by `make chaos-restart-check`, but there
   is not yet a dedicated concurrent in-flight drain harness.
-- There is no single shared Python module for server lifecycle and HTTP helpers;
-  `scripts/chaos_restart_check.py` currently owns its helpers locally.
+- Process-level reliability scripts share server lifecycle and HTTP helpers
+  through `scripts/cortexdb_server_harness.py`.
 - Long-running 24h/72h evidence belongs to soak campaigns, not the short E11
   correctness gate.
 
