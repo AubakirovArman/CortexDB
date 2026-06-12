@@ -393,9 +393,9 @@ impl SearchIndexes {
                 limit: rerank_candidate_limit(query),
                 ..query
             },
-            calibrated_hybrid_rrf_weights(query.text),
+            HybridRrfWeights::balanced(),
         );
-        rerank_results(&mut results, query, &WeightedScoreReranker::default());
+        rerank_results(&mut results, query, &WeightedScoreReranker::fixed_default());
         results.truncate(rerank_result_limit(query));
         results
     }

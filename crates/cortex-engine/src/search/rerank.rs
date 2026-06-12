@@ -75,7 +75,7 @@ pub struct WeightedScoreReranker {
 impl Default for WeightedScoreReranker {
     fn default() -> Self {
         Self {
-            calibrate_by_question_type: true,
+            calibrate_by_question_type: false,
             lexical_weight: 2,
             vector_weight: 2,
             anchor_payload_bonus: 25_000,
@@ -89,8 +89,12 @@ impl Default for WeightedScoreReranker {
 
 impl WeightedScoreReranker {
     pub fn fixed_default() -> Self {
+        Self::default()
+    }
+
+    pub fn enterprise_rag_calibrated() -> Self {
         Self {
-            calibrate_by_question_type: false,
+            calibrate_by_question_type: true,
             ..Self::default()
         }
     }
@@ -555,6 +559,17 @@ mod tests {
         });
 
         assert!(matched > weak);
+    }
+
+    #[test]
+    fn default_reranker_is_not_enterprise_rag_calibrated() {
+        let default = WeightedScoreReranker::default();
+        let calibrated = WeightedScoreReranker::enterprise_rag_calibrated()
+            .calibrated_for_query("Which approach is recommended for delayed adoption?");
+
+        assert!(!default.calibrate_by_question_type);
+        assert_ne!(default.vector_weight, calibrated.vector_weight);
+        assert!(calibrated.vector_weight > calibrated.lexical_weight);
     }
 
     #[test]

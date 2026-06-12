@@ -6,7 +6,7 @@ Execution rule: close epics in order. Use the dependency-aware order from the so
 
 Status values: `next`, `in_progress`, `partial`, `done`, `blocked`, `frozen`.
 
-Current pointer: `Kill hardcoded EnterpriseRAG overfit from default search`.
+Current pointer: `EPIC-D12`.
 
 ## First Execution Queue
 
@@ -410,6 +410,24 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 - risks: flaky на таймингах — модельные тесты делать детерминированными. Зависимости: нет. Эффект: страховка всего блока A.
 - evidence: Added `crates/cortex-engine/tests/core_property_tests.rs` with 4 property-style tests: model operation sequences across restart, strict WAL complete-prefix replay, WAL corruption no-panic/best-effort safe prefix, and persisted keyword index vs fresh rebuild. Added `make core-property-check` and `make core-property-random-check`. The suite found and fixed a real MVCC bug where tombstoning a replaced cell could resurrect an older version; regression coverage added in `crates/cortex-core/tests/memtable_tests.rs`.
 - verification: `make core-property-check`, `make core-property-random-check CORE_PROPERTY_RANDOM_SEED=424242`.
+
+### Queue Item — Kill hardcoded EnterpriseRAG overfit from default search
+
+- status: `done`
+- goal: default database search must be generic and must not silently apply EnterpriseRAG benchmark calibration.
+- problem: `WeightedScoreReranker::default()` previously enabled EnterpriseRAG question-type calibration, and default hybrid-rerank paths used calibrated RRF weights.
+- tasks:
+  - [x] 1) Make default reranking generic/fixed, not EnterpriseRAG-calibrated.
+  - [x] 2) Keep EnterpriseRAG calibration only as explicit opt-in diagnostic/benchmark API.
+  - [x] 3) Use balanced RRF weights in default live and persisted hybrid-rerank paths.
+  - [x] 4) Add a regression test proving default reranker is not EnterpriseRAG-calibrated.
+- acceptance:
+  - [x] 1) Default search/rerank no longer changes weights based on EnterpriseRAG question labels.
+  - [x] 2) Benchmark calibration helpers still exist for explicit experiments.
+  - [x] 3) Search API/database tests continue passing.
+- files: crates/cortex-engine/src/search/rerank.rs, crates/cortex-engine/src/search.rs, crates/cortex-engine/src/search/database.rs.
+- evidence: `WeightedScoreReranker::default()` now has `calibrate_by_question_type=false`; `WeightedScoreReranker::enterprise_rag_calibrated()` is the explicit opt-in. Default hybrid rerank uses `HybridRrfWeights::balanced()` and `WeightedScoreReranker::fixed_default()`.
+- verification: `cargo test -p cortex-engine search::rerank --lib`, `cargo test -p cortex-engine --test database_search`, `cargo test -p cortex-server search_api_tests`.
 
 ## Block B — Agent-native database primitives
 

@@ -21,10 +21,10 @@ use super::persisted::{
 use super::synonyms::expand_query_with_corpus_synonyms;
 use super::vector::{vector_from_payload, vectors_from_payload};
 use super::{
-    calibrated_hybrid_rrf_weights, classify_search_query_intent, extract_query_conditions,
-    route_policy_for_query, routed_candidate_limit, routed_result_limit, HybridRrfWeights,
-    ScoredCandidate, SearchIndexes, SearchMode, SearchQuery, SearchQueryIntent, SearchRerankInput,
-    SearchReranker, WeightedScoreReranker,
+    classify_search_query_intent, extract_query_conditions, route_policy_for_query,
+    routed_candidate_limit, routed_result_limit, HybridRrfWeights, ScoredCandidate, SearchIndexes,
+    SearchMode, SearchQuery, SearchQueryIntent, SearchRerankInput, SearchReranker,
+    WeightedScoreReranker,
 };
 
 const MAX_CORPUS_SYNONYM_QUERY_TERMS: usize = 12;
@@ -383,12 +383,7 @@ impl Database {
                     );
                     let vector =
                         search_persisted_vectors(&index.vectors, vector, &allowed, depth, &metric);
-                    let weights = if query.mode == SearchMode::HybridRerank {
-                        calibrated_hybrid_rrf_weights(query.text)
-                    } else {
-                        HybridRrfWeights::balanced()
-                    };
-                    fuse_persisted_rrf(lexical, vector, depth, weights)
+                    fuse_persisted_rrf(lexical, vector, depth, HybridRrfWeights::balanced())
                 } else {
                     search_persisted_lexical(
                         PersistedLexicalSearchIndex {
