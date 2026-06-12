@@ -51,7 +51,7 @@ def taxonomy_rows() -> dict[str, int]:
     rows: dict[str, int] = {}
     for status, code in re.findall(
         r"\|\s*`(\d{3})`\s*\|\s*`([a-z_]+)`\s*\|",
-        read("docs/API_ERROR_TAXONOMY.md"),
+        read("docs/archive/API_ERROR_TAXONOMY.md"),
     ):
         rows[code] = int(status)
     return rows
@@ -79,13 +79,13 @@ def validate() -> list[str]:
     taxonomy = taxonomy_rows()
     if set(taxonomy) != expected:
         failures.append(
-            "docs/API_ERROR_TAXONOMY.md codes differ: "
+            "docs/archive/API_ERROR_TAXONOMY.md codes differ: "
             f"missing={sorted(expected - set(taxonomy))} extra={sorted(set(taxonomy) - expected)}"
         )
     for code, status in CODE_STATUS.items():
         if taxonomy.get(code) != status:
             failures.append(
-                f"docs/API_ERROR_TAXONOMY.md status mismatch for {code}: "
+                f"docs/archive/API_ERROR_TAXONOMY.md status mismatch for {code}: "
                 f"expected {status}, got {taxonomy.get(code)}"
             )
 
@@ -118,7 +118,7 @@ def validate() -> list[str]:
 
     require_contains_all("docs/API_JSON_SCHEMAS.md", expected, failures)
     require_contains_all("docs/API.md", expected, failures)
-    require_contains_all("docs/API_ERROR_TAXONOMY.md", expected, failures)
+    require_contains_all("docs/archive/API_ERROR_TAXONOMY.md", expected, failures)
     require_contains_all("crates/cortex-server/src/tests/error_taxonomy_tests.rs", expected, failures)
     require_contains_all(
         "crates/cortex-server/src/tests/snapshots/"

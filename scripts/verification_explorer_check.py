@@ -27,9 +27,9 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_retrieval.js", "source_trust_category"),
     ],
     "docs": [
-        ("docs/DASHBOARD_UI.md", "Verification Explorer"),
-        ("docs/DASHBOARD_UI.md", "supporting evidence and contradicting evidence lists"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Epic 113. Verification Explorer"),
+        ("docs/archive/DASHBOARD_UI.md", "Verification Explorer"),
+        ("docs/archive/DASHBOARD_UI.md", "supporting evidence and contradicting evidence lists"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Epic 113. Verification Explorer"),
     ],
 }
 

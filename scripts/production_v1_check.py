@@ -13,18 +13,18 @@ from typing import Any
 
 
 DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
-    "docs/PRODUCTION_V1.md": (
+    "docs/archive/PRODUCTION_V1.md": (
         "single-node production",
         "Stable API/SDK",
         "Supported Backup/Restore",
         "Distributed Production Is Out Of Scope",
     ),
-    "docs/API_COMPATIBILITY.md": (
+    "docs/archive/API_COMPATIBILITY.md": (
         "OpenAPI",
         "SDK",
         "compatibility",
     ),
-    "docs/BINARY_PLATFORM_MATRIX.md": (
+    "docs/archive/BINARY_PLATFORM_MATRIX.md": (
         "Clean Install Smoke",
         "Windows is unsupported",
         "launchd",

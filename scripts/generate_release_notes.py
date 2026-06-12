@@ -114,8 +114,8 @@ def render(args: argparse.Namespace) -> str:
     production = read_json(repo / args.production_evidence_report)
     bundle = read_json(repo / args.evidence_bundle_report)
     manifest = read_json(repo / args.release_manifest)
-    beta_doc = (repo / "docs/BETA_RELEASE.md").read_text(encoding="utf-8")
-    migration_doc = (repo / "docs/UPGRADE_MIGRATION.md").read_text(encoding="utf-8")
+    beta_doc = (repo / "docs/archive/BETA_RELEASE.md").read_text(encoding="utf-8")
+    migration_doc = (repo / "docs/archive/UPGRADE_MIGRATION.md").read_text(encoding="utf-8")
 
     non_goals = bullet_items(section_lines(beta_doc, "## Explicit Non-Goals For Beta"))
     limitations = bullet_items(section_lines(migration_doc, "## Current Limitations"))
@@ -145,7 +145,7 @@ def render(args: argparse.Namespace) -> str:
         "## Migration Notes",
         "",
         f"- release compatibility pair: `{'v0.1.0-core-alpha.5 -> v0.2.0-beta.1' if compatibility else 'not detected'}`",
-        "- upgrade policy: `docs/UPGRADE_MIGRATION.md`",
+        "- upgrade policy: `docs/archive/UPGRADE_MIGRATION.md`",
         "- rollback policy: restore from immutable pre-upgrade backup; no in-place downgrade guarantee.",
         "",
         "## Known Limitations",

@@ -38,9 +38,9 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_operations.js", "Denials"),
     ],
     "docs": [
-        ("docs/DASHBOARD_UI.md", "Permissions Explorer"),
-        ("docs/DASHBOARD_UI.md", "denials"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Epic 115. Permissions View"),
+        ("docs/archive/DASHBOARD_UI.md", "Permissions Explorer"),
+        ("docs/archive/DASHBOARD_UI.md", "denials"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Epic 115. Permissions View"),
     ],
 }
 

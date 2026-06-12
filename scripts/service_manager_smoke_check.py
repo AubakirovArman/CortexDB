@@ -65,14 +65,14 @@ def check_launchd(failures: list[str]) -> dict[str, object]:
 
 def check_docs(failures: list[str]) -> dict[str, object]:
     docs = {
-        "docs/SYSTEMD.md": [
+        "docs/archive/SYSTEMD.md": [
             "systemctl enable --now cortexdb",
             "/v1/validate",
             "Environment File",
             "journalctl -u cortexdb",
             "CORTEXDB_AUDIT_LOG_FILE=/var/lib/cortexdb/audit.jsonl",
         ],
-        "docs/LAUNCHD.md": [
+        "docs/archive/LAUNCHD.md": [
             "launchctl bootstrap",
             "launchctl kickstart",
             "launchctl bootout",

@@ -71,8 +71,8 @@ def validate_markers(
 def validate(args: argparse.Namespace) -> dict[str, Any]:
     security_gate = read_report(Path(args.security_gate_v2_report))
     compliance = read_report(Path(args.compliance_boundary_report))
-    evidence = read_text(Path("docs/SECURITY_HARDENING_EVIDENCE.md"))
-    checklist = read_text(Path("docs/SECURITY_RELEASE_CHECKLIST.md"))
+    evidence = read_text(Path("docs/archive/SECURITY_HARDENING_EVIDENCE.md"))
+    checklist = read_text(Path("docs/archive/SECURITY_RELEASE_CHECKLIST.md"))
 
     failures: list[str] = []
     if security_gate.get("status") != "passed":

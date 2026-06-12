@@ -46,14 +46,14 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_operations.js", "dangerous hidden/disabled:"),
     ],
     "docs": [
-        ("docs/DASHBOARD_UI.md", "Role-based Dashboard UI"),
-        ("docs/DASHBOARD_UI.md", "dashboard_role_ui.v1"),
-        ("docs/DASHBOARD_UI.md", "Hide dangerous operations by role"),
+        ("docs/archive/DASHBOARD_UI.md", "Role-based Dashboard UI"),
+        ("docs/archive/DASHBOARD_UI.md", "dashboard_role_ui.v1"),
+        ("docs/archive/DASHBOARD_UI.md", "Hide dangerous operations by role"),
     ],
     "plan": [
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "### Epic 120. Dashboard Role-based UI"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Status: done"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "make dashboard-role-ui-check"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "### Epic 120. Dashboard Role-based UI"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Status: done"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "make dashboard-role-ui-check"),
     ],
 }
 

@@ -86,6 +86,30 @@ fn verify_fact_accepts_matching_normalized_numbers() {
 }
 
 #[test]
+fn verify_fact_does_not_cross_compare_equal_year_and_amount_claims() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=verified\ntype=fact\nsource=budget_approval_2024.xlsx\nmetric=annual_budget\n\nFinance department budget for 2024 was approved at 450 million KZT.".to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "Finance department budget for 2024 was approved at 450 million KZT." IN BRAIN investment_projects;"#,
+            &view(),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Supported);
+    assert_eq!(report.evidence[0].cell_id, CellId(1));
+    assert!(report.contradicting_evidence.is_empty());
+    assert!(report.guards.is_empty());
+    assert!(report.numeric_conflicts.is_empty());
+}
+
+#[test]
 fn verify_fact_reports_numeric_mismatch_even_with_shared_year() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();

@@ -36,15 +36,15 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_audit.js", "token_visible: false"),
     ],
     "docs": [
-        ("docs/DASHBOARD_UI.md", "Audit Viewer v2"),
-        ("docs/DASHBOARD_UI.md", "filters for safe audit event category and severity"),
-        ("docs/DASHBOARD_UI.md", "hash-chain verification guidance"),
-        ("docs/DASHBOARD_UI.md", "redaction status"),
+        ("docs/archive/DASHBOARD_UI.md", "Audit Viewer v2"),
+        ("docs/archive/DASHBOARD_UI.md", "filters for safe audit event category and severity"),
+        ("docs/archive/DASHBOARD_UI.md", "hash-chain verification guidance"),
+        ("docs/archive/DASHBOARD_UI.md", "redaction status"),
     ],
     "plan": [
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "### Epic 116. Audit Viewer v2"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Status: done"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "make audit-viewer-v2-check"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "### Epic 116. Audit Viewer v2"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Status: done"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "make audit-viewer-v2-check"),
     ],
 }
 

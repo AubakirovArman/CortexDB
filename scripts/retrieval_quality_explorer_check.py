@@ -31,9 +31,9 @@ REQUIRED_MARKERS = {
         ("scripts/retrieval_quality_dashboard_panels.py", "Latency Trend Panel"),
     ],
     "docs": [
-        ("docs/DASHBOARD_UI.md", "Retrieval Quality Explorer"),
+        ("docs/archive/DASHBOARD_UI.md", "Retrieval Quality Explorer"),
         ("docs/RETRIEVAL_QUALITY_EVIDENCE.md", "target/retrieval-quality/dashboard.html"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Epic 114. Retrieval Quality Explorer"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Epic 114. Retrieval Quality Explorer"),
     ],
     "make": [
         ("Makefile", "retrieval-quality-check"),

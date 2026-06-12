@@ -68,11 +68,11 @@ EPIC_MARKERS: dict[str, dict[str, object]] = {
                 "Required Gates",
                 "Non-goals",
             ],
-            "docs/COMPLIANCE_BOUNDARY_MAPPING.md": [
+            "docs/archive/COMPLIANCE_BOUNDARY_MAPPING.md": [
                 "cortexdb.compliance_boundary.v1",
                 "Supported certified frameworks today: none.",
             ],
-            "docs/RBAC_POLICY_STORE_DESIGN.md": [
+            "docs/archive/RBAC_POLICY_STORE_DESIGN.md": [
                 "policy store",
             ],
             "docs/FUTURE_NON_GOAL_EPICS.md": [

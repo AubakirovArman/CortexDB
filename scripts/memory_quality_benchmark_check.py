@@ -24,7 +24,7 @@ REQUIRED_MARKERS = {
         "memory_quality_preference_retrieval_uses_feedback_signal",
         "memory_quality_temporal_changes_preserve_snapshot_visibility",
     ],
-    "docs/PRODUCTION_EPIC_EXECUTION_PLAN.md": [
+    "docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md": [
         "### Epic 142. Memory Quality Benchmark",
         "Status: done",
         "docs/MEMORY_QUALITY_BENCHMARK.md",

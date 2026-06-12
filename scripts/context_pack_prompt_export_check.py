@@ -74,8 +74,8 @@ def validate(root: Path) -> dict[str, Any]:
         [
             read_text(root / "docs/API.md"),
             read_text(root / "docs/API_JSON_SCHEMAS.md"),
-            read_text(root / "docs/CONTEXT_PACK_QUALITY_EVIDENCE.md"),
-            read_text(root / "docs/CONTEXT_PACK_TECHNOLOGY.md"),
+            read_text(root / "docs/archive/CONTEXT_PACK_QUALITY_EVIDENCE.md"),
+            read_text(root / "docs/archive/CONTEXT_PACK_TECHNOLOGY.md"),
         ]
     )
 

@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 REQUIRED_MARKERS = {
-    "docs/PACKAGE_MANAGER_FEASIBILITY.md": [
+    "docs/archive/PACKAGE_MANAGER_FEASIBILITY.md": [
         "Homebrew Formula Evaluation",
         "Linux Package Evaluation",
         "Decision",
@@ -19,18 +19,18 @@ REQUIRED_MARKERS = {
         "RPM spec metadata",
         "package install smoke tests",
         "make binary-release-check",
-        "docs/SYSTEMD.md",
-        "docs/LAUNCHD.md",
+        "docs/archive/SYSTEMD.md",
+        "docs/archive/LAUNCHD.md",
         "Homebrew Formula Cookbook",
         "Debian binary package policy",
     ],
-    "docs/BINARY_RELEASES.md": [
+    "docs/archive/BINARY_RELEASES.md": [
         "PACKAGE_MANAGER_FEASIBILITY.md",
     ],
     "docs/DOCUMENTATION_INDEX.md": [
         "PACKAGE_MANAGER_FEASIBILITY.md",
     ],
-    "docs/PRODUCTION_EPIC_EXECUTION_PLAN.md": [
+    "docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md": [
         "Epic 130, Homebrew/Package Manager Feasibility",
         "make package-manager-feasibility-check",
         "Homebrew tap is feasible",

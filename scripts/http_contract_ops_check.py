@@ -12,7 +12,7 @@ from pathlib import Path
 REQUIRED_FILES = [
     Path("docs/openapi.yaml"),
     Path("docs/API.md"),
-    Path("docs/API_ERROR_TAXONOMY.md"),
+    Path("docs/archive/API_ERROR_TAXONOMY.md"),
     Path("docs/AUTH.md"),
     Path("crates/cortex-server/src/lib.rs"),
     Path("crates/cortex-server/src/audit.rs"),
@@ -33,7 +33,7 @@ REQUIRED_MARKERS = {
     ],
     "rate_limit": [
         ("crates/cortex-server/src/tests/security_tests.rs", "rate_limit_returns_typed_429_when_enabled"),
-        ("docs/API_ERROR_TAXONOMY.md", "rate_limited"),
+        ("docs/archive/API_ERROR_TAXONOMY.md", "rate_limited"),
     ],
     "cors": [
         ("crates/cortex-server/src/tests/security_tests.rs", "cors_preflight_is_only_enabled_for_configured_origin"),

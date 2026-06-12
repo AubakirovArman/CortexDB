@@ -33,15 +33,15 @@ REQUIRED_TERMS = {
         "Model-specific token profiles",
         "context-pack-token-estimator-check",
     ],
-    "docs/CONTEXT_PACK_TECHNOLOGY.md": [
+    "docs/archive/CONTEXT_PACK_TECHNOLOGY.md": [
         "Token Estimator v2",
         "model-specific profile",
     ],
-    "docs/CONTEXT_PACK_QUALITY_EVIDENCE.md": [
+    "docs/archive/CONTEXT_PACK_QUALITY_EVIDENCE.md": [
         "Token Estimator v2 Evidence",
         "context_pack_token_estimator",
     ],
-    "docs/PRODUCTION_EPIC_EXECUTION_PLAN.md": [
+    "docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md": [
         "Epic 68. ContextPack Token Estimator v2",
         "Status: done",
     ],

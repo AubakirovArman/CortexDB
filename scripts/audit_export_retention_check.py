@@ -47,8 +47,8 @@ REQUIRED_SAFE_FIELDS = {
 }
 MARKERS = [
     ("docs/AUTH.md", "audit-export-siem"),
-    ("docs/AUDIT_EXPORT_RETENTION_POLICY.md", "cortexdb.siem.audit.v1"),
-    ("docs/AUDIT_EXPORT_RETENTION_POLICY.md", "local_only_raw_security_debug"),
+    ("docs/archive/AUDIT_EXPORT_RETENTION_POLICY.md", "cortexdb.siem.audit.v1"),
+    ("docs/archive/AUDIT_EXPORT_RETENTION_POLICY.md", "local_only_raw_security_debug"),
     ("docs/AUDIT_EXPORT_RETENTION_POLICY.json", POLICY_SCHEMA),
     ("crates/cortex-cli/src/cli_audit_siem.rs", "cortexdb.siem.audit.v1"),
     ("crates/cortex-cli/src/cli_audit_siem_tests.rs", "audit_export_siem_writes_normalized_jsonl"),

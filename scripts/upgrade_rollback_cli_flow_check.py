@@ -37,7 +37,7 @@ REQUIRED_MARKERS = {
         "upgrade rollback",
         "migrate <path> <backup_path> <drill_restore_path>",
     ],
-    "docs/UPGRADE_ROLLBACK.md": [
+    "docs/archive/UPGRADE_ROLLBACK.md": [
         "cortexdb upgrade prepare",
         "cortexdb upgrade validate",
         "cortexdb upgrade rollback",
@@ -48,7 +48,7 @@ REQUIRED_MARKERS = {
         "cortexdb upgrade validate",
         "cortexdb upgrade rollback",
     ],
-    "docs/PRODUCTION_EPIC_EXECUTION_PLAN.md": [
+    "docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md": [
         "Epic 128. Upgrade/Rollback CLI Flow",
         "cortexdb migrate",
         "target/upgrade-rollback-cli-flow/report.json",

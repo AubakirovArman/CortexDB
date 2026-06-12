@@ -49,8 +49,8 @@ GATES: dict[str, dict[str, object]] = {
         },
         "markers": [
             ("docs/MANAGED_CLOUD_DESIGN.md", "Upgrade and rollback"),
-            ("docs/UPGRADE_ROLLBACK.md", "make deployment-upgrade-check"),
-            ("docs/UPGRADE_MIGRATION.md", "make migration-policy-check"),
+            ("docs/archive/UPGRADE_ROLLBACK.md", "make deployment-upgrade-check"),
+            ("docs/archive/UPGRADE_MIGRATION.md", "make migration-policy-check"),
             ("Makefile", "cloud-upgrade-check"),
         ],
     },

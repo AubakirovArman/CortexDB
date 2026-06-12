@@ -31,12 +31,12 @@ REQUIRED_TERMS = {
         "source_byte_start",
         "context-pack-span-packing-check",
     ],
-    "docs/CONTEXT_PACK_TECHNOLOGY.md": [
+    "docs/archive/CONTEXT_PACK_TECHNOLOGY.md": [
         "span_level_packing",
         "query-relevant body span",
         "structured provenance",
     ],
-    "docs/CONTEXT_PACK_QUALITY_EVIDENCE.md": [
+    "docs/archive/CONTEXT_PACK_QUALITY_EVIDENCE.md": [
         "Span-Level Packing Evidence",
         "context_pack_span_packing",
         "structured span provenance",

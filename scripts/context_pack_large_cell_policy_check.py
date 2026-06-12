@@ -30,15 +30,15 @@ REQUIRED_TERMS = {
         "source-only reference",
         "context-pack-large-cell-policy-check",
     ],
-    "docs/CONTEXT_PACK_TECHNOLOGY.md": [
+    "docs/archive/CONTEXT_PACK_TECHNOLOGY.md": [
         "Large Cell Policy",
         "source-only reference",
     ],
-    "docs/CONTEXT_PACK_QUALITY_EVIDENCE.md": [
+    "docs/archive/CONTEXT_PACK_QUALITY_EVIDENCE.md": [
         "Large Cell Policy Evidence",
         "context_pack_large_cell_policy",
     ],
-    "docs/PRODUCTION_EPIC_EXECUTION_PLAN.md": [
+    "docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md": [
         "Epic 69. ContextPack Large Cell Policy",
         "Status: done",
     ],

@@ -74,12 +74,12 @@ REQUIRED_MARKERS: dict[str, tuple[str, ...]] = {
 
 LINKED_DOCS = (
     "docs/INSTALL.md",
-    "docs/SYSTEMD.md",
-    "docs/LAUNCHD.md",
+    "docs/archive/SYSTEMD.md",
+    "docs/archive/LAUNCHD.md",
     "docs/BACKUP_RESTORE.md",
     "docs/RPO_RTO.md",
-    "docs/UPGRADE_MIGRATION.md",
-    "docs/UPGRADE_ROLLBACK.md",
+    "docs/archive/UPGRADE_MIGRATION.md",
+    "docs/archive/UPGRADE_ROLLBACK.md",
     "docs/METRICS.md",
     "docs/OBSERVABILITY_ALERTS.md",
     "docs/FAILURE_SCENARIOS.md",

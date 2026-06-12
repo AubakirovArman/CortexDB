@@ -24,7 +24,7 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "make single-node-performance-check",
         "target/single-node-performance/report.json",
     ),
-    "docs/API_COMPATIBILITY.md": (
+    "docs/archive/API_COMPATIBILITY.md": (
         "OpenAPI",
         "SDK",
         "compatibility",
@@ -34,7 +34,7 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "deprecation",
         "version",
     ),
-    "docs/UPGRADE_MIGRATION.md": (
+    "docs/archive/UPGRADE_MIGRATION.md": (
         "Upgrade Workflow",
         "Rollback Workflow",
         "make migration-compatibility-check",

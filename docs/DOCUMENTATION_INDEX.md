@@ -53,6 +53,7 @@ evidence snapshots, benchmark experiments, and release working notes live in
 ## Product And Roadmap
 
 - [`PUBLIC_CLAIMS_POLICY.md`](PUBLIC_CLAIMS_POLICY.md) - public wording boundary.
+- [`BETA_LANDING.md`](BETA_LANDING.md) - concise external beta landing page.
 - [`COMPARISONS.md`](COMPARISONS.md) - adjacent-stack comparison.
 - [`COMMUNITY_ROADMAP.md`](COMMUNITY_ROADMAP.md) - roadmap board.
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product layers.

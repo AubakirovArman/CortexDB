@@ -28,9 +28,9 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_retrieval.js", "why_excluded"),
     ],
     "docs": [
-        ("docs/DASHBOARD_UI.md", "ContextPack Explorer"),
-        ("docs/DASHBOARD_UI.md", "token budget usage"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Epic 112. ContextPack Explorer"),
+        ("docs/archive/DASHBOARD_UI.md", "ContextPack Explorer"),
+        ("docs/archive/DASHBOARD_UI.md", "token budget usage"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Epic 112. ContextPack Explorer"),
     ],
 }
 

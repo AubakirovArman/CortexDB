@@ -55,12 +55,12 @@ def main() -> int:
     repo = Path(__file__).resolve().parent.parent
     errors: list[str] = []
 
-    policy = read(repo / "docs/UPGRADE_MIGRATION.md")
+    policy = read(repo / "docs/archive/UPGRADE_MIGRATION.md")
     storage = read(repo / "docs/STORAGE_FORMATS.md")
     makefile = read(repo / "Makefile")
     workflow = read(repo / ".github/workflows/rust.yml")
 
-    errors.extend(require_terms("docs/UPGRADE_MIGRATION.md", policy, REQUIRED_POLICY_TERMS))
+    errors.extend(require_terms("docs/archive/UPGRADE_MIGRATION.md", policy, REQUIRED_POLICY_TERMS))
     errors.extend(require_terms("docs/STORAGE_FORMATS.md", storage, REQUIRED_STORAGE_LINK_TERMS))
 
     if "migration-policy-check:" not in makefile:

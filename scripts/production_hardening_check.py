@@ -28,7 +28,7 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "p95",
         "p99",
     ),
-    "docs/UPGRADE_MIGRATION.md": (
+    "docs/archive/UPGRADE_MIGRATION.md": (
         "make migration-compatibility-check",
         "compatibility",
     ),
@@ -37,7 +37,7 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "CORTEXDB_AUDIT_LOG_FILE",
         "cortexdb audit",
     ),
-    "docs/ENCRYPTED_BACKUPS_DESIGN.md": (
+    "docs/archive/ENCRYPTED_BACKUPS_DESIGN.md": (
         "envelope encryption",
         "Key Management",
         "Implemented MVP",

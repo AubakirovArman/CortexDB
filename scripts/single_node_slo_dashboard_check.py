@@ -41,9 +41,9 @@ REQUIRED_MARKERS = {
         ("crates/cortex-server/src/dashboard_tests.rs", "reporting_slo.js"),
     ],
     "docs": [
-        ("docs/DASHBOARD_UI.md", "Single-node SLO Dashboard"),
+        ("docs/archive/DASHBOARD_UI.md", "Single-node SLO Dashboard"),
         ("docs/SINGLE_NODE_SLO.md", "dashboard_slo.v1"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Epic 110. Single-node SLO Dashboard"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Epic 110. Single-node SLO Dashboard"),
     ],
 }
 

@@ -121,7 +121,7 @@ def main() -> int:
             require_file(repo, proof, errors)
 
     docs = {
-        "docs/UPGRADE_MIGRATION.md": (
+        "docs/archive/UPGRADE_MIGRATION.md": (
             "migration-compatibility-check",
             "compatibility_matrix_v1.json",
             "upgrade/downgrade matrix",
@@ -130,7 +130,7 @@ def main() -> int:
             "migration_upgrade_matrix_v2_check.py",
             "v0.1.0-core-alpha.5 -> v0.2.0-beta.1",
         ),
-        "docs/BINARY_RELEASES.md": ("binary-release-check", "SHA256SUMS"),
+        "docs/archive/BINARY_RELEASES.md": ("binary-release-check", "SHA256SUMS"),
     }
     for path, terms in docs.items():
         text = read(repo / path)

@@ -17,7 +17,7 @@ from typing import Any
 
 
 DOC_MARKERS = {
-    "docs/BINARY_PLATFORM_MATRIX.md": [
+    "docs/archive/BINARY_PLATFORM_MATRIX.md": [
         "linux-x86_64",
         "linux-aarch64",
         "macos-arm64",
@@ -31,7 +31,7 @@ DOC_MARKERS = {
         "network filesystems",
         "launchd",
     ],
-    "docs/BINARY_RELEASES.md": [
+    "docs/archive/BINARY_RELEASES.md": [
         "Binary Platform Matrix",
         "Linux and macOS",
         "No Windows binary artifact",

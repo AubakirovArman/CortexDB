@@ -32,7 +32,7 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "retry",
         "cancel",
     ),
-    "docs/DASHBOARD_UI.md": (
+    "docs/archive/DASHBOARD_UI.md": (
         "developer console",
         "dashboard-release-check",
         "operational",

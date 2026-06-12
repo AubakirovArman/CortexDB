@@ -61,7 +61,7 @@ REQUIRED_MARKERS = {
         "production_safe: true",
         "mean_recall_q16: 65535",
     ],
-    "docs/CONTEXT_PACK_QUALITY_EVIDENCE.md": [
+    "docs/archive/CONTEXT_PACK_QUALITY_EVIDENCE.md": [
         "evidence_coverage_q16: 65535",
         "domain_count: 5",
     ],

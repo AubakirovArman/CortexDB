@@ -46,7 +46,7 @@ REQUIRED_MARKERS = {
         "COMMUNITY_ROADMAP.md",
         "community roadmap",
     ],
-    "docs/PRODUCTION_EPIC_EXECUTION_PLAN.md": [
+    "docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md": [
         "### Epic 140. Community Roadmap Board",
         "Status: done",
         "docs/COMMUNITY_ROADMAP.md",

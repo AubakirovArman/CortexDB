@@ -6,7 +6,7 @@ Execution rule: close epics in order. Use the dependency-aware order from the so
 
 Status values: `next`, `in_progress`, `partial`, `done`, `blocked`, `frozen`.
 
-Current pointer: `EPIC-D15` (dependency needed before completing `EPIC-D05` public publication).
+Current pointer: `EPIC-D15` (beta release gate is green; version bump/tag/public release remain).
 
 Impact measurement rule: after each meaningful retrieval, ContextPack, or answer
 pipeline change, run `make enterprise-rag-bench-impact-gemini-50`. The target
@@ -1314,17 +1314,19 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-D15 — v0.2.0-beta.1: версии, release notes, тег
 
-- status: `pending`
+- status: `partial`
 - meta: Категория: product · P0 · 30 days · productize
 - goal: workspace 0.1.0 при бета-цели 0.2.0-beta.1; гейты есть, релиза нет.
 - tasks:
-  - [ ] 1) bump версий
-  - [ ] 2) `make beta-release-check` + бинарники (binary-release-check)
+  - [ ] 1) bump версий — pending because Rust/TypeScript can use `0.2.0-beta.1`, while Python package publication needs an explicit PEP 440-compatible mapping such as `0.2.0b1` or an updated release policy.
+  - [x] 2) `make beta-release-check` + бинарники (binary-release-check) — passed after aligning release gates with archived documentation paths and fixing a VERIFY numeric false-positive in the RAG demo smoke.
   - [ ] 3) тег+GitHub release; release notes сверить с реальностью (после repositioning).
 - acceptance:
   - [ ] 1) тег с артефактами
   - [ ] 2) README-статус соответствует.
 - dependencies: A01, D12, D05 (желательно). Эффект: точка отсчёта «бета».
+- evidence: `make beta-release-check` passed and produced `target/beta-release/report.json` plus `target/beta-release/evidence.tar.gz`; `make binary-release-check BINARY_RELEASE_VERSION=v0.2.0-beta.1 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local` passed; `make rag-demo-smoke` passed after VERIFY stopped cross-comparing matched year and amount values as numeric contradictions.
+- remaining: choose and document package-version mapping, bump workspace/OpenAPI/SDK versions, then create the tag and GitHub release after explicit release approval.
 
 ## Block E — Reliability, security, and operations
 

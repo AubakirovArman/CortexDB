@@ -35,8 +35,8 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_operations.js", "Last error"),
     ],
     "docs": [
-        ("docs/DASHBOARD_UI.md", "Operational Status View"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Epic 111. Dashboard Operational Status View"),
+        ("docs/archive/DASHBOARD_UI.md", "Operational Status View"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Epic 111. Dashboard Operational Status View"),
     ],
 }
 

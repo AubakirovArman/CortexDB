@@ -90,9 +90,18 @@ fn numeric_mismatch_details(fact: &str, payload: &[u8]) -> Option<NumericMismatc
     }
 
     let (fact_value, evidence_value) = fact_values.iter().find_map(|fact_value| {
+        let fact_has_equal_evidence = payload_values
+            .iter()
+            .any(|payload_value| fact_value.normalized_eq(payload_value));
         payload_values
             .iter()
-            .find(|payload_value| numeric_conflict(fact_value, payload_value))
+            .find(|payload_value| {
+                let evidence_has_equal_fact = fact_values
+                    .iter()
+                    .any(|other_fact_value| payload_value.normalized_eq(other_fact_value));
+                !(fact_has_equal_evidence && evidence_has_equal_fact)
+                    && numeric_conflict(fact_value, payload_value)
+            })
             .map(|payload_value| (fact_value.clone(), payload_value.clone()))
     })?;
 

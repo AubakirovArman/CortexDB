@@ -96,7 +96,7 @@ def main() -> int:
         "status": status,
         "files_checked": [
             "docs/TOOL_REGISTRY.md",
-            "docs/PRODUCTION_EPIC_EXECUTION_PLAN.md",
+            "docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md",
             "crates/cortex-engine/src/tool_registry.rs",
             "crates/cortex-engine/tests/tool_registry_tests.rs",
         ],

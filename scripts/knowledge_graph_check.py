@@ -48,7 +48,7 @@ def main() -> int:
 
     files_checked = [
         "docs/KNOWLEDGE_GRAPH.md",
-        "docs/PRODUCTION_EPIC_EXECUTION_PLAN.md",
+        "docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md",
         "crates/cortex-engine/src/graph.rs",
         "crates/cortex-engine/src/graph_retrieval.rs",
         "crates/cortex-engine/tests/graph_tests.rs",

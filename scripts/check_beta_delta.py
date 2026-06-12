@@ -49,8 +49,8 @@ REQUIRED_MAKEFILE_TERMS = (
 )
 
 REQUIRED_PLAN_TERMS = (
-    "docs/BETA_DELTA.md",
-    "docs/BETA_RELEASE.md",
+    "BETA_DELTA.md",
+    "BETA_RELEASE.md",
     "make beta-delta-check",
     "make beta-release-check",
 )
@@ -69,13 +69,13 @@ def missing_terms(label: str, text: str, terms: tuple[str, ...]) -> list[str]:
 
 def validate(repo: Path) -> list[str]:
     errors: list[str] = []
-    beta_delta = read(repo / "docs/BETA_DELTA.md")
+    beta_delta = read(repo / "docs/archive/BETA_DELTA.md")
     makefile = read(repo / "Makefile")
-    plan = read(repo / "docs/REMAINING_EXECUTION_PLAN.md")
+    plan = read(repo / "docs/archive/REMAINING_EXECUTION_PLAN.md")
 
-    errors.extend(missing_terms("docs/BETA_DELTA.md", beta_delta, REQUIRED_DOC_TERMS))
+    errors.extend(missing_terms("docs/archive/BETA_DELTA.md", beta_delta, REQUIRED_DOC_TERMS))
     errors.extend(missing_terms("Makefile", makefile, REQUIRED_MAKEFILE_TERMS))
-    errors.extend(missing_terms("docs/REMAINING_EXECUTION_PLAN.md", plan, REQUIRED_PLAN_TERMS))
+    errors.extend(missing_terms("docs/archive/REMAINING_EXECUTION_PLAN.md", plan, REQUIRED_PLAN_TERMS))
     return errors
 
 

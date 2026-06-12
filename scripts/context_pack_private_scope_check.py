@@ -55,11 +55,11 @@ def validate(root: Path) -> dict[str, Any]:
         "docs": "\n".join(
             [
                 read_text(root / "docs/CONTEXT_PACK.md"),
-                read_text(root / "docs/CONTEXT_PACK_TECHNOLOGY.md"),
-                read_text(root / "docs/CONTEXT_PACK_QUALITY_EVIDENCE.md"),
+                read_text(root / "docs/archive/CONTEXT_PACK_TECHNOLOGY.md"),
+                read_text(root / "docs/archive/CONTEXT_PACK_QUALITY_EVIDENCE.md"),
             ]
         ),
-        "plan": read_text(root / "docs/PRODUCTION_EPIC_EXECUTION_PLAN.md"),
+        "plan": read_text(root / "docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md"),
     }
 
     failures: list[str] = []

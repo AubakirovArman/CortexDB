@@ -40,7 +40,7 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "make chaos-restart-check",
         "corruption of `.acs`, `.acb`, `.aci`, `.acv`, and `.ach`",
     ),
-    "docs/UPGRADE_MIGRATION.md": (
+    "docs/archive/UPGRADE_MIGRATION.md": (
         "compatibility_matrix_v1.json",
         "upgrade/downgrade matrix",
         "historical restore fixture",

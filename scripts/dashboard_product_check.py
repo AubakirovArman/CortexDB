@@ -50,9 +50,9 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_operations.js", "Actor queue"),
         ("web/dashboard/src/reporting_operations.js", "Latest backup"),
         ("web/dashboard/src/reporting_operations.js", "Last error"),
-        ("docs/DASHBOARD_UI.md", "Operational Status View"),
-        ("docs/DASHBOARD_UI.md", "Backup/Restore View"),
-        ("docs/DASHBOARD_UI.md", "Incident View"),
+        ("docs/archive/DASHBOARD_UI.md", "Operational Status View"),
+        ("docs/archive/DASHBOARD_UI.md", "Backup/Restore View"),
+        ("docs/archive/DASHBOARD_UI.md", "Incident View"),
     ],
     "incident_timeline": [
         ("web/dashboard/src/app.js", "incident_timeline"),
@@ -64,7 +64,7 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_operations.js", "renderIncidentEvent"),
         ("web/dashboard/src/reporting_operations.js", "Incident timeline"),
         ("web/dashboard/src/reporting_operations.js", "audit / rate / storage / backup"),
-        ("docs/DASHBOARD_UI.md", "Incident Timeline"),
+        ("docs/archive/DASHBOARD_UI.md", "Incident Timeline"),
     ],
     "single_node_slo_dashboard": [
         ("web/dashboard/src/index.html", "id=\"slo-report\""),
@@ -80,7 +80,7 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_slo.js", "Backup freshness"),
         ("web/dashboard/src/reporting_slo.js", "Validation status"),
         ("web/dashboard/src/reporting_slo.js", "Error budget"),
-        ("docs/DASHBOARD_UI.md", "Single-node SLO Dashboard"),
+        ("docs/archive/DASHBOARD_UI.md", "Single-node SLO Dashboard"),
         ("docs/SINGLE_NODE_SLO.md", "dashboard_slo.v1"),
     ],
     "audit_readiness": [
@@ -93,7 +93,7 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_audit.js", "hash_chain_verification"),
         ("web/dashboard/src/reporting_audit.js", "redaction_status"),
         ("web/dashboard/src/reporting_audit.js", "filtered_events"),
-        ("docs/DASHBOARD_UI.md", "Audit Viewer v2"),
+        ("docs/archive/DASHBOARD_UI.md", "Audit Viewer v2"),
     ],
     "permissions_view": [
         ("web/dashboard/src/index.html", "href=\"/dashboard/permissions\""),
@@ -115,8 +115,8 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_operations.js", "Scope probes"),
         ("web/dashboard/src/reporting_operations.js", "AgentView policy"),
         ("web/dashboard/src/reporting_operations.js", "Denials"),
-        ("docs/DASHBOARD_UI.md", "Permissions Explorer"),
-        ("docs/DASHBOARD_UI.md", "Role-based Dashboard UI"),
+        ("docs/archive/DASHBOARD_UI.md", "Permissions Explorer"),
+        ("docs/archive/DASHBOARD_UI.md", "Role-based Dashboard UI"),
     ],
     "context_pack_explorer": [
         ("web/dashboard/src/index.html", "id=\"context-report\""),
@@ -127,7 +127,7 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_retrieval.js", "Source refs"),
         ("web/dashboard/src/reporting_retrieval.js", "score_components"),
         ("web/dashboard/src/reporting_retrieval.js", "why_excluded"),
-        ("docs/DASHBOARD_UI.md", "ContextPack Explorer"),
+        ("docs/archive/DASHBOARD_UI.md", "ContextPack Explorer"),
     ],
     "verification_explorer": [
         ("web/dashboard/src/index.html", "id=\"verify-report\""),
@@ -137,7 +137,7 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_retrieval.js", "Guard explorer"),
         ("web/dashboard/src/reporting_retrieval.js", "numeric_conflicts"),
         ("web/dashboard/src/reporting_retrieval.js", "source_trust_category"),
-        ("docs/DASHBOARD_UI.md", "Verification Explorer"),
+        ("docs/archive/DASHBOARD_UI.md", "Verification Explorer"),
     ],
     "ingestion_job_dashboard": [
         ("web/dashboard/src/index.html", "id=\"ingest-jobs-list-button\""),
@@ -148,11 +148,11 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_ingest.js", "failure reason"),
         ("web/dashboard/src/reporting_ingest.js", "Ingestion chunks and SourceRefs"),
         ("web/dashboard/src/style.css", ".report-table"),
-        ("docs/DASHBOARD_UI.md", "Ingestion Job Dashboard"),
+        ("docs/archive/DASHBOARD_UI.md", "Ingestion Job Dashboard"),
     ],
     "release_artifacts": [
         ("e2e/dashboard_screenshots.mjs", "permissions"),
-        ("docs/DASHBOARD_UI.md", "dashboard-screenshots"),
+        ("docs/archive/DASHBOARD_UI.md", "dashboard-screenshots"),
         ("docs/DASHBOARD_PRODUCT_UI_EVIDENCE.md", "make dashboard-product-check"),
     ],
 }

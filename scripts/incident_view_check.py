@@ -46,16 +46,16 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_operations.js", "backup failures:"),
     ],
     "docs": [
-        ("docs/DASHBOARD_UI.md", "Incident View"),
-        ("docs/DASHBOARD_UI.md", "dashboard_incident_view.v1"),
-        ("docs/DASHBOARD_UI.md", "actor busy status"),
-        ("docs/DASHBOARD_UI.md", "storage warnings"),
-        ("docs/DASHBOARD_UI.md", "backup failures"),
+        ("docs/archive/DASHBOARD_UI.md", "Incident View"),
+        ("docs/archive/DASHBOARD_UI.md", "dashboard_incident_view.v1"),
+        ("docs/archive/DASHBOARD_UI.md", "actor busy status"),
+        ("docs/archive/DASHBOARD_UI.md", "storage warnings"),
+        ("docs/archive/DASHBOARD_UI.md", "backup failures"),
     ],
     "plan": [
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "### Epic 119. Incident View"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Status: done"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "make incident-view-check"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "### Epic 119. Incident View"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Status: done"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "make incident-view-check"),
     ],
 }
 

@@ -20,7 +20,7 @@ REQUIRED_GATES = {
     "make migration-compatibility-check",
     "make storage-compat-check",
 }
-REQUIRED_DOCS = {"docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"}
+REQUIRED_DOCS = {"docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -143,7 +143,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     matrix = read_json(repo, args.compatibility)
     makefile = read_text(repo, "Makefile")
     workflow = read_text(repo, ".github/workflows/rust.yml")
-    migration_doc = read_text(repo, "docs/UPGRADE_MIGRATION.md")
+    migration_doc = read_text(repo, "docs/archive/UPGRADE_MIGRATION.md")
     storage_doc = read_text(repo, "docs/STORAGE_FORMATS.md")
     errors: list[str] = []
 
@@ -192,7 +192,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "release fixture",
     ):
         if term not in migration_doc:
-            errors.append(f"docs/UPGRADE_MIGRATION.md missing {term!r}")
+            errors.append(f"docs/archive/UPGRADE_MIGRATION.md missing {term!r}")
     for term in ("storage-format-change-note-check", "storage_format_change_notes_v1.json"):
         if term not in storage_doc:
             errors.append(f"docs/STORAGE_FORMATS.md missing {term!r}")

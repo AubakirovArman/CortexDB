@@ -16,19 +16,19 @@ REQUIRED_DOC_MARKERS = {
         "make binary-release-check",
         "BINARY_PLATFORM_MATRIX.md",
     ],
-    "docs/SYSTEMD.md": [
+    "docs/archive/SYSTEMD.md": [
         "[Service]",
         "ExecStart=/usr/local/bin/cortex-server",
         "CORTEXDB_AUTH_TOKENS_FILE",
         "/v1/validate",
     ],
-    "docs/LAUNCHD.md": [
+    "docs/archive/LAUNCHD.md": [
         "launchctl bootstrap",
         "launchctl kickstart",
         "launchctl bootout",
         "/v1/validate",
     ],
-    "docs/UPGRADE_ROLLBACK.md": [
+    "docs/archive/UPGRADE_ROLLBACK.md": [
         "Pre-Upgrade Checklist",
         "cortexdb upgrade prepare",
         "cortexdb upgrade validate",
@@ -50,13 +50,13 @@ REQUIRED_DOC_MARKERS = {
         "make observability-check",
         "make public-claims-check",
     ],
-    "docs/BINARY_RELEASES.md": [
+    "docs/archive/BINARY_RELEASES.md": [
         "GitHub Release Workflow",
         "Binary Platform Matrix",
         "target/release-artifacts",
         "SHA256SUMS",
     ],
-    "docs/BINARY_PLATFORM_MATRIX.md": [
+    "docs/archive/BINARY_PLATFORM_MATRIX.md": [
         "Windows is unsupported",
         "Clean Install Smoke",
         "launchd",
@@ -75,9 +75,9 @@ REQUIRED_DOC_MARKERS = {
 }
 
 LINK_MARKERS = {
-    "README.md": ["docs/INSTALL.md", "docs/SYSTEMD.md", "docs/UPGRADE_ROLLBACK.md"],
+    "README.md": ["docs/INSTALL.md", "docs/archive/SYSTEMD.md", "docs/archive/UPGRADE_ROLLBACK.md"],
     "docs/DOCUMENTATION_INDEX.md": ["INSTALL.md", "SYSTEMD.md", "LAUNCHD.md", "UPGRADE_ROLLBACK.md", "BINARY_PLATFORM_MATRIX.md"],
-    "docs/PL_EXTRACTED_EPICS.md": ["DEPLOYMENT_UPGRADE_EVIDENCE.md"],
+    "docs/archive/PL_EXTRACTED_EPICS.md": ["DEPLOYMENT_UPGRADE_EVIDENCE.md"],
 }
 
 

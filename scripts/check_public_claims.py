@@ -33,14 +33,14 @@ PUBLIC_DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "not ready for critical high-availability production databases",
         "Experimental",
     ),
-    "docs/BETA_DELTA.md": (
+    "docs/archive/BETA_DELTA.md": (
         "v0.2.0-beta.1",
         "BETA_RELEASE.md",
         "Stable Now",
         "Experimental Or Guarded",
         "Blocked Before Beta Promotion",
     ),
-    "docs/BETA_RELEASE.md": (
+    "docs/archive/BETA_RELEASE.md": (
         "v0.2.0-beta.1",
         "Core Alpha with Beta Foundation evidence",
         "Explicit Non-Goals For Beta",
@@ -52,21 +52,21 @@ PUBLIC_DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "Disallowed Claims",
         "Required Qualifiers",
     ),
-    "docs/PUBLIC_CLAIMS_FREEZE.md": (
+    "docs/archive/PUBLIC_CLAIMS_FREEZE.md": (
         "local single-node only",
         "Forbidden Public Claims",
         "Release Gate",
     ),
-    "docs/PRODUCTION_V1.md": (
+    "docs/archive/PRODUCTION_V1.md": (
         "local single-node",
         "Distributed Production Is Out Of Scope",
         "not a public SLA",
     ),
-    "docs/BINARY_PLATFORM_MATRIX.md": (
+    "docs/archive/BINARY_PLATFORM_MATRIX.md": (
         "Windows is unsupported",
         "Clean Install Smoke",
     ),
-    "docs/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md": (
+    "docs/archive/SECURITY_PRODUCTION_CANDIDATE_DECISIONS.md": (
         "Release-blocking rule",
         "Forbidden wording",
     ),

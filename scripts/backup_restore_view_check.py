@@ -39,16 +39,16 @@ REQUIRED_MARKERS = {
         ("web/dashboard/src/reporting_operations.js", "RPO ${backupRestore.rpo_rto?.rpo_budget_seconds || 86400}s"),
     ],
     "docs": [
-        ("docs/DASHBOARD_UI.md", "Backup/Restore View"),
-        ("docs/DASHBOARD_UI.md", "latest backup age"),
-        ("docs/DASHBOARD_UI.md", "restore drill status"),
-        ("docs/DASHBOARD_UI.md", "offsite status"),
-        ("docs/DASHBOARD_UI.md", "RPO/RTO posture"),
+        ("docs/archive/DASHBOARD_UI.md", "Backup/Restore View"),
+        ("docs/archive/DASHBOARD_UI.md", "latest backup age"),
+        ("docs/archive/DASHBOARD_UI.md", "restore drill status"),
+        ("docs/archive/DASHBOARD_UI.md", "offsite status"),
+        ("docs/archive/DASHBOARD_UI.md", "RPO/RTO posture"),
     ],
     "plan": [
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "### Epic 118. Backup/Restore View"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Status: done"),
-        ("docs/PRODUCTION_EPIC_EXECUTION_PLAN.md", "make backup-restore-view-check"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "### Epic 118. Backup/Restore View"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "Status: done"),
+        ("docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md", "make backup-restore-view-check"),
     ],
 }
 

@@ -14,8 +14,8 @@ GATE_MARKERS = {
         "schema": "cortexdb.enterprise_rbac.rbac_policy_store_gate.v1",
         "markers": [
             ("docs/AUTH.md", "CORTEXDB_AUTH_POLICY_STORE_FILE"),
-            ("docs/RBAC_POLICY_STORE_DESIGN.md", "policy store"),
-            ("docs/SECURITY_HARDENING_EVIDENCE.md", "persisted_auth_policy_store: true"),
+            ("docs/archive/RBAC_POLICY_STORE_DESIGN.md", "policy store"),
+            ("docs/archive/SECURITY_HARDENING_EVIDENCE.md", "persisted_auth_policy_store: true"),
             ("crates/cortex-server/src/auth.rs", "cortexdb.auth_policy.v1"),
             (
                 "crates/cortex-server/src/tests/auth_policy_tests.rs",
@@ -57,14 +57,14 @@ GATE_MARKERS = {
                 "crates/cortex-cli/src/cli_auth_review_tests.rs",
                 "auth_review_rejects_invalid_capability",
             ),
-            ("docs/RBAC_POLICY_STORE_DESIGN.md", "Action capability restrictions"),
+            ("docs/archive/RBAC_POLICY_STORE_DESIGN.md", "Action capability restrictions"),
         ],
     },
     "quota-policy": {
         "schema": "cortexdb.enterprise_rbac.quota_policy_gate.v1",
         "markers": [
             ("docs/AUTH.md", "request_quota_per_minute"),
-            ("docs/SECURITY_HARDENING_EVIDENCE.md", "per_principal_quota: true"),
+            ("docs/archive/SECURITY_HARDENING_EVIDENCE.md", "per_principal_quota: true"),
             ("crates/cortex-server/src/auth.rs", "request_quota_per_minute"),
             (
                 "crates/cortex-server/src/tests/security_quota_tests.rs",
@@ -84,7 +84,7 @@ GATE_MARKERS = {
         "schema": "cortexdb.enterprise_rbac.audit_chain_gate.v1",
         "markers": [
             ("docs/AUTH.md", "cortexdb audit ./audit/http.jsonl --summary --redaction-check --verify-chain"),
-            ("docs/SECURITY_HARDENING_EVIDENCE.md", "audit_chain_foundation: true"),
+            ("docs/archive/SECURITY_HARDENING_EVIDENCE.md", "audit_chain_foundation: true"),
             ("crates/cortex-server/src/audit.rs", "prev_hash"),
             ("crates/cortex-server/src/audit_tests.rs", "audit_sink_continues_chain_when_reopened"),
             (

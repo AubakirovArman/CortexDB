@@ -102,7 +102,7 @@ def main() -> int:
         "status": status,
         "files_checked": [
             "docs/CONTEXT_PACK_TOOL_RECOMMENDATION.md",
-            "docs/PRODUCTION_EPIC_EXECUTION_PLAN.md",
+            "docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md",
             "crates/cortex-engine/src/context/mod.rs",
             "crates/cortex-engine/src/context/pack.rs",
             "crates/cortex-engine/tests/context_pack_tool_recommendation.rs",
