@@ -5225,7 +5225,7 @@
     "scripts/enterprise_rag_bench/_multi_index_candidate_generation/__init__.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 5,
+      "lines": 6,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5589,7 +5589,77 @@
     "scripts/enterprise_rag_bench/doc_view_rerank.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 729,
+      "lines": 10,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/doc_view_rerank_lib/__init__.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 1,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/doc_view_rerank_lib/cli.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 81,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/doc_view_rerank_lib/constants.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 44,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/doc_view_rerank_lib/files.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 47,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/doc_view_rerank_lib/metrics.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 9,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/doc_view_rerank_lib/query.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 31,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/doc_view_rerank_lib/runner.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 164,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/doc_view_rerank_lib/scoring.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 83,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/doc_view_rerank_lib/selection.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 149,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/doc_view_rerank_lib/views.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 154,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5820,7 +5890,7 @@
     "scripts/enterprise_rag_bench/multi_index_candidate_generation.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 14,
+      "lines": 16,
       "soft_limit": 300,
       "warning_limit": 600
     },
