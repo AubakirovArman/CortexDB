@@ -3972,7 +3972,49 @@
     "mk/enterprise-rag-quality.mk": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 920,
+      "lines": 6,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-quality/analysis.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 125,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-quality/candidates.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 182,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-quality/evidence_selectors.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 171,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-quality/gates.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 155,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-quality/semantic_selectors.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 154,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-quality/source_selectors.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 133,
       "soft_limit": 300,
       "warning_limit": 600
     },
