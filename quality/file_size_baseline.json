@@ -3811,7 +3811,35 @@
     "crates/cortex-server/src/handler.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 635,
+      "lines": 252,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/handler/admin.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 282,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/handler/database_route.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 179,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/handler/error.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 9,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/handler/inference.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 59,
       "soft_limit": 300,
       "warning_limit": 600
     },
