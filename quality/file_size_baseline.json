@@ -3741,7 +3741,49 @@
     "crates/cortex-server/src/auth_policy_store.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 634,
+      "lines": 15,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth_policy_store/api.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 110,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth_policy_store/io.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 102,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth_policy_store/mutations.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 186,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth_policy_store/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 34,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/auth_policy_store/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 115,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth_policy_store/validation.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 120,
       "soft_limit": 300,
       "warning_limit": 600
     },
