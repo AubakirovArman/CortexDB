@@ -2894,7 +2894,28 @@
     "crates/cortex-engine/src/validation.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 459,
+      "lines": 60,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/validation/helpers.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 65,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/validation/report.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 300,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/validation/stats.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 55,
       "soft_limit": 300,
       "warning_limit": 600
     },
