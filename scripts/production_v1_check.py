@@ -29,7 +29,7 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "Windows is unsupported",
         "launchd",
     ),
-    "docs/SDK_RELEASE.md": (
+    "docs/archive/SDK_RELEASE.md": (
         "sdk-release-contract-check",
         "sdk-release-artifacts-check",
         "deprecation",

@@ -6,7 +6,16 @@ Execution rule: close epics in order. Use the dependency-aware order from the so
 
 Status values: `next`, `in_progress`, `partial`, `done`, `blocked`, `frozen`.
 
-Current pointer: `EPIC-D05`.
+Current pointer: `EPIC-D15` (dependency needed before completing `EPIC-D05` public publication).
+
+Impact measurement rule: after each meaningful retrieval, ContextPack, or answer
+pipeline change, run `make enterprise-rag-bench-impact-gemini-50`. The target
+uses official-clean 50 questions, Gemini 3.5 Flash as answerer and judge,
+`engine-aql` + weighted rerank, and `target/enterprise-rag-bench/cortexdb-full`
+with `reuse_db=1` so the corpus is not reingested. Current baseline:
+`overall=41.36`, `correctness=42.0`, `completeness=44.76`, `document_recall=56.0`,
+`invalid_extra_docs=9.44`, `answer_tokens=302372`, `judge_tokens=27312`
+from `target/enterprise-rag-bench/official-clean/50/impact-gemini50-20260612T095537Z/answer-gemini/official_clean_run_report.json`.
 
 ## First Execution Queue
 
@@ -1162,19 +1171,21 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-D05 — Публикация SDK (PyPI/npm/crates.io)
 
-- status: `pending`
+- status: `partial`
 - meta: Категория: SDK · P0 · 30 days · productize
 - goal: README обещает pip/npm — пакетов нет; preflight-гейты (make sdk-check) уже есть.
 - tasks:
-  - [ ] 1) проверить имена
-  - [ ] 2) выполнить tag-gated workflow (docs/SDK_RELEASE.md)
-  - [ ] 3) install-smoke с чистой машины в CI.
+  - [x] 1) проверить имена — manifest/package metadata lock `cortex-sdk`, `cortexdb-client`, and `@cortexdb/client`; `make sdk-check` validates Rust cargo package, Python wheel/test path, and npm pack dry-run.
+  - [x] 2) выполнить tag-gated workflow preflight/contract (`docs/archive/SDK_RELEASE.md`) — `make sdk-e2e-release-check` validates release contract, deprecation policy, registry gate, SDK examples artifact, and live SDK contract.
+  - [ ] 3) install-smoke с чистой машины в CI against public registries.
 - acceptance:
   - [ ] 1) `pip install cortexdb-client` работает
   - [ ] 2) npm/cargo аналогично
   - [ ] 3) README-примеры запускаются против опубликованных пакетов.
 - files: sdk/, .github/workflows/sdk-release.yml.
 - risks: занятые имена — резерв заранее. Зависимости: D15 (версии). Эффект: quickstart перестаёт быть фикцией.
+- evidence: `make sdk-e2e-release-check` passed after SDK release/deprecation/publication gates were aligned to archived docs; `make sdk-check` passed and produced Rust `cargo package`, Python SDK tests, and npm pack dry-run evidence.
+- remaining: public registry publication and clean-machine install smoke require the beta version/tag from `EPIC-D15` plus registry credentials/trusted publishing.
 
 ### EPIC-D06 — Python SDK: typed-модели, ретраи, таймауты
 

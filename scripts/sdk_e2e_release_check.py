@@ -21,10 +21,10 @@ REQUIRED_FILES = [
     Path("sdk/release-manifest.json"),
     Path(".github/workflows/sdk-release.yml"),
     Path("scripts/sdk_registry_gate_check.py"),
-    Path("docs/SDK_RELEASE.md"),
+    Path("docs/archive/SDK_RELEASE.md"),
     Path("docs/SDK_QUICKSTART.md"),
-    Path("docs/SDK_DEPRECATION_POLICY.md"),
-    Path("docs/SDK_PUBLICATION_STATUS.md"),
+    Path("docs/archive/SDK_DEPRECATION_POLICY.md"),
+    Path("docs/archive/SDK_PUBLICATION_STATUS.md"),
 ]
 
 REQUIRED_MARKERS = {
@@ -40,8 +40,8 @@ REQUIRED_MARKERS = {
         ("scripts/check_sdk_release_contract.py", "requires_explicit_publish_input"),
         ("scripts/check_sdk_release_contract.py", "registry_gate"),
         ("scripts/check_sdk_release_contract.py", "npm publish --access public --provenance"),
-        ("docs/SDK_RELEASE.md", "publish=true"),
-        ("docs/SDK_RELEASE.md", "protected `sdk-release` environment"),
+        ("docs/archive/SDK_RELEASE.md", "publish=true"),
+        ("docs/archive/SDK_RELEASE.md", "protected `sdk-release` environment"),
     ],
     "registry_gate": [
         ("scripts/sdk_registry_gate_check.py", "manual_only"),
@@ -49,18 +49,18 @@ REQUIRED_MARKERS = {
         ("scripts/sdk_registry_gate_check.py", "does_not_claim_publication_without_release_job"),
         ("sdk/release-manifest.json", "sdk-registry-gate-check"),
         ("Makefile", "sdk-registry-gate-check"),
-        ("docs/SDK_PUBLICATION_STATUS.md", "public registry publication is not claimed"),
+        ("docs/archive/SDK_PUBLICATION_STATUS.md", "public registry publication is not claimed"),
     ],
     "release_artifacts": [
         ("scripts/sdk_release_artifacts_check.py", "Package SDK examples"),
         ("sdk/release-manifest.json", "sdk_examples_archive"),
         ("sdk/python/examples/basic.py", "CortexDBClient"),
         ("sdk/typescript/examples/basic.mjs", "CortexDBClient"),
-        ("docs/SDK_RELEASE.md", "SDK examples artifact"),
+        ("docs/archive/SDK_RELEASE.md", "SDK examples artifact"),
     ],
     "deprecation_policy": [
         ("scripts/check_sdk_deprecation_policy.py", "SDK clients MUST NOT expose deprecated compatibility aliases"),
-        ("docs/SDK_DEPRECATION_POLICY.md", "Breaking SDK/API Changes"),
+        ("docs/archive/SDK_DEPRECATION_POLICY.md", "Breaking SDK/API Changes"),
     ],
     "quickstart": [
         ("docs/SDK_QUICKSTART.md", "Rust"),

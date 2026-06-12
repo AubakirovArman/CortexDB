@@ -138,7 +138,7 @@ def validate_manifest(repo: Path, errors: list[str]) -> dict[str, Any]:
         deprecation_policy = manifest.get("deprecation_policy")
         if not isinstance(deprecation_policy, dict):
             errors.append("sdk/release-manifest.json: deprecation_policy missing")
-        elif deprecation_policy.get("document") != "docs/SDK_DEPRECATION_POLICY.md":
+        elif deprecation_policy.get("document") != "docs/archive/SDK_DEPRECATION_POLICY.md":
             errors.append("sdk/release-manifest.json: deprecation_policy.document mismatch")
         packages = manifest.get("packages")
         if not isinstance(packages, list) or len(packages) != 3:
@@ -232,8 +232,11 @@ def validate_workflow(repo: Path, errors: list[str]) -> None:
         errors.append(str(exc))
 
 
+SDK_RELEASE_DOC = Path("docs/archive/SDK_RELEASE.md")
+
+
 def validate_docs(repo: Path, root_version: str, errors: list[str]) -> None:
-    sdk_release = read_text(repo / "docs/SDK_RELEASE.md")
+    sdk_release = read_text(repo / SDK_RELEASE_DOC)
     for phrase in (
         "manual-only",
         "publish=true",
@@ -243,7 +246,7 @@ def validate_docs(repo: Path, root_version: str, errors: list[str]) -> None:
         "version bump",
     ):
         if phrase not in sdk_release:
-            errors.append(f"docs/SDK_RELEASE.md: missing {phrase!r}")
+            errors.append(f"{SDK_RELEASE_DOC}: missing {phrase!r}")
     changelog = read_text(repo / "CHANGELOG.md")
     if "## Unreleased" not in changelog:
         errors.append("CHANGELOG.md: missing Unreleased section")

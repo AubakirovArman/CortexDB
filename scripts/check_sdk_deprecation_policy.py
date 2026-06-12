@@ -44,11 +44,11 @@ def sdk_source_files(repo: Path) -> list[Path]:
 
 
 def validate_deprecation_policy(repo: Path, errors: list[str]) -> None:
-    policy_path = repo / "docs/SDK_DEPRECATION_POLICY.md"
+    policy_path = repo / "docs/archive/SDK_DEPRECATION_POLICY.md"
     policy = read_text(policy_path)
     policy_norm = normalized(policy)
-    api_changelog = read_text(repo / "docs/API_CHANGELOG.md")
-    compatibility = read_text(repo / "docs/API_COMPATIBILITY.md")
+    api_changelog = read_text(repo / "docs/archive/API_CHANGELOG.md")
+    compatibility = read_text(repo / "docs/archive/API_COMPATIBILITY.md")
     openapi = read_text(repo / "docs/openapi.yaml")
     paths = deprecated_openapi_paths(openapi)
     if not paths:
@@ -62,14 +62,14 @@ def validate_deprecation_policy(repo: Path, errors: list[str]) -> None:
         "SDK clients MUST NOT expose deprecated compatibility aliases",
     ):
         if phrase not in policy_norm:
-            errors.append(f"docs/SDK_DEPRECATION_POLICY.md: missing {phrase!r}")
+            errors.append(f"{policy_path.relative_to(repo)}: missing {phrase!r}")
     for path in paths:
         if path not in policy:
-            errors.append(f"docs/SDK_DEPRECATION_POLICY.md: missing deprecated route {path}")
+            errors.append(f"{policy_path.relative_to(repo)}: missing deprecated route {path}")
         if path not in api_changelog:
-            errors.append(f"docs/API_CHANGELOG.md: missing deprecated route {path}")
+            errors.append(f"docs/archive/API_CHANGELOG.md: missing deprecated route {path}")
         if path not in compatibility:
-            errors.append(f"docs/API_COMPATIBILITY.md: missing deprecated route {path}")
+            errors.append(f"docs/archive/API_COMPATIBILITY.md: missing deprecated route {path}")
 
 
 def validate_sdk_sources(repo: Path, errors: list[str]) -> None:

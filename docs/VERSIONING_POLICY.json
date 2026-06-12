@@ -19,7 +19,7 @@
       "name": "sdk",
       "version_source": "Cargo.toml",
       "current_contract": "workspace package version",
-      "changelog": "docs/SDK_RELEASE.md",
+      "changelog": "docs/archive/SDK_RELEASE.md",
       "compatibility_gate": "make sdk-e2e-release-check",
       "breaking_change_examples": [
         "remove typed client method",

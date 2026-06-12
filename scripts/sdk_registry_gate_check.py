@@ -42,13 +42,13 @@ REQUIRED_WORKFLOW_MARKERS = (
 )
 
 REQUIRED_DOC_MARKERS = {
-    "docs/SDK_RELEASE.md": (
+    "docs/archive/SDK_RELEASE.md": (
         "manual-only",
         "publish=true",
         "protected `sdk-release` environment",
         "Registry credentials/trusted publishing",
     ),
-    "docs/SDK_PUBLICATION_STATUS.md": (
+    "docs/archive/SDK_PUBLICATION_STATUS.md": (
         "public registry publication is not claimed",
         "manual `sdk-release` GitHub environment approves publication",
         "Registry credentials or trusted publishing",

@@ -17,6 +17,7 @@
 .PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-retrieval-quality-fixture-check enterprise-rag-bench-category-dashboard-check enterprise-rag-bench-heldout-check erb-holdout-check enterprise-rag-bench-category-regression-check erb-category-regression-check enterprise-rag-bench-hybrid-parity-fixture-check enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-source-link-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-github-semantic-query-expansion enterprise-rag-bench-basic-google-drive-tail-rescue enterprise-rag-bench-confluence-completeness-selector enterprise-rag-bench-confluence-collection-selector enterprise-rag-bench-jira-project-source-selector enterprise-rag-bench-jira-completeness-source-selector enterprise-rag-bench-confluence-content-completeness-selector enterprise-rag-bench-confluence-project-source-selector enterprise-rag-bench-confluence-process-completeness-selector enterprise-rag-bench-slack-gmail-source-selector enterprise-rag-bench-hubspot-drive-anchor-selector enterprise-rag-bench-github-project-source-selector enterprise-rag-bench-sdk-auth-completeness-selector enterprise-rag-bench-confluence-postmortem-variant-selector enterprise-rag-bench-slack-basic-promotion-selector enterprise-rag-bench-jira-semantic-promotion-selector enterprise-rag-bench-confluence-semantic-variant-selector enterprise-rag-bench-linear-semantic-promotion-selector enterprise-rag-bench-jira-project-evidence-selector enterprise-rag-bench-gmail-project-evidence-selector enterprise-rag-bench-confluence-project-discovery-selector enterprise-rag-bench-gold-missing-bottlenecks enterprise-rag-bench-semantic-source-route-sweep enterprise-rag-bench-high-level-coverage
 .PHONY: enterprise-rag-bench-evidence-plan-check enterprise-rag-bench-evidence-table-check enterprise-rag-bench-evidence-table-extractor-check erb-evidence-table-extractor-check enterprise-rag-bench-completeness-plan-check erb-completeness-plan-check enterprise-rag-bench-project-answer-synth-check erb-project-answer-synth-check enterprise-rag-bench-conflict-synth-check erb-conflict-synth-check enterprise-rag-bench-answer-guard-check erb-answer-guard-check enterprise-rag-bench-answer-context-check erb-answer-context-check enterprise-rag-bench-answer-intent-check erb-answer-intent-check enterprise-rag-bench-answer-repair-check erb-answer-repair-check enterprise-rag-bench-anchor-overlap-check erb-anchor-overlap-check
 .PHONY: enterprise-rag-bench-official-clean-vectors-50 enterprise-rag-bench-official-clean-vectors-500 enterprise-rag-bench-embedding-coverage-check enterprise-rag-bench-official-clean-retrieval-smoke-50 enterprise-rag-bench-official-clean-retrieval-50-cached enterprise-rag-bench-official-clean-retrieval-50-engine-aql enterprise-rag-bench-official-clean-retrieval-50-engine-keyword enterprise-rag-bench-official-clean-retrieval-50-engine-keyword-rerank enterprise-rag-bench-official-clean-retrieval-50-engine-hybrid enterprise-rag-bench-official-clean-retrieval-50-engine-hybrid-rerank enterprise-rag-bench-official-clean-compare-retrieval enterprise-rag-bench-official-clean-heldout-smoke-check enterprise-rag-bench-official-clean-heldout-retrieval-quality-check enterprise-rag-bench-official-clean-status enterprise-rag-bench-official-clean-50 enterprise-rag-bench-official-clean-500 enterprise-rag-bench-official-clean-heldout enterprise-rag-bench-official-clean-50-gemma enterprise-rag-bench-official-clean-500-gemma enterprise-rag-bench-official-clean-heldout-gemma enterprise-rag-bench-official-clean-50-gemini enterprise-rag-bench-official-clean-500-gemini enterprise-rag-bench-official-clean-heldout-gemini enterprise-rag-bench-official-clean-50-deepseek enterprise-rag-bench-official-clean-500-deepseek enterprise-rag-bench-official-clean-heldout-deepseek
+.PHONY: enterprise-rag-bench-impact-gemini-50
 .PHONY: enterprise-rag-bench-query-understanding-lift-check enterprise-rag-bench-decomposition-check enterprise-rag-bench-scope-mapping-check enterprise-rag-bench-synonym-dictionary-check enterprise-rag-bench-condition-check enterprise-rag-bench-calibration-profile-check
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check dashboard-operational-status-check context-pack-explorer-check verification-explorer-check retrieval-quality-explorer-check permissions-view-check audit-viewer-v2-check backup-restore-view-check incident-view-check dashboard-role-ui-check
@@ -912,6 +913,8 @@ ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_DOCUMENT_LIMIT ?=
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT ?=
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_REUSE_DB ?= 0
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SKIP_CHECKPOINT ?= 0
+ENTERPRISE_RAG_BENCH_IMPACT_50_DB_ROOT ?= $(ENTERPRISE_RAG_BENCH_DB_FULL)
+ENTERPRISE_RAG_BENCH_IMPACT_50_RUN_LABEL ?= impact-gemini50-$(shell date -u +%Y%m%dT%H%M%SZ)
 DEEPSEEK_KEY_FILE ?= /mnt/hf_model_weights/arman/3bit/.deepseek
 SINGLE_NODE_PERF_ROOT ?= target/single-node-performance
 SINGLE_NODE_PERF_REPORT ?= $(SINGLE_NODE_PERF_ROOT)/report.json
@@ -2226,6 +2229,14 @@ enterprise-rag-bench-official-clean-heldout-gemma:
 
 enterprise-rag-bench-official-clean-50-gemini:
 	$(MAKE) enterprise-rag-bench-official-clean-50 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER=gemini ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER=gemini
+
+enterprise-rag-bench-impact-gemini-50:
+	$(MAKE) enterprise-rag-bench-official-clean-50-gemini \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL="$(ENTERPRISE_RAG_BENCH_IMPACT_50_RUN_LABEL)" \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_REUSE_DB=1 \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT="$(ENTERPRISE_RAG_BENCH_IMPACT_50_DB_ROOT)" \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROGRESS_EVERY=5 \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_PROGRESS_EVERY=50
 
 enterprise-rag-bench-official-clean-500-gemini:
 	$(MAKE) enterprise-rag-bench-official-clean-500 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_PROVIDER=gemini ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER=gemini

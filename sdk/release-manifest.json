@@ -9,7 +9,7 @@
     "tag_must_match_workspace_version": true
   },
   "deprecation_policy": {
-    "document": "docs/SDK_DEPRECATION_POLICY.md",
+    "document": "docs/archive/SDK_DEPRECATION_POLICY.md",
     "deprecated_openapi_entries_must_be_listed": true,
     "sdk_clients_must_not_use_deprecated_routes": true,
     "breaking_changes_require_changelog": true
@@ -53,9 +53,9 @@
       "crates/cortex-sdk/examples/basic.rs",
       "crates/cortex-sdk/examples/live_contract.rs",
       "docs/SDK_QUICKSTART.md",
-      "docs/SDK_RELEASE.md",
-      "docs/SDK_PUBLICATION_STATUS.md",
-      "docs/SDK_DEPRECATION_POLICY.md"
+      "docs/archive/SDK_RELEASE.md",
+      "docs/archive/SDK_PUBLICATION_STATUS.md",
+      "docs/archive/SDK_DEPRECATION_POLICY.md"
     ]
   },
   "required_gates": [

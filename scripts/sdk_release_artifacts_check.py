@@ -23,9 +23,9 @@ EXAMPLE_FILES = [
     "crates/cortex-sdk/examples/basic.rs",
     "crates/cortex-sdk/examples/live_contract.rs",
     "docs/SDK_QUICKSTART.md",
-    "docs/SDK_RELEASE.md",
-    "docs/SDK_PUBLICATION_STATUS.md",
-    "docs/SDK_DEPRECATION_POLICY.md",
+    "docs/archive/SDK_RELEASE.md",
+    "docs/archive/SDK_PUBLICATION_STATUS.md",
+    "docs/archive/SDK_DEPRECATION_POLICY.md",
 ]
 
 
