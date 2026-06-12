@@ -423,7 +423,56 @@
     "crates/cortex-cli/src/tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 1158,
+      "lines": 16,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/tests/backup.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 269,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/tests/basics.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 155,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/tests/helpers.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 11,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/tests/maintenance.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 141,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/tests/migration.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 172,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/tests/retrieval_core.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 189,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/tests/search.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 227,
       "soft_limit": 600,
       "warning_limit": 1200
     },
