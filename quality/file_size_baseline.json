@@ -2572,7 +2572,56 @@
     "crates/cortex-engine/tests/context_pack.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 672,
+      "lines": 14,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack/aql.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 140,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack/common.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 46,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack/exports.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 79,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack/packing.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 137,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack/redundancy.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 90,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack/scoring.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 140,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack/span.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 56,
       "soft_limit": 600,
       "warning_limit": 1200
     },
