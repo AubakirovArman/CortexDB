@@ -1,7 +1,12 @@
-use cortex_core::{CellId, CommitSeq};
+use std::fs::File;
+use std::io::Write;
+
+use cortex_core::{CellDescriptor, CellId, CommitSeq, KnowledgeCellType};
 use cortex_engine::{
-    Database, IngestedCell, IngestionValidationReport, TextChunkPolicy, TextIngestOptions,
+    encode_cell_core, Database, IngestedCell, IngestionValidationReport, TextChunkPolicy,
+    TextIngestOptions,
 };
+use cortex_storage::wal::{SectionTag, WalCodec, WalRecord, WalRecordType, WalSection};
 
 #[test]
 fn ingestion_validation_report_captures_text_chunk_source_refs() {
@@ -137,6 +142,60 @@ fn ingestion_validation_report_counts_invalid_metadata() {
     assert!(report.warnings[0]
         .message
         .contains("scope must not be empty"));
+}
+
+#[test]
+fn ingestion_validation_report_uses_descriptor_source_ref_over_payload_source() {
+    let dir = tempfile::tempdir().unwrap();
+    let wal_path = dir.path().join("db.aclog");
+    let descriptor = CellDescriptor {
+        scope: "project:descriptor".to_owned(),
+        status: "ready".to_owned(),
+        cell_type: KnowledgeCellType::DocumentBlock,
+        source: Some("descriptor-source".to_owned()),
+        source_trust_q16: Some(60_000),
+        ..CellDescriptor::default()
+    };
+    let payload = b"scope=project:payload\nstatus=ready\ntype=document_block\nsource=payload-source\nsource_url=https://example.test/payload\ndocument_id=payload-doc\ncell_range=payload#chunk-0001\n\nbody"
+        .to_vec();
+    let record = WalRecord::new(
+        WalRecordType::PutCellBatch,
+        vec![
+            WalSection::new(
+                SectionTag::CellCore,
+                encode_cell_core(CellId(321), CommitSeq(1)),
+            ),
+            WalSection::new(SectionTag::PayloadInline, payload),
+            WalSection::new(SectionTag::CellDescriptor, descriptor.encode_section_v1()),
+        ],
+    );
+    let mut file = File::create(&wal_path).unwrap();
+    file.write_all(&WalCodec::file_header()).unwrap();
+    let encoded = WalCodec::encode_record_at(&record, WalCodec::file_header_len() as u64).unwrap();
+    file.write_all(&encoded).unwrap();
+    drop(file);
+
+    let db = Database::open(dir.path()).unwrap();
+    let report = db.ingestion_validation_report(&[IngestedCell {
+        cell_id: CellId(321),
+        commit_seq: CommitSeq(1),
+        chunk_id: Some("payload#chunk-0001".to_owned()),
+    }]);
+
+    assert_eq!(report.source_refs.len(), 1);
+    assert_eq!(
+        report.source_refs[0].source_id.as_deref(),
+        Some("descriptor-source")
+    );
+    assert_eq!(
+        report.source_refs[0].source_url.as_deref(),
+        Some("https://example.test/payload")
+    );
+    assert_eq!(
+        report.source_refs[0].document_id.as_deref(),
+        Some("payload-doc")
+    );
+    assert!(report.warnings.is_empty());
 }
 
 #[test]

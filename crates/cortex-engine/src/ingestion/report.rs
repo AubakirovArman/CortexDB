@@ -52,7 +52,8 @@ impl Database {
             ..IngestionValidationReport::default()
         };
         for cell in cells {
-            let Some(payload) = self.get_latest_cell(cell.cell_id) else {
+            let Some((payload, descriptor)) = self.get_latest_cell_with_descriptor(cell.cell_id)
+            else {
                 report.warn(
                     "missing_payload",
                     "ingested cell is not visible after write",
@@ -64,7 +65,7 @@ impl Database {
             if let Err(error) = CellMetadata::decode_payload(&payload) {
                 report.record_invalid_metadata(cell.cell_id.0, cell.chunk_id.clone(), &error);
             }
-            let metadata = CellMetadata::from_payload(&payload);
+            let metadata = CellMetadata::from_payload_with_descriptor(&payload, &descriptor);
             let source_ref = metadata.source_ref;
             if let (Some(expected), Some(actual)) = (
                 cell.chunk_id.as_deref(),

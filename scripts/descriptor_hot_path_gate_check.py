@@ -17,6 +17,7 @@ DATABASE = ROOT / "crates/cortex-engine/src/database.rs"
 QUERY_EXPLAIN = ROOT / "crates/cortex-engine/src/query/explain.rs"
 SESSION = ROOT / "crates/cortex-engine/src/session.rs"
 SESSION_PAYLOAD = ROOT / "crates/cortex-engine/src/session/payload.rs"
+INGESTION_REPORT = ROOT / "crates/cortex-engine/src/ingestion/report.rs"
 
 
 def require(text: str, needle: str, label: str) -> None:
@@ -42,6 +43,7 @@ def main() -> None:
     query_explain = QUERY_EXPLAIN.read_text()
     session = SESSION.read_text()
     session_payload = SESSION_PAYLOAD.read_text()
+    ingestion_report = INGESTION_REPORT.read_text()
 
     require(
         server_authz,
@@ -168,6 +170,21 @@ def main() -> None:
         session_payload,
         "pub scope: String",
         "session payload scope permission metadata",
+    )
+    require(
+        ingestion_report,
+        "self.get_latest_cell_with_descriptor(cell.cell_id)",
+        "ingestion validation descriptor read",
+    )
+    require(
+        ingestion_report,
+        "CellMetadata::from_payload_with_descriptor(&payload, &descriptor)",
+        "ingestion validation descriptor-backed metadata",
+    )
+    forbid(
+        ingestion_report,
+        "CellMetadata::from_payload(&payload)",
+        "ingestion validation payload-only metadata",
     )
 
     print("descriptor hot path gate passed")
