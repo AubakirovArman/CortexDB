@@ -3,7 +3,8 @@ use cortex_engine::{AqlExplainReport, Database};
 
 use crate::authz;
 use crate::responses::{
-    AqlCandidateCountsResponse, AqlCellResponse, AqlExplainFilterResponse, AqlExplainResponse,
+    AqlCandidateCountsResponse, AqlCellResponse, AqlExecutionOperatorResponse,
+    AqlExecutionTraceResponse, AqlExplainFilterResponse, AqlExplainResponse,
     AqlLogicalPlanNodeResponse, AqlLogicalPlanResponse, AqlResponse, RouterError,
 };
 use crate::router::query_param_decoded;
@@ -18,7 +19,11 @@ pub fn handle_aql_shared(
     let aql = String::from_utf8_lossy(body);
     let view = authz::read_view_for_scope(&scope, authenticated_view)?;
     if starts_with_explain(&aql) {
-        let explain = db.explain_retrieve_aql(&aql, &view)?;
+        let explain = if starts_with_explain_analyze(&aql) {
+            db.explain_analyze_retrieve_aql(&aql, &view)?
+        } else {
+            db.explain_retrieve_aql(&aql, &view)?
+        };
         let response = AqlResponse {
             cells: Vec::new(),
             explain: Some(explain_response(explain)),
@@ -37,6 +42,17 @@ pub fn handle_aql_shared(
         explain: None,
     };
     Ok(serde_json::to_string(&response)?)
+}
+
+fn starts_with_explain_analyze(aql: &str) -> bool {
+    let trimmed = aql.trim_start();
+    trimmed
+        .get(..15)
+        .is_some_and(|prefix| prefix.eq_ignore_ascii_case("EXPLAIN ANALYZE"))
+        && trimmed
+            .chars()
+            .nth(15)
+            .is_none_or(|ch| ch.is_ascii_whitespace())
 }
 
 fn starts_with_explain(aql: &str) -> bool {
@@ -81,6 +97,21 @@ fn explain_response(report: AqlExplainReport) -> AqlExplainResponse {
         candidate_limit: report.candidate_limit,
         budget_tokens: report.budget_tokens,
         citations_required: report.citations_required,
+        execution_trace: report
+            .execution_trace
+            .map(|trace| AqlExecutionTraceResponse {
+                operators: trace
+                    .operators
+                    .into_iter()
+                    .map(|operator| AqlExecutionOperatorResponse {
+                        name: operator.name,
+                        input_count: operator.input_count,
+                        output_count: operator.output_count,
+                        elapsed_nanos: operator.elapsed_nanos,
+                    })
+                    .collect(),
+                total_elapsed_nanos: trace.total_elapsed_nanos,
+            }),
     }
 }
 

@@ -38,6 +38,7 @@ mod database_files;
 pub mod distributed;
 pub mod embedding_pipeline;
 pub mod error;
+pub mod exec;
 pub mod feedback;
 pub mod graph;
 pub mod graph_retrieval;
@@ -97,6 +98,7 @@ pub use embedding_pipeline::{
     DEFAULT_MIN_EMBEDDING_COVERAGE_BPS, EMBEDDING_PIPELINE_REPORT_SCHEMA,
 };
 pub use error::{EngineError, EngineErrorCategory, EngineErrorCode, EngineResult};
+pub use exec::{PhysicalOp, PhysicalOperatorTrace, RetrieveExecutionReport};
 pub use graph::{
     GraphEdge, GraphEdgeKind, GraphEntity, GraphSourceRef, KnowledgeGraphIndex, ToolCell,
 };
@@ -133,8 +135,8 @@ pub use options::{
 };
 pub use plan::{LogicalPlan, LogicalPlanNode, LogicalPlanReport, PolicyRewrite};
 pub use query::{
-    scope_id, AqlCandidateCounts, AqlExplainFilter, AqlExplainReport, AqlQueryCacheStats,
-    CandidateId, CellMetadata, EngineAqlIndex, SourceRef,
+    scope_id, AqlCandidateCounts, AqlExecutionTraceReport, AqlExplainFilter, AqlExplainReport,
+    AqlQueryCacheStats, CandidateId, CellMetadata, EngineAqlIndex, SourceRef,
 };
 pub use repair::RepairReport;
 pub use replay::{

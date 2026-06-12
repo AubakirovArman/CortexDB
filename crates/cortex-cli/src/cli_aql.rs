@@ -7,9 +7,12 @@ use crate::context::{format_retrieved_cells, view_for_scope};
 pub fn aql(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, String> {
     let db = open_database(path, false)?;
     if starts_with_explain(aql) {
-        let report = db
-            .explain_retrieve_aql(aql, &view_for_scope(scope))
-            .map_err(fmt_engine_error)?;
+        let report = if starts_with_explain_analyze(aql) {
+            db.explain_analyze_retrieve_aql(aql, &view_for_scope(scope))
+        } else {
+            db.explain_retrieve_aql(aql, &view_for_scope(scope))
+        }
+        .map_err(fmt_engine_error)?;
         if json {
             return Ok(aql_explain_to_json(report));
         }
@@ -23,6 +26,17 @@ pub fn aql(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, Str
     } else {
         Ok(format_retrieved_cells(&cells))
     }
+}
+
+fn starts_with_explain_analyze(aql: &str) -> bool {
+    let trimmed = aql.trim_start();
+    trimmed
+        .get(..15)
+        .is_some_and(|prefix| prefix.eq_ignore_ascii_case("EXPLAIN ANALYZE"))
+        && trimmed
+            .chars()
+            .nth(15)
+            .is_none_or(|ch| ch.is_ascii_whitespace())
 }
 
 fn starts_with_explain(aql: &str) -> bool {
@@ -47,7 +61,7 @@ fn format_aql_explain(report: &AqlExplainReport) -> String {
         .collect::<Vec<_>>()
         .join(", ");
     format!(
-        "aql_explain task={} mode={:?} brain_id={} candidate_limit={} budget_tokens={} citations_required={}\nlogical_plan_policy_complete={} policy_rewritten_plan_policy_complete={}\ncounts universe={} agent_allowed={} live={} after_bitmap={} after_quality={} returned_limit={}\nfilters={}\n{}",
+        "aql_explain task={} mode={:?} brain_id={} candidate_limit={} budget_tokens={} citations_required={}\nlogical_plan_policy_complete={} policy_rewritten_plan_policy_complete={} execution_trace_operators={}\ncounts universe={} agent_allowed={} live={} after_bitmap={} after_quality={} returned_limit={}\nfilters={}\n{}",
         report.task,
         report.selected_mode,
         report.brain_id.0,
@@ -56,6 +70,11 @@ fn format_aql_explain(report: &AqlExplainReport) -> String {
         report.citations_required,
         report.logical_plan.policy_complete,
         report.policy_rewritten_plan.policy_complete,
+        report
+            .execution_trace
+            .as_ref()
+            .map(|trace| trace.operators.len())
+            .unwrap_or_default(),
         report.candidate_counts.universe,
         report.candidate_counts.agent_allowed,
         report.candidate_counts.live,

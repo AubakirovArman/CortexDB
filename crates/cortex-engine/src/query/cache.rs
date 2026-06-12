@@ -15,6 +15,7 @@ pub(super) const DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES: usize = 128;
 pub enum AqlStatementKind {
     Retrieve,
     ExplainRetrieve,
+    ExplainAnalyzeRetrieve,
     ExplainOther,
     VerifyFact,
     Remember,
@@ -149,6 +150,21 @@ impl CachedAqlPlan {
             AqlStatement::Explain(inner) => match inner.as_ref() {
                 AqlStatement::RetrieveContext(raw) => Self {
                     statement_kind: AqlStatementKind::ExplainRetrieve,
+                    bound_plan,
+                    where_expression: raw
+                        .where_clause
+                        .as_ref()
+                        .map(|condition| condition_to_string(&condition.node)),
+                },
+                _ => Self {
+                    statement_kind: AqlStatementKind::ExplainOther,
+                    bound_plan,
+                    where_expression: None,
+                },
+            },
+            AqlStatement::ExplainAnalyze(inner) => match inner.as_ref() {
+                AqlStatement::RetrieveContext(raw) => Self {
+                    statement_kind: AqlStatementKind::ExplainAnalyzeRetrieve,
                     bound_plan,
                     where_expression: raw
                         .where_clause

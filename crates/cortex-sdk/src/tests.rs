@@ -461,7 +461,16 @@ fn typed_aql_explain_response_decodes_contract() {
             },
             "candidate_limit": 10,
             "budget_tokens": 2048,
-            "citations_required": false
+            "citations_required": false,
+            "execution_trace": {
+                "operators": [{
+                    "name": "BitmapIndexScan",
+                    "input_count": 0,
+                    "output_count": 1,
+                    "elapsed_nanos": 10
+                }],
+                "total_elapsed_nanos": 20
+            }
         }
     });
 
@@ -474,6 +483,14 @@ fn typed_aql_explain_response_decodes_contract() {
     assert_eq!(explain.filters[0].kind, "where");
     assert!(!explain.logical_plan.policy_complete);
     assert!(explain.policy_rewritten_plan.policy_complete);
+    assert_eq!(
+        explain
+            .execution_trace
+            .as_ref()
+            .and_then(|trace| trace.operators.first())
+            .map(|operator| operator.name.as_str()),
+        Some("BitmapIndexScan")
+    );
 }
 
 #[test]

@@ -22,6 +22,7 @@ use super::{
 };
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
+use crate::exec::PackOp;
 use crate::feedback::current_unix_seconds;
 use crate::query::{cache::AqlStatementKind, scope_id, CellMetadata, EngineAqlProvider};
 use crate::search::tokenize;
@@ -55,7 +56,7 @@ impl Database {
         let citations_required = options.require_citations || plan.context_policy.require_citations;
         let feedback_scores = self.feedback_scores_at(current_unix_seconds());
         let cells = order_by_feedback(self.retrieve_cells(&plan, &provider)?, &feedback_scores);
-        Ok(ContextPack::from_retrieved_with_feedback_options_and_view(
+        Ok(PackOp::execute(
             cells,
             budget,
             citations_required,
@@ -63,7 +64,8 @@ impl Database {
             aql,
             &feedback_scores,
             Some(view),
-        ))
+        )
+        .pack)
     }
 
     pub fn context_pack_with_tool_recommendations_from_aql(

@@ -22,7 +22,9 @@ use candidates::{
     candidate_from_ordinal, increment_candidate, next_candidate_after, reverse_candidate_map,
     validate_candidate,
 };
-pub use explain::{AqlCandidateCounts, AqlExplainFilter, AqlExplainReport};
+pub use explain::{
+    AqlCandidateCounts, AqlExecutionTraceReport, AqlExplainFilter, AqlExplainReport,
+};
 use metadata::{
     cell_type_handle, cell_type_id, memory_type_handle, scope_handle, status_handle, status_id,
 };

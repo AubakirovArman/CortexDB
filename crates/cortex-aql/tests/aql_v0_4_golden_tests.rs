@@ -225,6 +225,20 @@ fn aql_v0_4_explain_verify_and_remember_parse_contracts() {
     assert_eq!(explain_plan.brain_id, BrainId(7));
     assert_eq!(explain_plan.task, "budget");
 
+    let explain_analyze = parse_aql(
+        r#"EXPLAIN ANALYZE RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects;"#,
+    )
+    .unwrap();
+    assert!(matches!(explain_analyze, AqlStatement::ExplainAnalyze(_)));
+    let BoundPlan::Retrieve(analyze_plan) = Binder::new(&catalog(), &view())
+        .bind_statement(&explain_analyze)
+        .unwrap()
+    else {
+        panic!("expected explain analyze retrieve to bind as retrieve");
+    };
+    assert_eq!(analyze_plan.brain_id, BrainId(7));
+    assert_eq!(analyze_plan.task, "budget");
+
     let verify =
         parse_aql(r#"VERIFY FACT "Solar Plant budget is approved" IN BRAIN investment_projects;"#)
             .unwrap();

@@ -3,7 +3,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use cortex_aql::{eval_bitmap_program, BitmapProvider, BoundRetrievePlan, QualityThresholds};
+#[cfg(test)]
+use cortex_aql::eval_bitmap_program;
+use cortex_aql::{BitmapProvider, BoundRetrievePlan, QualityThresholds};
 use cortex_core::memtable::{CellVersion, MemTable, ReadTxn};
 use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::manifest::StorageManifest;
@@ -14,6 +16,7 @@ use crate::cleanup::{cleanup_orphans, remove_lock_file};
 use crate::database_files::find_wal_files;
 pub(crate) use crate::database_files::truncate_wal_tail;
 use crate::error::{EngineError, EngineResult};
+use crate::exec::{execute_retrieve, RetrieveExecutionReport};
 use crate::lock::DatabaseLock;
 use crate::operation::{
     wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq, DbOperation,
@@ -290,6 +293,24 @@ impl Database {
         plan: &BoundRetrievePlan,
         provider: &P,
     ) -> EngineResult<Vec<RetrievedCell>> {
+        self.retrieve_cells_with_execution_trace(plan, provider)
+            .map(|report| report.cells)
+    }
+
+    pub(crate) fn retrieve_cells_with_execution_trace<P: CandidateResolver>(
+        &self,
+        plan: &BoundRetrievePlan,
+        provider: &P,
+    ) -> EngineResult<RetrieveExecutionReport> {
+        execute_retrieve(self, plan, provider)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn retrieve_cells_direct<P: CandidateResolver>(
+        &self,
+        plan: &BoundRetrievePlan,
+        provider: &P,
+    ) -> EngineResult<Vec<RetrievedCell>> {
         let candidates = eval_bitmap_program(&plan.bitmap_program, provider)?;
         let txn = self.read_txn();
         let cells = candidates
@@ -509,7 +530,7 @@ fn unix_now_seconds() -> u64 {
     }
 }
 
-fn rank_retrieved_cells(
+pub(crate) fn rank_retrieved_cells(
     mut cells: Vec<RetrievedCell>,
     task: &str,
     weights: &cortex_aql::RetrievalWeights,
@@ -555,7 +576,7 @@ fn rank_retrieved_cells(
     indexed.into_iter().map(|(_, cell)| cell).collect()
 }
 
-fn suppress_duplicate_content(cells: Vec<RetrievedCell>) -> Vec<RetrievedCell> {
+pub(crate) fn suppress_duplicate_content(cells: Vec<RetrievedCell>) -> Vec<RetrievedCell> {
     let mut seen = BTreeSet::<String>::new();
     cells
         .into_iter()
@@ -569,7 +590,7 @@ fn suppress_duplicate_content(cells: Vec<RetrievedCell>) -> Vec<RetrievedCell> {
         .collect()
 }
 
-fn expand_parent_context(cells: Vec<RetrievedCell>) -> Vec<RetrievedCell> {
+pub(crate) fn expand_parent_context(cells: Vec<RetrievedCell>) -> Vec<RetrievedCell> {
     if cells.len() <= 1 {
         return cells;
     }
@@ -767,11 +788,15 @@ impl Drop for Database {
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeSet;
+    use std::time::Instant;
 
-    use cortex_aql::{AgentId, AgentView, BrainId, QualityThresholds, RetrievalMode, Q16_ZERO};
+    use cortex_aql::{
+        AgentId, AgentView, BoundPlan, BrainId, MemoryType, QualityThresholds, RetrievalMode,
+        Q16_ZERO,
+    };
 
     use super::*;
-    use crate::query::scope_id;
+    use crate::query::{scope_id, EngineAqlProvider};
 
     fn test_view(modes: impl IntoIterator<Item = RetrievalMode>) -> AgentView {
         AgentView {
@@ -894,6 +919,79 @@ mod tests {
     }
 
     #[test]
+    fn operator_executor_matches_direct_retrieve_pipeline_and_reports_trace() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(
+            CellId(1),
+            b"document_id=doc-alpha\nchunk_id=parent-alpha\nchunk_role=parent\ncontent_hash=parent\n\nParent context for alpha."
+                .to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(2),
+            b"document_id=doc-alpha\nchunk_id=child-alpha\nparent_id=parent-alpha\nchunk_role=child\ncontent_hash=child\n\nneedle alpha detail"
+                .to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(3),
+            b"content_hash=duplicate\n\nneedle alpha duplicate".to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(4),
+            b"content_hash=duplicate\ntitle=needle alpha\n\nneedle alpha duplicate".to_vec(),
+        )
+        .unwrap();
+
+        let view = test_view([RetrievalMode::Balanced]);
+        let (cached, index) = db
+            .bind_aql_cached(
+                r#"RETRIEVE CONTEXT FOR TASK "needle alpha" IN BRAIN default LIMIT 10 CANDIDATES;"#,
+                &view,
+            )
+            .unwrap();
+        let BoundPlan::Retrieve(plan) = cached.bound_plan else {
+            panic!("expected retrieve plan");
+        };
+        let provider = EngineAqlProvider::new(index, &view);
+
+        let direct = db.retrieve_cells_direct(&plan, &provider).unwrap();
+        let report = db
+            .retrieve_cells_with_execution_trace(&plan, &provider)
+            .unwrap();
+
+        assert_eq!(report.cells, direct);
+        let names = report
+            .operators
+            .iter()
+            .map(|operator| operator.name.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            names,
+            vec![
+                "BitmapIndexScan",
+                "PermissionFilter",
+                "QualityFilter",
+                "RankOp",
+                "DedupOp",
+                "ParentExpandOp",
+                "LimitOp",
+            ]
+        );
+        assert!(report.total_elapsed_nanos > 0);
+        assert_eq!(
+            report
+                .operators
+                .iter()
+                .find(|operator| operator.name == "LimitOp")
+                .map(|operator| operator.output_count),
+            Some(report.cells.len())
+        );
+    }
+
+    #[test]
     fn retrieve_aql_suppresses_duplicate_content_hashes() {
         let dir = tempfile::tempdir().unwrap();
         let mut db = Database::open(dir.path()).unwrap();
@@ -996,5 +1094,84 @@ mod tests {
             .unwrap();
 
         assert_eq!(results[0].cell_id, CellId(2));
+    }
+
+    fn bench_payload(id: u64) -> Vec<u8> {
+        format!("scope=bench\nstatus=ready\nsource=bench-{id}\ncell {id} budget ready").into_bytes()
+    }
+
+    fn bench_query() -> &'static str {
+        r#"RETRIEVE CONTEXT FOR TASK "bench" IN BRAIN default WHERE space = bench AND status = "ready" LIMIT 100 CANDIDATES;"#
+    }
+
+    fn bench_view() -> AgentView {
+        AgentView {
+            agent_id: AgentId(1),
+            label: Some("bench".to_owned()),
+            readable_brains: BTreeSet::from([BrainId(1)]),
+            readable_scopes: BTreeSet::from([scope_id("bench")]),
+            writable_scopes: BTreeSet::new(),
+            allowed_modes: BTreeSet::from([RetrievalMode::Balanced]),
+            allowed_memory_types: BTreeSet::from([MemoryType::Decision]),
+            max_context_budget_tokens: 100_000,
+            default_context_budget_tokens: 50_000,
+            max_candidate_limit: 1000,
+            default_candidate_limit: 100,
+            min_required_confidence_q16: Q16_ZERO,
+            max_ttl_seconds: Some(3_600),
+            allow_remember: false,
+            allow_verify_fact: false,
+            allow_audit_mode: false,
+            require_citations_by_default: true,
+            private_scope: None,
+        }
+    }
+
+    #[test]
+    #[ignore = "run explicitly: cargo test -p cortex-engine --lib --release operator_executor_overhead -- --ignored --nocapture"]
+    fn operator_executor_overhead_within_ten_percent() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+        for id in 1..=1000 {
+            db.put_cell(CellId(id), bench_payload(id)).unwrap();
+        }
+        db.checkpoint().unwrap();
+
+        let (cached, index) = db.bind_aql_cached(bench_query(), &bench_view()).unwrap();
+        let BoundPlan::Retrieve(plan) = cached.bound_plan else {
+            panic!("expected retrieve plan");
+        };
+        let provider = EngineAqlProvider::new(index, &bench_view());
+
+        let iterations = 100;
+        let mut direct_times = Vec::with_capacity(iterations);
+        let mut exec_times = Vec::with_capacity(iterations);
+
+        for _ in 0..iterations {
+            let start = Instant::now();
+            let _ = db.retrieve_cells_direct(&plan, &provider).unwrap();
+            direct_times.push(start.elapsed().as_nanos());
+        }
+        for _ in 0..iterations {
+            let start = Instant::now();
+            let _ = db
+                .retrieve_cells_with_execution_trace(&plan, &provider)
+                .unwrap();
+            exec_times.push(start.elapsed().as_nanos());
+        }
+
+        direct_times.sort();
+        exec_times.sort();
+        let direct_median = direct_times[iterations / 2];
+        let exec_median = exec_times[iterations / 2];
+        let ratio = exec_median as f64 / direct_median as f64;
+        eprintln!(
+            "direct median: {} ns, exec median: {} ns, ratio: {:.3}",
+            direct_median, exec_median, ratio
+        );
+        assert!(
+            ratio <= 1.10,
+            "executor overhead exceeds 10%: ratio = {ratio}"
+        );
     }
 }

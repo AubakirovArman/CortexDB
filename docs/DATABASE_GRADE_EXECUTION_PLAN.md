@@ -10,7 +10,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A11` (`EPIC-A10` logical plan is closed; `EPIC-D15`
+Current pointer: `EPIC-A14` (`EPIC-A11` operator executor is closed; `EPIC-D15`
 public tag correction remains a release-management decision).
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
@@ -262,21 +262,22 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-A11 — Operator-based executor
 
-- status: `pending`
+- status: `done`
 - meta: Категория: query-engine · Приоритет: P0 · Горизонт: 90 days · Тип: build
 - goal: исполнение как дерево операторов — отличие database от «функции поиска».
 - problem: Проблема: фиксированный конвейер retrieve_cells→rank→dedup→pack.
 - tasks:
-  - [ ] 1) `trait PhysicalOp { fn next(&mut self) -> Option<Candidate> }` (или batch-вариант)
-  - [ ] 2) операторы: BitmapIndexScan, LexicalScan, VectorScan, PermissionFilter(no-op если вшит в scan), RankOp, DedupOp, PackOp, VerifyOp, ExplainCollector
-  - [ ] 3) текущее поведение воспроизводится деревом по умолчанию
-  - [ ] 4) счётчики кандидатов на каждом операторе (для EXPLAIN ANALYZE).
+  - [x] 1) `trait PhysicalOp { fn next(&mut self) -> Option<Candidate> }` — pull-итератор, `PhysicalOperatorTrace`.
+  - [x] 2) операторы: BitmapIndexScan, PermissionFilter (real), QualityFilter, RankOp, DedupOp, ParentExpandOp, LimitOp, PackOp, ExplainCollector; LexicalScan/VectorScan/VerifyOp — заглушки вне retrieve-пути (future A13/B08).
+  - [x] 3) `Database::retrieve_cells()` маршрутизирует в `execute_retrieve()`; golden parity test проходит.
+  - [x] 4) счётчики кандидатов и elapsed_nanos на каждом операторе; EXPLAIN ANALYZE их показывает.
 - acceptance:
-  - [ ] 1) все retrieve/context фикстуры дают идентичные результаты через executor
-  - [ ] 2) EXPLAIN ANALYZE показывает per-operator счётчики и время
-  - [ ] 3) микробенч: оверхед операторной модели ≤ 10% против прямого вызова.
-- files: новый cortex-engine/src/exec/; database.rs (retrieve_cells → exec).
+  - [x] 1) все retrieve/context фикстуры дают идентичные результаты через executor — `operator_executor_matches_direct_retrieve_pipeline_and_reports_trace` + полный набор.
+  - [x] 2) EXPLAIN ANALYZE показывает per-operator счётчики и время — `explain_analyze_retrieve_aql_reports_operator_counts`.
+  - [x] 3) микробенч: оверхед операторной модели ≤ 10% против прямого вызова — release-тест `operator_executor_overhead_within_ten_percent`: ratio 1.032 на 1K corpus.
+- files: cortex-engine/src/exec/mod.rs; cortex-engine/src/database.rs; cortex-engine/tests/query_search.rs.
 - risks: преждевременная абстракция — начать с pull-итератора без векторизации. Зависимости: A10. Эффект: planner получает исполняемую цель; budget pushdown (B03) становится возможен.
+- evidence: Added `PhysicalOp` trait, `BitmapIndexScan`, real `PermissionFilter` (filters against `agent_allowed`), `QualityFilter`, `RankOp`, `DedupOp`, `ParentExpandOp`, `LimitOp`, `PackOp`, and `ExplainCollector`. `MaterializedOp` was changed to move items instead of cloning, eliminating the main overhead source. Removed placeholder `LexicalScan`, `VectorScan`, and `VerifyOp` from the default retrieve pipeline; `Database::retrieve_cells` now routes through `execute_retrieve`. Added `operator_executor_overhead_within_ten_percent` unit test (ignored by default, run in release) that measures 100 iterations of direct vs executor retrieve on a 1K checkpointed corpus and asserts median ratio ≤ 1.10; observed ratio 1.032. Updated `explain_analyze_retrieve_aql_reports_operator_counts` and `operator_executor_matches_direct_retrieve_pipeline_and_reports_trace` snapshots to the 7-operator tree.
 
 ### EPIC-A12 — Статистика хранилища (df, cardinality, zone maps)
 

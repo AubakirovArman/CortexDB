@@ -272,6 +272,21 @@ pub struct AqlLogicalPlan {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct AqlExecutionOperator {
+    pub name: String,
+    pub input_count: usize,
+    pub output_count: usize,
+    pub elapsed_nanos: u64,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct AqlExecutionTrace {
+    #[serde(default)]
+    pub operators: Vec<AqlExecutionOperator>,
+    pub total_elapsed_nanos: u64,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct AqlExplainResponse {
     pub task: String,
     pub brain_id: u64,
@@ -289,6 +304,8 @@ pub struct AqlExplainResponse {
     pub candidate_limit: u32,
     pub budget_tokens: u32,
     pub citations_required: bool,
+    #[serde(default)]
+    pub execution_trace: Option<AqlExecutionTrace>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]

@@ -155,6 +155,59 @@ USING MODE balanced WHERE space = project:investments AND status = "ready" LIMIT
 }
 
 #[test]
+fn explain_analyze_retrieve_aql_reports_operator_counts() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nsource=doc-a\n\nalpha budget".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\nsource=doc-b\n\nbeta budget".to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .explain_analyze_retrieve_aql(
+            r#"EXPLAIN ANALYZE RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
+USING MODE balanced WHERE space = project:investments LIMIT 1 CANDIDATES;"#,
+            &view(scope_id("project:investments")),
+        )
+        .unwrap();
+    let trace = report.execution_trace.expect("analyze trace");
+    let names = trace
+        .operators
+        .iter()
+        .map(|operator| operator.name.as_str())
+        .collect::<Vec<_>>();
+
+    assert_eq!(report.candidate_counts.returned_limit, 1);
+    assert_eq!(
+        names,
+        vec![
+            "BitmapIndexScan",
+            "PermissionFilter",
+            "QualityFilter",
+            "RankOp",
+            "DedupOp",
+            "ParentExpandOp",
+            "LimitOp",
+        ]
+    );
+    assert_eq!(
+        trace
+            .operators
+            .iter()
+            .find(|operator| operator.name == "LimitOp")
+            .map(|operator| operator.output_count),
+        Some(1)
+    );
+    assert!(trace.total_elapsed_nanos > 0);
+}
+
+#[test]
 fn retrieve_aql_preserves_large_cell_ids_after_checkpoint_and_compact() {
     let dir = tempfile::tempdir().unwrap();
     {

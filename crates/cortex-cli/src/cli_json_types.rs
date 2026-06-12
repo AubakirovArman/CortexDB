@@ -263,6 +263,20 @@ pub struct AqlLogicalPlanResponse {
 }
 
 #[derive(Serialize)]
+pub struct AqlExecutionOperatorResponse {
+    pub name: String,
+    pub input_count: usize,
+    pub output_count: usize,
+    pub elapsed_nanos: u64,
+}
+
+#[derive(Serialize)]
+pub struct AqlExecutionTraceResponse {
+    pub operators: Vec<AqlExecutionOperatorResponse>,
+    pub total_elapsed_nanos: u64,
+}
+
+#[derive(Serialize)]
 pub struct AqlExplainResponse {
     pub task: String,
     pub brain_id: u64,
@@ -276,6 +290,8 @@ pub struct AqlExplainResponse {
     pub candidate_limit: u32,
     pub budget_tokens: u32,
     pub citations_required: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub execution_trace: Option<AqlExecutionTraceResponse>,
 }
 
 #[derive(Serialize)]

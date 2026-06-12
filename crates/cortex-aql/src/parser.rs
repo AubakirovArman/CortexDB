@@ -71,6 +71,13 @@ fn parse_statement(input: Span<'_>) -> PResult<'_, AqlStatement<'_>> {
 fn parse_explain(input: Span<'_>) -> PResult<'_, AqlStatement<'_>> {
     let (input, _) = kw("EXPLAIN")(input)?;
     let (input, _) = ws1(input)?;
+    if starts_with_keyword(input, "ANALYZE") {
+        let (input, _) = kw("ANALYZE")(input)?;
+        let (input, _) = ws1(input)?;
+        return map(parse_statement, |statement| {
+            AqlStatement::ExplainAnalyze(Box::new(statement))
+        })(input);
+    }
     map(parse_statement, |statement| {
         AqlStatement::Explain(Box::new(statement))
     })(input)

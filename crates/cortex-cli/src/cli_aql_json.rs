@@ -3,7 +3,8 @@ use cortex_engine::{AqlExplainReport, RetrievedCell};
 use serde_json::to_string;
 
 use crate::cli_json_types::{
-    AqlCandidateCountsResponse, AqlCellResponse, AqlExplainFilterResponse, AqlExplainResponse,
+    AqlCandidateCountsResponse, AqlCellResponse, AqlExecutionOperatorResponse,
+    AqlExecutionTraceResponse, AqlExplainFilterResponse, AqlExplainResponse,
     AqlLogicalPlanNodeResponse, AqlLogicalPlanResponse, AqlResponse,
 };
 
@@ -50,6 +51,21 @@ pub(crate) fn aql_explain_to_json(report: AqlExplainReport) -> String {
             candidate_limit: report.candidate_limit,
             budget_tokens: report.budget_tokens,
             citations_required: report.citations_required,
+            execution_trace: report
+                .execution_trace
+                .map(|trace| AqlExecutionTraceResponse {
+                    operators: trace
+                        .operators
+                        .into_iter()
+                        .map(|operator| AqlExecutionOperatorResponse {
+                            name: operator.name,
+                            input_count: operator.input_count,
+                            output_count: operator.output_count,
+                            elapsed_nanos: operator.elapsed_nanos,
+                        })
+                        .collect(),
+                    total_elapsed_nanos: trace.total_elapsed_nanos,
+                }),
         }),
     })
 }

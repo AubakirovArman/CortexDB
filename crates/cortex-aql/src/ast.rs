@@ -122,6 +122,7 @@ pub enum AqlStatement<'a> {
     VerifyFact(Box<RawVerifyFact<'a>>),
     Remember(Box<RawRemember<'a>>),
     Explain(Box<AqlStatement<'a>>),
+    ExplainAnalyze(Box<AqlStatement<'a>>),
 }
 
 impl<'a> AqlString<'a> {

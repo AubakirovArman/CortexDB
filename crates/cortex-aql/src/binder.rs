@@ -154,7 +154,9 @@ impl<'a, C: AqlCatalog> Binder<'a, C> {
             AqlStatement::Remember(raw) => self
                 .bind_remember(raw)
                 .map(|plan| BoundPlan::Remember(Box::new(plan))),
-            AqlStatement::Explain(inner) => self.bind_statement(inner),
+            AqlStatement::Explain(inner) | AqlStatement::ExplainAnalyze(inner) => {
+                self.bind_statement(inner)
+            }
         }
     }
 
