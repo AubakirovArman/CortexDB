@@ -409,7 +409,8 @@ impl Database {
                 }
             }
         };
-        let txn = self.read_txn();
+        let pin = self.pin_read_txn();
+        let txn = pin.read_txn();
         let mut results = ranked
             .into_iter()
             .filter_map(|candidate| {

@@ -42,7 +42,8 @@ struct ConflictFacets {
 impl Database {
     pub fn conflict_index(&self, view: &AgentView) -> Vec<ConflictRecord> {
         let mut visible_facets = std::collections::BTreeMap::new();
-        let txn = self.read_txn();
+        let pin = self.pin_read_txn();
+        let txn = pin.read_txn();
         for version in self.memtable.visible_iter(txn) {
             let metadata = CellMetadata::from_version(version);
             if view.can_read_scope(scope_id(&metadata.scope)) {

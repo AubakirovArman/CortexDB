@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use cortex_aql::{AgentView, BoundPlan, Q16};
-use cortex_core::memtable::CellVersion;
+use cortex_core::memtable::{CellVersion, ReadTxn};
 use cortex_core::CellId;
 
 use crate::database::Database;
@@ -188,7 +188,9 @@ impl Database {
         let mut contradicting_evidence = Vec::new();
         let mut guards = Vec::new();
         let mut numeric_conflicts = Vec::new();
-        let candidate_versions = self.verification_candidate_versions(&plan.fact)?;
+        let pin = self.pin_read_txn();
+        let txn = pin.read_txn();
+        let candidate_versions = self.verification_candidate_versions(&plan.fact, txn)?;
         for version in &candidate_versions {
             if let Some(guard) = stale_fact_guard(&plan.fact, version, view) {
                 guards.push(guard);
@@ -217,7 +219,7 @@ impl Database {
             view,
             &mut contradicting_evidence,
         );
-        let support_versions = self.verification_source_support_versions(&evidence);
+        let support_versions = self.verification_source_support_versions(&evidence, txn);
         enrich_evidence_from_source_support_edges(self, &support_versions, view, &mut evidence);
         sort_evidence(&mut evidence);
         sort_evidence(&mut contradicting_evidence);
@@ -240,9 +242,9 @@ impl Database {
     fn verification_candidate_versions<'a>(
         &'a self,
         fact: &str,
+        txn: ReadTxn,
     ) -> EngineResult<Vec<&'a CellVersion>> {
         let fact_terms = tokenize(fact);
-        let txn = self.read_txn();
         if fact_terms.is_empty() {
             return Ok(self.memtable.visible_iter(txn).collect());
         }
@@ -307,6 +309,7 @@ impl Database {
     fn verification_source_support_versions<'a>(
         &'a self,
         evidence: &[VerificationEvidence],
+        txn: ReadTxn,
     ) -> Vec<&'a CellVersion> {
         if evidence.is_empty() {
             return Vec::new();
@@ -316,7 +319,6 @@ impl Database {
             .map(|item| item.cell_id)
             .map(|cell_id| format!("cell:{}", cell_id.0))
             .collect::<Vec<_>>();
-        let txn = self.read_txn();
         let checkpoint_seq = cortex_core::CommitSeq(self.manifest().checkpoint_seq);
         let scan_all_live = self.manifest().live_segments.is_empty();
         let visible = if scan_all_live {

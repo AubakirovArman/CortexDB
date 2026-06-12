@@ -6,7 +6,7 @@ use cortex_core::memtable::ReadTxn;
 use crate::context::{ContextPack, ContextPackOptions};
 use crate::database::{
     cell_version_meets_quality_thresholds, expand_parent_context, rank_retrieved_cells,
-    suppress_duplicate_content, CandidateResolver, Database, RetrievedCell,
+    suppress_duplicate_content, CandidateResolver, Database, PinnedReadTxn, RetrievedCell,
 };
 use crate::error::EngineResult;
 
@@ -126,6 +126,7 @@ pub struct QualityFilter<'a, P> {
     database: &'a Database,
     provider: &'a P,
     plan: &'a BoundRetrievePlan,
+    _pin: PinnedReadTxn,
     txn: ReadTxn,
     candidates: Vec<u32>,
     cursor: usize,
@@ -141,11 +142,14 @@ impl<'a, P: CandidateResolver> QualityFilter<'a, P> {
         candidates: Vec<u32>,
     ) -> Self {
         let input_count = candidates.len();
+        let pin = database.pin_read_txn();
+        let txn = pin.read_txn();
         Self {
             database,
             provider,
             plan,
-            txn: database.read_txn(),
+            _pin: pin,
+            txn,
             candidates,
             cursor: 0,
             started: Instant::now(),

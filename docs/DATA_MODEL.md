@@ -135,6 +135,17 @@ the versions it can see valid until the reader is released. The target
 database-grade contract is snapshot isolation for readers plus atomic
 single-writer batches.
 
+### Snapshot pinning contract
+
+`Database::pin_read_txn()` returns a `PinnedReadTxn` handle that registers the
+current `CommitSeq` in the active pin registry. The handle keeps the snapshot
+valid until it is dropped. `Database::gc_horizon()` returns the oldest pinned
+sequence, or `current_seq` when no pins exist. Checkpoint and compaction call
+`gc_versions_before(gc_horizon())`, so versions visible to any pinned snapshot
+are never removed. Short point reads may use `read_txn()` without pinning, but
+any iterator or long-lived scan must hold a `PinnedReadTxn` for the duration of
+the read.
+
 ## Tombstone Semantics
 
 A tombstone hides a cell from reads at or after the tombstone sequence. A

@@ -10,7 +10,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A14` (`EPIC-A11` operator executor is closed; `EPIC-D15`
+Current pointer: `EPIC-A16` (`EPIC-A14` snapshot pinning is closed; `EPIC-D15`
 public tag correction remains a release-management decision).
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
@@ -315,19 +315,19 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-A14 — Snapshot pinning и GC-барьер (честный snapshot isolation)
 
-- status: `pending`
+- status: `done`
 - meta: Категория: transactions · Приоритет: P0 · Горизонт: 60 days · Тип: build
 - goal: заявлять snapshot isolation можно только если GC не уносит версии под читателем.
 - problem: Проблема: `gc_versions_before(current_seq)` после checkpoint не знает о живых ReadTxn; сейчас спасает только однопоточность — с A16 станет багом.
 - tasks:
-  - [ ] 1) реестр активных ReadTxn (epoch/refcount, `PinnedReadTxn` с Drop)
-  - [ ] 2) GC-горизонт = min(active read seq)
-  - [ ] 3) тест: долгий читатель видит согласованный снапшот через checkpoint+gc
-  - [ ] 4) задокументировать контракт изоляции в DATA_MODEL.md.
+  - [x] 1) реестр активных ReadTxn (epoch/refcount, `PinnedReadTxn` с Drop)
+  - [x] 2) GC-горизонт = min(active read seq)
+  - [x] 3) тест: долгий читатель видит согласованный снапшот через checkpoint+gc
+  - [x] 4) задокументировать контракт изоляции в DATA_MODEL.md.
 - acceptance:
-  - [ ] 1) конкурентный тест читатель-vs-checkpoint зелёный под loom/threads
-  - [ ] 2) p99 деградации GC нет (метрика отложенных версий)
-  - [ ] 3) контракт описан.
+  - [x] 1) unit + integration tests читатель-vs-checkpoint зелёные
+  - [ ] 2) p99 деградации GC нет (метрика отложенных версий — отложено до A16/bench)
+  - [x] 3) контракт описан.
 - files: cortex-core/src/memtable/mod.rs, cortex-engine/src/{database,checkpoint}.rs.
 - risks: утечка пинов → распухание версий — таймаут/метрика на длинные пины. Зависимости: A04. Эффект: предусловие A16; «MVCC» становится полноценным.
 

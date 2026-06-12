@@ -119,7 +119,7 @@ impl Database {
         self.manifest.store(&self.manifest_path)?;
         super::database::truncate_wal_tail(&self.wal_path, 0)?;
         self.writer = WalWriter::start(&self.wal_path, self.durability_mode)?;
-        self.memtable.gc_versions_before(self.current_seq);
+        self.memtable.gc_versions_before(self.gc_horizon());
         Ok(CheckpointStats {
             segment_id: Some(segment_id),
             cells_flushed,
@@ -182,7 +182,7 @@ impl Database {
         self.manifest.store(&self.manifest_path)?;
         super::database::truncate_wal_tail(&self.wal_path, 0)?;
         self.writer = WalWriter::start(&self.wal_path, self.durability_mode)?;
-        self.memtable.gc_versions_before(self.current_seq);
+        self.memtable.gc_versions_before(self.gc_horizon());
         Ok(CheckpointStats {
             segment_id: Some(segment_id),
             cells_flushed,

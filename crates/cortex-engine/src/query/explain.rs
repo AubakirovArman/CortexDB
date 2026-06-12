@@ -105,7 +105,8 @@ impl Database {
             )
         } else {
             let bitmap_candidates = eval_bitmap_program(&plan.bitmap_program, &provider)?;
-            let txn = self.read_txn();
+            let pin = self.pin_read_txn();
+            let txn = pin.read_txn();
             let after_quality = bitmap_candidates
                 .iter()
                 .filter_map(|candidate| provider.cell_id_for_candidate(*candidate))

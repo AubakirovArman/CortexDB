@@ -1,7 +1,10 @@
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+
+use crate::exec::{execute_retrieve, RetrieveExecutionReport};
+use crate::lock::DatabaseLock;
 
 #[cfg(test)]
 use cortex_aql::eval_bitmap_program;
@@ -16,8 +19,6 @@ use crate::cleanup::{cleanup_orphans, remove_lock_file};
 use crate::database_files::find_wal_files;
 pub(crate) use crate::database_files::truncate_wal_tail;
 use crate::error::{EngineError, EngineResult};
-use crate::exec::{execute_retrieve, RetrieveExecutionReport};
-use crate::lock::DatabaseLock;
 use crate::operation::{
     wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq, DbOperation,
 };
@@ -51,8 +52,38 @@ pub struct Database {
     pub(crate) ingestion_rate_state: Mutex<crate::ingestion::IngestionRateState>,
     pub(crate) aql_query_cache: Mutex<AqlQueryCache>,
     pub(crate) persisted_index_cache: Mutex<Option<PersistedIndexCache>>,
+    pub(crate) active_read_pins: Arc<Mutex<BTreeMap<CommitSeq, usize>>>,
     pub(crate) _lock: DatabaseLock,
     closed: bool,
+}
+
+/// A pinned read transaction that prevents GC from removing versions visible
+/// to this snapshot until it is dropped.
+#[derive(Debug)]
+pub struct PinnedReadTxn {
+    read_txn: ReadTxn,
+    registry: Arc<Mutex<BTreeMap<CommitSeq, usize>>>,
+}
+
+impl PinnedReadTxn {
+    pub fn read_txn(&self) -> ReadTxn {
+        self.read_txn
+    }
+}
+
+impl Drop for PinnedReadTxn {
+    fn drop(&mut self) {
+        if let Ok(mut pins) = self.registry.lock() {
+            let seq = self.read_txn.read_seq;
+            if let Some(count) = pins.get_mut(&seq) {
+                if *count > 1 {
+                    *count -= 1;
+                } else {
+                    pins.remove(&seq);
+                }
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -182,6 +213,7 @@ impl Database {
             ingestion_rate_state: crate::ingestion::default_ingestion_rate_state(),
             aql_query_cache: Mutex::new(AqlQueryCache::default()),
             persisted_index_cache: Mutex::new(None),
+            active_read_pins: Arc::new(Mutex::new(BTreeMap::new())),
             _lock: lock,
             closed: false,
         };
@@ -254,6 +286,31 @@ impl Database {
         ReadTxn {
             read_seq: self.current_seq,
         }
+    }
+
+    /// Pin a read transaction so that GC does not remove versions visible to
+    /// this snapshot until the returned handle is dropped.
+    pub fn pin_read_txn(&self) -> PinnedReadTxn {
+        let read_txn = self.read_txn();
+        let mut pins = self
+            .active_read_pins
+            .lock()
+            .expect("read pin lock poisoned");
+        *pins.entry(read_txn.read_seq).or_insert(0) += 1;
+        PinnedReadTxn {
+            read_txn,
+            registry: Arc::clone(&self.active_read_pins),
+        }
+    }
+
+    /// The oldest snapshot that must be preserved. GC may remove versions
+    /// older than this sequence.
+    pub fn gc_horizon(&self) -> CommitSeq {
+        let pins = self
+            .active_read_pins
+            .lock()
+            .expect("read pin lock poisoned");
+        pins.keys().next().copied().unwrap_or(self.current_seq)
     }
 
     pub fn get_cell(&self, txn: ReadTxn, cell_id: CellId) -> Option<Vec<u8>> {
@@ -1173,5 +1230,52 @@ mod tests {
             ratio <= 1.10,
             "executor overhead exceeds 10%: ratio = {ratio}"
         );
+    }
+
+    #[test]
+    fn pin_read_txn_registers_and_unregisters() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = Database::open(dir.path()).unwrap();
+        let pin = db.pin_read_txn();
+        let seq = pin.read_txn().read_seq;
+        assert_eq!(db.active_read_pins.lock().unwrap().get(&seq), Some(&1));
+        assert_eq!(db.gc_horizon(), seq);
+        drop(pin);
+        assert!(db.active_read_pins.lock().unwrap().is_empty());
+        assert_eq!(db.gc_horizon(), db.current_seq());
+    }
+
+    #[test]
+    fn gc_horizon_is_oldest_active_pin() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"v1".to_vec()).unwrap();
+        let pin1 = db.pin_read_txn();
+        let seq1 = pin1.read_txn().read_seq;
+        db.put_cell(CellId(2), b"v2".to_vec()).unwrap();
+        let pin2 = db.pin_read_txn();
+        let seq2 = pin2.read_txn().read_seq;
+        db.put_cell(CellId(3), b"v3".to_vec()).unwrap();
+        assert_eq!(db.gc_horizon(), seq1);
+        drop(pin1);
+        assert_eq!(db.gc_horizon(), seq2);
+        drop(pin2);
+        assert_eq!(db.gc_horizon(), db.current_seq());
+    }
+
+    #[test]
+    fn pinned_snapshot_preserves_old_version_across_compact() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"v1".to_vec()).unwrap();
+        let pin = db.pin_read_txn();
+        let txn = pin.read_txn();
+        db.patch_cell(CellId(1), b"v2".to_vec()).unwrap();
+        db.compact().unwrap();
+        assert_eq!(db.get_cell(txn, CellId(1)).unwrap(), b"v1");
+        assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"v2");
+        drop(pin);
+        db.compact().unwrap();
+        assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"v2");
     }
 }
