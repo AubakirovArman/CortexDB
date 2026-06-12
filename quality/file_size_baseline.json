@@ -5040,10 +5040,38 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "mk/core-contracts.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 96,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/core-release-public.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 120,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/core-retrieval-context.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 95,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/core-security-ops.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 197,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "mk/core.mk": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 532,
+      "lines": 24,
       "soft_limit": 300,
       "warning_limit": 600
     },
