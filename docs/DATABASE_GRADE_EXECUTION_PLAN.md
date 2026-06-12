@@ -75,14 +75,14 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-A02 — Типизированная модель метаданных (typed cell descriptor)
 
-- status: `pending`
+- status: `partial`
 - meta: Категория: storage · Приоритет: P0 · Горизонт: 60 days · Тип: refactor
 - goal: data model — фундамент БД; сейчас scope/trust/даты — текстовые строки в payload, т.е. security-поле живёт в user-контенте и парсится regex'ом на каждом доступе.
 - problem: Проблема: `CellMetadata::from_payload` в hot path (в т.ч. в сортировке, database.rs:461-474); подделываемость представления.
 - tasks:
-  - [ ] 1) `CellDescriptor {scope_id, cell_type, status, source_trust_q16, created_at, valid_from/to, content_hash, parent_id, citation}` как бинарная секция в WAL-записи (расширить существующий `wal_record_from_operation_with_metadata`) и в segment v2
+  - [ ] 1) `CellDescriptor {scope_id, cell_type, status, source_trust_q16, created_at, valid_from/to, content_hash, parent_id, citation}` как бинарная секция в WAL-записи (расширить существующий `wal_record_from_operation_with_metadata`) и в segment v2 — started with an in-memory typed descriptor in `cortex-core`; binary WAL/segment persistence remains pending.
   - [ ] 2) dual-read: старые payload-строки парсятся один раз при replay/load и материализуются в descriptor
-  - [ ] 3) кэш descriptor в `CellVersion`
+  - [x] 3) кэш descriptor в `CellVersion`
   - [ ] 4) `cortexdb migrate` для офлайн-перегонки.
 - acceptance:
   - [ ] 1) hot paths не вызывают текстовый парсинг (проверка профилем)
@@ -92,6 +92,8 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 - dependencies: A01, A20 (property-тесты до начала).
 - risks: САМЫЙ ОПАСНЫЙ рефакторинг блока — формат данных; строго version-gated, dual-read, ни одного big-bang.
 - expected effect: модель данных перестаёт быть «текстом с конвенциями»; разблокирует B06, B10, C13, C14.
+- evidence: Added `cortex_core::CellDescriptor`, lossy legacy payload header materialization, `CellVersion.descriptor`, and core tests for descriptor decode/cache. `Database::retrieve_cells` now uses the cached descriptor for the source-trust/freshness quality fast path and falls back to legacy payload parsing when source-ref confidence is required. Targeted checks passed: `cargo test -p cortex-core --all-features`, `cargo test -p cortex-engine quality_threshold_fast_path_uses_materialized_descriptor --all-features`, and targeted retrieval ranking tests.
+- remaining: typed descriptor is not yet persisted as a WAL/segment binary section; permission/index hot paths still mostly parse legacy payload metadata; migration CLI remains pending.
 
 ### EPIC-A03 — DATA_MODEL.md — контракт модели данных
 

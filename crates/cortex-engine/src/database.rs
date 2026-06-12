@@ -263,10 +263,16 @@ impl Database {
             .into_iter()
             .filter_map(|candidate| provider.cell_id_for_candidate(candidate))
             .filter_map(|cell_id| {
-                self.get_cell(txn, cell_id)
-                    .map(|payload| RetrievedCell { cell_id, payload })
+                self.memtable
+                    .read(txn, cell_id)
+                    .filter(|version| {
+                        cell_version_meets_quality_thresholds(version, &plan.quality_thresholds)
+                    })
+                    .map(|version| RetrievedCell {
+                        cell_id,
+                        payload: version.payload.clone(),
+                    })
             })
-            .filter(|cell| cell_meets_quality_thresholds(&cell.payload, &plan.quality_thresholds))
             .collect::<Vec<_>>();
         let ranked =
             suppress_duplicate_content(rank_retrieved_cells(cells, &plan.task, &plan.weights));
@@ -426,6 +432,31 @@ pub(crate) fn cell_meets_quality_thresholds(
 
     if let Some(max_freshness_seconds) = thresholds.max_freshness_seconds {
         let Some(created) = metadata.created_unix_seconds else {
+            return false;
+        };
+        let age = unix_now_seconds().saturating_sub(created);
+        if age > max_freshness_seconds {
+            return false;
+        }
+    }
+
+    true
+}
+
+fn cell_version_meets_quality_thresholds(
+    version: &CellVersion,
+    thresholds: &QualityThresholds,
+) -> bool {
+    if thresholds.min_confidence_q16 > 0 {
+        return cell_meets_quality_thresholds(&version.payload, thresholds);
+    }
+
+    if version.descriptor.source_trust_q16.unwrap_or(0) < thresholds.min_source_trust_q16 {
+        return false;
+    }
+
+    if let Some(max_freshness_seconds) = thresholds.max_freshness_seconds {
+        let Some(created) = version.descriptor.created_unix_seconds else {
             return false;
         };
         let age = unix_now_seconds().saturating_sub(created);
@@ -703,7 +734,7 @@ impl Drop for Database {
 mod tests {
     use std::collections::BTreeSet;
 
-    use cortex_aql::{AgentId, AgentView, BrainId, RetrievalMode, Q16_ZERO};
+    use cortex_aql::{AgentId, AgentView, BrainId, QualityThresholds, RetrievalMode, Q16_ZERO};
 
     use super::*;
     use crate::query::scope_id;
@@ -755,6 +786,24 @@ mod tests {
             .unwrap();
 
         assert_eq!(results[0].cell_id, CellId(2));
+    }
+
+    #[test]
+    fn quality_threshold_fast_path_uses_materialized_descriptor() {
+        let mut version = CellVersion::new(
+            CellId(1),
+            CommitSeq(1),
+            b"scope=default\nstatus=ready\nsource_trust_q16=60000\n\nbody".to_vec(),
+            0,
+        );
+        version.payload = b"scope=default\nstatus=ready\nsource_trust_q16=1000\n\nbody".to_vec();
+        let thresholds = QualityThresholds {
+            min_confidence_q16: 0,
+            min_source_trust_q16: 50_000,
+            max_freshness_seconds: None,
+        };
+
+        assert!(cell_version_meets_quality_thresholds(&version, &thresholds));
     }
 
     #[test]

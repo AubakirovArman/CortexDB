@@ -25,6 +25,23 @@ pub struct KnowledgeCellMetadata {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CellDescriptor {
+    pub scope: String,
+    pub status: String,
+    pub cell_type: KnowledgeCellType,
+    pub memory_type: Option<String>,
+    pub ttl_seconds: Option<u64>,
+    pub created_unix_seconds: Option<u64>,
+    pub source_trust_q16: Option<u16>,
+    pub source: Option<String>,
+    pub citation: Option<String>,
+    pub content_hash: Option<String>,
+    pub parent_id: Option<String>,
+    pub valid_from: Option<String>,
+    pub valid_to: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct KnowledgeCell {
     pub metadata: KnowledgeCellMetadata,
     pub body: Vec<u8>,
@@ -93,6 +110,84 @@ impl KnowledgeCellMetadata {
     }
 }
 
+impl CellDescriptor {
+    pub fn from_metadata(metadata: &KnowledgeCellMetadata) -> Self {
+        Self {
+            scope: metadata.scope.clone(),
+            status: metadata.status.clone(),
+            cell_type: metadata.cell_type,
+            memory_type: metadata.memory_type.clone(),
+            ttl_seconds: metadata.ttl_seconds,
+            created_unix_seconds: metadata.created_unix_seconds,
+            source_trust_q16: metadata.source_trust_q16,
+            source: metadata.source.clone(),
+            citation: None,
+            content_hash: None,
+            parent_id: None,
+            valid_from: None,
+            valid_to: None,
+        }
+    }
+
+    pub fn from_payload_lossy(payload: &[u8]) -> Self {
+        let text = String::from_utf8_lossy(payload);
+        let mut descriptor = Self::default();
+        for line in text.lines() {
+            if line.trim().is_empty() {
+                break;
+            }
+            let Some((key, value)) = line.split_once('=') else {
+                break;
+            };
+            descriptor.apply_header(key.trim(), value.trim());
+        }
+        descriptor
+    }
+
+    fn apply_header(&mut self, key: &str, value: &str) {
+        match key {
+            "scope" if !value.is_empty() => self.scope = value.to_owned(),
+            "status" if !value.is_empty() => self.status = value.to_owned(),
+            "type" => {
+                if let Ok(cell_type) = value.parse() {
+                    self.cell_type = cell_type;
+                }
+            }
+            "memory_type" => self.memory_type = non_empty(value),
+            "ttl_seconds" => self.ttl_seconds = value.parse().ok(),
+            "created_unix_seconds" => self.created_unix_seconds = value.parse().ok(),
+            "source_trust_q16" => self.source_trust_q16 = value.parse().ok(),
+            "source" => self.source = non_empty(value),
+            "citation" => self.citation = non_empty(value),
+            "content_hash" => self.content_hash = non_empty(value),
+            "parent_id" | "parent_chunk_id" => self.parent_id = non_empty(value),
+            "valid_from" => self.valid_from = non_empty(value),
+            "valid_to" => self.valid_to = non_empty(value),
+            _ => {}
+        }
+    }
+}
+
+impl Default for CellDescriptor {
+    fn default() -> Self {
+        Self {
+            scope: "default".to_owned(),
+            status: "ready".to_owned(),
+            cell_type: KnowledgeCellType::Raw,
+            memory_type: None,
+            ttl_seconds: None,
+            created_unix_seconds: None,
+            source_trust_q16: None,
+            source: None,
+            citation: None,
+            content_hash: None,
+            parent_id: None,
+            valid_from: None,
+            valid_to: None,
+        }
+    }
+}
+
 impl Default for KnowledgeCellMetadata {
     fn default() -> Self {
         Self {
@@ -153,4 +248,54 @@ fn sanitize_line_value(value: &str) -> String {
             other => other,
         })
         .collect()
+}
+
+fn non_empty(value: &str) -> Option<String> {
+    let trimmed = value.trim();
+    (!trimmed.is_empty()).then(|| trimmed.to_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CellDescriptor, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
+
+    #[test]
+    fn descriptor_decodes_stable_payload_headers() {
+        let payload = b"scope=project:investments\nstatus=verified\ntype=fact\nmemory_type=decision\nttl_seconds=3600\ncreated_unix_seconds=1710000000\nsource_trust_q16=60000\nsource=annual-report\ncitation=p12\ncontent_hash=abc\nparent_chunk_id=doc-1\nvalid_from=2024-01-01\nvalid_to=2024-12-31\n\nbody";
+        let descriptor = CellDescriptor::from_payload_lossy(payload);
+
+        assert_eq!(descriptor.scope, "project:investments");
+        assert_eq!(descriptor.status, "verified");
+        assert_eq!(descriptor.cell_type, KnowledgeCellType::Fact);
+        assert_eq!(descriptor.memory_type.as_deref(), Some("decision"));
+        assert_eq!(descriptor.ttl_seconds, Some(3600));
+        assert_eq!(descriptor.created_unix_seconds, Some(1_710_000_000));
+        assert_eq!(descriptor.source_trust_q16, Some(60_000));
+        assert_eq!(descriptor.source.as_deref(), Some("annual-report"));
+        assert_eq!(descriptor.citation.as_deref(), Some("p12"));
+        assert_eq!(descriptor.content_hash.as_deref(), Some("abc"));
+        assert_eq!(descriptor.parent_id.as_deref(), Some("doc-1"));
+        assert_eq!(descriptor.valid_from.as_deref(), Some("2024-01-01"));
+        assert_eq!(descriptor.valid_to.as_deref(), Some("2024-12-31"));
+    }
+
+    #[test]
+    fn descriptor_matches_encoded_knowledge_cell_metadata() {
+        let cell = KnowledgeCell::new(
+            KnowledgeCellMetadata {
+                scope: "agent:7".to_owned(),
+                status: "ready".to_owned(),
+                cell_type: KnowledgeCellType::Memory,
+                memory_type: Some("preference".to_owned()),
+                ttl_seconds: Some(30),
+                created_unix_seconds: Some(42),
+                source_trust_q16: Some(50_000),
+                source: Some("user".to_owned()),
+            },
+            "remember this",
+        );
+
+        let descriptor = CellDescriptor::from_payload_lossy(&cell.encode_payload());
+        assert_eq!(descriptor, CellDescriptor::from_metadata(&cell.metadata));
+    }
 }
