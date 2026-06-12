@@ -1914,7 +1914,7 @@
     "crates/cortex-engine/src/search.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 595,
+      "lines": 115,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2324,6 +2324,13 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-engine/src/search/indexes.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 194,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-engine/src/search/intent.rs": {
       "hard_limit": 1000,
       "kind": "source",
@@ -2394,6 +2401,13 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-engine/src/search/lexical.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 213,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-engine/src/search/persisted.rs": {
       "hard_limit": 1000,
       "kind": "source",
@@ -2412,6 +2426,13 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 342,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ranking.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 61,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2527,10 +2548,24 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-engine/src/search/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 30,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-engine/src/search/vector.rs": {
       "hard_limit": 1000,
       "kind": "source",
       "lines": 93,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/vector_index.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 28,
       "soft_limit": 300,
       "warning_limit": 600
     },
