@@ -1,3 +1,5 @@
+#[cfg(test)]
+use std::cell::Cell as TestCell;
 use std::collections::BTreeMap;
 
 use cortex_aql::{BitmapHandle, CellTypeId, MemoryType, ScopeId, StatusId};
@@ -11,6 +13,11 @@ const SCOPE_NS: u64 = 0x1000_0000_0000_0000;
 const STATUS_NS: u64 = 0x2000_0000_0000_0000;
 const TYPE_NS: u64 = 0x3000_0000_0000_0000;
 const MEMORY_NS: u64 = 0x4000_0000_0000_0000;
+
+#[cfg(test)]
+thread_local! {
+    static LEGACY_PAYLOAD_METADATA_PARSE_CALLS: TestCell<usize> = const { TestCell::new(0) };
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceRef {
@@ -67,23 +74,38 @@ pub struct CellMetadata {
 
 impl CellMetadata {
     pub fn from_payload(payload: &[u8]) -> Self {
+        #[cfg(test)]
+        LEGACY_PAYLOAD_METADATA_PARSE_CALLS.with(|calls| calls.set(calls.get() + 1));
+        Self::from_payload_inner(payload, None)
+    }
+
+    fn from_payload_inner(payload: &[u8], descriptor: Option<&CellDescriptor>) -> Self {
+        let descriptor_backed = descriptor.is_some();
         let text = String::from_utf8_lossy(payload);
-        let mut scope = "default".to_owned();
-        let mut status = "ready".to_owned();
-        let mut cell_type = "raw".to_owned();
-        let mut memory_type = None;
-        let mut ttl_seconds = None;
-        let mut created_unix_seconds = None;
-        let mut source_trust_q16 = None;
+        let mut scope = descriptor
+            .map(|value| value.scope.clone())
+            .unwrap_or_else(|| "default".to_owned());
+        let mut status = descriptor
+            .map(|value| value.status.clone())
+            .unwrap_or_else(|| "ready".to_owned());
+        let mut cell_type = descriptor
+            .map(|value| value.cell_type.as_str().to_owned())
+            .unwrap_or_else(|| "raw".to_owned());
+        let mut memory_type = descriptor
+            .and_then(|value| value.memory_type.as_deref())
+            .and_then(|value| value.parse().ok());
+        let mut ttl_seconds = descriptor.and_then(|value| value.ttl_seconds);
+        let mut created_unix_seconds = descriptor.and_then(|value| value.created_unix_seconds);
+        let mut source_trust_q16 = descriptor.and_then(|value| value.source_trust_q16);
         let mut source_trust_class = None;
-        let mut source = None;
-        let mut citation = None;
+        let mut source = descriptor.and_then(|value| value.source.clone());
+        let mut citation = descriptor.and_then(|value| value.citation.clone());
         let mut title = None;
-        let mut content_hash = None;
+        let mut content_hash = descriptor.and_then(|value| value.content_hash.clone());
         let mut source_hash = None;
         let mut document_id_field = None;
         let mut chunk_id = None;
-        let mut parent_id = None;
+        let mut parent_id = descriptor.and_then(|value| value.parent_id.clone());
         let mut chunk_role = None;
         let mut path = None;
         let mut section = None;
@@ -95,8 +117,8 @@ impl CellMetadata {
         let mut event_date = None;
         let mut topic = None;
         let mut as_of = None;
-        let mut valid_from = None;
-        let mut valid_to = None;
+        let mut valid_from = descriptor.and_then(|value| value.valid_from.clone());
+        let mut valid_to = descriptor.and_then(|value| value.valid_to.clone());
         let mut supersedes = None;
         let mut superseded_by = None;
         let mut table_id = None;
@@ -121,40 +143,60 @@ impl CellMetadata {
                     continue;
                 }
                 if let Some(value) = line.strip_prefix("scope=") {
-                    scope = value.trim().to_owned();
+                    if !descriptor_backed {
+                        scope = value.trim().to_owned();
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("status=") {
-                    status = value.trim().to_owned();
+                    if !descriptor_backed {
+                        status = value.trim().to_owned();
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("type=") {
-                    cell_type = value.trim().to_owned();
+                    if !descriptor_backed {
+                        cell_type = value.trim().to_owned();
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("memory_type=") {
-                    memory_type = value.trim().parse().ok();
+                    if !descriptor_backed {
+                        memory_type = value.trim().parse().ok();
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("ttl_seconds=") {
-                    ttl_seconds = value.trim().parse().ok();
+                    if !descriptor_backed {
+                        ttl_seconds = value.trim().parse().ok();
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("created_unix_seconds=") {
-                    created_unix_seconds = value.trim().parse().ok();
+                    if !descriptor_backed {
+                        created_unix_seconds = value.trim().parse().ok();
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("source_trust_q16=") {
-                    source_trust_q16 = value.trim().parse().ok();
+                    if !descriptor_backed {
+                        source_trust_q16 = value.trim().parse().ok();
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("source_trust_class=") {
                     source_trust_class = parse_source_trust_class(value);
                     continue;
                 } else if let Some(value) = line.strip_prefix("source=") {
-                    source = non_empty(value);
+                    if !descriptor_backed {
+                        source = non_empty(value);
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("citation=") {
-                    citation = non_empty(value);
+                    if !descriptor_backed {
+                        citation = non_empty(value);
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("title=") {
                     title = non_empty(value);
                     continue;
                 } else if let Some(value) = line.strip_prefix("content_hash=") {
-                    content_hash = non_empty(value);
+                    if content_hash.is_none() {
+                        content_hash = non_empty(value);
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("source_hash=") {
                     source_hash = non_empty(value);
@@ -172,10 +214,14 @@ impl CellMetadata {
                     cell_range = chunk_id.clone();
                     continue;
                 } else if let Some(value) = line.strip_prefix("parent_id=") {
-                    parent_id = non_empty(value);
+                    if !descriptor_backed {
+                        parent_id = non_empty(value);
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("parent_chunk_id=") {
-                    parent_id = non_empty(value);
+                    if !descriptor_backed {
+                        parent_id = non_empty(value);
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("chunk_role=") {
                     chunk_role = non_empty(value);
@@ -214,10 +260,14 @@ impl CellMetadata {
                     as_of = non_empty(value);
                     continue;
                 } else if let Some(value) = line.strip_prefix("valid_from=") {
-                    valid_from = non_empty(value);
+                    if !descriptor_backed {
+                        valid_from = non_empty(value);
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("valid_to=") {
-                    valid_to = non_empty(value);
+                    if !descriptor_backed {
+                        valid_to = non_empty(value);
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("supersedes=") {
                     supersedes = non_empty(value);
@@ -278,9 +328,16 @@ impl CellMetadata {
         let body_text = body_lines.join("\n");
         let terms = tokenize(&body_text);
 
-        let final_source_id = source_id_val
-            .or_else(|| source.clone())
-            .or_else(|| citation.clone());
+        let final_source_id = if descriptor_backed {
+            source
+                .clone()
+                .or(source_id_val)
+                .or_else(|| citation.clone())
+        } else {
+            source_id_val
+                .or_else(|| source.clone())
+                .or_else(|| citation.clone())
+        };
         let source_ref = final_source_id.map(|id| SourceRef {
             source_id: id,
             source_url,
@@ -336,63 +393,7 @@ impl CellMetadata {
     }
 
     pub fn from_payload_with_descriptor(payload: &[u8], descriptor: &CellDescriptor) -> Self {
-        let mut metadata = Self::from_payload(payload);
-        metadata.scope = descriptor.scope.clone();
-        metadata.status = descriptor.status.clone();
-        metadata.cell_type = descriptor.cell_type.as_str().to_owned();
-        metadata.memory_type = descriptor
-            .memory_type
-            .as_deref()
-            .and_then(|value| value.parse().ok());
-        metadata.ttl_seconds = descriptor.ttl_seconds;
-        metadata.created_unix_seconds = descriptor.created_unix_seconds;
-        metadata.source_trust_q16 = descriptor.source_trust_q16;
-        metadata.source = descriptor.source.clone();
-        metadata.citation = descriptor.citation.clone();
-        metadata.content_hash = descriptor
-            .content_hash
-            .clone()
-            .or_else(|| metadata.content_hash.take());
-        metadata.parent_id = descriptor.parent_id.clone();
-        metadata.valid_from = descriptor.valid_from.clone();
-        metadata.valid_to = descriptor.valid_to.clone();
-        let legacy_source_ref = metadata.source_ref.take();
-        let source_id = metadata
-            .source
-            .clone()
-            .or_else(|| metadata.citation.clone())
-            .or_else(|| {
-                legacy_source_ref
-                    .as_ref()
-                    .map(|source| source.source_id.clone())
-            });
-        metadata.source_ref = source_id.map(|source_id| {
-            let source_trust =
-                SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class);
-            let confidence_q16 = legacy_source_ref
-                .as_ref()
-                .map(|source| source.confidence_q16)
-                .unwrap_or(source_trust.q16);
-            SourceRef {
-                source_id,
-                source_url: legacy_source_ref
-                    .as_ref()
-                    .and_then(|source| source.source_url.clone()),
-                document_id: legacy_source_ref
-                    .as_ref()
-                    .and_then(|source| source.document_id.clone()),
-                page: legacy_source_ref.as_ref().and_then(|source| source.page),
-                row: legacy_source_ref.as_ref().and_then(|source| source.row),
-                cell_range: legacy_source_ref
-                    .as_ref()
-                    .and_then(|source| source.cell_range.clone()),
-                json_path: legacy_source_ref
-                    .as_ref()
-                    .and_then(|source| source.json_path.clone()),
-                confidence_q16,
-            }
-        });
-        metadata
+        Self::from_payload_inner(payload, Some(descriptor))
     }
 
     pub fn from_version(version: &CellVersion) -> Self {
@@ -408,6 +409,16 @@ impl CellMetadata {
                     .as_ref()
                     .map(|source_ref| source_ref.source_id.as_str())
             })
+    }
+
+    #[cfg(test)]
+    pub(crate) fn reset_legacy_payload_metadata_parse_profile() {
+        LEGACY_PAYLOAD_METADATA_PARSE_CALLS.with(|calls| calls.set(0));
+    }
+
+    #[cfg(test)]
+    pub(crate) fn legacy_payload_metadata_parse_profile() -> usize {
+        LEGACY_PAYLOAD_METADATA_PARSE_CALLS.with(TestCell::get)
     }
 
     pub fn weighted_lexical_terms(&self) -> BTreeMap<String, u32> {
@@ -594,6 +605,46 @@ mod tests {
         let metadata = CellMetadata::from_payload_with_descriptor(payload, &descriptor);
 
         assert_eq!(metadata.content_hash.as_deref(), Some("descriptor-hash"));
+    }
+
+    #[test]
+    fn descriptor_metadata_profile_avoids_legacy_payload_metadata_parser() {
+        CellMetadata::reset_legacy_payload_metadata_parse_profile();
+        let payload = b"scope=payload\nstatus=blocked\ntype=memory\nmemory_type=preference\nttl_seconds=1\ncreated_unix_seconds=2\nsource_trust_q16=1\nsource=payload-source\ncitation=payload-citation\nparent_id=payload-parent\nvalid_from=1900-01-01\nvalid_to=1900-01-02\ntitle=Useful title\nproject=Apollo\ncontent_hash=legacy-hash\nsource_id=payload-ref\nconfidence_q16=123\n\nbody";
+        let descriptor = cortex_core::CellDescriptor {
+            scope: "descriptor".to_owned(),
+            status: "ready".to_owned(),
+            cell_type: cortex_core::KnowledgeCellType::Fact,
+            memory_type: Some("decision".to_owned()),
+            ttl_seconds: Some(3600),
+            created_unix_seconds: Some(123_456),
+            source_trust_q16: Some(50_000),
+            source: Some("descriptor-source".to_owned()),
+            citation: Some("descriptor-citation".to_owned()),
+            content_hash: Some("descriptor-hash".to_owned()),
+            parent_id: Some("descriptor-parent".to_owned()),
+            valid_from: Some("2026-01-01".to_owned()),
+            valid_to: Some("2026-12-31".to_owned()),
+        };
+
+        let metadata = CellMetadata::from_payload_with_descriptor(payload, &descriptor);
+
+        assert_eq!(CellMetadata::legacy_payload_metadata_parse_profile(), 0);
+        assert_eq!(metadata.scope, "descriptor");
+        assert_eq!(metadata.status, "ready");
+        assert_eq!(metadata.cell_type, "fact");
+        assert_eq!(metadata.memory_type, Some(MemoryType::Decision));
+        assert_eq!(metadata.ttl_seconds, Some(3600));
+        assert_eq!(metadata.created_unix_seconds, Some(123_456));
+        assert_eq!(metadata.source_trust_q16, Some(50_000));
+        assert_eq!(metadata.source.as_deref(), Some("descriptor-source"));
+        assert_eq!(metadata.citation.as_deref(), Some("descriptor-citation"));
+        assert_eq!(metadata.content_hash.as_deref(), Some("descriptor-hash"));
+        assert_eq!(metadata.parent_id.as_deref(), Some("descriptor-parent"));
+        assert_eq!(metadata.valid_from.as_deref(), Some("2026-01-01"));
+        assert_eq!(metadata.valid_to.as_deref(), Some("2026-12-31"));
+        assert_eq!(metadata.title.as_deref(), Some("Useful title"));
+        assert_eq!(metadata.project.as_deref(), Some("Apollo"));
     }
 
     #[test]
