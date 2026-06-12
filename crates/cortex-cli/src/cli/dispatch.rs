@@ -1,33 +1,29 @@
+mod audit;
+mod backup;
+mod ingestion;
+mod knowledge;
+mod maintenance;
+mod paths;
+mod search;
+mod upgrade_flow;
+
 use clap::{error::ErrorKind, CommandFactory, Parser};
 
-use crate::{
-    cli_ann as ann, cli_aql as aql_cmd, cli_audit as audit, cli_audit_siem as audit_siem,
-    cli_auth_review as auth_review, cli_ingest as ingest, cli_ops as ops, cli_upgrade as upgrade,
-};
+use crate::cli_ops as ops;
 
-use super::args::{Cli, Command, UpgradeCommand, VectorCommand};
+use super::args::{Cli, Command};
+use paths::resolve_path;
 
-fn resolve_path(path: &str, tenant: Option<&str>) -> std::path::PathBuf {
-    let base = std::path::PathBuf::from(path);
-    match tenant {
-        Some(t) if t != "default" => base.join("realms").join(t),
-        _ => base,
-    }
+#[derive(Clone, Copy)]
+pub(super) struct DispatchContext<'a> {
+    pub(super) tenant: Option<&'a str>,
+    pub(super) json: bool,
 }
 
-fn resolve_backup_passphrase(
-    passphrase: Option<String>,
-    passphrase_env: Option<String>,
-) -> Result<String, String> {
-    if let Some(value) = passphrase {
-        return Ok(value);
+impl DispatchContext<'_> {
+    pub(super) fn resolve(&self, path: &str) -> std::path::PathBuf {
+        resolve_path(path, self.tenant)
     }
-    let env_name = passphrase_env.unwrap_or_else(|| "CORTEXDB_BACKUP_PASSPHRASE".to_owned());
-    std::env::var(&env_name).map_err(|_| {
-        format!(
-            "encrypted backup passphrase is required; set {env_name} or pass --passphrase-env <VAR>"
-        )
-    })
 }
 
 pub fn run(args: Vec<String>) -> Result<String, String> {
@@ -51,12 +47,11 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             );
         }
     }
-    let resolved = |p: &str| resolve_path(p, cli.tenant.as_deref());
+    let ctx = DispatchContext {
+        tenant: cli.tenant.as_deref(),
+        json: cli.json,
+    };
     match cli.command {
-        Command::Demo => ops::run_demo(),
-        Command::Doctor { path } => {
-            ops::doctor(resolved(&path).to_str().unwrap(), cli.tenant.as_deref())
-        }
         Command::Completions { shell } => {
             let mut cmd = Cli::command();
             let name = cmd.get_name().to_owned();
@@ -65,127 +60,35 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             String::from_utf8(output).map_err(|error| error.to_string())
         }
         Command::Version => Ok(format!("cortexdb {}", env!("CARGO_PKG_VERSION"))),
-        Command::Put {
-            path,
-            cell_id,
-            payload,
-        } => ops::put(resolved(&path).to_str().unwrap(), &cell_id, &payload),
-        Command::Get { path, cell_id } => {
-            ops::get(resolved(&path).to_str().unwrap(), &cell_id, cli.json)
-        }
-        Command::Tombstone { path, cell_id } => {
-            ops::tombstone(resolved(&path).to_str().unwrap(), &cell_id)
-        }
-        Command::Flush {
-            path,
-            experimental_hnsw,
-        } => ops::flush(resolved(&path).to_str().unwrap(), experimental_hnsw),
-        Command::Compact {
-            path,
-            experimental_hnsw,
-        } => ops::compact(resolved(&path).to_str().unwrap(), experimental_hnsw),
-        Command::Stats { path } => ops::stats(resolved(&path).to_str().unwrap(), cli.json),
-        Command::Validate { path } => ops::validate(resolved(&path).to_str().unwrap(), cli.json),
-        Command::Vector { command } => match command {
-            VectorCommand::Rebuild {
-                path,
-                experimental_hnsw,
-            } => ops::vector_rebuild(
-                resolved(&path).to_str().unwrap(),
-                experimental_hnsw,
-                cli.json,
-            ),
-        },
-        Command::AnnValidate { path } => {
-            ops::ann_validate(resolved(&path).to_str().unwrap(), cli.json)
-        }
-        Command::HnswNoFallbackProfileShow { path } => {
-            ops::hnsw_no_fallback_profile_show(resolved(&path).to_str().unwrap(), cli.json)
-        }
-        Command::HnswNoFallbackProfileSet {
-            path,
-            enabled,
-            min_recall,
-            require_upper_layers,
-        } => {
-            let policy = ann::parse_no_fallback_profile(enabled, min_recall, require_upper_layers)?;
-            ops::hnsw_no_fallback_profile_set(resolved(&path).to_str().unwrap(), policy, cli.json)
-        }
-        Command::HnswNoFallbackProfileClear { path } => {
-            ops::hnsw_no_fallback_profile_clear(resolved(&path).to_str().unwrap(), cli.json)
-        }
-        Command::Repair { path, dry_run } => {
-            ops::repair(resolved(&path).to_str().unwrap(), dry_run)
-        }
-        Command::Backup { path, backup_path } => {
-            ops::backup(resolved(&path).to_str().unwrap(), &backup_path)
-        }
+        Command::Backup { path, backup_path } => backup::backup(ctx, path, backup_path),
         Command::BackupEncrypted {
             path,
             archive_path,
             passphrase,
             passphrase_env,
-        } => {
-            let passphrase = resolve_backup_passphrase(passphrase, passphrase_env)?;
-            ops::backup_encrypted(
-                resolved(&path).to_str().unwrap(),
-                &archive_path,
-                &passphrase,
-            )
-        }
+        } => backup::backup_encrypted(ctx, path, archive_path, passphrase, passphrase_env),
         Command::BackupDrill {
             path,
             backup_path,
             restore_path,
-        } => ops::backup_drill(
-            resolved(&path).to_str().unwrap(),
-            &backup_path,
-            &restore_path,
-        ),
+        } => backup::backup_drill(ctx, path, backup_path, restore_path),
         Command::BackupPrune {
             backup_root,
             prefix,
             keep_latest,
             dry_run,
-        } => ops::backup_prune(&backup_root, &prefix, keep_latest, dry_run),
+        } => backup::backup_prune(backup_root, prefix, keep_latest, dry_run),
         Command::BackupOffsiteStage {
             backup_path,
             offsite_root,
             backup_id,
-        } => ops::backup_offsite_stage(&backup_path, &offsite_root, &backup_id),
-        Command::Upgrade { command } => match command {
-            UpgradeCommand::Prepare {
-                path,
-                backup_path,
-                drill_restore_path,
-            } => upgrade::prepare(
-                resolved(&path).to_str().unwrap(),
-                &backup_path,
-                &drill_restore_path,
-                cli.json,
-            ),
-            UpgradeCommand::Validate { path } => {
-                upgrade::validate_after_upgrade(resolved(&path).to_str().unwrap(), cli.json)
-            }
-            UpgradeCommand::Rollback {
-                backup_path,
-                rollback_path,
-            } => upgrade::rollback(
-                &backup_path,
-                resolved(&rollback_path).to_str().unwrap(),
-                cli.json,
-            ),
-        },
+        } => backup::backup_offsite_stage(backup_path, offsite_root, backup_id),
+        Command::Upgrade { command } => upgrade_flow::upgrade(ctx, command),
         Command::Migrate {
             path,
             backup_path,
             drill_restore_path,
-        } => upgrade::migrate(
-            resolved(&path).to_str().unwrap(),
-            &backup_path,
-            &drill_restore_path,
-            cli.json,
-        ),
+        } => upgrade_flow::migrate(ctx, path, backup_path, drill_restore_path),
         Command::Audit {
             path,
             verify_path,
@@ -212,16 +115,16 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
                 }
                 path.as_str()
             };
-            audit::review(audit::AuditReviewOptions {
+            audit::review(audit::AuditReviewDispatch {
+                ctx,
                 path: actual_path,
-                route: route.as_deref(),
+                route,
                 status,
-                action: action.as_deref(),
-                tenant: tenant_filter.as_deref(),
+                action,
+                tenant_filter,
                 summary_only: summary || audit_verify_alias,
                 redaction_check,
                 verify_chain: verify_chain || audit_verify_alias,
-                json: cli.json,
             })
         }
         Command::AuditExportSiem {
@@ -229,82 +132,38 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             output_path,
             redaction_check,
             verify_chain,
-        } => audit_siem::export_jsonl(
-            &input_path,
-            &output_path,
-            redaction_check,
-            verify_chain,
-            cli.json,
-        ),
+        } => audit::export_siem(ctx, input_path, output_path, redaction_check, verify_chain),
         Command::AuthReview {
             policy_store,
             tokens_file,
             tokens,
-        } => auth_review::review(auth_review::AuthReviewOptions {
-            policy_store: policy_store.as_deref(),
-            tokens_file: tokens_file.as_deref(),
-            tokens: tokens.as_deref(),
-            json: cli.json,
-        }),
+        } => audit::auth_review(ctx, policy_store, tokens_file, tokens),
         Command::Restore {
             backup_path,
             path,
             dry_run,
-        } => ops::restore(&backup_path, resolved(&path).to_str().unwrap(), dry_run),
+        } => backup::restore(ctx, backup_path, path, dry_run),
         Command::RestoreEncrypted {
             archive_path,
             path,
             passphrase,
             passphrase_env,
-        } => {
-            let passphrase = resolve_backup_passphrase(passphrase, passphrase_env)?;
-            ops::restore_encrypted(
-                &archive_path,
-                resolved(&path).to_str().unwrap(),
-                &passphrase,
-            )
-        }
-        Command::GcRetired { path } => ops::gc_retired(resolved(&path).to_str().unwrap()),
-        Command::WalValidate { path } => ops::wal_validate(resolved(&path).to_str().unwrap()),
-        Command::WalDump { path } => ops::wal_dump(resolved(&path).to_str().unwrap()),
-        Command::WalTruncate { path } => ops::wal_truncate(resolved(&path).to_str().unwrap()),
-        Command::ManifestDump { path } => ops::manifest_dump(resolved(&path).to_str().unwrap()),
-        Command::ManifestValidate { path } => {
-            ops::manifest_validate(resolved(&path).to_str().unwrap())
-        }
+        } => backup::restore_encrypted(ctx, archive_path, path, passphrase, passphrase_env),
         Command::Context {
             path,
             scope,
             aql,
             format,
-        } => ops::context(
-            resolved(&path).to_str().unwrap(),
-            &scope,
-            &aql,
-            cli.json,
-            format.as_str(),
-        ),
-        Command::Remember { path, scope, aql } => {
-            ops::remember(resolved(&path).to_str().unwrap(), &scope, &aql, cli.json)
-        }
-        Command::Forget { path, cell_id } => {
-            ops::forget(resolved(&path).to_str().unwrap(), &cell_id, cli.json)
-        }
+        } => knowledge::context(ctx, path, scope, aql, format),
+        Command::Remember { path, scope, aql } => knowledge::remember(ctx, path, scope, aql),
+        Command::Forget { path, cell_id } => knowledge::forget(ctx, path, cell_id),
         Command::Verify {
             path,
             scope,
             aql,
             format,
-        } => ops::verify(
-            resolved(&path).to_str().unwrap(),
-            &scope,
-            &aql,
-            cli.json,
-            format.as_str(),
-        ),
-        Command::Aql { path, scope, aql } => {
-            aql_cmd::aql(resolved(&path).to_str().unwrap(), &scope, &aql, cli.json)
-        }
+        } => knowledge::verify(ctx, path, scope, aql, format),
+        Command::Aql { path, scope, aql } => knowledge::aql(ctx, path, scope, aql),
         Command::Search {
             path,
             scope,
@@ -312,15 +171,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             mode,
             vector,
             algorithm,
-        } => ops::search(
-            resolved(&path).to_str().unwrap(),
-            &scope,
-            &query,
-            cli.json,
-            &mode,
-            vector.as_deref(),
-            &algorithm,
-        ),
+        } => search::search(ctx, path, scope, query, mode, vector, algorithm),
         Command::SearchVector {
             path,
             scope,
@@ -334,41 +185,28 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             no_fallback_min_recall,
             use_no_fallback_profile,
             experimental_hnsw,
-        } => {
-            let policy = ann::parse_ann_policy(
+        } => search::search_vector(
+            ctx,
+            search::VectorSearchInput {
+                path,
+                scope,
+                vector,
                 fallback,
                 fallback_scan_cap,
                 min_recall,
                 max_visited_candidates,
                 require_slo,
-            )?;
-            let rollout_policy =
-                ann::parse_no_fallback_rollout_policy(no_fallback_rollout, no_fallback_min_recall)?;
-            ops::search_vector(ops::SearchVectorOptions {
-                path: resolved(&path).to_str().unwrap(),
-                scope: &scope,
-                vector: &vector,
-                exact: false,
-                policy: Some(policy),
-                rollout_policy,
+                no_fallback_rollout,
+                no_fallback_min_recall,
                 use_no_fallback_profile,
                 experimental_hnsw,
-            })
-        }
+            },
+        ),
         Command::SearchVectorExact {
             path,
             scope,
             vector,
-        } => ops::search_vector(ops::SearchVectorOptions {
-            path: resolved(&path).to_str().unwrap(),
-            scope: &scope,
-            vector: &vector,
-            exact: true,
-            policy: None,
-            rollout_policy: None,
-            use_no_fallback_profile: false,
-            experimental_hnsw: false,
-        }),
+        } => search::search_vector_exact(ctx, path, scope, vector),
         Command::SearchVectorEval {
             path,
             scope,
@@ -382,65 +220,41 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             no_fallback_min_recall,
             use_no_fallback_profile,
             experimental_hnsw,
-        } => {
-            let policy = ann::parse_ann_policy(
+        } => search::search_vector_eval(
+            ctx,
+            search::VectorSearchInput {
+                path,
+                scope,
+                vector,
                 fallback,
                 fallback_scan_cap,
                 min_recall,
                 max_visited_candidates,
                 require_slo,
-            )?;
-            let rollout_policy =
-                ann::parse_no_fallback_rollout_policy(no_fallback_rollout, no_fallback_min_recall)?;
-            ann::search_vector_eval(ann::SearchVectorEvalOptions {
-                path: resolved(&path).to_str().unwrap(),
-                scope: &scope,
-                vector: &vector,
-                json: cli.json,
-                policy: Some(policy),
-                rollout_policy,
+                no_fallback_rollout,
+                no_fallback_min_recall,
                 use_no_fallback_profile,
                 experimental_hnsw,
-            })
-        }
+            },
+        ),
         Command::SearchExplain {
             path,
             scope,
             query,
             mode,
             vector,
-        } => ops::search_explain(
-            resolved(&path).to_str().unwrap(),
-            &scope,
-            &query,
-            &mode,
-            vector.as_deref(),
-        ),
-        Command::Unlock { path, force } => ops::unlock(resolved(&path).to_str().unwrap(), force),
+        } => search::search_explain(ctx, path, scope, query, mode, vector),
         Command::LoadFixture { path, fixture_path } => {
-            ingest::load_fixture(resolved(&path).to_str().unwrap(), &fixture_path)
+            ingestion::load_fixture(ctx, path, fixture_path)
         }
-        Command::IngestText { path, scope, file } => {
-            ingest::text(resolved(&path).to_str().unwrap(), &scope, &file)
-        }
-        Command::IngestJson { path, scope, file } => {
-            ingest::json(resolved(&path).to_str().unwrap(), &scope, &file)
-        }
-        Command::IngestCsv { path, scope, file } => {
-            ingest::csv(resolved(&path).to_str().unwrap(), &scope, &file)
-        }
-        Command::IngestJobs { path } => ingest::jobs(resolved(&path).to_str().unwrap(), cli.json),
-        Command::IngestJob { path, job_id } => {
-            ingest::job(resolved(&path).to_str().unwrap(), job_id, cli.json)
-        }
-        Command::IngestJobCancel { path, job_id } => {
-            ingest::cancel_job(resolved(&path).to_str().unwrap(), job_id, cli.json)
-        }
-        Command::IngestJobRetry { path, job_id } => {
-            ingest::retry_job(resolved(&path).to_str().unwrap(), job_id, cli.json)
-        }
-        Command::IngestJobDelete { path, job_id } => {
-            ingest::delete_job(resolved(&path).to_str().unwrap(), job_id)
-        }
+        Command::IngestText { path, scope, file } => ingestion::text(ctx, path, scope, file),
+        Command::IngestJson { path, scope, file } => ingestion::json(ctx, path, scope, file),
+        Command::IngestCsv { path, scope, file } => ingestion::csv(ctx, path, scope, file),
+        Command::IngestJobs { path } => ingestion::jobs(ctx, path),
+        Command::IngestJob { path, job_id } => ingestion::job(ctx, path, job_id),
+        Command::IngestJobCancel { path, job_id } => ingestion::cancel_job(ctx, path, job_id),
+        Command::IngestJobRetry { path, job_id } => ingestion::retry_job(ctx, path, job_id),
+        Command::IngestJobDelete { path, job_id } => ingestion::delete_job(ctx, path, job_id),
+        command => maintenance::run(ctx, command),
     }
 }
