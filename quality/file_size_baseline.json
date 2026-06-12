@@ -2117,7 +2117,56 @@
     "crates/cortex-engine/src/search/decomposition.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 640,
+      "lines": 12,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/decomposition/anchors.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 127,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/decomposition/builder.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 184,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/decomposition/normalize.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 95,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/decomposition/slots.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 80,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/decomposition/split.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 64,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/decomposition/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 67,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/search/decomposition/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 36,
       "soft_limit": 300,
       "warning_limit": 600
     },
