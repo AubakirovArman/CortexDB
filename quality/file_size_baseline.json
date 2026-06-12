@@ -1130,7 +1130,49 @@
     "crates/cortex-engine/src/embedding_pipeline.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 964,
+      "lines": 21,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/embedding_pipeline/backfill.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 109,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/embedding_pipeline/coverage.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 275,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/embedding_pipeline/debt.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 133,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/embedding_pipeline/payload.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 83,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/embedding_pipeline/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 265,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/embedding_pipeline/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 125,
       "soft_limit": 300,
       "warning_limit": 600
     },
