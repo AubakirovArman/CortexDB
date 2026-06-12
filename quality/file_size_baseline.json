@@ -1060,7 +1060,35 @@
     "crates/cortex-engine/src/bin/scale_benchmark_check.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 514,
+      "lines": 20,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/scale_benchmark_check/args.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 89,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/scale_benchmark_check/metrics.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 156,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/scale_benchmark_check/runner.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 184,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/scale_benchmark_check/workload.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 107,
       "soft_limit": 300,
       "warning_limit": 600
     },
