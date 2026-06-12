@@ -693,10 +693,31 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/constants.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 15,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/document.rs": {
       "hard_limit": 1000,
       "kind": "source",
       "lines": 93,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/helpers.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 64,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/ingest.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 108,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -717,7 +738,7 @@
     "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/main.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 766,
+      "lines": 463,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -731,7 +752,7 @@
     "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/prefilter.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 29,
+      "lines": 28,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -795,6 +816,13 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 122,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/question_retrieval.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 165,
       "soft_limit": 300,
       "warning_limit": 600
     },
