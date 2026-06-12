@@ -1,6 +1,6 @@
 use cortex_aql::{eval_bitmap_program, AgentView, BitmapProvider, BrainId, RetrievalMode};
 
-use crate::database::{cell_meets_quality_thresholds, CandidateResolver, Database};
+use crate::database::{cell_version_meets_quality_thresholds, CandidateResolver, Database};
 use crate::error::{EngineError, EngineResult};
 
 use super::cache::AqlStatementKind;
@@ -55,8 +55,10 @@ impl Database {
         let after_quality = bitmap_candidates
             .iter()
             .filter_map(|candidate| provider.cell_id_for_candidate(*candidate))
-            .filter_map(|cell_id| self.get_cell(txn, cell_id))
-            .filter(|payload| cell_meets_quality_thresholds(payload, &plan.quality_thresholds))
+            .filter_map(|cell_id| self.memtable.read(txn, cell_id))
+            .filter(|version| {
+                cell_version_meets_quality_thresholds(version, &plan.quality_thresholds)
+            })
             .count();
         let candidate_limit = plan.context_policy.candidate_limit as usize;
         let mut filters = vec![

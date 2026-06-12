@@ -464,14 +464,6 @@ impl Database {
     }
 }
 
-pub(crate) fn cell_meets_quality_thresholds(
-    payload: &[u8],
-    thresholds: &QualityThresholds,
-) -> bool {
-    let metadata = CellMetadata::from_payload(payload);
-    metadata_meets_quality_thresholds(&metadata, thresholds)
-}
-
 fn metadata_meets_quality_thresholds(
     metadata: &CellMetadata,
     thresholds: &QualityThresholds,
@@ -503,7 +495,7 @@ fn metadata_meets_quality_thresholds(
     true
 }
 
-fn cell_version_meets_quality_thresholds(
+pub(crate) fn cell_version_meets_quality_thresholds(
     version: &CellVersion,
     thresholds: &QualityThresholds,
 ) -> bool {

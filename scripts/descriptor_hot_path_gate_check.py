@@ -10,6 +10,8 @@ SERVER_ROUTER = ROOT / "crates/cortex-server/src/router.rs"
 CONTEXT_DEDUP = ROOT / "crates/cortex-engine/src/context/dedup.rs"
 CONTEXT_PACK = ROOT / "crates/cortex-engine/src/context/pack.rs"
 SEARCH_DATABASE = ROOT / "crates/cortex-engine/src/search/database.rs"
+DATABASE = ROOT / "crates/cortex-engine/src/database.rs"
+QUERY_EXPLAIN = ROOT / "crates/cortex-engine/src/query/explain.rs"
 
 
 def require(text: str, needle: str, label: str) -> None:
@@ -28,6 +30,8 @@ def main() -> None:
     context_dedup = CONTEXT_DEDUP.read_text()
     context_pack = CONTEXT_PACK.read_text()
     search_database = SEARCH_DATABASE.read_text()
+    database = DATABASE.read_text()
+    query_explain = QUERY_EXPLAIN.read_text()
 
     require(
         server_authz,
@@ -47,6 +51,27 @@ def main() -> None:
     forbid(server_authz, "require_payload_write", "payload-based write authorization helper")
     forbid(server_authz, "CellMetadata::from_payload", "payload parsing in server authz")
     forbid(server_router, "require_payload_write", "payload-based route authorization")
+
+    require(
+        database,
+        "pub(crate) fn cell_version_meets_quality_thresholds",
+        "descriptor-backed quality threshold helper",
+    )
+    forbid(
+        database,
+        "pub(crate) fn cell_meets_quality_thresholds",
+        "payload-only quality threshold helper",
+    )
+    require(
+        query_explain,
+        "cell_version_meets_quality_thresholds(version, &plan.quality_thresholds)",
+        "EXPLAIN quality count from CellVersion descriptor",
+    )
+    forbid(
+        query_explain,
+        "cell_meets_quality_thresholds",
+        "EXPLAIN payload-only quality threshold helper",
+    )
 
     require(
         context_dedup,
