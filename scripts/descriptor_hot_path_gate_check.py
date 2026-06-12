@@ -15,6 +15,8 @@ SEARCH_RERANK = ROOT / "crates/cortex-engine/src/search/rerank.rs"
 SEARCH_SCOPE_MAPPING = ROOT / "crates/cortex-engine/src/search/scope_mapping.rs"
 DATABASE = ROOT / "crates/cortex-engine/src/database.rs"
 QUERY_EXPLAIN = ROOT / "crates/cortex-engine/src/query/explain.rs"
+SESSION = ROOT / "crates/cortex-engine/src/session.rs"
+SESSION_PAYLOAD = ROOT / "crates/cortex-engine/src/session/payload.rs"
 
 
 def require(text: str, needle: str, label: str) -> None:
@@ -38,6 +40,8 @@ def main() -> None:
     search_scope_mapping = SEARCH_SCOPE_MAPPING.read_text()
     database = DATABASE.read_text()
     query_explain = QUERY_EXPLAIN.read_text()
+    session = SESSION.read_text()
+    session_payload = SESSION_PAYLOAD.read_text()
 
     require(
         server_authz,
@@ -144,6 +148,26 @@ def main() -> None:
         search_scope_mapping,
         "pub fn scope_mapping_metadata_bonus(mapping: &QueryScopeMapping, metadata: &CellMetadata)",
         "scope mapping metadata scoring helper",
+    )
+    require(
+        session,
+        "let descriptor_metadata = CellMetadata::from_version(&version);",
+        "session retrieval descriptor metadata",
+    )
+    require(
+        session,
+        "view.can_read_scope(scope_id(&descriptor_metadata.scope))",
+        "session retrieval descriptor scope authorization",
+    )
+    forbid(
+        session,
+        "view.can_read_scope(scope_id(&metadata.scope))",
+        "session retrieval payload scope authorization",
+    )
+    forbid(
+        session_payload,
+        "pub scope: String",
+        "session payload scope permission metadata",
     )
 
     print("descriptor hot path gate passed")

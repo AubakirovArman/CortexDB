@@ -47,7 +47,6 @@ pub(super) fn session_payload(input: SessionPayload<'_>) -> Vec<u8> {
 pub(super) fn parse_session_cell(payload: &[u8]) -> Option<SessionCellMetadata> {
     let text = String::from_utf8_lossy(payload);
     let mut is_memory = false;
-    let mut scope = "default".to_owned();
     let mut session_id = None;
     let mut session_kind = None;
     let mut ttl_seconds = None;
@@ -58,8 +57,6 @@ pub(super) fn parse_session_cell(payload: &[u8]) -> Option<SessionCellMetadata> 
         }
         if line.trim() == "type=memory" {
             is_memory = true;
-        } else if let Some(value) = line.strip_prefix("scope=") {
-            scope = value.trim().to_owned();
         } else if let Some(value) = line.strip_prefix("session_id=") {
             session_id = Some(value.trim().to_owned());
         } else if let Some(value) = line.strip_prefix("session_kind=") {
@@ -71,7 +68,6 @@ pub(super) fn parse_session_cell(payload: &[u8]) -> Option<SessionCellMetadata> 
         }
     }
     is_memory.then_some(SessionCellMetadata {
-        scope,
         session_id: session_id?,
         _session_kind: session_kind?,
         ttl_seconds: ttl_seconds?,
@@ -80,7 +76,6 @@ pub(super) fn parse_session_cell(payload: &[u8]) -> Option<SessionCellMetadata> 
 }
 
 pub(super) struct SessionCellMetadata {
-    pub scope: String,
     pub session_id: String,
     _session_kind: String,
     ttl_seconds: u64,

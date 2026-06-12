@@ -1,5 +1,10 @@
+use std::fs::File;
+use std::io::Write;
+
 use cortex_aql::{AgentId, AgentView, BindError, MemoryType, PolicyError, ScopeId};
-use cortex_engine::{scope_id, Database, EngineError};
+use cortex_core::{CellDescriptor, CellId, CommitSeq, KnowledgeCellType};
+use cortex_engine::{encode_cell_core, scope_id, Database, EngineError};
+use cortex_storage::wal::{SectionTag, WalCodec, WalRecord, WalRecordType, WalSection};
 use tempfile::tempdir;
 
 fn view(scope: &str) -> AgentView {
@@ -175,5 +180,46 @@ fn unreadable_scope_cannot_retrieve_session_cells() {
 
     assert!(db
         .retrieve_session_cells(&session.session_id, &blocked, 1_010)
+        .is_empty());
+}
+
+#[test]
+fn session_retrieval_authorizes_with_descriptor_scope_over_payload_scope() {
+    let dir = tempdir().unwrap();
+    let wal_path = dir.path().join("db.aclog");
+    let descriptor = CellDescriptor {
+        scope: "agent:finance".to_owned(),
+        status: "ready".to_owned(),
+        cell_type: KnowledgeCellType::Memory,
+        memory_type: Some("observation".to_owned()),
+        ttl_seconds: Some(60),
+        created_unix_seconds: Some(1_000),
+        ..CellDescriptor::default()
+    };
+    let payload = b"scope=agent:private\nstatus=ready\ntype=memory\nmemory_type=observation\nttl_seconds=60\ncreated_unix_seconds=1000\nsession_id=session-typed\nsession_kind=context\n\nsession body"
+        .to_vec();
+    let record = WalRecord::new(
+        WalRecordType::PutCellBatch,
+        vec![
+            WalSection::new(
+                SectionTag::CellCore,
+                encode_cell_core(CellId(9_001), CommitSeq(1)),
+            ),
+            WalSection::new(SectionTag::PayloadInline, payload),
+            WalSection::new(SectionTag::CellDescriptor, descriptor.encode_section_v1()),
+        ],
+    );
+    let mut file = File::create(&wal_path).unwrap();
+    file.write_all(&WalCodec::file_header()).unwrap();
+    let encoded = WalCodec::encode_record_at(&record, WalCodec::file_header_len() as u64).unwrap();
+    file.write_all(&encoded).unwrap();
+
+    let db = Database::open(dir.path()).unwrap();
+
+    let descriptor_scope_cells =
+        db.retrieve_session_cells("session-typed", &view("agent:finance"), 1_010);
+    assert_eq!(descriptor_scope_cells.len(), 1);
+    assert!(db
+        .retrieve_session_cells("session-typed", &view("agent:private"), 1_010)
         .is_empty());
 }

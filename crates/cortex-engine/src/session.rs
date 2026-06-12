@@ -3,7 +3,7 @@ use cortex_core::{CellId, CommitSeq};
 
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
-use crate::query::scope_id;
+use crate::query::{scope_id, CellMetadata};
 
 mod payload;
 
@@ -127,10 +127,11 @@ impl Database {
             .snapshot_versions()
             .into_iter()
             .filter_map(|version| {
-                let metadata = parse_session_cell(&version.payload)?;
-                if metadata.session_id != session_id
-                    || metadata.is_expired(now_unix_seconds)
-                    || !view.can_read_scope(scope_id(&metadata.scope))
+                let session_metadata = parse_session_cell(&version.payload)?;
+                let descriptor_metadata = CellMetadata::from_version(&version);
+                if session_metadata.session_id != session_id
+                    || session_metadata.is_expired(now_unix_seconds)
+                    || !view.can_read_scope(scope_id(&descriptor_metadata.scope))
                 {
                     return None;
                 }
