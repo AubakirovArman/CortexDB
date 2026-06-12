@@ -2663,7 +2663,7 @@
     "crates/cortex-engine/src/verification.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 563,
+      "lines": 30,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2678,6 +2678,20 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 163,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/evidence.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 146,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/execution.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 223,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2748,6 +2762,20 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 215,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 81,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/verification/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 103,
       "soft_limit": 300,
       "warning_limit": 600
     },
