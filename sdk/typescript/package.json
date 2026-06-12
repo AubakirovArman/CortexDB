@@ -8,7 +8,7 @@
   "types": "./cortexdb-client.d.ts",
   "scripts": {
     "test": "node --test test.js",
-    "build": "esbuild cortexdb-client.ts --outfile=cortexdb-client.js --format=esm --target=es2022 && esbuild cortexdb-client.ts --outfile=cortexdb-client.cjs --format=cjs --target=node18"
+    "build": "esbuild cortexdb-client.ts --bundle --outfile=cortexdb-client.js --format=esm --target=es2022 && esbuild cortexdb-client.ts --bundle --outfile=cortexdb-client.cjs --format=cjs --target=node18"
   },
   "exports": {
     ".": {
@@ -21,7 +21,8 @@
     "cortexdb-client.d.ts",
     "cortexdb-client.js",
     "cortexdb-client.cjs",
-    "cortexdb-client.ts"
+    "cortexdb-client.ts",
+    "cortexdb-client/**/*.ts"
   ],
   "repository": {
     "type": "git",

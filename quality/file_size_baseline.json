@@ -6849,7 +6849,42 @@
     "sdk/typescript/cortexdb-client.ts": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 799,
+      "lines": 6,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/typescript/cortexdb-client/aql.ts": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 92,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/typescript/cortexdb-client/client.ts": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 247,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/typescript/cortexdb-client/errors.ts": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 28,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/typescript/cortexdb-client/grounding.ts": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 168,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/typescript/cortexdb-client/types.ts": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 275,
       "soft_limit": 300,
       "warning_limit": 600
     },
