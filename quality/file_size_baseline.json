@@ -4161,7 +4161,35 @@
     "mk/enterprise-rag-runs.mk": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 812,
+      "lines": 4,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-runs/analysis.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 145,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-runs/answers.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 241,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-runs/judges.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 293,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-runs/retrieval.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 133,
       "soft_limit": 300,
       "warning_limit": 600
     },
