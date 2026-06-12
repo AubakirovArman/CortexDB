@@ -658,10 +658,45 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/logger.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 112,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/main.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 3459,
+      "lines": 766,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/metrics.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 159,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/prefilter.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 788,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/prefilter/diversity.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 254,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/reporting.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 476,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -669,6 +704,20 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 867,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 653,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/vectors.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 362,
       "soft_limit": 300,
       "warning_limit": 600
     },
