@@ -919,6 +919,12 @@ SINGLE_NODE_PERF_CELLS ?= 500
 SINGLE_NODE_PERF_MAX_TOTAL_MS ?= 30000
 SINGLE_NODE_PERF_MIN_INGEST_CELLS_PER_SEC ?= 1
 SINGLE_NODE_PERF_MAX_RSS_BYTES ?= 1073741824
+VERIFY_PERF_ROOT ?= target/verify-performance
+VERIFY_PERF_REPORT ?= $(VERIFY_PERF_ROOT)/report.json
+VERIFY_PERF_CELLS ?= 10000
+VERIFY_PERF_WARMUP_SAMPLES ?= 1
+VERIFY_PERF_SAMPLES ?= 25
+VERIFY_PERF_MAX_P95_MS ?= 250
 PERFORMANCE_TREND_ROOT ?= target/performance-trends
 PERFORMANCE_TREND_REPORT ?= $(PERFORMANCE_TREND_ROOT)/report.json
 PERFORMANCE_HISTORY_ROOT ?= fixtures/performance/history
@@ -4469,6 +4475,10 @@ multihop-rag-temporal-subtype-analysis-v6:
 
 single-node-performance-check:
 	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)" --min-ingest-cells-per-sec "$(SINGLE_NODE_PERF_MIN_INGEST_CELLS_PER_SEC)" --max-rss-bytes "$(SINGLE_NODE_PERF_MAX_RSS_BYTES)"
+
+.PHONY: verify-performance-check
+verify-performance-check:
+	cargo run --release -p cortex-engine --bin verify_performance_check -- --root "$(VERIFY_PERF_ROOT)" --report "$(VERIFY_PERF_REPORT)" --cells "$(VERIFY_PERF_CELLS)" --warmup-samples "$(VERIFY_PERF_WARMUP_SAMPLES)" --samples "$(VERIFY_PERF_SAMPLES)" --max-p95-ms "$(VERIFY_PERF_MAX_P95_MS)"
 
 performance-trend-check:
 	python3 scripts/performance_trend_check.py --load-report "$(LOAD_SMOKE_REPORT)" --single-node-report "$(SINGLE_NODE_PERF_REPORT)" --history-root "$(PERFORMANCE_HISTORY_ROOT)" --report "$(PERFORMANCE_TREND_REPORT)"

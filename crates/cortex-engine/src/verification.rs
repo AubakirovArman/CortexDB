@@ -7,7 +7,7 @@ use cortex_core::CellId;
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::query::cache::AqlStatementKind;
-use crate::query::{scope_id, CellMetadata, EngineAqlIndex};
+use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
 use crate::source_trust::{SourceTrust, SourceTrustCategory};
 
@@ -25,7 +25,7 @@ pub use conflict_index::{ConflictRecord, ContradictionRelationOptions};
 use contradiction::contradiction_match;
 pub use export::VerificationReportExportFormat;
 use graph::{
-    add_graph_relation_contradictions, enrich_evidence_from_source_support_edges,
+    add_graph_relation_contradictions_from_versions, enrich_evidence_from_source_support_edges,
     is_graph_contradiction_payload,
 };
 use guards::{
@@ -177,7 +177,7 @@ impl Database {
     /// assert_eq!(report.fact, "budget is approved");
     /// ```
     pub fn verify_fact_aql(&self, aql: &str, view: &AgentView) -> EngineResult<VerificationReport> {
-        let (cached, index) = self.bind_aql_cached(aql, view)?;
+        let cached = self.bind_verify_fact_cached(aql, view)?;
         if cached.statement_kind != AqlStatementKind::VerifyFact {
             return Err(EngineError::InvalidOperation);
         }
@@ -188,7 +188,8 @@ impl Database {
         let mut contradicting_evidence = Vec::new();
         let mut guards = Vec::new();
         let mut numeric_conflicts = Vec::new();
-        for version in self.verification_candidate_versions(&index, &plan.fact) {
+        let candidate_versions = self.verification_candidate_versions(&plan.fact)?;
+        for version in &candidate_versions {
             if let Some(guard) =
                 stale_fact_guard(&plan.fact, &version.payload, version.cell_id, view)
             {
@@ -216,8 +217,14 @@ impl Database {
                 contradicting_evidence.push(item);
             }
         }
-        add_graph_relation_contradictions(self, &plan.fact, view, &mut contradicting_evidence);
-        enrich_evidence_from_source_support_edges(self, view, &mut evidence);
+        add_graph_relation_contradictions_from_versions(
+            &candidate_versions,
+            &plan.fact,
+            view,
+            &mut contradicting_evidence,
+        );
+        let support_versions = self.verification_source_support_versions(&evidence);
+        enrich_evidence_from_source_support_edges(self, &support_versions, view, &mut evidence);
         sort_evidence(&mut evidence);
         sort_evidence(&mut contradicting_evidence);
         evidence.truncate(8);
@@ -238,34 +245,115 @@ impl Database {
 
     fn verification_candidate_versions<'a>(
         &'a self,
-        index: &EngineAqlIndex,
         fact: &str,
-    ) -> Vec<&'a CellVersion> {
+    ) -> EngineResult<Vec<&'a CellVersion>> {
         let fact_terms = tokenize(fact);
         let txn = self.read_txn();
         if fact_terms.is_empty() {
-            return self.memtable.visible_iter(txn).collect();
+            return Ok(self.memtable.visible_iter(txn).collect());
         }
 
-        let mut candidates = BTreeSet::new();
-        for term in &fact_terms {
-            if let Some(term_candidates) = index.lexical.get(term) {
-                candidates.extend(term_candidates.iter().copied());
+        let mut cell_ids = BTreeSet::new();
+        if !self.manifest().live_segments.is_empty() {
+            let persisted = self.persisted_index_state_cached()?;
+            for term in &fact_terms {
+                if let Some(term_candidates) = persisted.lexical.terms.get(term) {
+                    cell_ids.extend(
+                        term_candidates
+                            .iter()
+                            .filter_map(|candidate| persisted.candidate_to_cell.get(candidate))
+                            .copied(),
+                    );
+                }
             }
         }
-        if candidates.is_empty() {
-            return self.memtable.visible_iter(txn).collect();
+
+        let checkpoint_seq = cortex_core::CommitSeq(self.manifest().checkpoint_seq);
+        let changed = self
+            .memtable
+            .changed_cell_ids_after(checkpoint_seq)
+            .into_iter()
+            .collect::<BTreeSet<_>>();
+        let scan_all_live = self.manifest().live_segments.is_empty();
+        if scan_all_live {
+            for version in self.memtable.visible_iter(txn) {
+                if payload_contains_any_term(&version.payload, &fact_terms) {
+                    cell_ids.insert(version.cell_id);
+                }
+            }
+        } else {
+            for cell_id in changed {
+                let Some(version) = self.memtable.read(txn, cell_id) else {
+                    continue;
+                };
+                if payload_contains_any_term(&version.payload, &fact_terms) {
+                    cell_ids.insert(version.cell_id);
+                }
+            }
         }
 
-        let mut versions = candidates
+        if cell_ids.is_empty() && scan_all_live {
+            return Ok(self.memtable.visible_iter(txn).collect());
+        }
+        if cell_ids.is_empty() {
+            for version in self.memtable.visible_iter(txn).take(32) {
+                cell_ids.insert(version.cell_id);
+            }
+        }
+
+        let mut versions = cell_ids
             .into_iter()
-            .filter_map(|candidate| index.candidate_to_cell.get(&candidate))
-            .filter_map(|cell_id| self.memtable.read(txn, *cell_id))
+            .filter_map(|cell_id| self.memtable.read(txn, cell_id))
             .collect::<Vec<_>>();
         versions.sort_by_key(|version| version.cell_id);
         versions.dedup_by_key(|version| version.cell_id);
-        versions
+        Ok(versions)
     }
+
+    fn verification_source_support_versions<'a>(
+        &'a self,
+        evidence: &[VerificationEvidence],
+    ) -> Vec<&'a CellVersion> {
+        if evidence.is_empty() {
+            return Vec::new();
+        }
+        let evidence_ids = evidence
+            .iter()
+            .map(|item| item.cell_id)
+            .map(|cell_id| format!("cell:{}", cell_id.0))
+            .collect::<Vec<_>>();
+        let txn = self.read_txn();
+        let checkpoint_seq = cortex_core::CommitSeq(self.manifest().checkpoint_seq);
+        let scan_all_live = self.manifest().live_segments.is_empty();
+        let visible = if scan_all_live {
+            self.memtable.visible_iter(txn).collect::<Vec<_>>()
+        } else {
+            self.memtable
+                .visible_created_after_iter(txn, checkpoint_seq)
+                .collect::<Vec<_>>()
+        };
+        visible
+            .into_iter()
+            .filter(|version| {
+                let metadata = CellMetadata::from_payload(&version.payload);
+                metadata.cell_type == "relation"
+                    && evidence_ids.iter().any(|id| {
+                        std::str::from_utf8(&version.payload)
+                            .map(|payload| payload.contains(id))
+                            .unwrap_or(false)
+                    })
+            })
+            .collect()
+    }
+}
+
+fn payload_contains_any_term(payload: &[u8], fact_terms: &[String]) -> bool {
+    if fact_terms.is_empty() {
+        return true;
+    }
+    let metadata = CellMetadata::from_payload(payload);
+    let terms = metadata.weighted_lexical_terms();
+    fact_terms.iter().any(|term| terms.contains_key(term))
 }
 
 fn verification_status(has_support: bool, has_contradiction: bool) -> VerificationStatus {

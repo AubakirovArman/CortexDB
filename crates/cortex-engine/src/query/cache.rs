@@ -213,6 +213,35 @@ impl Database {
         Ok((cached, index))
     }
 
+    pub(crate) fn bind_verify_fact_cached(
+        &self,
+        aql: &str,
+        view: &AgentView,
+    ) -> EngineResult<CachedAqlPlan> {
+        let catalog_fingerprint = self.aql_catalog_fingerprint();
+        let key = AqlQueryCache::key(aql, view, catalog_fingerprint);
+        if let Some(cached) = {
+            let mut cache = self
+                .aql_query_cache
+                .lock()
+                .map_err(|_| cache_lock_error())?;
+            cache.prepare_catalog(catalog_fingerprint);
+            cache.get(&key)
+        } {
+            return Ok(cached);
+        }
+
+        let statement = parse_aql(aql).map_err(|error| EngineError::AqlParse(error.to_string()))?;
+        let catalog = EngineAqlIndex::default();
+        let bound = Binder::new(&catalog, view).bind_statement(&statement)?;
+        let cached = CachedAqlPlan::from_statement(&statement, bound);
+        self.aql_query_cache
+            .lock()
+            .map_err(|_| cache_lock_error())?
+            .insert(key, cached.clone());
+        Ok(cached)
+    }
+
     fn aql_catalog_fingerprint(&self) -> u64 {
         let mut hasher = std::collections::hash_map::DefaultHasher::new();
         self.current_seq.0.hash(&mut hasher);

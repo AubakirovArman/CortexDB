@@ -9,6 +9,7 @@ CHECKPOINT = ROOT / "crates/cortex-engine/src/checkpoint.rs"
 MEMTABLE = ROOT / "crates/cortex-core/src/memtable/mod.rs"
 SEGMENT = ROOT / "crates/cortex-storage/src/segment.rs"
 VERIFY = ROOT / "crates/cortex-engine/src/verification.rs"
+VERIFY_GRAPH = ROOT / "crates/cortex-engine/src/verification/graph.rs"
 CONFLICT_INDEX = ROOT / "crates/cortex-engine/src/verification/conflict_index.rs"
 
 
@@ -27,6 +28,7 @@ def main() -> None:
     memtable = MEMTABLE.read_text()
     segment = SEGMENT.read_text()
     verify = VERIFY.read_text()
+    verify_graph = VERIFY_GRAPH.read_text()
     conflict_index = CONFLICT_INDEX.read_text()
 
     require(memtable, "pub fn visible_iter", "borrowed visible iterator")
@@ -64,6 +66,12 @@ def main() -> None:
         "owned segment writer in checkpoint/compact",
     )
     forbid(verify, "self.snapshot_versions()", "VERIFY FACT full clone scan")
+    forbid(verify, "bind_aql_cached", "VERIFY FACT retrieval-index bind path")
+    forbid(
+        verify_graph,
+        "conflicts_for_fact",
+        "VERIFY graph enrichment full conflict-index scan",
+    )
     forbid(
         conflict_index,
         "self.snapshot_versions()",
