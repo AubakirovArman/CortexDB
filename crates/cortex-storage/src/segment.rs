@@ -3,7 +3,7 @@ use std::path::Path;
 
 use crate::atomic::{append_crc32c, verify_crc32c, write_atomic};
 use crate::error::{StorageError, StorageResult};
-use crate::format::SEGMENT_MAGIC;
+use crate::format::{LEGACY_SEGMENT_MAGIC, SEGMENT_MAGIC};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SegmentCell {
@@ -14,12 +14,13 @@ pub struct SegmentCell {
     pub payload: Vec<u8>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SegmentCellRef<'a> {
     pub candidate_id: u32,
     pub cell_id: u64,
     pub created_seq: u64,
     pub deleted_seq: Option<u64>,
+    pub descriptor: Option<Vec<u8>>,
     pub payload: &'a [u8],
 }
 
@@ -30,9 +31,16 @@ impl<'a> From<&'a SegmentCell> for SegmentCellRef<'a> {
             cell_id: cell.cell_id,
             created_seq: cell.created_seq,
             deleted_seq: cell.deleted_seq,
+            descriptor: None,
             payload: &cell.payload,
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SegmentCellRecord {
+    pub cell: SegmentCell,
+    pub descriptor: Option<Vec<u8>>,
 }
 
 /// Lightweight per-cell entry that omits the payload. Index-rebuild paths only
@@ -75,6 +83,9 @@ impl SegmentWriter {
             put_u32(&mut out, cell.candidate_id);
             put_u64(&mut out, cell.created_seq);
             put_u64(&mut out, cell.deleted_seq.unwrap_or(0));
+            let descriptor = cell.descriptor.as_deref().unwrap_or(&[]);
+            put_u32(&mut out, descriptor.len() as u32);
+            out.extend_from_slice(descriptor);
             put_u32(&mut out, cell.payload.len() as u32);
             out.extend_from_slice(cell.payload);
         }
@@ -88,6 +99,11 @@ impl SegmentReader {
     pub fn read(path: impl AsRef<Path>) -> StorageResult<Vec<SegmentCell>> {
         let bytes = std::fs::read(path)?;
         decode_segment(&bytes)
+    }
+
+    pub fn read_records(path: impl AsRef<Path>) -> StorageResult<Vec<SegmentCellRecord>> {
+        let bytes = std::fs::read(path)?;
+        decode_segment_records(&bytes)
     }
 
     pub fn read_lookup(path: impl AsRef<Path>) -> StorageResult<SegmentLookup> {
@@ -139,13 +155,29 @@ impl SegmentLookup {
 }
 
 fn decode_segment(bytes: &[u8]) -> StorageResult<Vec<SegmentCell>> {
+    decode_segment_records(bytes).map(|records| {
+        records
+            .into_iter()
+            .map(|record| record.cell)
+            .collect::<Vec<_>>()
+    })
+}
+
+fn decode_segment_records(bytes: &[u8]) -> StorageResult<Vec<SegmentCellRecord>> {
     let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidSegmentFile)?;
-    if bytes.len() < 8 || bytes[..4] != SEGMENT_MAGIC {
+    if bytes.len() < 8 {
         return Err(StorageError::InvalidSegmentFile);
     }
+    let is_v2 = if bytes[..4] == SEGMENT_MAGIC {
+        true
+    } else if bytes[..4] == LEGACY_SEGMENT_MAGIC {
+        false
+    } else {
+        return Err(StorageError::InvalidSegmentFile);
+    };
     let mut cursor = 4;
     let count = read_u32(bytes, &mut cursor)? as usize;
-    let mut cells = Vec::with_capacity(count);
+    let mut records = Vec::with_capacity(count);
     for _ in 0..count {
         let cell_id = read_u64(bytes, &mut cursor)?;
         let candidate_id = read_u32(bytes, &mut cursor)?;
@@ -154,27 +186,44 @@ fn decode_segment(bytes: &[u8]) -> StorageResult<Vec<SegmentCell>> {
             0 => None,
             value => Some(value),
         };
+        let descriptor = if is_v2 {
+            let len = read_u32(bytes, &mut cursor)? as usize;
+            let value = read_bytes(bytes, &mut cursor, len)?;
+            (!value.is_empty()).then(|| value.to_vec())
+        } else {
+            None
+        };
         let len = read_u32(bytes, &mut cursor)? as usize;
         let payload = read_bytes(bytes, &mut cursor, len)?.to_vec();
-        cells.push(SegmentCell {
-            candidate_id,
-            cell_id,
-            created_seq,
-            deleted_seq,
-            payload,
+        records.push(SegmentCellRecord {
+            cell: SegmentCell {
+                candidate_id,
+                cell_id,
+                created_seq,
+                deleted_seq,
+                payload,
+            },
+            descriptor,
         });
     }
     if cursor != bytes.len() {
         return Err(StorageError::InvalidSegmentFile);
     }
-    Ok(cells)
+    Ok(records)
 }
 
 fn decode_segment_candidate_entries(bytes: &[u8]) -> StorageResult<Vec<SegmentCandidateEntry>> {
     let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidSegmentFile)?;
-    if bytes.len() < 8 || bytes[..4] != SEGMENT_MAGIC {
+    if bytes.len() < 8 {
         return Err(StorageError::InvalidSegmentFile);
     }
+    let is_v2 = if bytes[..4] == SEGMENT_MAGIC {
+        true
+    } else if bytes[..4] == LEGACY_SEGMENT_MAGIC {
+        false
+    } else {
+        return Err(StorageError::InvalidSegmentFile);
+    };
     let mut cursor = 4;
     let count = read_u32(bytes, &mut cursor)? as usize;
     let mut entries = Vec::with_capacity(count);
@@ -183,6 +232,10 @@ fn decode_segment_candidate_entries(bytes: &[u8]) -> StorageResult<Vec<SegmentCa
         let candidate_id = read_u32(bytes, &mut cursor)?;
         let _created_seq = read_u64(bytes, &mut cursor)?;
         let deleted = read_u64(bytes, &mut cursor)? != 0;
+        if is_v2 {
+            let descriptor_len = read_u32(bytes, &mut cursor)? as usize;
+            read_bytes(bytes, &mut cursor, descriptor_len)?;
+        }
         let len = read_u32(bytes, &mut cursor)? as usize;
         // Skip the payload without copying it.
         read_bytes(bytes, &mut cursor, len)?;
@@ -234,7 +287,7 @@ fn read_bytes<'a>(bytes: &'a [u8], cursor: &mut usize, len: usize) -> StorageRes
 
 #[cfg(test)]
 mod tests {
-    use super::{SegmentCandidateEntry, SegmentCell, SegmentReader, SegmentWriter};
+    use super::{SegmentCandidateEntry, SegmentCell, SegmentCellRef, SegmentReader, SegmentWriter};
 
     fn sample_cells() -> Vec<SegmentCell> {
         vec![
@@ -273,5 +326,40 @@ mod tests {
             })
             .collect();
         assert_eq!(entries, expected);
+    }
+
+    #[test]
+    fn segment_records_roundtrip_optional_descriptor_bytes() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("segment.acs");
+        let payload = b"typed payload".to_vec();
+        let descriptor = b"descriptor bytes".to_vec();
+        let cells = [SegmentCellRef {
+            candidate_id: 7,
+            cell_id: 70,
+            created_seq: 3,
+            deleted_seq: None,
+            descriptor: Some(descriptor.clone()),
+            payload: &payload,
+        }];
+
+        SegmentWriter::write_refs(&path, &cells).unwrap();
+
+        assert_eq!(
+            SegmentReader::read(&path).unwrap(),
+            vec![SegmentCell {
+                candidate_id: 7,
+                cell_id: 70,
+                created_seq: 3,
+                deleted_seq: None,
+                payload,
+            }]
+        );
+        let records = SegmentReader::read_records(&path).unwrap();
+        assert_eq!(records.len(), 1);
+        assert_eq!(
+            records[0].descriptor.as_deref(),
+            Some(descriptor.as_slice())
+        );
     }
 }

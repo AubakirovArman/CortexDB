@@ -11,7 +11,7 @@ mod paths;
 pub(crate) mod vector;
 
 use cortex_core::memtable::MemTable;
-use cortex_core::{CellId, CommitSeq};
+use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::{
     ManifestHnswProfile, ManifestSegment, ManifestVectorProfile, StorageManifest,
@@ -297,6 +297,7 @@ impl Database {
                 cell_id: version.cell_id.0,
                 created_seq: version.created_seq.0,
                 deleted_seq: None,
+                descriptor: Some(version.descriptor.encode_section_v1()),
                 payload: version.payload.as_slice(),
             });
         }
@@ -306,6 +307,7 @@ impl Database {
                 cell_id: cell_id.0,
                 created_seq: 0,
                 deleted_seq: Some(deleted.0),
+                descriptor: None,
                 payload: &[],
             });
         }
@@ -344,6 +346,7 @@ impl Database {
                     cell_id: version.1.cell_id.0,
                     created_seq: version.1.created_seq.0,
                     deleted_seq: None,
+                    descriptor: Some(version.1.descriptor.encode_section_v1()),
                     payload: version.1.payload.as_slice(),
                 })
             })
@@ -437,16 +440,36 @@ pub(crate) fn load_checkpoint(root: &Path) -> EngineResult<CheckpointLoad> {
     let manifest = StorageManifest::load(manifest_path(root))?;
     let mut memtable = MemTable::default();
     for segment in &manifest.live_segments {
-        let cells = SegmentReader::read(segment_path(&segments_path(root), segment.id))?;
-        for cell in cells {
+        let records = SegmentReader::read_records(segment_path(&segments_path(root), segment.id))?;
+        for record in records {
+            let cell = record.cell;
             if let Some(deleted) = cell.deleted_seq {
                 memtable.record_tombstone(CellId(cell.cell_id), CommitSeq(deleted));
             } else {
-                memtable.put_cell(
-                    CellId(cell.cell_id),
-                    CommitSeq(cell.created_seq),
-                    cell.payload,
-                );
+                match record.descriptor {
+                    Some(bytes) => {
+                        let descriptor =
+                            CellDescriptor::decode_section_v1(&bytes).ok_or_else(|| {
+                                EngineError::StorageInvariant(format!(
+                                    "segment {} contains an invalid cell descriptor for cell {}",
+                                    segment.id, cell.cell_id
+                                ))
+                            })?;
+                        memtable.put_cell_with_descriptor(
+                            CellId(cell.cell_id),
+                            CommitSeq(cell.created_seq),
+                            cell.payload,
+                            descriptor,
+                        );
+                    }
+                    None => {
+                        memtable.put_cell(
+                            CellId(cell.cell_id),
+                            CommitSeq(cell.created_seq),
+                            cell.payload,
+                        );
+                    }
+                }
             }
         }
     }
@@ -468,8 +491,14 @@ fn read_persisted_lexical_index(path: &Path) -> EngineResult<LexicalIndex> {
 mod persisted_index_cache_tests {
     use std::sync::Arc;
 
-    use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
+    use cortex_core::memtable::ReadTxn;
+    use cortex_core::{
+        CellDescriptor, CellId, CommitSeq, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType,
+    };
+    use cortex_storage::manifest::{ManifestSegment, StorageManifest};
+    use cortex_storage::segment::{SegmentCellRef, SegmentWriter};
 
+    use super::{load_checkpoint, segment_path, segments_path};
     use crate::Database;
 
     fn cell(body: &str) -> KnowledgeCell {
@@ -534,5 +563,60 @@ mod persisted_index_cache_tests {
             "a checkpoint that rewrites segments must invalidate the cached index"
         );
         assert_eq!(after.candidate_to_cell.len(), 2);
+    }
+
+    #[test]
+    fn load_checkpoint_prefers_segment_descriptor_over_payload_headers() {
+        let dir = tempfile::tempdir().unwrap();
+        let segments = segments_path(dir.path());
+        std::fs::create_dir_all(&segments).unwrap();
+        let payload =
+            b"scope=project:payload\nstatus=draft\ntype=raw\nsource_trust_q16=1000\n\nhello";
+        let descriptor = CellDescriptor {
+            scope: "project:typed".to_owned(),
+            status: "verified".to_owned(),
+            cell_type: KnowledgeCellType::Fact,
+            memory_type: None,
+            ttl_seconds: None,
+            created_unix_seconds: Some(123),
+            source_trust_q16: Some(60_000),
+            source: Some("segment-descriptor".to_owned()),
+            citation: None,
+            content_hash: None,
+            parent_id: None,
+            valid_from: None,
+            valid_to: None,
+        };
+        let cells = [SegmentCellRef {
+            candidate_id: 1,
+            cell_id: 42,
+            created_seq: 7,
+            deleted_seq: None,
+            descriptor: Some(descriptor.encode_section_v1()),
+            payload,
+        }];
+        SegmentWriter::write_refs(segment_path(&segments, 1), &cells).unwrap();
+        StorageManifest {
+            generation: 1,
+            checkpoint_seq: 7,
+            live_segments: vec![ManifestSegment {
+                id: 1,
+                generation: 1,
+                checkpoint_seq: 7,
+                cell_count: 1,
+            }],
+            ..StorageManifest::default()
+        }
+        .store(super::manifest_path(dir.path()))
+        .unwrap();
+
+        let checkpoint = load_checkpoint(dir.path()).unwrap();
+        let version = checkpoint
+            .memtable
+            .read(ReadTxn::at(CommitSeq(7)), CellId(42))
+            .unwrap();
+
+        assert_eq!(version.payload, payload);
+        assert_eq!(version.descriptor, descriptor);
     }
 }

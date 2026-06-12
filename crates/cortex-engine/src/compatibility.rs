@@ -131,7 +131,19 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(
             markers,
-            vec!["ACLOGv0", "ACS1", "ACB0", "ACI3", "ACV0", "ACH0", "ACM0"]
+            vec!["ACLOGv0", "ACS2", "ACB0", "ACI3", "ACV0", "ACH0", "ACM0"]
+        );
+
+        let segment = summary
+            .storage_formats
+            .iter()
+            .find(|format| format.extension == "acs")
+            .expect("segment compatibility should be public");
+        assert_eq!(segment.current_version, 2);
+        assert_eq!(segment.legacy_magics, vec!["ACS1"]);
+        assert_eq!(
+            segment.compatibility_rule,
+            "ACS1 remains read-only compatible; breaking changes require a new segment magic"
         );
 
         let lexical = summary

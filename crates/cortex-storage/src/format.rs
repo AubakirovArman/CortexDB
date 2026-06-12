@@ -1,6 +1,7 @@
 use crate::wal::{ACLOG_MAGIC, WAL_FORMAT_VERSION};
 
-pub const SEGMENT_MAGIC: [u8; 4] = *b"ACS1";
+pub const LEGACY_SEGMENT_MAGIC: [u8; 4] = *b"ACS1";
+pub const SEGMENT_MAGIC: [u8; 4] = *b"ACS2";
 pub const BITMAP_INDEX_MAGIC: [u8; 4] = *b"ACB0";
 pub const LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI3";
 pub const LEGACY_LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI0";
@@ -48,9 +49,10 @@ pub fn storage_format_specs() -> [StorageFormatSpec; 7] {
             name: "Segment",
             extension: "acs",
             current_magic: &SEGMENT_MAGIC,
-            current_version: 1,
-            legacy_magics: &[],
-            compatibility_rule: "breaking changes require a new segment magic",
+            current_version: 2,
+            legacy_magics: &[&LEGACY_SEGMENT_MAGIC],
+            compatibility_rule:
+                "ACS1 remains read-only compatible; breaking changes require a new segment magic",
         },
         StorageFormatSpec {
             kind: StorageFormatKind::BitmapIndex,

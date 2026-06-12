@@ -65,6 +65,7 @@ fn acs_segment_writes_borrowed_cells_without_owned_payloads() {
             cell_id: 20,
             created_seq: 8,
             deleted_seq: None,
+            descriptor: None,
             payload: &second,
         },
         SegmentCellRef {
@@ -72,6 +73,7 @@ fn acs_segment_writes_borrowed_cells_without_owned_payloads() {
             cell_id: 10,
             created_seq: 7,
             deleted_seq: None,
+            descriptor: None,
             payload: &first,
         },
     ];
