@@ -2250,7 +2250,35 @@
     "crates/cortex-engine/src/search/rerank.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 655,
+      "lines": 12,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/rerank/calibration.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 134,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/rerank/scoring.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 186,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/rerank/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 243,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/search/rerank/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 97,
       "soft_limit": 300,
       "warning_limit": 600
     },
