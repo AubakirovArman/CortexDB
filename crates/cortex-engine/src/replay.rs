@@ -93,10 +93,18 @@ fn replay_scan(
         metrics.records_applied += 1;
         match decoded.operation {
             DbOperation::PutCell { cell_id, payload } => {
-                memtable.put_cell(cell_id, seq, payload);
+                if let Some(descriptor) = decoded.descriptor {
+                    memtable.put_cell_with_descriptor(cell_id, seq, payload, descriptor);
+                } else {
+                    memtable.put_cell(cell_id, seq, payload);
+                }
             }
             DbOperation::PatchCell { cell_id, payload } => {
-                memtable.patch_cell(cell_id, seq, payload)?;
+                if let Some(descriptor) = decoded.descriptor {
+                    memtable.patch_cell_with_descriptor(cell_id, seq, payload, descriptor)?;
+                } else {
+                    memtable.patch_cell(cell_id, seq, payload)?;
+                }
             }
             DbOperation::TombstoneCell { cell_id } => {
                 memtable.record_tombstone(cell_id, seq);

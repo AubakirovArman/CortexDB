@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 pub use accumulator::{CellAccumulator, SectionFragment};
 pub use version::{CellVersion, IndexDebt};
 
+use crate::cell::CellDescriptor;
 use crate::error::{CoreError, CoreResult};
 use crate::types::{CellId, CommitSeq};
 
@@ -45,6 +46,21 @@ impl MemTable {
             .push(CellVersion::new(cell_id, seq, payload, 0));
     }
 
+    pub fn put_cell_with_descriptor(
+        &mut self,
+        cell_id: CellId,
+        seq: CommitSeq,
+        payload: Vec<u8>,
+        descriptor: CellDescriptor,
+    ) {
+        self.versions
+            .entry(cell_id)
+            .or_default()
+            .push(CellVersion::new_with_descriptor(
+                cell_id, seq, payload, 0, descriptor,
+            ));
+    }
+
     pub fn patch_cell(
         &mut self,
         cell_id: CellId,
@@ -60,6 +76,27 @@ impl MemTable {
             version.deleted_seq = Some(seq);
         }
         versions.push(CellVersion::new(cell_id, seq, payload, depth));
+        Ok(())
+    }
+
+    pub fn patch_cell_with_descriptor(
+        &mut self,
+        cell_id: CellId,
+        seq: CommitSeq,
+        payload: Vec<u8>,
+        descriptor: CellDescriptor,
+    ) -> CoreResult<()> {
+        let versions = self
+            .versions
+            .get_mut(&cell_id)
+            .ok_or(CoreError::CellNotFound(cell_id))?;
+        let depth = versions.last().map_or(0, |version| version.delta_depth + 1);
+        if let Some(version) = versions.last_mut() {
+            version.deleted_seq = Some(seq);
+        }
+        versions.push(CellVersion::new_with_descriptor(
+            cell_id, seq, payload, depth, descriptor,
+        ));
         Ok(())
     }
 

@@ -1,8 +1,8 @@
-use cortex_core::{CellId, CommitSeq};
+use cortex_core::{CellDescriptor, CellId, CommitSeq, KnowledgeCellType};
 use cortex_engine::{
-    decode_cell_core, decode_cell_id, encode_cell_core, encode_cell_id,
-    operation_from_decoded_wal_record, Database, DbOperation, EngineError, OperationDecoder,
-    OperationEncoder,
+    decode_cell_core, decode_cell_id, descriptor_from_decoded_wal_record, encode_cell_core,
+    encode_cell_id, operation_from_decoded_wal_record, Database, DbOperation, EngineError,
+    OperationDecoder, OperationEncoder,
 };
 use cortex_storage::wal::{
     checksum::crc32c, SectionTag, WalCodec, WalRecord, WalRecordType, WalSection,
@@ -13,7 +13,8 @@ use cortex_storage::wal::{
 fn operation_put_cell_roundtrips_through_wal() {
     let operation = DbOperation::PutCell {
         cell_id: CellId(7),
-        payload: b"hello".to_vec(),
+        payload: b"scope=project:test\nstatus=ready\ntype=fact\nsource_trust_q16=50000\n\nhello"
+            .to_vec(),
     };
     let record = OperationEncoder::encode_with_seq(CommitSeq(3), &operation);
     let encoded = WalCodec::encode_record(&record).unwrap();
@@ -30,6 +31,19 @@ fn operation_put_cell_roundtrips_through_wal() {
     assert_eq!(
         decode_cell_id(&encode_cell_id(CellId(7))).unwrap(),
         CellId(7)
+    );
+    let descriptor = descriptor_from_decoded_wal_record(&decoded)
+        .unwrap()
+        .expect("descriptor section");
+    assert_eq!(
+        descriptor,
+        CellDescriptor {
+            scope: "project:test".to_owned(),
+            status: "ready".to_owned(),
+            cell_type: KnowledgeCellType::Fact,
+            source_trust_q16: Some(50_000),
+            ..CellDescriptor::default()
+        }
     );
 }
 

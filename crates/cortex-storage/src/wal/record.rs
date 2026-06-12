@@ -57,6 +57,7 @@ pub enum SectionTag {
     EdgeHints,
     CellMetadata,
     ReplicationCore,
+    CellDescriptor,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -151,6 +152,7 @@ impl SectionTag {
             Self::EdgeHints => 7,
             Self::CellMetadata => 8,
             Self::ReplicationCore => 9,
+            Self::CellDescriptor => 10,
         }
     }
 
@@ -165,6 +167,7 @@ impl SectionTag {
             7 => Some(Self::EdgeHints),
             8 => Some(Self::CellMetadata),
             9 => Some(Self::ReplicationCore),
+            10 => Some(Self::CellDescriptor),
             _ => None,
         }
     }

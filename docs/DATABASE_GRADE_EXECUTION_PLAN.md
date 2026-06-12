@@ -6,7 +6,8 @@ Execution rule: close epics in order. Use the dependency-aware order from the so
 
 Status values: `next`, `in_progress`, `partial`, `done`, `blocked`, `frozen`.
 
-Current pointer: `EPIC-D15` (version bump and local release gates are green; public tag correction remains).
+Current pointer: `EPIC-A02` (typed descriptor WAL path is in progress; `EPIC-D15`
+public tag correction remains a release-management decision).
 
 Impact measurement rule: after each meaningful retrieval, ContextPack, or answer
 pipeline change, run `make enterprise-rag-bench-impact-gemini-50`. The target
@@ -15,7 +16,7 @@ uses official-clean 50 questions, Gemini 3.5 Flash as answerer and judge,
 with `reuse_db=1` so the corpus is not reingested. Current baseline:
 `overall=41.36`, `correctness=42.0`, `completeness=44.76`, `document_recall=56.0`,
 `invalid_extra_docs=9.44`, `answer_tokens=302372`, `judge_tokens=27312`
-from `target/enterprise-rag-bench/official-clean/50/impact-gemini50-20260612T105301Z/answer-gemini/official_clean_run_report.json`.
+from `target/enterprise-rag-bench/official-clean/50/impact-gemini50-20260612T110930Z/answer-gemini/official_clean_run_report.json`.
 
 ## First Execution Queue
 
@@ -80,8 +81,10 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 - goal: data model — фундамент БД; сейчас scope/trust/даты — текстовые строки в payload, т.е. security-поле живёт в user-контенте и парсится regex'ом на каждом доступе.
 - problem: Проблема: `CellMetadata::from_payload` в hot path (в т.ч. в сортировке, database.rs:461-474); подделываемость представления.
 - tasks:
-  - [ ] 1) `CellDescriptor {scope_id, cell_type, status, source_trust_q16, created_at, valid_from/to, content_hash, parent_id, citation}` как бинарная секция в WAL-записи (расширить существующий `wal_record_from_operation_with_metadata`) и в segment v2 — started with an in-memory typed descriptor in `cortex-core`; binary WAL/segment persistence remains pending.
-  - [ ] 2) dual-read: старые payload-строки парсятся один раз при replay/load и материализуются в descriptor
+  - [x] 1a) `CellDescriptor {scope_id, cell_type, status, source_trust_q16, created_at, valid_from/to, content_hash, parent_id, citation}` as a binary WAL section — `CellDescriptor::encode_section_v1/decode_section_v1`, `SectionTag::CellDescriptor`, automatic put/patch WAL emission, and replay apply are implemented.
+  - [ ] 1b) descriptor in segment v2 — checkpoint/segment files still persist payload-only cells.
+  - [x] 2a) WAL dual-read: new WAL records use binary descriptor; old WAL records without the section still materialize descriptor from legacy payload headers once.
+  - [ ] 2b) segment/checkpoint dual-read: persisted checkpoint load still materializes descriptor from payload because segment v2 is not implemented yet.
   - [x] 3) кэш descriptor в `CellVersion`
   - [ ] 4) `cortexdb migrate` для офлайн-перегонки.
 - acceptance:
@@ -92,8 +95,8 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 - dependencies: A01, A20 (property-тесты до начала).
 - risks: САМЫЙ ОПАСНЫЙ рефакторинг блока — формат данных; строго version-gated, dual-read, ни одного big-bang.
 - expected effect: модель данных перестаёт быть «текстом с конвенциями»; разблокирует B06, B10, C13, C14.
-- evidence: Added `cortex_core::CellDescriptor`, lossy legacy payload header materialization, `CellVersion.descriptor`, and core tests for descriptor decode/cache. `Database::retrieve_cells` now uses the cached descriptor for the source-trust/freshness quality fast path and falls back to legacy payload parsing when source-ref confidence is required. Checks passed: `cargo fmt --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, targeted descriptor/retrieval tests, and Gemini-50 impact on the existing DB stayed at the current baseline (`overall=41.36`, `document_recall=56.0`).
-- remaining: typed descriptor is not yet persisted as a WAL/segment binary section; permission/index hot paths still mostly parse legacy payload metadata; migration CLI remains pending.
+- evidence: Added `cortex_core::CellDescriptor`, lossy legacy payload header materialization, `CellVersion.descriptor`, and core tests for descriptor decode/cache. `Database::retrieve_cells` now uses the cached descriptor for the source-trust/freshness quality fast path and falls back to legacy payload parsing when source-ref confidence is required. Added binary WAL descriptor sections (`CellDescriptor` tag 10), put/patch WAL emission, replay dual-read, CLI WAL section-count contract update, and replay tests proving WAL descriptor wins over conflicting payload headers. Checks passed: `cargo fmt --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, targeted descriptor/retrieval/WAL tests, and Gemini-50 impact on the existing DB stayed at the current baseline (`overall=41.36`, `document_recall=56.0`; run `impact-gemini50-20260612T110930Z`).
+- remaining: descriptor is not yet persisted in segment v2; permission/index hot paths still mostly parse legacy payload metadata; migration CLI remains pending.
 
 ### EPIC-A03 — DATA_MODEL.md — контракт модели данных
 

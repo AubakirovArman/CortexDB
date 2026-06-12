@@ -1,4 +1,4 @@
-use cortex_core::{CellId, CommitSeq};
+use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::wal::{DecodedWalRecord, SectionTag, WalRecord, WalRecordType, WalSection};
 
 use crate::error::{EngineError, EngineResult};
@@ -21,6 +21,7 @@ pub enum DbOperation {
 pub struct DecodedDbOperation {
     pub seq: CommitSeq,
     pub operation: DbOperation,
+    pub descriptor: Option<CellDescriptor>,
 }
 
 #[derive(Clone, Debug)]
@@ -127,7 +128,12 @@ pub fn decoded_operation_from_wal_record(
         }),
         _ => Err(EngineError::InvalidOperation),
     }?;
-    Ok(DecodedDbOperation { seq, operation })
+    let descriptor = descriptor_from_decoded_wal_record(record)?;
+    Ok(DecodedDbOperation {
+        seq,
+        operation,
+        descriptor,
+    })
 }
 
 pub fn encode_cell_id(cell_id: CellId) -> [u8; 8] {
@@ -155,6 +161,17 @@ pub fn metadata_from_decoded_wal_record(record: &DecodedWalRecord) -> Option<&[u
     section(record, SectionTag::CellMetadata)
 }
 
+pub fn descriptor_from_decoded_wal_record(
+    record: &DecodedWalRecord,
+) -> EngineResult<Option<CellDescriptor>> {
+    let Some(bytes) = section(record, SectionTag::CellDescriptor) else {
+        return Ok(None);
+    };
+    CellDescriptor::decode_section_v1(bytes)
+        .map(Some)
+        .ok_or(EngineError::InvalidOperation)
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct DecodedCellCore {
     pub cell_id: CellId,
@@ -180,11 +197,13 @@ fn record_with_payload(
     seq: CommitSeq,
     payload: Vec<u8>,
 ) -> WalRecord {
+    let descriptor = CellDescriptor::from_payload_lossy(&payload);
     WalRecord::new(
         record_type,
         vec![
             WalSection::new(SectionTag::CellCore, encode_cell_core(cell_id, seq)),
             WalSection::new(SectionTag::PayloadInline, payload),
+            WalSection::new(SectionTag::CellDescriptor, descriptor.encode_section_v1()),
         ],
     )
 }

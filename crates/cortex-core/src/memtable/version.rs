@@ -27,6 +27,16 @@ impl CellVersion {
         delta_depth: u32,
     ) -> Self {
         let descriptor = CellDescriptor::from_payload_lossy(&payload);
+        Self::new_with_descriptor(cell_id, created_seq, payload, delta_depth, descriptor)
+    }
+
+    pub fn new_with_descriptor(
+        cell_id: CellId,
+        created_seq: CommitSeq,
+        payload: Vec<u8>,
+        delta_depth: u32,
+        descriptor: CellDescriptor,
+    ) -> Self {
         Self {
             cell_id,
             created_seq,

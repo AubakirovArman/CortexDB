@@ -1103,7 +1103,7 @@ fn wal_validate_and_dump_report_records() {
     ])
     .unwrap();
     assert!(validation.contains("records=1"));
-    assert!(validation.contains("known_sections=2"));
+    assert!(validation.contains("known_sections=3"));
 
     let dump = run(vec![
         "cortexdb".to_owned(),
@@ -1112,7 +1112,7 @@ fn wal_validate_and_dump_report_records() {
     ])
     .unwrap();
     assert!(dump.contains("type=PutCellBatch"));
-    assert!(dump.contains("sections=2"));
+    assert!(dump.contains("sections=3"));
 
     let _ = std::fs::remove_dir_all(path);
 }
