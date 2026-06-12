@@ -8,14 +8,14 @@ use axum::{
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Instant, SystemTime};
 use tower_http::cors::CorsLayer;
 use tower_http::limit::RequestBodyLimitLayer;
 
 use cortex_engine::DatabaseOptions;
-use responses::{ErrorCode, ErrorResponse, MetricsResponse};
+use responses::{CompactorControlResponse, ErrorCode, ErrorResponse, MetricsResponse};
 
 mod actor;
 mod aql;
@@ -132,6 +132,11 @@ pub struct ServerOptions {
     /// Defaults to production-safe behavior through `DatabaseOptions::default()`.
     /// Server startup may populate this from `EngineConfig::from_env()`.
     pub engine_database_options: DatabaseOptions,
+    /// Enable the background compaction task that periodically tries to merge
+    /// selected live segments.
+    pub background_compaction_enabled: bool,
+    /// Interval in seconds between background compaction passes.
+    pub background_compaction_interval_seconds: u64,
 }
 
 impl ServerOptions {
@@ -195,11 +200,24 @@ pub struct AppState {
     principal_quota_body_bytes_rejected: Arc<AtomicU64>,
     principal_quota_queue_acquired: Arc<AtomicU64>,
     principal_quota_queue_rejected: Arc<AtomicU64>,
+    compactions_triggered: Arc<AtomicU64>,
+    compactions_completed: Arc<AtomicU64>,
+    compaction_duration_ms_total: Arc<AtomicU64>,
+    compaction_cells_compacted: Arc<AtomicU64>,
+    compaction_input_bytes: Arc<AtomicU64>,
+    compaction_paused: Arc<AtomicBool>,
     rate_limit: Option<GlobalRateLimit>,
     principal_rate_limits: PrincipalRateLimits,
 }
 
 impl AppState {
+    fn db_actor_snapshot(&self) -> Vec<Arc<actor::DatabaseActor>> {
+        match self.dbs.lock() {
+            Ok(dbs) => dbs.values().cloned().collect(),
+            Err(_) => Vec::new(),
+        }
+    }
+
     pub fn get_db(&self, tenant: &str) -> std::io::Result<Arc<actor::DatabaseActor>> {
         if !validate_tenant_id(tenant) {
             return Err(std::io::Error::other(format!(
@@ -273,6 +291,12 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             principal_quota_body_bytes_rejected: Arc::new(AtomicU64::new(0)),
             principal_quota_queue_acquired: Arc::new(AtomicU64::new(0)),
             principal_quota_queue_rejected: Arc::new(AtomicU64::new(0)),
+            compactions_triggered: Arc::new(AtomicU64::new(0)),
+            compactions_completed: Arc::new(AtomicU64::new(0)),
+            compaction_duration_ms_total: Arc::new(AtomicU64::new(0)),
+            compaction_cells_compacted: Arc::new(AtomicU64::new(0)),
+            compaction_input_bytes: Arc::new(AtomicU64::new(0)),
+            compaction_paused: Arc::new(AtomicBool::new(false)),
             rate_limit,
             principal_rate_limits: PrincipalRateLimits::default(),
         };
@@ -311,11 +335,8 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap_or_default()
                     .as_secs();
-                let dbs = match ttl_state.dbs.lock() {
-                    Ok(d) => d,
-                    Err(_) => continue,
-                };
-                for actor in dbs.values() {
+                let actors = ttl_state.db_actor_snapshot();
+                for actor in actors {
                     match actor.expire_memory(now) {
                         Ok(expired) if !expired.is_empty() => {
                             tracing::info!(
@@ -328,6 +349,57 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
                 }
             }
         });
+
+        // Background incremental compaction task
+        if state.options.background_compaction_enabled {
+            let compaction_state = state.clone();
+            let interval_seconds = state.options.background_compaction_interval_seconds.max(1);
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(interval_seconds));
+                loop {
+                    interval.tick().await;
+                    if compaction_state.compaction_paused.load(Ordering::Relaxed) {
+                        continue;
+                    }
+                    let actors = compaction_state.db_actor_snapshot();
+                    for actor in actors {
+                        if actor.waiting_writers() > 0 {
+                            continue;
+                        }
+                        compaction_state
+                            .compactions_triggered
+                            .fetch_add(1, Ordering::Relaxed);
+                        match actor.maybe_incremental_compact() {
+                            Ok(Some(stats)) => {
+                                compaction_state
+                                    .compactions_completed
+                                    .fetch_add(1, Ordering::Relaxed);
+                                compaction_state
+                                    .compaction_duration_ms_total
+                                    .fetch_add(stats.duration_ms, Ordering::Relaxed);
+                                compaction_state
+                                    .compaction_cells_compacted
+                                    .fetch_add(stats.cells_compacted as u64, Ordering::Relaxed);
+                                compaction_state
+                                    .compaction_input_bytes
+                                    .fetch_add(stats.input_bytes, Ordering::Relaxed);
+                                tracing::info!(
+                                    "background compaction: segments {} -> {}, cells {}, input {} bytes",
+                                    stats.segments_before,
+                                    stats.segments_after,
+                                    stats.cells_compacted,
+                                    stats.input_bytes
+                                );
+                            }
+                            Ok(None) => {}
+                            Err(error) => {
+                                tracing::warn!("background compaction failed: {error}");
+                            }
+                        }
+                    }
+                }
+            });
+        }
 
         let listener = tokio::net::TcpListener::bind(addr).await?;
         axum::serve(listener, app).await?;
@@ -708,6 +780,29 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                     ErrorCode::RateLimited,
                     "principal request body quota exceeded",
                 )),
+            )
+                .into_response(),
+            &request_id,
+        );
+    }
+
+    if method == "POST"
+        && matches!(
+            path.as_str(),
+            "/v1/admin/compact/pause" | "/v1/admin/compact/resume"
+        )
+    {
+        let paused = path == "/v1/admin/compact/pause";
+        state.compaction_paused.store(paused, Ordering::Relaxed);
+        audit_http_response(&state, &audit_event, StatusCode::OK, None);
+        return with_request_id(
+            (
+                StatusCode::OK,
+                Json(CompactorControlResponse {
+                    background_enabled: state.options.background_compaction_enabled,
+                    paused,
+                    interval_seconds: state.options.background_compaction_interval_seconds.max(1),
+                }),
             )
                 .into_response(),
             &request_id,
@@ -1193,6 +1288,21 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                          # HELP cortexdb_principal_quota_queue_rejected Total per-principal actor queue permits rejected.\n\
                          # TYPE cortexdb_principal_quota_queue_rejected counter\n\
                          cortexdb_principal_quota_queue_rejected {}\n\
+# HELP cortexdb_compactions_triggered_total Total background compaction passes triggered.\n\
+# TYPE cortexdb_compactions_triggered_total counter\n\
+cortexdb_compactions_triggered_total {}\n\
+# HELP cortexdb_compactions_completed_total Total background compaction passes that wrote a new segment.\n\
+# TYPE cortexdb_compactions_completed_total counter\n\
+cortexdb_compactions_completed_total {}\n\
+# HELP cortexdb_compaction_duration_ms_total Total background compaction wall-clock time in milliseconds.\n\
+# TYPE cortexdb_compaction_duration_ms_total counter\n\
+cortexdb_compaction_duration_ms_total {}\n\
+# HELP cortexdb_compaction_cells_compacted_total Total cells written by background compaction.\n\
+# TYPE cortexdb_compaction_cells_compacted_total counter\n\
+cortexdb_compaction_cells_compacted_total {}\n\
+# HELP cortexdb_compaction_input_bytes_total Total input segment bytes processed by background compaction.\n\
+# TYPE cortexdb_compaction_input_bytes_total counter\n\
+cortexdb_compaction_input_bytes_total {}\n\
                          # HELP cortexdb_backup_latest_age_seconds Age of latest local backup evidence in seconds, or -1 when unavailable.\n\
                          # TYPE cortexdb_backup_latest_age_seconds gauge\n\
                          cortexdb_backup_latest_age_seconds {}\n",
@@ -1239,6 +1349,11 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                         state
                             .principal_quota_queue_rejected
                             .load(Ordering::Relaxed),
+                        state.compactions_triggered.load(Ordering::Relaxed),
+                        state.compactions_completed.load(Ordering::Relaxed),
+                        state.compaction_duration_ms_total.load(Ordering::Relaxed),
+                        state.compaction_cells_compacted.load(Ordering::Relaxed),
+                        state.compaction_input_bytes.load(Ordering::Relaxed),
                         backup_latest_age_seconds(&state.root),
                     );
                     return with_request_id(
@@ -1285,6 +1400,16 @@ async fn axum_handler(State(state): State<AppState>, req: Request) -> Response {
                         state.principal_quota_queue_acquired.load(Ordering::Relaxed);
                     metrics.principal_quota_queue_rejected =
                         state.principal_quota_queue_rejected.load(Ordering::Relaxed);
+                    metrics.compactions_triggered =
+                        state.compactions_triggered.load(Ordering::Relaxed);
+                    metrics.compactions_completed =
+                        state.compactions_completed.load(Ordering::Relaxed);
+                    metrics.compaction_duration_ms_total =
+                        state.compaction_duration_ms_total.load(Ordering::Relaxed);
+                    metrics.compaction_cells_compacted =
+                        state.compaction_cells_compacted.load(Ordering::Relaxed);
+                    metrics.compaction_input_bytes =
+                        state.compaction_input_bytes.load(Ordering::Relaxed);
                     metrics.backup_latest_age_seconds = backup_latest_age_seconds(&state.root);
                     return with_request_id(
                         (StatusCode::OK, Json(metrics)).into_response(),
@@ -1452,6 +1577,12 @@ mod metrics_tests {
             principal_quota_body_bytes_rejected: Arc::new(AtomicU64::new(0)),
             principal_quota_queue_acquired: Arc::new(AtomicU64::new(0)),
             principal_quota_queue_rejected: Arc::new(AtomicU64::new(0)),
+            compactions_triggered: Arc::new(AtomicU64::new(0)),
+            compactions_completed: Arc::new(AtomicU64::new(0)),
+            compaction_duration_ms_total: Arc::new(AtomicU64::new(0)),
+            compaction_cells_compacted: Arc::new(AtomicU64::new(0)),
+            compaction_input_bytes: Arc::new(AtomicU64::new(0)),
+            compaction_paused: Arc::new(AtomicBool::new(false)),
             rate_limit: None,
             principal_rate_limits: PrincipalRateLimits::default(),
         }

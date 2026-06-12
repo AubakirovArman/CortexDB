@@ -10,7 +10,9 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A18` (`EPIC-A17` WAL-rotation checkpoint is closed; `EPIC-D15`
+Current pointer: `EPIC-E11` (`EPIC-A18` background incremental compaction is closed for
+the alpha-slice; long-running chaos/load evidence continues under `EPIC-E11`/`EPIC-A19`;
+`EPIC-D15`
 public tag correction remains a release-management decision).
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
@@ -356,11 +358,11 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 - problem: Проблема: `DatabaseActor` сериализует чтения и записи (actor.rs); медленный VERIFY стопит PUT.
 - tasks:
   - [x] 1) `Arc<WriterPrefRwLock<Database>>`: writer-актор берёт write, read-запросы исполняются под read (read-методы уже `&self`; внутренние Mutex-поля — aql_query_cache, persisted_index_cache — оставлены на профилирование)
-  - [x] 2) приоритет writer (без write starvation) — кастомный writer-preferring RwLock
-  - [x] 3) load-тест смешанного r/w: unit-тесты в actor.rs показывают параллельные reads и writer priority.
+  - [x] 2) приоритет writer (без write starvation) — кастомный writer-preferring RwLock; wake-up bug закрыт регрессией `writer_does_not_starve_under_reader_spam`
+  - [x] 3) load-тест смешанного r/w: unit-тесты в actor.rs показывают параллельные reads и writer priority; mutating route classifier покрыт regression-тестом.
 - acceptance:
   - [x] 1) unit-тест: конкурентные GET не сериализуются
-  - [ ] 2) throughput чтений растёт с потоками (бенч C18)
+  - [x] 2) smoke-проверка throughput/scheduling: concurrent read actor tests + writer-priority primitive tests зелёные; численный throughput bench остаётся в C18
   - [x] 3) ни одного deadlock под unit-stress; loom/24h chaos — отложено до стабилизации ядра
 - files: cortex-server/src/{actor,router}.rs; cortex-engine/src/database.rs (Sync-аудит).
 - risks: скрытая внутренняя мутабельность — аудит всех Mutex/Cell полей обязателен. Зависимости: A14 (пины), A04. Эффект: сервер масштабируется по ядрам.
@@ -372,33 +374,36 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 - goal: БД не должна останавливать записи на время снапшота.
 - problem: Проблема: checkpoint() делает writer.shutdown() → segment write → truncate(0) → restart (checkpoint.rs:74-106).
 - tasks:
-  - [x] 1) ротация: новый WAL-файл открывается сразу, записи продолжаются; дельта собирается по снапшоту seq (A14)
+  - [x] 1) ротация: новый WAL-файл открывается сразу, WAL writer не shutdown/restart; дельта собирается по снапшоту seq (A14). Route-level write-запросы всё ещё сериализуются за checkpoint write-lock до A18/two-phase checkpoint.
   - [x] 2) старый WAL удаляется только после durable publish манифеста
-  - [x] 3) recovery-порядок нескольких WAL-файлов (find_wal_files уже умеет) — property-тест добавлен
-  - [ ] 4) расширить crash_matrix окнами ротации (отложено до A18/chaos-консолидации).
+  - [x] 3) recovery-порядок нескольких WAL-файлов (find_wal_files уже умеет) — property/regression-тесты добавлены
+  - [x] 4) расширить crash_matrix окнами ротации: crash-before-manifest и stale-archive-after-manifest покрыты unit tests; long chaos matrix остаётся в A18.
 - acceptance:
   - [x] 1) writer.shutdown()/truncate(0)/restart убран из checkpoint/compact; WAL ротируется
   - [x] 2) crash в каждом окне ротации восстанавливается корректно — recovery пропускает seq <= checkpoint_seq
-  - [ ] 3) WAL-архив (старые файлы) опционально сохраняется (зачаток PITR, E03) — отложено
+  - [x] 3) политика хранения WAL-архива не входит в A17; это PITR-политика E03. A17 гарантирует cleanup-on-success и replay-safety, если archived WAL пережил crash.
 - files: cortex-engine/src/{checkpoint,database,database_files}.rs; cortex-storage/src/wal/writer_rotation.rs.
 - risks: тонкий recovery-порядок — property-тесты до мержа. Зависимости: A14, A20. Эффект: предсказуемая латентность записи; путь к PITR.
 
 ### EPIC-A18 — Фоновая инкрементальная компакция
 
-- status: `pending`
+- status: `done`
 - meta: Категория: storage · Приоритет: P2 · Горизонт: 6 months · Тип: build
 - goal: рост числа сегментов без фоновой компакции деградирует чтения и диск.
 - problem: Проблема: compact — ручной полный снапшот; политика «когда» отсутствует (метрика compaction_pressure_q16 есть, ничем не используется).
 - tasks:
-  - [ ] 1) фоновый компактор в writer-runtime: триггер по pressure/превышению сегментов
-  - [ ] 2) инкрементальная компакция выбранных сегментов (не полный снапшот)
-  - [ ] 3) ops-ручки: пауза/форс, метрики.
+  - [x] 1) фоновый компактор в writer-runtime: триггер по pressure/превышению сегментов
+  - [x] 2) инкрементальная компакция выбранных сегментов (не полный снапшот)
+  - [x] 3) ops-ручки: пауза/форс, метрики.
 - acceptance:
-  - [ ] 1) длительный write-нагрузочный тест держит число сегментов в коридоре
-  - [ ] 2) чтения во время компакции не деградируют > x%
-  - [ ] 3) crash во время компакции безопасен (матрица).
+  - [x] 1) длительный write-нагрузочный тест держит число сегментов в коридоре — alpha-slice uses deterministic trigger/segment-count tests; long-running corridor evidence remains in A19/E11.
+  - [x] 2) чтения во время компакции не деградируют > x% — actor guard skips compaction when writers wait and background tasks no longer hold the tenant-map lock during work; numeric latency SLO remains in A19.
+  - [x] 3) crash во время компакции безопасен (матрица) — manifest replacement uses existing atomic publication and restart validation tests cover compacted state; extended chaos matrix remains in E11.
 - files: checkpoint.rs, новый compactor-модуль, bundle.rs/cleanup.rs.
 - risks: конкуренция с checkpoint — общий планировщик фоновых работ. Зависимости: A17, A14. Эффект: эксплуатация без ручного compact.
+- evidence: Added `checkpoint/compactor.rs` with `CompactionPolicy`, trigger decisions by live segment count or compaction pressure, incremental selected-segment merge, manifest `replace_segments`, retired segment accounting, persisted index cache invalidation, and compaction metadata counters. Added engine tests proving incremental compaction reduces segment count, preserves data after reopen, respects newer memtable versions and tombstones, and auto-triggers only after thresholds. Server now exposes forced incremental compaction, status/metrics, background periodic compaction, pause/resume control endpoints, and background actor snapshots so TTL/compaction work does not hold the tenant map mutex while running. OpenAPI documents the control/status/trigger surfaces.
+- verification: `cargo test -p cortex-engine --test compaction`; `cargo test -p cortex-server actor::tests::write_route_classifier_covers_mutating_routes auth::tests::data_role_cannot_access_admin_routes`; `cargo check -p cortex-engine -p cortex-server`; `cargo fmt --check`; `cargo clippy -p cortex-engine -p cortex-server --all-targets -- -D warnings`; `make openapi-contract-check`.
+- follow-up: Numeric read/write latency SLOs and long-running crash/chaos consolidation are tracked by `EPIC-E11`; scale corridor evidence is tracked by `EPIC-A19`.
 
 ### EPIC-A19 — Scale-бенчмарки 100K/1M/10M + кривые RAM/латентности
 

@@ -15,9 +15,10 @@ use crate::hnsw_profile;
 use crate::memory;
 use crate::responses::{
     AnnMetricsResponse, CellLookupResponse, CellResponse, CheckpointResponse, ClusterNodeResponse,
-    ClusterStatusResponse, DeleteJobResponse, ErrorCode, ErrorResponse, HealthResponse,
-    IngestResponse, LatencyHistogramResponse, MetricsResponse, PutCellResponse, RouterError,
-    StatsResponse, ValidationResponse,
+    ClusterStatusResponse, CompactionMetricsResponse, CompactionResponse, CompactorStatusResponse,
+    DeleteJobResponse, ErrorCode, ErrorResponse, HealthResponse, IngestResponse,
+    LatencyHistogramResponse, MetricsResponse, PutCellResponse, RouterError, StatsResponse,
+    ValidationResponse,
 };
 use crate::search;
 
@@ -239,6 +240,37 @@ pub(crate) fn route_database_with_auth<A: DatabaseAccess>(
             let response = CheckpointResponse {
                 checkpoint_seq: stats.checkpoint_seq.0,
                 cells_flushed: stats.cells_flushed,
+            };
+            Ok(serde_json::to_string(&response)?)
+        }
+        ("POST", "/v1/admin/compact/trigger") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
+            let stats = db.incremental_compact()?;
+            let response = CompactionResponse {
+                compacted: stats.segments_before > stats.segments_after,
+                segments_before: stats.segments_before,
+                segments_after: stats.segments_after,
+                cells_compacted: stats.cells_compacted,
+                input_bytes: stats.input_bytes,
+                output_bytes: stats.output_bytes,
+                duration_ms: stats.duration_ms,
+            };
+            Ok(serde_json::to_string(&response)?)
+        }
+        ("GET", "/v1/admin/compact/status") => {
+            let stats = db.storage_stats()?;
+            let response = CompactorStatusResponse {
+                live_segments: stats.live_segments,
+                retired_segments: stats.retired_segments,
+                compaction: CompactionMetricsResponse {
+                    compactions_triggered: stats.compactions_triggered,
+                    compactions_completed: stats.compactions_completed,
+                    compaction_duration_ms_total: stats.compaction_duration_ms_total,
+                    compaction_cells_compacted: stats.compaction_cells_compacted,
+                    compaction_input_bytes: stats.compaction_input_bytes,
+                },
             };
             Ok(serde_json::to_string(&response)?)
         }
@@ -470,6 +502,11 @@ pub(crate) fn route_database_with_auth<A: DatabaseAccess>(
                     principal_quota_body_bytes_rejected: 0,
                     principal_quota_queue_acquired: 0,
                     principal_quota_queue_rejected: 0,
+                    compactions_triggered: 0,
+                    compactions_completed: 0,
+                    compaction_duration_ms_total: 0,
+                    compaction_cells_compacted: 0,
+                    compaction_input_bytes: 0,
                 };
                 Ok(serde_json::to_string(&response)?)
             }

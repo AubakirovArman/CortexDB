@@ -170,6 +170,7 @@ fn write_max_candidate_segment(root: &std::path::Path) {
         hnsw_profile: None,
         vector_profile: None,
         hnsw_no_fallback_profile: None,
+        compaction_metadata: Default::default(),
     }
     .store(root.join("manifest.acm"))
     .unwrap();

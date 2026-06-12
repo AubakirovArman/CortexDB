@@ -23,7 +23,8 @@ use crate::operation::{
     wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq, DbOperation,
 };
 use crate::options::{
-    DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
+    CompactionPolicy, DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode,
+    StaleLockPolicy,
 };
 use crate::query::cache::AqlQueryCache;
 use crate::query::CellMetadata;
@@ -53,6 +54,7 @@ pub struct Database {
     pub(crate) aql_query_cache: Mutex<AqlQueryCache>,
     pub(crate) persisted_index_cache: Mutex<Option<PersistedIndexCache>>,
     pub(crate) active_read_pins: Arc<Mutex<BTreeMap<CommitSeq, usize>>>,
+    pub(crate) compaction_policy: CompactionPolicy,
     pub(crate) _lock: DatabaseLock,
     closed: bool,
 }
@@ -214,6 +216,7 @@ impl Database {
             aql_query_cache: Mutex::new(AqlQueryCache::default()),
             persisted_index_cache: Mutex::new(None),
             active_read_pins: Arc::new(Mutex::new(BTreeMap::new())),
+            compaction_policy: options.compaction_policy,
             _lock: lock,
             closed: false,
         };

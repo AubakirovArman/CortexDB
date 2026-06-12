@@ -4,7 +4,9 @@ use std::fmt;
 
 use cortex_storage::wal::DurabilityMode;
 
-use crate::options::{DatabaseOptions, EngineFeatureFlags, RecoveryMode, StaleLockPolicy};
+use crate::options::{
+    CompactionPolicy, DatabaseOptions, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
+};
 use crate::search::{HnswBuildConfig, HnswBuildProfile};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -43,6 +45,7 @@ impl EngineConfig {
             hnsw_build_config: parse_hnsw_build_config(&vars)?,
             feature_flags,
             ingestion_backpressure: Default::default(),
+            compaction_policy: CompactionPolicy::default(),
         };
         database_options.hnsw_build_config = database_options.hnsw_build_config.normalized();
         Ok(Self { database_options })

@@ -176,6 +176,7 @@ fn manifest_store_is_atomic_and_ignores_leftover_tmp() {
         hnsw_profile: None,
         vector_profile: None,
         hnsw_no_fallback_profile: None,
+        compaction_metadata: Default::default(),
     };
 
     manifest.store(&path).unwrap();

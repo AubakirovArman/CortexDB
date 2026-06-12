@@ -139,6 +139,11 @@ fn snapshot_metrics_response() {
         principal_quota_body_bytes_rejected: 512,
         principal_quota_queue_acquired: 70,
         principal_quota_queue_rejected: 2,
+        compactions_triggered: 1,
+        compactions_completed: 1,
+        compaction_duration_ms_total: 42,
+        compaction_cells_compacted: 120,
+        compaction_input_bytes: 65536,
     };
     insta::assert_json_snapshot!(resp);
 }

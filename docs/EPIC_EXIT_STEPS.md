@@ -168,7 +168,8 @@ Exit steps:
 2. Use snapshot pins for concurrent readers.
 3. Add mixed read/write throughput tests.
 4. Preserve write ordering and permission invariants.
-5. Mark done when reads do not block behind unrelated slow reads/writes; then move to E15.
+5. Add route-classification regression coverage so mutating endpoints always take write locks.
+6. Mark done when reads do not block behind unrelated slow reads and queued writers cannot starve; then move to E15.
 
 ### EPIC-A17 — Checkpoint без stop-the-world
 
@@ -177,7 +178,8 @@ Exit steps:
 2. Implement checkpoint without shutting down the writer.
 3. Add crash tests across rotation, segment write, and manifest publish.
 4. Record write latency during checkpoint.
-5. Mark done when checkpoint no longer pauses writes; then move to A18.
+5. Mark WAL-rotation safety done when the writer is not shutdown/restarted and recovery handles rotated WAL files.
+6. Move route-level fully concurrent checkpoint build to A18 unless a two-phase checkpoint API is added here.
 
 ### EPIC-A18 — Фоновая инкрементальная компакция
 

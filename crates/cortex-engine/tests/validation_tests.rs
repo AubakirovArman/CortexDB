@@ -252,6 +252,7 @@ fn write_manifest(
         hnsw_profile: None,
         vector_profile: None,
         hnsw_no_fallback_profile: None,
+        compaction_metadata: Default::default(),
     }
     .store(root.join("manifest.acm"))
     .unwrap();

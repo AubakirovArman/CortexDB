@@ -73,9 +73,9 @@ impl<T> WriterPrefRwLock<T> {
         let mut state = self.state.lock().expect("writer-pref lock poisoned");
         state.readers -= 1;
         if state.readers == 0 {
-            // Wake one waiter. If a writer is queued it will acquire the lock;
-            // otherwise a reader may acquire it (but only if no writer is waiting).
-            self.cond.notify_one();
+            // Wake all waiters so a queued writer cannot be stranded behind a
+            // reader that wakes up only to block again on writer priority.
+            self.cond.notify_all();
         }
     }
 

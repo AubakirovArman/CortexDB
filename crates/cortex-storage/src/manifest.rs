@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::fs;
 use std::io::ErrorKind;
 use std::path::Path;
@@ -36,6 +37,15 @@ pub struct ManifestHnswNoFallbackProfile {
     pub require_upper_layers: bool,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct CompactionMetadata {
+    pub triggered: u64,
+    pub completed: u64,
+    pub duration_ms: u64,
+    pub cells_compacted: u64,
+    pub input_bytes: u64,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct StorageManifest {
     pub generation: u64,
@@ -45,6 +55,7 @@ pub struct StorageManifest {
     pub hnsw_profile: Option<ManifestHnswProfile>,
     pub vector_profile: Option<ManifestVectorProfile>,
     pub hnsw_no_fallback_profile: Option<ManifestHnswNoFallbackProfile>,
+    pub compaction_metadata: CompactionMetadata,
 }
 
 impl StorageManifest {
@@ -72,6 +83,26 @@ impl StorageManifest {
         self.checkpoint_seq = segment.checkpoint_seq;
         self.retired_segments.append(&mut self.live_segments);
         self.live_segments.push(segment);
+    }
+
+    /// Replace a contiguous subset of live segments with a single merged segment.
+    /// The replaced segments are appended to `retired_segments`. The checkpoint
+    /// sequence is not changed: the merge does not advance the WAL truncation
+    /// horizon.
+    pub fn replace_segments(&mut self, selected: Vec<ManifestSegment>, merged: ManifestSegment) {
+        self.generation += 1;
+        let selected_ids: BTreeSet<u64> = selected.iter().map(|segment| segment.id).collect();
+        let mut new_live = Vec::with_capacity(self.live_segments.len() - selected.len() + 1);
+        // The selected segments are expected to be the oldest contiguous live
+        // segments, so the merged segment takes their place at the front.
+        new_live.push(merged);
+        for segment in &self.live_segments {
+            if !selected_ids.contains(&segment.id) {
+                new_live.push(segment.clone());
+            }
+        }
+        self.live_segments = new_live;
+        self.retired_segments.extend(selected);
     }
 }
 
@@ -101,6 +132,15 @@ fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
         put_u32(&mut out, u32::from(profile.min_recall_q16));
         put_u32(&mut out, bool_to_u32(profile.require_upper_layers));
     }
+    {
+        let meta = manifest.compaction_metadata;
+        out.extend_from_slice(b"COMP");
+        put_u64(&mut out, meta.triggered);
+        put_u64(&mut out, meta.completed);
+        put_u64(&mut out, meta.duration_ms);
+        put_u64(&mut out, meta.cells_compacted);
+        put_u64(&mut out, meta.input_bytes);
+    }
     append_crc32c(&mut out);
     out
 }
@@ -118,6 +158,7 @@ fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
     let hnsw_profile = read_hnsw_profile(bytes, &mut cursor)?;
     let vector_profile = read_vector_profile(bytes, &mut cursor)?;
     let hnsw_no_fallback_profile = read_hnsw_no_fallback_profile(bytes, &mut cursor)?;
+    let compaction_metadata = read_compaction_metadata(bytes, &mut cursor)?;
     if cursor > bytes.len() {
         return Err(StorageError::InvalidManifestFile);
     }
@@ -129,6 +170,7 @@ fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
         hnsw_profile,
         vector_profile,
         hnsw_no_fallback_profile,
+        compaction_metadata,
     })
 }
 
@@ -226,6 +268,20 @@ fn read_hnsw_no_fallback_profile(
         min_recall_q16,
         require_upper_layers,
     }))
+}
+
+fn read_compaction_metadata(bytes: &[u8], cursor: &mut usize) -> StorageResult<CompactionMetadata> {
+    if bytes.len().saturating_sub(*cursor) < 4 || &bytes[*cursor..*cursor + 4] != b"COMP" {
+        return Ok(CompactionMetadata::default());
+    }
+    *cursor += 4;
+    Ok(CompactionMetadata {
+        triggered: read_u64(bytes, cursor)?,
+        completed: read_u64(bytes, cursor)?,
+        duration_ms: read_u64(bytes, cursor)?,
+        cells_compacted: read_u64(bytes, cursor)?,
+        input_bytes: read_u64(bytes, cursor)?,
+    })
 }
 
 fn bool_to_u32(value: bool) -> u32 {

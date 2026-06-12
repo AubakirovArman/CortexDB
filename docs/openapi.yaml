@@ -318,6 +318,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CheckpointResponse'
+  /v1/admin/compact/trigger:
+    post:
+      summary: Trigger an incremental background compaction pass
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      responses:
+        '200':
+          description: Compaction pass result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompactionResponse'
+        '401': *id004
+        '403': *id005
+        '500': *id002
+  /v1/admin/compact/pause:
+    post:
+      summary: Pause background compaction
+      responses:
+        '200':
+          description: Background compaction control state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompactorControlResponse'
+        '401': *id004
+        '403': *id005
+        '500': *id002
+  /v1/admin/compact/resume:
+    post:
+      summary: Resume background compaction
+      responses:
+        '200':
+          description: Background compaction control state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompactorControlResponse'
+        '401': *id004
+        '403': *id005
+        '500': *id002
+  /v1/admin/compact/status:
+    get:
+      summary: Get compaction status and cumulative metrics
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      responses:
+        '200':
+          description: Compactor status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompactorStatusResponse'
+        '401': *id004
+        '403': *id005
+        '500': *id002
   /v1/aql:
     post:
       summary: Run AQL retrieve or explain retrieve
@@ -3114,6 +3170,11 @@ components:
       - principal_quota_body_bytes_rejected
       - principal_quota_queue_acquired
       - principal_quota_queue_rejected
+      - compactions_triggered
+      - compactions_completed
+      - compaction_duration_ms_total
+      - compaction_cells_compacted
+      - compaction_input_bytes
       properties:
         current_seq:
           type: integer
@@ -3251,6 +3312,21 @@ components:
         principal_quota_queue_rejected:
           type: integer
           format: uint64
+        compactions_triggered:
+          type: integer
+          format: uint64
+        compactions_completed:
+          type: integer
+          format: uint64
+        compaction_duration_ms_total:
+          type: integer
+          format: uint64
+        compaction_cells_compacted:
+          type: integer
+          format: uint64
+        compaction_input_bytes:
+          type: integer
+          format: uint64
     LatencyHistogramResponse:
       type: object
       required:
@@ -3285,6 +3361,85 @@ components:
           type: integer
           format: uint64
         gt_1000_ms:
+          type: integer
+          format: uint64
+    CompactionResponse:
+      type: object
+      required:
+      - compacted
+      - segments_before
+      - segments_after
+      - cells_compacted
+      - input_bytes
+      - output_bytes
+      - duration_ms
+      properties:
+        compacted:
+          type: boolean
+        segments_before:
+          type: integer
+        segments_after:
+          type: integer
+        cells_compacted:
+          type: integer
+        input_bytes:
+          type: integer
+          format: uint64
+        output_bytes:
+          type: integer
+          format: uint64
+        duration_ms:
+          type: integer
+          format: uint64
+    CompactionMetricsResponse:
+      type: object
+      required:
+      - compactions_triggered
+      - compactions_completed
+      - compaction_duration_ms_total
+      - compaction_cells_compacted
+      - compaction_input_bytes
+      properties:
+        compactions_triggered:
+          type: integer
+          format: uint64
+        compactions_completed:
+          type: integer
+          format: uint64
+        compaction_duration_ms_total:
+          type: integer
+          format: uint64
+        compaction_cells_compacted:
+          type: integer
+          format: uint64
+        compaction_input_bytes:
+          type: integer
+          format: uint64
+    CompactorStatusResponse:
+      type: object
+      required:
+      - live_segments
+      - retired_segments
+      - compaction
+      properties:
+        live_segments:
+          type: integer
+        retired_segments:
+          type: integer
+        compaction:
+          $ref: '#/components/schemas/CompactionMetricsResponse'
+    CompactorControlResponse:
+      type: object
+      required:
+      - background_enabled
+      - paused
+      - interval_seconds
+      properties:
+        background_enabled:
+          type: boolean
+        paused:
+          type: boolean
+        interval_seconds:
           type: integer
           format: uint64
     AnnMetricsResponse:

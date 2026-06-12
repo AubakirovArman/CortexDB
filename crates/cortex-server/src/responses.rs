@@ -130,6 +130,40 @@ pub struct CheckpointResponse {
 }
 
 #[derive(Serialize, Debug, Clone)]
+pub struct CompactionResponse {
+    pub compacted: bool,
+    pub segments_before: usize,
+    pub segments_after: usize,
+    pub cells_compacted: usize,
+    pub input_bytes: u64,
+    pub output_bytes: u64,
+    pub duration_ms: u64,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct CompactionMetricsResponse {
+    pub compactions_triggered: u64,
+    pub compactions_completed: u64,
+    pub compaction_duration_ms_total: u64,
+    pub compaction_cells_compacted: u64,
+    pub compaction_input_bytes: u64,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct CompactorStatusResponse {
+    pub live_segments: usize,
+    pub retired_segments: usize,
+    pub compaction: CompactionMetricsResponse,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct CompactorControlResponse {
+    pub background_enabled: bool,
+    pub paused: bool,
+    pub interval_seconds: u64,
+}
+
+#[derive(Serialize, Debug, Clone)]
 pub struct ScoreComponentResponse {
     pub name: String,
     pub value: u32,
@@ -644,6 +678,11 @@ pub struct MetricsResponse {
     pub principal_quota_body_bytes_rejected: u64,
     pub principal_quota_queue_acquired: u64,
     pub principal_quota_queue_rejected: u64,
+    pub compactions_triggered: u64,
+    pub compactions_completed: u64,
+    pub compaction_duration_ms_total: u64,
+    pub compaction_cells_compacted: u64,
+    pub compaction_input_bytes: u64,
 }
 
 /// Typed router error taxonomy for consistent HTTP status mapping.

@@ -4,6 +4,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 mod candidates;
+pub mod compactor;
 pub(crate) mod hnsw;
 mod index_merge;
 mod manifest_safety;

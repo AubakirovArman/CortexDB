@@ -366,6 +366,16 @@ mod tests {
     fn data_role_cannot_access_admin_routes() {
         assert!(!role_can_access(AuthRole::Data, "GET", "/v1/stats"));
         assert!(!role_can_access(AuthRole::Data, "POST", "/v1/flush"));
+        assert!(!role_can_access(
+            AuthRole::Data,
+            "POST",
+            "/v1/admin/compact/pause"
+        ));
+        assert!(!role_can_access(
+            AuthRole::Data,
+            "POST",
+            "/v1/admin/compact/resume"
+        ));
     }
 
     #[test]

@@ -43,6 +43,11 @@ pub struct StorageStats {
     pub compaction_pressure_q16: u32,
     pub wal_size_bytes: u64,
     pub wal_writer: WalWriterMetrics,
+    pub compactions_triggered: u64,
+    pub compactions_completed: u64,
+    pub compaction_duration_ms_total: u64,
+    pub compaction_cells_compacted: u64,
+    pub compaction_input_bytes: u64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -106,6 +111,11 @@ impl Database {
             compaction_pressure_q16: ratio_q16(retired_usage.bundle_bytes, total_segment_bytes),
             wal_size_bytes,
             wal_writer,
+            compactions_triggered: self.manifest.compaction_metadata.triggered,
+            compactions_completed: self.manifest.compaction_metadata.completed,
+            compaction_duration_ms_total: self.manifest.compaction_metadata.duration_ms,
+            compaction_cells_compacted: self.manifest.compaction_metadata.cells_compacted,
+            compaction_input_bytes: self.manifest.compaction_metadata.input_bytes,
         })
     }
 

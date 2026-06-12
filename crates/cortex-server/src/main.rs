@@ -87,6 +87,8 @@ fn main() -> ExitCode {
         llm_test_double_enabled: llm_test_double_enabled_from_env(),
         dashboard_enabled: engine_config.database_options.feature_flags.dashboard,
         engine_database_options: engine_config.database_options,
+        background_compaction_enabled: false,
+        background_compaction_interval_seconds: 60,
     };
     match cortex_server::serve_with_options(&PathBuf::from(root), addr, options) {
         Ok(()) => ExitCode::SUCCESS,

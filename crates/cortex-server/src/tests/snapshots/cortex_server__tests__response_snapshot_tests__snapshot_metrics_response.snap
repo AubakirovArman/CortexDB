@@ -1,6 +1,6 @@
 ---
 source: crates/cortex-server/src/tests/response_snapshot_tests.rs
-assertion_line: 143
+assertion_line: 148
 expression: resp
 ---
 {
@@ -65,5 +65,10 @@ expression: resp
   "principal_quota_body_bytes_allowed": 4096,
   "principal_quota_body_bytes_rejected": 512,
   "principal_quota_queue_acquired": 70,
-  "principal_quota_queue_rejected": 2
+  "principal_quota_queue_rejected": 2,
+  "compactions_triggered": 1,
+  "compactions_completed": 1,
+  "compaction_duration_ms_total": 42,
+  "compaction_cells_compacted": 120,
+  "compaction_input_bytes": 65536
 }

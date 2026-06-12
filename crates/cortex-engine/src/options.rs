@@ -3,6 +3,38 @@ use cortex_storage::wal::DurabilityMode;
 use crate::ingestion::IngestionBackpressurePolicy;
 use crate::search::HnswBuildConfig;
 
+/// Thresholds and limits that govern when the background compactor selects a
+/// subset of live segments for an incremental merge.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CompactionPolicy {
+    /// Q16 pressure ratio at which compaction is considered necessary.
+    pub trigger_pressure_q16: u32,
+    /// Number of live segments that also triggers compaction.
+    pub trigger_segment_count: usize,
+    /// Maximum number of input segments merged in one incremental compaction.
+    pub max_input_segments: usize,
+    /// Maximum total input bytes merged in one incremental compaction.
+    pub max_input_bytes: u64,
+}
+
+impl CompactionPolicy {
+    pub const DEFAULT_TRIGGER_PRESSURE_Q16: u32 = 32_768; // 0.5
+    pub const DEFAULT_TRIGGER_SEGMENT_COUNT: usize = 6;
+    pub const DEFAULT_MAX_INPUT_SEGMENTS: usize = 4;
+    pub const DEFAULT_MAX_INPUT_BYTES: u64 = 64 * 1024 * 1024;
+}
+
+impl Default for CompactionPolicy {
+    fn default() -> Self {
+        Self {
+            trigger_pressure_q16: Self::DEFAULT_TRIGGER_PRESSURE_Q16,
+            trigger_segment_count: Self::DEFAULT_TRIGGER_SEGMENT_COUNT,
+            max_input_segments: Self::DEFAULT_MAX_INPUT_SEGMENTS,
+            max_input_bytes: Self::DEFAULT_MAX_INPUT_BYTES,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RecoveryMode {
     Strict,
@@ -94,6 +126,7 @@ pub struct DatabaseOptions {
     pub hnsw_build_config: HnswBuildConfig,
     pub feature_flags: EngineFeatureFlags,
     pub ingestion_backpressure: IngestionBackpressurePolicy,
+    pub compaction_policy: CompactionPolicy,
 }
 
 impl Default for DatabaseOptions {
@@ -105,6 +138,7 @@ impl Default for DatabaseOptions {
             hnsw_build_config: HnswBuildConfig::default(),
             feature_flags: EngineFeatureFlags::production_safe(),
             ingestion_backpressure: IngestionBackpressurePolicy::default(),
+            compaction_policy: CompactionPolicy::default(),
         }
     }
 }

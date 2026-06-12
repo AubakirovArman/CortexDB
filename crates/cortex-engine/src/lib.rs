@@ -72,6 +72,7 @@ pub use backup::{
     RestoreDryRunReport, RestoreReport,
 };
 pub use bundle::{RetiredSegmentGc, SegmentBundle};
+pub use checkpoint::compactor::{CompactionDecision, CompactionStats};
 pub use compatibility::{
     compatibility_summary, ApiCompatibility, CompatibilitySummary, MigrationCompatibility,
     SdkCompatibility, StorageFormatCompatibility,
@@ -132,7 +133,8 @@ pub use operation::{
     DbOperationKind, DecodedCellCore, DecodedDbOperation, OperationDecoder, OperationEncoder,
 };
 pub use options::{
-    DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
+    CompactionPolicy, DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode,
+    StaleLockPolicy,
 };
 pub use plan::{LogicalPlan, LogicalPlanNode, LogicalPlanReport, PolicyRewrite};
 pub use query::{

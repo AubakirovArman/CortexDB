@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use cortex_aql::AgentId;
 use cortex_engine::concurrency::{CapacitySemaphore, WriterPrefRwLock};
-use cortex_engine::{Database, DatabaseOptions, ExpiredMemoryCell};
+use cortex_engine::{CompactionStats, Database, DatabaseOptions, ExpiredMemoryCell};
 
 use crate::auth::AuthRouteContext;
 use crate::auth_policy_cells::{self, AuthPolicyCellSyncReport};
@@ -29,6 +29,7 @@ fn is_write_route(method: &str, target: &str) -> bool {
             | ("POST", "/flush")
             | ("POST", "/v1/flush")
             | ("POST", "/v1/compact")
+            | ("POST", "/v1/admin/compact/trigger")
             | ("PUT", "/v1/admin/search/hnsw/no-fallback-profile")
             | ("DELETE", "/v1/admin/search/hnsw/no-fallback-profile")
             | ("POST", "/v1/remember")
@@ -179,6 +180,38 @@ impl DatabaseActor {
         let mut guard = self.db.write();
         let result = guard
             .expire_memory_cells(now_unix_seconds)
+            .map_err(|e| RouterError::Internal(e.to_string()));
+        self.requests_completed.fetch_add(1, Ordering::Relaxed);
+        result
+    }
+
+    /// Run an incremental compaction if storage pressure or the live segment
+    /// count crosses the configured threshold. Returns `None` when no work was
+    /// performed, including when foreground writes are waiting so the
+    /// compaction does not starve them.
+    pub fn maybe_incremental_compact(&self) -> Result<Option<CompactionStats>, RouterError> {
+        self.ensure_open()?;
+        if self.waiting_writers() > 0 {
+            return Ok(None);
+        }
+        let _permit = self.semaphore.acquire();
+        self.requests_sent.fetch_add(1, Ordering::Relaxed);
+        let mut guard = self.db.write();
+        let result = guard
+            .maybe_incremental_compact()
+            .map_err(|e| RouterError::Internal(e.to_string()));
+        self.requests_completed.fetch_add(1, Ordering::Relaxed);
+        result
+    }
+
+    /// Force an incremental compaction regardless of current pressure.
+    pub fn incremental_compact(&self) -> Result<CompactionStats, RouterError> {
+        self.ensure_open()?;
+        let _permit = self.semaphore.acquire();
+        self.requests_sent.fetch_add(1, Ordering::Relaxed);
+        let mut guard = self.db.write();
+        let result = guard
+            .incremental_compact()
             .map_err(|e| RouterError::Internal(e.to_string()));
         self.requests_completed.fetch_add(1, Ordering::Relaxed);
         result
@@ -356,5 +389,61 @@ mod tests {
         write_handle.join().unwrap();
         let body = read_handle.join().unwrap();
         assert!(body.contains("v1") || body.contains("v2"));
+    }
+
+    #[test]
+    fn write_route_classifier_covers_mutating_routes() {
+        let write_routes = [
+            ("POST", "/put"),
+            ("POST", "/v1/cell"),
+            ("POST", "/tombstone"),
+            ("DELETE", "/v1/cell"),
+            ("POST", "/flush"),
+            ("POST", "/v1/flush"),
+            ("POST", "/v1/compact"),
+            ("POST", "/v1/admin/compact/trigger"),
+            ("PUT", "/v1/admin/search/hnsw/no-fallback-profile"),
+            ("DELETE", "/v1/admin/search/hnsw/no-fallback-profile"),
+            ("POST", "/v1/remember"),
+            ("POST", "/v1/forget"),
+            ("POST", "/v1/ingest/text"),
+            ("POST", "/v1/ingest/json"),
+            ("POST", "/v1/ingest/csv"),
+            ("DELETE", "/v1/ingest/jobs/42"),
+            ("POST", "/v1/ingest/jobs/42/cancel"),
+            ("POST", "/v1/ingest/jobs/42/retry"),
+        ];
+        for (method, target) in write_routes {
+            assert!(
+                super::is_write_route(method, target),
+                "{method} {target} must take a write lock"
+            );
+        }
+
+        let read_routes = [
+            ("GET", "/v1/health"),
+            ("GET", "/v1/stats"),
+            ("GET", "/v1/validate"),
+            ("GET", "/v1/cell?cell_id=1"),
+            ("POST", "/v1/context"),
+            ("POST", "/v1/context/trace"),
+            ("POST", "/v1/aql"),
+            ("POST", "/v1/search"),
+            ("POST", "/v1/search/explain"),
+            ("POST", "/v1/search/ann-evaluate"),
+            ("GET", "/v1/admin/search/hnsw/no-fallback-profile"),
+            ("GET", "/v1/admin/compact/status"),
+            ("GET", "/v1/metrics"),
+            ("GET", "/v1/ann/metrics"),
+            ("POST", "/v1/verify"),
+            ("GET", "/v1/ingest/jobs"),
+            ("GET", "/v1/ingest/jobs/42"),
+        ];
+        for (method, target) in read_routes {
+            assert!(
+                !super::is_write_route(method, target),
+                "{method} {target} should not take a write lock"
+            );
+        }
     }
 }

@@ -185,6 +185,7 @@ fn tombstone_only_checkpoint_does_not_resurrect_cell() {
         hnsw_profile: None,
         vector_profile: None,
         hnsw_no_fallback_profile: None,
+        compaction_metadata: Default::default(),
     }
     .store(dir.path().join("manifest.acm"))
     .unwrap();
@@ -254,6 +255,7 @@ fn validate_storage_rejects_segment_count_mismatch() {
         hnsw_profile: None,
         vector_profile: None,
         hnsw_no_fallback_profile: None,
+        compaction_metadata: Default::default(),
     }
     .store(dir.path().join("manifest.acm"))
     .unwrap();
@@ -306,6 +308,48 @@ fn checkpoint_recovery_is_safe_if_archived_wal_is_not_removed() {
         "expected at most one archived WAL, got {:?}",
         archived
     );
+
+    let db = Database::open(dir.path()).unwrap();
+    assert_eq!(db.current_seq(), CommitSeq(2));
+    assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"v2");
+}
+
+#[test]
+fn recovery_replays_rotated_wal_when_manifest_was_not_published() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"v1".to_vec()).unwrap();
+
+        // Simulate a crash after the WAL was archived but before a checkpoint
+        // manifest was published. Recovery must still discover the archived
+        // WAL and apply records newer than the manifest checkpoint sequence.
+        std::fs::copy(
+            dir.path().join("db.aclog"),
+            dir.path().join("db.000001.aclog"),
+        )
+        .unwrap();
+    }
+
+    let db = Database::open(dir.path()).unwrap();
+    assert_eq!(db.current_seq(), CommitSeq(1));
+    assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"v1");
+}
+
+#[test]
+fn recovery_skips_archived_records_at_or_before_checkpoint_seq() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"v1".to_vec()).unwrap();
+        std::fs::copy(
+            dir.path().join("db.aclog"),
+            dir.path().join("db.000001.aclog"),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+        db.patch_cell(CellId(1), b"v2".to_vec()).unwrap();
+    }
 
     let db = Database::open(dir.path()).unwrap();
     assert_eq!(db.current_seq(), CommitSeq(2));
