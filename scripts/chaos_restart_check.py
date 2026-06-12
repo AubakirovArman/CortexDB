@@ -176,6 +176,7 @@ def main() -> int:
     expected: dict[int, str] = {}
     actions: list[dict] = []
     kills = 0
+    graceful_terminations = 0
     repair_runs = 0
     restarts = 0
 
@@ -223,6 +224,19 @@ def main() -> int:
                     )
                 )
 
+        server.terminate()
+        graceful_terminations += 1
+        server = Server(repo, db, log_path)
+        server.start()
+        restarts += 1
+        graceful_verified = verify_expected(server.base_url, expected)
+        actions.append(
+            action_report(
+                "sigterm_restart",
+                cells_verified=graceful_verified,
+            )
+        )
+
         final_verified = verify_expected(server.base_url, expected)
         final_stats = request_json(server.base_url, "GET", "/v1/stats")
         final_validation = request_json(server.base_url, "GET", "/v1/validate")
@@ -241,6 +255,7 @@ def main() -> int:
         "steps": args.steps,
         "server_restarts": restarts,
         "forced_kills": kills,
+        "graceful_terminations": graceful_terminations,
         "repair_runs_after_forced_kill": repair_runs,
         "cells_expected": len(expected),
         "cells_verified_final": final_verified,

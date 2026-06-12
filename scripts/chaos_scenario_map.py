@@ -59,6 +59,7 @@ SCENARIO_GROUPS = [
             "http_flush_checkpoint",
             "http_compact_full_snapshot",
             "sigkill_restart_repair_readback",
+            "sigterm_restart_readback",
             "post_kill_unlock_repair_validate",
         ],
     },
@@ -75,12 +76,11 @@ SCENARIO_GROUPS = [
     },
     {
         "id": "graceful_shutdown",
-        "kind": "shutdown_gap",
-        "command": "pending",
+        "kind": "shutdown_partial",
+        "command": "make chaos-restart-check",
         "source": "EPIC-E11",
         "scenarios": [
-            "sigterm_drains_inflight_requests",
-            "sigterm_shutdowns_wal_without_ack_loss",
+            "sigterm_drains_inflight_requests_pending",
             "server_shutdown_latency_bound",
         ],
     },
@@ -100,11 +100,12 @@ def build_report() -> dict:
     duplicates = {
         scenario: groups for scenario, groups in sorted(index.items()) if len(groups) > 1
     }
-    gaps = [
-        group["id"]
+    gaps = sorted(
+        scenario
         for group in SCENARIO_GROUPS
-        if group["kind"] == "shutdown_gap" or group["command"] == "pending"
-    ]
+        for scenario in group["scenarios"]
+        if str(scenario).endswith("_pending")
+    )
     return {
         "schema_version": "cortexdb.chaos_scenario_map.v1",
         "status": "partial" if gaps else "ok",

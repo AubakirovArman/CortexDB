@@ -1497,14 +1497,14 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 - meta: Категория: ops · P2 · 90 days · test
 - tasks:
   - [x] 1) карта crash/restart/chaos-сценариев, дедуп тестов (crash_matrix vs fault_injection vs chaos-restart)
-  - [ ] 2) SIGTERM: дренаж очередей+WAL shutdown (тест под нагрузкой)
+  - [ ] 2) SIGTERM: дренаж очередей+WAL shutdown (тест под нагрузкой) — basic SIGTERM restart/readback is wired into `chaos-restart-check`; concurrent in-flight drain remains.
   - [ ] 3) общий harness-модуль.
 - acceptance:
   - [ ] 1) время набора ↓ ≥30% без потери сценариев
   - [ ] 2) SIGTERM-тест без потерь ack'нутого.
 - files: тесты engine/server, server main.
-- evidence: Added `docs/CHAOS_SCENARIO_MATRIX.md` and `scripts/chaos_scenario_map.py`, wired through `make chaos-scenario-map-check`. The report maps engine crash matrix, deterministic fault injection, HTTP chaos restart, storage soak, and the explicit graceful-shutdown gap into `target/chaos-scenario-map/report.json`.
-- next: Implement graceful SIGTERM server shutdown and a small load test proving acknowledged writes survive the drain.
+- evidence: Added `docs/CHAOS_SCENARIO_MATRIX.md` and `scripts/chaos_scenario_map.py`, wired through `make chaos-scenario-map-check`. The report maps engine crash matrix, deterministic fault injection, HTTP chaos restart, storage soak, and the explicit graceful-shutdown gap into `target/chaos-scenario-map/report.json`. Axum serving now uses `with_graceful_shutdown` for Ctrl-C/SIGTERM, and `chaos-restart-check` includes a SIGTERM/restart/readback phase for acknowledged writes.
+- next: Add a dedicated in-flight load/drain harness and then extract shared server lifecycle helpers from `chaos_restart_check.py`.
 
 ### EPIC-E12 — Migration framework для форматов (A02/A07/C01/C02)
 
