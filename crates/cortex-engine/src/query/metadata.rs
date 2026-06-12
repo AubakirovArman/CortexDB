@@ -366,6 +366,10 @@ impl CellMetadata {
         metadata.source_ref = source_id.map(|source_id| {
             let source_trust =
                 SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class);
+            let confidence_q16 = legacy_source_ref
+                .as_ref()
+                .map(|source| source.confidence_q16)
+                .unwrap_or(source_trust.q16);
             SourceRef {
                 source_id,
                 source_url: legacy_source_ref
@@ -382,7 +386,7 @@ impl CellMetadata {
                 json_path: legacy_source_ref
                     .as_ref()
                     .and_then(|source| source.json_path.clone()),
-                confidence_q16: source_trust.q16,
+                confidence_q16,
             }
         });
         metadata

@@ -219,11 +219,14 @@ fn q16_ratio(numerator: usize, denominator: usize) -> u16 {
 mod tests {
     use super::*;
     use crate::context::ContextPackCell;
+    use crate::query::CellMetadata;
 
     fn cell(id: u64, text: &str, citation: Option<&str>) -> ContextPackCell {
+        let payload = text.as_bytes().to_vec();
         ContextPackCell {
             cell_id: CellId(id),
-            payload: text.as_bytes().to_vec(),
+            metadata: CellMetadata::from_payload(&payload),
+            payload,
             estimated_tokens: 0,
             citation: citation.map(str::to_owned),
             provenance: None,

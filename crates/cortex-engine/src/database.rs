@@ -56,6 +56,30 @@ pub struct Database {
 pub struct RetrievedCell {
     pub cell_id: CellId,
     pub payload: Vec<u8>,
+    pub descriptor: CellDescriptor,
+}
+
+impl RetrievedCell {
+    pub fn from_payload(cell_id: CellId, payload: Vec<u8>) -> Self {
+        let descriptor = CellDescriptor::from_payload_lossy(&payload);
+        Self {
+            cell_id,
+            payload,
+            descriptor,
+        }
+    }
+
+    pub(crate) fn from_version(version: &CellVersion) -> Self {
+        Self {
+            cell_id: version.cell_id,
+            payload: version.payload.clone(),
+            descriptor: version.descriptor.clone(),
+        }
+    }
+
+    pub(crate) fn metadata(&self) -> CellMetadata {
+        CellMetadata::from_payload_with_descriptor(&self.payload, &self.descriptor)
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -277,10 +301,7 @@ impl Database {
                     .filter(|version| {
                         cell_version_meets_quality_thresholds(version, &plan.quality_thresholds)
                     })
-                    .map(|version| RetrievedCell {
-                        cell_id,
-                        payload: version.payload.clone(),
-                    })
+                    .map(RetrievedCell::from_version)
             })
             .collect::<Vec<_>>();
         let ranked =
@@ -448,6 +469,13 @@ pub(crate) fn cell_meets_quality_thresholds(
     thresholds: &QualityThresholds,
 ) -> bool {
     let metadata = CellMetadata::from_payload(payload);
+    metadata_meets_quality_thresholds(&metadata, thresholds)
+}
+
+fn metadata_meets_quality_thresholds(
+    metadata: &CellMetadata,
+    thresholds: &QualityThresholds,
+) -> bool {
     let confidence_q16 = metadata
         .source_ref
         .as_ref()
@@ -479,25 +507,7 @@ fn cell_version_meets_quality_thresholds(
     version: &CellVersion,
     thresholds: &QualityThresholds,
 ) -> bool {
-    if thresholds.min_confidence_q16 > 0 {
-        return cell_meets_quality_thresholds(&version.payload, thresholds);
-    }
-
-    if version.descriptor.source_trust_q16.unwrap_or(0) < thresholds.min_source_trust_q16 {
-        return false;
-    }
-
-    if let Some(max_freshness_seconds) = thresholds.max_freshness_seconds {
-        let Some(created) = version.descriptor.created_unix_seconds else {
-            return false;
-        };
-        let age = unix_now_seconds().saturating_sub(created);
-        if age > max_freshness_seconds {
-            return false;
-        }
-    }
-
-    true
+    metadata_meets_quality_thresholds(&CellMetadata::from_version(version), thresholds)
 }
 
 fn unix_now_seconds() -> u64 {
@@ -518,7 +528,7 @@ fn rank_retrieved_cells(
 
     let metadata = cells
         .iter()
-        .map(|cell| CellMetadata::from_payload(&cell.payload))
+        .map(RetrievedCell::metadata)
         .collect::<Vec<_>>();
     let lexical_scores = lexical_bm25_scores_from_metadata(&metadata, task);
     let query_vector = query_vector_from_task(task);
@@ -558,7 +568,7 @@ fn suppress_duplicate_content(cells: Vec<RetrievedCell>) -> Vec<RetrievedCell> {
     cells
         .into_iter()
         .filter(|cell| {
-            let metadata = CellMetadata::from_payload(&cell.payload);
+            let metadata = cell.metadata();
             let Some(content_hash) = metadata.content_hash else {
                 return true;
             };
@@ -575,7 +585,7 @@ fn expand_parent_context(cells: Vec<RetrievedCell>) -> Vec<RetrievedCell> {
     let mut parent_key_to_index = BTreeMap::<String, usize>::new();
     let metadata = cells
         .iter()
-        .map(|cell| CellMetadata::from_payload(&cell.payload))
+        .map(RetrievedCell::metadata)
         .collect::<Vec<_>>();
     for (index, metadata) in metadata.iter().enumerate() {
         if let Some(chunk_id) = &metadata.chunk_id {

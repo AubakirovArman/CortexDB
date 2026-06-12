@@ -175,6 +175,7 @@ mod tests {
 
     use super::*;
     use crate::context::{ContextPack, ContextPackCell};
+    use crate::query::CellMetadata;
 
     #[test]
     fn pipeline_trace_summarizes_pack_and_verification() {
@@ -182,6 +183,7 @@ mod tests {
             cells: vec![ContextPackCell {
                 cell_id: CellId(7),
                 payload: b"source=doc-a\n\nbudget approved".to_vec(),
+                metadata: CellMetadata::from_payload(b"source=doc-a\n\nbudget approved"),
                 estimated_tokens: 12,
                 citation: Some("doc-a".to_owned()),
                 provenance: None,

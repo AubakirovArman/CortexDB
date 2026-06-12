@@ -711,10 +711,10 @@ impl BenchmarkSearchIndex {
             let candidate =
                 u32::try_from(index + 1).map_err(|_| "candidate id overflow".to_owned())?;
             let cell_id = CellId(u64::from(candidate));
-            let Some(payload) = db.get_latest_cell(cell_id) else {
+            let Some((payload, descriptor)) = db.get_latest_cell_with_descriptor(cell_id) else {
                 continue;
             };
-            let metadata = CellMetadata::from_payload(&payload);
+            let metadata = CellMetadata::from_payload_with_descriptor(&payload, &descriptor);
             if !view.can_read_scope(scope_id(&metadata.scope)) {
                 continue;
             }
@@ -1200,8 +1200,12 @@ fn retrieve_aql_questions(
             .iter()
             .filter_map(|doc_id| doc_to_cell.get(doc_id).copied())
             .filter_map(|cell_id| {
-                db.get_latest_cell(cell_id)
-                    .map(|payload| RetrievedCell { cell_id, payload })
+                db.get_latest_cell_with_descriptor(cell_id)
+                    .map(|(payload, descriptor)| RetrievedCell {
+                        cell_id,
+                        payload,
+                        descriptor,
+                    })
             })
             .collect::<Vec<_>>();
         let mode = if vector.is_some() {

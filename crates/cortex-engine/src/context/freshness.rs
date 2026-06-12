@@ -1,5 +1,4 @@
 use crate::database::RetrievedCell;
-use crate::query::CellMetadata;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SourceFreshnessCategory {
@@ -88,8 +87,7 @@ impl SourceFreshnessRange {
         let mut min_created_unix_seconds = None;
         let mut max_created_unix_seconds = None;
         for cell in cells {
-            let Some(created) = CellMetadata::from_payload(&cell.payload).created_unix_seconds
-            else {
+            let Some(created) = cell.metadata().created_unix_seconds else {
                 continue;
             };
             min_created_unix_seconds = Some(
@@ -152,9 +150,6 @@ mod tests {
     }
 
     fn retrieved(cell_id: u64, payload: &str) -> RetrievedCell {
-        RetrievedCell {
-            cell_id: CellId(cell_id),
-            payload: payload.as_bytes().to_vec(),
-        }
+        RetrievedCell::from_payload(CellId(cell_id), payload.as_bytes().to_vec())
     }
 }

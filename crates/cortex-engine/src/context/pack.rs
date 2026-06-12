@@ -167,8 +167,8 @@ impl ContextPack {
         };
 
         for cell in cells {
-            let citation = extract_citation(&cell.payload);
-            let metadata = CellMetadata::from_payload(&cell.payload);
+            let metadata = cell.metadata();
+            let citation = metadata.citation().map(str::to_owned);
             let access_decision = context_access_decision(cell.cell_id, &metadata, access_view);
             let cell_body_terms = tokenize(&metadata.body_text)
                 .into_iter()
@@ -210,6 +210,7 @@ impl ContextPack {
                 remaining_tokens,
                 query_terms: &query_terms,
                 options,
+                source_ref: metadata.source_ref.as_ref(),
             }) {
                 truncated = true;
                 anomalies.push(selection.anomaly);
@@ -334,6 +335,7 @@ impl ContextPack {
             pack_cells.push(ContextPackCell {
                 cell_id: cell.cell_id,
                 payload: selected_payload,
+                metadata,
                 estimated_tokens: selected_tokens,
                 citation,
                 provenance: selected_provenance,
@@ -362,12 +364,6 @@ impl ContextPack {
     }
 }
 
-fn extract_citation(payload: &[u8]) -> Option<String> {
-    CellMetadata::from_payload(payload)
-        .citation()
-        .map(str::to_owned)
-}
-
 fn diversity_aware_order(cells: Vec<RetrievedCell>, query_terms: &[String]) -> Vec<RetrievedCell> {
     if cells.len() <= 2 || query_terms.is_empty() {
         return cells;
@@ -384,7 +380,8 @@ fn diversity_aware_order(cells: Vec<RetrievedCell>, query_terms: &[String]) -> V
         .into_iter()
         .enumerate()
         .map(|(index, cell)| {
-            let terms = CellMetadata::from_payload(&cell.payload)
+            let terms = cell
+                .metadata()
                 .weighted_lexical_terms()
                 .into_keys()
                 .collect::<BTreeSet<_>>();

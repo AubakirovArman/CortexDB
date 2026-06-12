@@ -4,7 +4,7 @@ use super::large_cell::estimate_cell_tokens;
 use super::{
     ContextPackAnomaly, ContextPackAnomalyCode, ContextPackOptions, ContextSpanProvenance,
 };
-use crate::query::CellMetadata;
+use crate::query::metadata::SourceRef;
 use crate::search::tokenize;
 
 pub(crate) struct ContextSpanRequest<'a> {
@@ -16,6 +16,7 @@ pub(crate) struct ContextSpanRequest<'a> {
     pub remaining_tokens: u32,
     pub query_terms: &'a [String],
     pub options: &'a ContextPackOptions,
+    pub source_ref: Option<&'a SourceRef>,
 }
 
 pub(crate) struct ContextSpanSelection {
@@ -54,7 +55,7 @@ pub(crate) fn select_relevant_span(
             source_byte_end: lines[end].end_byte,
             source_line_start: u32::try_from(start + 1).unwrap_or(u32::MAX),
             source_line_end: u32::try_from(end + 1).unwrap_or(u32::MAX),
-            source_ref: CellMetadata::from_payload(request.payload).source_ref,
+            source_ref: request.source_ref.cloned(),
         },
         anomaly: ContextPackAnomaly {
             cell_id: Some(request.cell_id),

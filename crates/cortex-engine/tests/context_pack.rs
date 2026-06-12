@@ -507,10 +507,7 @@ WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#
 }
 
 fn retrieved(cell_id: u64, payload: &str) -> RetrievedCell {
-    RetrievedCell {
-        cell_id: CellId(cell_id),
-        payload: payload.as_bytes().to_vec(),
-    }
+    RetrievedCell::from_payload(CellId(cell_id), payload.as_bytes().to_vec())
 }
 
 fn view(require_citations: bool) -> AgentView {

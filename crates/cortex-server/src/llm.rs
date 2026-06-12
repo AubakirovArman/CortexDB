@@ -1,7 +1,9 @@
 use serde::Deserialize;
 
 use cortex_core::CellId;
-use cortex_engine::{AnswerGroundingOptions, AnswerGroundingReport, ContextPack, ContextPackCell};
+use cortex_engine::{
+    AnswerGroundingOptions, AnswerGroundingReport, CellMetadata, ContextPack, ContextPackCell,
+};
 
 use crate::responses::{
     AnswerGroundingReportResponse, AnswerGroundingSpanResponse, LlmInferenceAuditResponse,
@@ -257,20 +259,24 @@ fn grounding_context_pack(request: &LlmInferenceRequest) -> ContextPack {
             .context_pack
             .cells
             .iter()
-            .map(|cell| ContextPackCell {
-                cell_id: CellId(cell.cell_id),
-                payload: cell
+            .map(|cell| {
+                let payload = cell
                     .text
                     .as_deref()
                     .or(cell.payload_text.as_deref())
                     .unwrap_or("")
                     .as_bytes()
-                    .to_vec(),
-                estimated_tokens: 0,
-                citation: cell.citation.clone().or_else(|| cell.source_ref.clone()),
-                provenance: None,
-                explain: None,
-                access_decision: None,
+                    .to_vec();
+                ContextPackCell {
+                    cell_id: CellId(cell.cell_id),
+                    metadata: CellMetadata::from_payload(&payload),
+                    payload,
+                    estimated_tokens: 0,
+                    citation: cell.citation.clone().or_else(|| cell.source_ref.clone()),
+                    provenance: None,
+                    explain: None,
+                    access_decision: None,
+                }
             })
             .collect(),
         token_budget_tokens: 0,

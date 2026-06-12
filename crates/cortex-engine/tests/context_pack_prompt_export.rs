@@ -1,12 +1,15 @@
-use cortex_core::CellId;
-use cortex_engine::{ContextPack, ContextPackExportFormat, ContextPackOptions, RetrievedCell};
+use std::collections::{BTreeMap, BTreeSet};
+
+use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode};
+use cortex_core::{CellDescriptor, CellId, KnowledgeCellType};
+use cortex_engine::{
+    scope_id, ContextAccessDecisionOutcome, ContextPack, ContextPackExportFormat,
+    ContextPackOptions, RetrievedCell,
+};
 use serde_json::Value;
 
 fn retrieved(cell_id: u64, payload: &str) -> RetrievedCell {
-    RetrievedCell {
-        cell_id: CellId(cell_id),
-        payload: payload.as_bytes().to_vec(),
-    }
+    RetrievedCell::from_payload(CellId(cell_id), payload.as_bytes().to_vec())
 }
 
 fn export_pack() -> ContextPack {
@@ -85,4 +88,87 @@ fn context_pack_json_export_has_public_schema_fields() {
         .unwrap()
         .iter()
         .any(|component| component["name"] == "source_trust_bonus"));
+}
+
+#[test]
+fn context_pack_export_uses_descriptor_metadata_over_payload_headers() {
+    let descriptor = CellDescriptor {
+        scope: "project:secure".to_owned(),
+        status: "ready".to_owned(),
+        cell_type: KnowledgeCellType::Fact,
+        source: Some("descriptor-source".to_owned()),
+        citation: Some("descriptor-citation".to_owned()),
+        source_trust_q16: Some(60_000),
+        created_unix_seconds: Some(200),
+        ..CellDescriptor::default()
+    };
+    let cell = RetrievedCell {
+        cell_id: CellId(42),
+        payload: b"scope=project:payload\nstatus=ready\nsource=payload-source\nsource_id=payload-source\ndocument_id=payload-doc\nsource_trust_q16=1\ncreated_unix_seconds=10\n\nsecure evidence"
+            .to_vec(),
+        descriptor,
+    };
+    let view = AgentView {
+        agent_id: AgentId(7),
+        label: None,
+        readable_brains: BTreeSet::from([BrainId(1)]),
+        readable_scopes: BTreeSet::from([scope_id("project:secure")]),
+        writable_scopes: BTreeSet::new(),
+        allowed_modes: BTreeSet::from([RetrievalMode::Balanced]),
+        allowed_memory_types: BTreeSet::from([MemoryType::Decision]),
+        max_context_budget_tokens: 1_000,
+        default_context_budget_tokens: 400,
+        max_candidate_limit: 100,
+        default_candidate_limit: 20,
+        min_required_confidence_q16: 0,
+        max_ttl_seconds: Some(3_600),
+        allow_remember: false,
+        allow_verify_fact: false,
+        allow_audit_mode: false,
+        require_citations_by_default: true,
+        private_scope: None,
+    };
+
+    let pack = ContextPack::from_retrieved_with_feedback_options_and_view(
+        vec![cell],
+        1_000,
+        true,
+        &ContextPackOptions::default(),
+        "secure evidence",
+        &BTreeMap::new(),
+        Some(&view),
+    );
+
+    assert_eq!(
+        pack.cells[0].citation.as_deref(),
+        Some("descriptor-citation")
+    );
+    assert_eq!(
+        pack.cells[0]
+            .metadata
+            .source_ref
+            .as_ref()
+            .map(|source_ref| source_ref.source_id.as_str()),
+        Some("descriptor-source")
+    );
+    let decision = pack.cells[0].access_decision.as_ref().unwrap();
+    assert_eq!(decision.decision, ContextAccessDecisionOutcome::Allowed);
+    assert_eq!(decision.scope, "project:secure");
+
+    let json: Value = serde_json::from_str(&pack.export(ContextPackExportFormat::Json)).unwrap();
+    assert_eq!(json["cells"][0]["citation"], "descriptor-citation");
+    assert_eq!(
+        json["cells"][0]["source_ref"]["source_id"],
+        "descriptor-source"
+    );
+    assert_eq!(
+        json["cells"][0]["access_decision"]["scope"],
+        "project:secure"
+    );
+
+    let prompt = pack.export(ContextPackExportFormat::Prompt);
+    assert!(prompt.contains("citation=descriptor-citation"));
+    assert!(prompt.contains("source_ref=source_id=descriptor-source"));
+    assert!(!prompt.contains("citation=payload-source"));
+    assert!(!prompt.contains("source_ref=source_id=payload-source"));
 }

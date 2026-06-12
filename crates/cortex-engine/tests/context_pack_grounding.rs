@@ -42,11 +42,10 @@ fn context_pack_grounding_flags_unsupported_answer_span() {
 #[test]
 fn context_pack_grounding_can_require_citations() {
     let pack = ContextPack::from_retrieved_with_options(
-        vec![RetrievedCell {
-            cell_id: CellId(7),
-            payload: b"scope=project:investments\nstatus=ready\n\nSolar Plant budget is 1.2B KZT."
-                .to_vec(),
-        }],
+        vec![RetrievedCell::from_payload(
+            CellId(7),
+            b"scope=project:investments\nstatus=ready\n\nSolar Plant budget is 1.2B KZT.".to_vec(),
+        )],
         1_000,
         false,
         &ContextPackOptions::default(),
@@ -68,11 +67,11 @@ fn context_pack_grounding_can_require_citations() {
 
 fn pack() -> ContextPack {
     ContextPack::from_retrieved_with_options(
-        vec![RetrievedCell {
-            cell_id: CellId(1),
-            payload: b"scope=project:investments\nstatus=ready\nsource=report-q1\n\nSolar Plant budget is 1.2B KZT."
+        vec![RetrievedCell::from_payload(
+            CellId(1),
+            b"scope=project:investments\nstatus=ready\nsource=report-q1\n\nSolar Plant budget is 1.2B KZT."
                 .to_vec(),
-        }],
+        )],
         1_000,
         true,
         &ContextPackOptions::default(),

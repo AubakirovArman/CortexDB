@@ -2,20 +2,18 @@ use serde_json::json;
 
 use crate::context::ContextPack;
 use crate::query::metadata::SourceRef;
-use crate::query::CellMetadata;
 
 pub(super) fn to_json(pack: &ContextPack) -> String {
     let cells = pack
         .cells
         .iter()
         .map(|cell| {
-            let metadata = CellMetadata::from_payload(&cell.payload);
             json!({
                 "cell_id": cell.cell_id.0,
                 "estimated_tokens": cell.estimated_tokens,
                 "citation": cell.citation.as_ref(),
                 "payload_text": String::from_utf8_lossy(&cell.payload),
-                "source_ref": metadata.source_ref.as_ref().map(source_ref_json),
+                "source_ref": cell.metadata.source_ref.as_ref().map(source_ref_json),
                 "provenance": cell.provenance.as_ref().map(|provenance| json!({
                     "source_cell_id": provenance.source_cell_id.0,
                     "source_byte_start": provenance.source_byte_start,

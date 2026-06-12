@@ -130,10 +130,7 @@ fn large_payload() -> String {
 }
 
 fn retrieved(id: u64, payload: &str) -> RetrievedCell {
-    RetrievedCell {
-        cell_id: CellId(id),
-        payload: payload.as_bytes().to_vec(),
-    }
+    RetrievedCell::from_payload(CellId(id), payload.as_bytes().to_vec())
 }
 
 fn query() -> &'static str {

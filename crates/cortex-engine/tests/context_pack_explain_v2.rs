@@ -5,10 +5,7 @@ use cortex_engine::{
 };
 
 fn retrieved(cell_id: u64, payload: &str) -> RetrievedCell {
-    RetrievedCell {
-        cell_id: CellId(cell_id),
-        payload: payload.as_bytes().to_vec(),
-    }
+    RetrievedCell::from_payload(CellId(cell_id), payload.as_bytes().to_vec())
 }
 
 #[test]

@@ -1,6 +1,5 @@
 use super::{ContextPack, ContextPackAnomaly, ContextPackCell};
 use crate::query::metadata::SourceRef;
-use crate::query::CellMetadata;
 
 use text::{markdown_fence_for, option_or_null, push_line, trim_final_newline};
 
@@ -146,7 +145,6 @@ impl ContextPack {
 }
 
 fn push_prompt_cell(out: &mut String, index: usize, cell: &ContextPackCell) {
-    let metadata = CellMetadata::from_payload(&cell.payload);
     push_line(out, "");
     push_line(out, &format!("[{}] cell_id={}", index, cell.cell_id.0));
     push_line(out, &format!("estimated_tokens={}", cell.estimated_tokens));
@@ -154,7 +152,7 @@ fn push_prompt_cell(out: &mut String, index: usize, cell: &ContextPackCell) {
         out,
         &format!("citation={}", option_or_null(cell.citation.as_deref())),
     );
-    if let Some(source_ref) = &metadata.source_ref {
+    if let Some(source_ref) = &cell.metadata.source_ref {
         push_line(
             out,
             &format!("source_ref={}", source_ref_inline(source_ref)),
@@ -203,7 +201,6 @@ fn push_prompt_anomaly(out: &mut String, anomaly: &ContextPackAnomaly) {
 }
 
 fn push_markdown_cell(out: &mut String, index: usize, cell: &ContextPackCell) {
-    let metadata = CellMetadata::from_payload(&cell.payload);
     push_line(out, "");
     push_line(out, &format!("### Cell {}", index));
     push_line(out, "");
@@ -216,7 +213,7 @@ fn push_markdown_cell(out: &mut String, index: usize, cell: &ContextPackCell) {
         out,
         &format!("- citation: `{}`", option_or_null(cell.citation.as_deref())),
     );
-    if let Some(source_ref) = &metadata.source_ref {
+    if let Some(source_ref) = &cell.metadata.source_ref {
         push_line(
             out,
             &format!("- source_ref: `{}`", source_ref_inline(source_ref)),

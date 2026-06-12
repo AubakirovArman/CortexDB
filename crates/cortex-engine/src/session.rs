@@ -137,6 +137,7 @@ impl Database {
                 Some(RetrievedCell {
                     cell_id: version.cell_id,
                     payload: version.payload,
+                    descriptor: version.descriptor,
                 })
             })
             .collect();

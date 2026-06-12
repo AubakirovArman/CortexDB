@@ -92,6 +92,7 @@ pub struct ContextExplain {
 pub struct ContextPackCell {
     pub cell_id: CellId,
     pub payload: Vec<u8>,
+    pub metadata: crate::query::CellMetadata,
     pub estimated_tokens: u32,
     pub citation: Option<String>,
     pub provenance: Option<ContextSpanProvenance>,
