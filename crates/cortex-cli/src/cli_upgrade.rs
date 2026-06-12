@@ -21,7 +21,7 @@ struct UpgradePrepareResponse {
 }
 
 #[derive(Serialize)]
-struct MigrationPreflightResponse {
+struct MigrationOfflineResponse {
     phase: &'static str,
     status: &'static str,
     source_path: String,
@@ -33,6 +33,14 @@ struct MigrationPreflightResponse {
     backup_files_copied: usize,
     backup_bytes_copied: u64,
     drill_restored_cells_checked: usize,
+    migration_segment_id: Option<u64>,
+    migration_cells_rewritten: usize,
+    migration_checkpoint_seq: u64,
+    post_migration_live_segments_checked: usize,
+    post_migration_cells_checked: usize,
+    post_migration_wal_records_checked: usize,
+    current_seq: u64,
+    checkpoint_seq: u64,
     validate_after_migration_command: String,
     rollback_command: String,
 }
@@ -131,9 +139,16 @@ pub(crate) fn migrate(
     };
     let drill = Database::backup_restore_drill_path(path, backup_path, drill_restore_path)
         .map_err(fmt_engine_error)?;
-    let response = MigrationPreflightResponse {
-        phase: "migrate_preflight",
-        status: "ready_for_offline_migration",
+    let (migration, post_validation, post_stats) = {
+        let mut db = open_database(path, false)?;
+        let migration = db.compact().map_err(fmt_engine_error)?;
+        let post_validation = db.validate_storage().map_err(fmt_engine_error)?;
+        let post_stats = db.storage_stats().map_err(fmt_engine_error)?;
+        (migration, post_validation, post_stats)
+    };
+    let response = MigrationOfflineResponse {
+        phase: "migrate_offline",
+        status: "offline_migration_completed",
         source_path: path.to_owned(),
         backup_path: backup_path.to_owned(),
         drill_restore_path: drill_restore_path.to_owned(),
@@ -143,6 +158,14 @@ pub(crate) fn migrate(
         backup_files_copied: drill.backup.files_copied,
         backup_bytes_copied: drill.backup.bytes_copied,
         drill_restored_cells_checked: drill.restore.restored_validation.cells_checked,
+        migration_segment_id: migration.segment_id,
+        migration_cells_rewritten: migration.cells_flushed,
+        migration_checkpoint_seq: migration.checkpoint_seq.0,
+        post_migration_live_segments_checked: post_validation.live_segments_checked,
+        post_migration_cells_checked: post_validation.cells_checked,
+        post_migration_wal_records_checked: post_validation.wal_records_checked,
+        current_seq: post_stats.current_seq.0,
+        checkpoint_seq: post_stats.checkpoint_seq.0,
         validate_after_migration_command: format!("cortexdb upgrade validate {path}"),
         rollback_command: format!("cortexdb upgrade rollback {backup_path} {path}.rollback"),
     };
@@ -150,7 +173,7 @@ pub(crate) fn migrate(
         return Ok(to_json(&response));
     }
     Ok(format!(
-        "phase={} status={} preflight_live_segments_checked={} preflight_cells_checked={} preflight_wal_records_checked={} backup_files_copied={} backup_bytes_copied={} drill_restored_cells_checked={} validate_after_migration_command=\"{}\" rollback_command=\"{}\"",
+        "phase={} status={} preflight_live_segments_checked={} preflight_cells_checked={} preflight_wal_records_checked={} backup_files_copied={} backup_bytes_copied={} drill_restored_cells_checked={} migration_segment_id={:?} migration_cells_rewritten={} migration_checkpoint_seq={} post_migration_live_segments_checked={} post_migration_cells_checked={} post_migration_wal_records_checked={} current_seq={} checkpoint_seq={} validate_after_migration_command=\"{}\" rollback_command=\"{}\"",
         response.phase,
         response.status,
         response.preflight_live_segments_checked,
@@ -159,6 +182,14 @@ pub(crate) fn migrate(
         response.backup_files_copied,
         response.backup_bytes_copied,
         response.drill_restored_cells_checked,
+        response.migration_segment_id,
+        response.migration_cells_rewritten,
+        response.migration_checkpoint_seq,
+        response.post_migration_live_segments_checked,
+        response.post_migration_cells_checked,
+        response.post_migration_wal_records_checked,
+        response.current_seq,
+        response.checkpoint_seq,
         response.validate_after_migration_command,
         response.rollback_command
     ))

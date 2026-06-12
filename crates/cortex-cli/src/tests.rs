@@ -873,7 +873,7 @@ fn upgrade_prepare_json_reports_next_commands() {
 }
 
 #[test]
-fn migrate_preflight_creates_backup_drill_and_preserves_data() {
+fn migrate_offline_creates_backup_drill_rewrites_and_preserves_data() {
     let root = unique_path("cortexdb-cli-migrate-root");
     let source = root.join("source");
     let backup = root.join("migration-backup");
@@ -900,10 +900,20 @@ fn migrate_preflight_creates_backup_drill_and_preserves_data() {
         drill_arg.clone(),
     ])
     .unwrap();
-    assert!(output.contains(r#""phase":"migrate_preflight""#));
-    assert!(output.contains(r#""status":"ready_for_offline_migration""#));
+    assert!(output.contains(r#""phase":"migrate_offline""#));
+    assert!(output.contains(r#""status":"offline_migration_completed""#));
+    assert!(output.contains(r#""migration_segment_id":1"#));
+    assert!(output.contains(r#""migration_cells_rewritten":1"#));
+    assert!(output.contains(r#""post_migration_cells_checked":1"#));
     assert!(output.contains(r#""validate_after_migration_command""#));
     assert!(output.contains(r#""rollback_command""#));
+
+    let segment_magic = std::fs::read(source.join("segments").join("segment-1.acs"))
+        .unwrap()
+        .into_iter()
+        .take(4)
+        .collect::<Vec<_>>();
+    assert_eq!(segment_magic.as_slice(), b"ACS2");
 
     let source_payload = run(vec![
         "cortexdb".to_owned(),

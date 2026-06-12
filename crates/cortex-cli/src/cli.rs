@@ -143,7 +143,7 @@ enum Command {
         #[command(subcommand)]
         command: UpgradeCommand,
     },
-    #[command(about = "Run the safe offline migration preflight")]
+    #[command(about = "Run a safe offline migration rewrite")]
     Migrate {
         path: String,
         backup_path: String,

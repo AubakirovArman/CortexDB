@@ -41,9 +41,9 @@ make storage-format-change-note-check
 | Format | File | Magic | Version state | Compatibility rule |
 | --- | --- | --- | --- | --- |
 | ACLOG WAL | `.aclog` | `ACLOGv0\0` | `version = 0` in file header | Breaking changes require a new WAL version. |
-| Segment | `.acs` | `ACS1` | magic carries v1 | Breaking changes require a new magic. |
+| Segment | `.acs` | `ACS2` | magic carries v2 | `ACS1` remains read-only compatible. |
 | Bitmap index | `.acb` | `ACB0` | magic carries v0 | Breaking changes require a new magic. |
-| Lexical index | `.aci` | `ACI2` | magic carries v2 | `ACI0` and `ACI1` remain read-only compatible. |
+| Lexical index | `.aci` | `ACI3` | magic carries v3 | `ACI0`, `ACI1`, and `ACI2` remain read-only compatible. |
 | Vector index | `.acv` | `ACV0` | magic carries v0 | Breaking changes require a new magic. |
 | HNSW graph | `.ach` | `ACH0` | magic carries v0 | Breaking changes require a new magic. |
 | Manifest | `.acm` | `ACM0` | magic carries v0 | Breaking changes require a new magic. |
@@ -53,19 +53,23 @@ All multi-byte integer fields are little-endian.
 ## Segment `.acs`
 
 ```text
-magic[4] = "ACS1"
+magic[4] = "ACS2"
 cell_count u32
 repeat cell_count:
   cell_id u64
   candidate_id u32
   created_seq u64
   deleted_seq u64, 0 means none
+  descriptor_len u32
+  descriptor bytes, may be empty
   payload_len u32
   payload bytes
 crc32c u32 over all previous bytes
 ```
 
-Writers persist cells in ascending `candidate_id` order.
+Writers persist cells in ascending `candidate_id` order. `ACS1` is retained as a
+read-only legacy segment format and has the same layout without the
+`descriptor_len` and `descriptor bytes` fields.
 `SegmentReader::read_lookup` builds an in-memory lookup for `candidate_id` and
 full `cell_id` access without repeated segment scans.
 
@@ -85,7 +89,7 @@ crc32c u32 over all previous bytes
 ## Lexical Index `.aci`
 
 ```text
-magic[4] = "ACI2"
+magic[4] = "ACI3"
 term_count u32
 repeat term_count:
   term_len u16

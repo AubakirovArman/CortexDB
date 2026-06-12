@@ -1309,7 +1309,7 @@ docker-production-compose-check:
 upgrade-rollback-cli-flow-check:
 	cargo test -p cortex-cli upgrade_prepare_validate_and_rollback_flow
 	cargo test -p cortex-cli upgrade_prepare_json_reports_next_commands
-	cargo test -p cortex-cli migrate_preflight_creates_backup_drill_and_preserves_data
+	cargo test -p cortex-cli migrate_offline_creates_backup_drill_rewrites_and_preserves_data
 	python3 scripts/upgrade_rollback_cli_flow_check.py --report "$(UPGRADE_ROLLBACK_CLI_FLOW_REPORT)"
 
 package-manager-feasibility-check:

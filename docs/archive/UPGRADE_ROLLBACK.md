@@ -46,15 +46,16 @@ stable response shape:
 cortexdb --json upgrade prepare ./data ./backups/cortexdb-pre-upgrade ./drills/cortexdb-pre-upgrade
 ```
 
-For release-to-release migration preflight, use the explicit migration alias:
+For release-to-release storage migration, use the explicit migration command:
 
 ```bash
 cortexdb migrate ./data ./backups/cortexdb-pre-migration ./drills/cortexdb-pre-migration
 ```
 
-This follows the same guarded offline shape as `upgrade prepare`: source
-validation, immutable backup, drill restore, and follow-up validate/rollback
-commands. It does not rewrite the database in place in Core Alpha.
+This follows the guarded offline shape but also rewrites the source through the
+current checkpoint/compact writer after source validation, immutable backup, and
+drill restore. The command validates the migrated source and reports the
+follow-up validate/rollback commands.
 
 ## Upgrade
 

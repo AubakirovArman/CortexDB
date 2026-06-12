@@ -19,8 +19,8 @@ REQUIRED_MARKERS = {
     "crates/cortex-cli/src/cli_upgrade.rs": [
         "upgrade_prepare",
         "ready_for_offline_upgrade",
-        "migrate_preflight",
-        "ready_for_offline_migration",
+        "migrate_offline",
+        "offline_migration_completed",
         "upgrade_validate",
         "validated_after_upgrade",
         "upgrade_rollback",
@@ -29,7 +29,7 @@ REQUIRED_MARKERS = {
     "crates/cortex-cli/src/tests.rs": [
         "upgrade_prepare_validate_and_rollback_flow",
         "upgrade_prepare_json_reports_next_commands",
-        "migrate_preflight_creates_backup_drill_and_preserves_data",
+        "migrate_offline_creates_backup_drill_rewrites_and_preserves_data",
     ],
     "docs/CLI.md": [
         "upgrade prepare",
@@ -43,7 +43,7 @@ REQUIRED_MARKERS = {
         "cortexdb upgrade rollback",
         "cortexdb migrate",
     ],
-    "docs/OPERATIONS_RUNBOOK_V1.md": [
+    "docs/archive/OPERATIONS_RUNBOOK_V1.md": [
         "cortexdb upgrade prepare",
         "cortexdb upgrade validate",
         "cortexdb upgrade rollback",

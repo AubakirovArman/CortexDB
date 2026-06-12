@@ -13,7 +13,18 @@
       "compatibility": "current",
       "change_policy": "Breaking WAL changes require a WAL_FORMAT_VERSION bump, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence.",
       "release_fixture_required": true,
-      "required_docs": ["docs/ACLOG_FORMAT.md", "docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"],
+      "required_docs": ["docs/archive/ACLOG_FORMAT.md", "docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
+      "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
+      "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
+    },
+    {
+      "kind": "segment",
+      "marker": "ACS2",
+      "extension": ".acs",
+      "compatibility": "current",
+      "change_policy": "ACS2 adds optional typed descriptor bytes to segment records. Breaking segment changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence.",
+      "release_fixture_required": true,
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
       "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
     },
@@ -21,10 +32,10 @@
       "kind": "segment",
       "marker": "ACS1",
       "extension": ".acs",
-      "compatibility": "current",
-      "change_policy": "Breaking segment changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence.",
+      "compatibility": "read-only compatible",
+      "change_policy": "Legacy segment ACS1 compatibility must remain documented and covered by segment tests or be removed only through a breaking migration note and release fixture.",
       "release_fixture_required": true,
-      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"],
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
       "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
     },
@@ -35,7 +46,18 @@
       "compatibility": "current",
       "change_policy": "Breaking bitmap-index changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence.",
       "release_fixture_required": true,
-      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"],
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
+      "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
+      "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
+    },
+    {
+      "kind": "lexical_index",
+      "marker": "ACI3",
+      "extension": ".aci",
+      "compatibility": "current",
+      "change_policy": "ACI3 is the current lexical index marker. Breaking lexical-index changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence while preserving documented ACI0/ACI1/ACI2 read-only compatibility.",
+      "release_fixture_required": true,
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
       "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
     },
@@ -43,10 +65,10 @@
       "kind": "lexical_index",
       "marker": "ACI2",
       "extension": ".aci",
-      "compatibility": "current",
-      "change_policy": "Breaking lexical-index changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence while preserving documented ACI0/ACI1 read-only compatibility.",
+      "compatibility": "read-only compatible",
+      "change_policy": "Legacy lexical ACI2 compatibility must remain documented and covered by lexical index tests or be removed only through a breaking migration note and release fixture.",
       "release_fixture_required": true,
-      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"],
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
       "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
     },
@@ -57,7 +79,7 @@
       "compatibility": "read-only compatible",
       "change_policy": "Legacy lexical ACI0 compatibility must remain documented and covered by lexical index tests or be removed only through a breaking migration note and release fixture.",
       "release_fixture_required": true,
-      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"],
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
       "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
     },
@@ -68,7 +90,7 @@
       "compatibility": "read-only compatible",
       "change_policy": "Legacy lexical ACI1 compatibility must remain documented and covered by lexical index tests or be removed only through a breaking migration note and release fixture.",
       "release_fixture_required": true,
-      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"],
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
       "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
     },
@@ -79,7 +101,7 @@
       "compatibility": "current",
       "change_policy": "Breaking vector-index changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence.",
       "release_fixture_required": true,
-      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"],
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
       "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
     },
@@ -90,7 +112,7 @@
       "compatibility": "current",
       "change_policy": "Breaking HNSW graph changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence.",
       "release_fixture_required": true,
-      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"],
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
       "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
     },
@@ -101,7 +123,7 @@
       "compatibility": "current",
       "change_policy": "Breaking manifest changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence.",
       "release_fixture_required": true,
-      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"],
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
       "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
     }

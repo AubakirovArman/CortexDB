@@ -12,17 +12,17 @@
       "current_version": 0,
       "legacy_magics": [],
       "breaking_change_policy": "breaking changes require WAL_FORMAT_VERSION bump and migration notes",
-      "docs": ["docs/ACLOG_FORMAT.md", "docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+      "docs": ["docs/archive/ACLOG_FORMAT.md", "docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"]
     },
     {
       "kind": "segment",
       "name": "Segment",
       "extension": "acs",
-      "current_magic": "ACS1",
-      "current_version": 1,
-      "legacy_magics": [],
-      "breaking_change_policy": "breaking changes require a new segment magic and migration notes",
-      "docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+      "current_magic": "ACS2",
+      "current_version": 2,
+      "legacy_magics": ["ACS1"],
+      "breaking_change_policy": "ACS1 remains read-only compatible; breaking changes require a new segment magic and migration notes",
+      "docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"]
     },
     {
       "kind": "bitmap_index",
@@ -32,17 +32,17 @@
       "current_version": 0,
       "legacy_magics": [],
       "breaking_change_policy": "breaking changes require a new bitmap magic and migration notes",
-      "docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+      "docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"]
     },
     {
       "kind": "lexical_index",
       "name": "Lexical index",
       "extension": "aci",
-      "current_magic": "ACI2",
-      "current_version": 2,
-      "legacy_magics": ["ACI0", "ACI1"],
-      "breaking_change_policy": "ACI0 and ACI1 remain read-only compatible; breaking changes require a new lexical magic",
-      "docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+      "current_magic": "ACI3",
+      "current_version": 3,
+      "legacy_magics": ["ACI0", "ACI1", "ACI2"],
+      "breaking_change_policy": "ACI0, ACI1 and ACI2 remain read-only compatible; breaking changes require a new lexical magic",
+      "docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"]
     },
     {
       "kind": "vector_index",
@@ -52,7 +52,7 @@
       "current_version": 0,
       "legacy_magics": [],
       "breaking_change_policy": "breaking changes require a new vector magic and migration notes",
-      "docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+      "docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"]
     },
     {
       "kind": "hnsw_graph",
@@ -62,7 +62,7 @@
       "current_version": 0,
       "legacy_magics": [],
       "breaking_change_policy": "breaking changes require a new HNSW graph magic and migration notes",
-      "docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+      "docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"]
     },
     {
       "kind": "manifest",
@@ -72,7 +72,7 @@
       "current_version": 0,
       "legacy_magics": [],
       "breaking_change_policy": "breaking changes require a new manifest magic and migration notes",
-      "docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+      "docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"]
     }
   ],
   "required_evidence_gates": [

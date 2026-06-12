@@ -200,12 +200,12 @@ cortexdb upgrade rollback ./backups/cortexdb-pre-upgrade ./db.rollback
 ```
 
 #### `migrate <path> <backup_path> <drill_restore_path>`
-Run the offline migration preflight for a release-to-release storage/API
-transition. In Core Alpha this command intentionally does not rewrite storage
-in place: it validates the source database, creates an immutable backup, restores
-that backup into a drill target, and prints the follow-up validation and rollback
-commands. It is the operator-facing migration alias for the safe upgrade
-workflow.
+Run the guarded offline migration path for a release-to-release storage/API
+transition. It validates the source database, creates an immutable backup,
+restores that backup into a drill target, rewrites the source database through
+the current checkpoint/compact writer, validates the migrated source, and prints
+the follow-up validation and rollback commands. This is the operator-facing
+migration alias for the safe upgrade workflow.
 
 ```bash
 cortexdb migrate ./db ./backups/cortexdb-pre-migration ./drills/cortexdb-pre-migration

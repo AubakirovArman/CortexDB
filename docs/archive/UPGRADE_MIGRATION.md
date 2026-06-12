@@ -24,9 +24,9 @@ production Raft migration support.
 | File | Current marker | Compatibility rule |
 | --- | --- | --- |
 | WAL `.aclog` | `ACLOGv0` | Breaking changes require a WAL version bump and migration note. |
-| Segment `.acs` | `ACS1` | Breaking changes require a new segment magic and migration note. |
+| Segment `.acs` | `ACS2` | `ACS1` remains read-only compatible; breaking changes require a new segment magic and migration note. |
 | Bitmap index `.acb` | `ACB0` | Breaking changes require a new bitmap magic and migration note. |
-| Lexical index `.aci` | `ACI2` | `ACI0` and `ACI1` remain read-only compatible. |
+| Lexical index `.aci` | `ACI3` | `ACI0`, `ACI1`, and `ACI2` remain read-only compatible. |
 | Vector index `.acv` | `ACV0` | Breaking changes require a new vector magic and migration note. |
 | HNSW graph `.ach` | `ACH0` | Breaking changes require a new graph magic and migration note. |
 | Manifest `.acm` | `ACM0` | Breaking changes require a new manifest magic and migration note. |
@@ -122,11 +122,11 @@ both the historical cells and the marker cell. This proves the offline upgrade
 path covers both historical backup restore and previous-release direct database
 open/write behavior.
 
-`cortexdb migrate` is the operator-facing migration preflight command for this
-policy. In Core Alpha it does not perform an automatic data rewrite. It validates
-the source, creates the immutable backup, restores the drill target, and reports
-the `cortexdb upgrade validate` plus `cortexdb upgrade rollback` commands that
-complete the offline workflow.
+`cortexdb migrate` is the operator-facing offline migration command for this
+policy. It validates the source, creates the immutable backup, restores the drill
+target, rewrites the source through the current checkpoint/compact writer,
+validates the migrated source, and reports the `cortexdb upgrade validate` plus
+`cortexdb upgrade rollback` commands that complete the offline workflow.
 
 Downgrade remains restore-only: restore the immutable pre-upgrade backup and run
 the previous binary against that restored directory. CortexDB does not support

@@ -2,7 +2,7 @@
 
 ACLOG is CortexDB's append-only write-ahead log format.
 The current format is frozen as v0 for Core Alpha. Breaking layout changes
-require a `WAL_FORMAT_VERSION` bump and compatibility notes.
+require a `WAL_FORMAT_VERSION` bump, a migration note, and compatibility notes.
 
 ## File Header
 

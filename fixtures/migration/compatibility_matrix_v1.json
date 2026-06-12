@@ -10,9 +10,15 @@
       "proof": ["crates/cortex-storage/tests/wal_tests.rs"]
     },
     {
-      "marker": "ACS1",
+      "marker": "ACS2",
       "file": ".acs",
       "compatibility": "current",
+      "proof": ["crates/cortex-storage/tests/segment_index_tests.rs"]
+    },
+    {
+      "marker": "ACS1",
+      "file": ".acs",
+      "compatibility": "read-only compatible",
       "proof": ["crates/cortex-storage/tests/segment_index_tests.rs"]
     },
     {
@@ -22,9 +28,15 @@
       "proof": ["crates/cortex-storage/tests/segment_index_tests.rs"]
     },
     {
-      "marker": "ACI2",
+      "marker": "ACI3",
       "file": ".aci",
       "compatibility": "current",
+      "proof": ["crates/cortex-storage/tests/lexical_index_tests.rs"]
+    },
+    {
+      "marker": "ACI2",
+      "file": ".aci",
+      "compatibility": "read-only compatible",
       "proof": ["crates/cortex-storage/tests/lexical_index_tests.rs"]
     },
     {
@@ -62,17 +74,17 @@
     {
       "boundary": "storage",
       "gate": "cargo test -p cortex-storage",
-      "proof": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"]
+      "proof": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"]
     },
     {
       "boundary": "api",
       "gate": "make openapi-contract-check",
-      "proof": ["docs/openapi.yaml", "docs/API_COMPATIBILITY.md"]
+      "proof": ["docs/openapi.yaml", "docs/archive/API_COMPATIBILITY.md"]
     },
     {
       "boundary": "sdk",
       "gate": "make sdk-contract-check",
-      "proof": ["docs/SDK_RELEASE.md", "scripts/check_sdk_contract.py"]
+      "proof": ["docs/archive/SDK_RELEASE.md", "scripts/check_sdk_contract.py"]
     }
   ],
   "upgrade_matrix": [
@@ -81,7 +93,7 @@
       "to": "v0.2.0-beta.1",
       "mode": "offline backup-drill, install new binary, validate, smoke",
       "downgrade": "restore immutable pre-upgrade backup; no in-place downgrade",
-      "proof": ["docs/UPGRADE_MIGRATION.md"]
+      "proof": ["docs/archive/UPGRADE_MIGRATION.md"]
     }
   ],
   "release_compatibility_matrix": [
@@ -98,10 +110,10 @@
             "storage_contract_gate": "make storage-compat-check",
       "downgrade": "restore-only from immutable pre-upgrade backup; no in-place downgrade",
       "proof": [
-        "docs/UPGRADE_MIGRATION.md",
-        "docs/API_COMPATIBILITY.md",
-        "docs/SDK_RELEASE.md",
-        "docs/STORAGE_COMPATIBILITY.md"
+        "docs/archive/UPGRADE_MIGRATION.md",
+        "docs/archive/API_COMPATIBILITY.md",
+        "docs/archive/SDK_RELEASE.md",
+        "docs/archive/STORAGE_COMPATIBILITY.md"
       ]
     }
   ],
@@ -118,12 +130,12 @@
   "migration_notes": [
     {
       "change_type": "storage",
-      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/UPGRADE_MIGRATION.md"],
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make migration-policy-check", "make migration-compatibility-check"]
     },
     {
       "change_type": "api_or_sdk",
-      "required_docs": ["docs/API_CHANGELOG.md", "docs/API_COMPATIBILITY.md"],
+      "required_docs": ["docs/archive/API_CHANGELOG.md", "docs/archive/API_COMPATIBILITY.md"],
       "required_gates": ["make openapi-contract-check", "make sdk-contract-check"]
     }
   ]
