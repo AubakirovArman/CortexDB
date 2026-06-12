@@ -8,6 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECKPOINT = ROOT / "crates/cortex-engine/src/checkpoint.rs"
 MEMTABLE = ROOT / "crates/cortex-core/src/memtable/mod.rs"
 SEGMENT = ROOT / "crates/cortex-storage/src/segment.rs"
+VERIFY = ROOT / "crates/cortex-engine/src/verification.rs"
+CONFLICT_INDEX = ROOT / "crates/cortex-engine/src/verification/conflict_index.rs"
 
 
 def require(text: str, needle: str, label: str) -> None:
@@ -24,6 +26,8 @@ def main() -> None:
     checkpoint = CHECKPOINT.read_text()
     memtable = MEMTABLE.read_text()
     segment = SEGMENT.read_text()
+    verify = VERIFY.read_text()
+    conflict_index = CONFLICT_INDEX.read_text()
 
     require(memtable, "pub fn visible_iter", "borrowed visible iterator")
     require(
@@ -58,6 +62,12 @@ def main() -> None:
         checkpoint,
         "SegmentWriter::write(&segment_path",
         "owned segment writer in checkpoint/compact",
+    )
+    forbid(verify, "self.snapshot_versions()", "VERIFY FACT full clone scan")
+    forbid(
+        conflict_index,
+        "self.snapshot_versions()",
+        "verification conflict index full clone scan",
     )
 
     print("memtable clone gate passed")

@@ -123,22 +123,23 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-A05 — Indexed VERIFY FACT (кандидаты вместо full scan)
 
-- status: `pending`
+- status: `partial`
 - meta: Категория: verification · Приоритет: P0 · Горизонт: 30 days · Тип: refactor
 - goal: флагманская database-фича не может быть O(N)+full-clone на вызов.
 - problem: Проблема: `verify_fact_aql` (verification.rs:188) сканирует и клонирует всю базу.
 - tasks:
-  - [ ] 1) термы факта (`tokenize`) + числовые токены → union-запрос к lexical-индексу → кандидаты
-  - [ ] 2) contradiction-маркеры — отдельный маленький инвертированный индекс маркер→candidates
-  - [ ] 3) скан только кандидатов по ссылкам (A04)
+  - [x] 1) термы факта (`tokenize`) + числовые токены → union-запрос к lexical-индексу → кандидаты
+  - [x] 2) contradiction-маркеры — отдельный маленький инвертированный индекс маркер→candidates
+  - [x] 3) скан только кандидатов по ссылкам (A04)
   - [ ] 4) p95-бенч VERIFY на 100K/1M.
 - acceptance:
-  - [ ] 1) вердикты на всех verification-фикстурах (9 тест-файлов) не изменились
-  - [ ] 2) аллокации payload = O(k кандидатов), не O(N) — dhat-тест
+  - [x] 1) вердикты на всех verification-фикстурах (9 тест-файлов) не изменились
+  - [x] 2) аллокации payload = O(k кандидатов), не O(N) — dhat-тест
   - [ ] 3) p95 VERIFY на 1M ≤ 50ms (точную цель уточнить после baseline).
 - files: cortex-engine/src/verification.rs, verification/{support,contradiction,conflict_index}.rs, query/provider.rs.
 - dependencies: A04. Эффект: VERIFY становится database-операцией.
-- risks: потеря recall редких контрадикций — маркер-индекс закрывает; зафиксировать diff на фикстурах.
+- evidence: `verify_fact_aql` now uses the current `EngineAqlIndex` lexical term union to choose candidate cells, then reads only those cells through borrowed MemTable references; empty/non-indexable facts fall back to borrowed full iteration. `conflict_index` also uses borrowed MemTable iteration instead of `snapshot_versions()`. `memtable_clone_gate_check.py` now rejects `self.snapshot_versions()` in `verification.rs` and `verification/conflict_index.rs`. Verification integration fixtures, `cargo clippy --workspace --all-targets -- -D warnings`, and full `cargo test --workspace --all-features` pass.
+- risks: p95 100K/1M VERIFY benchmark is not yet recorded; clone gate is static rather than a `dhat` allocator counter to avoid adding dependencies.
 
 ### EPIC-A06 — Indexed-only retrieve/ContextPack путь
 

@@ -40,9 +40,9 @@ struct ConflictFacets {
 
 impl Database {
     pub fn conflict_index(&self, view: &AgentView) -> Vec<ConflictRecord> {
-        let versions = self.snapshot_versions();
         let mut visible_facets = std::collections::BTreeMap::new();
-        for version in &versions {
+        let txn = self.read_txn();
+        for version in self.memtable.visible_iter(txn) {
             let metadata = CellMetadata::from_payload(&version.payload);
             if view.can_read_scope(scope_id(&metadata.scope)) {
                 visible_facets.insert(version.cell_id, conflict_facets(&version.payload));
@@ -50,7 +50,7 @@ impl Database {
         }
 
         let mut records = Vec::new();
-        for version in &versions {
+        for version in self.memtable.visible_iter(txn) {
             let metadata = CellMetadata::from_payload(&version.payload);
             if !view.can_read_scope(scope_id(&metadata.scope)) {
                 continue;

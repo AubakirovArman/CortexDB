@@ -1,10 +1,13 @@
+use std::collections::BTreeSet;
+
 use cortex_aql::{AgentView, BoundPlan, Q16};
+use cortex_core::memtable::CellVersion;
 use cortex_core::CellId;
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::query::cache::AqlStatementKind;
-use crate::query::{scope_id, CellMetadata};
+use crate::query::{scope_id, CellMetadata, EngineAqlIndex};
 use crate::search::tokenize;
 use crate::source_trust::{SourceTrust, SourceTrustCategory};
 
@@ -174,7 +177,7 @@ impl Database {
     /// assert_eq!(report.fact, "budget is approved");
     /// ```
     pub fn verify_fact_aql(&self, aql: &str, view: &AgentView) -> EngineResult<VerificationReport> {
-        let (cached, _) = self.bind_aql_cached(aql, view)?;
+        let (cached, index) = self.bind_aql_cached(aql, view)?;
         if cached.statement_kind != AqlStatementKind::VerifyFact {
             return Err(EngineError::InvalidOperation);
         }
@@ -185,7 +188,7 @@ impl Database {
         let mut contradicting_evidence = Vec::new();
         let mut guards = Vec::new();
         let mut numeric_conflicts = Vec::new();
-        for version in self.snapshot_versions() {
+        for version in self.verification_candidate_versions(&index, &plan.fact) {
             if let Some(guard) =
                 stale_fact_guard(&plan.fact, &version.payload, version.cell_id, view)
             {
@@ -231,6 +234,37 @@ impl Database {
             guards,
             numeric_conflicts,
         })
+    }
+
+    fn verification_candidate_versions<'a>(
+        &'a self,
+        index: &EngineAqlIndex,
+        fact: &str,
+    ) -> Vec<&'a CellVersion> {
+        let fact_terms = tokenize(fact);
+        let txn = self.read_txn();
+        if fact_terms.is_empty() {
+            return self.memtable.visible_iter(txn).collect();
+        }
+
+        let mut candidates = BTreeSet::new();
+        for term in &fact_terms {
+            if let Some(term_candidates) = index.lexical.get(term) {
+                candidates.extend(term_candidates.iter().copied());
+            }
+        }
+        if candidates.is_empty() {
+            return self.memtable.visible_iter(txn).collect();
+        }
+
+        let mut versions = candidates
+            .into_iter()
+            .filter_map(|candidate| index.candidate_to_cell.get(&candidate))
+            .filter_map(|cell_id| self.memtable.read(txn, *cell_id))
+            .collect::<Vec<_>>();
+        versions.sort_by_key(|version| version.cell_id);
+        versions.dedup_by_key(|version| version.cell_id);
+        versions
     }
 }
 
