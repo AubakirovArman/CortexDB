@@ -6387,7 +6387,56 @@
     "scripts/enterprise_rag_bench/embed_corpus.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 553,
+      "lines": 69,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/embed_corpus_lib/__init__.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 2,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/embed_corpus_lib/constants.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 5,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/embed_corpus_lib/logging.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 38,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/embed_corpus_lib/manifest.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 50,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/embed_corpus_lib/reporting.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 170,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/embed_corpus_lib/runner.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 201,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/embed_corpus_lib/state.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 79,
       "soft_limit": 300,
       "warning_limit": 600
     },
