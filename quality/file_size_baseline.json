@@ -1480,7 +1480,42 @@
     "crates/cortex-engine/src/exec/mod.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 506,
+      "lines": 13,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/exec/pack.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 68,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/exec/retrieve.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 88,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/exec/scans.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 246,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/exec/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 58,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/exec/trace.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 64,
       "soft_limit": 300,
       "warning_limit": 600
     },
