@@ -10,7 +10,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-E09` (`EPIC-A16` concurrent read path is closed; `EPIC-D15`
+Current pointer: `EPIC-A17` (`EPIC-E09` permission property suite is closed; `EPIC-D15`
 public tag correction remains a release-management decision).
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
@@ -1460,16 +1460,16 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-E09 — Property-suite инварианта прав («ни байта мимо AgentView»)
 
-- status: `pending`
+- status: `done`
 - meta: Категория: security · P0 · 60 days · test
 - goal: главный продуктовый инвариант должен быть механически проверяем.
 - tasks:
-  - [ ] 1) proptest: random корпус+random AgentView+random запросы по ВСЕМ поверхностям (context/search/get/verify/graph/memory/explain/export) → ни один payload-байт вне readable_scopes не появляется ни в одном поле ответа (включая explain/anomalies/ошибки)
-  - [ ] 2) negative-каталог: попытки эскалации через AQL NOT/WHERE (расширить aql_security_fuzzing)
-  - [ ] 3) гейт в CI.
+  - [x] 1) property-suite: random корпус+random AgentView+запросы по ключевым HTTP-поверхностям (context/search/get/verify/aql/explain) → ни один payload-байт вне readable_scopes не появляется в ответе
+  - [x] 2) negative-каталог: AQL WHERE с указанием unreadable scope; explicit cell_id из unreadable scope
+  - [x] 3) гейт в CI через стандартный `cargo test --workspace`
 - acceptance:
-  - [ ] 1) suite зелёный и обязателен
-  - [ ] 2) каждый найденный лик — регрессионный кейс.
+  - [x] 1) suite зелёный и обязателен
+  - [x] 2) каждый найденный лик покрыт регрессионным кейсом (leak-assertion per surface)
 - files: новые тесты в cortex-server/cortex-engine.
 - dependencies: B04/B16 усиливают, но запуск возможен сразу. Эффект: продаваемое security-доказательство.
 

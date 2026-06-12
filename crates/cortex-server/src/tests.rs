@@ -1,3 +1,4 @@
+mod agent_view_property_tests;
 mod api_tests;
 mod auth_policy_tests;
 mod auth_rotation_tests;
