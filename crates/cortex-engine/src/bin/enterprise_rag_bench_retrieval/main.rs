@@ -29,9 +29,9 @@ mod vectors;
 pub(crate) use constants::*;
 #[cfg(test)]
 pub(crate) use document::build_payload;
-pub(crate) use helpers::{
-    doc_id_to_cell_id, document_total, retrieval_row, round_ms, round_pct, throughput_per_sec,
-};
+#[cfg(test)]
+pub(crate) use helpers::throughput_per_sec;
+pub(crate) use helpers::{doc_id_to_cell_id, document_total, retrieval_row, round_ms};
 use ingest::ingest_documents;
 use logger::RunLogger;
 #[cfg(test)]
