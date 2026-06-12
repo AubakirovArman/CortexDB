@@ -6289,7 +6289,7 @@
     "scripts/enterprise_rag_bench/build_official_clean_vectors.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 497,
+      "lines": 10,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -7018,6 +7018,55 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 174,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_vectors_lib/__init__.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 1,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_vectors_lib/cli.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 56,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_vectors_lib/embedding.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 179,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_vectors_lib/files.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 54,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_vectors_lib/logging.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 10,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_vectors_lib/runner.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 104,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_vectors_lib/texts.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 136,
       "soft_limit": 300,
       "warning_limit": 600
     },
