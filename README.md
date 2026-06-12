@@ -24,6 +24,8 @@ For durable tool registry cells and ContextPack inclusion, see
 [`docs/TOOL_REGISTRY.md`](docs/TOOL_REGISTRY.md).
 For typed entity/relation/source graph traversal, see
 [`docs/KNOWLEDGE_GRAPH.md`](docs/KNOWLEDGE_GRAPH.md).
+For the knowledge cell, MVCC, scope, lifecycle, and metadata contract, see
+[`docs/DATA_MODEL.md`](docs/DATA_MODEL.md).
 
 CortexDB is specifically engineered for autonomous AI agents. Unlike traditional databases that return raw rows or tables, or vector databases that return fragmented, unverified text chunks, CortexDB compiles permission-safe, evidence-aware **Context Packs** with strict token-budget limits and deterministic fact verification.
 

@@ -453,25 +453,39 @@ fn rank_retrieved_cells(
         return cells;
     }
 
-    let lexical_scores = lexical_bm25_scores(&cells, task);
+    let metadata = cells
+        .iter()
+        .map(|cell| CellMetadata::from_payload(&cell.payload))
+        .collect::<Vec<_>>();
+    let lexical_scores = lexical_bm25_scores_from_metadata(&metadata, task);
     let query_vector = query_vector_from_task(task);
-    let recency_scores = recency_scores_q16(&cells);
-    let mut indexed = cells.drain(..).enumerate().collect::<Vec<_>>();
+    let recency_scores = recency_scores_q16_from_metadata(&metadata);
+    let rank_keys = cells
+        .iter()
+        .enumerate()
+        .map(|(index, cell)| {
+            let lexical = lexical_scores.get(index).copied().unwrap_or(0);
+            let semantic = query_vector
+                .as_deref()
+                .map(|query| semantic_dot_score(&cell.payload, query))
+                .unwrap_or(0);
+            let recency = recency_scores.get(index).copied().unwrap_or(0);
+            let metadata = &metadata[index];
+            let trust = u64::from(
+                SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class)
+                    .q16,
+            );
+            let score = weighted_retrieval_score(lexical, semantic, recency, trust, weights);
+            (score, index)
+        })
+        .collect::<Vec<_>>();
+    let mut indexed = cells
+        .drain(..)
+        .enumerate()
+        .map(|(index, cell)| (rank_keys[index], cell))
+        .collect::<Vec<_>>();
 
-    indexed.sort_by_key(|(index, cell)| {
-        let lexical = lexical_scores.get(*index).copied().unwrap_or(0);
-        let semantic = query_vector
-            .as_deref()
-            .map(|query| semantic_dot_score(&cell.payload, query))
-            .unwrap_or(0);
-        let recency = recency_scores.get(*index).copied().unwrap_or(0);
-        let metadata = CellMetadata::from_payload(&cell.payload);
-        let trust = u64::from(
-            SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class).q16,
-        );
-        let score = weighted_retrieval_score(lexical, semantic, recency, trust, weights);
-        (Reverse(score), *index)
-    });
+    indexed.sort_by_key(|((score, index), _)| (Reverse(*score), *index));
 
     indexed.into_iter().map(|(_, cell)| cell).collect()
 }
@@ -545,15 +559,15 @@ fn is_parent_context_metadata(metadata: &CellMetadata) -> bool {
         .unwrap_or(false)
 }
 
-fn lexical_bm25_scores(cells: &[RetrievedCell], query: &str) -> Vec<u64> {
+fn lexical_bm25_scores_from_metadata(metadata: &[CellMetadata], query: &str) -> Vec<u64> {
     let query_terms = analyze_search_query(query).weighted_terms;
-    if query_terms.is_empty() || cells.is_empty() {
-        return vec![0; cells.len()];
+    if query_terms.is_empty() || metadata.is_empty() {
+        return vec![0; metadata.len()];
     }
 
-    let docs = cells
+    let docs = metadata
         .iter()
-        .map(|cell| CellMetadata::from_payload(&cell.payload).weighted_lexical_terms())
+        .map(CellMetadata::weighted_lexical_terms)
         .collect::<Vec<_>>();
     let doc_lengths = docs
         .iter()
@@ -605,14 +619,14 @@ fn average_len_q10(doc_lengths: &[u32]) -> u64 {
     total * 1024 / doc_lengths.len() as u64
 }
 
-fn recency_scores_q16(cells: &[RetrievedCell]) -> Vec<u64> {
-    let created = cells
+fn recency_scores_q16_from_metadata(metadata: &[CellMetadata]) -> Vec<u64> {
+    let created = metadata
         .iter()
-        .map(|cell| CellMetadata::from_payload(&cell.payload).created_unix_seconds)
+        .map(|metadata| metadata.created_unix_seconds)
         .collect::<Vec<_>>();
     let mut timestamps = created.iter().filter_map(|value| *value);
     let Some(first) = timestamps.next() else {
-        return vec![0; cells.len()];
+        return vec![0; metadata.len()];
     };
     let (min, max) = timestamps.fold((first, first), |(min, max), value| {
         (min.min(value), max.max(value))

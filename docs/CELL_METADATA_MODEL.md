@@ -2,6 +2,10 @@
 
 CortexDB uses the cell payload's text lines as the single, authoritative **Source of Truth (SoT)** for query metadata. This document formalizes the payload metadata serialization standard.
 
+For the broader knowledge cell, MVCC, lifecycle, scope, provenance, and target
+typed descriptor contract, see [`DATA_MODEL.md`](DATA_MODEL.md). This document
+only defines the current Core Alpha payload-header compatibility format.
+
 ---
 
 ## 1. Metadata Schema Format

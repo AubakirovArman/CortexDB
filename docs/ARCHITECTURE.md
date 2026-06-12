@@ -60,6 +60,9 @@ cortex-aql
 
 ## Data Model
 
+The model contract is maintained in [`DATA_MODEL.md`](DATA_MODEL.md). This
+section summarizes the current storage-facing shape.
+
 The durable unit is a knowledge cell:
 
 ```text
@@ -74,9 +77,10 @@ metadata lines in payload for Core Alpha:
   source_trust=...
 ```
 
-`docs/CELL_METADATA_MODEL.md` defines the Core Alpha source of truth. WAL
-sections and future typed sections may carry optimized metadata, but payload
-metadata lines are the current compatibility boundary.
+`docs/CELL_METADATA_MODEL.md` defines the Core Alpha payload metadata
+serialization. WAL sections and future typed sections may carry optimized
+metadata, but payload metadata lines are the current compatibility boundary
+until the typed descriptor migration described in `DATA_MODEL.md` is complete.
 
 ## Write Path
 
