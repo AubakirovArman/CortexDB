@@ -2600,9 +2600,30 @@
     "crates/cortex-engine/src/search/routing.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 500,
+      "lines": 93,
       "soft_limit": 300,
       "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/routing/decision.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 45,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/routing/policy.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 191,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/routing/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 179,
+      "soft_limit": 600,
+      "warning_limit": 1200
     },
     "crates/cortex-engine/src/search/scope_mapping.rs": {
       "hard_limit": 1000,
