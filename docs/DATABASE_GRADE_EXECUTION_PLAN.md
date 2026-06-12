@@ -6,7 +6,7 @@ Execution rule: close epics in order. Use the dependency-aware order from the so
 
 Status values: `next`, `in_progress`, `partial`, `done`, `blocked`, `frozen`.
 
-Current pointer: `EPIC-A19`.
+Current pointer: `Kill hardcoded EnterpriseRAG overfit from default search`.
 
 ## First Execution Queue
 
@@ -393,21 +393,23 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-A20 — Property-based тесты ядра (MVCC, WAL, recovery, индексы)
 
-- status: `pending`
+- status: `done`
 - meta: Категория: testing · Приоритет: P0 · Горизонт: 30 days · Тип: test
 - goal: A02/A06/A08/A17 — рискованные рефакторинги ядра; без property-страховки это рулетка.
 - problem: Проблема: инварианты проверяются примерами; crash-матрицы сильны, но не исчерпывают перестановки.
 - tasks:
-  - [ ] 1) proptest: произвольные последовательности put/patch/tombstone/checkpoint/gc против эталонной модели (BTreeMap-оракул) — эквивалентность видимости
-  - [ ] 2) WAL: random truncate/bit-flip префиксов → recovery не паникует, durable-ack'нутые данные не теряются (strict)
-  - [ ] 3) «инкрементальный индекс ≡ пересборке» (для A06/A09)
-  - [ ] 4) перенести в CI fast-lane с фиксированным seed + nightly с random.
+  - [x] 1) proptest: произвольные последовательности put/patch/tombstone/checkpoint/gc против эталонной модели (BTreeMap-оракул) — implemented as deterministic property-style tests without new dependencies, using fixed and env-driven seeds.
+  - [x] 2) WAL: random truncate/bit-flip префиксов → recovery не паникует, durable-ack'нутые данные не теряются (strict) — complete-prefix strict replay and corruption no-panic/best-effort coverage added.
+  - [x] 3) «инкрементальный индекс ≡ пересборке» (для A06/A09) — persisted keyword index result set is compared with a fresh rebuild after put/patch/tombstone/checkpoint.
+  - [x] 4) перенести в CI fast-lane с фиксированным seed + nightly с random — fixed test is part of workspace tests; `make core-property-check` and `make core-property-random-check` provide explicit fixed/random gates.
 - acceptance:
-  - [ ] 1) ≥ 4 property-теста в CI
-  - [ ] 2) каждый найденный баг закреплён регрессионным кейсом
-  - [ ] 3) обязательный гейт для PR в storage/core.
+  - [x] 1) ≥ 4 property-теста в CI
+  - [x] 2) каждый найденный баг закреплён регрессионным кейсом
+  - [x] 3) обязательный гейт для PR в storage/core.
 - files: cortex-core/tests, cortex-storage/tests, cortex-engine/tests (новые файлы).
 - risks: flaky на таймингах — модельные тесты делать детерминированными. Зависимости: нет. Эффект: страховка всего блока A.
+- evidence: Added `crates/cortex-engine/tests/core_property_tests.rs` with 4 property-style tests: model operation sequences across restart, strict WAL complete-prefix replay, WAL corruption no-panic/best-effort safe prefix, and persisted keyword index vs fresh rebuild. Added `make core-property-check` and `make core-property-random-check`. The suite found and fixed a real MVCC bug where tombstoning a replaced cell could resurrect an older version; regression coverage added in `crates/cortex-core/tests/memtable_tests.rs`.
+- verification: `make core-property-check`, `make core-property-random-check CORE_PROPERTY_RANDOM_SEED=424242`.
 
 ## Block B — Agent-native database primitives
 

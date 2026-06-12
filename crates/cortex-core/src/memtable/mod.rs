@@ -68,16 +68,14 @@ impl MemTable {
             .versions
             .get_mut(&cell_id)
             .ok_or(CoreError::CellNotFound(cell_id))?;
-        if let Some(version) = versions.last_mut() {
-            version.deleted_seq = Some(seq);
-        }
+        mark_versions_deleted_at(versions, seq);
         Ok(())
     }
 
     pub fn record_tombstone(&mut self, cell_id: CellId, seq: CommitSeq) {
         let versions = self.versions.entry(cell_id).or_default();
-        if let Some(version) = versions.last_mut() {
-            version.deleted_seq = Some(seq);
+        if !versions.is_empty() {
+            mark_versions_deleted_at(versions, seq);
             return;
         }
 
@@ -267,5 +265,13 @@ impl MemTable {
             .iter()
             .map(|version| version.delta_depth + version.index_debt.total())
             .max()
+    }
+}
+
+fn mark_versions_deleted_at(versions: &mut [CellVersion], seq: CommitSeq) {
+    for version in versions {
+        if version.deleted_seq.is_none_or(|deleted| deleted > seq) {
+            version.deleted_seq = Some(seq);
+        }
     }
 }

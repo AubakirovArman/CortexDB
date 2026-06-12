@@ -937,6 +937,7 @@ SCALE_BENCH_VERIFY_SAMPLES ?= 0
 SCALE_BENCH_BATCH_SIZE ?= 5000
 SCALE_BENCH_100K_REPORT ?= $(SCALE_BENCH_ROOT)/100k/report.json
 SCALE_BENCH_1M_REPORT ?= $(SCALE_BENCH_ROOT)/1m/report.json
+CORE_PROPERTY_RANDOM_SEED ?= $(shell date +%s)
 PERFORMANCE_TREND_ROOT ?= target/performance-trends
 PERFORMANCE_TREND_REPORT ?= $(PERFORMANCE_TREND_ROOT)/report.json
 PERFORMANCE_HISTORY_ROOT ?= fixtures/performance/history
@@ -4502,6 +4503,13 @@ scale-bench-100k:
 
 scale-bench-1m:
 	cargo run --release -p cortex-engine --bin scale_benchmark_check -- --root "$(SCALE_BENCH_ROOT)/1m" --report "$(SCALE_BENCH_1M_REPORT)" --cells 1000000 --samples "$(SCALE_BENCH_SAMPLES)" --search-samples "$(SCALE_BENCH_SEARCH_SAMPLES)" --context-samples "$(SCALE_BENCH_CONTEXT_SAMPLES)" --verify-samples "$(SCALE_BENCH_VERIFY_SAMPLES)" --batch-size "$(SCALE_BENCH_BATCH_SIZE)"
+
+.PHONY: core-property-check core-property-random-check
+core-property-check:
+	cargo test -p cortex-engine --test core_property_tests
+
+core-property-random-check:
+	CORTEXDB_CORE_PROPERTY_RANDOM_SEED="$(CORE_PROPERTY_RANDOM_SEED)" cargo test -p cortex-engine --test core_property_tests
 
 performance-trend-check:
 	python3 scripts/performance_trend_check.py --load-report "$(LOAD_SMOKE_REPORT)" --single-node-report "$(SINGLE_NODE_PERF_REPORT)" --history-root "$(PERFORMANCE_HISTORY_ROOT)" --report "$(PERFORMANCE_TREND_REPORT)"

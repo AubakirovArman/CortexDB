@@ -88,6 +88,25 @@ fn tombstone_hides_cell_after_delete_seq() {
 }
 
 #[test]
+fn tombstone_does_not_resurrect_replaced_older_version() {
+    let mut table = MemTable::default();
+    table.put_cell(CellId(1), CommitSeq(10), b"v1".to_vec());
+    table.put_cell(CellId(1), CommitSeq(20), b"v2".to_vec());
+    table.tombstone_cell(CellId(1), CommitSeq(30)).unwrap();
+
+    assert_eq!(
+        table.read_at(CommitSeq(15), CellId(1)).unwrap().payload,
+        b"v1"
+    );
+    assert_eq!(
+        table.read_at(CommitSeq(25), CellId(1)).unwrap().payload,
+        b"v2"
+    );
+    assert!(table.read_at(CommitSeq(30), CellId(1)).is_none());
+    assert!(table.read_at(CommitSeq(40), CellId(1)).is_none());
+}
+
+#[test]
 fn tombstone_marker_without_base_is_never_visible() {
     let mut table = MemTable::default();
     table.record_tombstone(CellId(9), CommitSeq(20));
