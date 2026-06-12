@@ -6,7 +6,7 @@ Execution rule: close epics in order. Use the dependency-aware order from the so
 
 Status values: `next`, `in_progress`, `partial`, `done`, `blocked`, `frozen`.
 
-Current pointer: `EPIC-D15` (version bump and local release gates are green; tag/public release remain).
+Current pointer: `EPIC-D15` (version bump and local release gates are green; public tag correction remains).
 
 Impact measurement rule: after each meaningful retrieval, ContextPack, or answer
 pipeline change, run `make enterprise-rag-bench-impact-gemini-50`. The target
@@ -1326,7 +1326,7 @@ This queue follows section 7 of the source plan and dependency notes from the ep
   - [ ] 2) README-статус соответствует.
 - dependencies: A01, D12, D05 (желательно). Эффект: точка отсчёта «бета».
 - evidence: `make sdk-check`, `make sdk-e2e-release-check`, `make openapi-contract-check`, `make beta-release-check`, `make binary-release-check BINARY_RELEASE_VERSION=v0.2.0-beta.1 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local`, `make release-artifact-manifest-check BINARY_RELEASE_VERSION=v0.2.0-beta.1 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local BINARY_RELEASE_ARCHIVE=target/release-artifacts/cortexdb-v0.2.0-beta.1-local.tar.gz`, `make evidence-artifact-retention-check`, and `make versioning-policy-check` passed after the version bump. Earlier `make rag-demo-smoke` passed after VERIFY stopped cross-comparing matched year and amount values as numeric contradictions.
-- remaining: create the tag and GitHub release after explicit release approval; public SDK registry publication remains governed by `EPIC-D05`.
+- remaining: public `v0.2.0-beta.1` already exists but points to old commit `46d0f3a` whose workspace/Python package versions are still `0.1.0`; do not force-move that published tag without explicit approval. Safe next release options are either an explicit force-refresh of `v0.2.0-beta.1` after approval or a new patch prerelease such as `v0.2.0-beta.2`. Public SDK registry publication remains governed by `EPIC-D05`.
 
 ## Block E — Reliability, security, and operations
 
