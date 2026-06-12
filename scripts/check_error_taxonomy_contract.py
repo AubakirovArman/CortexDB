@@ -112,11 +112,11 @@ def validate() -> list[str]:
             f"missing={sorted(expected - sdk_codes)} extra={sorted(sdk_codes - expected)}"
         )
 
-    sdk_types = read("crates/cortex-sdk/src/types.rs")
+    sdk_types = read("crates/cortex-sdk/src/types/error.rs")
     for code in sorted(expected):
         variant = pascal_case(code)
         if variant not in sdk_types:
-            failures.append(f"crates/cortex-sdk/src/types.rs: missing ErrorCode::{variant}")
+            failures.append(f"crates/cortex-sdk/src/types/error.rs: missing ErrorCode::{variant}")
 
     require_contains_all("docs/API_JSON_SCHEMAS.md", expected, failures)
     require_contains_all("docs/API.md", expected, failures)
