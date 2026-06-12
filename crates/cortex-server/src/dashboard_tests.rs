@@ -110,6 +110,8 @@ fn dashboard_html_exposes_admin_console_surfaces() {
         "/dashboard/assets/v1/reporting_common.js",
         "/dashboard/assets/v1/reporting_retrieval.js",
         "/dashboard/assets/v1/reporting_operations.js",
+        "/dashboard/assets/v1/reporting_operations_status.js",
+        "/dashboard/assets/v1/reporting_operations_permissions.js",
         "/dashboard/assets/v1/reporting_slo.js",
         "/dashboard/assets/v1/reporting_ingest.js",
         "/dashboard/assets/v1/reporting_audit.js",
@@ -238,6 +240,12 @@ fn dashboard_static_assets_are_versioned_and_typed() {
         .expect("dashboard reporting retrieval asset");
     let operations = super::dashboard::asset("/dashboard/assets/v1/reporting_operations.js")
         .expect("dashboard reporting operations asset");
+    let operations_status =
+        super::dashboard::asset("/dashboard/assets/v1/reporting_operations_status.js")
+            .expect("dashboard reporting operations status asset");
+    let operations_permissions =
+        super::dashboard::asset("/dashboard/assets/v1/reporting_operations_permissions.js")
+            .expect("dashboard reporting operations permissions asset");
     let slo = super::dashboard::asset("/dashboard/assets/v1/reporting_slo.js")
         .expect("dashboard reporting slo asset");
     let ingest = super::dashboard::asset("/dashboard/assets/v1/reporting_ingest.js")
@@ -256,6 +264,14 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     );
     assert_eq!(
         operations.content_type,
+        "application/javascript; charset=utf-8"
+    );
+    assert_eq!(
+        operations_status.content_type,
+        "application/javascript; charset=utf-8"
+    );
+    assert_eq!(
+        operations_permissions.content_type,
         "application/javascript; charset=utf-8"
     );
     assert_eq!(slo.content_type, "application/javascript; charset=utf-8");
@@ -294,24 +310,32 @@ fn dashboard_static_assets_are_versioned_and_typed() {
     assert!(operations.body.contains("renderCellReport"));
     assert!(operations.body.contains("renderClusterReport"));
     assert!(operations.body.contains("renderIngestReport"));
-    assert!(operations.body.contains("renderOperationalStatus"));
-    assert!(operations.body.contains("Version compatibility"));
-    assert!(operations.body.contains("API / SDK / storage / migration"));
-    assert!(operations.body.contains("Backup posture"));
-    assert!(operations.body.contains("Last error"));
-    assert!(operations.body.contains("renderIncidentEvent"));
-    assert!(operations.body.contains("Incident timeline"));
-    assert!(operations.body.contains("audit / rate / storage / backup"));
-    assert!(operations.body.contains("renderPermissionsView"));
-    assert!(operations.body.contains("Permissions explorer"));
-    assert!(operations.body.contains("Token / role / scope / AgentView"));
-    assert!(operations.body.contains("Scope probes"));
-    assert!(operations.body.contains("AgentView policy"));
     assert!(operations.body.contains("renderRequestIssue"));
     assert!(operations.body.contains("clearRequestIssue"));
     assert!(operations.body.contains("Use an admin token"));
     assert!(operations.body.contains("AgentView can read"));
     assert!(operations.body.contains("renderStorageValidation"));
+    assert!(operations_status.body.contains("renderOperationalStatus"));
+    assert!(operations_status.body.contains("Version compatibility"));
+    assert!(operations_status
+        .body
+        .contains("API / SDK / storage / migration"));
+    assert!(operations_status.body.contains("Backup posture"));
+    assert!(operations_status.body.contains("Last error"));
+    assert!(operations_status.body.contains("renderIncidentEvent"));
+    assert!(operations_status.body.contains("Incident timeline"));
+    assert!(operations_status
+        .body
+        .contains("audit / rate / storage / backup"));
+    assert!(operations_permissions
+        .body
+        .contains("renderPermissionsView"));
+    assert!(operations_permissions.body.contains("Permissions explorer"));
+    assert!(operations_permissions
+        .body
+        .contains("Token / role / scope / AgentView"));
+    assert!(operations_permissions.body.contains("Scope probes"));
+    assert!(operations_permissions.body.contains("AgentView policy"));
     assert!(slo.body.contains("renderSloDashboard"));
     assert!(slo.body.contains("Availability"));
     assert!(slo.body.contains("Latency"));
@@ -371,6 +395,16 @@ fn dashboard_asset_endpoint_serves_css_and_js() {
             "/dashboard/assets/v1/reporting_operations.js",
             "Content-Type: application/javascript; charset=utf-8",
             "renderCellReport",
+        ),
+        (
+            "/dashboard/assets/v1/reporting_operations_status.js",
+            "Content-Type: application/javascript; charset=utf-8",
+            "renderOperationalStatus",
+        ),
+        (
+            "/dashboard/assets/v1/reporting_operations_permissions.js",
+            "Content-Type: application/javascript; charset=utf-8",
+            "renderPermissionsView",
         ),
         (
             "/dashboard/assets/v1/reporting_ingest.js",

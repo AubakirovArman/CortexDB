@@ -3916,7 +3916,21 @@
     "crates/cortex-server/assets/dashboard/v1/reporting_operations.js": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 538,
+      "lines": 229,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/reporting_operations_permissions.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 105,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/reporting_operations_status.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 222,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -4084,14 +4098,14 @@
     "crates/cortex-server/src/dashboard.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 106,
+      "lines": 114,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-server/src/dashboard_tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 405,
+      "lines": 439,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -5736,7 +5750,7 @@
     "scripts/dashboard_build.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 182,
+      "lines": 186,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -8186,7 +8200,21 @@
     "web/dashboard/src/reporting_operations.js": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 538,
+      "lines": 229,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/reporting_operations_permissions.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 105,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/reporting_operations_status.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 222,
       "soft_limit": 300,
       "warning_limit": 600
     },
