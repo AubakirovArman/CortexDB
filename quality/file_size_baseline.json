@@ -5257,10 +5257,45 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "mk/enterprise-rag-core-evidence.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 111,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-core-official-clean.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 143,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-core-providers.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 34,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-core-retrieval.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 158,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "mk/enterprise-rag-core-setup.mk": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 37,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "mk/enterprise-rag-core.mk": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 487,
+      "lines": 5,
       "soft_limit": 300,
       "warning_limit": 600
     },
