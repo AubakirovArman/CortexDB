@@ -69,10 +69,15 @@ pub(crate) fn extract_project_metric_value(
     (project, metric, value)
 }
 
-pub(crate) fn is_redundant(payload: &[u8], packed: &[ContextPackCell], threshold_q16: u16) -> bool {
+pub(crate) fn is_redundant(
+    payload: &[u8],
+    metadata: &CellMetadata,
+    packed: &[ContextPackCell],
+    threshold_q16: u16,
+) -> bool {
     let (cur_proj, cur_metric, cur_val) = extract_project_metric_value(payload);
     let current_vec = crate::search::vector::vector_from_payload(payload);
-    let current_terms = term_set(payload);
+    let current_terms = term_set(metadata);
 
     if current_vec.is_none() && current_terms.is_empty() {
         return false;
@@ -93,12 +98,11 @@ pub(crate) fn is_redundant(payload: &[u8], packed: &[ContextPackCell], threshold
                 return cosine_similarity_q16(current_vec, &cell_vec) >= threshold_q16;
             }
         }
-        weighted_jaccard_q16(&current_terms, &term_set(&cell.payload)) >= threshold_q16
+        weighted_jaccard_q16(&current_terms, &term_set(&cell.metadata)) >= threshold_q16
     })
 }
 
-pub(crate) fn term_set(payload: &[u8]) -> BTreeSet<String> {
-    let metadata = CellMetadata::from_payload(payload);
+pub(crate) fn term_set(metadata: &CellMetadata) -> BTreeSet<String> {
     tokenize(&metadata.body_text).into_iter().collect()
 }
 

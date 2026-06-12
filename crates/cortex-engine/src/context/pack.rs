@@ -176,6 +176,7 @@ impl ContextPack {
             if options.reduce_redundancy
                 && is_redundant(
                     &cell.payload,
+                    &metadata,
                     &pack_cells,
                     effective_redundancy_threshold(options.redundancy_threshold_q16),
                 )
@@ -292,7 +293,7 @@ impl ContextPack {
             let mut max_jaccard_similarity_q16 = 0u32;
             for packed in &pack_cells {
                 let jaccard =
-                    weighted_jaccard_q16(&cell_body_terms, &term_set(&packed.payload)) as u32;
+                    weighted_jaccard_q16(&cell_body_terms, &term_set(&packed.metadata)) as u32;
                 if jaccard > max_jaccard_similarity_q16 {
                     max_jaccard_similarity_q16 = jaccard;
                 }

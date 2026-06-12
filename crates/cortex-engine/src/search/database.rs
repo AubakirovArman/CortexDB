@@ -981,14 +981,14 @@ fn diversity_similarity_q16(
     selected
         .iter()
         .map(|existing| DiversitySimilarity {
-            payload_q16: payload_jaccard_q16(&candidate.payload, &existing.payload),
+            payload_q16: payload_jaccard_q16(&candidate.metadata, &existing.metadata),
             cluster_q16: metadata_cluster_similarity_q16(&candidate.metadata, &existing.metadata),
         })
         .max_by_key(|similarity| similarity.max_q16())
         .unwrap_or_default()
 }
 
-fn payload_jaccard_q16(left: &[u8], right: &[u8]) -> u64 {
+fn payload_jaccard_q16(left: &CellMetadata, right: &CellMetadata) -> u64 {
     let left = payload_terms(left);
     let right = payload_terms(right);
     if left.is_empty() || right.is_empty() {
@@ -999,11 +999,12 @@ fn payload_jaccard_q16(left: &[u8], right: &[u8]) -> u64 {
     intersection.saturating_mul(65_535) / union.max(1)
 }
 
-fn payload_terms(payload: &[u8]) -> BTreeSet<String> {
-    CellMetadata::from_payload(payload)
+fn payload_terms(metadata: &CellMetadata) -> BTreeSet<String> {
+    metadata
         .terms
-        .into_iter()
+        .iter()
         .filter(|term| term.len() >= 3)
+        .cloned()
         .collect()
 }
 
