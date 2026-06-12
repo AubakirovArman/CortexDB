@@ -1,4 +1,5 @@
 use cortex_aql::{AgentView, Q16};
+use cortex_core::memtable::CellVersion;
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 
 use crate::database::Database;
@@ -43,21 +44,21 @@ impl Database {
         let mut visible_facets = std::collections::BTreeMap::new();
         let txn = self.read_txn();
         for version in self.memtable.visible_iter(txn) {
-            let metadata = CellMetadata::from_payload(&version.payload);
+            let metadata = CellMetadata::from_version(version);
             if view.can_read_scope(scope_id(&metadata.scope)) {
-                visible_facets.insert(version.cell_id, conflict_facets(&version.payload));
+                visible_facets.insert(version.cell_id, conflict_facets_for_version(version));
             }
         }
 
         let mut records = Vec::new();
         for version in self.memtable.visible_iter(txn) {
-            let metadata = CellMetadata::from_payload(&version.payload);
+            let metadata = CellMetadata::from_version(version);
             if !view.can_read_scope(scope_id(&metadata.scope)) {
                 continue;
             }
             let trust =
                 SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class);
-            let facets = conflict_facets(&version.payload);
+            let facets = conflict_facets_for_version(version);
             records.extend(
                 contradiction_facts(&version.payload)
                     .into_iter()
@@ -79,6 +80,7 @@ impl Database {
                     &version.payload,
                     trust.q16,
                     trust.category,
+                    facets.clone(),
                     &visible_facets,
                 ) {
                     records.push(record);
@@ -175,6 +177,7 @@ fn contradiction_relation_record(
     payload: &[u8],
     source_trust_q16: Q16,
     source_trust_category: SourceTrustCategory,
+    relation_facets: ConflictFacets,
     visible_facets: &std::collections::BTreeMap<CellId, ConflictFacets>,
 ) -> Option<ConflictRecord> {
     let relation = RelationBody::parse(payload);
@@ -183,7 +186,6 @@ fn contradiction_relation_record(
         return None;
     }
     let source_cell_id = relation_source_cell_id(&relation);
-    let relation_facets = conflict_facets(payload);
     let source_facets = source_cell_id.and_then(|cell_id| visible_facets.get(&cell_id));
     let fact = relation.object?;
     Some(ConflictRecord {
@@ -224,8 +226,12 @@ fn sanitize_relation_value(value: &str) -> String {
         .collect()
 }
 
-fn conflict_facets(payload: &[u8]) -> ConflictFacets {
-    let metadata = CellMetadata::from_payload(payload);
+fn conflict_facets_for_version(version: &CellVersion) -> ConflictFacets {
+    let metadata = CellMetadata::from_version(version);
+    conflict_facets_from_metadata(metadata)
+}
+
+fn conflict_facets_from_metadata(metadata: CellMetadata) -> ConflictFacets {
     ConflictFacets {
         entity: metadata_value(&metadata.body_text, &["entity", "project"])
             .or(metadata.entity)

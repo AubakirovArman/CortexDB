@@ -124,7 +124,7 @@ impl Database {
         self.snapshot_versions()
             .into_iter()
             .filter_map(|version| {
-                let metadata = CellMetadata::from_payload(&version.payload);
+                let metadata = CellMetadata::from_version(&version);
                 if metadata.cell_type != "tool" {
                     return None;
                 }
@@ -148,7 +148,7 @@ impl KnowledgeGraphIndex {
     pub fn from_versions(versions: Vec<cortex_core::memtable::CellVersion>) -> Self {
         let mut index = Self::default();
         for version in versions {
-            let metadata = CellMetadata::from_payload(&version.payload);
+            let metadata = CellMetadata::from_version(&version);
             index.index_source_ref(version.cell_id, &metadata);
             match metadata.cell_type.as_str() {
                 "entity" => index.index_entity(version.cell_id, &version.payload, &metadata),

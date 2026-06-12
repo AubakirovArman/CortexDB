@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
-use cortex_core::CellId;
+use cortex_core::{CellDescriptor, CellId, KnowledgeCellType};
 use cortex_engine::context::ContextPackOptions;
 use cortex_engine::{scope_id, Database, ToolDescriptor, ToolPermission};
 
@@ -66,6 +66,25 @@ fn list_tools_respects_agent_scope() {
     assert_eq!(tools.len(), 1);
     assert_eq!(tools[0].cell_id, CellId(10));
     assert_eq!(tools[0].descriptor.name, "calculator");
+}
+
+#[test]
+fn tool_descriptor_uses_descriptor_type_and_scope_over_payload_header() {
+    let payload = b"scope=project:visible\nstatus=ready\ntype=raw\nsource=payload-source\n\nname=calculator\ndescription=calc\npermissions=read"
+        .to_vec();
+    let descriptor = CellDescriptor {
+        scope: "tenant:private".to_owned(),
+        status: "ready".to_owned(),
+        cell_type: KnowledgeCellType::Tool,
+        source: Some("descriptor-source".to_owned()),
+        ..CellDescriptor::default()
+    };
+
+    let tool = ToolDescriptor::from_payload_with_descriptor(&payload, &descriptor).unwrap();
+
+    assert_eq!(tool.scope, "tenant:private");
+    assert_eq!(tool.source.as_deref(), Some("descriptor-source"));
+    assert_eq!(tool.name, "calculator");
 }
 
 #[test]

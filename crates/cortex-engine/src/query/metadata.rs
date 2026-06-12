@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use cortex_aql::{BitmapHandle, CellTypeId, MemoryType, ScopeId, StatusId};
+use cortex_core::memtable::CellVersion;
 use cortex_core::CellDescriptor;
 
 use crate::search::tokenize;
@@ -352,7 +353,43 @@ impl CellMetadata {
         metadata.parent_id = descriptor.parent_id.clone();
         metadata.valid_from = descriptor.valid_from.clone();
         metadata.valid_to = descriptor.valid_to.clone();
+        let legacy_source_ref = metadata.source_ref.take();
+        let source_id = metadata
+            .source
+            .clone()
+            .or_else(|| metadata.citation.clone())
+            .or_else(|| {
+                legacy_source_ref
+                    .as_ref()
+                    .map(|source| source.source_id.clone())
+            });
+        metadata.source_ref = source_id.map(|source_id| {
+            let source_trust =
+                SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class);
+            SourceRef {
+                source_id,
+                source_url: legacy_source_ref
+                    .as_ref()
+                    .and_then(|source| source.source_url.clone()),
+                document_id: legacy_source_ref
+                    .as_ref()
+                    .and_then(|source| source.document_id.clone()),
+                page: legacy_source_ref.as_ref().and_then(|source| source.page),
+                row: legacy_source_ref.as_ref().and_then(|source| source.row),
+                cell_range: legacy_source_ref
+                    .as_ref()
+                    .and_then(|source| source.cell_range.clone()),
+                json_path: legacy_source_ref
+                    .as_ref()
+                    .and_then(|source| source.json_path.clone()),
+                confidence_q16: source_trust.q16,
+            }
+        });
         metadata
+    }
+
+    pub fn from_version(version: &CellVersion) -> Self {
+        Self::from_payload_with_descriptor(&version.payload, &version.descriptor)
     }
 
     pub fn citation(&self) -> Option<&str> {

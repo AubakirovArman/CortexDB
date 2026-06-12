@@ -1,10 +1,11 @@
 use crate::query::CellMetadata;
 use crate::search::tokenize;
 use cortex_aql::AgentView;
+use cortex_core::memtable::CellVersion;
 use cortex_core::CellId;
 
 use crate::verification::numeric::{extract_numeric_values, numeric_conflict};
-use crate::verification::temporal::{temporal_stale_reason, TemporalStaleReason};
+use crate::verification::temporal::{temporal_stale_reason_with_metadata, TemporalStaleReason};
 
 use super::{VerificationEvidence, VerificationGuard, VerificationNumericConflict};
 
@@ -52,24 +53,26 @@ pub(super) fn numeric_mismatch_conflict(
 
 pub(super) fn stale_fact_guard(
     fact: &str,
-    payload: &[u8],
-    cell_id: CellId,
+    version: &CellVersion,
     view: &AgentView,
 ) -> Option<VerificationGuard> {
-    let metadata = CellMetadata::from_payload(payload);
+    let metadata = CellMetadata::from_version(version);
     if !view.can_read_scope(crate::query::scope_id(&metadata.scope)) {
         return None;
     }
-    let reason = temporal_stale(fact, payload)?;
+    let reason = temporal_stale_from_metadata(fact, &metadata)?;
     Some(VerificationGuard {
-        cell_id: Some(cell_id),
+        cell_id: Some(version.cell_id),
         code: crate::verification::VerificationGuardCode::StaleFact,
         message: temporal_stale_message(reason),
     })
 }
 
-pub(super) fn temporal_stale(fact: &str, payload: &[u8]) -> Option<TemporalStaleReason> {
-    temporal_stale_reason(fact, payload)
+pub(super) fn temporal_stale_from_metadata(
+    fact: &str,
+    metadata: &CellMetadata,
+) -> Option<TemporalStaleReason> {
+    temporal_stale_reason_with_metadata(fact, metadata)
 }
 
 struct NumericMismatchDetails {

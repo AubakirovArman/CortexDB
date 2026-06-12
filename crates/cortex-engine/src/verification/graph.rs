@@ -24,20 +24,20 @@ struct SourceSupport {
 }
 
 pub(super) fn graph_contradiction_for_version(
-    cell_id: CellId,
-    payload: &[u8],
+    version: &CellVersion,
     fact: &str,
     view: &AgentView,
     existing: &BTreeSet<CellId>,
 ) -> Option<VerificationEvidence> {
+    let cell_id = version.cell_id;
     if existing.contains(&cell_id) {
         return None;
     }
-    let metadata = CellMetadata::from_payload(payload);
+    let metadata = CellMetadata::from_version(version);
     if !view.can_read_scope(scope_id(&metadata.scope)) {
         return None;
     }
-    let relation = RelationBody::parse(payload);
+    let relation = RelationBody::parse(&version.payload);
     let kind = relation
         .predicate
         .as_deref()
@@ -84,13 +84,8 @@ pub(super) fn add_graph_relation_contradictions_from_versions(
         .map(|evidence| evidence.cell_id)
         .collect::<BTreeSet<_>>();
     for version in versions {
-        let Some(mut evidence) = graph_contradiction_for_version(
-            version.cell_id,
-            &version.payload,
-            fact,
-            view,
-            &existing,
-        ) else {
+        let Some(mut evidence) = graph_contradiction_for_version(version, fact, view, &existing)
+        else {
             continue;
         };
         if evidence.matched_terms == 0 {
@@ -155,7 +150,7 @@ fn source_supports_by_fact_cell_from_versions(
     let mut supports = BTreeMap::new();
     for version in versions {
         let Some((fact_cell_id, support)) =
-            source_support_from_payload(version.cell_id, &version.payload, view, target_cells)
+            source_support_from_version(version, view, target_cells)
         else {
             continue;
         };
@@ -190,8 +185,8 @@ fn source_support_from_edge(
     view: &AgentView,
     edge: &GraphEdge,
 ) -> Option<SourceSupport> {
-    let payload = db.get_latest_cell(edge.relation_cell_id)?;
-    let metadata = CellMetadata::from_payload(&payload);
+    let (payload, descriptor) = db.get_latest_cell_with_descriptor(edge.relation_cell_id)?;
+    let metadata = CellMetadata::from_payload_with_descriptor(&payload, &descriptor);
     if !view.can_read_scope(scope_id(&metadata.scope)) {
         return None;
     }
@@ -207,17 +202,16 @@ fn source_support_from_edge(
     })
 }
 
-fn source_support_from_payload(
-    relation_cell_id: CellId,
-    payload: &[u8],
+fn source_support_from_version(
+    version: &CellVersion,
     view: &AgentView,
     target_cells: &BTreeSet<CellId>,
 ) -> Option<(CellId, SourceSupport)> {
-    let metadata = CellMetadata::from_payload(payload);
+    let metadata = CellMetadata::from_version(version);
     if !view.can_read_scope(scope_id(&metadata.scope)) {
         return None;
     }
-    let relation = RelationBody::parse(payload);
+    let relation = RelationBody::parse(&version.payload);
     let kind = relation
         .predicate
         .as_deref()
@@ -237,7 +231,7 @@ fn source_support_from_payload(
     Some((
         fact_cell_id,
         SourceSupport {
-            relation_cell_id,
+            relation_cell_id: version.cell_id,
             source_trust_q16: trust.q16,
             source_trust_category: trust.category,
             citation: metadata
@@ -298,4 +292,69 @@ fn matched_terms(text: &str, fact_terms: &[String]) -> u32 {
         .filter(|term| text_terms.contains(term))
         .count()
         .max(1) as u32
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeSet;
+
+    use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
+    use cortex_core::{CellDescriptor, CommitSeq, KnowledgeCellType};
+
+    use super::*;
+
+    #[test]
+    fn graph_contradiction_for_version_respects_descriptor_scope() {
+        let payload = b"scope=project:visible\nstatus=ready\ntype=relation\nsource=payload-source\n\nsubject=cell:1\npredicate=fact_contradicts_fact\nobject=ABC budget approved"
+            .to_vec();
+        let descriptor = CellDescriptor {
+            scope: "tenant:private".to_owned(),
+            status: "ready".to_owned(),
+            cell_type: KnowledgeCellType::Relation,
+            source: Some("descriptor-source".to_owned()),
+            source_trust_q16: Some(60_000),
+            ..CellDescriptor::default()
+        };
+        let version =
+            CellVersion::new_with_descriptor(CellId(10), CommitSeq(1), payload, 0, descriptor);
+        let existing = BTreeSet::new();
+
+        assert!(graph_contradiction_for_version(
+            &version,
+            "ABC budget approved",
+            &view("project:visible"),
+            &existing,
+        )
+        .is_none());
+        assert!(graph_contradiction_for_version(
+            &version,
+            "ABC budget approved",
+            &view("tenant:private"),
+            &existing,
+        )
+        .is_some());
+    }
+
+    fn view(scope: &str) -> AgentView {
+        AgentView {
+            agent_id: AgentId(1),
+            label: None,
+            readable_brains: BTreeSet::from([BrainId(1)]),
+            readable_scopes: BTreeSet::from([scope_id(scope)]),
+            writable_scopes: BTreeSet::new(),
+            allowed_modes: BTreeSet::from([RetrievalMode::Balanced]),
+            allowed_memory_types: BTreeSet::from([MemoryType::Decision]),
+            max_context_budget_tokens: 1_000,
+            default_context_budget_tokens: 400,
+            max_candidate_limit: 100,
+            default_candidate_limit: 20,
+            min_required_confidence_q16: Q16_ZERO,
+            max_ttl_seconds: None,
+            allow_remember: false,
+            allow_verify_fact: true,
+            allow_audit_mode: false,
+            require_citations_by_default: false,
+            private_scope: None,
+        }
+    }
 }

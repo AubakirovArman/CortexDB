@@ -30,7 +30,7 @@ use graph::{
 };
 use guards::{
     citation_guard, numeric_mismatch, numeric_mismatch_conflict, numeric_mismatch_guard,
-    stale_fact_guard, temporal_stale,
+    stale_fact_guard, temporal_stale_from_metadata,
 };
 pub use numeric::{
     compare_numeric_values, format_scaled_value, normalized_numeric_equal, parse_currency_code,
@@ -190,22 +190,16 @@ impl Database {
         let mut numeric_conflicts = Vec::new();
         let candidate_versions = self.verification_candidate_versions(&plan.fact)?;
         for version in &candidate_versions {
-            if let Some(guard) =
-                stale_fact_guard(&plan.fact, &version.payload, version.cell_id, view)
-            {
+            if let Some(guard) = stale_fact_guard(&plan.fact, version, view) {
                 guards.push(guard);
             }
-            if let Some(item) =
-                evidence_for_version(version.cell_id, &version.payload, view, &plan.fact)
-            {
+            if let Some(item) = evidence_for_version(version, view, &plan.fact) {
                 if let Some(guard) = citation_guard(&item) {
                     guards.push(guard);
                 }
                 evidence.push(item);
             }
-            if let Some(item) =
-                contradiction_for_version(version.cell_id, &version.payload, view, &plan.fact)
-            {
+            if let Some(item) = contradiction_for_version(version, view, &plan.fact) {
                 if let Some(guard) = numeric_mismatch_guard(&plan.fact, &version.payload, &item) {
                     guards.push(guard);
                 }
@@ -277,7 +271,7 @@ impl Database {
         let scan_all_live = self.manifest().live_segments.is_empty();
         if scan_all_live {
             for version in self.memtable.visible_iter(txn) {
-                if payload_contains_any_term(&version.payload, &fact_terms) {
+                if version_contains_any_term(version, &fact_terms) {
                     cell_ids.insert(version.cell_id);
                 }
             }
@@ -286,7 +280,7 @@ impl Database {
                 let Some(version) = self.memtable.read(txn, cell_id) else {
                     continue;
                 };
-                if payload_contains_any_term(&version.payload, &fact_terms) {
+                if version_contains_any_term(version, &fact_terms) {
                     cell_ids.insert(version.cell_id);
                 }
             }
@@ -335,7 +329,7 @@ impl Database {
         visible
             .into_iter()
             .filter(|version| {
-                let metadata = CellMetadata::from_payload(&version.payload);
+                let metadata = CellMetadata::from_version(version);
                 metadata.cell_type == "relation"
                     && evidence_ids.iter().any(|id| {
                         std::str::from_utf8(&version.payload)
@@ -347,11 +341,11 @@ impl Database {
     }
 }
 
-fn payload_contains_any_term(payload: &[u8], fact_terms: &[String]) -> bool {
+fn version_contains_any_term(version: &CellVersion, fact_terms: &[String]) -> bool {
     if fact_terms.is_empty() {
         return true;
     }
-    let metadata = CellMetadata::from_payload(payload);
+    let metadata = CellMetadata::from_version(version);
     let terms = metadata.weighted_lexical_terms();
     fact_terms.iter().any(|term| terms.contains_key(term))
 }
@@ -400,12 +394,12 @@ fn sort_evidence(evidence: &mut [VerificationEvidence]) {
 }
 
 fn evidence_for_version(
-    cell_id: CellId,
-    payload: &[u8],
+    version: &CellVersion,
     view: &AgentView,
     fact: &str,
 ) -> Option<VerificationEvidence> {
-    let metadata = CellMetadata::from_payload(payload);
+    let metadata = CellMetadata::from_version(version);
+    let payload = &version.payload;
     let fact_terms = tokenize(fact);
     if !view.can_read_scope(scope_id(&metadata.scope)) {
         return None;
@@ -415,14 +409,14 @@ fn evidence_for_version(
     }
     if has_matching_contradiction(payload, &fact_terms)
         || numeric_mismatch(fact, payload).is_some()
-        || temporal_stale(fact, payload).is_some()
+        || temporal_stale_from_metadata(fact, &metadata).is_some()
     {
         return None;
     }
-    let source_trust = source_trust(payload);
+    let source_trust = source_trust_from_metadata(&metadata);
     let support = support_match(fact, payload)?;
     Some(VerificationEvidence {
-        cell_id,
+        cell_id: version.cell_id,
         matched_terms: support.matched_terms,
         match_score_q16: support.match_score_q16,
         match_kind: support.match_kind,
@@ -433,23 +427,23 @@ fn evidence_for_version(
 }
 
 fn contradiction_for_version(
-    cell_id: CellId,
-    payload: &[u8],
+    version: &CellVersion,
     view: &AgentView,
     fact: &str,
 ) -> Option<VerificationEvidence> {
-    let metadata = CellMetadata::from_payload(payload);
+    let metadata = CellMetadata::from_version(version);
+    let payload = &version.payload;
     let fact_terms = tokenize(fact);
     if !view.can_read_scope(scope_id(&metadata.scope)) || fact_terms.is_empty() {
         return None;
     }
-    if temporal_stale(fact, payload).is_some() {
+    if temporal_stale_from_metadata(fact, &metadata).is_some() {
         return None;
     }
-    let source_trust = source_trust(payload);
+    let source_trust = source_trust_from_metadata(&metadata);
     if let Some(matched_terms) = numeric_mismatch(fact, payload) {
         return Some(VerificationEvidence {
-            cell_id,
+            cell_id: version.cell_id,
             matched_terms,
             match_score_q16: u16::MAX,
             match_kind: VerificationMatchKind::NumericContradiction,
@@ -459,7 +453,7 @@ fn contradiction_for_version(
         });
     }
     contradiction_match(payload, &fact_terms).map(|matched_terms| VerificationEvidence {
-        cell_id,
+        cell_id: version.cell_id,
         matched_terms,
         match_score_q16: term_coverage_q16(matched_terms, &fact_terms),
         match_kind: VerificationMatchKind::SemanticContradiction,
@@ -473,7 +467,95 @@ fn has_matching_contradiction(payload: &[u8], fact_terms: &[String]) -> bool {
     contradiction_match(payload, fact_terms).is_some()
 }
 
-fn source_trust(payload: &[u8]) -> SourceTrust {
-    let metadata = CellMetadata::from_payload(payload);
+fn source_trust_from_metadata(metadata: &CellMetadata) -> SourceTrust {
     SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeSet;
+
+    use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
+    use cortex_core::{CellDescriptor, CommitSeq, KnowledgeCellType};
+
+    use super::*;
+
+    #[test]
+    fn evidence_for_version_respects_descriptor_scope_over_payload_scope() {
+        let version = mismatched_version(
+            CellId(7),
+            b"scope=project:visible\nstatus=ready\ntype=fact\nsource=payload-source\n\nABC budget approved",
+            KnowledgeCellType::Fact,
+        );
+
+        assert!(
+            evidence_for_version(&version, &view("project:visible"), "ABC budget approved")
+                .is_none()
+        );
+        assert!(
+            evidence_for_version(&version, &view("tenant:private"), "ABC budget approved")
+                .is_some()
+        );
+    }
+
+    #[test]
+    fn contradiction_for_version_respects_descriptor_scope_over_payload_scope() {
+        let version = mismatched_version(
+            CellId(8),
+            b"scope=project:visible\nstatus=ready\ntype=fact\nsource=payload-source\n\ncontradicts=ABC budget approved\nABC budget rejected",
+            KnowledgeCellType::Fact,
+        );
+
+        assert!(contradiction_for_version(
+            &version,
+            &view("project:visible"),
+            "ABC budget approved",
+        )
+        .is_none());
+        assert!(contradiction_for_version(
+            &version,
+            &view("tenant:private"),
+            "ABC budget approved",
+        )
+        .is_some());
+    }
+
+    fn mismatched_version(
+        cell_id: CellId,
+        payload: &[u8],
+        cell_type: KnowledgeCellType,
+    ) -> CellVersion {
+        let descriptor = CellDescriptor {
+            scope: "tenant:private".to_owned(),
+            status: "ready".to_owned(),
+            cell_type,
+            source: Some("descriptor-source".to_owned()),
+            source_trust_q16: Some(60_000),
+            ..CellDescriptor::default()
+        };
+        CellVersion::new_with_descriptor(cell_id, CommitSeq(1), payload.to_vec(), 0, descriptor)
+    }
+
+    fn view(scope: &str) -> AgentView {
+        AgentView {
+            agent_id: AgentId(1),
+            label: None,
+            readable_brains: BTreeSet::from([BrainId(1)]),
+            readable_scopes: BTreeSet::from([scope_id(scope)]),
+            writable_scopes: BTreeSet::new(),
+            allowed_modes: BTreeSet::from([RetrievalMode::Balanced]),
+            allowed_memory_types: BTreeSet::from([MemoryType::Decision]),
+            max_context_budget_tokens: 1_000,
+            default_context_budget_tokens: 400,
+            max_candidate_limit: 100,
+            default_candidate_limit: 20,
+            min_required_confidence_q16: Q16_ZERO,
+            max_ttl_seconds: None,
+            allow_remember: false,
+            allow_verify_fact: true,
+            allow_audit_mode: false,
+            require_citations_by_default: false,
+            private_scope: None,
+        }
+    }
 }

@@ -128,13 +128,37 @@ pub(super) fn temporal_validity_from_payload(payload: &[u8]) -> TemporalValidity
     }
 }
 
-pub(super) fn temporal_stale_reason(fact: &str, payload: &[u8]) -> Option<TemporalStaleReason> {
+pub(super) fn temporal_validity_from_metadata(metadata: &CellMetadata) -> TemporalValidity {
+    TemporalValidity {
+        valid_from: metadata
+            .valid_from
+            .as_deref()
+            .and_then(|value| parse_temporal_bound(value, Boundary::Start)),
+        valid_to: metadata
+            .valid_to
+            .as_deref()
+            .and_then(|value| parse_temporal_bound(value, Boundary::End)),
+    }
+}
+
+pub(super) fn temporal_stale_reason_with_metadata(
+    fact: &str,
+    metadata: &CellMetadata,
+) -> Option<TemporalStaleReason> {
     let query = extract_temporal_query_range(fact)?;
-    let validity = temporal_validity_from_payload(payload);
+    let validity = temporal_validity_from_metadata(metadata);
     if validity.is_empty() {
         return None;
     }
-    let metadata = CellMetadata::from_payload(payload);
+    temporal_stale_reason_from_metadata(fact, query, validity, metadata)
+}
+
+fn temporal_stale_reason_from_metadata(
+    fact: &str,
+    query: TemporalQueryRange,
+    validity: TemporalValidity,
+    metadata: &CellMetadata,
+) -> Option<TemporalStaleReason> {
     (non_temporal_overlap(fact, &metadata.body_text) > 0).then(|| validity.stale_reason(query))?
 }
 

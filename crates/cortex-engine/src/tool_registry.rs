@@ -2,7 +2,10 @@ use std::cmp::Reverse;
 use std::collections::BTreeSet;
 
 use cortex_aql::AgentView;
-use cortex_core::{CellId, CommitSeq, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
+use cortex_core::memtable::CellVersion;
+use cortex_core::{
+    CellDescriptor, CellId, CommitSeq, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType,
+};
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
@@ -105,6 +108,23 @@ impl ToolDescriptor {
 
     pub fn from_payload(payload: &[u8]) -> EngineResult<Self> {
         let metadata = CellMetadata::from_payload(payload);
+        Self::from_metadata(metadata)
+    }
+
+    pub fn from_payload_with_descriptor(
+        payload: &[u8],
+        descriptor: &CellDescriptor,
+    ) -> EngineResult<Self> {
+        let metadata = CellMetadata::from_payload_with_descriptor(payload, descriptor);
+        Self::from_metadata(metadata)
+    }
+
+    pub fn from_version(version: &CellVersion) -> EngineResult<Self> {
+        let metadata = CellMetadata::from_version(version);
+        Self::from_metadata(metadata)
+    }
+
+    fn from_metadata(metadata: CellMetadata) -> EngineResult<Self> {
         if metadata.cell_type != KnowledgeCellType::Tool.as_str() {
             return Err(invalid_tool("cell is not a tool"));
         }
@@ -153,8 +173,8 @@ impl Database {
             .snapshot_versions()
             .into_iter()
             .filter_map(|version| {
-                let descriptor = ToolDescriptor::from_payload(&version.payload).ok()?;
-                if !view.readable_scopes.contains(&scope_id(&descriptor.scope)) {
+                let descriptor = ToolDescriptor::from_version(&version).ok()?;
+                if !view.can_read_scope(scope_id(&descriptor.scope)) {
                     return None;
                 }
                 Some(RegisteredTool {

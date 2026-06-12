@@ -36,7 +36,7 @@ impl Database {
     pub fn temporal_fact_index(&self, view: &AgentView) -> TemporalFactIndex {
         let mut groups = BTreeMap::<TemporalFactKey, Vec<TemporalFactRecord>>::new();
         for version in self.snapshot_versions() {
-            let metadata = CellMetadata::from_payload(&version.payload);
+            let metadata = CellMetadata::from_version(&version);
             if !view.can_read_scope(scope_id(&metadata.scope)) {
                 continue;
             }

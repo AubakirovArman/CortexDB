@@ -1,4 +1,8 @@
-use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
+use cortex_core::memtable::CellVersion;
+use cortex_core::{
+    CellDescriptor, CellId, CommitSeq, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType,
+};
+use cortex_engine::graph::KnowledgeGraphIndex;
 use cortex_engine::{Database, GraphEdgeKind};
 
 fn entity_cell(name: &str, kind: &str, source: &str) -> KnowledgeCell {
@@ -73,6 +77,33 @@ fn graph_neighbors_ignores_non_relation_cells() {
     let edges = db.graph_neighbors("A");
     assert_eq!(edges.len(), 1);
     assert_eq!(edges[0].relation_cell_id, CellId(1));
+}
+
+#[test]
+fn knowledge_graph_index_uses_descriptor_type_over_payload_type() {
+    let payload = b"scope=project:investments\nstatus=ready\ntype=relation\nsource=payload-source\n\nsubject=A\npredicate=links\nobject=B"
+        .to_vec();
+    let descriptor = CellDescriptor {
+        scope: "project:investments".to_owned(),
+        status: "ready".to_owned(),
+        cell_type: KnowledgeCellType::Raw,
+        source: Some("descriptor-source".to_owned()),
+        ..CellDescriptor::default()
+    };
+    let version =
+        CellVersion::new_with_descriptor(CellId(99), CommitSeq(1), payload, 0, descriptor);
+
+    let index = KnowledgeGraphIndex::from_versions(vec![version]);
+
+    assert!(index.neighbors("A").is_empty());
+    assert_eq!(
+        index.cells_for_source("payload-source"),
+        Vec::<CellId>::new()
+    );
+    assert_eq!(
+        index.cells_for_source("descriptor-source"),
+        vec![CellId(99)]
+    );
 }
 
 #[test]
