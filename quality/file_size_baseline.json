@@ -2964,7 +2964,49 @@
     "crates/cortex-engine/tests/query_search.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 667,
+      "lines": 12,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/query_search/api.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 24,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/query_search/aql.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 292,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/query_search/common.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 38,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/query_search/indexes.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 183,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/query_search/replication.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 35,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/query_search/reranker.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 107,
       "soft_limit": 600,
       "warning_limit": 1200
     },
