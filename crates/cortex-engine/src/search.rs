@@ -97,8 +97,8 @@ pub use routing::{
     SearchRouteStrategy,
 };
 pub use scope_mapping::{
-    map_query_to_scope, scope_mapping_payload_bonus, QueryScopeDirective, QueryScopeField,
-    QueryScopeMapping,
+    map_query_to_scope, scope_mapping_metadata_bonus, scope_mapping_payload_bonus,
+    QueryScopeDirective, QueryScopeField, QueryScopeMapping,
 };
 pub use synonyms::{
     build_corpus_synonym_dictionary, read_acsyn_dictionary, write_acsyn_dictionary,
@@ -468,6 +468,7 @@ fn rerank_results(
             lexical_score: result.lexical_score,
             vector_score: result.vector_score,
             base_score: result.score,
+            metadata: None,
             payload: None,
         });
     }

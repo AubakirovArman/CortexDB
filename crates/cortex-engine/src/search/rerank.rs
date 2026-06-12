@@ -1,9 +1,12 @@
 use std::cmp::Reverse;
 
+use crate::query::CellMetadata;
+
 use super::{
     analyze_search_query, classify_enterprise_rag_question_type, condition_payload_bonus,
     covered_requirement_ids, decompose_enterprise_rag_question, extract_query_conditions,
-    map_query_to_scope, scope_mapping_payload_bonus, tokenize, EnterpriseRagQuestionType,
+    map_query_to_scope, scope_mapping_metadata_bonus, scope_mapping_payload_bonus, tokenize,
+    EnterpriseRagQuestionType,
 };
 
 const REQUIREMENT_PAYLOAD_BONUS: u64 = 2_500;
@@ -17,6 +20,7 @@ pub struct SearchRerankInput<'a> {
     pub lexical_score: u64,
     pub vector_score: u64,
     pub base_score: u64,
+    pub metadata: Option<&'a CellMetadata>,
     pub payload: Option<&'a [u8]>,
 }
 
@@ -292,10 +296,12 @@ fn payload_signal_bonus(input: SearchRerankInput<'_>, reranker: &WeightedScoreRe
             .saturating_mul(REQUIREMENT_PAYLOAD_BONUS),
     );
     let scope_mapping = map_query_to_scope(input.query_text);
-    bonus = bonus.saturating_add(
-        scope_mapping_payload_bonus(&scope_mapping, payload.as_bytes())
-            .saturating_mul(reranker.scope_mapping_payload_bonus),
+    let scope_mapping_bonus = input.metadata.map_or_else(
+        || scope_mapping_payload_bonus(&scope_mapping, payload.as_bytes()),
+        |metadata| scope_mapping_metadata_bonus(&scope_mapping, metadata),
     );
+    bonus = bonus
+        .saturating_add(scope_mapping_bonus.saturating_mul(reranker.scope_mapping_payload_bonus));
     let conditions = extract_query_conditions(input.query_text);
     bonus = bonus.saturating_add(
         condition_payload_bonus(&conditions, payload.as_bytes())
@@ -410,6 +416,8 @@ fn is_evidence_term(term: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use crate::query::CellMetadata;
+
     use super::{
         calibrated_hybrid_rrf_weights, evidence_overlap_score, rerank_calibration_profile,
         SearchRerankInput, SearchReranker, WeightedScoreReranker,
@@ -425,6 +433,7 @@ mod tests {
             lexical_score: 1,
             vector_score: 0,
             base_score: 1,
+            metadata: None,
             payload: Some(b"scope=project\n\nAUTH-123 was fixed by PR #42."),
         });
         let unmatched = reranker.rerank_score(SearchRerankInput {
@@ -434,6 +443,7 @@ mod tests {
             lexical_score: 1,
             vector_score: 0,
             base_score: 1,
+            metadata: None,
             payload: Some(b"scope=project\n\nGeneral engineering update."),
         });
 
@@ -450,6 +460,7 @@ mod tests {
             lexical_score: 0,
             vector_score: 10_000,
             base_score: 10_000,
+            metadata: None,
             payload: Some(b"AUTH-123 was fixed by PR #42."),
         });
         let unmatched = reranker.rerank_score(SearchRerankInput {
@@ -459,6 +470,7 @@ mod tests {
             lexical_score: 0,
             vector_score: 10_000,
             base_score: 10_000,
+            metadata: None,
             payload: Some(b"General engineering update."),
         });
 
@@ -496,6 +508,7 @@ mod tests {
             lexical_score: 0,
             vector_score: 0,
             base_score: 1,
+            metadata: None,
             payload: Some(b"Apollo owner Maya. Launch blocker is auth. Deadline is 2026-05-01."),
         });
         let weak = reranker.rerank_score(SearchRerankInput {
@@ -505,6 +518,7 @@ mod tests {
             lexical_score: 0,
             vector_score: 0,
             base_score: 1,
+            metadata: None,
             payload: Some(b"Launch celebration notes."),
         });
 
@@ -521,6 +535,7 @@ mod tests {
             lexical_score: 0,
             vector_score: 0,
             base_score: 1,
+            metadata: None,
             payload: Some(b"source=slack\nproject=Apollo\ntopic=rollout\n\nLaunch update."),
         });
         let weak = reranker.rerank_score(SearchRerankInput {
@@ -530,7 +545,37 @@ mod tests {
             lexical_score: 0,
             vector_score: 0,
             base_score: 1,
+            metadata: None,
             payload: Some(b"source=gmail\nproject=Hermes\n\nOffice schedule."),
+        });
+
+        assert!(matched > weak);
+    }
+
+    #[test]
+    fn weighted_reranker_uses_descriptor_metadata_before_payload_scope_mapping() {
+        let reranker = WeightedScoreReranker::default();
+        let descriptor_metadata =
+            CellMetadata::from_payload(b"source=jira\nproject=Apollo\n\nLaunch update.");
+        let matched = reranker.rerank_score(SearchRerankInput {
+            query_text: "What did Jira say about the Apollo rollout?",
+            query_vector: None,
+            candidate_id: 1,
+            lexical_score: 0,
+            vector_score: 0,
+            base_score: 1,
+            metadata: Some(&descriptor_metadata),
+            payload: Some(b"source=gmail\nproject=Hermes\n\nLaunch update."),
+        });
+        let weak = reranker.rerank_score(SearchRerankInput {
+            query_text: "What did Jira say about the Apollo rollout?",
+            query_vector: None,
+            candidate_id: 2,
+            lexical_score: 0,
+            vector_score: 0,
+            base_score: 1,
+            metadata: None,
+            payload: Some(b"source=gmail\nproject=Hermes\n\nLaunch update."),
         });
 
         assert!(matched > weak);
@@ -546,6 +591,7 @@ mod tests {
             lexical_score: 0,
             vector_score: 0,
             base_score: 1,
+            metadata: None,
             payload: Some(b"p95 latency threshold is 180 ms for the EU route."),
         });
         let weak = reranker.rerank_score(SearchRerankInput {
@@ -555,6 +601,7 @@ mod tests {
             lexical_score: 0,
             vector_score: 0,
             base_score: 1,
+            metadata: None,
             payload: Some(b"p95 latency threshold is 280 ms for the EU route."),
         });
 

@@ -1181,6 +1181,7 @@ fn rerank_database_results(
                 lexical_score: result.lexical_score,
                 vector_score: result.vector_score,
                 base_score: result.score,
+                metadata: Some(&result.metadata),
                 payload: Some(&result.payload),
             })
             .saturating_add(search_metadata_rerank_bonus(

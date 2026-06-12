@@ -433,6 +433,7 @@ impl SearchRerankMode {
                     lexical_score: result.lexical_score,
                     vector_score: result.vector_score,
                     base_score: result.score,
+                    metadata: Some(&result.metadata),
                     payload: Some(&result.payload),
                 });
             }

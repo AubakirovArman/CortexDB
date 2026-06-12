@@ -851,6 +851,7 @@ impl BenchmarkSearchIndex {
                 lexical_score: result.lexical_score,
                 vector_score: result.vector_score,
                 base_score: result.score,
+                metadata: None,
                 payload: payload.as_deref(),
             });
         }
@@ -1479,6 +1480,7 @@ fn select_prefilter_candidates(
                 lexical_score: candidate.lexical_score,
                 vector_score: candidate.vector_score,
                 base_score: candidate.score,
+                metadata: None,
                 payload: Some(&candidate.payload),
             });
         }

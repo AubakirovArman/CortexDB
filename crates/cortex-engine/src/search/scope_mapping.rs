@@ -141,10 +141,17 @@ pub fn scope_mapping_payload_bonus(mapping: &QueryScopeMapping, payload: &[u8]) 
         return 0;
     }
     let metadata = CellMetadata::from_payload(payload);
+    scope_mapping_metadata_bonus(mapping, &metadata)
+}
+
+pub fn scope_mapping_metadata_bonus(mapping: &QueryScopeMapping, metadata: &CellMetadata) -> u64 {
+    if mapping.directives.is_empty() {
+        return 0;
+    }
     mapping
         .directives
         .iter()
-        .filter(|directive| directive_matches_metadata(directive, &metadata))
+        .filter(|directive| directive_matches_metadata(directive, metadata))
         .map(|directive| u64::from(directive.confidence_q16) / 6)
         .sum()
 }

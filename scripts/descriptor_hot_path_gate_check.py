@@ -7,9 +7,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SERVER_AUTHZ = ROOT / "crates/cortex-server/src/authz.rs"
 SERVER_ROUTER = ROOT / "crates/cortex-server/src/router.rs"
+SERVER_SEARCH = ROOT / "crates/cortex-server/src/search.rs"
 CONTEXT_DEDUP = ROOT / "crates/cortex-engine/src/context/dedup.rs"
 CONTEXT_PACK = ROOT / "crates/cortex-engine/src/context/pack.rs"
 SEARCH_DATABASE = ROOT / "crates/cortex-engine/src/search/database.rs"
+SEARCH_RERANK = ROOT / "crates/cortex-engine/src/search/rerank.rs"
+SEARCH_SCOPE_MAPPING = ROOT / "crates/cortex-engine/src/search/scope_mapping.rs"
 DATABASE = ROOT / "crates/cortex-engine/src/database.rs"
 QUERY_EXPLAIN = ROOT / "crates/cortex-engine/src/query/explain.rs"
 
@@ -27,9 +30,12 @@ def forbid(text: str, needle: str, label: str) -> None:
 def main() -> None:
     server_authz = SERVER_AUTHZ.read_text()
     server_router = SERVER_ROUTER.read_text()
+    server_search = SERVER_SEARCH.read_text()
     context_dedup = CONTEXT_DEDUP.read_text()
     context_pack = CONTEXT_PACK.read_text()
     search_database = SEARCH_DATABASE.read_text()
+    search_rerank = SEARCH_RERANK.read_text()
+    search_scope_mapping = SEARCH_SCOPE_MAPPING.read_text()
     database = DATABASE.read_text()
     query_explain = QUERY_EXPLAIN.read_text()
 
@@ -51,6 +57,11 @@ def main() -> None:
     forbid(server_authz, "require_payload_write", "payload-based write authorization helper")
     forbid(server_authz, "CellMetadata::from_payload", "payload parsing in server authz")
     forbid(server_router, "require_payload_write", "payload-based route authorization")
+    require(
+        server_search,
+        "metadata: Some(&result.metadata)",
+        "server weighted rerank receives descriptor-backed metadata",
+    )
 
     require(
         database,
@@ -109,10 +120,30 @@ def main() -> None:
         "fn payload_terms(metadata: &CellMetadata)",
         "search diversity term extraction from metadata",
     )
+    require(
+        search_database,
+        "metadata: Some(&result.metadata)",
+        "production search rerank receives descriptor-backed metadata",
+    )
     forbid(
         search_database,
         "CellMetadata::from_payload(payload)",
         "search diversity payload parsing",
+    )
+    require(
+        search_rerank,
+        "pub metadata: Option<&'a CellMetadata>",
+        "rerank input descriptor-backed metadata",
+    )
+    require(
+        search_rerank,
+        "scope_mapping_metadata_bonus(&scope_mapping, metadata)",
+        "rerank scope mapping from metadata when available",
+    )
+    require(
+        search_scope_mapping,
+        "pub fn scope_mapping_metadata_bonus(mapping: &QueryScopeMapping, metadata: &CellMetadata)",
+        "scope mapping metadata scoring helper",
     )
 
     print("descriptor hot path gate passed")
