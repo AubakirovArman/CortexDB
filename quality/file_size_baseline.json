@@ -2772,6 +2772,13 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-server/src/config.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 102,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-server/src/context.rs": {
       "hard_limit": 1000,
       "kind": "source",
@@ -2814,6 +2821,13 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-server/src/handler.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 635,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-server/src/hnsw_profile.rs": {
       "hard_limit": 1000,
       "kind": "source",
@@ -2821,10 +2835,24 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-server/src/http_metrics.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 399,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-server/src/lib.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 1653,
+      "lines": 52,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/lifecycle.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 230,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2877,10 +2905,31 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-server/src/quota.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 86,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-server/src/rate_limit.rs": {
       "hard_limit": 1000,
       "kind": "source",
       "lines": 172,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/request_audit.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 80,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/request_id.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 52,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2912,10 +2961,17 @@
       "soft_limit": 600,
       "warning_limit": 1200
     },
+    "crates/cortex-server/src/state.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 97,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-server/src/sync_handler.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 197,
+      "lines": 198,
       "soft_limit": 300,
       "warning_limit": 600
     },

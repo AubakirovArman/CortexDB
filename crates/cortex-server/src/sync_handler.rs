@@ -2,10 +2,11 @@ use std::path::Path;
 
 use cortex_engine::Database;
 
+use crate::responses::ErrorCode;
 use crate::router::{query_param_opt_decoded, route_shared_with_auth};
 use crate::{
     auth, auth_policy_cells, auth_policy_store, auth_scope_admin, dashboard, json_error,
-    json_response, llm, validate_tenant_id, ErrorCode, ServerOptions,
+    json_response, llm, validate_tenant_id, ServerOptions,
 };
 
 fn serve_dashboard() -> String {
