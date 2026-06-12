@@ -6,14 +6,20 @@ Execution rule: close epics in order. Use the dependency-aware order from the so
 
 Status values: `next`, `in_progress`, `partial`, `done`, `blocked`, `frozen`.
 
+Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
+what must be done before moving to the next epic. The detailed tasks and
+evidence remain in this tracker.
+
 Current pointer: `EPIC-A02` (typed descriptor WAL path is in progress; `EPIC-D15`
 public tag correction remains a release-management decision).
 
-Impact measurement rule: after each meaningful retrieval, ContextPack, or answer
-pipeline change, run `make enterprise-rag-bench-impact-gemini-50`. The target
-uses official-clean 50 questions, Gemini 3.5 Flash as answerer and judge,
-`engine-aql` + weighted rerank, and `target/enterprise-rag-bench/cortexdb-full`
-with `reuse_db=1` so the corpus is not reingested. Current baseline:
+Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
+mandatory after every change. Run `make enterprise-rag-bench-impact-gemini-50`
+only when explicitly requested or when we intentionally promote a benchmark
+pipeline. The target uses official-clean 50 questions, Gemini 3.5 Flash as
+answerer and judge, `engine-aql` + weighted rerank, and
+`target/enterprise-rag-bench/cortexdb-full` with `reuse_db=1` so the corpus is
+not reingested. Current baseline:
 `overall=41.36`, `correctness=42.0`, `completeness=44.76`, `document_recall=56.0`,
 `invalid_extra_docs=9.44`, `answer_tokens=302372`, `judge_tokens=27312`
 from `target/enterprise-rag-bench/official-clean/50/impact-gemini50-20260612T140305Z/answer-gemini/official_clean_run_report.json`.
