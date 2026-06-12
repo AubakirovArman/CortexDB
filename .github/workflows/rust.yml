@@ -17,6 +17,8 @@ jobs:
       RUSTFLAGS: -D warnings
     steps:
       - uses: actions/checkout@v5
+      - run: make file-size-check
+        if: matrix.toolchain == 'stable'
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}

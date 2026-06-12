@@ -48,6 +48,7 @@
 .PHONY: next-60-epics-audit next-60-epics-completion-check
 .PHONY: chaos-scenario-map-check
 .PHONY: graceful-shutdown-check
+.PHONY: file-size-report file-size-check
 .PHONY: check test sdk-check sdk-release-contract-check sdk-deprecation-check sdk-release-artifacts-check sdk-registry-gate-check sdk-productization-check openapi-check openapi-contract-check sdk-contract-check sdk-e2e-release-check migration-policy-check migration-compatibility-check storage-compat-check engine-api-check aql-compat-check retrieval-quality-check retrieval-quality-history-check search-quality-gate-v2-check context-pack-quality-check verification-quality-check security-check rbac-policy-store-check quota-policy-check audit-chain-check audit-export-retention-check security-hardening-check security-gate-v2-check security-release-report-check compliance-boundary-check observability-check deployment-upgrade-check http-contract-ops-check cli-product-check future-epic-design-check distributed-consensus-design-check managed-cloud-design-check enterprise-rbac-design-check hnsw-no-fallback-design-check llm-inference-design-check external-identity-design-check legal-verification-design-check distributed-consensus-check consensus-partition-soak-check consensus-failover-slo-check consensus-rejoin-check cloud-tenant-lifecycle-check cloud-backup-restore-check cloud-upgrade-check ann-production-no-fallback-check ann-production-slo-history-check ann-real-domain-history-check ann-public-corpus-history-check ann-graph-freshness-check llm-inference-contract-check llm-inference-safety-check llm-inference-smoke-check secrets-check oidc-auth-contract-check identity-policy-mapping-check auth-rotation-check legal-verification-dataset-check legal-verification-quality-check legal-citation-policy-check binary-release-package binary-release-validate binary-platform-matrix-check install-script-check binary-release-check beta-delta-check beta-foundation-check beta-rc-check beta-release-check production-hardening-check production-candidate-check production-v1-check public-claims-check load-smoke-check single-node-performance-check performance-trend-check tenant-recovery-check context-verify-quality-check dashboard-build dashboard-standalone-build dashboard-check dashboard-standalone-check dashboard-standalone-smoke dashboard-package dashboard-validate-package dashboard-release-check dashboard-product-check dashboard-smoke dashboard-screenshots ann-fixture-check ann-fixture-report ann-drift-check ann-drift-report ann-external-check ann-external-report ann-metric-matrix-check ann-metric-matrix-report ann-reference-suite-check ann-reference-suite-report ann-corpus-smoke-check ann-corpus-smoke-report ann-domain-corpus-check ann-domain-corpus-report ann-recall-probe-check ann-recall-probe-report ann-demo-domain-corpus-build ann-demo-domain-corpus-run ann-demo-domain-publish-baseline ann-demo-domain-package-baseline ann-demo-domain-validate-baseline-package ann-embedded-domain-corpus-build ann-embedded-domain-corpus-run ann-embedding-domain-export ann-embedding-domain-corpus-run ann-real-embedding-readiness ann-real-embedding-preflight ann-real-embedding-benchmark ann-real-embedding-compare ann-real-embedding-benchmark-and-compare ann-real-embedding-history-report ann-real-embedding-history-regression-check ann-real-embedding-publish-baseline ann-real-embedding-package-baseline ann-real-embedding-validate-baseline-package ann-real-embedding-release-check ann-slo-profile ann-scripts-check ann-convert-public-smoke ann-public-corpus-smoke ann-public-corpus-run ann-corpus-compare ann-corpus-run-smoke ann-history-report ann-history-regression-check ann-history-fixture-check ann-publish-baseline ann-package-baseline ann-validate-baseline-package ann-compare-baseline-bundle ann-release-evidence-check backup-drill-check backup-offsite-check backup-rpo-rto-profile-check crash-fault-check chaos-restart-check storage-soak-check storage-soak-history-check storage-soak-24h-campaign storage-soak-campaign-status storage-soak-campaign-watchdog storage-soak-campaign-status-check storage-soak-24h-evidence-check storage-soak-72h-start storage-soak-72h-campaign storage-soak-72h-status storage-soak-72h-status-report storage-soak-72h-watchdog storage-soak-72h-evidence-check storage-soak-epic-finalize replication-partition-check replication-lifecycle-check production-evidence-sweep smoke-test sdk-smoke-test rag-demo-smoke flagship-demo-check render-flagship-demo-gif alpha-check release-check demo
 
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
@@ -1051,11 +1052,19 @@ AQL_COMPAT_ROOT ?= target/aql-compat
 AQL_COMPAT_REPORT ?= $(AQL_COMPAT_ROOT)/report.json
 FUTURE_EPIC_REPORT ?= target/future-epics/report.json
 FUTURE_EPIC_ROOT ?= target/future-epics
+FILE_SIZE_BASELINE ?= quality/file_size_baseline.json
+FILE_SIZE_REPORT ?= target/file-size-report/report.json
 
 .PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check
 
 check: memtable-clone-gate-check descriptor-hot-path-gate-check
 	cargo check --workspace
+
+file-size-report:
+	python3 scripts/file_size_report.py --output "$(FILE_SIZE_REPORT)"
+
+file-size-check:
+	python3 scripts/file_size_report.py --baseline "$(FILE_SIZE_BASELINE)" --check --output "$(FILE_SIZE_REPORT)"
 
 memtable-clone-gate-check:
 	python3 scripts/memtable_clone_gate_check.py

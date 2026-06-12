@@ -1,0 +1,5927 @@
+{
+  "files": {
+    "Makefile": {
+      "hard_limit": 1000,
+      "kind": "makefile",
+      "lines": 5125,
+      "soft_limit": 150,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/agent_view.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 63,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/ast.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 156,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/binder.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 265,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/binder/catalog.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 73,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/binder/diagnostics.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 39,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/binder/plan.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 50,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/binder/support.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 211,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/binder/where_bitmap.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 222,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/errors.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 84,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/executor_mock.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 90,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/lib.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 17,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/parser.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 249,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/parser/condition.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 155,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/parser/retrieve.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 221,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/parser/string.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 66,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/policy.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 273,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/src/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 85,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-aql/tests/aql_examples_pack.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 57,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-aql/tests/aql_stabilization_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 244,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-aql/tests/aql_v0_4_golden_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 329,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-aql/tests/binder_completion_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 224,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-aql/tests/binder_hardening_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 231,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-aql/tests/binder_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 252,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-aql/tests/bitmap_vm_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 82,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-aql/tests/e2e_retrieve.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 113,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-aql/tests/parser_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 241,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-aql/tests/policy_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 112,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/cli.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 886,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_ann.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 364,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_aql.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 87,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_aql_json.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 109,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_audit.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 272,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_audit_chain.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 141,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_audit_chain_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 166,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/cli_audit_siem.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 146,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_audit_siem_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 130,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/cli_audit_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 304,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/cli_auth_review.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 402,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_auth_review_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 195,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/cli_doctor.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 108,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_doctor_checks.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 271,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_ingest.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 168,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_ingest_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 165,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/cli_json.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 336,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_json_types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 335,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_ops.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 758,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_upgrade.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 264,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/context.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 156,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/json_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 236,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/main.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 57,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/manifest.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 42,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 1158,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/tool_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 76,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/vector_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 322,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/wal.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 54,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/tests/integration_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 120,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-core/src/cell.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 521,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-core/src/error.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 9,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-core/src/lib.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 9,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-core/src/manifest/mod.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 29,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-core/src/memtable/accumulator.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 25,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-core/src/memtable/mod.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 314,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-core/src/memtable/version.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 85,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-core/src/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 5,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-core/tests/memtable_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 306,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-core/tests/memtable_tests/maintenance_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 62,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/benches/core_baseline.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 294,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/agent_views.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 300,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/backup.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 226,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/backup/dry_run.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 115,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/backup/encrypted/codec.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 282,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/backup/encrypted/crypto.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 66,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/backup/encrypted/filesystem.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 125,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/backup/encrypted/mod.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 102,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/backup/offsite.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 180,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/backup/retention.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 129,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/ann_corpus_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 231,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/ann_drift_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 121,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/ann_external_fixture_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 115,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/ann_fixture_gate.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 145,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/ann_metric_matrix_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 116,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/embedding_coverage_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 328,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/args.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 449,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/document.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 93,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/io.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 66,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/main.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 3459,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/retrieval.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 867,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_calibration_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 398,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_condition_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 341,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_decomposition_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 400,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_intent_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 296,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_scope_mapping_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 333,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_synonym_dictionary_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 393,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/locomo_retrieval/args.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 70,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/locomo_retrieval/main.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 290,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/locomo_retrieval/model.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 17,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/locomo_retrieval/view.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 33,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/memory_profile_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 352,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/multihop_rag_retrieval.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 259,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/query_understanding_lift_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 425,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/scale_benchmark_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 514,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/single_node_performance/args.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 112,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/single_node_performance/latency.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 92,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/single_node_performance_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 374,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/verify_performance_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 313,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bundle.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 96,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/checkpoint.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 613,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/checkpoint/candidates.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 84,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/checkpoint/compactor.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 274,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/checkpoint/hnsw.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 152,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/checkpoint/index_merge.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 29,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/checkpoint/manifest_safety.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 35,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/checkpoint/paths.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 29,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/checkpoint/vector.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 104,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/cleanup.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 72,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/compatibility.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 161,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/concurrency.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 367,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/config.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 239,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/answerability.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 97,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/conflicts.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 56,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/dedup.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 124,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/explain.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 37,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/export.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 323,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/export/json_export.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 94,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/export/text.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 29,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/freshness.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 155,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/grounding.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 291,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/large_cell.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 275,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/mod.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 185,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/pack.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 468,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/scoring.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 77,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/span.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 256,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/token_estimator.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 247,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/context/trace.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 231,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/database.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 1284,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/database_files.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 62,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/distributed.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 236,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/embedding_pipeline.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 964,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/error.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 255,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/exec/mod.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 506,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/feedback.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 250,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/graph.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 627,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/graph_retrieval.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 150,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 184,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion/adapters.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 261,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion/backpressure.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 155,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion/cells.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 200,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion/chunking.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 240,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion/dedup.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 102,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion/enrichment.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 183,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion/formats.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 62,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion/jobs.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 199,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion/pdf.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 285,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion/pdf_contracts.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 220,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion/pdf_ingest.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 148,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion/progress.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 178,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/ingestion/report.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 149,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/legal.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 169,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/legal/report.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 125,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/lib.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 169,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/lock.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 59,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/memory.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 135,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/memory_accounting.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 170,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/operation.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 236,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/options.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 144,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/plan/mod.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 334,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 364,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/cache.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 301,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/candidates.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 54,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/catalog.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 86,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/explain.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 180,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/metadata.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 681,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/metadata_validation.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 372,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/metadata_validation/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 134,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/query/provider.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 66,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/render.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 57,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/repair.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 78,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replay.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 131,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 63,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/consensus.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 224,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/election.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 176,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/install.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 123,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/log.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 270,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/log_matching.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 60,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/membership.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 221,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/peer.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 153,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/recovery.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 53,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/repair.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 310,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/repair/background.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 167,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/repair/cycle.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 136,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/repair/database_snapshot.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 36,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/repair/progress_store.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 241,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/repair/progress_transport.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 139,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/repair/snapshot_sender.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 86,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/repair/worker.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 173,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/rotation.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 281,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/runtime.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 78,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/snapshot.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 288,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/tcp.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 260,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/replication/transport.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 160,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 595,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/access.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 16,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/analyzer.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 175,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 791,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 465,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/search/ann_corpus.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 324,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann_corpus/compare.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 76,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann_corpus/loader.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 188,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann_corpus/metrics.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 71,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann_corpus/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 92,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/search/ann_drift.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 304,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann_drift/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 66,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/search/ann_external.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 270,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann_external/compare.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 94,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann_external/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 70,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/search/ann_fixture.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 305,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann_metric_matrix.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 219,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann_metric_matrix/compare.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 120,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann_metric_matrix/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 59,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/search/ann_recall_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 234,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/search/ann_report.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 291,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/conditions.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 492,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/database.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 1579,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/decomposition.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 640,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/evaluation.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 59,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/hnsw.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 24,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/hnsw/graph.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 83,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/hnsw/index.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 177,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/hnsw/integrity.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 101,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/hnsw/maintenance.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 54,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/hnsw/metric.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 67,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/hnsw/search_impl.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 321,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/hnsw_no_fallback.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 309,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/hnsw_policy.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 104,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/intent.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 748,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/persisted.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 421,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/quality_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 230,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/search/query_understanding.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 342,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/rerank.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 655,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/routing.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 500,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/scope_mapping.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 580,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/synonyms.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 792,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/tokenizer.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 47,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/vector.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 93,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/session.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 214,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/session/payload.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 99,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/source_trust.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 198,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/tool_registry.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 309,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/typed_body.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 71,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/validation.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 459,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/vector_rebuild.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 126,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 563,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/conflict_index.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 271,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/contradiction.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 163,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/export.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 265,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/graph.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 360,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/guards.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 176,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/numeric/mod.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 19,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/numeric/parse.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 192,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/numeric/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 111,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/verification/numeric/value.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 124,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/support.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 150,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/temporal.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 313,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/temporal_index.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 215,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/tests/agent_session_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 225,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/agent_view_store.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 99,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/alpha_matrix.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 243,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/ann_evaluation.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 105,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/aql_limit_budget_semantics.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 161,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/aql_query_cache.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 133,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/aql_require_semantics.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 159,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/aql_retrieve.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 143,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/aql_security_fuzzing.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 183,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/backup_restore.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 584,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/bundle_gc.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 65,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/checkpoint.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 368,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/compaction.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 119,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 672,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack_answerability.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 114,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack_conflict_visibility.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 141,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack_explain_v2.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 136,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack_grounding.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 80,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack_large_cell_policy.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 96,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack_private_scope.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 236,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack_prompt_export.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 174,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack_span_packing.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 138,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack_token_estimator.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 86,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_pack_tool_recommendation.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 165,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/context_verify_quality.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 267,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/core_property_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 330,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/corruption_matrix.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 112,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/crash_consistency_fault_injection.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 374,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/crash_matrix.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 197,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/database_loop.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 273,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/database_search.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 1333,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/determinism.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 276,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/error_model.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 119,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/feature_flags.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 111,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/feedback_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 216,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/full_stack_consistency.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 144,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/graph_retrieval_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 143,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/graph_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 279,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/hnsw_failure_simulation.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 137,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/hnsw_manifest_profile.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 191,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/hnsw_persistence.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 227,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/ingestion_adapters.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 391,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/ingestion_backpressure.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 139,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/ingestion_chunking_policy.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 115,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/ingestion_job_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 367,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/ingestion_pdf_contracts.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 153,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/ingestion_pdf_digital.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 218,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/ingestion_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 231,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/ingestion_validation_report.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 214,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/lifecycle_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 102,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/memory_quality_benchmark.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 236,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/memory_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 143,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/persisted_index_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 200,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/public_api.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 62,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/query_search.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 667,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/recovery_modes.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 216,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/repair_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 86,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_cluster_config.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 150,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_commit.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 71,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_consensus_hardening.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 210,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_database_snapshot.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 180,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_election.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 29,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_failure_injection.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 268,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_log.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 198,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_log_matching.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 169,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_membership.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 294,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_membership_rotation.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 123,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_partition_matrix.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 445,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_progress_membership.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 133,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_progress_runtime.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 124,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_progress_store.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 280,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_repair.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 277,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_repair_background.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 215,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_repair_cycle.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 122,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_repair_worker.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 195,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_replay_apply.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 107,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_runtime.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 111,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_snapshot_faults.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 275,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_snapshot_sender.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 179,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/replication_transport.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 344,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/restart_matrix.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 66,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/search_quality.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 83,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/snapshot_pinning.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 54,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/storage_stats.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 96,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/tool_registry_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 208,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/typed_body_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 48,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/validation_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 268,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/vector_rebuild.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 145,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/verification_conflict_index.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 193,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/verification_evaluation.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 148,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/verification_export.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 80,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/verification_graph_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 154,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/verification_guards.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 350,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/verification_natural_language.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 147,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/verification_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 495,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/wal_commit_seq.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 76,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-sdk/examples/basic.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 41,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/examples/live_contract.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 248,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/aql.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 228,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/aql_support.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 122,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/context_pack.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 276,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/context_pack_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 245,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-sdk/src/grounded_answer.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 225,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/grounded_answer_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 98,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-sdk/src/http.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 39,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/lib.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 646,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 570,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-sdk/src/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 599,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/verification.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 204,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/verification_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 119,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/assets/dashboard/v1/app.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 1186,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/reporting.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 4,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/reporting_audit.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 159,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/reporting_common.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 56,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/reporting_ingest.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 227,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/reporting_operations.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 538,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/reporting_retrieval.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 313,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/assets/dashboard/v1/reporting_slo.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 76,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/actor.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 449,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/aql.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 141,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/audit.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 243,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/audit/llm.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 129,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/audit_chain.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 65,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/audit_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 141,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/auth.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 519,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth_capability.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 156,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth_policy_cells.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 273,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth_policy_io.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 42,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth_policy_store.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 634,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth_scope_admin.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 129,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/authz.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 125,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/context.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 298,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/dashboard.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 74,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/dashboard_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 360,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/external_identity.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 260,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/external_identity/audit.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 118,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/external_identity/provider.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 126,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/hnsw_profile.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 57,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/lib.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 1653,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/llm.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 339,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/llm/audit.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 88,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/llm/safety.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 116,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/llm/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 56,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/main.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 350,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/memory.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 138,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/metrics.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 72,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/rate_limit.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 172,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/responses.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 822,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/router.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 916,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/search.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 661,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/search_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 65,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/sync_handler.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 197,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 18,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/agent_view_property_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 294,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/api_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 140,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/auth_policy_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 1052,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/auth_rotation_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 45,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/cell_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 36,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/error_response_snapshot_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 34,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/error_taxonomy_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 102,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/format_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 19,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/ingest_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 196,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/llm_inference_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 245,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/response_snapshot_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 569,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/search_api_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 286,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/security_quota_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 237,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/security_redaction_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 129,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/security_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 749,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/snapshot_api_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 357,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/snapshot_completion_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 99,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/snapshot_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 239,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-storage/src/atomic.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 66,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/error.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 33,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/format.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 107,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/hnsw.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 197,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/indexes.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 348,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/lib.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 11,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/manifest.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 335,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/segment.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 365,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/vectors.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 136,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/wal/checksum.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 9,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/wal/codec.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 270,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/wal/diagnostics.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 44,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/wal/mod.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 21,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/wal/reader.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 81,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/wal/record.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 174,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/wal/writer.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 245,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/wal/writer_append.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 153,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/wal/writer_rotation.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 59,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/tests/format_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 107,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-storage/tests/hnsw_graph_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 97,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-storage/tests/lexical_index_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 117,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-storage/tests/manifest_profile_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 85,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-storage/tests/segment_index_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 330,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-storage/tests/vector_index_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 30,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-storage/tests/wal_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 228,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-storage/tests/wal_tests/writer_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 115,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "e2e/dashboard.spec.ts": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 295,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "e2e/dashboard_auth.spec.ts": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 189,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "e2e/dashboard_screenshots.mjs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 290,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "e2e/run.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 33,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/demo/agent_memory/run.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 17,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/demo/investment_projects/run.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 151,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/demo/legal_policies/run.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 39,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/demo/support_tickets/run.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 40,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/demo/technical_docs/run.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 30,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/engine_api_compat/src/main.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 123,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/kimi_rag/app.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 286,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/kimi_rag/generate_data.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 140,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/kimi_rag/run.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 35,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/metrics/smoke.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 10,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/rag_demo/app.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 466,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/rag_demo/ingest.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 77,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/rag_demo/run.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 66,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/rag_demo/smoke.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 257,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/real_domains/investment_projects/scripts/build_chunks.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 73,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/real_domains/investment_projects/scripts/build_corpus.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 300,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/real_domains/investment_projects/scripts/build_queries.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 11,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/real_domains/investment_projects/scripts/validate_corpus.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 79,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/real_domains/investment_projects/scripts/validate_ground_truth.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 84,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/real_domains/legal_policies/scripts/validate_corpus.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 67,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/real_domains/legal_policies/scripts/validate_ground_truth.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 65,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/real_domains/support_tickets/scripts/validate_corpus.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 67,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/real_domains/support_tickets/scripts/validate_ground_truth.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 65,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/real_domains/technical_docs/scripts/validate_corpus.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 67,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "examples/real_domains/technical_docs/scripts/validate_ground_truth.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 65,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "playwright.config.ts": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 19,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/agent_memory_demo_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 177,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/attach_real_embedding_metadata.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 144,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/build_demo_domain_corpus.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 268,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/build_embedded_domain_corpus.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 272,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/compare_reports.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 155,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/convert_public_corpus.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 247,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/embed_text_command.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 170,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/embedding_cache.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 84,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/embedding_provider.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 285,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/embedding_provider_selftest.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 133,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/exact_ground_truth.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 167,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/export_embedding_domain_corpus.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 299,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/history_contract.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 152,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/history_fixture_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 203,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/history_gate.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 191,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/package_baseline.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 176,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/preflight_real_embedding_benchmark.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 296,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/publish_baseline.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 254,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/real_embedding_readiness.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 237,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/recall_probe.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 300,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/reference_suite_gate.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 242,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/report_contract.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 149,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/run_external_corpus.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 326,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/run_public_corpus.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 300,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/slo_profile.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 166,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/summarize_history.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 412,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ann/validate_baseline_package.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 287,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/aql_compat_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 245,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/audit_export_retention_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 185,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/audit_viewer_v2_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 104,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/backup_drill_check.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 155,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/backup_offsite_check.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 104,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/backup_restore_pack_validators.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 96,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/backup_restore_production_pack.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 271,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/backup_restore_view_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 107,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/backup_rpo_rto_profiles.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 205,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/beta_foundation_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 181,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/beta_landing_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 107,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/beta_rc_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 238,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/beta_release_bundle.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 226,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/binary_platform_matrix_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 244,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/chaos_restart_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 162,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/chaos_scenario_map.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 147,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/check_aql_changelog_policy.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 153,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/check_beta_delta.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 119,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/check_error_taxonomy_contract.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 145,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/check_migration_compatibility.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 159,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/check_migration_policy.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 94,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/check_openapi_contract.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 349,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/check_openapi_coverage.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 89,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/check_public_claims.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 289,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/check_sdk_contract.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 101,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/check_sdk_deprecation_policy.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 111,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/check_sdk_release_contract.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 324,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/check_storage_format_change_notes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 234,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/chunking_quality_benchmark.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 292,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/cli_product_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 93,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/community_roadmap_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 102,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/comparison_docs_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 83,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/compliance_boundary_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 92,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/consensus_gate_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 186,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/context_pack_answerability_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 111,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/context_pack_conflict_visibility_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 108,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/context_pack_explain_v2_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 199,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/context_pack_explorer_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 89,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/context_pack_large_cell_policy_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 94,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/context_pack_private_scope_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 97,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/context_pack_prompt_export_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 125,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/context_pack_quality_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 287,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/context_pack_quality_v3_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 297,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/context_pack_span_packing_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 192,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/context_pack_token_estimator_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 99,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/context_pack_tool_recommendation_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 121,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/contributor_onboarding_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 122,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/cortexdb_server_harness.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 121,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/crash_fault_check.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 115,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/dashboard_build.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 166,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/dashboard_dist_smoke.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 115,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/dashboard_operational_status_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 94,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/dashboard_product_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 213,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/dashboard_release.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 310,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/dashboard_role_ui_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 112,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/deployment_upgrade_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 154,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/descriptor_hot_path_gate_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 305,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/deterministic_chunking_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 108,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/distributed_consensus_research_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 77,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/docker_hardening_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 126,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/docker_production_compose_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 142,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/docs_link_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 86,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/encrypted_backup_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 225,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/encrypted_backup_rotation_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 279,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/engine_api_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 299,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/engine_api_compat_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 138,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/engine_determinism_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 121,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/engine_error_model_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 146,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/engine_feature_flags_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 155,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/engine_internal_boundary_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 157,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/engine_panic_audit_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 114,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/analyze_answer_errors.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 199,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/analyze_full_recall.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 328,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/analyze_question_decomposition.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 168,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/anchor_overlap_diagnostics.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 292,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/answer_artifacts.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 97,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/answer_chat.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 153,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/answer_context.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 243,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/answer_guard.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 185,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/answer_intent.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 211,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/answer_prompts.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 378,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/answer_prompts_coverage.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 33,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/answer_prompts_evidence_first.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 79,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/answer_prompts_exact.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 38,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/answer_repair.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 47,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/build_balanced_subset.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 140,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/build_doc_view_subset.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 146,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/build_doc_views.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 216,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/build_official_clean_vectors.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 497,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/candidate_depth_audit.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 233,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/candidate_generator_gate.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 77,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/candidate_tail_rescue.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 235,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/category_regression_gate.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 262,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/category_retrieval_dashboard.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 379,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/chunk_embed.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 105,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/closed_book_answers.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 135,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/combine_routed_answer_outputs.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 203,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/combine_routed_retrieval_outputs.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 145,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/compare_answer_budget_runs.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 318,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/compare_retrieval_runs.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 264,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/completeness_planner.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 237,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/conflict_resolution_synthesizer.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 295,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/confluence_collection_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 278,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/confluence_completeness_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 350,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/confluence_content_completeness_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 298,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/confluence_postmortem_variant_modes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 22,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/confluence_postmortem_variant_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 224,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/confluence_process_completeness_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 192,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/confluence_project_discovery_modes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 54,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/confluence_project_discovery_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 227,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/confluence_project_source_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 209,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/confluence_semantic_variant_modes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 46,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/confluence_semantic_variant_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 221,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/context_windows.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 223,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/coverage_route_retrieval.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 199,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/dense_candidates.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 269,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/doc_view_rerank.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 729,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/embed_corpus.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 553,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/enterprise_neighbors.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 130,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/evaluate_evidence_pack.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 292,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/evaluate_high_level_coverage.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 124,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/evidence_digest.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 132,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/evidence_slot_plan_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 81,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/evidence_slot_planner.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 456,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/evidence_span_fallback.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 64,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/evidence_spans.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 293,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/evidence_table_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 147,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/evidence_table_extractor.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 304,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/filter_retrieval_to_questions.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 64,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/fuse_retrieval_outputs.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 139,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/github_project_modes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 52,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/github_project_source_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 173,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/gmail_project_evidence_modes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 44,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/gmail_project_evidence_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 225,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/gold_missing_bottleneck_report.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 243,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/gold_missing_reason_classifier.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 362,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/heldout_no_overfit_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 312,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/hubspot_drive_anchor_modes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 231,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/hubspot_drive_anchor_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 178,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/hybrid_rerank_enterprise.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 296,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/hybrid_rerank_features.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 245,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/jira_completeness_source_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 217,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/jira_project_evidence_modes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 56,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/jira_project_evidence_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 266,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/jira_project_source_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 333,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/jira_semantic_promotion_modes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 34,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/jira_semantic_promotion_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 225,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/linear_semantic_promotion_modes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 53,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/linear_semantic_promotion_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 248,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/multi_index_candidate_generation.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 900,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 174,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/official_clean_gate.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 174,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/oracle_usage_audit.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 184,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/postprocess_retrieval_modes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 93,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/preflight.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 169,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/prepare_official_clean_inputs.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 153,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/progress_logging.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 161,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/project_answer_synthesizer.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 346,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/project_chain_rerank.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 288,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/question_decomposition.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 205,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/rerank_with_embeddings.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 271,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/retrieval_quality_gate.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 363,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 599,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/run_deepseek_answers.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 713,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/run_dense_hybrid_clean.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 81,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/run_official_clean_answers.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 199,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/run_official_clean_benchmark.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 1049,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/run_official_clean_judge.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 123,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/run_official_clean_regression.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 182,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/sdk_auth_completeness_modes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 16,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/sdk_auth_completeness_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 242,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/show_official_clean_status.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 224,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/slack_basic_promotion_modes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 35,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/slack_basic_promotion_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 215,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/slack_gmail_source_selector.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 293,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/source_route_sweep.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 234,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/summarize_local_calibration.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 95,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/summarize_score.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 150,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rag_bench/test_anchor_overlap_diagnostics.py": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 31,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "scripts/enterprise_rag_bench/test_answer_context.py": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 43,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "scripts/enterprise_rag_bench/test_answer_guard.py": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 92,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "scripts/enterprise_rag_bench/test_answer_intent.py": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 127,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "scripts/enterprise_rag_bench/test_answer_repair.py": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 40,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "scripts/enterprise_rag_bench/test_compare_answer_budget_runs.py": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 104,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "scripts/enterprise_rag_bench/test_conflict_resolution_synthesizer.py": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 57,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "scripts/enterprise_rag_bench/test_evidence_table_extractor.py": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 67,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "scripts/enterprise_rag_bench/type_topk_policy.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 148,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/enterprise_rbac_gate_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 159,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/evidence_artifact_retention_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 150,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/external_identity_gate_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 276,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/file_size_report.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 248,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/flagship_demo_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 46,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/future_epic_design_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 264,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/generate_release_notes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 195,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/getting_started_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 84,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/graceful_shutdown_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 138,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/hnsw_no_fallback_gate_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 330,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/http_contract_ops_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 109,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/incident_playbooks_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 106,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/incident_view_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 114,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/ingestion_jobs_v2_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 234,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/install.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 184,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/install_script_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 138,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/knowledge_graph_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 154,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/legal_verification_gate_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 278,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/llm_inference_gate_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 290,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/llm_inference_runtime_safety.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 61,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/load_smoke_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 279,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/load_suite_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 248,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/locomo/check_retrieval_adapter.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 157,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/locomo/download.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 113,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/longmemeval/analyze_v1_results.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 279,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/longmemeval/build_balanced_subset.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 153,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/longmemeval/build_question_type_subset.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 73,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/longmemeval/check_v1_e2e_adapter.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 287,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/longmemeval/check_v1_retrieval_adapter.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 171,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/longmemeval/compare_deepseek_flash_runs.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 193,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/longmemeval/download_v1.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 117,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/longmemeval/package_v1_submission.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 253,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/longmemeval/run_deepseek_flash_subset.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 351,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/longmemeval/v1_context_modes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 50,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/longmemeval/v1_cortexdb_retrieval.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 278,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/longmemeval/v1_official_metrics.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 121,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/longmemeval_evidence_page_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 96,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/managed_cloud_feasibility_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 69,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/managed_cloud_gate_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 181,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/memory_quality_benchmark_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 98,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/memtable_clone_gate_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 85,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/metrics_contract_v2_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 234,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/migration_historical_restore_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 117,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/migration_upgrade_matrix_v2_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 247,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/module_ownership_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 130,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/multihop_rag/analyze_qa_errors.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 173,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/multihop_rag/analyze_temporal_subtypes.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 238,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/multihop_rag/build_balanced_subset.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 181,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/multihop_rag/combine_qa_by_type.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 138,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/multihop_rag/download.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 116,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/multihop_rag/postprocess_qa_answers.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 66,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/multihop_rag/preflight.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 108,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/multihop_rag/qa_prompting.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 396,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/multihop_rag/run_deepseek_qa.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 430,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/multihop_rag/tqdm.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 2,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/next_60_epics_audit.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 140,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/observability_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 211,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/operations_runbook_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 135,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/package_binaries.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 214,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/package_manager_feasibility_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 94,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/perf_latency.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 50,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/performance_trend_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 276,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/permissions_view_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 99,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/production_candidate_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 247,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/production_evidence_sweep.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 104,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/production_hardening_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 251,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/production_v1_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 262,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/public_benchmarks_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 144,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/public_retrieval_benchmark_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 132,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/release_artifact_manifest_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 359,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/release_evidence_bundle.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 283,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/release_regression_dashboard.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 221,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/render_flagship_demo_gif.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 14,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/replication_lifecycle_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 193,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/replication_partition_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 144,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/retrieval_beta_report.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 300,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/retrieval_quality_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 267,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/retrieval_quality_dashboard.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 244,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/retrieval_quality_dashboard_panels.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 116,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/retrieval_quality_dashboard_self_test.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 101,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/retrieval_quality_explorer_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 97,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/retrieval_quality_history.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 287,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/retrieval_quality_history_self_test.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 67,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/sdk_e2e_release_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 145,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/sdk_productization_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 90,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/sdk_registry_gate_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 182,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/sdk_release_artifacts_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 156,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/sdk_smoke_test.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 181,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/sdk_ts_smoke_test.mjs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 217,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/search_quality_gate_v2.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 232,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/security_beta_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 113,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/security_gate_v2_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 153,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/security_hardening_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 183,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/security_release_report_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 147,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/service_manager_smoke_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 129,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/single_node_slo_dashboard_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 101,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/smoke_test.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 96,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/storage_compat_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 271,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/storage_format_freeze_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 217,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/storage_soak_campaign.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 204,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/storage_soak_campaign_start.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 78,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/storage_soak_campaign_status.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 218,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/storage_soak_campaign_status_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 99,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/storage_soak_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 51,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/storage_soak_epic_finalize.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 132,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/storage_soak_history_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 315,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/storage_soak_lib.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 319,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/storage_soak_v2_gate.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 169,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/structured_source_ref_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 95,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/tenant_recovery_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 239,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/tool_registry_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 117,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/upgrade_rollback_cli_flow_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 109,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/use_case_pack_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 298,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/use_case_pack_epic132.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 68,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/use_case_pack_epic133.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 111,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/use_case_pack_epic134.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 119,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/use_case_pack_epic135.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 127,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/verification_explorer_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 88,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/verification_quality_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 254,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/verification_quality_dashboard.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 194,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/verification_quality_dashboard_self_test.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 85,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/versioning_policy_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 133,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/publish/check.sh": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 90,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/python/cortexdb_client.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 1135,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/python/examples/basic.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 40,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/python/test_cortexdb_client.py": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 306,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "sdk/typescript/cortexdb-client.cjs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 440,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/typescript/cortexdb-client.d.ts": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 356,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/typescript/cortexdb-client.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 421,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/typescript/cortexdb-client.ts": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 799,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/typescript/examples/basic.mjs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 25,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "sdk/typescript/test.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 280,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/app.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 1186,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/reporting.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 4,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/reporting_audit.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 159,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/reporting_common.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 56,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/reporting_ingest.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 227,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/reporting_operations.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 538,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/reporting_retrieval.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 313,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "web/dashboard/src/reporting_slo.js": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 76,
+      "soft_limit": 300,
+      "warning_limit": 600
+    }
+  },
+  "schema_version": "cortexdb.file_size_report.v1"
+}
