@@ -3388,6 +3388,55 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-sdk/src/client.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 8,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/client/core.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 64,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/client/ingest.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 85,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/client/query.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 94,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/client/search.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 169,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/client/transport.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 132,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-sdk/src/client/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 79,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-sdk/src/context_pack.rs": {
       "hard_limit": 1000,
       "kind": "source",
@@ -3426,7 +3475,7 @@
     "crates/cortex-sdk/src/lib.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 646,
+      "lines": 63,
       "soft_limit": 300,
       "warning_limit": 600
     },
