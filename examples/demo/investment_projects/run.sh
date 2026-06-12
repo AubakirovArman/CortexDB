@@ -1,7 +1,35 @@
 #!/bin/bash
 set -e
 
-echo "=== CortexDB Alpha Demo: Search + AQL + ContextPack + Verify ==="
+if [ -t 1 ]; then
+  BOLD="\033[1m"
+  CYAN="\033[36m"
+  GREEN="\033[32m"
+  YELLOW="\033[33m"
+  RED="\033[31m"
+  RESET="\033[0m"
+else
+  BOLD=""
+  CYAN=""
+  GREEN=""
+  YELLOW=""
+  RED=""
+  RESET=""
+fi
+
+section() {
+  printf "\n${BOLD}${CYAN}%s${RESET}\n" "$1"
+}
+
+success() {
+  printf "${GREEN}%s${RESET}\n" "$1"
+}
+
+warn() {
+  printf "${YELLOW}%s${RESET}\n" "$1"
+}
+
+echo "=== CortexDB Flagship Demo: Permissions + ContextPack + Verify ==="
 echo ""
 echo "This demo shows why CortexDB is stronger than plain RAG:"
 echo "  - permission-safe scope filtering"
@@ -17,7 +45,7 @@ cd "$ROOT_DIR"
 DB_PATH="./examples/demo/investment_projects/db_temp"
 rm -rf "$DB_PATH"
 
-echo "1. Putting fact cells into the database..."
+section "1. Putting finance and private fact cells into the database..."
 cargo run -q -p cortex-cli -- put "$DB_PATH" 1 "scope=project:investments
 status=ready
 type=fact
@@ -54,53 +82,61 @@ source=board_minutes.pdf
 
 Board approved Solar Plant expansion with revised timeline."
 
-echo ""
-echo "2. Reading cell with ID 1..."
+section "2. Reading cell with ID 1..."
 cargo run -q -p cortex-cli -- get "$DB_PATH" 1
 
-echo ""
-echo "3. Flushing MemTable to create stable persistent segments..."
+section "3. Flushing MemTable to create stable persistent segments..."
 cargo run -q -p cortex-cli -- flush "$DB_PATH"
 
-echo ""
-echo "4. Checking storage stats..."
+section "4. Checking storage stats..."
 cargo run -q -p cortex-cli -- stats "$DB_PATH"
 
-echo ""
-echo "5. Plain keyword search for 'Solar' in scope 'project:investments'..."
+section "5. Finance agent: keyword search in scope 'project:investments'..."
 echo "   (This returns raw matching cells — like a typical RAG retriever)"
 cargo run -q -p cortex-cli -- search "$DB_PATH" project:investments Solar
 
-echo ""
-echo "6. AQL retrieve — permission-safe, scoped, policy-bound..."
+section "6. Finance agent: AQL retrieve builds a scoped ContextPack..."
 echo "   (Notice: 'private' scope cell does NOT appear)"
 cargo run -q -p cortex-cli -- context "$DB_PATH" project:investments \
   "RETRIEVE CONTEXT FOR TASK \"What is the Solar Plant budget?\" IN BRAIN default WHERE space = project:investments LIMIT 10 CANDIDATES;"
 
-echo ""
-echo "7. ContextPack with --json output..."
+section "7. HR agent: the same investment scope is denied before retrieval..."
+set +e
+DENIED_OUTPUT=$(cargo run -q -p cortex-cli -- context "$DB_PATH" agent:hr \
+  "RETRIEVE CONTEXT FOR TASK \"What is the Solar Plant budget?\" IN BRAIN default WHERE space = project:investments LIMIT 10 CANDIDATES;" 2>&1)
+DENIED_STATUS=$?
+set -e
+if [ "$DENIED_STATUS" -eq 0 ]; then
+  printf "${RED}expected HR agent denial, but command succeeded${RESET}\n"
+  exit 1
+fi
+echo "$DENIED_OUTPUT"
+if echo "$DENIED_OUTPUT" | grep -q "ScopeNotReadable"; then
+  success "HR agent denied as expected: ScopeNotReadable"
+else
+  printf "${RED}expected ScopeNotReadable denial${RESET}\n"
+  exit 1
+fi
+
+section "8. ContextPack with --json output..."
 echo "   (Shows token_budget, estimated_tokens, citations, anomalies)"
 cargo run -q -p cortex-cli -- context "$DB_PATH" project:investments \
   "RETRIEVE CONTEXT FOR TASK \"What is the Solar Plant budget?\" IN BRAIN default WHERE space = project:investments LIMIT 10 CANDIDATES;" --json
 
-echo ""
-echo "8. VERIFY FACT — 'Solar Plant budget is 1.2B KZT'..."
+section "9. VERIFY FACT — 'Solar Plant budget is 1.2B KZT'..."
 echo "   (CortexDB detects the Q1 vs Q2 numeric conflict)"
 cargo run -q -p cortex-cli -- verify "$DB_PATH" project:investments \
   "VERIFY FACT \"Solar Plant budget is 1.2B KZT\" IN BRAIN default;"
 
-echo ""
-echo "9. VERIFY FACT with --json output..."
+section "10. VERIFY FACT with --json output..."
 echo "   (Shows supporting evidence, contradicting evidence, numeric_conflicts)"
 cargo run -q -p cortex-cli -- verify "$DB_PATH" project:investments \
   "VERIFY FACT \"Solar Plant budget is 1.2B KZT\" IN BRAIN default;" --json
 
-echo ""
-echo "10. Validating the storage files integrity..."
+section "11. Validating the storage files integrity..."
 cargo run -q -p cortex-cli -- validate "$DB_PATH"
 
-echo ""
-echo "=== Comparison: Plain RAG vs CortexDB ==="
+section "=== Comparison: Plain RAG vs CortexDB ==="
 echo ""
 echo "  Plain RAG:              CortexDB:"
 echo "  - top-k chunks          - ContextPack with token budgets"
@@ -110,6 +146,6 @@ echo "  - no citation policy     - structured SourceRef + citations"
 echo "  - no anomaly reports     - anomaly report per pack"
 echo ""
 
-echo "=== Clean up temp db ==="
+warn "=== Clean up temp db ==="
 rm -rf "$DB_PATH"
-echo "=== CortexDB Demo Completed Successfully ==="
+success "=== CortexDB Demo Completed Successfully ==="

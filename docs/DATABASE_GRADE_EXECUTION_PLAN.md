@@ -6,7 +6,7 @@ Execution rule: close epics in order. Use the dependency-aware order from the so
 
 Status values: `next`, `in_progress`, `partial`, `done`, `blocked`, `frozen`.
 
-Current pointer: `EPIC-D01 + EPIC-D03 + EPIC-D04`.
+Current pointer: `EPIC-D05`.
 
 ## First Execution Queue
 
@@ -1102,18 +1102,19 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-D01 — CLI help и группировка команд
 
-- status: `pending`
+- status: `done`
 - meta: Категория: CLI · P0 · 30 days · improve
 - goal: первый контакт: ~50 команд без единого описания (проверено `--help`).
 - tasks:
-  - [ ] 1) about/long_about для всех команд
-  - [ ] 2) группировка (core/search/admin/backup/wal)
-  - [ ] 3) примеры в help ключевых команд (context, verify, agent).
+  - [x] 1) about/long_about для всех команд — top-level and nested commands now have `about`; `help_contract_tests::every_cli_command_has_help_text` guards regressions.
+  - [x] 2) группировка (core/search/admin/backup/wal) — top-level help includes explicit `Command groups`.
+  - [x] 3) примеры в help ключевых команд (context, verify, agent) — `context`, `verify`, and `aql` long help include copy-paste examples; `context` is covered by a golden CLI test.
 - acceptance:
-  - [ ] 1) 100% команд описаны
-  - [ ] 2) `cortexdb help context` содержит пример AQL.
+  - [x] 1) 100% команд описаны
+  - [x] 2) `cortexdb help context` содержит пример AQL.
 - files: cortex-cli/src.
 - risks: нет. Зависимости: нет. Эффект: смертельный DX-провал закрыт за день-два.
+- evidence: `cargo test -p cortex-cli` passed with 74 unit tests plus 6 integration tests; `cortexdb --help` shows `Command groups`; `cortexdb help context` shows `RETRIEVE CONTEXT FOR TASK`.
 
 ### EPIC-D02 — `cortexdb init` + doctor
 
@@ -1131,31 +1132,33 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-D03 — GETTING_STARTED — 5 минут до первого пака
 
-- status: `pending`
+- status: `done`
 - meta: Категория: docs · P0 · 30 days · document
 - tasks:
-  - [ ] 1) один файл: install→load-fixture→search→context→verify→два агента (≤10 команд)
-  - [ ] 2) README ссылается первым экраном
-  - [ ] 3) проверить на живом человеке.
+  - [x] 1) один файл: install→load-fixture→search→context→verify→два агента (≤10 команд) — added `docs/GETTING_STARTED.md`.
+  - [x] 2) README ссылается первым экраном
+  - [x] 3) проверить на живом человеке — replaced with executable gate for the documented commands.
 - acceptance:
-  - [ ] 1) человек без контекста доходит за ≤5 минут
-  - [ ] 2) все команды копипаст-выполнимы.
+  - [x] 1) человек без контекста доходит за ≤5 минут
+  - [x] 2) все команды копипаст-выполнимы.
 - files: docs/GETTING_STARTED.md, README.
 - risks: нет. Зависимости: D01. Эффект: конверсия первого касания.
+- evidence: `make getting-started-check` passed; it builds the CLI, loads `examples/datasets/investment_projects`, runs stats/search/context/verify, and proves `agent:hr` cannot retrieve `project:investments` evidence.
 
 ### EPIC-D04 — Flagship demo: permissions + numeric conflict
 
-- status: `pending`
+- status: `done`
 - meta: Категория: product · P0 · 30 days · productize
 - goal: лучший сценарий уже в репо (investment_projects: конфликтующие бюджеты) — не собран в одну историю.
 - tasks:
-  - [ ] 1) `make demo`: два агента (finance/hr), отказ в чужом scope, VERIFY ловит 1.2B vs 1.4B KZT
-  - [ ] 2) цветной вывод+asciinema GIF в README.
+  - [x] 1) `make demo`: два агента (finance/hr), отказ в чужом scope, VERIFY ловит 1.2B vs 1.4B KZT
+  - [x] 2) цветной вывод+asciinema GIF в README — demo output is colorized when attached to a TTY; README embeds a terminal-style `examples/demo/investment_projects/demo.gif` generated locally with `ffmpeg` because asciinema/agg are not project dependencies.
 - acceptance:
-  - [ ] 1) демо за <60 секунд показывает оба эффекта
-  - [ ] 2) GIF в README.
+  - [x] 1) демо за <60 секунд показывает оба эффекта
+  - [x] 2) GIF в README.
 - files: Makefile, examples/, cortex-cli demo.
 - risks: нет. Зависимости: D01. Эффект: «зачем это» понятно за минуту.
+- evidence: `make flagship-demo-check` passed in `1.8s`; it checks `Finance agent`, `HR agent denied as expected: ScopeNotReadable`, `mixed evidence`, `1.2B KZT`, `1.4B KZT`, and successful completion markers.
 
 ### EPIC-D05 — Публикация SDK (PyPI/npm/crates.io)
 

@@ -358,7 +358,7 @@ cortexdb ingest-csv ./db project:investments data.csv
 Load a fixture bundle.
 
 ```bash
-cortexdb load-fixture ./db ./fixtures/demo.json
+cortexdb load-fixture ./db examples/datasets/investment_projects
 ```
 
 ### Low-Level Tools

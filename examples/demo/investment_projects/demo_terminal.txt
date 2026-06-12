@@ -1,0 +1,18 @@
+CortexDB Flagship Demo
+
+Finance agent
+  search scope: project:investments
+  result: Solar Plant Q1 budget = 1.2B KZT
+  result: Solar Plant Q2 budget = 1.4B KZT
+
+HR agent
+  query asks for project:investments
+  result: ScopeNotReadable
+
+VERIFY FACT
+  "Solar Plant budget is 1.2B KZT"
+  verdict: mixed_evidence
+  conflict: 1.2B KZT vs 1.4B KZT
+
+ContextPack
+  scoped cells + citations + token budget + anomalies

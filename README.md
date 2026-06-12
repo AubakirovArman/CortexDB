@@ -12,6 +12,8 @@
 
 For the short external beta overview, start with
 [`docs/BETA_LANDING.md`](docs/archive/BETA_LANDING.md).
+For a copy-paste local path to the first ContextPack, start with
+[`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md).
 For runnable domain scenarios, see
 [`docs/USE_CASE_PACKS.md`](docs/archive/USE_CASE_PACKS.md).
 For public benchmark history, see
@@ -81,9 +83,11 @@ cloud, and no published leaderboard claim until submitted and accepted.
 
 ## 3-Minute Demo
 
+![CortexDB flagship demo](examples/demo/investment_projects/demo.gif)
+
 ```bash
 # 1. Load a fixture
-cargo run -p cortex-cli -- load-fixture examples/datasets/investment_projects ./demo-db
+cargo run -p cortex-cli -- load-fixture ./demo-db examples/datasets/investment_projects
 
 # 2. Search
 cargo run -p cortex-cli -- search ./demo-db project:investments "Solar Plant budget"
@@ -97,7 +101,12 @@ cargo run -p cortex-cli -- verify ./demo-db project:investments \
   'VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN default;' --json
 ```
 
-Or run the full demo: `make demo`
+Or run the full demo:
+
+```bash
+make demo
+make flagship-demo-check
+```
 
 ---
 
@@ -156,7 +165,7 @@ CortexDB includes five built-in standard dataset fixtures under `examples/datase
 
 To populate your database with a dataset fixture:
 ```bash
-cargo run -p cortex-cli -- load-fixture examples/datasets/legal_policies ./data
+cargo run -p cortex-cli -- load-fixture ./data examples/datasets/legal_policies
 ```
 
 ---
@@ -187,7 +196,7 @@ cargo run -p cortex-cli -- validate ./data
 cargo run -p cortex-cli -- backup ./data ./data.backup
 cargo run -p cortex-cli -- restore ./data.backup ./data.restored
 cargo run -p cortex-cli -- backup-prune ./backups cortexdb- 7
-cargo run -p cortex-cli -- load-fixture examples/datasets/legal_policies ./data
+cargo run -p cortex-cli -- load-fixture ./data examples/datasets/legal_policies
 ```
 
 Backup and restore behavior is documented in

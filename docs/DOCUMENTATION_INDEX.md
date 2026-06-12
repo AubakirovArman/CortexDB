@@ -9,6 +9,7 @@ evidence snapshots, benchmark experiments, and release working notes live in
 ## Start Here
 
 - [`README.md`](../README.md) - project overview and quickstart.
+- [`GETTING_STARTED.md`](GETTING_STARTED.md) - five-minute local ContextPack path.
 - [`PROJECT_STATUS.md`](PROJECT_STATUS.md) - current product status and limits.
 - [`CORE_ALPHA.md`](CORE_ALPHA.md) - Core Alpha scope.
 - [`INSTALL.md`](INSTALL.md) - local install and first checks.

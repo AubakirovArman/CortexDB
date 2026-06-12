@@ -133,9 +133,22 @@ fn cli_golden_outputs_are_stable() {
         "verify",
         "search-vector-eval",
         "migrate",
+        "Command groups:",
+        "Core database:",
+        "Agent retrieval:",
+        "Vector and ANN:",
     ] {
         assert!(help.contains(marker), "missing help marker: {marker}");
     }
+
+    let context_help = run(vec![
+        "cortexdb".to_owned(),
+        "help".to_owned(),
+        "context".to_owned(),
+    ])
+    .unwrap();
+    assert!(context_help.contains("Build a token-budgeted"));
+    assert!(context_help.contains("RETRIEVE CONTEXT FOR TASK"));
 
     let version = run(vec!["cortexdb".to_owned(), "version".to_owned()]).unwrap();
     assert!(version.starts_with("cortexdb "));
