@@ -885,7 +885,42 @@
     "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 653,
+      "lines": 5,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/tests/benchmark.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 115,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/tests/clean.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 172,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/tests/prefilter.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 236,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/tests/support.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 24,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/tests/vectors.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 104,
       "soft_limit": 600,
       "warning_limit": 1200
     },
