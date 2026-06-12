@@ -152,7 +152,12 @@ pub(crate) fn route_database_with_auth<A: DatabaseAccess>(
         }
         ("POST", "/v1/search/ann-evaluate") => {
             let db = db.as_read();
-            return search::handle_ann_evaluate_shared(db, query, body, authenticated_view.as_ref());
+            return search::handle_ann_evaluate_shared(
+                db,
+                query,
+                body,
+                authenticated_view.as_ref(),
+            );
         }
         ("GET", "/v1/admin/search/hnsw/no-fallback-profile") => {
             let db = db.as_read();

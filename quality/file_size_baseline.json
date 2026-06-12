@@ -199,7 +199,21 @@
     "crates/cortex-cli/src/cli.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 886,
+      "lines": 27,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli/args.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 420,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli/dispatch.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 446,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -325,7 +339,49 @@
     "crates/cortex-cli/src/cli_ops.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 758,
+      "lines": 25,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_ops/agent.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 84,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_ops/backup.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 136,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_ops/common.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 32,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_ops/core.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 195,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_ops/maintenance.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 44,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_ops/search.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 284,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2943,7 +2999,42 @@
     "crates/cortex-server/src/router.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 916,
+      "lines": 275,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/router/core_routes.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 220,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/router/ingest_routes.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 255,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/router/memory_routes.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 53,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/router/metrics_routes.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 223,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/router/params.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 78,
       "soft_limit": 300,
       "warning_limit": 600
     },
