@@ -4028,7 +4028,42 @@
     "crates/cortex-server/src/auth.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 519,
+      "lines": 16,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth/parser.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 99,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth/policy.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 112,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth/routes.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 46,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 156,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/auth/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 114,
       "soft_limit": 300,
       "warning_limit": 600
     },
