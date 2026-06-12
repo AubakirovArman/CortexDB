@@ -1690,7 +1690,35 @@
     "crates/cortex-engine/src/search/ann.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 791,
+      "lines": 21,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann/evaluation.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 147,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann/report.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 63,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann/runtime.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 65,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann/search.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 384,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1700,6 +1728,13 @@
       "lines": 465,
       "soft_limit": 600,
       "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/search/ann/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 153,
+      "soft_limit": 300,
+      "warning_limit": 600
     },
     "crates/cortex-engine/src/search/ann_corpus.rs": {
       "hard_limit": 1000,
@@ -2089,7 +2124,7 @@
     "crates/cortex-engine/src/search/synonyms/tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 183,
+      "lines": 182,
       "soft_limit": 600,
       "warning_limit": 1200
     },
