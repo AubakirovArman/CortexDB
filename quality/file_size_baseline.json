@@ -3363,7 +3363,56 @@
     "crates/cortex-server/src/tests/auth_policy_tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 1052,
+      "lines": 14,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/auth_policy_tests/admin_policy_cells.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 96,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/auth_policy_tests/admin_principals.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 224,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/auth_policy_tests/helpers.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 58,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/auth_policy_tests/role_routes.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 86,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/auth_policy_tests/scope_budget.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 190,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/auth_policy_tests/store_validation.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 268,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/auth_policy_tests/token_scope.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 140,
       "soft_limit": 600,
       "warning_limit": 1200
     },
