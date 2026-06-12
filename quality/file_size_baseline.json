@@ -2047,7 +2047,56 @@
     "crates/cortex-engine/src/search/synonyms.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 792,
+      "lines": 17,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/synonyms/builder.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 167,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/synonyms/database.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 48,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/synonyms/persistence.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 91,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/synonyms/query.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 44,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/synonyms/terms.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 205,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/synonyms/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 183,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/src/search/synonyms/types.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 74,
       "soft_limit": 300,
       "warning_limit": 600
     },
