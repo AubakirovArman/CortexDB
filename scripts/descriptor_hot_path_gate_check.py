@@ -20,6 +20,12 @@ SESSION_PAYLOAD = ROOT / "crates/cortex-engine/src/session/payload.rs"
 INGESTION_REPORT = ROOT / "crates/cortex-engine/src/ingestion/report.rs"
 REPLICATION_SNAPSHOT = ROOT / "crates/cortex-engine/src/replication/snapshot.rs"
 REPLICATION_INSTALL = ROOT / "crates/cortex-engine/src/replication/install.rs"
+TOOL_REGISTRY = ROOT / "crates/cortex-engine/src/tool_registry.rs"
+VERIFICATION = ROOT / "crates/cortex-engine/src/verification.rs"
+VERIFICATION_GRAPH = ROOT / "crates/cortex-engine/src/verification/graph.rs"
+VERIFICATION_CONFLICT_INDEX = ROOT / "crates/cortex-engine/src/verification/conflict_index.rs"
+VERIFICATION_TEMPORAL_INDEX = ROOT / "crates/cortex-engine/src/verification/temporal_index.rs"
+VERIFICATION_GUARDS = ROOT / "crates/cortex-engine/src/verification/guards.rs"
 
 
 def require(text: str, needle: str, label: str) -> None:
@@ -48,6 +54,12 @@ def main() -> None:
     ingestion_report = INGESTION_REPORT.read_text()
     replication_snapshot = REPLICATION_SNAPSHOT.read_text()
     replication_install = REPLICATION_INSTALL.read_text()
+    tool_registry = TOOL_REGISTRY.read_text()
+    verification = VERIFICATION.read_text()
+    verification_graph = VERIFICATION_GRAPH.read_text()
+    verification_conflict_index = VERIFICATION_CONFLICT_INDEX.read_text()
+    verification_temporal_index = VERIFICATION_TEMPORAL_INDEX.read_text()
+    verification_guards = VERIFICATION_GUARDS.read_text()
 
     require(
         server_authz,
@@ -199,6 +211,51 @@ def main() -> None:
         ingestion_report,
         "CellMetadata::from_payload(&payload)",
         "ingestion validation payload-only metadata",
+    )
+    require(
+        tool_registry,
+        "let descriptor = ToolDescriptor::from_version(&version).ok()?;",
+        "tool registry list uses CellVersion descriptor",
+    )
+    require(
+        tool_registry,
+        "if !view.can_read_scope(scope_id(&descriptor.scope))",
+        "tool registry permission check uses descriptor scope",
+    )
+    require(
+        verification,
+        "let metadata = CellMetadata::from_version(version);",
+        "verification evidence uses CellVersion descriptor",
+    )
+    require(
+        verification,
+        "if !view.can_read_scope(scope_id(&metadata.scope))",
+        "verification permission check uses descriptor metadata",
+    )
+    require(
+        verification_graph,
+        "let metadata = CellMetadata::from_version(version);",
+        "verification graph relation uses CellVersion descriptor",
+    )
+    require(
+        verification_graph,
+        "CellMetadata::from_payload_with_descriptor(&payload, &descriptor)",
+        "verification graph persisted edge uses descriptor-backed metadata",
+    )
+    require(
+        verification_conflict_index,
+        "let metadata = CellMetadata::from_version(version);",
+        "conflict index uses CellVersion descriptor",
+    )
+    require(
+        verification_temporal_index,
+        "let metadata = CellMetadata::from_version(&version);",
+        "temporal index uses CellVersion descriptor",
+    )
+    require(
+        verification_guards,
+        "let metadata = CellMetadata::from_version(version);",
+        "verification guards use CellVersion descriptor",
     )
     require(
         replication_snapshot,
