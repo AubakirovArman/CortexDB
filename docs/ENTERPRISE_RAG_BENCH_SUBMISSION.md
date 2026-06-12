@@ -87,13 +87,13 @@ how a real deployed system would answer.
   `target/external-benchmarks/EnterpriseRAG-Bench/` (its `questions.jsonl` and
   `generated_data/{sources,uuid_index.json}`). `make enterprise-rag-bench-official-repo`
   clones it.
-- Two OpenAI-compatible HTTP endpoints (both open models, run them however you
-  like — e.g. vLLM / TEI):
+- Embedding and answer providers configured through local environment variables:
   - **Embeddings**: `BAAI/bge-m3` → set in a local `.env`:
     `CORTEXDB_EMBEDDING_URL`, `CORTEXDB_EMBEDDING_MODEL=BAAI/bge-m3`,
     `CORTEXDB_EMBEDDING_API_KEY`.
-  - **Answer LLM**: `google/gemma-4-31B-it` →
-    `VLLM_URL`, `VLLM_MODEL=google/gemma-4-31B-it`, `VLLM_API_KEY`.
+  - **Answer LLM**: `gemini-3.5-flash` →
+    `GEMINI_API_KEY` or the provider-specific variables accepted by
+    `scripts/enterprise_rag_bench/official_clean.py`.
 - ~12 GB disk for the corpus embedding cache; the corpus embed runs against the
   embedding endpoint (~hours at typical throughput, resumable).
 
@@ -129,7 +129,7 @@ python3 scripts/enterprise_rag_bench/embed_corpus.py \
   --env-file .env --workers 16 --batch-size 32 \
   --log-file target/enterprise-rag-bench/embeddings/embed_corpus.log
 
-# (3) full pipeline: CortexDB AQL retrieve/rerank -> dense+RRF fuse -> gemma answers
+# (3) full pipeline: CortexDB AQL retrieve/rerank -> dense+RRF fuse -> Gemini answers
 #     (this wrapper runs the exact config used for the reported number)
 SIZE=500 \
 QUESTIONS_FILE=$BENCH/questions.jsonl \
@@ -192,7 +192,7 @@ result in §1. Use `gpt-5.4` for the fully-official number.
 
 ## 7. Reproducibility caveats
 
-- **Non-determinism**: answer generation (gemma) and the LLM judge are
+- **Non-determinism**: answer generation (Gemini) and the LLM judge are
   non-deterministic; expect the correctness metric within a few points of 44.0
   across reruns.
 - **Coverage**: 11,264 / 511,958 corpus docs (2.2%) failed embedding on transient

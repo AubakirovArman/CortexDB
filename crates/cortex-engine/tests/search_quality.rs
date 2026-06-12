@@ -5,25 +5,25 @@ fn text_analyzer_applies_field_weights_and_stopwords() {
     let analyzer = TextAnalyzer::default().with_stopwords(["draft".to_owned()]);
     let terms = analyzer.weighted_terms([("title", "Budget draft"), ("body", "budget workflow")]);
 
-    assert_eq!(terms.get("budget"), Some(&7));
+    assert_eq!(terms.get("budget"), Some(&9));
     assert_eq!(terms.get("workflow"), Some(&1));
     assert!(!terms.contains_key("draft"));
 }
 
 #[test]
-fn title_field_weights_six_times_body() {
+fn title_field_weights_eight_times_body() {
     let analyzer = TextAnalyzer::default();
     let terms = analyzer.weighted_terms([("title", "budget"), ("body", "budget")]);
-    // title weight = 6, body weight = 1
-    assert_eq!(terms.get("budget"), Some(&7));
+    // title weight = 8, body weight = 1
+    assert_eq!(terms.get("budget"), Some(&9));
 }
 
 #[test]
-fn source_field_weights_same_as_body() {
+fn source_field_weight_matches_entity_boost() {
     let analyzer = TextAnalyzer::default();
     let terms = analyzer.weighted_terms([("source", "budget"), ("body", "budget")]);
-    // source weight = 1, body weight = 1
-    assert_eq!(terms.get("budget"), Some(&2));
+    // source weight = 4, body weight = 1
+    assert_eq!(terms.get("budget"), Some(&5));
 }
 
 #[test]

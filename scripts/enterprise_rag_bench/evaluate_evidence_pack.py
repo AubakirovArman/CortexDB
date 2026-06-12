@@ -13,6 +13,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from answer_context import brain_digest_context
 from context_windows import query_tokens, question_aware_snippet
 from evidence_digest import evidence_digest
 
@@ -106,6 +107,8 @@ def packed_text(
         return question_aware_snippet(content, question, max_chars)
     if mode == "evidence-digest":
         return evidence_digest(content, title, question, max_chars)
+    if mode == "brain-digest":
+        return brain_digest_context(content, title, question, max_chars)
     if mode == "digest-window":
         digest = evidence_digest(content, title, question, max_chars=max(400, max_chars // 3))
         remaining = max(0, max_chars - len(digest) - 2)
@@ -272,7 +275,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--retrieval-file", type=Path, required=True)
     parser.add_argument("--uuid-index", type=Path, required=True)
     parser.add_argument("--sources-dir", type=Path, required=True)
-    parser.add_argument("--mode", choices=["leading", "question-window", "evidence-digest", "digest-window"], required=True)
+    parser.add_argument("--mode", choices=["leading", "question-window", "evidence-digest", "brain-digest", "digest-window"], required=True)
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument("--max-chars-per-doc", type=int, default=5000)
     parser.add_argument("--output-jsonl", type=Path, required=True)

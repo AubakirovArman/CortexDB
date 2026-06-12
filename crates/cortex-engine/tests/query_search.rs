@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, ScopeId, Q16_ZERO};
 use cortex_core::CellId;
@@ -232,6 +232,40 @@ fn field_weighting_prioritizes_important_fields() {
 }
 
 #[test]
+fn field_aware_bm25_prioritizes_title_over_body_frequency() {
+    let mut indexes = SearchIndexes::default();
+    indexes.add_field_terms(
+        1,
+        BTreeMap::from([
+            (
+                "title".to_owned(),
+                BTreeMap::from([("apollo".to_owned(), 1)]),
+            ),
+            (
+                "body".to_owned(),
+                BTreeMap::from([("status".to_owned(), 8)]),
+            ),
+        ]),
+    );
+    indexes.add_field_terms(
+        2,
+        BTreeMap::from([(
+            "body".to_owned(),
+            BTreeMap::from([("apollo".to_owned(), 3)]),
+        )]),
+    );
+
+    let results = indexes.search(SearchQuery {
+        text: "apollo",
+        vector: None,
+        limit: 2,
+        mode: SearchMode::Keyword,
+    });
+
+    assert_eq!(results[0].cell_id, 1);
+}
+
+#[test]
 fn replacing_document_removes_old_postings() {
     let mut index = Bm25Index::default();
     index.add_document(1, "obsolete");
@@ -372,6 +406,80 @@ fn search_indexes_support_pluggable_reranker() {
 
     assert_eq!(results[0].cell_id, 2);
     assert!(results[0].score > results[0].lexical_score);
+}
+
+#[test]
+fn search_with_reranker_uses_route_policy_candidate_depth() {
+    struct PromoteCandidate(u64);
+
+    impl SearchReranker for PromoteCandidate {
+        fn rerank_score(&self, input: SearchRerankInput<'_>) -> u64 {
+            if input.candidate_id == self.0 {
+                input.base_score.saturating_add(10_000_000)
+            } else {
+                input.base_score
+            }
+        }
+    }
+
+    let mut indexes = SearchIndexes::default();
+    for id in 1..=35 {
+        indexes.add_document(id, "project blocker");
+    }
+
+    let results = indexes.search_with_reranker(
+        SearchQuery {
+            text: "List all project blockers",
+            vector: None,
+            limit: 5,
+            mode: SearchMode::Keyword,
+        },
+        &PromoteCandidate(35),
+    );
+
+    assert_eq!(results[0].cell_id, 35);
+}
+
+#[test]
+fn search_with_reranker_uses_adaptive_result_limit() {
+    struct IdentityReranker;
+
+    impl SearchReranker for IdentityReranker {
+        fn rerank_score(&self, input: SearchRerankInput<'_>) -> u64 {
+            input.base_score
+        }
+    }
+
+    let mut indexes = SearchIndexes::default();
+    for id in 1..=12 {
+        indexes.add_document(id, &format!("invoice q4 payment record {id}"));
+    }
+    for id in 13..=24 {
+        indexes.add_document(id, &format!("project blockers evidence {id}"));
+    }
+
+    let lookup_results = indexes.search_with_reranker(
+        SearchQuery {
+            text: "Find invoice Q4",
+            vector: None,
+            limit: 10,
+            mode: SearchMode::Keyword,
+        },
+        &IdentityReranker,
+    );
+
+    let broad_results = indexes.search_with_reranker(
+        SearchQuery {
+            text: "List all project blockers",
+            vector: None,
+            limit: 10,
+            mode: SearchMode::Keyword,
+        },
+        &IdentityReranker,
+    );
+
+    assert_eq!(lookup_results.len(), 5);
+    assert_eq!(broad_results.len(), 10);
 }
 
 #[test]

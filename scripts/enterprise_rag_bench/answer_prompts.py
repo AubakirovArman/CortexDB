@@ -310,10 +310,21 @@ def official_clean_v1(row: dict[str, Any], context: str) -> str:
 Clean-run rules:
 - You do not know benchmark labels, expected documents, source filters, or answer facts.
 - Infer the user's intent only from the question text and the provided evidence.
+- If the question asks for a company overview, mission, strategy, business model,
+  commercial offering, organization, departments, reliability, security, routing,
+  or platform differentiation, synthesize the overview from the retrieved
+  evidence instead of treating the question as unavailable.
 - Answer with every concrete fact supported by the evidence: names, IDs, dates,
   paths, numbers, regions, owners, policy conditions, steps, and caveats.
 - If the question asks for a list, enumerate all supported items instead of
   giving a generic summary.
+- If an Evidence table is present, treat it as a navigation aid for exact
+  candidate facts. For project, incident, rollout, migration, blocker, owner,
+  status, risk, cause, or fix questions, use table rows only when they match the
+  question anchors and then verify them against the retrieved document windows.
+- Do not add concrete TTLs, percentages, dates, owners, ticket IDs, products,
+  rollout states, or root causes unless the same specific fact is visible in
+  the evidence.
 - If the evidence conflicts, explain the conflict and prefer the most specific,
   current, or directly relevant source.
 - If the evidence supports only part of the answer, answer the supported part

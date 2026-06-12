@@ -31,9 +31,16 @@ impl Default for TextAnalyzer {
     fn default() -> Self {
         Self {
             field_weights: BTreeMap::from([
-                ("title".to_owned(), 6),
+                ("title".to_owned(), 8),
+                ("path".to_owned(), 5),
+                ("document_id".to_owned(), 5),
+                ("section".to_owned(), 5),
+                ("project".to_owned(), 4),
+                ("entity".to_owned(), 4),
+                ("sector".to_owned(), 4),
                 ("body".to_owned(), 1),
-                ("source".to_owned(), 1),
+                ("source".to_owned(), 4),
+                ("chunk_id".to_owned(), 2),
             ]),
             stopwords: BTreeSet::new(),
             lemmas: BTreeMap::new(),

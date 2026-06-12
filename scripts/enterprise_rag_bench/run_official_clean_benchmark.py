@@ -306,6 +306,7 @@ def retrieve(args: argparse.Namespace, p: dict[str, Path]) -> None:
         f"batch_size={args.batch_size} "
         f"reuse_db={args.reuse_db} db_root={p['db_root']} "
         f"query_vectors={args.query_vectors} document_vectors={args.document_vectors} "
+        f"prefilter_retrieval={args.prefilter_retrieval} "
         f"progress_every={args.retrieval_progress_every}"
     )
     run_cmd(
@@ -349,10 +350,16 @@ def retrieve(args: argparse.Namespace, p: dict[str, Path]) -> None:
         cmd.extend(["--query-vectors", str(args.query_vectors)])
     if args.document_vectors:
         cmd.extend(["--document-vectors", str(args.document_vectors)])
+    if args.prefilter_retrieval:
+        cmd.extend(["--prefilter-retrieval", str(args.prefilter_retrieval)])
+    if args.disable_search_prefilter:
+        cmd.append("--disable-search-prefilter")
     if args.reuse_db:
         cmd.append("--skip-ingest")
     else:
         cmd.append("--reset-db")
+    if args.skip_checkpoint:
+        cmd.append("--skip-checkpoint")
     run_cmd(
         cmd,
         label="retrieve with CortexDB",
@@ -447,7 +454,8 @@ def answer(args: argparse.Namespace, p: dict[str, Path]) -> None:
         f"provider={args.answer_provider} context_mode={args.context_mode} "
         f"top_k_context={args.top_k_context} max_chars_per_doc={args.max_chars_per_doc} "
         f"max_tokens={args.max_tokens} workers={args.answer_workers} "
-        f"progress_every={args.progress_every}"
+        f"progress_every={args.progress_every} "
+        f"include_evidence_plan={args.include_evidence_plan}"
     )
     cmd = [
         "python3",
@@ -468,6 +476,8 @@ def answer(args: argparse.Namespace, p: dict[str, Path]) -> None:
         str(args.max_chars_per_doc),
         "--max-tokens",
         str(args.max_tokens),
+        "--unsupported-claim-guard",
+        args.unsupported_claim_guard,
         "--context-mode",
         args.context_mode,
         "--workers",
@@ -479,6 +489,42 @@ def answer(args: argparse.Namespace, p: dict[str, Path]) -> None:
         "--status-file",
         str(p["answer_status"]),
     ]
+    if args.enable_text_intent_budget:
+        cmd.extend(
+            [
+                "--enable-text-intent-budget",
+                "--complex-top-k-context",
+                str(args.complex_top_k_context),
+                "--complex-max-chars-per-doc",
+                str(args.complex_max_chars_per_doc),
+                "--complex-max-tokens",
+                str(args.complex_max_tokens),
+            ]
+        )
+    if args.self_consistency_repair:
+        cmd.extend(
+            [
+                "--self-consistency-repair",
+                "--self-consistency-retries",
+                str(args.self_consistency_retries),
+            ]
+        )
+    if args.include_evidence_table:
+        cmd.extend(
+            [
+                "--include-evidence-table",
+                "--max-evidence-facts-per-doc",
+                str(args.max_evidence_facts_per_doc),
+                "--max-evidence-table-rows",
+                str(args.max_evidence_table_rows),
+            ]
+        )
+        if args.evidence_table_file:
+            cmd.extend(["--evidence-table-file", str(args.evidence_table_file)])
+    if args.include_evidence_plan:
+        cmd.append("--include-evidence-plan")
+        if args.evidence_plan_file:
+            cmd.extend(["--evidence-plan-file", str(args.evidence_plan_file)])
     run_cmd(
         cmd,
         label=f"answer questions with {args.answer_provider}",
@@ -723,7 +769,13 @@ def main() -> int:
     )
     parser.add_argument(
         "--retrieval-mode",
-        choices=["cached-lexical", "engine-aql", "engine-keyword", "engine-hybrid"],
+        choices=[
+            "cached-lexical",
+            "engine-aql",
+            "engine-keyword",
+            "engine-hybrid",
+            "engine-hybrid-rerank",
+        ],
         default="engine-aql",
     )
     parser.add_argument(
@@ -759,10 +811,54 @@ def main() -> int:
         type=Path,
         help="JSONL with {doc_id, vector}; required for dense engine-hybrid corpus ingest.",
     )
+    parser.add_argument(
+        "--prefilter-retrieval",
+        type=Path,
+        help="Official-clean retrieval JSONL used as a reusable candidate source before fallback retrieval.",
+    )
+    parser.add_argument(
+        "--disable-search-prefilter",
+        action="store_true",
+        help="Force direct engine search instead of the checkpoint/ingest lexical prefilter.",
+    )
     parser.add_argument("--top-k-context", type=int, default=8)
     parser.add_argument("--max-chars-per-doc", type=int, default=2200)
     parser.add_argument("--max-tokens", type=int, default=420)
     parser.add_argument("--context-mode", default="question-window-digest-ranked")
+    parser.add_argument(
+        "--unsupported-claim-guard",
+        choices=["off", "report", "suppress", "repair"],
+        default="off",
+        help="Report, remove, or repair answer statements with unsupported exact concrete markers.",
+    )
+    parser.add_argument(
+        "--self-consistency-repair",
+        action="store_true",
+        help="Run one evidence-only repair call when the draft answer contains unsupported exact markers.",
+    )
+    parser.add_argument("--self-consistency-retries", type=int, default=1)
+    parser.add_argument(
+        "--enable-text-intent-budget",
+        action="store_true",
+        help="Use oracle-free question text intent to increase budget for complex answers.",
+    )
+    parser.add_argument("--complex-top-k-context", type=int, default=10)
+    parser.add_argument("--complex-max-chars-per-doc", type=int, default=2600)
+    parser.add_argument("--complex-max-tokens", type=int, default=900)
+    parser.add_argument("--evidence-table-file", type=Path)
+    parser.add_argument("--evidence-plan-file", type=Path)
+    parser.add_argument(
+        "--include-evidence-plan",
+        action="store_true",
+        help="Inject deterministic oracle-free evidence slot/completeness plans into answer prompts.",
+    )
+    parser.add_argument("--max-evidence-facts-per-doc", type=int, default=6)
+    parser.add_argument("--max-evidence-table-rows", type=int, default=40)
+    parser.add_argument(
+        "--include-evidence-table",
+        action="store_true",
+        help="Inject deterministic evidence fact rows into answer prompts.",
+    )
     parser.add_argument("--answer-workers", type=int, default=2)
     parser.add_argument("--judge-workers", type=int, default=2)
     parser.add_argument("--judge-timeout-seconds", type=float, default=180.0)
@@ -774,6 +870,11 @@ def main() -> int:
         help="Reuse an existing indexed CortexDB root and skip corpus ingest.",
     )
     parser.add_argument(
+        "--skip-checkpoint",
+        action="store_true",
+        help="Skip checkpoint after ingest for one-shot retrieval quality runs.",
+    )
+    parser.add_argument(
         "--stage",
         choices=["all", "retrieval", "prepare", "retrieve", "answer", "judge"],
         default="all",
@@ -781,10 +882,12 @@ def main() -> int:
     args = parser.parse_args()
     if args.size <= 0:
         parser.error("--size must be positive")
-    if args.retrieval_mode == "engine-hybrid" and not args.query_vectors:
-        parser.error("--retrieval-mode engine-hybrid requires --query-vectors")
+    if args.retrieval_mode in {"engine-hybrid", "engine-hybrid-rerank"} and not args.query_vectors:
+        parser.error(f"--retrieval-mode {args.retrieval_mode} requires --query-vectors")
     if args.rerank == "weighted" and args.retrieval_mode == "cached-lexical":
-        parser.error("--rerank weighted requires --retrieval-mode engine-keyword or engine-hybrid")
+        parser.error(
+            "--rerank weighted requires an engine retrieval mode, not cached-lexical"
+        )
     if args.embedding_rerank and args.embedding_rerank_candidates <= args.top_k:
         parser.error("--embedding-rerank-candidates must exceed --top-k to have any effect")
     if args.max_documents is not None and args.max_documents <= 0:
@@ -868,12 +971,22 @@ def main() -> int:
         "questions_file": str(args.questions_file),
         "stage": args.stage,
         "reuse_db": args.reuse_db,
+        "skip_checkpoint": args.skip_checkpoint,
         "retrieval_mode": args.retrieval_mode,
         "rerank": args.rerank,
         "embedding_rerank": args.embedding_rerank,
         "embedding_rerank_candidates": args.embedding_rerank_candidates if args.embedding_rerank else None,
+        "include_evidence_plan": args.include_evidence_plan,
+        "evidence_plan_file": str(args.evidence_plan_file) if args.evidence_plan_file else None,
+        "include_evidence_table": args.include_evidence_table,
+        "evidence_table_file": str(args.evidence_table_file) if args.evidence_table_file else None,
+        "self_consistency_repair": args.self_consistency_repair,
+        "self_consistency_retries": args.self_consistency_retries,
         "query_vectors": str(args.query_vectors) if args.query_vectors else None,
         "document_vectors": str(args.document_vectors) if args.document_vectors else None,
+        "prefilter_retrieval": str(args.prefilter_retrieval)
+        if args.prefilter_retrieval
+        else None,
         "max_documents": args.max_documents,
         "clean_questions": str(p["clean_questions"]),
         "clean_retrieval": str(p["clean_retrieval"]),

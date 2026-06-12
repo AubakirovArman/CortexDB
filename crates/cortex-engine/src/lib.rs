@@ -36,6 +36,7 @@ pub mod context;
 pub mod database;
 mod database_files;
 pub mod distributed;
+pub mod embedding_pipeline;
 pub mod error;
 pub mod feedback;
 pub mod graph;
@@ -85,6 +86,15 @@ pub use context::{
 };
 pub use database::{CandidateResolver, CheckpointStats, Database, RetrievedCell};
 pub use distributed::*;
+pub use embedding_pipeline::{
+    embedding_coverage_report_from_expected_items, embedding_coverage_report_from_files,
+    embedding_coverage_report_from_jsonl, embedding_debt_report_from_versions,
+    embedding_expected_items_from_versions, embedding_retry_ids_from_expected_items,
+    embedding_retry_ids_from_jsonl, embedding_text_hash, EmbeddingBackfillOptions,
+    EmbeddingBackfillProvider, EmbeddingBackfillReport, EmbeddingCoverageConfig,
+    EmbeddingCoverageReport, EmbeddingDebtItem, EmbeddingDebtReport, EmbeddingExpectedItem,
+    DEFAULT_MIN_EMBEDDING_COVERAGE_BPS, EMBEDDING_PIPELINE_REPORT_SCHEMA,
+};
 pub use error::{EngineError, EngineErrorCategory, EngineErrorCode, EngineResult};
 pub use graph::{
     GraphEdge, GraphEdgeKind, GraphEntity, GraphSourceRef, KnowledgeGraphIndex, ToolCell,
@@ -94,11 +104,11 @@ pub use ingestion::{
     extract_pdf_text, split_text_chunks, stable_chunk_id, stable_ingestion_hash_hex,
     validate_external_ocr_output, validate_external_ocr_request, CsvIngestOptions,
     DigitalPdfTextExtractor, DisabledExternalOcrAdapter, DisabledExternalPdfParserAdapter,
-    EntityIngestOptions, ExternalOcrAdapter, ExternalOcrBoundingBox, ExternalOcrOutput,
-    ExternalOcrPageImage, ExternalOcrPageText, ExternalOcrRequest, ExternalOcrTextBlock,
-    ExternalPdfParserAdapter, ExternalPdfParserRequest, IngestedCell, IngestionBackpressurePolicy,
-    IngestionBackpressureRequest, IngestionJobId, IngestionJobStatus, IngestionProgress,
-    IngestionProgressTracker, IngestionSkippedItem, IngestionSourceRefReport,
+    DuplicateContentGroup, EntityIngestOptions, ExternalOcrAdapter, ExternalOcrBoundingBox,
+    ExternalOcrOutput, ExternalOcrPageImage, ExternalOcrPageText, ExternalOcrRequest,
+    ExternalOcrTextBlock, ExternalPdfParserAdapter, ExternalPdfParserRequest, IngestedCell,
+    IngestionBackpressurePolicy, IngestionBackpressureRequest, IngestionJobId, IngestionJobStatus,
+    IngestionProgress, IngestionProgressTracker, IngestionSkippedItem, IngestionSourceRefReport,
     IngestionUpdatePolicy, IngestionValidationIssue, IngestionValidationReport, JsonChunkPolicy,
     JsonIngestOptions, NativeDigitalPdfTextExtractor, PdfExtractedPageText, PdfExtractionStats,
     PdfIngestOptions, PdfTextExtractionBoundary, RelationIngestOptions, RememberedCell,
@@ -145,8 +155,8 @@ pub use verification::{
     compare_numeric_values, extract_temporal_query_range, format_scaled_value,
     normalized_numeric_equal, parse_currency_code, parse_magnitude_suffix, parse_temporal_date,
     parse_unit_code, ConflictRecord, ContradictionRelationOptions, Magnitude, NumericComparison,
-    NumericValue, TemporalDate, TemporalQueryRange, TemporalStaleReason, TemporalValidity,
-    VerificationEvidence, VerificationGuard, VerificationGuardCode, VerificationMatchKind,
-    VerificationNumericConflict, VerificationReport, VerificationReportExportFormat,
-    VerificationStatus,
+    NumericValue, TemporalDate, TemporalFactIndex, TemporalFactKey, TemporalFactRecord,
+    TemporalQueryRange, TemporalStaleReason, TemporalValidity, VerificationEvidence,
+    VerificationGuard, VerificationGuardCode, VerificationMatchKind, VerificationNumericConflict,
+    VerificationReport, VerificationReportExportFormat, VerificationStatus,
 };

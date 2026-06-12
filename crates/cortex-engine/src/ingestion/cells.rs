@@ -4,6 +4,7 @@ use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::ingestion::chunking::{sanitize_header_value, TextChunk};
 use crate::ingestion::dedup::{content_hash_hex, source_hash_hex};
+use crate::ingestion::enrichment::SourceMetadataEnrichment;
 use crate::operation::DbOperation;
 
 pub(crate) fn put_text_chunk_cell(
@@ -48,6 +49,16 @@ pub(crate) fn document_metadata(scope: String, source: String) -> KnowledgeCellM
         scope,
         status: "ready".to_owned(),
         cell_type: KnowledgeCellType::DocumentBlock,
+        source: Some(source),
+        ..KnowledgeCellMetadata::default()
+    }
+}
+
+pub(crate) fn table_metadata(scope: String, source: String) -> KnowledgeCellMetadata {
+    KnowledgeCellMetadata {
+        scope,
+        status: "ready".to_owned(),
+        cell_type: KnowledgeCellType::Table,
         source: Some(source),
         ..KnowledgeCellMetadata::default()
     }
@@ -118,6 +129,7 @@ fn text_chunk_payload(
         "chunk_id={}",
         sanitize_header_value(&chunk.chunk_id)
     ));
+    push_enrichment_headers(&mut lines, &chunk.text, document_id);
     lines.push(String::new());
     let mut payload = lines.join("\n").into_bytes();
     payload.extend_from_slice(chunk.text.as_bytes());
@@ -155,6 +167,7 @@ fn source_ref_payload(
     if let Some(confidence_q16) = source_ref.confidence_q16 {
         lines.push(format!("confidence_q16={confidence_q16}"));
     }
+    push_enrichment_headers(&mut lines, body, source_ref.document_id);
     for (key, value) in source_ref.extra_headers {
         lines.push(format!(
             "{}={}",
@@ -178,4 +191,10 @@ fn base_header_lines(metadata: &KnowledgeCellMetadata) -> Vec<String> {
         lines.push(format!("source={}", sanitize_header_value(source)));
     }
     lines
+}
+
+fn push_enrichment_headers(lines: &mut Vec<String>, body: &str, source: &str) {
+    for (key, value) in SourceMetadataEnrichment::from_text(body, source).header_pairs() {
+        lines.push(format!("{key}={value}"));
+    }
 }

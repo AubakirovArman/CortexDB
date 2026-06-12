@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_storage::format::{
     storage_format_specs, StorageFormatKind, HNSW_GRAPH_MAGIC, LEGACY_LEXICAL_INDEX_MAGIC,
-    LEGACY_LEXICAL_INDEX_V1_MAGIC, LEXICAL_INDEX_MAGIC,
+    LEGACY_LEXICAL_INDEX_V1_MAGIC, LEGACY_LEXICAL_INDEX_V2_MAGIC, LEXICAL_INDEX_MAGIC,
 };
 use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
@@ -21,7 +21,11 @@ fn storage_format_inventory_lists_current_core_formats() {
     assert_eq!(specs[3].current_magic, LEXICAL_INDEX_MAGIC);
     assert_eq!(
         specs[3].legacy_magics,
-        &[&LEGACY_LEXICAL_INDEX_MAGIC, &LEGACY_LEXICAL_INDEX_V1_MAGIC]
+        &[
+            &LEGACY_LEXICAL_INDEX_MAGIC,
+            &LEGACY_LEXICAL_INDEX_V1_MAGIC,
+            &LEGACY_LEXICAL_INDEX_V2_MAGIC,
+        ]
     );
     assert_eq!(specs[4].kind, StorageFormatKind::VectorIndex);
     assert_eq!(specs[5].kind, StorageFormatKind::HnswGraph);
@@ -51,6 +55,7 @@ fn written_storage_files_match_current_format_inventory() {
         terms: BTreeMap::from([("budget".to_owned(), BTreeSet::from([1]))]),
         doc_lengths: BTreeMap::from([(1, 1)]),
         term_frequencies: BTreeMap::from([("budget".to_owned(), BTreeMap::from([(1, 1)]))]),
+        ..LexicalIndex::default()
     }
     .write(&lexical)
     .unwrap();

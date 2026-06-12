@@ -2,9 +2,10 @@ use crate::wal::{ACLOG_MAGIC, WAL_FORMAT_VERSION};
 
 pub const SEGMENT_MAGIC: [u8; 4] = *b"ACS1";
 pub const BITMAP_INDEX_MAGIC: [u8; 4] = *b"ACB0";
-pub const LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI2";
+pub const LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI3";
 pub const LEGACY_LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI0";
 pub const LEGACY_LEXICAL_INDEX_V1_MAGIC: [u8; 4] = *b"ACI1";
+pub const LEGACY_LEXICAL_INDEX_V2_MAGIC: [u8; 4] = *b"ACI2";
 pub const VECTOR_INDEX_MAGIC: [u8; 4] = *b"ACV0";
 pub const HNSW_GRAPH_MAGIC: [u8; 4] = *b"ACH0";
 pub const MANIFEST_MAGIC: [u8; 4] = *b"ACM0";
@@ -65,9 +66,13 @@ pub fn storage_format_specs() -> [StorageFormatSpec; 7] {
             name: "Lexical index",
             extension: "aci",
             current_magic: &LEXICAL_INDEX_MAGIC,
-            current_version: 2,
-            legacy_magics: &[&LEGACY_LEXICAL_INDEX_MAGIC, &LEGACY_LEXICAL_INDEX_V1_MAGIC],
-            compatibility_rule: "ACI0 and ACI1 remain read-only compatible",
+            current_version: 3,
+            legacy_magics: &[
+                &LEGACY_LEXICAL_INDEX_MAGIC,
+                &LEGACY_LEXICAL_INDEX_V1_MAGIC,
+                &LEGACY_LEXICAL_INDEX_V2_MAGIC,
+            ],
+            compatibility_rule: "ACI0, ACI1 and ACI2 remain read-only compatible",
         },
         StorageFormatSpec {
             kind: StorageFormatKind::VectorIndex,

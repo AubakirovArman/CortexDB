@@ -37,6 +37,8 @@ pub struct EngineAqlIndex {
     pub lexical: BTreeMap<String, BTreeSet<u32>>,
     pub lexical_doc_lengths: BTreeMap<u32, u32>,
     pub lexical_term_frequencies: BTreeMap<String, BTreeMap<u32, u32>>,
+    pub lexical_field_doc_lengths: BTreeMap<String, BTreeMap<u32, u32>>,
+    pub lexical_field_term_frequencies: BTreeMap<String, BTreeMap<String, BTreeMap<u32, u32>>>,
     pub universe: BTreeSet<u32>,
     pub candidate_to_cell: BTreeMap<u32, CellId>,
     pub cell_to_candidate: BTreeMap<CellId, u32>,
@@ -165,6 +167,8 @@ impl EngineAqlIndex {
             lexical: lexical.terms,
             lexical_doc_lengths: lexical.doc_lengths,
             lexical_term_frequencies: lexical.term_frequencies,
+            lexical_field_doc_lengths: lexical.field_doc_lengths,
+            lexical_field_term_frequencies: lexical.field_term_frequencies,
             universe: BTreeSet::new(),
             candidate_to_cell,
             cell_to_candidate,
@@ -207,6 +211,8 @@ impl EngineAqlIndex {
             terms: self.lexical.clone(),
             doc_lengths: self.lexical_doc_lengths.clone(),
             term_frequencies: self.lexical_term_frequencies.clone(),
+            field_doc_lengths: self.lexical_field_doc_lengths.clone(),
+            field_term_frequencies: self.lexical_field_term_frequencies.clone(),
         }
     }
 
@@ -266,6 +272,23 @@ impl EngineAqlIndex {
                     .or_default()
                     .insert(candidate, frequency);
             }
+            for (field, terms) in metadata.lexical_field_terms() {
+                let field_length = terms.values().copied().sum::<u32>().max(1);
+                self.lexical_field_doc_lengths
+                    .entry(field.clone())
+                    .or_default()
+                    .insert(candidate, field_length);
+                let field_frequencies = self
+                    .lexical_field_term_frequencies
+                    .entry(field)
+                    .or_default();
+                for (term, frequency) in terms {
+                    field_frequencies
+                        .entry(term)
+                        .or_default()
+                        .insert(candidate, frequency);
+                }
+            }
         }
         Ok(())
     }
@@ -290,6 +313,19 @@ impl EngineAqlIndex {
         }
         self.lexical_term_frequencies
             .retain(|_, values| !values.is_empty());
+        for values in self.lexical_field_doc_lengths.values_mut() {
+            values.retain(|candidate, _| !candidates.contains(candidate));
+        }
+        self.lexical_field_doc_lengths
+            .retain(|_, values| !values.is_empty());
+        for terms in self.lexical_field_term_frequencies.values_mut() {
+            for values in terms.values_mut() {
+                values.retain(|candidate, _| !candidates.contains(candidate));
+            }
+            terms.retain(|_, values| !values.is_empty());
+        }
+        self.lexical_field_term_frequencies
+            .retain(|_, terms| !terms.is_empty());
         self.candidate_to_cell
             .retain(|candidate, _| !candidates.contains(candidate));
         self.cell_to_candidate

@@ -37,6 +37,27 @@ pub struct CellMetadata {
     pub title: Option<String>,
     pub content_hash: Option<String>,
     pub source_hash: Option<String>,
+    pub document_id: Option<String>,
+    pub chunk_id: Option<String>,
+    pub parent_id: Option<String>,
+    pub chunk_role: Option<String>,
+    pub path: Option<String>,
+    pub section: Option<String>,
+    pub project: Option<String>,
+    pub entity: Option<String>,
+    pub sector: Option<String>,
+    pub owner: Option<String>,
+    pub status_tag: Option<String>,
+    pub event_date: Option<String>,
+    pub topic: Option<String>,
+    pub as_of: Option<String>,
+    pub valid_from: Option<String>,
+    pub valid_to: Option<String>,
+    pub supersedes: Option<String>,
+    pub superseded_by: Option<String>,
+    pub table_id: Option<String>,
+    pub table_headers: Option<String>,
+    pub row_label: Option<String>,
     pub body_text: String,
     pub terms: Vec<String>,
     pub source_ref: Option<SourceRef>,
@@ -58,6 +79,27 @@ impl CellMetadata {
         let mut title = None;
         let mut content_hash = None;
         let mut source_hash = None;
+        let mut document_id_field = None;
+        let mut chunk_id = None;
+        let mut parent_id = None;
+        let mut chunk_role = None;
+        let mut path = None;
+        let mut section = None;
+        let mut project = None;
+        let mut entity = None;
+        let mut sector = None;
+        let mut owner = None;
+        let mut status_tag = None;
+        let mut event_date = None;
+        let mut topic = None;
+        let mut as_of = None;
+        let mut valid_from = None;
+        let mut valid_to = None;
+        let mut supersedes = None;
+        let mut superseded_by = None;
+        let mut table_id = None;
+        let mut table_headers = None;
+        let mut row_label = None;
         let mut body_lines = Vec::new();
         let mut in_header = true;
 
@@ -115,6 +157,90 @@ impl CellMetadata {
                 } else if let Some(value) = line.strip_prefix("source_hash=") {
                     source_hash = non_empty(value);
                     continue;
+                } else if let Some(value) = line.strip_prefix("document_id=") {
+                    document_id_field = non_empty(value);
+                    document_id = document_id_field.clone();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("doc_id=") {
+                    document_id_field = non_empty(value);
+                    document_id = document_id_field.clone();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("chunk_id=") {
+                    chunk_id = non_empty(value);
+                    cell_range = chunk_id.clone();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("parent_id=") {
+                    parent_id = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("parent_chunk_id=") {
+                    parent_id = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("chunk_role=") {
+                    chunk_role = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("chunk_kind=") {
+                    chunk_role = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("path=") {
+                    path = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("section=") {
+                    section = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("project=") {
+                    project = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("entity=") {
+                    entity = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("sector=") {
+                    sector = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("owner=") {
+                    owner = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("status_tag=") {
+                    status_tag = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("event_date=") {
+                    event_date = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("topic=") {
+                    topic = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("as_of=") {
+                    as_of = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("valid_from=") {
+                    valid_from = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("valid_to=") {
+                    valid_to = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("supersedes=") {
+                    supersedes = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("superseded_by=") {
+                    superseded_by = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("table_id=") {
+                    table_id = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("table_headers=") {
+                    table_headers = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("columns=") {
+                    table_headers = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("row_label=") {
+                    row_label = non_empty(value);
+                    continue;
+                } else if line.strip_prefix("embedding_model=").is_some()
+                    || line.strip_prefix("embedding_text_hash=").is_some()
+                    || line.strip_prefix("vector=").is_some()
+                    || line.contains("_vector=")
+                {
+                    continue;
                 } else if let Some(value) = line.strip_prefix("source_id=") {
                     source_id_val = non_empty(value);
                     continue;
@@ -123,12 +249,6 @@ impl CellMetadata {
                     continue;
                 } else if let Some(value) = line.strip_prefix("url=") {
                     source_url = non_empty(value);
-                    continue;
-                } else if let Some(value) = line.strip_prefix("document_id=") {
-                    document_id = non_empty(value);
-                    continue;
-                } else if let Some(value) = line.strip_prefix("doc_id=") {
-                    document_id = non_empty(value);
                     continue;
                 } else if let Some(value) = line.strip_prefix("page=") {
                     page = value.trim().parse().ok();
@@ -140,9 +260,6 @@ impl CellMetadata {
                     row = value.trim().parse().ok();
                     continue;
                 } else if let Some(value) = line.strip_prefix("cell_range=") {
-                    cell_range = non_empty(value);
-                    continue;
-                } else if let Some(value) = line.strip_prefix("chunk_id=") {
                     cell_range = non_empty(value);
                     continue;
                 } else if let Some(value) = line.strip_prefix("json_path=") {
@@ -189,6 +306,27 @@ impl CellMetadata {
             title,
             content_hash,
             source_hash,
+            document_id: document_id_field,
+            chunk_id,
+            parent_id,
+            chunk_role,
+            path,
+            section,
+            project,
+            entity,
+            sector,
+            owner,
+            status_tag,
+            event_date,
+            topic,
+            as_of,
+            valid_from,
+            valid_to,
+            supersedes,
+            superseded_by,
+            table_id,
+            table_headers,
+            row_label,
             body_text,
             terms,
             source_ref,
@@ -208,11 +346,69 @@ impl CellMetadata {
 
     pub fn weighted_lexical_terms(&self) -> BTreeMap<String, u32> {
         let mut terms = BTreeMap::new();
-        add_weighted_terms(&mut terms, &self.body_text, 1);
-        if let Some(title) = &self.title {
-            add_weighted_terms(&mut terms, title, 6);
+        for (field, field_terms) in self.lexical_field_terms() {
+            let weight = lexical_field_weight(&field);
+            for (term, frequency) in field_terms {
+                *terms.entry(term).or_default() += frequency.saturating_mul(weight);
+            }
         }
         terms
+    }
+
+    pub fn lexical_field_terms(&self) -> BTreeMap<String, BTreeMap<String, u32>> {
+        let mut fields = BTreeMap::new();
+        add_field_terms(&mut fields, "body", &self.body_text);
+        if let Some(title) = &self.title {
+            add_field_terms(&mut fields, "title", title);
+        }
+        for value in [
+            self.path.as_ref(),
+            self.document_id.as_ref(),
+            self.section.as_ref(),
+        ]
+        .into_iter()
+        .flatten()
+        {
+            add_field_terms(&mut fields, "path", value);
+        }
+        for value in [
+            self.project.as_ref(),
+            self.entity.as_ref(),
+            self.sector.as_ref(),
+            self.owner.as_ref(),
+            self.status_tag.as_ref(),
+            self.event_date.as_ref(),
+            self.topic.as_ref(),
+            self.as_of.as_ref(),
+            self.valid_from.as_ref(),
+            self.valid_to.as_ref(),
+            self.source.as_ref(),
+        ]
+        .into_iter()
+        .flatten()
+        {
+            add_field_terms(&mut fields, "entity", value);
+        }
+        if let Some(chunk_id) = &self.chunk_id {
+            add_field_terms(&mut fields, "chunk", chunk_id);
+        }
+        if let Some(parent_id) = &self.parent_id {
+            add_field_terms(&mut fields, "chunk", parent_id);
+        }
+        for value in [
+            self.table_id.as_ref(),
+            self.table_headers.as_ref(),
+            self.row_label.as_ref(),
+            self.source_ref
+                .as_ref()
+                .and_then(|source| source.cell_range.as_ref()),
+        ]
+        .into_iter()
+        .flatten()
+        {
+            add_field_terms(&mut fields, "table", value);
+        }
+        fields
     }
 }
 
@@ -221,9 +417,24 @@ pub(crate) fn non_empty(value: &str) -> Option<String> {
     (!value.is_empty()).then(|| value.to_owned())
 }
 
-fn add_weighted_terms(terms: &mut BTreeMap<String, u32>, text: &str, weight: u32) {
+pub(crate) fn lexical_field_weight(field: &str) -> u32 {
+    match field {
+        "title" => 8,
+        "table" => 6,
+        "path" => 5,
+        "entity" => 4,
+        "chunk" => 2,
+        _ => 1,
+    }
+}
+
+fn add_field_terms(fields: &mut BTreeMap<String, BTreeMap<String, u32>>, field: &str, text: &str) {
     for term in tokenize(text) {
-        *terms.entry(term).or_default() += weight;
+        *fields
+            .entry(field.to_owned())
+            .or_default()
+            .entry(term)
+            .or_default() += 1;
     }
 }
 
@@ -262,4 +473,68 @@ fn stable_hash(value: &str) -> u64 {
         hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
     }
     hash & 0x0fff_ffff_ffff_ffff
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn weighted_lexical_terms_include_document_views() {
+        let metadata = CellMetadata::from_payload(
+            b"scope=docs\nstatus=ready\ntitle=Payments Migration\npath=confluence/payments/runbook\ndocument_id=doc-payments\nchunk_id=chunk-7\nparent_id=chunk-parent\nchunk_role=child\nsection=Rollout Plan\nproject=Apollo\nentity=Payments API\nsector=platform\nsource=confluence\n\nbody mentions payments once",
+        );
+        let terms = metadata.weighted_lexical_terms();
+
+        assert_eq!(metadata.parent_id.as_deref(), Some("chunk-parent"));
+        assert_eq!(metadata.chunk_role.as_deref(), Some("child"));
+        assert!(terms.get("migration").copied().unwrap_or(0) >= 8);
+        assert!(terms.get("runbook").copied().unwrap_or(0) >= 5);
+        assert!(terms.get("apollo").copied().unwrap_or(0) >= 4);
+        assert!(terms.get("chunk").copied().unwrap_or(0) >= 2);
+    }
+
+    #[test]
+    fn embedding_lines_do_not_pollute_body_text() {
+        let metadata = CellMetadata::from_payload(
+            b"scope=docs\nstatus=ready\nembedding_model=bge-m3\nembedding_text_hash=abc\nvector=1,2,3\ntitle_vector=3,2,1\n\nAlpha body",
+        );
+
+        assert_eq!(metadata.body_text, "Alpha body");
+        assert!(!metadata.terms.contains(&"vector".to_owned()));
+        assert!(!metadata.terms.contains(&"bge".to_owned()));
+        assert!(!metadata.terms.contains(&"title".to_owned()));
+    }
+
+    #[test]
+    fn weighted_lexical_terms_include_table_views() {
+        let metadata = CellMetadata::from_payload(
+            b"scope=docs\nstatus=ready\ntype=table\nsource=csv\ntable_id=budget.csv\ntable_headers=project|budget|owner\nrow_label=Apollo\ncell_range=row-7\n\nproject: Apollo\nbudget: 12000",
+        );
+        let terms = metadata.weighted_lexical_terms();
+
+        assert_eq!(metadata.cell_type, "table");
+        assert_eq!(metadata.table_id.as_deref(), Some("budget.csv"));
+        assert_eq!(metadata.row_label.as_deref(), Some("Apollo"));
+        assert!(terms.get("budget").copied().unwrap_or(0) >= 6);
+        assert!(terms.get("apollo").copied().unwrap_or(0) >= 6);
+        assert!(terms.get("row").copied().unwrap_or(0) >= 6);
+    }
+
+    #[test]
+    fn weighted_lexical_terms_include_enrichment_views() {
+        let metadata = CellMetadata::from_payload(
+            b"scope=docs\nstatus=ready\nproject=Apollo\nowner=Alice Lee\nstatus_tag=blocked\nevent_date=2026-05-14\ntopic=Migration Runbook\n\nbody",
+        );
+        let terms = metadata.weighted_lexical_terms();
+
+        assert_eq!(metadata.project.as_deref(), Some("Apollo"));
+        assert_eq!(metadata.owner.as_deref(), Some("Alice Lee"));
+        assert_eq!(metadata.status_tag.as_deref(), Some("blocked"));
+        assert_eq!(metadata.event_date.as_deref(), Some("2026-05-14"));
+        assert_eq!(metadata.topic.as_deref(), Some("Migration Runbook"));
+        assert!(terms.get("alice").copied().unwrap_or(0) >= 4);
+        assert!(terms.get("blocked").copied().unwrap_or(0) >= 4);
+        assert!(terms.get("migration").copied().unwrap_or(0) >= 4);
+    }
 }

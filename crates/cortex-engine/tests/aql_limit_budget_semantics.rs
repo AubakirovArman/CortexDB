@@ -41,7 +41,7 @@ fn aql_budget_drives_default_context_pack_token_budget() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
     seed_ready_cells(&mut db, 1);
-    let query = r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
+    let query = r#"RETRIEVE CONTEXT FOR TASK "List all budget cells" IN BRAIN investment_projects
 WHERE space = project:investments AND status = "ready"
 BUDGET 96 TOKENS LIMIT 10 CANDIDATES;"#;
 
@@ -61,7 +61,7 @@ fn aql_budget_is_policy_clamped_by_agent_view() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
     seed_ready_cells(&mut db, 1);
-    let query = r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
+    let query = r#"RETRIEVE CONTEXT FOR TASK "List all budget cells" IN BRAIN investment_projects
 WHERE space = project:investments AND status = "ready"
 BUDGET 1000 TOKENS LIMIT 10 CANDIDATES;"#;
 
@@ -77,7 +77,7 @@ fn explicit_context_pack_budget_overrides_aql_budget_but_stays_policy_clamped() 
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
     seed_ready_cells(&mut db, 1);
-    let query = r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
+    let query = r#"RETRIEVE CONTEXT FOR TASK "List all budget cells" IN BRAIN investment_projects
 WHERE space = project:investments AND status = "ready"
 BUDGET 96 TOKENS LIMIT 10 CANDIDATES;"#;
 
@@ -93,6 +93,26 @@ BUDGET 96 TOKENS LIMIT 10 CANDIDATES;"#;
         .unwrap();
 
     assert_eq!(pack.token_budget_tokens, 48);
+}
+
+#[test]
+fn lookup_task_preserves_aql_context_pack_token_budget() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    seed_ready_cells(&mut db, 1);
+    let query = r#"RETRIEVE CONTEXT FOR TASK "Find budget" IN BRAIN investment_projects
+WHERE space = project:investments AND status = "ready"
+BUDGET 100 TOKENS LIMIT 10 CANDIDATES;"#;
+
+    let pack = db
+        .context_pack_from_aql(
+            query,
+            &view(100, 20, 1_000, 400),
+            ContextPackOptions::default(),
+        )
+        .unwrap();
+
+    assert_eq!(pack.token_budget_tokens, 100);
 }
 
 fn seed_ready_cells(db: &mut Database, count: u64) {

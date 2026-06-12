@@ -224,6 +224,7 @@ fn checksum_corruption_is_rejected() {
         terms: BTreeMap::from([("one".to_owned(), BTreeSet::from([1]))]),
         doc_lengths: BTreeMap::from([(1, 1)]),
         term_frequencies: BTreeMap::from([("one".to_owned(), BTreeMap::from([(1, 1)]))]),
+        ..LexicalIndex::default()
     }
     .write(&lexical)
     .unwrap();

@@ -14,11 +14,14 @@ pub struct Args {
     pub max_documents: Option<usize>,
     pub reset_db: bool,
     pub skip_ingest: bool,
+    pub skip_checkpoint: bool,
     pub official_clean: bool,
     pub retrieval_mode: BenchmarkRetrievalMode,
     pub rerank_mode: BenchmarkRerankMode,
     pub query_vectors: Option<PathBuf>,
     pub document_vectors: Option<PathBuf>,
+    pub prefilter_retrieval: Option<PathBuf>,
+    pub disable_search_prefilter: bool,
     pub log_file: Option<PathBuf>,
     pub status_file: Option<PathBuf>,
 }
@@ -29,6 +32,7 @@ pub enum BenchmarkRetrievalMode {
     EngineAql,
     EngineKeyword,
     EngineHybrid,
+    EngineHybridRerank,
 }
 
 impl BenchmarkRetrievalMode {
@@ -38,8 +42,9 @@ impl BenchmarkRetrievalMode {
             "engine-aql" => Ok(Self::EngineAql),
             "engine-keyword" => Ok(Self::EngineKeyword),
             "engine-hybrid" => Ok(Self::EngineHybrid),
+            "engine-hybrid-rerank" => Ok(Self::EngineHybridRerank),
             _ => Err(
-                "retrieval mode must be cached-lexical, engine-aql, engine-keyword, or engine-hybrid"
+                "retrieval mode must be cached-lexical, engine-aql, engine-keyword, engine-hybrid, or engine-hybrid-rerank"
                     .to_owned(),
             ),
         }
@@ -51,6 +56,7 @@ impl BenchmarkRetrievalMode {
             Self::EngineAql => "engine-aql",
             Self::EngineKeyword => "engine-keyword",
             Self::EngineHybrid => "engine-hybrid",
+            Self::EngineHybridRerank => "engine-hybrid-rerank",
         }
     }
 }
@@ -112,6 +118,7 @@ impl Args {
                 }
                 "--reset-db" => parsed.reset_db = true,
                 "--skip-ingest" => parsed.skip_ingest = true,
+                "--skip-checkpoint" => parsed.skip_checkpoint = true,
                 "--official-clean" => parsed.official_clean = true,
                 "--retrieval-mode" => {
                     parsed.retrieval_mode =
@@ -126,6 +133,10 @@ impl Args {
                 "--document-vectors" => {
                     parsed.document_vectors = Some(PathBuf::from(next_value(&mut args, &arg)?))
                 }
+                "--prefilter-retrieval" => {
+                    parsed.prefilter_retrieval = Some(PathBuf::from(next_value(&mut args, &arg)?))
+                }
+                "--disable-search-prefilter" => parsed.disable_search_prefilter = true,
                 "--log-file" => parsed.log_file = Some(PathBuf::from(next_value(&mut args, &arg)?)),
                 "--status-file" => {
                     parsed.status_file = Some(PathBuf::from(next_value(&mut args, &arg)?))
@@ -151,11 +162,14 @@ struct PartialArgs {
     max_documents: Option<usize>,
     reset_db: bool,
     skip_ingest: bool,
+    skip_checkpoint: bool,
     official_clean: bool,
     retrieval_mode: BenchmarkRetrievalMode,
     rerank_mode: BenchmarkRerankMode,
     query_vectors: Option<PathBuf>,
     document_vectors: Option<PathBuf>,
+    prefilter_retrieval: Option<PathBuf>,
+    disable_search_prefilter: bool,
     log_file: Option<PathBuf>,
     status_file: Option<PathBuf>,
 }
@@ -175,11 +189,14 @@ impl Default for PartialArgs {
             max_documents: None,
             reset_db: false,
             skip_ingest: false,
+            skip_checkpoint: false,
             official_clean: false,
             retrieval_mode: BenchmarkRetrievalMode::CachedLexical,
             rerank_mode: BenchmarkRerankMode::None,
             query_vectors: None,
             document_vectors: None,
+            prefilter_retrieval: None,
+            disable_search_prefilter: false,
             log_file: None,
             status_file: None,
         }
@@ -211,11 +228,14 @@ impl PartialArgs {
             max_documents: self.max_documents,
             reset_db: self.reset_db,
             skip_ingest: self.skip_ingest,
+            skip_checkpoint: self.skip_checkpoint,
             official_clean: self.official_clean,
             retrieval_mode: self.retrieval_mode,
             rerank_mode: self.rerank_mode,
             query_vectors: self.query_vectors,
             document_vectors: self.document_vectors,
+            prefilter_retrieval: self.prefilter_retrieval,
+            disable_search_prefilter: self.disable_search_prefilter,
             log_file: self.log_file,
             status_file: self.status_file,
         })
@@ -239,10 +259,11 @@ fn usage() -> String {
         "--questions <jsonl> --uuid-index <json> --sources-dir <dir> ",
         "--db-root <path> --output <jsonl> [--report <json>] ",
         "[--top-k <n>] [--batch-size <n>] [--max-documents <n>] ",
-        "[--reset-db] [--skip-ingest] [--official-clean] ",
-        "[--retrieval-mode <cached-lexical|engine-aql|engine-keyword|engine-hybrid>] ",
+        "[--reset-db] [--skip-ingest] [--skip-checkpoint] [--official-clean] ",
+        "[--retrieval-mode <cached-lexical|engine-aql|engine-keyword|engine-hybrid|engine-hybrid-rerank>] ",
         "[--rerank <none|weighted>] ",
         "[--query-vectors <jsonl>] [--document-vectors <jsonl>] ",
+        "[--prefilter-retrieval <clean-jsonl>] [--disable-search-prefilter] ",
         "[--log-file <path>] [--status-file <path>]"
     )
     .to_owned()
@@ -288,6 +309,26 @@ mod tests {
     }
 
     #[test]
+    fn parses_skip_checkpoint_flag() {
+        let mut args = required_args();
+        args.push("--skip-checkpoint".to_owned());
+
+        let parsed = Args::parse(args).expect("parse args");
+
+        assert!(parsed.skip_checkpoint);
+    }
+
+    #[test]
+    fn parses_disable_search_prefilter_flag() {
+        let mut args = required_args();
+        args.push("--disable-search-prefilter".to_owned());
+
+        let parsed = Args::parse(args).expect("parse args");
+
+        assert!(parsed.disable_search_prefilter);
+    }
+
+    #[test]
     fn parses_engine_hybrid_mode_and_query_vectors() {
         let mut args = required_args();
         args.extend([
@@ -297,6 +338,8 @@ mod tests {
             "vectors.jsonl".to_owned(),
             "--document-vectors".to_owned(),
             "document_vectors.jsonl".to_owned(),
+            "--prefilter-retrieval".to_owned(),
+            "prefilter.jsonl".to_owned(),
         ]);
 
         let parsed = Args::parse(args).expect("parse args");
@@ -313,6 +356,29 @@ mod tests {
             parsed.document_vectors.unwrap(),
             std::path::PathBuf::from("document_vectors.jsonl")
         );
+        assert_eq!(
+            parsed.prefilter_retrieval.unwrap(),
+            std::path::PathBuf::from("prefilter.jsonl")
+        );
+    }
+
+    #[test]
+    fn parses_engine_hybrid_rerank_mode() {
+        let mut args = required_args();
+        args.extend([
+            "--retrieval-mode".to_owned(),
+            "engine-hybrid-rerank".to_owned(),
+            "--query-vectors".to_owned(),
+            "vectors.jsonl".to_owned(),
+        ]);
+
+        let parsed = Args::parse(args).expect("parse args");
+
+        assert_eq!(
+            parsed.retrieval_mode,
+            super::BenchmarkRetrievalMode::EngineHybridRerank
+        );
+        assert_eq!(parsed.retrieval_mode.as_str(), "engine-hybrid-rerank");
     }
 
     #[test]

@@ -46,6 +46,9 @@ pub(crate) fn weighted_query_terms(query: &str, anchors: &[QueryAnchor]) -> BTre
             add_weighted_term(&mut terms, expansion, 1);
         }
     }
+    for expansion in phrase_query_expansions(query) {
+        add_weighted_term(&mut terms, expansion, 2);
+    }
     for anchor in anchors {
         for term in &anchor.terms {
             add_weighted_term(&mut terms, term, anchor_weight(anchor.kind));
@@ -98,7 +101,7 @@ fn quoted_phrases(query: &str) -> Vec<String> {
     let mut quote: Option<char> = None;
     let mut current = String::new();
     for ch in query.chars() {
-        if matches!(ch, '"' | '\'') {
+        if matches!(ch, '"' | '`') {
             if quote == Some(ch) {
                 let phrase = current.trim();
                 if !phrase.is_empty() {
@@ -146,18 +149,63 @@ fn source_hint(term: &str) -> Option<&'static str> {
 
 fn query_expansions(term: &str) -> &'static [&'static str] {
     match term {
-        "blocked" | "blocker" | "blockers" => &["risk", "dependency", "delayed", "waiting"],
-        "owner" | "owns" => &["assignee", "assigned", "responsible", "dri", "lead"],
-        "deadline" | "due" => &["eta", "date", "timeline"],
-        "policy" => &["guideline", "rule", "requirement", "procedure"],
-        "revenue" => &["income", "sales", "arr", "mrr"],
-        "customer" => &["client", "account"],
-        "incident" => &["outage", "postmortem", "root", "cause"],
-        "migration" => &["upgrade", "rollout"],
-        "security" => &["auth", "permission", "rbac", "risk"],
+        "blocked" | "blocker" | "blockers" | "stuck" | "slipped" | "slipping" => &[
+            "blocked",
+            "blocker",
+            "risk",
+            "dependency",
+            "delayed",
+            "waiting",
+            "issue",
+        ],
+        "delay" | "delays" | "delayed" | "late" => {
+            &["blocked", "blocker", "risk", "dependency", "waiting"]
+        }
+        "dependency" | "dependencies" | "waiting" => &["blocked", "blocker", "risk"],
+        "owner" | "owns" | "owned" => &["assignee", "assigned", "responsible", "dri", "lead"],
+        "assignee" | "assigned" | "responsible" | "dri" | "lead" => &["owner", "owns"],
+        "deadline" | "due" => &["eta", "date", "timeline", "target"],
+        "eta" | "timeline" | "target" => &["deadline", "due", "date"],
+        "policy" => &["guideline", "rule", "requirement", "procedure", "standard"],
+        "guideline" | "rule" | "requirement" | "procedure" | "standard" => &["policy"],
+        "revenue" => &["income", "sales", "arr", "mrr", "billing"],
+        "income" | "sales" | "billing" => &["revenue"],
+        "customer" => &["client", "account", "tenant"],
+        "client" | "account" | "tenant" => &["customer"],
+        "incident" => &["outage", "postmortem", "root", "cause", "sev"],
+        "outage" | "postmortem" | "sev" => &["incident"],
+        "migration" => &["upgrade", "rollout", "transition"],
+        "upgrade" | "transition" => &["migration"],
+        "security" => &["auth", "permission", "rbac", "risk", "access"],
+        "auth" | "permission" | "permissions" | "rbac" | "access" => &["security"],
         "launch" => &["release", "rollout", "ga"],
+        "release" | "ga" => &["launch", "rollout"],
+        "overview" | "summary" => &["mission", "charter", "about", "strategy"],
+        "mission" | "charter" | "strategy" | "vision" => &["overview", "summary", "about"],
         _ => &[],
     }
+}
+
+fn phrase_query_expansions(query: &str) -> Vec<&'static str> {
+    let query = query.to_ascii_lowercase();
+    let mut expansions = BTreeSet::new();
+    if query.contains("high level")
+        || query.contains("big picture")
+        || query.contains("company overview")
+        || query.contains("what does")
+    {
+        expansions.extend(["overview", "summary", "mission", "charter", "about"]);
+    }
+    if query.contains("single sign") || query.contains("sign on") {
+        expansions.extend(["sso", "auth", "authentication", "security"]);
+    }
+    if query.contains("role based") || query.contains("access control") {
+        expansions.extend(["rbac", "permission", "permissions", "security"]);
+    }
+    if query.contains("go live") || query.contains("general availability") {
+        expansions.extend(["launch", "release", "rollout", "ga"]);
+    }
+    expansions.into_iter().collect()
 }
 
 fn add_weighted_term(terms: &mut BTreeMap<String, u32>, term: &str, weight: u32) {
@@ -179,7 +227,7 @@ fn clean_token(raw: &str) -> String {
     raw.trim_matches(|ch: char| {
         matches!(
             ch,
-            ',' | ';' | ':' | ')' | '(' | '[' | ']' | '{' | '}' | '"' | '\''
+            ',' | ';' | ':' | ')' | '(' | '[' | ']' | '{' | '}' | '"' | '\'' | '?' | '!'
         )
     })
     .to_owned()
@@ -272,5 +320,23 @@ mod tests {
         assert!(analyzed.weighted_terms.contains_key("assignee"));
         assert!(analyzed.weighted_terms.contains_key("dependency"));
         assert!(analyzed.weighted_terms.contains_key("release"));
+    }
+
+    #[test]
+    fn expands_bidirectional_enterprise_terms_without_gold_labels() {
+        let analyzed = analyze_search_query("Who is the DRI for the slipped rollout ETA?");
+
+        assert!(analyzed.weighted_terms.contains_key("owner"));
+        assert!(analyzed.weighted_terms.contains_key("blocked"));
+        assert!(analyzed.weighted_terms.contains_key("deadline"));
+    }
+
+    #[test]
+    fn expands_high_level_phrases_without_question_type_oracle() {
+        let analyzed = analyze_search_query("Give me the high level company overview");
+
+        assert!(analyzed.weighted_terms.contains_key("mission"));
+        assert!(analyzed.weighted_terms.contains_key("charter"));
+        assert!(analyzed.weighted_terms.contains_key("about"));
     }
 }

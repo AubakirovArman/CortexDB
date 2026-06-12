@@ -3,8 +3,8 @@ use cortex_core::{CellId, CommitSeq, KnowledgeCell};
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::ingestion::cells::{
-    document_metadata, entity_metadata, fact_metadata, offset_cell_id, put_source_ref_cell,
-    put_text_chunk_cell, relation_metadata, SourceRefHeaders,
+    entity_metadata, fact_metadata, offset_cell_id, put_source_ref_cell, put_text_chunk_cell,
+    relation_metadata, table_metadata, SourceRefHeaders,
 };
 use crate::ingestion::chunking::{split_text_chunks, TableChunkPolicy, TextChunkPolicy};
 use crate::ingestion::dedup::{content_hash_hex, source_hash_hex};
@@ -183,10 +183,16 @@ impl Database {
                     .map(|(header, value)| format!("{header}: {value}"))
                     .collect::<Vec<_>>()
                     .join("\n");
+                let extra_headers = vec![
+                    ("table_id", options.source.clone()),
+                    ("table_headers", headers.join("|")),
+                    ("row_label", row.first().cloned().unwrap_or_default()),
+                    ("chunk_role", "table_row".to_owned()),
+                ];
                 let commit_seq = put_source_ref_cell(
                     self,
                     cell_id,
-                    document_metadata(options.scope.clone(), options.source.clone()),
+                    table_metadata(options.scope.clone(), options.source.clone()),
                     &body,
                     SourceRefHeaders {
                         document_id: &options.source,
@@ -195,7 +201,7 @@ impl Database {
                         cell_range: Some(&cell_range),
                         json_path: None,
                         confidence_q16: None,
-                        extra_headers: &[],
+                        extra_headers: &extra_headers,
                     },
                 )?;
                 Ok(IngestedCell {

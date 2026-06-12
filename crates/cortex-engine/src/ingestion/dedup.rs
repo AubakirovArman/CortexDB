@@ -3,6 +3,14 @@ use cortex_core::CellId;
 use crate::database::Database;
 use crate::query::CellMetadata;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DuplicateContentGroup {
+    pub content_hash: String,
+    pub canonical_cell_id: CellId,
+    pub duplicate_cell_ids: Vec<CellId>,
+    pub source_hashes: Vec<String>,
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum IngestionUpdatePolicy {
     #[default]
@@ -22,6 +30,55 @@ impl Database {
             let same_content = metadata.content_hash.as_deref() == Some(content_hash);
             (same_source && same_content).then_some(version.cell_id)
         })
+    }
+
+    pub fn duplicate_content_groups(&self) -> Vec<DuplicateContentGroup> {
+        let mut groups =
+            std::collections::BTreeMap::<String, (CellId, Vec<CellId>, Vec<String>)>::new();
+        for version in self.snapshot_versions() {
+            let metadata = CellMetadata::from_payload(&version.payload);
+            let Some(content_hash) = metadata.content_hash else {
+                continue;
+            };
+            let entry = groups.entry(content_hash).or_insert_with(|| {
+                (
+                    version.cell_id,
+                    Vec::new(),
+                    metadata.source_hash.iter().cloned().collect(),
+                )
+            });
+            if version.cell_id < entry.0 {
+                entry.1.push(entry.0);
+                entry.0 = version.cell_id;
+            } else if version.cell_id != entry.0 {
+                entry.1.push(version.cell_id);
+            }
+            if let Some(source_hash) = metadata.source_hash {
+                if !entry.2.contains(&source_hash) {
+                    entry.2.push(source_hash);
+                }
+            }
+        }
+        groups
+            .into_iter()
+            .filter_map(
+                |(content_hash, (canonical_cell_id, mut duplicate_cell_ids, mut source_hashes))| {
+                    if duplicate_cell_ids.is_empty() {
+                        return None;
+                    }
+                    duplicate_cell_ids.sort();
+                    duplicate_cell_ids.dedup();
+                    source_hashes.sort();
+                    source_hashes.dedup();
+                    Some(DuplicateContentGroup {
+                        content_hash,
+                        canonical_cell_id,
+                        duplicate_cell_ids,
+                        source_hashes,
+                    })
+                },
+            )
+            .collect()
     }
 }
 

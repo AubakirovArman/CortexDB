@@ -1,6 +1,7 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KnowledgeCellType {
     DocumentBlock,
+    Table,
     Fact,
     Entity,
     Relation,
@@ -111,6 +112,7 @@ impl KnowledgeCellType {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::DocumentBlock => "document_block",
+            Self::Table => "table",
             Self::Fact => "fact",
             Self::Entity => "entity",
             Self::Relation => "relation",
@@ -129,6 +131,7 @@ impl std::str::FromStr for KnowledgeCellType {
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         match value {
             "document_block" => Ok(Self::DocumentBlock),
+            "table" => Ok(Self::Table),
             "fact" => Ok(Self::Fact),
             "entity" => Ok(Self::Entity),
             "relation" => Ok(Self::Relation),

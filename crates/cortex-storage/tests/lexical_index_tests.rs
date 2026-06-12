@@ -17,10 +17,49 @@ fn aci_lexical_index_roundtrips_terms() {
             ("budget".to_owned(), BTreeMap::from([(1, 2), (2, 1)])),
             ("ready".to_owned(), BTreeMap::from([(2, 1)])),
         ]),
+        field_doc_lengths: BTreeMap::from([
+            ("body".to_owned(), BTreeMap::from([(1, 5), (2, 2)])),
+            ("title".to_owned(), BTreeMap::from([(1, 2)])),
+        ]),
+        field_term_frequencies: BTreeMap::from([
+            (
+                "body".to_owned(),
+                BTreeMap::from([("budget".to_owned(), BTreeMap::from([(1, 1), (2, 1)]))]),
+            ),
+            (
+                "title".to_owned(),
+                BTreeMap::from([("budget".to_owned(), BTreeMap::from([(1, 1)]))]),
+            ),
+        ]),
     };
     index.write(&path).unwrap();
     assert_eq!(LexicalIndex::read(&path).unwrap(), index);
     assert!(!dir.path().join("0001.aci.tmp").exists());
+}
+
+#[test]
+fn aci_lexical_index_terms_only_read_skips_heavy_frequency_sections() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("0001.aci");
+    let index = LexicalIndex {
+        terms: BTreeMap::from([("budget".to_owned(), BTreeSet::from([1, 2]))]),
+        doc_lengths: BTreeMap::from([(1, 7), (2, 3)]),
+        term_frequencies: BTreeMap::from([("budget".to_owned(), BTreeMap::from([(1, 2), (2, 1)]))]),
+        field_doc_lengths: BTreeMap::from([("title".to_owned(), BTreeMap::from([(1, 2)]))]),
+        field_term_frequencies: BTreeMap::from([(
+            "title".to_owned(),
+            BTreeMap::from([("budget".to_owned(), BTreeMap::from([(1, 1)]))]),
+        )]),
+    };
+    index.write(&path).unwrap();
+
+    let light = LexicalIndex::read_terms_only(&path).unwrap();
+
+    assert_eq!(light.terms, index.terms);
+    assert_eq!(light.doc_lengths, index.doc_lengths);
+    assert!(light.term_frequencies.is_empty());
+    assert!(light.field_doc_lengths.is_empty());
+    assert!(light.field_term_frequencies.is_empty());
 }
 
 #[test]

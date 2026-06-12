@@ -77,6 +77,27 @@ impl CellMetadata {
         let mut title = None;
         let mut content_hash = None;
         let mut source_hash = None;
+        let mut document_id_field = None;
+        let mut chunk_id = None;
+        let mut parent_id = None;
+        let mut chunk_role = None;
+        let mut path = None;
+        let mut section = None;
+        let mut project = None;
+        let mut entity = None;
+        let mut sector = None;
+        let mut owner = None;
+        let mut status_tag = None;
+        let mut event_date = None;
+        let mut topic = None;
+        let mut as_of = None;
+        let mut valid_from = None;
+        let mut valid_to = None;
+        let mut supersedes = None;
+        let mut superseded_by = None;
+        let mut table_id = None;
+        let mut table_headers = None;
+        let mut row_label = None;
         let mut body_lines = Vec::new();
         let mut in_header = true;
         let mut has_separator = false;
@@ -128,16 +149,71 @@ impl CellMetadata {
                     content_hash = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("source_hash=") {
                     source_hash = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("document_id=") {
+                    document_id_field = non_empty(value);
+                    document_id = document_id_field.clone();
+                } else if let Some(value) = line.strip_prefix("doc_id=") {
+                    document_id_field = non_empty(value);
+                    document_id = document_id_field.clone();
+                } else if let Some(value) = line.strip_prefix("chunk_id=") {
+                    chunk_id = non_empty(value);
+                    cell_range = chunk_id.clone();
+                } else if let Some(value) = line.strip_prefix("parent_id=") {
+                    parent_id = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("parent_chunk_id=") {
+                    parent_id = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("chunk_role=") {
+                    chunk_role = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("chunk_kind=") {
+                    chunk_role = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("path=") {
+                    path = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("section=") {
+                    section = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("project=") {
+                    project = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("entity=") {
+                    entity = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("sector=") {
+                    sector = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("owner=") {
+                    owner = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("status_tag=") {
+                    status_tag = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("event_date=") {
+                    event_date = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("topic=") {
+                    topic = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("as_of=") {
+                    as_of = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("valid_from=") {
+                    valid_from = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("valid_to=") {
+                    valid_to = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("supersedes=") {
+                    supersedes = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("superseded_by=") {
+                    superseded_by = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("table_id=") {
+                    table_id = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("table_headers=") {
+                    table_headers = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("columns=") {
+                    table_headers = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("row_label=") {
+                    row_label = non_empty(value);
+                } else if line.strip_prefix("embedding_model=").is_some()
+                    || line.strip_prefix("embedding_text_hash=").is_some()
+                    || line.strip_prefix("vector=").is_some()
+                    || line.contains("_vector=")
+                {
+                    continue;
                 } else if let Some(value) = line.strip_prefix("source_id=") {
                     source_id_val = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("source_url=") {
                     source_url = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("url=") {
                     source_url = non_empty(value);
-                } else if let Some(value) = line.strip_prefix("document_id=") {
-                    document_id = non_empty(value);
-                } else if let Some(value) = line.strip_prefix("doc_id=") {
-                    document_id = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("page=") {
                     page = value.trim().parse().ok();
                 } else if let Some(value) = line.strip_prefix("row=") {
@@ -145,8 +221,6 @@ impl CellMetadata {
                 } else if let Some(value) = line.strip_prefix("row_number=") {
                     row = value.trim().parse().ok();
                 } else if let Some(value) = line.strip_prefix("cell_range=") {
-                    cell_range = non_empty(value);
-                } else if let Some(value) = line.strip_prefix("chunk_id=") {
                     cell_range = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("json_path=") {
                     json_path = non_empty(value);
@@ -219,6 +293,27 @@ impl CellMetadata {
             title,
             content_hash,
             source_hash,
+            document_id: document_id_field,
+            chunk_id,
+            parent_id,
+            chunk_role,
+            path,
+            section,
+            project,
+            entity,
+            sector,
+            owner,
+            status_tag,
+            event_date,
+            topic,
+            as_of,
+            valid_from,
+            valid_to,
+            supersedes,
+            superseded_by,
+            table_id,
+            table_headers,
+            row_label,
             body_text,
             terms,
             source_ref,

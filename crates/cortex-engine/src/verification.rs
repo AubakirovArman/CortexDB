@@ -16,6 +16,7 @@ mod guards;
 pub mod numeric;
 mod support;
 pub mod temporal;
+mod temporal_index;
 
 pub use conflict_index::{ConflictRecord, ContradictionRelationOptions};
 use contradiction::contradiction_match;
@@ -37,6 +38,7 @@ pub use temporal::{
     extract_temporal_query_range, parse_temporal_date, TemporalDate, TemporalQueryRange,
     TemporalStaleReason, TemporalValidity,
 };
+pub use temporal_index::{TemporalFactIndex, TemporalFactKey, TemporalFactRecord};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VerificationStatus {

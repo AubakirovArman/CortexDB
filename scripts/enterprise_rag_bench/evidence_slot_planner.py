@@ -346,5 +346,111 @@ def format_evidence_plan_for_prompt(plan: dict[str, Any]) -> str:
                 instruction=slot.get("instruction"),
             )
         )
-    lines.append("Fill these slots internally before writing the final answer.")
+    checklist = [item for item in plan.get("checklist", []) if isinstance(item, dict)]
+    if checklist:
+        coverage_pct = plan.get("coverage_pct")
+        lines.append(f"- Completeness coverage from retrieved evidence: {coverage_pct}%")
+        lines.append("- Covered checklist items and strongest evidence:")
+        for item in checklist[:10]:
+            status = "covered" if item.get("covered") else "uncovered"
+            lines.append(f"  - {item.get('id')} [{status}] {item.get('text')}")
+            for evidence in list(item.get("evidence", []))[:2]:
+                evidence_text = " ".join(str(evidence.get("text") or "").split())
+                if len(evidence_text) > 260:
+                    evidence_text = evidence_text[:256].rstrip() + " ..."
+                lines.append(
+                    "    evidence: doc={doc} rank={rank} signals={signals}: {text}".format(
+                        doc=evidence.get("doc_id"),
+                        rank=evidence.get("doc_rank"),
+                        signals=",".join(str(signal) for signal in evidence.get("signals", [])[:4]),
+                        text=evidence_text,
+                    )
+                )
+        uncovered = [str(item) for item in plan.get("uncovered_unit_ids", []) if str(item)]
+        if uncovered:
+            lines.append("- Uncovered checklist item IDs: " + ", ".join(uncovered[:12]))
+        repair_policy = str(plan.get("repair_policy") or "").strip()
+        if repair_policy:
+            lines.append("- Repair policy: " + repair_policy)
+    project_card = plan.get("project_card")
+    if isinstance(project_card, dict):
+        anchors = [
+            str(item)
+            for item in project_card.get("identity_anchors", [])
+            if str(item).strip()
+        ]
+        if anchors:
+            lines.append("- Project/card anchors: " + "; ".join(anchors[:10]))
+        policy = str(project_card.get("answer_policy") or "").strip()
+        if policy:
+            lines.append("- Project/card answer policy: " + policy)
+        by_category = project_card.get("by_category")
+        if isinstance(by_category, dict):
+            lines.append("- Project/card evidence rows:")
+            for category in (
+                "identity",
+                "status",
+                "owner",
+                "timeline",
+                "risk",
+                "action",
+                "metric",
+                "linked_artifact",
+            ):
+                rows = [row for row in by_category.get(category, []) if isinstance(row, dict)]
+                if not rows:
+                    continue
+                lines.append(f"  - {category}:")
+                for row in rows[:3]:
+                    evidence_text = " ".join(str(row.get("text") or "").split())
+                    if len(evidence_text) > 280:
+                        evidence_text = evidence_text[:276].rstrip() + " ..."
+                    lines.append(
+                        "    source={doc} rank={rank} line={line}: {text}".format(
+                            doc=row.get("doc_id"),
+                            rank=row.get("doc_rank"),
+                            line=row.get("line"),
+                            text=evidence_text,
+                        )
+                    )
+        missing = [str(item) for item in project_card.get("missing_categories", []) if str(item)]
+        if missing:
+            lines.append("- Project/card missing categories: " + ", ".join(missing[:8]))
+    conflict_resolution = plan.get("conflict_resolution")
+    if isinstance(conflict_resolution, dict):
+        anchors = [
+            str(item)
+            for item in conflict_resolution.get("anchors", [])
+            if str(item).strip()
+        ]
+        if anchors:
+            lines.append("- Conflict-resolution anchors: " + "; ".join(anchors[:10]))
+        policy = str(conflict_resolution.get("answer_policy") or "").strip()
+        if policy:
+            lines.append("- Conflict-resolution answer policy: " + policy)
+        by_kind = conflict_resolution.get("by_kind")
+        if isinstance(by_kind, dict):
+            lines.append("- Conflict-resolution claims:")
+            for kind in ("current", "conflict", "previous", "candidate"):
+                rows = [row for row in by_kind.get(kind, []) if isinstance(row, dict)]
+                if not rows:
+                    continue
+                lines.append(f"  - {kind}:")
+                for row in rows[:4]:
+                    text = " ".join(str(row.get("text") or "").split())
+                    if len(text) > 280:
+                        text = text[:276].rstrip() + " ..."
+                    markers = ",".join(str(marker) for marker in row.get("markers", [])[:5])
+                    lines.append(
+                        "    source={doc} rank={rank} date={date} markers={markers}: {text}".format(
+                            doc=row.get("doc_id"),
+                            rank=row.get("doc_rank"),
+                            date=row.get("date") or "unknown",
+                            markers=markers,
+                            text=text,
+                        )
+                    )
+    lines.append(
+        "Fill these slots internally before writing the final answer; if a requested checklist item is uncovered, do not invent it."
+    )
     return "\n".join(lines)

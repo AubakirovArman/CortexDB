@@ -1,5 +1,5 @@
 use std::cmp::Reverse;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -268,7 +268,9 @@ impl Database {
             })
             .filter(|cell| cell_meets_quality_thresholds(&cell.payload, &plan.quality_thresholds))
             .collect::<Vec<_>>();
-        Ok(rank_retrieved_cells(cells, &plan.task, &plan.weights)
+        let ranked =
+            suppress_duplicate_content(rank_retrieved_cells(cells, &plan.task, &plan.weights));
+        Ok(expand_parent_context(ranked)
             .into_iter()
             .take(plan.context_policy.candidate_limit as usize)
             .collect())
@@ -474,6 +476,75 @@ fn rank_retrieved_cells(
     indexed.into_iter().map(|(_, cell)| cell).collect()
 }
 
+fn suppress_duplicate_content(cells: Vec<RetrievedCell>) -> Vec<RetrievedCell> {
+    let mut seen = BTreeSet::<String>::new();
+    cells
+        .into_iter()
+        .filter(|cell| {
+            let metadata = CellMetadata::from_payload(&cell.payload);
+            let Some(content_hash) = metadata.content_hash else {
+                return true;
+            };
+            seen.insert(content_hash)
+        })
+        .collect()
+}
+
+fn expand_parent_context(cells: Vec<RetrievedCell>) -> Vec<RetrievedCell> {
+    if cells.len() <= 1 {
+        return cells;
+    }
+
+    let mut parent_key_to_index = BTreeMap::<String, usize>::new();
+    let metadata = cells
+        .iter()
+        .map(|cell| CellMetadata::from_payload(&cell.payload))
+        .collect::<Vec<_>>();
+    for (index, metadata) in metadata.iter().enumerate() {
+        if let Some(chunk_id) = &metadata.chunk_id {
+            parent_key_to_index.entry(chunk_id.clone()).or_insert(index);
+        }
+        if is_parent_context_metadata(metadata) {
+            if let Some(document_id) = &metadata.document_id {
+                parent_key_to_index
+                    .entry(document_id.clone())
+                    .or_insert(index);
+            }
+        }
+    }
+
+    let mut expanded = Vec::with_capacity(cells.len());
+    let mut emitted = BTreeSet::<CellId>::new();
+    for (index, cell) in cells.iter().enumerate() {
+        if emitted.insert(cell.cell_id) {
+            expanded.push(cell.clone());
+        }
+        let Some(parent_id) = metadata[index].parent_id.as_ref() else {
+            continue;
+        };
+        let Some(parent_index) = parent_key_to_index.get(parent_id).copied() else {
+            continue;
+        };
+        let parent = &cells[parent_index];
+        if parent.cell_id != cell.cell_id && emitted.insert(parent.cell_id) {
+            expanded.push(parent.clone());
+        }
+    }
+    expanded
+}
+
+fn is_parent_context_metadata(metadata: &CellMetadata) -> bool {
+    metadata
+        .chunk_role
+        .as_deref()
+        .map(|role| {
+            role.eq_ignore_ascii_case("parent")
+                || role.eq_ignore_ascii_case("document")
+                || role.eq_ignore_ascii_case("summary")
+        })
+        .unwrap_or(false)
+}
+
 fn lexical_bm25_scores(cells: &[RetrievedCell], query: &str) -> Vec<u64> {
     let query_terms = analyze_search_query(query).weighted_terms;
     if query_terms.is_empty() || cells.is_empty() {
@@ -574,18 +645,19 @@ fn query_vector_from_task(task: &str) -> Option<Vec<i16>> {
 }
 
 fn semantic_dot_score(payload: &[u8], query: &[i16]) -> u64 {
-    let Some(vector) = crate::search::vector::vector_from_payload(payload) else {
-        return 0;
-    };
-    if vector.len() != query.len() {
-        return 0;
-    }
-    vector
-        .iter()
-        .zip(query)
-        .map(|(left, right)| i64::from(*left) * i64::from(*right))
-        .sum::<i64>()
-        .max(0) as u64
+    crate::search::vector::vectors_from_payload(payload)
+        .into_iter()
+        .filter(|view| view.vector.len() == query.len())
+        .map(|view| {
+            view.vector
+                .iter()
+                .zip(query)
+                .map(|(left, right)| i64::from(*left) * i64::from(*right))
+                .sum::<i64>()
+                .max(0) as u64
+        })
+        .max()
+        .unwrap_or(0)
 }
 
 fn weighted_retrieval_score(
@@ -672,6 +744,86 @@ mod tests {
     }
 
     #[test]
+    fn retrieve_aql_uses_path_view_for_lexical_relevance() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"title=unrelated\n\nrunbook".to_vec())
+            .unwrap();
+        db.put_cell(
+            CellId(2),
+            b"path=confluence/payments/runbook\n\ncommon body".to_vec(),
+        )
+        .unwrap();
+
+        let view = test_view([RetrievalMode::Balanced]);
+        let results = db
+            .retrieve_aql(
+                r#"RETRIEVE CONTEXT FOR TASK "runbook" IN BRAIN default LIMIT 2 CANDIDATES;"#,
+                &view,
+            )
+            .unwrap();
+
+        assert_eq!(results[0].cell_id, CellId(2));
+    }
+
+    #[test]
+    fn retrieve_aql_expands_child_hit_with_parent_context() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(
+            CellId(1),
+            b"document_id=doc-alpha\nchunk_id=parent-alpha\nchunk_role=parent\ntitle=Alpha parent\n\nParent context includes owner, deadline, and rollout notes."
+                .to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(2),
+            b"document_id=doc-alpha\nchunk_id=child-alpha-1\nparent_id=parent-alpha\nchunk_role=child\nsection=Risk details\n\nspecific-child-anchor appears here."
+                .to_vec(),
+        )
+        .unwrap();
+
+        let view = test_view([RetrievalMode::Balanced]);
+        let results = db
+            .retrieve_aql(
+                r#"RETRIEVE CONTEXT FOR TASK "specific-child-anchor" IN BRAIN default LIMIT 2 CANDIDATES;"#,
+                &view,
+            )
+            .unwrap();
+
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].cell_id, CellId(2));
+        assert_eq!(results[1].cell_id, CellId(1));
+    }
+
+    #[test]
+    fn retrieve_aql_suppresses_duplicate_content_hashes() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(
+            CellId(1),
+            b"source_hash=source-a\ncontent_hash=same-content\n\nalpha budget duplicate".to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(2),
+            b"source_hash=source-b\ncontent_hash=same-content\ntitle=alpha budget\n\nalpha budget duplicate".to_vec(),
+        )
+        .unwrap();
+
+        let view = test_view([RetrievalMode::Balanced]);
+        let results = db
+            .retrieve_aql(
+                r#"RETRIEVE CONTEXT FOR TASK "alpha budget" IN BRAIN default LIMIT 10 CANDIDATES;"#,
+                &view,
+            )
+            .unwrap();
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].cell_id, CellId(2));
+    }
+
+    #[test]
     fn audit_mode_uses_trust_weight_in_retrieval_ordering() {
         let dir = tempfile::tempdir().unwrap();
         let mut db = Database::open(dir.path()).unwrap();
@@ -716,6 +868,32 @@ mod tests {
         let results = db
             .retrieve_aql(
                 r#"RETRIEVE CONTEXT FOR TASK "query_vector=0,100" IN BRAIN default USING MODE semantic LIMIT 2 CANDIDATES;"#,
+                &view,
+            )
+            .unwrap();
+
+        assert_eq!(results[0].cell_id, CellId(2));
+    }
+
+    #[test]
+    fn semantic_mode_uses_named_view_vectors_for_retrieval_ordering() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(
+            CellId(1),
+            b"title=body match\nvector=0,100\n\nshared context".to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(2),
+            b"title=view match\ntitle_vector=100,0\nvector=0,1\n\nshared context".to_vec(),
+        )
+        .unwrap();
+
+        let view = test_view([RetrievalMode::Semantic]);
+        let results = db
+            .retrieve_aql(
+                r#"RETRIEVE CONTEXT FOR TASK "query_vector=100,0" IN BRAIN default USING MODE semantic LIMIT 2 CANDIDATES;"#,
                 &view,
             )
             .unwrap();

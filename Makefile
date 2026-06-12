@@ -14,10 +14,10 @@
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v13-source-truth-digest-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v13-source-truth-digest-windowed-judge-50 enterprise-rag-bench-routed-v14-completeness-source-truth-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v14-completeness-source-truth-judge-50
 .PHONY: enterprise-rag-bench-deepseek-answers-routed-v15-coverage-ranked-windowed-50 enterprise-rag-bench-official-answer-metrics-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v15-coverage-ranked-windowed-judge-50 enterprise-rag-bench-routed-v16-conflict-coverage-judge-50 enterprise-rag-bench-answer-error-analysis-routed-v16-conflict-coverage-judge-50
 .PHONY: enterprise-rag-bench-balanced-100 enterprise-rag-bench-score-summary-routed-v16-50 enterprise-rag-bench-token-tracked-judge-routed-v16-50 enterprise-rag-bench-score-summary-routed-v17-50 enterprise-rag-bench-token-tracked-judge-routed-v17-50 enterprise-rag-bench-official-answer-metrics-routed-v17-evidence-first-judge-50 enterprise-rag-bench-current-best-balanced-50 enterprise-rag-bench-deepseek-answers-routed-v17-evidence-first-50 enterprise-rag-bench-calibration-50 enterprise-rag-bench-calibration-100-prep
-.PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-retrieval-quality-fixture-check enterprise-rag-bench-hybrid-parity-fixture-check enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-source-link-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-github-semantic-query-expansion enterprise-rag-bench-basic-google-drive-tail-rescue enterprise-rag-bench-confluence-completeness-selector enterprise-rag-bench-confluence-collection-selector enterprise-rag-bench-jira-project-source-selector enterprise-rag-bench-jira-completeness-source-selector enterprise-rag-bench-confluence-content-completeness-selector enterprise-rag-bench-confluence-project-source-selector enterprise-rag-bench-confluence-process-completeness-selector enterprise-rag-bench-slack-gmail-source-selector enterprise-rag-bench-hubspot-drive-anchor-selector enterprise-rag-bench-github-project-source-selector enterprise-rag-bench-sdk-auth-completeness-selector enterprise-rag-bench-confluence-postmortem-variant-selector enterprise-rag-bench-slack-basic-promotion-selector enterprise-rag-bench-jira-semantic-promotion-selector enterprise-rag-bench-confluence-semantic-variant-selector enterprise-rag-bench-linear-semantic-promotion-selector enterprise-rag-bench-jira-project-evidence-selector enterprise-rag-bench-gmail-project-evidence-selector enterprise-rag-bench-confluence-project-discovery-selector enterprise-rag-bench-gold-missing-bottlenecks enterprise-rag-bench-semantic-source-route-sweep enterprise-rag-bench-high-level-coverage
-.PHONY: enterprise-rag-bench-evidence-plan-check enterprise-rag-bench-evidence-table-check
-.PHONY: enterprise-rag-bench-official-clean-vectors-50 enterprise-rag-bench-official-clean-vectors-500 enterprise-rag-bench-official-clean-retrieval-smoke-50 enterprise-rag-bench-official-clean-retrieval-50-cached enterprise-rag-bench-official-clean-retrieval-50-engine-aql enterprise-rag-bench-official-clean-retrieval-50-engine-keyword enterprise-rag-bench-official-clean-retrieval-50-engine-keyword-rerank enterprise-rag-bench-official-clean-retrieval-50-engine-hybrid enterprise-rag-bench-official-clean-compare-retrieval enterprise-rag-bench-official-clean-heldout-smoke-check enterprise-rag-bench-official-clean-heldout-retrieval-quality-check enterprise-rag-bench-official-clean-status enterprise-rag-bench-official-clean-50 enterprise-rag-bench-official-clean-500 enterprise-rag-bench-official-clean-heldout enterprise-rag-bench-official-clean-50-gemma enterprise-rag-bench-official-clean-500-gemma enterprise-rag-bench-official-clean-heldout-gemma enterprise-rag-bench-official-clean-50-gemini enterprise-rag-bench-official-clean-500-gemini enterprise-rag-bench-official-clean-heldout-gemini enterprise-rag-bench-official-clean-50-deepseek enterprise-rag-bench-official-clean-500-deepseek enterprise-rag-bench-official-clean-heldout-deepseek
-.PHONY: enterprise-rag-bench-query-understanding-lift-check
+.PHONY: enterprise-rag-bench-candidate-depth-check enterprise-rag-bench-local-retrieval-gate enterprise-rag-bench-retrieval-quality-fixture-check enterprise-rag-bench-category-dashboard-check enterprise-rag-bench-heldout-check erb-holdout-check enterprise-rag-bench-category-regression-check erb-category-regression-check enterprise-rag-bench-hybrid-parity-fixture-check enterprise-rag-bench-completeness-coverage enterprise-rag-bench-semantic-coverage enterprise-rag-bench-anchor-candidate-coverage enterprise-rag-bench-neighbor-candidate-coverage enterprise-rag-bench-source-link-candidate-coverage enterprise-rag-bench-project-related-coverage enterprise-rag-bench-github-semantic-query-expansion enterprise-rag-bench-basic-google-drive-tail-rescue enterprise-rag-bench-confluence-completeness-selector enterprise-rag-bench-confluence-collection-selector enterprise-rag-bench-jira-project-source-selector enterprise-rag-bench-jira-completeness-source-selector enterprise-rag-bench-confluence-content-completeness-selector enterprise-rag-bench-confluence-project-source-selector enterprise-rag-bench-confluence-process-completeness-selector enterprise-rag-bench-slack-gmail-source-selector enterprise-rag-bench-hubspot-drive-anchor-selector enterprise-rag-bench-github-project-source-selector enterprise-rag-bench-sdk-auth-completeness-selector enterprise-rag-bench-confluence-postmortem-variant-selector enterprise-rag-bench-slack-basic-promotion-selector enterprise-rag-bench-jira-semantic-promotion-selector enterprise-rag-bench-confluence-semantic-variant-selector enterprise-rag-bench-linear-semantic-promotion-selector enterprise-rag-bench-jira-project-evidence-selector enterprise-rag-bench-gmail-project-evidence-selector enterprise-rag-bench-confluence-project-discovery-selector enterprise-rag-bench-gold-missing-bottlenecks enterprise-rag-bench-semantic-source-route-sweep enterprise-rag-bench-high-level-coverage
+.PHONY: enterprise-rag-bench-evidence-plan-check enterprise-rag-bench-evidence-table-check enterprise-rag-bench-evidence-table-extractor-check erb-evidence-table-extractor-check enterprise-rag-bench-completeness-plan-check erb-completeness-plan-check enterprise-rag-bench-project-answer-synth-check erb-project-answer-synth-check enterprise-rag-bench-conflict-synth-check erb-conflict-synth-check enterprise-rag-bench-answer-guard-check erb-answer-guard-check enterprise-rag-bench-answer-context-check erb-answer-context-check enterprise-rag-bench-answer-intent-check erb-answer-intent-check enterprise-rag-bench-answer-repair-check erb-answer-repair-check enterprise-rag-bench-anchor-overlap-check erb-anchor-overlap-check
+.PHONY: enterprise-rag-bench-official-clean-vectors-50 enterprise-rag-bench-official-clean-vectors-500 enterprise-rag-bench-embedding-coverage-check enterprise-rag-bench-official-clean-retrieval-smoke-50 enterprise-rag-bench-official-clean-retrieval-50-cached enterprise-rag-bench-official-clean-retrieval-50-engine-aql enterprise-rag-bench-official-clean-retrieval-50-engine-keyword enterprise-rag-bench-official-clean-retrieval-50-engine-keyword-rerank enterprise-rag-bench-official-clean-retrieval-50-engine-hybrid enterprise-rag-bench-official-clean-retrieval-50-engine-hybrid-rerank enterprise-rag-bench-official-clean-compare-retrieval enterprise-rag-bench-official-clean-heldout-smoke-check enterprise-rag-bench-official-clean-heldout-retrieval-quality-check enterprise-rag-bench-official-clean-status enterprise-rag-bench-official-clean-50 enterprise-rag-bench-official-clean-500 enterprise-rag-bench-official-clean-heldout enterprise-rag-bench-official-clean-50-gemma enterprise-rag-bench-official-clean-500-gemma enterprise-rag-bench-official-clean-heldout-gemma enterprise-rag-bench-official-clean-50-gemini enterprise-rag-bench-official-clean-500-gemini enterprise-rag-bench-official-clean-heldout-gemini enterprise-rag-bench-official-clean-50-deepseek enterprise-rag-bench-official-clean-500-deepseek enterprise-rag-bench-official-clean-heldout-deepseek
+.PHONY: enterprise-rag-bench-query-understanding-lift-check enterprise-rag-bench-decomposition-check enterprise-rag-bench-scope-mapping-check enterprise-rag-bench-synonym-dictionary-check enterprise-rag-bench-condition-check enterprise-rag-bench-calibration-profile-check
 .PHONY: multihop-rag-temporal-subtype-analysis-v6
 .PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check dashboard-operational-status-check context-pack-explorer-check verification-explorer-check retrieval-quality-explorer-check permissions-view-check audit-viewer-v2-check backup-restore-view-check incident-view-check dashboard-role-ui-check
 .PHONY: doctor-check
@@ -558,6 +558,7 @@ ENTERPRISE_RAG_BENCH_HIGH_LEVEL_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrie
 ENTERPRISE_RAG_BENCH_HIGH_LEVEL_RETRIEVAL_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_high_level_v31_top10_report.json
 ENTERPRISE_RAG_BENCH_HIGH_LEVEL_COVERAGE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/high_level_coverage_v31_report.json
 ENTERPRISE_RAG_BENCH_HIGH_LEVEL_COVERAGE_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/high_level_coverage_v31_details.jsonl
+ENTERPRISE_RAG_BENCH_HIGH_LEVEL_COVERAGE_MODE ?= brain-digest
 ENTERPRISE_RAG_BENCH_SUBSET_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/subsets
 ENTERPRISE_RAG_BENCH_SUBSET_LIMIT ?= 50
 ENTERPRISE_RAG_BENCH_SUBSET_PREFIX ?= balanced_50
@@ -570,6 +571,33 @@ ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_SUBSET_Q
 ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_CURRENT_BEST)
 ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_JSONL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_table_balanced_50.jsonl
 ENTERPRISE_RAG_BENCH_EVIDENCE_TABLE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/evidence_table_balanced_50_report.json
+ENTERPRISE_RAG_BENCH_COMPLETENESS_PLAN_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_CURRENT_BEST_BALANCED_50)
+ENTERPRISE_RAG_BENCH_COMPLETENESS_PLAN_JSONL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/completeness_plan_balanced_50.jsonl
+ENTERPRISE_RAG_BENCH_COMPLETENESS_PLAN_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/completeness_plan_balanced_50_report.json
+ENTERPRISE_RAG_BENCH_COMPLETENESS_PLAN_TOP_DOCS ?= 10
+ENTERPRISE_RAG_BENCH_COMPLETENESS_PLAN_MAX_SPANS_PER_DOC ?= 3
+ENTERPRISE_RAG_BENCH_COMPLETENESS_PLAN_MAX_CHARS_PER_SPAN ?= 700
+ENTERPRISE_RAG_BENCH_PROJECT_SYNTH_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_CURRENT_BEST_BALANCED_50)
+ENTERPRISE_RAG_BENCH_PROJECT_SYNTH_JSONL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/project_answer_cards_balanced_50.jsonl
+ENTERPRISE_RAG_BENCH_PROJECT_SYNTH_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/project_answer_cards_balanced_50_report.json
+ENTERPRISE_RAG_BENCH_PROJECT_SYNTH_TOP_DOCS ?= 10
+ENTERPRISE_RAG_BENCH_PROJECT_SYNTH_MAX_ROWS_PER_DOC ?= 5
+ENTERPRISE_RAG_BENCH_PROJECT_SYNTH_MAX_ROWS_TOTAL ?= 28
+ENTERPRISE_RAG_BENCH_CONFLICT_SYNTH_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_CURRENT_BEST_BALANCED_50)
+ENTERPRISE_RAG_BENCH_CONFLICT_SYNTH_JSONL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/conflict_resolution_plans_balanced_50.jsonl
+ENTERPRISE_RAG_BENCH_CONFLICT_SYNTH_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/conflict_resolution_plans_balanced_50_report.json
+ENTERPRISE_RAG_BENCH_CONFLICT_SYNTH_TOP_DOCS ?= 10
+ENTERPRISE_RAG_BENCH_CONFLICT_SYNTH_MAX_ROWS_TOTAL ?= 24
+ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)
+ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_CURRENT_BEST_BALANCED_50)
+ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/anchor_overlap_balanced_50_report.json
+ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_DETAILS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/analysis/anchor_overlap_balanced_50_details.jsonl
+ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_TOPK ?= 10
+ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_MIN_RECALL_PCT ?= 60
+ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_MAX_INVALID_EXTRA_DOCS ?= 10
+ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_MIN_OVERLAP_DOC_PCT ?= 35
+ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_STRONG_MIN_ANCHORS ?= 2
+ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_MIN_STRONG_DOC_PCT ?= 35
 ENTERPRISE_RAG_BENCH_CURRENT_BEST_BALANCED_50 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/retrieval/cortexdb_full_doc_view_v81_confluence_project_discovery_balanced_50.jsonl
 ENTERPRISE_RAG_BENCH_DB_50 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/cortexdb-50
 ENTERPRISE_RAG_BENCH_DB_FULL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/cortexdb-full
@@ -749,6 +777,12 @@ ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE ?= all
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_TOPK_CONTEXT ?= 8
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_CHARS_PER_DOC ?= 2200
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_TOKENS ?= 420
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_UNSUPPORTED_CLAIM_GUARD ?= off
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ENABLE_TEXT_INTENT_BUDGET ?= 0
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_REPAIR ?= 0
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_RETRIES ?= 1
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_PLAN ?= 0
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_EVIDENCE_PLAN_FILE ?=
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_WORKERS ?= 2
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_WORKERS ?= 2
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_TIMEOUT_SECONDS ?= 180
@@ -759,6 +793,7 @@ ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK ?= weighted
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS ?=
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS ?=
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS ?=
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PREFILTER_RETRIEVAL ?=
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_CACHE ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/vector_cache.jsonl
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/vector_report.json
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_LOG ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/vector_progress.log
@@ -767,6 +802,12 @@ ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS_50 ?= $(ENTERPRISE_RAG_BENCH_R
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS_50 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/50/document_vectors.jsonl
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS_500 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/500/query_vectors.jsonl
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS_500 ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/500/document_vectors.jsonl
+ENTERPRISE_RAG_BENCH_EMBEDDING_COVERAGE_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/embedding_coverage_report.json
+ENTERPRISE_RAG_BENCH_EMBEDDING_RETRY_IDS ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/embedding_retry_ids.txt
+ENTERPRISE_RAG_BENCH_EMBEDDING_EXPECTED_MANIFEST ?=
+ENTERPRISE_RAG_BENCH_EMBEDDING_EXPECTED_MODEL ?=
+ENTERPRISE_RAG_BENCH_EMBEDDING_COVERAGE_MIN_BPS ?= 9950
+ENTERPRISE_RAG_BENCH_EMBEDDING_EXPECTED_DIMENSION ?=
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_BASELINE_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/50/cached-lexical/retrieval.clean.jsonl
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_CANDIDATE_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/50/engine-hybrid/retrieval.clean.jsonl
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_COMPARISON_JSONL ?= $(ENTERPRISE_RAG_BENCH_ROOT)/official-clean/retrieval_comparison.jsonl
@@ -784,6 +825,36 @@ ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_REPORT ?= $(ENTERPRISE_RAG_BENCH_
 ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_OUTPUT_ROOT)/report.md
 ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_LOG ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_OUTPUT_ROOT)/progress.log
 ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_STATUS ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_OUTPUT_ROOT)/status.json
+ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_ROOT)/questions.jsonl
+ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_ROOT)/retrieval.clean.jsonl
+ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_OUTPUT_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/category-dashboard
+ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_REPORT ?= $(ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_OUTPUT_ROOT)/report.json
+ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_OUTPUT_ROOT)/report.md
+ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_HISTORY ?= $(ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_OUTPUT_ROOT)/history.jsonl
+ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_RUN_ID ?= local
+ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_COMMIT ?=
+ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_TOPK ?= 10
+ENTERPRISE_RAG_BENCH_HELDOUT_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_ROOT)/questions.jsonl
+ENTERPRISE_RAG_BENCH_HELDOUT_RETRIEVAL ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_ROOT)/retrieval.clean.jsonl
+ENTERPRISE_RAG_BENCH_HELDOUT_OUTPUT_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/heldout-no-overfit
+ENTERPRISE_RAG_BENCH_HELDOUT_REPORT ?= $(ENTERPRISE_RAG_BENCH_HELDOUT_OUTPUT_ROOT)/report.json
+ENTERPRISE_RAG_BENCH_HELDOUT_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_HELDOUT_OUTPUT_ROOT)/report.md
+ENTERPRISE_RAG_BENCH_HELDOUT_TOPK ?= 10
+ENTERPRISE_RAG_BENCH_HELDOUT_SIZE ?= 1
+ENTERPRISE_RAG_BENCH_HELDOUT_SEED ?= cortexdb-erb-heldout-v1
+ENTERPRISE_RAG_BENCH_HELDOUT_MAX_ABS_RECALL_DELTA_PCT ?= 100
+ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_ROOT)/questions.jsonl
+ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_BASELINE ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_ROOT)/retrieval.clean.jsonl
+ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_CANDIDATE ?= $(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_ROOT)/retrieval.clean.jsonl
+ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_OUTPUT_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/category-regression
+ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_REPORT ?= $(ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_OUTPUT_ROOT)/report.json
+ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_OUTPUT_ROOT)/report.md
+ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_TOPK ?= 10
+ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_MAX_RECALL_DROP_PCT ?= 0
+ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_MAX_PRECISION_DROP_PCT ?= 5
+ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_MAX_INVALID_EXTRA_INCREASE ?= 0.5
+ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_MAX_MRR_DROP ?= 0.05
+ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_MAX_NDCG_DROP ?= 0.05
 ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_ROOT ?= fixtures/enterprise_rag_bench/hybrid_parity
 ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_OUTPUT_ROOT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/hybrid-parity-fixture
 ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_JSONL ?= $(ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_OUTPUT_ROOT)/details.jsonl
@@ -791,6 +862,43 @@ ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_REPORT ?= $(ENTERPRISE_RAG_BENCH_HYBR
 ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_MARKDOWN ?= $(ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_OUTPUT_ROOT)/report.md
 ENTERPRISE_RAG_BENCH_QUERY_UNDERSTANDING_LIFT_FIXTURE_ROOT ?= fixtures/enterprise_rag_bench/query_understanding_lift
 ENTERPRISE_RAG_BENCH_QUERY_UNDERSTANDING_LIFT_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/query-understanding-lift/report.json
+ENTERPRISE_RAG_BENCH_INTENT_CHECK_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_QUESTIONS)
+ENTERPRISE_RAG_BENCH_INTENT_CHECK_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/intent-check/report.json
+ENTERPRISE_RAG_BENCH_INTENT_CHECK_LIMIT ?=
+ENTERPRISE_RAG_BENCH_INTENT_CHECK_OFFSET ?= 0
+ENTERPRISE_RAG_BENCH_INTENT_MIN_ACCURACY_PCT ?= 90
+ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_QUESTIONS)
+ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/decomposition-check/report.json
+ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_LIMIT ?=
+ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_OFFSET ?= 0
+ENTERPRISE_RAG_BENCH_DECOMPOSITION_MIN_MULTI_COVERAGE_PCT ?= 80
+ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_QUESTIONS)
+ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/scope-mapping-check/report.json
+ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_LIMIT ?=
+ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_OFFSET ?= 0
+ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_MIN_PROJECT_RELATED_COVERAGE_PCT ?= 70
+ENTERPRISE_RAG_BENCH_SYNONYM_DICTIONARY_OUTPUT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/synonyms/corpus.acsyn
+ENTERPRISE_RAG_BENCH_SYNONYM_DICTIONARY_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/synonyms/report.json
+ENTERPRISE_RAG_BENCH_SYNONYM_DICTIONARY_LIMIT ?=
+ENTERPRISE_RAG_BENCH_SYNONYM_MIN_TERMS_WITH_SYNONYMS ?= 1000
+ENTERPRISE_RAG_BENCH_SYNONYM_MIN_TERM_DF ?= 3
+ENTERPRISE_RAG_BENCH_SYNONYM_MIN_PAIR_DF ?= 2
+ENTERPRISE_RAG_BENCH_SYNONYM_MAX_SYNONYMS_PER_TERM ?= 8
+ENTERPRISE_RAG_BENCH_SYNONYM_MAX_TERMS ?= 10000
+ENTERPRISE_RAG_BENCH_SYNONYM_MAX_TERMS_PER_DOCUMENT ?= 64
+ENTERPRISE_RAG_BENCH_SYNONYM_PROGRESS_EVERY ?= 10000
+ENTERPRISE_RAG_BENCH_CONDITION_CHECK_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_QUESTIONS)
+ENTERPRISE_RAG_BENCH_CONDITION_CHECK_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/condition-check/report.json
+ENTERPRISE_RAG_BENCH_CONDITION_CHECK_LIMIT ?=
+ENTERPRISE_RAG_BENCH_CONDITION_CHECK_OFFSET ?= 0
+ENTERPRISE_RAG_BENCH_CONDITION_MIN_CONSTRAINED_COVERAGE_PCT ?= 70
+ENTERPRISE_RAG_BENCH_CALIBRATION_CHECK_QUESTIONS ?= $(ENTERPRISE_RAG_BENCH_QUESTIONS)
+ENTERPRISE_RAG_BENCH_CALIBRATION_CHECK_REPORT ?= $(ENTERPRISE_RAG_BENCH_ROOT)/calibration-check/report.json
+ENTERPRISE_RAG_BENCH_CALIBRATION_CHECK_LIMIT ?=
+ENTERPRISE_RAG_BENCH_CALIBRATION_CHECK_OFFSET ?= 0
+ENTERPRISE_RAG_BENCH_CALIBRATION_MIN_CALIBRATED_PCT ?= 95
+ENTERPRISE_RAG_BENCH_CALIBRATION_MIN_SEMANTIC_VECTOR_PCT ?= 60
+ENTERPRISE_RAG_BENCH_CALIBRATION_MIN_CONSTRAINED_CONDITION_PCT ?= 70
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_SIZE ?= 500
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_RUN_LABEL ?= $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL)
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_WATCH ?= 0
@@ -803,6 +911,7 @@ ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_MAX_CHARS_PER_DOC ?= 1800
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_DOCUMENT_LIMIT ?=
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT ?=
 ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_REUSE_DB ?= 0
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SKIP_CHECKPOINT ?= 0
 DEEPSEEK_KEY_FILE ?= /mnt/hf_model_weights/arman/3bit/.deepseek
 SINGLE_NODE_PERF_ROOT ?= target/single-node-performance
 SINGLE_NODE_PERF_REPORT ?= $(SINGLE_NODE_PERF_ROOT)/report.json
@@ -1679,6 +1788,93 @@ enterprise-rag-bench-evidence-table-check: enterprise-rag-bench-balanced-50
 	  --top-docs 10 \
 	  --max-facts-per-doc 6
 
+enterprise-rag-bench-evidence-table-extractor-check:
+	python3 scripts/enterprise_rag_bench/test_evidence_table_extractor.py
+
+erb-evidence-table-extractor-check: enterprise-rag-bench-evidence-table-extractor-check
+
+enterprise-rag-bench-completeness-plan-check: enterprise-rag-bench-current-best-balanced-50
+	test -f "$(ENTERPRISE_RAG_BENCH_COMPLETENESS_PLAN_RETRIEVAL)"
+	python3 scripts/enterprise_rag_bench/completeness_planner.py \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_COMPLETENESS_PLAN_RETRIEVAL)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output-jsonl "$(ENTERPRISE_RAG_BENCH_COMPLETENESS_PLAN_JSONL)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_COMPLETENESS_PLAN_REPORT)" \
+	  --top-docs "$(ENTERPRISE_RAG_BENCH_COMPLETENESS_PLAN_TOP_DOCS)" \
+	  --max-spans-per-doc "$(ENTERPRISE_RAG_BENCH_COMPLETENESS_PLAN_MAX_SPANS_PER_DOC)" \
+	  --max-chars-per-span "$(ENTERPRISE_RAG_BENCH_COMPLETENESS_PLAN_MAX_CHARS_PER_SPAN)"
+
+erb-completeness-plan-check: enterprise-rag-bench-completeness-plan-check
+
+enterprise-rag-bench-project-answer-synth-check: enterprise-rag-bench-current-best-balanced-50
+	test -f "$(ENTERPRISE_RAG_BENCH_PROJECT_SYNTH_RETRIEVAL)"
+	python3 scripts/enterprise_rag_bench/project_answer_synthesizer.py \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_PROJECT_SYNTH_RETRIEVAL)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output-jsonl "$(ENTERPRISE_RAG_BENCH_PROJECT_SYNTH_JSONL)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_PROJECT_SYNTH_REPORT)" \
+	  --top-docs "$(ENTERPRISE_RAG_BENCH_PROJECT_SYNTH_TOP_DOCS)" \
+	  --max-rows-per-doc "$(ENTERPRISE_RAG_BENCH_PROJECT_SYNTH_MAX_ROWS_PER_DOC)" \
+	  --max-rows-total "$(ENTERPRISE_RAG_BENCH_PROJECT_SYNTH_MAX_ROWS_TOTAL)"
+
+erb-project-answer-synth-check: enterprise-rag-bench-project-answer-synth-check
+
+enterprise-rag-bench-conflict-synth-check: enterprise-rag-bench-current-best-balanced-50
+	python3 scripts/enterprise_rag_bench/test_conflict_resolution_synthesizer.py
+	test -f "$(ENTERPRISE_RAG_BENCH_CONFLICT_SYNTH_RETRIEVAL)"
+	python3 scripts/enterprise_rag_bench/conflict_resolution_synthesizer.py \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_CONFLICT_SYNTH_RETRIEVAL)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output-jsonl "$(ENTERPRISE_RAG_BENCH_CONFLICT_SYNTH_JSONL)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_CONFLICT_SYNTH_REPORT)" \
+	  --top-docs "$(ENTERPRISE_RAG_BENCH_CONFLICT_SYNTH_TOP_DOCS)" \
+	  --max-rows-total "$(ENTERPRISE_RAG_BENCH_CONFLICT_SYNTH_MAX_ROWS_TOTAL)"
+
+erb-conflict-synth-check: enterprise-rag-bench-conflict-synth-check
+
+enterprise-rag-bench-answer-guard-check:
+	python3 scripts/enterprise_rag_bench/test_answer_guard.py
+
+erb-answer-guard-check: enterprise-rag-bench-answer-guard-check
+
+enterprise-rag-bench-answer-context-check:
+	python3 scripts/enterprise_rag_bench/test_answer_context.py
+
+erb-answer-context-check: enterprise-rag-bench-answer-context-check
+
+enterprise-rag-bench-answer-intent-check:
+	python3 scripts/enterprise_rag_bench/test_answer_intent.py
+
+erb-answer-intent-check: enterprise-rag-bench-answer-intent-check
+
+enterprise-rag-bench-answer-repair-check:
+	python3 scripts/enterprise_rag_bench/test_answer_repair.py
+
+erb-answer-repair-check: enterprise-rag-bench-answer-repair-check
+
+enterprise-rag-bench-anchor-overlap-check: enterprise-rag-bench-current-best-balanced-50
+	python3 scripts/enterprise_rag_bench/test_anchor_overlap_diagnostics.py
+	test -f "$(ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_QUESTIONS)"
+	test -f "$(ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_RETRIEVAL)"
+	python3 scripts/enterprise_rag_bench/anchor_overlap_diagnostics.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_QUESTIONS)" \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_RETRIEVAL)" \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_REPORT)" \
+	  --details-jsonl "$(ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_DETAILS)" \
+	  --top-k "$(ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_TOPK)" \
+	  --min-recall-pct "$(ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_MIN_RECALL_PCT)" \
+	  --max-average-invalid-extra-docs "$(ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_MAX_INVALID_EXTRA_DOCS)" \
+	  --min-overlap-doc-pct "$(ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_MIN_OVERLAP_DOC_PCT)" \
+	  --strong-overlap-min-anchors "$(ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_STRONG_MIN_ANCHORS)" \
+	  --min-strong-overlap-doc-pct "$(ENTERPRISE_RAG_BENCH_ANCHOR_OVERLAP_MIN_STRONG_DOC_PCT)"
+
+erb-anchor-overlap-check: enterprise-rag-bench-anchor-overlap-check
+
 enterprise-rag-bench-current-best-balanced-50: enterprise-rag-bench-balanced-50
 	test -f "$(ENTERPRISE_RAG_BENCH_CURRENT_BEST)"
 	python3 scripts/enterprise_rag_bench/filter_retrieval_to_questions.py \
@@ -1773,6 +1969,16 @@ enterprise-rag-bench-official-clean-vectors-500: enterprise-rag-bench-official-r
 	  --log-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_LOG)" \
 	  --status-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_VECTOR_STATUS)"
 
+enterprise-rag-bench-embedding-coverage-check: enterprise-rag-bench-official-repo
+	cargo run -p cortex-engine --bin embedding_coverage_check -- \
+	  $(if $(ENTERPRISE_RAG_BENCH_EMBEDDING_EXPECTED_MANIFEST),--expected-manifest "$(ENTERPRISE_RAG_BENCH_EMBEDDING_EXPECTED_MANIFEST)",--uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)") \
+	  --embeddings "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS_500)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_EMBEDDING_COVERAGE_REPORT)" \
+	  --retry-ids-output "$(ENTERPRISE_RAG_BENCH_EMBEDDING_RETRY_IDS)" \
+	  --min-coverage-bps "$(ENTERPRISE_RAG_BENCH_EMBEDDING_COVERAGE_MIN_BPS)" \
+	  $(if $(ENTERPRISE_RAG_BENCH_EMBEDDING_EXPECTED_MODEL),--expected-model "$(ENTERPRISE_RAG_BENCH_EMBEDDING_EXPECTED_MODEL)",) \
+	  $(if $(ENTERPRISE_RAG_BENCH_EMBEDDING_EXPECTED_DIMENSION),--expected-dimension "$(ENTERPRISE_RAG_BENCH_EMBEDDING_EXPECTED_DIMENSION)",)
+
 enterprise-rag-bench-official-clean-compare-retrieval:
 	python3 scripts/enterprise_rag_bench/compare_retrieval_runs.py \
 	  --questions-file "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
@@ -1826,6 +2032,15 @@ enterprise-rag-bench-official-clean-retrieval-50-engine-hybrid:
 	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS="$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS_50)" \
 	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS="$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS_50)"
 
+enterprise-rag-bench-official-clean-retrieval-50-engine-hybrid-rerank:
+	$(MAKE) enterprise-rag-bench-official-clean-50 \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE=retrieval \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RUN_LABEL=engine-hybrid-rerank \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE=engine-hybrid-rerank \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK=weighted \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS="$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS_50)" \
+	  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS="$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS_50)"
+
 enterprise-rag-bench-official-clean-50: enterprise-rag-bench-official-repo
 	python3 scripts/enterprise_rag_bench/run_official_clean_benchmark.py \
 	  --size 50 \
@@ -1837,17 +2052,24 @@ enterprise-rag-bench-official-clean-50: enterprise-rag-bench-official-repo
 	  --top-k-context "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_TOPK_CONTEXT)" \
 	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_CHARS_PER_DOC)" \
 	  --max-tokens "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_TOKENS)" \
+	  --unsupported-claim-guard "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_UNSUPPORTED_CLAIM_GUARD)" \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ENABLE_TEXT_INTENT_BUDGET)),--enable-text-intent-budget,) \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_REPAIR)),--self-consistency-repair --self-consistency-retries "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_RETRIES)",) \
 	  --answer-workers "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_WORKERS)" \
 	  --judge-workers "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_WORKERS)" \
 	  --judge-timeout-seconds "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_TIMEOUT_SECONDS)" \
 	  --progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROGRESS_EVERY)" \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_PLAN)),--include-evidence-plan,) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_EVIDENCE_PLAN_FILE),--evidence-plan-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_EVIDENCE_PLAN_FILE)",) \
 	  --retrieval-progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_PROGRESS_EVERY)" \
 	  --retrieval-mode "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE)" \
 	  --rerank "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK)" \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS),--max-documents "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS)",) \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS),--query-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS)",) \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS),--document-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS)",) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PREFILTER_RETRIEVAL),--prefilter-retrieval "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PREFILTER_RETRIEVAL)",) \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT),--db-root "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT)",) \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SKIP_CHECKPOINT)),--skip-checkpoint,) \
 	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_REUSE_DB)),--reuse-db,)
 
 enterprise-rag-bench-official-clean-500: enterprise-rag-bench-official-repo
@@ -1861,17 +2083,24 @@ enterprise-rag-bench-official-clean-500: enterprise-rag-bench-official-repo
 	  --top-k-context "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_TOPK_CONTEXT)" \
 	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_CHARS_PER_DOC)" \
 	  --max-tokens "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_TOKENS)" \
+	  --unsupported-claim-guard "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_UNSUPPORTED_CLAIM_GUARD)" \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ENABLE_TEXT_INTENT_BUDGET)),--enable-text-intent-budget,) \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_REPAIR)),--self-consistency-repair --self-consistency-retries "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_RETRIES)",) \
 	  --answer-workers "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_WORKERS)" \
 	  --judge-workers "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_WORKERS)" \
 	  --judge-timeout-seconds "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_TIMEOUT_SECONDS)" \
 	  --progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROGRESS_EVERY)" \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_PLAN)),--include-evidence-plan,) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_EVIDENCE_PLAN_FILE),--evidence-plan-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_EVIDENCE_PLAN_FILE)",) \
 	  --retrieval-progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_PROGRESS_EVERY)" \
 	  --retrieval-mode "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE)" \
 	  --rerank "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK)" \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS),--max-documents "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS)",) \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS),--query-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS)",) \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS),--document-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS)",) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PREFILTER_RETRIEVAL),--prefilter-retrieval "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PREFILTER_RETRIEVAL)",) \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT),--db-root "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT)",) \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SKIP_CHECKPOINT)),--skip-checkpoint,) \
 	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_REUSE_DB)),--reuse-db,)
 
 enterprise-rag-bench-official-clean-heldout: enterprise-rag-bench-official-repo
@@ -1886,17 +2115,24 @@ enterprise-rag-bench-official-clean-heldout: enterprise-rag-bench-official-repo
 	  --top-k-context "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_TOPK_CONTEXT)" \
 	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_CHARS_PER_DOC)" \
 	  --max-tokens "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_TOKENS)" \
+	  --unsupported-claim-guard "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_UNSUPPORTED_CLAIM_GUARD)" \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ENABLE_TEXT_INTENT_BUDGET)),--enable-text-intent-budget,) \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_REPAIR)),--self-consistency-repair --self-consistency-retries "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_RETRIES)",) \
 	  --answer-workers "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ANSWER_WORKERS)" \
 	  --judge-workers "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_WORKERS)" \
 	  --judge-timeout-seconds "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_TIMEOUT_SECONDS)" \
 	  --progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROGRESS_EVERY)" \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_PLAN)),--include-evidence-plan,) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_EVIDENCE_PLAN_FILE),--evidence-plan-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_EVIDENCE_PLAN_FILE)",) \
 	  --retrieval-progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_PROGRESS_EVERY)" \
 	  --retrieval-mode "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE)" \
 	  --rerank "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK)" \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS),--max-documents "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_DOCUMENTS)",) \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS),--query-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_QUERY_VECTORS)",) \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS),--document-vectors "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DOCUMENT_VECTORS)",) \
+	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PREFILTER_RETRIEVAL),--prefilter-retrieval "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PREFILTER_RETRIEVAL)",) \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT),--db-root "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_DB_ROOT)",) \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SKIP_CHECKPOINT)),--skip-checkpoint,) \
 	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_REUSE_DB)),--reuse-db,)
 
 enterprise-rag-bench-official-clean-heldout-smoke-check: enterprise-rag-bench-official-repo
@@ -1994,6 +2230,47 @@ enterprise-rag-bench-retrieval-quality-fixture-check:
 	  --log-file "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_LOG)" \
 	  --status-file "$(ENTERPRISE_RAG_BENCH_RETRIEVAL_QUALITY_FIXTURE_STATUS)"
 
+enterprise-rag-bench-category-dashboard-check:
+	python3 scripts/enterprise_rag_bench/category_retrieval_dashboard.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_QUESTIONS)" \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_RETRIEVAL)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_REPORT)" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_MARKDOWN)" \
+	  --history "$(ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_HISTORY)" \
+	  --top-k "$(ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_TOPK)" \
+	  --run-id "$(ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_RUN_ID)" \
+	  $(if $(ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_COMMIT),--commit "$(ENTERPRISE_RAG_BENCH_CATEGORY_DASHBOARD_COMMIT)",)
+
+enterprise-rag-bench-heldout-check:
+	python3 scripts/enterprise_rag_bench/heldout_no_overfit_check.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_HELDOUT_QUESTIONS)" \
+	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_HELDOUT_RETRIEVAL)" \
+	  --output-root "$(ENTERPRISE_RAG_BENCH_HELDOUT_OUTPUT_ROOT)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_HELDOUT_REPORT)" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_HELDOUT_MARKDOWN)" \
+	  --top-k "$(ENTERPRISE_RAG_BENCH_HELDOUT_TOPK)" \
+	  --heldout-size "$(ENTERPRISE_RAG_BENCH_HELDOUT_SIZE)" \
+	  --seed "$(ENTERPRISE_RAG_BENCH_HELDOUT_SEED)" \
+	  --max-absolute-recall-delta-pct "$(ENTERPRISE_RAG_BENCH_HELDOUT_MAX_ABS_RECALL_DELTA_PCT)"
+
+erb-holdout-check: enterprise-rag-bench-heldout-check
+
+enterprise-rag-bench-category-regression-check:
+	python3 scripts/enterprise_rag_bench/category_regression_gate.py \
+	  --questions-file "$(ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_QUESTIONS)" \
+	  --baseline-retrieval-file "$(ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_BASELINE)" \
+	  --candidate-retrieval-file "$(ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_CANDIDATE)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_REPORT)" \
+	  --markdown "$(ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_MARKDOWN)" \
+	  --top-k "$(ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_TOPK)" \
+	  --max-category-recall-regression-pct "$(ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_MAX_RECALL_DROP_PCT)" \
+	  --max-category-precision-regression-pct "$(ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_MAX_PRECISION_DROP_PCT)" \
+	  --max-category-invalid-extra-regression "$(ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_MAX_INVALID_EXTRA_INCREASE)" \
+	  --max-category-mrr-regression "$(ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_MAX_MRR_DROP)" \
+	  --max-category-ndcg-regression "$(ENTERPRISE_RAG_BENCH_CATEGORY_REGRESSION_MAX_NDCG_DROP)"
+
+erb-category-regression-check: enterprise-rag-bench-category-regression-check
+
 enterprise-rag-bench-hybrid-parity-fixture-check:
 	python3 scripts/enterprise_rag_bench/compare_retrieval_runs.py \
 	  --questions-file "$(ENTERPRISE_RAG_BENCH_HYBRID_PARITY_FIXTURE_ROOT)/questions.jsonl" \
@@ -2017,6 +2294,63 @@ enterprise-rag-bench-query-understanding-lift-check:
 	  --min-average-recall-delta-pct 50 \
 	  --min-full-recall-delta 3 \
 	  --min-engine-average-recall-pct 100
+
+enterprise-rag-bench-intent-check:
+	cargo run -p cortex-engine --bin enterprise_rag_intent_check -- \
+	  --questions "$(ENTERPRISE_RAG_BENCH_INTENT_CHECK_QUESTIONS)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_INTENT_CHECK_REPORT)" \
+	  --offset "$(ENTERPRISE_RAG_BENCH_INTENT_CHECK_OFFSET)" \
+	  --min-accuracy-pct "$(ENTERPRISE_RAG_BENCH_INTENT_MIN_ACCURACY_PCT)" \
+	  $(if $(ENTERPRISE_RAG_BENCH_INTENT_CHECK_LIMIT),--limit "$(ENTERPRISE_RAG_BENCH_INTENT_CHECK_LIMIT)",)
+
+enterprise-rag-bench-decomposition-check:
+	cargo run -p cortex-engine --bin enterprise_rag_decomposition_check -- \
+	  --questions "$(ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_QUESTIONS)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_REPORT)" \
+	  --offset "$(ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_OFFSET)" \
+	  --min-multi-coverage-pct "$(ENTERPRISE_RAG_BENCH_DECOMPOSITION_MIN_MULTI_COVERAGE_PCT)" \
+	  $(if $(ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_LIMIT),--limit "$(ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_LIMIT)",)
+
+enterprise-rag-bench-scope-mapping-check:
+	cargo run -p cortex-engine --bin enterprise_rag_scope_mapping_check -- \
+	  --questions "$(ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_QUESTIONS)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_REPORT)" \
+	  --offset "$(ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_OFFSET)" \
+	  --min-project-related-coverage-pct "$(ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_MIN_PROJECT_RELATED_COVERAGE_PCT)" \
+	  $(if $(ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_LIMIT),--limit "$(ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_LIMIT)",)
+
+enterprise-rag-bench-synonym-dictionary-check:
+	cargo run -p cortex-engine --bin enterprise_rag_synonym_dictionary_check -- \
+	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
+	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_SYNONYM_DICTIONARY_OUTPUT)" \
+	  --report "$(ENTERPRISE_RAG_BENCH_SYNONYM_DICTIONARY_REPORT)" \
+	  --min-terms-with-synonyms "$(ENTERPRISE_RAG_BENCH_SYNONYM_MIN_TERMS_WITH_SYNONYMS)" \
+	  --min-term-document-frequency "$(ENTERPRISE_RAG_BENCH_SYNONYM_MIN_TERM_DF)" \
+	  --min-pair-document-frequency "$(ENTERPRISE_RAG_BENCH_SYNONYM_MIN_PAIR_DF)" \
+	  --max-synonyms-per-term "$(ENTERPRISE_RAG_BENCH_SYNONYM_MAX_SYNONYMS_PER_TERM)" \
+	  --max-terms "$(ENTERPRISE_RAG_BENCH_SYNONYM_MAX_TERMS)" \
+	  --max-terms-per-document "$(ENTERPRISE_RAG_BENCH_SYNONYM_MAX_TERMS_PER_DOCUMENT)" \
+	  --progress-every "$(ENTERPRISE_RAG_BENCH_SYNONYM_PROGRESS_EVERY)" \
+	  $(if $(ENTERPRISE_RAG_BENCH_SYNONYM_DICTIONARY_LIMIT),--limit "$(ENTERPRISE_RAG_BENCH_SYNONYM_DICTIONARY_LIMIT)",)
+
+enterprise-rag-bench-condition-check:
+	cargo run -p cortex-engine --bin enterprise_rag_condition_check -- \
+	  --questions "$(ENTERPRISE_RAG_BENCH_CONDITION_CHECK_QUESTIONS)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_CONDITION_CHECK_REPORT)" \
+	  --offset "$(ENTERPRISE_RAG_BENCH_CONDITION_CHECK_OFFSET)" \
+	  --min-constrained-coverage-pct "$(ENTERPRISE_RAG_BENCH_CONDITION_MIN_CONSTRAINED_COVERAGE_PCT)" \
+	  $(if $(ENTERPRISE_RAG_BENCH_CONDITION_CHECK_LIMIT),--limit "$(ENTERPRISE_RAG_BENCH_CONDITION_CHECK_LIMIT)",)
+
+enterprise-rag-bench-calibration-profile-check:
+	cargo run -p cortex-engine --bin enterprise_rag_calibration_check -- \
+	  --questions "$(ENTERPRISE_RAG_BENCH_CALIBRATION_CHECK_QUESTIONS)" \
+	  --output "$(ENTERPRISE_RAG_BENCH_CALIBRATION_CHECK_REPORT)" \
+	  --offset "$(ENTERPRISE_RAG_BENCH_CALIBRATION_CHECK_OFFSET)" \
+	  --min-calibrated-pct "$(ENTERPRISE_RAG_BENCH_CALIBRATION_MIN_CALIBRATED_PCT)" \
+	  --min-semantic-vector-pct "$(ENTERPRISE_RAG_BENCH_CALIBRATION_MIN_SEMANTIC_VECTOR_PCT)" \
+	  --min-constrained-condition-pct "$(ENTERPRISE_RAG_BENCH_CALIBRATION_MIN_CONSTRAINED_CONDITION_PCT)" \
+	  $(if $(ENTERPRISE_RAG_BENCH_CALIBRATION_CHECK_LIMIT),--limit "$(ENTERPRISE_RAG_BENCH_CALIBRATION_CHECK_LIMIT)",)
 
 enterprise-rag-bench-candidate-depth-check:
 	python3 scripts/enterprise_rag_bench/candidate_depth_audit.py \
@@ -2791,7 +3125,7 @@ enterprise-rag-bench-high-level-coverage:
 	  --retrieval-file "$(ENTERPRISE_RAG_BENCH_HIGH_LEVEL_RETRIEVAL)" \
 	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
 	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
-	  --mode leading \
+	  --mode "$(ENTERPRISE_RAG_BENCH_HIGH_LEVEL_COVERAGE_MODE)" \
 	  --top-k 10 \
 	  --max-chars-per-doc 5000 \
 	  --min-fact-token-coverage-pct 60 \

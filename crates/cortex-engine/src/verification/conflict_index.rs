@@ -227,7 +227,9 @@ fn sanitize_relation_value(value: &str) -> String {
 fn conflict_facets(payload: &[u8]) -> ConflictFacets {
     let metadata = CellMetadata::from_payload(payload);
     ConflictFacets {
-        entity: metadata_value(&metadata.body_text, &["entity", "project"]),
+        entity: metadata_value(&metadata.body_text, &["entity", "project"])
+            .or(metadata.entity)
+            .or(metadata.project),
         metric: metadata_value(&metadata.body_text, &["metric"]),
         source: metadata.source.or_else(|| {
             metadata

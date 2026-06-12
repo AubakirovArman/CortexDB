@@ -41,6 +41,16 @@ run_step tenant_recovery make tenant-recovery-check
 run_step ann_release_evidence make ann-release-evidence-check
 run_step ann_production_slo_history make ann-production-slo-history-check
 run_step ann_real_embedding_readiness make ann-real-embedding-readiness
+run_step enterprise_rag_category_regression make erb-category-regression-check
+run_step enterprise_rag_evidence_table_extractor make erb-evidence-table-extractor-check
+run_step enterprise_rag_completeness_plan make erb-completeness-plan-check
+run_step enterprise_rag_project_answer_synth make erb-project-answer-synth-check
+run_step enterprise_rag_conflict_synth make erb-conflict-synth-check
+run_step enterprise_rag_answer_guard make erb-answer-guard-check
+run_step enterprise_rag_answer_context make erb-answer-context-check
+run_step enterprise_rag_answer_intent make erb-answer-intent-check
+run_step enterprise_rag_answer_repair make erb-answer-repair-check
+run_step enterprise_rag_anchor_overlap make erb-anchor-overlap-check
 run_step replication_partition make replication-partition-check
 
 FINISHED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
@@ -71,6 +81,16 @@ FINISHED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   printf '    "ann_release_evidence_root": "target/ann/release-evidence",\n'
   printf '    "ann_production_slo_history_report": "target/ann/production-slo-history/runs/history.json",\n'
   printf '    "ann_real_embedding_readiness_report": "target/ann/real-embedding/readiness.json",\n'
+  printf '    "enterprise_rag_category_regression_report": "target/enterprise-rag-bench/category-regression/report.json",\n'
+  printf '    "enterprise_rag_evidence_table_extractor_log": "%s",\n' "$ROOT/enterprise_rag_evidence_table_extractor.log"
+  printf '    "enterprise_rag_completeness_plan_report": "target/enterprise-rag-bench/analysis/completeness_plan_balanced_50_report.json",\n'
+  printf '    "enterprise_rag_project_answer_synth_report": "target/enterprise-rag-bench/analysis/project_answer_cards_balanced_50_report.json",\n'
+  printf '    "enterprise_rag_conflict_synth_report": "target/enterprise-rag-bench/analysis/conflict_resolution_plans_balanced_50_report.json",\n'
+  printf '    "enterprise_rag_answer_guard_log": "%s",\n' "$ROOT/enterprise_rag_answer_guard.log"
+  printf '    "enterprise_rag_answer_context_log": "%s",\n' "$ROOT/enterprise_rag_answer_context.log"
+  printf '    "enterprise_rag_answer_intent_log": "%s",\n' "$ROOT/enterprise_rag_answer_intent.log"
+  printf '    "enterprise_rag_answer_repair_log": "%s",\n' "$ROOT/enterprise_rag_answer_repair.log"
+  printf '    "enterprise_rag_anchor_overlap_report": "target/enterprise-rag-bench/analysis/anchor_overlap_balanced_50_report.json",\n'
   printf '    "replication_partition_report": "target/replication-partition/report.json"\n'
   printf '  }\n'
   printf '}\n'

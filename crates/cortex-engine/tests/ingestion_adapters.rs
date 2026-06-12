@@ -149,6 +149,40 @@ fn text_ingestion_writes_content_and_source_hash_metadata() {
 }
 
 #[test]
+fn text_ingestion_enriches_source_metadata_for_retrieval() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+
+    db.ingest_text(
+        CellId(700),
+        "# Migration Runbook\nProject: Apollo\nOwner: Alice Lee\nStatus: Blocked\nDue 2026-05-14",
+        TextIngestOptions {
+            scope: "project:investments".to_owned(),
+            source: "runbooks/migration.md".to_owned(),
+        },
+    )
+    .unwrap();
+
+    let payload = db.get_latest_cell(CellId(700)).unwrap();
+    let metadata = CellMetadata::decode_payload(&payload).unwrap();
+
+    assert_eq!(metadata.project.as_deref(), Some("Apollo"));
+    assert_eq!(metadata.owner.as_deref(), Some("Alice Lee"));
+    assert_eq!(metadata.status_tag.as_deref(), Some("blocked"));
+    assert_eq!(metadata.event_date.as_deref(), Some("2026-05-14"));
+    assert_eq!(metadata.topic.as_deref(), Some("Migration Runbook"));
+
+    let results = db
+        .search_keyword(
+            "Alice blocked migration",
+            &crate_view(),
+            cortex_engine::SearchLimit(1),
+        )
+        .unwrap();
+    assert_eq!(results[0].cell_id, CellId(700));
+}
+
+#[test]
 fn text_ingestion_skip_existing_policy_skips_duplicate_chunks() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
@@ -195,6 +229,37 @@ fn text_ingestion_skip_existing_policy_skips_duplicate_chunks() {
     assert_eq!(inserted_again.len(), 1);
     assert!(db.get_latest_cell(CellId(500)).is_none());
     assert!(db.get_latest_cell(CellId(600)).is_some());
+}
+
+#[test]
+fn duplicate_content_groups_report_cross_source_duplicates() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.ingest_text(
+        CellId(10),
+        "same duplicated paragraph",
+        TextIngestOptions {
+            scope: "project:investments".to_owned(),
+            source: "slack.md".to_owned(),
+        },
+    )
+    .unwrap();
+    db.ingest_text(
+        CellId(20),
+        "same duplicated paragraph",
+        TextIngestOptions {
+            scope: "project:investments".to_owned(),
+            source: "confluence.md".to_owned(),
+        },
+    )
+    .unwrap();
+
+    let groups = db.duplicate_content_groups();
+
+    assert_eq!(groups.len(), 1);
+    assert_eq!(groups[0].canonical_cell_id, CellId(10));
+    assert_eq!(groups[0].duplicate_cell_ids, vec![CellId(20)]);
+    assert_eq!(groups[0].source_hashes.len(), 2);
 }
 
 #[test]
@@ -254,11 +319,20 @@ fn csv_ingestion_writes_one_cell_per_row() {
     assert_eq!(found[0].cell_id, CellId(21));
     let payload = db.get_latest_cell(CellId(20)).unwrap();
     let payload_text = String::from_utf8_lossy(&payload);
+    assert!(payload_text.contains("type=table"));
     assert!(payload_text.contains("source_id=budget.csv"));
     assert!(payload_text.contains("document_id=budget.csv"));
+    assert!(payload_text.contains("table_id=budget.csv"));
+    assert!(payload_text.contains("table_headers=project|budget"));
+    assert!(payload_text.contains("row_label=ABC"));
     assert!(payload_text.contains("row=2"));
     assert!(payload_text.contains("cell_range=row-2"));
-    let source_ref = CellMetadata::from_payload(&payload).source_ref.unwrap();
+    let metadata = CellMetadata::from_payload(&payload);
+    assert_eq!(metadata.cell_type, "table");
+    assert_eq!(metadata.table_id.as_deref(), Some("budget.csv"));
+    assert_eq!(metadata.table_headers.as_deref(), Some("project|budget"));
+    assert_eq!(metadata.row_label.as_deref(), Some("ABC"));
+    let source_ref = metadata.source_ref.unwrap();
     assert_eq!(source_ref.row, Some(2));
     assert_eq!(source_ref.cell_range.as_deref(), Some("row-2"));
 }

@@ -38,11 +38,45 @@ def main() -> int:
     parser.add_argument("--top-k-context", type=int, default=8)
     parser.add_argument("--max-chars-per-doc", type=int, default=2200)
     parser.add_argument("--max-tokens", type=int, default=420)
+    parser.add_argument(
+        "--enable-text-intent-budget",
+        action="store_true",
+        help="Use oracle-free question text intent to increase budget for complex answers.",
+    )
+    parser.add_argument("--complex-top-k-context", type=int, default=10)
+    parser.add_argument("--complex-max-chars-per-doc", type=int, default=2600)
+    parser.add_argument("--complex-max-tokens", type=int, default=900)
+    parser.add_argument(
+        "--unsupported-claim-guard",
+        choices=["off", "report", "suppress", "repair"],
+        default="off",
+        help="Report, remove, or repair answer statements with unsupported exact concrete markers.",
+    )
+    parser.add_argument(
+        "--self-consistency-repair",
+        action="store_true",
+        help="Run one evidence-only repair call when the draft answer contains unsupported exact markers.",
+    )
+    parser.add_argument("--self-consistency-retries", type=int, default=1)
     parser.add_argument("--context-mode", default="question-window-digest-ranked")
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--retries", type=int, default=3)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--progress-every", type=int, default=10)
+    parser.add_argument("--evidence-table-file", type=Path)
+    parser.add_argument("--evidence-plan-file", type=Path)
+    parser.add_argument(
+        "--include-evidence-plan",
+        action="store_true",
+        help="Inject deterministic oracle-free evidence slot/completeness plans into the prompt.",
+    )
+    parser.add_argument("--max-evidence-facts-per-doc", type=int, default=6)
+    parser.add_argument("--max-evidence-table-rows", type=int, default=40)
+    parser.add_argument(
+        "--include-evidence-table",
+        action="store_true",
+        help="Inject deterministic evidence fact rows into the official-clean prompt.",
+    )
     parser.add_argument("--log-file", type=Path)
     parser.add_argument("--status-file", type=Path)
     args = parser.parse_args()
@@ -101,6 +135,13 @@ def main() -> int:
                 top_k_context=args.top_k_context,
                 max_chars_per_doc=args.max_chars_per_doc,
                 max_tokens=args.max_tokens,
+                enable_text_intent_budget=args.enable_text_intent_budget,
+                complex_top_k_context=args.complex_top_k_context,
+                complex_max_chars_per_doc=args.complex_max_chars_per_doc,
+                complex_max_tokens=args.complex_max_tokens,
+                unsupported_claim_guard=args.unsupported_claim_guard,
+                self_consistency_repair=args.self_consistency_repair,
+                self_consistency_retries=args.self_consistency_retries,
                 high_level_top_k_context=args.top_k_context,
                 high_level_max_chars_per_doc=args.max_chars_per_doc,
                 high_level_reference_file=None,
@@ -113,12 +154,12 @@ def main() -> int:
                 retries=args.retries,
                 limit=args.limit,
                 progress_every=args.progress_every,
-                evidence_plan_file=None,
-                include_evidence_plan=False,
-                evidence_table_file=None,
-                max_evidence_facts_per_doc=0,
-                max_evidence_table_rows=0,
-                include_evidence_table=False,
+                evidence_plan_file=args.evidence_plan_file,
+                include_evidence_plan=args.include_evidence_plan,
+                evidence_table_file=args.evidence_table_file,
+                max_evidence_facts_per_doc=args.max_evidence_facts_per_doc,
+                max_evidence_table_rows=args.max_evidence_table_rows,
+                include_evidence_table=args.include_evidence_table,
                 omit_thinking_field=bool(profile["omit_thinking_field"]),
                 gemini_native=bool(profile["gemini_native"]),
                 gemini_thinking_budget=0,

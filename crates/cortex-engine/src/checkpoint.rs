@@ -29,6 +29,8 @@ pub(crate) use paths::{
     bitmap_path, hnsw_path, lexical_path, manifest_path, segment_path, segments_path, vector_path,
 };
 
+const LARGE_LEXICAL_TERMS_ONLY_THRESHOLD_BYTES: u64 = 512 * 1024 * 1024;
+
 pub(crate) struct CheckpointLoad {
     pub manifest: StorageManifest,
     pub memtable: MemTable,
@@ -90,6 +92,7 @@ impl Database {
             hnsw::hnsw_graph_for_cells_with_config(&cells, self.hnsw_build_config)?
                 .write(hnsw_path(&self.segments_path, segment_id))?;
         }
+        self.publish_checkpoint_corpus_synonym_dictionary()?;
 
         self.manifest.checkpoint_segment(ManifestSegment {
             id: segment_id,
@@ -121,6 +124,7 @@ impl Database {
             .transpose()?;
         let vector_profile = vector::vector_profile_for_cells(&cells, self.hnsw_build_config)?;
         if cells.is_empty() {
+            self.publish_checkpoint_corpus_synonym_dictionary()?;
             return Ok(CheckpointStats {
                 segment_id: None,
                 cells_flushed: 0,
@@ -147,6 +151,7 @@ impl Database {
             hnsw::hnsw_graph_for_cells_with_config(&cells, self.hnsw_build_config)?
                 .write(hnsw_path(&self.segments_path, segment_id))?;
         }
+        self.publish_checkpoint_corpus_synonym_dictionary()?;
 
         self.manifest.compact_to_segment(ManifestSegment {
             id: segment_id,
@@ -200,7 +205,7 @@ impl Database {
             }
             let segment_bitmap = BitmapIndex::read(bitmap_path(&self.segments_path, segment.id))?;
             let segment_lexical =
-                LexicalIndex::read(lexical_path(&self.segments_path, segment.id))?;
+                read_persisted_lexical_index(&lexical_path(&self.segments_path, segment.id))?;
             merge_bitmap_index(&mut bitmap, segment_bitmap);
             merge_lexical_index(&mut lexical, segment_lexical);
         }
@@ -376,6 +381,21 @@ fn remove_candidates(
     lexical
         .term_frequencies
         .retain(|_, values| !values.is_empty());
+    for values in lexical.field_doc_lengths.values_mut() {
+        values.retain(|candidate, _| !candidates.contains(candidate));
+    }
+    lexical
+        .field_doc_lengths
+        .retain(|_, values| !values.is_empty());
+    for terms in lexical.field_term_frequencies.values_mut() {
+        for values in terms.values_mut() {
+            values.retain(|candidate, _| !candidates.contains(candidate));
+        }
+        terms.retain(|_, values| !values.is_empty());
+    }
+    lexical
+        .field_term_frequencies
+        .retain(|_, terms| !terms.is_empty());
 }
 
 pub(crate) fn load_checkpoint(root: &Path) -> EngineResult<CheckpointLoad> {
@@ -397,6 +417,17 @@ pub(crate) fn load_checkpoint(root: &Path) -> EngineResult<CheckpointLoad> {
         }
     }
     Ok(CheckpointLoad { manifest, memtable })
+}
+
+fn read_persisted_lexical_index(path: &Path) -> EngineResult<LexicalIndex> {
+    let size = fs::metadata(path)
+        .map(|metadata| metadata.len())
+        .unwrap_or(0);
+    if size >= LARGE_LEXICAL_TERMS_ONLY_THRESHOLD_BYTES {
+        Ok(LexicalIndex::read_terms_only(path)?)
+    } else {
+        Ok(LexicalIndex::read(path)?)
+    }
 }
 
 #[cfg(test)]
