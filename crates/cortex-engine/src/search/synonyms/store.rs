@@ -13,10 +13,15 @@ pub(crate) struct CorpusSynonymStore {
 
 impl CorpusSynonymStore {
     pub(crate) fn from_memtable(memtable: &MemTable, txn: ReadTxn) -> Self {
-        let documents = memtable
-            .visible_iter(txn)
-            .map(|version| (version.cell_id, document_from_payload(&version.payload)))
-            .collect();
+        Self::from_records(
+            memtable
+                .visible_iter(txn)
+                .map(|version| (version.cell_id, document_from_payload(&version.payload))),
+        )
+    }
+
+    pub(crate) fn from_records(records: impl IntoIterator<Item = (CellId, String)>) -> Self {
+        let documents = records.into_iter().collect();
         Self { documents }
     }
 

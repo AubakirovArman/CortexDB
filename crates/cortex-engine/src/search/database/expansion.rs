@@ -4,10 +4,11 @@ use cortex_aql::AgentView;
 use cortex_core::CellId;
 
 use crate::database::Database;
+use crate::options::PayloadResidency;
 
 use super::super::{classify_search_query_intent, SearchQuery, SearchQueryIntent};
 use super::context::search_parent_lookup_keys;
-use super::DatabaseSearchResult;
+use super::{DatabaseSearchResult, SearchContextStore};
 
 impl Database {
     pub(crate) fn expand_search_parent_context(
@@ -139,19 +140,36 @@ impl Database {
         view: &AgentView,
         projects: &BTreeSet<String>,
     ) -> Vec<DatabaseSearchResult> {
-        self.search_context_store
+        self.search_context_store_snapshot()
             .project_context_candidates(view, projects)
     }
 
     fn high_level_anchor_candidates(&self, view: &AgentView) -> Vec<DatabaseSearchResult> {
-        self.search_context_store.high_level_anchor_candidates(view)
+        self.search_context_store_snapshot()
+            .high_level_anchor_candidates(view)
     }
 
     fn search_parent_context_candidates(
         &self,
         view: &AgentView,
     ) -> std::collections::BTreeMap<String, DatabaseSearchResult> {
-        self.search_context_store
+        self.search_context_store_snapshot()
             .search_parent_context_candidates(view)
+    }
+
+    fn search_context_store_snapshot(&self) -> SearchContextStore {
+        if self.payload_residency != PayloadResidency::Lazy {
+            return self.search_context_store.clone();
+        }
+
+        let records = self
+            .memtable
+            .visible_iter(self.read_txn())
+            .filter_map(|version| {
+                let payload = self.payload_for_version(version).ok()?;
+                SearchContextStore::record_from_payload(payload, &version.descriptor)
+                    .map(|record| (version.cell_id, record))
+            });
+        SearchContextStore::from_records(records)
     }
 }

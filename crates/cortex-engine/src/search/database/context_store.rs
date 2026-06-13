@@ -25,13 +25,16 @@ pub(crate) struct SearchContextRecord {
 
 impl SearchContextStore {
     pub(crate) fn from_memtable(memtable: &MemTable, txn: ReadTxn) -> Self {
-        let records = memtable
-            .visible_iter(txn)
-            .filter_map(|version| {
-                Self::record_from_payload(version.payload.clone(), &version.descriptor)
-                    .map(|record| (version.cell_id, record))
-            })
-            .collect();
+        Self::from_records(memtable.visible_iter(txn).filter_map(|version| {
+            Self::record_from_payload(version.payload.clone(), &version.descriptor)
+                .map(|record| (version.cell_id, record))
+        }))
+    }
+
+    pub(crate) fn from_records(
+        records: impl IntoIterator<Item = (CellId, SearchContextRecord)>,
+    ) -> Self {
+        let records = records.into_iter().collect();
         Self { records }
     }
 

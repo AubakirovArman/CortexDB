@@ -2,7 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use cortex_core::CellId;
 
-use crate::Database;
+use crate::{Database, DatabaseOptions, PayloadResidency};
 
 use super::{
     build_corpus_synonym_dictionary, expand_query_with_corpus_synonyms, read_acsyn_dictionary,
@@ -171,6 +171,51 @@ fn corpus_synonym_store_tracks_patch_tombstone_checkpoint_and_reopen() {
         .synonyms_for("apollo")
         .contains(&"updated".to_owned()));
     assert!(dictionary.synonyms_for("rollout").is_empty());
+}
+
+#[test]
+fn corpus_synonym_dictionary_survives_lazy_checkpoint_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    let options = CorpusSynonymOptions {
+        min_term_document_frequency: 1,
+        min_pair_document_frequency: 1,
+        max_synonyms_per_term: 8,
+        max_terms: 100,
+        max_terms_per_document: 64,
+    };
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(
+            CellId(1),
+            b"scope=default\nstatus=ready\ntype=fact\n\nApollo rollout blocker auth owner".to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(2),
+            b"scope=default\nstatus=ready\ntype=fact\n\nApollo rollout blocker auth deadline"
+                .to_vec(),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+    }
+    let db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            payload_residency: PayloadResidency::Lazy,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+
+    assert_eq!(db.storage_stats().unwrap().memtable_payload_bytes, 0);
+    let dictionary = db.corpus_synonym_dictionary(options);
+
+    assert!(dictionary
+        .synonyms_for("apollo")
+        .contains(&"rollout".to_owned()));
+    assert!(dictionary
+        .synonyms_for("auth")
+        .contains(&"blocker".to_owned()));
 }
 
 #[test]

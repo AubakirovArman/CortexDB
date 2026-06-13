@@ -8,7 +8,9 @@ pub(crate) use cortex_engine::search::{
     analyze_search_query, CorpusSynonymOptions, DatabaseSearchResult, QueryAnchorKind, SearchMode,
     SearchQuery, SearchRerankInput, SearchReranker,
 };
-pub(crate) use cortex_engine::{scope_id, Database, SearchLimit};
+pub(crate) use cortex_engine::{
+    scope_id, Database, DatabaseOptions, PayloadResidency, SearchLimit,
+};
 pub(crate) use cortex_storage::indexes::LexicalIndex;
 pub(crate) use cortex_storage::vectors::VectorIndex;
 

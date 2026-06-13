@@ -134,3 +134,28 @@ fn database_search_high_level_query_fills_summary_anchor_from_persisted_index() 
     assert_eq!(results[0].cell_id, CellId(1));
     assert!(String::from_utf8_lossy(&results[0].payload).contains("Northstar"));
 }
+
+#[test]
+fn database_search_high_level_query_fills_summary_anchor_lazy_checkpoint_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        seed_high_level_anchor_cells(&mut db);
+        db.checkpoint().unwrap();
+    }
+    let db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            payload_residency: PayloadResidency::Lazy,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+
+    assert_eq!(db.storage_stats().unwrap().memtable_payload_bytes, 0);
+    let results = search_high_level_anchor(&db);
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].cell_id, CellId(1));
+    assert!(String::from_utf8_lossy(&results[0].payload).contains("Northstar"));
+}

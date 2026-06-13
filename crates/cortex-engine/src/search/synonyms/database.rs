@@ -1,7 +1,9 @@
 use crate::database::Database;
 use crate::error::EngineResult;
+use crate::options::PayloadResidency;
 
 use super::persistence::{read_acsyn_dictionary, write_acsyn_dictionary, ACSYN_FILE_NAME};
+use super::store::CorpusSynonymStore;
 use super::types::{CorpusSynonymDictionary, CorpusSynonymOptions};
 
 impl Database {
@@ -13,7 +15,24 @@ impl Database {
         &self,
         options: CorpusSynonymOptions,
     ) -> CorpusSynonymDictionary {
+        if self.payload_residency == PayloadResidency::Lazy {
+            return self.lazy_corpus_synonym_store().dictionary(options);
+        }
         self.corpus_synonym_store.dictionary(options)
+    }
+
+    fn lazy_corpus_synonym_store(&self) -> CorpusSynonymStore {
+        let records = self
+            .memtable
+            .visible_iter(self.read_txn())
+            .filter_map(|version| {
+                let payload = self.payload_for_version(version).ok()?;
+                Some(CorpusSynonymStore::record_from_payload(
+                    version.cell_id,
+                    &payload,
+                ))
+            });
+        CorpusSynonymStore::from_records(records)
     }
 
     pub fn persist_corpus_synonym_dictionary(
