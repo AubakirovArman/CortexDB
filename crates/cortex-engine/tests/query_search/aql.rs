@@ -1,5 +1,6 @@
 use super::common::prelude::*;
 use super::common::view;
+use cortex_aql::AqlCatalog;
 
 #[test]
 fn retrieve_aql_uses_engine_index_without_mock_provider() {
@@ -62,6 +63,71 @@ WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#;
 
     let db = Database::open(dir.path()).unwrap();
     assert_eq!(retrieve_ids(&db, query), vec![CellId(2)]);
+}
+
+#[test]
+fn aql_uses_manifest_stats_for_bitmap_estimates_after_checkpoint() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:wide\nstatus=draft\ntype=fact\n\nalpha budget".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:wide\nstatus=draft\ntype=fact\n\nbeta budget".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(3),
+        b"scope=project:wide\nstatus=ready\ntype=document_block\n\nbudget gamma".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+
+    let statistics = db.statistics();
+    assert_eq!(
+        statistics.estimate_scope_cardinality("project:wide"),
+        Some(3)
+    );
+    assert_eq!(statistics.estimate_status_cardinality("ready"), Some(1));
+    assert_eq!(
+        statistics.estimate_cell_type_cardinality("document_block"),
+        Some(1)
+    );
+    assert_eq!(
+        statistics.estimate_term_document_frequency("budget"),
+        Some(3)
+    );
+
+    let report = db
+        .explain_retrieve_aql(
+            r#"EXPLAIN RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
+WHERE space = project:wide AND status = "ready" LIMIT 10 CANDIDATES;"#,
+            &view(scope_id("project:wide")),
+        )
+        .unwrap();
+    let index = db.aql_index().unwrap();
+    let brain = BrainId(1);
+    let status_handle = index
+        .status_bitmap(brain, index.resolve_status(brain, "ready").unwrap())
+        .unwrap();
+    let scope_handle = index.scope_bitmap(brain, scope_id("project:wide")).unwrap();
+
+    let status_op = format!("Push({status_handle:?})");
+    let scope_op = format!("Push({scope_handle:?})");
+    let status_position = report
+        .bitmap_ops
+        .iter()
+        .position(|op| op == &status_op)
+        .unwrap();
+    let scope_position = report
+        .bitmap_ops
+        .iter()
+        .position(|op| op == &scope_op)
+        .unwrap();
+    assert!(status_position < scope_position);
 }
 
 #[test]

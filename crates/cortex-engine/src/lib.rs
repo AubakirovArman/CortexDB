@@ -142,7 +142,7 @@ pub use options::{
 pub use plan::{LogicalPlan, LogicalPlanNode, LogicalPlanReport, PolicyRewrite};
 pub use query::{
     scope_id, AqlCandidateCounts, AqlExecutionTraceReport, AqlExplainFilter, AqlExplainReport,
-    AqlQueryCacheStats, CandidateId, CellMetadata, EngineAqlIndex, SourceRef,
+    AqlQueryCacheStats, CandidateId, CellMetadata, DatabaseStatistics, EngineAqlIndex, SourceRef,
 };
 pub use repair::RepairReport;
 pub use replay::{

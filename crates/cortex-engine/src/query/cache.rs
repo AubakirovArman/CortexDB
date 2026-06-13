@@ -218,9 +218,10 @@ impl Database {
             return Ok((cached, self.try_aql_index()?));
         }
 
-        let index = self.try_aql_index()?;
         let statement = parse_aql(aql).map_err(|error| EngineError::AqlParse(error.to_string()))?;
-        let bound = Binder::new(&index, view).bind_statement(&statement)?;
+        let catalog = self.aql_statistics_catalog();
+        let bound = Binder::new(&catalog, view).bind_statement(&statement)?;
+        let index = self.try_aql_index()?;
         let cached = CachedAqlPlan::from_statement(&statement, bound);
         self.aql_query_cache
             .lock()

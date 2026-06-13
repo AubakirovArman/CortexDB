@@ -11,6 +11,7 @@ pub(crate) mod metadata;
 mod metadata_validation;
 mod provider;
 mod render;
+mod statistics;
 
 use cortex_aql::{AgentView, BitmapHandle, BoundPlan, BrainId};
 use cortex_core::CellId;
@@ -24,6 +25,7 @@ pub use explain::{
 };
 pub use metadata::{scope_id, CellMetadata, SourceRef};
 pub use provider::EngineAqlProvider;
+pub use statistics::DatabaseStatistics;
 
 const DEFAULT_BRAIN: BrainId = BrainId(1);
 
