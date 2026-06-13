@@ -16,11 +16,19 @@ make memory-profile \
   MEMORY_PROFILE_ROOT=target/memory-profile/10k \
   MEMORY_PROFILE_REPORT=target/memory-profile/10k/report.json \
   MEMORY_PROFILE_CELLS=10000 \
+  MEMORY_PROFILE_PAYLOAD_BYTES=0 \
   MEMORY_PROFILE_PAYLOAD_RESIDENCY=memory
 ```
 
 Use `MEMORY_PROFILE_PAYLOAD_RESIDENCY=lazy` to measure checkpoint reopen with
 segment-backed payloads left on disk.
+
+Use `MEMORY_PROFILE_PAYLOAD_BYTES=N` to pad every generated payload to at least
+`N` bytes. Use `MEMORY_PROFILE_REOPEN_ONLY=--reopen-only` to measure a fresh
+process opening an existing `MEMORY_PROFILE_ROOT/db` without rebuilding the
+database first. Fresh-process reopen is the correct RSS comparison for lazy
+payload residency because allocator memory from the ingestion/checkpoint phase
+can otherwise dominate the process RSS.
 
 ## Report
 
@@ -60,13 +68,55 @@ memory resident payload after reopen: 11184 bytes
 lazy resident payload after reopen: 0 bytes
 ```
 
+A08 fresh-process 10K x 4KB reopen profile:
+
+```text
+prepared root: target/memory-profile/a08-memory-10k-4kb
+memory report: target/memory-profile/a08-reopen-memory-10k-4kb/report.json
+lazy report: target/memory-profile/a08-reopen-lazy-10k-4kb/report.json
+cells: 10000
+payload_bytes: 4096
+memory RSS: 924790784
+lazy RSS: 110858240
+RSS memory/lazy ratio: 8.342
+memory peak RSS: 943800320
+lazy peak RSS: 129933312
+peak RSS memory/lazy ratio: 7.264
+memory resident payload after reopen: 40960000 bytes
+lazy resident payload after reopen: 0 bytes
+memory estimated total: 128993526
+lazy estimated total: 47073526
+estimated memory/lazy ratio: 2.740
+memory reopen duration: 6298.253 ms
+lazy reopen duration: 450.410 ms
+```
+
+A08 fresh-process 10K x 4KB reopen + 50 `get_latest` samples:
+
+```text
+memory report: target/memory-profile/a08-reopen-memory-10k-4kb-read50/report.json
+lazy report: target/memory-profile/a08-reopen-lazy-10k-4kb-read50/report.json
+memory RSS: 926367744
+lazy RSS: 111054848
+RSS memory/lazy ratio: 8.342
+memory resident payload after reopen: 40960000 bytes
+lazy resident payload after reopen: 0 bytes
+memory get_latest p95: 0.002 ms
+lazy get_latest p95: 1.423 ms
+lazy/memory p95 ratio: 711.500
+```
+
 Interpretation:
 
 - The estimate is lower than process RSS because RSS includes allocator/runtime
   overhead and non-database process memory.
 - Small smoke runs can have identical RSS in memory and lazy mode because process
-  overhead dominates the payload bytes; the resident payload counter is the
-  precise signal for this scale.
+  overhead dominates the payload bytes, and same-process build/reopen runs can
+  retain allocator memory from ingestion/checkpoint. Use `--reopen-only` for
+  RSS comparisons.
 - The gap is now visible and reproducible instead of being an undocumented claim.
+- Lazy payload residency trades RAM for on-demand disk reads: the local 10K x
+  4KB read sample shows a large relative p95 increase, but the absolute lazy
+  `get_latest` p95 remains low at this scale.
 - The static clone gate is not an allocator profiler; it prevents known
   full-payload clone regressions from returning to checkpoint and VERIFY paths.

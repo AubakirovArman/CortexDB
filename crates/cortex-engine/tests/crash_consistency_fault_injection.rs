@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use cortex_core::{CellId, CommitSeq};
-use cortex_engine::Database;
+use cortex_engine::{Database, DatabaseOptions, PayloadResidency};
 use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::segment::{SegmentCell, SegmentWriter};
@@ -79,6 +79,9 @@ fn published_torn_checkpoint_files_fail_closed_or_validate_bad() {
 
     let segment = dir.path().join("segments").join("segment-1.acs");
     corrupt_last_byte(&segment);
+    if let Ok(db) = Database::open_with_options(dir.path(), lazy_options()) {
+        assert!(db.validate_storage().is_err());
+    }
     assert!(Database::open(dir.path()).is_err());
 }
 
@@ -311,6 +314,17 @@ fn assert_visible(
     expected: &[(CellId, Vec<u8>)],
     absent: &[CellId],
 ) {
+    let db = Database::open_with_options(root, lazy_options()).unwrap();
+    assert_eq!(db.current_seq(), expected_seq);
+    db.validate_storage().unwrap();
+    for (cell_id, payload) in expected {
+        assert_eq!(db.get_latest_cell(*cell_id).unwrap(), *payload);
+    }
+    for cell_id in absent {
+        assert_eq!(db.get_latest_cell(*cell_id), None);
+    }
+    drop(db);
+
     let db = Database::open(root).unwrap();
     assert_eq!(db.current_seq(), expected_seq);
     db.validate_storage().unwrap();
@@ -319,6 +333,13 @@ fn assert_visible(
     }
     for cell_id in absent {
         assert_eq!(db.get_latest_cell(*cell_id), None);
+    }
+}
+
+fn lazy_options() -> DatabaseOptions {
+    DatabaseOptions {
+        payload_residency: PayloadResidency::Lazy,
+        ..DatabaseOptions::default()
     }
 }
 

@@ -6,6 +6,9 @@ pub(super) struct Args {
     pub(super) root: PathBuf,
     pub(super) report: PathBuf,
     pub(super) cells: usize,
+    pub(super) payload_bytes: usize,
+    pub(super) reopen_only: bool,
+    pub(super) read_samples: usize,
     pub(super) max_rss_to_estimated_total_ratio: f64,
     pub(super) payload_residency: PayloadResidency,
 }
@@ -16,6 +19,9 @@ impl Args {
             root: PathBuf::from("target/memory-profile"),
             report: PathBuf::from("target/memory-profile/report.json"),
             cells: 10_000,
+            payload_bytes: 0,
+            reopen_only: false,
+            read_samples: 0,
             max_rss_to_estimated_total_ratio: 128.0,
             payload_residency: PayloadResidency::Memory,
         };
@@ -26,6 +32,17 @@ impl Args {
                 "--report" => args.report = PathBuf::from(next_value(&mut values, "--report")?),
                 "--cells" => {
                     args.cells = parse_usize(next_value(&mut values, "--cells")?, "--cells")?
+                }
+                "--payload-bytes" => {
+                    args.payload_bytes = parse_usize(
+                        next_value(&mut values, "--payload-bytes")?,
+                        "--payload-bytes",
+                    )?
+                }
+                "--reopen-only" => args.reopen_only = true,
+                "--read-samples" => {
+                    args.read_samples =
+                        parse_usize(next_value(&mut values, "--read-samples")?, "--read-samples")?
                 }
                 "--max-rss-to-estimated-total-ratio" => {
                     args.max_rss_to_estimated_total_ratio = parse_f64(
@@ -80,5 +97,43 @@ fn parse_payload_residency(value: String) -> Result<PayloadResidency, String> {
 }
 
 fn help_text() -> String {
-    "usage: memory_profile_check [--root PATH] [--report PATH] [--cells N] [--payload-residency memory|lazy] [--max-rss-to-estimated-total-ratio N]".to_owned()
+    "usage: memory_profile_check [--root PATH] [--report PATH] [--cells N] [--payload-bytes N] [--reopen-only] [--read-samples N] [--payload-residency memory|lazy] [--max-rss-to-estimated-total-ratio N]".to_owned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(values: &[&str]) -> Args {
+        Args::parse(values.iter().map(|value| (*value).to_owned())).unwrap()
+    }
+
+    #[test]
+    fn parse_payload_bytes_override() {
+        let args = parse(&["--cells", "12", "--payload-bytes", "4096"]);
+
+        assert_eq!(args.cells, 12);
+        assert_eq!(args.payload_bytes, 4096);
+    }
+
+    #[test]
+    fn parse_keeps_payload_bytes_disabled_by_default() {
+        let args = parse(&[]);
+
+        assert_eq!(args.payload_bytes, 0);
+    }
+
+    #[test]
+    fn parse_reopen_only_flag() {
+        let args = parse(&["--reopen-only"]);
+
+        assert!(args.reopen_only);
+    }
+
+    #[test]
+    fn parse_read_samples_override() {
+        let args = parse(&["--read-samples", "25"]);
+
+        assert_eq!(args.read_samples, 25);
+    }
 }
