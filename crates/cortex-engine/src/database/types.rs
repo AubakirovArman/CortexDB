@@ -29,6 +29,10 @@ pub trait CandidateResolver: BitmapProvider {
     fn lexical_candidates_for_terms(&self, _terms: &[String]) -> Option<BTreeSet<u32>> {
         None
     }
+
+    fn ranked_candidates_for_task(&self, _task: &str, _candidates: &[u32]) -> Option<Vec<u32>> {
+        None
+    }
 }
 
 #[derive(Debug)]

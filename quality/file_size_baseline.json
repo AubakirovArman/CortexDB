@@ -1907,7 +1907,7 @@
     "crates/cortex-engine/src/database/types.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 132,
+      "lines": 136,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2005,7 +2005,7 @@
     "crates/cortex-engine/src/exec/retrieve.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 186,
+      "lines": 222,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2432,7 +2432,7 @@
     "crates/cortex-engine/src/query/provider.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 78,
+      "lines": 178,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -4175,7 +4175,7 @@
     "crates/cortex-engine/tests/query_search/aql.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 507,
+      "lines": 516,
       "soft_limit": 600,
       "warning_limit": 1200
     },

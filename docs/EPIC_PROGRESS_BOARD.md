@@ -26,7 +26,8 @@ work by accident.
 B03 exit steps:
 
 1. Done: make PackOp signal when the token budget is filled.
-2. Stop upstream operators as early as safely possible.
+2. Done: stop upstream candidate work before payload materialization with
+   `CheapRankBudgetOp` where the provider can rank candidate IDs cheaply.
 3. Done: clamp retrieve `LimitOp` to the budget-derived cost-model
    `recommended_candidate_limit`.
 4. Move lazy payload reads behind permission/rank and bounded pack selection.
@@ -44,8 +45,12 @@ B03 progress:
   2 budget-derived candidates from 5 quality-filtered candidates;
 - done: `PackOp`/`PackExecution` expose a budget-filled signal covered by
   `pack_operator_reports_budget_filled_signal`;
-- remaining: upstream early stop and bounded lazy payload fetch after cheap
-  candidate/rank metadata.
+- done: `CheapRankBudgetOp` uses the AQL lexical index to rank candidate IDs
+  without fetching payloads and bounds the input to `QualityFilter`; the small
+  explain fixture shows 5 -> 4 before payload materialization, then 4 -> 2 at
+  `LimitOp`;
+- remaining: explicit lazy payload-read counter gate and final B03 closeout
+  decision before moving to B04.
 
 ## Recently Closed
 
@@ -184,9 +189,8 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 Work on B03 only:
 
-1. add a budget-full signal to PackOp/ContextPackBuilder;
-2. stop upstream candidate/payload work when the pack is complete;
-3. prove ContextPack fixture parity;
-4. update `docs/DATABASE_GRADE_EXECUTION_PLAN.md` and this board;
-5. move pointer only after B03 is `done` or explicitly split with accepted
+1. add an explicit small/medium lazy payload-read counter gate;
+2. verify ContextPack fixture parity after the bounded candidate path;
+3. update `docs/DATABASE_GRADE_EXECUTION_PLAN.md` and this board;
+4. move pointer only after B03 is `done` or explicitly split with accepted
    follow-up scope.
