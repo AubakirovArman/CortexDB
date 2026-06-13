@@ -1,12 +1,19 @@
 use std::env;
 use std::fs;
-use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Instant;
 
 use cortex_core::CellId;
 use cortex_engine::Database;
 use serde_json::{json, Value};
+
+#[path = "memory_profile_check/args.rs"]
+mod args;
+#[path = "memory_profile_check/payload_gate.rs"]
+mod payload_gate;
+
+use args::Args;
+use payload_gate::{clone_gate_errors, payload_clone_gate_report};
 
 fn main() -> ExitCode {
     match run() {
@@ -175,87 +182,6 @@ fn estimate_ratio_error(
     })
 }
 
-fn payload_clone_gate_report() -> Value {
-    let checks = [
-        require_check(
-            "crates/cortex-core/src/memtable/mod.rs",
-            "pub fn visible_iter",
-            "borrowed visible iterator",
-        ),
-        require_check(
-            "crates/cortex-core/src/memtable/mod.rs",
-            "pub fn visible_created_after_iter",
-            "borrowed delta iterator",
-        ),
-        require_check(
-            "crates/cortex-storage/src/segment.rs",
-            "pub struct SegmentCellRef",
-            "borrowed segment cell view",
-        ),
-        forbid_check(
-            "crates/cortex-engine/src/checkpoint.rs",
-            "self.snapshot_versions()",
-            "checkpoint snapshot clone path",
-        ),
-        forbid_check(
-            "crates/cortex-engine/src/verification.rs",
-            "self.snapshot_versions()",
-            "VERIFY FACT full clone scan",
-        ),
-        forbid_check(
-            "crates/cortex-engine/src/verification.rs",
-            "bind_aql_cached",
-            "VERIFY FACT retrieval-index bind path",
-        ),
-        forbid_check(
-            "crates/cortex-engine/src/verification/graph.rs",
-            "conflicts_for_fact",
-            "VERIFY graph enrichment full conflict-index scan",
-        ),
-    ];
-    let checks = checks.into_iter().collect::<Vec<_>>();
-    let passed = checks
-        .iter()
-        .all(|check| check["ok"].as_bool().unwrap_or(false));
-    json!({
-        "passed": passed,
-        "method": "static_source_gate",
-        "checks": checks,
-    })
-}
-
-fn require_check(path: &str, needle: &str, label: &str) -> Value {
-    source_check(path, needle, label, true)
-}
-
-fn forbid_check(path: &str, needle: &str, label: &str) -> Value {
-    source_check(path, needle, label, false)
-}
-
-fn source_check(path: &str, needle: &str, label: &str, require: bool) -> Value {
-    let text = fs::read_to_string(path).unwrap_or_default();
-    let contains = text.contains(needle);
-    let ok = if require { contains } else { !contains };
-    json!({
-        "ok": ok,
-        "path": path,
-        "label": label,
-        "kind": if require { "require" } else { "forbid" },
-        "needle": needle,
-    })
-}
-
-fn clone_gate_errors(report: &Value) -> Vec<String> {
-    report["checks"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter(|check| !check["ok"].as_bool().unwrap_or(false))
-        .filter_map(|check| check["label"].as_str())
-        .map(|label| format!("payload clone gate failed: {label}"))
-        .collect()
-}
-
 fn linux_proc_status_memory_bytes() -> Option<(u64, u64)> {
     let status = fs::read_to_string("/proc/self/status").ok()?;
     let mut rss_bytes = 0;
@@ -284,69 +210,4 @@ fn ratio(numerator: u64, denominator: u64) -> f64 {
 
 fn round_ms(value: f64) -> f64 {
     (value * 1000.0).round() / 1000.0
-}
-
-struct Args {
-    root: PathBuf,
-    report: PathBuf,
-    cells: usize,
-    max_rss_to_estimated_total_ratio: f64,
-}
-
-impl Args {
-    fn parse(values: impl Iterator<Item = String>) -> Result<Self, String> {
-        let mut args = Self {
-            root: PathBuf::from("target/memory-profile"),
-            report: PathBuf::from("target/memory-profile/report.json"),
-            cells: 10_000,
-            max_rss_to_estimated_total_ratio: 128.0,
-        };
-        let mut values = values.peekable();
-        while let Some(arg) = values.next() {
-            match arg.as_str() {
-                "--root" => args.root = PathBuf::from(next_value(&mut values, "--root")?),
-                "--report" => args.report = PathBuf::from(next_value(&mut values, "--report")?),
-                "--cells" => {
-                    args.cells = parse_usize(next_value(&mut values, "--cells")?, "--cells")?
-                }
-                "--max-rss-to-estimated-total-ratio" => {
-                    args.max_rss_to_estimated_total_ratio = parse_f64(
-                        next_value(&mut values, "--max-rss-to-estimated-total-ratio")?,
-                        "--max-rss-to-estimated-total-ratio",
-                    )?
-                }
-                "--help" | "-h" => return Err(help_text()),
-                unknown => return Err(format!("unknown argument: {unknown}\n{}", help_text())),
-            }
-        }
-        if args.cells == 0 {
-            return Err("--cells must be positive".to_owned());
-        }
-        Ok(args)
-    }
-}
-
-fn next_value(
-    values: &mut std::iter::Peekable<impl Iterator<Item = String>>,
-    flag: &str,
-) -> Result<String, String> {
-    values
-        .next()
-        .ok_or_else(|| format!("missing value for {flag}"))
-}
-
-fn parse_usize(value: String, flag: &str) -> Result<usize, String> {
-    value
-        .parse::<usize>()
-        .map_err(|_| format!("invalid value for {flag}: {value}"))
-}
-
-fn parse_f64(value: String, flag: &str) -> Result<f64, String> {
-    value
-        .parse::<f64>()
-        .map_err(|_| format!("invalid value for {flag}: {value}"))
-}
-
-fn help_text() -> String {
-    "usage: memory_profile_check [--root PATH] [--report PATH] [--cells N] [--max-rss-to-estimated-total-ratio N]".to_owned()
 }
