@@ -2,11 +2,9 @@ use clap::Subcommand;
 mod formats;
 mod inputs;
 mod subcommands;
-
 pub(in crate::cli) use formats::{ContextOutputFormat, VerificationOutputFormat};
 pub(in crate::cli) use inputs::{ScopedAqlArgs, ScopedVectorArgs, VectorSearchPolicyArgs};
 pub(in crate::cli) use subcommands::{UpgradeCommand, VectorCommand};
-
 #[derive(Subcommand, Debug)]
 pub(in crate::cli) enum Command {
     #[command(
@@ -14,6 +12,8 @@ pub(in crate::cli) enum Command {
         long_about = "Run the flagship local CortexDB demo. The demo loads a small fixture and shows scope-safe retrieval plus deterministic numeric conflict verification."
     )]
     Demo,
+    #[command(about = "Initialize a local database with a starter AgentView and sample cell")]
+    Init { path: String },
     #[command(about = "Check local database health and repair advice")]
     Doctor { path: String },
     #[command(about = "Generate shell completion scripts")]

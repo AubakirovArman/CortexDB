@@ -1,8 +1,9 @@
 use std::path::Path;
 
 use crate::cli_doctor_checks::{
-    auth_check, backup_age_check, lock_check_after_open, lock_check_without_open, repair_advice,
-    server_health_check, tenant_check, validate_tenant_id, DoctorCheck,
+    auth_check, backup_age_check, format_versions_check, lock_check_after_open,
+    lock_check_without_open, memory_forecast_check, repair_advice, server_health_check,
+    tenant_check, validate_tenant_id, wal_check, DoctorCheck,
 };
 use crate::cli_ops::open_database;
 
@@ -33,7 +34,7 @@ pub(crate) fn doctor(path: &str, tenant: Option<&str>) -> Result<String, String>
 
     checks.push(lock_check_after_open(db_path));
 
-    match db.storage_stats() {
+    let storage_stats = match db.storage_stats() {
         Ok(stats) => {
             checks.push(DoctorCheck::ok(
                 "storage_stats",
@@ -42,14 +43,24 @@ pub(crate) fn doctor(path: &str, tenant: Option<&str>) -> Result<String, String>
                     stats.current_seq.0, stats.live_segments, stats.memtable.cell_count
                 ),
             ));
+            Some(stats)
         }
         Err(error) => {
             checks.push(DoctorCheck::fail("storage_stats", error.to_string()));
             all_ok = false;
+            None
         }
+    };
+    if let Some(stats) = storage_stats.as_ref() {
+        let check = memory_forecast_check(stats);
+        all_ok &= check.ok;
+        checks.push(check);
     }
 
     let report = db.validate_storage_report();
+    let wal = wal_check(&report, db_path);
+    all_ok &= wal.ok;
+    checks.push(wal);
     if report.errors.is_empty() {
         checks.push(DoctorCheck::ok(
             "validate",
@@ -64,6 +75,7 @@ pub(crate) fn doctor(path: &str, tenant: Option<&str>) -> Result<String, String>
     }
 
     for check in [
+        format_versions_check(),
         backup_age_check(db_path),
         server_health_check(),
         auth_check(),

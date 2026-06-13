@@ -4,6 +4,12 @@ use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
+mod system;
+#[cfg(test)]
+mod tests;
+
+pub(crate) use system::{format_versions_check, memory_forecast_check, wal_check};
+
 pub(crate) struct DoctorCheck {
     pub(crate) name: &'static str,
     pub(crate) ok: bool,
@@ -90,6 +96,10 @@ pub(crate) fn lock_check_without_open(path: &Path) -> DoctorCheck {
 
 pub(crate) fn backup_age_check(path: &Path) -> DoctorCheck {
     let (roots, configured) = backup_roots(path);
+    backup_age_check_for_roots(roots, configured)
+}
+
+fn backup_age_check_for_roots(roots: Vec<PathBuf>, configured: bool) -> DoctorCheck {
     let mut latest: Option<SystemTime> = None;
     let mut existing_roots = Vec::new();
     for root in &roots {

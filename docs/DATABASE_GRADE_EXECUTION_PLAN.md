@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-D02` (`EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
+Current pointer: `EPIC-D06` (`EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
 `EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
 remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
 partial follow-up).
@@ -44,8 +44,9 @@ enough to unblock the next dependency step.
 6. `EPIC-D11` — MCP adapter: done.
 7. `EPIC-E01` — WAL writer error surfacing: done.
 8. `EPIC-A09` — disk-resident persisted-index incremental merge: done.
-9. `EPIC-D02` — `cortexdb init` + doctor: current active front.
-10. `EPIC-D06-D10` — DX wave after SDK publishing/version decisions.
+9. `EPIC-D02` — `cortexdb init` + doctor: done.
+10. `EPIC-D06` — Python SDK typed models, retries, and timeouts: current active front.
+11. `EPIC-D07-D10` — remaining DX wave after SDK publishing/version decisions.
 
 ## Summary
 
@@ -1205,17 +1206,18 @@ enough to unblock the next dependency step.
 
 ### EPIC-D02 — `cortexdb init` + doctor
 
-- status: `pending`
+- status: `done`
 - meta: Категория: CLI · P1 · 60 days · build
 - tasks:
-  - [ ] 1) init: база+пример AgentView+печать следующих шагов
-  - [ ] 2) doctor: lock, WAL-валидность, версии форматов, RAM-прогноз vs доступно
-  - [ ] 3) выводить «что не так и что сделать».
+  - [x] 1) init: база+пример AgentView+печать следующих шагов — `cortexdb init <path>` opens/creates the database, persists starter AgentView `agent_id=1`, writes a scoped starter cell when cell 1 is empty, and prints copy-paste `doctor`, `context`, and `verify` next commands.
+  - [x] 2) doctor: lock, WAL-валидность, версии форматов, RAM-прогноз vs доступно — doctor now reports `wal`, `format_versions`, and `memory_forecast` alongside existing open/lock/stats/validate/backup/server/auth/ANN checks.
+  - [x] 3) выводить «что не так и что сделать» — failure paths include explicit repair/unlock/WAL validation/memory sizing advice.
 - acceptance:
-  - [ ] 1) init→quickstart без чтения доков
-  - [ ] 2) doctor ловит 5 типовых проблем (тесты).
+  - [x] 1) init→quickstart без чтения доков — CLI regression runs `init -> doctor -> context` on a fresh path and verifies the starter AgentView file plus retrieved starter ContextPack.
+  - [x] 2) doctor ловит 5 типовых проблем (тесты) — tests cover invalid tenant, stale lock, configured backup root without backups, WAL failure advice, and RAM forecast failure.
 - files: cortex-cli.
 - risks: нет. Зависимости: D01. Эффект: нулевой порог входа.
+- evidence: `cargo test -p cortex-cli tests::basics --all-features`, `cargo test -p cortex-cli cli_doctor_checks --all-features`, and `cargo test -p cortex-cli --all-features` passed. File-size discipline held: `cli_ops/core.rs` 263 lines, `cli_doctor_checks.rs` 281, `cli_doctor_checks/system.rs` 120, and `cli/args/commands.rs` 300.
 
 ### EPIC-D03 — GETTING_STARTED — 5 минут до первого пака
 

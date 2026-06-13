@@ -11,12 +11,56 @@ fn usage_is_reported_for_missing_args() {
 fn help_and_version_commands_work() {
     let help = run(vec!["cortexdb".to_owned(), "--help".to_owned()]).unwrap();
     assert!(help.contains("Usage: cortexdb"));
+    assert!(help.contains("init"));
     assert!(help.contains("ingest-json"));
     assert!(help.contains("doctor"));
     assert!(help.contains("completions"));
 
     let version = run(vec!["cortexdb".to_owned(), "version".to_owned()]).unwrap();
     assert!(version.starts_with("cortexdb "));
+}
+
+#[test]
+fn init_creates_quickstart_database_agent_view_and_sample_context() {
+    let path = unique_path("cortexdb-cli-init");
+    let path_arg = path.to_string_lossy().into_owned();
+
+    let init = run(vec![
+        "cortexdb".to_owned(),
+        "init".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    assert!(init.contains("CortexDB initialized"));
+    assert!(init.contains("agent_view_id=1"));
+    assert!(init.contains("sample_scope=project:starter"));
+    assert!(init.contains("cortexdb doctor"));
+    assert!(path.join("agent_views/1.view").exists());
+
+    let doctor = run(vec![
+        "cortexdb".to_owned(),
+        "doctor".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    assert!(doctor.contains("wal:"));
+    assert!(doctor.contains("format_versions:"));
+    assert!(doctor.contains("memory_forecast:"));
+    assert!(doctor.contains("All checks passed"));
+
+    let context = run(vec![
+        "cortexdb".to_owned(),
+        "context".to_owned(),
+        path_arg.clone(),
+        "project:starter".to_owned(),
+        "RETRIEVE CONTEXT FOR TASK \"starter onboarding\" IN BRAIN default LIMIT 5 CANDIDATES;"
+            .to_owned(),
+    ])
+    .unwrap();
+    assert!(context.contains("cells=1"));
+    assert!(context.contains("ContextPack retrieval"));
+
+    let _ = std::fs::remove_dir_all(path);
 }
 
 #[test]
@@ -42,6 +86,9 @@ fn doctor_and_completions_commands_work() {
     assert!(doctor.contains("open: database opened successfully"));
     assert!(doctor.contains("tenant: tenant=default"));
     assert!(doctor.contains("db_lock: lock acquired"));
+    assert!(doctor.contains("wal:"));
+    assert!(doctor.contains("format_versions:"));
+    assert!(doctor.contains("memory_forecast:"));
     assert!(doctor.contains("backup_age:"));
     assert!(doctor.contains("server_health:"));
     assert!(doctor.contains("auth:"));
@@ -55,6 +102,7 @@ fn doctor_and_completions_commands_work() {
     ])
     .unwrap();
     assert!(bash.contains("_cortexdb"));
+    assert!(bash.contains("init"));
     assert!(bash.contains("doctor"));
     assert!(bash.contains("completions"));
 
@@ -78,6 +126,9 @@ fn doctor_reports_lock_backup_server_auth_tenant_and_repair_advice() {
     assert!(doctor.contains("tenant: tenant=tenant_alpha"));
     assert!(doctor.contains("db_lock: lock acquired"));
     assert!(doctor.contains("validate:"));
+    assert!(doctor.contains("wal:"));
+    assert!(doctor.contains("format_versions:"));
+    assert!(doctor.contains("memory_forecast:"));
     assert!(doctor.contains("backup_age:"));
     assert!(doctor.contains("server_health:"));
     assert!(doctor.contains("auth:"));
@@ -125,6 +176,7 @@ fn cli_golden_outputs_are_stable() {
     for marker in [
         "Usage: cortexdb",
         "Commands:",
+        "init",
         "doctor",
         "stats",
         "validate",

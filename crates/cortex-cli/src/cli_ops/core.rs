@@ -1,4 +1,8 @@
-use cortex_engine::Database;
+use std::collections::BTreeSet;
+
+use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
+use cortex_core::CellId;
+use cortex_engine::{scope_id, Database};
 
 use crate::cli_json::{ann_validate_to_json, stats_to_json, validation_to_json};
 
@@ -8,12 +12,76 @@ pub fn doctor(path: &str, tenant: Option<&str>) -> Result<String, String> {
     crate::cli_doctor::doctor(path, tenant)
 }
 
+pub fn init(path: &str) -> Result<String, String> {
+    let mut db = open_database(path, false)?;
+    let view = starter_agent_view();
+    db.save_agent_view(&view).map_err(fmt_engine_error)?;
+    let sample_cell_id = CellId(1);
+    let sample_written = if db.get_latest_cell(sample_cell_id).is_none() {
+        db.put_cell(sample_cell_id, starter_payload().into_bytes())
+            .map_err(fmt_engine_error)?;
+        true
+    } else {
+        false
+    };
+    Ok(format!(
+        "CortexDB initialized\npath={path}\nagent_view_id={}\nagent_label={}\nsample_scope={STARTER_SCOPE}\nsample_cell_id={} sample_written={sample_written}\nnext:\n  cortexdb doctor {path}\n  cortexdb context {path} {STARTER_SCOPE} 'RETRIEVE CONTEXT FOR TASK \"starter onboarding\" IN BRAIN default LIMIT 5 CANDIDATES;'\n  cortexdb verify {path} {STARTER_SCOPE} 'VERIFY FACT \"CortexDB starter onboarding uses ContextPack\" IN BRAIN default;'",
+        view.agent_id.0,
+        view.label.as_deref().unwrap_or("starter"),
+        sample_cell_id.0
+    ))
+}
+
 pub fn run_demo() -> Result<String, String> {
     let output = std::process::Command::new("./examples/demo/investment_projects/run.sh")
         .output()
         .map_err(|e| format!("Failed to run demo script: {e}"))?;
     Ok(String::from_utf8_lossy(&output.stdout).into_owned()
         + &String::from_utf8_lossy(&output.stderr))
+}
+
+const STARTER_SCOPE: &str = "project:starter";
+
+fn starter_agent_view() -> AgentView {
+    AgentView {
+        agent_id: AgentId(1),
+        label: Some("starter-cli".to_owned()),
+        readable_brains: BTreeSet::from([BrainId(1)]),
+        readable_scopes: BTreeSet::from([scope_id(STARTER_SCOPE)]),
+        writable_scopes: BTreeSet::from([scope_id(STARTER_SCOPE)]),
+        allowed_modes: BTreeSet::from([RetrievalMode::Fast, RetrievalMode::Balanced]),
+        allowed_memory_types: BTreeSet::from([
+            MemoryType::Decision,
+            MemoryType::Observation,
+            MemoryType::WorkflowResult,
+        ]),
+        max_context_budget_tokens: 4_000,
+        default_context_budget_tokens: 1_000,
+        max_candidate_limit: 100,
+        default_candidate_limit: 20,
+        min_required_confidence_q16: Q16_ZERO,
+        max_ttl_seconds: Some(2_592_000),
+        allow_remember: true,
+        allow_verify_fact: true,
+        allow_audit_mode: false,
+        require_citations_by_default: false,
+        private_scope: None,
+    }
+}
+
+fn starter_payload() -> String {
+    [
+        "scope=project:starter",
+        "status=ready",
+        "type=fact",
+        "memory_type=decision",
+        "source_trust=0.90",
+        "citation=init://starter",
+        "",
+        "CortexDB starter onboarding uses ContextPack retrieval for scoped agent memory.",
+        "Use this cell to verify init, doctor, context, and verify commands before loading real data.",
+    ]
+    .join("\n")
 }
 
 pub fn put(path: &str, cell_id: &str, payload: &str) -> Result<String, String> {

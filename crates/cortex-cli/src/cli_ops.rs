@@ -12,8 +12,8 @@ pub use backup::{
 };
 pub(crate) use common::{fmt_engine_error, open_database, validate_tenant_id};
 pub use core::{
-    ann_validate, compact, doctor, flush, get, put, repair, run_demo, stats, tombstone, validate,
-    vector_rebuild,
+    ann_validate, compact, doctor, flush, get, init, put, repair, run_demo, stats, tombstone,
+    validate, vector_rebuild,
 };
 pub use maintenance::{
     gc_retired, manifest_dump, manifest_validate, unlock, wal_dump, wal_truncate, wal_validate,

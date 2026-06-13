@@ -6,6 +6,7 @@ use super::DispatchContext;
 pub(super) fn run(ctx: DispatchContext<'_>, command: Command) -> Result<String, String> {
     match command {
         Command::Demo => ops::run_demo(),
+        Command::Init { path } => ops::init(ctx.resolve(&path).to_str().unwrap()),
         Command::Doctor { path } => ops::doctor(ctx.resolve(&path).to_str().unwrap(), ctx.tenant),
         Command::Put {
             path,
