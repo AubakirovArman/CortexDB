@@ -4,6 +4,7 @@ mod context;
 mod context_store;
 mod diversity;
 mod expansion;
+mod live_store;
 mod persisted;
 mod persisted_rrf;
 mod query_expansion;
@@ -20,3 +21,4 @@ pub use self::types::{
     SearchViewTrace,
 };
 pub(crate) use context_store::SearchContextStore;
+pub(crate) use live_store::LiveSearchStore;

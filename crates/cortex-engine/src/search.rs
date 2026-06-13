@@ -62,11 +62,11 @@ pub use conditions::{
     condition_payload_bonus, extract_query_conditions, NumericConditionOperator,
     QueryConditionExtraction, QueryConditionSlot, QueryNumericCondition,
 };
-pub(crate) use database::SearchContextStore;
 pub use database::{
     DatabaseSearchOutcome, DatabaseSearchResult, SearchDiversityDiagnostics, SearchLimit,
     SearchViewTrace,
 };
+pub(crate) use database::{LiveSearchStore, SearchContextStore};
 pub use decomposition::{
     covered_requirement_ids, decompose_enterprise_rag_question, split_subquestions,
     QuestionDecomposition, QuestionRequirement, QuestionRequirementKind,

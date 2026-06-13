@@ -33,7 +33,7 @@ pub(super) fn search_rerank_result_limit(query: SearchQuery<'_>) -> usize {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct BestPayloadVector {
+pub(crate) struct BestPayloadVector {
     pub(super) view_name: Option<String>,
     pub(super) vector: Vec<i16>,
     pub(super) score: u64,

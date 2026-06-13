@@ -1,21 +1,17 @@
 use std::collections::BTreeMap;
 
 use cortex_aql::AgentView;
-use cortex_core::CellId;
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
-use crate::query::{scope_id, CellMetadata};
 
 use super::super::ann::AnnSearchPolicy;
 use super::super::{SearchIndexes, SearchMode, SearchQuery, WeightedScoreReranker};
 use super::ann_reports::snapshot_ann_report;
 use super::diversity::select_diverse_results;
-use super::ranking::{
-    best_payload_vector_for_query, database_index_query, rerank_database_results,
-};
+use super::ranking::{database_index_query, rerank_database_results};
 use super::trace::trace_search;
-use super::{metadata_for_version, DatabaseSearchOutcome, DatabaseSearchResult, SearchViewTrace};
+use super::{DatabaseSearchOutcome, SearchViewTrace};
 
 impl Database {
     pub fn search_cells_with_report_with_policy(
@@ -32,36 +28,26 @@ impl Database {
             query.mode, query.limit
         ));
         let mut indexes = SearchIndexes::default();
-        let mut cells = BTreeMap::<u32, (CellId, Vec<u8>, CellMetadata)>::new();
+        let mut cells = BTreeMap::new();
         let mut traces = BTreeMap::<u32, SearchViewTrace>::new();
         let mut vector_candidates = 0usize;
-        for (index, (version, metadata)) in self
-            .snapshot_versions()
+        for (index, record) in self
+            .live_search_store
+            .visible_records(view, query.vector)
             .into_iter()
-            .filter_map(|version| {
-                let metadata = metadata_for_version(&version);
-                view.can_read_scope(scope_id(&metadata.scope))
-                    .then_some((version, metadata))
-            })
             .enumerate()
         {
-            let candidate =
+            let candidate_id =
                 u32::try_from(index + 1).map_err(|_| EngineError::CandidateIdOverflow)?;
-            indexes.add_field_terms(candidate, metadata.lexical_field_terms());
-            if let Some(best) = best_payload_vector_for_query(&version.payload, query.vector) {
-                traces.insert(
-                    candidate,
-                    SearchViewTrace {
-                        cell_id: version.cell_id,
-                        candidate_id: candidate,
-                        vector_view: best.view_name,
-                        vector_score: best.score,
-                    },
-                );
-                indexes.add_vector(candidate, best.vector);
+            indexes.add_field_terms(candidate_id, record.metadata.lexical_field_terms());
+            if let Some(best) = record.best_vector.as_ref() {
+                if let Some(trace) = record.trace(candidate_id) {
+                    traces.insert(candidate_id, trace);
+                }
+                indexes.add_vector(candidate_id, best.vector.clone());
                 vector_candidates += 1;
             }
-            cells.insert(candidate, (version.cell_id, version.payload, metadata));
+            cells.insert(candidate_id, record);
         }
         let expanded_query_text = self.corpus_synonym_expanded_query_text(query.text)?;
         let index_query_text = expanded_query_text.as_deref().unwrap_or(query.text);
@@ -79,17 +65,10 @@ impl Database {
             .into_iter()
             .filter_map(|result| {
                 let candidate_id = result.cell_id;
-                let (cell_id, payload, metadata) = cells.remove(&candidate_id)?;
+                let candidate = cells.remove(&candidate_id)?;
                 Some((
                     candidate_id,
-                    DatabaseSearchResult {
-                        cell_id,
-                        score: result.score,
-                        lexical_score: result.lexical_score,
-                        vector_score: result.vector_score,
-                        metadata,
-                        payload,
-                    },
+                    candidate.into_result(result.score, result.lexical_score, result.vector_score),
                 ))
             })
             .collect::<Vec<_>>();

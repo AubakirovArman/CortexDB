@@ -21,7 +21,7 @@ use crate::options::{
 use crate::query::cache::AqlQueryCache;
 use crate::query::AqlDeltaIndex;
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
-use crate::search::{CorpusSynonymStore, SearchContextStore};
+use crate::search::{CorpusSynonymStore, LiveSearchStore, SearchContextStore};
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
 use crate::verification::TemporalFactStore;
@@ -109,6 +109,8 @@ impl Database {
             FeedbackIndex::from_memtable(&current_memtable, ReadTxn::at(current_seq));
         let graph_index_store =
             GraphIndexStore::from_memtable(&current_memtable, ReadTxn::at(current_seq));
+        let live_search_store =
+            LiveSearchStore::from_memtable(&current_memtable, ReadTxn::at(current_seq));
         let search_context_store =
             SearchContextStore::from_memtable(&current_memtable, ReadTxn::at(current_seq));
         let corpus_synonym_store =
@@ -137,6 +139,7 @@ impl Database {
             corpus_synonym_store,
             feedback_index,
             graph_index_store,
+            live_search_store,
             search_context_store,
             session_index,
             temporal_fact_store,
