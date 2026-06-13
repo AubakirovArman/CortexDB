@@ -2,6 +2,7 @@ use cortex_core::{CellDescriptor, CellId, CommitSeq};
 
 use super::Database;
 use crate::error::{EngineError, EngineResult};
+use crate::feedback::FeedbackIndex;
 use crate::operation::{
     wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq, DbOperation,
 };
@@ -108,24 +109,29 @@ impl Database {
                 let descriptor =
                     descriptor.unwrap_or_else(|| CellDescriptor::from_payload_lossy(&payload));
                 let metadata = CellMetadata::from_payload_with_descriptor(&payload, &descriptor);
+                let feedback_record = FeedbackIndex::record_from_payload(&payload);
                 self.memtable
                     .put_cell_with_descriptor(cell_id, seq, payload, descriptor);
                 self.aql_delta_index.apply_metadata(cell_id, metadata);
+                self.feedback_index.apply_record(cell_id, feedback_record);
                 Ok(())
             }
             DbOperation::PatchCell { cell_id, payload } => {
                 let descriptor =
                     descriptor.unwrap_or_else(|| CellDescriptor::from_payload_lossy(&payload));
                 let metadata = CellMetadata::from_payload_with_descriptor(&payload, &descriptor);
+                let feedback_record = FeedbackIndex::record_from_payload(&payload);
                 self.memtable
                     .patch_cell_with_descriptor(cell_id, seq, payload, descriptor)
                     .map_err(EngineError::from)?;
                 self.aql_delta_index.apply_metadata(cell_id, metadata);
+                self.feedback_index.apply_record(cell_id, feedback_record);
                 Ok(())
             }
             DbOperation::TombstoneCell { cell_id } => {
                 self.memtable.record_tombstone(cell_id, seq);
                 self.aql_delta_index.apply_tombstone(cell_id);
+                self.feedback_index.apply_tombstone(cell_id);
                 Ok(())
             }
         }

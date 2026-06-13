@@ -9,6 +9,7 @@ use cortex_storage::manifest::StorageManifest;
 use cortex_storage::wal::{DurabilityMode, WalWriterHandle};
 
 use crate::checkpoint::PersistedIndexCache;
+use crate::feedback::FeedbackIndex;
 use crate::lock::DatabaseLock;
 use crate::options::{CompactionPolicy, EngineFeatureFlags};
 use crate::query::cache::AqlQueryCache;
@@ -37,6 +38,7 @@ pub struct Database {
     pub(crate) ingestion_rate_state: Mutex<crate::ingestion::IngestionRateState>,
     pub(crate) aql_query_cache: Mutex<AqlQueryCache>,
     pub(crate) aql_delta_index: AqlDeltaIndex,
+    pub(crate) feedback_index: FeedbackIndex,
     pub(crate) persisted_index_cache: Mutex<Option<PersistedIndexCache>>,
     pub(crate) active_read_pins: Arc<Mutex<BTreeMap<CommitSeq, usize>>>,
     pub(crate) compaction_policy: CompactionPolicy,

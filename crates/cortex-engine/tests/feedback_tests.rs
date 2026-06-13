@@ -168,6 +168,42 @@ fn feedback_score_report_explains_raw_and_decayed_contribution() {
     );
 }
 
+#[test]
+fn feedback_index_tracks_patch_tombstone_checkpoint_and_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_knowledge_cell(CellId(10), feedback_cell(CellId(42), true, 100))
+            .unwrap();
+        db.put_knowledge_cell(CellId(11), feedback_cell(CellId(43), true, 100))
+            .unwrap();
+
+        assert_eq!(db.feedback_scores().get(&CellId(42)), Some(&1));
+        assert_eq!(db.feedback_scores().get(&CellId(43)), Some(&1));
+
+        db.patch_cell(
+            CellId(10),
+            feedback_cell(CellId(42), false, 100).encode_payload(),
+        )
+        .unwrap();
+        db.tombstone_cell(CellId(11)).unwrap();
+
+        let scores = db.feedback_scores();
+        assert_eq!(scores.get(&CellId(42)), Some(&-1));
+        assert_eq!(scores.get(&CellId(43)), None);
+
+        db.checkpoint().unwrap();
+        let scores_after_checkpoint = db.feedback_scores();
+        assert_eq!(scores_after_checkpoint.get(&CellId(42)), Some(&-1));
+        assert_eq!(scores_after_checkpoint.get(&CellId(43)), None);
+    }
+
+    let reopened = Database::open(dir.path()).unwrap();
+    let scores_after_reopen = reopened.feedback_scores();
+    assert_eq!(scores_after_reopen.get(&CellId(42)), Some(&-1));
+    assert_eq!(scores_after_reopen.get(&CellId(43)), None);
+}
+
 fn feedback(source_cell_id: CellId, useful: bool) -> ContextFeedback {
     ContextFeedback {
         source_cell_id,

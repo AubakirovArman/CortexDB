@@ -12,6 +12,7 @@ use crate::cleanup::{cleanup_orphans, remove_lock_file};
 use crate::database_files::find_wal_files;
 use crate::database_files::truncate_wal_tail;
 use crate::error::{EngineError, EngineResult};
+use crate::feedback::FeedbackIndex;
 use crate::lock::DatabaseLock;
 use crate::options::{
     DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
@@ -99,6 +100,8 @@ impl Database {
             ReadTxn::at(current_seq),
             CommitSeq(checkpoint.manifest.checkpoint_seq),
         );
+        let feedback_index =
+            FeedbackIndex::from_memtable(&current_memtable, ReadTxn::at(current_seq));
         let database = Self {
             root_path,
             wal_path,
@@ -115,6 +118,7 @@ impl Database {
             ingestion_rate_state: crate::ingestion::default_ingestion_rate_state(),
             aql_query_cache: Mutex::new(AqlQueryCache::default()),
             aql_delta_index,
+            feedback_index,
             persisted_index_cache: Mutex::new(None),
             active_read_pins: Arc::new(Mutex::new(BTreeMap::new())),
             compaction_policy: options.compaction_policy,
