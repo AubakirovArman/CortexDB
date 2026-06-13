@@ -1,7 +1,6 @@
 use crate::database::Database;
 use crate::error::EngineResult;
 
-use super::builder::build_corpus_synonym_dictionary;
 use super::persistence::{read_acsyn_dictionary, write_acsyn_dictionary, ACSYN_FILE_NAME};
 use super::types::{CorpusSynonymDictionary, CorpusSynonymOptions};
 
@@ -14,12 +13,7 @@ impl Database {
         &self,
         options: CorpusSynonymOptions,
     ) -> CorpusSynonymDictionary {
-        let payloads = self
-            .snapshot_versions()
-            .into_iter()
-            .map(|version| String::from_utf8_lossy(&version.payload).into_owned())
-            .collect::<Vec<_>>();
-        build_corpus_synonym_dictionary(payloads.iter().map(String::as_str), options)
+        self.corpus_synonym_store.dictionary(options)
     }
 
     pub fn persist_corpus_synonym_dictionary(

@@ -20,6 +20,7 @@ use crate::options::{
 use crate::query::cache::AqlQueryCache;
 use crate::query::AqlDeltaIndex;
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
+use crate::search::CorpusSynonymStore;
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
 use crate::verification::TemporalFactStore;
@@ -105,6 +106,8 @@ impl Database {
         );
         let feedback_index =
             FeedbackIndex::from_memtable(&current_memtable, ReadTxn::at(current_seq));
+        let corpus_synonym_store =
+            CorpusSynonymStore::from_memtable(&current_memtable, ReadTxn::at(current_seq));
         let session_index =
             SessionIndex::from_memtable(&current_memtable, ReadTxn::at(current_seq));
         let temporal_fact_store =
@@ -126,6 +129,7 @@ impl Database {
             ingestion_rate_state: crate::ingestion::default_ingestion_rate_state(),
             aql_query_cache: Mutex::new(AqlQueryCache::default()),
             aql_delta_index,
+            corpus_synonym_store,
             feedback_index,
             session_index,
             temporal_fact_store,

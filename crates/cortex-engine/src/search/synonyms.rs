@@ -2,6 +2,7 @@ mod builder;
 mod database;
 mod persistence;
 mod query;
+mod store;
 mod terms;
 mod types;
 
@@ -11,6 +12,7 @@ mod tests;
 pub use builder::build_corpus_synonym_dictionary;
 pub use persistence::{read_acsyn_dictionary, write_acsyn_dictionary};
 pub use query::expand_query_with_corpus_synonyms;
+pub(crate) use store::CorpusSynonymStore;
 pub use types::{
     CorpusSynonymCandidate, CorpusSynonymDictionary, CorpusSynonymDictionaryBuilder,
     CorpusSynonymEntry, CorpusSynonymOptions,

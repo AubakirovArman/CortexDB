@@ -15,6 +15,7 @@ use crate::error::{EngineError, EngineResult};
 use crate::feedback::FeedbackIndex;
 use crate::options::EngineFeature;
 use crate::query::EngineAqlIndex;
+use crate::search::CorpusSynonymStore;
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
 use crate::verification::TemporalFactStore;
@@ -77,6 +78,8 @@ impl Database {
         self.memtable = memtable_from_snapshot(&snapshot);
         self.current_seq = snapshot.checkpoint_seq;
         self.aql_delta_index.clear();
+        self.corpus_synonym_store =
+            CorpusSynonymStore::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
         self.feedback_index =
             FeedbackIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
         self.session_index =

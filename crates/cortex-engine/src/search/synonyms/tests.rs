@@ -126,6 +126,54 @@ fn database_persists_live_corpus_synonym_dictionary() {
 }
 
 #[test]
+fn corpus_synonym_store_tracks_patch_tombstone_checkpoint_and_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    let options = CorpusSynonymOptions {
+        min_term_document_frequency: 1,
+        min_pair_document_frequency: 1,
+        max_synonyms_per_term: 8,
+        max_terms: 100,
+        max_terms_per_document: 64,
+    };
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(
+            CellId(1),
+            b"scope=default\nstatus=ready\ntype=fact\n\nApollo rollout blocker auth owner".to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(2),
+            b"scope=default\nstatus=ready\ntype=fact\n\nApollo launch blocker auth deadline"
+                .to_vec(),
+        )
+        .unwrap();
+        db.patch_cell(
+            CellId(2),
+            b"scope=default\nstatus=ready\ntype=fact\n\nApollo updated blocker auth deadline"
+                .to_vec(),
+        )
+        .unwrap();
+        db.tombstone_cell(CellId(1)).unwrap();
+
+        let dictionary = db.corpus_synonym_dictionary(options);
+        assert!(dictionary
+            .synonyms_for("apollo")
+            .contains(&"updated".to_owned()));
+        assert!(dictionary.synonyms_for("rollout").is_empty());
+
+        db.checkpoint().unwrap();
+    }
+
+    let db = Database::open(dir.path()).unwrap();
+    let dictionary = db.corpus_synonym_dictionary(options);
+    assert!(dictionary
+        .synonyms_for("apollo")
+        .contains(&"updated".to_owned()));
+    assert!(dictionary.synonyms_for("rollout").is_empty());
+}
+
+#[test]
 fn expands_query_with_persisted_corpus_synonyms() {
     let docs = [
         "zephyr quartz rollout",

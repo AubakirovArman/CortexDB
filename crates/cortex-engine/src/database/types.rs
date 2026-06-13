@@ -15,7 +15,7 @@ use crate::options::{CompactionPolicy, EngineFeatureFlags};
 use crate::query::cache::AqlQueryCache;
 use crate::query::AqlDeltaIndex;
 use crate::query::CellMetadata;
-use crate::search::HnswBuildConfig;
+use crate::search::{CorpusSynonymStore, HnswBuildConfig};
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
 use crate::verification::TemporalFactStore;
@@ -41,6 +41,7 @@ pub struct Database {
     pub(crate) ingestion_rate_state: Mutex<crate::ingestion::IngestionRateState>,
     pub(crate) aql_query_cache: Mutex<AqlQueryCache>,
     pub(crate) aql_delta_index: AqlDeltaIndex,
+    pub(crate) corpus_synonym_store: CorpusSynonymStore,
     pub(crate) feedback_index: FeedbackIndex,
     pub(crate) session_index: SessionIndex,
     pub(crate) temporal_fact_store: TemporalFactStore,

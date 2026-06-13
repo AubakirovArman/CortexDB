@@ -102,6 +102,7 @@ pub use scope_mapping::{
     map_query_to_scope, scope_mapping_metadata_bonus, scope_mapping_payload_bonus,
     QueryScopeDirective, QueryScopeField, QueryScopeMapping,
 };
+pub(crate) use synonyms::CorpusSynonymStore;
 pub use synonyms::{
     build_corpus_synonym_dictionary, read_acsyn_dictionary, write_acsyn_dictionary,
     CorpusSynonymCandidate, CorpusSynonymDictionary, CorpusSynonymDictionaryBuilder,
