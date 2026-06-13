@@ -1,4 +1,5 @@
 mod helpers;
+mod issue;
 mod report;
 mod stats;
 
@@ -57,4 +58,6 @@ pub struct StorageValidationReport {
     pub wal_records_checked: usize,
     pub wal_safe_truncate_offset: u64,
     pub errors: Vec<String>,
+    pub issues: Vec<StorageValidationIssue>,
 }
+pub use issue::{StorageRecoveryAction, StorageValidationIssue, StorageValidationIssueKind};

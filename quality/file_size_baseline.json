@@ -437,7 +437,7 @@
     "crates/cortex-cli/src/cli_doctor.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 120,
+      "lines": 148,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -479,7 +479,7 @@
     "crates/cortex-cli/src/cli_json.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 248,
+      "lines": 257,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -493,7 +493,7 @@
     "crates/cortex-cli/src/cli_json_types.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 289,
+      "lines": 300,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -549,7 +549,7 @@
     "crates/cortex-cli/src/cli_ops/core.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 263,
+      "lines": 299,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -647,7 +647,7 @@
     "crates/cortex-cli/src/tests/maintenance.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 141,
+      "lines": 238,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -2243,7 +2243,7 @@
     "crates/cortex-engine/src/lib.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 180,
+      "lines": 183,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3517,7 +3517,7 @@
     "crates/cortex-engine/src/validation.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 60,
+      "lines": 63,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3528,10 +3528,17 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-engine/src/validation/issue.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 125,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-engine/src/validation/report.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 300,
+      "lines": 366,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3923,7 +3930,7 @@
     "crates/cortex-engine/tests/corruption_matrix.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 112,
+      "lines": 160,
       "soft_limit": 600,
       "warning_limit": 1200
     },

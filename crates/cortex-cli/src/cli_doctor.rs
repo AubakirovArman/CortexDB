@@ -26,6 +26,13 @@ pub(crate) fn doctor(path: &str, tenant: Option<&str>) -> Result<String, String>
                 "open",
                 format!("failed to open: {error}"),
             ));
+            let report = cortex_engine::Database::validate_storage_path_report(db_path);
+            if !report.errors.is_empty() {
+                checks.push(DoctorCheck::fail(
+                    "validate",
+                    format_validation_issues(&report, db_path),
+                ));
+            }
             checks.push(lock_check_without_open(db_path));
             checks.push(repair_advice(false, db_path));
             return Ok(format_doctor_report(checks, false));
@@ -95,6 +102,27 @@ pub(crate) fn doctor(path: &str, tenant: Option<&str>) -> Result<String, String>
 
     checks.push(repair_advice(all_ok, db_path));
     Ok(format_doctor_report(checks, all_ok))
+}
+
+fn format_validation_issues(
+    report: &cortex_engine::StorageValidationReport,
+    path: &Path,
+) -> String {
+    report
+        .issues
+        .iter()
+        .map(|issue| {
+            format!(
+                "kind={} action={} requires_restore={} message={} command=\"{}\"",
+                issue.kind.as_str(),
+                issue.recovery_action.as_str(),
+                issue.requires_restore,
+                issue.message,
+                issue.recommended_command(path)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("; ")
 }
 
 pub(crate) fn is_valid_tenant_arg(tenant: &str) -> bool {

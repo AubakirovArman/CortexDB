@@ -167,7 +167,10 @@ pub use source_trust::{
 };
 pub use tool_registry::{RegisteredTool, ToolDescriptor, ToolPermission, ToolRecommendation};
 pub use typed_body::{EntityBody, FactBody, RelationBody};
-pub use validation::{StorageStats, StorageValidation, StorageValidationReport};
+pub use validation::{
+    StorageRecoveryAction, StorageStats, StorageValidation, StorageValidationIssue,
+    StorageValidationIssueKind, StorageValidationReport,
+};
 pub use vector_rebuild::VectorRebuildReport;
 pub use verification::{
     compare_numeric_values, extract_temporal_query_range, format_scaled_value,

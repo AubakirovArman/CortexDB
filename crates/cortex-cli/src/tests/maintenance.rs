@@ -121,6 +121,97 @@ fn wal_validate_and_dump_report_records() {
 }
 
 #[test]
+fn validate_reports_actionable_corruption_advice() {
+    let path = unique_path("cortexdb-cli-corrupt-validate");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=ops\nstatus=ready\npayload".to_owned(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "flush".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    corrupt_last_byte(&path.join("segments").join("segment-1.acb"));
+
+    let error = run(vec![
+        "cortexdb".to_owned(),
+        "validate".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap_err();
+    assert!(error.contains("validation failed issue_count=1"));
+    assert!(error.contains("kind=bitmap_index"));
+    assert!(error.contains("action=restore_from_backup"));
+    assert!(error.contains("command=\"cortexdb validate"));
+    assert!(error.contains("cortexdb restore <backup_path> <restore_path>"));
+
+    let json = run(vec![
+        "cortexdb".to_owned(),
+        "--json".to_owned(),
+        "validate".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    assert!(json.contains("\"ok\":false"));
+    assert!(json.contains("\"kind\":\"bitmap_index\""));
+    assert!(json.contains("\"requires_restore\":true"));
+
+    let repair = run(vec![
+        "cortexdb".to_owned(),
+        "repair".to_owned(),
+        "--dry-run".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    assert!(repair.contains("validation_issue_count=1"));
+    assert!(repair.contains("issue kind=bitmap_index"));
+    assert!(repair.contains("command=\"cortexdb validate"));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
+fn doctor_reports_manifest_corruption_advice_when_open_fails() {
+    let path = unique_path("cortexdb-cli-corrupt-doctor");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=ops\nstatus=ready\npayload".to_owned(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "flush".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    corrupt_last_byte(&path.join("manifest.acm"));
+
+    let doctor = run(vec![
+        "cortexdb".to_owned(),
+        "doctor".to_owned(),
+        path_arg.clone(),
+    ])
+    .unwrap();
+    assert!(doctor.contains("open: failed to open"));
+    assert!(doctor.contains("validate: kind=manifest"));
+    assert!(doctor.contains("action=restore_from_backup"));
+    assert!(doctor.contains("cortexdb restore <backup_path> <restore_path>"));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
 fn unlock_force_removes_stale_lock() {
     let path = unique_path("cortexdb-cli-unlock");
     std::fs::create_dir_all(&path).unwrap();
@@ -138,4 +229,10 @@ fn unlock_force_removes_stale_lock() {
     assert!(!path.join("db.lock").exists());
 
     let _ = std::fs::remove_dir_all(path);
+}
+
+fn corrupt_last_byte(path: &std::path::Path) {
+    let mut bytes = std::fs::read(path).unwrap();
+    *bytes.last_mut().unwrap() ^= 0xff;
+    std::fs::write(path, bytes).unwrap();
 }

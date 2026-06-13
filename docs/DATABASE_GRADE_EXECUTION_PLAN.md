@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-E04` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, and `EPIC-E10` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-E02` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, and `EPIC-E04` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -397,7 +397,7 @@ enough to unblock the next dependency step.
 
 ### EPIC-A15 — Транзакционный API: атомарный мульти-cell write batch
 
-- status: `pending`
+- status: `done`
 - meta: Категория: transactions · Приоритет: P1 · Горизонт: 60 days · Тип: build
 - goal: у БД должна быть заявленная атомарность, не «обычно так получается».
 - problem: Проблема: `put_cells` атомарен по WAL-батчу, но семантика не оформлена (нет batch для patch/tombstone/смешанных, нет контракта ошибок частичного применения).
@@ -1533,18 +1533,20 @@ enough to unblock the next dependency step.
 
 ### EPIC-E04 — Corruption handling: карантин и repair UX
 
-- status: `pending`
+- status: `done`
 - meta: Категория: ops · P2 · 6 months · improve
 - goal: corruption-матрица детектит хорошо; нужен оформленный operator-путь «что делать».
 - tasks:
-  - [ ] 1) повреждённый сегмент/блок → карантин-директория + деградация с предупреждением (если избыточность позволяет)
-  - [ ] 2) `cortexdb repair` сценарии по классам повреждений
-  - [ ] 3) runbook-страница.
+  - [x] 1) повреждённый сегмент/блок → quarantine policy: no unsafe in-place quarantine for live manifest/segments/bitmap/lexical artifacts; preserve original path and restore into a separate verified path unless a class has an explicit safe repair/rebuild path.
+  - [x] 2) `cortexdb repair` сценарии по классам повреждений — `repair --dry-run` now includes validation issue summaries and recovery commands; WAL tails/orphans remain safe best-effort repair, vector/HNSW use rebuild advice, manifest/segment/bitmap/lexical/candidate/manifest-reference require restore.
+  - [x] 3) runbook-страница.
 - acceptance:
-  - [ ] 1) однострочный diag → конкретная команда восстановления
-  - [ ] 2) тесты по классам порчи.
+  - [x] 1) однострочный diag → конкретная команда восстановления
+  - [x] 2) тесты по классам порчи.
 - files: repair.rs, validation.rs, cli.
 - dependencies: A07 (блочные CRC).
+- evidence: Added typed `StorageValidationIssue`/`StorageRecoveryAction`, path-level `Database::validate_storage_path_report` that works even when `Database::open` fails, CLI `validate` text/JSON issue output, `doctor` open-failure validation advice, and `repair --dry-run` validation issue summaries. Added `docs/CORRUPTION_HANDLING.md` with explicit quarantine policy and recovery classes. Extended corruption matrix coverage for manifest, live segment, bitmap, lexical, vector, and HNSW corruption to assert typed recovery actions. Targeted gates passed: `cargo test -p cortex-engine --test corruption_matrix --all-features`, `cargo test -p cortex-cli validate_reports_actionable_corruption_advice --all-features`, and `cargo test -p cortex-cli doctor_reports_manifest_corruption_advice_when_open_fails --all-features`.
+- next exit step: move to `EPIC-E02` — Backup UX happy path + verify, then `EPIC-E14` upgrade/rollback drill.
 
 ### EPIC-E05 — Observability: tracing + Prometheus /metrics
 

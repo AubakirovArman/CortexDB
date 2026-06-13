@@ -23,6 +23,7 @@ evidence snapshots, benchmark experiments, and release working notes live in
 - [`CELL_METADATA_MODEL.md`](CELL_METADATA_MODEL.md) - metadata source of truth.
 - [`STORAGE_FORMATS.md`](STORAGE_FORMATS.md) - WAL/segment/index/manifest formats.
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) - backup and restore operations.
+- [`CORRUPTION_HANDLING.md`](CORRUPTION_HANDLING.md) - validation issues and recovery actions.
 - [`ENGINE_API.md`](ENGINE_API.md) - embedded Rust engine API.
 
 ## Agent-Native Surface

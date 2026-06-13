@@ -47,6 +47,17 @@ pub struct CliValidateResponse {
     pub cells_checked: usize,
     pub wal_records_checked: u64,
     pub wal_safe_truncate_offset: u64,
+    pub issue_count: usize,
+    pub issues: Vec<CliValidationIssueResponse>,
+}
+
+#[derive(Serialize)]
+pub struct CliValidationIssueResponse {
+    pub kind: String,
+    pub message: String,
+    pub recovery_action: String,
+    pub recommended_command: String,
+    pub requires_restore: bool,
 }
 
 #[derive(Serialize)]

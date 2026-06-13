@@ -1,14 +1,16 @@
 use crate::cli_json_types::{
     CellResponse, CliAnnEvaluationResponse, CliAnnSearchReportResponse, CliAnnValidateResponse,
-    CliStatsResponse, CliValidateResponse, CliVectorRebuildResponse, NumericConflictResponse,
-    RememberResponse, SearchResponse, SearchResultResponse, SearchRoutingDecisionResponse,
-    VerificationEvidenceResponse, VerificationResponse,
+    CliStatsResponse, CliValidateResponse, CliValidationIssueResponse, CliVectorRebuildResponse,
+    NumericConflictResponse, RememberResponse, SearchResponse, SearchResultResponse,
+    SearchRoutingDecisionResponse, VerificationEvidenceResponse, VerificationResponse,
 };
 use cortex_engine::{
     ContextPack, Database, DatabaseSearchResult, RememberedCell, SearchRouteDecision, StorageStats,
-    VectorRebuildReport, VerificationEvidence, VerificationReport, VerificationStatus,
+    StorageValidationReport, VectorRebuildReport, VerificationEvidence, VerificationReport,
+    VerificationStatus,
 };
 use serde_json::to_string;
+use std::path::Path;
 
 mod context;
 
@@ -133,19 +135,26 @@ pub(crate) fn stats_to_json(stats: &StorageStats) -> String {
     })
 }
 
-pub(crate) fn validation_to_json(
-    live_segments_checked: usize,
-    cells_checked: usize,
-    wal_records_checked: u64,
-    wal_safe_truncate_offset: u64,
-    ok: bool,
-) -> String {
+pub(crate) fn validation_to_json(report: &StorageValidationReport, path: &Path) -> String {
+    let ok = report.errors.is_empty();
     serialize_or_error(&CliValidateResponse {
         ok,
-        live_segments_checked,
-        cells_checked,
-        wal_records_checked,
-        wal_safe_truncate_offset,
+        live_segments_checked: report.live_segments_checked,
+        cells_checked: report.cells_checked,
+        wal_records_checked: report.wal_records_checked.try_into().unwrap_or(u64::MAX),
+        wal_safe_truncate_offset: report.wal_safe_truncate_offset,
+        issue_count: report.issues.len(),
+        issues: report
+            .issues
+            .iter()
+            .map(|issue| CliValidationIssueResponse {
+                kind: issue.kind.as_str().to_owned(),
+                message: issue.message.clone(),
+                recovery_action: issue.recovery_action.as_str().to_owned(),
+                recommended_command: issue.recommended_command(path),
+                requires_restore: issue.requires_restore,
+            })
+            .collect(),
     })
 }
 

@@ -424,7 +424,9 @@ cortexdb demo
 The CLI prints actionable error messages:
 
 - **Database locked** → suggests `cortexdb unlock <path>` or `--force`
-- **Corruption detected** → suggests `cortexdb repair <path>`
+- **Corruption detected** → `validate`, `doctor`, and `repair --dry-run`
+  report issue kind, recovery action, and recommended command. See
+  [`CORRUPTION_HANDLING.md`](CORRUPTION_HANDLING.md).
 - **Cell not found** → shows the cell_id that was queried
 - **Invalid AQL** → prints the parse error location
 

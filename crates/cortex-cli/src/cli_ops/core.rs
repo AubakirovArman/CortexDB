@@ -1,4 +1,5 @@
 use std::collections::BTreeSet;
+use std::path::Path;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
@@ -170,27 +171,45 @@ pub fn stats(path: &str, json: bool) -> Result<String, String> {
 }
 
 pub fn validate(path: &str, json: bool) -> Result<String, String> {
-    let db = open_database(path, false)?;
-    let validation = db.validate_storage().map_err(fmt_engine_error)?;
+    let report = Database::validate_storage_path_report(path);
     if json {
-        return Ok(validation_to_json(
-            validation.live_segments_checked,
-            validation.cells_checked,
-            validation
-                .wal_records_checked
-                .try_into()
-                .unwrap_or(u64::MAX),
-            validation.wal_safe_truncate_offset,
-            true,
-        ));
+        return Ok(validation_to_json(&report, Path::new(path)));
+    }
+    if !report.errors.is_empty() {
+        return Err(format_validation_failure(&report, Path::new(path)));
     }
     Ok(format!(
         "ok live_segments_checked={} cells_checked={} wal_records_checked={} wal_safe_truncate_offset={}",
-        validation.live_segments_checked,
-        validation.cells_checked,
-        validation.wal_records_checked,
-        validation.wal_safe_truncate_offset
+        report.live_segments_checked,
+        report.cells_checked,
+        report.wal_records_checked,
+        report.wal_safe_truncate_offset
     ))
+}
+
+fn format_validation_failure(
+    report: &cortex_engine::StorageValidationReport,
+    path: &Path,
+) -> String {
+    let mut lines = vec![format!(
+        "validation failed issue_count={} live_segments_checked={} cells_checked={} wal_records_checked={} wal_safe_truncate_offset={}",
+        report.issues.len(),
+        report.live_segments_checked,
+        report.cells_checked,
+        report.wal_records_checked,
+        report.wal_safe_truncate_offset
+    )];
+    for issue in &report.issues {
+        lines.push(format!(
+            "issue kind={} action={} requires_restore={} message={} command=\"{}\"",
+            issue.kind.as_str(),
+            issue.recovery_action.as_str(),
+            issue.requires_restore,
+            issue.message,
+            issue.recommended_command(path)
+        ));
+    }
+    lines.join("\n")
 }
 
 pub fn ann_validate(path: &str, json: bool) -> Result<String, String> {
@@ -243,13 +262,14 @@ pub fn vector_rebuild(path: &str, experimental_hnsw: bool, json: bool) -> Result
 }
 
 pub fn repair(path: &str, dry_run: bool) -> Result<String, String> {
+    let validation = Database::validate_storage_path_report(path);
     let report = if dry_run {
         Database::repair_best_effort_dry_run(path)
     } else {
         Database::repair_best_effort(path)
     }
     .map_err(fmt_engine_error)?;
-    Ok(format!(
+    let mut output = format!(
         "dry_run={} orphan_temp_files_removed={} wal_records_preserved={} wal_safe_truncate_offset={} wal_bytes_before={} wal_bytes_after={} wal_truncated={} wal_truncation_needed={}",
         report.dry_run,
         report.orphan_temp_files_removed,
@@ -259,5 +279,21 @@ pub fn repair(path: &str, dry_run: bool) -> Result<String, String> {
         report.wal_bytes_after,
         report.wal_truncated,
         report.wal_truncation_needed
-    ))
+    );
+    if !validation.issues.is_empty() {
+        output.push_str(&format!(
+            " validation_issue_count={}",
+            validation.issues.len()
+        ));
+        for issue in &validation.issues {
+            output.push_str(&format!(
+                "\nissue kind={} action={} requires_restore={} command=\"{}\"",
+                issue.kind.as_str(),
+                issue.recovery_action.as_str(),
+                issue.requires_restore,
+                issue.recommended_command(Path::new(path))
+            ));
+        }
+    }
+    Ok(output)
 }

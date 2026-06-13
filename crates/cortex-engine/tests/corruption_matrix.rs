@@ -1,5 +1,8 @@
 use cortex_core::CellId;
-use cortex_engine::{Database, DatabaseOptions, EngineFeatureFlags};
+use cortex_engine::{
+    Database, DatabaseOptions, EngineFeatureFlags, StorageRecoveryAction,
+    StorageValidationIssueKind,
+};
 
 #[test]
 fn corrupt_live_segment_blocks_open() {
@@ -8,6 +11,11 @@ fn corrupt_live_segment_blocks_open() {
     corrupt_last_byte(&dir.path().join("segments").join("segment-1.acs"));
 
     assert!(Database::open(dir.path()).is_err());
+    assert_issue(
+        &Database::validate_storage_path_report(dir.path()),
+        StorageValidationIssueKind::Segment,
+        StorageRecoveryAction::RestoreFromBackup,
+    );
 }
 
 #[test]
@@ -17,6 +25,11 @@ fn corrupt_manifest_blocks_open() {
     corrupt_last_byte(&dir.path().join("manifest.acm"));
 
     assert!(Database::open(dir.path()).is_err());
+    assert_issue(
+        &Database::validate_storage_path_report(dir.path()),
+        StorageValidationIssueKind::Manifest,
+        StorageRecoveryAction::RestoreFromBackup,
+    );
 }
 
 #[test]
@@ -32,6 +45,11 @@ fn corrupt_bitmap_index_fails_validation_report() {
         .errors
         .iter()
         .any(|error| error.contains("bitmap index 1")));
+    assert_issue(
+        &report,
+        StorageValidationIssueKind::BitmapIndex,
+        StorageRecoveryAction::RestoreFromBackup,
+    );
 }
 
 #[test]
@@ -47,6 +65,11 @@ fn corrupt_lexical_index_fails_validation_report() {
         .errors
         .iter()
         .any(|error| error.contains("lexical index 1")));
+    assert_issue(
+        &report,
+        StorageValidationIssueKind::LexicalIndex,
+        StorageRecoveryAction::RestoreFromBackup,
+    );
 }
 
 #[test]
@@ -62,6 +85,11 @@ fn corrupt_vector_index_fails_validation_report() {
         .errors
         .iter()
         .any(|error| error.contains("vector index 1")));
+    assert_issue(
+        &report,
+        StorageValidationIssueKind::VectorIndex,
+        StorageRecoveryAction::RebuildVectorArtifacts,
+    );
 }
 
 #[test]
@@ -77,6 +105,26 @@ fn corrupt_hnsw_graph_fails_validation_report() {
         .errors
         .iter()
         .any(|error| error.contains("hnsw graph 1")));
+    assert_issue(
+        &report,
+        StorageValidationIssueKind::HnswGraph,
+        StorageRecoveryAction::RebuildVectorArtifacts,
+    );
+}
+
+fn assert_issue(
+    report: &cortex_engine::StorageValidationReport,
+    kind: StorageValidationIssueKind,
+    action: StorageRecoveryAction,
+) {
+    assert!(
+        report
+            .issues
+            .iter()
+            .any(|issue| issue.kind == kind && issue.recovery_action == action),
+        "missing {kind:?}/{action:?} in {:?}",
+        report.issues
+    );
 }
 
 fn write_checkpoint(root: &std::path::Path) {

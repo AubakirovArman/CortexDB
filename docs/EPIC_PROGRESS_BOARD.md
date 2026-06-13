@@ -21,21 +21,46 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-E04` — Corruption handling.
+`EPIC-E02` — Backup UX happy path + verify.
 
-E04 exit steps:
+E02 exit steps:
 
-1. Define quarantine behavior for corrupt WAL/segments/indexes.
-2. Add repair/report UX.
-3. Add corruption matrix tests.
-4. Mark done when corruption produces actionable reports, not ambiguous crashes.
+1. Make one documented backup command create a validated offline copy.
+2. Verify backup manifest, WAL, segments, and indexes.
+3. Add happy-path restore verification.
+4. Mark done when a user can backup and verify with one documented flow.
 
-E04 progress:
+E02 progress:
 
-- next: inventory current validation/repair error paths and choose the smallest
-  operator-facing quarantine/report slice.
+- next: inventory current backup/restore commands, docs, and tests before
+  choosing the smallest missing UX/evidence slice.
 
 ## Recently Closed
+
+### EPIC-E04 — Corruption handling
+
+Status: `done`
+
+What closed it:
+
+- Added typed validation issues with recovery actions for manifest, WAL,
+  segment, bitmap, lexical, vector, HNSW, candidate mapping, and manifest
+  reference problems.
+- Added path-level `Database::validate_storage_path_report`, so manifest and
+  segment corruption can produce actionable reports even when normal
+  `Database::open` fails.
+- `cortexdb validate`, `doctor`, and `repair --dry-run` now expose issue kind,
+  recovery action, restore requirement, and a recommended command.
+- Added `docs/CORRUPTION_HANDLING.md` with the Core Alpha quarantine policy:
+  no unsafe in-place quarantine for live manifest/segment/bitmap/lexical
+  artifacts; restore into a separate verified path unless a class has an
+  explicit safe repair/rebuild path.
+- Corruption matrix tests now assert typed recovery actions for manifest,
+  live segment, bitmap, lexical, vector, and HNSW corruption.
+
+Next:
+
+- Continue with E02 as directed by `EPIC_EXIT_STEPS.md`.
 
 ### EPIC-E10 — Fuzzing decode paths
 
