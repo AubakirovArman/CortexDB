@@ -304,9 +304,16 @@
     "crates/cortex-cli/src/cli_ann.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 364,
+      "lines": 298,
       "soft_limit": 300,
       "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_ann/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 65,
+      "soft_limit": 600,
+      "warning_limit": 1200
     },
     "crates/cortex-cli/src/cli_aql.rs": {
       "hard_limit": 1000,
