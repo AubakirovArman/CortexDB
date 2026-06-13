@@ -367,7 +367,21 @@
     "crates/cortex-cli/src/cli_auth_review.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 402,
+      "lines": 259,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_auth_review/format.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 57,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_auth_review/validators.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 99,
       "soft_limit": 300,
       "warning_limit": 600
     },

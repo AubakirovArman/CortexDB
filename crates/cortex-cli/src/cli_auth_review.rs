@@ -3,6 +3,15 @@ use std::fs;
 
 use serde::{Deserialize, Serialize};
 
+mod format;
+mod validators;
+
+use format::format_plain;
+use validators::{
+    validate_agent_id, validate_capabilities, validate_principal, validate_role, validate_tenants,
+    validate_u32_quota, validate_u64_quota,
+};
+
 #[derive(Debug, Serialize)]
 struct AuthReviewResponse {
     schema_version: &'static str,
@@ -247,156 +256,4 @@ fn parse_token_entry(
         token_present: true,
         token_redacted: true,
     })
-}
-
-fn validate_principal(principal_id: &str, line: usize) -> Result<(), String> {
-    if principal_id.is_empty() {
-        return Err(format!(
-            "auth policy store principal {line} has empty principal_id"
-        ));
-    }
-    Ok(())
-}
-
-fn validate_role(role: &str) -> Result<(), String> {
-    match role.trim().to_ascii_lowercase().as_str() {
-        "admin" | "data" => Ok(()),
-        _ => Err("auth token role must be admin or data".to_owned()),
-    }
-}
-
-fn validate_agent_id(agent_id: Option<u64>) -> Result<(), String> {
-    if matches!(agent_id, Some(0)) {
-        return Err("auth token policy agent_id must be greater than zero".to_owned());
-    }
-    Ok(())
-}
-
-fn validate_u64_quota(quota: Option<u64>, field: &str) -> Result<(), String> {
-    if matches!(quota, Some(0)) {
-        return Err(format!(
-            "auth token policy {field} must be greater than zero"
-        ));
-    }
-    Ok(())
-}
-
-fn validate_u32_quota(quota: Option<u32>, field: &str) -> Result<(), String> {
-    if matches!(quota, Some(0)) {
-        return Err(format!(
-            "auth token policy {field} must be greater than zero"
-        ));
-    }
-    Ok(())
-}
-
-fn validate_capabilities(raw: Option<Vec<String>>) -> Result<Option<Vec<String>>, String> {
-    let Some(values) = raw else {
-        return Ok(None);
-    };
-    if values.is_empty() {
-        return Err("auth policy capabilities must not be empty".to_owned());
-    }
-    let mut seen = BTreeSet::new();
-    let mut normalized = Vec::new();
-    for value in values {
-        let capability = value.trim().to_ascii_lowercase();
-        match capability.as_str() {
-            "admin" | "aql" | "context" | "delete" | "ingest" | "inference" | "memory"
-            | "metrics" | "read" | "search" | "verify" | "write" => {}
-            _ => return Err("auth policy capability is not recognized".to_owned()),
-        }
-        if !seen.insert(capability.clone()) {
-            return Err("auth policy capability is duplicated".to_owned());
-        }
-        normalized.push(capability);
-    }
-    Ok(Some(normalized))
-}
-
-fn validate_tenants(raw: Option<Vec<String>>) -> Result<Option<Vec<String>>, String> {
-    let Some(values) = raw else {
-        return Ok(None);
-    };
-    if values.is_empty() {
-        return Err("auth policy tenants must not be empty".to_owned());
-    }
-    let mut seen = BTreeSet::new();
-    let mut normalized = Vec::new();
-    for value in values {
-        let tenant = value.trim();
-        if !validate_tenant_id(tenant) {
-            return Err("auth policy tenant is invalid".to_owned());
-        }
-        if !seen.insert(tenant.to_owned()) {
-            return Err("auth policy tenant is duplicated".to_owned());
-        }
-        normalized.push(tenant.to_owned());
-    }
-    Ok(Some(normalized))
-}
-
-fn validate_tenant_id(tenant: &str) -> bool {
-    if tenant.is_empty() || tenant.len() > 64 {
-        return false;
-    }
-    tenant
-        .chars()
-        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
-}
-
-fn format_plain(response: &AuthReviewResponse) -> String {
-    let mut lines = vec![format!(
-        "auth_policy_records={} active_records={} disabled_records={} token_redaction=\"{}\"",
-        response.total_records,
-        response.active_records,
-        response.disabled_records,
-        response.token_redaction
-    )];
-    for record in &response.records {
-        lines.push(format!(
-            "record source={} line={} principal={} role={} active={} disabled={} agent_id={} quota_per_minute={} body_quota_bytes_per_minute={} queue_quota={} context_budget_tokens={} capabilities={} tenants={} token_redacted={}",
-            record.source,
-            record
-                .source_line
-                .map(|value| value.to_string())
-                .unwrap_or_else(|| "-".to_owned()),
-            record.principal_id.as_deref().unwrap_or("-"),
-            record.role,
-            record.active,
-            record.disabled,
-            record
-                .agent_id
-                .map(|value| value.to_string())
-                .unwrap_or_else(|| "-".to_owned()),
-            record
-                .request_quota_per_minute
-                .map(|value| value.to_string())
-                .unwrap_or_else(|| "-".to_owned()),
-            record
-                .body_quota_bytes_per_minute
-                .map(|value| value.to_string())
-                .unwrap_or_else(|| "-".to_owned()),
-            record
-                .queue_quota
-                .map(|value| value.to_string())
-                .unwrap_or_else(|| "-".to_owned()),
-            record
-                .context_budget_tokens
-                .map(|value| value.to_string())
-                .unwrap_or_else(|| "-".to_owned()),
-            record
-                .capabilities
-                .as_ref()
-                .map(|values| values.join(","))
-                .unwrap_or_else(|| "-".to_owned()),
-            record
-                .tenants
-                .as_ref()
-                .map(|values| values.join(","))
-                .unwrap_or_else(|| "-".to_owned()),
-            record.token_redacted,
-        ));
-    }
-    lines.join("\n")
 }
