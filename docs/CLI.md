@@ -115,6 +115,15 @@ files, and excludes `db.lock` plus known temporary files.
 cortexdb backup ./db ./db.backup
 ```
 
+#### `backup-verify <backup_path>`
+Verify a backup directory without restoring it. This is the lightweight
+post-backup check for automation: it reads backup files, storage checksums,
+format compatibility, manifest segments, indexes, and WAL readability.
+
+```bash
+cortexdb backup-verify ./db.backup
+```
+
 #### `backup-encrypted <path> <archive_path>`
 Create a passphrase-protected single-file backup archive. Prefer
 `--passphrase-env` or `CORTEXDB_BACKUP_PASSPHRASE` instead of typing secrets

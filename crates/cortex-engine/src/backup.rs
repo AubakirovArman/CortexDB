@@ -10,8 +10,10 @@ use crate::validation::StorageValidation;
 
 mod dry_run;
 mod encrypted;
+mod manifest;
 mod offsite;
 mod retention;
+pub use dry_run::BackupVerifyReport;
 pub use dry_run::RestoreDryRunReport;
 pub use encrypted::{EncryptedBackupReport, EncryptedRestoreReport};
 pub use offsite::{
@@ -25,6 +27,7 @@ pub struct BackupReport {
     pub files_copied: usize,
     pub bytes_copied: u64,
     pub source_validation: StorageValidation,
+    pub checksum_manifest_files: usize,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -66,10 +69,12 @@ impl Database {
         self.writer = restart_result?;
 
         let copied = backup_result?;
+        let checksum_manifest_files = manifest::write_backup_manifest(backup_path.as_ref())?;
         Ok(BackupReport {
             files_copied: copied.files_copied,
             bytes_copied: copied.bytes_copied,
             source_validation,
+            checksum_manifest_files,
         })
     }
 
@@ -93,6 +98,10 @@ impl Database {
         target_path: impl AsRef<Path>,
     ) -> EngineResult<RestoreDryRunReport> {
         dry_run::restore_from_backup_dry_run(backup_path.as_ref(), target_path.as_ref())
+    }
+
+    pub fn verify_backup_path(backup_path: impl AsRef<Path>) -> EngineResult<BackupVerifyReport> {
+        dry_run::verify_backup_read_only(backup_path.as_ref())
     }
 
     pub fn backup_restore_drill_path(

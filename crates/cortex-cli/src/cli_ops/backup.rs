@@ -5,12 +5,13 @@ use super::common::fmt_engine_error;
 pub fn backup(path: &str, backup_path: &str) -> Result<String, String> {
     let report = Database::backup_path(path, backup_path).map_err(fmt_engine_error)?;
     Ok(format!(
-        "files_copied={} bytes_copied={} source_live_segments_checked={} source_cells_checked={} source_wal_records_checked={}",
+        "files_copied={} bytes_copied={} source_live_segments_checked={} source_cells_checked={} source_wal_records_checked={} checksum_manifest_files={}",
         report.files_copied,
         report.bytes_copied,
         report.source_validation.live_segments_checked,
         report.source_validation.cells_checked,
-        report.source_validation.wal_records_checked
+        report.source_validation.wal_records_checked,
+        report.checksum_manifest_files
     ))
 }
 
@@ -37,11 +38,13 @@ pub fn restore(backup_path: &str, path: &str, dry_run: bool) -> Result<String, S
         let report =
             Database::restore_from_backup_dry_run(backup_path, path).map_err(fmt_engine_error)?;
         return Ok(format!(
-            "dry_run=true restore_path={} files_checked={} bytes_checked={} version_compatible={} backup_live_segments_checked={} backup_cells_checked={} backup_wal_records_checked={}",
+            "dry_run=true restore_path={} files_checked={} bytes_checked={} version_compatible={} checksum_manifest_present={} checksum_manifest_files_verified={} backup_live_segments_checked={} backup_cells_checked={} backup_wal_records_checked={}",
             report.restore_path.display(),
             report.files_checked,
             report.bytes_checked,
             report.version_compatible,
+            report.checksum_manifest_present,
+            report.checksum_manifest_files_verified,
             report.backup_validation.live_segments_checked,
             report.backup_validation.cells_checked,
             report.backup_validation.wal_records_checked
@@ -88,6 +91,21 @@ pub fn backup_drill(path: &str, backup_path: &str, restore_path: &str) -> Result
         report.restore.restored_validation.live_segments_checked,
         report.restore.restored_validation.cells_checked,
         report.restore.restored_validation.wal_records_checked
+    ))
+}
+
+pub fn backup_verify(backup_path: &str) -> Result<String, String> {
+    let report = Database::verify_backup_path(backup_path).map_err(fmt_engine_error)?;
+    Ok(format!(
+        "backup_ok=true files_checked={} bytes_checked={} version_compatible={} checksum_manifest_present={} checksum_manifest_files_verified={} backup_live_segments_checked={} backup_cells_checked={} backup_wal_records_checked={}",
+        report.files_checked,
+        report.bytes_checked,
+        report.version_compatible,
+        report.checksum_manifest_present,
+        report.checksum_manifest_files_verified,
+        report.backup_validation.live_segments_checked,
+        report.backup_validation.cells_checked,
+        report.backup_validation.wal_records_checked
     ))
 }
 

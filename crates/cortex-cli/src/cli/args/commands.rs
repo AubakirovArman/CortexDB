@@ -95,6 +95,8 @@ pub(in crate::cli) enum Command {
         backup_path: String,
         restore_path: String,
     },
+    #[command(about = "Verify a backup directory without restoring it")]
+    BackupVerify { backup_path: String },
     #[command(about = "Prune old backup directories by prefix")]
     BackupPrune {
         backup_root: String,

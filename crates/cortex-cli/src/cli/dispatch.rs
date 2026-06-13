@@ -72,6 +72,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             backup_path,
             restore_path,
         } => backup::backup_drill(ctx, path, backup_path, restore_path),
+        Command::BackupVerify { backup_path } => backup::backup_verify(backup_path),
         Command::BackupPrune {
             backup_root,
             prefix,

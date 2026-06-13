@@ -11,8 +11,8 @@ pub(crate) use agent::{
     AgentScopeAccess, AgentScopeInput,
 };
 pub use backup::{
-    backup, backup_drill, backup_encrypted, backup_offsite_stage, backup_prune, restore,
-    restore_encrypted,
+    backup, backup_drill, backup_encrypted, backup_offsite_stage, backup_prune, backup_verify,
+    restore, restore_encrypted,
 };
 pub(crate) use common::{fmt_engine_error, open_database, validate_tenant_id};
 pub use core::{

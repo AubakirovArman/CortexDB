@@ -21,21 +21,43 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-E02` — Backup UX happy path + verify.
+`EPIC-E14` — Upgrade/rollback drill.
 
-E02 exit steps:
+E14 exit steps:
 
-1. Make one documented backup command create a validated offline copy.
-2. Verify backup manifest, WAL, segments, and indexes.
-3. Add happy-path restore verification.
-4. Mark done when a user can backup and verify with one documented flow.
+1. Create release-candidate backup.
+2. Restore with candidate binary.
+3. Roll back to previous binary and validate.
+4. Mark done when release candidates pass upgrade/rollback drill.
 
-E02 progress:
+E14 progress:
 
-- next: inventory current backup/restore commands, docs, and tests before
-  choosing the smallest missing UX/evidence slice.
+- next: inventory current upgrade prepare/validate/rollback commands, release
+  docs, and migration tests before choosing the smallest missing drill evidence.
 
 ## Recently Closed
+
+### EPIC-E02 — Backup UX happy path + verify
+
+Status: `done`
+
+What closed it:
+
+- Backup now writes `backup_manifest.tsv` with relative path, file size, and
+  CRC32C for copied files.
+- Added engine `Database::verify_backup_path` and CLI
+  `cortexdb backup-verify <backup_path>` for verifying a backup without
+  creating a restore target.
+- `restore --dry-run` reports checksum manifest presence and verified file
+  count when present.
+- Docs now show the two-command happy path: `cortexdb backup ...` followed by
+  `cortexdb backup-verify ...`.
+- Regression test corrupts a backed-up segment and proves `backup-verify`
+  rejects it through the checksum manifest.
+
+Next:
+
+- Continue with E14 as directed by `EPIC_EXIT_STEPS.md`.
 
 ### EPIC-E04 — Corruption handling
 

@@ -248,7 +248,7 @@
     "crates/cortex-cli/src/cli/args/commands.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 307,
+      "lines": 309,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -276,7 +276,7 @@
     "crates/cortex-cli/src/cli/dispatch.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 287,
+      "lines": 288,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -290,7 +290,7 @@
     "crates/cortex-cli/src/cli/dispatch/backup.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 81,
+      "lines": 85,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -535,7 +535,7 @@
     "crates/cortex-cli/src/cli_ops/backup.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 136,
+      "lines": 154,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -626,7 +626,7 @@
     "crates/cortex-cli/src/tests/backup.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 269,
+      "lines": 332,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -822,14 +822,14 @@
     "crates/cortex-engine/src/backup.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 226,
+      "lines": 235,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-engine/src/backup/dry_run.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 116,
+      "lines": 144,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -858,6 +858,13 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 102,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/backup/manifest.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 182,
       "soft_limit": 300,
       "warning_limit": 600
     },

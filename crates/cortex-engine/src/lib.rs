@@ -69,9 +69,9 @@ pub mod verification;
 
 pub use backup::{
     BackupDrillReport, BackupReport, BackupRetentionPlan, BackupRetentionReport,
-    EncryptedBackupReport, EncryptedRestoreReport, LocalFilesystemOffsiteAdapter,
-    OffsiteBackupAdapter, OffsiteBackupStageReport, OffsiteBackupTransferReport,
-    RestoreDryRunReport, RestoreReport,
+    BackupVerifyReport, EncryptedBackupReport, EncryptedRestoreReport,
+    LocalFilesystemOffsiteAdapter, OffsiteBackupAdapter, OffsiteBackupStageReport,
+    OffsiteBackupTransferReport, RestoreDryRunReport, RestoreReport,
 };
 pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use checkpoint::compactor::{CompactionDecision, CompactionStats};

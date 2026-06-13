@@ -7,6 +7,7 @@ locked single-node database directory.
 
 ```bash
 cortexdb backup ./db ./db.backup
+cortexdb backup-verify ./db.backup
 cortexdb restore ./db.backup ./db.restored --dry-run
 cortexdb restore ./db.backup ./db.restored
 cortexdb validate ./db.restored
@@ -28,7 +29,11 @@ make backup-restore-production-pack-check
 - Backup takes the source database lock.
 - The WAL writer is shut down before copying and restarted afterward.
 - Source storage is validated before copying.
+- Backup writes `backup_manifest.tsv` with file sizes and CRC32C checksums for
+  copied files.
 - `db.lock` and known temporary files are excluded.
+- Backup verify inspects an existing backup without creating a restore target
+  and checks `backup_manifest.tsv` when present.
 - Restore dry-run inspects backup files, storage checksums, format
   compatibility, manifest segments, indexes, and WAL readability without
   creating the target path.
@@ -54,6 +59,11 @@ The backup copies the database root recursively, including:
 
 Symlinks and other non-regular files are rejected.
 
+Each backup directory also receives `backup_manifest.tsv`. It is an operator
+checksum manifest, not the storage manifest. It records relative file paths,
+file sizes, and CRC32C checksums so `cortexdb backup-verify <backup_path>` can
+detect accidental file changes before restore.
+
 ## Current Limitations
 
 - Passphrase encrypted backups are a local MVP, not KMS-backed envelope
@@ -72,11 +82,12 @@ Symlinks and other non-regular files are rejected.
 Before a real restore, run a dry-run preflight:
 
 ```bash
+cortexdb backup-verify ./db.backup
 cortexdb restore ./db.backup ./db.restore-target --dry-run
 ```
 
-This command does not create `./db.restore-target`. It verifies the backup can
-be read by the current binary and reports the files, bytes, manifest segments,
+These commands do not create `./db.restore-target`. They verify the backup can
+be read by the current binary and report the files, bytes, manifest segments,
 cells, and WAL records that would be restored.
 
 ## Operational Drill

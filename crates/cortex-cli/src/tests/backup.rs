@@ -148,6 +148,63 @@ fn backup_drill_command_restores_and_validates_copy() {
 }
 
 #[test]
+fn backup_verify_command_validates_backup_and_catches_corruption() {
+    let root = unique_path("cortexdb-cli-backup-verify-root");
+    let source = root.join("source");
+    let backup = root.join("backup");
+    let source_arg = source.to_string_lossy().into_owned();
+    let backup_arg = backup.to_string_lossy().into_owned();
+
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        source_arg.clone(),
+        "45".to_owned(),
+        "backup verify payload".to_owned(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "flush".to_owned(),
+        source_arg.clone(),
+    ])
+    .unwrap();
+    run(vec![
+        "cortexdb".to_owned(),
+        "backup".to_owned(),
+        source_arg,
+        backup_arg.clone(),
+    ])
+    .unwrap();
+    assert!(backup.join("backup_manifest.tsv").exists());
+
+    let verify = run(vec![
+        "cortexdb".to_owned(),
+        "backup-verify".to_owned(),
+        backup_arg.clone(),
+    ])
+    .unwrap();
+    assert!(verify.contains("backup_ok=true"));
+    assert!(verify.contains("checksum_manifest_present=true"));
+    assert!(verify.contains("checksum_manifest_files_verified="));
+    assert!(verify.contains("backup_live_segments_checked=1"));
+
+    corrupt_last_byte(&backup.join("segments").join("segment-1.acs"));
+    let error = run(vec![
+        "cortexdb".to_owned(),
+        "backup-verify".to_owned(),
+        backup_arg,
+    ])
+    .unwrap_err();
+    assert!(
+        error.contains("backup manifest checksum mismatch"),
+        "{error}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn backup_prune_command_removes_old_matching_backups() {
     let root = unique_path("cortexdb-cli-backup-prune-root");
     std::fs::create_dir_all(&root).unwrap();
@@ -266,4 +323,10 @@ fn backup_offsite_stage_command_validates_and_publishes_copy() {
     assert_eq!(payload, "offsite cli payload");
 
     let _ = std::fs::remove_dir_all(root);
+}
+
+fn corrupt_last_byte(path: &std::path::Path) {
+    let mut bytes = std::fs::read(path).unwrap();
+    *bytes.last_mut().unwrap() ^= 0xff;
+    std::fs::write(path, bytes).unwrap();
 }

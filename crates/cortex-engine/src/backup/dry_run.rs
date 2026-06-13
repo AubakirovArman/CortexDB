@@ -8,7 +8,7 @@ use cortex_storage::vectors::VectorIndex;
 use cortex_storage::wal::WalReader;
 
 use crate::backup::{
-    reject_existing_target, reject_target_inside_source, should_skip_backup_entry,
+    manifest, reject_existing_target, reject_target_inside_source, should_skip_backup_entry,
 };
 use crate::checkpoint::{
     bitmap_path, hnsw_path, lexical_path, load_checkpoint, segment_path, segments_path, vector_path,
@@ -24,6 +24,33 @@ pub struct RestoreDryRunReport {
     pub bytes_checked: u64,
     pub backup_validation: StorageValidation,
     pub version_compatible: bool,
+    pub checksum_manifest_present: bool,
+    pub checksum_manifest_files_verified: usize,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BackupVerifyReport {
+    pub files_checked: usize,
+    pub bytes_checked: u64,
+    pub backup_validation: StorageValidation,
+    pub version_compatible: bool,
+    pub checksum_manifest_present: bool,
+    pub checksum_manifest_files_verified: usize,
+}
+
+pub(super) fn verify_backup_read_only(backup_path: &Path) -> EngineResult<BackupVerifyReport> {
+    let backup_path = backup_path.canonicalize()?;
+    let checked = inspect_database_dir(&backup_path)?;
+    let manifest = manifest::verify_backup_manifest(&backup_path)?;
+    let backup_validation = validate_backup_read_only(&backup_path)?;
+    Ok(BackupVerifyReport {
+        files_checked: checked.files_checked,
+        bytes_checked: checked.bytes_checked,
+        backup_validation,
+        version_compatible: true,
+        checksum_manifest_present: manifest.present,
+        checksum_manifest_files_verified: manifest.files_verified,
+    })
 }
 
 pub(super) fn restore_from_backup_dry_run(
@@ -34,14 +61,15 @@ pub(super) fn restore_from_backup_dry_run(
     reject_target_inside_source(&backup_path, target_path)?;
     reject_existing_target(target_path)?;
 
-    let checked = inspect_database_dir(&backup_path)?;
-    let backup_validation = validate_backup_read_only(&backup_path)?;
+    let verified = verify_backup_read_only(&backup_path)?;
     Ok(RestoreDryRunReport {
         restore_path: target_path.to_owned(),
-        files_checked: checked.files_checked,
-        bytes_checked: checked.bytes_checked,
-        backup_validation,
-        version_compatible: true,
+        files_checked: verified.files_checked,
+        bytes_checked: verified.bytes_checked,
+        backup_validation: verified.backup_validation,
+        version_compatible: verified.version_compatible,
+        checksum_manifest_present: verified.checksum_manifest_present,
+        checksum_manifest_files_verified: verified.checksum_manifest_files_verified,
     })
 }
 

@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-E02` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, and `EPIC-E04` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-E14` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, and `EPIC-E02` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -1507,15 +1507,17 @@ enough to unblock the next dependency step.
 
 ### EPIC-E02 — Backup UX: один happy path + verify
 
-- status: `pending`
+- status: `done`
 - meta: Категория: ops · P1 · 60 days · improve
 - tasks:
-  - [ ] 1) `backup create` = snapshot+validate+checksum-манифест
-  - [ ] 2) `backup verify` без восстановления
-  - [ ] 3) restore с прогрессом; 6 команд остаются как advanced.
+  - [x] 1) `backup create` = snapshot+validate+checksum-манифест
+  - [x] 2) `backup verify` без восстановления
+  - [x] 3) restore с прогрессом; 6 команд остаются как advanced.
 - acceptance:
-  - [ ] happy path = 2 команды; verify ловит порчу (тест).
+  - [x] happy path = 2 команды; verify ловит порчу (тест).
 - files: cortex-cli, engine/backup.
+- evidence: Added `backup_manifest.tsv` with file sizes and CRC32C checksums for copied backup files, engine-level `Database::verify_backup_path`, CLI `backup-verify <backup_path>`, and docs for the two-command happy path `backup` + `backup-verify`. `restore --dry-run` now also reports checksum manifest presence/verified file count when a manifest exists. Regression coverage: `backup_verify_command_validates_backup_and_catches_corruption` verifies a fresh backup, corrupts a backed-up segment, and confirms `backup-verify` rejects it via checksum manifest mismatch. Targeted gates passed: `cargo test -p cortex-cli backup_verify_command_validates_backup_and_catches_corruption --all-features`, `cargo test -p cortex-cli backup --all-features`, and `cargo test -p cortex-engine --test backup_restore --all-features`.
+- next exit step: move to `EPIC-E14` — Upgrade/rollback drill.
 
 ### EPIC-E03 — WAL-архив → point-in-time recovery (groundwork)
 

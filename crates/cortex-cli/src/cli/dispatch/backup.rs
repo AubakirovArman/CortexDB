@@ -39,6 +39,10 @@ pub(super) fn backup_drill(
     )
 }
 
+pub(super) fn backup_verify(backup_path: String) -> Result<String, String> {
+    ops::backup_verify(&backup_path)
+}
+
 pub(super) fn backup_prune(
     backup_root: String,
     prefix: String,
