@@ -5701,7 +5701,7 @@
     "crates/cortex-server/src/tests/security_tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 5,
+      "lines": 6,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -5736,7 +5736,14 @@
     "crates/cortex-server/src/tests/security_tests/tenancy.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 197,
+      "lines": 259,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/security_tests/tenancy_matrix.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 225,
       "soft_limit": 600,
       "warning_limit": 1200
     },

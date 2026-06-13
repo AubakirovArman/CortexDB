@@ -132,6 +132,33 @@ fn test_tenant_validation_unit_cases() {
 }
 
 #[test]
+fn tenant_validation_generated_reject_cases_do_not_panic_or_create_realms() {
+    let dir = tempfile::tempdir().unwrap();
+    let generated = generated_invalid_tenants();
+
+    for tenant in &generated {
+        assert!(
+            !crate::validate_tenant_id(tenant),
+            "generated tenant should be invalid: {tenant:?}"
+        );
+        let request = format!(
+            "GET /v1/health?tenant={} HTTP/1.1\r\n\r\n",
+            encode_tenant_query_value(tenant)
+        );
+        let response = handle_http_with_options(dir.path(), &request, &ServerOptions::default());
+        assert!(
+            response.contains("invalid_tenant"),
+            "invalid tenant should return invalid_tenant: {tenant:?} -> {response}"
+        );
+    }
+
+    assert!(
+        !dir.path().join("realms").exists(),
+        "invalid tenants must not create tenant realm directories"
+    );
+}
+
+#[test]
 fn test_query_param_percent_decoding() {
     // Scope with colon
     assert_eq!(
@@ -194,4 +221,39 @@ fn test_tenant_path_traversal_over_http() {
             resp_str
         );
     }
+}
+
+fn generated_invalid_tenants() -> Vec<String> {
+    let fragments = [
+        "..",
+        ".",
+        "alpha/beta",
+        "alpha\\beta",
+        "alpha%2Fbeta",
+        "alpha%5Cbeta",
+        "alpha:beta",
+        "alpha beta",
+        "alpha\nbeta",
+        "alpha\tbeta",
+        "%2e%2e",
+        "tenant@home",
+    ];
+    fragments
+        .into_iter()
+        .flat_map(|fragment| {
+            [
+                fragment.to_owned(),
+                format!("{fragment}_suffix"),
+                format!("prefix_{fragment}"),
+            ]
+        })
+        .collect()
+}
+
+fn encode_tenant_query_value(value: &str) -> String {
+    value
+        .replace('\\', "%5C")
+        .replace(' ', "%20")
+        .replace('\n', "%0A")
+        .replace('\t', "%09")
 }

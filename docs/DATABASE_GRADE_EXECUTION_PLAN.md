@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-E08` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, and `EPIC-B05` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-E10` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, and `EPIC-E09` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -1588,16 +1588,19 @@ enough to unblock the next dependency step.
 
 ### EPIC-E08 — Tenant isolation test suite
 
-- status: `pending`
+- status: `done`
 - meta: Категория: security · P1 · 60 days · test
 - tasks:
-  - [ ] 1) негативные тесты path-traversal имён тенантов (валидация есть — закрепить)
-  - [ ] 2) cross-tenant: данные/статы/метрики не утекают между тенантами (матрица маршрутов)
-  - [ ] 3) fuzz tenant-имён.
+  - [x] 1) негативные тесты path-traversal имён тенантов (валидация есть — закрепить)
+  - [x] 2) cross-tenant: данные/статы/метрики не утекают между тенантами (матрица маршрутов)
+  - [x] 3) fuzz tenant-имён.
 - acceptance:
-  - [ ] 1) полная матрица маршрутов покрыта cross-tenant тестом
-  - [ ] 2) fuzz без паник/утечек.
+  - [x] 1) полная матрица маршрутов покрыта cross-tenant тестом
+  - [x] 2) fuzz без паник/утечек.
 - files: server/tests.
+- evidence: Expanded `crates/cortex-server/src/tests/security_tests/tenancy.rs` with a tenant route matrix across cell get, search, context, AQL, verify, stats, validate, and metrics. Added tenant-local AgentView loading regression coverage so the same agent id resolves permissions from the requested tenant realm instead of another realm. Added generated invalid-tenant reject cases that percent-encode path traversal, separators, whitespace, reserved characters, and traversal fragments, verifying they return `invalid_tenant` and do not create `realms/`.
+- verification: `cargo test -p cortex-server tenancy --all-features`; `python3 scripts/file_size_report.py --root . --baseline quality/file_size_baseline.json --check`; `cargo fmt --check`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `make check`.
+- next exit step: `EPIC-E09` is already done, so move to `EPIC-E10` — Fuzzing decode paths.
 
 ### EPIC-E09 — Property-suite инварианта прав («ни байта мимо AgentView»)
 

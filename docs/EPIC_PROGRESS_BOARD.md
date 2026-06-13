@@ -21,21 +21,44 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-E08` — Tenant isolation test suite.
+`EPIC-E10` — Fuzzing decode paths.
 
-E08 exit steps:
+E10 exit steps:
 
-1. Generate multi-tenant/AgentView cases.
-2. Test all public surfaces for isolation.
-3. Add regression seeds.
-4. Mark done when tenant leaks fail tests; then move to E09.
+1. Select WAL/segment/manifest/index decoders for fuzzing.
+2. Add fuzz targets and seed corpus.
+3. Wire the short fuzz/smoke gate without making normal PR checks long.
+4. Mark done when decode paths have reproducible panic/corruption coverage.
 
-E08 progress:
+E10 progress:
 
-- next: inspect existing tenant isolation tests and route matrix before adding
-  any new cases.
+- next: inventory existing decode tests and choose the smallest no-new-deps
+  fuzz-like harness shape for the first gate.
 
 ## Recently Closed
+
+### EPIC-E08 — Tenant isolation test suite
+
+Status: `done`
+
+What closed it:
+
+- Tenant route matrix covers `/v1/cell`, `/v1/search`, `/v1/context`,
+  `/v1/aql`, `/v1/verify`, `/v1/stats`, `/v1/validate`, and `/v1/metrics`
+  for cross-tenant payload isolation.
+- Same numeric AgentView id is loaded from the requested tenant realm, proving
+  one tenant's scope grants do not authorize another tenant's realm.
+- Generated invalid tenant values cover traversal, separators, whitespace,
+  reserved characters, and percent-encoded variants; rejected tenants do not
+  create `realms/`.
+- Gates passed: `cargo test -p cortex-server tenancy --all-features`,
+  file-size ratchet, `cargo fmt --check`,
+  `cargo test --workspace --all-features`,
+  `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`.
+
+Next:
+
+- E09 was already closed, so continue with E10.
 
 ### EPIC-B05 — AgentView lifecycle API v1
 
@@ -189,7 +212,7 @@ Important follow-up:
 
 ## Done Snapshot
 
-Done count in roadmap snapshot: `38`.
+Done count in roadmap snapshot: `39`.
 
 High-signal done epics:
 
@@ -223,6 +246,7 @@ High-signal done epics:
 - D10 OpenAPI/codegen control;
 - D11 MCP adapter;
 - E01 WAL writer error surfacing;
+- E08 tenant isolation test suite;
 - E09 AgentView rights property suite;
 - E11 chaos/graceful shutdown;
 - E12 migration framework.
@@ -251,11 +275,11 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on B04 only:
+Work on E10 only:
 
-1. inventory remaining read surfaces and current permission gates;
-2. decide whether remaining engine/search/verification reads are already
-   covered by descriptor indexes or need new B04 work;
-3. run the E09/property/security subset plus full required gates when closing;
-4. move pointer only after B04 is `done` or explicitly split with accepted
+1. inventory WAL, segment, manifest, index, and AQL parser decode paths;
+2. add a short deterministic fuzz-like harness with seed corpus and corruption
+   cases;
+3. run targeted decode/fuzz smoke tests plus full required gates when closing;
+4. move pointer only after E10 is `done` or explicitly split with accepted
    follow-up scope.
