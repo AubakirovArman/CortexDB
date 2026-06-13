@@ -62,7 +62,8 @@ fn checkpoint_that_changes_segments_invalidates_cached_persisted_index() {
     let before = db.persisted_index_state_cached().unwrap();
 
     // A new checkpoint that writes another segment changes the live-segment
-    // fingerprint, so the cache key no longer matches and the state is rebuilt.
+    // fingerprint, so callers holding the previous Arc cannot observe a stale
+    // state. The cache may update by incremental suffix merge internally.
     db.put_knowledge_cell(CellId(2), cell("wind farm budget approved"))
         .unwrap();
     db.checkpoint().unwrap();
@@ -73,6 +74,73 @@ fn checkpoint_that_changes_segments_invalidates_cached_persisted_index() {
         "a checkpoint that rewrites segments must invalidate the cached index"
     );
     assert_eq!(after.candidate_to_cell.len(), 2);
+}
+
+#[test]
+fn aql_index_uses_cached_persisted_index_state() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(CellId(1), cell("solar plant budget approved"))
+        .unwrap();
+    db.checkpoint().unwrap();
+
+    let first = db.aql_index().unwrap();
+    let second = db.aql_index().unwrap();
+    let stats = db.persisted_index_cache_stats().unwrap();
+
+    assert_eq!(stats.full_rebuilds, 1);
+    assert_eq!(stats.incremental_segments, 0);
+    assert_eq!(first.candidate_to_cell, second.candidate_to_cell);
+    assert!(first.lexical.contains_key("solar"));
+}
+
+#[test]
+fn appended_checkpoint_segment_incrementally_updates_persisted_index_cache() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(CellId(1), cell("solar plant budget approved"))
+        .unwrap();
+    db.checkpoint().unwrap();
+
+    let warm = db.persisted_index_state_cached().unwrap();
+    assert!(warm.lexical.terms.contains_key("solar"));
+    assert_eq!(db.persisted_index_cache_stats().unwrap().full_rebuilds, 1);
+
+    db.put_knowledge_cell(CellId(1), cell("wind farm budget approved"))
+        .unwrap();
+    db.checkpoint().unwrap();
+    let incremental = db.persisted_index_state_cached().unwrap();
+    let stats = db.persisted_index_cache_stats().unwrap();
+    assert_eq!(stats.full_rebuilds, 1);
+    assert_eq!(stats.incremental_segments, 1);
+
+    assert_eq!(incremental.candidate_to_cell.len(), 1);
+    assert!(!incremental.lexical.terms.contains_key("solar"));
+    assert!(incremental.lexical.terms.contains_key("wind"));
+    let full = db.persisted_index_state().unwrap();
+    assert_eq!(incremental.as_ref(), &full);
+}
+
+#[test]
+fn appended_tombstone_segment_incrementally_removes_persisted_candidates() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(CellId(1), cell("solar plant budget approved"))
+        .unwrap();
+    db.checkpoint().unwrap();
+    db.persisted_index_state_cached().unwrap();
+
+    db.tombstone_cell(CellId(1)).unwrap();
+    db.checkpoint().unwrap();
+    let incremental = db.persisted_index_state_cached().unwrap();
+    let stats = db.persisted_index_cache_stats().unwrap();
+    assert_eq!(stats.full_rebuilds, 1);
+    assert_eq!(stats.incremental_segments, 1);
+
+    assert!(incremental.candidate_to_cell.is_empty());
+    assert!(incremental.lexical.terms.is_empty());
+    let full = db.persisted_index_state().unwrap();
+    assert_eq!(incremental.as_ref(), &full);
 }
 
 #[test]

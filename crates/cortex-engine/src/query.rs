@@ -54,11 +54,11 @@ impl Database {
         if self.manifest().live_segments.is_empty() {
             return EngineAqlIndex::try_from_delta(&self.aql_delta_index);
         }
-        let persisted = self.persisted_index_state()?;
+        let persisted = self.persisted_index_state_cached()?;
         EngineAqlIndex::from_persisted_delta(
-            persisted.bitmap,
-            persisted.lexical,
-            persisted.candidate_to_cell,
+            persisted.bitmap.clone(),
+            persisted.lexical.clone(),
+            persisted.candidate_to_cell.clone(),
             &self.aql_delta_index,
         )
     }

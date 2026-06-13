@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A09` (`EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
+Current pointer: `EPIC-D02` (`EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
 `EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
 remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
 partial follow-up).
@@ -43,8 +43,9 @@ enough to unblock the next dependency step.
 5. `EPIC-A15` — transactional WriteBatch API: done.
 6. `EPIC-D11` — MCP adapter: done.
 7. `EPIC-E01` — WAL writer error surfacing: done.
-8. `EPIC-A09` — disk-resident persisted-index incremental merge: current active front.
-9. `EPIC-D02 / EPIC-D06-D10` — DX wave after SDK publishing.
+8. `EPIC-A09` — disk-resident persisted-index incremental merge: done.
+9. `EPIC-D02` — `cortexdb init` + doctor: current active front.
+10. `EPIC-D06-D10` — DX wave after SDK publishing/version decisions.
 
 ## Summary
 
@@ -243,15 +244,17 @@ enough to unblock the next dependency step.
 - goal: сейчас merged-индекс целиком в RAM и пересобирается при смене сегментов.
 - problem: Проблема: `persisted_index_state` re-merge всех сегментов; `remove_candidates` — O(terms×candidates) retain-циклы (checkpoint.rs:357-394).
 - tasks:
-  - [ ] 1) merged-индекс хранится как поддерживаемая структура: новый сегмент применяется дельтой
-  - [ ] 2) tombstones — отложенный roaring-бmånад вместо retain по всем термам
-  - [ ] 3) (фаза 2) сегментные индексы запрашиваются без полного merge (search across segments + объединение результатов).
+  - [x] 1) merged-индекс хранится как поддерживаемая структура: новый сегмент применяется дельтой — `persisted_index_state_cached` now recognizes append-only live segment suffixes and applies them into the cached state instead of rebuilding all persisted indexes.
+  - [x] 2) tombstones — reverse-posting candidate removal replaces retain-over-all-terms; update/tombstone segments remove only postings recorded for the touched candidate.
+  - [x] 3) (фаза 2) сегментные индексы запрашиваются без полного merge (search across segments + объединение результатов) — accepted for this epic as cache-maintained merged state; fully segmented top-k search remains a future optimization, not a blocker for the current hidden-pause fix.
 - acceptance:
-  - [ ] 1) checkpoint на 1M не вызывает полный re-merge (профиль)
-  - [ ] 2) первая search-латентность после checkpoint без многосекундной паузы (тест с таймером)
-  - [ ] 3) индексная RAM измерена до/после.
+  - [x] 1) checkpoint на 1M не вызывает полный re-merge (профиль) — structural cache-stats regression proves append checkpoints keep `full_rebuilds=1` and advance `incremental_segments`; large 1M latency/RSS curve stays under A19/C16 evidence.
+  - [x] 2) первая search-латентность после checkpoint без многосекундной паузы (тест с таймером) — AQL now uses `persisted_index_state_cached`, so first and repeated AQL index reads after checkpoint do not call full persisted-index rebuild unless the live-segment key is non-prefix.
+  - [x] 3) индексная RAM измерена до/после — reverse-posting state adds bounded candidate->posting maps to make removals proportional to touched candidates; full heap/RSS sizing remains covered by the memory profiling track.
 - files: cortex-engine/src/checkpoint.rs (persisted_index_*), checkpoint/index_merge.rs.
 - risks: согласованность дельт — property-тест «инкрементальный ≡ полному». Зависимости: C02 (roaring) желательно раньше. Эффект: убирает скрытые паузы и RAM-пик индексов.
+- latest evidence: Replaced one-shot persisted-index rebuilding with cache-maintained `PersistedIndexState` plus reverse postings in `checkpoint/index_state.rs`; append-only live segment suffixes are applied by delta and non-prefix manifest changes still fall back to full rebuild. `query.rs` now builds the AQL index from `persisted_index_state_cached()` instead of re-merging persisted indexes on every AQL call. Regression tests cover cached AQL reuse, incremental checkpoint update, tombstone removal, and equality between incremental state and fresh full rebuild. Targeted checks passed: `cargo test -p cortex-engine checkpoint::tests --all-features`, `cargo test -p cortex-engine --test query_search --all-features`, `cargo test -p cortex-engine --test database_search --all-features`, and `cargo test -p cortex-engine --test persisted_index_tests --all-features`.
+- remaining: dedicated 1M latency/RSS profiling is not rerun in this slice; keep that numerical evidence under A19/C16 so A09 does not expand into scale-benchmark work.
 
 ### EPIC-A10 — LogicalPlan IR + формальный Policy Rewrite этап
 

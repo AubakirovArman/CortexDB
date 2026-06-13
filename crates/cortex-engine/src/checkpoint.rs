@@ -2,7 +2,7 @@ mod candidates;
 pub mod compactor;
 mod database;
 pub(crate) mod hnsw;
-mod index_merge;
+mod index_state;
 mod indexes;
 mod load;
 mod manifest_safety;

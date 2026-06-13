@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -9,9 +9,9 @@ use cortex_storage::segment::SegmentReader;
 use crate::database::Database;
 use crate::error::EngineResult;
 
-use super::index_merge::{merge_bitmap_index, merge_lexical_index};
+use super::index_state::{merge_bitmap_index, merge_lexical_index, remove_candidates};
 use super::paths::{bitmap_path, lexical_path, segment_path};
-use super::types::{PersistedIndexCache, PersistedIndexState};
+use super::types::{PersistedIndexCache, PersistedIndexCacheStats, PersistedIndexState};
 
 const LARGE_LEXICAL_TERMS_ONLY_THRESHOLD_BYTES: u64 = 512 * 1024 * 1024;
 
@@ -22,10 +22,8 @@ impl Database {
     }
 
     pub(crate) fn persisted_index_state(&self) -> EngineResult<PersistedIndexState> {
-        let mut bitmap = BitmapIndex::default();
-        let mut lexical = LexicalIndex::default();
+        let mut state = PersistedIndexState::default();
         let mut tombstoned = BTreeSet::new();
-        let mut candidate_to_cell = BTreeMap::new();
         for segment in &self.manifest.live_segments {
             // Index rebuild only needs candidate/cell identity and liveness, so
             // read the lightweight entries instead of copying every payload.
@@ -37,28 +35,26 @@ impl Database {
                 .iter()
                 .map(|entry| entry.candidate_id)
                 .collect::<BTreeSet<_>>();
-            remove_candidates(&mut bitmap, &mut lexical, &segment_candidates);
+            remove_candidates(&mut state, &segment_candidates);
             for entry in entries {
                 if entry.deleted {
                     tombstoned.insert(entry.candidate_id);
-                    candidate_to_cell.remove(&entry.candidate_id);
+                    state.candidate_to_cell.remove(&entry.candidate_id);
                 } else {
                     tombstoned.remove(&entry.candidate_id);
-                    candidate_to_cell.insert(entry.candidate_id, CellId(entry.cell_id));
+                    state
+                        .candidate_to_cell
+                        .insert(entry.candidate_id, CellId(entry.cell_id));
                 }
             }
             let segment_bitmap = BitmapIndex::read(bitmap_path(&self.segments_path, segment.id))?;
             let segment_lexical =
                 read_persisted_lexical_index(&lexical_path(&self.segments_path, segment.id))?;
-            merge_bitmap_index(&mut bitmap, segment_bitmap);
-            merge_lexical_index(&mut lexical, segment_lexical);
+            merge_bitmap_index(&mut state, segment_bitmap);
+            merge_lexical_index(&mut state, segment_lexical);
         }
-        remove_candidates(&mut bitmap, &mut lexical, &tombstoned);
-        Ok(PersistedIndexState {
-            bitmap,
-            lexical,
-            candidate_to_cell,
-        })
+        remove_candidates(&mut state, &tombstoned);
+        Ok(state)
     }
 
     /// Return the persisted index, reusing a cached copy when the live-segment
@@ -71,12 +67,7 @@ impl Database {
     /// so a checkpoint or compaction that rewrites segments transparently forces
     /// a rebuild while a steady-state read corpus is decoded only once.
     pub(crate) fn persisted_index_state_cached(&self) -> EngineResult<Arc<PersistedIndexState>> {
-        let key: Vec<(u64, u64, u64)> = self
-            .manifest
-            .live_segments
-            .iter()
-            .map(|segment| (segment.id, segment.generation, segment.checkpoint_seq))
-            .collect();
+        let key = self.persisted_index_key();
         let mut cache = self
             .persisted_index_cache
             .lock()
@@ -86,52 +77,84 @@ impl Database {
                 return Ok(Arc::clone(&entry.state));
             }
         }
+        if let Some(entry) = cache.as_mut() {
+            if key_starts_with(&key, &entry.key) {
+                let old_len = entry.key.len();
+                let suffix = self.manifest.live_segments[old_len..].to_vec();
+                let state = Arc::make_mut(&mut entry.state);
+                for segment in suffix {
+                    self.apply_persisted_segment_delta(state, segment.id)?;
+                    entry.stats.incremental_segments += 1;
+                }
+                entry.key = key;
+                return Ok(Arc::clone(&entry.state));
+            }
+        }
+        let previous_stats = cache.as_ref().map(|entry| entry.stats).unwrap_or_default();
         let state = Arc::new(self.persisted_index_state()?);
         *cache = Some(PersistedIndexCache {
             key,
             state: Arc::clone(&state),
+            stats: PersistedIndexCacheStats {
+                full_rebuilds: previous_stats.full_rebuilds + 1,
+                incremental_segments: previous_stats.incremental_segments,
+            },
         });
         Ok(state)
     }
+
+    fn persisted_index_key(&self) -> Vec<(u64, u64, u64)> {
+        self.manifest
+            .live_segments
+            .iter()
+            .map(|segment| (segment.id, segment.generation, segment.checkpoint_seq))
+            .collect()
+    }
+
+    fn apply_persisted_segment_delta(
+        &self,
+        state: &mut PersistedIndexState,
+        segment_id: u64,
+    ) -> EngineResult<()> {
+        let entries =
+            SegmentReader::read_candidate_entries(segment_path(&self.segments_path, segment_id))?;
+        let segment_candidates = entries
+            .iter()
+            .map(|entry| entry.candidate_id)
+            .collect::<BTreeSet<_>>();
+        remove_candidates(state, &segment_candidates);
+        let mut tombstoned = BTreeSet::new();
+        for entry in entries {
+            if entry.deleted {
+                tombstoned.insert(entry.candidate_id);
+                state.candidate_to_cell.remove(&entry.candidate_id);
+            } else {
+                state
+                    .candidate_to_cell
+                    .insert(entry.candidate_id, CellId(entry.cell_id));
+            }
+        }
+        let segment_bitmap = BitmapIndex::read(bitmap_path(&self.segments_path, segment_id))?;
+        let segment_lexical =
+            read_persisted_lexical_index(&lexical_path(&self.segments_path, segment_id))?;
+        merge_bitmap_index(state, segment_bitmap);
+        merge_lexical_index(state, segment_lexical);
+        remove_candidates(state, &tombstoned);
+        Ok(())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn persisted_index_cache_stats(&self) -> Option<PersistedIndexCacheStats> {
+        self.persisted_index_cache
+            .lock()
+            .expect("persisted index cache mutex poisoned")
+            .as_ref()
+            .map(|entry| entry.stats)
+    }
 }
 
-fn remove_candidates(
-    bitmap: &mut BitmapIndex,
-    lexical: &mut LexicalIndex,
-    candidates: &BTreeSet<u32>,
-) {
-    for values in bitmap.bitmaps.values_mut() {
-        values.retain(|candidate| !candidates.contains(candidate));
-    }
-    bitmap.bitmaps.retain(|_, values| !values.is_empty());
-    for values in lexical.terms.values_mut() {
-        values.retain(|candidate| !candidates.contains(candidate));
-    }
-    lexical.terms.retain(|_, values| !values.is_empty());
-    lexical
-        .doc_lengths
-        .retain(|candidate, _| !candidates.contains(candidate));
-    for values in lexical.term_frequencies.values_mut() {
-        values.retain(|candidate, _| !candidates.contains(candidate));
-    }
-    lexical
-        .term_frequencies
-        .retain(|_, values| !values.is_empty());
-    for values in lexical.field_doc_lengths.values_mut() {
-        values.retain(|candidate, _| !candidates.contains(candidate));
-    }
-    lexical
-        .field_doc_lengths
-        .retain(|_, values| !values.is_empty());
-    for terms in lexical.field_term_frequencies.values_mut() {
-        for values in terms.values_mut() {
-            values.retain(|candidate, _| !candidates.contains(candidate));
-        }
-        terms.retain(|_, values| !values.is_empty());
-    }
-    lexical
-        .field_term_frequencies
-        .retain(|_, terms| !terms.is_empty());
+fn key_starts_with(key: &[(u64, u64, u64)], prefix: &[(u64, u64, u64)]) -> bool {
+    key.len() >= prefix.len() && &key[..prefix.len()] == prefix
 }
 
 fn read_persisted_lexical_index(path: &Path) -> EngineResult<LexicalIndex> {
