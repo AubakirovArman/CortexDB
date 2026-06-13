@@ -25,11 +25,11 @@ pub(crate) struct EngineMemoryEstimate {
 pub(crate) fn estimate_database_memory(db: &Database) -> EngineResult<EngineMemoryEstimate> {
     let memtable = db.memtable.stats();
     let index = db.try_aql_index()?;
-    let versions = db.snapshot_versions();
     let memtable_payload_bytes = memtable.payload_bytes;
     let estimated_memtable_bytes = estimate_memtable_bytes(memtable);
     let estimated_index_bytes = estimate_aql_index_bytes(&index);
-    let estimated_context_pack_bytes = estimate_context_pack_working_set_bytes(&versions);
+    let estimated_context_pack_bytes =
+        estimate_context_pack_working_set_bytes(db.memtable.visible_iter(db.read_txn()));
     Ok(EngineMemoryEstimate {
         memtable_payload_bytes,
         estimated_memtable_bytes,
@@ -116,11 +116,15 @@ fn estimate_lexical_maps(index: &EngineAqlIndex) -> usize {
         .saturating_add(term_frequencies)
 }
 
-fn estimate_context_pack_working_set_bytes(versions: &[CellVersion]) -> usize {
-    let payload_bytes = versions
-        .iter()
-        .map(|version| version.payload.len())
-        .sum::<usize>();
+fn estimate_context_pack_working_set_bytes<'a>(
+    versions: impl Iterator<Item = &'a CellVersion>,
+) -> usize {
+    let mut count = 0usize;
+    let mut payload_bytes = 0usize;
+    for version in versions {
+        count += 1;
+        payload_bytes = payload_bytes.saturating_add(version.payload.len());
+    }
     let per_cell = size_of::<RetrievedCell>()
         .saturating_add(size_of::<ContextPackCell>())
         .saturating_add(size_of::<ContextExplain>())
@@ -129,7 +133,7 @@ fn estimate_context_pack_working_set_bytes(versions: &[CellVersion]) -> usize {
     payload_bytes
         .saturating_add(size_of::<Vec<RetrievedCell>>())
         .saturating_add(size_of::<Vec<ContextPackCell>>())
-        .saturating_add(versions.len().saturating_mul(per_cell))
+        .saturating_add(count.saturating_mul(per_cell))
 }
 
 fn estimate_set(values: &BTreeSet<u32>) -> usize {

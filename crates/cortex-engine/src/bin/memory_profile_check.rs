@@ -3,7 +3,6 @@ use std::fs;
 use std::process::ExitCode;
 use std::time::Instant;
 
-use cortex_core::CellId;
 use cortex_engine::{Database, DatabaseOptions, PayloadResidency};
 use serde_json::{json, Value};
 
@@ -13,10 +12,13 @@ mod args;
 mod latency;
 #[path = "memory_profile_check/payload_gate.rs"]
 mod payload_gate;
+#[path = "memory_profile_check/workload.rs"]
+mod workload;
 
 use args::Args;
 use latency::get_latest_latency_report;
 use payload_gate::{clone_gate_errors, payload_clone_gate_report};
+use workload::{prepare_direct_checkpoint, put_profile_cells};
 
 fn main() -> ExitCode {
     match run() {
@@ -56,13 +58,15 @@ fn run() -> Result<(), String> {
     let mut after_put_stats = None;
     let mut after_checkpoint_stats = None;
 
-    if !args.reopen_only {
+    if !args.reopen_only && args.direct_checkpoint {
+        prepare_direct_checkpoint(&db_path, args.cells, args.payload_bytes, args.batch_size)?;
+        samples.push(memory_sample("after_direct_checkpoint"));
+    } else if !args.reopen_only {
         let mut db =
             Database::open_with_options(&db_path, options).map_err(|error| error.to_string())?;
         samples.push(memory_sample("open_empty"));
 
-        db.put_cells(build_cells(args.cells, args.payload_bytes))
-            .map_err(|error| error.to_string())?;
+        put_profile_cells(&mut db, args.cells, args.payload_bytes, args.batch_size)?;
         after_put_stats = Some(db.storage_stats().map_err(|error| error.to_string())?);
         samples.push(memory_sample("after_put"));
 
@@ -74,8 +78,9 @@ fn run() -> Result<(), String> {
     }
 
     let db = Database::open_with_options(&db_path, options).map_err(|error| error.to_string())?;
+    samples.push(memory_sample("after_open"));
     let after_reopen_stats = db.storage_stats().map_err(|error| error.to_string())?;
-    samples.push(memory_sample("after_reopen"));
+    samples.push(memory_sample("after_reopen_stats"));
     let get_latest_latency = get_latest_latency_report(&db, args.cells, args.read_samples)?;
 
     let validation = db.validate_storage_report();
@@ -96,7 +101,9 @@ fn run() -> Result<(), String> {
         "schema_version": "cortexdb.memory_profile.v1",
         "ok": errors.is_empty(),
         "cells": args.cells,
+        "batch_size": args.batch_size,
         "payload_bytes": args.payload_bytes,
+        "prepare_mode": if args.direct_checkpoint { "direct_checkpoint" } else { "wal_put_checkpoint" },
         "mode": if args.reopen_only { "reopen_only" } else { "build_and_reopen" },
         "payload_residency": payload_residency_name(args.payload_residency),
         "duration_ms": round_ms(started.elapsed().as_secs_f64() * 1000.0),
@@ -148,30 +155,6 @@ fn run() -> Result<(), String> {
     }
     println!("memory profile passed: {}", args.report.display());
     Ok(())
-}
-
-fn build_cells(cells: usize, payload_bytes: usize) -> Vec<(CellId, Vec<u8>)> {
-    (1..=cells)
-        .map(|index| (CellId(index as u64), build_payload(index, payload_bytes)))
-        .collect()
-}
-
-fn build_payload(index: usize, payload_bytes: usize) -> Vec<u8> {
-    let mut payload = format!(
-        "scope=memory:profile\nstatus=ready\ntype=fact\nsource=memory-profile-{index}\n\nmemory profile payload {index} alpha beta gamma"
-    )
-    .into_bytes();
-    if payload_bytes <= payload.len() {
-        return payload;
-    }
-
-    payload.push(b'\n');
-    let filler = format!("filler-{index:08}-");
-    while payload.len() < payload_bytes {
-        payload.extend_from_slice(filler.as_bytes());
-    }
-    payload.truncate(payload_bytes);
-    payload
 }
 
 fn payload_residency_name(payload_residency: PayloadResidency) -> &'static str {
@@ -263,26 +246,4 @@ fn ratio(numerator: u64, denominator: u64) -> f64 {
 
 fn round_ms(value: f64) -> f64 {
     (value * 1000.0).round() / 1000.0
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn build_payload_keeps_legacy_size_when_disabled() {
-        let payload = build_payload(7, 0);
-        let text = String::from_utf8(payload).unwrap();
-
-        assert!(text.contains("source=memory-profile-7"));
-        assert!(text.contains("memory profile payload 7 alpha beta gamma"));
-    }
-
-    #[test]
-    fn build_payload_pads_to_requested_size() {
-        let payload = build_payload(7, 4096);
-
-        assert_eq!(payload.len(), 4096);
-        assert!(payload.starts_with(b"scope=memory:profile\n"));
-    }
 }

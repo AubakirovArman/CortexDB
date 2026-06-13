@@ -7,7 +7,7 @@ verify-performance-check:
 
 .PHONY: memory-profile
 memory-profile:
-	cargo run --release -p cortex-engine --bin memory_profile_check -- --root "$(MEMORY_PROFILE_ROOT)" --report "$(MEMORY_PROFILE_REPORT)" --cells "$(MEMORY_PROFILE_CELLS)" --payload-bytes "$(MEMORY_PROFILE_PAYLOAD_BYTES)" $(MEMORY_PROFILE_REOPEN_ONLY) --read-samples "$(MEMORY_PROFILE_READ_SAMPLES)" --payload-residency "$(MEMORY_PROFILE_PAYLOAD_RESIDENCY)" --max-rss-to-estimated-total-ratio "$(MEMORY_PROFILE_MAX_RSS_TO_ESTIMATED_TOTAL_RATIO)"
+	cargo run --release -p cortex-engine --bin memory_profile_check -- --root "$(MEMORY_PROFILE_ROOT)" --report "$(MEMORY_PROFILE_REPORT)" --cells "$(MEMORY_PROFILE_CELLS)" --batch-size "$(MEMORY_PROFILE_BATCH_SIZE)" $(MEMORY_PROFILE_DIRECT_CHECKPOINT) --payload-bytes "$(MEMORY_PROFILE_PAYLOAD_BYTES)" $(MEMORY_PROFILE_REOPEN_ONLY) --read-samples "$(MEMORY_PROFILE_READ_SAMPLES)" --payload-residency "$(MEMORY_PROFILE_PAYLOAD_RESIDENCY)" --max-rss-to-estimated-total-ratio "$(MEMORY_PROFILE_MAX_RSS_TO_ESTIMATED_TOTAL_RATIO)"
 
 .PHONY: scale-bench-100k scale-bench-1m
 scale-bench-100k:

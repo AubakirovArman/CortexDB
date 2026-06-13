@@ -6,6 +6,8 @@ pub(super) struct Args {
     pub(super) root: PathBuf,
     pub(super) report: PathBuf,
     pub(super) cells: usize,
+    pub(super) batch_size: usize,
+    pub(super) direct_checkpoint: bool,
     pub(super) payload_bytes: usize,
     pub(super) reopen_only: bool,
     pub(super) read_samples: usize,
@@ -19,6 +21,8 @@ impl Args {
             root: PathBuf::from("target/memory-profile"),
             report: PathBuf::from("target/memory-profile/report.json"),
             cells: 10_000,
+            batch_size: 5_000,
+            direct_checkpoint: false,
             payload_bytes: 0,
             reopen_only: false,
             read_samples: 0,
@@ -33,6 +37,11 @@ impl Args {
                 "--cells" => {
                     args.cells = parse_usize(next_value(&mut values, "--cells")?, "--cells")?
                 }
+                "--batch-size" => {
+                    args.batch_size =
+                        parse_usize(next_value(&mut values, "--batch-size")?, "--batch-size")?
+                }
+                "--direct-checkpoint" => args.direct_checkpoint = true,
                 "--payload-bytes" => {
                     args.payload_bytes = parse_usize(
                         next_value(&mut values, "--payload-bytes")?,
@@ -60,6 +69,9 @@ impl Args {
         }
         if args.cells == 0 {
             return Err("--cells must be positive".to_owned());
+        }
+        if args.batch_size == 0 {
+            return Err("--batch-size must be positive".to_owned());
         }
         Ok(args)
     }
@@ -97,7 +109,7 @@ fn parse_payload_residency(value: String) -> Result<PayloadResidency, String> {
 }
 
 fn help_text() -> String {
-    "usage: memory_profile_check [--root PATH] [--report PATH] [--cells N] [--payload-bytes N] [--reopen-only] [--read-samples N] [--payload-residency memory|lazy] [--max-rss-to-estimated-total-ratio N]".to_owned()
+    "usage: memory_profile_check [--root PATH] [--report PATH] [--cells N] [--batch-size N] [--direct-checkpoint] [--payload-bytes N] [--reopen-only] [--read-samples N] [--payload-residency memory|lazy] [--max-rss-to-estimated-total-ratio N]".to_owned()
 }
 
 #[cfg(test)]
@@ -114,6 +126,20 @@ mod tests {
 
         assert_eq!(args.cells, 12);
         assert_eq!(args.payload_bytes, 4096);
+    }
+
+    #[test]
+    fn parse_batch_size_override() {
+        let args = parse(&["--batch-size", "77"]);
+
+        assert_eq!(args.batch_size, 77);
+    }
+
+    #[test]
+    fn parse_direct_checkpoint_flag() {
+        let args = parse(&["--direct-checkpoint"]);
+
+        assert!(args.direct_checkpoint);
     }
 
     #[test]
@@ -135,5 +161,15 @@ mod tests {
         let args = parse(&["--read-samples", "25"]);
 
         assert_eq!(args.read_samples, 25);
+    }
+
+    #[test]
+    fn parse_rejects_zero_batch_size() {
+        let error = match Args::parse(["--batch-size", "0"].into_iter().map(str::to_owned)) {
+            Ok(_) => panic!("expected zero batch size to fail"),
+            Err(error) => error,
+        };
+
+        assert_eq!(error, "--batch-size must be positive");
     }
 }
