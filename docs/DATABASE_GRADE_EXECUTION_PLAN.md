@@ -1,6 +1,7 @@
 # CortexDB Database-Grade Execution Plan
 
-Source of truth: `/mnt/hf_model_weights/arman/3bit/sites/pl copy.md`.
+Source of truth: `/mnt/hf_model_weights/arman/3bit/sites/CortexDB-roadmap`.
+Raw catalog source: `/mnt/hf_model_weights/arman/3bit/sites/pl copy.md`.
 
 Execution rule: close epics in order. Use the dependency-aware order from the source plan when raw catalog order conflicts with dependencies. Do not jump to later epics unless the current epic explicitly depends on a prerequisite check, a small safe parallel task, or the user redirects the order.
 
@@ -10,11 +11,11 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A08` (`EPIC-E12` migration framework is closed for the
-current format framework; `EPIC-A18` background incremental compaction and
-`EPIC-E11` chaos/graceful-shutdown consolidation are closed for the alpha-slice;
-long-running load evidence continues under `EPIC-A19`; `EPIC-D15` public tag
-correction remains a release-management decision).
+Current pointer: `EPIC-A12` (`EPIC-A07` is done and `EPIC-A08` phase-1 lazy
+payload residency has accepted 1M RSS evidence; the remaining A08 crash-parity
+and full AQL/ContextPack p95 work stays tracked as partial follow-up. `EPIC-A09`
+is intentionally later in the roadmap queue, after `EPIC-A12 -> EPIC-A13`,
+`EPIC-B01`, `EPIC-A15`, `EPIC-D11`, and `EPIC-E01`).
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
 mandatory after every change. Run `make enterprise-rag-bench-impact-gemini-50`
@@ -27,30 +28,25 @@ not reingested. Current baseline:
 `invalid_extra_docs=9.44`, `answer_tokens=302372`, `judge_tokens=27312`
 from `target/enterprise-rag-bench/official-clean/50/impact-gemini50-20260612T140305Z/answer-gemini/official_clean_run_report.json`.
 
-## First Execution Queue
+## Active Execution Queue
 
-This queue follows section 7 of the source plan and dependency notes from the epic catalog.
+This queue follows `CortexDB-roadmap/00-status.md`, not raw numeric epic order.
+Partial epics can remain tracked as follow-up work when their accepted phase is
+enough to unblock the next dependency step.
 
-1. `EPIC-A01` — clean repository and reproducibility baseline
-2. `EPIC-A03` — data model contract before typed metadata implementation
-3. `EPIC-C12` — rank key precompute
-4. `EPIC-A04` — MemTable iterators without cloning
-5. `EPIC-A05` — indexed VERIFY FACT
-6. `EPIC-C16` — memory profiling harness
-7. `EPIC-A19` — scale benchmarks 100K/1M
-8. `EPIC-A20` — property-based core tests
-9. Kill hardcoded EnterpriseRAG overfit from default search
-10. `EPIC-D12` — docs consolidation
-11. `EPIC-D01` + `EPIC-D03` + `EPIC-D04` — CLI/quickstart/demo
-12. `EPIC-D05` — SDK publishing
-13. `EPIC-D15` — beta tag and release notes
-14. `EPIC-A02` — typed metadata after property coverage
-15. `EPIC-A10` — LogicalPlan and PolicyRewrite
-16. `EPIC-A14` — snapshot pinning
-17. `EPIC-A16` — concurrent reads
-18. `EPIC-E09` — AgentView permission property suite
-19. `EPIC-A07` + `EPIC-A08` — segment v2 and lazy payload
-20. `EPIC-D11` — MCP adapter
+1. `EPIC-A06` — indexed-only retrieve/ContextPack path: partial, major
+   full-scan work removed; remaining p95/scan-tail evidence stays tracked.
+2. `EPIC-A07 -> EPIC-A08` — segment v2 plus lazy payload: A07 done, A08
+   phase-1 accepted with 1M RSS evidence; remaining lazy parity/p95 stays
+   tracked as partial follow-up.
+3. `EPIC-A12 -> EPIC-A13` — storage statistics then cost model v0: current
+   active front.
+4. `EPIC-B01` — ContextPack JSON Schema v1.
+5. `EPIC-A15` — transactional WriteBatch API.
+6. `EPIC-D11` — MCP adapter.
+7. `EPIC-E01` — WAL writer error surfacing.
+8. `EPIC-A09` — disk-resident persisted-index incremental merge.
+9. `EPIC-D02 / EPIC-D06-D10` — DX wave after SDK publishing.
 
 ## Summary
 
@@ -299,10 +295,18 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-A12 — Статистика хранилища (df, cardinality, zone maps)
 
-- status: `pending`
+- status: `in_progress`
 - meta: Категория: indexing · Приоритет: P0 · Горизонт: 90 days · Тип: build
 - goal: cost model без статистики — гадание.
 - problem: Проблема: `bitmap_estimated_cardinality` возвращает None (binder.rs:63) — хук есть, данных нет.
+- execution steps:
+  - [ ] 0) зафиксировать компактный stats-contract: per-segment row count, scope/status/type cardinality, created_at min/max, top-K term df; не писать полные словари в manifest.
+  - [ ] 1) собрать статистику при checkpoint/compact рядом с segment metadata.
+  - [ ] 2) сохранить статистику в manifest или совместимом sidecar так, чтобы restart не пересчитывал всё из payload.
+  - [ ] 3) добавить engine API для оценки bitmap/scope/status/type predicates и term df.
+  - [ ] 4) вывести estimated rows в EXPLAIN рядом с actual rows.
+  - [ ] 5) добавить тест-корпус, где оценка scope cardinality отклоняется не более чем в 2x.
+  - [ ] 6) после зелёных gates и evidence перевести A12 в `done` и перейти к `EPIC-A13`.
 - tasks:
   - [ ] 1) при checkpoint собирать в manifest/индексы: cells per scope/status/type, term document frequency (top-K + sketch), min/max created_at per segment
   - [ ] 2) API `Statistics::estimate(predicate) -> rows`
@@ -312,6 +316,7 @@ This queue follows section 7 of the source plan and dependency notes from the ep
   - [ ] 2) статистика переживает рестарт (в манифесте/сайдкаре)
   - [ ] 3) EXPLAIN показывает estimated vs actual.
 - files: cortex-storage/src/manifest.rs, indexes.rs; checkpoint.rs.
+- next exit step: implement the stats contract and persistence shape first, then wire the binder/explain estimate API.
 - risks: распухание манифеста — sketch/top-K, не полные словари. Зависимости: A07 удобно вместе. Эффект: кормит A13.
 
 ### EPIC-A13 — Cost model v0 — выбор пути исполнения
