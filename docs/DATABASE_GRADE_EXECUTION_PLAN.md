@@ -11,11 +11,11 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B01` (`EPIC-A12` and `EPIC-A13` are done, `EPIC-A07` is done, and
+Current pointer: `EPIC-A15` (`EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
 `EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
 remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
 partial follow-up. `EPIC-A09` is intentionally later in the roadmap queue,
-after `EPIC-B01`, `EPIC-A15`, `EPIC-D11`, and `EPIC-E01`).
+after `EPIC-A15`, `EPIC-D11`, and `EPIC-E01`).
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
 mandatory after every change. Run `make enterprise-rag-bench-impact-gemini-50`
@@ -40,8 +40,8 @@ enough to unblock the next dependency step.
    phase-1 accepted with 1M RSS evidence; remaining lazy parity/p95 stays
    tracked as partial follow-up.
 3. `EPIC-A13` — cost model v0: done.
-4. `EPIC-B01` — ContextPack JSON Schema v1: current active front.
-5. `EPIC-A15` — transactional WriteBatch API.
+4. `EPIC-B01` — ContextPack JSON Schema v1: done.
+5. `EPIC-A15` — transactional WriteBatch API: current active front.
 6. `EPIC-D11` — MCP adapter.
 7. `EPIC-E01` — WAL writer error surfacing.
 8. `EPIC-A09` — disk-resident persisted-index incremental merge.
@@ -506,20 +506,29 @@ enough to unblock the next dependency step.
 
 ### EPIC-B01 — ContextPack JSON Schema v1 — замороженный тип результата
 
-- status: `pending`
+- status: `done`
 - meta: Категория: contextpack · Приоритет: P0 · Горизонт: 30 days · Тип: productize
 - goal: result type — контракт БД; ContextPack должен быть стабильным объектом, на который можно строить интеграции.
 - problem: Проблема: схема живёт в коде и примерах README; поля меняются по мере коммитов.
+- execution steps:
+  - [x] 1) freeze v1 field list and versioning rule in a standalone JSON Schema.
+  - [x] 2) resolve `access_decision.NotRecorded`: keep it in v1 only for manually constructed packs; AQL-built packs must record the readable-scope trail.
+  - [x] 3) validate the server ContextPack snapshot against the schema.
+  - [x] 4) align OpenAPI required fields with the schema.
+  - [x] 5) generate Rust SDK v1 aliases from the schema and gate staleness in CI.
+  - [x] 6) document additive-only v1 policy and mark B01 done.
 - tasks:
-  - [ ] 1) ревизия полей (решить судьбу спорных: `access_decision.NotRecorded` — признание учётной дыры; либо закрыть дыру, либо не включать в v1)
-  - [ ] 2) `docs/schemas/context_pack.v1.json` + `schema_version` в ответе
-  - [ ] 3) golden snapshot-тесты сериализации; additive-only политика до v2.
+  - [x] 1) ревизия полей (решить судьбу спорных: `access_decision.NotRecorded` — признание учётной дыры; либо закрыть дыру, либо не включать в v1)
+  - [x] 2) `docs/schemas/context_pack.v1.json` + `schema_version` в ответе
+  - [x] 3) golden snapshot-тесты сериализации; additive-only политика до v2.
 - acceptance:
-  - [ ] 1) CI валидирует `/v1/context` против схемы
-  - [ ] 2) breaking change ломает golden-тест
-  - [ ] 3) SDK-типы генерируются из схемы.
+  - [x] 1) CI валидирует `/v1/context` против схемы
+  - [x] 2) breaking change ломает golden-тест
+  - [x] 3) SDK-типы генерируются из схемы.
 - files: cortex-engine/src/context/*, cortex-server/src/responses.rs, docs/schemas/.
+- next exit step: move to `EPIC-A15` — transactional WriteBatch API.
 - risks: заморозить неудачное поле — ревизия до freeze. Зависимости: A01. Эффект: ContextPack официально становится «result set» CortexDB.
+- evidence: B01 added `docs/schemas/context_pack.v1.json` as the frozen ContextPack v1 JSON Schema, kept `schema_version = "context_pack.v1"` as the required discriminator, and documented the additive-only policy in `docs/CONTEXT_PACK.md` and `docs/API_JSON_SCHEMAS.md`. `access_decision.not_recorded` remains in v1 only for manually constructed packs; AQL-built packs must expose the AgentView readable-scope trail. `scripts/context_pack_schema_contract_check.py` validates the server ContextPack snapshot against the schema, checks OpenAPI required fields, verifies docs, and checks the Rust SDK generated aliases. `scripts/generate_context_pack_sdk_types.py` generates `crates/cortex-sdk/src/generated/context_pack_v1.rs`; the SDK now re-exports the generated `ContextPackV1` aliases and schema constants. `make check` runs `context-pack-schema-contract-check`.
 
 ### EPIC-B02 — ContextPackBuilder как физический оператор
 

@@ -2488,6 +2488,7 @@ components:
     ContextPackAnomalyResponse:
       type: object
       required:
+      - cell_id
       - code
       - message
       - why_excluded

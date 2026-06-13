@@ -1,0 +1,425 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cortexdb.local/schemas/context_pack.v1.json",
+  "title": "CortexDB ContextPack v1",
+  "description": "Stable JSON response contract for CortexDB ContextPack v1. Optional additive fields are allowed until v2; existing required fields and semantics are frozen.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "token_budget_tokens",
+    "estimated_tokens",
+    "truncated",
+    "citations_required",
+    "answerability_q16",
+    "conflict_visibility_q16",
+    "visible_conflict_count",
+    "cells",
+    "anomalies"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "context_pack.v1"
+    },
+    "token_budget_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "estimated_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "citations_required": {
+      "type": "boolean"
+    },
+    "answerability_q16": {
+      "$ref": "#/$defs/q16"
+    },
+    "conflict_visibility_q16": {
+      "$ref": "#/$defs/q16"
+    },
+    "visible_conflict_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cells": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/context_pack_cell"
+      }
+    },
+    "anomalies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/context_pack_anomaly"
+      }
+    }
+  },
+  "$defs": {
+    "q16": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "u64": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "nullable_string": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "nullable_u32": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "context_pack_cell": {
+      "type": "object",
+      "required": [
+        "cell_id",
+        "estimated_tokens",
+        "citation",
+        "payload_text",
+        "explain",
+        "source_ref",
+        "provenance",
+        "access_decision"
+      ],
+      "properties": {
+        "cell_id": {
+          "$ref": "#/$defs/u64"
+        },
+        "estimated_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "citation": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "payload_text": {
+          "type": "string"
+        },
+        "explain": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/context_pack_explain"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/source_ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/context_span_provenance"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "access_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/context_access_decision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "context_access_decision": {
+      "type": "object",
+      "required": [
+        "cell_id",
+        "decision",
+        "policy",
+        "reason",
+        "scope",
+        "scope_id",
+        "agent_id"
+      ],
+      "properties": {
+        "cell_id": {
+          "$ref": "#/$defs/u64"
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "allowed",
+            "not_recorded"
+          ]
+        },
+        "policy": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "scope_id": {
+          "$ref": "#/$defs/u64"
+        },
+        "agent_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/u64"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "principal_id": {
+          "type": "string"
+        },
+        "auth_role": {
+          "type": "string"
+        }
+      }
+    },
+    "context_span_provenance": {
+      "type": "object",
+      "required": [
+        "source_cell_id",
+        "source_byte_start",
+        "source_byte_end",
+        "source_line_start",
+        "source_line_end",
+        "source_ref"
+      ],
+      "properties": {
+        "source_cell_id": {
+          "$ref": "#/$defs/u64"
+        },
+        "source_byte_start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_byte_end": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_line_start": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "source_line_end": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "source_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/source_ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "context_pack_explain": {
+      "type": "object",
+      "required": [
+        "score",
+        "matched_terms",
+        "why_selected",
+        "score_components",
+        "base_bm25",
+        "source_trust_q16",
+        "source_trust_category",
+        "source_trust_bonus",
+        "source_freshness_q16",
+        "source_freshness_category",
+        "source_freshness_bonus",
+        "redundancy_penalty"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "matched_terms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "why_selected": {
+          "type": "string"
+        },
+        "score_components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/score_component"
+          }
+        },
+        "base_bm25": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_trust_q16": {
+          "$ref": "#/$defs/q16"
+        },
+        "source_trust_category": {
+          "type": "string",
+          "enum": [
+            "unknown",
+            "low",
+            "medium",
+            "high",
+            "official"
+          ]
+        },
+        "source_trust_bonus": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_freshness_q16": {
+          "$ref": "#/$defs/q16"
+        },
+        "source_freshness_category": {
+          "type": "string",
+          "enum": [
+            "unknown",
+            "stale",
+            "older",
+            "recent",
+            "current"
+          ]
+        },
+        "source_freshness_bonus": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "redundancy_penalty": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "score_component": {
+      "type": "object",
+      "required": [
+        "name",
+        "value",
+        "contribution",
+        "reason"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "contribution": {
+          "type": "integer"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "source_ref": {
+      "type": "object",
+      "required": [
+        "source_id",
+        "document_id",
+        "page",
+        "row",
+        "cell_range",
+        "json_path",
+        "confidence_q16"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string"
+        },
+        "source_url": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "document_id": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "page": {
+          "$ref": "#/$defs/nullable_u32"
+        },
+        "row": {
+          "$ref": "#/$defs/nullable_u32"
+        },
+        "cell_range": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "json_path": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "confidence_q16": {
+          "$ref": "#/$defs/q16"
+        }
+      }
+    },
+    "context_pack_anomaly": {
+      "type": "object",
+      "required": [
+        "cell_id",
+        "code",
+        "message",
+        "why_excluded"
+      ],
+      "properties": {
+        "cell_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/u64"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "redundant_cell",
+            "missing_citation",
+            "token_overload",
+            "insufficient_context",
+            "scope_mismatch"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "why_excluded": {
+          "$ref": "#/$defs/nullable_string"
+        }
+      }
+    }
+  }
+}

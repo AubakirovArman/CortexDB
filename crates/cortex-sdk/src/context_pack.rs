@@ -1,21 +1,16 @@
 use std::collections::BTreeSet;
 
-use crate::types::{
-    AnswerGroundingOptionsResponse, AnswerGroundingReportResponse, AnswerGroundingSpanResponse,
-    ContextAccessDecisionResponse, ContextPackAnomalyResponse, ContextPackCellResponse,
-    ContextPackResponse, ContextSpanProvenanceResponse, ExplainResponse, SourceRefResponse,
+pub use crate::generated::context_pack_v1::{
+    AnswerGroundingOptionsV1, AnswerGroundingReportV1, AnswerGroundingSpanV1,
+    ContextPackAccessDecisionV1, ContextPackAnomalyV1, ContextPackCellV1, ContextPackExplainV1,
+    ContextPackProvenanceV1, ContextPackSourceRefV1, ContextPackV1,
+    CONTEXT_PACK_V1_REQUIRED_FIELDS, CONTEXT_PACK_V1_SCHEMA_VERSION,
 };
 
-pub type ContextPackV1 = ContextPackResponse;
-pub type ContextPackCellV1 = ContextPackCellResponse;
-pub type ContextPackSourceRefV1 = SourceRefResponse;
-pub type ContextPackProvenanceV1 = ContextSpanProvenanceResponse;
-pub type ContextPackExplainV1 = ExplainResponse;
-pub type ContextPackAccessDecisionV1 = ContextAccessDecisionResponse;
-pub type ContextPackAnomalyV1 = ContextPackAnomalyResponse;
-pub type AnswerGroundingReportV1 = AnswerGroundingReportResponse;
-pub type AnswerGroundingSpanV1 = AnswerGroundingSpanResponse;
-pub type AnswerGroundingOptionsV1 = AnswerGroundingOptionsResponse;
+use crate::types::{
+    AnswerGroundingOptionsResponse, AnswerGroundingReportResponse, AnswerGroundingSpanResponse,
+    ContextPackCellResponse, ContextPackResponse,
+};
 
 impl Default for AnswerGroundingOptionsResponse {
     fn default() -> Self {
@@ -28,7 +23,7 @@ impl Default for AnswerGroundingOptionsResponse {
 }
 
 impl ContextPackResponse {
-    pub const SCHEMA_VERSION_V1: &'static str = "context_pack.v1";
+    pub const SCHEMA_VERSION_V1: &'static str = CONTEXT_PACK_V1_SCHEMA_VERSION;
 
     pub fn is_v1(&self) -> bool {
         self.schema_version == Self::SCHEMA_VERSION_V1

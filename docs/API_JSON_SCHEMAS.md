@@ -623,6 +623,13 @@ changes exist, `available` is `false` and `reason` is
 Use `format=prompt` for a stable agent prompt export or `format=markdown` for a
 stable Markdown export.
 
+The frozen v1 JSON Schema is
+[`docs/schemas/context_pack.v1.json`](schemas/context_pack.v1.json). CI runs
+`make context-pack-schema-contract-check` to validate the server snapshot against
+that schema and keep OpenAPI plus Rust SDK `ContextPackV1` types aligned.
+`context_pack.v1` is additive-only until v2: required fields and enum semantics
+cannot be removed or renamed without a new `schema_version`.
+
 ```json
 {
   "schema_version": "context_pack.v1",

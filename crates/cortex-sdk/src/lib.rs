@@ -18,6 +18,7 @@ mod aql;
 mod aql_support;
 mod client;
 mod context_pack;
+mod generated;
 mod grounded_answer;
 mod http;
 mod types;
@@ -32,6 +33,7 @@ pub use context_pack::{
     AnswerGroundingOptionsV1, AnswerGroundingReportV1, AnswerGroundingSpanV1,
     ContextPackAccessDecisionV1, ContextPackAnomalyV1, ContextPackCellV1, ContextPackExplainV1,
     ContextPackProvenanceV1, ContextPackSourceRefV1, ContextPackV1,
+    CONTEXT_PACK_V1_REQUIRED_FIELDS, CONTEXT_PACK_V1_SCHEMA_VERSION,
 };
 pub use grounded_answer::{GroundedAnswerRequest, GroundedAnswerResponse};
 pub use types::{

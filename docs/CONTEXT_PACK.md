@@ -103,6 +103,15 @@ Public JSON responses include:
 }
 ```
 
+The frozen JSON Schema lives at
+[`docs/schemas/context_pack.v1.json`](schemas/context_pack.v1.json). The
+contract is guarded by `make context-pack-schema-contract-check`, which validates
+the server snapshot against the schema and checks that OpenAPI and Rust SDK v1
+types stay aligned with the same required fields. Until `context_pack.v2`, v1 is
+additive-only: existing required fields, enum meanings, and `schema_version`
+cannot be removed or renamed; new optional fields may be added only when schema,
+OpenAPI, SDK, snapshots, and docs move together.
+
 For selected cells, `cells[].access_decision` is the per-cell RBAC trail. A
 typical HTTP response includes:
 
@@ -120,8 +129,11 @@ typical HTTP response includes:
 }
 ```
 
-`schema_version` is required. Future incompatible ContextPack response changes
-must introduce a new schema version and update OpenAPI, SDKs, snapshots, and
+`schema_version` is required. `cells[].access_decision.decision = "not_recorded"`
+is part of v1 only for manually constructed packs that did not pass through an
+AgentView-backed AQL retrieval. AQL-built packs must record the readable-scope
+decision trail. Future incompatible ContextPack response changes must introduce
+a new schema version and update the JSON Schema, OpenAPI, SDKs, snapshots, and
 API changelog entries together.
 
 The CLI exposes:
