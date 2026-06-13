@@ -7,7 +7,8 @@ mod search;
 mod verification;
 
 pub use aql::{
-    AqlCandidateCounts, AqlCellResponse, AqlExplainFilter, AqlExplainResponse, AqlResponse,
+    AqlCandidateCounts, AqlCellResponse, AqlExecutionOperator, AqlExecutionTrace, AqlExplainFilter,
+    AqlExplainResponse, AqlLogicalPlan, AqlLogicalPlanNode, AqlResponse,
 };
 pub use context::{
     AnswerGroundingOptionsResponse, AnswerGroundingReportResponse, AnswerGroundingSpanResponse,
@@ -26,9 +27,12 @@ pub use ingestion::{
     IngestionSourceRefReport, IngestionValidationIssue, IngestionValidationReport,
 };
 pub use search::{
-    AnnEvaluationResponse, AnnNoFallbackDecision, AnnSearchReport, HnswNoFallbackProfileResponse,
-    SearchExplainItem, SearchExplainResponse, SearchExplainTermContribution, SearchResponse,
-    SearchResult, SearchRoutingDecision, VectorAlgorithm,
+    AnnEvaluationResponse, AnnNoFallbackDecision, AnnSearchReport,
+    AnswerGroundingReportResponse as SearchAnswerGroundingReportResponse,
+    AnswerGroundingSpanResponse as SearchAnswerGroundingSpanResponse,
+    HnswNoFallbackProfileResponse, SearchExplainItem, SearchExplainResponse,
+    SearchExplainTermContribution, SearchResponse, SearchResult, SearchRoutingDecision,
+    VectorAlgorithm,
 };
 pub use verification::{
     EvidenceResponse, GuardResponse, NumericConflictResponse, VerificationReportResponse,

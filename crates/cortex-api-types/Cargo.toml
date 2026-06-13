@@ -1,0 +1,15 @@
+[package]
+name = "cortex-api-types"
+description = "Shared CortexDB HTTP API wire types"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+repository = "https://github.com/AubakirovArman/CortexDB"
+keywords = ["cortexdb", "database", "api", "types"]
+categories = ["database", "web-programming"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1"

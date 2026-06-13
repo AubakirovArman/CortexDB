@@ -39,20 +39,22 @@ pub use grounded_answer::{GroundedAnswerRequest, GroundedAnswerResponse};
 pub use types::{
     AnnEvaluationResponse, AnnNoFallbackDecision, AnnSearchReport, AnswerGroundingOptionsResponse,
     AnswerGroundingReportResponse, AnswerGroundingSpanResponse, AqlCandidateCounts,
-    AqlCellResponse, AqlExplainFilter, AqlExplainResponse, AqlResponse, CellLookupResponse,
-    CellResponse, ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
+    AqlCellResponse, AqlExecutionOperator, AqlExecutionTrace, AqlExplainFilter, AqlExplainResponse,
+    AqlLogicalPlan, AqlLogicalPlanNode, AqlResponse, CellLookupResponse, CellResponse,
+    ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
     ContextSpanProvenanceResponse, DeleteJobResponse, ErrorCode, ErrorResponse, EvidenceResponse,
     ExplainResponse, GuardResponse, HealthResponse, HnswNoFallbackProfileResponse, IngestResponse,
     IngestionJobResponse, IngestionJobStatus, IngestionSkippedItem, IngestionSourceRefReport,
     IngestionValidationIssue, IngestionValidationReport, NumericConflictResponse, PutCellResponse,
-    RememberResponse, ScoreComponentResponse, SearchExplainItem, SearchExplainResponse,
+    RememberResponse, ScoreComponentResponse, SearchAnswerGroundingReportResponse,
+    SearchAnswerGroundingSpanResponse, SearchExplainItem, SearchExplainResponse,
     SearchExplainTermContribution, SearchResponse, SearchResult, SearchRoutingDecision,
     SourceRefResponse, StatsResponse, ValidationResponse, VectorAlgorithm,
     VerificationReportResponse, WriteBatchOperationRequest, WriteBatchRequest, WriteBatchResponse,
 };
 pub use verification::{
-    VerifyConflict, VerifyEvidenceConflict, VerifyNumericConflict, VerifyOutputFormat,
-    VerifyRequest, VerifyResult,
+    VerificationReportExt, VerifyConflict, VerifyEvidenceConflict, VerifyNumericConflict,
+    VerifyOutputFormat, VerifyRequest, VerifyResult,
 };
 
 #[cfg(test)]

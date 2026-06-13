@@ -1301,18 +1301,19 @@ enough to unblock the next dependency step.
 
 ### EPIC-D08 — Async Rust SDK + общий крейт api-types
 
-- status: `pending`
+- status: `partial`
 - meta: Категория: SDK · P1 · 90 days · build
 - goal: cortex-sdk блокирующий; типы ответов дублируются с сервером.
 - tasks:
-  - [ ] 1) `cortex-api-types` (вынести из server/responses.rs)
+  - [x] 1) `cortex-api-types` (вынести из server/responses.rs) — extracted shared core/system, AQL, search, and verification wire types into `crates/cortex-api-types`; `cortex-sdk` re-exports those types and `cortex-server` uses them for the same response surfaces.
   - [ ] 2) async-клиент (reqwest) feature-флагом
-  - [ ] 3) contract-тесты на оба клиента.
+  - [x] 3) contract-тесты на оба клиента — shared response compile-contract tests prove SDK uses `cortex_api_types` for core/AQL/search/verification and server snapshots prove the JSON surface stayed stable; api-types has wire-shape tests for batch request and legacy SDK stats decoding.
 - acceptance:
-  - [ ] 1) сервер и SDK используют одни типы
+  - [x] 1) сервер и SDK используют одни типы — covered for core/system, AQL, search, and verification responses; ContextPack and ingestion validation still track follow-up extraction because they touch generated schema/engine validation types.
   - [ ] 2) async-клиент проходит те же тесты.
 - files: новый crates/cortex-api-types, cortex-sdk, cortex-server.
-- risks: нет. Зависимости: B01. Эффект: типобезопасность контура.
+- risks: `cortex-api-types` must be published before `cortex-sdk`; local `sdk-check` verifies `cortex-api-types` package and skips `cortex-sdk` package verification until `CORTEX_API_TYPES_PUBLISHED=1`. Dependencies: B01. Effect: API type drift is now compile-time visible on the migrated surfaces.
+- evidence: `cargo fmt --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, `make check`, `cargo test -p cortex-api-types`, `cargo test -p cortex-sdk shared_with_api_types`, `cargo test -p cortex-server response_snapshot_tests::snapshot`, `cargo package -p cortex-api-types --allow-dirty`, and `make sdk-check` passed.
 
 ### EPIC-D09 — Docker GHCR + compose quickstart
 

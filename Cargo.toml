@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/cortex-api-types",
     "crates/cortex-aql",
     "crates/cortex-cli",
     "crates/cortex-core",

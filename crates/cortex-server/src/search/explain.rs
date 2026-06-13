@@ -89,7 +89,7 @@ pub fn handle_search_explain_shared(
     let response = SearchExplainResponse {
         query_terms,
         search_mode: route.search_mode().to_owned(),
-        routing: routing_response(route),
+        routing: Some(routing_response(route)),
         results: explain_results,
     };
     Ok(serde_json::to_string(&response)?)

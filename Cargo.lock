@@ -334,6 +334,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "cortex-api-types"
+version = "0.2.0-beta.1"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "cortex-aql"
 version = "0.2.0-beta.1"
 dependencies = [
@@ -392,6 +400,7 @@ dependencies = [
 name = "cortex-sdk"
 version = "0.2.0-beta.1"
 dependencies = [
+ "cortex-api-types",
  "serde",
  "serde_json",
  "thiserror",
@@ -403,6 +412,7 @@ name = "cortex-server"
 version = "0.2.0-beta.1"
 dependencies = [
  "axum",
+ "cortex-api-types",
  "cortex-aql",
  "cortex-core",
  "cortex-engine",

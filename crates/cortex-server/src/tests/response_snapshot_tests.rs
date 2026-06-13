@@ -52,6 +52,7 @@ fn snapshot_stats_response() {
         wal_writer_fsyncs: 10,
         wal_writer_batches: 5,
     };
+    let _: cortex_api_types::core::StatsResponse = resp.clone();
     insta::assert_json_snapshot!(resp);
 }
 

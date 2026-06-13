@@ -86,7 +86,7 @@ fn explain_response(report: AqlExplainReport) -> AqlExplainResponse {
                 expression: filter.expression,
             })
             .collect(),
-        cost_model: cost_model_response(report.cost_model),
+        cost_model: Some(cost_model_response(report.cost_model)),
         candidate_counts: AqlCandidateCountsResponse {
             universe: report.candidate_counts.universe,
             agent_allowed: report.candidate_counts.agent_allowed,

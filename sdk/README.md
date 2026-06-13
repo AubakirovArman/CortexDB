@@ -8,6 +8,7 @@ surface and intentionally keep runtime dependencies small.
 - `typescript/cortexdb-client.js`: fetch-based JavaScript runtime entrypoint.
 - `typescript/cortexdb-client.d.ts`: TypeScript declarations.
 - `typescript/cortexdb-client.ts`: TypeScript source reference.
+- `crates/cortex-api-types`: shared serde wire types used by server and Rust SDK.
 - `crates/cortex-sdk`: blocking Rust HTTP client with crates.io metadata.
 
 The SDK APIs are Beta contracts and may still receive additive changes.
@@ -24,9 +25,13 @@ the same per-tenant database layout exposed by `cortex-server` and `/dashboard`.
 All clients also expose AQL builder helpers for `RETRIEVE CONTEXT`,
 `VERIFY FACT`, and `REMEMBER` so common integrations do not have to assemble
 query strings by hand.
-`publish/check.sh` validates Python bytecode/tests/wheel packaging, Rust tests
-and `cargo package`, SDK version consistency, tenant routing, ANN evaluation surface presence,
-and npm package dry-runs when npm is installed.
+`publish/check.sh` validates Python bytecode/tests/wheel packaging, Rust tests,
+`cortex-api-types` packaging, SDK version consistency, tenant routing, ANN
+evaluation surface presence, shared API type contracts, and npm package
+dry-runs when npm is installed.
+Publish order matters for Rust: publish `cortex-api-types` first, then rerun
+with `CORTEX_API_TYPES_PUBLISHED=1` so `cortex-sdk` package verification can
+resolve the new dependency from crates.io.
 `make sdk-contract-check` validates live API compatibility by building the
 current `cortex-server` binary and running Python, TypeScript, and Rust SDK
 smoke tests against real `/v1/*` responses. The smoke contract covers health,

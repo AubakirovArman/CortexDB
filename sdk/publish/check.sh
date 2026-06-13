@@ -52,8 +52,16 @@ rm -rf "$PY_WHEEL_DIR"
 python3 -m pip wheel --no-deps --wheel-dir "$PY_WHEEL_DIR" "$ROOT/python" >/dev/null
 rm -rf "$PY_WHEEL_DIR"
 
-cargo test -p cortex-sdk --manifest-path "$REPO_ROOT/Cargo.toml"
-cargo package -p cortex-sdk --manifest-path "$REPO_ROOT/Cargo.toml" --allow-dirty >/dev/null
+cargo test -p cortex-api-types -p cortex-sdk --manifest-path "$REPO_ROOT/Cargo.toml"
+cargo package -p cortex-api-types --manifest-path "$REPO_ROOT/Cargo.toml" --allow-dirty >/dev/null
+# cortex-sdk depends on cortex-api-types. Cargo resolves versioned dependencies
+# against crates.io before packaging, so verify the SDK package only after
+# cortex-api-types has been published.
+if [ "${CORTEX_API_TYPES_PUBLISHED:-0}" = "1" ]; then
+  cargo package -p cortex-sdk --manifest-path "$REPO_ROOT/Cargo.toml" --allow-dirty >/dev/null
+else
+  printf 'skipping cortex-sdk package verification until cortex-api-types is published\n'
+fi
 
 if command -v npm >/dev/null 2>&1; then
   (cd "$ROOT/typescript" &&

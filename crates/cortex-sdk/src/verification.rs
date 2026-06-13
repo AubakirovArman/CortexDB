@@ -172,8 +172,14 @@ impl From<NumericConflictResponse> for VerifyNumericConflict {
     }
 }
 
-impl VerificationReportResponse {
-    pub fn result(&self) -> VerifyResult {
+pub trait VerificationReportExt {
+    fn result(&self) -> VerifyResult;
+    fn has_conflicts(&self) -> bool;
+    fn conflicts(&self) -> Vec<VerifyConflict>;
+}
+
+impl VerificationReportExt for VerificationReportResponse {
+    fn result(&self) -> VerifyResult {
         let status = VerifyResult::from_wire(&self.status);
         match status {
             VerifyResult::Unknown(_) => VerifyResult::from_wire(&self.verdict),
@@ -181,11 +187,11 @@ impl VerificationReportResponse {
         }
     }
 
-    pub fn has_conflicts(&self) -> bool {
+    fn has_conflicts(&self) -> bool {
         !self.contradicting_evidence.is_empty() || !self.numeric_conflicts.is_empty()
     }
 
-    pub fn conflicts(&self) -> Vec<VerifyConflict> {
+    fn conflicts(&self) -> Vec<VerifyConflict> {
         let evidence = self
             .contradicting_evidence
             .iter()

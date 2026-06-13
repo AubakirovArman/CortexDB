@@ -2,6 +2,80 @@ use super::*;
 use crate::http::{append_query_param, path};
 
 #[test]
+fn core_response_types_are_shared_with_api_types() {
+    let response: StatsResponse = serde_json::from_value(serde_json::json!({
+        "current_seq": 42,
+        "checkpoint_seq": 30,
+        "live_segments": 3,
+        "retired_segments": 1,
+        "memtable_cells": 12,
+        "memtable_versions": 15,
+        "memtable_payload_bytes": 2048,
+        "estimated_memtable_bytes": 4096,
+        "estimated_index_bytes": 8192,
+        "estimated_context_pack_bytes": 16384,
+        "estimated_total_memory_bytes": 28672,
+        "live_segment_bytes": 65536,
+        "retired_segment_bytes": 8192,
+        "total_segment_bytes": 73728,
+        "durable_storage_bytes": 77824,
+        "live_segment_payload_bytes": 20480,
+        "logical_payload_bytes": 22528,
+        "space_amplification_q16": 226395,
+        "write_amplification_q16": 238718,
+        "compaction_pressure_q16": 7281,
+        "wal_size_bytes": 4096,
+        "wal_writer_records": 100,
+        "wal_writer_bytes": 8192,
+        "wal_writer_fsyncs": 10,
+        "wal_writer_batches": 5
+    }))
+    .expect("shared stats response should decode");
+    let shared: cortex_api_types::core::StatsResponse = response;
+    assert_eq!(shared.live_segment_bytes, 65_536);
+    assert_eq!(shared.compaction_pressure_q16, 7_281);
+}
+
+#[test]
+fn aql_search_and_verification_types_are_shared_with_api_types() {
+    let aql: AqlResponse = serde_json::from_value(serde_json::json!({
+        "cells": [{"cell_id": 1, "payload": "hello"}],
+        "explain": null
+    }))
+    .expect("aql response decodes");
+    let _: cortex_api_types::aql::AqlResponse = aql;
+
+    let search: SearchResponse = serde_json::from_value(serde_json::json!({
+        "search_mode": "keyword",
+        "ann_report": null,
+        "results": [{
+            "cell_id": 1,
+            "score": 10,
+            "lexical_score": 10,
+            "vector_score": 0,
+            "payload": "hello"
+        }]
+    }))
+    .expect("search response decodes");
+    let _: cortex_api_types::search::SearchResponse = search;
+
+    let verification: VerificationReportResponse = serde_json::from_value(serde_json::json!({
+        "fact": "hello",
+        "status": "supported",
+        "verdict": "supported",
+        "confidence_q16": 65535,
+        "evidence": [],
+        "contradicting_evidence": [],
+        "guards": [],
+        "supporting": [],
+        "contradicting": [],
+        "numeric_conflicts": []
+    }))
+    .expect("verification response decodes");
+    let _: cortex_api_types::verification::VerificationReportResponse = verification;
+}
+
+#[test]
 fn aql_retrieve_builder_outputs_stable_statement() {
     let statement = Aql::retrieve_context("budget \"audit\"\nline", "investment_projects")
         .mode(AqlRetrievalMode::Balanced)
