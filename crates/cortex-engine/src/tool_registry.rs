@@ -9,8 +9,12 @@ use cortex_core::{
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
-use crate::query::{scope_id, CellMetadata};
+use crate::query::CellMetadata;
 use crate::search::tokenize;
+
+mod index;
+
+pub(crate) use index::ToolIndex;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ToolPermission {
@@ -169,21 +173,7 @@ impl Database {
     }
 
     pub fn list_tools(&self, view: &AgentView) -> Vec<RegisteredTool> {
-        let mut tools = self
-            .snapshot_versions()
-            .into_iter()
-            .filter_map(|version| {
-                let descriptor = ToolDescriptor::from_version(&version).ok()?;
-                if !view.can_read_scope(scope_id(&descriptor.scope)) {
-                    return None;
-                }
-                Some(RegisteredTool {
-                    cell_id: version.cell_id,
-                    commit_seq: version.created_seq,
-                    descriptor,
-                })
-            })
-            .collect::<Vec<_>>();
+        let mut tools = self.tool_index.list_tools(view);
         tools.sort_by_key(|tool| tool.cell_id);
         tools
     }

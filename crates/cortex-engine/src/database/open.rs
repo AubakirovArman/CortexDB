@@ -20,6 +20,7 @@ use crate::options::{
 use crate::query::cache::AqlQueryCache;
 use crate::query::AqlDeltaIndex;
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
+use crate::tool_registry::ToolIndex;
 
 impl Database {
     /// Open a database at the given path with default options.
@@ -102,6 +103,7 @@ impl Database {
         );
         let feedback_index =
             FeedbackIndex::from_memtable(&current_memtable, ReadTxn::at(current_seq));
+        let tool_index = ToolIndex::from_memtable(&current_memtable, ReadTxn::at(current_seq));
         let database = Self {
             root_path,
             wal_path,
@@ -119,6 +121,7 @@ impl Database {
             aql_query_cache: Mutex::new(AqlQueryCache::default()),
             aql_delta_index,
             feedback_index,
+            tool_index,
             persisted_index_cache: Mutex::new(None),
             active_read_pins: Arc::new(Mutex::new(BTreeMap::new())),
             compaction_policy: options.compaction_policy,

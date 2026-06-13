@@ -27,7 +27,10 @@ SESSION_PAYLOAD = ROOT / "crates/cortex-engine/src/session/payload.rs"
 INGESTION_REPORT = ROOT / "crates/cortex-engine/src/ingestion/report.rs"
 REPLICATION_SNAPSHOT = ROOT / "crates/cortex-engine/src/replication/snapshot.rs"
 REPLICATION_INSTALL = ROOT / "crates/cortex-engine/src/replication/install.rs"
-TOOL_REGISTRY = ROOT / "crates/cortex-engine/src/tool_registry.rs"
+TOOL_REGISTRY_FILES = (
+    ROOT / "crates/cortex-engine/src/tool_registry.rs",
+    ROOT / "crates/cortex-engine/src/tool_registry/index.rs",
+)
 VERIFICATION = ROOT / "crates/cortex-engine/src/verification/evidence.rs"
 VERIFICATION_GRAPH = ROOT / "crates/cortex-engine/src/verification/graph.rs"
 VERIFICATION_CONFLICT_INDEX = ROOT / "crates/cortex-engine/src/verification/conflict_index.rs"
@@ -62,7 +65,7 @@ def main() -> None:
     ingestion_report = INGESTION_REPORT.read_text()
     replication_snapshot = REPLICATION_SNAPSHOT.read_text()
     replication_install = REPLICATION_INSTALL.read_text()
-    tool_registry = TOOL_REGISTRY.read_text()
+    tool_registry = "\n".join(path.read_text() for path in TOOL_REGISTRY_FILES)
     verification = VERIFICATION.read_text()
     verification_graph = VERIFICATION_GRAPH.read_text()
     verification_conflict_index = VERIFICATION_CONFLICT_INDEX.read_text()
@@ -222,12 +225,12 @@ def main() -> None:
     )
     require(
         tool_registry,
-        "let descriptor = ToolDescriptor::from_version(&version).ok()?;",
+        "let descriptor = ToolDescriptor::from_version(version).ok()?;",
         "tool registry list uses CellVersion descriptor",
     )
     require(
         tool_registry,
-        "if !view.can_read_scope(scope_id(&descriptor.scope))",
+        "view.can_read_scope(scope_id(&tool.descriptor.scope))",
         "tool registry permission check uses descriptor scope",
     )
     require(

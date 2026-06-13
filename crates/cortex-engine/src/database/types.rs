@@ -16,6 +16,7 @@ use crate::query::cache::AqlQueryCache;
 use crate::query::AqlDeltaIndex;
 use crate::query::CellMetadata;
 use crate::search::HnswBuildConfig;
+use crate::tool_registry::ToolIndex;
 
 pub trait CandidateResolver: BitmapProvider {
     fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId>;
@@ -39,6 +40,7 @@ pub struct Database {
     pub(crate) aql_query_cache: Mutex<AqlQueryCache>,
     pub(crate) aql_delta_index: AqlDeltaIndex,
     pub(crate) feedback_index: FeedbackIndex,
+    pub(crate) tool_index: ToolIndex,
     pub(crate) persisted_index_cache: Mutex<Option<PersistedIndexCache>>,
     pub(crate) active_read_pins: Arc<Mutex<BTreeMap<CommitSeq, usize>>>,
     pub(crate) compaction_policy: CompactionPolicy,

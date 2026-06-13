@@ -69,6 +69,49 @@ fn list_tools_respects_agent_scope() {
 }
 
 #[test]
+fn tool_index_tracks_patch_tombstone_checkpoint_and_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.register_tool(CellId(10), descriptor("project:investments", "calculator"))
+            .unwrap();
+        db.register_tool(
+            CellId(11),
+            descriptor("project:investments", "source_finder"),
+        )
+        .unwrap();
+
+        assert_eq!(db.list_tools(&view("project:investments")).len(), 2);
+
+        db.patch_cell(
+            CellId(10),
+            descriptor("project:legal", "contract_search")
+                .to_knowledge_cell()
+                .unwrap()
+                .encode_payload(),
+        )
+        .unwrap();
+        db.tombstone_cell(CellId(11)).unwrap();
+
+        let investment_tools = db.list_tools(&view("project:investments"));
+        assert!(investment_tools.is_empty());
+        let legal_tools = db.list_tools(&view("project:legal"));
+        assert_eq!(legal_tools.len(), 1);
+        assert_eq!(legal_tools[0].cell_id, CellId(10));
+        assert_eq!(legal_tools[0].descriptor.name, "contract_search");
+
+        db.checkpoint().unwrap();
+    }
+
+    let reopened = Database::open(dir.path()).unwrap();
+    assert!(reopened.list_tools(&view("project:investments")).is_empty());
+    let legal_tools = reopened.list_tools(&view("project:legal"));
+    assert_eq!(legal_tools.len(), 1);
+    assert_eq!(legal_tools[0].cell_id, CellId(10));
+    assert_eq!(legal_tools[0].descriptor.name, "contract_search");
+}
+
+#[test]
 fn tool_descriptor_uses_descriptor_type_and_scope_over_payload_header() {
     let payload = b"scope=project:visible\nstatus=ready\ntype=raw\nsource=payload-source\n\nname=calculator\ndescription=calc\npermissions=read"
         .to_vec();
