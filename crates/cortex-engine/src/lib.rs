@@ -66,7 +66,6 @@ pub mod typed_body;
 pub mod validation;
 pub mod vector_rebuild;
 pub mod verification;
-
 pub use backup::{
     BackupDrillReport, BackupReport, BackupRetentionPlan, BackupRetentionReport,
     BackupVerifyReport, EncryptedBackupReport, EncryptedRestoreReport,
@@ -150,7 +149,8 @@ pub use plan::{
 };
 pub use query::{
     scope_id, AqlCandidateCounts, AqlExecutionTraceReport, AqlExplainFilter, AqlExplainReport,
-    AqlQueryCacheStats, CandidateId, CellMetadata, DatabaseStatistics, EngineAqlIndex, SourceRef,
+    AqlQueryCacheStats, AqlVerifyExplainReport, CandidateId, CellMetadata, DatabaseStatistics,
+    EngineAqlIndex, SourceRef,
 };
 pub use repair::RepairReport;
 pub use replay::{

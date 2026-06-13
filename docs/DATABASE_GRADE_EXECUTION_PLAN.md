@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B08` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-B09` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-B09` is next. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -63,7 +63,10 @@ enough to unblock the next dependency step.
 20. `EPIC-B07` — fact/claim store with typed numeric values: done for the
    maintained typed-store and VERIFY integration slice; the metric-sorted
    numeric index and 1M p95 evidence remain tracked by `EPIC-C13`/`EPIC-A19`.
-21. `EPIC-B08` — VerifyOp as a planned operator: next.
+21. `EPIC-B08` — VerifyOp as a planned operator: done; VERIFY now has a
+   logical plan node, traceable execution stages, engine-level
+   `EXPLAIN VERIFY`/`EXPLAIN ANALYZE VERIFY`, and public report parity tests.
+22. `EPIC-B09` — incremental contradiction/conflict index: next.
 
 ## Summary
 
@@ -729,20 +732,48 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-B08 — VerifyOp — верификация как оператор плана
 
-- status: `next`
+- status: `done`
 - meta: Категория: verification · Приоритет: P1 · Горизонт: 6 months · Тип: refactor
 - goal: VERIFY FACT должен быть планируемым запросом (со статистикой, EXPLAIN, permission в scan), а не спецфункцией.
 - problem: Проблема: verify_fact_aql — монолитная функция мимо будущего executor.
 - tasks:
-  - [ ] 1) перевести A05-реализацию на план: Scan(lexical ∪ numeric ∪ markers) → PermissionFilter → EvidenceMatch → VerdictAggregate
-  - [ ] 2) EXPLAIN ANALYZE для VERIFY (сколько кандидатов, какие индексы)
-  - [ ] 3) опции глубины (max evidence, max candidates) как параметры плана, клампятся политикой.
+  - [x] 1) перевести A05-реализацию на план: Scan(lexical ∪ numeric ∪ markers) → PermissionFilter → EvidenceMatch → VerdictAggregate
+  - [x] 2) EXPLAIN ANALYZE для VERIFY (сколько кандидатов, какие индексы)
+  - [x] 3) опции глубины (max evidence, max candidates) как параметры плана, клампятся политикой.
 - acceptance:
-  - [ ] 1) вердикты фикстур неизменны
-  - [ ] 2) EXPLAIN VERIFY показывает стадии
-  - [ ] 3) код verify не содержит собственного скан-цикла.
+  - [x] 1) вердикты фикстур неизменны
+  - [x] 2) EXPLAIN VERIFY показывает стадии
+  - [x] 3) код verify не содержит собственного скан-цикла.
 - files: verification.rs → exec/verify_op.rs.
 - risks: нет существенных после A05/A11. Зависимости: A05, A11. Эффект: единый query engine для retrieve и verify.
+- evidence: Added `verification::operator::VerificationExecutionReport` and
+  `Database::execute_verify_fact_plan`, which executes VERIFY through traceable
+  stages: `VerificationCandidateScan`, `VerificationPermissionFilter`,
+  `VerificationMaterializeOp`, `VerifyOp`, `SourceSupportExpandOp`, and
+  `VerdictAggregateOp`. `verify_fact_aql` now binds AQL and delegates to this
+  execution-report path while returning the same public `VerificationReport`.
+  `BoundVerifyFactPlan` now carries policy-clamped `max_candidates` and
+  `max_evidence`, and VERIFY uses those plan parameters instead of hard-coded
+  depth limits.
+  Candidate/materialization/source-support loops live under
+  `verification/operator/candidates.rs`, keeping the main VERIFY execution
+  path as an explicit operator pipeline. Added engine-level
+  `explain_verify_aql` and `explain_analyze_verify_aql`; analyze reports the
+  same physical operator traces plus verdict/evidence counters. Regression
+  coverage proves the execution report preserves the public report, emits
+  operator traces, and that `EXPLAIN VERIFY`/`EXPLAIN ANALYZE VERIFY` expose
+  logical policy rewrite and physical trace stages.
+- latest gates: `cargo fmt --check`,
+  `python3 scripts/file_size_report.py --root . --baseline quality/file_size_baseline.json --check`,
+  `python3 scripts/descriptor_hot_path_gate_check.py`,
+  `cargo test -p cortex-aql --all-features`,
+  `cargo test -p cortex-engine --test aql_verify_explain --all-features`,
+  `cargo test -p cortex-engine verification::operator --all-features`,
+  `cargo test -p cortex-engine --test verification_tests --all-features`,
+  `cargo test --workspace --all-features`,
+  `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`.
+- next exit step: move to `EPIC-B09` — incremental contradiction/conflict
+  index.
 
 ### EPIC-B09 — Инкрементальный contradiction/conflict-индекс
 

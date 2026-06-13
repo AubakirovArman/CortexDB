@@ -1,6 +1,5 @@
-use crate::types::{BrainId, MemoryType, RetrievalMode, ScopeId, Q16};
-
 use super::{BitmapProgram, RetrievalWeights};
+use crate::types::{BrainId, MemoryType, RetrievalMode, ScopeId, Q16};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct QualityThresholds {
@@ -31,8 +30,9 @@ pub struct BoundRetrievePlan {
 pub struct BoundVerifyFactPlan {
     pub brain_id: BrainId,
     pub fact: String,
+    pub max_candidates: u32,
+    pub max_evidence: u32,
 }
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BoundRememberPlan {
     pub scope_id: ScopeId,

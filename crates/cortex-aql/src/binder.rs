@@ -1,12 +1,10 @@
-use thiserror::Error;
-
 use crate::agent_view::AgentView;
 use crate::ast::{AqlStatement, RawRemember, RawRetrieveContext, RawVerifyFact, TtlValue};
 use crate::policy::{PolicyError, PolicyValidator};
 use crate::types::{
     BrainId, CellTypeId, MemoryType, RetrievalMode, ScopeId, StatusId, Q16, Q16_ZERO,
 };
-
+use thiserror::Error;
 mod catalog;
 mod diagnostics;
 mod plan;
@@ -24,7 +22,6 @@ pub use support::{
     compute_bitmap_stack_depth, context_policy_for_mode, decimal_to_q16, default_weights,
     normalize_weights, optimize_bitmap_ops,
 };
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BitmapHandle(pub u64);
 
@@ -231,9 +228,12 @@ impl<'a, C: AqlCatalog> Binder<'a, C> {
         PolicyValidator::new(self.view)
             .enforce_verify_fact(brain)
             .map_err(BindError::PolicyDenied)?;
+        let view = self.view;
         Ok(BoundVerifyFactPlan {
             brain_id: brain,
             fact: raw.fact.node.value.to_string(),
+            max_candidates: view.effective_candidate_limit(view.default_candidate_limit),
+            max_evidence: view.effective_candidate_limit(8),
         })
     }
 

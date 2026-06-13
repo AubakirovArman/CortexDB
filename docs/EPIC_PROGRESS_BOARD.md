@@ -21,24 +21,21 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B08` — VerifyOp as a planned verification operator.
+`EPIC-B09` — Incremental contradiction/conflict index.
 
-B08 exit steps:
+B09 exit steps:
 
-1. Represent verification as logical and physical operators.
-2. Reuse indexed candidates and typed facts from A05/B07.
-3. Preserve existing VERIFY outputs and report shape.
-4. Add EXPLAIN/trace coverage for VERIFY stages.
-5. Mark done only when VERIFY participates in plan/explain and then move to
-   B09/B15 by dependency.
+1. Define contradiction index keys and update rules.
+2. Update the index on put/patch/tombstone.
+3. Add equivalence tests against full rebuild.
+4. Mark done when conflict lookup is incremental and candidate-based; then
+   move to B10/B14 by dependency.
 
-B08 current state:
+B09 current state:
 
-- next; do not start benchmark tuning or later C-block retrieval work before
-  B08 has a concrete operator plan and parity tests.
-- B07 closed the maintained typed claim store, but the metric-sorted numeric
-  index remains C13; B08 should consume the typed store as an available source,
-  not implement the full C13 performance index.
+- next; start by inventorying the current on-demand conflict lookup and the
+  write hooks already maintaining B07 fact claims.
+- B09 should not reopen B08 operator work unless VERIFY explain gates regress.
 
 ## Active Partial Tail
 
@@ -83,6 +80,34 @@ C17 split state:
   is out of focus.
 
 ## Recently Closed
+
+### EPIC-B08 — VerifyOp as a planned verification operator
+
+Status: `done`
+
+What closed it:
+
+- `verify_fact_aql` now delegates to `Database::execute_verify_fact_plan`,
+  preserving the public `VerificationReport`.
+- VERIFY execution is traceable as `VerificationCandidateScan`,
+  `VerificationPermissionFilter`, `VerificationMaterializeOp`, `VerifyOp`,
+  `SourceSupportExpandOp`, and `VerdictAggregateOp`.
+- Candidate/materialize/source-support loops are isolated under
+  `verification/operator/candidates.rs`, leaving the main VERIFY path as an
+  explicit operator pipeline.
+- `BoundVerifyFactPlan` carries policy-clamped `max_candidates` and
+  `max_evidence`; VERIFY uses those plan limits instead of hard-coded depth.
+- Engine-level `explain_verify_aql` and `explain_analyze_verify_aql` expose
+  logical policy rewrite and physical trace stages.
+- Gates passed: `cargo fmt --check`, file-size ratchet,
+  descriptor hot-path gate, `cargo test -p cortex-aql --all-features`,
+  B08 targeted engine tests, `cargo test --workspace --all-features`,
+  `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`.
+
+Remaining follow-up:
+
+- Server/CLI formatting for VERIFY explain is B15/API-surface work; B08 only
+  closes the engine execution and explain boundary.
 
 ### EPIC-B07 — Fact/claim store with typed numeric values
 

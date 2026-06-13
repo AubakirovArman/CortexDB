@@ -6,13 +6,13 @@ pub mod export;
 mod graph;
 mod guards;
 pub mod numeric;
+mod operator;
 mod support;
 pub mod temporal;
 mod temporal_index;
 #[cfg(test)]
 mod tests;
 mod types;
-
 pub use conflict_index::{ConflictRecord, ContradictionRelationOptions};
 pub use export::VerificationReportExportFormat;
 pub use numeric::{

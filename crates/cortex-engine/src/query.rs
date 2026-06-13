@@ -12,7 +12,7 @@ mod metadata_validation;
 mod provider;
 mod render;
 mod statistics;
-
+mod verify_explain;
 use cortex_aql::{AgentView, BitmapHandle, BoundPlan, BrainId};
 use cortex_core::CellId;
 
@@ -26,7 +26,7 @@ pub use explain::{
 pub use metadata::{scope_id, CellMetadata, SourceRef};
 pub use provider::EngineAqlProvider;
 pub use statistics::DatabaseStatistics;
-
+pub use verify_explain::AqlVerifyExplainReport;
 const DEFAULT_BRAIN: BrainId = BrainId(1);
 
 #[derive(Clone, Debug, Default)]
