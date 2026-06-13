@@ -3559,7 +3559,7 @@
     "crates/cortex-engine/src/verification/execution.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 246,
+      "lines": 250,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3573,7 +3573,7 @@
     "crates/cortex-engine/src/verification/graph.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 304,
+      "lines": 305,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -4462,7 +4462,7 @@
     "crates/cortex-engine/tests/verification_graph_tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 197,
+      "lines": 242,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -7017,7 +7017,7 @@
     "scripts/descriptor_hot_path_gate_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 372,
+      "lines": 394,
       "soft_limit": 300,
       "warning_limit": 600
     },

@@ -48,6 +48,11 @@ B04 progress:
 - done: `descriptor_hot_path_gate_check.py` now requires descriptor-only lookup
   in server core/memory routes and forbids pre-auth
   `get_latest_cell_with_descriptor` in those auth paths;
+- done: verification source-support enrichment now checks relation descriptor
+  scope before lazy relation payload reads, with a regression proving unreadable
+  persisted source-support relation payload is not materialized;
+- done: the structural descriptor hot-path gate covers the verification
+  source-support scan and persisted graph-edge enrichment paths;
 - remaining: finish the broader non-AQL read-surface inventory and decide
   whether B04 can close on descriptor-index authorization or needs a separate
   permission-bitmap follow-up.

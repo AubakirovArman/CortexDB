@@ -189,11 +189,12 @@ fn source_support_from_edge(
     view: &AgentView,
     edge: &GraphEdge,
 ) -> Option<SourceSupport> {
-    let (payload, descriptor) = db.get_latest_cell_with_descriptor(edge.relation_cell_id)?;
-    let metadata = CellMetadata::from_payload_with_descriptor(&payload, &descriptor);
-    if !view.can_read_scope(scope_id(&metadata.scope)) {
+    let descriptor = db.get_latest_cell_descriptor(edge.relation_cell_id)?;
+    if !view.can_read_scope(scope_id(&descriptor.scope)) {
         return None;
     }
+    let payload = db.get_latest_cell(edge.relation_cell_id)?;
+    let metadata = CellMetadata::from_payload_with_descriptor(&payload, &descriptor);
     let trust = SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class);
     Some(SourceSupport {
         relation_cell_id: edge.relation_cell_id,

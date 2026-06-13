@@ -34,6 +34,7 @@ TOOL_REGISTRY_FILES = (
     ROOT / "crates/cortex-engine/src/tool_registry/index.rs",
 )
 VERIFICATION = ROOT / "crates/cortex-engine/src/verification/evidence.rs"
+VERIFICATION_EXECUTION = ROOT / "crates/cortex-engine/src/verification/execution.rs"
 VERIFICATION_GRAPH = ROOT / "crates/cortex-engine/src/verification/graph.rs"
 VERIFICATION_CONFLICT_INDEX = ROOT / "crates/cortex-engine/src/verification/conflict_index.rs"
 VERIFICATION_TEMPORAL_INDEX = ROOT / "crates/cortex-engine/src/verification/temporal_index.rs"
@@ -72,6 +73,7 @@ def main() -> None:
     replication_install = REPLICATION_INSTALL.read_text()
     tool_registry = "\n".join(path.read_text() for path in TOOL_REGISTRY_FILES)
     verification = VERIFICATION.read_text()
+    verification_execution = VERIFICATION_EXECUTION.read_text()
     verification_graph = VERIFICATION_GRAPH.read_text()
     verification_conflict_index = VERIFICATION_CONFLICT_INDEX.read_text()
     verification_temporal_index = VERIFICATION_TEMPORAL_INDEX.read_text()
@@ -290,6 +292,16 @@ def main() -> None:
         "verification permission check uses descriptor metadata",
     )
     require(
+        verification_execution,
+        "if !view.can_read_scope(crate::query::scope_id(&metadata.scope))",
+        "verification source-support scan checks descriptor scope before payload",
+    )
+    require(
+        verification_execution,
+        "let payload = self.payload_for_version(version)?;",
+        "verification source-support scan materializes payload after descriptor checks",
+    )
+    require(
         verification_graph,
         "let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);",
         "verification graph relation uses CellVersion descriptor",
@@ -298,6 +310,16 @@ def main() -> None:
         verification_graph,
         "CellMetadata::from_payload_with_descriptor(&payload, &descriptor)",
         "verification graph persisted edge uses descriptor-backed metadata",
+    )
+    require(
+        verification_graph,
+        "let descriptor = db.get_latest_cell_descriptor(edge.relation_cell_id)?;",
+        "verification graph persisted edge checks descriptor before payload",
+    )
+    forbid(
+        verification_graph,
+        "let (payload, descriptor) = db.get_latest_cell_with_descriptor(edge.relation_cell_id)?;",
+        "verification graph persisted edge pre-auth payload+descriptor lookup",
     )
     require(
         verification_conflict_index,

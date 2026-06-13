@@ -102,7 +102,7 @@ impl Database {
             view,
             &mut contradicting_evidence,
         );
-        let support_versions = self.verification_source_support_versions(&evidence, txn)?;
+        let support_versions = self.verification_source_support_versions(&evidence, view, txn)?;
         enrich_evidence_from_source_support_edges(self, &support_versions, view, &mut evidence);
         sort_evidence(&mut evidence);
         sort_evidence(&mut contradicting_evidence);
@@ -205,6 +205,7 @@ impl Database {
     fn verification_source_support_versions<'a>(
         &'a self,
         evidence: &[VerificationEvidence],
+        view: &AgentView,
         txn: ReadTxn,
     ) -> EngineResult<Vec<MaterializedVersion<'a>>> {
         if evidence.is_empty() {
@@ -229,6 +230,9 @@ impl Database {
         for version in visible {
             let metadata = CellMetadata::from_version(version);
             if metadata.cell_type != "relation" {
+                continue;
+            }
+            if !view.can_read_scope(crate::query::scope_id(&metadata.scope)) {
                 continue;
             }
             let payload = self.payload_for_version(version)?;

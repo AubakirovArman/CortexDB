@@ -165,6 +165,51 @@ fn verify_fact_aql_ignores_unreadable_source_support_edge() {
     assert_eq!(report.evidence[0].source_trust_q16, 20_000);
 }
 
+#[test]
+fn verify_fact_aql_checks_persisted_source_support_descriptor_before_lazy_payload_read() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_knowledge_cell(
+            CellId(1),
+            fact_cell("project:investments", "ABC budget approved", Some(20_000)),
+        )
+        .unwrap();
+        db.put_knowledge_cell(
+            CellId(10),
+            source_support_relation("tenant:private", CellId(1), Some(60_000)),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+    }
+    let db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            payload_residency: PayloadResidency::Lazy,
+            payload_cache_bytes: 0,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;"#,
+            &view("project:investments"),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Supported);
+    assert_eq!(report.evidence[0].cell_id, CellId(1));
+    assert_eq!(report.evidence[0].citation, None);
+    assert_eq!(report.evidence[0].source_trust_q16, 20_000);
+    assert_eq!(
+        db.payload_cache_stats().segment_loads,
+        1,
+        "verification should not read unreadable source-support relation payload"
+    );
+}
+
 fn contradiction_relation_options(scope: &str) -> ContradictionRelationOptions {
     ContradictionRelationOptions {
         scope: scope.to_owned(),
