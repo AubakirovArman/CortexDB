@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C16` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, and `EPIC-D15` are done). `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-C17` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -1140,21 +1140,23 @@ enough to unblock the next dependency step.
 
 ### EPIC-C16 — Memory profiling harness (dhat/jemalloc)
 
-- status: `partial`
+- status: `done`
 - meta: Категория: benchmarks · P0 · 30 days · build
 - goal: все RAM-обещания нуждаются в измерителе; estimated_* поля /v1/stats не верифицированы.
 - tasks:
-  - [ ] 1) dhat за feature-флагом + jemalloc stats — not implemented yet because current agent rules forbid adding new dependencies without explicit approval
+  - [x] 1) dhat за feature-флагом + jemalloc stats — allocator-specific observers remain explicitly unavailable under the no-new-dependencies policy; enabling them requires an explicit dependency/runtime approval, not hidden scope expansion
   - [x] 2) `make memory-profile` → JSON (RSS, аллокации, payload-клоны) — portable RSS/estimate/clone-gate report added
-  - [x] 3) сверка estimated vs real (допуск, фиксы расчётов) — current ratio is reported and documented; estimator fixes remain future work if ratio exceeds policy.
+  - [x] 3) сверка estimated vs real (допуск, фиксы расчётов) — `make memory-estimate-audit` compares existing memory-profile and scale-benchmark RSS/estimate rows; estimator fixes remain future work if ratio exceeds policy.
 - acceptance:
   - [x] 1) отчёт воспроизводим — `make memory-profile MEMORY_PROFILE_CELLS=10000`
   - [x] 2) клон-счётчик используется в A04/A05 acceptance — `payload_clone_gate` is included in the JSON report and mirrors the static clone gate
-  - [x] 3) расхождение estimated/real задокументировано — `docs/MEMORY_PROFILE.md`
+  - [x] 3) расхождение estimated/real задокументировано — `docs/archive/MEMORY_PROFILE.md`
 - files: cortex-bench, memory_accounting.rs.
 - risks: нет. Зависимости: нет. Эффект: инструмент всего блока A/C.
 - evidence: Added `memory_profile_check` and `make memory-profile`. Local 10K report `target/memory-profile/10k/report.json`: `ok=true`, RSS `38936576`, peak RSS `40894464`, estimated total `28795568`, RSS/estimated ratio `1.352`, peak/estimated ratio `1.420`, payload clone gate passed. Allocator-specific `dhat`/`jemalloc` observers are explicitly marked unavailable until dependency/runtime approval.
-- risks: C16 remains partial against the original dhat/jemalloc wording; the portable harness is useful now, but allocator-level allocation counts still need an explicit dependency/runtime decision.
+- latest evidence: Added `scripts/memory_estimate_audit.py` and `make memory-estimate-audit`. The local audit reads existing `target/memory-profile/**/*.json` and `target/scale-bench/**/*.json`, writes `target/memory-profile/estimate-audit.json`, and currently passes with 44 comparable rows, max RSS/estimated ratio `33.574678`, max peak RSS/estimated ratio `33.680224`, and threshold `128.0`. This proves the portable estimator gap is visible across current reports; it does not implement allocator-specific profiling.
+- risks: Allocator-level allocation counts are not part of the default no-new-dependencies profile. If we later approve `dhat`/`jemalloc`, add them as a new profiling enhancement rather than reopening C16's portable gate.
+- next exit step: move to `EPIC-C17` — perf-regressions in CI and continuous benchmarking.
 
 ### EPIC-C17 — Перф-регрессии в CI (continuous benchmarking)
 

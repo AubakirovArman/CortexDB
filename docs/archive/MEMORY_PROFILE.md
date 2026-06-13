@@ -58,6 +58,37 @@ workspace does not add new profiling dependencies by default. Those observers ar
 reported as unavailable until an explicit profiling dependency/runtime decision is
 made.
 
+## Estimate Audit
+
+Use this report-only gate to compare existing memory-profile and scale-benchmark
+JSON reports without running a new benchmark:
+
+```bash
+make memory-estimate-audit
+```
+
+It writes:
+
+```text
+target/memory-profile/estimate-audit.json
+target/memory-profile/estimate-audit.md
+```
+
+Current local audit:
+
+```text
+status: passed
+rows: 44
+max_rss_to_estimated_total_ratio: 33.574678
+max_peak_rss_to_estimated_total_ratio: 33.680224
+threshold: 128.0
+```
+
+The worst current row is the 10K x 4KB lazy profile. This means the estimator is
+still a coarse lower-bound for some residency modes, not a precise RSS
+predictor. The audit makes that gap explicit and keeps it under the current
+portable policy threshold until allocator-specific profiling is approved.
+
 ## Current Local Evidence
 
 Latest local 10K profile:

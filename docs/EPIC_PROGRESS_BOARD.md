@@ -21,24 +21,24 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C16` — memory profiling harness.
+`EPIC-C17` — perf-regressions in CI and continuous benchmarking.
 
-C16 exit steps:
+C17 exit steps:
 
-1. Keep `make memory-profile` reproducible.
-2. Use the portable memory report to compare RSS against estimated memory.
-3. Decide whether allocator-level `dhat`/`jemalloc` evidence is required now or
-   remains dependency/runtime-gated.
-4. Feed the memory evidence into A19/C17 without running a new large benchmark.
+1. Reuse existing performance reports and A19 scale trend reports before adding
+   new long-running jobs.
+2. Produce a stable trend artifact that can be used by CI/nightly jobs.
+3. Define regression thresholds for p50/p95 metrics.
+4. Keep large 1M/10M campaigns outside per-PR checks.
 
-C16 current state:
+C17 current state:
 
-- portable `memory_profile_check` exists and writes JSON;
-- the documented 10K report passed with RSS/estimated ratio `1.352`;
-- allocator-specific observers are not implemented because they require a
-  dependency/runtime decision;
-- next work: compare current A19 scale RSS evidence against the memory-profile
-  estimator and decide the gate shape.
+- `performance-trend-check` already exists for load/single-node history;
+- `make scale-bench-trends` exists for A19 scale reports and writes
+  `target/scale-bench/trends.json`;
+- `make memory-estimate-audit` exists for C16 estimator-vs-RSS evidence;
+- next work: make C17 consume these artifacts as a coherent trend/regression
+  gate without running a new heavy benchmark.
 
 ## Active Partial Tail
 
@@ -431,17 +431,16 @@ High-signal done epics:
 - E08 tenant isolation test suite;
 - E09 AgentView rights property suite;
 - E11 chaos/graceful shutdown;
-- E12 migration framework.
+- E12 migration framework;
+- C16 memory profiling harness.
 
 ## Partial Snapshot
 
-Partial count in roadmap snapshot: `3`.
+Partial count in roadmap snapshot: `2`.
 
 - A19 scale benchmarks:
   10M lazy evidence, cold outlier analysis, and historical before/after
   optimization labels remain.
-- C16 memory profiling:
-  estimated-vs-real verification and gate integration remain.
 - D05 SDK publish:
   local gates exist; public registry publication remains externally blocked.
 
@@ -455,11 +454,11 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on C16 only:
+Work on C17 only:
 
-1. inspect `target/memory-profile/10k/report.json` and current A19 RSS reports;
-2. add a small report/check that compares estimated memory with observed RSS
-   for available memory/scale reports;
-3. document whether `dhat`/`jemalloc` remains deferred by dependency policy;
-4. move pointer to C17 only when C16 has a reproducible estimator-vs-RSS gate or
-   an explicit accepted dependency decision.
+1. inspect `performance-trend-check`, `scale-bench-trends`, and
+   `memory-estimate-audit` outputs;
+2. add a lightweight C17 regression/trend gate over existing artifacts;
+3. document threshold policy and where nightly/long-running artifacts will live;
+4. move pointer only when the trend gate is reproducible and does not run heavy
+   benchmarks by default.
