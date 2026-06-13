@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-D10` (`EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
+Current pointer: `EPIC-A06` (`EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
 `EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
 remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
 partial follow-up).
@@ -33,8 +33,8 @@ This queue follows `CortexDB-roadmap/00-status.md`, not raw numeric epic order.
 Partial epics can remain tracked as follow-up work when their accepted phase is
 enough to unblock the next dependency step.
 
-1. `EPIC-A06` — indexed-only retrieve/ContextPack path: partial, major
-   full-scan work removed; remaining p95/scan-tail evidence stays tracked.
+1. `EPIC-A06` — indexed-only retrieve/ContextPack path: current active front;
+   major full-scan work removed; remaining p95/scan-tail evidence stays tracked.
 2. `EPIC-A07 -> EPIC-A08` — segment v2 plus lazy payload: A07 done, A08
    phase-1 accepted with 1M RSS evidence; remaining lazy parity/p95 stays
    tracked as partial follow-up.
@@ -49,7 +49,7 @@ enough to unblock the next dependency step.
 11. `EPIC-D07` — TypeScript SDK polish: done.
 12. `EPIC-D08` — Async Rust SDK + shared API types: done.
 13. `EPIC-D09` — Docker GHCR + compose quickstart: done.
-14. `EPIC-D10` — OpenAPI as source of truth + codegen control: current active front.
+14. `EPIC-D10` — OpenAPI as source of truth + codegen control: done.
 
 ## Summary
 
@@ -1332,35 +1332,42 @@ enough to unblock the next dependency step.
 
 ### EPIC-D10 — OpenAPI как единый источник + codegen-контроль
 
-- status: `partial`
+- status: `done`
 - meta: Категория: API · P1 · 90 days · improve
 - goal: openapi.yaml есть; нужно гарантировать соответствие коду.
 - tasks:
   - [x] 1) contract-тест: реальные ответы валидируются против OpenAPI (расширить openapi-contract-check)
   - [x] 2) error codes (E-таксономия) в схеме
-  - [ ] 3) генерация клиентских типов из схемы в SDK-пайплайне — current slice adds SDK/OpenAPI drift control, not full generated SDK output.
+  - [x] 3) генерация клиентских типов из схемы в SDK-пайплайне — Python/TypeScript ship generated OpenAPI type artifacts; Rust uses shared `cortex-api-types` and contract gates.
 - acceptance:
   - [x] 1) расхождение код/схема валит CI
-  - [ ] 2) SDK-типы из единого источника.
+  - [x] 2) SDK-типы из единого источника.
 - files: docs/openapi.yaml, тесты server.
-- evidence: `openapi-contract-check` now validates live HTTP responses against
+- evidence: `openapi-contract-check` validates live HTTP responses against
   OpenAPI, verifies the stable error taxonomy across docs/OpenAPI/server/SDK,
-  and runs `openapi-sdk-codegen-control-check`. Added
+  checks generated OpenAPI-derived SDK type artifacts, and runs
+  `openapi-sdk-codegen-control-check`. Added
   `scripts/check_openapi_sdk_codegen_control.py` to fail drift between selected
   OpenAPI component schemas, shared Rust API/server response structs, Python SDK
-  models, and modular TypeScript SDK type declarations. Python and TypeScript
-  SDK models were aligned with current stats/search/verification/ingestion
-  schemas, `NumericConflictResponse` is now a reusable OpenAPI component, and
-  `sdk-check` validates the modular TypeScript declaration package. Checks
-  passed: `python3 scripts/check_openapi_sdk_codegen_control.py`,
+  models, and modular TypeScript SDK type declarations. Added
+  `scripts/generate_openapi_sdk_types.py`, which generates
+  `sdk/typescript/cortexdb-client/generated/openapi-types.ts` and
+  `sdk/python/_cortexdb_client/generated/openapi_types.py` from
+  `docs/openapi.yaml`; the generated types use the `OpenApi*` prefix and are
+  exported/packaged by the TypeScript and Python SDKs while Rust keeps using the
+  shared `cortex-api-types` wire structs. Python and TypeScript SDK models were
+  aligned with current stats/search/verification/ingestion schemas,
+  `NumericConflictResponse` is now a reusable OpenAPI component, and
+  `sdk/README.md` documents the generator boundary. Checks passed:
+  `python3 scripts/generate_openapi_sdk_types.py --check`,
+  `python3 scripts/check_openapi_sdk_codegen_control.py`,
   `make openapi-contract-check`, `make sdk-contract-check`, `make sdk-check`,
   `cargo test -p cortex-sdk --all-features`, `cargo fmt --check`,
   `cargo test --workspace --all-features`, `cargo clippy --workspace
   --all-targets -- -D warnings`, and `make check`.
-- remaining: replace drift-control checks with generated SDK type artifacts
-  produced from OpenAPI for the supported SDK surfaces, or explicitly document
-  the chosen generator boundary if the project keeps hand-written SDK clients
-  with generated contract gates.
+- remaining: no open D10 work for the current OpenAPI/SDK contract surface;
+  future endpoint/schema additions must update OpenAPI and regenerate SDK type
+  artifacts in the same change.
 
 ### EPIC-D11 — MCP server adapter
 

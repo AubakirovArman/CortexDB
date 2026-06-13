@@ -19,10 +19,14 @@ openapi-check:
 openapi-sdk-codegen-control-check:
 	python3 scripts/check_openapi_sdk_codegen_control.py
 
+openapi-sdk-generated-types-check:
+	python3 scripts/generate_openapi_sdk_types.py --check
+
 openapi-contract-check:
 	$(MAKE) openapi-check
 	python3 scripts/check_openapi_contract.py
 	python3 scripts/check_error_taxonomy_contract.py
+	$(MAKE) openapi-sdk-generated-types-check
 	$(MAKE) openapi-sdk-codegen-control-check
 
 sdk-contract-check:

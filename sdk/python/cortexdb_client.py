@@ -34,6 +34,7 @@ from _cortexdb_client import (
     build_remember_aql,
     build_retrieve_context_aql,
     build_verify_fact_aql,
+    openapi_types,
 )
 
 __all__ = [
@@ -70,4 +71,5 @@ __all__ = [
     "build_remember_aql",
     "build_retrieve_context_aql",
     "build_verify_fact_aql",
+    "openapi_types",
 ]

@@ -1,5 +1,5 @@
 import { CortexDBClient } from "./cortexdb-client.js";
-import type { ClientOptions, ContextPackResponse, HealthResponse } from "./cortexdb-client";
+import type { ClientOptions, ContextPackResponse, HealthResponse, OpenApiHealthResponse } from "./cortexdb-client";
 
 const options: ClientOptions = {
   timeoutMs: 2500,
@@ -18,6 +18,9 @@ const client = new CortexDBClient("http://127.0.0.1:8181")
 
 const health: HealthResponse = await client.health();
 if (health.status !== "ok") throw new Error("unexpected health response");
+
+const openApiHealth: OpenApiHealthResponse = health;
+if (openApiHealth.server_version !== "test") throw new Error("unexpected OpenAPI health type");
 
 const context: ContextPackResponse = {
   schema_version: "context_pack.v1",

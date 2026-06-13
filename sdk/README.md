@@ -32,6 +32,16 @@ with all Rust SDK features,
 `cortex-api-types` packaging, SDK version consistency, tenant routing, ANN
 evaluation surface presence, shared API type contracts, and npm package
 dry-runs when npm is installed.
+OpenAPI is the source of truth for generated schema-shaped SDK type artifacts:
+`scripts/generate_openapi_sdk_types.py` emits
+`typescript/cortexdb-client/generated/openapi-types.ts` and
+`python/_cortexdb_client/generated/openapi_types.py` from `docs/openapi.yaml`.
+The generated types use the `OpenApi*` prefix so they can coexist with the
+hand-written ergonomic client models. Rust keeps using the shared
+`cortex-api-types` wire structs instead of a second generated Rust type layer;
+`make openapi-contract-check` still gates Rust/server/schema drift through live
+response validation, error taxonomy checks, generated SDK type freshness, and
+SDK surface drift checks.
 Publish order matters for Rust: publish `cortex-api-types` first, then rerun
 with `CORTEX_API_TYPES_PUBLISHED=1` so `cortex-sdk` package verification can
 resolve the new dependency from crates.io.

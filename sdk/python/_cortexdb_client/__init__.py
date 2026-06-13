@@ -1,6 +1,7 @@
 from .aql import build_remember_aql, build_retrieve_context_aql, build_verify_fact_aql
 from .client import CortexDBClient
 from .errors import CortexDBError
+from .generated import openapi_types
 from .models import (
     AnnEvaluationResponse,
     AnnSearchReport,
@@ -66,4 +67,5 @@ __all__ = [
     "build_remember_aql",
     "build_retrieve_context_aql",
     "build_verify_fact_aql",
+    "openapi_types",
 ]

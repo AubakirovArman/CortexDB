@@ -9,10 +9,15 @@ from cortexdb_client import (
     CortexDBError,
     VerificationReportResponse,
     SearchResponse,
+    openapi_types,
 )
 
 
 class CortexDBClientPathTests(unittest.TestCase):
+    def test_openapi_generated_types_are_publicly_importable(self) -> None:
+        response: openapi_types.OpenApiHealthResponse = {"status": "ok"}
+        self.assertEqual(response["status"], "ok")
+
     def test_aql_builders_output_stable_statements(self) -> None:
         retrieve = CortexDBClient.build_retrieve_context_aql(
             'budget "audit"\nline',
