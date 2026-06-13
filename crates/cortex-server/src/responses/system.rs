@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug, Clone)]
 pub struct HealthResponse {
@@ -114,6 +114,36 @@ pub struct CellLookupResponse {
 pub struct PutCellResponse {
     pub seq: u64,
     pub cell_id: u64,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct WriteBatchRequest {
+    pub operations: Vec<WriteBatchOperationRequest>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(tag = "op", rename_all = "snake_case")]
+pub enum WriteBatchOperationRequest {
+    PutCell { cell_id: u64, payload: String },
+    PatchCell { cell_id: u64, payload: String },
+    TombstoneCell { cell_id: u64 },
+}
+
+impl WriteBatchOperationRequest {
+    pub fn cell_id(&self) -> u64 {
+        match self {
+            Self::PutCell { cell_id, .. }
+            | Self::PatchCell { cell_id, .. }
+            | Self::TombstoneCell { cell_id } => *cell_id,
+        }
+    }
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct WriteBatchResponse {
+    pub seq: u64,
+    pub operation_count: usize,
+    pub cell_ids: Vec<u64>,
 }
 
 #[derive(Serialize, Debug, Clone)]

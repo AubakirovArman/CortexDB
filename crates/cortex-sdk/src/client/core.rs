@@ -3,7 +3,7 @@ use super::CortexDbClient;
 use crate::http::path;
 use crate::{
     CellLookupResponse, HealthResponse, PutCellResponse, SdkResult, StatsResponse,
-    ValidationResponse,
+    ValidationResponse, WriteBatchRequest, WriteBatchResponse,
 };
 
 impl CortexDbClient {
@@ -40,6 +40,18 @@ impl CortexDbClient {
 
     pub fn put_cell_response(&self, cell_id: u64, payload: &str) -> SdkResult<PutCellResponse> {
         decode_value(self.put_cell(cell_id, payload)?)
+    }
+
+    pub fn write_batch(&self, request: &WriteBatchRequest) -> SdkResult<serde_json::Value> {
+        let body = serde_json::to_string(request)?;
+        self.post("/v1/batch", &body)
+    }
+
+    pub fn write_batch_response(
+        &self,
+        request: &WriteBatchRequest,
+    ) -> SdkResult<WriteBatchResponse> {
+        decode_value(self.write_batch(request)?)
     }
 
     pub fn get_cell(&self, cell_id: u64) -> SdkResult<serde_json::Value> {

@@ -130,10 +130,13 @@ pub use legal::{
 };
 pub use operation::{
     decode_cell_core, decode_cell_id, decoded_operation_from_wal_record,
-    descriptor_from_decoded_wal_record, encode_cell_core, encode_cell_id,
-    metadata_from_decoded_wal_record, operation_from_decoded_wal_record, wal_record_from_operation,
-    wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq, DbOperation,
-    DbOperationKind, DecodedCellCore, DecodedDbOperation, OperationDecoder, OperationEncoder,
+    decoded_write_batch_marker, descriptor_from_decoded_wal_record, encode_cell_core,
+    encode_cell_id, metadata_from_decoded_wal_record, operation_from_decoded_wal_record,
+    wal_record_from_operation, wal_record_from_operation_with_metadata,
+    wal_record_from_operation_with_seq, wal_record_from_write_batch_begin,
+    wal_record_from_write_batch_commit, DbOperation, DbOperationKind, DecodedCellCore,
+    DecodedDbOperation, DecodedWriteBatchMarker, OperationDecoder, OperationEncoder, WriteBatch,
+    WriteBatchMarker, WriteBatchOperation,
 };
 pub use options::{
     CompactionPolicy, DatabaseOptions, EngineFeature, EngineFeatureFlags, PayloadResidency,

@@ -15,6 +15,7 @@ pub(super) fn is_write_route(method: &str, target: &str) -> bool {
         (method, path),
         ("POST", "/put")
             | ("POST", "/v1/cell")
+            | ("POST", "/v1/batch")
             | ("POST", "/tombstone")
             | ("DELETE", "/v1/cell")
             | ("POST", "/flush")

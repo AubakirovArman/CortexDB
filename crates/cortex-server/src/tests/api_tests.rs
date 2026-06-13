@@ -70,6 +70,55 @@ fn v1_aql_returns_retrieved_cells() {
 }
 
 #[test]
+fn v1_batch_applies_mixed_operations_atomically() {
+    let dir = tempfile::tempdir().unwrap();
+    let put =
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\nscope=project:investments\nstatus=ready\nold";
+    assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+
+    let batch = concat!(
+        "POST /v1/batch HTTP/1.1\r\ncontent-type: application/json\r\n\r\n",
+        r#"{"operations":["#,
+        r#"{"op":"patch_cell","cell_id":1,"payload":"scope=project:investments\nstatus=ready\nnew"},"#,
+        r#"{"op":"put_cell","cell_id":2,"payload":"scope=project:investments\nstatus=ready\ntemporary"},"#,
+        r#"{"op":"tombstone_cell","cell_id":2}"#,
+        r#"]}"#
+    );
+    let response = handle_http(dir.path(), batch);
+    assert!(response.contains(r#""seq":4"#));
+    assert!(response.contains(r#""operation_count":3"#));
+    assert!(response.contains(r#""cell_ids":[1,2,2]"#));
+
+    let cell_one = handle_http(dir.path(), "GET /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n");
+    assert!(cell_one.contains("new"));
+    let cell_two = handle_http(dir.path(), "GET /v1/cell?cell_id=2 HTTP/1.1\r\n\r\n");
+    assert!(cell_two.contains(r#""cell":null"#));
+}
+
+#[test]
+fn v1_batch_validation_error_does_not_advance_seq() {
+    let dir = tempfile::tempdir().unwrap();
+    let put =
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\nscope=project:investments\nstatus=ready\nold";
+    assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+
+    let batch = concat!(
+        "POST /v1/batch HTTP/1.1\r\ncontent-type: application/json\r\n\r\n",
+        r#"{"operations":["#,
+        r#"{"op":"patch_cell","cell_id":1,"payload":"scope=project:investments\nstatus=ready\nnew"},"#,
+        r#"{"op":"tombstone_cell","cell_id":99}"#,
+        r#"]}"#
+    );
+    let response = handle_http(dir.path(), batch);
+    assert!(response.contains(r#""code":"not_found""#));
+
+    let stats = handle_http(dir.path(), "GET /v1/stats HTTP/1.1\r\n\r\n");
+    assert!(stats.contains(r#""current_seq":1"#));
+    let cell_one = handle_http(dir.path(), "GET /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n");
+    assert!(cell_one.contains("old"));
+}
+
+#[test]
 fn v1_aql_explain_returns_plan_filters_counts_and_mode() {
     let dir = tempfile::tempdir().unwrap();
     let put = concat!(

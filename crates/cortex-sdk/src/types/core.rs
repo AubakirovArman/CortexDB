@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct HealthResponse {
@@ -47,6 +47,62 @@ pub struct ValidationResponse {
 pub struct PutCellResponse {
     pub seq: u64,
     pub cell_id: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct WriteBatchRequest {
+    pub operations: Vec<WriteBatchOperationRequest>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "op", rename_all = "snake_case")]
+pub enum WriteBatchOperationRequest {
+    PutCell { cell_id: u64, payload: String },
+    PatchCell { cell_id: u64, payload: String },
+    TombstoneCell { cell_id: u64 },
+}
+
+impl WriteBatchRequest {
+    pub fn new() -> Self {
+        Self {
+            operations: Vec::new(),
+        }
+    }
+
+    pub fn put_cell(mut self, cell_id: u64, payload: impl Into<String>) -> Self {
+        self.operations.push(WriteBatchOperationRequest::PutCell {
+            cell_id,
+            payload: payload.into(),
+        });
+        self
+    }
+
+    pub fn patch_cell(mut self, cell_id: u64, payload: impl Into<String>) -> Self {
+        self.operations.push(WriteBatchOperationRequest::PatchCell {
+            cell_id,
+            payload: payload.into(),
+        });
+        self
+    }
+
+    pub fn tombstone_cell(mut self, cell_id: u64) -> Self {
+        self.operations
+            .push(WriteBatchOperationRequest::TombstoneCell { cell_id });
+        self
+    }
+}
+
+impl Default for WriteBatchRequest {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct WriteBatchResponse {
+    pub seq: u64,
+    pub operation_count: usize,
+    pub cell_ids: Vec<u64>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]

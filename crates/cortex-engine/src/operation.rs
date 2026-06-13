@@ -17,11 +17,36 @@ pub enum DbOperation {
     TombstoneCell { cell_id: CellId },
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct WriteBatch {
+    operations: Vec<WriteBatchOperation>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum WriteBatchOperation {
+    PutCell { cell_id: CellId, payload: Vec<u8> },
+    PatchCell { cell_id: CellId, payload: Vec<u8> },
+    TombstoneCell { cell_id: CellId },
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DecodedDbOperation {
     pub seq: CommitSeq,
     pub operation: DbOperation,
     pub descriptor: Option<CellDescriptor>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct WriteBatchMarker {
+    pub start_seq: CommitSeq,
+    pub end_seq: CommitSeq,
+    pub operation_count: u32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DecodedWriteBatchMarker {
+    Begin(WriteBatchMarker),
+    Commit(WriteBatchMarker),
 }
 
 #[derive(Clone, Debug)]
@@ -36,6 +61,66 @@ impl DbOperation {
             Self::PutCell { .. } => DbOperationKind::PutCell,
             Self::PatchCell { .. } => DbOperationKind::PatchCell,
             Self::TombstoneCell { .. } => DbOperationKind::TombstoneCell,
+        }
+    }
+}
+
+impl WriteBatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn put_cell(mut self, cell_id: CellId, payload: Vec<u8>) -> Self {
+        self.operations
+            .push(WriteBatchOperation::PutCell { cell_id, payload });
+        self
+    }
+
+    pub fn patch_cell(mut self, cell_id: CellId, payload: Vec<u8>) -> Self {
+        self.operations
+            .push(WriteBatchOperation::PatchCell { cell_id, payload });
+        self
+    }
+
+    pub fn tombstone_cell(mut self, cell_id: CellId) -> Self {
+        self.operations
+            .push(WriteBatchOperation::TombstoneCell { cell_id });
+        self
+    }
+
+    pub fn from_operations(operations: Vec<WriteBatchOperation>) -> Self {
+        Self { operations }
+    }
+
+    pub fn operations(&self) -> &[WriteBatchOperation] {
+        &self.operations
+    }
+
+    pub fn into_operations(self) -> Vec<WriteBatchOperation> {
+        self.operations
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.operations.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.operations.len()
+    }
+}
+
+impl From<WriteBatchOperation> for DbOperation {
+    fn from(operation: WriteBatchOperation) -> Self {
+        match operation {
+            WriteBatchOperation::PutCell { cell_id, payload } => {
+                DbOperation::PutCell { cell_id, payload }
+            }
+            WriteBatchOperation::PatchCell { cell_id, payload } => {
+                DbOperation::PatchCell { cell_id, payload }
+            }
+            WriteBatchOperation::TombstoneCell { cell_id } => {
+                DbOperation::TombstoneCell { cell_id }
+            }
         }
     }
 }
@@ -95,6 +180,51 @@ pub fn wal_record_from_operation_with_metadata(
     record
 }
 
+pub fn wal_record_from_write_batch_begin(
+    start_seq: CommitSeq,
+    end_seq: CommitSeq,
+    operation_count: u32,
+) -> WalRecord {
+    wal_record_from_write_batch_marker(
+        WalRecordType::WriteBatchBegin,
+        start_seq,
+        end_seq,
+        operation_count,
+    )
+}
+
+pub fn wal_record_from_write_batch_commit(
+    start_seq: CommitSeq,
+    end_seq: CommitSeq,
+    operation_count: u32,
+) -> WalRecord {
+    wal_record_from_write_batch_marker(
+        WalRecordType::WriteBatchCommit,
+        start_seq,
+        end_seq,
+        operation_count,
+    )
+}
+
+pub fn decoded_write_batch_marker(
+    record: &DecodedWalRecord,
+) -> EngineResult<Option<DecodedWriteBatchMarker>> {
+    let marker = match record.record.record_type {
+        WalRecordType::WriteBatchBegin => DecodedWriteBatchMarker::Begin(decode_write_batch_core(
+            section(record, SectionTag::WriteBatchCore)
+                .ok_or(EngineError::MissingWalSection("WriteBatchCore"))?,
+        )?),
+        WalRecordType::WriteBatchCommit => {
+            DecodedWriteBatchMarker::Commit(decode_write_batch_core(
+                section(record, SectionTag::WriteBatchCore)
+                    .ok_or(EngineError::MissingWalSection("WriteBatchCore"))?,
+            )?)
+        }
+        _ => return Ok(None),
+    };
+    Ok(Some(marker))
+}
+
 fn wal_record_from_operation_inner(seq: CommitSeq, operation: &DbOperation) -> WalRecord {
     match operation {
         DbOperation::PutCell { cell_id, payload } => {
@@ -114,6 +244,53 @@ fn wal_record_from_operation_inner(seq: CommitSeq, operation: &DbOperation) -> W
             )],
         ),
     }
+}
+
+fn wal_record_from_write_batch_marker(
+    record_type: WalRecordType,
+    start_seq: CommitSeq,
+    end_seq: CommitSeq,
+    operation_count: u32,
+) -> WalRecord {
+    WalRecord::new(
+        record_type,
+        vec![WalSection::new(
+            SectionTag::WriteBatchCore,
+            encode_write_batch_core(start_seq, end_seq, operation_count),
+        )],
+    )
+}
+
+fn encode_write_batch_core(
+    start_seq: CommitSeq,
+    end_seq: CommitSeq,
+    operation_count: u32,
+) -> Vec<u8> {
+    let mut out = Vec::with_capacity(20);
+    out.extend_from_slice(&start_seq.0.to_le_bytes());
+    out.extend_from_slice(&end_seq.0.to_le_bytes());
+    out.extend_from_slice(&operation_count.to_le_bytes());
+    out
+}
+
+fn decode_write_batch_core(bytes: &[u8]) -> EngineResult<WriteBatchMarker> {
+    if bytes.len() < 20 {
+        return Err(EngineError::InvalidOperation);
+    }
+    let start_raw: [u8; 8] = bytes[..8]
+        .try_into()
+        .map_err(|_| EngineError::InvalidOperation)?;
+    let end_raw: [u8; 8] = bytes[8..16]
+        .try_into()
+        .map_err(|_| EngineError::InvalidOperation)?;
+    let count_raw: [u8; 4] = bytes[16..20]
+        .try_into()
+        .map_err(|_| EngineError::InvalidOperation)?;
+    Ok(WriteBatchMarker {
+        start_seq: CommitSeq(u64::from_le_bytes(start_raw)),
+        end_seq: CommitSeq(u64::from_le_bytes(end_raw)),
+        operation_count: u32::from_le_bytes(count_raw),
+    })
 }
 
 pub fn operation_from_decoded_wal_record(record: &DecodedWalRecord) -> EngineResult<DbOperation> {

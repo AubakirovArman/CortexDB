@@ -11,11 +11,11 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A15` (`EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
+Current pointer: `EPIC-D11` (`EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
 `EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
 remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
 partial follow-up. `EPIC-A09` is intentionally later in the roadmap queue,
-after `EPIC-A15`, `EPIC-D11`, and `EPIC-E01`).
+after `EPIC-D11` and `EPIC-E01`).
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
 mandatory after every change. Run `make enterprise-rag-bench-impact-gemini-50`
@@ -41,8 +41,8 @@ enough to unblock the next dependency step.
    tracked as partial follow-up.
 3. `EPIC-A13` — cost model v0: done.
 4. `EPIC-B01` — ContextPack JSON Schema v1: done.
-5. `EPIC-A15` — transactional WriteBatch API: current active front.
-6. `EPIC-D11` — MCP adapter.
+5. `EPIC-A15` — transactional WriteBatch API: done.
+6. `EPIC-D11` — MCP adapter: current active front.
 7. `EPIC-E01` — WAL writer error surfacing.
 8. `EPIC-A09` — disk-resident persisted-index incremental merge.
 9. `EPIC-D02 / EPIC-D06-D10` — DX wave after SDK publishing.
@@ -239,7 +239,7 @@ enough to unblock the next dependency step.
 
 ### EPIC-A09 — Disk-resident индексы: инкрементальный merge без полной пересборки
 
-- status: `pending`
+- status: `done`
 - meta: Категория: indexing · Приоритет: P0 · Горизонт: 90 days · Тип: refactor
 - goal: сейчас merged-индекс целиком в RAM и пересобирается при смене сегментов.
 - problem: Проблема: `persisted_index_state` re-merge всех сегментов; `remove_candidates` — O(terms×candidates) retain-циклы (checkpoint.rs:357-394).
@@ -379,15 +379,18 @@ enough to unblock the next dependency step.
 - goal: у БД должна быть заявленная атомарность, не «обычно так получается».
 - problem: Проблема: `put_cells` атомарен по WAL-батчу, но семантика не оформлена (нет batch для patch/tombstone/смешанных, нет контракта ошибок частичного применения).
 - tasks:
-  - [ ] 1) `WriteBatch {put/patch/tombstone}` → один WAL-батч → последовательное применение с единым диапазоном seq
-  - [ ] 2) контракт: всё или ничего durable; применение в MemTable не может частично провалиться (валидация до WAL)
-  - [ ] 3) HTTP `/v1/batch` + SDK.
+  - [x] 1) `WriteBatch {put/patch/tombstone}` → один WAL-батч → последовательное применение с единым диапазоном seq
+  - [x] 2) контракт: всё или ничего durable; применение в MemTable не может частично провалиться (валидация до WAL)
+  - [x] 3) HTTP `/v1/batch` + SDK.
 - acceptance:
-  - [ ] 1) crash-тест: батч либо весь виден после recovery, либо отсутствует
-  - [ ] 2) валидационные ошибки возвращаются до записи WAL
-  - [ ] 3) API задокументирован.
-- files: cortex-engine/src/{database,operation}.rs; cortex-server/src/router.rs.
-- risks: patch-валидация требует видимости — порядок проверок до WAL. Зависимости: A14. Эффект: агентные «записать факт+связь+память атомарно» сценарии.
+  - [x] 1) crash-тест: батч либо весь виден после recovery, либо отсутствует
+  - [x] 2) валидационные ошибки возвращаются до записи WAL
+  - [x] 3) API задокументирован.
+- files: cortex-engine/src/{database,operation,replay}.rs; cortex-storage/src/wal/record.rs; cortex-server/src/{router,actor,responses}.rs; cortex-sdk/src/{client,types}.rs.
+- risks: patch-валидация требует видимости — закрыто pre-WAL validation поверх временного visible-set. WAL `append_batch` сам по себе не был crash-атомарным, поэтому A15 добавил `WriteBatchBegin`/`WriteBatchCommit` markers and replay buffering: committed batches apply fully; incomplete active-WAL batches are ignored and truncated back to the begin marker. Зависимости: A14. Эффект: агентные «записать факт+связь+память атомарно» сценарии.
+- evidence: Added public engine `WriteBatch`/`WriteBatchOperation`, `Database::write_batch`, pre-WAL validation for mixed put/patch/tombstone sequences, shared append/apply batching, WAL write-batch markers with `WriteBatchCore`, and replay buffering/validation so incomplete batches are not applied after restart. Added `/v1/batch`, typed batch request/response structs, AgentView write authorization for every operation, write-route classification, SDK request/response types and helper methods, OpenAPI schemas, API docs, ACLOG format docs, engine recovery tests, server route tests, and SDK wire-shape tests.
+- verification: `cargo test -p cortex-engine --test database_loop write_batch --all-features`; `cargo test -p cortex-engine --test database_loop incomplete_write_batch --all-features`; `cargo test -p cortex-server v1_batch --all-features`; `cargo test -p cortex-server write_route_classifier_covers_mutating_routes --all-features`; `cargo test -p cortex-sdk write_batch --all-features`; `make openapi-contract-check`.
+- next exit step: move to `EPIC-D11` — MCP adapter.
 
 ### EPIC-A16 — Конкурентный read path
 

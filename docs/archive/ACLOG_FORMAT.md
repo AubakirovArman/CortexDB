@@ -51,6 +51,8 @@ Sections are 8-byte aligned in the payload. Padding bytes are zero-filled.
 - `Checkpoint`
 - `ManifestSwitch`
 - `ReplicatedLogEntry`
+- `WriteBatchBegin`
+- `WriteBatchCommit`
 
 ## Section Tags
 
@@ -63,6 +65,8 @@ Sections are 8-byte aligned in the payload. Padding bytes are zero-filled.
 - `EdgeHints`
 - `CellMetadata`
 - `ReplicationCore`
+- `CellDescriptor`
+- `WriteBatchCore`
 
 Unknown section tags are retained in decoded section metadata and skipped from
 the known `WalRecord.sections` view.
@@ -103,6 +107,21 @@ offset.
 Operation records written by the engine must include both little-endian
 `CellId` and little-endian `CommitSeq` in `CellCore`. Records missing
 `CommitSeq` are rejected by replay.
+
+Multi-operation `WriteBatch` commits are wrapped by `WriteBatchBegin` and
+`WriteBatchCommit` records. Both marker records carry `WriteBatchCore`:
+
+```text
+start_seq u64
+end_seq u64
+operation_count u32
+```
+
+Replay buffers operation records between the begin and commit markers and only
+applies them when the commit marker matches the begin marker, operation count,
+and contiguous commit-sequence range. If the WAL ends before the commit marker,
+the batch is not applied and replay reports the begin marker LSN as the safe
+truncate offset for the active WAL.
 
 `CellMetadata` is an optional structured metadata section for new knowledge-cell
 writes. The current v1 payload is deterministic UTF-8 key/value lines starting

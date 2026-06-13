@@ -17,7 +17,8 @@ pub use context::{
 };
 pub use core::{
     CellLookupResponse, CellResponse, DeleteJobResponse, HealthResponse, PutCellResponse,
-    RememberResponse, StatsResponse, ValidationResponse,
+    RememberResponse, StatsResponse, ValidationResponse, WriteBatchOperationRequest,
+    WriteBatchRequest, WriteBatchResponse,
 };
 pub use error::{ErrorCode, ErrorResponse};
 pub use ingestion::{

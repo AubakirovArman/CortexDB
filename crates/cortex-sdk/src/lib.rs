@@ -48,7 +48,7 @@ pub use types::{
     RememberResponse, ScoreComponentResponse, SearchExplainItem, SearchExplainResponse,
     SearchExplainTermContribution, SearchResponse, SearchResult, SearchRoutingDecision,
     SourceRefResponse, StatsResponse, ValidationResponse, VectorAlgorithm,
-    VerificationReportResponse,
+    VerificationReportResponse, WriteBatchOperationRequest, WriteBatchRequest, WriteBatchResponse,
 };
 pub use verification::{
     VerifyConflict, VerifyEvidenceConflict, VerifyNumericConflict, VerifyOutputFormat,

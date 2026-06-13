@@ -44,6 +44,8 @@ pub enum WalRecordType {
     Checkpoint,
     ManifestSwitch,
     ReplicatedLogEntry,
+    WriteBatchBegin,
+    WriteBatchCommit,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -58,6 +60,7 @@ pub enum SectionTag {
     CellMetadata,
     ReplicationCore,
     CellDescriptor,
+    WriteBatchCore,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -123,6 +126,8 @@ impl WalRecordType {
             Self::Checkpoint => 5,
             Self::ManifestSwitch => 6,
             Self::ReplicatedLogEntry => 7,
+            Self::WriteBatchBegin => 8,
+            Self::WriteBatchCommit => 9,
         }
     }
 
@@ -135,6 +140,8 @@ impl WalRecordType {
             5 => Some(Self::Checkpoint),
             6 => Some(Self::ManifestSwitch),
             7 => Some(Self::ReplicatedLogEntry),
+            8 => Some(Self::WriteBatchBegin),
+            9 => Some(Self::WriteBatchCommit),
             _ => None,
         }
     }
@@ -153,6 +160,7 @@ impl SectionTag {
             Self::CellMetadata => 8,
             Self::ReplicationCore => 9,
             Self::CellDescriptor => 10,
+            Self::WriteBatchCore => 11,
         }
     }
 
@@ -168,6 +176,7 @@ impl SectionTag {
             8 => Some(Self::CellMetadata),
             9 => Some(Self::ReplicationCore),
             10 => Some(Self::CellDescriptor),
+            11 => Some(Self::WriteBatchCore),
             _ => None,
         }
     }

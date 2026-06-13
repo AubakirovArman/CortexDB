@@ -2,10 +2,10 @@ use cortex_core::{CellDescriptor, CellId, CommitSeq, KnowledgeCellType};
 use cortex_engine::{
     decode_cell_core, decode_cell_id, descriptor_from_decoded_wal_record, encode_cell_core,
     encode_cell_id, operation_from_decoded_wal_record, Database, DbOperation, EngineError,
-    OperationDecoder, OperationEncoder,
+    OperationDecoder, OperationEncoder, WriteBatch,
 };
 use cortex_storage::wal::{
-    checksum::crc32c, SectionTag, WalCodec, WalRecord, WalRecordType, WalSection,
+    checksum::crc32c, SectionTag, WalCodec, WalReader, WalRecord, WalRecordType, WalSection,
     WAL_RECORD_HEADER_LEN, WAL_SECTION_ENTRY_LEN,
 };
 
@@ -263,6 +263,99 @@ fn test_put_cells_batch_put() {
     let db = Database::open(dir.path()).unwrap();
     assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"batch1");
     assert_eq!(db.get_latest_cell(CellId(2)).unwrap(), b"batch2");
+}
+
+#[test]
+fn write_batch_mixes_put_patch_and_tombstone_atomically() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"old".to_vec()).unwrap();
+        let seq = db
+            .write_batch(
+                WriteBatch::new()
+                    .patch_cell(CellId(1), b"new".to_vec())
+                    .put_cell(CellId(2), b"temporary".to_vec())
+                    .tombstone_cell(CellId(2)),
+            )
+            .unwrap();
+        assert_eq!(seq, CommitSeq(4));
+        assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"new");
+        assert!(db.get_latest_cell(CellId(2)).is_none());
+    }
+
+    let db = Database::open(dir.path()).unwrap();
+    assert_eq!(db.current_seq(), CommitSeq(4));
+    assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"new");
+    assert!(db.get_latest_cell(CellId(2)).is_none());
+}
+
+#[test]
+fn write_batch_validation_error_happens_before_wal_append() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"before".to_vec()).unwrap();
+        let error = db
+            .write_batch(
+                WriteBatch::new()
+                    .patch_cell(CellId(1), b"after".to_vec())
+                    .tombstone_cell(CellId(99)),
+            )
+            .unwrap_err();
+        assert!(matches!(error, EngineError::Core(_)));
+        assert_eq!(db.current_seq(), CommitSeq(1));
+        assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"before");
+    }
+
+    let db = Database::open(dir.path()).unwrap();
+    assert_eq!(db.current_seq(), CommitSeq(1));
+    assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"before");
+    assert!(db.get_latest_cell(CellId(99)).is_none());
+}
+
+#[test]
+fn incomplete_write_batch_is_not_replayed_after_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    let wal_path = dir.path().join("db.aclog");
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"before".to_vec()).unwrap();
+        db.write_batch(
+            WriteBatch::new()
+                .patch_cell(CellId(1), b"after".to_vec())
+                .put_cell(CellId(2), b"new".to_vec()),
+        )
+        .unwrap();
+        db.close().unwrap();
+    }
+
+    let scan = WalReader::scan_path(&wal_path).unwrap();
+    let commit_lsn = scan
+        .records
+        .iter()
+        .find(|record| record.record.record_type == WalRecordType::WriteBatchCommit)
+        .expect("write batch commit marker should be present")
+        .lsn;
+    std::fs::OpenOptions::new()
+        .write(true)
+        .open(&wal_path)
+        .unwrap()
+        .set_len(commit_lsn)
+        .unwrap();
+
+    {
+        let db = Database::open(dir.path()).unwrap();
+        assert_eq!(db.current_seq(), CommitSeq(1));
+        assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"before");
+        assert!(db.get_latest_cell(CellId(2)).is_none());
+    }
+
+    let scan_after_reopen = WalReader::scan_path(&wal_path).unwrap();
+    assert!(scan_after_reopen
+        .records
+        .iter()
+        .all(|record| record.record.record_type != WalRecordType::WriteBatchBegin));
 }
 
 fn rewrite_header_crc(encoded: &mut [u8]) {

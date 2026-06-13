@@ -95,6 +95,47 @@ Missing cells return:
 }
 ```
 
+## Atomic Write Batch
+
+`POST /v1/batch`
+
+The batch route validates every operation before appending WAL records. On
+success, the operation records are wrapped in WAL begin/commit markers; recovery
+replays the whole committed batch or discards the whole incomplete batch.
+
+Request:
+
+```json
+{
+  "operations": [
+    {
+      "op": "put_cell",
+      "cell_id": 1,
+      "payload": "scope=project:investments\nstatus=ready\nfact"
+    },
+    {
+      "op": "patch_cell",
+      "cell_id": 1,
+      "payload": "scope=project:investments\nstatus=ready\nupdated fact"
+    },
+    {
+      "op": "tombstone_cell",
+      "cell_id": 2
+    }
+  ]
+}
+```
+
+Response:
+
+```json
+{
+  "seq": 4,
+  "operation_count": 3,
+  "cell_ids": [1, 1, 2]
+}
+```
+
 ## Auth Policy Mutation
 
 Admin-only local policy-store lifecycle routes. They require

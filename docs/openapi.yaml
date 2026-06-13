@@ -121,6 +121,37 @@ paths:
         '400': *id001
         '404': *id003
         '500': *id002
+  /v1/batch:
+    post:
+      summary: Atomically apply a mixed cell write batch
+      description: Validates the entire put/patch/tombstone operation list before
+        writing any WAL records. On success all operations are durable under one
+        WAL batch and a contiguous commit-sequence range.
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WriteBatchRequest'
+      responses:
+        '200':
+          description: Batch commit acknowledgement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WriteBatchResponse'
+        '400': *id001
+        '403':
+          description: Permission Denied — token or AgentView cannot write the
+            requested scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404': *id003
+        '500': *id002
   /v1/admin/auth/principal:
     post:
       summary: Upsert a local auth policy principal
@@ -1315,6 +1346,89 @@ components:
         cell_id:
           type: integer
           format: uint64
+    WriteBatchRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - operations
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/WriteBatchOperationRequest'
+    WriteBatchOperationRequest:
+      oneOf:
+      - $ref: '#/components/schemas/WriteBatchPutOperation'
+      - $ref: '#/components/schemas/WriteBatchPatchOperation'
+      - $ref: '#/components/schemas/WriteBatchTombstoneOperation'
+      discriminator:
+        propertyName: op
+    WriteBatchPutOperation:
+      type: object
+      additionalProperties: false
+      required:
+      - op
+      - cell_id
+      - payload
+      properties:
+        op:
+          type: string
+          enum:
+          - put_cell
+        cell_id:
+          type: integer
+          format: uint64
+        payload:
+          type: string
+    WriteBatchPatchOperation:
+      type: object
+      additionalProperties: false
+      required:
+      - op
+      - cell_id
+      - payload
+      properties:
+        op:
+          type: string
+          enum:
+          - patch_cell
+        cell_id:
+          type: integer
+          format: uint64
+        payload:
+          type: string
+    WriteBatchTombstoneOperation:
+      type: object
+      additionalProperties: false
+      required:
+      - op
+      - cell_id
+      properties:
+        op:
+          type: string
+          enum:
+          - tombstone_cell
+        cell_id:
+          type: integer
+          format: uint64
+    WriteBatchResponse:
+      type: object
+      required:
+      - seq
+      - operation_count
+      - cell_ids
+      properties:
+        seq:
+          type: integer
+          format: uint64
+        operation_count:
+          type: integer
+          format: uint64
+        cell_ids:
+          type: array
+          items:
+            type: integer
+            format: uint64
     AuthPolicyPrincipalRequest:
       type: object
       additionalProperties: false

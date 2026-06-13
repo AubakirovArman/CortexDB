@@ -212,6 +212,7 @@ fn is_agent_scoped_route(method: &str, path: &str) -> bool {
             | ("GET", "/v1/cell")
             | ("POST", "/put")
             | ("POST", "/v1/cell")
+            | ("POST", "/v1/batch")
             | ("POST", "/tombstone")
             | ("DELETE", "/v1/cell")
             | ("POST", "/v1/context")

@@ -144,6 +144,46 @@ fn context_export_paths_are_wire_stable() {
 }
 
 #[test]
+fn write_batch_request_and_response_are_wire_stable() {
+    let request = WriteBatchRequest::new()
+        .put_cell(1, "scope=project:investments\nstatus=ready\none")
+        .patch_cell(1, "scope=project:investments\nstatus=ready\ntwo")
+        .tombstone_cell(2);
+    let value = serde_json::to_value(&request).expect("batch request should encode");
+    assert_eq!(
+        value,
+        serde_json::json!({
+            "operations": [
+                {
+                    "op": "put_cell",
+                    "cell_id": 1,
+                    "payload": "scope=project:investments\nstatus=ready\none"
+                },
+                {
+                    "op": "patch_cell",
+                    "cell_id": 1,
+                    "payload": "scope=project:investments\nstatus=ready\ntwo"
+                },
+                {
+                    "op": "tombstone_cell",
+                    "cell_id": 2
+                }
+            ]
+        })
+    );
+
+    let response: WriteBatchResponse = serde_json::from_value(serde_json::json!({
+        "seq": 3,
+        "operation_count": 3,
+        "cell_ids": [1, 1, 2]
+    }))
+    .expect("batch response should decode");
+    assert_eq!(response.seq, 3);
+    assert_eq!(response.operation_count, 3);
+    assert_eq!(response.cell_ids, vec![1, 1, 2]);
+}
+
+#[test]
 fn typed_context_response_decodes_source_ref_url() {
     let value = serde_json::json!({
         "schema_version": "context_pack.v1",

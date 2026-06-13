@@ -1,11 +1,14 @@
-use cortex_core::CellDescriptor;
-use cortex_engine::ClusterConfig;
+use std::collections::BTreeMap;
+
+use cortex_core::{CellDescriptor, CellId};
+use cortex_engine::{ClusterConfig, WriteBatch, WriteBatchOperation};
 
 use crate::authz;
 use crate::responses::{
     CellLookupResponse, CellResponse, CheckpointResponse, ClusterNodeResponse,
     ClusterStatusResponse, CompactionMetricsResponse, CompactionResponse, CompactorStatusResponse,
     HealthResponse, PutCellResponse, RouterError, StatsResponse, ValidationResponse,
+    WriteBatchOperationRequest, WriteBatchRequest, WriteBatchResponse,
 };
 
 use super::params::cell_id;
@@ -30,6 +33,7 @@ pub(super) fn try_route<A: DatabaseAccess>(
             | ("GET", "/v1/cell")
             | ("POST", "/put")
             | ("POST", "/v1/cell")
+            | ("POST", "/v1/batch")
             | ("POST", "/tombstone")
             | ("DELETE", "/v1/cell")
             | ("POST", "/flush")
@@ -146,6 +150,50 @@ pub(super) fn try_route<A: DatabaseAccess>(
                 };
                 Ok(serde_json::to_string(&response)?)
             }
+            ("POST", "/v1/batch") => {
+                let db = db
+                    .as_write()
+                    .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
+                let request: WriteBatchRequest = serde_json::from_slice(body)
+                    .map_err(|e| RouterError::BadRequest(format!("invalid batch JSON: {e}")))?;
+                authorize_write_batch(db, &request, authenticated_view)?;
+                let operation_count = request.operations.len();
+                let cell_ids = request
+                    .operations
+                    .iter()
+                    .map(WriteBatchOperationRequest::cell_id)
+                    .collect::<Vec<_>>();
+                let operations = request
+                    .operations
+                    .into_iter()
+                    .map(|operation| match operation {
+                        WriteBatchOperationRequest::PutCell { cell_id, payload } => {
+                            WriteBatchOperation::PutCell {
+                                cell_id: CellId(cell_id),
+                                payload: payload.into_bytes(),
+                            }
+                        }
+                        WriteBatchOperationRequest::PatchCell { cell_id, payload } => {
+                            WriteBatchOperation::PatchCell {
+                                cell_id: CellId(cell_id),
+                                payload: payload.into_bytes(),
+                            }
+                        }
+                        WriteBatchOperationRequest::TombstoneCell { cell_id } => {
+                            WriteBatchOperation::TombstoneCell {
+                                cell_id: CellId(cell_id),
+                            }
+                        }
+                    })
+                    .collect();
+                let seq = db.write_batch(WriteBatch::from_operations(operations))?;
+                let response = WriteBatchResponse {
+                    seq: seq.0,
+                    operation_count,
+                    cell_ids,
+                };
+                Ok(serde_json::to_string(&response)?)
+            }
             ("POST", "/tombstone") | ("DELETE", "/v1/cell") => {
                 let db = db
                     .as_write()
@@ -217,4 +265,33 @@ pub(super) fn try_route<A: DatabaseAccess>(
             _ => unreachable!("route prefiltered"),
         }
     })())
+}
+
+fn authorize_write_batch(
+    db: &cortex_engine::Database,
+    request: &WriteBatchRequest,
+    authenticated_view: Option<&cortex_aql::AgentView>,
+) -> Result<(), RouterError> {
+    let mut staged_descriptors: BTreeMap<CellId, CellDescriptor> = BTreeMap::new();
+    for operation in &request.operations {
+        match operation {
+            WriteBatchOperationRequest::PutCell { cell_id, payload }
+            | WriteBatchOperationRequest::PatchCell { cell_id, payload } => {
+                let cell_id = CellId(*cell_id);
+                let descriptor = CellDescriptor::from_payload_lossy(payload.as_bytes());
+                authz::require_descriptor_write(authenticated_view, &descriptor)?;
+                staged_descriptors.insert(cell_id, descriptor);
+            }
+            WriteBatchOperationRequest::TombstoneCell { cell_id } => {
+                let cell_id = CellId(*cell_id);
+                if let Some(descriptor) = staged_descriptors
+                    .remove(&cell_id)
+                    .or_else(|| db.get_latest_cell_with_descriptor(cell_id).map(|(_, d)| d))
+                {
+                    authz::require_descriptor_write(authenticated_view, &descriptor)?;
+                }
+            }
+        }
+    }
+    Ok(())
 }

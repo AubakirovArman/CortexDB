@@ -131,6 +131,7 @@ fn write_route_classifier_covers_mutating_routes() {
     let write_routes = [
         ("POST", "/put"),
         ("POST", "/v1/cell"),
+        ("POST", "/v1/batch"),
         ("POST", "/tombstone"),
         ("DELETE", "/v1/cell"),
         ("POST", "/flush"),

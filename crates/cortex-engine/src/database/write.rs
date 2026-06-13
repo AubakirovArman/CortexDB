@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use cortex_core::{CellDescriptor, CellId, CommitSeq};
 
 use super::Database;
@@ -5,7 +7,9 @@ use crate::error::{EngineError, EngineResult};
 use crate::feedback::FeedbackIndex;
 use crate::graph::GraphIndexStore;
 use crate::operation::{
-    wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq, DbOperation,
+    wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq,
+    wal_record_from_write_batch_begin, wal_record_from_write_batch_commit, DbOperation, WriteBatch,
+    WriteBatchOperation,
 };
 use crate::query::CellMetadata;
 use crate::search::{CorpusSynonymStore, LiveSearchStore, SearchContextStore};
@@ -31,28 +35,21 @@ impl Database {
     }
 
     pub fn put_cells(&mut self, cells: Vec<(CellId, Vec<u8>)>) -> EngineResult<CommitSeq> {
-        if cells.is_empty() {
-            return Ok(self.current_seq);
-        }
-        let mut records = Vec::with_capacity(cells.len());
-        let mut ops = Vec::with_capacity(cells.len());
-        let mut next_seq = self.current_seq.0;
+        let operations = cells
+            .into_iter()
+            .map(|(cell_id, payload)| DbOperation::PutCell { cell_id, payload })
+            .collect();
+        self.append_then_apply_batch(operations)
+    }
 
-        for (cell_id, payload) in cells {
-            next_seq += 1;
-            let op = DbOperation::PutCell { cell_id, payload };
-            let record = wal_record_from_operation_with_seq(CommitSeq(next_seq), &op);
-            records.push(record);
-            ops.push((CommitSeq(next_seq), op));
-        }
-
-        self.writer.append_batch(records)?;
-
-        for (seq, op) in ops {
-            self.apply_operation(seq, op)?;
-        }
-        self.current_seq = CommitSeq(next_seq);
-        Ok(self.current_seq)
+    pub fn write_batch(&mut self, batch: WriteBatch) -> EngineResult<CommitSeq> {
+        self.validate_write_batch(&batch)?;
+        let operations = batch
+            .into_operations()
+            .into_iter()
+            .map(DbOperation::from)
+            .collect();
+        self.append_then_apply_batch(operations)
     }
 
     pub fn patch_cell(&mut self, cell_id: CellId, payload: Vec<u8>) -> EngineResult<CommitSeq> {
@@ -82,6 +79,54 @@ impl Database {
         self.apply_operation(next_seq, operation)?;
         self.current_seq = next_seq;
         Ok(next_seq)
+    }
+
+    fn append_then_apply_batch(&mut self, operations: Vec<DbOperation>) -> EngineResult<CommitSeq> {
+        if operations.is_empty() {
+            return Ok(self.current_seq);
+        }
+        if operations.len() == 1 {
+            if let Some(operation) = operations.into_iter().next() {
+                return self.append_then_apply(operation);
+            }
+            return Err(EngineError::StorageInvariant(
+                "write batch operation disappeared before WAL append".to_owned(),
+            ));
+        }
+
+        let operation_count = u32::try_from(operations.len())
+            .map_err(|_| EngineError::StorageInvariant("write batch is too large".to_owned()))?;
+        let start_seq = CommitSeq(self.current_seq.0 + 1);
+        let end_seq = CommitSeq(self.current_seq.0 + u64::from(operation_count));
+        let mut records = Vec::with_capacity(operations.len() + 2);
+        let mut sequenced_operations = Vec::with_capacity(operations.len());
+        let mut next_seq = self.current_seq.0;
+
+        records.push(wal_record_from_write_batch_begin(
+            start_seq,
+            end_seq,
+            operation_count,
+        ));
+        for operation in operations {
+            next_seq += 1;
+            let seq = CommitSeq(next_seq);
+            let record = wal_record_from_operation_with_seq(seq, &operation);
+            records.push(record);
+            sequenced_operations.push((seq, operation));
+        }
+        records.push(wal_record_from_write_batch_commit(
+            start_seq,
+            end_seq,
+            operation_count,
+        ));
+
+        self.writer.append_batch(records)?;
+
+        for (seq, operation) in sequenced_operations {
+            self.apply_operation(seq, operation)?;
+        }
+        self.current_seq = CommitSeq(next_seq);
+        Ok(self.current_seq)
     }
 
     pub(crate) fn append_then_apply_with_metadata(
@@ -204,5 +249,32 @@ impl Database {
             .read(self.read_txn(), cell_id)
             .map(|_| ())
             .ok_or_else(|| cortex_core::CoreError::CellNotFound(cell_id).into())
+    }
+
+    fn validate_write_batch(&self, batch: &WriteBatch) -> EngineResult<()> {
+        let mut visible: BTreeSet<CellId> = self
+            .memtable
+            .live_cell_ids(self.read_txn())
+            .into_iter()
+            .collect();
+        for operation in batch.operations() {
+            match operation {
+                WriteBatchOperation::PutCell { cell_id, .. } => {
+                    visible.insert(*cell_id);
+                }
+                WriteBatchOperation::PatchCell { cell_id, .. } => {
+                    if !visible.contains(cell_id) {
+                        return Err(cortex_core::CoreError::CellNotFound(*cell_id).into());
+                    }
+                    visible.insert(*cell_id);
+                }
+                WriteBatchOperation::TombstoneCell { cell_id } => {
+                    if !visible.remove(cell_id) {
+                        return Err(cortex_core::CoreError::CellNotFound(*cell_id).into());
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 }
