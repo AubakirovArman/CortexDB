@@ -1,12 +1,12 @@
 mod open;
 mod payload_cache;
+mod payload_read;
 mod read;
 mod stores;
 #[cfg(test)]
 mod tests;
 mod types;
 mod write;
-
 pub use payload_cache::PayloadCacheStats;
 pub use types::{CandidateResolver, CheckpointStats, Database, PinnedReadTxn, RetrievedCell};
 

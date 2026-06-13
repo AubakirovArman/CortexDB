@@ -37,7 +37,7 @@ TOOL_REGISTRY_FILES = (
 VERIFICATION = ROOT / "crates/cortex-engine/src/verification/evidence.rs"
 VERIFICATION_OPERATOR_FILES = (ROOT / "crates/cortex-engine/src/verification/operator.rs", ROOT / "crates/cortex-engine/src/verification/operator/candidates.rs")
 VERIFICATION_GRAPH = ROOT / "crates/cortex-engine/src/verification/graph.rs"
-VERIFICATION_CONFLICT_INDEX = ROOT / "crates/cortex-engine/src/verification/conflict_index.rs"
+VERIFICATION_CONFLICT_INDEX = ROOT / "crates/cortex-engine/src/verification/conflict_index.rs"; VERIFICATION_CONFLICT_STORE = ROOT / "crates/cortex-engine/src/verification/conflict_index/store.rs"
 VERIFICATION_TEMPORAL_INDEX = ROOT / "crates/cortex-engine/src/verification/temporal_index.rs"
 VERIFICATION_TEMPORAL_STORE = ROOT / "crates/cortex-engine/src/verification/temporal_index/store.rs"
 VERIFICATION_GUARDS = ROOT / "crates/cortex-engine/src/verification/guards.rs"
@@ -77,7 +77,7 @@ def main() -> None:
     verification = VERIFICATION.read_text()
     verification_operator = "\n".join(path.read_text() for path in VERIFICATION_OPERATOR_FILES)
     verification_graph = VERIFICATION_GRAPH.read_text()
-    verification_conflict_index = VERIFICATION_CONFLICT_INDEX.read_text()
+    verification_conflict_index = VERIFICATION_CONFLICT_INDEX.read_text(); verification_conflict_store = VERIFICATION_CONFLICT_STORE.read_text()
     verification_temporal_index = VERIFICATION_TEMPORAL_INDEX.read_text()
     verification_temporal_store = VERIFICATION_TEMPORAL_STORE.read_text()
     verification_guards = VERIFICATION_GUARDS.read_text()
@@ -310,8 +310,8 @@ def main() -> None:
         "verification graph persisted edge pre-auth payload+descriptor lookup",
     )
     require(
-        verification_conflict_index,
-        "let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);",
+        verification_conflict_store,
+        "let metadata = CellMetadata::from_payload_with_descriptor(payload, descriptor);",
         "conflict index uses CellVersion descriptor",
     )
     require(

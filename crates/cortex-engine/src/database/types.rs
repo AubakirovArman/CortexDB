@@ -19,7 +19,9 @@ use crate::query::{cache::AqlQueryCache, AqlDeltaIndex, CellMetadata};
 use crate::search::{CorpusSynonymStore, HnswBuildConfig, LiveSearchStore, SearchContextStore};
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
-use crate::verification::{numeric::fact_claim::FactClaimStore, TemporalFactStore};
+use crate::verification::{
+    numeric::fact_claim::FactClaimStore, ConflictIndexStore, TemporalFactStore,
+};
 
 pub trait CandidateResolver: BitmapProvider {
     fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId>;
@@ -59,6 +61,7 @@ pub struct Database {
     pub(crate) search_context_store: SearchContextStore,
     pub(crate) session_index: SessionIndex,
     pub(crate) fact_claim_store: FactClaimStore,
+    pub(crate) conflict_index_store: ConflictIndexStore,
     pub(crate) temporal_fact_store: TemporalFactStore,
     pub(crate) tool_index: ToolIndex,
     pub(crate) persisted_index_cache: Mutex<Option<PersistedIndexCache>>,

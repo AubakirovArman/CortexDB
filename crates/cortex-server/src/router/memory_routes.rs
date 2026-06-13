@@ -17,7 +17,10 @@ pub(super) fn try_route<A: DatabaseAccess>(
 ) -> Option<Result<String, RouterError>> {
     if !matches!(
         (method, path),
-        ("POST", "/v1/remember") | ("POST", "/v1/forget") | ("POST", "/v1/verify")
+        ("POST", "/v1/remember")
+            | ("POST", "/v1/forget")
+            | ("POST", "/v1/verify")
+            | ("GET", "/v1/conflicts")
     ) {
         return None;
     }
@@ -46,6 +49,10 @@ pub(super) fn try_route<A: DatabaseAccess>(
             ("POST", "/v1/verify") => {
                 let db = db.as_read();
                 memory::handle_verify_shared(db, query, body, authenticated_view)
+            }
+            ("GET", "/v1/conflicts") => {
+                let db = db.as_read();
+                memory::handle_conflicts_shared(db, query, authenticated_view)
             }
             _ => unreachable!("route prefiltered"),
         }

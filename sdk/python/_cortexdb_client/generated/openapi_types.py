@@ -914,6 +914,33 @@ OpenApiNumericConflictResponse = TypedDict(
     total=False,
 )
 
+OpenApiConflictIndexResponse = TypedDict(
+    'OpenApiConflictIndexResponse',
+    {
+        'conflict_count': 'int',
+        'conflicts': 'list[OpenApiConflictRecordResponse]',
+        'schema_version': 'str',
+        'scope': 'str',
+    },
+    total=False,
+)
+
+OpenApiConflictRecordResponse = TypedDict(
+    'OpenApiConflictRecordResponse',
+    {
+        'cell_id': 'int',
+        'entity': 'str | Any',
+        'fact': 'str',
+        'metric': 'str | Any',
+        'relation_cell_id': 'int | Any',
+        'source': 'str | Any',
+        'source_cell_id': 'int | Any',
+        'source_trust_category': 'str',
+        'source_trust_q16': 'int',
+    },
+    total=False,
+)
+
 OpenApiVerificationEvidenceResponse = TypedDict(
     'OpenApiVerificationEvidenceResponse',
     {

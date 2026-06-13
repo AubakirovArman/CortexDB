@@ -438,7 +438,37 @@ Verifies a specific factual claim against the available database knowledge using
 
 ---
 
-### 2.9. POST `/v1/search?scope=<scope>&q=<query>`
+### 2.9. GET `/v1/conflicts?scope=<scope>`
+Returns contradiction/conflict records visible to the requested scope.
+
+The endpoint is backed by the maintained conflict index. It does not rebuild the
+conflict list by scanning all payloads at request time.
+
+* **Response (200 OK):**
+  ```json
+  {
+    "schema_version": "conflict_index.v1",
+    "scope": "project:investments",
+    "conflict_count": 1,
+    "conflicts": [
+      {
+        "cell_id": 1,
+        "relation_cell_id": null,
+        "source_cell_id": 2,
+        "fact": "Mirny budget conflicts: 1.2B KZT vs 1.4B KZT",
+        "entity": "Mirny",
+        "metric": "budget",
+        "source": "ifc",
+        "source_trust_q16": 50000,
+        "source_trust_category": "internal"
+      }
+    ]
+  }
+  ```
+
+---
+
+### 2.10. POST `/v1/search?scope=<scope>&q=<query>`
 Runs keyword, vector, ANN, or hybrid search.
 
 * **Modes:** `keyword`, `vector`, `hybrid`, or `auto`.

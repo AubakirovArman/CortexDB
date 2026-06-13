@@ -11,6 +11,10 @@ use crate::responses::{
 };
 use crate::router::{query_param_decoded, query_param_opt_decoded};
 
+mod conflicts;
+
+pub use conflicts::handle_conflicts_shared;
+
 pub fn handle_remember_shared(
     db: &mut Database,
     query: &str,

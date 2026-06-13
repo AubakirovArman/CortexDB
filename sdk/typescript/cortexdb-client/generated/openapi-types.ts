@@ -636,6 +636,25 @@ export interface OpenApiNumericConflictResponse {
   right: string;
 }
 
+export interface OpenApiConflictIndexResponse {
+  conflict_count: number;
+  conflicts: OpenApiConflictRecordResponse[];
+  schema_version: string;
+  scope: string;
+}
+
+export interface OpenApiConflictRecordResponse {
+  cell_id: number;
+  entity: string | unknown;
+  fact: string;
+  metric: string | unknown;
+  relation_cell_id: number | unknown;
+  source: string | unknown;
+  source_cell_id: number | unknown;
+  source_trust_category: string;
+  source_trust_q16: number;
+}
+
 export interface OpenApiVerificationEvidenceResponse {
   cell_id: number;
   citation: string | unknown;

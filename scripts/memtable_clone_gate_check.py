@@ -85,6 +85,21 @@ def main() -> None:
         "self.snapshot_versions()",
         "verification conflict index full clone scan",
     )
+    forbid(
+        conflict_index,
+        "visible_iter",
+        "verification conflict index query-time visible scan",
+    )
+    forbid(
+        conflict_index,
+        "payload_for_version",
+        "verification conflict index query-time payload materialization scan",
+    )
+    require(
+        conflict_index,
+        "self.conflict_index_store.records(view)",
+        "maintained conflict-index lookup",
+    )
 
     print("memtable clone gate passed")
 

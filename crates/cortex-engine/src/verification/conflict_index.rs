@@ -1,16 +1,19 @@
 use cortex_aql::{AgentView, Q16};
-use cortex_core::memtable::CellVersion;
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 
 use crate::database::Database;
 use crate::error::EngineResult;
 use crate::ingestion::IngestedCell;
-use crate::query::{scope_id, CellMetadata};
+use crate::query::CellMetadata;
 use crate::search::tokenize;
-use crate::source_trust::{SourceTrust, SourceTrustCategory};
+use crate::source_trust::SourceTrustCategory;
 use crate::typed_body::RelationBody;
 
 use super::contradiction::{contradiction_facts, contradiction_text_matches};
+
+mod store;
+
+pub(crate) use store::ConflictIndexStore;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConflictRecord {
@@ -32,8 +35,8 @@ pub struct ContradictionRelationOptions {
     pub source_trust_q16: Option<Q16>,
 }
 
-#[derive(Clone, Debug, Default)]
-struct ConflictFacets {
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(super) struct ConflictFacets {
     entity: Option<String>,
     metric: Option<String>,
     source: Option<String>,
@@ -41,84 +44,7 @@ struct ConflictFacets {
 
 impl Database {
     pub fn conflict_index(&self, view: &AgentView) -> Vec<ConflictRecord> {
-        let mut visible_facets = std::collections::BTreeMap::new();
-        let pin = self.pin_read_txn();
-        let txn = pin.read_txn();
-        let visible_versions = self.materialized_conflict_versions(txn);
-        for (version, payload) in &visible_versions {
-            let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
-            if view.can_read_scope(scope_id(&metadata.scope)) {
-                visible_facets.insert(
-                    version.cell_id,
-                    conflict_facets_from_payload(version, payload),
-                );
-            }
-        }
-
-        let mut records = Vec::new();
-        for (version, payload) in &visible_versions {
-            let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
-            if !view.can_read_scope(scope_id(&metadata.scope)) {
-                continue;
-            }
-            let trust =
-                SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class);
-            let facets = conflict_facets_from_payload(version, payload);
-            records.extend(
-                contradiction_facts(payload)
-                    .into_iter()
-                    .map(|fact| ConflictRecord {
-                        cell_id: version.cell_id,
-                        relation_cell_id: None,
-                        source_cell_id: Some(version.cell_id),
-                        fact,
-                        entity: facets.entity.clone(),
-                        metric: facets.metric.clone(),
-                        source: facets.source.clone(),
-                        source_trust_q16: trust.q16,
-                        source_trust_category: trust.category,
-                    }),
-            );
-            if metadata.cell_type == KnowledgeCellType::Relation.as_str() {
-                if let Some(record) = contradiction_relation_record(
-                    version.cell_id,
-                    payload,
-                    trust.q16,
-                    trust.category,
-                    facets.clone(),
-                    &visible_facets,
-                ) {
-                    records.push(record);
-                }
-            }
-        }
-        records.sort_by_key(|record| {
-            (
-                record.fact.clone(),
-                record.cell_id,
-                record.relation_cell_id.unwrap_or(CellId(0)),
-            )
-        });
-        records.dedup_by(|left, right| {
-            left.cell_id == right.cell_id
-                && left.relation_cell_id == right.relation_cell_id
-                && left.fact == right.fact
-        });
-        records
-    }
-
-    fn materialized_conflict_versions(
-        &self,
-        txn: cortex_core::memtable::ReadTxn,
-    ) -> Vec<(&CellVersion, Vec<u8>)> {
-        self.memtable
-            .visible_iter(txn)
-            .filter_map(|version| {
-                self.payload_for_version(version)
-                    .ok()
-                    .map(|payload| (version, payload))
-            })
-            .collect()
+        self.conflict_index_store.records(view)
     }
 
     pub fn conflicts_for_fact(&self, fact: &str, view: &AgentView) -> Vec<ConflictRecord> {
@@ -191,7 +117,7 @@ fn contradiction_relation_body(source_cell_id: CellId, contradicted_fact: &str) 
     )
 }
 
-fn contradiction_relation_record(
+pub(super) fn contradiction_relation_record(
     relation_cell_id: CellId,
     payload: &[u8],
     source_trust_q16: Q16,
@@ -226,7 +152,7 @@ fn contradiction_relation_record(
     })
 }
 
-fn relation_source_cell_id(relation: &RelationBody) -> Option<CellId> {
+pub(super) fn relation_source_cell_id(relation: &RelationBody) -> Option<CellId> {
     relation
         .subject
         .as_deref()
@@ -245,12 +171,7 @@ fn sanitize_relation_value(value: &str) -> String {
         .collect()
 }
 
-fn conflict_facets_from_payload(version: &CellVersion, payload: &[u8]) -> ConflictFacets {
-    let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
-    conflict_facets_from_metadata(metadata)
-}
-
-fn conflict_facets_from_metadata(metadata: CellMetadata) -> ConflictFacets {
+pub(super) fn conflict_facets_from_metadata(metadata: CellMetadata) -> ConflictFacets {
     ConflictFacets {
         entity: metadata_value(&metadata.body_text, &["entity", "project"])
             .or(metadata.entity)

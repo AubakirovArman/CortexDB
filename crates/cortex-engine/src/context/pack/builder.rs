@@ -261,6 +261,7 @@ impl<'a> ContextPackBuilder<'a> {
         if answerability.is_insufficient() {
             anomalies.push(answerability::insufficient_context_anomaly(&answerability));
         }
+        anomalies.extend(conflicts::anomaly(&conflict_visibility));
 
         ContextPack {
             cells: pack_cells,

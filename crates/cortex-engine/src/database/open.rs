@@ -111,7 +111,7 @@ impl Database {
             ReadTxn::at(current_seq),
             options.payload_residency,
         );
-        let database = Self {
+        let mut database = Self {
             root_path,
             wal_path,
             manifest_path,
@@ -136,6 +136,7 @@ impl Database {
             search_context_store: stores.search_context_store,
             session_index: stores.session_index,
             fact_claim_store: stores.fact_claim_store,
+            conflict_index_store: stores.conflict_index_store,
             temporal_fact_store: stores.temporal_fact_store,
             tool_index: stores.tool_index,
             persisted_index_cache: Mutex::new(None),
@@ -144,6 +145,9 @@ impl Database {
             _lock: lock,
             closed: false,
         };
+        if options.payload_residency == PayloadResidency::Lazy {
+            database.rebuild_conflict_index_store_from_visible_payloads();
+        }
         database.resume_interrupted_ingestion_jobs()?;
         Ok(database)
     }

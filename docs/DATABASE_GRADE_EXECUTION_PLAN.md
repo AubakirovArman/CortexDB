@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B09` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-B09` is next. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-B10` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-B10` is next. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -66,7 +66,10 @@ enough to unblock the next dependency step.
 21. `EPIC-B08` — VerifyOp as a planned operator: done; VERIFY now has a
    logical plan node, traceable execution stages, engine-level
    `EXPLAIN VERIFY`/`EXPLAIN ANALYZE VERIFY`, and public report parity tests.
-22. `EPIC-B09` — incremental contradiction/conflict index: next.
+22. `EPIC-B09` — incremental contradiction/conflict index: done; conflicts are
+   maintained on put/patch/tombstone/reopen, exposed through `/v1/conflicts`,
+   and surfaced as ContextPack conflict anomalies without query-time full scan.
+23. `EPIC-B10` — temporal validity columns and temporal queries: next.
 
 ## Summary
 
@@ -777,20 +780,29 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-B09 — Инкрементальный contradiction/conflict-индекс
 
-- status: `pending`
+- status: `done`
 - meta: Категория: verification · Приоритет: P2 · Горизонт: 6 months · Тип: build
 - goal: «база знает свои противоречия» — фича уровня категории: конфликты можно находить при записи, а не при запросе.
 - problem: Проблема: conflict_index.rs строится сканом по запросу.
 - tasks:
-  - [ ] 1) при записи факта (B07) проверять fact-индекс на конфликтующее значение той же метрики в том же scope → материализовать conflict-запись
-  - [ ] 2) `/v1/conflicts?scope=` API + anomaly в паке «в паке есть стороны конфликта X»
-  - [ ] 3) инвалидация при tombstone/patch.
+  - [x] 1) при записи факта (B07) проверять fact-индекс на конфликтующее значение той же метрики в том же scope → материализовать conflict-запись
+  - [x] 2) `/v1/conflicts?scope=` API + anomaly в паке «в паке есть стороны конфликта X»
+  - [x] 3) инвалидация при tombstone/patch.
+- execution steps:
+  - [x] 1) define maintained conflict-index keys, scope rules, and rebuild semantics.
+  - [x] 2) add `ConflictIndexStore` and wire put/patch/tombstone/rebuild/open paths.
+  - [x] 3) replace query-time conflict lookup with store-backed candidate filtering while preserving AgentView source-facet isolation.
+  - [x] 4) add ContextPack conflict anomaly and typed `/v1/conflicts?scope=` response.
+  - [x] 5) add write/patch/tombstone/reopen/lazy/context/API regression tests.
+  - [x] 6) run gates, publish evidence, mark B09 `done`, then move to `EPIC-B10`.
 - acceptance:
-  - [ ] 1) конфликт обнаруживается на записи (тест: два бюджета → запись conflict)
-  - [ ] 2) пак, содержащий стороны конфликта, помечает это без full-scan
-  - [ ] 3) consistency-тест с patch/delete.
-- files: verification/conflict_index.rs, database.rs (write hook).
-- risks: write-amplification — делать асинхронно в фоновом задании writer-runtime. Зависимости: B07. Эффект: уникальная фича «contradiction-aware database».
+  - [x] 1) конфликт обнаруживается на записи (тест: два бюджета → запись conflict)
+  - [x] 2) пак, содержащий стороны конфликта, помечает это без full-scan
+  - [x] 3) consistency-тест с patch/delete.
+- latest evidence: Added maintained `ConflictIndexStore` backed by inline contradiction markers, persisted contradiction relations, descriptor/source facets, and typed numeric fact pairs. The store updates on put/patch/tombstone, rebuilds from visible records on open/replay, preserves lazy payload residency by using uncached maintenance payload reads, and `Database::conflict_index` now delegates to the maintained store instead of scanning query-time visible payloads. Added `ContextPackAnomalyCode::VisibleConflict`, typed `GET /v1/conflicts?scope=...` response/OpenAPI/SDK schemas, server AgentView route coverage, and regression tests for write/patch/tombstone/lazy reopen, ContextPack anomaly export, source-facet isolation, and API shape. Gates passed: `cargo fmt --check`, `cargo test -p cortex-engine --test verification_conflict_index --test verification_conflict_numeric --test context_pack_conflict_visibility --all-features`, `cargo test -p cortex-engine --test query_search retrieve_aql_lazy_budget_pushdown_bounds_segment_payload_reads --all-features`, `cargo test -p cortex-server v1_conflicts_returns_incremental_conflict_index --all-features`, `cargo test -p cortex-server agent_view_property --all-features`, `make openapi-contract-check`, `python3 scripts/file_size_report.py --root . --baseline quality/file_size_baseline.json --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`.
+- files: verification/conflict_index.rs, verification/conflict_index/store.rs, database/stores.rs, database/open.rs, context/conflicts.rs, server memory/routes/responses, OpenAPI/SDK generated types.
+- risks: maintained conflict index adds write-path bookkeeping and lazy-open rebuild work; current tests prove correctness on small/medium gates, with broader performance tracked by A19/C17 if write amplification becomes measurable.
+- next exit step: move to `EPIC-B10` — Temporal validity as columns and temporal queries.
 
 ### EPIC-B10 — Temporal validity как колонки + временные запросы
 

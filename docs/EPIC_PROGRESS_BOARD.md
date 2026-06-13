@@ -21,21 +21,23 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B09` — Incremental contradiction/conflict index.
+`EPIC-B10` — Temporal validity as columns and temporal queries.
 
-B09 exit steps:
+B10 exit steps:
 
-1. Define contradiction index keys and update rules.
-2. Update the index on put/patch/tombstone.
-3. Add equivalence tests against full rebuild.
-4. Mark done when conflict lookup is incremental and candidate-based; then
-   move to B10/B14 by dependency.
+1. Inventory current temporal parsing paths and `TemporalFactStore` behavior.
+2. Define `valid_from`/`valid_to` descriptor semantics and migration behavior.
+3. Add AQL `REQUIRE VALID AT "<date>"` bind/execution semantics.
+4. Route stale-guard VERIFY/evidence filtering through temporal columns/indexes.
+5. Add DATA_MODEL docs plus restart/lazy/index regression tests.
+6. Mark done when temporal filtering is column/index-backed; then move to B11.
 
-B09 current state:
+B10 current state:
 
-- next; start by inventorying the current on-demand conflict lookup and the
-  write hooks already maintaining B07 fact claims.
-- B09 should not reopen B08 operator work unless VERIFY explain gates regress.
+- next; start by inventorying temporal payload parsing and existing maintained
+  temporal index hooks.
+- B10 should not reopen B09 conflict indexing unless a temporal/conflict
+  regression points directly at the maintained conflict store.
 
 ## Active Partial Tail
 
@@ -80,6 +82,32 @@ C17 split state:
   is out of focus.
 
 ## Recently Closed
+
+### EPIC-B09 — Incremental contradiction/conflict index
+
+Status: `done`
+
+What closed it:
+
+- Added maintained `ConflictIndexStore` for inline contradiction markers,
+  persisted contradiction relations, descriptor/source facets, and typed
+  numeric fact conflicts.
+- Wired the store through put/patch/tombstone, replay/open rebuild, lazy reopen,
+  and replication/snapshot derived-store rebuild paths.
+- `Database::conflict_index` now delegates to the maintained store instead of
+  scanning visible payloads at query time.
+- Added `visible_conflict` ContextPack anomaly and typed
+  `GET /v1/conflicts?scope=...` API/OpenAPI/SDK response shape.
+- Preserved lazy read-path SLO accounting by using uncached maintenance payload
+  reads for conflict-index lazy-open rebuild.
+- Gates passed: `cargo fmt --check`, B09 targeted engine/server tests,
+  `make openapi-contract-check`, file-size ratchet, full workspace tests,
+  clippy with `-D warnings`, and `make check`.
+
+Remaining follow-up:
+
+- None for B09. If write amplification becomes measurable, track performance
+  evidence under A19/C17 rather than reopening B09 behavior.
 
 ### EPIC-B08 — VerifyOp as a planned verification operator
 

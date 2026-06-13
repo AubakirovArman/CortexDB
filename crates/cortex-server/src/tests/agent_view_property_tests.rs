@@ -226,6 +226,11 @@ fn run_surface_requests(root: &Path, scope: &str) -> Vec<String> {
         ),
         &options,
     ));
+    responses.push(handle_http_with_options(
+        root,
+        &http_request("GET", &format!("/v1/conflicts?scope={}", scope), ""),
+        &options,
+    ));
 
     responses
 }

@@ -224,6 +224,7 @@ fn is_agent_scoped_route(method: &str, path: &str) -> bool {
             | ("POST", "/v1/remember")
             | ("POST", "/v1/forget")
             | ("POST", "/v1/verify")
+            | ("GET", "/v1/conflicts")
             | ("POST", "/v1/ingest/text")
             | ("POST", "/v1/ingest/json")
             | ("POST", "/v1/ingest/csv")

@@ -988,6 +988,33 @@ Mixed evidence with numeric conflict:
 }
 ```
 
+## Conflicts
+
+`GET /v1/conflicts?scope=<scope>` returns conflict records visible to the
+requested scope. The response is backed by the maintained conflict index rather
+than a request-time payload scan.
+
+```json
+{
+  "schema_version": "conflict_index.v1",
+  "scope": "project:investments",
+  "conflict_count": 1,
+  "conflicts": [
+    {
+      "cell_id": 1,
+      "relation_cell_id": null,
+      "source_cell_id": 2,
+      "fact": "Mirny budget conflicts: 1.2B KZT vs 1.4B KZT",
+      "entity": "Mirny",
+      "metric": "budget",
+      "source": "ifc",
+      "source_trust_q16": 50000,
+      "source_trust_category": "internal"
+    }
+  ]
+}
+```
+
 ## Ingestion
 
 `POST /v1/ingest/text`, `POST /v1/ingest/json`, and

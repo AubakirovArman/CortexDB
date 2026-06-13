@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::context::dedup::extract_project_metric_value;
-use crate::context::ContextPackCell;
+use crate::context::{ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct ContextConflictVisibility {
@@ -38,6 +38,18 @@ pub(crate) fn measure(cells: &[ContextPackCell]) -> ContextConflictVisibility {
         visible_conflict_count,
         conflict_visibility_q16: conflict_intensity_q16(visible_conflict_count),
     }
+}
+
+pub(crate) fn anomaly(visibility: &ContextConflictVisibility) -> Option<ContextPackAnomaly> {
+    (visibility.visible_conflict_count > 0).then(|| ContextPackAnomaly {
+        cell_id: None,
+        code: ContextPackAnomalyCode::VisibleConflict,
+        message: format!(
+            "context pack contains {} visible conflict group(s)",
+            visibility.visible_conflict_count
+        ),
+        why_excluded: None,
+    })
 }
 
 fn conflict_intensity_q16(visible_conflict_count: u32) -> u16 {

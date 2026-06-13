@@ -163,6 +163,7 @@ pub enum ContextPackAnomalyCode {
     TokenOverload,
     ScopeMismatch,
     InsufficientContext,
+    VisibleConflict,
 }
 
 impl ContextPackAnomalyCode {
@@ -173,6 +174,7 @@ impl ContextPackAnomalyCode {
             Self::TokenOverload => "token_overload",
             Self::ScopeMismatch => "scope_mismatch",
             Self::InsufficientContext => "insufficient_context",
+            Self::VisibleConflict => "visible_conflict",
         }
     }
 }

@@ -873,6 +873,21 @@ paths:
                 type: string
         '400': *id001
         '500': *id002
+  /v1/conflicts:
+    get:
+      summary: List indexed contradiction/conflict records
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      - $ref: '#/components/parameters/Scope'
+      responses:
+        '200':
+          description: Conflict index records visible to the requested scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictIndexResponse'
+        '400': *id001
+        '500': *id002
   /v1/ingest/text:
     post:
       summary: Ingest raw text chunks
@@ -3360,6 +3375,71 @@ components:
         left:
           type: string
         right:
+          type: string
+    ConflictIndexResponse:
+      type: object
+      required:
+      - schema_version
+      - scope
+      - conflict_count
+      - conflicts
+      properties:
+        schema_version:
+          type: string
+        scope:
+          type: string
+        conflict_count:
+          type: integer
+          format: uint64
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConflictRecordResponse'
+    ConflictRecordResponse:
+      type: object
+      required:
+      - cell_id
+      - relation_cell_id
+      - source_cell_id
+      - fact
+      - entity
+      - metric
+      - source
+      - source_trust_q16
+      - source_trust_category
+      properties:
+        cell_id:
+          type: integer
+          format: uint64
+        relation_cell_id:
+          anyOf:
+          - type: integer
+            format: uint64
+          - type: 'null'
+        source_cell_id:
+          anyOf:
+          - type: integer
+            format: uint64
+          - type: 'null'
+        fact:
+          type: string
+        entity:
+          anyOf:
+          - type: string
+          - type: 'null'
+        metric:
+          anyOf:
+          - type: string
+          - type: 'null'
+        source:
+          anyOf:
+          - type: string
+          - type: 'null'
+        source_trust_q16:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        source_trust_category:
           type: string
     VerificationEvidenceResponse:
       type: object

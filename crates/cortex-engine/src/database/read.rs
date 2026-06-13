@@ -4,15 +4,13 @@ use std::sync::Arc;
 #[cfg(test)]
 use cortex_aql::eval_bitmap_program;
 use cortex_aql::BoundRetrievePlan;
-use cortex_core::memtable::{CellVersion, PayloadRef, ReadTxn};
+use cortex_core::memtable::{CellVersion, ReadTxn};
 use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::manifest::StorageManifest;
-use cortex_storage::segment::SegmentReader;
 
-use super::payload_cache::{PayloadCacheStats, SegmentPayloadCacheKey};
+use super::payload_cache::PayloadCacheStats;
 use super::{CandidateResolver, Database, PinnedReadTxn, RetrievedCell};
-use crate::checkpoint::segment_path;
-use crate::error::{EngineError, EngineResult};
+use crate::error::EngineResult;
 use crate::exec::{execute_retrieve, RetrieveExecutionReport};
 #[cfg(test)]
 use crate::retrieval_quality::cell_version_meets_quality_thresholds;
@@ -237,43 +235,5 @@ impl Database {
             payload: self.payload_for_version(version)?,
             descriptor: version.descriptor.clone(),
         })
-    }
-
-    pub(crate) fn payload_for_version(&self, version: &CellVersion) -> EngineResult<Vec<u8>> {
-        match &version.payload_ref {
-            PayloadRef::Inline => Ok(version.payload.clone()),
-            PayloadRef::Segment {
-                segment_id,
-                candidate_id,
-                ..
-            } => {
-                let key = SegmentPayloadCacheKey::new(*segment_id, *candidate_id);
-                if let Some(payload) = self
-                    .payload_cache
-                    .lock()
-                    .expect("payload cache lock poisoned")
-                    .get(key)
-                {
-                    return Ok(payload);
-                }
-
-                let payload = SegmentReader::read_payload_at(
-                    segment_path(&self.segments_path, *segment_id),
-                    *candidate_id,
-                )?
-                .ok_or_else(|| {
-                    EngineError::StorageInvariant(format!(
-                        "segment {segment_id} is missing payload for candidate {candidate_id}"
-                    ))
-                })?;
-                let mut cache = self
-                    .payload_cache
-                    .lock()
-                    .expect("payload cache lock poisoned");
-                cache.record_segment_load();
-                cache.insert(key, payload.clone());
-                Ok(payload)
-            }
-        }
     }
 }

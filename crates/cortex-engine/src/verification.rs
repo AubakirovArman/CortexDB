@@ -13,6 +13,7 @@ mod temporal_index;
 #[cfg(test)]
 mod tests;
 mod types;
+pub(crate) use conflict_index::ConflictIndexStore;
 pub use conflict_index::{ConflictRecord, ContradictionRelationOptions};
 pub use export::VerificationReportExportFormat;
 pub use numeric::{

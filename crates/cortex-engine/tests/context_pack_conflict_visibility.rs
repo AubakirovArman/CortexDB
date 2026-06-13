@@ -1,7 +1,7 @@
 use cortex_core::CellId;
 use cortex_engine::{
-    ContextPack, ContextPackExportFormat, ContextPackOptions, RetrievedCell,
-    SourceFreshnessCategory,
+    ContextPack, ContextPackAnomalyCode, ContextPackExportFormat, ContextPackOptions,
+    RetrievedCell, SourceFreshnessCategory,
 };
 
 #[test]
@@ -34,6 +34,10 @@ fn conflict_visibility_reports_conflicting_project_metric_values() {
     assert_eq!(pack.cells.len(), 2);
     assert_eq!(pack.visible_conflict_count, 1);
     assert_eq!(pack.conflict_visibility_q16, 32_767);
+    assert!(pack
+        .anomalies
+        .iter()
+        .any(|anomaly| anomaly.code == ContextPackAnomalyCode::VisibleConflict));
 }
 
 #[test]

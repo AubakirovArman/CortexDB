@@ -1,4 +1,5 @@
 mod aql;
+mod conflicts;
 mod context;
 mod errors;
 mod ingest;
@@ -7,6 +8,7 @@ mod system;
 mod verification;
 
 pub use self::aql::*;
+pub use self::conflicts::*;
 pub use self::context::*;
 pub use self::errors::*;
 pub use self::ingest::*;

@@ -10,7 +10,7 @@ use crate::search::{CorpusSynonymStore, LiveSearchStore, SearchContextStore};
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
 use crate::verification::numeric::fact_claim::FactClaimStore;
-use crate::verification::TemporalFactStore;
+use crate::verification::{ConflictIndexStore, TemporalFactStore};
 
 #[derive(Default)]
 pub(super) struct DerivedStores {
@@ -21,6 +21,7 @@ pub(super) struct DerivedStores {
     pub(super) search_context_store: SearchContextStore,
     pub(super) session_index: SessionIndex,
     pub(super) fact_claim_store: FactClaimStore,
+    pub(super) conflict_index_store: ConflictIndexStore,
     pub(super) temporal_fact_store: TemporalFactStore,
     pub(super) tool_index: ToolIndex,
 }
@@ -46,6 +47,7 @@ impl DerivedStores {
             search_context_store: SearchContextStore::from_memtable(memtable, txn),
             session_index: SessionIndex::from_memtable(memtable, txn),
             fact_claim_store: FactClaimStore::from_memtable(memtable, txn),
+            conflict_index_store: ConflictIndexStore::from_memtable(memtable, txn),
             temporal_fact_store: TemporalFactStore::from_memtable(memtable, txn),
             tool_index: ToolIndex::from_memtable(memtable, txn),
         }
@@ -100,6 +102,8 @@ impl DerivedStores {
             cell_id,
             FactClaimStore::record_from_payload(cell_id, payload, descriptor),
         );
+        self.conflict_index_store
+            .apply_record(cell_id, payload, descriptor);
         self.temporal_fact_store.apply_record(
             cell_id,
             TemporalFactStore::record_from_payload(cell_id, payload, descriptor),
@@ -147,6 +151,8 @@ impl Database {
             cell_id,
             FactClaimStore::record_from_payload(cell_id, payload, descriptor),
         );
+        self.conflict_index_store
+            .apply_record(cell_id, payload, descriptor);
         self.temporal_fact_store.apply_record(
             cell_id,
             TemporalFactStore::record_from_payload(cell_id, payload, descriptor),
@@ -166,6 +172,7 @@ impl Database {
         self.search_context_store.apply_tombstone(cell_id);
         self.session_index.apply_tombstone(cell_id);
         self.fact_claim_store.apply_tombstone(cell_id);
+        self.conflict_index_store.apply_tombstone(cell_id);
         self.temporal_fact_store.apply_tombstone(cell_id);
         self.tool_index.apply_tombstone(cell_id);
     }
@@ -179,7 +186,20 @@ impl Database {
         self.search_context_store = stores.search_context_store;
         self.session_index = stores.session_index;
         self.fact_claim_store = stores.fact_claim_store;
+        self.conflict_index_store = stores.conflict_index_store;
         self.temporal_fact_store = stores.temporal_fact_store;
         self.tool_index = stores.tool_index;
+    }
+
+    pub(crate) fn rebuild_conflict_index_store_from_visible_payloads(&mut self) {
+        let pin = self.pin_read_txn();
+        let txn = pin.read_txn();
+        let mut store = ConflictIndexStore::default();
+        for version in self.memtable.visible_iter(txn) {
+            if let Ok(payload) = self.payload_for_version_uncached(version) {
+                store.apply_record(version.cell_id, &payload, &version.descriptor);
+            }
+        }
+        self.conflict_index_store = store;
     }
 }
