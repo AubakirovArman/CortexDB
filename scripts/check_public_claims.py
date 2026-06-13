@@ -152,6 +152,11 @@ def read(path: Path) -> str:
         raise AssertionError(f"missing file: {path}") from None
 
 
+def read_make_surface(repo: Path) -> str:
+    parts = [repo / "Makefile", *sorted((repo / "mk").glob("*.mk"))]
+    return "\n".join(read(part) for part in parts if part.exists())
+
+
 def missing_terms(label: str, text: str, terms: tuple[str, ...]) -> list[str]:
     return [f"{label}: missing required qualifier {term!r}" for term in terms if term not in text]
 
@@ -209,7 +214,7 @@ def validate(repo: Path) -> list[str]:
             errors.extend(forbidden_terms(relative, text))
     errors.extend(risky_claim_errors(repo))
 
-    makefile = read(repo / "Makefile")
+    makefile = read_make_surface(repo)
     if "public-claims-check:" not in makefile:
         errors.append("Makefile: missing public-claims-check target")
     if "$(MAKE) public-claims-check" not in makefile:

@@ -6828,7 +6828,7 @@
     "scripts/check_beta_delta.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 119,
+      "lines": 124,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -6877,7 +6877,7 @@
     "scripts/check_public_claims.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 289,
+      "lines": 294,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -6996,7 +6996,7 @@
     "scripts/context_pack_prompt_export_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 125,
+      "lines": 126,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -8991,7 +8991,7 @@
     "scripts/retrieval_quality_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 267,
+      "lines": 268,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -9040,7 +9040,7 @@
     "scripts/sdk_e2e_release_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 145,
+      "lines": 150,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -9089,7 +9089,7 @@
     "scripts/security_beta_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 113,
+      "lines": 118,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -9103,7 +9103,7 @@
     "scripts/security_hardening_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 183,
+      "lines": 188,
       "soft_limit": 300,
       "warning_limit": 600
     },

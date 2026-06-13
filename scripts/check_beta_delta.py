@@ -63,6 +63,11 @@ def read(path: Path) -> str:
         raise AssertionError(f"missing file: {path}") from None
 
 
+def read_make_surface(repo: Path) -> str:
+    parts = [repo / "Makefile", *sorted((repo / "mk").glob("*.mk"))]
+    return "\n".join(read(part) for part in parts if part.exists())
+
+
 def missing_terms(label: str, text: str, terms: tuple[str, ...]) -> list[str]:
     return [f"{label}: missing {term!r}" for term in terms if term not in text]
 
@@ -70,7 +75,7 @@ def missing_terms(label: str, text: str, terms: tuple[str, ...]) -> list[str]:
 def validate(repo: Path) -> list[str]:
     errors: list[str] = []
     beta_delta = read(repo / "docs/archive/BETA_DELTA.md")
-    makefile = read(repo / "Makefile")
+    makefile = read_make_surface(repo)
     plan = read(repo / "docs/archive/REMAINING_EXECUTION_PLAN.md")
 
     errors.extend(missing_terms("docs/archive/BETA_DELTA.md", beta_delta, REQUIRED_DOC_TERMS))

@@ -16,21 +16,21 @@ GATE_MARKERS = {
             ("docs/AUTH.md", "CORTEXDB_AUTH_POLICY_STORE_FILE"),
             ("docs/archive/RBAC_POLICY_STORE_DESIGN.md", "policy store"),
             ("docs/archive/SECURITY_HARDENING_EVIDENCE.md", "persisted_auth_policy_store: true"),
-            ("crates/cortex-server/src/auth.rs", "cortexdb.auth_policy.v1"),
+            ("crates/cortex-server/src/auth_policy_store.rs", "cortexdb.auth_policy.v1"),
             (
-                "crates/cortex-server/src/tests/auth_policy_tests.rs",
+                "crates/cortex-server/src/tests/auth_policy_tests/store_validation.rs",
                 "auth_policy_store_allows_active_principal_and_denies_disabled",
             ),
             (
-                "crates/cortex-server/src/tests/auth_policy_tests.rs",
+                "crates/cortex-server/src/tests/auth_policy_tests/store_validation.rs",
                 "auth_policy_store_invalid_json_fails_closed",
             ),
             (
-                "crates/cortex-server/src/tests/auth_policy_tests.rs",
+                "crates/cortex-server/src/tests/auth_policy_tests/store_validation.rs",
                 "auth_policy_store_v0_tokens_migrate_and_authenticate",
             ),
             (
-                "crates/cortex-server/src/tests/auth_policy_tests.rs",
+                "crates/cortex-server/src/tests/auth_policy_tests/store_validation.rs",
                 "auth_policy_store_unknown_schema_fails_closed",
             ),
             (
@@ -38,19 +38,19 @@ GATE_MARKERS = {
                 "auth_review_redacts_policy_store_tokens",
             ),
             (
-                "crates/cortex-server/src/tests/auth_policy_tests.rs",
+                "crates/cortex-server/src/tests/auth_policy_tests/admin_principals.rs",
                 "admin_can_upsert_policy_store_principal",
             ),
             (
-                "crates/cortex-server/src/tests/auth_policy_tests.rs",
+                "crates/cortex-server/src/tests/auth_policy_tests/admin_principals.rs",
                 "data_token_cannot_mutate_policy_store",
             ),
             (
-                "crates/cortex-server/src/tests/auth_policy_tests.rs",
+                "crates/cortex-server/src/tests/auth_policy_tests/admin_principals.rs",
                 "admin_can_disable_policy_store_principal_and_rollback",
             ),
             (
-                "crates/cortex-server/src/tests/auth_policy_tests.rs",
+                "crates/cortex-server/src/tests/auth_policy_tests/store_validation.rs",
                 "auth_policy_store_capabilities_restrict_data_routes",
             ),
             (
@@ -65,13 +65,13 @@ GATE_MARKERS = {
         "markers": [
             ("docs/AUTH.md", "request_quota_per_minute"),
             ("docs/archive/SECURITY_HARDENING_EVIDENCE.md", "per_principal_quota: true"),
-            ("crates/cortex-server/src/auth.rs", "request_quota_per_minute"),
+            ("crates/cortex-server/src/auth_capability.rs", "request_quota_per_minute"),
             (
                 "crates/cortex-server/src/tests/security_quota_tests.rs",
                 "policy_store_principal_quota_is_isolated_per_principal",
             ),
             (
-                "crates/cortex-server/src/tests/security_tests.rs",
+                "crates/cortex-server/src/tests/security_tests/http_controls.rs",
                 "rate_limit_returns_typed_429_when_enabled",
             ),
             (

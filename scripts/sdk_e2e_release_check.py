@@ -72,6 +72,11 @@ REQUIRED_MARKERS = {
 
 
 def read(path: Path) -> str:
+    if str(path) == "Makefile":
+        return "\n".join(
+            part.read_text(encoding="utf-8")
+            for part in [Path("Makefile"), *sorted(Path("mk").glob("*.mk"))]
+        )
     try:
         return path.read_text(encoding="utf-8")
     except OSError as error:

@@ -65,9 +65,10 @@ def require_contains(name: str, text: str, needles: list[str]) -> list[str]:
 def validate(root: Path) -> dict[str, Any]:
     failures: list[str] = []
     export_rs = read_text(root / "crates/cortex-engine/src/context/export.rs")
+    prompt_rs = read_text(root / "crates/cortex-engine/src/context/export/prompt.rs")
     json_export = read_text(root / "crates/cortex-engine/src/context/export/json_export.rs")
     tests = read_text(root / "crates/cortex-engine/tests/context_pack_prompt_export.rs")
-    cli = read_text(root / "crates/cortex-cli/src/cli_ops.rs")
+    cli = read_text(root / "crates/cortex-cli/src/cli_ops/agent.rs")
     server = read_text(root / "crates/cortex-server/src/context.rs")
     openapi = read_text(root / "docs/openapi.yaml")
     docs = "\n".join(
@@ -80,7 +81,7 @@ def validate(root: Path) -> dict[str, Any]:
     )
 
     failures.extend(require_contains("engine export formats", export_rs, REQUIRED_ENGINE_FORMATS))
-    failures.extend(require_contains("engine prompt instructions", export_rs, REQUIRED_PROMPT_LINES))
+    failures.extend(require_contains("engine prompt instructions", prompt_rs, REQUIRED_PROMPT_LINES))
     failures.extend(require_contains("engine json export fields", json_export, REQUIRED_JSON_FIELDS))
     failures.extend(require_contains("engine export tests", tests, REQUIRED_TESTS))
     failures.extend(require_contains("cli context formats", cli, ["json", "prompt", "markdown"]))

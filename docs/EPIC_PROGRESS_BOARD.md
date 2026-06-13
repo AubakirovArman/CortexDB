@@ -32,6 +32,11 @@ D15 exit steps:
 
 D15 progress:
 
+- `make beta-release-check` passes and writes
+  `target/beta-release/report.json` plus
+  `target/beta-release/evidence.tar.gz` after release/security/retrieval
+  evidence checkers were aligned with the modular `mk/*.mk`,
+  ContextPack, retrieval, and security test layout.
 - next: decide whether to create a new prerelease tag such as
   `v0.2.0-beta.2` or explicitly refresh `v0.2.0-beta.1` with approval.
 

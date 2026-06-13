@@ -11,43 +11,43 @@ from pathlib import Path
 
 CHECKS = {
     "auth_required": [
-        ("crates/cortex-server/src/tests/security_tests.rs", "v1_api_requires_bearer_token_when_configured"),
+        ("crates/cortex-server/src/tests/security_tests/auth.rs", "v1_api_requires_bearer_token_when_configured"),
         ("crates/cortex-server/src/tests/error_taxonomy_tests.rs", '"unauthorized"'),
     ],
     "wrong_token_rejected": [
-        ("crates/cortex-server/src/tests/security_tests.rs", "v1_api_rejects_wrong_bearer_token_when_configured"),
-        ("crates/cortex-server/src/tests/security_tests.rs", "Bearer wrong-secret"),
+        ("crates/cortex-server/src/tests/security_tests/auth.rs", "v1_api_rejects_wrong_bearer_token_when_configured"),
+        ("crates/cortex-server/src/tests/security_tests/auth.rs", "Bearer wrong-secret"),
         ("crates/cortex-server/src/tests/error_taxonomy_tests.rs", "ErrorCode::Unauthorized"),
     ],
     "data_token_admin_denied": [
-        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "data_token_cannot_access_admin_routes"),
-        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "data_token_cannot_access_dashboard"),
+        ("crates/cortex-server/src/tests/auth_policy_tests/role_routes.rs", "data_token_cannot_access_admin_routes"),
+        ("crates/cortex-server/src/tests/auth_policy_tests/role_routes.rs", "data_token_cannot_access_dashboard"),
     ],
     "tenant_traversal_rejected": [
-        ("crates/cortex-server/src/tests/security_tests.rs", "test_tenant_path_traversal_over_http"),
-        ("crates/cortex-server/src/tests/security_tests.rs", "../../escape"),
+        ("crates/cortex-server/src/tests/security_tests/tenancy.rs", "test_tenant_path_traversal_over_http"),
+        ("crates/cortex-server/src/tests/security_tests/tenancy.rs", "../../escape"),
     ],
     "rate_limit_works": [
-        ("crates/cortex-server/src/tests/security_tests.rs", "rate_limit_returns_typed_429_when_enabled"),
+        ("crates/cortex-server/src/tests/security_tests/http_controls.rs", "rate_limit_returns_typed_429_when_enabled"),
         ("crates/cortex-server/src/tests/security_quota_tests.rs", "policy_store_principal_quota_is_isolated_per_principal"),
     ],
     "cors_allowlist_works": [
-        ("crates/cortex-server/src/tests/security_tests.rs", "cors_preflight_is_only_enabled_for_configured_origin"),
-        ("crates/cortex-server/src/tests/security_tests.rs", "https://app.example"),
+        ("crates/cortex-server/src/tests/security_tests/http_controls.rs", "cors_preflight_is_only_enabled_for_configured_origin"),
+        ("crates/cortex-server/src/tests/security_tests/http_controls.rs", "https://app.example"),
     ],
     "audit_redacts_body_query_token": [
-        ("crates/cortex-server/src/tests/security_tests.rs", "audit_log_file_redacts_ingestion_query_and_body"),
-        ("crates/cortex-server/src/tests/security_tests.rs", "audit_log_file_records_policy_store_principal_without_token"),
+        ("crates/cortex-server/src/tests/security_tests/audit.rs", "audit_log_file_redacts_ingestion_query_and_body"),
+        ("crates/cortex-server/src/tests/security_tests/audit.rs", "audit_log_file_records_policy_store_principal_without_token"),
         ("crates/cortex-server/src/tests/security_redaction_tests.rs", "denied_ingestion_audit_event_does_not_leak_query_body_or_token"),
     ],
     "agent_view_scope_enforcement": [
-        ("crates/cortex-server/src/tests/security_tests.rs", "auth_agent_view_blocks_unreadable_scope_over_http"),
-        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "token_policy_agent_id_applies_agent_view_scope"),
+        ("crates/cortex-server/src/tests/security_tests/auth.rs", "auth_agent_view_blocks_unreadable_scope_over_http"),
+        ("crates/cortex-server/src/tests/auth_policy_tests/token_scope.rs", "token_policy_agent_id_applies_agent_view_scope"),
     ],
     "body_limit_works": [
-        ("crates/cortex-server/src/tests/security_tests.rs", "test_server_concurrency_and_size_limit"),
-        ("crates/cortex-server/src/tests/security_tests.rs", "413 Payload Too Large"),
-        ("crates/cortex-server/src/lib.rs", "RequestBodyLimitLayer"),
+        ("crates/cortex-server/src/tests/security_tests/http_controls.rs", "test_server_concurrency_and_size_limit"),
+        ("crates/cortex-server/src/tests/security_tests/http_controls.rs", "413 Payload Too Large"),
+        ("crates/cortex-server/src/lifecycle.rs", "RequestBodyLimitLayer"),
     ],
     "openapi_contract_gate": [
         ("Makefile", "openapi-contract-check"),
@@ -57,6 +57,11 @@ CHECKS = {
 
 
 def read(path: Path) -> str:
+    if str(path) == "Makefile":
+        return "\n".join(
+            part.read_text(encoding="utf-8")
+            for part in [Path("Makefile"), *sorted(Path("mk").glob("*.mk"))]
+        )
     try:
         return path.read_text(encoding="utf-8")
     except OSError as error:

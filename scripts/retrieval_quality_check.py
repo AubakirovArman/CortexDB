@@ -100,7 +100,8 @@ def query_level_rows(report: dict[str, Any]) -> list[dict[str, Any]]:
 
 def mode_report(latest: dict[str, Any], latest_report: dict[str, Any]) -> dict[str, Any]:
     search_quality_tests = Path("crates/cortex-engine/tests/search_quality.rs")
-    query_search_tests = Path("crates/cortex-engine/tests/query_search.rs")
+    query_search_api_tests = Path("crates/cortex-engine/tests/query_search/api.rs")
+    query_search_indexes_tests = Path("crates/cortex-engine/tests/query_search/indexes.rs")
     return {
         "lexical": {
             "status": "covered",
@@ -113,18 +114,18 @@ def mode_report(latest: dict[str, Any], latest_report: dict[str, Any]) -> dict[s
         },
         "vector": {
             "status": "covered",
-            "evidence": str(query_search_tests),
+            "evidence": str(query_search_api_tests),
             "gate": "cargo test -p cortex-engine --test query_search",
             "exact_vector_mode": marker_present(
-                query_search_tests,
+                query_search_api_tests,
                 "search_api_supports_keyword_and_vector_modes",
             ),
         },
         "hybrid": {
             "status": "covered",
-            "evidence": str(query_search_tests),
+            "evidence": str(query_search_indexes_tests),
             "gate": "cargo test -p cortex-engine --test query_search",
-            "rrf_fusion": marker_present(query_search_tests, "hybrid_search_fuses_keyword"),
+            "rrf_fusion": marker_present(query_search_indexes_tests, "hybrid_search_fuses_keyword"),
         },
         "guarded_ann": {
             "status": "measured",

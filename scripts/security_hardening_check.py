@@ -17,11 +17,11 @@ REQUIRED_MARKERS = {
         ("docs/archive/SECURITY_HARDENING_EVIDENCE.md", "rbac_policy_store_gate: true"),
         ("Makefile", "rbac-policy-store-check"),
         ("scripts/enterprise_rbac_gate_check.py", "cortexdb.enterprise_rbac.rbac_policy_store_gate.v1"),
-        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "auth_policy_store_allows_active_principal_and_denies_disabled"),
-        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "auth_policy_store_invalid_json_fails_closed"),
-        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "admin_can_upsert_policy_store_principal"),
-        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "admin_can_disable_policy_store_principal_and_rollback"),
-        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "auth_policy_store_capabilities_restrict_data_routes"),
+        ("crates/cortex-server/src/tests/auth_policy_tests/store_validation.rs", "auth_policy_store_allows_active_principal_and_denies_disabled"),
+        ("crates/cortex-server/src/tests/auth_policy_tests/store_validation.rs", "auth_policy_store_invalid_json_fails_closed"),
+        ("crates/cortex-server/src/tests/auth_policy_tests/admin_principals.rs", "admin_can_upsert_policy_store_principal"),
+        ("crates/cortex-server/src/tests/auth_policy_tests/admin_principals.rs", "admin_can_disable_policy_store_principal_and_rollback"),
+        ("crates/cortex-server/src/tests/auth_policy_tests/store_validation.rs", "auth_policy_store_capabilities_restrict_data_routes"),
         ("crates/cortex-cli/src/cli_auth_review_tests.rs", "auth_review_rejects_invalid_capability"),
         ("docs/archive/RBAC_POLICY_STORE_DESIGN.md", "Action capability restrictions"),
     ],
@@ -34,7 +34,7 @@ REQUIRED_MARKERS = {
     "per_token_quota_boundary": [
         ("docs/archive/SECURITY_BETA_BASELINE.md", "request_quota_per_minute"),
         ("docs/archive/SECURITY_THREAT_MODEL.md", "Per-token quotas by route class"),
-        ("crates/cortex-server/src/tests/security_tests.rs", "rate_limit_returns_typed_429_when_enabled"),
+        ("crates/cortex-server/src/tests/security_tests/http_controls.rs", "rate_limit_returns_typed_429_when_enabled"),
     ],
     "per_principal_quota": [
         ("docs/AUTH.md", "request_quota_per_minute"),
@@ -42,13 +42,13 @@ REQUIRED_MARKERS = {
         ("docs/archive/SECURITY_HARDENING_EVIDENCE.md", "quota_policy_gate: true"),
         ("Makefile", "quota-policy-check"),
         ("scripts/enterprise_rbac_gate_check.py", "cortexdb.enterprise_rbac.quota_policy_gate.v1"),
-        ("crates/cortex-server/src/auth.rs", "auth_policy_store_rejects_zero_quota"),
+        ("crates/cortex-server/src/auth/tests.rs", "auth_policy_store_rejects_zero_quota"),
         ("crates/cortex-server/src/tests/security_quota_tests.rs", "policy_store_principal_quota_is_isolated_per_principal"),
     ],
     "audit_principal_metadata": [
         ("docs/AUTH.md", "principal_id`, `auth_role`, and `auth_agent_id`"),
         ("docs/archive/SECURITY_HARDENING_EVIDENCE.md", "Principal-aware audit metadata"),
-        ("crates/cortex-server/src/tests/security_tests.rs", "audit_log_file_records_policy_store_principal_without_token"),
+        ("crates/cortex-server/src/tests/security_tests/audit.rs", "audit_log_file_records_policy_store_principal_without_token"),
     ],
     "audit_chain_foundation": [
         ("docs/AUTH.md", "cortexdb audit ./audit/http.jsonl --summary --redaction-check --verify-chain"),
@@ -82,7 +82,7 @@ REQUIRED_MARKERS = {
         ("Makefile", "compliance-boundary-check"),
     ],
     "audit_redaction": [
-        ("crates/cortex-server/src/tests/security_tests.rs", "audit_log_file_redacts_ingestion_query_and_body"),
+        ("crates/cortex-server/src/tests/security_tests/audit.rs", "audit_log_file_redacts_ingestion_query_and_body"),
         ("crates/cortex-cli/src/cli_audit_tests.rs", "redaction_ok=true"),
     ],
     "tamper_evident_audit_boundary": [
@@ -105,11 +105,11 @@ REQUIRED_MARKERS = {
     ],
     "dashboard_auth_hardening": [
         ("docs/archive/SECURITY_BETA_BASELINE.md", "data tokens cannot access dashboard HTML or assets"),
-        ("crates/cortex-server/src/tests/auth_policy_tests.rs", "data_token_cannot_access_dashboard"),
+        ("crates/cortex-server/src/tests/auth_policy_tests/role_routes.rs", "data_token_cannot_access_dashboard"),
         ("docs/archive/SECURITY_RELEASE_CHECKLIST.md", "Dashboard access is treated as administrative"),
     ],
     "malicious_ingestion_tests": [
-        ("crates/cortex-server/src/tests/security_tests.rs", "malicious_ingestion_scope_bypass_is_denied_by_agent_view"),
+        ("crates/cortex-server/src/tests/security_tests/auth.rs", "malicious_ingestion_scope_bypass_is_denied_by_agent_view"),
         ("crates/cortex-server/src/tests/security_redaction_tests.rs", "denied_ingestion_audit_event_does_not_leak_query_body_or_token"),
     ],
     "security_beta_baseline": [
@@ -131,6 +131,11 @@ REQUIRED_MARKERS = {
 
 
 def read(path: Path) -> str:
+    if str(path) == "Makefile":
+        return "\n".join(
+            part.read_text(encoding="utf-8")
+            for part in [Path("Makefile"), *sorted(Path("mk").glob("*.mk"))]
+        )
     try:
         return path.read_text(encoding="utf-8")
     except OSError as error:
