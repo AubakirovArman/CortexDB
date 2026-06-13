@@ -3,13 +3,17 @@ use std::fs;
 use std::time::Instant;
 
 use cortex_engine::{ContextPackOptions, Database, SearchLimit};
-use serde_json::json;
 
 use super::args::Args;
-use super::metrics::{
-    matrix_from_phases, measure_once, measure_repeated, memory_phase, round_ms, sampled_cell_id,
-};
+use super::metrics::{measure_once, measure_repeated, memory_phase, sampled_cell_id};
 use super::workload::{ingest_batches, scale_view};
+use prepared::prepare_direct_checkpoint;
+use report::write_report;
+
+#[path = "prepared.rs"]
+mod prepared;
+#[path = "report.rs"]
+mod report;
 
 const VERIFY_AQL: &str =
     r#"VERIFY FACT "scale target onboarding budget approved" IN BRAIN default;"#;
@@ -17,33 +21,56 @@ const CONTEXT_AQL: &str = r#"RETRIEVE CONTEXT FOR TASK "onboarding latency budge
 
 pub(crate) fn run() -> Result<(), String> {
     let args = Args::parse(env::args().skip(1))?;
-    fs::remove_dir_all(&args.root).ok();
-    fs::create_dir_all(&args.root)
-        .map_err(|error| format!("failed to create {}: {error}", args.root.display()))?;
-
     let started = Instant::now();
     let db_path = args.root.join("db");
     let mut phases = Vec::new();
     let view = scale_view();
 
-    eprintln!("[scale-bench] open_empty");
-    let (mut db, phase) = measure_once("open_empty", 1, || Database::open(&db_path))?;
+    if args.reopen_only {
+        if !db_path.exists() {
+            return Err(format!(
+                "--reopen-only requires an existing database at {}",
+                db_path.display()
+            ));
+        }
+    } else {
+        fs::remove_dir_all(&args.root).ok();
+        fs::create_dir_all(&args.root)
+            .map_err(|error| format!("failed to create {}: {error}", args.root.display()))?;
+        if args.direct_checkpoint {
+            eprintln!("[scale-bench] direct_checkpoint cells={}", args.cells);
+            phases.push(prepare_direct_checkpoint(&db_path, &args)?);
+        }
+    }
+
+    let open_phase = if args.reopen_only || args.direct_checkpoint {
+        "open_prepared"
+    } else {
+        "open_empty"
+    };
+    eprintln!("[scale-bench] {open_phase}");
+    let (mut db, phase) = measure_once(open_phase, 1, || Database::open(&db_path))?;
     phases.push(phase);
-    eprintln!("[scale-bench] put_batches cells={}", args.cells);
-    phases.push(ingest_batches(&mut db, &args)?);
-    eprintln!("[scale-bench] memory after_put");
-    phases.push(memory_phase("after_put", &db)?);
-    eprintln!("[scale-bench] checkpoint");
-    phases.push(
-        measure_once("checkpoint", args.cells, || {
-            db.checkpoint()
-                .map(|_| ())
-                .map_err(|error| error.to_string())
-        })?
-        .1,
-    );
-    eprintln!("[scale-bench] memory after_checkpoint");
-    phases.push(memory_phase("after_checkpoint", &db)?);
+    if args.direct_checkpoint || args.reopen_only {
+        eprintln!("[scale-bench] memory after_open_prepared");
+        phases.push(memory_phase("after_open_prepared", &db)?);
+    } else {
+        eprintln!("[scale-bench] put_batches cells={}", args.cells);
+        phases.push(ingest_batches(&mut db, &args)?);
+        eprintln!("[scale-bench] memory after_put");
+        phases.push(memory_phase("after_put", &db)?);
+        eprintln!("[scale-bench] checkpoint");
+        phases.push(
+            measure_once("checkpoint", args.cells, || {
+                db.checkpoint()
+                    .map(|_| ())
+                    .map_err(|error| error.to_string())
+            })?
+            .1,
+        );
+        eprintln!("[scale-bench] memory after_checkpoint");
+        phases.push(memory_phase("after_checkpoint", &db)?);
+    }
 
     if args.samples > 0 {
         eprintln!("[scale-bench] get_latest samples={}", args.samples);
@@ -134,53 +161,4 @@ pub(crate) fn run() -> Result<(), String> {
         .close()
         .map_err(|error| format!("restart close failed: {error}"))?;
     write_report(&args, started, &phases, &validation, errors)
-}
-
-fn write_report(
-    args: &Args,
-    started: Instant,
-    phases: &[serde_json::Value],
-    validation: &cortex_engine::validation::StorageValidationReport,
-    errors: Vec<String>,
-) -> Result<(), String> {
-    let duration_ms = round_ms(started.elapsed().as_secs_f64() * 1000.0);
-    let report = json!({
-        "schema_version": "cortexdb.scale_benchmark.v1",
-        "ok": errors.is_empty(),
-        "cells": args.cells,
-        "payload_profile": args.payload_bytes
-            .map(|bytes| format!("fixed_{bytes}b"))
-            .unwrap_or_else(|| "realistic_0_5kb_to_4kb".to_owned()),
-        "samples": {
-            "read": args.samples,
-            "search": args.search_samples,
-            "context": args.context_samples,
-            "verify": args.verify_samples,
-        },
-        "duration_ms": duration_ms,
-        "phases": phases,
-        "matrix": matrix_from_phases(phases),
-        "validation": {
-            "manifest_ok": validation.manifest_ok,
-            "wal_ok": validation.wal_ok,
-            "live_segments_checked": validation.live_segments_checked,
-            "cells_checked": validation.cells_checked,
-        },
-        "errors": errors,
-    });
-
-    if let Some(parent) = args.report.parent() {
-        fs::create_dir_all(parent)
-            .map_err(|error| format!("failed to create {}: {error}", parent.display()))?;
-    }
-    fs::write(
-        &args.report,
-        format!("{}\n", serde_json::to_string_pretty(&report).unwrap()),
-    )
-    .map_err(|error| format!("failed to write {}: {error}", args.report.display()))?;
-    if !report["ok"].as_bool().unwrap_or(false) {
-        return Err(format!("scale benchmark failed: {}", args.report.display()));
-    }
-    println!("scale benchmark passed: {}", args.report.display());
-    Ok(())
 }

@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A06` (`EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
+Current pointer: `EPIC-A08` (`EPIC-A06`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
 `EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
 remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
 partial follow-up).
@@ -33,11 +33,11 @@ This queue follows `CortexDB-roadmap/00-status.md`, not raw numeric epic order.
 Partial epics can remain tracked as follow-up work when their accepted phase is
 enough to unblock the next dependency step.
 
-1. `EPIC-A06` — indexed-only retrieve/ContextPack path: current active front;
-   major full-scan work removed; remaining p95/scan-tail evidence stays tracked.
+1. `EPIC-A06` — indexed-only retrieve/ContextPack path: done; query-adjacent
+   scans remain at zero and the 1M prepared-index ContextPack p95 is published.
 2. `EPIC-A07 -> EPIC-A08` — segment v2 plus lazy payload: A07 done, A08
-   phase-1 accepted with 1M RSS evidence; remaining lazy parity/p95 stays
-   tracked as partial follow-up.
+   phase-1 accepted with 1M RSS evidence; remaining lazy parity/p95 is the
+   current active front.
 3. `EPIC-A13` — cost model v0: done.
 4. `EPIC-B01` — ContextPack JSON Schema v1: done.
 5. `EPIC-A15` — transactional WriteBatch API: done.
@@ -171,7 +171,7 @@ enough to unblock the next dependency step.
 
 ### EPIC-A06 — Indexed-only retrieve/ContextPack путь
 
-- status: `in_progress`
+- status: `done`
 - meta: Категория: query-engine · Приоритет: P0 · Горизонт: 60 days · Тип: refactor
 - goal: главный read path обязан быть индексным от начала до конца.
 - problem: Проблема: `try_aql_index` на незачекпоинченных данных строит индекс из `snapshot_versions()` на каждый запрос (query.rs:55-69); ranking парсит metadata в sort-ключе.
@@ -179,16 +179,17 @@ enough to unblock the next dependency step.
   - [x] 0) first cleanup slice: AQL index construction now consumes borrowed `MemTable::visible_iter(txn)` refs instead of cloning `snapshot_versions()` in `query.rs`; `indexed-retrieve-gate-check` is wired into `make check`.
   - [x] 1) поддерживаемый **инкрементальный delta-индекс** MemTable (обновляется в `apply_operation`), мержится с persisted-индексом на чтении — `AqlDeltaIndex` is built once at open/replay, updated after successful put/patch/tombstone, cleared after checkpoint/compact/snapshot install, and consumed by `try_aql_index`.
   - [x] 2) предвычисление rank-ключей один раз на кандидата (sort_by_cached_key) — `rank_retrieved_cells` precomputes metadata, lexical, recency, semantic/trust inputs, and rank keys before sorting; `indexed-retrieve-gate-check` rejects metadata/scoring work inside the retrieval sort key.
-  - [ ] 3) feedback/graph/dedup-пути — на свои инкрементальные структуры (B13, B18, отдельные эпики) либо за candidate-фильтр.
+  - [x] 3) feedback/graph/dedup-пути — на свои инкрементальные структуры (B13, B18, отдельные эпики) либо за candidate-фильтр.
 - acceptance:
   - [x] 1) `grep snapshot_versions` по запросным путям = 0 — `query.rs` is covered by `indexed-retrieve-gate-check`; broader search/context query-adjacent paths are now inventoried by `query-scan-inventory-check` as 0 query-adjacent calls and 8 maintenance/backfill calls.
-  - [ ] 2) p95 retrieve на 1M cells измерен и опубликован
-  - [ ] 3) корректность: фикстуры retrieval-quality без изменений.
+  - [x] 2) p95 retrieve на 1M cells измерен и опубликован
+  - [x] 3) корректность: фикстуры retrieval-quality без изменений.
 - files: cortex-engine/src/query.rs, query/{provider,candidates}.rs, database.rs (apply_operation), search/database.rs.
 - dependencies: A04, A20. Эффект: read path масштабируется индексом, не размером базы.
 - evidence: `EngineAqlIndex` has borrowed builders (`try_from_version_refs`, `from_persisted_refs`) with an equivalence unit test against the owned builder. `Database::try_aql_index` no longer calls `snapshot_versions()`, `changed_cell_ids_after`, or `memtable.visible_iter`; `scripts/indexed_retrieve_gate_check.py` is part of `make check` and rejects reintroducing those scans in `query.rs`. `AqlDeltaIndex` stores changed cell ids plus parsed live metadata once, updates in `apply_operation_with_descriptor`, rebuilds from replayed MemTable at open, and is cleared when checkpoint/compact/snapshot install makes changes persisted. Regression coverage: `retrieve_aql_delta_index_tracks_write_patch_tombstone_checkpoint_reopen`. A06 also inherits the completed C12 rank-key implementation: `rank_retrieved_cells` precomputes metadata, lexical scores, query vector, recency scores, trust, and final rank keys before sorting; the A06 static gate now checks that sort uses the precomputed `(score, index)` key and rejects metadata/scoring work in the retrieval sort key. `query-scan-inventory-check` is wired into `make check` and now keeps query-adjacent full-snapshot calls at zero. A maintained `FeedbackIndex` now removes the four `feedback.rs` full-snapshot scans from ContextPack feedback ordering/reporting: it rebuilds once at open, updates on successful put/patch/tombstone, rebuilds after replication snapshot install, and is covered by `feedback_index_tracks_patch_tombstone_checkpoint_and_reopen`. A maintained `ToolIndex` now removes the `tool_registry.rs` full-snapshot scan from ContextPack tool recommendations/listing: it rebuilds once at open, updates on successful put/patch/tombstone, rebuilds after replication snapshot install, and is covered by `tool_index_tracks_patch_tombstone_checkpoint_and_reopen`. A maintained `SessionIndex` now removes the `session.rs` full-snapshot scan from agent session retrieval: it rebuilds once at open, updates on successful put/patch/tombstone, rebuilds after replication snapshot install, and is covered by `session_index_tracks_patch_tombstone_checkpoint_and_reopen`. A maintained `TemporalFactStore` now removes the `verification/temporal_index.rs` full-snapshot scan from temporal fact listing/latest lookups: it rebuilds once at open, updates on successful put/patch/tombstone, rebuilds after replication snapshot install, and is covered by `temporal_fact_store_tracks_patch_tombstone_checkpoint_and_reopen`. A maintained `CorpusSynonymStore` now removes the `search/synonyms/database.rs` full-snapshot scan from live corpus synonym dictionary publication/building: it rebuilds once at open, updates on successful put/patch/tombstone, rebuilds after replication snapshot install, and is covered by `corpus_synonym_store_tracks_patch_tombstone_checkpoint_and_reopen`. A maintained `GraphIndexStore` now removes both `graph/database.rs` full-snapshot scans from graph traversal/tool-cell query helpers: it rebuilds once at open, updates on successful put/patch/tombstone, rebuilds after replication snapshot install, and is covered by `knowledge_graph_store_tracks_patch_tombstone_checkpoint_and_reopen`. A maintained `SearchContextStore` now removes the three `search/database/expansion.rs` full-snapshot scans from parent/high-level/project search expansion: it rebuilds once at open, updates on successful put/patch/tombstone, rebuilds after replication snapshot install, and is covered by `search_context_store_tracks_patch_tombstone_checkpoint_and_reopen`. A maintained `LiveSearchStore` now removes the final `search/database/snapshot.rs` full-snapshot scan from live search fallback: it rebuilds once at open, updates on successful put/patch/tombstone, rebuilds after replication snapshot install, and is covered by the existing uncheckpointed keyword/vector fallback tests. The current inventory gate reports 0 query-adjacent scan calls, 7 maintenance/backfill calls, and 2 non-runtime gate literals. `scale_benchmark_check` now supports `--payload-bytes` so A06 read-path measurements can use a bounded payload profile instead of spending hours preparing a multi-GB WAL fixture. A 10K smoke with `--payload-bytes 128`, 3 ContextPack samples, and report `target/scale-bench/a06-smoke-10k/report.json` passed with `payload_profile=fixed_128b`, `context_pack.p95_ms=105.871`, and `put_batches.elapsed_ms=34502.587`.
-- next exit step: add or reuse an indexed prepared-fixture/reopen-only scale path so 1M ContextPack p95 can be measured without timing write-heavy fixture preparation, then publish the 1M p95 retrieve evidence.
-- risks: инкрементальный индекс = новый класс багов согласованности — property-тест «индекс ≡ пересборке с нуля» обязателен. Current slice removes the AQL catalog/index rebuild scans but does not yet prove the full A06 indexed-only contract across search/context/feedback/graph paths.
+- latest evidence: `scale_benchmark_check` now supports `--direct-checkpoint` and `--reopen-only`. The direct checkpoint path writes normal segment bundles (`.acs/.acb/.aci/.acv/.ach`) plus manifest before `Database::open`, so A06 can measure indexed read/retrieve without timing WAL ingestion. A 10K direct smoke passed at `target/scale-bench/a06-direct-smoke-10k/report.json` with `context_pack.p95_ms=104.203`, 10 live segments, and `validation.errors=[]`. The 1M direct indexed benchmark passed at `target/scale-bench/a06-direct-1m-context/report.json` with 20 live segments, `validation.cells_checked=1000000`, `manifest_ok=true`, `wal_ok=true`, `open_prepared.elapsed_ms=21559.742`, `context_pack.p50_ms=11064.372`, `context_pack.p95_ms=11633.309`, `context_pack.p99_ms=12034.731`, `context_pack.max_ms=12516.712`, and after-open RSS `12291145728`. `make query-scan-inventory-check` still reports `query_adjacent=0 maintenance_or_backfill=7 non_runtime_gates=2`; `cargo test -p cortex-engine --test context_verify_quality --all-features` passed.
+- next exit step: move to A08, keeping the measured 1M ContextPack latency/RSS as the concrete performance baseline for lazy-payload/full-retrieve follow-up work.
+- risks: инкрементальный индекс = новый класс багов согласованности — property-тест «индекс ≡ пересборке с нуля» обязателен. A06 now proves the indexed contract and publishes 1M p95, but the p95 is high (`11.633s`) and after-open RSS is high (`12.291GB`); that is tracked as performance work in A08/C-performance rather than hidden by this closure.
 
 ### EPIC-A07 — Segment format v2 — payload-офсеты и блочные CRC
 

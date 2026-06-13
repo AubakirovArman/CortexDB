@@ -71,7 +71,7 @@ pub(crate) fn scale_view() -> AgentView {
     }
 }
 
-fn payload(index: usize, payload_bytes: Option<usize>) -> Vec<u8> {
+pub(crate) fn payload(index: usize, payload_bytes: Option<usize>) -> Vec<u8> {
     let scope = match index % 5 {
         0 => "scale",
         1 => "scale",

@@ -10,6 +10,8 @@ pub(crate) struct Args {
     pub(crate) verify_samples: usize,
     pub(crate) batch_size: usize,
     pub(crate) payload_bytes: Option<usize>,
+    pub(crate) direct_checkpoint: bool,
+    pub(crate) reopen_only: bool,
 }
 
 impl Args {
@@ -24,6 +26,8 @@ impl Args {
             verify_samples: 10,
             batch_size: 5_000,
             payload_bytes: None,
+            direct_checkpoint: false,
+            reopen_only: false,
         };
         let mut values = values.peekable();
         while let Some(arg) = values.next() {
@@ -64,6 +68,8 @@ impl Args {
                         "--payload-bytes",
                     )?)
                 }
+                "--direct-checkpoint" => args.direct_checkpoint = true,
+                "--reopen-only" => args.reopen_only = true,
                 "--help" | "-h" => return Err(help_text()),
                 unknown => return Err(format!("unknown argument: {unknown}\n{}", help_text())),
             }
@@ -97,25 +103,9 @@ fn parse_usize(value: String, flag: &str) -> Result<usize, String> {
 }
 
 fn help_text() -> String {
-    "usage: scale_benchmark_check [--root PATH] [--report PATH] [--cells N] [--samples N] [--search-samples N] [--context-samples N] [--verify-samples N] [--batch-size N] [--payload-bytes N]".to_owned()
+    "usage: scale_benchmark_check [--root PATH] [--report PATH] [--cells N] [--samples N] [--search-samples N] [--context-samples N] [--verify-samples N] [--batch-size N] [--payload-bytes N] [--direct-checkpoint] [--reopen-only]".to_owned()
 }
 
 #[cfg(test)]
-mod tests {
-    use super::Args;
-
-    #[test]
-    fn parse_payload_bytes_override() {
-        let args = Args::parse(["--payload-bytes", "128"].into_iter().map(str::to_owned)).unwrap();
-        assert_eq!(args.payload_bytes, Some(128));
-    }
-
-    #[test]
-    fn parse_rejects_zero_payload_bytes() {
-        let error = match Args::parse(["--payload-bytes", "0"].into_iter().map(str::to_owned)) {
-            Ok(_) => panic!("expected --payload-bytes=0 to fail"),
-            Err(error) => error,
-        };
-        assert!(error.contains("--payload-bytes must be positive"));
-    }
-}
+#[path = "args_tests.rs"]
+mod tests;
