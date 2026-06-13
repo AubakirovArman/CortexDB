@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "cortexdb": {
+      "command": "cargo",
+      "args": ["run", "-p", "cortex-mcp", "--"],
+      "env": {
+        "CORTEXDB_MCP_BASE_URL": "http://127.0.0.1:8181",
+        "CORTEXDB_MCP_AUTH_TOKEN": "replace-with-token",
+        "CORTEXDB_MCP_TENANT": "default",
+        "CORTEXDB_MCP_SCOPE": "project:investments",
+        "CORTEXDB_MCP_BRAIN": "default"
+      }
+    }
+  }
+}

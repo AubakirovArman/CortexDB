@@ -1,0 +1,13 @@
+[package]
+name = "cortex-mcp"
+description = "MCP stdio adapter for CortexDB agent tools"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+repository = "https://github.com/AubakirovArman/CortexDB"
+authors = ["CortexDB Contributors"]
+
+[dependencies]
+cortex-sdk = { path = "../cortex-sdk" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

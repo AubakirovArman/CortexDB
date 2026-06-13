@@ -41,6 +41,7 @@ evidence snapshots, benchmark experiments, and release working notes live in
 - [`AUTH.md`](AUTH.md) - auth and token policy.
 - [`CLI.md`](CLI.md) - CLI reference.
 - [`SDK_QUICKSTART.md`](SDK_QUICKSTART.md) - SDK usage.
+- [`MCP.md`](MCP.md) - MCP stdio adapter for agent tools.
 
 ## Operations
 

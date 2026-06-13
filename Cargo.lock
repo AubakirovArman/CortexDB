@@ -380,6 +380,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cortex-mcp"
+version = "0.2.0-beta.1"
+dependencies = [
+ "cortex-sdk",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "cortex-sdk"
 version = "0.2.0-beta.1"
 dependencies = [

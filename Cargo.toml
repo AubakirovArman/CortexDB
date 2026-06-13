@@ -4,6 +4,7 @@ members = [
     "crates/cortex-cli",
     "crates/cortex-core",
     "crates/cortex-engine",
+    "crates/cortex-mcp",
     "crates/cortex-sdk",
     "crates/cortex-server",
     "crates/cortex-storage",
