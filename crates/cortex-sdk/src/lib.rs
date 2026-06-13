@@ -16,6 +16,8 @@
 
 mod aql;
 mod aql_support;
+#[cfg(feature = "async")]
+mod async_client;
 mod client;
 mod context_pack;
 mod generated;
@@ -28,6 +30,8 @@ pub use aql::{
     Aql, AqlBuildError, AqlRetrievalMode, RememberBuilder, RetrieveContextBuilder,
     VerifyFactBuilder,
 };
+#[cfg(feature = "async")]
+pub use async_client::AsyncCortexDbClient;
 pub use client::{CortexDbClient, SdkError, SdkResult};
 pub use context_pack::{
     AnswerGroundingOptionsV1, AnswerGroundingReportV1, AnswerGroundingSpanV1,

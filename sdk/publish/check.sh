@@ -52,7 +52,7 @@ rm -rf "$PY_WHEEL_DIR"
 python3 -m pip wheel --no-deps --wheel-dir "$PY_WHEEL_DIR" "$ROOT/python" >/dev/null
 rm -rf "$PY_WHEEL_DIR"
 
-cargo test -p cortex-api-types -p cortex-sdk --manifest-path "$REPO_ROOT/Cargo.toml"
+cargo test -p cortex-api-types -p cortex-sdk --all-features --manifest-path "$REPO_ROOT/Cargo.toml"
 cargo package -p cortex-api-types --manifest-path "$REPO_ROOT/Cargo.toml" --allow-dirty >/dev/null
 # cortex-sdk depends on cortex-api-types. Cargo resolves versioned dependencies
 # against crates.io before packaging, so verify the SDK package only after

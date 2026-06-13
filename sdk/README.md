@@ -9,7 +9,9 @@ surface and intentionally keep runtime dependencies small.
 - `typescript/cortexdb-client.d.ts`: TypeScript declarations.
 - `typescript/cortexdb-client.ts`: TypeScript source reference.
 - `crates/cortex-api-types`: shared serde wire types used by server and Rust SDK.
-- `crates/cortex-sdk`: blocking Rust HTTP client with crates.io metadata.
+- `crates/cortex-sdk`: Rust HTTP client with crates.io metadata. It exports the
+  blocking `CortexDbClient` by default and `AsyncCortexDbClient` when the
+  `async` feature is enabled.
 
 The SDK APIs are Beta contracts and may still receive additive changes.
 Search clients expose a typed response shape with `search_mode`, `ann_report`,
@@ -25,7 +27,8 @@ the same per-tenant database layout exposed by `cortex-server` and `/dashboard`.
 All clients also expose AQL builder helpers for `RETRIEVE CONTEXT`,
 `VERIFY FACT`, and `REMEMBER` so common integrations do not have to assemble
 query strings by hand.
-`publish/check.sh` validates Python bytecode/tests/wheel packaging, Rust tests,
+`publish/check.sh` validates Python bytecode/tests/wheel packaging, Rust tests
+with all Rust SDK features,
 `cortex-api-types` packaging, SDK version consistency, tenant routing, ANN
 evaluation surface presence, shared API type contracts, and npm package
 dry-runs when npm is installed.

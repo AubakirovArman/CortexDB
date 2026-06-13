@@ -357,6 +357,64 @@ fn client_with_tenant_scopes_requests() {
     );
 }
 
+#[cfg(feature = "async")]
+#[test]
+fn async_client_with_tenant_scopes_requests() {
+    let client = AsyncCortexDbClient::new("http://127.0.0.1:8181").with_tenant("tenant:alpha");
+    assert_eq!(
+        client.url("/v1/stats"),
+        "http://127.0.0.1:8181/v1/stats?tenant=tenant%3Aalpha"
+    );
+    assert_eq!(
+        client.url("/v1/search?scope=project%3Ainvestments"),
+        "http://127.0.0.1:8181/v1/search?scope=project%3Ainvestments&tenant=tenant%3Aalpha"
+    );
+}
+
+#[cfg(feature = "async")]
+#[test]
+fn async_client_core_query_search_and_ingest_futures_are_send() {
+    fn assert_send<T: Send>(_: T) {}
+
+    assert_send(async {
+        let client = AsyncCortexDbClient::new("http://127.0.0.1:8181")
+            .with_token("secret")
+            .with_tenant("tenant:alpha");
+        let _ = client.health_response().await;
+        let _ = client.stats_response().await;
+        let _ = client
+            .aql_response("project:investments", "RETRIEVE CONTEXT;")
+            .await;
+        let _ = client
+            .context_response("project:investments", "RETRIEVE CONTEXT;")
+            .await;
+        let _ = client
+            .verify_response("project:investments", "VERIFY FACT \"x\" IN BRAIN default;")
+            .await;
+        let _ = client
+            .remember_response("project:investments", "REMEMBER \"x\" IN SCOPE default;")
+            .await;
+        let _ = client
+            .search_keyword_response("project:investments", "budget", 10)
+            .await;
+        let _ = client
+            .search_vector_response(
+                "project:investments",
+                &[1, 2, 3],
+                VectorAlgorithm::Exact,
+                10,
+            )
+            .await;
+        let _ = client
+            .evaluate_ann_response("project:investments", &[1, 2, 3], 10)
+            .await;
+        let _ = client
+            .ingest_text_response("project:investments", "memo.md", "body")
+            .await;
+        let _ = client.ingestion_job_response(7).await;
+    });
+}
+
 #[test]
 fn vector_algorithm_is_wire_stable() {
     assert_eq!(VectorAlgorithm::Ann.as_str(), "ann");

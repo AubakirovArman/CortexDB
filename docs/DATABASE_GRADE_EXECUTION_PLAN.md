@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-D08` (`EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
+Current pointer: `EPIC-D09-D10` (`EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
 `EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
 remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
 partial follow-up).
@@ -47,8 +47,8 @@ enough to unblock the next dependency step.
 9. `EPIC-D02` — `cortexdb init` + doctor: done.
 10. `EPIC-D06` — Python SDK typed models, retries, and timeouts: done.
 11. `EPIC-D07` — TypeScript SDK polish: done.
-12. `EPIC-D08` — Async Rust SDK + shared API types: current active front.
-13. `EPIC-D09-D10` — remaining DX wave after SDK publishing/version decisions.
+12. `EPIC-D08` — Async Rust SDK + shared API types: done.
+13. `EPIC-D09-D10` — remaining DX wave after SDK publishing/version decisions: current active front.
 
 ## Summary
 
@@ -212,7 +212,7 @@ enough to unblock the next dependency step.
 
 ### EPIC-A08 — Lazy payload residency, фаза 1 (метаданные в RAM, payload на диске)
 
-- status: `partial`
+- status: `done`
 - meta: Категория: storage · Приоритет: P0 · Горизонт: 90 days · Тип: build
 - goal: свойство №1 «database»: данные > RAM.
 - problem: Проблема: `load_checkpoint` (checkpoint.rs:396-415) грузит все payload'ы в память.
@@ -1306,14 +1306,14 @@ enough to unblock the next dependency step.
 - goal: cortex-sdk блокирующий; типы ответов дублируются с сервером.
 - tasks:
   - [x] 1) `cortex-api-types` (вынести из server/responses.rs) — extracted shared core/system, AQL, search, and verification wire types into `crates/cortex-api-types`; `cortex-sdk` re-exports those types and `cortex-server` uses them for the same response surfaces.
-  - [ ] 2) async-клиент (reqwest) feature-флагом
-  - [x] 3) contract-тесты на оба клиента — shared response compile-contract tests prove SDK uses `cortex_api_types` for core/AQL/search/verification and server snapshots prove the JSON surface stayed stable; api-types has wire-shape tests for batch request and legacy SDK stats decoding.
+  - [x] 2) async-клиент (reqwest) feature-флагом — added feature-gated `AsyncCortexDbClient` with core, AQL/context/verify/remember, search, ingestion, retry, timeout, auth, and tenant routing support.
+  - [x] 3) contract-тесты на оба клиента — shared response compile-contract tests prove SDK uses `cortex_api_types` for core/AQL/search/verification and server snapshots prove the JSON surface stayed stable; api-types has wire-shape tests for batch request and legacy SDK stats decoding, and async SDK tests cover tenant routing plus `Send` futures for the main API groups.
 - acceptance:
   - [x] 1) сервер и SDK используют одни типы — covered for core/system, AQL, search, and verification responses; ContextPack and ingestion validation still track follow-up extraction because they touch generated schema/engine validation types.
-  - [ ] 2) async-клиент проходит те же тесты.
+  - [x] 2) async-клиент проходит те же тесты.
 - files: новый crates/cortex-api-types, cortex-sdk, cortex-server.
 - risks: `cortex-api-types` must be published before `cortex-sdk`; local `sdk-check` verifies `cortex-api-types` package and skips `cortex-sdk` package verification until `CORTEX_API_TYPES_PUBLISHED=1`. Dependencies: B01. Effect: API type drift is now compile-time visible on the migrated surfaces.
-- evidence: `cargo fmt --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, `make check`, `cargo test -p cortex-api-types`, `cargo test -p cortex-sdk shared_with_api_types`, `cargo test -p cortex-server response_snapshot_tests::snapshot`, `cargo package -p cortex-api-types --allow-dirty`, and `make sdk-check` passed.
+- evidence: `cargo fmt --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo clippy -p cortex-sdk --all-features --all-targets -- -D warnings`, `make check`, `make openapi-contract-check`, `cargo test -p cortex-api-types`, `cargo test -p cortex-sdk --all-features`, `cargo test -p cortex-sdk shared_with_api_types`, `cargo test -p cortex-server response_snapshot_tests::snapshot`, `cargo package -p cortex-api-types --allow-dirty`, and `make sdk-check` passed.
 
 ### EPIC-D09 — Docker GHCR + compose quickstart
 
