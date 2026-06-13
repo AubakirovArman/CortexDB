@@ -636,7 +636,7 @@ enough to unblock the next dependency step.
 
 ### EPIC-B06 — Typed provenance model (source_ref, citation, content_hash как колонки)
 
-- status: `pending`
+- status: `partial`
 - meta: Категория: storage · Приоритет: P1 · Горизонт: 90 days · Тип: refactor
 - goal: provenance — продуктовое отличие; строки в payload не дают целостности.
 - problem: Проблема: citation/source/content_hash — текстовые конвенции.
@@ -650,6 +650,28 @@ enough to unblock the next dependency step.
   - [ ] 3) формат описан в DATA_MODEL.md.
 - files: cortex-core/cell.rs, cortex-engine/{ingestion,context}/.
 - risks: вместе с A02 (одна миграция, не две). Зависимости: A02. Эффект: цитаты — данные, а не текст.
+
+Current evidence:
+
+- `make provenance-model-inventory` writes
+  `target/provenance-model/inventory.json`;
+- current inventory status is `partial`: 5 checks pass, 1 is partial, and 1
+  fails;
+- already typed: `CellDescriptor` has `source_trust_q16`, `source`,
+  `citation`, and `content_hash`; engine `CellMetadata` has `SourceRef`;
+  ingestion writes `content_hash`; ContextPack exports `citation` and
+  `source_ref`; dedup/diversity uses `content_hash`;
+- remaining gaps: `SourceRef` is not encoded as first-class
+  descriptor/WAL/storage-boundary data, and `KnowledgeCellMetadata` writes
+  source/trust but not citation/content_hash/source_ref.
+
+Next patch order:
+
+1. add core `SourceRef`/`ProvenanceDescriptor` fields or a nested wire section;
+2. make write/ingestion paths fill descriptor-backed citation/hash/source_ref
+   values;
+3. add no-payload-parse ContextPack citation regression tests;
+4. document descriptor-backed provenance in `DATA_MODEL.md`.
 
 ### EPIC-B07 — Fact/claim store: типизированные факты с numeric-значениями
 

@@ -33,8 +33,18 @@ B06 exit steps:
 
 B06 current state:
 
-- pending; next work is a code audit of current `source_ref`, `citation`,
-  `content_hash`, and `source_trust` handling before changing storage structs.
+- partial; `make provenance-model-inventory` writes
+  `target/provenance-model/inventory.json` and reports `status=partial` with
+  5 passing checks, 1 partial check, and 1 failing check.
+- confirmed ready pieces: descriptor-backed `source_trust_q16`, `source`,
+  `citation`, and `content_hash`; engine `SourceRef`; ingestion
+  `content_hash`; ContextPack citation/source_ref export; content-hash
+  dedup/diversity.
+- remaining B06 blockers: `SourceRef` is not first-class descriptor/WAL data,
+  and `KnowledgeCellMetadata` still cannot write citation/content_hash/source_ref
+  without payload header conventions.
+- next work is the smallest descriptor/storage-compatible provenance patch,
+  then no-payload-parse ContextPack citation tests.
 
 ## Active Partial Tail
 
@@ -442,11 +452,15 @@ High-signal done epics:
 
 ## Partial Snapshot
 
-Partial count in roadmap snapshot: `3`.
+Partial count in roadmap snapshot: `4`.
 
 - A19 scale benchmarks:
   10M lazy evidence, cold outlier analysis, and historical before/after
   optimization labels remain.
+- B06 typed provenance:
+  inventory exists; descriptor-backed citation/hash/trust is partial, but
+  first-class SourceRef descriptor/WAL data and no-payload-parse citation tests
+  remain.
 - C17 perf-regressions:
   local gate exists; hosted scheduled/nightly CI wiring remains deferred.
 - D05 SDK publish:

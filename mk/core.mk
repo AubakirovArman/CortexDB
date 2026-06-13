@@ -1,4 +1,4 @@
-.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check context-pack-schema-contract-check decode-fuzz-check
+.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check context-pack-schema-contract-check provenance-model-inventory decode-fuzz-check
 
 check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check context-pack-schema-contract-check decode-fuzz-check
 	cargo check --workspace
@@ -23,7 +23,7 @@ query-scan-inventory-check:
 
 context-pack-schema-contract-check:
 	python3 scripts/context_pack_schema_contract_check.py
-
+provenance-model-inventory: ; python3 scripts/provenance_model_inventory.py
 decode-fuzz-check:
 	cargo test -p cortex-engine --test decode_fuzz --all-features
 
