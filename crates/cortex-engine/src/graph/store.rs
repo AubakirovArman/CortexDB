@@ -22,14 +22,10 @@ pub(crate) struct GraphIndexRecord {
 
 impl GraphIndexStore {
     pub(crate) fn from_memtable(memtable: &MemTable, txn: ReadTxn) -> Self {
-        let records = memtable
-            .visible_iter(txn)
-            .filter_map(|version| {
-                Self::record_from_payload(version.payload.clone(), &version.descriptor)
-                    .map(|record| (version.cell_id, record))
-            })
-            .collect();
-        Self::from_records(records)
+        Self::from_records(memtable.visible_iter(txn).filter_map(|version| {
+            Self::record_from_payload(version.payload.clone(), &version.descriptor)
+                .map(|record| (version.cell_id, record))
+        }))
     }
 
     pub(crate) fn record_from_payload(
@@ -62,7 +58,10 @@ impl GraphIndexStore {
         self.tools.values().cloned().collect()
     }
 
-    fn from_records(records: BTreeMap<CellId, GraphIndexRecord>) -> Self {
+    pub(crate) fn from_records(
+        records: impl IntoIterator<Item = (CellId, GraphIndexRecord)>,
+    ) -> Self {
+        let records = records.into_iter().collect();
         let mut store = Self {
             records,
             index: KnowledgeGraphIndex::default(),

@@ -2,6 +2,7 @@ use cortex_aql::AgentView;
 use cortex_core::CellId;
 
 use crate::database::Database;
+use crate::options::PayloadResidency;
 use crate::query::CellMetadata;
 
 use super::{parse_temporal_date, TemporalDate};
@@ -36,6 +37,20 @@ pub struct TemporalFactIndex {
 
 impl Database {
     pub fn temporal_fact_index(&self, view: &AgentView) -> TemporalFactIndex {
+        if self.payload_residency == PayloadResidency::Lazy {
+            let records = self
+                .memtable
+                .visible_iter(self.read_txn())
+                .filter_map(|version| {
+                    let payload = self.payload_for_version(version).ok()?;
+                    TemporalFactStore::record_from_payload(
+                        version.cell_id,
+                        &payload,
+                        &version.descriptor,
+                    )
+                });
+            return TemporalFactStore::from_records(records).fact_index(view);
+        }
         self.temporal_fact_store.fact_index(view)
     }
 
@@ -96,6 +111,7 @@ mod tests {
 
     use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 
+    use crate::options::{DatabaseOptions, PayloadResidency};
     use crate::query::scope_id;
 
     use super::*;
@@ -188,6 +204,36 @@ mod tests {
         let latest = db.latest_temporal_facts(&view("project:investments"));
         assert_eq!(latest.len(), 1);
         assert_eq!(latest[0].cell_id, CellId(2));
+        assert_eq!(latest[0].value.as_deref(), Some("15000"));
+    }
+
+    #[test]
+    fn temporal_fact_index_survives_lazy_checkpoint_reopen() {
+        let dir = tempfile::tempdir().unwrap();
+        {
+            let mut db = Database::open(dir.path()).unwrap();
+            db.put_cell(
+                CellId(1),
+                b"scope=project:investments\nstatus=ready\ntype=fact\nas_of=2025-07-01\n\nproject=Apollo\nmetric=budget\nvalue=15000"
+                    .to_vec(),
+            )
+            .unwrap();
+            db.checkpoint().unwrap();
+        }
+
+        let db = Database::open_with_options(
+            dir.path(),
+            DatabaseOptions {
+                payload_residency: PayloadResidency::Lazy,
+                ..DatabaseOptions::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(db.storage_stats().unwrap().memtable_payload_bytes, 0);
+
+        let latest = db.latest_temporal_facts(&view("project:investments"));
+        assert_eq!(latest.len(), 1);
+        assert_eq!(latest[0].cell_id, CellId(1));
         assert_eq!(latest[0].value.as_deref(), Some("15000"));
     }
 

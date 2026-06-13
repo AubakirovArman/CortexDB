@@ -90,4 +90,21 @@ impl SessionIndex {
             .map(|cell| cell.retrieved.clone())
             .collect()
     }
+
+    pub(crate) fn retrieve_from_payload(
+        cell_id: CellId,
+        payload: &[u8],
+        descriptor: &CellDescriptor,
+        session_id: &str,
+        view: &AgentView,
+        now_unix_seconds: u64,
+    ) -> Option<RetrievedCell> {
+        let (_, cell) = Self::record_from_payload(cell_id, payload, descriptor)?;
+        let descriptor_metadata =
+            CellMetadata::from_payload_with_descriptor(&cell.retrieved.payload, descriptor);
+        (cell.session_id == session_id
+            && now_unix_seconds < cell.expires_at_unix_seconds
+            && view.can_read_scope(scope_id(&descriptor_metadata.scope)))
+        .then_some(cell.retrieved)
+    }
 }

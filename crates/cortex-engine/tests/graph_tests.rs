@@ -3,7 +3,7 @@ use cortex_core::{
     CellDescriptor, CellId, CommitSeq, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType,
 };
 use cortex_engine::graph::KnowledgeGraphIndex;
-use cortex_engine::{Database, GraphEdgeKind};
+use cortex_engine::{Database, DatabaseOptions, GraphEdgeKind, PayloadResidency};
 
 fn entity_cell(name: &str, kind: &str, source: &str) -> KnowledgeCell {
     let body = format!("name={name}\nkind={kind}");
@@ -288,6 +288,42 @@ fn knowledge_graph_index_survives_checkpoint_and_reopen() {
     assert_eq!(db.graph_entities("Solar Plant").len(), 1);
     assert_eq!(db.graph_neighbors("Solar Plant").len(), 1);
     assert_eq!(db.graph_cells_for_source("ifc:solar-001"), vec![CellId(1)]);
+}
+
+#[test]
+fn knowledge_graph_index_survives_lazy_checkpoint_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_knowledge_cell(
+            CellId(1),
+            entity_cell("Solar Plant", "project", "ifc:solar-001"),
+        )
+        .unwrap();
+        db.put_knowledge_cell(
+            CellId(2),
+            relation_cell("Solar Plant", "has_sector", "renewable_energy"),
+        )
+        .unwrap();
+        db.put_knowledge_cell(CellId(3), tool_cell("name=calculator\n\nbudget tool"))
+            .unwrap();
+        db.checkpoint().unwrap();
+    }
+
+    let db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            payload_residency: PayloadResidency::Lazy,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+    assert_eq!(db.storage_stats().unwrap().memtable_payload_bytes, 0);
+
+    assert_eq!(db.graph_entities("Solar Plant").len(), 1);
+    assert_eq!(db.graph_neighbors("Solar Plant").len(), 1);
+    assert_eq!(db.graph_cells_for_source("ifc:solar-001"), vec![CellId(1)]);
+    assert_eq!(db.tool_cells()[0].name, Some("calculator".to_owned()));
 }
 
 #[test]

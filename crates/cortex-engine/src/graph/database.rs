@@ -2,14 +2,16 @@ use std::path::PathBuf;
 
 use crate::database::Database;
 use crate::error::EngineResult;
+use crate::options::PayloadResidency;
 
 use super::ackg::ACKG_FILE_NAME;
 use super::types::{GraphEdge, GraphEntity, KnowledgeGraphIndex, ToolCell};
+use super::GraphIndexStore;
 
 impl Database {
     /// Build a deterministic graph index from the current snapshot.
     pub fn knowledge_graph_index(&self) -> KnowledgeGraphIndex {
-        self.graph_index_store.index()
+        self.graph_index_store_snapshot().index()
     }
 
     pub fn knowledge_graph_index_path(&self) -> PathBuf {
@@ -60,6 +62,22 @@ impl Database {
 
     /// Find all Tool cells in the database.
     pub fn tool_cells(&self) -> Vec<ToolCell> {
-        self.graph_index_store.tool_cells()
+        self.graph_index_store_snapshot().tool_cells()
+    }
+
+    fn graph_index_store_snapshot(&self) -> GraphIndexStore {
+        if self.payload_residency != PayloadResidency::Lazy {
+            return self.graph_index_store.clone();
+        }
+
+        let records = self
+            .memtable
+            .visible_iter(self.read_txn())
+            .filter_map(|version| {
+                let payload = self.payload_for_version(version).ok()?;
+                GraphIndexStore::record_from_payload(payload, &version.descriptor)
+                    .map(|record| (version.cell_id, record))
+            });
+        GraphIndexStore::from_records(records)
     }
 }

@@ -3,7 +3,9 @@ use std::io::Write;
 
 use cortex_aql::{AgentId, AgentView, BindError, MemoryType, PolicyError, ScopeId};
 use cortex_core::{CellDescriptor, CellId, CommitSeq, KnowledgeCellType};
-use cortex_engine::{encode_cell_core, scope_id, Database, EngineError};
+use cortex_engine::{
+    encode_cell_core, scope_id, Database, DatabaseOptions, EngineError, PayloadResidency,
+};
 use cortex_storage::wal::{SectionTag, WalCodec, WalRecord, WalRecordType, WalSection};
 use tempfile::tempdir;
 
@@ -116,6 +118,40 @@ fn session_memory_survives_restart() {
         cell.payload
             .windows("restart note".len())
             .any(|w| w == b"restart note")
+    }));
+}
+
+#[test]
+fn session_memory_survives_lazy_checkpoint_reopen() {
+    let dir = tempdir().unwrap();
+    let session_id = {
+        let mut db = Database::open(dir.path()).unwrap();
+        let view = view("agent:finance");
+        let session = db
+            .start_agent_session(&view, "agent:finance", b"lazy context", 60, 1_000)
+            .unwrap();
+        db.remember_session_memory(&session, &view, b"lazy restart note", Some(30), 1_010)
+            .unwrap();
+        db.checkpoint().unwrap();
+        session.session_id
+    };
+
+    let db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            payload_residency: PayloadResidency::Lazy,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+    assert_eq!(db.storage_stats().unwrap().memtable_payload_bytes, 0);
+
+    let cells = db.retrieve_session_cells(&session_id, &view("agent:finance"), 1_020);
+    assert_eq!(cells.len(), 2);
+    assert!(cells.iter().any(|cell| {
+        cell.payload
+            .windows("lazy restart note".len())
+            .any(|window| window == b"lazy restart note")
     }));
 }
 

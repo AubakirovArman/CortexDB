@@ -3,7 +3,9 @@ use std::collections::BTreeSet;
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::{CellDescriptor, CellId, KnowledgeCellType};
 use cortex_engine::context::ContextPackOptions;
-use cortex_engine::{scope_id, Database, ToolDescriptor, ToolPermission};
+use cortex_engine::{
+    scope_id, Database, DatabaseOptions, PayloadResidency, ToolDescriptor, ToolPermission,
+};
 
 fn descriptor(scope: &str, name: &str) -> ToolDescriptor {
     let mut descriptor = ToolDescriptor::new(
@@ -109,6 +111,44 @@ fn tool_index_tracks_patch_tombstone_checkpoint_and_reopen() {
     assert_eq!(legal_tools.len(), 1);
     assert_eq!(legal_tools[0].cell_id, CellId(10));
     assert_eq!(legal_tools[0].descriptor.name, "contract_search");
+}
+
+#[test]
+fn tool_index_survives_lazy_checkpoint_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.register_tool(
+            CellId(10),
+            task_descriptor(
+                "project:investments",
+                "budget_calculator",
+                "calculates investment budget variance and financial exposure",
+            ),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+    }
+
+    let db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            payload_residency: PayloadResidency::Lazy,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+    assert_eq!(db.storage_stats().unwrap().memtable_payload_bytes, 0);
+
+    let tools = db.list_tools(&view("project:investments"));
+    assert_eq!(tools.len(), 1);
+    assert_eq!(tools[0].cell_id, CellId(10));
+    assert_eq!(tools[0].descriptor.name, "budget_calculator");
+
+    let recommendations =
+        db.recommend_tools_for_task(&view("project:investments"), "budget analysis", 2);
+    assert_eq!(recommendations.len(), 1);
+    assert_eq!(recommendations[0].tool.cell_id, CellId(10));
 }
 
 #[test]

@@ -24,12 +24,15 @@ pub(crate) struct TemporalFactIndexEntry {
 
 impl TemporalFactStore {
     pub(crate) fn from_memtable(memtable: &MemTable, txn: ReadTxn) -> Self {
-        let records = memtable
-            .visible_iter(txn)
-            .filter_map(|version| {
-                Self::record_from_payload(version.cell_id, &version.payload, &version.descriptor)
-            })
-            .collect();
+        Self::from_records(memtable.visible_iter(txn).filter_map(|version| {
+            Self::record_from_payload(version.cell_id, &version.payload, &version.descriptor)
+        }))
+    }
+
+    pub(crate) fn from_records(
+        records: impl IntoIterator<Item = (CellId, TemporalFactIndexEntry)>,
+    ) -> Self {
+        let records = records.into_iter().collect();
         Self { records }
     }
 

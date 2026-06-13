@@ -9,7 +9,8 @@ use cortex_core::{
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
-use crate::query::CellMetadata;
+use crate::options::PayloadResidency;
+use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
 
 mod index;
@@ -173,7 +174,24 @@ impl Database {
     }
 
     pub fn list_tools(&self, view: &AgentView) -> Vec<RegisteredTool> {
-        let mut tools = self.tool_index.list_tools(view);
+        let mut tools = if self.payload_residency == PayloadResidency::Lazy {
+            self.memtable
+                .visible_iter(self.read_txn())
+                .filter_map(|version| {
+                    let payload = self.payload_for_version(version).ok()?;
+                    let tool = ToolIndex::record_from_payload(
+                        version.cell_id,
+                        version.created_seq,
+                        &payload,
+                        &version.descriptor,
+                    )?;
+                    view.can_read_scope(scope_id(&tool.descriptor.scope))
+                        .then_some(tool)
+                })
+                .collect()
+        } else {
+            self.tool_index.list_tools(view)
+        };
         tools.sort_by_key(|tool| tool.cell_id);
         tools
     }
