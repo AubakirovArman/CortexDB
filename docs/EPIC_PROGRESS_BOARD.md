@@ -42,8 +42,11 @@ A19 progress:
   `target/scale-bench/a19-search-verify-100k/report.json`;
 - keyword_search and verify_fact p50/p95 now exist for 1M through
   `target/scale-bench/a19-search-verify-1m/report.json`;
-- 10M post-lazy RSS/latency, lazy cold outlier analysis, and larger-scale trend
-  curves remain;
+- `make scale-bench-trends` writes `target/scale-bench/trends.json` and
+  `target/scale-bench/trends.md`; current status is `partial` with 17
+  multi-point current scale curves;
+- 10M post-lazy RSS/latency, lazy cold outlier analysis, and historical
+  before/after A05/A06/A08/A09 optimization curve labels remain;
 - use small/medium gates while implementing; do not run 1M/10M unless this
   epic explicitly needs the evidence.
 
@@ -413,7 +416,8 @@ High-signal done epics:
 Partial count in roadmap snapshot: `3`.
 
 - A19 scale benchmarks:
-  10M lazy evidence, cold outlier analysis, and trend curves remain.
+  10M lazy evidence, cold outlier analysis, and historical before/after
+  optimization labels remain.
 - C16 memory profiling:
   estimated-vs-real verification and gate integration remain.
 - D05 SDK publish:
@@ -431,10 +435,11 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 Work on A19 only:
 
-1. decide whether to run 10M lazy evidence now or keep it as the explicit
-   long-running A19 tail;
-2. add a lightweight trend/history report for the existing 100K/1M evidence if
-   it can close the trend-curve acceptance without a large rerun;
+1. decide whether to keep 10M lazy evidence as the explicit final long-running
+   A19 tail, matching the small/medium-gate rule;
+2. decide whether historical before/after A05/A06/A08/A09 optimization labels
+   can be reconstructed from existing artifacts or must remain an explicit
+   non-reconstructable A19 note;
 3. add or fix benchmark reporting only where it directly closes A19 acceptance;
-4. update the tracker with report paths and move pointer only when A19 is done
-   or explicitly split with accepted follow-up scope.
+4. move pointer to C16/C17 only when A19 is either done or explicitly split with
+   accepted follow-up scope.

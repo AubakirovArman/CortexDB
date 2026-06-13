@@ -1,6 +1,5 @@
 single-node-performance-check:
 	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)" --min-ingest-cells-per-sec "$(SINGLE_NODE_PERF_MIN_INGEST_CELLS_PER_SEC)" --max-rss-bytes "$(SINGLE_NODE_PERF_MAX_RSS_BYTES)"
-
 .PHONY: verify-performance-check
 verify-performance-check:
 	cargo run --release -p cortex-engine --bin verify_performance_check -- --root "$(VERIFY_PERF_ROOT)" --report "$(VERIFY_PERF_REPORT)" --cells "$(VERIFY_PERF_CELLS)" --warmup-samples "$(VERIFY_PERF_WARMUP_SAMPLES)" --samples "$(VERIFY_PERF_SAMPLES)" --max-p95-ms "$(VERIFY_PERF_MAX_P95_MS)"
@@ -9,13 +8,14 @@ verify-performance-check:
 memory-profile:
 	cargo run --release -p cortex-engine --bin memory_profile_check -- --root "$(MEMORY_PROFILE_ROOT)" --report "$(MEMORY_PROFILE_REPORT)" --cells "$(MEMORY_PROFILE_CELLS)" --batch-size "$(MEMORY_PROFILE_BATCH_SIZE)" $(MEMORY_PROFILE_DIRECT_CHECKPOINT) --payload-bytes "$(MEMORY_PROFILE_PAYLOAD_BYTES)" $(MEMORY_PROFILE_REOPEN_ONLY) --read-samples "$(MEMORY_PROFILE_READ_SAMPLES)" --payload-residency "$(MEMORY_PROFILE_PAYLOAD_RESIDENCY)" --max-rss-to-estimated-total-ratio "$(MEMORY_PROFILE_MAX_RSS_TO_ESTIMATED_TOTAL_RATIO)"
 
-.PHONY: scale-bench-100k scale-bench-1m
+.PHONY: scale-bench-100k scale-bench-1m scale-bench-trends
 scale-bench-100k:
 	cargo run --release -p cortex-engine --bin scale_benchmark_check -- --root "$(SCALE_BENCH_ROOT)/100k" --report "$(SCALE_BENCH_100K_REPORT)" --cells 100000 --samples "$(SCALE_BENCH_SAMPLES)" --search-samples "$(SCALE_BENCH_SEARCH_SAMPLES)" --context-samples "$(SCALE_BENCH_CONTEXT_SAMPLES)" --verify-samples "$(SCALE_BENCH_VERIFY_SAMPLES)" --batch-size "$(SCALE_BENCH_BATCH_SIZE)"
 
 scale-bench-1m:
 	cargo run --release -p cortex-engine --bin scale_benchmark_check -- --root "$(SCALE_BENCH_ROOT)/1m" --report "$(SCALE_BENCH_1M_REPORT)" --cells 1000000 --samples "$(SCALE_BENCH_SAMPLES)" --search-samples "$(SCALE_BENCH_SEARCH_SAMPLES)" --context-samples "$(SCALE_BENCH_CONTEXT_SAMPLES)" --verify-samples "$(SCALE_BENCH_VERIFY_SAMPLES)" --batch-size "$(SCALE_BENCH_BATCH_SIZE)"
 
+scale-bench-trends: ; python3 scripts/scale_benchmark_trends.py --root "$(SCALE_BENCH_ROOT)" --report "$(SCALE_BENCH_ROOT)/trends.json" --markdown "$(SCALE_BENCH_ROOT)/trends.md"
 .PHONY: core-property-check core-property-random-check
 core-property-check:
 	cargo test -p cortex-engine --test core_property_tests

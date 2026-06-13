@@ -26,7 +26,7 @@ def report_paths(root: Path) -> list[Path]:
     return sorted(
         path
         for path in root.glob("**/*.json")
-        if path.name != "inventory.json" and "history" not in path.parts
+        if path.name not in {"inventory.json", "trends.json"} and "history" not in path.parts
     )
 
 
@@ -80,7 +80,21 @@ def coverage_by_size(reports: list[dict[str, Any]]) -> dict[str, Any]:
     return coverage
 
 
-def missing_items(coverage: dict[str, Any]) -> list[str]:
+def trend_missing_item(root: Path) -> str:
+    trend_path = root / "trends.json"
+    if not trend_path.exists():
+        return "trend curves: missing multi-point scale trend report"
+    try:
+        trend = read_report(trend_path)
+    except Exception as error:  # noqa: BLE001 - inventory should surface unreadable reports.
+        return f"trend curves: unreadable trend report: {error}"
+    curve_count = trend.get("curve_count")
+    if isinstance(curve_count, int) and curve_count > 0:
+        return "optimization history: missing before/after A05/A06/A08/A09 curve labels"
+    return "trend curves: trend report has no multi-point curves"
+
+
+def missing_items(root: Path, coverage: dict[str, Any]) -> list[str]:
     missing: list[str] = []
     for cells in ("100000", "1000000"):
         entry = coverage.get(cells)
@@ -95,7 +109,7 @@ def missing_items(coverage: dict[str, Any]) -> list[str]:
                 missing.append(f"{cells}: missing {phase} p50/p95")
     if "10000000" not in coverage:
         missing.append("10000000: missing post-lazy RSS/latency report")
-    missing.append("trend curves: missing multi-point before/after optimization history")
+    missing.append(trend_missing_item(root))
     return missing
 
 
@@ -115,7 +129,7 @@ def main() -> int:
             errors.append(f"{path}: {error}")
 
     coverage = coverage_by_size(summaries)
-    missing = missing_items(coverage)
+    missing = missing_items(root, coverage)
     status = "blocked" if errors else ("complete" if not missing else "partial")
     output = {
         "schema_version": "cortexdb.scale_benchmark_inventory.v1",

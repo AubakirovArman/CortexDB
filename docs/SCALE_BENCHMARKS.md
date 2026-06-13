@@ -52,6 +52,20 @@ This writes:
 target/scale-bench/inventory.json
 ```
 
+To build current scale trend curves from existing reports without running a new
+benchmark:
+
+```bash
+make scale-bench-trends
+```
+
+This writes:
+
+```text
+target/scale-bench/trends.json
+target/scale-bench/trends.md
+```
+
 ## Payload Profile
 
 The generated corpus uses realistic text payloads between roughly 0.5KB and
@@ -177,7 +191,38 @@ Summary:
 Open A19 items from the inventory:
 
 - 10M post-lazy RSS/latency report.
-- Multi-point before/after optimization trend curves.
+- Historical before/after A05/A06/A08/A09 optimization curve labels.
+
+## A19 Current Scale Trend Report
+
+Run date: 2026-06-13
+
+Command:
+
+```bash
+make scale-bench-trends
+```
+
+Reports:
+
+```text
+target/scale-bench/trends.json
+target/scale-bench/trends.md
+```
+
+Summary:
+
+| Item | Result |
+| --- | ---: |
+| trend status | partial |
+| multi-point curves | 17 |
+| git revision | recorded in `target/scale-bench/trends.json` |
+
+The current trend report proves that the existing evidence can produce
+multi-point scale curves for the measured 100K/1M corridor. It does not claim
+the full A19 optimization-history requirement: the remaining open items are the
+10M post-lazy RSS/latency point and historical before/after A05/A06/A08/A09
+curve labels.
 
 ## A19 100K Search/Verify Instrumentation
 
