@@ -8,6 +8,7 @@ use cortex_storage::manifest::{ManifestSegment, StorageManifest};
 use cortex_storage::segment::{SegmentCellRef, SegmentWriter};
 
 use super::{load_checkpoint, segment_path, segments_path};
+use crate::options::PayloadResidency;
 use crate::Database;
 
 fn cell(body: &str) -> KnowledgeCell {
@@ -118,7 +119,7 @@ fn load_checkpoint_prefers_segment_descriptor_over_payload_headers() {
     .store(super::manifest_path(dir.path()))
     .unwrap();
 
-    let checkpoint = load_checkpoint(dir.path()).unwrap();
+    let checkpoint = load_checkpoint(dir.path(), PayloadResidency::Memory).unwrap();
     let version = checkpoint
         .memtable
         .read(ReadTxn::at(CommitSeq(7)), CellId(42))

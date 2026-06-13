@@ -5,7 +5,8 @@ use std::fmt;
 use cortex_storage::wal::DurabilityMode;
 
 use crate::options::{
-    CompactionPolicy, DatabaseOptions, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
+    CompactionPolicy, DatabaseOptions, EngineFeatureFlags, PayloadResidency, RecoveryMode,
+    StaleLockPolicy,
 };
 use crate::search::{HnswBuildConfig, HnswBuildProfile};
 
@@ -42,6 +43,7 @@ impl EngineConfig {
             durability_mode: parse_durability_mode(&vars)?,
             recovery_mode: parse_recovery_mode(&vars)?,
             stale_lock_policy: parse_stale_lock_policy(&vars)?,
+            payload_residency: parse_payload_residency(&vars)?,
             hnsw_build_config: parse_hnsw_build_config(&vars)?,
             feature_flags,
             ingestion_backpressure: Default::default(),
@@ -157,6 +159,23 @@ fn parse_stale_lock_policy(
     }
 }
 
+fn parse_payload_residency(
+    vars: &BTreeMap<String, String>,
+) -> Result<PayloadResidency, EngineConfigError> {
+    let Some(raw) = var(vars, "CORTEXDB_PAYLOAD_RESIDENCY") else {
+        return Ok(PayloadResidency::Memory);
+    };
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "memory" => Ok(PayloadResidency::Memory),
+        "lazy" => Ok(PayloadResidency::Lazy),
+        _ => Err(EngineConfigError::new(
+            "CORTEXDB_PAYLOAD_RESIDENCY",
+            raw,
+            "memory or lazy",
+        )),
+    }
+}
+
 fn parse_hnsw_build_config(
     vars: &BTreeMap<String, String>,
 ) -> Result<HnswBuildConfig, EngineConfigError> {
@@ -199,6 +218,7 @@ mod tests {
             ("CORTEXDB_DURABILITY_MODE", "balanced"),
             ("CORTEXDB_RECOVERY_MODE", "best_effort"),
             ("CORTEXDB_STALE_LOCK_POLICY", "break"),
+            ("CORTEXDB_PAYLOAD_RESIDENCY", "lazy"),
             ("CORTEXDB_HNSW_PROFILE", "audit"),
             ("CORTEXDB_EXPERIMENTAL_HNSW", "true"),
             ("CORTEXDB_EXPERIMENTAL_REPLICATION", "1"),
@@ -218,6 +238,10 @@ mod tests {
             StaleLockPolicy::Break
         );
         assert_eq!(
+            config.database_options.payload_residency,
+            PayloadResidency::Lazy
+        );
+        assert_eq!(
             config.database_options.hnsw_build_config,
             HnswBuildConfig::for_profile(HnswBuildProfile::Audit)
         );
@@ -235,5 +259,8 @@ mod tests {
     fn engine_config_rejects_invalid_values() {
         let error = EngineConfig::from_env_vars([("CORTEXDB_RECOVERY_MODE", "maybe")]).unwrap_err();
         assert_eq!(error.variable, "CORTEXDB_RECOVERY_MODE");
+        let error =
+            EngineConfig::from_env_vars([("CORTEXDB_PAYLOAD_RESIDENCY", "maybe")]).unwrap_err();
+        assert_eq!(error.variable, "CORTEXDB_PAYLOAD_RESIDENCY");
     }
 }

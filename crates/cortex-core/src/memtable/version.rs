@@ -15,8 +15,21 @@ pub struct CellVersion {
     pub deleted_seq: Option<CommitSeq>,
     pub descriptor: CellDescriptor,
     pub payload: Vec<u8>,
+    pub payload_ref: PayloadRef,
     pub delta_depth: u32,
     pub index_debt: IndexDebt,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PayloadRef {
+    Inline,
+    Segment {
+        segment_id: u64,
+        candidate_id: u32,
+        offset: u64,
+        len: u64,
+        crc32c: u32,
+    },
 }
 
 impl CellVersion {
@@ -43,9 +56,36 @@ impl CellVersion {
             deleted_seq: None,
             descriptor,
             payload,
+            payload_ref: PayloadRef::Inline,
             delta_depth,
             index_debt: IndexDebt::default(),
         }
+    }
+
+    pub fn new_with_payload_ref(
+        cell_id: CellId,
+        created_seq: CommitSeq,
+        descriptor: CellDescriptor,
+        payload_ref: PayloadRef,
+    ) -> Self {
+        Self {
+            cell_id,
+            created_seq,
+            deleted_seq: None,
+            descriptor,
+            payload: Vec::new(),
+            payload_ref,
+            delta_depth: 0,
+            index_debt: IndexDebt::default(),
+        }
+    }
+
+    pub fn resident_payload_len(&self) -> usize {
+        self.payload.len()
+    }
+
+    pub fn is_payload_resident(&self) -> bool {
+        matches!(self.payload_ref, PayloadRef::Inline)
     }
 
     pub fn visible_at(&self, read_seq: CommitSeq) -> bool {

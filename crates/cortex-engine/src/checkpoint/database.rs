@@ -3,7 +3,7 @@ use std::fs;
 
 use cortex_core::{CellId, CommitSeq};
 use cortex_storage::manifest::ManifestSegment;
-use cortex_storage::segment::{SegmentCellRef, SegmentWriter};
+use cortex_storage::segment::{SegmentCell, SegmentCellRecord, SegmentCellRef, SegmentWriter};
 
 use crate::database::{CheckpointStats, Database};
 use crate::error::{EngineError, EngineResult};
@@ -108,10 +108,9 @@ impl Database {
                 checkpoint_seq: self.current_seq,
             });
         }
-        let vector_profile = {
-            let cells = self.full_snapshot_cell_refs()?;
-            vector::vector_profile_for_cell_refs(&cells, self.hnsw_build_config)
-        }?;
+        let records = self.full_snapshot_segment_records()?;
+        let cells = segment_record_refs(&records);
+        let vector_profile = vector::vector_profile_for_cell_refs(&cells, self.hnsw_build_config)?;
 
         let archived_wal = self.writer.rotate().map_err(|e| {
             EngineError::Storage(cortex_storage::StorageError::Io(std::io::Error::other(
@@ -122,8 +121,7 @@ impl Database {
         let segment_id = self.manifest.generation + 1;
         let segment_path = segment_path(&self.segments_path, segment_id);
         let cells_flushed = {
-            let cells = self.full_snapshot_cell_refs()?;
-            SegmentWriter::write_refs(&segment_path, &cells)?;
+            SegmentWriter::write_records(&segment_path, &records)?;
 
             let index = EngineAqlIndex::try_from_segment_cell_refs(&cells)?;
             index
@@ -164,14 +162,14 @@ impl Database {
     fn persisted_candidate_map(&self) -> EngineResult<BTreeMap<CellId, u32>> {
         let mut map = BTreeMap::new();
         for segment in &self.manifest.live_segments {
-            for cell in cortex_storage::segment::SegmentReader::read(segment_path(
+            for entry in cortex_storage::segment::SegmentReader::read_descriptors(segment_path(
                 &self.segments_path,
                 segment.id,
             ))? {
-                if cell.deleted_seq.is_some() {
-                    map.remove(&CellId(cell.cell_id));
+                if entry.deleted_seq.is_some() {
+                    map.remove(&CellId(entry.cell_id));
                 } else {
-                    map.insert(CellId(cell.cell_id), cell.candidate_id);
+                    map.insert(CellId(entry.cell_id), entry.candidate_id);
                 }
             }
         }
@@ -233,4 +231,37 @@ impl Database {
             })
             .collect()
     }
+
+    fn full_snapshot_segment_records(&self) -> EngineResult<Vec<SegmentCellRecord>> {
+        self.memtable
+            .visible_iter(self.read_txn())
+            .enumerate()
+            .map(|(ordinal, version)| {
+                Ok(SegmentCellRecord {
+                    cell: SegmentCell {
+                        candidate_id: candidate_from_ordinal(ordinal)?,
+                        cell_id: version.cell_id.0,
+                        created_seq: version.created_seq.0,
+                        deleted_seq: None,
+                        payload: self.payload_for_version(version)?,
+                    },
+                    descriptor: Some(version.descriptor.encode_section_v1()),
+                })
+            })
+            .collect()
+    }
+}
+
+fn segment_record_refs(records: &[SegmentCellRecord]) -> Vec<SegmentCellRef<'_>> {
+    records
+        .iter()
+        .map(|record| SegmentCellRef {
+            candidate_id: record.cell.candidate_id,
+            cell_id: record.cell.cell_id,
+            created_seq: record.cell.created_seq,
+            deleted_seq: record.cell.deleted_seq,
+            descriptor: record.descriptor.clone(),
+            payload: &record.cell.payload,
+        })
+        .collect()
 }

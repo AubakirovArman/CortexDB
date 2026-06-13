@@ -4,7 +4,7 @@ mod version;
 use std::collections::BTreeMap;
 
 pub use accumulator::{CellAccumulator, SectionFragment};
-pub use version::{CellVersion, IndexDebt};
+pub use version::{CellVersion, IndexDebt, PayloadRef};
 
 use crate::cell::CellDescriptor;
 use crate::error::{CoreError, CoreResult};
@@ -58,6 +58,24 @@ impl MemTable {
             .or_default()
             .push(CellVersion::new_with_descriptor(
                 cell_id, seq, payload, 0, descriptor,
+            ));
+    }
+
+    pub fn put_cell_with_payload_ref(
+        &mut self,
+        cell_id: CellId,
+        seq: CommitSeq,
+        descriptor: CellDescriptor,
+        payload_ref: PayloadRef,
+    ) {
+        self.versions
+            .entry(cell_id)
+            .or_default()
+            .push(CellVersion::new_with_payload_ref(
+                cell_id,
+                seq,
+                descriptor,
+                payload_ref,
             ));
     }
 
@@ -277,7 +295,7 @@ impl MemTable {
             stats.version_count += versions.len();
             stats.payload_bytes += versions
                 .iter()
-                .map(|version| version.payload.len())
+                .map(CellVersion::resident_payload_len)
                 .sum::<usize>();
             if versions
                 .last()

@@ -155,7 +155,7 @@ impl<P: CandidateResolver> PhysicalOp for QualityFilter<'_, P> {
                 .filter(|version| {
                     cell_version_meets_quality_thresholds(version, &self.plan.quality_thresholds)
                 })
-                .map(RetrievedCell::from_version);
+                .and_then(|version| self.database.retrieved_cell_from_version(version).ok());
             if let Some(cell) = cell {
                 self.trace.output_count += 1;
                 return Some(cell);

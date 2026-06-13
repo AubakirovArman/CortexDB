@@ -65,6 +65,42 @@ WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#;
 }
 
 #[test]
+fn retrieve_aql_lazy_payload_residency_reads_checkpoint_payload_on_demand() {
+    let dir = tempfile::tempdir().unwrap();
+    let payload =
+        b"scope=project:investments\nstatus=ready\ntitle=lazy budget\n\nlazy budget payload body"
+            .to_vec();
+    let query = r#"RETRIEVE CONTEXT FOR TASK "lazy budget" IN BRAIN investment_projects
+WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#;
+
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), payload.clone()).unwrap();
+        db.checkpoint().unwrap();
+    }
+
+    let db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            payload_residency: PayloadResidency::Lazy,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+
+    assert_eq!(db.payload_residency(), PayloadResidency::Lazy);
+    assert_eq!(db.storage_stats().unwrap().memtable_payload_bytes, 0);
+    assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), payload);
+
+    let cells = db
+        .retrieve_aql(query, &view(scope_id("project:investments")))
+        .unwrap();
+    assert_eq!(cells.len(), 1);
+    assert_eq!(cells[0].cell_id, CellId(1));
+    assert_eq!(cells[0].payload, payload);
+}
+
+#[test]
 fn retrieve_aql_with_allowed_cells_restricts_candidate_pool() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();

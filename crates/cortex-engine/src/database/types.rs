@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use cortex_aql::BitmapProvider;
-use cortex_core::memtable::{CellVersion, MemTable, ReadTxn};
+use cortex_core::memtable::{MemTable, ReadTxn};
 use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::manifest::StorageManifest;
 use cortex_storage::wal::{DurabilityMode, WalWriterHandle};
@@ -12,7 +12,7 @@ use crate::checkpoint::PersistedIndexCache;
 use crate::feedback::FeedbackIndex;
 use crate::graph::GraphIndexStore;
 use crate::lock::DatabaseLock;
-use crate::options::{CompactionPolicy, EngineFeatureFlags};
+use crate::options::{CompactionPolicy, EngineFeatureFlags, PayloadResidency};
 use crate::query::cache::AqlQueryCache;
 use crate::query::AqlDeltaIndex;
 use crate::query::CellMetadata;
@@ -36,6 +36,7 @@ pub struct Database {
     pub(crate) writer: WalWriterHandle,
     pub(crate) current_seq: CommitSeq,
     pub(crate) durability_mode: DurabilityMode,
+    pub(crate) payload_residency: PayloadResidency,
     pub(crate) hnsw_build_config: HnswBuildConfig,
     pub(crate) feature_flags: EngineFeatureFlags,
     pub(crate) ingestion_backpressure_policy: crate::ingestion::IngestionBackpressurePolicy,
@@ -100,14 +101,6 @@ impl RetrievedCell {
             cell_id,
             payload,
             descriptor,
-        }
-    }
-
-    pub(crate) fn from_version(version: &CellVersion) -> Self {
-        Self {
-            cell_id: version.cell_id,
-            payload: version.payload.clone(),
-            descriptor: version.descriptor.clone(),
         }
     }
 

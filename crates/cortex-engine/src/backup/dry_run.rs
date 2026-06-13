@@ -14,6 +14,7 @@ use crate::checkpoint::{
     bitmap_path, hnsw_path, lexical_path, load_checkpoint, segment_path, segments_path, vector_path,
 };
 use crate::error::{EngineError, EngineResult};
+use crate::options::PayloadResidency;
 use crate::validation::StorageValidation;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -79,7 +80,7 @@ fn inspect_database_dir(path: &Path) -> EngineResult<InspectReport> {
 }
 
 fn validate_backup_read_only(root: &Path) -> EngineResult<StorageValidation> {
-    let checkpoint = load_checkpoint(root)?;
+    let checkpoint = load_checkpoint(root, PayloadResidency::Memory)?;
     let segments = segments_path(root);
     let mut cells_checked = 0;
     for segment in &checkpoint.manifest.live_segments {

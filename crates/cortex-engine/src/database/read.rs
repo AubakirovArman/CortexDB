@@ -4,12 +4,14 @@ use std::sync::Arc;
 #[cfg(test)]
 use cortex_aql::eval_bitmap_program;
 use cortex_aql::BoundRetrievePlan;
-use cortex_core::memtable::{CellVersion, ReadTxn};
+use cortex_core::memtable::{CellVersion, PayloadRef, ReadTxn};
 use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::manifest::StorageManifest;
+use cortex_storage::segment::SegmentReader;
 
 use super::{CandidateResolver, Database, PinnedReadTxn, RetrievedCell};
-use crate::error::EngineResult;
+use crate::checkpoint::segment_path;
+use crate::error::{EngineError, EngineResult};
 use crate::exec::{execute_retrieve, RetrieveExecutionReport};
 #[cfg(test)]
 use crate::retrieval_quality::cell_version_meets_quality_thresholds;
@@ -52,7 +54,7 @@ impl Database {
     pub fn get_cell(&self, txn: ReadTxn, cell_id: CellId) -> Option<Vec<u8>> {
         self.memtable
             .read(txn, cell_id)
-            .map(|version| version.payload.clone())
+            .and_then(|version| self.payload_for_version(version).ok())
     }
 
     /// Read the latest visible payload for a cell.
@@ -78,7 +80,11 @@ impl Database {
     ) -> Option<(Vec<u8>, CellDescriptor)> {
         self.memtable
             .read(self.read_txn(), cell_id)
-            .map(|version| (version.payload.clone(), version.descriptor.clone()))
+            .and_then(|version| {
+                self.payload_for_version(version)
+                    .ok()
+                    .map(|payload| (payload, version.descriptor.clone()))
+            })
     }
 
     pub fn retrieve_cells<P: CandidateResolver>(
@@ -115,7 +121,7 @@ impl Database {
                     .filter(|version| {
                         cell_version_meets_quality_thresholds(version, &plan.quality_thresholds)
                     })
-                    .map(RetrievedCell::from_version)
+                    .and_then(|version| self.retrieved_cell_from_version(version).ok())
             })
             .collect::<Vec<_>>();
         let ranked =
@@ -206,5 +212,35 @@ impl Database {
 
     pub(crate) fn snapshot_versions(&self) -> Vec<CellVersion> {
         self.memtable.visible_cells(self.read_txn())
+    }
+
+    pub(crate) fn retrieved_cell_from_version(
+        &self,
+        version: &CellVersion,
+    ) -> EngineResult<RetrievedCell> {
+        Ok(RetrievedCell {
+            cell_id: version.cell_id,
+            payload: self.payload_for_version(version)?,
+            descriptor: version.descriptor.clone(),
+        })
+    }
+
+    pub(crate) fn payload_for_version(&self, version: &CellVersion) -> EngineResult<Vec<u8>> {
+        match &version.payload_ref {
+            PayloadRef::Inline => Ok(version.payload.clone()),
+            PayloadRef::Segment {
+                segment_id,
+                candidate_id,
+                ..
+            } => Ok(SegmentReader::read_payload_at(
+                segment_path(&self.segments_path, *segment_id),
+                *candidate_id,
+            )?
+            .ok_or_else(|| {
+                EngineError::StorageInvariant(format!(
+                    "segment {segment_id} is missing payload for candidate {candidate_id}"
+                ))
+            })?),
+        }
     }
 }

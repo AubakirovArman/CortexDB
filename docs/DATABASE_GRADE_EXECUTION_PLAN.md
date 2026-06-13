@@ -214,15 +214,15 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-A08 — Lazy payload residency, фаза 1 (метаданные в RAM, payload на диске)
 
-- status: `pending`
+- status: `partial`
 - meta: Категория: storage · Приоритет: P0 · Горизонт: 90 days · Тип: build
 - goal: свойство №1 «database»: данные > RAM.
 - problem: Проблема: `load_checkpoint` (checkpoint.rs:396-415) грузит все payload'ы в память.
 - tasks:
-  - [ ] 1) `PayloadRef::{Inline(Vec<u8>), Segment{segment_id, offset, len}}` в CellVersion
-  - [ ] 2) open: descriptors+индексы в RAM, payload — on-demand (pread/mmap) через LRU page cache
-  - [ ] 3) конфиг `payload_residency = memory | lazy` (дефолт memory до стабилизации)
-  - [ ] 4) интеграция с executor: payload читается только для ячеек, прошедших permission+rank+budget (см. B03)
+  - [x] 1) `PayloadRef` в CellVersion: inline-compatible default plus `Segment{segment_id, candidate_id, offset, len, crc32c}` for checkpoint-backed payloads
+  - [ ] 2) partial: open keeps descriptors in RAM and reads payload on-demand via `SegmentReader::read_payload_at`; LRU page cache is still pending
+  - [x] 3) конфиг `payload_residency = memory | lazy` (дефолт memory до стабилизации)
+  - [ ] 4) partial: AQL/get materialize payload through `Database::payload_for_version`; secondary live stores still need lazy-aware hydration
   - [ ] 5) crash/recovery матрица в обоих режимах.
 - acceptance:
   - [ ] 1) RSS на 1M cells в lazy ≥ 5x ниже memory-режима (бенч)
@@ -230,6 +230,8 @@ This queue follows section 7 of the source plan and dependency notes from the ep
   - [ ] 3) p95 retrieve в lazy задокументирован рядом с memory.
 - files: cortex-core/memtable/version.rs; cortex-engine/{checkpoint,database}.rs; новый cache-модуль.
 - dependencies: A02, A07, A20. Эффект: потолок масштаба переезжает с RAM на диск.
+- evidence: `PayloadResidency::{Memory, Lazy}` is exposed through `DatabaseOptions` and env config `CORTEXDB_PAYLOAD_RESIDENCY`. `load_checkpoint` now has memory and lazy branches: lazy reads `ACS3` descriptors without payload copies and stores segment-backed `PayloadRef` entries in MemTable. `Database::payload_for_version` materializes segment-backed payloads on demand through `SegmentReader::read_payload_at`, and `get_latest_cell`, descriptor reads, direct AQL retrieval, and executor scan materialization use that resolver. `storage_stats.memtable_payload_bytes` now measures resident bytes only. Regression coverage: `retrieve_aql_lazy_payload_residency_reads_checkpoint_payload_on_demand` verifies checkpoint -> lazy reopen -> zero resident MemTable payload bytes -> `get` and AQL payload retrieval from disk. Targeted checks passed: `cargo test -p cortex-engine --test query_search --all-features`, `cargo test -p cortex-engine --test checkpoint --all-features`, and `cargo check -p cortex-engine --all-features`.
+- next exit step: add lazy-aware secondary store hydration or make those stores descriptor/index-backed, then add the LRU page cache and lazy crash matrix before marking A08 done.
 - risks: ВЫСОКИЕ — самое глубокое вмешательство; только после A04-A07 и A20; за флагом.
 
 ### EPIC-A09 — Disk-resident индексы: инкрементальный merge без полной пересборки

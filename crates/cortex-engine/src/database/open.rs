@@ -16,7 +16,8 @@ use crate::feedback::FeedbackIndex;
 use crate::graph::GraphIndexStore;
 use crate::lock::DatabaseLock;
 use crate::options::{
-    DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
+    DatabaseOptions, EngineFeature, EngineFeatureFlags, PayloadResidency, RecoveryMode,
+    StaleLockPolicy,
 };
 use crate::query::cache::AqlQueryCache;
 use crate::query::AqlDeltaIndex;
@@ -50,6 +51,10 @@ impl Database {
         self.feature_flags
     }
 
+    pub fn payload_residency(&self) -> PayloadResidency {
+        self.payload_residency
+    }
+
     pub(crate) fn require_feature(&self, feature: EngineFeature) -> EngineResult<()> {
         if self.feature_flags.is_enabled(feature) {
             Ok(())
@@ -78,7 +83,7 @@ impl Database {
         let wal_path = root_path.join("db.aclog");
         let manifest_path = manifest_path(&root_path);
         let segments_path = segments_path(&root_path);
-        let checkpoint = load_checkpoint(&root_path)?;
+        let checkpoint = load_checkpoint(&root_path, options.payload_residency)?;
         let wal_files = find_wal_files(&wal_path);
         let mut current_memtable = checkpoint.memtable;
         let mut current_seq = CommitSeq(checkpoint.manifest.checkpoint_seq);
@@ -130,6 +135,7 @@ impl Database {
             writer,
             current_seq,
             durability_mode: options.durability_mode,
+            payload_residency: options.payload_residency,
             hnsw_build_config: options.hnsw_build_config.normalized(),
             feature_flags: options.feature_flags,
             ingestion_backpressure_policy: options.ingestion_backpressure,

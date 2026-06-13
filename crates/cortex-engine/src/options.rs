@@ -48,6 +48,12 @@ pub enum StaleLockPolicy {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PayloadResidency {
+    Memory,
+    Lazy,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EngineFeature {
     ExperimentalHnsw,
     ExperimentalReplication,
@@ -123,6 +129,7 @@ pub struct DatabaseOptions {
     pub durability_mode: DurabilityMode,
     pub recovery_mode: RecoveryMode,
     pub stale_lock_policy: StaleLockPolicy,
+    pub payload_residency: PayloadResidency,
     pub hnsw_build_config: HnswBuildConfig,
     pub feature_flags: EngineFeatureFlags,
     pub ingestion_backpressure: IngestionBackpressurePolicy,
@@ -135,6 +142,7 @@ impl Default for DatabaseOptions {
             durability_mode: DurabilityMode::Strict,
             recovery_mode: RecoveryMode::Strict,
             stale_lock_policy: StaleLockPolicy::Reject,
+            payload_residency: PayloadResidency::Memory,
             hnsw_build_config: HnswBuildConfig::default(),
             feature_flags: EngineFeatureFlags::production_safe(),
             ingestion_backpressure: IngestionBackpressurePolicy::default(),

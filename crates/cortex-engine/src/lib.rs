@@ -136,8 +136,8 @@ pub use operation::{
     DbOperationKind, DecodedCellCore, DecodedDbOperation, OperationDecoder, OperationEncoder,
 };
 pub use options::{
-    CompactionPolicy, DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode,
-    StaleLockPolicy,
+    CompactionPolicy, DatabaseOptions, EngineFeature, EngineFeatureFlags, PayloadResidency,
+    RecoveryMode, StaleLockPolicy,
 };
 pub use plan::{LogicalPlan, LogicalPlanNode, LogicalPlanReport, PolicyRewrite};
 pub use query::{

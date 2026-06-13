@@ -91,6 +91,24 @@ impl SegmentWriter {
         write_atomic(path.as_ref(), &out)?;
         Ok(())
     }
+
+    pub fn write_records(
+        path: impl AsRef<Path>,
+        records: &[SegmentCellRecord],
+    ) -> StorageResult<()> {
+        let refs = records
+            .iter()
+            .map(|record| SegmentCellRef {
+                candidate_id: record.cell.candidate_id,
+                cell_id: record.cell.cell_id,
+                created_seq: record.cell.created_seq,
+                deleted_seq: record.cell.deleted_seq,
+                descriptor: record.descriptor.clone(),
+                payload: &record.cell.payload,
+            })
+            .collect::<Vec<_>>();
+        Self::write_refs(path, &refs)
+    }
 }
 
 impl SegmentReader {
