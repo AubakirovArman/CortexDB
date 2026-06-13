@@ -1,5 +1,9 @@
 use serde::Serialize;
 
+mod context;
+
+pub use context::*;
+
 #[derive(Serialize)]
 pub struct ErrorResponse {
     pub code: String,
@@ -111,85 +115,6 @@ pub struct CliAnnEvaluationResponse {
     pub ann_top_k: Vec<u32>,
     pub overlap_count: usize,
     pub recall_q16: u16,
-}
-
-#[derive(Serialize)]
-pub struct ContextPackResponse {
-    pub schema_version: &'static str,
-    pub token_budget_tokens: u32,
-    pub estimated_tokens: u32,
-    pub truncated: bool,
-    pub citations_required: bool,
-    pub answerability_q16: u16,
-    pub conflict_visibility_q16: u16,
-    pub visible_conflict_count: u32,
-    pub cells: Vec<ContextPackCellResponse>,
-    pub anomalies: Vec<ContextPackAnomalyResponse>,
-}
-
-#[derive(Serialize)]
-pub struct ContextPackCellResponse {
-    pub cell_id: u64,
-    pub estimated_tokens: u32,
-    pub citation: Option<String>,
-    pub payload_text: String,
-    pub explain: Option<ContextPackExplainResponse>,
-    pub source_ref: Option<SourceRefResponse>,
-    pub provenance: Option<ContextSpanProvenanceResponse>,
-}
-
-#[derive(Serialize)]
-pub struct ContextSpanProvenanceResponse {
-    pub source_cell_id: u64,
-    pub source_byte_start: usize,
-    pub source_byte_end: usize,
-    pub source_line_start: u32,
-    pub source_line_end: u32,
-    pub source_ref: Option<SourceRefResponse>,
-}
-
-#[derive(Serialize)]
-pub struct ContextPackExplainResponse {
-    pub score: u32,
-    pub matched_terms: Vec<String>,
-    pub why_selected: String,
-    pub score_components: Vec<ContextPackScoreComponentResponse>,
-    pub base_bm25: u32,
-    pub source_trust_q16: u16,
-    pub source_trust_category: String,
-    pub source_trust_bonus: u32,
-    pub source_freshness_q16: u16,
-    pub source_freshness_category: String,
-    pub source_freshness_bonus: u32,
-    pub redundancy_penalty: u32,
-}
-
-#[derive(Serialize)]
-pub struct ContextPackScoreComponentResponse {
-    pub name: String,
-    pub value: u32,
-    pub contribution: i32,
-    pub reason: String,
-}
-
-#[derive(Serialize)]
-pub struct SourceRefResponse {
-    pub source_id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source_url: Option<String>,
-    pub document_id: Option<String>,
-    pub page: Option<u32>,
-    pub cell_range: Option<String>,
-    pub json_path: Option<String>,
-    pub confidence_q16: u16,
-}
-
-#[derive(Serialize)]
-pub struct ContextPackAnomalyResponse {
-    pub cell_id: Option<u64>,
-    pub code: String,
-    pub message: String,
-    pub why_excluded: Option<String>,
 }
 
 #[derive(Serialize)]
