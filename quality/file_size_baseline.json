@@ -5190,9 +5190,16 @@
     "crates/cortex-storage/src/segment.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 365,
+      "lines": 289,
       "soft_limit": 300,
       "warning_limit": 600
+    },
+    "crates/cortex-storage/src/segment/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 75,
+      "soft_limit": 600,
+      "warning_limit": 1200
     },
     "crates/cortex-storage/src/vectors.rs": {
       "hard_limit": 1000,
