@@ -17,7 +17,7 @@ make public-benchmarks-check
 | Release | Status | Benchmark evidence | Public boundary |
 | --- | --- | --- | --- |
 | `v0.1.0-core-alpha.5` | Core Alpha prerelease | ANN smoke baseline package, demo-domain ANN baseline package, local binary package validation, dashboard package, and Core Alpha release notes. | Local single-node evidence only; no production consensus, managed cloud, legal-grade verification, or fallback-free HNSW claim. |
-| `v0.2.0-beta.1` | Beta target candidate | `make beta-release-check`, `make retrieval-quality-check`, `make context-pack-quality-check`, `make verification-quality-check`, `make single-node-performance-check`, `make performance-trend-check`, and `make public-claims-check`. | Local single-node developer/API beta evidence; no hosted embedding CI requirement, no public registry publication claim, no production SLA. |
+| `v0.2.0-beta.2` | Beta target candidate | `make beta-release-check`, `make retrieval-quality-check`, `make context-pack-quality-check`, `make verification-quality-check`, `make single-node-performance-check`, `make performance-trend-check`, and `make public-claims-check`. | Local single-node developer/API beta evidence; no hosted embedding CI requirement, no public registry publication claim, no production SLA. |
 
 ## Latest Public Metrics Snapshot
 

@@ -21,8 +21,8 @@ Defaults:
   --prefix $HOME/.local
 
 Examples:
-  scripts/install.sh ./cortexdb-v0.2.0-beta.1-linux-x86_64.tar.gz
-  scripts/install.sh https://example.com/cortexdb-v0.2.0-beta.1-linux-x86_64.tar.gz --prefix /usr/local
+  scripts/install.sh ./cortexdb-v0.2.0-beta.2-linux-x86_64.tar.gz
+  scripts/install.sh https://example.com/cortexdb-v0.2.0-beta.2-linux-x86_64.tar.gz --prefix /usr/local
 EOF
 }
 

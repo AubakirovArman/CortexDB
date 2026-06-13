@@ -10,7 +10,7 @@ from pathlib import Path
 
 REQUIRED_DOC_TERMS = (
     "Core Alpha",
-    "v0.2.0-beta.1",
+    "v0.2.0-beta.2",
     "Stable Now",
     "Experimental Or Guarded",
     "Blocked Before Beta Promotion",

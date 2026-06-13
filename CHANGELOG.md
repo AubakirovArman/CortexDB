@@ -2,9 +2,19 @@
 
 ## Unreleased
 
+### v0.2.0-beta.2
+
+- Prepared the safe beta.2 prerelease path after the public
+  `v0.2.0-beta.1` tag was found to point at an older commit; workspace, SDK,
+  OpenAPI, binary-release, migration-compatibility, and release-evidence
+  surfaces now target `v0.2.0-beta.2` without force-moving the existing tag.
+- Kept SDK publication manual/tag-gated: Rust, Python, and TypeScript SDK
+  version examples now use the beta.2 package spellings, with Python using
+  `0.2.0b2` per PEP 440.
+
 ### Beta Release Preparation
 
-- Added `docs/BETA_RELEASE.md` to freeze the `v0.2.0-beta.1` target as a
+- Added `docs/BETA_RELEASE.md` to freeze the `v0.2.0-beta.2` target as a
   local single-node developer/API beta, with explicit non-goals for production
   distributed consensus, managed cloud, enterprise compliance, legal-grade
   verification, unrestricted HNSW, and built-in production LLM inference.
@@ -27,7 +37,7 @@
 - Added `docs/BETA_OPERATIONS.md`, a Linux/macOS beta runbook covering install,
   server startup, auth, tenants, backup/restore, validation, repair,
   upgrade/rollback, metrics, logs, and known limits.
-- Added planned `v0.2.0-beta.1` release notes and wired local binary package
+- Added planned `v0.2.0-beta.2` release notes and wired local binary package
   validation into the beta release evidence bundle.
 - Added a beta product demo article and expected-output contract, and tightened
   `make rag-demo-smoke` to require `mixed_evidence` from `VERIFY FACT`.

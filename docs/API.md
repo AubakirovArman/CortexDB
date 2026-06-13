@@ -1,4 +1,4 @@
-# CortexDB HTTP API Contract Specification (v0.2.0-beta.1)
+# CortexDB HTTP API Contract Specification (v0.2.0-beta.2)
 
 CortexDB exposes a lightweight Beta HTTP JSON API for interacting with
 Agent Memory, Retrieving Context, and Verifying Facts. This contract is covered
@@ -64,7 +64,7 @@ versions.
     },
     "sdk": {
       "contract": "sdk-contract.v1",
-      "workspace_version": "0.2.0-beta.1",
+      "workspace_version": "0.2.0-beta.2",
       "gate": "make sdk-contract-check"
     },
     "storage_formats": [
@@ -80,7 +80,7 @@ versions.
     "migration": {
       "matrix_schema_version": 1,
       "release": "v0.1.0-core-alpha",
-      "current_release": "v0.2.0-beta.1",
+      "current_release": "v0.2.0-beta.2",
       "gate": "make migration-compatibility-check"
     }
   }

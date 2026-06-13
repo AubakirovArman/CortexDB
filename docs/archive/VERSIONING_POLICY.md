@@ -97,8 +97,8 @@ green in the same release candidate.
 
 For SDK packages, Rust and TypeScript use the canonical workspace version.
 Python must stay aligned to the same release but may use the PEP 440 prerelease
-spelling required by PyPI; for example, workspace `0.2.0-beta.1` maps to
-Python `0.2.0b1`. This is a registry spelling difference, not a separate
+spelling required by PyPI; for example, workspace `0.2.0-beta.2` maps to
+Python `0.2.0b2`. This is a registry spelling difference, not a separate
 release train.
 
 ## Release Evidence

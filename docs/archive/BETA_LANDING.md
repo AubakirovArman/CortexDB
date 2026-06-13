@@ -1,6 +1,6 @@
 # CortexDB Public Beta Landing
 
-Status: concise external landing path for `v0.2.0-beta.1`.
+Status: concise external landing path for `v0.2.0-beta.2`.
 
 ## One-liner
 
@@ -113,5 +113,5 @@ Those topics remain future milestones with explicit design gates.
 - Architecture: [`ARCHITECTURE.md`](../ARCHITECTURE.md)
 - Context Packs: [`CONTEXT_PACK_TECHNOLOGY.md`](CONTEXT_PACK_TECHNOLOGY.md)
 - API schemas: [`API_JSON_SCHEMAS.md`](../API_JSON_SCHEMAS.md)
-- Release notes: [`RELEASE_NOTES_v0.2.0-beta.1.md`](../RELEASE_NOTES_v0.2.0-beta.1.md)
+- Release notes: [`RELEASE_NOTES_v0.2.0-beta.2.md`](../RELEASE_NOTES_v0.2.0-beta.2.md)
 - Documentation map: [`DOCUMENTATION_INDEX.md`](../DOCUMENTATION_INDEX.md)

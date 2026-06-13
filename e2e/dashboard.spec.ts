@@ -66,9 +66,10 @@ test('dashboard loads versioned assets and drives core forms', async ({ page, re
     const script = await request.get(`${baseUrl}/dashboard/assets/v1/app.js`);
     expect(script.ok()).toBeTruthy();
     expect(script.headers()['content-type']).toContain('application/javascript');
-    expect(await script.text()).toContain('run("stats"');
+    expect(await script.text()).toContain('CortexDB dashboard app entrypoint');
 
     for (const [asset, marker] of [
+      ['app_bindings.js', 'run("stats"'],
       ['reporting_common.js', 'dashboard-reports.v1'],
       ['reporting_retrieval.js', 'renderSearchReport'],
       ['reporting_operations.js', 'renderAnnEvaluation'],

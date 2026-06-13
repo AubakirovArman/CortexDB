@@ -72,7 +72,7 @@ Evidence:
 Tasks:
 
 - Create or update `docs/BETA_RELEASE.md`.
-- Define `v0.2.0-beta.1`.
+- Define `v0.2.0-beta.2`.
 - Mark stable, experimental, and out-of-scope surfaces.
 - Synchronize README wording.
 
@@ -141,7 +141,7 @@ Evidence:
 
 - `docs/CHANGELOG_RULES.md`
 - `docs/API_CHANGELOG.md`
-- `docs/RELEASE_NOTES_v0.2.0-beta.1.md`
+- `docs/RELEASE_NOTES_v0.2.0-beta.2.md`
 - `scripts/generate_release_notes.py`
 - `make release-notes-generate`
 - `target/release-notes/generated.md`

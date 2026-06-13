@@ -144,7 +144,7 @@ def render(args: argparse.Namespace) -> str:
         "",
         "## Migration Notes",
         "",
-        f"- release compatibility pair: `{'v0.1.0-core-alpha.5 -> v0.2.0-beta.1' if compatibility else 'not detected'}`",
+        f"- release compatibility pair: `{'v0.1.0-core-alpha.5 -> v0.2.0-beta.2' if compatibility else 'not detected'}`",
         "- upgrade policy: `docs/archive/UPGRADE_MIGRATION.md`",
         "- rollback policy: restore from immutable pre-upgrade backup; no in-place downgrade guarantee.",
         "",

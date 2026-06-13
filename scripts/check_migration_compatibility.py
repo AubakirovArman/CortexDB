@@ -24,7 +24,7 @@ REQUIRED_FORMATS = {
 }
 
 REQUIRED_BOUNDARIES = {"storage", "api", "sdk"}
-CURRENT_RELEASE = "v0.2.0-beta.1"
+CURRENT_RELEASE = "v0.2.0-beta.2"
 PREVIOUS_RELEASE = "v0.1.0-core-alpha.5"
 REQUIRED_RELEASE_GATES = {
     "restore_gate": "python3 scripts/migration_historical_restore_check.py",
@@ -138,7 +138,7 @@ def main() -> int:
             "historical restore fixture",
             "previous-release direct database",
             "migration_upgrade_matrix_v2_check.py",
-            "v0.1.0-core-alpha.5 -> v0.2.0-beta.1",
+            "v0.1.0-core-alpha.5 -> v0.2.0-beta.2",
         ),
         "docs/archive/BINARY_RELEASES.md": ("binary-release-check", "SHA256SUMS"),
     }

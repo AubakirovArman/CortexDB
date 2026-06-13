@@ -1,6 +1,6 @@
 [project]
 name = "cortexdb-client"
-version = "0.2.0b1"
+version = "0.2.0b2"
 description = "Beta CortexDB HTTP client"
 readme = "README.md"
 requires-python = ">=3.10"

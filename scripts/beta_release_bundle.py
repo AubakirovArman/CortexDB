@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 
-VERSION = "0.2.0-beta.1"
+VERSION = "0.2.0-beta.2"
 
 SUITES: tuple[dict[str, Any], ...] = (
     {"name": "beta_foundation", "command": ["make", "beta-foundation-check"]},
@@ -31,8 +31,8 @@ SUITES: tuple[dict[str, Any], ...] = (
         "command": [
             "make",
             "binary-release-check",
-            "BINARY_RELEASE_VERSION=v0.2.0-beta.1",
-            "BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local",
+            "BINARY_RELEASE_VERSION=v0.2.0-beta.2",
+            "BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.2-local",
         ],
     },
     {
@@ -40,8 +40,8 @@ SUITES: tuple[dict[str, Any], ...] = (
         "command": [
             "make",
             "release-artifact-manifest-check",
-            "BINARY_RELEASE_VERSION=v0.2.0-beta.1",
-            "BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local",
+            "BINARY_RELEASE_VERSION=v0.2.0-beta.2",
+            "BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.2-local",
         ],
     },
     {"name": "rag_demo_smoke", "command": ["make", "rag-demo-smoke"]},
@@ -66,8 +66,8 @@ KNOWN_ARTIFACTS = (
     "target/install-script/report.json",
     "target/release-artifact-manifest/manifest.json",
     "target/release-artifact-manifest/report.json",
-    "target/release-artifacts/cortexdb-v0.2.0-beta.1-local.tar.gz",
-    "target/release-artifacts/cortexdb-v0.2.0-beta.1-local.tar.gz.sha256",
+    "target/release-artifacts/cortexdb-v0.2.0-beta.2-local.tar.gz",
+    "target/release-artifacts/cortexdb-v0.2.0-beta.2-local.tar.gz.sha256",
     "target/public-claims/report.json",
 )
 

@@ -14,7 +14,7 @@ with registry credentials.
 
 ## Beta Publication Rule
 
-The SDKs are part of the `v0.2.0-beta.1` developer/API beta contract only after:
+The SDKs are part of the `v0.2.0-beta.2` developer/API beta contract only after:
 
 1. `make sdk-check` passes.
 2. `make sdk-e2e-release-check` passes.
@@ -37,7 +37,7 @@ job actually runs from the tag and the registry pages exist.
 - Changelog entries are required for breaking changes and deprecations.
 - SDKs must keep Rust, Python, and TypeScript package versions aligned with the
   workspace release; Python may use the PEP 440 prerelease spelling required by
-  PyPI, for example `0.2.0b1` for workspace `0.2.0-beta.1`.
+  PyPI, for example `0.2.0b2` for workspace `0.2.0-beta.2`.
 
 ## Non-Claims
 

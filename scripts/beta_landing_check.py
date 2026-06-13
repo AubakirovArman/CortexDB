@@ -10,7 +10,7 @@ from pathlib import Path
 
 REQUIRED_MARKERS = {
     "docs/BETA_LANDING.md": [
-        "v0.2.0-beta.1",
+        "v0.2.0-beta.2",
         "## One-liner",
         "## Value Proposition",
         "## Quickstart",

@@ -7,7 +7,7 @@ Core Alpha with Beta Foundation evidence state.
 
 - CortexDB is an experimental Core Alpha agent-native context database with
   Beta Foundation evidence.
-- CortexDB may describe `v0.2.0-beta.1` as a future local single-node
+- CortexDB may describe `v0.2.0-beta.2` as a future local single-node
   developer/API beta target when that statement references `BETA_RELEASE.md`
   or `make beta-release-check`.
 - The single-node durable core has repeatable test and release evidence.

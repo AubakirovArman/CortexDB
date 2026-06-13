@@ -1,6 +1,6 @@
 # CortexDB Beta Release Boundary
 
-Status: beta scope frozen for the `v0.2.0-beta.1` target. Current public
+Status: beta scope frozen for the `v0.2.0-beta.2` target. Current public
 status remains **Core Alpha with Beta Foundation evidence** until
 `make beta-release-check` passes and the beta evidence bundle is attached to a
 release.
@@ -17,7 +17,7 @@ context storage and retrieval workflows.
 
 ## Target Version
 
-- Target tag: `v0.2.0-beta.1`
+- Target tag: `v0.2.0-beta.2`
 - Current state: Core Alpha with Beta Foundation evidence
 - Promotion gate: `make beta-release-check`
 - Evidence root: `target/beta-release/`

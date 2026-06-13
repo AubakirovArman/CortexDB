@@ -11,7 +11,7 @@ from pathlib import Path
 REQUIRED_MARKERS = {
     "docs/PUBLIC_BENCHMARKS.md": [
         "v0.1.0-core-alpha.5",
-        "v0.2.0-beta.1",
+        "v0.2.0-beta.2",
         "## Epic 136 Task Coverage",
         "Storage benchmarks",
         "Retrieval benchmarks",

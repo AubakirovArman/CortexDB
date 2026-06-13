@@ -6037,7 +6037,7 @@
     "e2e/dashboard.spec.ts": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 295,
+      "lines": 296,
       "soft_limit": 300,
       "warning_limit": 600
     },

@@ -5,7 +5,7 @@ work. It is intentionally conservative: do not promote a capability from
 experimental to stable unless its release gate is repeatable and its
 operational limits are documented.
 
-The beta target is `v0.2.0-beta.1`. The public boundary is defined in
+The beta target is `v0.2.0-beta.2`. The public boundary is defined in
 [`BETA_RELEASE.md`](BETA_RELEASE.md): local single-node developer/API beta with
 stable HTTP/CLI/SDK contracts, ContextPack, Verify, guarded retrieval, backup,
 security, and operations evidence. Production distributed consensus, managed

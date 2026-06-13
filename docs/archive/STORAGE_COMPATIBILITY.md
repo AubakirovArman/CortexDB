@@ -62,7 +62,7 @@ release-tag backup path before newer release artifacts are published.
 The current release-to-release beta pair is fixed in the migration fixture:
 
 ```text
-v0.1.0-core-alpha.5 -> v0.2.0-beta.1
+v0.1.0-core-alpha.5 -> v0.2.0-beta.2
 ```
 
 That pair requires the historical restore fixture, previous-release direct

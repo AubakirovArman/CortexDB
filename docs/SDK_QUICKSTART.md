@@ -12,17 +12,17 @@ public registry publication.
 
 | Artifact | Version |
 |---|---|
-| Server | `0.2.0-beta.1` |
-| OpenAPI | `0.2.0-beta.1` |
-| Rust SDK (`cortex-sdk`) | `0.2.0-beta.1` |
-| Python SDK (`cortexdb-client`) | `0.2.0b1` |
-| TypeScript SDK (`@cortexdb/client`) | `0.2.0-beta.1` |
+| Server | `0.2.0-beta.2` |
+| OpenAPI | `0.2.0-beta.2` |
+| Rust SDK (`cortex-sdk`) | `0.2.0-beta.2` |
+| Python SDK (`cortexdb-client`) | `0.2.0b2` |
+| TypeScript SDK (`@cortexdb/client`) | `0.2.0-beta.2` |
 
 ## Rust
 
 ```toml
 [dependencies]
-cortex-sdk = "0.2.0-beta.1"
+cortex-sdk = "0.2.0-beta.2"
 ```
 
 ```rust
@@ -45,7 +45,7 @@ See `crates/cortex-sdk/examples/basic.rs` for a runnable example and
 ## Python
 
 ```bash
-pip install cortexdb-client==0.2.0b1
+pip install cortexdb-client==0.2.0b2
 ```
 
 ```python
@@ -69,7 +69,7 @@ remember = client.remember_response("default", client.build_remember_aql("hello"
 ## TypeScript
 
 ```bash
-npm install @cortexdb/client@0.2.0-beta.1
+npm install @cortexdb/client@0.2.0-beta.2
 ```
 
 ```typescript

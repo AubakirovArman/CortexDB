@@ -341,7 +341,7 @@ dependencies = [
 
 [[package]]
 name = "cortex-api-types"
-version = "0.2.0-beta.1"
+version = "0.2.0-beta.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -349,7 +349,7 @@ dependencies = [
 
 [[package]]
 name = "cortex-aql"
-version = "0.2.0-beta.1"
+version = "0.2.0-beta.2"
 dependencies = [
  "nom",
  "nom_locate",
@@ -358,7 +358,7 @@ dependencies = [
 
 [[package]]
 name = "cortex-cli"
-version = "0.2.0-beta.1"
+version = "0.2.0-beta.2"
 dependencies = [
  "clap",
  "clap_complete",
@@ -373,14 +373,14 @@ dependencies = [
 
 [[package]]
 name = "cortex-core"
-version = "0.2.0-beta.1"
+version = "0.2.0-beta.2"
 dependencies = [
  "thiserror 1.0.69",
 ]
 
 [[package]]
 name = "cortex-engine"
-version = "0.2.0-beta.1"
+version = "0.2.0-beta.2"
 dependencies = [
  "cortex-aql",
  "cortex-core",
@@ -395,7 +395,7 @@ dependencies = [
 
 [[package]]
 name = "cortex-mcp"
-version = "0.2.0-beta.1"
+version = "0.2.0-beta.2"
 dependencies = [
  "cortex-sdk",
  "serde",
@@ -404,7 +404,7 @@ dependencies = [
 
 [[package]]
 name = "cortex-sdk"
-version = "0.2.0-beta.1"
+version = "0.2.0-beta.2"
 dependencies = [
  "cortex-api-types",
  "reqwest",
@@ -417,7 +417,7 @@ dependencies = [
 
 [[package]]
 name = "cortex-server"
-version = "0.2.0-beta.1"
+version = "0.2.0-beta.2"
 dependencies = [
  "axum",
  "cortex-api-types",
@@ -438,7 +438,7 @@ dependencies = [
 
 [[package]]
 name = "cortex-storage"
-version = "0.2.0-beta.1"
+version = "0.2.0-beta.2"
 dependencies = [
  "crc32c",
  "crossbeam-channel",

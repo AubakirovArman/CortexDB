@@ -27,9 +27,9 @@ Override the release metadata:
 
 ```bash
 make binary-release-check \
-  BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local \
+  BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.2-local \
   BINARY_RELEASE_PLATFORM=linux-x86_64 \
-  BINARY_RELEASE_VERSION=v0.2.0-beta.1
+  BINARY_RELEASE_VERSION=v0.2.0-beta.2
 ```
 
 ## Archive Contents
@@ -136,8 +136,8 @@ For the beta evidence bundle, `make beta-release-check` runs the local binary
 release gate with:
 
 ```text
-BINARY_RELEASE_VERSION=v0.2.0-beta.1
-BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local
+BINARY_RELEASE_VERSION=v0.2.0-beta.2
+BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.2-local
 ```
 
 and packages the resulting archive plus checksum into the beta evidence

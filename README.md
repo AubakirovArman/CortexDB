@@ -6,7 +6,7 @@
 
 > ⚠️ **Warning:** CortexDB is currently in **Core Alpha status** and is suitable for local experiments, research, architecture validation, and early contributors. It is **not recommended for production workloads yet.**
 >
-> The current beta target is `v0.2.0-beta.1`: a local single-node developer/API
+> The current beta target is `v0.2.0-beta.2`: a local single-node developer/API
 > beta. Promotion requires `make beta-release-check` and the evidence bundle
 > described in [`docs/BETA_RELEASE.md`](docs/archive/BETA_RELEASE.md).
 
@@ -204,7 +204,7 @@ Backup and restore behavior is documented in
 The beta release boundary and target version are documented in
 [`docs/BETA_RELEASE.md`](docs/archive/BETA_RELEASE.md).
 The planned beta release notes are documented in
-[`docs/RELEASE_NOTES_v0.2.0-beta.1.md`](docs/RELEASE_NOTES_v0.2.0-beta.1.md).
+[`docs/RELEASE_NOTES_v0.2.0-beta.2.md`](docs/RELEASE_NOTES_v0.2.0-beta.2.md).
 The beta operations runbook is documented in
 [`docs/BETA_OPERATIONS.md`](docs/archive/BETA_OPERATIONS.md).
 The current Core Alpha vs beta-readiness delta is documented in

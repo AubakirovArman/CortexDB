@@ -3,7 +3,7 @@
 Source: `/mnt/hf_model_weights/arman/3bit/sites/pl.md`, audited on 2026-06-01.
 
 This file is the normalized execution backlog for the next product layer after
-`v0.2.0-beta.1`. It should be treated as the active epic map unless a newer
+`v0.2.0-beta.2`. It should be treated as the active epic map unless a newer
 plan explicitly replaces it.
 
 ## Status Legend
@@ -42,11 +42,11 @@ The plan recommends this first execution batch:
 
 | # | Epic | Status | What Exists Now | Remaining Closure Work |
 | ---: | --- | --- | --- | --- |
-| 1 | Public Beta Release Definition | closed | `BETA_RELEASE.md`, README/public claims boundary, release tag `v0.2.0-beta.1`. | Keep wording aligned as features change. |
+| 1 | Public Beta Release Definition | closed | `BETA_RELEASE.md`, README/public claims boundary, release tag `v0.2.0-beta.2`. | Keep wording aligned as features change. |
 | 2 | Beta Release Evidence Bundle | closed | `make beta-release-check`, `target/beta-release/evidence.tar.gz`, GitHub release asset. | Keep bundle regenerated for each release. |
-| 3 | Public Beta Release Notes | closed | `RELEASE_NOTES_v0.2.0-beta.1.md` and GitHub release notes. | Update for patch/beta follow-ups. |
+| 3 | Public Beta Release Notes | closed | `RELEASE_NOTES_v0.2.0-beta.2.md` and GitHub release notes. | Update for patch/beta follow-ups. |
 | 4 | Beta Claims Guard | closed | `make public-claims-check`, public claims policy/freeze docs. | Add new forbidden claims as surfaces expand. |
-| 5 | Beta Compatibility Matrix | closed | `compatibility_matrix_v1.json` now fixes `v0.1.0-core-alpha.5 -> v0.2.0-beta.1`; `make migration-compatibility-check` restores the historical backup fixture and validates API/SDK/storage gate wiring. | Keep adding previous-release fixtures for future releases. |
+| 5 | Beta Compatibility Matrix | closed | `compatibility_matrix_v1.json` now fixes `v0.1.0-core-alpha.5 -> v0.2.0-beta.2`; `make migration-compatibility-check` restores the historical backup fixture and validates API/SDK/storage gate wiring. | Keep adding previous-release fixtures for future releases. |
 | 6 | SDK Public Release Train | closed | SDK release manifest now includes `sdk-registry-gate-check`; `make sdk-e2e-release-check` runs release contract, artifacts, registry gate, and live SDK contract checks. | Public registry publication still requires manual tag-gated workflow execution and credentials. |
 | 7 | Python SDK Productization | closed | Python SDK package metadata, typed client, tests, example, wheel/build evidence, registry-gate wiring, and live SDK contract coverage are checked by `make sdk-productization-check`. | Public PyPI publication remains manual tag-gated and is not claimed by the local gate. |
 | 8 | TypeScript SDK Productization | closed | TypeScript SDK package metadata, ESM client, `.d.ts` types, tests, example, npm dry-run evidence, registry-gate wiring, and live SDK contract coverage are checked by `make sdk-productization-check`. | Public npm publication remains manual tag-gated and is not claimed by the local gate. |

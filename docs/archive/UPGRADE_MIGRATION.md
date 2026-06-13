@@ -96,7 +96,7 @@ For Core Alpha, upgrades are offline and single-node:
 The current beta compatibility pair is:
 
 ```text
-v0.1.0-core-alpha.5 -> v0.2.0-beta.1
+v0.1.0-core-alpha.5 -> v0.2.0-beta.2
 ```
 
 It is represented in `fixtures/migration/compatibility_matrix_v1.json` and
@@ -223,7 +223,7 @@ It validates `fixtures/migration/compatibility_matrix_v1.json`, including:
 - storage/API/SDK compatibility boundaries;
 - current and old read-only format markers;
 - an offline upgrade/downgrade matrix;
-- the explicit `v0.1.0-core-alpha.5 -> v0.2.0-beta.1` release-to-release pair;
+- the explicit `v0.1.0-core-alpha.5 -> v0.2.0-beta.2` release-to-release pair;
 - at least one historical restore fixture whose old backup is restored and
   validated by the current binary;
 - at least one previous-release direct database fixture that is opened, written,

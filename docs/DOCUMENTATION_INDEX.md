@@ -70,7 +70,7 @@ evidence snapshots, benchmark experiments, and release working notes live in
 - [`FUTURE_PRODUCT_LAYERS_PLAN.md`](FUTURE_PRODUCT_LAYERS_PLAN.md) - future product layers.
 - [`FUTURE_NON_GOAL_EPICS.md`](FUTURE_NON_GOAL_EPICS.md) - future/non-goal epics.
 - [`DATABASE_GRADE_EXECUTION_PLAN.md`](DATABASE_GRADE_EXECUTION_PLAN.md) - active ordered epic plan.
-- [`RELEASE_NOTES_v0.2.0-beta.1.md`](RELEASE_NOTES_v0.2.0-beta.1.md) - beta release notes.
+- [`RELEASE_NOTES_v0.2.0-beta.2.md`](RELEASE_NOTES_v0.2.0-beta.2.md) - beta release notes.
 
 ## Archive
 

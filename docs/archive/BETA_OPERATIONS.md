@@ -1,6 +1,6 @@
 # CortexDB Beta Operations Pack
 
-This runbook is for the `v0.2.0-beta.1` local single-node developer/API beta.
+This runbook is for the `v0.2.0-beta.2` local single-node developer/API beta.
 It covers Linux and macOS only. It does not describe a managed cloud service,
 distributed production deployment, or enterprise compliance posture.
 

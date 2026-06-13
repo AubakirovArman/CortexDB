@@ -1459,21 +1459,21 @@ enough to unblock the next dependency step.
   - [ ] каждый пример: папка+README+CI-smoke (mock LLM).
 - dependencies: D05, B01. Эффект: разработчики копируют примеры.
 
-### EPIC-D15 — v0.2.0-beta.1: версии, release notes, тег
+### EPIC-D15 — v0.2.0-beta.2: версии, release notes, тег
 
 - status: `partial`
 - meta: Категория: product · P0 · 30 days · productize
-- goal: workspace 0.1.0 при бета-цели 0.2.0-beta.1; гейты есть, релиза нет.
+- goal: workspace 0.1.0 при бета-цели 0.2.0-beta.2; гейты есть, релиза нет.
 - tasks:
-  - [x] 1) bump версий — workspace/Rust/TypeScript/OpenAPI now use `0.2.0-beta.1`; Python uses the documented PEP 440 spelling `0.2.0b1`; SDK/release gates validate this mapping.
+  - [x] 1) bump версий — workspace/Rust/TypeScript/OpenAPI now use `0.2.0-beta.2`; Python uses the documented PEP 440 spelling `0.2.0b2`; SDK/release gates validate this mapping.
   - [x] 2) `make beta-release-check` + бинарники (binary-release-check) — passed after aligning release gates with archived documentation paths and fixing a VERIFY numeric false-positive in the RAG demo smoke.
   - [ ] 3) тег+GitHub release; release notes сверить с реальностью (после repositioning) — release notes and local artifacts are verified; public tag/release remains.
 - acceptance:
   - [ ] 1) тег с артефактами
   - [ ] 2) README-статус соответствует.
 - dependencies: A01, D12, D05 (желательно). Эффект: точка отсчёта «бета».
-- evidence: `make sdk-check`, `make sdk-e2e-release-check`, `make openapi-contract-check`, `make beta-release-check`, `make binary-release-check BINARY_RELEASE_VERSION=v0.2.0-beta.1 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local`, `make release-artifact-manifest-check BINARY_RELEASE_VERSION=v0.2.0-beta.1 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.1-local BINARY_RELEASE_ARCHIVE=target/release-artifacts/cortexdb-v0.2.0-beta.1-local.tar.gz`, `make evidence-artifact-retention-check`, and `make versioning-policy-check` passed after the version bump. Earlier `make rag-demo-smoke` passed after VERIFY stopped cross-comparing matched year and amount values as numeric contradictions. Latest D15 gate evidence: `make beta-release-check` passes with `target/beta-release/report.json` status `passed` and evidence archive `target/beta-release/evidence.tar.gz` after release/security/retrieval checker paths were aligned with the modular `mk/*.mk`, `context/export/*`, `responses/context.rs`, `query_search/*`, `security_tests/*`, and `auth_policy_tests/*` layout.
-- remaining: public `v0.2.0-beta.1` already exists but points to old commit `46d0f3a` whose workspace/Python package versions are still `0.1.0`; do not force-move that published tag without explicit approval. Safe next release options are either an explicit force-refresh of `v0.2.0-beta.1` after approval or a new patch prerelease such as `v0.2.0-beta.2`. Public SDK registry publication remains governed by `EPIC-D05`.
+- evidence: `make sdk-check`, `make sdk-e2e-release-check`, `make openapi-contract-check`, `make beta-release-check`, `make binary-release-check BINARY_RELEASE_VERSION=v0.2.0-beta.2 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.2-local`, `make release-artifact-manifest-check BINARY_RELEASE_VERSION=v0.2.0-beta.2 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.2-local BINARY_RELEASE_ARCHIVE=target/release-artifacts/cortexdb-v0.2.0-beta.2-local.tar.gz`, `make evidence-artifact-retention-check`, and `make versioning-policy-check` passed after the version bump. Earlier `make rag-demo-smoke` passed after VERIFY stopped cross-comparing matched year and amount values as numeric contradictions. Latest D15 gate evidence: `make beta-release-check` passes with `target/beta-release/report.json` status `passed` and evidence archive `target/beta-release/evidence.tar.gz` after release/security/retrieval checker paths were aligned with the modular `mk/*.mk`, `context/export/*`, `responses/context.rs`, `query_search/*`, `security_tests/*`, and `auth_policy_tests/*` layout.
+- remaining: public `v0.2.0-beta.1` already exists and points to old commit `46d0f3a`; do not force-move that published tag without explicit approval. The safe release path is a new `v0.2.0-beta.2` prerelease tag on the current verified commit. Public SDK registry publication remains governed by `EPIC-D05`.
 
 ## Block E — Reliability, security, and operations
 

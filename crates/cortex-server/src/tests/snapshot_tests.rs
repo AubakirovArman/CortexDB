@@ -28,7 +28,7 @@ fn snapshot_compatibility_response_shape() {
     assert!(response.contains(r#""kind":"segment""#));
     assert!(response.contains(r#""required_gate":"make storage-format-freeze-check""#));
     assert!(response.contains(r#""from":"v0.1.0-core-alpha.5""#));
-    assert!(response.contains(r#""to":"v0.2.0-beta.1""#));
+    assert!(response.contains(r#""to":"v0.2.0-beta.2""#));
 }
 
 #[test]

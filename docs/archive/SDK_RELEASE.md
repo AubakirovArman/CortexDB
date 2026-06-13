@@ -13,8 +13,8 @@ tree:
 
 Rust and TypeScript package versions use the canonical workspace version in the
 root `Cargo.toml`. Python prerelease packages use the PEP 440 spelling of the
-same release when needed; for example, workspace `0.2.0-beta.1` maps to
-Python `0.2.0b1`.
+same release when needed; for example, workspace `0.2.0-beta.2` maps to
+Python `0.2.0b2`.
 
 ## Preflight
 
@@ -114,7 +114,7 @@ The SDK unit tests also decode the full Core Alpha error taxonomy documented in
 `.github/workflows/sdk-release.yml` runs the same preflight on SDK-relevant
 pull requests and pushes. The publish job is intentionally manual-only:
 
-1. Create and push a version tag, for example `v0.2.0-beta.1`.
+1. Create and push a version tag, for example `v0.2.0-beta.2`.
 2. Open the `SDK Release` workflow in GitHub Actions.
 3. Select the tag ref.
 4. Run the workflow with `publish=true`.
@@ -124,9 +124,9 @@ The publish job is skipped unless all of these are true:
 - The workflow was started with `workflow_dispatch`.
 - The selected ref is a tag beginning with `v`.
 - The tag version must match the workspace version, for example
-  `v0.2.0-beta.1` for workspace version `0.2.0-beta.1`.
+  `v0.2.0-beta.2` for workspace version `0.2.0-beta.2`.
 - Python package metadata may use the PEP 440-normalized spelling of that same
-  release, for example `0.2.0b1`.
+  release, for example `0.2.0b2`.
 - `publish=true` was explicitly set.
 - The protected `sdk-release` environment approves the deployment.
 - Registry credentials/trusted publishing are configured.
@@ -153,7 +153,7 @@ contract checks, deprecation policy checks, and live local server e2e evidence.
 
 ## Beta Compatibility Policy
 
-For the `v0.2.0-beta.1` target, the SDKs are treated as beta developer/API
+For the `v0.2.0-beta.2` target, the SDKs are treated as beta developer/API
 contracts:
 
 - Additive endpoint and response-field coverage can ship in patch releases when

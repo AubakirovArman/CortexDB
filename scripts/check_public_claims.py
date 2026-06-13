@@ -34,14 +34,14 @@ PUBLIC_DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "Experimental",
     ),
     "docs/archive/BETA_DELTA.md": (
-        "v0.2.0-beta.1",
+        "v0.2.0-beta.2",
         "BETA_RELEASE.md",
         "Stable Now",
         "Experimental Or Guarded",
         "Blocked Before Beta Promotion",
     ),
     "docs/archive/BETA_RELEASE.md": (
-        "v0.2.0-beta.1",
+        "v0.2.0-beta.2",
         "Core Alpha with Beta Foundation evidence",
         "Explicit Non-Goals For Beta",
         "make beta-release-check",

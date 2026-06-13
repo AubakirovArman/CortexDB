@@ -27,7 +27,7 @@ REQUIRED_REPORTS = [
 
 OPTIONAL_ARTIFACTS = [
     ("retrieval_dashboard", "target/retrieval-quality/dashboard.html"),
-    ("sdk_examples_archive", "target/sdk-release-artifacts/cortexdb-sdk-examples-0.2.0-beta.1.tar.gz"),
+    ("sdk_examples_archive", "target/sdk-release-artifacts/cortexdb-sdk-examples-0.2.0-beta.2.tar.gz"),
 ]
 
 

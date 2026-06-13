@@ -279,7 +279,7 @@ mod tests {
     #[test]
     fn migration_registry_centralizes_format_and_release_versions() {
         let summary = compatibility_summary();
-        assert_eq!(summary.migration_registry.current_release, "v0.2.0-beta.1");
+        assert_eq!(summary.migration_registry.current_release, "v0.2.0-beta.2");
         assert!(summary
             .migration_registry
             .downgrade_policy
@@ -306,7 +306,7 @@ mod tests {
             .iter()
             .find(|release| release.from == "v0.1.0-core-alpha.5")
             .expect("previous release migration path should be registered");
-        assert_eq!(release.to, "v0.2.0-beta.1");
+        assert_eq!(release.to, "v0.2.0-beta.2");
         assert!(release
             .fixture
             .as_deref()

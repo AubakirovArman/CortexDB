@@ -21,7 +21,7 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-D15` — v0.2.0-beta.1 release/tag decision.
+`EPIC-D15` — v0.2.0-beta.2 release/tag decision.
 
 D15 exit steps:
 
@@ -37,8 +37,9 @@ D15 progress:
   `target/beta-release/evidence.tar.gz` after release/security/retrieval
   evidence checkers were aligned with the modular `mk/*.mk`,
   ContextPack, retrieval, and security test layout.
-- next: decide whether to create a new prerelease tag such as
-  `v0.2.0-beta.2` or explicitly refresh `v0.2.0-beta.1` with approval.
+- next: create and publish the new prerelease tag `v0.2.0-beta.2` after the
+  beta.2 version bump gates pass. Do not force-refresh the existing
+  `v0.2.0-beta.1` tag.
 
 ## Recently Closed
 
@@ -376,10 +377,12 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on E04 only:
+Work on D15 only:
 
-1. inventory current validation, repair, and corruption-report paths;
-2. define quarantine/report behavior for corrupt WAL, segments, and indexes;
-3. add operator-facing diagnostics and regression tests by corruption class;
-4. move pointer only after E04 is `done` or explicitly split with accepted
+1. commit the beta.2 version, release-note, migration-fixture, and checker
+   alignment changes after the release gates pass;
+2. create a new `v0.2.0-beta.2` prerelease tag on the verified commit;
+3. push the commit and tag without force-moving the published beta.1 tag;
+4. rerun `make beta-release-check` on the committed SHA;
+5. move the pointer only after D15 is `done` or explicitly split with accepted
    follow-up scope.

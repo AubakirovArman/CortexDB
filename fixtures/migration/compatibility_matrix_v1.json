@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "release": "v0.1.0-core-alpha",
-  "current_release": "v0.2.0-beta.1",
+  "current_release": "v0.2.0-beta.2",
   "storage_formats": [
     {
       "marker": "ACLOGv0",
@@ -96,7 +96,7 @@
   "upgrade_matrix": [
     {
       "from": "v0.1.0-core-alpha",
-      "to": "v0.2.0-beta.1",
+      "to": "v0.2.0-beta.2",
       "mode": "offline backup-drill, install new binary, validate, smoke",
       "downgrade": "restore immutable pre-upgrade backup; no in-place downgrade",
       "proof": ["docs/archive/UPGRADE_MIGRATION.md"]
@@ -105,7 +105,7 @@
   "release_compatibility_matrix": [
     {
       "from": "v0.1.0-core-alpha.5",
-            "to": "v0.2.0-beta.1",
+            "to": "v0.2.0-beta.2",
             "fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json",
             "backup_path": "fixtures/migration/historical/v0.1.0-core-alpha.5/backup",
             "database_path": "fixtures/migration/historical/v0.1.0-core-alpha.5/backup",
