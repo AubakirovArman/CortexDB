@@ -53,6 +53,10 @@ B04 progress:
   persisted source-support relation payload is not materialized;
 - done: the structural descriptor hot-path gate covers the verification
   source-support scan and persisted graph-edge enrichment paths;
+- done: memory and session cell-id allocation use descriptor-only existence
+  checks instead of fetching payloads just to detect ID collisions;
+- done: the structural descriptor hot-path gate now covers memory/session ID
+  allocation too;
 - remaining: finish the broader non-AQL read-surface inventory and decide
   whether B04 can close on descriptor-index authorization or needs a separate
   permission-bitmap follow-up.

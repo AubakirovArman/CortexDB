@@ -168,7 +168,7 @@ impl Database {
         let mut attempts = 0u64;
         loop {
             let cell_id = CellId(SESSION_CELL_NAMESPACE | agent_bits | (sequence & 0xffff_ffff));
-            if self.get_latest_cell(cell_id).is_none() {
+            if self.get_latest_cell_descriptor(cell_id).is_none() {
                 return Ok(cell_id);
             }
             attempts = attempts.checked_add(1).ok_or_else(session_id_overflow)?;

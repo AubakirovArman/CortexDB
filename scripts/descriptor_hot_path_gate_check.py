@@ -26,6 +26,7 @@ QUERY_EXPLAIN = ROOT / "crates/cortex-engine/src/query/explain.rs"
 SESSION = ROOT / "crates/cortex-engine/src/session.rs"
 SESSION_INDEX = ROOT / "crates/cortex-engine/src/session/index.rs"
 SESSION_PAYLOAD = ROOT / "crates/cortex-engine/src/session/payload.rs"
+INGESTION = ROOT / "crates/cortex-engine/src/ingestion.rs"
 INGESTION_REPORT = ROOT / "crates/cortex-engine/src/ingestion/report.rs"
 REPLICATION_SNAPSHOT = ROOT / "crates/cortex-engine/src/replication/snapshot.rs"
 REPLICATION_INSTALL = ROOT / "crates/cortex-engine/src/replication/install.rs"
@@ -68,6 +69,7 @@ def main() -> None:
     session = SESSION.read_text()
     session_index = SESSION_INDEX.read_text()
     session_payload = SESSION_PAYLOAD.read_text()
+    ingestion = INGESTION.read_text()
     ingestion_report = INGESTION_REPORT.read_text()
     replication_snapshot = REPLICATION_SNAPSHOT.read_text()
     replication_install = REPLICATION_INSTALL.read_text()
@@ -226,36 +228,22 @@ def main() -> None:
         "pub fn scope_mapping_metadata_bonus(mapping: &QueryScopeMapping, metadata: &CellMetadata)",
         "scope mapping metadata scoring helper",
     )
-    require(
-        session,
-        "self.session_index\n                .retrieve(session_id, view, now_unix_seconds)",
-        "session retrieval delegates to maintained index",
-    )
-    require(
-        session_index,
-        "let descriptor_metadata = CellMetadata::from_payload_with_descriptor(",
-        "session index descriptor-backed metadata",
-    )
-    require(
-        session_index,
-        "view.can_read_scope(scope_id(&descriptor_metadata.scope))",
-        "session index descriptor scope authorization",
-    )
-    forbid(
-        session,
-        "snapshot_versions()",
-        "session retrieval full snapshot scan",
-    )
-    forbid(
-        session,
-        "view.can_read_scope(scope_id(&metadata.scope))",
-        "session retrieval payload scope authorization",
-    )
-    forbid(
-        session_payload,
-        "pub scope: String",
-        "session payload scope permission metadata",
-    )
+    for text, needle, label in (
+        (session, "self.session_index\n                .retrieve(session_id, view, now_unix_seconds)", "session retrieval delegates to maintained index"),
+        (session_index, "let descriptor_metadata = CellMetadata::from_payload_with_descriptor(", "session index descriptor-backed metadata"),
+        (session_index, "view.can_read_scope(scope_id(&descriptor_metadata.scope))", "session index descriptor scope authorization"),
+        (session, "self.get_latest_cell_descriptor(cell_id).is_none()", "session id allocation uses descriptor-only existence check"),
+        (ingestion, "self.get_latest_cell_descriptor(cell_id).is_none()", "memory id allocation uses descriptor-only existence check"),
+    ):
+        require(text, needle, label)
+    for text, needle, label in (
+        (session, "snapshot_versions()", "session retrieval full snapshot scan"),
+        (session, "view.can_read_scope(scope_id(&metadata.scope))", "session retrieval payload scope authorization"),
+        (session_payload, "pub scope: String", "session payload scope permission metadata"),
+        (session, "self.get_latest_cell(cell_id).is_none()", "session id allocation payload existence check"),
+        (ingestion, "self.get_latest_cell(cell_id).is_none()", "memory id allocation payload existence check"),
+    ):
+        forbid(text, needle, label)
     require(
         ingestion_report,
         "self.get_latest_cell_with_descriptor(cell.cell_id)",
