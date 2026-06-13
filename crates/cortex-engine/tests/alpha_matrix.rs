@@ -4,7 +4,9 @@ use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZER
 use cortex_core::{CellId, CommitSeq};
 use cortex_engine::query::scope_id;
 use cortex_engine::verification::VerificationStatus;
-use cortex_engine::{ContextPackOptions, Database, DatabaseOptions, RecoveryMode};
+use cortex_engine::{
+    ContextPackOptions, Database, DatabaseOptions, PayloadResidency, RecoveryMode,
+};
 
 fn test_view(scope: &str, allow_verify: bool) -> AgentView {
     AgentView {
@@ -111,6 +113,76 @@ fn alpha_matrix_checkpoint_compact_with_wal_tail_restart() {
         assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"v1");
         assert_eq!(db.get_latest_cell(CellId(2)).unwrap(), b"v2");
         assert_eq!(db.get_latest_cell(CellId(3)).unwrap(), b"v3");
+    }
+}
+
+#[test]
+fn alpha_matrix_lazy_payload_checkpoint_compact_and_wal_tail_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    let lazy_options = || DatabaseOptions {
+        payload_residency: PayloadResidency::Lazy,
+        payload_cache_bytes: 16,
+        ..DatabaseOptions::default()
+    };
+
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(CellId(1), b"scope=default\nstatus=ready\n\nv1".to_vec())
+            .unwrap();
+        db.checkpoint().unwrap();
+        db.put_cell(CellId(2), b"scope=default\nstatus=ready\n\nv2".to_vec())
+            .unwrap();
+    }
+    {
+        let db = Database::open_with_options(dir.path(), lazy_options()).unwrap();
+        assert_eq!(
+            db.get_latest_cell(CellId(1)).unwrap(),
+            b"scope=default\nstatus=ready\n\nv1"
+        );
+        assert_eq!(
+            db.get_latest_cell(CellId(2)).unwrap(),
+            b"scope=default\nstatus=ready\n\nv2"
+        );
+        assert!(db.storage_stats().unwrap().memtable_payload_bytes > 0);
+    }
+
+    {
+        let mut db = Database::open_with_options(dir.path(), lazy_options()).unwrap();
+        db.patch_cell(
+            CellId(1),
+            b"scope=default\nstatus=ready\n\nv1-patched".to_vec(),
+        )
+        .unwrap();
+        db.tombstone_cell(CellId(2)).unwrap();
+        db.checkpoint().unwrap();
+    }
+    {
+        let db = Database::open_with_options(dir.path(), lazy_options()).unwrap();
+        assert_eq!(
+            db.get_latest_cell(CellId(1)).unwrap(),
+            b"scope=default\nstatus=ready\n\nv1-patched"
+        );
+        assert!(db.get_latest_cell(CellId(2)).is_none());
+        assert_eq!(db.storage_stats().unwrap().memtable_payload_bytes, 0);
+    }
+
+    {
+        let mut db = Database::open_with_options(dir.path(), lazy_options()).unwrap();
+        db.compact().unwrap();
+        db.put_cell(CellId(3), b"scope=default\nstatus=ready\n\nv3".to_vec())
+            .unwrap();
+    }
+    {
+        let db = Database::open_with_options(dir.path(), lazy_options()).unwrap();
+        assert_eq!(
+            db.get_latest_cell(CellId(1)).unwrap(),
+            b"scope=default\nstatus=ready\n\nv1-patched"
+        );
+        assert!(db.get_latest_cell(CellId(2)).is_none());
+        assert_eq!(
+            db.get_latest_cell(CellId(3)).unwrap(),
+            b"scope=default\nstatus=ready\n\nv3"
+        );
     }
 }
 
