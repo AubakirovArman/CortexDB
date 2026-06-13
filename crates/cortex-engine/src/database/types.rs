@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -25,6 +25,10 @@ use crate::verification::TemporalFactStore;
 
 pub trait CandidateResolver: BitmapProvider {
     fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId>;
+
+    fn lexical_candidates_for_terms(&self, _terms: &[String]) -> Option<BTreeSet<u32>> {
+        None
+    }
 }
 
 #[derive(Debug)]

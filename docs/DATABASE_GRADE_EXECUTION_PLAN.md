@@ -11,11 +11,11 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A13` (`EPIC-A12` is done, `EPIC-A07` is done, and
+Current pointer: `EPIC-B01` (`EPIC-A12` and `EPIC-A13` are done, `EPIC-A07` is done, and
 `EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
 remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
 partial follow-up. `EPIC-A09` is intentionally later in the roadmap queue,
-after `EPIC-A13`, `EPIC-B01`, `EPIC-A15`, `EPIC-D11`, and `EPIC-E01`).
+after `EPIC-B01`, `EPIC-A15`, `EPIC-D11`, and `EPIC-E01`).
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
 mandatory after every change. Run `make enterprise-rag-bench-impact-gemini-50`
@@ -39,8 +39,8 @@ enough to unblock the next dependency step.
 2. `EPIC-A07 -> EPIC-A08` — segment v2 plus lazy payload: A07 done, A08
    phase-1 accepted with 1M RSS evidence; remaining lazy parity/p95 stays
    tracked as partial follow-up.
-3. `EPIC-A13` — cost model v0: current active front.
-4. `EPIC-B01` — ContextPack JSON Schema v1.
+3. `EPIC-A13` — cost model v0: done.
+4. `EPIC-B01` — ContextPack JSON Schema v1: current active front.
 5. `EPIC-A15` — transactional WriteBatch API.
 6. `EPIC-D11` — MCP adapter.
 7. `EPIC-E01` — WAL writer error surfacing.
@@ -325,7 +325,7 @@ enough to unblock the next dependency step.
 
 ### EPIC-A13 — Cost model v0 — выбор пути исполнения
 
-- status: `in_progress`
+- status: `done`
 - meta: Категория: query-engine · Приоритет: P1 · Горизонт: 90 days · Тип: build
 - goal: планировщик должен выбирать, а не исполнять единственный путь.
 - problem: Проблема: lexical/vector/hybrid захардкожены режимом AQL.
@@ -336,22 +336,23 @@ enough to unblock the next dependency step.
   - [x] 3) add synthetic tests for narrow scope, rare term, and wide vector scenarios.
   - [x] 4) add budget-driven candidate-limit heuristic.
   - [x] 5) add force/override hook for debugging without changing default AQL syntax.
-  - [ ] 6) wire selected path into the physical candidate source where it is correctness-preserving.
-  - [ ] 7) after gates and evidence, mark A13 `done` and move to `EPIC-B01`.
+  - [x] 6) wire selected path into the physical candidate source where it is correctness-preserving.
+  - [x] 7) after gates and evidence, mark A13 `done` and move to `EPIC-B01`.
 - tasks:
   - [x] 1) правила v0 по статистике: узкий scope → bitmap-first; редкие термы → lexical-first; есть вектор + широкий корпус → vector-first с lexical-rerank
   - [x] 2) бюджет → candidate-limit вниз по эвристике токенов/ячейку
   - [x] 3) флаг `force_mode` для обхода (отладка), решение пишется в EXPLAIN.
-  - [ ] 4) выбранный путь управляет физическим candidate source там, где это не меняет семантику.
+  - [x] 4) выбранный путь управляет физическим candidate source там, где это не меняет семантику.
 - acceptance:
   - [x] 1) на синтетических сценариях (узкий scope/редкий терм/широкий vector) планировщик выбирает ожидаемый путь (тест)
   - [x] 2) retrieval-quality фикстуры не деградируют
   - [x] 3) EXPLAIN показывает причину выбора.
-  - [ ] 4) EXPLAIN ANALYZE trace shows the selected physical source path when a non-bitmap path is chosen.
+  - [x] 4) EXPLAIN ANALYZE trace shows the selected physical source path when a non-bitmap path is chosen.
 - files: cortex-engine/src/plan/cost.rs (новый).
-- next exit step: wire the cost decision into the executor candidate source, starting with lexical-first intersection against bitmap filters.
+- next exit step: move to `EPIC-B01` — ContextPack JSON Schema v1.
 - risks: регрессии качества — quality-фикстуры в gate. Зависимости: A10, A11, A12. Эффект: «planner» перестаёт быть словом из доков.
 - evidence: A13.0-A13.5 added `plan::cost` with deterministic path decisions over A12 stats, bitmap row estimates, term document frequency, query-vector detection, budget-based recommended candidate limit, and a forced debug path option. `RetrieveExecutionReport` and AQL EXPLAIN now carry `cost_model` with selected path, reason, estimates, and candidate-limit recommendation; CLI/server JSON and OpenAPI expose the same contract. Tests cover narrow bitmap, rare lexical term, wide semantic vector, budget heuristic, forced path, checkpointed estimate propagation, CLI/server JSON shape, and workspace retrieval fixtures. Gates: `cargo fmt --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, `make check`, `make openapi-contract-check`.
+- evidence: A13.6 wires the `LexicalFirst` cost decision into the physical candidate source when it is correctness-preserving: the executor starts from the selected rare lexical term, runs the normal bitmap plan, intersects both candidate sets, and falls back to bitmap-first if lexical candidates are unavailable or empty. Permission and WHERE semantics stay bitmap-enforced. `EXPLAIN ANALYZE` now shows `LexicalScan` and `BitmapIntersectOp` for a non-bitmap chosen path. Targeted tests passed: `cargo test -p cortex-engine --test query_search explain_analyze_uses_lexical_first_source_for_rare_term --all-features`, `cargo test -p cortex-engine --test query_search explain_analyze_retrieve_aql_reports_operator_counts --all-features`, and `cargo test -p cortex-engine plan::cost --lib --all-features`.
 
 ### EPIC-A14 — Snapshot pinning и GC-барьер (честный snapshot isolation)
 

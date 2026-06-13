@@ -63,4 +63,16 @@ impl CandidateResolver for EngineAqlProvider {
     fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId> {
         self.index.cell_id_for_candidate(candidate)
     }
+
+    fn lexical_candidates_for_terms(&self, terms: &[String]) -> Option<BTreeSet<u32>> {
+        let mut matched = false;
+        let mut candidates = BTreeSet::new();
+        for term in terms {
+            if let Some(term_candidates) = self.index.lexical.get(term) {
+                matched = true;
+                candidates.extend(term_candidates.iter().copied());
+            }
+        }
+        matched.then_some(candidates)
+    }
 }

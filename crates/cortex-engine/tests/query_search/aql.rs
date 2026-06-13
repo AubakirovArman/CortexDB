@@ -360,6 +360,53 @@ USING MODE balanced WHERE space = project:investments LIMIT 1 CANDIDATES;"#,
 }
 
 #[test]
+fn explain_analyze_uses_lexical_first_source_for_rare_term() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:wide\nstatus=ready\nsource=doc-needle\n\nneedle evidence".to_vec(),
+    )
+    .unwrap();
+    for id in 2..=50 {
+        db.put_cell(
+            CellId(id),
+            format!("scope=project:wide\nstatus=ready\nsource=doc-{id}\n\ncommon evidence")
+                .into_bytes(),
+        )
+        .unwrap();
+    }
+    db.checkpoint().unwrap();
+
+    let report = db
+        .explain_analyze_retrieve_aql(
+            r#"EXPLAIN ANALYZE RETRIEVE CONTEXT FOR TASK "needle common" IN BRAIN investment_projects
+WHERE space = project:wide LIMIT 10 CANDIDATES;"#,
+            &view(scope_id("project:wide")),
+        )
+        .unwrap();
+    let trace = report.execution_trace.as_ref().expect("analyze trace");
+
+    assert_eq!(report.cost_model.selected_path, ExecutionPath::LexicalFirst);
+    assert!(trace
+        .operators
+        .iter()
+        .any(|operator| operator.name == "LexicalScan"));
+    assert!(trace
+        .operators
+        .iter()
+        .any(|operator| operator.name == "BitmapIntersectOp"));
+    assert_eq!(
+        trace
+            .operators
+            .iter()
+            .find(|operator| operator.name == "LimitOp")
+            .map(|operator| operator.output_count),
+        Some(1)
+    );
+}
+
+#[test]
 fn retrieve_aql_preserves_large_cell_ids_after_checkpoint_and_compact() {
     let dir = tempfile::tempdir().unwrap();
     {
