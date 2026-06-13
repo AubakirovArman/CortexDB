@@ -4742,9 +4742,16 @@
     "crates/cortex-server/src/main.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 350,
+      "lines": 247,
       "soft_limit": 300,
       "warning_limit": 600
+    },
+    "crates/cortex-server/src/main/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 103,
+      "soft_limit": 600,
+      "warning_limit": 1200
     },
     "crates/cortex-server/src/memory.rs": {
       "hard_limit": 1000,
