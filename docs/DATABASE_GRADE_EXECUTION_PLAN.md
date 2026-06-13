@@ -615,7 +615,7 @@ enough to unblock the next dependency step.
 
 ### EPIC-B05 — AgentView lifecycle API v1
 
-- status: `pending`
+- status: `in_progress`
 - meta: Категория: security · Приоритет: P1 · Горизонт: 60 days · Тип: productize
 - goal: security boundary без удобного управления не используется.
 - problem: Проблема: создание/гранты разбросаны (auth_scope_admin.rs, policy cells); нет единого CLI/API/доки.
@@ -625,9 +625,11 @@ enough to unblock the next dependency step.
   - [ ] 3) AUTH.md: «агенты и права за 10 минут» (≤250 строк); e2e-тест двух агентов с разными scopes.
 - acceptance:
   - [ ] 1) сценарий «два агента, разные права» проходит из CLI без ручного JSON
-  - [ ] 2) admin-маршруты покрыты authz-тестами
+  - [x] 2) admin-маршруты покрыты authz-тестами
   - [ ] 3) doc-страница единственная.
 - files: cortex-server/src/{auth_scope_admin,auth_policy_*}.rs; cortex-cli; docs/AUTH.md.
+- evidence: Started B05 by inspecting the existing `agent_views/*.view` store, auth policy store, old `/v1/admin/auth/scope/*` mutation routes, async actor boundary, sync test harness, and CLI surfaces. Added a server-side lifecycle foundation in `auth_agent_admin`: typed AgentView create/list/show request and response models, async actor methods, `/v1/agents` and `/v1/agents/{agent_id}` admin routes, and legacy sync-handler coverage. Data-role access to `/v1/agents` is now classified as admin and denied by the normal role policy. Tests `admin_can_create_list_and_show_agent_views` and `data_token_cannot_manage_agent_views` cover admin lifecycle and authz. OpenAPI now documents `/v1/agents` and `/v1/agents/{agent_id}`; generated Python/TypeScript OpenAPI SDK type artifacts were refreshed. Checks passed so far: `cargo fmt --check`, file-size ratchet, targeted lifecycle tests, `cargo test -p cortex-server --all-features`, and `make openapi-contract-check`.
+- next exit step: add `cortexdb agent create|grant|revoke|list|show` CLI commands over the same AgentView model, then decide the compatibility bridge/system-cell migration wording in `docs/AUTH.md`.
 - risks: совместимость со старым policy-store — migration-тест. Зависимости: нет. Эффект: главная фича становится управляемой.
 
 ### EPIC-B06 — Typed provenance model (source_ref, citation, content_hash как колонки)

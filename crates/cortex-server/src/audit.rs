@@ -55,6 +55,7 @@ pub(crate) fn classify(method: &str, path: &str) -> AuditAction {
     match path {
         _ if dashboard::is_page(path) => AuditAction::Admin,
         _ if path.starts_with("/v1/admin/") => AuditAction::Admin,
+        _ if path == "/v1/agents" || path.starts_with("/v1/agents/") => AuditAction::Admin,
         "/v1/health" => AuditAction::Health,
         "/v1/stats" | "/v1/validate" | "/v1/flush" | "/v1/compact" => AuditAction::Admin,
         "/v1/metrics" | "/v1/ann/metrics" => AuditAction::Metrics,

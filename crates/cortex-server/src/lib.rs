@@ -5,6 +5,7 @@ mod audit_chain;
 #[cfg(test)]
 mod audit_tests;
 mod auth;
+mod auth_agent_admin;
 mod auth_capability;
 mod auth_policy_cells;
 mod auth_policy_io;

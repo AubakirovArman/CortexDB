@@ -1,4 +1,5 @@
 mod admin;
+mod agent_admin;
 mod database_route;
 mod error;
 mod inference;
@@ -151,6 +152,19 @@ pub(crate) async fn axum_handler(State(state): State<AppState>, req: Request) ->
         &method,
         &path,
         &query,
+        &body_bytes,
+        &audit_event,
+        &request_id,
+        &auth_decision,
+    )
+    .await
+    {
+        return response;
+    }
+    if let Some(response) = agent_admin::handle_agent_admin(
+        &state,
+        &method,
+        &path,
         &body_bytes,
         &audit_event,
         &request_id,

@@ -276,6 +276,66 @@ OpenApiAuthScopeMutationResponse = TypedDict(
     total=False,
 )
 
+OpenApiAgentViewCreateRequest = TypedDict(
+    'OpenApiAgentViewCreateRequest',
+    {
+        'agent_id': 'int',
+        'allow_audit_mode': 'bool',
+        'allow_remember': 'bool',
+        'allow_verify_fact': 'bool',
+        'allowed_memory_types': "list[Literal['decision', 'preference', 'workflow_result', 'error_log', 'observation']]",
+        'allowed_modes': "list[Literal['fast', 'balanced', 'semantic', 'audit']]",
+        'default_candidate_limit': 'int',
+        'default_context_budget_tokens': 'int',
+        'label': 'str | None',
+        'max_candidate_limit': 'int',
+        'max_context_budget_tokens': 'int',
+        'max_ttl_seconds': 'int | None',
+        'min_required_confidence_q16': 'int',
+        'private_scope': 'str | None',
+        'readable_brains': 'list[int]',
+        'readable_scopes': 'list[str]',
+        'require_citations_by_default': 'bool',
+        'writable_scopes': 'list[str]',
+    },
+    total=False,
+)
+
+OpenApiAgentViewResponse = TypedDict(
+    'OpenApiAgentViewResponse',
+    {
+        'agent_id': 'int',
+        'allow_audit_mode': 'bool',
+        'allow_remember': 'bool',
+        'allow_verify_fact': 'bool',
+        'allowed_memory_types': "list[Literal['decision', 'preference', 'workflow_result', 'error_log', 'observation']]",
+        'allowed_modes': "list[Literal['fast', 'balanced', 'semantic', 'audit']]",
+        'default_candidate_limit': 'int',
+        'default_context_budget_tokens': 'int',
+        'label': 'str | None',
+        'max_candidate_limit': 'int',
+        'max_context_budget_tokens': 'int',
+        'max_ttl_seconds': 'int | None',
+        'min_required_confidence_q16': 'int',
+        'private_scope': 'int | None',
+        'readable_brains': 'list[int]',
+        'readable_scopes': 'list[int]',
+        'require_citations_by_default': 'bool',
+        'schema_version': "Literal['cortexdb.agent_view.v1']",
+        'writable_scopes': 'list[int]',
+    },
+    total=False,
+)
+
+OpenApiAgentViewListResponse = TypedDict(
+    'OpenApiAgentViewListResponse',
+    {
+        'agents': 'list[OpenApiAgentViewResponse]',
+        'schema_version': "Literal['cortexdb.agent_views.v1']",
+    },
+    total=False,
+)
+
 OpenApiHnswNoFallbackProfileRequest = TypedDict(
     'OpenApiHnswNoFallbackProfileRequest',
     {

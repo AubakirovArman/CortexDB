@@ -4917,7 +4917,14 @@
     "crates/cortex-server/src/actor.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 109,
+      "lines": 110,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/actor/agent_views.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 49,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -4952,7 +4959,7 @@
     "crates/cortex-server/src/audit.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 243,
+      "lines": 244,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5016,6 +5023,13 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 114,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/auth_agent_admin.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 284,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5155,7 +5169,7 @@
     "crates/cortex-server/src/handler.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 252,
+      "lines": 266,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5163,6 +5177,13 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 282,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/handler/agent_admin.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 122,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5232,7 +5253,7 @@
     "crates/cortex-server/src/lib.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 52,
+      "lines": 53,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5491,7 +5512,7 @@
     "crates/cortex-server/src/sync_handler.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 198,
+      "lines": 210,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5519,7 +5540,7 @@
     "crates/cortex-server/src/tests/auth_policy_tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 14,
+      "lines": 16,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -5534,6 +5555,13 @@
       "hard_limit": 2000,
       "kind": "test",
       "lines": 224,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-server/src/tests/auth_policy_tests/agent_lifecycle.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 79,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -7017,7 +7045,7 @@
     "scripts/descriptor_hot_path_gate_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 394,
+      "lines": 382,
       "soft_limit": 300,
       "warning_limit": 600
     },

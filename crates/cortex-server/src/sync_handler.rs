@@ -5,8 +5,8 @@ use cortex_engine::Database;
 use crate::responses::ErrorCode;
 use crate::router::{query_param_opt_decoded, route_shared_with_auth};
 use crate::{
-    auth, auth_policy_cells, auth_policy_store, auth_scope_admin, dashboard, json_error,
-    json_response, llm, validate_tenant_id, ServerOptions,
+    auth, auth_agent_admin, auth_policy_cells, auth_policy_store, auth_scope_admin, dashboard,
+    json_error, json_response, llm, validate_tenant_id, ServerOptions,
 };
 
 fn serve_dashboard() -> String {
@@ -104,6 +104,18 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
         }
         Ok(None) => {}
         Err(error) => return json_error(error.status_code(), error.code(), &error.to_string()),
+    }
+
+    if path == "/v1/agents" || path.starts_with("/v1/agents/") {
+        let Ok(mut db) = open_database(root, options) else {
+            return json_error(500, ErrorCode::Internal, "failed to open database");
+        };
+        return match auth_agent_admin::handle_sync_request(&mut db, parts[0], path, body.as_bytes())
+        {
+            Ok(Some(body)) => json_response(200, &body),
+            Ok(None) => json_error(404, ErrorCode::NotFound, "unknown agent admin route"),
+            Err(error) => json_error(error.status_code(), error.code(), &error.to_string()),
+        };
     }
 
     if parts[0] == "POST"

@@ -33,7 +33,19 @@ B05 exit steps:
 
 B05 progress:
 
-- next: inspect current auth policy/admin route surface before editing.
+- done: inspected current auth policy, scope-admin, AgentView store, async actor,
+  legacy sync handler, and CLI surfaces;
+- done: added server-side AgentView lifecycle foundation: typed
+  create/list/show helpers, async actor methods, `/v1/agents` and
+  `/v1/agents/{agent_id}` admin routes, and legacy sync-handler coverage;
+- done: added admin authz tests for create/list/show and data-token denial;
+- done: documented `/v1/agents` in OpenAPI and regenerated Python/TypeScript
+  OpenAPI SDK type artifacts;
+- remaining: add `cortexdb agent create|grant|revoke|list|show` CLI commands;
+- remaining: decide whether B05 closes on the existing file-backed
+  `agent_views/*.view` compatibility bridge or needs a system-cell migration
+  in this epic;
+- next: implement CLI lifecycle commands over the same AgentView model.
 
 ## Recently Closed
 

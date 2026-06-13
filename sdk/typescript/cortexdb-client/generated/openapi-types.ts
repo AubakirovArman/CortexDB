@@ -181,6 +181,54 @@ export interface OpenApiAuthScopeMutationResponse {
   writable_scope_count: number;
 }
 
+export interface OpenApiAgentViewCreateRequest {
+  agent_id: number;
+  allow_audit_mode?: boolean;
+  allow_remember?: boolean;
+  allow_verify_fact?: boolean;
+  allowed_memory_types?: "decision" | "preference" | "workflow_result" | "error_log" | "observation"[];
+  allowed_modes?: "fast" | "balanced" | "semantic" | "audit"[];
+  default_candidate_limit?: number;
+  default_context_budget_tokens?: number;
+  label?: string | null;
+  max_candidate_limit?: number;
+  max_context_budget_tokens?: number;
+  max_ttl_seconds?: number | null;
+  min_required_confidence_q16?: number;
+  private_scope?: string | null;
+  readable_brains?: number[];
+  readable_scopes?: string[];
+  require_citations_by_default?: boolean;
+  writable_scopes?: string[];
+}
+
+export interface OpenApiAgentViewResponse {
+  agent_id: number;
+  allow_audit_mode: boolean;
+  allow_remember: boolean;
+  allow_verify_fact: boolean;
+  allowed_memory_types: "decision" | "preference" | "workflow_result" | "error_log" | "observation"[];
+  allowed_modes: "fast" | "balanced" | "semantic" | "audit"[];
+  default_candidate_limit: number;
+  default_context_budget_tokens: number;
+  label: string | null;
+  max_candidate_limit: number;
+  max_context_budget_tokens: number;
+  max_ttl_seconds: number | null;
+  min_required_confidence_q16: number;
+  private_scope: number | null;
+  readable_brains: number[];
+  readable_scopes: number[];
+  require_citations_by_default: boolean;
+  schema_version: "cortexdb.agent_view.v1";
+  writable_scopes: number[];
+}
+
+export interface OpenApiAgentViewListResponse {
+  agents: OpenApiAgentViewResponse[];
+  schema_version: "cortexdb.agent_views.v1";
+}
+
 export interface OpenApiHnswNoFallbackProfileRequest {
   min_recall_q16?: number;
   require_upper_layers?: boolean;

@@ -279,6 +279,65 @@ paths:
         '403': *id005
         '404': *id003
         '500': *id002
+  /v1/agents:
+    get:
+      summary: List persisted AgentViews
+      description: Admin-only AgentView lifecycle route. Scope names are stored as deterministic scope IDs.
+      responses:
+        '200':
+          description: AgentView list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentViewListResponse'
+        '400': *id001
+        '401': *id004
+        '403': *id005
+        '500': *id002
+    post:
+      summary: Create or replace a persisted AgentView
+      description: Admin-only AgentView lifecycle route. Scope labels are converted to stable scope IDs before persistence.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentViewCreateRequest'
+      responses:
+        '200':
+          description: Created AgentView
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentViewResponse'
+        '400': *id001
+        '401': *id004
+        '403': *id005
+        '500': *id002
+  /v1/agents/{agent_id}:
+    get:
+      summary: Show a persisted AgentView
+      description: Admin-only AgentView lifecycle route.
+      parameters:
+      - name: agent_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: uint64
+          minimum: 1
+      responses:
+        '200':
+          description: AgentView
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentViewResponse'
+        '400': *id001
+        '401': *id004
+        '403': *id005
+        '404': *id003
+        '500': *id002
   /v1/admin/search/hnsw/no-fallback-profile:
     get:
       summary: Read the persisted HNSW no-fallback rollout profile
@@ -1682,6 +1741,197 @@ components:
           type: integer
         writable_scope_count:
           type: integer
+    AgentViewCreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - agent_id
+      properties:
+        agent_id:
+          type: integer
+          format: uint64
+          minimum: 1
+        label:
+          type: string
+          nullable: true
+        readable_scopes:
+          type: array
+          items:
+            type: string
+        writable_scopes:
+          type: array
+          items:
+            type: string
+        readable_brains:
+          type: array
+          items:
+            type: integer
+            format: uint64
+        allowed_modes:
+          type: array
+          items:
+            type: string
+            enum:
+            - fast
+            - balanced
+            - semantic
+            - audit
+        allowed_memory_types:
+          type: array
+          items:
+            type: string
+            enum:
+            - decision
+            - preference
+            - workflow_result
+            - error_log
+            - observation
+        max_context_budget_tokens:
+          type: integer
+          format: uint32
+        default_context_budget_tokens:
+          type: integer
+          format: uint32
+        max_candidate_limit:
+          type: integer
+          format: uint32
+        default_candidate_limit:
+          type: integer
+          format: uint32
+        min_required_confidence_q16:
+          type: integer
+          format: uint32
+          minimum: 0
+          maximum: 65535
+        max_ttl_seconds:
+          type: integer
+          format: uint64
+          nullable: true
+        allow_remember:
+          type: boolean
+        allow_verify_fact:
+          type: boolean
+        allow_audit_mode:
+          type: boolean
+        require_citations_by_default:
+          type: boolean
+        private_scope:
+          type: string
+          nullable: true
+    AgentViewResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - schema_version
+      - agent_id
+      - label
+      - readable_brains
+      - readable_scopes
+      - writable_scopes
+      - allowed_modes
+      - allowed_memory_types
+      - max_context_budget_tokens
+      - default_context_budget_tokens
+      - max_candidate_limit
+      - default_candidate_limit
+      - min_required_confidence_q16
+      - max_ttl_seconds
+      - allow_remember
+      - allow_verify_fact
+      - allow_audit_mode
+      - require_citations_by_default
+      - private_scope
+      properties:
+        schema_version:
+          type: string
+          enum:
+          - cortexdb.agent_view.v1
+        agent_id:
+          type: integer
+          format: uint64
+        label:
+          type: string
+          nullable: true
+        readable_brains:
+          type: array
+          items:
+            type: integer
+            format: uint64
+        readable_scopes:
+          type: array
+          items:
+            type: integer
+            format: uint64
+        writable_scopes:
+          type: array
+          items:
+            type: integer
+            format: uint64
+        allowed_modes:
+          type: array
+          items:
+            type: string
+            enum:
+            - fast
+            - balanced
+            - semantic
+            - audit
+        allowed_memory_types:
+          type: array
+          items:
+            type: string
+            enum:
+            - decision
+            - preference
+            - workflow_result
+            - error_log
+            - observation
+        max_context_budget_tokens:
+          type: integer
+          format: uint32
+        default_context_budget_tokens:
+          type: integer
+          format: uint32
+        max_candidate_limit:
+          type: integer
+          format: uint32
+        default_candidate_limit:
+          type: integer
+          format: uint32
+        min_required_confidence_q16:
+          type: integer
+          format: uint32
+        max_ttl_seconds:
+          type: integer
+          format: uint64
+          nullable: true
+        allow_remember:
+          type: boolean
+        allow_verify_fact:
+          type: boolean
+        allow_audit_mode:
+          type: boolean
+        require_citations_by_default:
+          type: boolean
+        private_scope:
+          type: integer
+          format: uint64
+          nullable: true
+    AgentViewListResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - schema_version
+      - agents
+      properties:
+        schema_version:
+          type: string
+          enum:
+          - cortexdb.agent_views.v1
+        agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentViewResponse'
     HnswNoFallbackProfileRequest:
       type: object
       additionalProperties: false

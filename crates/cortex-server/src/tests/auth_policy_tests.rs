@@ -2,6 +2,8 @@
 mod admin_policy_cells;
 #[path = "auth_policy_tests/admin_principals.rs"]
 mod admin_principals;
+#[path = "auth_policy_tests/agent_lifecycle.rs"]
+mod agent_lifecycle;
 #[path = "auth_policy_tests/helpers.rs"]
 mod helpers;
 #[path = "auth_policy_tests/role_routes.rs"]
