@@ -9,8 +9,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-
 REQUIRED_PACKAGES = {
+    "rust_api_types": {"registry": "crates.io", "publish": "cargo publish -p cortex-api-types", "dry_run": "cargo publish -p cortex-api-types --dry-run"},
     "rust": {
         "registry": "crates.io",
         "publish": "cargo publish -p cortex-sdk",

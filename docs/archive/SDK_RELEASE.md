@@ -4,9 +4,10 @@ Unified CortexDB public-surface versioning rules are defined in
 [`VERSIONING_POLICY.md`](VERSIONING_POLICY.md). This document covers the SDK
 release train and registry guardrails.
 
-CortexDB publishes three client surfaces from one versioned source
-tree:
+CortexDB publishes three client surfaces from one versioned source tree plus one
+Rust support crate that must be published before the Rust SDK:
 
+- Rust support crate: `crates/cortex-api-types` as `cortex-api-types`
 - Python package: `sdk/python` as `cortexdb-client`
 - TypeScript package: `sdk/typescript` as `@cortexdb/client`
 - Rust crate: `crates/cortex-sdk` as `cortex-sdk`
@@ -130,6 +131,8 @@ The publish job is skipped unless all of these are true:
 - `publish=true` was explicitly set.
 - The protected `sdk-release` environment approves the deployment.
 - Registry credentials/trusted publishing are configured.
+- Rust packages publish in order: `cortex-api-types` first, then
+  `cortex-sdk`.
 
 The local release train gate is:
 
@@ -147,7 +150,7 @@ contract checks, deprecation policy checks, and live local server e2e evidence.
 - npm: `NPM_TOKEN` repository secret with publish permission for
   `@cortexdb/client`.
 - crates.io: `CARGO_REGISTRY_TOKEN` repository secret with publish permission
-  for `cortex-sdk`.
+  for `cortex-api-types` and `cortex-sdk`.
 
 ## Release Discipline
 

@@ -17,6 +17,14 @@
   },
   "packages": [
     {
+      "language": "rust_api_types",
+      "name": "cortex-api-types",
+      "manifest": "crates/cortex-api-types/Cargo.toml",
+      "registry": "crates.io",
+      "publish_command": "cargo publish -p cortex-api-types",
+      "dry_run_command": "cargo publish -p cortex-api-types --dry-run"
+    },
+    {
       "language": "rust",
       "name": "cortex-sdk",
       "manifest": "crates/cortex-sdk/Cargo.toml",

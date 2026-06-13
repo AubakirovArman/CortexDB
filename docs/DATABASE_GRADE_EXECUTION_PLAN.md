@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-D05` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, and `EPIC-D15` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-A19` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, and `EPIC-D15` are done). `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -1292,8 +1292,8 @@ enough to unblock the next dependency step.
   - [ ] 3) README-примеры запускаются против опубликованных пакетов.
 - files: sdk/, .github/workflows/sdk-release.yml.
 - risks: занятые имена — резерв заранее. Зависимости: D15 (версии). Эффект: quickstart перестаёт быть фикцией.
-- evidence: `make sdk-e2e-release-check` passed after SDK release/deprecation/publication gates were aligned to archived docs; `make sdk-check` passed and produced Rust `cargo package`, Python SDK tests, and npm pack dry-run evidence.
-- remaining: public registry publication and clean-machine install smoke are now unblocked by `EPIC-D15` and still require registry credentials/trusted publishing. Next D05 exit step is to audit the actual registry workflow/secret state, then either publish beta.2 SDK packages or explicitly park public registry publication as external.
+- evidence: `make sdk-e2e-release-check` passed after SDK release/deprecation/publication gates were aligned to archived docs; `make sdk-check` passed and produced Rust `cargo package`, Python SDK tests, and npm pack dry-run evidence. D05 follow-up audit found that the `SDK Release` workflow preflight failed on the beta.2 tag because it tried `cargo publish -p cortex-sdk --dry-run` before the unpublished `cortex-api-types` dependency existed on crates.io. The workflow, manifest, registry gate, and docs now model the required order: `cortex-api-types` first, then `cortex-sdk`; local gates passed again (`make sdk-release-contract-check`, `make sdk-registry-gate-check`, `make sdk-e2e-release-check`, `make sdk-check`).
+- remaining: public registry publication and clean-machine install smoke still require external registry setup. Current GitHub repository state has no `sdk-release` environment and no repo-level `NPM_TOKEN` or `CARGO_REGISTRY_TOKEN`; PyPI trusted publishing is not configured from the repo state. Do not claim public SDK publication until those are configured and the manual tag-gated release job succeeds.
 
 ### EPIC-D06 — Python SDK: typed-модели, ретраи, таймауты
 

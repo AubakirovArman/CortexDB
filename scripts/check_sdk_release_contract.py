@@ -150,10 +150,10 @@ def validate_manifest(repo: Path, errors: list[str]) -> dict[str, Any]:
         elif deprecation_policy.get("document") != "docs/archive/SDK_DEPRECATION_POLICY.md":
             errors.append("sdk/release-manifest.json: deprecation_policy.document mismatch")
         packages = manifest.get("packages")
-        if not isinstance(packages, list) or len(packages) != 3:
-            errors.append("sdk/release-manifest.json: expected exactly 3 packages")
+        if not isinstance(packages, list) or len(packages) != 4:
+            errors.append("sdk/release-manifest.json: expected exactly 4 packages")
             return manifest
-        required_languages = {"rust", "python", "typescript"}
+        required_languages = {"rust_api_types", "rust", "python", "typescript"}
         languages = {item.get("language") for item in packages if isinstance(item, dict)}
         if languages != required_languages:
             errors.append(f"sdk/release-manifest.json: package languages mismatch: {sorted(languages)}")
@@ -216,13 +216,13 @@ def validate_package_metadata(repo: Path, manifest: dict[str, Any], errors: list
     if "cortexdb-client.cjs" not in ts.get("files", []):
         errors.append("sdk/typescript/package.json: cjs build missing from files")
 
-
 def validate_workflow(repo: Path, errors: list[str]) -> None:
     workflow = read_text(repo / ".github/workflows/sdk-release.yml")
     for needle in (
         "workflow_dispatch",
         "inputs.publish",
         "startsWith(github.ref, 'refs/tags/v')",
+        "cargo publish -p cortex-api-types --dry-run",
         "cargo publish -p cortex-sdk --dry-run",
         "python3 scripts/check_sdk_release_contract.py --enforce-github-ref",
         "python3 scripts/check_sdk_deprecation_policy.py",
@@ -231,6 +231,7 @@ def validate_workflow(repo: Path, errors: list[str]) -> None:
         "environment: sdk-release",
         "pypa/gh-action-pypi-publish",
         "npm publish --access public --provenance",
+        "cargo publish -p cortex-api-types",
         "cargo publish -p cortex-sdk",
     ):
         try:
@@ -240,8 +241,7 @@ def validate_workflow(repo: Path, errors: list[str]) -> None:
     try:
         workflow_count_at_least(workflow, 'node-version: "24"', 2)
     except ValueError as exc:
-        errors.append(str(exc))
-
+            errors.append(str(exc))
 
 SDK_RELEASE_DOC = Path("docs/archive/SDK_RELEASE.md")
 

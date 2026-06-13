@@ -21,27 +21,50 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-D05` — SDK publication decision.
+`EPIC-A19` — scale benchmarks and RAM/latency curves.
 
-D05 exit steps:
+A19 exit steps:
 
-1. Audit the actual PyPI/npm/crates.io workflow and secret/trusted-publishing
-   state.
-2. If credentials/trusted publishing are available, publish beta.2 SDK packages
-   from the verified tag.
-3. If public registry publication is intentionally deferred, record the
-   external blocker and keep D05 partial/local-only before moving to A19.
-4. Mark done only when public install smoke passes.
+1. Keep reproducible commands for 100K/1M/10M scale targets.
+2. Record RAM, open time, put/get/retrieve/verify/checkpoint latency.
+3. Store reports in stable target/docs paths.
+4. Compare each storage/indexing change against the baseline.
+5. Mark done only when the scale envelope is measured and documented.
 
-D05 progress:
+A19 progress:
 
-- local SDK package and e2e release gates pass;
-- `v0.2.0-beta.2` is now published, so the previous D15 version/tag blocker is
-  gone;
-- next: decide the public registry path from actual workflow/secret state, not
-  assumptions.
+- 100K/1M core lifecycle baselines exist and are documented;
+- heavy search/context/verify p95, lazy cold outlier analysis, and larger-scale
+  trend curves remain;
+- use small/medium gates while implementing; do not run 1M/10M unless this
+  epic explicitly needs the evidence.
 
 ## Recently Closed
+
+### EPIC-D05 — SDK publication audit follow-up
+
+Status: `partial`
+
+What advanced it:
+
+- `v0.2.0-beta.2` removed the previous version/tag blocker.
+- The `SDK Release` workflow failure on the beta.2 tag was traced to Rust
+  publish order: `cortex-sdk` was dry-run before `cortex-api-types` existed on
+  crates.io.
+- The workflow, release manifest, registry gate, and SDK release docs now model
+  the correct order: `cortex-api-types` first, then `cortex-sdk`.
+- Local gates pass again: `make sdk-release-contract-check`,
+  `make sdk-registry-gate-check`, `make sdk-e2e-release-check`, and
+  `make sdk-check`.
+- GitHub repo state currently shows no `sdk-release` environment and no
+  repo-level `NPM_TOKEN` or `CARGO_REGISTRY_TOKEN`; public registry publication
+  remains external.
+
+Next:
+
+- Do not claim public SDK packages until registry credentials/trusted
+  publishing are configured and the manual tag-gated workflow succeeds.
+- Continue with A19.
 
 ### EPIC-D15 — v0.2.0-beta.2 release/tag
 
@@ -387,7 +410,7 @@ Partial count in roadmap snapshot: `3`.
 - C16 memory profiling:
   estimated-vs-real verification and gate integration remain.
 - D05 SDK publish:
-  local gates exist; public registry publication remains.
+  local gates exist; public registry publication remains externally blocked.
 
 ## Frozen Snapshot
 
@@ -399,11 +422,11 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on D05 only:
+Work on A19 only:
 
-1. inspect `.github/workflows`, SDK release scripts, and registry documentation;
-2. determine whether PyPI/npm/crates.io publication can run from the beta.2 tag
-   without adding secrets to the repo;
-3. run local SDK gates again if scripts/config change;
-4. either publish and smoke-test public installs, or record a concrete external
-   blocker and move to A19 with D05 still partial.
+1. inventory the existing 100K/1M scale reports and identify missing metrics;
+2. keep the next run small enough to validate instrumentation before any large
+   benchmark;
+3. add or fix benchmark reporting only where it directly closes A19 acceptance;
+4. update the tracker with report paths and move pointer only when A19 is done
+   or explicitly split with accepted follow-up scope.
