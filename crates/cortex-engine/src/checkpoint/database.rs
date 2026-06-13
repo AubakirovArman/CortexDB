@@ -11,6 +11,7 @@ use crate::query::EngineAqlIndex;
 
 use super::candidates::{candidate_from_ordinal, segment_cell_count, CandidateAllocator};
 use super::profiles::ensure_checkpoint_profiles;
+use super::stats::segment_stats_from_cell_refs;
 use super::{
     bitmap_path, hnsw, hnsw_path, lexical_path, manifest_hnsw_profile, segment_path, vector,
     vector_path,
@@ -52,8 +53,9 @@ impl Database {
         fs::create_dir_all(&self.segments_path)?;
         let segment_id = self.manifest.generation + 1;
         let segment_path = segment_path(&self.segments_path, segment_id);
-        let cells_flushed = {
+        let (cells_flushed, segment_stats) = {
             let cells = self.checkpoint_delta_cell_refs(base_seq, &candidate_map, &tombstones)?;
+            let segment_stats = segment_stats_from_cell_refs(segment_id, &cells);
             SegmentWriter::write_refs(&segment_path, &cells)?;
 
             let index = EngineAqlIndex::try_from_segment_cell_refs(&cells)?;
@@ -69,7 +71,7 @@ impl Database {
                 hnsw::hnsw_graph_for_cell_refs_with_config(&cells, self.hnsw_build_config)?
                     .write(hnsw_path(&self.segments_path, segment_id))?;
             }
-            cells.len()
+            (cells.len(), segment_stats)
         };
         self.publish_checkpoint_corpus_synonym_dictionary()?;
 
@@ -79,6 +81,7 @@ impl Database {
             checkpoint_seq: self.current_seq.0,
             cell_count: segment_cell_count(cells_flushed)?,
         });
+        self.manifest.set_segment_stats(segment_stats);
         self.manifest.hnsw_profile = hnsw_profile;
         if let Some(profile) = vector_profile {
             self.manifest.vector_profile = Some(profile);
@@ -120,6 +123,7 @@ impl Database {
         fs::create_dir_all(&self.segments_path)?;
         let segment_id = self.manifest.generation + 1;
         let segment_path = segment_path(&self.segments_path, segment_id);
+        let segment_stats = segment_stats_from_cell_refs(segment_id, &cells);
         let cells_flushed = {
             SegmentWriter::write_records(&segment_path, &records)?;
 
@@ -146,6 +150,7 @@ impl Database {
             checkpoint_seq: self.current_seq.0,
             cell_count: segment_cell_count(cells_flushed)?,
         });
+        self.manifest.set_segment_stats(segment_stats);
         self.manifest.hnsw_profile = hnsw_profile;
         self.manifest.vector_profile = vector_profile;
         self.manifest.store(&self.manifest_path)?;

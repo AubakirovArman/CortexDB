@@ -8,6 +8,7 @@ mod load;
 mod manifest_safety;
 mod paths;
 mod profiles;
+mod stats;
 #[cfg(test)]
 mod tests;
 mod types;

@@ -2,7 +2,7 @@ use cortex_core::{CellId, CommitSeq};
 use cortex_engine::Database;
 use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
-use cortex_storage::manifest::{ManifestSegment, StorageManifest};
+use cortex_storage::manifest::{ManifestCount, ManifestSegment, StorageManifest};
 use cortex_storage::segment::{SegmentCell, SegmentWriter};
 use cortex_storage::vectors::VectorIndex;
 
@@ -37,6 +37,46 @@ fn checkpoint_persists_segment_indexes_and_manifest() {
         .unwrap()
         .terms
         .contains_key("budget"));
+}
+
+#[test]
+fn checkpoint_persists_segment_stats_in_manifest_across_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_cell(
+            CellId(1),
+            b"scope=project:a\nstatus=ready\ntype=fact\ncreated_unix_seconds=10\n\nbudget runway budget"
+                .to_vec(),
+        )
+        .unwrap();
+        db.put_cell(
+            CellId(2),
+            b"scope=project:b\nstatus=draft\ntype=document_block\ncreated_unix_seconds=30\n\nbudget schedule"
+                .to_vec(),
+        )
+        .unwrap();
+
+        db.checkpoint().unwrap();
+        let stats = db.manifest().stats_for_segment(1).unwrap();
+        assert_eq!(stats.row_count, 2);
+        assert_eq!(stats.min_created_unix_seconds, Some(10));
+        assert_eq!(stats.max_created_unix_seconds, Some(30));
+        assert_eq!(count_for(&stats.scope_counts, "project:a"), Some(1));
+        assert_eq!(count_for(&stats.scope_counts, "project:b"), Some(1));
+        assert_eq!(count_for(&stats.status_counts, "ready"), Some(1));
+        assert_eq!(count_for(&stats.status_counts, "draft"), Some(1));
+        assert_eq!(count_for(&stats.type_counts, "fact"), Some(1));
+        assert_eq!(count_for(&stats.type_counts, "document_block"), Some(1));
+        assert_eq!(stats.top_terms[0].term, "budget");
+        assert_eq!(stats.top_terms[0].document_frequency, 2);
+    }
+
+    let db = Database::open(dir.path()).unwrap();
+    let stats = db.manifest().stats_for_segment(1).unwrap();
+    assert_eq!(stats.row_count, 2);
+    assert_eq!(count_for(&stats.scope_counts, "project:a"), Some(1));
+    assert_eq!(stats.top_terms[0].term, "budget");
 }
 
 #[test]
@@ -127,6 +167,36 @@ fn compact_retires_old_segments_to_full_visible_snapshot() {
     assert_eq!(db.manifest().live_segments.len(), 1);
     assert_eq!(db.manifest().retired_segments.len(), 2);
     assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"v2");
+}
+
+#[test]
+fn compact_replaces_segment_stats_with_full_snapshot_stats() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:a\nstatus=ready\ntype=fact\ncreated_unix_seconds=10\n\nold budget".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+    db.patch_cell(
+        CellId(1),
+        b"scope=project:b\nstatus=ready\ntype=fact\ncreated_unix_seconds=20\n\nnew budget".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+
+    assert_eq!(db.manifest().segment_stats.len(), 2);
+    db.compact().unwrap();
+
+    assert_eq!(db.manifest().live_segments.len(), 1);
+    assert_eq!(db.manifest().segment_stats.len(), 1);
+    let segment_id = db.manifest().live_segments[0].id;
+    let stats = db.manifest().stats_for_segment(segment_id).unwrap();
+    assert_eq!(stats.row_count, 1);
+    assert_eq!(count_for(&stats.scope_counts, "project:b"), Some(1));
+    assert_eq!(count_for(&stats.scope_counts, "project:a"), None);
+    assert_eq!(stats.min_created_unix_seconds, Some(20));
 }
 
 #[test]
@@ -274,6 +344,13 @@ fn checkpoint_rotates_wal_and_reclaims_archived_file() {
     assert_eq!(archived_count_before, 0);
     assert_eq!(archived_count_after, 0);
     assert!(wal_path.exists());
+}
+
+fn count_for(counts: &[ManifestCount], key: &str) -> Option<u64> {
+    counts
+        .iter()
+        .find(|count| count.key == key)
+        .map(|count| count.count)
 }
 
 #[test]

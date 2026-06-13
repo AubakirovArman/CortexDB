@@ -1,5 +1,6 @@
 use cortex_core::CellId;
 use cortex_engine::{CompactionPolicy, Database, DatabaseOptions};
+use cortex_storage::manifest::ManifestCount;
 
 fn opts_with_low_threshold() -> DatabaseOptions {
     DatabaseOptions {
@@ -41,6 +42,19 @@ fn incremental_compact_reduces_segment_count_and_preserves_data() {
         assert_eq!(stats.segments_after, 2);
         assert!(stats.cells_compacted > 0);
         assert!(stats.duration_ms < 10_000);
+        assert_eq!(db.manifest().segment_stats.len(), 2);
+        let compacted_segment_id = db
+            .manifest()
+            .live_segments
+            .iter()
+            .map(|segment| segment.id)
+            .max()
+            .unwrap();
+        let compacted_stats = db
+            .manifest()
+            .stats_for_segment(compacted_segment_id)
+            .unwrap();
+        assert_eq!(compacted_stats.row_count, 20);
 
         // Data from all batches is still visible.
         for i in 1..=30 {
@@ -64,6 +78,59 @@ fn incremental_compact_reduces_segment_count_and_preserves_data() {
         );
     }
     db.validate_storage().unwrap();
+}
+
+#[test]
+fn incremental_compact_replaces_selected_segment_stats() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open_with_options(dir.path(), opts_with_low_threshold()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:a\nstatus=ready\ntype=fact\n\nalpha budget".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:b\nstatus=ready\ntype=fact\n\nbeta budget".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+    db.put_cell(
+        CellId(3),
+        b"scope=project:c\nstatus=draft\ntype=document_block\n\ngamma".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+
+    assert_eq!(db.manifest().segment_stats.len(), 3);
+    db.incremental_compact().unwrap();
+
+    assert_eq!(db.manifest().live_segments.len(), 2);
+    assert_eq!(db.manifest().segment_stats.len(), 2);
+    let compacted_segment_id = db
+        .manifest()
+        .live_segments
+        .iter()
+        .map(|segment| segment.id)
+        .max()
+        .unwrap();
+    let compacted_stats = db
+        .manifest()
+        .stats_for_segment(compacted_segment_id)
+        .unwrap();
+    assert_eq!(compacted_stats.row_count, 2);
+    assert_eq!(
+        count_for(&compacted_stats.scope_counts, "project:a"),
+        Some(1)
+    );
+    assert_eq!(
+        count_for(&compacted_stats.scope_counts, "project:b"),
+        Some(1)
+    );
+    assert_eq!(count_for(&compacted_stats.scope_counts, "project:c"), None);
+    assert_eq!(compacted_stats.top_terms[0].term, "budget");
+    assert_eq!(compacted_stats.top_terms[0].document_frequency, 2);
 }
 
 #[test]
@@ -116,4 +183,11 @@ fn maybe_incremental_compact_triggers_automatically() {
         .unwrap()
         .expect("should compact");
     assert!(stats.segments_after < stats.segments_before);
+}
+
+fn count_for(counts: &[ManifestCount], key: &str) -> Option<u64> {
+    counts
+        .iter()
+        .find(|count| count.key == key)
+        .map(|count| count.count)
 }

@@ -109,8 +109,15 @@ impl StorageManifest {
     pub fn compact_to_segment(&mut self, segment: ManifestSegment) {
         self.generation += 1;
         self.checkpoint_seq = segment.checkpoint_seq;
+        let retired_ids = self
+            .live_segments
+            .iter()
+            .map(|segment| segment.id)
+            .collect::<BTreeSet<_>>();
         self.retired_segments.append(&mut self.live_segments);
         self.live_segments.push(segment);
+        self.segment_stats
+            .retain(|stats| !retired_ids.contains(&stats.segment_id));
     }
 
     /// Replace a contiguous subset of live segments with a single merged segment.

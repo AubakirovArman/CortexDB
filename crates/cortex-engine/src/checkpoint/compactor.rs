@@ -12,6 +12,7 @@ use crate::error::EngineResult;
 use crate::query::EngineAqlIndex;
 
 use super::candidates::{candidate_from_ordinal, segment_cell_count};
+use super::stats::segment_stats_from_cell_refs;
 use super::vector::vector_profile_for_cell_refs;
 use super::{
     bitmap_path, ensure_checkpoint_profiles, hnsw_path, lexical_path, manifest_hnsw_profile,
@@ -142,12 +143,13 @@ impl Database {
             .then(|| manifest_hnsw_profile(self.hnsw_build_config))
             .transpose()?;
 
+        let new_segment_id = self.manifest.generation + 1;
         let cells = build_cell_refs(&merged)?;
+        let new_segment_stats = segment_stats_from_cell_refs(new_segment_id, &cells);
         let vector_profile = vector_profile_for_cell_refs(&cells, self.hnsw_build_config)?;
         ensure_checkpoint_profiles(&self.manifest, hnsw_profile, vector_profile)?;
 
         fs::create_dir_all(&self.segments_path)?;
-        let new_segment_id = self.manifest.generation + 1;
         let new_segment_path = segment_path(&self.segments_path, new_segment_id);
         SegmentWriter::write_refs(&new_segment_path, &cells)?;
 
@@ -178,6 +180,7 @@ impl Database {
         };
         self.manifest
             .replace_segments(selected_segments, new_segment);
+        self.manifest.set_segment_stats(new_segment_stats);
 
         let duration_ms = start.elapsed().as_millis() as u64;
         self.manifest.compaction_metadata.completed += 1;

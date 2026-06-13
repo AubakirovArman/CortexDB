@@ -144,6 +144,48 @@ fn manifest_segment_stats_helpers_replace_and_retire_by_segment_id() {
 }
 
 #[test]
+fn manifest_segment_stats_are_retired_by_full_compaction() {
+    let mut manifest = StorageManifest {
+        live_segments: vec![
+            ManifestSegment {
+                id: 1,
+                generation: 1,
+                checkpoint_seq: 10,
+                cell_count: 10,
+            },
+            ManifestSegment {
+                id: 2,
+                generation: 2,
+                checkpoint_seq: 20,
+                cell_count: 10,
+            },
+        ],
+        ..StorageManifest::default()
+    };
+    manifest.set_segment_stats(ManifestSegmentStats {
+        segment_id: 1,
+        row_count: 10,
+        ..ManifestSegmentStats::default()
+    });
+    manifest.set_segment_stats(ManifestSegmentStats {
+        segment_id: 2,
+        row_count: 10,
+        ..ManifestSegmentStats::default()
+    });
+
+    manifest.compact_to_segment(ManifestSegment {
+        id: 3,
+        generation: 3,
+        checkpoint_seq: 20,
+        cell_count: 20,
+    });
+
+    assert!(manifest.stats_for_segment(1).is_none());
+    assert!(manifest.stats_for_segment(2).is_none());
+    assert!(manifest.segment_stats.is_empty());
+}
+
+#[test]
 fn manifest_rejects_zero_vector_dimension() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("manifest.acm");
