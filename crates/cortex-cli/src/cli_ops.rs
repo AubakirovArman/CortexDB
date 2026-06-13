@@ -6,6 +6,10 @@ mod maintenance;
 mod search;
 
 pub use agent::{context, forget, remember, verify};
+pub(crate) use agent::{
+    create_agent, grant_agent_scope, list_agents, revoke_agent_scope, show_agent, AgentCreateInput,
+    AgentScopeAccess, AgentScopeInput,
+};
 pub use backup::{
     backup, backup_drill, backup_encrypted, backup_offsite_stage, backup_prune, restore,
     restore_encrypted,

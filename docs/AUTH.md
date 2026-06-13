@@ -115,6 +115,27 @@ Roles:
 If an `agent_id` is present, that token is also bound to the persisted
 `AgentView` with the same ID, so scope permissions are enforced per token.
 
+Manage local AgentViews with the CLI before binding tokens to them:
+
+```bash
+cortexdb agent create ./data 8 \
+  --label finance-agent \
+  --read-scope project:investments \
+  --write-scope project:investments
+
+cortexdb agent grant ./data 8 project:finance --access read_write
+cortexdb agent revoke ./data 8 project:finance --access read
+cortexdb agent list ./data
+cortexdb --json agent show ./data 8
+```
+
+Core Beta keeps AgentViews in the existing durable local
+`agent_views/*.view` compatibility bridge. The store writes through the engine
+with temp-file, fsync, rename, and parent-directory fsync publication. Auth
+policy records bind tokens/principals to `agent_id`; they do not duplicate
+AgentView scope sets. Moving AgentViews into system cells is a future migration,
+not a B05 requirement.
+
 Review local auth policy files without exposing bearer tokens:
 
 ```bash

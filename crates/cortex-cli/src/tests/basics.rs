@@ -182,6 +182,7 @@ fn cli_golden_outputs_are_stable() {
         "validate",
         "vector",
         "context",
+        "agent",
         "verify",
         "search-vector-eval",
         "migrate",

@@ -1,3 +1,10 @@
+mod lifecycle;
+
+pub(crate) use lifecycle::{
+    create_agent, grant_agent_scope, list_agents, revoke_agent_scope, show_agent, AgentCreateInput,
+    AgentScopeAccess, AgentScopeInput,
+};
+
 use cortex_engine::{ContextPackExportFormat, ContextPackOptions, VerificationReportExportFormat};
 
 use crate::cli_json::{context_pack_to_json, verification_report_to_json};

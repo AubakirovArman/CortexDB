@@ -4,7 +4,9 @@ mod inputs;
 mod subcommands;
 pub(in crate::cli) use formats::{ContextOutputFormat, VerificationOutputFormat};
 pub(in crate::cli) use inputs::{ScopedAqlArgs, ScopedVectorArgs, VectorSearchPolicyArgs};
-pub(in crate::cli) use subcommands::{UpgradeCommand, VectorCommand};
+pub(in crate::cli) use subcommands::{
+    AgentCommand, AgentScopeAccessArg, UpgradeCommand, VectorCommand,
+};
 #[derive(Subcommand, Debug)]
 pub(in crate::cli) enum Command {
     #[command(
@@ -156,6 +158,11 @@ pub(in crate::cli) enum Command {
         tokens_file: Option<String>,
         #[arg(long)]
         tokens: Option<String>,
+    },
+    #[command(about = "Manage persisted AgentViews")]
+    Agent {
+        #[command(subcommand)]
+        command: AgentCommand,
     },
     #[command(about = "Restore a backup into a new database path")]
     Restore {

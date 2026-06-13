@@ -1,4 +1,75 @@
-use clap::Subcommand;
+use clap::{Args, Subcommand, ValueEnum};
+
+#[derive(Subcommand, Debug)]
+pub(in crate::cli) enum AgentCommand {
+    #[command(about = "Create or replace a persisted AgentView")]
+    Create(AgentCreateArgs),
+    #[command(about = "List persisted AgentViews")]
+    List { path: String },
+    #[command(about = "Show one persisted AgentView")]
+    Show { path: String, agent_id: u64 },
+    #[command(about = "Grant an AgentView scope permission")]
+    Grant(AgentScopeArgs),
+    #[command(about = "Revoke an AgentView scope permission")]
+    Revoke(AgentScopeArgs),
+}
+
+#[derive(Args, Debug)]
+pub(in crate::cli) struct AgentCreateArgs {
+    pub(in crate::cli) path: String,
+    pub(in crate::cli) agent_id: u64,
+    #[arg(long)]
+    pub(in crate::cli) label: Option<String>,
+    #[arg(long = "read-scope")]
+    pub(in crate::cli) readable_scopes: Vec<String>,
+    #[arg(long = "write-scope")]
+    pub(in crate::cli) writable_scopes: Vec<String>,
+    #[arg(long = "brain")]
+    pub(in crate::cli) readable_brains: Vec<u64>,
+    #[arg(long = "mode")]
+    pub(in crate::cli) allowed_modes: Vec<String>,
+    #[arg(long = "memory-type")]
+    pub(in crate::cli) allowed_memory_types: Vec<String>,
+    #[arg(long, default_value_t = 4_000)]
+    pub(in crate::cli) max_context_budget_tokens: u32,
+    #[arg(long, default_value_t = 1_000)]
+    pub(in crate::cli) default_context_budget_tokens: u32,
+    #[arg(long, default_value_t = 100)]
+    pub(in crate::cli) max_candidate_limit: u32,
+    #[arg(long, default_value_t = 20)]
+    pub(in crate::cli) default_candidate_limit: u32,
+    #[arg(long, default_value_t = 0)]
+    pub(in crate::cli) min_required_confidence_q16: u16,
+    #[arg(long)]
+    pub(in crate::cli) max_ttl_seconds: Option<u64>,
+    #[arg(long)]
+    pub(in crate::cli) private_scope: Option<String>,
+    #[arg(long)]
+    pub(in crate::cli) deny_remember: bool,
+    #[arg(long)]
+    pub(in crate::cli) deny_verify_fact: bool,
+    #[arg(long)]
+    pub(in crate::cli) allow_audit_mode: bool,
+    #[arg(long)]
+    pub(in crate::cli) require_citations: bool,
+}
+
+#[derive(Args, Debug)]
+pub(in crate::cli) struct AgentScopeArgs {
+    pub(in crate::cli) path: String,
+    pub(in crate::cli) agent_id: u64,
+    pub(in crate::cli) scope: String,
+    #[arg(long, value_enum, default_value_t = AgentScopeAccessArg::Read)]
+    pub(in crate::cli) access: AgentScopeAccessArg,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+pub(in crate::cli) enum AgentScopeAccessArg {
+    Read,
+    Write,
+    #[value(name = "read_write", alias = "read-write", alias = "both")]
+    ReadWrite,
+}
 
 #[derive(Subcommand, Debug)]
 pub(in crate::cli) enum VectorCommand {

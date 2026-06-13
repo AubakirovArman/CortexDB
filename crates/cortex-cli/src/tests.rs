@@ -1,5 +1,7 @@
 pub(crate) use super::run;
 
+#[path = "tests/agent.rs"]
+mod agent;
 #[path = "tests/backup.rs"]
 mod backup;
 #[path = "tests/basics.rs"]

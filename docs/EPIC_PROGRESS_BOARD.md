@@ -21,33 +21,40 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B05` — AgentView lifecycle API v1.
+`EPIC-E08` — Tenant isolation test suite.
 
-B05 exit steps:
+E08 exit steps:
 
-1. Define the stable admin lifecycle surface for AgentView management.
-2. Add CLI/API CRUD for create, grant, revoke, list, and show.
-3. Persist AgentViews as system cells or explicitly document the chosen
-   compatibility bridge.
-4. Add an end-to-end two-agent scope isolation test for the lifecycle surface.
+1. Generate multi-tenant/AgentView cases.
+2. Test all public surfaces for isolation.
+3. Add regression seeds.
+4. Mark done when tenant leaks fail tests; then move to E09.
 
-B05 progress:
+E08 progress:
 
-- done: inspected current auth policy, scope-admin, AgentView store, async actor,
-  legacy sync handler, and CLI surfaces;
-- done: added server-side AgentView lifecycle foundation: typed
-  create/list/show helpers, async actor methods, `/v1/agents` and
-  `/v1/agents/{agent_id}` admin routes, and legacy sync-handler coverage;
-- done: added admin authz tests for create/list/show and data-token denial;
-- done: documented `/v1/agents` in OpenAPI and regenerated Python/TypeScript
-  OpenAPI SDK type artifacts;
-- remaining: add `cortexdb agent create|grant|revoke|list|show` CLI commands;
-- remaining: decide whether B05 closes on the existing file-backed
-  `agent_views/*.view` compatibility bridge or needs a system-cell migration
-  in this epic;
-- next: implement CLI lifecycle commands over the same AgentView model.
+- next: inspect existing tenant isolation tests and route matrix before adding
+  any new cases.
 
 ## Recently Closed
+
+### EPIC-B05 — AgentView lifecycle API v1
+
+Status: `done`
+
+What closed it:
+
+- Stable AgentView lifecycle surface now includes server create/list/show routes
+  and CLI create/list/show/grant/revoke commands.
+- CLI supports human and JSON output for AgentView lifecycle commands.
+- Admin authz tests cover `/v1/agents` create/list/show and data-role denial.
+- CLI tests cover lifecycle mutation behavior and a two-agent scope isolation
+  scenario using AgentViews created through CLI commands.
+- `docs/AUTH.md` documents the durable file-backed `agent_views/*.view`
+  compatibility bridge; system-cell migration remains future work.
+
+Next:
+
+- E08 extends this security surface into a tenant isolation route matrix.
 
 ### EPIC-B04 — AgentView as an index invariant before payload reads
 

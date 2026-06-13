@@ -241,14 +241,14 @@
     "crates/cortex-cli/src/cli/args.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 32,
+      "lines": 33,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-cli/src/cli/args/commands.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 300,
+      "lines": 307,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -269,14 +269,14 @@
     "crates/cortex-cli/src/cli/args/commands/subcommands.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 28,
+      "lines": 99,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-cli/src/cli/dispatch.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 227,
+      "lines": 287,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -507,14 +507,28 @@
     "crates/cortex-cli/src/cli_ops.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 25,
+      "lines": 29,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-cli/src/cli_ops/agent.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 84,
+      "lines": 91,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_ops/agent/lifecycle.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 243,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_ops/agent/lifecycle/format.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 180,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -598,7 +612,14 @@
     "crates/cortex-cli/src/tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 16,
+      "lines": 18,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-cli/src/tests/agent.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 156,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -612,7 +633,7 @@
     "crates/cortex-cli/src/tests/basics.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 207,
+      "lines": 208,
       "soft_limit": 600,
       "warning_limit": 1200
     },

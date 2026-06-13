@@ -11,7 +11,7 @@ use clap::{error::ErrorKind, CommandFactory, Parser};
 
 use crate::cli_ops as ops;
 
-use super::args::{Cli, Command};
+use super::args::{AgentCommand, AgentScopeAccessArg, Cli, Command};
 use paths::resolve_path;
 
 #[derive(Clone, Copy)]
@@ -139,6 +139,58 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             tokens_file,
             tokens,
         } => audit::auth_review(ctx, policy_store, tokens_file, tokens),
+        Command::Agent { command } => match command {
+            AgentCommand::Create(input) => ops::create_agent(
+                ctx.json,
+                ops::AgentCreateInput {
+                    path: ctx.resolve(&input.path).to_string_lossy().into_owned(),
+                    agent_id: input.agent_id,
+                    label: input.label,
+                    readable_scopes: input.readable_scopes,
+                    writable_scopes: input.writable_scopes,
+                    readable_brains: input.readable_brains,
+                    allowed_modes: input.allowed_modes,
+                    allowed_memory_types: input.allowed_memory_types,
+                    max_context_budget_tokens: input.max_context_budget_tokens,
+                    default_context_budget_tokens: input.default_context_budget_tokens,
+                    max_candidate_limit: input.max_candidate_limit,
+                    default_candidate_limit: input.default_candidate_limit,
+                    min_required_confidence_q16: input.min_required_confidence_q16,
+                    max_ttl_seconds: input.max_ttl_seconds,
+                    private_scope: input.private_scope,
+                    allow_remember: !input.deny_remember,
+                    allow_verify_fact: !input.deny_verify_fact,
+                    allow_audit_mode: input.allow_audit_mode,
+                    require_citations_by_default: input.require_citations,
+                },
+            ),
+            AgentCommand::List { path } => {
+                ops::list_agents(ctx.json, ctx.resolve(&path).to_string_lossy().into_owned())
+            }
+            AgentCommand::Show { path, agent_id } => ops::show_agent(
+                ctx.json,
+                ctx.resolve(&path).to_string_lossy().into_owned(),
+                agent_id,
+            ),
+            AgentCommand::Grant(input) => ops::grant_agent_scope(
+                ctx.json,
+                ops::AgentScopeInput {
+                    path: ctx.resolve(&input.path).to_string_lossy().into_owned(),
+                    agent_id: input.agent_id,
+                    scope: input.scope,
+                    access: agent_scope_access(input.access),
+                },
+            ),
+            AgentCommand::Revoke(input) => ops::revoke_agent_scope(
+                ctx.json,
+                ops::AgentScopeInput {
+                    path: ctx.resolve(&input.path).to_string_lossy().into_owned(),
+                    agent_id: input.agent_id,
+                    scope: input.scope,
+                    access: agent_scope_access(input.access),
+                },
+            ),
+        },
         Command::Restore {
             backup_path,
             path,
@@ -223,5 +275,13 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         Command::IngestJobRetry { path, job_id } => ingestion::retry_job(ctx, path, job_id),
         Command::IngestJobDelete { path, job_id } => ingestion::delete_job(ctx, path, job_id),
         command => maintenance::run(ctx, command),
+    }
+}
+
+fn agent_scope_access(access: AgentScopeAccessArg) -> ops::AgentScopeAccess {
+    match access {
+        AgentScopeAccessArg::Read => ops::AgentScopeAccess::Read,
+        AgentScopeAccessArg::Write => ops::AgentScopeAccess::Write,
+        AgentScopeAccessArg::ReadWrite => ops::AgentScopeAccess::ReadWrite,
     }
 }
