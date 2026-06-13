@@ -1,6 +1,6 @@
-.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check
+.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check
 
-check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check
+check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check
 	cargo check --workspace
 
 file-size-report:
@@ -17,6 +17,9 @@ descriptor-hot-path-gate-check:
 
 indexed-retrieve-gate-check:
 	python3 scripts/indexed_retrieve_gate_check.py
+
+query-scan-inventory-check:
+	python3 scripts/query_scan_inventory_check.py
 
 test:
 	cargo test --workspace
