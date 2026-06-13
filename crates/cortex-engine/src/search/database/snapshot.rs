@@ -4,6 +4,7 @@ use cortex_aql::AgentView;
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
+use crate::options::PayloadResidency;
 
 use super::super::ann::AnnSearchPolicy;
 use super::super::{SearchIndexes, SearchMode, SearchQuery, WeightedScoreReranker};
@@ -32,8 +33,7 @@ impl Database {
         let mut traces = BTreeMap::<u32, SearchViewTrace>::new();
         let mut vector_candidates = 0usize;
         for (index, record) in self
-            .live_search_store
-            .visible_records(view, query.vector)
+            .snapshot_search_records(view, query)?
             .into_iter()
             .enumerate()
         {
@@ -113,5 +113,31 @@ impl Database {
             view_traces,
             diversity_diagnostics,
         })
+    }
+
+    fn snapshot_search_records(
+        &self,
+        view: &AgentView,
+        query: SearchQuery<'_>,
+    ) -> EngineResult<Vec<super::live_store::LiveSearchCandidate>> {
+        if self.payload_residency != PayloadResidency::Lazy {
+            return Ok(self.live_search_store.visible_records(view, query.vector));
+        }
+
+        let txn = self.read_txn();
+        let mut records = Vec::new();
+        for version in self.memtable.visible_iter(txn) {
+            let payload = self.payload_for_version(version)?;
+            let record = super::LiveSearchStore::candidate_from_payload(
+                version.cell_id,
+                payload,
+                &version.descriptor,
+                query.vector,
+            );
+            if view.can_read_scope(crate::query::scope_id(&record.metadata.scope)) {
+                records.push(record);
+            }
+        }
+        Ok(records)
     }
 }

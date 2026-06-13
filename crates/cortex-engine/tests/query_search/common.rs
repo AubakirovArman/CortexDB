@@ -7,8 +7,8 @@ pub(super) mod prelude {
     pub use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
     pub use cortex_engine::{
         scope_id, tokenize, Bm25Index, ClusterConfig, ConsensusState, Database, DatabaseOptions,
-        HnswIndex, LogIndex, NodeId, PayloadResidency, ReplicatedEntry, SearchIndexes, SearchMode,
-        SearchQuery, SearchRerankInput, SearchReranker, Term, VectorIndex,
+        HnswIndex, LogIndex, NodeId, PayloadResidency, ReplicatedEntry, SearchIndexes, SearchLimit,
+        SearchMode, SearchQuery, SearchRerankInput, SearchReranker, Term, VectorIndex,
     };
 }
 

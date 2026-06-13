@@ -42,6 +42,21 @@ impl LiveSearchStore {
         LiveSearchRecord { payload, metadata }
     }
 
+    pub(crate) fn candidate_from_payload(
+        cell_id: CellId,
+        payload: Vec<u8>,
+        descriptor: &CellDescriptor,
+        query_vector: Option<&[i16]>,
+    ) -> LiveSearchCandidate {
+        let record = Self::record_from_payload(payload, descriptor);
+        LiveSearchCandidate {
+            cell_id,
+            best_vector: best_payload_vector_for_query(&record.payload, query_vector),
+            metadata: record.metadata,
+            payload: record.payload,
+        }
+    }
+
     pub(crate) fn apply_record(&mut self, cell_id: CellId, record: LiveSearchRecord) {
         self.records.insert(cell_id, record);
     }

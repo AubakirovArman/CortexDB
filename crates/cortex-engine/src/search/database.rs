@@ -15,7 +15,7 @@ mod tests;
 mod trace;
 mod types;
 
-pub(crate) use self::types::{metadata_for_version, PersistedSearchCandidate};
+pub(crate) use self::types::PersistedSearchCandidate;
 pub use self::types::{
     DatabaseSearchOutcome, DatabaseSearchResult, SearchDiversityDiagnostics, SearchLimit,
     SearchViewTrace,

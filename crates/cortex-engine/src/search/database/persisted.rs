@@ -19,9 +19,7 @@ use super::diversity::select_diverse_results;
 use super::persisted_rrf::{distance_metric_from_manifest, fuse_persisted_rrf};
 use super::ranking::{rerank_database_results, search_rerank_candidate_limit};
 use super::trace::trace_search;
-use super::{
-    metadata_for_version, DatabaseSearchOutcome, DatabaseSearchResult, PersistedSearchCandidate,
-};
+use super::{DatabaseSearchOutcome, DatabaseSearchResult, PersistedSearchCandidate};
 
 impl Database {
     pub(crate) fn search_persisted_query(
@@ -249,23 +247,28 @@ impl Database {
         };
         let pin = self.pin_read_txn();
         let txn = pin.read_txn();
-        let mut results = ranked
-            .into_iter()
-            .filter_map(|candidate| {
-                let cell_id = state.candidate_to_cell.get(&candidate.candidate_id)?;
-                self.memtable.read(txn, *cell_id).map(|version| {
-                    let metadata = metadata_for_version(version);
-                    DatabaseSearchResult {
-                        cell_id: *cell_id,
-                        score: candidate.score,
-                        lexical_score: candidate.lexical_score,
-                        vector_score: candidate.vector_score,
-                        metadata,
-                        payload: version.payload.clone(),
-                    }
-                })
-            })
-            .collect::<Vec<_>>();
+        let mut results = Vec::new();
+        for candidate in ranked {
+            let Some(cell_id) = state.candidate_to_cell.get(&candidate.candidate_id) else {
+                continue;
+            };
+            let Some(version) = self.memtable.read(txn, *cell_id) else {
+                continue;
+            };
+            let retrieved = self.retrieved_cell_from_version(version)?;
+            let metadata = crate::query::CellMetadata::from_payload_with_descriptor(
+                &retrieved.payload,
+                &retrieved.descriptor,
+            );
+            results.push(DatabaseSearchResult {
+                cell_id: *cell_id,
+                score: candidate.score,
+                lexical_score: candidate.lexical_score,
+                vector_score: candidate.vector_score,
+                metadata,
+                payload: retrieved.payload,
+            });
+        }
         let mut diversity_diagnostics = None;
         if query.mode == SearchMode::HybridRerank {
             rerank_database_results(&mut results, query, &WeightedScoreReranker::default());

@@ -1,4 +1,3 @@
-use cortex_core::memtable::CellVersion;
 use cortex_core::CellId;
 
 use crate::query::CellMetadata;
@@ -11,10 +10,6 @@ pub(crate) struct PersistedSearchCandidate {
     pub(super) score: u64,
     pub(super) lexical_score: u64,
     pub(super) vector_score: u64,
-}
-
-pub(crate) fn metadata_for_version(version: &CellVersion) -> CellMetadata {
-    CellMetadata::from_payload_with_descriptor(&version.payload, &version.descriptor)
 }
 
 impl PersistedSearchCandidate {
