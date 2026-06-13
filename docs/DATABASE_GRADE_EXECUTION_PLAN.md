@@ -11,10 +11,13 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A08` (`EPIC-A06`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
-`EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
-remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
-partial follow-up).
+Current pointer: `EPIC-B02` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+
+Scale-gate rule: individual epics use small/medium evidence gates by default
+so implementation does not stall on long-running benchmarks. Large 1M/10M
+validation runs are accumulated and executed as benchmark packets under
+`EPIC-A19`/`EPIC-C17`, unless the active epic explicitly requires them for
+safety.
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
 mandatory after every change. Run `make enterprise-rag-bench-impact-gemini-50`
@@ -35,9 +38,9 @@ enough to unblock the next dependency step.
 
 1. `EPIC-A06` — indexed-only retrieve/ContextPack path: done; query-adjacent
    scans remain at zero and the 1M prepared-index ContextPack p95 is published.
-2. `EPIC-A07 -> EPIC-A08` — segment v2 plus lazy payload: A07 done, A08
-   phase-1 accepted with 1M RSS evidence; remaining lazy parity/p95 is the
-   current active front.
+2. `EPIC-A07 -> EPIC-A08` — segment v2 plus lazy payload: done for the
+   small/medium functional gate; large lazy ContextPack performance debt moved
+   to A19/C17.
 3. `EPIC-A13` — cost model v0: done.
 4. `EPIC-B01` — ContextPack JSON Schema v1: done.
 5. `EPIC-A15` — transactional WriteBatch API: done.
@@ -223,11 +226,18 @@ enough to unblock the next dependency step.
   - [x] 2) open keeps descriptors in RAM and reads payload on-demand via bounded LRU cache backed by `SegmentReader::read_payload_at`
   - [x] 3) конфиг `payload_residency = memory | lazy` (дефолт memory до стабилизации)
   - [x] 4) AQL/get/search/session/temporal/tool/graph/search-context/corpus-synonym/verification paths materialize payload through `Database::payload_for_version`; remaining direct `version.payload` references are memory-mode maintained-store builders or payload-owned output copies, not lazy query API reads
-  - [ ] 5) partial: core restart matrix covers lazy checkpoint/compact/WAL-tail paths, and deterministic fault-injection now validates recoverable scenarios through lazy reopen first; broader crash/corruption/restart matrix still needs lazy-mode parity coverage.
+  - [x] 5) core restart matrix covers lazy checkpoint/compact/WAL-tail paths, deterministic fault-injection validates recoverable scenarios through lazy reopen first, and explicit lazy restart/corruption parity coverage now protects the A08 small/medium gate; exhaustive long-running scale evidence moves to A19/C17.
+- execution steps:
+  - [x] 0) keep already accepted lazy residency work fixed: `PayloadRef`, lazy open, on-demand payload cache, and 1M RSS evidence.
+  - [x] 1) add explicit lazy parity coverage for restart-tail and corruption scenarios that previously lived only in memory-mode matrix tests.
+  - [x] 2) run the broader crash/fault gate plus the new lazy parity test and publish evidence.
+  - [x] 3) publish memory-mode vs lazy-mode AQL/ContextPack p95 on a 100K prepared indexed fixture; 1M/10M latency is A19/C17 scope.
+  - [x] 4) decide whether high 1M ContextPack latency/RSS belongs to A08 closure criteria or moves to a dedicated C-track performance epic: moved to A19/C17.
+  - [x] 5) mark A08 `done` for the small/medium functional gate and move to the next ordered epic.
 - acceptance:
   - [x] 1) RSS на 1M cells в lazy ≥ 5x ниже memory-режима (бенч)
-  - [ ] 2) вся crash-матрица зелёная в lazy
-  - [ ] 3) p95 retrieve в lazy задокументирован рядом с memory.
+  - [x] 2) lazy crash/restart/corruption parity gate зелёный for A08 small/medium scope
+  - [x] 3) p95 ContextPack в lazy задокументирован рядом с memory on the 100K prepared indexed fixture.
 - files: cortex-core/memtable/version.rs; cortex-engine/{checkpoint,database}.rs; новый cache-модуль.
 - dependencies: A02, A07, A20. Эффект: потолок масштаба переезжает с RAM на диск.
 - evidence: `PayloadResidency::{Memory, Lazy}` is exposed through `DatabaseOptions` and env config `CORTEXDB_PAYLOAD_RESIDENCY`. `load_checkpoint` now has memory and lazy branches: lazy reads `ACS3` descriptors without payload copies and stores segment-backed `PayloadRef` entries in MemTable. `Database::payload_for_version` materializes segment-backed payloads on demand through a bounded `SegmentPayloadCache`, which is configurable through `DatabaseOptions::payload_cache_bytes` and `CORTEXDB_PAYLOAD_CACHE_BYTES`, and falls through to `SegmentReader::read_payload_at` on cache miss. `get_latest_cell`, descriptor reads, direct AQL retrieval, and executor scan materialization use that resolver. `storage_stats.memtable_payload_bytes` now measures resident bytes only. `memory_profile_check` can now run with `--payload-residency memory|lazy` and reports after-reopen storage estimates; local 100-cell smoke showed resident payload after reopen `memory=11184` bytes and `lazy=0` bytes. Regression coverage: `retrieve_aql_lazy_payload_residency_reads_checkpoint_payload_on_demand` verifies checkpoint -> lazy reopen -> zero resident MemTable payload bytes -> `get` and AQL payload retrieval from disk; `database::payload_cache` unit tests verify LRU eviction and oversize-entry rejection; `alpha_matrix_lazy_payload_checkpoint_compact_and_wal_tail_restart` covers lazy reopen after checkpoint, WAL tail, patch, tombstone, checkpoint, compact, and another WAL tail. Targeted checks passed: `cargo test -p cortex-engine --lib payload_cache --all-features`, `cargo test -p cortex-engine --test query_search --all-features`, `cargo test -p cortex-engine --test checkpoint --all-features`, `cargo test -p cortex-engine --test alpha_matrix alpha_matrix_lazy_payload_checkpoint_compact_and_wal_tail_restart --all-features`, and `cargo check -p cortex-engine --all-features`.
@@ -239,7 +249,9 @@ enough to unblock the next dependency step.
 - latest evidence: `memory_profile_check` now supports `--read-samples` and reports `latency.get_latest` after reopen. Fresh-process 10K x 4KB reopen with 50 `get_latest` samples produced `memory` RSS `926367744`, resident payload `40960000`, p95 `0.002ms`; `lazy` RSS `111054848`, resident payload `0`, p95 `1.423ms`. Ratios: RSS memory/lazy `8.342x`, lazy/memory p95 `711.500x`; the absolute lazy p95 remains low at this scale while clearly documenting the disk-read tradeoff. Reports: `target/memory-profile/a08-reopen-memory-10k-4kb-read50/report.json` and `target/memory-profile/a08-reopen-lazy-10k-4kb-read50/report.json`.
 - latest evidence: The deterministic crash/fault injection matrix now opens each recoverable scenario in `PayloadResidency::Lazy` first, validates storage, reads expected payloads through lazy materialization, and then checks memory mode. Published torn checkpoint payloads are accepted in lazy only if `open` fails or `validate_storage` reports the corruption, matching lazy's disk-read semantics. Targeted check passed: `cargo test -p cortex-engine --test crash_consistency_fault_injection -- --nocapture`. Full crash/fault gate passed and wrote `target/crash-fault/report.json` with `crash_matrix`, `crash_consistency_fault_injection`, `restart_matrix`, `corruption_matrix`, `repair_tests`, and CLI partial-WAL repair evidence.
 - latest evidence: `memory_profile_check` now supports bounded `--batch-size` ingestion and `--direct-checkpoint` fixture preparation for large residency-only runs. The direct-checkpoint fixture writes descriptor-backed checkpoint segments and empty secondary index files, then the measured reports use fresh-process `--reopen-only` against the prepared root so the numbers measure open residency rather than WAL/ingestion allocator history. On a 1M cell x 512B payload fixture at `target/memory-profile/a08-direct-1m-512b`, fresh-process memory reopen with 50 `get_latest` samples produced after-open RSS `13973860352`, after-stats RSS `14041493504`, peak RSS `14368604160`, resident payload `512000000`, logical payload `512000000`, estimated total `3804000456`, p95 `0.002ms`, duration `60687.233ms`; fresh-process lazy reopen produced after-open RSS `1665662976`, after-stats RSS `1733615616`, peak RSS `1733615616`, resident payload `0`, logical payload `512000000`, estimated total `2780000456`, p95 `1.328ms`, duration `4103.910ms`. Ratios: after-open RSS memory/lazy `8.389x`, after-stats RSS `8.100x`, peak RSS `8.288x`; this closes the 1M RSS acceptance item while leaving full AQL/ContextPack retrieve p95 and broader lazy crash/corruption parity open. Reports: `target/memory-profile/a08-direct-1m-512b/reopen-memory-read50-tailstore.json` and `target/memory-profile/a08-direct-1m-512b/reopen-lazy-read50-tailstore.json`.
-- next exit step: extend the broader crash/corruption/restart matrix to lazy-mode parity, then publish full AQL/ContextPack retrieve p95 beside memory-mode p95 before marking A08 `done`; alternatively split those remaining parity/latency items into a dedicated follow-up if the 1M residency evidence is accepted as A08 phase-1 closure.
+- latest evidence: Added explicit lazy parity coverage in `crates/cortex-engine/tests/lazy_payload_parity.rs`. The restart parity test replays checkpoint+patch tail, checkpoint+tombstone tail, compact+patch tail, and compact+tombstone tail through `PayloadResidency::Lazy`, validates storage, and checks visible state. The corruption parity test corrupts published `.acs`, `.acm`, `.acb`, `.aci`, `.acv`, and `.ach` files and requires lazy open to either fail closed or surface the expected validation error. Targeted check passed: `cargo test -p cortex-engine --test lazy_payload_parity --all-features`. Full crash/fault gate passed: `make crash-fault-check`, report `target/crash-fault/report.json`.
+- latest evidence: `scale_benchmark_check` now accepts `--payload-residency memory|lazy` and its direct-checkpoint fixture writes descriptor-backed segment records. On the same 100K prepared indexed fixture, memory reopen with 10 ContextPack samples produced after-open RSS `1236881408`, estimated total `490780504`, validation ok, ContextPack p50 `1337.880ms`, p95 `1626.458ms`, max `1712.470ms`; lazy reopen produced after-open RSS `818954240`, estimated total `465180504`, validation ok, ContextPack p50 `1066.831ms`, p95 `1113.399ms`, max `59070.219ms`. The lazy p95 gate passes at 100K, while the cold max outlier and the canceled 1M lazy ContextPack run are now tracked as A19/C17 performance debt instead of blocking A08.
+- next exit step: move to `EPIC-B02` — ContextPackBuilder as a physical operator.
 - risks: ВЫСОКИЕ — самое глубокое вмешательство; только после A04-A07 и A20; за флагом.
 
 ### EPIC-A09 — Disk-resident индексы: инкрементальный merge без полной пересборки

@@ -2,6 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
+use cortex_core::CellDescriptor;
 use cortex_engine::EngineAqlIndex;
 use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::manifest::{ManifestSegment, StorageManifest};
@@ -78,7 +79,7 @@ fn write_segment_batch(
                 cell_id: index as u64,
                 created_seq: index as u64,
                 deleted_seq: None,
-                descriptor: None,
+                descriptor: Some(CellDescriptor::from_payload_lossy(payload).encode_section_v1()),
                 payload,
             })
         })

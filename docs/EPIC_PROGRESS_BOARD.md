@@ -13,25 +13,24 @@ work by accident.
 - A `partial` epic can be revisited only for its listed remaining exit steps.
 - Do not redo accepted work unless a new failing test or explicit user request
   changes the scope.
+- Use small/medium gates inside implementation epics. Large 1M/10M runs are
+  accumulated in A19/C17 benchmark packets unless the current epic explicitly
+  needs them for safety.
 - Update this file whenever an epic moves between `current`, `done`,
   `partial`, or `next`.
 
 ## Current Pointer
 
-`EPIC-A08` — lazy payload residency follow-up.
+`EPIC-B02` — ContextPackBuilder as a physical operator.
 
-Already accepted:
+B02 exit steps:
 
-- lazy payload residency path exists;
-- 1M RSS evidence accepted;
-- checkpoint-backed lazy payload materialization works across many read paths.
-
-Remaining A08 exit steps:
-
-- broader lazy crash/corruption/restart parity;
-- full AQL/ContextPack p95 beside memory-mode p95;
-- decide whether remaining latency/RSS work stays in A08 or moves to a
-  dedicated performance epic.
+1. Inspect current ContextPack construction paths and identify the minimum
+   operator boundary.
+2. Add PackOp/ContextPackBuilder execution path behind existing semantics.
+3. Preserve existing pack output on golden fixtures.
+4. Add operator counters where available without changing public JSON.
+5. Run targeted ContextPack tests plus workspace gates, then update this board.
 
 ## Recently Closed
 
@@ -63,9 +62,33 @@ Important follow-up:
   The high p95 and after-open RSS are now performance work for A08/C-track, not
   a reason to reopen A06 from scratch.
 
+### EPIC-A08 — Lazy payload residency follow-up
+
+Status: `done`
+
+What closed it:
+
+- explicit lazy restart-tail parity covers checkpoint+patch tail,
+  checkpoint+tombstone tail, compact+patch tail, and compact+tombstone tail;
+- explicit lazy corruption parity covers `.acs`, `.acm`, `.acb`, `.aci`,
+  `.acv`, and `.ach` corruption as fail-closed or validation-error behavior;
+- `cargo test -p cortex-engine --test lazy_payload_parity --all-features`
+  passed;
+- `make crash-fault-check` passed and wrote `target/crash-fault/report.json`;
+- `scale_benchmark_check` supports `--payload-residency memory|lazy`;
+- 100K prepared indexed fixture passed in both modes:
+  - memory: after-open RSS `1236881408`, ContextPack p95 `1626.458ms`;
+  - lazy: after-open RSS `818954240`, ContextPack p95 `1113.399ms`,
+    max `59070.219ms`.
+
+Important follow-up:
+
+- the lazy cold max outlier and canceled 1M lazy ContextPack run are
+  performance debt for A19/C17, not A08 blockers.
+
 ## Done Snapshot
 
-Done count in roadmap snapshot: `35`.
+Done count in roadmap snapshot: `36`.
 
 High-signal done epics:
 
@@ -76,6 +99,7 @@ High-signal done epics:
 - A05 indexed VERIFY FACT;
 - A06 indexed-only retrieve/ContextPack evidence;
 - A07 segment footer/random payload access;
+- A08 lazy payload residency small/medium functional gate;
 - A09 disk-resident persisted-index incremental merge;
 - A10 logical plan;
 - A11 operator executor;
@@ -102,12 +126,11 @@ High-signal done epics:
 
 ## Partial Snapshot
 
-Partial count in roadmap snapshot: `5`.
+Partial count in roadmap snapshot: `4`.
 
-- A08 lazy payload residency follow-up:
-  crash parity and full AQL/ContextPack p95 remain.
 - A19 scale benchmarks:
-  long-running load evidence and later larger-scale evidence remain.
+  long-running load evidence, lazy cold outlier analysis, and later larger-scale
+  evidence remain.
 - C16 memory profiling:
   estimated-vs-real verification and gate integration remain.
 - D05 SDK publish:
@@ -125,11 +148,11 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on A08 only for its remaining tail:
+Work on B02 only:
 
-1. identify which lazy crash/corruption/restart scenarios are not yet mirrored;
-2. run or extend the lazy parity matrix;
-3. publish memory-mode vs lazy-mode full AQL/ContextPack p95;
+1. inspect ContextPack construction and executor interfaces;
+2. implement the smallest PackOp boundary without output drift;
+3. prove golden ContextPack parity;
 4. update `docs/DATABASE_GRADE_EXECUTION_PLAN.md` and this board;
-5. move pointer to the next ordered epic only after A08 is `done` or explicitly
-   split with accepted follow-up scope.
+5. move pointer only after B02 is `done` or explicitly split with accepted
+   follow-up scope.

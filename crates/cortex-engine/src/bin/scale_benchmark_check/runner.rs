@@ -2,7 +2,7 @@ use std::env;
 use std::fs;
 use std::time::Instant;
 
-use cortex_engine::{ContextPackOptions, Database, SearchLimit};
+use cortex_engine::{ContextPackOptions, Database, DatabaseOptions, SearchLimit};
 
 use super::args::Args;
 use super::metrics::{measure_once, measure_repeated, memory_phase, sampled_cell_id};
@@ -25,6 +25,10 @@ pub(crate) fn run() -> Result<(), String> {
     let db_path = args.root.join("db");
     let mut phases = Vec::new();
     let view = scale_view();
+    let options = DatabaseOptions {
+        payload_residency: args.payload_residency,
+        ..DatabaseOptions::default()
+    };
 
     if args.reopen_only {
         if !db_path.exists() {
@@ -49,7 +53,9 @@ pub(crate) fn run() -> Result<(), String> {
         "open_empty"
     };
     eprintln!("[scale-bench] {open_phase}");
-    let (mut db, phase) = measure_once(open_phase, 1, || Database::open(&db_path))?;
+    let (mut db, phase) = measure_once(open_phase, 1, || {
+        Database::open_with_options(&db_path, options)
+    })?;
     phases.push(phase);
     if args.direct_checkpoint || args.reopen_only {
         eprintln!("[scale-bench] memory after_open_prepared");
@@ -148,7 +154,9 @@ pub(crate) fn run() -> Result<(), String> {
     eprintln!("[scale-bench] close");
     phases.push(measure_once("close", 1, || db.close())?.1);
     eprintln!("[scale-bench] restart_open");
-    let (reopened, phase) = measure_once("restart_open", args.cells, || Database::open(&db_path))?;
+    let (reopened, phase) = measure_once("restart_open", args.cells, || {
+        Database::open_with_options(&db_path, options)
+    })?;
     phases.push(phase);
     let restart_validation = reopened.validate_storage_report();
     errors.extend(

@@ -21,6 +21,7 @@ pub(crate) fn write_report(
             .map(|bytes| format!("fixed_{bytes}b"))
             .unwrap_or_else(|| "realistic_0_5kb_to_4kb".to_owned()),
         "fixture_mode": fixture_mode(args),
+        "payload_residency": payload_residency_name(args.payload_residency),
         "samples": {
             "read": args.samples,
             "search": args.search_samples,
@@ -53,6 +54,13 @@ pub(crate) fn write_report(
     }
     println!("scale benchmark passed: {}", args.report.display());
     Ok(())
+}
+
+fn payload_residency_name(value: cortex_engine::PayloadResidency) -> &'static str {
+    match value {
+        cortex_engine::PayloadResidency::Memory => "memory",
+        cortex_engine::PayloadResidency::Lazy => "lazy",
+    }
 }
 
 fn fixture_mode(args: &Args) -> &'static str {

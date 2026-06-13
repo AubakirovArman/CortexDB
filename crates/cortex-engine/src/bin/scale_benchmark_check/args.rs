@@ -12,6 +12,7 @@ pub(crate) struct Args {
     pub(crate) payload_bytes: Option<usize>,
     pub(crate) direct_checkpoint: bool,
     pub(crate) reopen_only: bool,
+    pub(crate) payload_residency: cortex_engine::PayloadResidency,
 }
 
 impl Args {
@@ -28,6 +29,7 @@ impl Args {
             payload_bytes: None,
             direct_checkpoint: false,
             reopen_only: false,
+            payload_residency: cortex_engine::PayloadResidency::Memory,
         };
         let mut values = values.peekable();
         while let Some(arg) = values.next() {
@@ -70,6 +72,10 @@ impl Args {
                 }
                 "--direct-checkpoint" => args.direct_checkpoint = true,
                 "--reopen-only" => args.reopen_only = true,
+                "--payload-residency" => {
+                    args.payload_residency =
+                        residency::parse(next_value(&mut values, "--payload-residency")?)?
+                }
                 "--help" | "-h" => return Err(help_text()),
                 unknown => return Err(format!("unknown argument: {unknown}\n{}", help_text())),
             }
@@ -103,8 +109,11 @@ fn parse_usize(value: String, flag: &str) -> Result<usize, String> {
 }
 
 fn help_text() -> String {
-    "usage: scale_benchmark_check [--root PATH] [--report PATH] [--cells N] [--samples N] [--search-samples N] [--context-samples N] [--verify-samples N] [--batch-size N] [--payload-bytes N] [--direct-checkpoint] [--reopen-only]".to_owned()
+    "usage: scale_benchmark_check [--root PATH] [--report PATH] [--cells N] [--samples N] [--search-samples N] [--context-samples N] [--verify-samples N] [--batch-size N] [--payload-bytes N] [--direct-checkpoint] [--reopen-only] [--payload-residency memory|lazy]".to_owned()
 }
+
+#[path = "residency.rs"]
+mod residency;
 
 #[cfg(test)]
 #[path = "args_tests.rs"]

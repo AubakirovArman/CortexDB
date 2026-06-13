@@ -1,4 +1,5 @@
 use super::Args;
+use cortex_engine::PayloadResidency;
 
 #[test]
 fn parse_payload_bytes_override() {
@@ -25,4 +26,15 @@ fn parse_direct_checkpoint_and_reopen_only() {
     .unwrap();
     assert!(args.direct_checkpoint);
     assert!(args.reopen_only);
+}
+
+#[test]
+fn parse_payload_residency_lazy() {
+    let args = Args::parse(
+        ["--payload-residency", "lazy"]
+            .into_iter()
+            .map(str::to_owned),
+    )
+    .unwrap();
+    assert_eq!(args.payload_residency, PayloadResidency::Lazy);
 }
