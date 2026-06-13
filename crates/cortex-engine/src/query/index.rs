@@ -19,7 +19,13 @@ use crate::error::{EngineError, EngineResult};
 
 impl EngineAqlIndex {
     pub fn try_from_versions(versions: &[CellVersion]) -> EngineResult<Self> {
-        let mut sorted = versions.iter().collect::<Vec<_>>();
+        Self::try_from_version_refs(versions.iter())
+    }
+
+    pub(crate) fn try_from_version_refs<'a>(
+        versions: impl IntoIterator<Item = &'a CellVersion>,
+    ) -> EngineResult<Self> {
+        let mut sorted = versions.into_iter().collect::<Vec<_>>();
         sorted.sort_by_key(|version| version.cell_id);
         let cells = sorted
             .into_iter()
@@ -73,6 +79,16 @@ impl EngineAqlIndex {
         current: &[CellVersion],
         changed: &[CellId],
     ) -> EngineResult<Self> {
+        Self::from_persisted_refs(bitmap, lexical, candidate_to_cell, current.iter(), changed)
+    }
+
+    pub(crate) fn from_persisted_refs<'a>(
+        bitmap: BitmapIndex,
+        lexical: LexicalIndex,
+        candidate_to_cell: BTreeMap<u32, CellId>,
+        current: impl IntoIterator<Item = &'a CellVersion>,
+        changed: &[CellId],
+    ) -> EngineResult<Self> {
         let cell_to_candidate = reverse_candidate_map(&candidate_to_cell)?;
         let changed_candidates = changed
             .iter()
@@ -105,7 +121,7 @@ impl EngineAqlIndex {
         let mut next_candidate = None;
         let mut changed_current = Vec::new();
         for version in current
-            .iter()
+            .into_iter()
             .filter(|version| changed.contains(&version.cell_id))
         {
             let candidate = if let Some(candidate) = changed_cell_candidates.get(&version.cell_id) {
@@ -265,5 +281,44 @@ impl EngineAqlIndex {
 
     fn rebuild_universe(&mut self) {
         self.universe = self.candidate_to_cell.keys().copied().collect();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use cortex_core::{CellId, CommitSeq};
+
+    use super::*;
+
+    #[test]
+    fn borrowed_version_index_matches_owned_version_index() {
+        let versions = vec![
+            CellVersion::new(
+                CellId(2),
+                CommitSeq(1),
+                b"scope=project:alpha\nstatus=ready\ntype=fact\n\nbeta term".to_vec(),
+                0,
+            ),
+            CellVersion::new(
+                CellId(1),
+                CommitSeq(2),
+                b"scope=project:alpha\nstatus=ready\ntype=document_block\n\nalpha term".to_vec(),
+                0,
+            ),
+        ];
+
+        let owned = EngineAqlIndex::try_from_versions(&versions).unwrap();
+        let borrowed = EngineAqlIndex::try_from_version_refs(versions.iter()).unwrap();
+
+        assert_eq!(owned.bitmaps, borrowed.bitmaps);
+        assert_eq!(owned.lexical, borrowed.lexical);
+        assert_eq!(owned.lexical_doc_lengths, borrowed.lexical_doc_lengths);
+        assert_eq!(
+            owned.lexical_term_frequencies,
+            borrowed.lexical_term_frequencies
+        );
+        assert_eq!(owned.candidate_to_cell, borrowed.candidate_to_cell);
+        assert_eq!(owned.cell_to_candidate, borrowed.cell_to_candidate);
+        assert_eq!(owned.universe, borrowed.universe);
     }
 }

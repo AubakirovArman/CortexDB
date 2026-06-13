@@ -48,15 +48,16 @@ impl Database {
     pub fn try_aql_index(&self) -> EngineResult<EngineAqlIndex> {
         let checkpoint_seq = CommitSeq(self.manifest().checkpoint_seq);
         let changed = self.memtable.changed_cell_ids_after(checkpoint_seq);
+        let txn = self.read_txn();
         if self.manifest().live_segments.is_empty() {
-            return EngineAqlIndex::try_from_versions(&self.snapshot_versions());
+            return EngineAqlIndex::try_from_version_refs(self.memtable.visible_iter(txn));
         }
         let persisted = self.persisted_index_state()?;
-        EngineAqlIndex::from_persisted(
+        EngineAqlIndex::from_persisted_refs(
             persisted.bitmap,
             persisted.lexical,
             persisted.candidate_to_cell,
-            &self.snapshot_versions(),
+            self.memtable.visible_iter(txn),
             &changed,
         )
     }

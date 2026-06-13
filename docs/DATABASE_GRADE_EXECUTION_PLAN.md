@@ -172,21 +172,24 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-A06 — Indexed-only retrieve/ContextPack путь
 
-- status: `pending`
+- status: `in_progress`
 - meta: Категория: query-engine · Приоритет: P0 · Горизонт: 60 days · Тип: refactor
 - goal: главный read path обязан быть индексным от начала до конца.
 - problem: Проблема: `try_aql_index` на незачекпоинченных данных строит индекс из `snapshot_versions()` на каждый запрос (query.rs:55-69); ranking парсит metadata в sort-ключе.
 - tasks:
+  - [x] 0) first cleanup slice: AQL index construction now consumes borrowed `MemTable::visible_iter(txn)` refs instead of cloning `snapshot_versions()` in `query.rs`; `indexed-retrieve-gate-check` is wired into `make check`.
   - [ ] 1) поддерживаемый **инкрементальный delta-индекс** MemTable (обновляется в `apply_operation`), мержится с persisted-индексом на чтении
   - [ ] 2) предвычисление rank-ключей один раз на кандидата (sort_by_cached_key)
   - [ ] 3) feedback/graph/dedup-пути — на свои инкрементальные структуры (B13, B18, отдельные эпики) либо за candidate-фильтр.
 - acceptance:
-  - [ ] 1) `grep snapshot_versions` по запросным путям = 0
+  - [ ] 1) `grep snapshot_versions` по запросным путям = 0 — `query.rs` is covered by `indexed-retrieve-gate-check`; broader search/context/feedback query-adjacent paths remain to classify or move behind candidate filters.
   - [ ] 2) p95 retrieve на 1M cells измерен и опубликован
   - [ ] 3) корректность: фикстуры retrieval-quality без изменений.
 - files: cortex-engine/src/query.rs, query/{provider,candidates}.rs, database.rs (apply_operation), search/database.rs.
 - dependencies: A04, A20. Эффект: read path масштабируется индексом, не размером базы.
-- risks: инкрементальный индекс = новый класс багов согласованности — property-тест «индекс ≡ пересборке с нуля» обязателен.
+- evidence: `EngineAqlIndex` has borrowed builders (`try_from_version_refs`, `from_persisted_refs`) with an equivalence unit test against the owned builder. `Database::try_aql_index` no longer calls `snapshot_versions()`; both empty-persisted and persisted+changed-tail paths read visible versions through `MemTable::visible_iter(txn)`. `scripts/indexed_retrieve_gate_check.py` is part of `make check` and rejects reintroducing `snapshot_versions()` in `query.rs`.
+- next exit step: implement the supported incremental delta index updated on writes, then merge persisted+delta candidates without rebuilding current changed cells per query.
+- risks: инкрементальный индекс = новый класс багов согласованности — property-тест «индекс ≡ пересборке с нуля» обязателен. Current slice removes one hot clone/rebuild source but does not yet prove the full A06 indexed-only contract.
 
 ### EPIC-A07 — Segment format v2 — payload-офсеты и блочные CRC
 
