@@ -202,6 +202,7 @@ METRICS_CONTRACT_V2_REPORT ?= target/observability/metrics-contract-v2.json
 DEPLOYMENT_UPGRADE_REPORT ?= target/deployment-upgrade/report.json
 SERVICE_MANAGER_REPORT ?= target/service-manager-smoke/report.json
 DOCKER_HARDENING_REPORT ?= target/docker-hardening/report.json
+DOCKER_QUICKSTART_REPORT ?= target/docker-quickstart/report.json
 DOCKER_PRODUCTION_COMPOSE_REPORT ?= target/docker-production-compose/report.json
 UPGRADE_ROLLBACK_CLI_FLOW_REPORT ?= target/upgrade-rollback-cli-flow/report.json
 PACKAGE_MANAGER_FEASIBILITY_REPORT ?= target/package-manager-feasibility/report.json

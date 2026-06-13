@@ -4,6 +4,7 @@ WORKDIR /app
 # Cache dependencies for faster rebuilds
 COPY Cargo.toml Cargo.lock ./
 COPY crates/ ./crates/
+COPY fixtures/ ./fixtures/
 RUN cargo build --release -p cortex-server -p cortex-cli
 
 FROM debian:bookworm-slim

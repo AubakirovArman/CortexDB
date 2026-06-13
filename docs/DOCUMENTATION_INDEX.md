@@ -46,10 +46,15 @@ evidence snapshots, benchmark experiments, and release working notes live in
 ## Operations
 
 - [`OPERATIONS.md`](OPERATIONS.md) - operator guidance.
+- [`DOCKER.md`](DOCKER.md) - Docker image, compose quickstart, and GHCR release path.
+  Deployment artifacts: [`docker-compose.production.yml`](../docker-compose.production.yml),
+  [`auth.tokens.example`](deployment/auth.tokens.example), and
+  [`cortexdb.conf`](deployment/nginx/cortexdb.conf).
 - [`METRICS.md`](METRICS.md) - metrics endpoint and fields.
 - [`SECURITY_MODEL.md`](SECURITY_MODEL.md) - security model.
 - [`BENCHMARKS.md`](BENCHMARKS.md) - benchmark gates and reports.
 - [`SCALE_BENCHMARKS.md`](SCALE_BENCHMARKS.md) - 100K/1M scale baselines.
+- [`SDK_DOCKER_OBSERVABILITY.md`](SDK_DOCKER_OBSERVABILITY.md) - integration smoke paths.
 
 ## Product And Roadmap
 

@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -86,6 +87,43 @@ jobs:
           path: |
             target/ann/release-baselines/*.tar.gz
             target/ann/demo-domain-corpus/release-baselines/*.tar.gz
+
+  release-container:
+    name: Publish GHCR Docker image
+    needs: release-ann-baseline
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Prepare image names
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          repo="${GITHUB_REPOSITORY,,}"
+          image="ghcr.io/${repo}"
+          echo "RELEASE_TAG=$tag" >> "$GITHUB_ENV"
+          echo "GHCR_IMAGE=$image" >> "$GITHUB_ENV"
+
+      - name: Login to GHCR
+        run: echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build container image
+        run: |
+          docker build \
+            --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --label "org.opencontainers.image.version=${RELEASE_TAG}" \
+            -t "${GHCR_IMAGE}:${RELEASE_TAG}" \
+            -t "${GHCR_IMAGE}:latest" \
+            .
+
+      - name: Smoke image CLI
+        run: docker run --rm --entrypoint cortexdb "${GHCR_IMAGE}:${RELEASE_TAG}" --version
+
+      - name: Push container image
+        run: |
+          docker push "${GHCR_IMAGE}:${RELEASE_TAG}"
+          docker push "${GHCR_IMAGE}:latest"
 
   release-binaries:
     name: Publish binary release artifacts

@@ -54,6 +54,9 @@ service-manager-smoke-check:
 docker-hardening-check:
 	python3 scripts/docker_hardening_check.py --report "$(DOCKER_HARDENING_REPORT)"
 
+docker-quickstart-check:
+	python3 scripts/docker_quickstart_check.py --report "$(DOCKER_QUICKSTART_REPORT)"
+
 docker-production-compose-check:
 	python3 scripts/docker_production_compose_check.py --report "$(DOCKER_PRODUCTION_COMPOSE_REPORT)"
 

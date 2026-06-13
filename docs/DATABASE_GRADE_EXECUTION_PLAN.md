@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-D09-D10` (`EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
+Current pointer: `EPIC-D10` (`EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
 `EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
 remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
 partial follow-up).
@@ -48,7 +48,8 @@ enough to unblock the next dependency step.
 10. `EPIC-D06` — Python SDK typed models, retries, and timeouts: done.
 11. `EPIC-D07` — TypeScript SDK polish: done.
 12. `EPIC-D08` — Async Rust SDK + shared API types: done.
-13. `EPIC-D09-D10` — remaining DX wave after SDK publishing/version decisions: current active front.
+13. `EPIC-D09` — Docker GHCR + compose quickstart: done.
+14. `EPIC-D10` — OpenAPI as source of truth + codegen control: current active front.
 
 ## Summary
 
@@ -1301,7 +1302,7 @@ enough to unblock the next dependency step.
 
 ### EPIC-D08 — Async Rust SDK + общий крейт api-types
 
-- status: `partial`
+- status: `done`
 - meta: Категория: SDK · P1 · 90 days · build
 - goal: cortex-sdk блокирующий; типы ответов дублируются с сервером.
 - tasks:
@@ -1317,20 +1318,21 @@ enough to unblock the next dependency step.
 
 ### EPIC-D09 — Docker GHCR + compose quickstart
 
-- status: `pending`
+- status: `done`
 - meta: Категория: adoption · P1 · 60 days · productize
 - tasks:
-  - [ ] 1) publish в release workflow
-  - [ ] 2) compose: server+авто-загрузка фикстуры+дашборд
-  - [ ] 3) docker-путь в GETTING_STARTED.
+  - [x] 1) publish в release workflow — release tags now build and push `ghcr.io/<repo>:<tag>` and `:latest` after ANN baseline, with GHCR login, OCI labels, and image CLI smoke.
+  - [x] 2) compose: server+авто-загрузка фикстуры+дашборд — quickstart compose now has a one-shot fixture seed service, dashboard enabled, hardened runtime settings, healthcheck, and shared volume.
+  - [x] 3) docker-путь в GETTING_STARTED — added Docker quickstart commands, dashboard URL, GHCR image example, and Docker docs link.
 - acceptance:
-  - [ ] 1) `docker run ghcr.io/...` поднимает рабочий сервер
-  - [ ] 2) healthcheck зелёный.
+  - [x] 1) `docker run ghcr.io/...` поднимает рабочий сервер — release workflow publishes the GHCR image on tags; local equivalent compose/image smoke built the image, loaded fixtures, and served API/dashboard. Actual GHCR publication remains tag-release controlled.
+  - [x] 2) healthcheck зелёный — real `docker compose up --build -d` smoke reached healthy status and `/v1/health` returned `{"status":"ok"}`.
 - files: Dockerfile, workflows, docs.
+- evidence: Added `release-container` to `.github/workflows/release.yml`, fixed Docker build context for storage compatibility fixtures, added fixture seeding and dashboard defaults to `docker-compose.yml`, added `docs/DOCKER.md`, `docs/SDK_DOCKER_OBSERVABILITY.md`, Docker quickstart material in `docs/GETTING_STARTED.md`, documentation index links, and `scripts/docker_quickstart_check.py` wired as `make docker-quickstart-check`. Checks passed: `make docker-quickstart-check`, `make docker-hardening-check`, `make docker-production-compose-check`, `docker compose config`, `docker compose -f docker-compose.production.yml config`, real `docker compose up --build -d` smoke, `/v1/health`, `/dashboard`, `/v1/stats`, and `/v1/search` smoke, followed by `docker compose down -v`, `cargo fmt --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, `make getting-started-check`, and `make check`.
 
 ### EPIC-D10 — OpenAPI как единый источник + codegen-контроль
 
-- status: `pending`
+- status: `next`
 - meta: Категория: API · P1 · 90 days · improve
 - goal: openapi.yaml есть; нужно гарантировать соответствие коду.
 - tasks:

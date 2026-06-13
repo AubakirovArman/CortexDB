@@ -1,9 +1,33 @@
 services:
+  cortexdb-seed:
+    build: .
+    image: cortexdb:local
+    container_name: cortexdb-seed
+    user: "10001:10001"
+    read_only: true
+    volumes:
+      - cortexdb-data:/data:rw
+      - ./examples/datasets/investment_projects:/fixtures/investment_projects:ro
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    entrypoint: ["/bin/sh", "-lc"]
+    command:
+      - 'if [ -s /data/db.aclog ]; then echo "fixture already loaded"; else cortexdb load-fixture /data /fixtures/investment_projects; fi'
+    restart: "no"
+
   cortexdb:
     build: .
+    image: cortexdb:local
     container_name: cortexdb
     user: "10001:10001"
     read_only: true
+    depends_on:
+      cortexdb-seed:
+        condition: service_completed_successfully
     ports:
       - "8181:8181"
     volumes:
@@ -11,7 +35,8 @@ services:
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
     environment:
-      - RUST_LOG=info
+      RUST_LOG: info
+      CORTEXDB_DASHBOARD: "true"
     security_opt:
       - no-new-privileges:true
     cap_drop:

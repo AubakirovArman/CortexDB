@@ -69,8 +69,29 @@ make demo
 The demo shows the same product story in one script: scoped retrieval,
 ContextPack output, deterministic verification, and storage validation.
 
+## 9. Optional Docker Server Path
+
+The compose quickstart starts the HTTP server, loads the investment-project
+fixture once, and enables the embedded dashboard:
+
+```bash
+docker compose up --build -d
+curl -sf http://127.0.0.1:8181/v1/health
+open http://127.0.0.1:8181/dashboard
+```
+
+Tagged releases publish a GHCR image:
+
+```bash
+docker run --rm -p 8181:8181 -v cortexdb-data:/data \
+  ghcr.io/aubakirovarman/cortexdb:latest
+```
+
+See [`DOCKER.md`](DOCKER.md) for the full Docker and production-compose path.
+
 ## Check This Guide
 
 ```bash
 make getting-started-check
+make docker-quickstart-check
 ```
