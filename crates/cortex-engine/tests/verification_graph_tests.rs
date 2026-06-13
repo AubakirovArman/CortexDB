@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 use cortex_engine::verification::{ContradictionRelationOptions, VerificationStatus};
-use cortex_engine::{scope_id, Database, SourceTrustCategory};
+use cortex_engine::{scope_id, Database, DatabaseOptions, PayloadResidency, SourceTrustCategory};
 
 fn fact_cell(scope: &str, body: &str, trust: Option<u16>) -> KnowledgeCell {
     KnowledgeCell::new(
@@ -92,6 +92,49 @@ fn verify_fact_aql_enriches_evidence_from_source_support_edge() {
         report.evidence[0].source_trust_category,
         SourceTrustCategory::Official
     );
+}
+
+#[test]
+fn verify_fact_aql_enriches_evidence_from_source_support_edge_lazy_checkpoint_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_knowledge_cell(
+            CellId(1),
+            fact_cell("project:investments", "ABC budget approved", Some(20_000)),
+        )
+        .unwrap();
+        db.put_knowledge_cell(
+            CellId(10),
+            source_support_relation("project:investments", CellId(1), Some(60_000)),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+    }
+    let db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            payload_residency: PayloadResidency::Lazy,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+
+    assert_eq!(db.storage_stats().unwrap().memtable_payload_bytes, 0);
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;"#,
+            &view("project:investments"),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Supported);
+    assert_eq!(report.evidence[0].cell_id, CellId(1));
+    assert_eq!(
+        report.evidence[0].citation,
+        Some("ifc:disclosure-001".to_owned())
+    );
+    assert_eq!(report.evidence[0].source_trust_q16, 60_000);
 }
 
 #[test]

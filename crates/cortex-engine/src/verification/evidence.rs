@@ -12,6 +12,11 @@ use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
 use crate::source_trust::SourceTrust;
 
+pub(super) struct MaterializedVersion<'a> {
+    pub(super) version: &'a CellVersion,
+    pub(super) payload: Vec<u8>,
+}
+
 pub(super) fn version_contains_any_term(version: &CellVersion, fact_terms: &[String]) -> bool {
     if fact_terms.is_empty() {
         return true;
@@ -60,12 +65,13 @@ pub(super) fn sort_evidence(evidence: &mut [VerificationEvidence]) {
 }
 
 pub(super) fn evidence_for_version(
-    version: &CellVersion,
+    candidate: &MaterializedVersion<'_>,
     view: &AgentView,
     fact: &str,
 ) -> Option<VerificationEvidence> {
-    let metadata = CellMetadata::from_version(version);
-    let payload = &version.payload;
+    let version = candidate.version;
+    let payload = candidate.payload.as_slice();
+    let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
     let fact_terms = tokenize(fact);
     if !view.can_read_scope(scope_id(&metadata.scope)) {
         return None;
@@ -93,12 +99,13 @@ pub(super) fn evidence_for_version(
 }
 
 pub(super) fn contradiction_for_version(
-    version: &CellVersion,
+    candidate: &MaterializedVersion<'_>,
     view: &AgentView,
     fact: &str,
 ) -> Option<VerificationEvidence> {
-    let metadata = CellMetadata::from_version(version);
-    let payload = &version.payload;
+    let version = candidate.version;
+    let payload = candidate.payload.as_slice();
+    let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
     let fact_terms = tokenize(fact);
     if !view.can_read_scope(scope_id(&metadata.scope)) || fact_terms.is_empty() {
         return None;

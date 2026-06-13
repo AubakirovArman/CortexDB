@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 use cortex_engine::verification::ContradictionRelationOptions;
-use cortex_engine::{scope_id, Database};
+use cortex_engine::{scope_id, Database, DatabaseOptions, PayloadResidency};
 
 #[test]
 fn conflicts_for_entity_reads_structured_inline_marker() {
@@ -118,6 +118,48 @@ fn persisted_relation_can_be_queried_by_source_cell_facets() {
     assert_eq!(by_source.len(), 1);
     assert_eq!(by_source[0].relation_cell_id, Some(CellId(10)));
     assert_eq!(by_source[0].source.as_deref(), Some("ifc"));
+}
+
+#[test]
+fn persisted_relation_can_be_queried_by_source_cell_facets_lazy_checkpoint_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_knowledge_cell(
+            CellId(1),
+            fact_cell(
+                "project:investments",
+                "ifc",
+                "project=ABC Airport\nmetric=budget\nABC Airport budget rejected",
+            ),
+        )
+        .unwrap();
+        db.persist_contradiction_relation(
+            CellId(10),
+            CellId(1),
+            "ABC Airport budget approved",
+            contradiction_relation_options("project:investments"),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+    }
+    let db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            payload_residency: PayloadResidency::Lazy,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+
+    assert_eq!(db.storage_stats().unwrap().memtable_payload_bytes, 0);
+    let by_entity = db.conflicts_for_entity("abc airport", &view("project:investments"));
+
+    assert_eq!(by_entity.len(), 1);
+    assert_eq!(by_entity[0].relation_cell_id, Some(CellId(10)));
+    assert_eq!(by_entity[0].entity.as_deref(), Some("ABC Airport"));
+    assert_eq!(by_entity[0].metric.as_deref(), Some("budget"));
+    assert_eq!(by_entity[0].source.as_deref(), Some("ifc"));
 }
 
 #[test]

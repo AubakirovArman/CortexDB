@@ -3,7 +3,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_aql::AgentView;
-use cortex_core::memtable::CellVersion;
 use cortex_core::CellId;
 
 use crate::database::Database;
@@ -13,7 +12,10 @@ use crate::search::tokenize;
 use crate::source_trust::{SourceTrust, SourceTrustCategory};
 use crate::typed_body::RelationBody;
 
-use super::{support::term_coverage_q16, VerificationEvidence, VerificationMatchKind};
+use super::{
+    evidence::MaterializedVersion, support::term_coverage_q16, VerificationEvidence,
+    VerificationMatchKind,
+};
 
 #[derive(Clone, Debug)]
 struct SourceSupport {
@@ -24,20 +26,22 @@ struct SourceSupport {
 }
 
 pub(super) fn graph_contradiction_for_version(
-    version: &CellVersion,
+    candidate: &MaterializedVersion<'_>,
     fact: &str,
     view: &AgentView,
     existing: &BTreeSet<CellId>,
 ) -> Option<VerificationEvidence> {
+    let version = candidate.version;
     let cell_id = version.cell_id;
     if existing.contains(&cell_id) {
         return None;
     }
-    let metadata = CellMetadata::from_version(version);
+    let payload = candidate.payload.as_slice();
+    let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
     if !view.can_read_scope(scope_id(&metadata.scope)) {
         return None;
     }
-    let relation = RelationBody::parse(&version.payload);
+    let relation = RelationBody::parse(payload);
     let kind = relation
         .predicate
         .as_deref()
@@ -73,7 +77,7 @@ pub(super) fn graph_contradiction_for_version(
 }
 
 pub(super) fn add_graph_relation_contradictions_from_versions(
-    versions: &[&CellVersion],
+    versions: &[MaterializedVersion<'_>],
     fact: &str,
     view: &AgentView,
     contradicting_evidence: &mut Vec<VerificationEvidence>,
@@ -107,7 +111,7 @@ pub(super) fn is_graph_contradiction_payload(payload: &[u8]) -> bool {
 
 pub(super) fn enrich_evidence_from_source_support_edges(
     db: &Database,
-    versions: &[&CellVersion],
+    versions: &[MaterializedVersion<'_>],
     view: &AgentView,
     evidence: &mut [VerificationEvidence],
 ) {
@@ -143,7 +147,7 @@ pub(super) fn enrich_evidence_from_source_support_edges(
 }
 
 fn source_supports_by_fact_cell_from_versions(
-    versions: &[&CellVersion],
+    versions: &[MaterializedVersion<'_>],
     view: &AgentView,
     target_cells: &BTreeSet<CellId>,
 ) -> BTreeMap<CellId, SourceSupport> {
@@ -203,15 +207,17 @@ fn source_support_from_edge(
 }
 
 fn source_support_from_version(
-    version: &CellVersion,
+    candidate: &MaterializedVersion<'_>,
     view: &AgentView,
     target_cells: &BTreeSet<CellId>,
 ) -> Option<(CellId, SourceSupport)> {
-    let metadata = CellMetadata::from_version(version);
+    let version = candidate.version;
+    let payload = candidate.payload.as_slice();
+    let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
     if !view.can_read_scope(scope_id(&metadata.scope)) {
         return None;
     }
-    let relation = RelationBody::parse(&version.payload);
+    let relation = RelationBody::parse(payload);
     let kind = relation
         .predicate
         .as_deref()

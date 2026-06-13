@@ -44,24 +44,28 @@ impl Database {
         let mut visible_facets = std::collections::BTreeMap::new();
         let pin = self.pin_read_txn();
         let txn = pin.read_txn();
-        for version in self.memtable.visible_iter(txn) {
-            let metadata = CellMetadata::from_version(version);
+        let visible_versions = self.materialized_conflict_versions(txn);
+        for (version, payload) in &visible_versions {
+            let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
             if view.can_read_scope(scope_id(&metadata.scope)) {
-                visible_facets.insert(version.cell_id, conflict_facets_for_version(version));
+                visible_facets.insert(
+                    version.cell_id,
+                    conflict_facets_from_payload(version, payload),
+                );
             }
         }
 
         let mut records = Vec::new();
-        for version in self.memtable.visible_iter(txn) {
-            let metadata = CellMetadata::from_version(version);
+        for (version, payload) in &visible_versions {
+            let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
             if !view.can_read_scope(scope_id(&metadata.scope)) {
                 continue;
             }
             let trust =
                 SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class);
-            let facets = conflict_facets_for_version(version);
+            let facets = conflict_facets_from_payload(version, payload);
             records.extend(
-                contradiction_facts(&version.payload)
+                contradiction_facts(payload)
                     .into_iter()
                     .map(|fact| ConflictRecord {
                         cell_id: version.cell_id,
@@ -78,7 +82,7 @@ impl Database {
             if metadata.cell_type == KnowledgeCellType::Relation.as_str() {
                 if let Some(record) = contradiction_relation_record(
                     version.cell_id,
-                    &version.payload,
+                    payload,
                     trust.q16,
                     trust.category,
                     facets.clone(),
@@ -101,6 +105,20 @@ impl Database {
                 && left.fact == right.fact
         });
         records
+    }
+
+    fn materialized_conflict_versions(
+        &self,
+        txn: cortex_core::memtable::ReadTxn,
+    ) -> Vec<(&CellVersion, Vec<u8>)> {
+        self.memtable
+            .visible_iter(txn)
+            .filter_map(|version| {
+                self.payload_for_version(version)
+                    .ok()
+                    .map(|payload| (version, payload))
+            })
+            .collect()
     }
 
     pub fn conflicts_for_fact(&self, fact: &str, view: &AgentView) -> Vec<ConflictRecord> {
@@ -227,8 +245,8 @@ fn sanitize_relation_value(value: &str) -> String {
         .collect()
 }
 
-fn conflict_facets_for_version(version: &CellVersion) -> ConflictFacets {
-    let metadata = CellMetadata::from_version(version);
+fn conflict_facets_from_payload(version: &CellVersion, payload: &[u8]) -> ConflictFacets {
+    let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
     conflict_facets_from_metadata(metadata)
 }
 

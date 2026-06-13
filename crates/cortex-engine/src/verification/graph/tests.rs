@@ -1,9 +1,11 @@
 use std::collections::BTreeSet;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
-use cortex_core::{CellDescriptor, CommitSeq, KnowledgeCellType};
+use cortex_core::memtable::CellVersion;
+use cortex_core::{CellDescriptor, CellId, CommitSeq, KnowledgeCellType};
 
 use super::*;
+use crate::verification::evidence::MaterializedVersion;
 
 #[test]
 fn graph_contradiction_for_version_respects_descriptor_scope() {
@@ -19,17 +21,21 @@ fn graph_contradiction_for_version_respects_descriptor_scope() {
     };
     let version =
         CellVersion::new_with_descriptor(CellId(10), CommitSeq(1), payload, 0, descriptor);
+    let candidate = MaterializedVersion {
+        version: &version,
+        payload: version.payload.clone(),
+    };
     let existing = BTreeSet::new();
 
     assert!(graph_contradiction_for_version(
-        &version,
+        &candidate,
         "ABC budget approved",
         &view("project:visible"),
         &existing,
     )
     .is_none());
     assert!(graph_contradiction_for_version(
-        &version,
+        &candidate,
         "ABC budget approved",
         &view("tenant:private"),
         &existing,

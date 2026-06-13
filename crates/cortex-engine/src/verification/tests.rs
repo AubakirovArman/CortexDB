@@ -4,7 +4,7 @@ use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZER
 use cortex_core::memtable::CellVersion;
 use cortex_core::{CellDescriptor, CellId, CommitSeq, KnowledgeCellType};
 
-use super::evidence::{contradiction_for_version, evidence_for_version};
+use super::evidence::{contradiction_for_version, evidence_for_version, MaterializedVersion};
 use crate::query::scope_id;
 
 #[test]
@@ -15,11 +15,13 @@ fn evidence_for_version_respects_descriptor_scope_over_payload_scope() {
         KnowledgeCellType::Fact,
     );
 
+    let candidate = materialized_version(&version);
+
     assert!(
-        evidence_for_version(&version, &view("project:visible"), "ABC budget approved").is_none()
+        evidence_for_version(&candidate, &view("project:visible"), "ABC budget approved").is_none()
     );
     assert!(
-        evidence_for_version(&version, &view("tenant:private"), "ABC budget approved").is_some()
+        evidence_for_version(&candidate, &view("tenant:private"), "ABC budget approved").is_some()
     );
 }
 
@@ -31,14 +33,23 @@ fn contradiction_for_version_respects_descriptor_scope_over_payload_scope() {
         KnowledgeCellType::Fact,
     );
 
+    let candidate = materialized_version(&version);
+
     assert!(
-        contradiction_for_version(&version, &view("project:visible"), "ABC budget approved",)
+        contradiction_for_version(&candidate, &view("project:visible"), "ABC budget approved",)
             .is_none()
     );
     assert!(
-        contradiction_for_version(&version, &view("tenant:private"), "ABC budget approved",)
+        contradiction_for_version(&candidate, &view("tenant:private"), "ABC budget approved",)
             .is_some()
     );
+}
+
+fn materialized_version(version: &CellVersion) -> MaterializedVersion<'_> {
+    MaterializedVersion {
+        version,
+        payload: version.payload.clone(),
+    }
 }
 
 fn mismatched_version(

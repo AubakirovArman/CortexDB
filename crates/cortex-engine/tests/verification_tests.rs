@@ -2,7 +2,10 @@ use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZER
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 use cortex_engine::verification::ContradictionRelationOptions;
 use cortex_engine::verification::{VerificationMatchKind, VerificationStatus};
-use cortex_engine::{scope_id, Database, SourceTrustCategory, INFERRED_SOURCE_TRUST_Q16};
+use cortex_engine::{
+    scope_id, Database, DatabaseOptions, PayloadResidency, SourceTrustCategory,
+    INFERRED_SOURCE_TRUST_Q16,
+};
 use std::collections::BTreeSet;
 
 #[test]
@@ -92,6 +95,39 @@ fn verify_fact_aql_survives_restart() {
     }
 
     let db = Database::open(dir.path()).unwrap();
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;"#,
+            &view("project:investments", true),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Supported);
+    assert_eq!(report.evidence[0].cell_id, CellId(1));
+}
+
+#[test]
+fn verify_fact_aql_survives_lazy_checkpoint_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_knowledge_cell(
+            CellId(1),
+            fact_cell("project:investments", "ABC budget approved"),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+    }
+    let db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            payload_residency: PayloadResidency::Lazy,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+
+    assert_eq!(db.storage_stats().unwrap().memtable_payload_bytes, 0);
     let report = db
         .verify_fact_aql(
             r#"VERIFY FACT "ABC budget approved" IN BRAIN investment_projects;"#,

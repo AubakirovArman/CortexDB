@@ -5,7 +5,7 @@ use cortex_core::memtable::{CellVersion, ReadTxn};
 
 use super::evidence::{
     contradiction_for_version, evidence_for_version, sort_evidence, verification_confidence_q16,
-    verification_status, version_contains_any_term,
+    verification_status, version_contains_any_term, MaterializedVersion,
 };
 use super::graph::{
     add_graph_relation_contradictions_from_versions, enrich_evidence_from_source_support_edges,
@@ -16,6 +16,7 @@ use super::guards::{
 use super::{VerificationEvidence, VerificationReport};
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
+use crate::options::PayloadResidency;
 use crate::query::cache::AqlStatementKind;
 use crate::query::CellMetadata;
 use crate::search::tokenize;
@@ -69,23 +70,26 @@ impl Database {
         let mut numeric_conflicts = Vec::new();
         let pin = self.pin_read_txn();
         let txn = pin.read_txn();
-        let candidate_versions = self.verification_candidate_versions(&plan.fact, txn)?;
-        for version in &candidate_versions {
+        let candidate_versions = self.materialize_verification_versions(
+            self.verification_candidate_versions(&plan.fact, txn)?,
+        )?;
+        for candidate in &candidate_versions {
+            let version = candidate.version;
+            let payload = candidate.payload.as_slice();
             if let Some(guard) = stale_fact_guard(&plan.fact, version, view) {
                 guards.push(guard);
             }
-            if let Some(item) = evidence_for_version(version, view, &plan.fact) {
+            if let Some(item) = evidence_for_version(candidate, view, &plan.fact) {
                 if let Some(guard) = citation_guard(&item) {
                     guards.push(guard);
                 }
                 evidence.push(item);
             }
-            if let Some(item) = contradiction_for_version(version, view, &plan.fact) {
-                if let Some(guard) = numeric_mismatch_guard(&plan.fact, &version.payload, &item) {
+            if let Some(item) = contradiction_for_version(candidate, view, &plan.fact) {
+                if let Some(guard) = numeric_mismatch_guard(&plan.fact, payload, &item) {
                     guards.push(guard);
                 }
-                if let Some(conflict) =
-                    numeric_mismatch_conflict(&plan.fact, &version.payload, item.cell_id)
+                if let Some(conflict) = numeric_mismatch_conflict(&plan.fact, payload, item.cell_id)
                 {
                     numeric_conflicts.push(conflict);
                 }
@@ -98,7 +102,7 @@ impl Database {
             view,
             &mut contradicting_evidence,
         );
-        let support_versions = self.verification_source_support_versions(&evidence, txn);
+        let support_versions = self.verification_source_support_versions(&evidence, txn)?;
         enrich_evidence_from_source_support_edges(self, &support_versions, view, &mut evidence);
         sort_evidence(&mut evidence);
         sort_evidence(&mut contradicting_evidence);
@@ -185,13 +189,26 @@ impl Database {
         Ok(versions)
     }
 
+    fn materialize_verification_versions<'a>(
+        &'a self,
+        versions: Vec<&'a CellVersion>,
+    ) -> EngineResult<Vec<MaterializedVersion<'a>>> {
+        versions
+            .into_iter()
+            .map(|version| {
+                self.payload_for_version(version)
+                    .map(|payload| MaterializedVersion { version, payload })
+            })
+            .collect()
+    }
+
     fn verification_source_support_versions<'a>(
         &'a self,
         evidence: &[VerificationEvidence],
         txn: ReadTxn,
-    ) -> Vec<&'a CellVersion> {
+    ) -> EngineResult<Vec<MaterializedVersion<'a>>> {
         if evidence.is_empty() {
-            return Vec::new();
+            return Ok(Vec::new());
         }
         let evidence_ids = evidence
             .iter()
@@ -199,7 +216,8 @@ impl Database {
             .map(|cell_id| format!("cell:{}", cell_id.0))
             .collect::<Vec<_>>();
         let checkpoint_seq = cortex_core::CommitSeq(self.manifest().checkpoint_seq);
-        let scan_all_live = self.manifest().live_segments.is_empty();
+        let scan_all_live = self.manifest().live_segments.is_empty()
+            || self.payload_residency == PayloadResidency::Lazy;
         let visible = if scan_all_live {
             self.memtable.visible_iter(txn).collect::<Vec<_>>()
         } else {
@@ -207,17 +225,22 @@ impl Database {
                 .visible_created_after_iter(txn, checkpoint_seq)
                 .collect::<Vec<_>>()
         };
-        visible
-            .into_iter()
-            .filter(|version| {
-                let metadata = CellMetadata::from_version(version);
-                metadata.cell_type == "relation"
-                    && evidence_ids.iter().any(|id| {
-                        std::str::from_utf8(&version.payload)
-                            .map(|payload| payload.contains(id))
-                            .unwrap_or(false)
-                    })
-            })
-            .collect()
+        let mut support_versions = Vec::new();
+        for version in visible {
+            let metadata = CellMetadata::from_version(version);
+            if metadata.cell_type != "relation" {
+                continue;
+            }
+            let payload = self.payload_for_version(version)?;
+            let is_source_support = evidence_ids.iter().any(|id| {
+                std::str::from_utf8(&payload)
+                    .map(|payload| payload.contains(id))
+                    .unwrap_or(false)
+            });
+            if is_source_support {
+                support_versions.push(MaterializedVersion { version, payload });
+            }
+        }
+        Ok(support_versions)
     }
 }
