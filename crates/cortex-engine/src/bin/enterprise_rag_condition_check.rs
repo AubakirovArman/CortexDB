@@ -1,19 +1,15 @@
 use std::collections::BTreeMap;
 use std::env;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use cortex_engine::search::extract_query_conditions;
 use serde_json::{json, Value};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct Args {
-    questions: PathBuf,
-    output: PathBuf,
-    limit: Option<usize>,
-    offset: usize,
-    min_constrained_coverage_pct: u64,
-}
+#[path = "enterprise_rag_condition_check/args.rs"]
+mod args;
+
+pub(crate) use args::{parse_args, Args};
 
 #[derive(Clone, Debug)]
 struct QuestionRow {
@@ -84,58 +80,6 @@ fn summary(report: &Value, output: &Path) -> String {
         "output": output.display().to_string(),
     })
     .to_string()
-}
-
-fn parse_args(mut args: impl Iterator<Item = String>) -> Result<Args, String> {
-    let mut questions = None;
-    let mut output = None;
-    let mut limit = None;
-    let mut offset = 0usize;
-    let mut min_constrained_coverage_pct = 70u64;
-    while let Some(arg) = args.next() {
-        match arg.as_str() {
-            "--questions" | "--questions-file" => {
-                questions = Some(PathBuf::from(next_value(&mut args, &arg)?));
-            }
-            "--output" | "--report" => output = Some(PathBuf::from(next_value(&mut args, &arg)?)),
-            "--limit" => limit = Some(parse_usize(&next_value(&mut args, &arg)?, &arg)?),
-            "--offset" => offset = parse_usize(&next_value(&mut args, &arg)?, &arg)?,
-            "--min-constrained-coverage-pct" => {
-                min_constrained_coverage_pct =
-                    parse_u64(&next_value(&mut args, &arg)?, &arg)?.min(100)
-            }
-            "--help" | "-h" => return Err(usage()),
-            _ => return Err(format!("unknown argument {arg}\n{}", usage())),
-        }
-    }
-    Ok(Args {
-        questions: questions.ok_or_else(usage)?,
-        output: output.ok_or_else(usage)?,
-        limit,
-        offset,
-        min_constrained_coverage_pct,
-    })
-}
-
-fn next_value(args: &mut impl Iterator<Item = String>, name: &str) -> Result<String, String> {
-    args.next()
-        .ok_or_else(|| format!("{name} requires a value\n{}", usage()))
-}
-
-fn parse_usize(value: &str, name: &str) -> Result<usize, String> {
-    value
-        .parse::<usize>()
-        .map_err(|error| format!("{name} expects a positive integer: {error}"))
-}
-
-fn parse_u64(value: &str, name: &str) -> Result<u64, String> {
-    value
-        .parse::<u64>()
-        .map_err(|error| format!("{name} expects an integer: {error}"))
-}
-
-fn usage() -> String {
-    "usage: enterprise_rag_condition_check --questions <questions.jsonl> --output <report.json> [--limit N] [--offset N] [--min-constrained-coverage-pct PCT]".to_owned()
 }
 
 fn read_questions(path: &Path) -> Result<Vec<QuestionRow>, String> {
