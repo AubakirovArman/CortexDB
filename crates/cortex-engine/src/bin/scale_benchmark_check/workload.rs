@@ -18,7 +18,7 @@ pub(crate) fn ingest_batches(db: &mut Database, args: &Args) -> Result<Value, St
             .saturating_sub(1)
             .min(args.cells);
         let batch = (next..=end)
-            .map(|index| (CellId(index as u64), payload(index)))
+            .map(|index| (CellId(index as u64), payload(index, args.payload_bytes)))
             .collect::<Vec<_>>();
         db.put_cells(batch).map_err(|error| error.to_string())?;
         next = end + 1;
@@ -71,7 +71,7 @@ pub(crate) fn scale_view() -> AgentView {
     }
 }
 
-fn payload(index: usize) -> Vec<u8> {
+fn payload(index: usize, payload_bytes: Option<usize>) -> Vec<u8> {
     let scope = match index % 5 {
         0 => "scale",
         1 => "scale",
@@ -93,7 +93,7 @@ fn payload(index: usize) -> Vec<u8> {
     } else {
         "scale benchmark background evidence"
     };
-    let target_len = 512 + ((index.wrapping_mul(7919)) % 3585);
+    let target_len = payload_bytes.unwrap_or_else(|| 512 + ((index.wrapping_mul(7919)) % 3585));
     let mut text = format!(
         "scope={scope}\nstatus=ready\ntype=fact\nsource=scale-doc-{index}\ncreated={}\n\n{target}. {topic}. ",
         1_700_000_000u64 + index as u64

@@ -9,6 +9,7 @@ pub(crate) struct Args {
     pub(crate) context_samples: usize,
     pub(crate) verify_samples: usize,
     pub(crate) batch_size: usize,
+    pub(crate) payload_bytes: Option<usize>,
 }
 
 impl Args {
@@ -22,6 +23,7 @@ impl Args {
             context_samples: 10,
             verify_samples: 10,
             batch_size: 5_000,
+            payload_bytes: None,
         };
         let mut values = values.peekable();
         while let Some(arg) = values.next() {
@@ -56,11 +58,21 @@ impl Args {
                     args.batch_size =
                         parse_usize(next_value(&mut values, "--batch-size")?, "--batch-size")?
                 }
+                "--payload-bytes" => {
+                    args.payload_bytes = Some(parse_usize(
+                        next_value(&mut values, "--payload-bytes")?,
+                        "--payload-bytes",
+                    )?)
+                }
                 "--help" | "-h" => return Err(help_text()),
                 unknown => return Err(format!("unknown argument: {unknown}\n{}", help_text())),
             }
         }
-        for (name, value) in [("--cells", args.cells), ("--batch-size", args.batch_size)] {
+        for (name, value) in [
+            ("--cells", args.cells),
+            ("--batch-size", args.batch_size),
+            ("--payload-bytes", args.payload_bytes.unwrap_or(1)),
+        ] {
             if value == 0 {
                 return Err(format!("{name} must be positive"));
             }
@@ -85,5 +97,25 @@ fn parse_usize(value: String, flag: &str) -> Result<usize, String> {
 }
 
 fn help_text() -> String {
-    "usage: scale_benchmark_check [--root PATH] [--report PATH] [--cells N] [--samples N] [--search-samples N] [--context-samples N] [--verify-samples N] [--batch-size N]".to_owned()
+    "usage: scale_benchmark_check [--root PATH] [--report PATH] [--cells N] [--samples N] [--search-samples N] [--context-samples N] [--verify-samples N] [--batch-size N] [--payload-bytes N]".to_owned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Args;
+
+    #[test]
+    fn parse_payload_bytes_override() {
+        let args = Args::parse(["--payload-bytes", "128"].into_iter().map(str::to_owned)).unwrap();
+        assert_eq!(args.payload_bytes, Some(128));
+    }
+
+    #[test]
+    fn parse_rejects_zero_payload_bytes() {
+        let error = match Args::parse(["--payload-bytes", "0"].into_iter().map(str::to_owned)) {
+            Ok(_) => panic!("expected --payload-bytes=0 to fail"),
+            Err(error) => error,
+        };
+        assert!(error.contains("--payload-bytes must be positive"));
+    }
 }

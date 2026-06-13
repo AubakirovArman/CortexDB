@@ -1466,7 +1466,7 @@
     "crates/cortex-engine/src/bin/scale_benchmark_check/args.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 89,
+      "lines": 121,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1480,7 +1480,7 @@
     "crates/cortex-engine/src/bin/scale_benchmark_check/runner.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 184,
+      "lines": 186,
       "soft_limit": 300,
       "warning_limit": 600
     },

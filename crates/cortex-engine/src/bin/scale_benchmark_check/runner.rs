@@ -148,7 +148,9 @@ fn write_report(
         "schema_version": "cortexdb.scale_benchmark.v1",
         "ok": errors.is_empty(),
         "cells": args.cells,
-        "payload_profile": "realistic_0_5kb_to_4kb",
+        "payload_profile": args.payload_bytes
+            .map(|bytes| format!("fixed_{bytes}b"))
+            .unwrap_or_else(|| "realistic_0_5kb_to_4kb".to_owned()),
         "samples": {
             "read": args.samples,
             "search": args.search_samples,
