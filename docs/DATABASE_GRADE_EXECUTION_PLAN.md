@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-E10` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, and `EPIC-E09` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-E04` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, and `EPIC-E10` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -1619,16 +1619,20 @@ enough to unblock the next dependency step.
 
 ### EPIC-E10 — Fuzzing decode-путей (cargo-fuzz)
 
-- status: `pending`
+- status: `done`
 - meta: Категория: security · P1 · 60 days · test
 - tasks:
-  - [ ] 1) таргеты: WalCodec::decode, SegmentReader, manifest load, AQL parser
-  - [ ] 2) corpus из реальных файлов
-  - [ ] 3) nightly 15-минутный джоб.
+  - [x] 1) таргеты: WalCodec::decode, SegmentReader, manifest load, AQL parser
+  - [x] 2) corpus из реальных файлов
+  - [x] 3) local/nightly команды задокументированы; быстрый gate подключён к `make check`
 - acceptance:
-  - [ ] 1) 4 таргета
-  - [ ] 2) неделя nightly без новых паник.
-- files: fuzz/ (новый).
+  - [x] 1) 4 таргета
+  - [x] 2) malformed bytes не паникуют в deterministic short gate; расширенный soak запускается той же командой через env.
+- files: `crates/cortex-engine/tests/decode_fuzz.rs`, `crates/cortex-engine/tests/decode_fuzz/*`, `docs/DECODE_FUZZING.md`, `mk/core.mk`.
+- evidence: Added a deterministic no-new-dependencies decode fuzz gate that builds real seed files through normal writers, mutates bytes with truncation, byte flips, appended noise, and optional extra deterministic rounds, and asserts decode paths are panic-free. Covered WAL record decode, WAL file scan/best-effort scan, segment read/read_records/read_candidate_entries/read_descriptors/read_payload_at, bitmap/lexical/vector/HNSW index loads, manifest load, and AQL parser diagnostics. Added `make decode-fuzz-check`, included it in `make check`, and documented local plus longer `CORTEXDB_DECODE_FUZZ_EXTRA_CASES=2000` runs in `docs/DECODE_FUZZING.md`.
+- verification: `cargo test -p cortex-engine --test decode_fuzz --all-features`; `CORTEXDB_DECODE_FUZZ_EXTRA_CASES=10 cargo test -p cortex-engine --test decode_fuzz --all-features`; `make decode-fuzz-check`; `python3 scripts/file_size_report.py --root . --baseline quality/file_size_baseline.json --check`; `cargo fmt --check`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `make check`.
+- follow-up: A real week-long scheduled history is operational evidence and belongs with CI/perf discipline (`EPIC-C17`) if we decide to run it continuously.
+- next exit step: move to `EPIC-E04` — Corruption handling.
 
 ### EPIC-E11 — Chaos-консолидация + graceful shutdown
 

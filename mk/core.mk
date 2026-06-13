@@ -1,6 +1,6 @@
-.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check context-pack-schema-contract-check
+.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check context-pack-schema-contract-check decode-fuzz-check
 
-check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check context-pack-schema-contract-check
+check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check context-pack-schema-contract-check decode-fuzz-check
 	cargo check --workspace
 
 file-size-report:
@@ -23,6 +23,9 @@ query-scan-inventory-check:
 
 context-pack-schema-contract-check:
 	python3 scripts/context_pack_schema_contract_check.py
+
+decode-fuzz-check:
+	cargo test -p cortex-engine --test decode_fuzz --all-features
 
 test:
 	cargo test --workspace

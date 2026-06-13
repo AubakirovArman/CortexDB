@@ -4011,6 +4011,34 @@
       "soft_limit": 600,
       "warning_limit": 1200
     },
+    "crates/cortex-engine/tests/decode_fuzz.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 39,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/decode_fuzz/aql.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 31,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/decode_fuzz/corpus.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 291,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
+    "crates/cortex-engine/tests/decode_fuzz/mutations.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 65,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
     "crates/cortex-engine/tests/determinism.rs": {
       "hard_limit": 2000,
       "kind": "test",
@@ -6233,7 +6261,7 @@
     "mk/core.mk": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 33,
+      "lines": 36,
       "soft_limit": 300,
       "warning_limit": 600
     },

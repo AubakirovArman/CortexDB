@@ -21,21 +21,46 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-E10` — Fuzzing decode paths.
+`EPIC-E04` — Corruption handling.
 
-E10 exit steps:
+E04 exit steps:
 
-1. Select WAL/segment/manifest/index decoders for fuzzing.
-2. Add fuzz targets and seed corpus.
-3. Wire the short fuzz/smoke gate without making normal PR checks long.
-4. Mark done when decode paths have reproducible panic/corruption coverage.
+1. Define quarantine behavior for corrupt WAL/segments/indexes.
+2. Add repair/report UX.
+3. Add corruption matrix tests.
+4. Mark done when corruption produces actionable reports, not ambiguous crashes.
 
-E10 progress:
+E04 progress:
 
-- next: inventory existing decode tests and choose the smallest no-new-deps
-  fuzz-like harness shape for the first gate.
+- next: inventory current validation/repair error paths and choose the smallest
+  operator-facing quarantine/report slice.
 
 ## Recently Closed
+
+### EPIC-E10 — Fuzzing decode paths
+
+Status: `done`
+
+What closed it:
+
+- Added a no-new-deps deterministic decode fuzz gate over real seed files built
+  by the normal WAL/storage writers.
+- Covered WAL records and WAL files; segment record, descriptor, candidate, and
+  payload lookup paths; bitmap, lexical, vector, and HNSW indexes; manifest
+  load; and AQL parser diagnostics.
+- Added byte truncation, byte flip, appended-noise, pure-noise, and optional
+  deterministic extra mutation rounds.
+- Added `make decode-fuzz-check` and included it in `make check`.
+- Documented local and longer soak commands in `docs/DECODE_FUZZING.md`.
+- Gates passed: `cargo test -p cortex-engine --test decode_fuzz --all-features`,
+  `CORTEXDB_DECODE_FUZZ_EXTRA_CASES=10 cargo test -p cortex-engine --test decode_fuzz --all-features`,
+  `make decode-fuzz-check`, file-size ratchet, `cargo fmt --check`,
+  `cargo test --workspace --all-features`,
+  `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`.
+
+Next:
+
+- Continue with E04 as directed by `EPIC_EXIT_STEPS.md`.
 
 ### EPIC-E08 — Tenant isolation test suite
 
@@ -212,7 +237,7 @@ Important follow-up:
 
 ## Done Snapshot
 
-Done count in roadmap snapshot: `39`.
+Done count in roadmap snapshot: `40`.
 
 High-signal done epics:
 
@@ -246,6 +271,7 @@ High-signal done epics:
 - D10 OpenAPI/codegen control;
 - D11 MCP adapter;
 - E01 WAL writer error surfacing;
+- E10 decode fuzzing gate;
 - E08 tenant isolation test suite;
 - E09 AgentView rights property suite;
 - E11 chaos/graceful shutdown;
@@ -275,11 +301,10 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on E10 only:
+Work on E04 only:
 
-1. inventory WAL, segment, manifest, index, and AQL parser decode paths;
-2. add a short deterministic fuzz-like harness with seed corpus and corruption
-   cases;
-3. run targeted decode/fuzz smoke tests plus full required gates when closing;
-4. move pointer only after E10 is `done` or explicitly split with accepted
+1. inventory current validation, repair, and corruption-report paths;
+2. define quarantine/report behavior for corrupt WAL, segments, and indexes;
+3. add operator-facing diagnostics and regression tests by corruption class;
+4. move pointer only after E04 is `done` or explicitly split with accepted
    follow-up scope.
