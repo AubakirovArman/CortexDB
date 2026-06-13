@@ -21,15 +21,37 @@ work by accident.
 
 ## Current Pointer
 
+`EPIC-C16` — memory profiling harness.
+
+C16 exit steps:
+
+1. Keep `make memory-profile` reproducible.
+2. Use the portable memory report to compare RSS against estimated memory.
+3. Decide whether allocator-level `dhat`/`jemalloc` evidence is required now or
+   remains dependency/runtime-gated.
+4. Feed the memory evidence into A19/C17 without running a new large benchmark.
+
+C16 current state:
+
+- portable `memory_profile_check` exists and writes JSON;
+- the documented 10K report passed with RSS/estimated ratio `1.352`;
+- allocator-specific observers are not implemented because they require a
+  dependency/runtime decision;
+- next work: compare current A19 scale RSS evidence against the memory-profile
+  estimator and decide the gate shape.
+
+## Active Partial Tail
+
 `EPIC-A19` — scale benchmarks and RAM/latency curves.
 
-A19 exit steps:
+A19 split state:
 
 1. Keep reproducible commands for 100K/1M/10M scale targets.
 2. Record RAM, open time, put/get/retrieve/verify/checkpoint latency.
 3. Store reports in stable target/docs paths.
 4. Compare each storage/indexing change against the baseline.
-5. Mark done only when the scale envelope is measured and documented.
+5. Keep 10M lazy evidence and historical optimization labels as the final
+   long-running benchmark packet.
 
 A19 progress:
 
@@ -433,13 +455,11 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on A19 only:
+Work on C16 only:
 
-1. decide whether to keep 10M lazy evidence as the explicit final long-running
-   A19 tail, matching the small/medium-gate rule;
-2. decide whether historical before/after A05/A06/A08/A09 optimization labels
-   can be reconstructed from existing artifacts or must remain an explicit
-   non-reconstructable A19 note;
-3. add or fix benchmark reporting only where it directly closes A19 acceptance;
-4. move pointer to C16/C17 only when A19 is either done or explicitly split with
-   accepted follow-up scope.
+1. inspect `target/memory-profile/10k/report.json` and current A19 RSS reports;
+2. add a small report/check that compares estimated memory with observed RSS
+   for available memory/scale reports;
+3. document whether `dhat`/`jemalloc` remains deferred by dependency policy;
+4. move pointer to C17 only when C16 has a reproducible estimator-vs-RSS gate or
+   an explicit accepted dependency decision.
