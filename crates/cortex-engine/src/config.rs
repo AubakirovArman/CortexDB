@@ -6,7 +6,7 @@ use cortex_storage::wal::DurabilityMode;
 
 use crate::options::{
     CompactionPolicy, DatabaseOptions, EngineFeatureFlags, PayloadResidency, RecoveryMode,
-    StaleLockPolicy,
+    StaleLockPolicy, DEFAULT_PAYLOAD_CACHE_BYTES,
 };
 use crate::search::{HnswBuildConfig, HnswBuildProfile};
 
@@ -44,6 +44,11 @@ impl EngineConfig {
             recovery_mode: parse_recovery_mode(&vars)?,
             stale_lock_policy: parse_stale_lock_policy(&vars)?,
             payload_residency: parse_payload_residency(&vars)?,
+            payload_cache_bytes: parse_usize_var(
+                &vars,
+                "CORTEXDB_PAYLOAD_CACHE_BYTES",
+                DEFAULT_PAYLOAD_CACHE_BYTES,
+            )?,
             hnsw_build_config: parse_hnsw_build_config(&vars)?,
             feature_flags,
             ingestion_backpressure: Default::default(),
@@ -176,6 +181,19 @@ fn parse_payload_residency(
     }
 }
 
+fn parse_usize_var(
+    vars: &BTreeMap<String, String>,
+    name: &'static str,
+    default: usize,
+) -> Result<usize, EngineConfigError> {
+    let Some(raw) = var(vars, name) else {
+        return Ok(default);
+    };
+    raw.trim()
+        .parse::<usize>()
+        .map_err(|_| EngineConfigError::new(name, raw, "a non-negative integer"))
+}
+
 fn parse_hnsw_build_config(
     vars: &BTreeMap<String, String>,
 ) -> Result<HnswBuildConfig, EngineConfigError> {
@@ -219,6 +237,7 @@ mod tests {
             ("CORTEXDB_RECOVERY_MODE", "best_effort"),
             ("CORTEXDB_STALE_LOCK_POLICY", "break"),
             ("CORTEXDB_PAYLOAD_RESIDENCY", "lazy"),
+            ("CORTEXDB_PAYLOAD_CACHE_BYTES", "4096"),
             ("CORTEXDB_HNSW_PROFILE", "audit"),
             ("CORTEXDB_EXPERIMENTAL_HNSW", "true"),
             ("CORTEXDB_EXPERIMENTAL_REPLICATION", "1"),
@@ -241,6 +260,7 @@ mod tests {
             config.database_options.payload_residency,
             PayloadResidency::Lazy
         );
+        assert_eq!(config.database_options.payload_cache_bytes, 4096);
         assert_eq!(
             config.database_options.hnsw_build_config,
             HnswBuildConfig::for_profile(HnswBuildProfile::Audit)
@@ -262,5 +282,8 @@ mod tests {
         let error =
             EngineConfig::from_env_vars([("CORTEXDB_PAYLOAD_RESIDENCY", "maybe")]).unwrap_err();
         assert_eq!(error.variable, "CORTEXDB_PAYLOAD_RESIDENCY");
+        let error =
+            EngineConfig::from_env_vars([("CORTEXDB_PAYLOAD_CACHE_BYTES", "maybe")]).unwrap_err();
+        assert_eq!(error.variable, "CORTEXDB_PAYLOAD_CACHE_BYTES");
     }
 }

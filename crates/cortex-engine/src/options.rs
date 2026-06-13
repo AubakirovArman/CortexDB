@@ -53,6 +53,8 @@ pub enum PayloadResidency {
     Lazy,
 }
 
+pub const DEFAULT_PAYLOAD_CACHE_BYTES: usize = 64 * 1024 * 1024;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EngineFeature {
     ExperimentalHnsw,
@@ -130,6 +132,7 @@ pub struct DatabaseOptions {
     pub recovery_mode: RecoveryMode,
     pub stale_lock_policy: StaleLockPolicy,
     pub payload_residency: PayloadResidency,
+    pub payload_cache_bytes: usize,
     pub hnsw_build_config: HnswBuildConfig,
     pub feature_flags: EngineFeatureFlags,
     pub ingestion_backpressure: IngestionBackpressurePolicy,
@@ -143,6 +146,7 @@ impl Default for DatabaseOptions {
             recovery_mode: RecoveryMode::Strict,
             stale_lock_policy: StaleLockPolicy::Reject,
             payload_residency: PayloadResidency::Memory,
+            payload_cache_bytes: DEFAULT_PAYLOAD_CACHE_BYTES,
             hnsw_build_config: HnswBuildConfig::default(),
             feature_flags: EngineFeatureFlags::production_safe(),
             ingestion_backpressure: IngestionBackpressurePolicy::default(),

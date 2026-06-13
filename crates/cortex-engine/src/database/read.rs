@@ -9,6 +9,7 @@ use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::manifest::StorageManifest;
 use cortex_storage::segment::SegmentReader;
 
+use super::payload_cache::SegmentPayloadCacheKey;
 use super::{CandidateResolver, Database, PinnedReadTxn, RetrievedCell};
 use crate::checkpoint::segment_path;
 use crate::error::{EngineError, EngineResult};
@@ -232,15 +233,32 @@ impl Database {
                 segment_id,
                 candidate_id,
                 ..
-            } => Ok(SegmentReader::read_payload_at(
-                segment_path(&self.segments_path, *segment_id),
-                *candidate_id,
-            )?
-            .ok_or_else(|| {
-                EngineError::StorageInvariant(format!(
-                    "segment {segment_id} is missing payload for candidate {candidate_id}"
-                ))
-            })?),
+            } => {
+                let key = SegmentPayloadCacheKey::new(*segment_id, *candidate_id);
+                if let Some(payload) = self
+                    .payload_cache
+                    .lock()
+                    .expect("payload cache lock poisoned")
+                    .get(key)
+                {
+                    return Ok(payload);
+                }
+
+                let payload = SegmentReader::read_payload_at(
+                    segment_path(&self.segments_path, *segment_id),
+                    *candidate_id,
+                )?
+                .ok_or_else(|| {
+                    EngineError::StorageInvariant(format!(
+                        "segment {segment_id} is missing payload for candidate {candidate_id}"
+                    ))
+                })?;
+                self.payload_cache
+                    .lock()
+                    .expect("payload cache lock poisoned")
+                    .insert(key, payload.clone());
+                Ok(payload)
+            }
         }
     }
 }

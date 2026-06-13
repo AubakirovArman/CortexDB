@@ -1,4 +1,5 @@
 mod open;
+mod payload_cache;
 mod read;
 #[cfg(test)]
 mod tests;

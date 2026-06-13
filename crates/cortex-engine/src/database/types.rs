@@ -8,6 +8,8 @@ use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::manifest::StorageManifest;
 use cortex_storage::wal::{DurabilityMode, WalWriterHandle};
 
+use super::payload_cache::SegmentPayloadCache;
+
 use crate::checkpoint::PersistedIndexCache;
 use crate::feedback::FeedbackIndex;
 use crate::graph::GraphIndexStore;
@@ -37,6 +39,7 @@ pub struct Database {
     pub(crate) current_seq: CommitSeq,
     pub(crate) durability_mode: DurabilityMode,
     pub(crate) payload_residency: PayloadResidency,
+    pub(crate) payload_cache: Mutex<SegmentPayloadCache>,
     pub(crate) hnsw_build_config: HnswBuildConfig,
     pub(crate) feature_flags: EngineFeatureFlags,
     pub(crate) ingestion_backpressure_policy: crate::ingestion::IngestionBackpressurePolicy,

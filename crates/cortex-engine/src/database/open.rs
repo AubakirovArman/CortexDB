@@ -6,6 +6,7 @@ use cortex_core::memtable::ReadTxn;
 use cortex_core::CommitSeq;
 use cortex_storage::wal::WalWriter;
 
+use super::payload_cache::SegmentPayloadCache;
 use super::Database;
 use crate::checkpoint::{load_checkpoint, manifest_path, segments_path};
 use crate::cleanup::{cleanup_orphans, remove_lock_file};
@@ -136,6 +137,7 @@ impl Database {
             current_seq,
             durability_mode: options.durability_mode,
             payload_residency: options.payload_residency,
+            payload_cache: Mutex::new(SegmentPayloadCache::new(options.payload_cache_bytes)),
             hnsw_build_config: options.hnsw_build_config.normalized(),
             feature_flags: options.feature_flags,
             ingestion_backpressure_policy: options.ingestion_backpressure,
