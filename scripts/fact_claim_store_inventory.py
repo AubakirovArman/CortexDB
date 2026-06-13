@@ -86,70 +86,131 @@ def check_numeric_parser() -> Check:
 
 
 def check_typed_fact_body_shape() -> Check:
-    path = "crates/cortex-engine/src/typed_body.rs"
-    needles = ["pub struct FactBody", "metric", "value", "currency", "project"]
-    text = read(path)
-    status = "partial" if has_all(text, needles) else "fail"
+    paths = [
+        "crates/cortex-engine/src/typed_body.rs",
+        "crates/cortex-engine/src/verification/numeric/fact_claim.rs",
+    ]
+    needles = {
+        "crates/cortex-engine/src/typed_body.rs": [
+            "pub struct FactBody",
+            "metric",
+            "value",
+            "currency",
+            "project",
+        ],
+        "crates/cortex-engine/src/verification/numeric/fact_claim.rs": [
+            "NumericFactRecord",
+            "FactBody::parse",
+            "single_numeric_value",
+            "NumericValue",
+        ],
+    }
+    evidence: list[str] = []
+    ok = True
+    for path in paths:
+        text = read(path)
+        ok = ok and has_all(text, needles[path])
+        evidence.extend(line_refs(path, needles[path]))
+    status = "pass" if ok else "fail"
     return Check(
         "typed_fact_body_shape",
         status,
-        line_refs(path, needles),
-        "FactBody stores numeric value as text; B07 needs a typed NumericValue claim record.",
+        evidence,
+        None if ok else "FactBody numeric values are not materialized into typed claim records.",
     )
 
 
 def check_verify_numeric_scan_path() -> Check:
-    path = "crates/cortex-engine/src/verification/guards.rs"
-    needles = [
+    guards_path = "crates/cortex-engine/src/verification/guards.rs"
+    execution_path = "crates/cortex-engine/src/verification/execution.rs"
+    store_path = "crates/cortex-engine/src/verification/numeric/fact_claim.rs"
+    fallback_needles = [
         "numeric_mismatch_details",
         "CellMetadata::from_payload(payload)",
         "extract_numeric_values(&metadata.body_text)",
     ]
-    text = read(path)
-    status = "partial" if has_all(text, needles) else "pass"
-    gap = (
-        "VERIFY numeric conflict detection still reparses payload body per evidence item."
-        if status == "partial"
-        else None
+    typed_needles = ["add_verify_matches", "VerificationNumericConflict", "numeric_conflict"]
+    execution_needles = ["fact_claim_store.add_verify_matches"]
+    fallback_text = read(guards_path)
+    typed_text = read(store_path)
+    execution_text = read(execution_path)
+    typed_ok = has_all(typed_text, typed_needles) and has_all(execution_text, execution_needles)
+    fallback_exists = has_all(fallback_text, fallback_needles)
+    evidence = (
+        line_refs(store_path, typed_needles)
+        + line_refs(execution_path, execution_needles)
+        + line_refs(guards_path, fallback_needles)
     )
-    return Check("verify_numeric_scan_path", status, line_refs(path, needles), gap)
+    status = "pass" if typed_ok else ("partial" if fallback_exists else "fail")
+    gap = None if typed_ok else "VERIFY numeric conflict checks do not consult typed claims yet."
+    return Check("verify_numeric_scan_path", status, evidence, gap)
 
 
 def check_support_numeric_scan_path() -> Check:
-    path = "crates/cortex-engine/src/verification/support.rs"
-    needles = [
+    support_path = "crates/cortex-engine/src/verification/support.rs"
+    execution_path = "crates/cortex-engine/src/verification/execution.rs"
+    store_path = "crates/cortex-engine/src/verification/numeric/fact_claim.rs"
+    fallback_needles = [
         "numeric_entailment",
         "CellMetadata::from_payload(payload).body_text",
         "extract_numeric_values(&payload_text)",
     ]
-    text = read(path)
-    status = "partial" if has_all(text, needles) else "pass"
-    gap = (
-        "Numeric support entailment still reparses payload body instead of consulting typed claims."
-        if status == "partial"
-        else None
+    typed_needles = ["add_verify_matches", "NumericEntailment", "normalized_numeric_equal"]
+    execution_needles = ["fact_claim_store.add_verify_matches"]
+    fallback_text = read(support_path)
+    typed_text = read(store_path)
+    execution_text = read(execution_path)
+    typed_ok = has_all(typed_text, typed_needles) and has_all(execution_text, execution_needles)
+    fallback_exists = has_all(fallback_text, fallback_needles)
+    evidence = (
+        line_refs(store_path, typed_needles)
+        + line_refs(execution_path, execution_needles)
+        + line_refs(support_path, fallback_needles)
     )
-    return Check("support_numeric_scan_path", status, line_refs(path, needles), gap)
+    status = "pass" if typed_ok else ("partial" if fallback_exists else "fail")
+    gap = None if typed_ok else "VERIFY numeric support checks do not consult typed claims yet."
+    return Check("support_numeric_scan_path", status, evidence, gap)
 
 
 def check_typed_fact_store() -> Check:
     paths = [
-        "crates/cortex-engine/src/verification.rs",
         "crates/cortex-engine/src/verification/numeric/mod.rs",
+        "crates/cortex-engine/src/verification/numeric/fact_claim.rs",
+        "crates/cortex-engine/src/database/stores.rs",
+        "crates/cortex-engine/src/database/open.rs",
+        "crates/cortex-engine/src/database/write.rs",
+        "crates/cortex-engine/src/replication/install.rs",
     ]
     evidence: list[str] = []
-    found = False
+    ok = True
     for path in paths:
         text = read(path)
-        needles = ["FactClaimStore", "NumericFactStore", "TypedFactStore"]
-        found = found or any(needle in text for needle in needles)
+        if path.endswith("numeric/mod.rs"):
+            needles = ["fact_claim"]
+        elif path.endswith("fact_claim.rs"):
+            needles = ["FactClaimStore", "record_from_payload", "apply_record", "apply_tombstone"]
+        elif path.endswith("database/stores.rs"):
+            needles = [
+                "fact_claim_store",
+                "FactClaimStore::from_memtable",
+                "FactClaimStore::record_from_payload",
+                "apply_derived_cell_record",
+                "apply_derived_tombstone",
+            ]
+        elif path.endswith("database/open.rs"):
+            needles = ["DerivedStores::from_memtable_for_residency", "fact_claim_store"]
+        elif path.endswith("database/write.rs"):
+            needles = ["apply_derived_cell_record", "apply_derived_tombstone"]
+        else:
+            needles = ["rebuild_derived_stores_from_memtable"]
+        ok = ok and has_all(text, needles)
         evidence.extend(line_refs(path, needles))
-    status = "pass" if found else "fail"
+    status = "pass" if ok else "fail"
     return Check(
         "typed_fact_store",
         status,
         evidence,
-        None if found else "No maintained typed fact/claim store is wired into verification yet.",
+        None if ok else "FactClaimStore is not fully wired into Database open/write lifecycle.",
     )
 
 
@@ -179,10 +240,8 @@ def inventory() -> dict[str, object]:
         "checks": [check.to_json() for check in checks],
         "remaining_gaps": gaps,
         "next_patch_order": [
-            "Add a conservative typed fact/claim record backed by NumericValue.",
-            "Populate a maintained in-memory fact store on open/put/patch/tombstone.",
-            "Route VERIFY numeric conflict and support checks through typed claims where possible.",
-            "Keep parser-path fallback until parity tests prove safe replacement.",
+            "Keep parser-path fallback until broader parity coverage allows removal.",
+            "Move to EPIC-B08 after B07 tests and docs are green.",
         ],
     }
 

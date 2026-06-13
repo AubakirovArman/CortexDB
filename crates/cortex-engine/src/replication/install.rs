@@ -1,6 +1,6 @@
 use std::fs;
 
-use cortex_core::memtable::{MemTable, ReadTxn};
+use cortex_core::memtable::MemTable;
 use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::manifest::ManifestSegment;
 use cortex_storage::segment::{SegmentCellRef, SegmentWriter};
@@ -12,14 +12,8 @@ use crate::checkpoint::vector::vector_index_for_cell_refs;
 use crate::checkpoint::{bitmap_path, hnsw_path, lexical_path, segment_path, vector_path};
 use crate::database::{CheckpointStats, Database};
 use crate::error::{EngineError, EngineResult};
-use crate::feedback::FeedbackIndex;
-use crate::graph::GraphIndexStore;
 use crate::options::EngineFeature;
 use crate::query::EngineAqlIndex;
-use crate::search::{CorpusSynonymStore, LiveSearchStore, SearchContextStore};
-use crate::session::SessionIndex;
-use crate::tool_registry::ToolIndex;
-use crate::verification::TemporalFactStore;
 
 use super::{SnapshotCell, SnapshotSegment};
 
@@ -75,25 +69,11 @@ impl Database {
             .then(|| manifest_hnsw_profile(self.hnsw_build_config))
             .transpose()?;
         self.manifest.store(&self.manifest_path)?;
-        crate::database::truncate_wal_tail(&self.wal_path, 0)?;
+        crate::database_files::truncate_wal_tail(&self.wal_path, 0)?;
         self.memtable = memtable_from_snapshot(&snapshot);
         self.current_seq = snapshot.checkpoint_seq;
         self.aql_delta_index.clear();
-        self.corpus_synonym_store =
-            CorpusSynonymStore::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
-        self.feedback_index =
-            FeedbackIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
-        self.graph_index_store =
-            GraphIndexStore::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
-        self.live_search_store =
-            LiveSearchStore::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
-        self.search_context_store =
-            SearchContextStore::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
-        self.session_index =
-            SessionIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
-        self.temporal_fact_store =
-            TemporalFactStore::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
-        self.tool_index = ToolIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
+        self.rebuild_derived_stores_from_memtable();
         if let Ok(mut cache) = self.persisted_index_cache.lock() {
             *cache = None;
         }

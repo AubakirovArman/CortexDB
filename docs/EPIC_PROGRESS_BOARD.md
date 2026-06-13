@@ -21,27 +21,24 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B07` — Fact/claim store with typed numeric values.
+`EPIC-B08` — VerifyOp as a planned verification operator.
 
-B07 exit steps:
+B08 exit steps:
 
-1. Audit current numeric extraction and VERIFY FACT scan paths.
-2. Add a typed fact/claim record shape for conservative numeric facts.
-3. Populate the fact store from write/ingestion paths without using LLMs.
-4. Make VERIFY numeric conflicts consult the typed fact store where possible.
-5. Add fixture tests proving verdict parity with the existing parser path.
+1. Represent verification as logical and physical operators.
+2. Reuse indexed candidates and typed facts from A05/B07.
+3. Preserve existing VERIFY outputs and report shape.
+4. Add EXPLAIN/trace coverage for VERIFY stages.
+5. Mark done only when VERIFY participates in plan/explain and then move to
+   B09/B15 by dependency.
 
-B07 current state:
+B08 current state:
 
-- in progress; `scripts/fact_claim_store_inventory.py` writes
-  `target/fact-claim-store/inventory.json` and currently reports `partial`.
-- audit found that `NumericValue` and deterministic parsing exist, but
-  `FactBody` stores value text and VERIFY numeric support/conflict still
-  reparses payload body per evidence item.
-- do not add an LLM extraction step in core; B07 must use conservative parser
-  rules and typed storage/index structures.
-- next work is the smallest typed `FactClaim`/`NumericFact` record plus a
-  maintained store with parser-path parity tests.
+- next; do not start benchmark tuning or later C-block retrieval work before
+  B08 has a concrete operator plan and parity tests.
+- B07 closed the maintained typed claim store, but the metric-sorted numeric
+  index remains C13; B08 should consume the typed store as an available source,
+  not implement the full C13 performance index.
 
 ## Active Partial Tail
 
@@ -86,6 +83,33 @@ C17 split state:
   is out of focus.
 
 ## Recently Closed
+
+### EPIC-B07 — Fact/claim store with typed numeric values
+
+Status: `done`
+
+What closed it:
+
+- Added `FactClaimStore` and `NumericFactRecord` backed by `NumericValue`.
+- Conservative extraction requires a metric, materializes exactly one numeric
+  value, and rejects ambiguous multi-value claims.
+- Added `database::stores::DerivedStores` so the fact store rebuilds on open,
+  updates on put/patch/tombstone, and rebuilds after replication snapshot
+  install with the other maintained derived stores.
+- `verify_fact_aql` now consults typed claims for numeric support/conflict
+  evidence before sorting, while retaining the parser fallback for non-typed
+  evidence and temporal guard paths.
+- `scripts/fact_claim_store_inventory.py` reports `status=complete` with
+  6 pass, 0 partial, 0 fail.
+- Targeted gates passed: `cargo fmt --check`, file-size ratchet,
+  fact-claim inventory, `cargo test -p cortex-engine verification::numeric::fact_claim --all-features`,
+  `cargo test -p cortex-engine --test verification_guards --all-features`, and
+  `cargo test -p cortex-engine --test verification_tests --all-features`.
+
+Remaining follow-up:
+
+- The metric-sorted numeric index and 1M p95 proof are not B07; they remain in
+  `EPIC-C13`/`EPIC-A19`.
 
 ### EPIC-B06 — Typed provenance model
 

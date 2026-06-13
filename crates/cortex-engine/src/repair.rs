@@ -5,7 +5,7 @@ use std::path::Path;
 use cortex_storage::wal::WalReader;
 
 use crate::cleanup::{cleanup_orphans, count_orphans};
-use crate::database::{truncate_wal_tail, Database};
+use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::lock::DatabaseLock;
 
@@ -54,7 +54,7 @@ fn repair_best_effort_inner(root: &Path, dry_run: bool) -> EngineResult<RepairRe
     };
     let wal_truncation_needed = scan.safe_truncate_offset < wal_bytes_before;
     if !dry_run {
-        truncate_wal_tail(&wal_path, scan.safe_truncate_offset)?;
+        crate::database_files::truncate_wal_tail(&wal_path, scan.safe_truncate_offset)?;
     }
     let wal_bytes_after = file_len_or_zero(&wal_path)?;
     Ok(RepairReport {

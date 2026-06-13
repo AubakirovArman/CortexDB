@@ -15,13 +15,11 @@ use crate::feedback::FeedbackIndex;
 use crate::graph::GraphIndexStore;
 use crate::lock::DatabaseLock;
 use crate::options::{CompactionPolicy, EngineFeatureFlags, PayloadResidency};
-use crate::query::cache::AqlQueryCache;
-use crate::query::AqlDeltaIndex;
-use crate::query::CellMetadata;
+use crate::query::{cache::AqlQueryCache, AqlDeltaIndex, CellMetadata};
 use crate::search::{CorpusSynonymStore, HnswBuildConfig, LiveSearchStore, SearchContextStore};
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
-use crate::verification::TemporalFactStore;
+use crate::verification::{numeric::fact_claim::FactClaimStore, TemporalFactStore};
 
 pub trait CandidateResolver: BitmapProvider {
     fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId>;
@@ -60,6 +58,7 @@ pub struct Database {
     pub(crate) live_search_store: LiveSearchStore,
     pub(crate) search_context_store: SearchContextStore,
     pub(crate) session_index: SessionIndex,
+    pub(crate) fact_claim_store: FactClaimStore,
     pub(crate) temporal_fact_store: TemporalFactStore,
     pub(crate) tool_index: ToolIndex,
     pub(crate) persisted_index_cache: Mutex<Option<PersistedIndexCache>>,

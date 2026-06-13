@@ -2,19 +2,18 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
-use cortex_core::memtable::{MemTable, ReadTxn};
+use cortex_core::memtable::ReadTxn;
 use cortex_core::CommitSeq;
 use cortex_storage::wal::WalWriter;
 
 use super::payload_cache::SegmentPayloadCache;
+use super::stores::DerivedStores;
 use super::Database;
 use crate::checkpoint::{load_checkpoint, manifest_path, segments_path};
 use crate::cleanup::{cleanup_orphans, remove_lock_file};
 use crate::database_files::find_wal_files;
 use crate::database_files::truncate_wal_tail;
 use crate::error::{EngineError, EngineResult};
-use crate::feedback::FeedbackIndex;
-use crate::graph::GraphIndexStore;
 use crate::lock::DatabaseLock;
 use crate::options::{
     DatabaseOptions, EngineFeature, EngineFeatureFlags, PayloadResidency, RecoveryMode,
@@ -23,10 +22,6 @@ use crate::options::{
 use crate::query::cache::AqlQueryCache;
 use crate::query::AqlDeltaIndex;
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
-use crate::search::{CorpusSynonymStore, LiveSearchStore, SearchContextStore};
-use crate::session::SessionIndex;
-use crate::tool_registry::ToolIndex;
-use crate::verification::TemporalFactStore;
 
 impl Database {
     /// Open a database at the given path with default options.
@@ -111,29 +106,11 @@ impl Database {
             ReadTxn::at(current_seq),
             CommitSeq(checkpoint.manifest.checkpoint_seq),
         );
-        let (
-            feedback_index,
-            graph_index_store,
-            live_search_store,
-            search_context_store,
-            corpus_synonym_store,
-            session_index,
-            temporal_fact_store,
-            tool_index,
-        ) = if options.payload_residency == PayloadResidency::Lazy {
-            build_resident_payload_stores(&current_memtable, ReadTxn::at(current_seq))
-        } else {
-            (
-                FeedbackIndex::from_memtable(&current_memtable, ReadTxn::at(current_seq)),
-                GraphIndexStore::from_memtable(&current_memtable, ReadTxn::at(current_seq)),
-                LiveSearchStore::from_memtable(&current_memtable, ReadTxn::at(current_seq)),
-                SearchContextStore::from_memtable(&current_memtable, ReadTxn::at(current_seq)),
-                CorpusSynonymStore::from_memtable(&current_memtable, ReadTxn::at(current_seq)),
-                SessionIndex::from_memtable(&current_memtable, ReadTxn::at(current_seq)),
-                TemporalFactStore::from_memtable(&current_memtable, ReadTxn::at(current_seq)),
-                ToolIndex::from_memtable(&current_memtable, ReadTxn::at(current_seq)),
-            )
-        };
+        let stores = DerivedStores::from_memtable_for_residency(
+            &current_memtable,
+            ReadTxn::at(current_seq),
+            options.payload_residency,
+        );
         let database = Self {
             root_path,
             wal_path,
@@ -152,14 +129,15 @@ impl Database {
             ingestion_rate_state: crate::ingestion::default_ingestion_rate_state(),
             aql_query_cache: Mutex::new(AqlQueryCache::default()),
             aql_delta_index,
-            corpus_synonym_store,
-            feedback_index,
-            graph_index_store,
-            live_search_store,
-            search_context_store,
-            session_index,
-            temporal_fact_store,
-            tool_index,
+            corpus_synonym_store: stores.corpus_synonym_store,
+            feedback_index: stores.feedback_index,
+            graph_index_store: stores.graph_index_store,
+            live_search_store: stores.live_search_store,
+            search_context_store: stores.search_context_store,
+            session_index: stores.session_index,
+            fact_claim_store: stores.fact_claim_store,
+            temporal_fact_store: stores.temporal_fact_store,
+            tool_index: stores.tool_index,
             persisted_index_cache: Mutex::new(None),
             active_read_pins: Arc::new(Mutex::new(BTreeMap::new())),
             compaction_policy: options.compaction_policy,
@@ -169,89 +147,4 @@ impl Database {
         database.resume_interrupted_ingestion_jobs()?;
         Ok(database)
     }
-}
-
-fn build_resident_payload_stores(
-    memtable: &MemTable,
-    txn: ReadTxn,
-) -> (
-    FeedbackIndex,
-    GraphIndexStore,
-    LiveSearchStore,
-    SearchContextStore,
-    CorpusSynonymStore,
-    SessionIndex,
-    TemporalFactStore,
-    ToolIndex,
-) {
-    let mut feedback_index = FeedbackIndex::default();
-    let mut graph_index_store = GraphIndexStore::default();
-    let mut live_search_store = LiveSearchStore::default();
-    let mut search_context_store = SearchContextStore::default();
-    let mut corpus_synonym_store = CorpusSynonymStore::default();
-    let mut session_index = SessionIndex::default();
-    let mut temporal_fact_store = TemporalFactStore::default();
-    let mut tool_index = ToolIndex::default();
-
-    for version in memtable
-        .visible_iter(txn)
-        .filter(|version| version.is_payload_resident())
-    {
-        feedback_index.apply_record(
-            version.cell_id,
-            FeedbackIndex::record_from_payload(&version.payload),
-        );
-        graph_index_store.apply_record(
-            version.cell_id,
-            GraphIndexStore::record_from_payload(version.payload.clone(), &version.descriptor),
-        );
-        live_search_store.apply_record(
-            version.cell_id,
-            LiveSearchStore::record_from_payload(version.payload.clone(), &version.descriptor),
-        );
-        search_context_store.apply_record(
-            version.cell_id,
-            SearchContextStore::record_from_payload(version.payload.clone(), &version.descriptor),
-        );
-        corpus_synonym_store.apply_record(
-            version.cell_id,
-            CorpusSynonymStore::record_from_payload(version.cell_id, &version.payload),
-        );
-        session_index.apply_record(
-            version.cell_id,
-            SessionIndex::record_from_payload(
-                version.cell_id,
-                &version.payload,
-                &version.descriptor,
-            ),
-        );
-        temporal_fact_store.apply_record(
-            version.cell_id,
-            TemporalFactStore::record_from_payload(
-                version.cell_id,
-                &version.payload,
-                &version.descriptor,
-            ),
-        );
-        tool_index.apply_record(
-            version.cell_id,
-            ToolIndex::record_from_payload(
-                version.cell_id,
-                version.created_seq,
-                &version.payload,
-                &version.descriptor,
-            ),
-        );
-    }
-
-    (
-        feedback_index,
-        graph_index_store,
-        live_search_store,
-        search_context_store,
-        corpus_synonym_store,
-        session_index,
-        temporal_fact_store,
-        tool_index,
-    )
 }

@@ -264,7 +264,9 @@ Exit steps:
 1. Define typed claim/fact records with numeric values and units.
 2. Store facts in descriptor/body structures that can be indexed.
 3. Add parsing and equality/conflict tests.
-4. Mark done when facts are queryable without free-text parsing; then move to C13.
+4. Mark done when the maintained typed store feeds VERIFY with parser fallback
+   retained; the metric-sorted numeric index remains C13.
+5. Then move to B08.
 
 ### EPIC-B08 — VerifyOp
 
@@ -272,7 +274,9 @@ Exit steps:
 1. Represent verification as a logical and physical operator.
 2. Reuse indexed candidates and typed facts.
 3. Preserve existing VERIFY outputs.
-4. Mark done when VERIFY participates in plans/explain; then move to B15.
+4. Add EXPLAIN/trace coverage for VERIFY stages.
+5. Mark done when VERIFY participates in plans/explain; then move to B09/B15
+   by dependency.
 
 ### EPIC-B09 — Инкрементальный contradiction/conflict-индекс
 

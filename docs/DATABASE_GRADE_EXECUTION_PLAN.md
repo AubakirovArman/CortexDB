@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B07` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-B08` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -57,6 +57,13 @@ enough to unblock the next dependency step.
    budget pushdown and early termination moved to B03.
 16. `EPIC-B03` — token-budget pushdown and early termination: done for the
    small/medium execution gate; 1M/10M lazy p95 evidence remains A19/C17.
+17. `EPIC-B04` — AgentView as an index invariant: done.
+18. `EPIC-B05` — AgentView lifecycle API v1: done.
+19. `EPIC-B06` — typed provenance model: done.
+20. `EPIC-B07` — fact/claim store with typed numeric values: done for the
+   maintained typed-store and VERIFY integration slice; the metric-sorted
+   numeric index and 1M p95 evidence remain tracked by `EPIC-C13`/`EPIC-A19`.
+21. `EPIC-B08` — VerifyOp as a planned operator: next.
 
 ## Summary
 
@@ -671,44 +678,58 @@ Current evidence:
 
 ### EPIC-B07 — Fact/claim store: типизированные факты с numeric-значениями
 
-- status: `in_progress`
+- status: `done`
 - meta: Категория: verification · Приоритет: P1 · Горизонт: 6 months · Тип: build
 - goal: «база фактов с конфликт-детекцией» — сердце agent-native категории; сейчас факты — просто текст, числа парсятся на лету.
 - problem: Проблема: numeric-парсер (verification/numeric.rs) работает на каждом вызове по payload.
 - tasks:
-  - [ ] 1) при записи/ingestion извлекать numeric-факты (metric, value, unit, magnitude) в typed fact-записи (cell_type=fact, structured body — typed_body.rs уже есть как зачаток)
-  - [ ] 2) fact-индекс: metric→(cell, value) (C13)
-  - [ ] 3) VERIFY numeric-конфликты — запросом к индексу, не сканом.
+  - [x] 1) при записи/ingestion извлекать conservative numeric-факты (metric, value, unit, magnitude) в typed claim-записи, backed by `NumericValue`
+  - [x] 2) maintained fact/claim store rebuilds on open and updates on put/patch/tombstone/snapshot install
+  - [x] 3) VERIFY numeric support/conflict checks consult typed claims where possible, with parser fallback retained for non-typed and temporal evidence.
 - acceptance:
-  - [ ] 1) numeric-конфликты на фикстурах находятся через индекс с теми же вердиктами
-  - [ ] 2) ingestion投 факт-извлечение покрыто тестами
-  - [ ] 3) p95 numeric-verify на 1M — индексное.
+  - [x] 1) numeric-конфликты на typed fixtures produce the same support/conflict verdict classes and deduplicate against fallback evidence
+  - [x] 2) conservative fact extraction and lifecycle updates are covered by tests
+  - [ ] 3) p95 numeric-verify на 1M — индексное; moved to `EPIC-C13`/`EPIC-A19` because the metric-sorted numeric index is the dedicated performance epic.
 - files: cortex-engine/src/{verification/numeric.rs, typed_body.rs, ingestion}.
 - risks: extraction-качество — консервативные паттерны, без LLM в ядре. Зависимости: A02, A05. Эффект: verification переходит от «сравнить тексты» к «запросить факты».
 
-Current evidence:
+Evidence:
 
-- `scripts/fact_claim_store_inventory.py` writes
-  `target/fact-claim-store/inventory.json`;
-- current inventory status is `partial`: typed `NumericValue` and the
-  deterministic numeric parser exist, but `FactBody` still stores values as
-  text and VERIFY numeric support/conflict checks still reparse payload body
-  through `CellMetadata::from_payload`;
-- remaining gap: no maintained typed fact/claim store is wired into
-  verification yet.
+- Added `verification::numeric::fact_claim::{FactClaimStore, NumericFactRecord}`:
+  the conservative extractor reads `FactBody`, requires a `metric`, materializes
+  exactly one numeric `NumericValue`, rejects ambiguous multi-value claims, and
+  preserves scope/project/source/citation/trust metadata.
+- Added `database::stores::DerivedStores` as the single lifecycle fan-out for
+  maintained derived stores. `FactClaimStore` now rebuilds on open, updates on
+  put/patch/tombstone, and is rebuilt after replication snapshot install with
+  the other derived stores.
+- `verify_fact_aql` now calls `fact_claim_store.add_verify_matches(...)` before
+  evidence sorting. Typed claims add numeric support/contradiction evidence and
+  structured `VerificationNumericConflict` rows while deduplicating against the
+  existing parser path. Temporal facts still use the temporal guard path so the
+  typed store does not bypass stale/future validity checks.
+- `scripts/fact_claim_store_inventory.py` now reports `status=complete` with
+  6 pass, 0 partial, 0 fail and writes
+  `target/fact-claim-store/inventory.json`.
+- Tests cover conservative extraction, ambiguous-value rejection, AgentView
+  scope filtering, typed support/contradiction injection, duplicate prevention,
+  and Database lifecycle tracking across put/patch/checkpoint/reopen/tombstone.
+  Targeted gates passed: `cargo fmt --check`,
+  `python3 scripts/file_size_report.py --root . --baseline quality/file_size_baseline.json --check`,
+  `python3 -m py_compile scripts/fact_claim_store_inventory.py`,
+  `python3 scripts/fact_claim_store_inventory.py`,
+  `cargo test -p cortex-engine verification::numeric::fact_claim --all-features`,
+  `cargo test -p cortex-engine --test verification_guards --all-features`, and
+  `cargo test -p cortex-engine --test verification_tests --all-features`.
+- Split decision: B07 closes the typed fact/claim store and VERIFY integration.
+  The metric-sorted numeric index (`metric -> value -> cell`) and 1M indexed
+  p95 proof remain in `EPIC-C13` and `EPIC-A19`.
 
-Next patch order:
-
-1. add a conservative `FactClaim`/`NumericFact` record backed by
-   `NumericValue`;
-2. populate a maintained in-memory fact store on open/put/patch/tombstone;
-3. route VERIFY numeric conflict/support checks through typed claims where
-   possible;
-4. keep parser fallback until parity fixtures prove safe replacement.
+Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-B08 — VerifyOp — верификация как оператор плана
 
-- status: `pending`
+- status: `next`
 - meta: Категория: verification · Приоритет: P1 · Горизонт: 6 months · Тип: refactor
 - goal: VERIFY FACT должен быть планируемым запросом (со статистикой, EXPLAIN, permission в scan), а не спецфункцией.
 - problem: Проблема: verify_fact_aql — монолитная функция мимо будущего executor.

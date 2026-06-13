@@ -4,6 +4,7 @@
 //! optional magnitude, currency, and unit context into `NumericValue`, then
 //! compares normalized values without `f32`/`f64`.
 
+pub(crate) mod fact_claim;
 mod parse;
 mod value;
 
@@ -14,6 +15,5 @@ pub use value::{
     compare_numeric_values, format_scaled_value, normalized_numeric_equal, numeric_conflict,
     Magnitude, NumericComparison, NumericValue,
 };
-
 #[cfg(test)]
 mod tests;

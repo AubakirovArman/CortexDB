@@ -4,19 +4,12 @@ use cortex_core::{CellDescriptor, CellId, CommitSeq};
 
 use super::Database;
 use crate::error::{EngineError, EngineResult};
-use crate::feedback::FeedbackIndex;
-use crate::graph::GraphIndexStore;
 use crate::operation::{
     wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq,
     wal_record_from_write_batch_begin, wal_record_from_write_batch_commit, DbOperation, WriteBatch,
     WriteBatchOperation,
 };
 use crate::operation_descriptor::descriptor_from_operation_with_metadata;
-use crate::query::CellMetadata;
-use crate::search::{CorpusSynonymStore, LiveSearchStore, SearchContextStore};
-use crate::session::SessionIndex;
-use crate::tool_registry::ToolIndex;
-use crate::verification::TemporalFactStore;
 
 impl Database {
     /// Store a single cell payload and return the commit sequence.
@@ -158,87 +151,27 @@ impl Database {
             DbOperation::PutCell { cell_id, payload } => {
                 let descriptor =
                     descriptor.unwrap_or_else(|| CellDescriptor::from_payload_lossy(&payload));
-                let metadata = CellMetadata::from_payload_with_descriptor(&payload, &descriptor);
-                let corpus_synonym_record =
-                    CorpusSynonymStore::record_from_payload(cell_id, &payload);
-                let graph_record =
-                    GraphIndexStore::record_from_payload(payload.clone(), &descriptor);
-                let live_search_record =
-                    LiveSearchStore::record_from_payload(payload.clone(), &descriptor);
-                let search_context_record =
-                    SearchContextStore::record_from_payload(payload.clone(), &descriptor);
-                let feedback_record = FeedbackIndex::record_from_payload(&payload);
-                let session_record =
-                    SessionIndex::record_from_payload(cell_id, &payload, &descriptor);
-                let temporal_record =
-                    TemporalFactStore::record_from_payload(cell_id, &payload, &descriptor);
-                let tool_record =
-                    ToolIndex::record_from_payload(cell_id, seq, &payload, &descriptor);
-                self.memtable
-                    .put_cell_with_descriptor(cell_id, seq, payload, descriptor);
-                self.aql_delta_index.apply_metadata(cell_id, metadata);
-                self.corpus_synonym_store
-                    .apply_record(cell_id, corpus_synonym_record);
-                self.graph_index_store.apply_record(cell_id, graph_record);
-                self.live_search_store
-                    .apply_record(cell_id, live_search_record);
-                self.search_context_store
-                    .apply_record(cell_id, search_context_record);
-                self.feedback_index.apply_record(cell_id, feedback_record);
-                self.session_index.apply_record(cell_id, session_record);
-                self.temporal_fact_store
-                    .apply_record(cell_id, temporal_record);
-                self.tool_index.apply_record(cell_id, tool_record);
+                self.memtable.put_cell_with_descriptor(
+                    cell_id,
+                    seq,
+                    payload.clone(),
+                    descriptor.clone(),
+                );
+                self.apply_derived_cell_record(cell_id, seq, &payload, &descriptor);
                 Ok(())
             }
             DbOperation::PatchCell { cell_id, payload } => {
                 let descriptor =
                     descriptor.unwrap_or_else(|| CellDescriptor::from_payload_lossy(&payload));
-                let metadata = CellMetadata::from_payload_with_descriptor(&payload, &descriptor);
-                let corpus_synonym_record =
-                    CorpusSynonymStore::record_from_payload(cell_id, &payload);
-                let graph_record =
-                    GraphIndexStore::record_from_payload(payload.clone(), &descriptor);
-                let live_search_record =
-                    LiveSearchStore::record_from_payload(payload.clone(), &descriptor);
-                let search_context_record =
-                    SearchContextStore::record_from_payload(payload.clone(), &descriptor);
-                let feedback_record = FeedbackIndex::record_from_payload(&payload);
-                let session_record =
-                    SessionIndex::record_from_payload(cell_id, &payload, &descriptor);
-                let temporal_record =
-                    TemporalFactStore::record_from_payload(cell_id, &payload, &descriptor);
-                let tool_record =
-                    ToolIndex::record_from_payload(cell_id, seq, &payload, &descriptor);
                 self.memtable
-                    .patch_cell_with_descriptor(cell_id, seq, payload, descriptor)
+                    .patch_cell_with_descriptor(cell_id, seq, payload.clone(), descriptor.clone())
                     .map_err(EngineError::from)?;
-                self.aql_delta_index.apply_metadata(cell_id, metadata);
-                self.corpus_synonym_store
-                    .apply_record(cell_id, corpus_synonym_record);
-                self.graph_index_store.apply_record(cell_id, graph_record);
-                self.live_search_store
-                    .apply_record(cell_id, live_search_record);
-                self.search_context_store
-                    .apply_record(cell_id, search_context_record);
-                self.feedback_index.apply_record(cell_id, feedback_record);
-                self.session_index.apply_record(cell_id, session_record);
-                self.temporal_fact_store
-                    .apply_record(cell_id, temporal_record);
-                self.tool_index.apply_record(cell_id, tool_record);
+                self.apply_derived_cell_record(cell_id, seq, &payload, &descriptor);
                 Ok(())
             }
             DbOperation::TombstoneCell { cell_id } => {
                 self.memtable.record_tombstone(cell_id, seq);
-                self.aql_delta_index.apply_tombstone(cell_id);
-                self.corpus_synonym_store.apply_tombstone(cell_id);
-                self.graph_index_store.apply_tombstone(cell_id);
-                self.live_search_store.apply_tombstone(cell_id);
-                self.search_context_store.apply_tombstone(cell_id);
-                self.feedback_index.apply_tombstone(cell_id);
-                self.session_index.apply_tombstone(cell_id);
-                self.temporal_fact_store.apply_tombstone(cell_id);
-                self.tool_index.apply_tombstone(cell_id);
+                self.apply_derived_tombstone(cell_id);
                 Ok(())
             }
         }
