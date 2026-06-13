@@ -11,11 +11,11 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A12` (`EPIC-A07` is done and `EPIC-A08` phase-1 lazy
-payload residency has accepted 1M RSS evidence; the remaining A08 crash-parity
-and full AQL/ContextPack p95 work stays tracked as partial follow-up. `EPIC-A09`
-is intentionally later in the roadmap queue, after `EPIC-A12 -> EPIC-A13`,
-`EPIC-B01`, `EPIC-A15`, `EPIC-D11`, and `EPIC-E01`).
+Current pointer: `EPIC-A13` (`EPIC-A12` is done, `EPIC-A07` is done, and
+`EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
+remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
+partial follow-up. `EPIC-A09` is intentionally later in the roadmap queue,
+after `EPIC-A13`, `EPIC-B01`, `EPIC-A15`, `EPIC-D11`, and `EPIC-E01`).
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
 mandatory after every change. Run `make enterprise-rag-bench-impact-gemini-50`
@@ -39,8 +39,7 @@ enough to unblock the next dependency step.
 2. `EPIC-A07 -> EPIC-A08` — segment v2 plus lazy payload: A07 done, A08
    phase-1 accepted with 1M RSS evidence; remaining lazy parity/p95 stays
    tracked as partial follow-up.
-3. `EPIC-A12 -> EPIC-A13` — storage statistics then cost model v0: current
-   active front.
+3. `EPIC-A13` — cost model v0: current active front.
 4. `EPIC-B01` — ContextPack JSON Schema v1.
 5. `EPIC-A15` — transactional WriteBatch API.
 6. `EPIC-D11` — MCP adapter.
@@ -295,7 +294,7 @@ enough to unblock the next dependency step.
 
 ### EPIC-A12 — Статистика хранилища (df, cardinality, zone maps)
 
-- status: `in_progress`
+- status: `done`
 - meta: Категория: indexing · Приоритет: P0 · Горизонт: 90 days · Тип: build
 - goal: cost model без статистики — гадание.
 - problem: Проблема: `bitmap_estimated_cardinality` возвращает None (binder.rs:63) — хук есть, данных нет.
@@ -306,26 +305,27 @@ enough to unblock the next dependency step.
   - [x] 3) добавить engine API для оценки bitmap/scope/status/type predicates и term df.
   - [x] 4) вывести estimated rows в EXPLAIN рядом с actual rows.
   - [x] 5) добавить тест-корпус, где оценка scope cardinality отклоняется не более чем в 2x.
-  - [ ] 6) после зелёных gates и evidence перевести A12 в `done` и перейти к `EPIC-A13`.
+  - [x] 6) после зелёных gates и evidence перевести A12 в `done` и перейти к `EPIC-A13`.
 - tasks:
   - [x] 1) при checkpoint собирать в manifest/индексы: cells per scope/status/type, term document frequency (top-K + sketch), min/max created_at per segment
   - [x] 2) API `Statistics::estimate(predicate) -> rows`
-  - [ ] 3) zone maps для segment skipping (C10 использует).
+  - [x] 3) zone maps для segment skipping (C10 использует).
 - acceptance:
   - [x] 1) оценка кардинальности scope-фильтра отклоняется ≤ 2x на тест-корпусе
   - [x] 2) статистика переживает рестарт (в манифесте/сайдкаре)
   - [x] 3) EXPLAIN показывает estimated vs actual.
 - files: cortex-storage/src/manifest.rs, indexes.rs; checkpoint.rs.
-- next exit step: implement minimal zone-map segment skipping from A12 stats, or explicitly defer it to C10 before marking A12 done.
+- next exit step: move to `EPIC-A13` — Cost model v0.
 - risks: распухание манифеста — sketch/top-K, не полные словари. Зависимости: A07 удобно вместе. Эффект: кормит A13.
 - evidence: A12.0 stats contract added as manifest `STAT` extension with `ManifestSegmentStats`: per-segment row count, optional created_at min/max, scope/status/type counts, and bounded top term document frequencies. Helper API replaces stats by segment id, sorts stats deterministically, and retires stats with replaced segments. Tests: `manifest_segment_stats_roundtrips`, `manifest_segment_stats_helpers_replace_and_retire_by_segment_id`; `cargo test -p cortex-storage --all-features`.
 - evidence: A12.1 stats collection is wired into incremental checkpoint, full compact, and incremental compaction. The builder derives descriptor-backed scope/status/type counts, created_at min/max, and top-32 term document frequencies while skipping tombstone metadata counts. Full compact and incremental compaction retire stale stats with retired segments. Tests: `checkpoint_persists_segment_stats_in_manifest_across_restart`, `compact_replaces_segment_stats_with_full_snapshot_stats`, `incremental_compact_replaces_selected_segment_stats`, `manifest_segment_stats_are_retired_by_full_compaction`.
 - evidence: A12.3 added `DatabaseStatistics` API over live manifest segment stats: live row count, scope/status/type cardinality estimates, top-term document frequency, and bitmap-handle estimates. AQL bind cache misses now use a lightweight stats catalog for bitmap cost ordering before loading the execution index. Tests: `query::statistics::tests::{statistics_estimates_live_scope_status_type_and_rows,stats_catalog_estimates_bitmap_handles_without_materialized_bitmaps}` and `aql_uses_manifest_stats_for_bitmap_estimates_after_checkpoint`.
 - evidence: A12.4 added `estimated_after_bitmap` to AQL EXPLAIN candidate counts in engine, CLI JSON/text, server typed JSON, OpenAPI, and API docs. EXPLAIN now exposes estimated bitmap rows next to actual `after_bitmap` rows. Gates: `make openapi-contract-check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`.
+- evidence: A12.5 added conservative live-segment zone-map APIs over manifest stats for scope/status/type and created_at range filtering. Unknown live segment stats are treated as potentially matching, so future segment skipping cannot drop data from mixed old/new manifests. Tests: `query::statistics::zone_maps::tests::{zone_maps_filter_live_segments_without_retired_leaks,zone_maps_are_unknown_when_no_live_segment_has_stats}`.
 
 ### EPIC-A13 — Cost model v0 — выбор пути исполнения
 
-- status: `pending`
+- status: `next`
 - meta: Категория: query-engine · Приоритет: P1 · Горизонт: 90 days · Тип: build
 - goal: планировщик должен выбирать, а не исполнять единственный путь.
 - problem: Проблема: lexical/vector/hybrid захардкожены режимом AQL.
