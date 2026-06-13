@@ -33,10 +33,15 @@ B07 exit steps:
 
 B07 current state:
 
-- pending; start with a code audit of `verification/numeric.rs`,
-  `typed_body.rs`, ingestion metadata, and current VERIFY FACT conflict paths.
+- in progress; `scripts/fact_claim_store_inventory.py` writes
+  `target/fact-claim-store/inventory.json` and currently reports `partial`.
+- audit found that `NumericValue` and deterministic parsing exist, but
+  `FactBody` stores value text and VERIFY numeric support/conflict still
+  reparses payload body per evidence item.
 - do not add an LLM extraction step in core; B07 must use conservative parser
   rules and typed storage/index structures.
+- next work is the smallest typed `FactClaim`/`NumericFact` record plus a
+  maintained store with parser-path parity tests.
 
 ## Active Partial Tail
 

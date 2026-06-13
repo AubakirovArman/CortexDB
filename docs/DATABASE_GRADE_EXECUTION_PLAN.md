@@ -671,7 +671,7 @@ Current evidence:
 
 ### EPIC-B07 — Fact/claim store: типизированные факты с numeric-значениями
 
-- status: `pending`
+- status: `in_progress`
 - meta: Категория: verification · Приоритет: P1 · Горизонт: 6 months · Тип: build
 - goal: «база фактов с конфликт-детекцией» — сердце agent-native категории; сейчас факты — просто текст, числа парсятся на лету.
 - problem: Проблема: numeric-парсер (verification/numeric.rs) работает на каждом вызове по payload.
@@ -685,6 +685,26 @@ Current evidence:
   - [ ] 3) p95 numeric-verify на 1M — индексное.
 - files: cortex-engine/src/{verification/numeric.rs, typed_body.rs, ingestion}.
 - risks: extraction-качество — консервативные паттерны, без LLM в ядре. Зависимости: A02, A05. Эффект: verification переходит от «сравнить тексты» к «запросить факты».
+
+Current evidence:
+
+- `scripts/fact_claim_store_inventory.py` writes
+  `target/fact-claim-store/inventory.json`;
+- current inventory status is `partial`: typed `NumericValue` and the
+  deterministic numeric parser exist, but `FactBody` still stores values as
+  text and VERIFY numeric support/conflict checks still reparse payload body
+  through `CellMetadata::from_payload`;
+- remaining gap: no maintained typed fact/claim store is wired into
+  verification yet.
+
+Next patch order:
+
+1. add a conservative `FactClaim`/`NumericFact` record backed by
+   `NumericValue`;
+2. populate a maintained in-memory fact store on open/put/patch/tombstone;
+3. route VERIFY numeric conflict/support checks through typed claims where
+   possible;
+4. keep parser fallback until parity fixtures prove safe replacement.
 
 ### EPIC-B08 — VerifyOp — верификация как оператор плана
 
