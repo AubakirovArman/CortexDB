@@ -72,6 +72,10 @@ impl Database {
         crate::database::truncate_wal_tail(&self.wal_path, 0)?;
         self.memtable = memtable_from_snapshot(&snapshot);
         self.current_seq = snapshot.checkpoint_seq;
+        self.aql_delta_index.clear();
+        if let Ok(mut cache) = self.persisted_index_cache.lock() {
+            *cache = None;
+        }
         self.writer = WalWriter::start(&self.wal_path, self.durability_mode)?;
         Ok(CheckpointStats {
             segment_id: Some(segment_id),

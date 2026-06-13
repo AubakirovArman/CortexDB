@@ -178,7 +178,7 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 - problem: Проблема: `try_aql_index` на незачекпоинченных данных строит индекс из `snapshot_versions()` на каждый запрос (query.rs:55-69); ranking парсит metadata в sort-ключе.
 - tasks:
   - [x] 0) first cleanup slice: AQL index construction now consumes borrowed `MemTable::visible_iter(txn)` refs instead of cloning `snapshot_versions()` in `query.rs`; `indexed-retrieve-gate-check` is wired into `make check`.
-  - [ ] 1) поддерживаемый **инкрементальный delta-индекс** MemTable (обновляется в `apply_operation`), мержится с persisted-индексом на чтении
+  - [x] 1) поддерживаемый **инкрементальный delta-индекс** MemTable (обновляется в `apply_operation`), мержится с persisted-индексом на чтении — `AqlDeltaIndex` is built once at open/replay, updated after successful put/patch/tombstone, cleared after checkpoint/compact/snapshot install, and consumed by `try_aql_index`.
   - [ ] 2) предвычисление rank-ключей один раз на кандидата (sort_by_cached_key)
   - [ ] 3) feedback/graph/dedup-пути — на свои инкрементальные структуры (B13, B18, отдельные эпики) либо за candidate-фильтр.
 - acceptance:
@@ -187,9 +187,9 @@ This queue follows section 7 of the source plan and dependency notes from the ep
   - [ ] 3) корректность: фикстуры retrieval-quality без изменений.
 - files: cortex-engine/src/query.rs, query/{provider,candidates}.rs, database.rs (apply_operation), search/database.rs.
 - dependencies: A04, A20. Эффект: read path масштабируется индексом, не размером базы.
-- evidence: `EngineAqlIndex` has borrowed builders (`try_from_version_refs`, `from_persisted_refs`) with an equivalence unit test against the owned builder. `Database::try_aql_index` no longer calls `snapshot_versions()`; both empty-persisted and persisted+changed-tail paths read visible versions through `MemTable::visible_iter(txn)`. `scripts/indexed_retrieve_gate_check.py` is part of `make check` and rejects reintroducing `snapshot_versions()` in `query.rs`.
-- next exit step: implement the supported incremental delta index updated on writes, then merge persisted+delta candidates without rebuilding current changed cells per query.
-- risks: инкрементальный индекс = новый класс багов согласованности — property-тест «индекс ≡ пересборке с нуля» обязателен. Current slice removes one hot clone/rebuild source but does not yet prove the full A06 indexed-only contract.
+- evidence: `EngineAqlIndex` has borrowed builders (`try_from_version_refs`, `from_persisted_refs`) with an equivalence unit test against the owned builder. `Database::try_aql_index` no longer calls `snapshot_versions()`, `changed_cell_ids_after`, or `memtable.visible_iter`; `scripts/indexed_retrieve_gate_check.py` is part of `make check` and rejects reintroducing those scans in `query.rs`. `AqlDeltaIndex` stores changed cell ids plus parsed live metadata once, updates in `apply_operation_with_descriptor`, rebuilds from replayed MemTable at open, and is cleared when checkpoint/compact/snapshot install makes changes persisted. Regression coverage: `retrieve_aql_delta_index_tracks_write_patch_tombstone_checkpoint_reopen`.
+- next exit step: push A06 beyond AQL index construction into rank-key precompute and remaining query-adjacent `snapshot_versions()` paths, then publish p95 retrieve evidence.
+- risks: инкрементальный индекс = новый класс багов согласованности — property-тест «индекс ≡ пересборке с нуля» обязателен. Current slice removes the AQL catalog/index rebuild scans but does not yet prove the full A06 indexed-only contract across search/context/feedback/graph paths.
 
 ### EPIC-A07 — Segment format v2 — payload-офсеты и блочные CRC
 

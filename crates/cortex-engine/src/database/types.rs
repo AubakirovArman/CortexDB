@@ -12,6 +12,7 @@ use crate::checkpoint::PersistedIndexCache;
 use crate::lock::DatabaseLock;
 use crate::options::{CompactionPolicy, EngineFeatureFlags};
 use crate::query::cache::AqlQueryCache;
+use crate::query::AqlDeltaIndex;
 use crate::query::CellMetadata;
 use crate::search::HnswBuildConfig;
 
@@ -35,6 +36,7 @@ pub struct Database {
     pub(crate) ingestion_backpressure_policy: crate::ingestion::IngestionBackpressurePolicy,
     pub(crate) ingestion_rate_state: Mutex<crate::ingestion::IngestionRateState>,
     pub(crate) aql_query_cache: Mutex<AqlQueryCache>,
+    pub(crate) aql_delta_index: AqlDeltaIndex,
     pub(crate) persisted_index_cache: Mutex<Option<PersistedIndexCache>>,
     pub(crate) active_read_pins: Arc<Mutex<BTreeMap<CommitSeq, usize>>>,
     pub(crate) compaction_policy: CompactionPolicy,

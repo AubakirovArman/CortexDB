@@ -28,6 +28,43 @@ WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#,
 }
 
 #[test]
+fn retrieve_aql_delta_index_tracks_write_patch_tombstone_checkpoint_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    let query = r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
+WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#;
+    let mut db = Database::open(dir.path()).unwrap();
+
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\n\nalpha budget".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=draft\n\nbeta budget".to_vec(),
+    )
+    .unwrap();
+    assert_eq!(retrieve_ids(&db, query), vec![CellId(1)]);
+
+    db.patch_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\n\nbeta budget".to_vec(),
+    )
+    .unwrap();
+    assert_eq!(retrieve_ids(&db, query), vec![CellId(1), CellId(2)]);
+
+    db.tombstone_cell(CellId(1)).unwrap();
+    assert_eq!(retrieve_ids(&db, query), vec![CellId(2)]);
+
+    db.checkpoint().unwrap();
+    assert_eq!(retrieve_ids(&db, query), vec![CellId(2)]);
+    drop(db);
+
+    let db = Database::open(dir.path()).unwrap();
+    assert_eq!(retrieve_ids(&db, query), vec![CellId(2)]);
+}
+
+#[test]
 fn retrieve_aql_with_allowed_cells_restricts_candidate_pool() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
@@ -53,6 +90,17 @@ WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#,
 
     assert_eq!(cells.len(), 1);
     assert_eq!(cells[0].cell_id, CellId(2));
+}
+
+fn retrieve_ids(db: &Database, query: &str) -> Vec<CellId> {
+    let mut ids = db
+        .retrieve_aql(query, &view(scope_id("project:investments")))
+        .unwrap()
+        .into_iter()
+        .map(|cell| cell.cell_id)
+        .collect::<Vec<_>>();
+    ids.sort();
+    ids
 }
 
 #[test]

@@ -5,6 +5,7 @@ use crate::error::{EngineError, EngineResult};
 use crate::operation::{
     wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq, DbOperation,
 };
+use crate::query::CellMetadata;
 
 impl Database {
     /// Store a single cell payload and return the commit sequence.
@@ -104,27 +105,27 @@ impl Database {
     ) -> EngineResult<()> {
         match operation {
             DbOperation::PutCell { cell_id, payload } => {
-                if let Some(descriptor) = descriptor {
-                    self.memtable
-                        .put_cell_with_descriptor(cell_id, seq, payload, descriptor);
-                } else {
-                    self.memtable.put_cell(cell_id, seq, payload);
-                }
+                let descriptor =
+                    descriptor.unwrap_or_else(|| CellDescriptor::from_payload_lossy(&payload));
+                let metadata = CellMetadata::from_payload_with_descriptor(&payload, &descriptor);
+                self.memtable
+                    .put_cell_with_descriptor(cell_id, seq, payload, descriptor);
+                self.aql_delta_index.apply_metadata(cell_id, metadata);
                 Ok(())
             }
             DbOperation::PatchCell { cell_id, payload } => {
-                if let Some(descriptor) = descriptor {
-                    self.memtable
-                        .patch_cell_with_descriptor(cell_id, seq, payload, descriptor)
-                        .map_err(EngineError::from)
-                } else {
-                    self.memtable
-                        .patch_cell(cell_id, seq, payload)
-                        .map_err(EngineError::from)
-                }
+                let descriptor =
+                    descriptor.unwrap_or_else(|| CellDescriptor::from_payload_lossy(&payload));
+                let metadata = CellMetadata::from_payload_with_descriptor(&payload, &descriptor);
+                self.memtable
+                    .patch_cell_with_descriptor(cell_id, seq, payload, descriptor)
+                    .map_err(EngineError::from)?;
+                self.aql_delta_index.apply_metadata(cell_id, metadata);
+                Ok(())
             }
             DbOperation::TombstoneCell { cell_id } => {
                 self.memtable.record_tombstone(cell_id, seq);
+                self.aql_delta_index.apply_tombstone(cell_id);
                 Ok(())
             }
         }

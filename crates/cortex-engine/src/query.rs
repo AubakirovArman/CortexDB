@@ -3,19 +3,22 @@ use std::collections::{BTreeMap, BTreeSet};
 pub(crate) mod cache;
 mod candidates;
 mod catalog;
+pub(crate) mod delta;
 mod explain;
 mod index;
+mod index_merge;
 pub(crate) mod metadata;
 mod metadata_validation;
 mod provider;
 mod render;
 
 use cortex_aql::{AgentView, BitmapHandle, BoundPlan, BrainId};
-use cortex_core::{CellId, CommitSeq};
+use cortex_core::CellId;
 
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
 pub use cache::AqlQueryCacheStats;
+pub(crate) use delta::AqlDeltaIndex;
 pub use explain::{
     AqlCandidateCounts, AqlExecutionTraceReport, AqlExplainFilter, AqlExplainReport,
 };
@@ -46,19 +49,15 @@ impl Database {
     }
 
     pub fn try_aql_index(&self) -> EngineResult<EngineAqlIndex> {
-        let checkpoint_seq = CommitSeq(self.manifest().checkpoint_seq);
-        let changed = self.memtable.changed_cell_ids_after(checkpoint_seq);
-        let txn = self.read_txn();
         if self.manifest().live_segments.is_empty() {
-            return EngineAqlIndex::try_from_version_refs(self.memtable.visible_iter(txn));
+            return EngineAqlIndex::try_from_delta(&self.aql_delta_index);
         }
         let persisted = self.persisted_index_state()?;
-        EngineAqlIndex::from_persisted_refs(
+        EngineAqlIndex::from_persisted_delta(
             persisted.bitmap,
             persisted.lexical,
             persisted.candidate_to_cell,
-            self.memtable.visible_iter(txn),
-            &changed,
+            &self.aql_delta_index,
         )
     }
 

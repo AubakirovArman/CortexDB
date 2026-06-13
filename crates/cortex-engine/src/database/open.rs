@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
+use cortex_core::memtable::ReadTxn;
 use cortex_core::CommitSeq;
 use cortex_storage::wal::WalWriter;
 
@@ -16,6 +17,7 @@ use crate::options::{
     DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
 };
 use crate::query::cache::AqlQueryCache;
+use crate::query::AqlDeltaIndex;
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
 
 impl Database {
@@ -92,6 +94,11 @@ impl Database {
 
         truncate_wal_tail(&wal_path, last_safe_offset)?;
         let writer = WalWriter::start(&wal_path, options.durability_mode)?;
+        let aql_delta_index = AqlDeltaIndex::from_memtable_after(
+            &current_memtable,
+            ReadTxn::at(current_seq),
+            CommitSeq(checkpoint.manifest.checkpoint_seq),
+        );
         let database = Self {
             root_path,
             wal_path,
@@ -107,6 +114,7 @@ impl Database {
             ingestion_backpressure_policy: options.ingestion_backpressure,
             ingestion_rate_state: crate::ingestion::default_ingestion_rate_state(),
             aql_query_cache: Mutex::new(AqlQueryCache::default()),
+            aql_delta_index,
             persisted_index_cache: Mutex::new(None),
             active_read_pins: Arc::new(Mutex::new(BTreeMap::new())),
             compaction_policy: options.compaction_policy,

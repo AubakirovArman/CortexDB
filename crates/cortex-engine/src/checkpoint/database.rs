@@ -86,6 +86,7 @@ impl Database {
         self.manifest.store(&self.manifest_path)?;
         let _ = std::fs::remove_file(&archived_wal);
         self.memtable.gc_versions_before(self.gc_horizon());
+        self.aql_delta_index.clear();
         Ok(CheckpointStats {
             segment_id: Some(segment_id),
             cells_flushed,
@@ -152,6 +153,7 @@ impl Database {
         self.manifest.store(&self.manifest_path)?;
         let _ = std::fs::remove_file(&archived_wal);
         self.memtable.gc_versions_before(self.gc_horizon());
+        self.aql_delta_index.clear();
         Ok(CheckpointStats {
             segment_id: Some(segment_id),
             cells_flushed,

@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 use cortex_aql::BitmapHandle;
 use cortex_core::memtable::CellVersion;
@@ -6,15 +6,12 @@ use cortex_core::{CellDescriptor, CellId};
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::segment::{SegmentCell, SegmentCellRef};
 
-use super::candidates::{
-    candidate_from_ordinal, increment_candidate, next_candidate_after, reverse_candidate_map,
-    validate_candidate,
-};
+use super::candidates::{candidate_from_ordinal, validate_candidate};
 use super::metadata::{
     cell_type_handle, cell_type_id, memory_type_handle, scope_handle, scope_id, status_handle,
     status_id, CellMetadata,
 };
-use super::EngineAqlIndex;
+use super::{AqlDeltaIndex, EngineAqlIndex};
 use crate::error::{EngineError, EngineResult};
 
 impl EngineAqlIndex {
@@ -39,6 +36,17 @@ impl EngineAqlIndex {
                     ),
                     version.cell_id,
                 ))
+            })
+            .collect::<EngineResult<Vec<_>>>()?;
+        Self::try_from_cells(cells)
+    }
+
+    pub(crate) fn try_from_delta(delta: &AqlDeltaIndex) -> EngineResult<Self> {
+        let cells = delta
+            .live_cells()
+            .enumerate()
+            .map(|(index, (cell_id, metadata))| {
+                Ok((candidate_from_ordinal(index)?, metadata.clone(), cell_id))
             })
             .collect::<EngineResult<Vec<_>>>()?;
         Self::try_from_cells(cells)
@@ -72,78 +80,6 @@ impl EngineAqlIndex {
         }))
     }
 
-    pub fn from_persisted(
-        bitmap: BitmapIndex,
-        lexical: LexicalIndex,
-        candidate_to_cell: BTreeMap<u32, CellId>,
-        current: &[CellVersion],
-        changed: &[CellId],
-    ) -> EngineResult<Self> {
-        Self::from_persisted_refs(bitmap, lexical, candidate_to_cell, current.iter(), changed)
-    }
-
-    pub(crate) fn from_persisted_refs<'a>(
-        bitmap: BitmapIndex,
-        lexical: LexicalIndex,
-        candidate_to_cell: BTreeMap<u32, CellId>,
-        current: impl IntoIterator<Item = &'a CellVersion>,
-        changed: &[CellId],
-    ) -> EngineResult<Self> {
-        let cell_to_candidate = reverse_candidate_map(&candidate_to_cell)?;
-        let changed_candidates = changed
-            .iter()
-            .filter_map(|cell_id| cell_to_candidate.get(cell_id).copied())
-            .collect::<BTreeSet<_>>();
-        let changed_cell_candidates = changed
-            .iter()
-            .filter_map(|cell_id| {
-                cell_to_candidate
-                    .get(cell_id)
-                    .map(|candidate| (*cell_id, *candidate))
-            })
-            .collect::<BTreeMap<_, _>>();
-        let mut index = Self {
-            bitmaps: bitmap
-                .bitmaps
-                .into_iter()
-                .map(|(handle, values)| (BitmapHandle(handle), values))
-                .collect(),
-            lexical: lexical.terms,
-            lexical_doc_lengths: lexical.doc_lengths,
-            lexical_term_frequencies: lexical.term_frequencies,
-            lexical_field_doc_lengths: lexical.field_doc_lengths,
-            lexical_field_term_frequencies: lexical.field_term_frequencies,
-            universe: BTreeSet::new(),
-            candidate_to_cell,
-            cell_to_candidate,
-        };
-        index.remove_candidates(&changed_candidates);
-        let mut next_candidate = None;
-        let mut changed_current = Vec::new();
-        for version in current
-            .into_iter()
-            .filter(|version| changed.contains(&version.cell_id))
-        {
-            let candidate = if let Some(candidate) = changed_cell_candidates.get(&version.cell_id) {
-                *candidate
-            } else {
-                let value = *next_candidate.get_or_insert(next_candidate_after(
-                    index.candidate_to_cell.keys().copied(),
-                )?);
-                next_candidate = Some(increment_candidate(value)?);
-                value
-            };
-            changed_current.push((
-                candidate,
-                CellMetadata::from_payload_with_descriptor(&version.payload, &version.descriptor),
-                version.cell_id,
-            ));
-        }
-        index.extend_cells(changed_current)?;
-        index.rebuild_universe();
-        Ok(index)
-    }
-
     pub fn bitmap_index(&self) -> BitmapIndex {
         BitmapIndex {
             bitmaps: self
@@ -172,7 +108,7 @@ impl EngineAqlIndex {
         Ok(index)
     }
 
-    fn extend_cells(
+    pub(super) fn extend_cells(
         &mut self,
         cells: impl IntoIterator<Item = (u32, CellMetadata, CellId)>,
     ) -> EngineResult<()> {
@@ -244,7 +180,7 @@ impl EngineAqlIndex {
         self.bitmaps.entry(handle).or_default().insert(candidate);
     }
 
-    fn remove_candidates(&mut self, candidates: &BTreeSet<u32>) {
+    pub(super) fn remove_candidates(&mut self, candidates: &BTreeSet<u32>) {
         for values in self.bitmaps.values_mut() {
             values.retain(|candidate| !candidates.contains(candidate));
         }
@@ -279,7 +215,7 @@ impl EngineAqlIndex {
             .retain(|_, candidate| !candidates.contains(candidate));
     }
 
-    fn rebuild_universe(&mut self) {
+    pub(super) fn rebuild_universe(&mut self) {
         self.universe = self.candidate_to_cell.keys().copied().collect();
     }
 }
