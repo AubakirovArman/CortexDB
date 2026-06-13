@@ -10,10 +10,12 @@ use crate::database::{
     Database, RetrievedCell,
 };
 use crate::error::EngineResult;
+use crate::plan::{choose_retrieve_path, CostModelDecision, CostModelOptions};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RetrieveExecutionReport {
     pub cells: Vec<RetrievedCell>,
+    pub cost_model: CostModelDecision,
     pub operators: Vec<PhysicalOperatorTrace>,
     pub total_elapsed_nanos: u64,
 }
@@ -24,6 +26,12 @@ pub fn execute_retrieve<P: CandidateResolver>(
     provider: &P,
 ) -> EngineResult<RetrieveExecutionReport> {
     let started_total = Instant::now();
+    let cost_model = choose_retrieve_path(
+        plan,
+        database.statistics(),
+        provider,
+        &CostModelOptions::default(),
+    );
     let mut collector = ExplainCollector::default();
 
     let mut scan = BitmapIndexScan::from_plan(plan, provider)?;
@@ -82,6 +90,7 @@ pub fn execute_retrieve<P: CandidateResolver>(
 
     Ok(RetrieveExecutionReport {
         cells,
+        cost_model,
         operators: collector.into_traces(),
         total_elapsed_nanos: elapsed_nanos(started_total),
     })

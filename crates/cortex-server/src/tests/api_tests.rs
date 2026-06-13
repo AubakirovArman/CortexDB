@@ -86,6 +86,7 @@ fn v1_aql_explain_returns_plan_filters_counts_and_mode() {
     let response = handle_http(dir.path(), request);
     assert!(response.contains(r#""cells":[]"#));
     assert!(response.contains(r#""selected_mode":"balanced""#));
+    assert!(response.contains(r#""cost_model":{"selected_path":"bitmap-first""#));
     assert!(response.contains(r#""after_bitmap":1"#));
     assert!(response.contains(r#""kind":"where""#));
     assert!(response.contains("BitmapProgram(max_stack_depth="));

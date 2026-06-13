@@ -1,11 +1,12 @@
-use cortex_aql::{
-    eval_bitmap_program, AgentView, BitmapOp, BitmapProgram, BitmapProvider, BrainId, RetrievalMode,
-};
+use cortex_aql::{eval_bitmap_program, AgentView, BitmapProvider, BrainId, RetrievalMode};
 
 use crate::database::{cell_version_meets_quality_thresholds, CandidateResolver, Database};
 use crate::error::{EngineError, EngineResult};
 use crate::exec::PhysicalOperatorTrace;
-use crate::plan::{LogicalPlan, LogicalPlanReport, PolicyRewrite};
+use crate::plan::{
+    choose_retrieve_path, CostModelDecision, CostModelOptions, LogicalPlan, LogicalPlanReport,
+    PolicyRewrite,
+};
 
 use super::cache::AqlStatementKind;
 use super::EngineAqlProvider;
@@ -20,6 +21,7 @@ pub struct AqlExplainReport {
     pub bitmap_plan: String,
     pub bitmap_ops: Vec<String>,
     pub filters: Vec<AqlExplainFilter>,
+    pub cost_model: CostModelDecision,
     pub candidate_counts: AqlCandidateCounts,
     pub candidate_limit: u32,
     pub budget_tokens: u32,
@@ -125,8 +127,20 @@ impl Database {
                 after_quality.min(candidate_limit),
             )
         };
-        let estimated_after_bitmap =
-            estimate_bitmap_program_rows(&plan.bitmap_program, self, &provider);
+        let cost_model = execution
+            .as_ref()
+            .map(|execution| execution.cost_model.clone())
+            .unwrap_or_else(|| {
+                choose_retrieve_path(
+                    &plan,
+                    self.statistics(),
+                    &provider,
+                    &CostModelOptions::default(),
+                )
+            });
+        let estimated_after_bitmap = cost_model
+            .estimated_after_bitmap
+            .and_then(|rows| usize::try_from(rows).ok());
         let mut filters = vec![
             AqlExplainFilter {
                 kind: "policy".to_owned(),
@@ -157,6 +171,7 @@ impl Database {
                 .map(|op| format!("{op:?}"))
                 .collect(),
             filters,
+            cost_model,
             candidate_counts: AqlCandidateCounts {
                 universe: provider.universe().len(),
                 agent_allowed: provider.agent_allowed().len(),
@@ -175,41 +190,6 @@ impl Database {
             }),
         })
     }
-}
-
-fn estimate_bitmap_program_rows<P: BitmapProvider>(
-    program: &BitmapProgram,
-    database: &Database,
-    provider: &P,
-) -> Option<usize> {
-    let statistics = database.statistics();
-    let max_rows = statistics.live_segment_row_count();
-    let mut stack = Vec::<Option<u64>>::new();
-    for op in &program.ops {
-        match op {
-            BitmapOp::Push(handle) => stack.push(statistics.estimate_bitmap_cardinality(*handle)),
-            BitmapOp::PushUniverse | BitmapOp::PushLive => stack.push(Some(max_rows)),
-            BitmapOp::PushAgentAllowed => stack.push(Some(provider.agent_allowed().len() as u64)),
-            BitmapOp::And => {
-                let rhs = stack.pop()??;
-                let lhs = stack.pop()??;
-                stack.push(Some(lhs.min(rhs)));
-            }
-            BitmapOp::Or => {
-                let rhs = stack.pop()??;
-                let lhs = stack.pop()??;
-                stack.push(Some(lhs.saturating_add(rhs).min(max_rows)));
-            }
-            BitmapOp::Not => {
-                let value = stack.pop()??;
-                stack.push(Some(max_rows.saturating_sub(value)));
-            }
-        }
-    }
-    let [Some(rows)] = stack.as_slice() else {
-        return None;
-    };
-    usize::try_from(*rows).ok()
 }
 
 fn operator_output_count(operators: &[PhysicalOperatorTrace], name: &str) -> usize {

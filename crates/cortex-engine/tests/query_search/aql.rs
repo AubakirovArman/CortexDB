@@ -1,6 +1,7 @@
 use super::common::prelude::*;
 use super::common::view;
 use cortex_aql::AqlCatalog;
+use cortex_engine::ExecutionPath;
 
 #[test]
 fn retrieve_aql_uses_engine_index_without_mock_provider() {
@@ -116,6 +117,8 @@ WHERE space = project:wide AND status = "ready" LIMIT 10 CANDIDATES;"#,
     let scope_handle = index.scope_bitmap(brain, scope_id("project:wide")).unwrap();
 
     assert_eq!(report.candidate_counts.estimated_after_bitmap, Some(1));
+    assert_eq!(report.cost_model.estimated_after_bitmap, Some(1));
+    assert_eq!(report.cost_model.selected_path, ExecutionPath::BitmapFirst);
     assert_eq!(report.candidate_counts.after_bitmap, 1);
     let status_op = format!("Push({status_handle:?})");
     let scope_op = format!("Push({scope_handle:?})");
@@ -289,6 +292,10 @@ USING MODE balanced WHERE space = project:investments AND status = "ready" LIMIT
     assert_eq!(report.candidate_counts.after_bitmap, 1);
     assert_eq!(report.candidate_counts.after_quality, 1);
     assert_eq!(report.candidate_counts.returned_limit, 1);
+    assert_eq!(report.cost_model.selected_path, ExecutionPath::BitmapFirst);
+    assert!(report.cost_model.reason.contains("bitmap"));
+    assert_eq!(report.cost_model.estimated_after_bitmap, None);
+    assert_eq!(report.cost_model.recommended_candidate_limit, 2);
     assert!(report
         .bitmap_plan
         .contains("BitmapProgram(max_stack_depth="));

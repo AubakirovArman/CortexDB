@@ -1837,6 +1837,73 @@ components:
         returned_limit:
           type: integer
           minimum: 0
+    AqlCostModelTerm:
+      type: object
+      required:
+      - term
+      - document_frequency
+      properties:
+        term:
+          type: string
+        document_frequency:
+          type: integer
+          minimum: 0
+    AqlCostModelEstimate:
+      type: object
+      required:
+      - path
+      - cost_units
+      properties:
+        path:
+          type: string
+          enum:
+          - bitmap-first
+          - lexical-first
+          - vector-first
+          - hybrid
+          - pack
+        cost_units:
+          type: integer
+          minimum: 0
+    AqlCostModel:
+      type: object
+      required:
+      - selected_path
+      - reason
+      - estimated_live_rows
+      - recommended_candidate_limit
+      - has_query_vector
+      - estimates
+      properties:
+        selected_path:
+          type: string
+          enum:
+          - bitmap-first
+          - lexical-first
+          - vector-first
+          - hybrid
+        reason:
+          type: string
+        estimated_live_rows:
+          type: integer
+          minimum: 0
+        estimated_after_bitmap:
+          type: integer
+          minimum: 0
+          nullable: true
+        recommended_candidate_limit:
+          type: integer
+          minimum: 1
+        has_query_vector:
+          type: boolean
+        rarest_term:
+          anyOf:
+          - $ref: '#/components/schemas/AqlCostModelTerm'
+          - type: 'null'
+        estimates:
+          type: array
+          items:
+            $ref: '#/components/schemas/AqlCostModelEstimate'
     AqlExplainResponse:
       type: object
       required:
@@ -1846,6 +1913,7 @@ components:
       - bitmap_plan
       - bitmap_ops
       - filters
+      - cost_model
       - candidate_counts
       - candidate_limit
       - budget_tokens
@@ -1873,6 +1941,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AqlExplainFilter'
+        cost_model:
+          $ref: '#/components/schemas/AqlCostModel'
         candidate_counts:
           $ref: '#/components/schemas/AqlCandidateCounts'
         candidate_limit:

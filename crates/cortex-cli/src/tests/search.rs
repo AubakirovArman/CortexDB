@@ -52,6 +52,7 @@ fn aql_command_explain_reports_plan_filters_counts_and_mode() {
     .unwrap();
     assert!(output.contains("aql_explain task=budget"));
     assert!(output.contains("mode=Balanced"));
+    assert!(output.contains("cost_model selected_path=bitmap-first"));
     assert!(output.contains("after_bitmap=1"));
     assert!(output.contains("filters=policy=agent_allowed"));
     assert!(output.contains("BitmapProgram(max_stack_depth="));
@@ -67,6 +68,7 @@ fn aql_command_explain_reports_plan_filters_counts_and_mode() {
     .unwrap();
     assert!(json.contains(r#""cells":[]"#));
     assert!(json.contains(r#""selected_mode":"balanced""#));
+    assert!(json.contains(r#""cost_model":{"selected_path":"bitmap-first""#));
     assert!(json.contains(r#""after_bitmap":1"#));
 
     let _ = std::fs::remove_dir_all(path);

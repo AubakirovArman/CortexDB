@@ -61,7 +61,7 @@ fn format_aql_explain(report: &AqlExplainReport) -> String {
         .collect::<Vec<_>>()
         .join(", ");
     format!(
-        "aql_explain task={} mode={:?} brain_id={} candidate_limit={} budget_tokens={} citations_required={}\nlogical_plan_policy_complete={} policy_rewritten_plan_policy_complete={} execution_trace_operators={}\ncounts universe={} agent_allowed={} live={} estimated_after_bitmap={} after_bitmap={} after_quality={} returned_limit={}\nfilters={}\n{}",
+        "aql_explain task={} mode={:?} brain_id={} candidate_limit={} budget_tokens={} citations_required={}\nlogical_plan_policy_complete={} policy_rewritten_plan_policy_complete={} execution_trace_operators={}\ncost_model selected_path={} reason={} recommended_candidate_limit={} has_query_vector={}\ncounts universe={} agent_allowed={} live={} estimated_after_bitmap={} after_bitmap={} after_quality={} returned_limit={}\nfilters={}\n{}",
         report.task,
         report.selected_mode,
         report.brain_id.0,
@@ -75,6 +75,10 @@ fn format_aql_explain(report: &AqlExplainReport) -> String {
             .as_ref()
             .map(|trace| trace.operators.len())
             .unwrap_or_default(),
+        report.cost_model.selected_path.as_str(),
+        report.cost_model.reason,
+        report.cost_model.recommended_candidate_limit,
+        report.cost_model.has_query_vector,
         report.candidate_counts.universe,
         report.candidate_counts.agent_allowed,
         report.candidate_counts.live,

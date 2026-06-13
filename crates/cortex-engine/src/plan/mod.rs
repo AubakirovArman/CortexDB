@@ -1,4 +1,11 @@
+pub mod cost;
+
 use cortex_aql::{AgentView, BoundPlan, BrainId, RetrievalMode, RetrievalWeights};
+
+pub use cost::{
+    choose_retrieve_path, estimate_bitmap_program_rows, CostModelDecision, CostModelEstimate,
+    CostModelOptions, ExecutionPath, TermDfEstimate,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LogicalPlan {

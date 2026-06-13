@@ -12,7 +12,6 @@ QUERY_ADJACENT = {
 }
 
 MAINTENANCE_OR_BACKFILL = {
-    ("memory_accounting.rs", "let versions = db.snapshot_versions();"): 1,
     ("ingestion/dedup.rs", "self.snapshot_versions().into_iter().find_map(|version| {"): 1,
     ("ingestion/dedup.rs", "for version in self.snapshot_versions() {"): 1,
     ("memory.rs", "self.snapshot_versions()"): 2,

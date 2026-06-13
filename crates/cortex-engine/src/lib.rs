@@ -139,7 +139,10 @@ pub use options::{
     CompactionPolicy, DatabaseOptions, EngineFeature, EngineFeatureFlags, PayloadResidency,
     RecoveryMode, StaleLockPolicy,
 };
-pub use plan::{LogicalPlan, LogicalPlanNode, LogicalPlanReport, PolicyRewrite};
+pub use plan::{
+    CostModelDecision, CostModelEstimate, CostModelOptions, ExecutionPath, LogicalPlan,
+    LogicalPlanNode, LogicalPlanReport, PolicyRewrite, TermDfEstimate,
+};
 pub use query::{
     scope_id, AqlCandidateCounts, AqlExecutionTraceReport, AqlExplainFilter, AqlExplainReport,
     AqlQueryCacheStats, CandidateId, CellMetadata, DatabaseStatistics, EngineAqlIndex, SourceRef,

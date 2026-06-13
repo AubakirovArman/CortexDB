@@ -375,6 +375,22 @@ bound AQL plan; it does not return payload rows.
       {"kind": "liveness", "expression": "live"},
       {"kind": "where", "expression": "status = \"ready\""}
     ],
+    "cost_model": {
+      "selected_path": "bitmap-first",
+      "reason": "bitmap predicate is selective",
+      "estimated_live_rows": 2,
+      "estimated_after_bitmap": 1,
+      "recommended_candidate_limit": 10,
+      "has_query_vector": false,
+      "rarest_term": {"term": "budget", "document_frequency": 1},
+      "estimates": [
+        {"path": "bitmap-first", "cost_units": 4},
+        {"path": "lexical-first", "cost_units": 4},
+        {"path": "vector-first", "cost_units": 4611686018427387903},
+        {"path": "hybrid", "cost_units": 2305843009213693955},
+        {"path": "pack", "cost_units": 1600}
+      ]
+    },
     "candidate_counts": {
       "universe": 2,
       "agent_allowed": 2,

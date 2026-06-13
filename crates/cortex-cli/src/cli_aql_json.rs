@@ -3,7 +3,8 @@ use cortex_engine::{AqlExplainReport, RetrievedCell};
 use serde_json::to_string;
 
 use crate::cli_json_types::{
-    AqlCandidateCountsResponse, AqlCellResponse, AqlExecutionOperatorResponse,
+    AqlCandidateCountsResponse, AqlCellResponse, AqlCostModelEstimateResponse,
+    AqlCostModelResponse, AqlCostModelTermResponse, AqlExecutionOperatorResponse,
     AqlExecutionTraceResponse, AqlExplainFilterResponse, AqlExplainResponse,
     AqlLogicalPlanNodeResponse, AqlLogicalPlanResponse, AqlResponse,
 };
@@ -40,6 +41,7 @@ pub(crate) fn aql_explain_to_json(report: AqlExplainReport) -> String {
                     expression: filter.expression,
                 })
                 .collect(),
+            cost_model: cost_model_response(report.cost_model),
             candidate_counts: AqlCandidateCountsResponse {
                 universe: report.candidate_counts.universe,
                 agent_allowed: report.candidate_counts.agent_allowed,
@@ -69,6 +71,29 @@ pub(crate) fn aql_explain_to_json(report: AqlExplainReport) -> String {
                 }),
         }),
     })
+}
+
+fn cost_model_response(decision: cortex_engine::CostModelDecision) -> AqlCostModelResponse {
+    AqlCostModelResponse {
+        selected_path: decision.selected_path.as_str().to_owned(),
+        reason: decision.reason,
+        estimated_live_rows: decision.estimated_live_rows,
+        estimated_after_bitmap: decision.estimated_after_bitmap,
+        recommended_candidate_limit: decision.recommended_candidate_limit,
+        has_query_vector: decision.has_query_vector,
+        rarest_term: decision.rarest_term.map(|term| AqlCostModelTermResponse {
+            term: term.term,
+            document_frequency: term.document_frequency,
+        }),
+        estimates: decision
+            .estimates
+            .into_iter()
+            .map(|estimate| AqlCostModelEstimateResponse {
+                path: estimate.path.as_str().to_owned(),
+                cost_units: estimate.cost_units,
+            })
+            .collect(),
+    }
 }
 
 fn logical_plan_response(report: cortex_engine::LogicalPlanReport) -> AqlLogicalPlanResponse {

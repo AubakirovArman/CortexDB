@@ -194,7 +194,7 @@ def main() -> None:
     )
     require(
         session,
-        ".session_index\n            .retrieve(session_id, view, now_unix_seconds)",
+        "self.session_index\n                .retrieve(session_id, view, now_unix_seconds)",
         "session retrieval delegates to maintained index",
     )
     require(
@@ -259,7 +259,7 @@ def main() -> None:
     )
     require(
         verification_graph,
-        "let metadata = CellMetadata::from_version(version);",
+        "let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);",
         "verification graph relation uses CellVersion descriptor",
     )
     require(
@@ -269,7 +269,7 @@ def main() -> None:
     )
     require(
         verification_conflict_index,
-        "let metadata = CellMetadata::from_version(version);",
+        "let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);",
         "conflict index uses CellVersion descriptor",
     )
     require(

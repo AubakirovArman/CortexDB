@@ -176,6 +176,32 @@ pub struct AqlCandidateCountsResponse {
 }
 
 #[derive(Serialize)]
+pub struct AqlCostModelTermResponse {
+    pub term: String,
+    pub document_frequency: u64,
+}
+
+#[derive(Serialize)]
+pub struct AqlCostModelEstimateResponse {
+    pub path: String,
+    pub cost_units: u64,
+}
+
+#[derive(Serialize)]
+pub struct AqlCostModelResponse {
+    pub selected_path: String,
+    pub reason: String,
+    pub estimated_live_rows: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub estimated_after_bitmap: Option<u64>,
+    pub recommended_candidate_limit: u32,
+    pub has_query_vector: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rarest_term: Option<AqlCostModelTermResponse>,
+    pub estimates: Vec<AqlCostModelEstimateResponse>,
+}
+
+#[derive(Serialize)]
 pub struct AqlLogicalPlanNodeResponse {
     pub id: usize,
     pub kind: String,
@@ -213,6 +239,7 @@ pub struct AqlExplainResponse {
     pub bitmap_plan: String,
     pub bitmap_ops: Vec<String>,
     pub filters: Vec<AqlExplainFilterResponse>,
+    pub cost_model: AqlCostModelResponse,
     pub candidate_counts: AqlCandidateCountsResponse,
     pub candidate_limit: u32,
     pub budget_tokens: u32,
