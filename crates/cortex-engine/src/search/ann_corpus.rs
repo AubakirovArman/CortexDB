@@ -3,13 +3,14 @@ use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::{EngineError, EngineResult};
+use crate::error::EngineResult;
 
 use super::hnsw::{DistanceMetric, HnswIndex, VectorCollectionConfig};
 
 use self::compare::compare_corpus_report;
 use self::loader::load_ann_corpus;
-use self::metrics::ranking_metrics_q16;
+use self::metrics::{mean_q16, percentile, ranking_metrics_q16, ratio_q16, recall_q16};
+pub use self::metrics::{metric_name, parse_ann_metric};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct AnnCorpusVector {
@@ -260,60 +261,6 @@ pub fn evaluate_ann_corpus(
     report.failures = compare_corpus_report(options, &report);
     report.passed = report.failures.is_empty();
     Ok(report)
-}
-
-pub fn parse_ann_metric(value: &str) -> EngineResult<DistanceMetric> {
-    match value {
-        "dot_product" | "dotproduct" | "dot" => Ok(DistanceMetric::DotProduct),
-        "cosine" => Ok(DistanceMetric::Cosine),
-        "l2" | "euclidean" => Ok(DistanceMetric::L2),
-        _ => Err(EngineError::InvalidAnnCorpus(format!(
-            "unknown metric {value}"
-        ))),
-    }
-}
-
-pub fn metric_name(metric: DistanceMetric) -> &'static str {
-    match metric {
-        DistanceMetric::DotProduct => "dot_product",
-        DistanceMetric::Cosine => "cosine",
-        DistanceMetric::L2 => "l2",
-    }
-}
-
-fn recall_q16(results: &[u32], truth: &[u32], limit: usize) -> u16 {
-    let denominator = truth.len().min(limit);
-    if denominator == 0 {
-        return 65_535;
-    }
-    let truth = truth.iter().take(limit).copied().collect::<BTreeSet<_>>();
-    let overlap = results
-        .iter()
-        .take(limit)
-        .filter(|candidate| truth.contains(candidate))
-        .count();
-    ((overlap as u64 * 65_535) / denominator as u64) as u16
-}
-
-fn percentile(values: &[u128], percentile: usize) -> u128 {
-    if values.is_empty() {
-        return 0;
-    }
-    values[((values.len() - 1) * percentile.min(100)) / 100]
-}
-
-fn mean_q16(values: &[u16]) -> u16 {
-    if values.is_empty() {
-        return 0;
-    }
-    (values.iter().copied().map(u64::from).sum::<u64>() / values.len() as u64) as u16
-}
-
-fn ratio_q16(numerator: usize, denominator: usize) -> u16 {
-    if denominator == 0 {
-        return 0;
-    }
-    ((numerator as u64 * 65_535) / denominator as u64) as u16
 }
 
 mod compare;

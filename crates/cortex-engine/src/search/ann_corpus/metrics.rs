@@ -1,10 +1,67 @@
 use std::collections::BTreeSet;
 
+use crate::error::{EngineError, EngineResult};
+use crate::search::hnsw::DistanceMetric;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) struct RankingMetrics {
     pub reciprocal_rank_q16: u16,
     pub ndcg_q16: u16,
     pub exact_parity: bool,
+}
+
+pub fn parse_ann_metric(value: &str) -> EngineResult<DistanceMetric> {
+    match value {
+        "dot_product" | "dotproduct" | "dot" => Ok(DistanceMetric::DotProduct),
+        "cosine" => Ok(DistanceMetric::Cosine),
+        "l2" | "euclidean" => Ok(DistanceMetric::L2),
+        _ => Err(EngineError::InvalidAnnCorpus(format!(
+            "unknown metric {value}"
+        ))),
+    }
+}
+
+pub fn metric_name(metric: DistanceMetric) -> &'static str {
+    match metric {
+        DistanceMetric::DotProduct => "dot_product",
+        DistanceMetric::Cosine => "cosine",
+        DistanceMetric::L2 => "l2",
+    }
+}
+
+pub(super) fn recall_q16(results: &[u32], truth: &[u32], limit: usize) -> u16 {
+    let denominator = truth.len().min(limit);
+    if denominator == 0 {
+        return 65_535;
+    }
+    let truth = truth.iter().take(limit).copied().collect::<BTreeSet<_>>();
+    let overlap = results
+        .iter()
+        .take(limit)
+        .filter(|candidate| truth.contains(candidate))
+        .count();
+    ((overlap as u64 * 65_535) / denominator as u64) as u16
+}
+
+pub(super) fn percentile(values: &[u128], percentile: usize) -> u128 {
+    if values.is_empty() {
+        return 0;
+    }
+    values[((values.len() - 1) * percentile.min(100)) / 100]
+}
+
+pub(super) fn mean_q16(values: &[u16]) -> u16 {
+    if values.is_empty() {
+        return 0;
+    }
+    (values.iter().copied().map(u64::from).sum::<u64>() / values.len() as u64) as u16
+}
+
+pub(super) fn ratio_q16(numerator: usize, denominator: usize) -> u16 {
+    if denominator == 0 {
+        return 0;
+    }
+    ((numerator as u64 * 65_535) / denominator as u64) as u16
 }
 
 pub(super) fn ranking_metrics_q16(results: &[u32], truth: &[u32], limit: usize) -> RankingMetrics {
