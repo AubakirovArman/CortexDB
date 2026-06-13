@@ -6,6 +6,7 @@ mod tests;
 mod types;
 mod write;
 
+pub use payload_cache::PayloadCacheStats;
 pub use types::{CandidateResolver, CheckpointStats, Database, PinnedReadTxn, RetrievedCell};
 
 pub(crate) use crate::database_files::truncate_wal_tail;

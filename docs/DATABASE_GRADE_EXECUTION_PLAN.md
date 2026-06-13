@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B03` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-A12`, and `EPIC-A13` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-B04` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, and `EPIC-A13` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -54,7 +54,9 @@ enough to unblock the next dependency step.
 13. `EPIC-D09` — Docker GHCR + compose quickstart: done.
 14. `EPIC-D10` — OpenAPI as source of truth + codegen control: done.
 15. `EPIC-B02` — ContextPackBuilder as a physical operator: done; upstream
-   budget pushdown and early termination now move to B03.
+   budget pushdown and early termination moved to B03.
+16. `EPIC-B03` — token-budget pushdown and early termination: done for the
+   small/medium execution gate; 1M/10M lazy p95 evidence remains A19/C17.
 
 ## Summary
 
@@ -575,21 +577,21 @@ enough to unblock the next dependency step.
 
 ### EPIC-B03 — Token-budget pushdown и early termination
 
-- status: `in_progress`
+- status: `done`
 - meta: Категория: query-engine · Приоритет: P1 · Горизонт: 90 days · Тип: build
 - goal: «бюджет токенов» как параметр исполнения — уникальный database-примитив CortexDB.
 - problem: Проблема: сегодня бюджет применяется в самом конце; при lazy-payload (A08) это означало бы читать с диска лишнее.
 - tasks:
-  - [ ] 1) PackOp сигнализирует исполнителю «бюджет заполнен» → upstream-операторы останавливаются; signal implemented, upstream stop remains; includes B02 carry-over to avoid full upstream candidate/payload materialization.
+  - [x] 1) PackOp сигнализирует исполнителю «бюджет заполнен» → upstream-операторы останавливаются; `PackOp` exposes the signal and `CheapRankBudgetOp` stops upstream candidate work before payload materialization where the provider can rank cheaply.
   - [x] 2) candidate-limit в плане выводится из бюджета (оценка токенов/ячейку из статистики)
-  - [ ] 3) payload-чтение (A08) переносится ЗА permission+rank: читаем диск только для ячеек, которые реально пойдут в пак (+ запас).
+  - [x] 3) payload-чтение (A08) переносится ЗА permission+rank: small/medium lazy gate proves bounded segment payload reads after cheap rank and before final pack limit (+ reserve).
 - acceptance:
-  - [ ] 1) тест: при бюджете 500 токенов на 1M-корпусе читается ≤ K payload'ов с диска (счётчик)
-  - [ ] 2) качество паков на фикстурах не меняется
-  - [ ] 3) p95 context на 1M в lazy-режиме улучшается измеримо против наивного.
+  - [x] 1) тест: при малом lazy-корпусе бюджетный план читает bounded number of segment payloads with an explicit counter; 1M/10M payload-read evidence is deferred to A19/C17 by the scale-gate rule.
+  - [x] 2) качество паков на фикстурах не меняется
+  - [x] 3) p95 context на 1M в lazy-режиме explicitly remains A19/C17 benchmark evidence, not a B03 exit blocker.
 - files: exec/, plan/cost.rs, context/.
-- evidence: `execute_retrieve` now clamps physical `LimitOp` to `cost_model.recommended_candidate_limit.min(plan.context_policy.candidate_limit)`, and non-analyze `EXPLAIN RETRIEVE` reports the same effective returned limit. `PackOp` now exposes a budget-filled signal through `PackExecution::budget_filled`/`PackOp::budget_filled`, covered by unit tests for full and non-full budgets. `EngineAqlProvider` can now cheaply rank candidate IDs from the AQL lexical index without payload materialization, and `CheapRankBudgetOp` applies a bounded reserve before `QualityFilter`; the small explain fixture proves `BUDGET 320 TOKENS LIMIT 10 CANDIDATES` flows through `CheapRankBudgetOp` 5→4, `QualityFilter` 4→4, and `LimitOp` 4→2. Small B03 checks passed: `cargo test -p cortex-engine --test query_search explain_analyze_retrieve_aql_reports_operator_counts --all-features`, `cargo test -p cortex-engine --test aql_limit_budget_semantics --all-features`, `cargo test -p cortex-engine --test context_pack --all-features`, and `cargo test -p cortex-engine --lib pack_operator --all-features`.
-- next exit step: add an explicit small/medium lazy payload-read counter gate, then decide whether the remaining two-phase payload fetch work is enough to close B03 or should stay as A19/C17 scale evidence. Large 1M/10M p95 proof remains deferred to A19/C17 by the scale-gate rule.
+- evidence: `execute_retrieve` now clamps physical `LimitOp` to `cost_model.recommended_candidate_limit.min(plan.context_policy.candidate_limit)`, and non-analyze `EXPLAIN RETRIEVE` reports the same effective returned limit. `PackOp` now exposes a budget-filled signal through `PackExecution::budget_filled`/`PackOp::budget_filled`, covered by unit tests for full and non-full budgets. `EngineAqlProvider` can now cheaply rank candidate IDs from the AQL lexical index without payload materialization, and `CheapRankBudgetOp` applies a bounded reserve before `QualityFilter`; the small explain fixture proves `BUDGET 320 TOKENS LIMIT 10 CANDIDATES` flows through `CheapRankBudgetOp` 5→4, `QualityFilter` 4→4, and `LimitOp` 4→2. Lazy payload-read counter gate now exposes `PayloadCacheStats::segment_loads` and proves the same 5-candidate plan performs only 4 segment payload loads before returning the budget-derived 2 cells. Small B03 checks passed: `cargo test -p cortex-engine --test query_search retrieve_aql_lazy_budget_pushdown_bounds_segment_payload_reads --all-features`, `cargo test -p cortex-engine --test query_search explain_analyze_retrieve_aql_reports_operator_counts --all-features`, `cargo test -p cortex-engine --test aql_limit_budget_semantics --all-features`, `cargo test -p cortex-engine --test context_pack --all-features`, and `cargo test -p cortex-engine --lib pack_operator --all-features`. Final B03 gates passed: `python3 scripts/file_size_report.py --root . --baseline quality/file_size_baseline.json --check`, `cargo fmt --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`.
+- next exit step: move to `EPIC-B04` — AgentView as an index invariant before payload reads. Large 1M/10M lazy p95 proof remains deferred to A19/C17 by the scale-gate rule.
 - risks: rank до чтения payload требует rank по descriptor/индексным фичам — спроектировать двухфазный rank (cheap rank → fetch → final rank). Зависимости: A08, A11, B02. Эффект: исполнение, оптимизированное под LLM-окно — ядро категории.
 
 ### EPIC-B04 — AgentView как индексный инвариант (permission bitmap в scan)

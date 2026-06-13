@@ -9,7 +9,7 @@ use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::manifest::StorageManifest;
 use cortex_storage::segment::SegmentReader;
 
-use super::payload_cache::SegmentPayloadCacheKey;
+use super::payload_cache::{PayloadCacheStats, SegmentPayloadCacheKey};
 use super::{CandidateResolver, Database, PinnedReadTxn, RetrievedCell};
 use crate::checkpoint::segment_path;
 use crate::error::{EngineError, EngineResult};
@@ -86,6 +86,13 @@ impl Database {
                     .ok()
                     .map(|payload| (payload, version.descriptor.clone()))
             })
+    }
+
+    pub fn payload_cache_stats(&self) -> PayloadCacheStats {
+        self.payload_cache
+            .lock()
+            .expect("payload cache lock poisoned")
+            .stats()
     }
 
     pub fn retrieve_cells<P: CandidateResolver>(
@@ -253,10 +260,12 @@ impl Database {
                         "segment {segment_id} is missing payload for candidate {candidate_id}"
                     ))
                 })?;
-                self.payload_cache
+                let mut cache = self
+                    .payload_cache
                     .lock()
-                    .expect("payload cache lock poisoned")
-                    .insert(key, payload.clone());
+                    .expect("payload cache lock poisoned");
+                cache.record_segment_load();
+                cache.insert(key, payload.clone());
                 Ok(payload)
             }
         }

@@ -91,7 +91,9 @@ pub use context::{
     ContextSpanProvenance, ContextTokenProfile, SourceFreshnessCategory,
     DEFAULT_CITATION_OVERHEAD_TOKENS, DEFAULT_GROUNDING_THRESHOLD_Q16,
 };
-pub use database::{CandidateResolver, CheckpointStats, Database, RetrievedCell};
+pub use database::{
+    CandidateResolver, CheckpointStats, Database, PayloadCacheStats, RetrievedCell,
+};
 pub use distributed::*;
 pub use embedding_pipeline::{
     embedding_coverage_report_from_expected_items, embedding_coverage_report_from_files,

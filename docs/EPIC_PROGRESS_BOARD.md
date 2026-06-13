@@ -21,38 +21,52 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B03` — token-budget pushdown and early termination.
+`EPIC-B04` — AgentView as an index invariant before payload reads.
 
-B03 exit steps:
+B04 exit steps:
 
-1. Done: make PackOp signal when the token budget is filled.
-2. Done: stop upstream candidate work before payload materialization with
-   `CheapRankBudgetOp` where the provider can rank candidate IDs cheaply.
-3. Done: clamp retrieve `LimitOp` to the budget-derived cost-model
-   `recommended_candidate_limit`.
-4. Move lazy payload reads behind permission/rank and bounded pack selection.
-5. Preserve ContextPack fixture quality.
-6. Publish a small/medium payload-read count or latency gate; large 1M/10M
-   evidence remains A19/C17.
+1. Inventory read surfaces that still authorize after payload materialization.
+2. Route readable candidate filtering through AgentView/descriptor indexes before
+   payload fetch where possible.
+3. Ensure `/get` and server read paths authorize from descriptor scope, not
+   payload-parsed scope.
+4. Extend the structural permission gate so no scan/read surface silently skips
+   the permission predicate.
 
-B03 progress:
+B04 progress:
 
-- done: physical `LimitOp` now uses
-  `min(cost_model.recommended_candidate_limit, plan.context_policy.candidate_limit)`;
-- done: non-analyze `EXPLAIN RETRIEVE` reports the same effective returned
-  limit;
-- done: small tests cover `BUDGET 320 TOKENS LIMIT 10 CANDIDATES` producing
-  2 budget-derived candidates from 5 quality-filtered candidates;
-- done: `PackOp`/`PackExecution` expose a budget-filled signal covered by
-  `pack_operator_reports_budget_filled_signal`;
-- done: `CheapRankBudgetOp` uses the AQL lexical index to rank candidate IDs
-  without fetching payloads and bounds the input to `QualityFilter`; the small
-  explain fixture shows 5 -> 4 before payload materialization, then 4 -> 2 at
-  `LimitOp`;
-- remaining: explicit lazy payload-read counter gate and final B03 closeout
-  decision before moving to B04.
+- next: start with a code inventory of server/engine read paths and identify the
+  smallest descriptor-first permission gap to close with a regression test.
 
 ## Recently Closed
+
+### EPIC-B03 — Token-budget pushdown and early termination
+
+Status: `done`
+
+What closed it:
+
+- physical `LimitOp` now uses
+  `min(cost_model.recommended_candidate_limit, plan.context_policy.candidate_limit)`;
+- non-analyze `EXPLAIN RETRIEVE` reports the same effective returned limit;
+- `PackOp`/`PackExecution` expose a budget-filled signal covered by full and
+  non-full budget unit tests;
+- `CheapRankBudgetOp` uses the AQL lexical index to rank candidate IDs without
+  fetching payloads and bounds the input to `QualityFilter`;
+- the small explain fixture shows `CheapRankBudgetOp` 5 -> 4 before payload
+  materialization, `QualityFilter` 4 -> 4, and `LimitOp` 4 -> 2;
+- lazy payload-read counter gate exposes `PayloadCacheStats::segment_loads` and
+  proves the same bounded plan performs only 4 segment payload loads before
+  returning the budget-derived 2 cells;
+- ContextPack fixture quality stayed stable.
+- final B03 gates passed: file-size ratchet, `cargo fmt --check`,
+  `cargo test --workspace --all-features`,
+  `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`.
+
+Important follow-up:
+
+- Large 1M/10M lazy ContextPack p95 evidence remains A19/C17 benchmark work, not
+  a reason to reopen B03.
 
 ### EPIC-A06 — Indexed-only retrieve/ContextPack path
 
@@ -126,7 +140,7 @@ Important follow-up:
 
 ## Done Snapshot
 
-Done count in roadmap snapshot: `37`.
+Done count in roadmap snapshot: `38`.
 
 High-signal done epics:
 
@@ -151,6 +165,7 @@ High-signal done epics:
 - A20 property tests for MVCC/WAL/recovery;
 - B01 ContextPack JSON Schema v1;
 - B02 ContextPackBuilder physical operator;
+- B03 token-budget pushdown and early termination;
 - D02 init/doctor;
 - D06 Python SDK;
 - D07 TypeScript SDK;
@@ -187,10 +202,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on B03 only:
+Work on B04 only:
 
-1. add an explicit small/medium lazy payload-read counter gate;
-2. verify ContextPack fixture parity after the bounded candidate path;
-3. update `docs/DATABASE_GRADE_EXECUTION_PLAN.md` and this board;
-4. move pointer only after B03 is `done` or explicitly split with accepted
-   follow-up scope.
+1. inventory read surfaces and current permission gates;
+2. select the smallest descriptor-first pre-payload authorization gap;
+3. add a regression test for spoofed payload scope vs durable descriptor scope;
+4. update the board before moving past B04.

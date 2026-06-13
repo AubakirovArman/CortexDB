@@ -172,6 +172,46 @@ WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#;
 }
 
 #[test]
+fn retrieve_aql_lazy_budget_pushdown_bounds_segment_payload_reads() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        for id in 1..=5 {
+            db.put_cell(
+                CellId(id),
+                format!(
+                    "scope=project:investments\nstatus=ready\nsource=doc-{id}\n\nbudget payload {id}"
+                )
+                .into_bytes(),
+            )
+            .unwrap();
+        }
+        db.checkpoint().unwrap();
+    }
+
+    let db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            payload_residency: PayloadResidency::Lazy,
+            payload_cache_bytes: 0,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+    let report = db
+        .explain_analyze_retrieve_aql(
+            r#"EXPLAIN ANALYZE RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
+USING MODE balanced WHERE space = project:investments BUDGET 320 TOKENS LIMIT 10 CANDIDATES;"#,
+            &view(scope_id("project:investments")),
+        )
+        .unwrap();
+
+    assert_eq!(report.candidate_counts.after_quality, 4);
+    assert_eq!(report.candidate_counts.returned_limit, 2);
+    assert_eq!(db.payload_cache_stats().segment_loads, 4);
+}
+
+#[test]
 fn retrieve_aql_with_allowed_cells_restricts_candidate_pool() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();

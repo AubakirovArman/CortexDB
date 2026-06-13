@@ -20,7 +20,15 @@ pub(crate) struct SegmentPayloadCache {
     max_bytes: usize,
     resident_bytes: usize,
     clock: u64,
+    segment_loads: u64,
     entries: BTreeMap<SegmentPayloadCacheKey, CacheEntry>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct PayloadCacheStats {
+    pub resident_bytes: usize,
+    pub entries: usize,
+    pub segment_loads: u64,
 }
 
 #[derive(Debug)]
@@ -36,6 +44,7 @@ impl SegmentPayloadCache {
             max_bytes,
             resident_bytes: 0,
             clock: 0,
+            segment_loads: 0,
             entries: BTreeMap::new(),
         }
     }
@@ -66,6 +75,18 @@ impl SegmentPayloadCache {
         );
         self.resident_bytes = self.resident_bytes.saturating_add(bytes);
         self.evict_over_budget();
+    }
+
+    pub(crate) fn record_segment_load(&mut self) {
+        self.segment_loads = self.segment_loads.saturating_add(1);
+    }
+
+    pub(crate) fn stats(&self) -> PayloadCacheStats {
+        PayloadCacheStats {
+            resident_bytes: self.resident_bytes,
+            entries: self.entries.len(),
+            segment_loads: self.segment_loads,
+        }
     }
 
     fn next_clock(&mut self) -> u64 {
