@@ -21,27 +21,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C17` — perf-regressions in CI and continuous benchmarking.
+`EPIC-B06` — typed provenance model.
 
-C17 exit steps:
+B06 exit steps:
 
-1. Reuse existing performance reports and A19 scale trend reports before adding
-   new long-running jobs.
-2. Produce a stable trend artifact that can be used by CI/nightly jobs.
-3. Define regression thresholds for p50/p95 metrics.
-4. Keep large 1M/10M campaigns outside per-PR checks.
+1. Add typed provenance fields to the descriptor/storage boundary without
+   relying on payload header parsing.
+2. Make ingestion/write paths populate content hash and source/trust fields.
+3. Make ContextPack citations use typed provenance when available.
+4. Document the model in DATA_MODEL without changing public JSON unexpectedly.
 
-C17 current state:
+B06 current state:
 
-- `performance-trend-check` already exists for load/single-node history;
-- `fixtures/performance/history/v0.2.0-beta.2` is the latest local baseline;
-- `make scale-bench-trends` exists for A19 scale reports and writes
-  `target/scale-bench/trends.json`;
-- `make memory-estimate-audit` exists for C16 estimator-vs-RSS evidence;
-- `make continuous-benchmark-gate` consumes all three artifacts, enforces p95/p99
-  ratio `<= 1.2`, and has a synthetic regression self-test;
-- remaining work: hosted scheduled/nightly workflow wiring is deferred while
-  GitHub Actions work is out of focus.
+- pending; next work is a code audit of current `source_ref`, `citation`,
+  `content_hash`, and `source_trust` handling before changing storage structs.
 
 ## Active Partial Tail
 
@@ -74,6 +67,16 @@ A19 progress:
   before/after A05/A06/A08/A09 optimization curve labels remain;
 - use small/medium gates while implementing; do not run 1M/10M unless this
   epic explicitly needs the evidence.
+
+`EPIC-C17` — perf-regressions in CI and continuous benchmarking.
+
+C17 split state:
+
+- local `make continuous-benchmark-gate` exists and passed;
+- p95/p99 threshold is `1.2` against latest history fixture
+  `v0.2.0-beta.2`;
+- hosted scheduled/nightly GitHub Actions wiring is deferred while Actions work
+  is out of focus.
 
 ## Recently Closed
 
@@ -459,10 +462,11 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on C17 only:
+Work on B06 only:
 
-1. if Actions work remains deferred, explicitly split the hosted nightly tail and
-   move to the next ordered epic;
-2. if Actions work is re-opened, add a scheduled workflow that uploads
-   `target/continuous-benchmark-gate/report.json`;
-3. do not add more local C17 scripts unless they close the hosted/nightly tail.
+1. audit existing provenance-related fields and payload conventions;
+2. identify the smallest descriptor/storage change that does not break current
+   fixtures;
+3. add tests before changing ContextPack citation behavior;
+4. keep the change storage/API-compatible unless a migration is explicitly
+   required.

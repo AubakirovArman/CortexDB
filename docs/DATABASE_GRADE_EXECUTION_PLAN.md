@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C17` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-B06` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -1172,6 +1172,7 @@ enough to unblock the next dependency step.
   - [x] 2) тренд-страница генерируется — local Markdown reports are generated for scale trends, memory audit, and continuous benchmark gate.
 - files: CI workflows, cortex-bench.
 - latest evidence: Added `scripts/continuous_benchmark_gate.py`, `make continuous-benchmark-gate`, and fresh `v0.2.0-beta.2` performance history fixtures. `make continuous-benchmark-gate` runs `performance-trend-check`, `scale-bench-trends`, `memory-estimate-audit`, and then gates p95/p99 ratios at `1.2`; the current report passed with latest history `v0.2.0-beta.2`, no ratio violations, and one warning that A19 scale trends remain partial because the 10M packet is deferred. `python3 scripts/continuous_benchmark_gate.py --self-test` passed and proves an artificial `1.25` p95 ratio is detected.
+- split decision: C17 is local-ready and intentionally not marked done because the hosted scheduled/nightly workflow is deferred while GitHub Actions work is out of focus. Return only to wire the scheduled workflow or upload hosted artifacts.
 - risks: GitHub scheduled/nightly workflow wiring is not added in this slice per the current instruction to skip Actions work. Runner noise still needs medians from N scheduled runs before this can be called a hosted CI performance discipline. Зависимости: A19. Эффект: перф-дисциплина.
 
 ### EPIC-C18 — Concurrent read throughput bench
