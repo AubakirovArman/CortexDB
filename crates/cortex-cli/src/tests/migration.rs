@@ -170,3 +170,52 @@ fn migrate_offline_creates_backup_drill_rewrites_and_preserves_data() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn migrate_dry_run_drills_backup_without_rewriting_source() {
+    let root = unique_path("cortexdb-cli-migrate-dry-run-root");
+    let source = root.join("source");
+    let backup = root.join("migration-backup");
+    let drill = root.join("migration-drill");
+    let source_arg = source.to_string_lossy().into_owned();
+    let backup_arg = backup.to_string_lossy().into_owned();
+    let drill_arg = drill.to_string_lossy().into_owned();
+
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        source_arg.clone(),
+        "47".to_owned(),
+        "migration dry run payload".to_owned(),
+    ])
+    .unwrap();
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "--json".to_owned(),
+        "migrate".to_owned(),
+        "--dry-run".to_owned(),
+        source_arg.clone(),
+        backup_arg,
+        drill_arg,
+    ])
+    .unwrap();
+    assert!(output.contains(r#""phase":"migrate_offline""#));
+    assert!(output.contains(r#""status":"dry_run_ready""#));
+    assert!(output.contains(r#""dry_run":true"#));
+    assert!(output.contains(r#""planned_steps":["#));
+    assert!(output.contains(r#""migration_segment_id":null"#));
+    assert!(output.contains(r#""migration_cells_rewritten":0"#));
+    assert!(!source.join("segments").join("segment-1.acs").exists());
+
+    let source_payload = run(vec![
+        "cortexdb".to_owned(),
+        "get".to_owned(),
+        source_arg,
+        "47".to_owned(),
+    ])
+    .unwrap();
+    assert_eq!(source_payload, "migration dry run payload");
+
+    let _ = std::fs::remove_dir_all(root);
+}

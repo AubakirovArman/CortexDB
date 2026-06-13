@@ -14,6 +14,8 @@ REQUIRED_POLICY_TERMS = (
     "restore",
     "rollback",
     "cortexdb migrate",
+    "cortexdb migrate --dry-run",
+    "planned migration steps",
     "migration note",
     "read-only compatible",
     "make migration-policy-check",
@@ -68,6 +70,9 @@ def main() -> int:
     storage = read(repo / "docs/STORAGE_FORMATS.md")
     makefile = make_surface(repo)
     workflow = read(repo / ".github/workflows/rust.yml")
+    cli_upgrade = read(repo / "crates/cortex-cli/src/cli_upgrade.rs")
+    cli_commands = read(repo / "crates/cortex-cli/src/cli/args/commands.rs")
+    cli_migration_tests = read(repo / "crates/cortex-cli/src/tests/migration.rs")
 
     errors.extend(require_terms("docs/archive/UPGRADE_MIGRATION.md", policy, REQUIRED_POLICY_TERMS))
     errors.extend(require_terms("docs/STORAGE_FORMATS.md", storage, REQUIRED_STORAGE_LINK_TERMS))
@@ -86,6 +91,18 @@ def main() -> int:
         errors.append(".github/workflows/rust.yml: CI must run migration-policy-check")
     if "make storage-format-change-note-check" not in workflow:
         errors.append(".github/workflows/rust.yml: CI must run storage-format-change-note-check")
+    errors.extend(
+        require_terms(
+            "cortex-cli migrate dry-run surface",
+            cli_commands + cli_upgrade + cli_migration_tests,
+            (
+                "dry_run",
+                "dry_run_ready",
+                "planned_steps",
+                "migrate_dry_run_drills_backup_without_rewriting_source",
+            ),
+        )
+    )
 
     if errors:
         print("MIGRATION POLICY CHECK FAILED:")

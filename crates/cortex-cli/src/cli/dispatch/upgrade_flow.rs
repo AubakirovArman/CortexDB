@@ -34,11 +34,13 @@ pub(super) fn migrate(
     path: String,
     backup_path: String,
     drill_restore_path: String,
+    dry_run: bool,
 ) -> Result<String, String> {
     upgrade::migrate(
         ctx.resolve(&path).to_str().unwrap(),
         &backup_path,
         &drill_restore_path,
+        dry_run,
         ctx.json,
     )
 }

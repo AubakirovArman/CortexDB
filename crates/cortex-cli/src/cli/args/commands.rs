@@ -1,5 +1,4 @@
 use clap::Subcommand;
-
 mod formats;
 mod inputs;
 mod subcommands;
@@ -118,6 +117,8 @@ pub(in crate::cli) enum Command {
         path: String,
         backup_path: String,
         drill_restore_path: String,
+        #[arg(long)]
+        dry_run: bool,
     },
     #[command(about = "Review and verify audit JSONL logs")]
     Audit {

@@ -65,6 +65,7 @@ For Core Alpha, upgrades are offline and single-node:
    Automation can use the migration alias for the same guarded workflow:
 
    ```bash
+   cortexdb migrate --dry-run ./db ./backups/cortexdb-pre-migration ./drills/cortexdb-pre-migration
    cortexdb migrate ./db ./backups/cortexdb-pre-migration ./drills/cortexdb-pre-migration
    cortexdb --json migrate ./db ./backups/cortexdb-pre-migration ./drills/cortexdb-pre-migration
    ```
@@ -126,7 +127,10 @@ open/write behavior.
 policy. It validates the source, creates the immutable backup, restores the drill
 target, rewrites the source through the current checkpoint/compact writer,
 validates the migrated source, and reports the `cortexdb upgrade validate` plus
-`cortexdb upgrade rollback` commands that complete the offline workflow.
+`cortexdb upgrade rollback` commands that complete the offline workflow. Run
+`cortexdb migrate --dry-run` first when preparing a maintenance window: it
+performs the source validation and backup-drill preconditions, reports the
+planned migration steps, and leaves the source database unrevised.
 
 Downgrade remains restore-only: restore the immutable pre-upgrade backup and run
 the previous binary against that restored directory. CortexDB does not support

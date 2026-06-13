@@ -88,7 +88,8 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             path,
             backup_path,
             drill_restore_path,
-        } => upgrade_flow::migrate(ctx, path, backup_path, drill_restore_path),
+            dry_run,
+        } => upgrade_flow::migrate(ctx, path, backup_path, drill_restore_path, dry_run),
         Command::Audit {
             path,
             verify_path,
