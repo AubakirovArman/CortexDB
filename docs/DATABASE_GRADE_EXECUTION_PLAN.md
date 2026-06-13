@@ -1332,17 +1332,35 @@ enough to unblock the next dependency step.
 
 ### EPIC-D10 — OpenAPI как единый источник + codegen-контроль
 
-- status: `next`
+- status: `partial`
 - meta: Категория: API · P1 · 90 days · improve
 - goal: openapi.yaml есть; нужно гарантировать соответствие коду.
 - tasks:
-  - [ ] 1) contract-тест: реальные ответы валидируются против OpenAPI (расширить openapi-contract-check)
-  - [ ] 2) error codes (E-таксономия) в схеме
-  - [ ] 3) генерация клиентских типов из схемы в SDK-пайплайне.
+  - [x] 1) contract-тест: реальные ответы валидируются против OpenAPI (расширить openapi-contract-check)
+  - [x] 2) error codes (E-таксономия) в схеме
+  - [ ] 3) генерация клиентских типов из схемы в SDK-пайплайне — current slice adds SDK/OpenAPI drift control, not full generated SDK output.
 - acceptance:
-  - [ ] 1) расхождение код/схема валит CI
+  - [x] 1) расхождение код/схема валит CI
   - [ ] 2) SDK-типы из единого источника.
 - files: docs/openapi.yaml, тесты server.
+- evidence: `openapi-contract-check` now validates live HTTP responses against
+  OpenAPI, verifies the stable error taxonomy across docs/OpenAPI/server/SDK,
+  and runs `openapi-sdk-codegen-control-check`. Added
+  `scripts/check_openapi_sdk_codegen_control.py` to fail drift between selected
+  OpenAPI component schemas, shared Rust API/server response structs, Python SDK
+  models, and modular TypeScript SDK type declarations. Python and TypeScript
+  SDK models were aligned with current stats/search/verification/ingestion
+  schemas, `NumericConflictResponse` is now a reusable OpenAPI component, and
+  `sdk-check` validates the modular TypeScript declaration package. Checks
+  passed: `python3 scripts/check_openapi_sdk_codegen_control.py`,
+  `make openapi-contract-check`, `make sdk-contract-check`, `make sdk-check`,
+  `cargo test -p cortex-sdk --all-features`, `cargo fmt --check`,
+  `cargo test --workspace --all-features`, `cargo clippy --workspace
+  --all-targets -- -D warnings`, and `make check`.
+- remaining: replace drift-control checks with generated SDK type artifacts
+  produced from OpenAPI for the supported SDK surfaces, or explicitly document
+  the chosen generator boundary if the project keeps hand-written SDK clients
+  with generated contract gates.
 
 ### EPIC-D11 — MCP server adapter
 

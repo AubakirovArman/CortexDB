@@ -27,6 +27,20 @@ class StatsResponse:
     retired_segments: int
     memtable_cells: int
     memtable_versions: int
+    memtable_payload_bytes: int
+    estimated_memtable_bytes: int
+    estimated_index_bytes: int
+    estimated_context_pack_bytes: int
+    estimated_total_memory_bytes: int
+    live_segment_bytes: int
+    retired_segment_bytes: int
+    total_segment_bytes: int
+    durable_storage_bytes: int
+    live_segment_payload_bytes: int
+    logical_payload_bytes: int
+    space_amplification_q16: int
+    write_amplification_q16: int
+    compaction_pressure_q16: int
     wal_size_bytes: int
     wal_writer_records: int
     wal_writer_bytes: int
@@ -42,6 +56,20 @@ class StatsResponse:
             retired_segments=int(value["retired_segments"]),
             memtable_cells=int(value["memtable_cells"]),
             memtable_versions=int(value["memtable_versions"]),
+            memtable_payload_bytes=int(value.get("memtable_payload_bytes", 0)),
+            estimated_memtable_bytes=int(value.get("estimated_memtable_bytes", 0)),
+            estimated_index_bytes=int(value.get("estimated_index_bytes", 0)),
+            estimated_context_pack_bytes=int(value.get("estimated_context_pack_bytes", 0)),
+            estimated_total_memory_bytes=int(value.get("estimated_total_memory_bytes", 0)),
+            live_segment_bytes=int(value.get("live_segment_bytes", 0)),
+            retired_segment_bytes=int(value.get("retired_segment_bytes", 0)),
+            total_segment_bytes=int(value.get("total_segment_bytes", 0)),
+            durable_storage_bytes=int(value.get("durable_storage_bytes", 0)),
+            live_segment_payload_bytes=int(value.get("live_segment_payload_bytes", 0)),
+            logical_payload_bytes=int(value.get("logical_payload_bytes", 0)),
+            space_amplification_q16=int(value.get("space_amplification_q16", 0)),
+            write_amplification_q16=int(value.get("write_amplification_q16", 0)),
+            compaction_pressure_q16=int(value.get("compaction_pressure_q16", 0)),
             wal_size_bytes=int(value["wal_size_bytes"]),
             wal_writer_records=int(value["wal_writer_records"]),
             wal_writer_bytes=int(value["wal_writer_bytes"]),
@@ -130,4 +158,3 @@ class AqlResponse:
     @classmethod
     def from_json(cls, value: dict[str, Any]) -> "AqlResponse":
         return cls(cells=tuple(AqlCellResponse.from_json(row) for row in value["cells"]))
-

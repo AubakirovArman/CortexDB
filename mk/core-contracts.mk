@@ -16,9 +16,14 @@ sdk-registry-gate-check:
 openapi-check:
 	python3 scripts/check_openapi_coverage.py
 
+openapi-sdk-codegen-control-check:
+	python3 scripts/check_openapi_sdk_codegen_control.py
+
 openapi-contract-check:
+	$(MAKE) openapi-check
 	python3 scripts/check_openapi_contract.py
 	python3 scripts/check_error_taxonomy_contract.py
+	$(MAKE) openapi-sdk-codegen-control-check
 
 sdk-contract-check:
 	python3 scripts/check_sdk_contract.py

@@ -6,6 +6,7 @@ model implementations from ``_cortexdb_client.model_types``.
 
 from .model_types import (
     AnnEvaluationResponse,
+    AnnNoFallbackDecision,
     AnnSearchReport,
     AnswerGroundingReportResponse,
     AnswerGroundingSpanResponse,
@@ -29,6 +30,7 @@ from .model_types import (
     RememberResponse,
     SearchResponse,
     SearchResult,
+    SearchRoutingDecision,
     SourceRefResponse,
     StatsResponse,
     ValidationResponse,
@@ -37,6 +39,7 @@ from .model_types import (
 
 __all__ = [
     "AnnEvaluationResponse",
+    "AnnNoFallbackDecision",
     "AnnSearchReport",
     "AnswerGroundingReportResponse",
     "AnswerGroundingSpanResponse",
@@ -60,6 +63,7 @@ __all__ = [
     "RememberResponse",
     "SearchResponse",
     "SearchResult",
+    "SearchRoutingDecision",
     "SourceRefResponse",
     "StatsResponse",
     "ValidationResponse",

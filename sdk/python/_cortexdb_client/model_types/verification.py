@@ -8,7 +8,10 @@ from typing import Any
 class EvidenceResponse:
     cell_id: int
     matched_terms: int
+    match_score_q16: int
+    match_kind: str
     source_trust_q16: int
+    source_trust_category: str
     citation: str | None
     payload_text: str
 
@@ -17,7 +20,10 @@ class EvidenceResponse:
         return cls(
             cell_id=int(value["cell_id"]),
             matched_terms=int(value["matched_terms"]),
+            match_score_q16=int(value.get("match_score_q16", 0)),
+            match_kind=str(value.get("match_kind", "")),
             source_trust_q16=int(value["source_trust_q16"]),
+            source_trust_category=str(value.get("source_trust_category", "")),
             citation=str(value["citation"]) if value.get("citation") is not None else None,
             payload_text=str(value["payload_text"]),
         )
@@ -80,4 +86,3 @@ class VerificationReportResponse:
             contradicting=tuple(EvidenceResponse.from_json(row) for row in value["contradicting"]),
             numeric_conflicts=tuple(NumericConflictResponse.from_json(row) for row in value["numeric_conflicts"]),
         )
-

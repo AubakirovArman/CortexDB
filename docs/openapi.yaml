@@ -3097,18 +3097,20 @@ components:
         numeric_conflicts:
           type: array
           items:
-            type: object
-            required:
-            - metric
-            - left
-            - right
-            properties:
-              metric:
-                type: string
-              left:
-                type: string
-              right:
-                type: string
+            $ref: '#/components/schemas/NumericConflictResponse'
+    NumericConflictResponse:
+      type: object
+      required:
+      - metric
+      - left
+      - right
+      properties:
+        metric:
+          type: string
+        left:
+          type: string
+        right:
+          type: string
     VerificationEvidenceResponse:
       type: object
       required:

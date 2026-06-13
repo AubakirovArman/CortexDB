@@ -11,6 +11,7 @@ class IngestResponse:
     facts_ingested: int
     first_cell_id: int | None
     job_id: int | None
+    validation_report: dict[str, Any]
 
     @classmethod
     def from_json(cls, value: dict[str, Any]) -> "IngestResponse":
@@ -20,6 +21,7 @@ class IngestResponse:
             facts_ingested=int(value["facts_ingested"]),
             first_cell_id=int(value["first_cell_id"]) if value.get("first_cell_id") is not None else None,
             job_id=int(value["job_id"]) if value.get("job_id") is not None else None,
+            validation_report=dict(value.get("validation_report", {})),
         )
 
 
@@ -59,4 +61,3 @@ class DeleteJobResponse:
     @classmethod
     def from_json(cls, value: dict[str, Any]) -> "DeleteJobResponse":
         return cls(deleted=bool(value["deleted"]))
-

@@ -20,11 +20,19 @@ from .core import (
 )
 from .ingestion import DeleteJobResponse, IngestResponse, IngestionJobResponse
 from .memory import RememberResponse
-from .search import AnnEvaluationResponse, AnnSearchReport, SearchResponse, SearchResult
+from .search import (
+    AnnEvaluationResponse,
+    AnnNoFallbackDecision,
+    AnnSearchReport,
+    SearchResponse,
+    SearchResult,
+    SearchRoutingDecision,
+)
 from .verification import EvidenceResponse, GuardResponse, NumericConflictResponse, VerificationReportResponse
 
 __all__ = [
     "AnnEvaluationResponse",
+    "AnnNoFallbackDecision",
     "AnnSearchReport",
     "AnswerGroundingReportResponse",
     "AnswerGroundingSpanResponse",
@@ -48,9 +56,9 @@ __all__ = [
     "RememberResponse",
     "SearchResponse",
     "SearchResult",
+    "SearchRoutingDecision",
     "SourceRefResponse",
     "StatsResponse",
     "ValidationResponse",
     "VerificationReportResponse",
 ]
-
