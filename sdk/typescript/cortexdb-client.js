@@ -1,4 +1,5 @@
-class CortexDBError extends Error {
+// cortexdb-client/errors.ts
+var CortexDBError = class _CortexDBError extends Error {
   constructor(message, code = null, status = null, body = null) {
     super(message);
     this.code = code;
@@ -13,19 +14,21 @@ class CortexDBError extends Error {
     const body = await response.text();
     try {
       const data = JSON.parse(body);
-      return new CortexDBError(
+      return new _CortexDBError(
         String(data.message ?? body),
         data.code ? String(data.code) : null,
         response.status,
         body
       );
     } catch {
-      return new CortexDBError(body, null, response.status, body);
+      return new _CortexDBError(body, null, response.status, body);
     }
   }
-}
+};
+
+// cortexdb-client/aql.ts
 function quoteAqlString(value) {
-  return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"').replaceAll("\n", "\\n").replaceAll("\r", "\\r").replaceAll("\t", "\\t")}"`;
+  return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"').replaceAll("\n", "\\n").replaceAll("\r", "\\r").replaceAll("	", "\\t")}"`;
 }
 function validateAqlIdentifier(field, value) {
   if (!/^[A-Za-z_][A-Za-z0-9_:-]*$/.test(value)) {
@@ -86,6 +89,8 @@ function buildRememberAql(content, scope, memoryType, ttlSeconds) {
   if (ttlSeconds !== void 0) statement += ` TTL ${ttlSeconds} SECONDS`;
   return `${statement};`;
 }
+
+// cortexdb-client/grounding.ts
 function uniqueValues(values) {
   const seen = /* @__PURE__ */ new Set();
   const out = [];
@@ -164,13 +169,13 @@ function groundAnswer(context, answer, options = {}) {
         if (cell.citation) citations.push(cell.citation);
       }
     }
-    const support = q16Ratio(covered.size, spanTerms.length);
-    const supported = support >= minSpanSupportQ16 && (!requireCitations || citations.length > 0);
+    const support2 = q16Ratio(covered.size, spanTerms.length);
+    const supported = support2 >= minSpanSupportQ16 && (!requireCitations || citations.length > 0);
     return {
       text,
       start_byte: start,
       end_byte: end,
-      support_q16: support,
+      support_q16: support2,
       supported,
       covered_terms: [...covered].sort(),
       missing_terms: spanTerms.filter((term) => !covered.has(term)),
@@ -217,24 +222,137 @@ function buildGroundedAnswerResponse(params) {
     rejected: grounding.rejected
   };
 }
-class CortexDBClient {
-  constructor(baseUrl = "http://127.0.0.1:8181", token, tenant, maxRetries = 0, retryDelayMs = 500) {
+
+// cortexdb-client/answering.ts
+async function answerWithGroundedContext(client, scope, brain, question, answerer, options = {}) {
+  const requireCitations = options.requireCitations ?? true;
+  const retrieveStatement = buildRetrieveContextAql(question, brain, {
+    ...options,
+    requireCitations
+  });
+  const context = await client.retrieveContext(scope, retrieveStatement);
+  const answer = await answerer(context);
+  const verifyAnswer = options.verifyAnswer ?? true;
+  const verifyStatement = verifyAnswer && answer.trim().length > 0 ? buildVerifyFactAql(answer, brain) : null;
+  const verification = verifyStatement ? await client.verifyFact(scope, verifyStatement) : null;
+  return buildGroundedAnswerResponse({
+    question,
+    answer,
+    retrieveStatement,
+    verifyStatement,
+    context,
+    verification,
+    requireCitations,
+    minSpanSupportQ16: options.minSpanSupportQ16,
+    rejectUnsupported: options.rejectUnsupported
+  });
+}
+
+// cortexdb-client/transport.ts
+async function requestJson(options) {
+  const url = `${options.baseUrl}${options.path}`;
+  const body = encodeBody(options.body);
+  let attempt = 0;
+  while (true) {
+    const controller = options.timeoutMs > 0 ? new AbortController() : null;
+    const timeout = controller ? setTimeout(() => controller.abort(), options.timeoutMs) : null;
+    try {
+      const response = await options.fetch(url, buildInit(options, body, controller));
+      if (!response.ok) {
+        if (attempt < options.maxRetries && await isRetryableResponse(response)) {
+          attempt += 1;
+          await sleep(options.retryDelayMs * attempt);
+          continue;
+        }
+        throw await CortexDBError.fromResponse(response);
+      }
+      return response.json();
+    } catch (error) {
+      if (error instanceof CortexDBError) throw error;
+      if (attempt < options.maxRetries) {
+        attempt += 1;
+        await sleep(options.retryDelayMs * attempt);
+        continue;
+      }
+      throw error;
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
+  }
+}
+async function isRetryableResponse(response) {
+  if (response.status === 502 || response.status === 504) return true;
+  if (response.status !== 503) return false;
+  const code = await responseErrorCode(response);
+  return code === "database_busy" || code === "service_unavailable";
+}
+function scopedPath(path, tenant) {
+  if (!tenant || tenant === "default") return path;
+  const params = new URLSearchParams({ tenant });
+  return `${path}${path.includes("?") ? "&" : "?"}${params.toString()}`;
+}
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+function buildInit(options, body, controller) {
+  const headers = {};
+  if (options.token) headers.authorization = `Bearer ${options.token}`;
+  if (body !== void 0) headers["content-type"] = "application/json";
+  return {
+    method: options.method,
+    headers,
+    body,
+    signal: controller?.signal
+  };
+}
+function encodeBody(body) {
+  if (body === void 0) return void 0;
+  return typeof body === "string" ? body : JSON.stringify(body);
+}
+async function responseErrorCode(response) {
+  try {
+    const text = await response.clone().text();
+    const data = JSON.parse(text);
+    return data.code || data.error ? String(data.code ?? data.error) : null;
+  } catch {
+    return null;
+  }
+}
+
+// cortexdb-client/client.ts
+var CortexDBClient = class _CortexDBClient {
+  constructor(baseUrl = "http://127.0.0.1:8181", token, tenant, maxRetries = 0, retryDelayMs = 500, timeoutMs = 1e4, fetchImpl = globalThis.fetch.bind(globalThis)) {
     this.baseUrl = baseUrl;
     this.token = token;
     this.tenant = tenant;
     this.maxRetries = maxRetries;
     this.retryDelayMs = retryDelayMs;
+    this.timeoutMs = timeoutMs;
+    this.fetchImpl = fetchImpl;
   }
   baseUrl;
   token;
   tenant;
   maxRetries;
   retryDelayMs;
+  timeoutMs;
+  fetchImpl;
   withTenant(tenant) {
-    return new CortexDBClient(this.baseUrl, this.token, tenant, this.maxRetries, this.retryDelayMs);
+    return this.copy({ tenant });
   }
   withRetries(maxRetries, retryDelayMs = 500) {
-    return new CortexDBClient(this.baseUrl, this.token, this.tenant, maxRetries, retryDelayMs);
+    return this.copy({ maxRetries, retryDelayMs });
+  }
+  withTimeout(timeoutMs) {
+    return this.copy({ timeoutMs });
+  }
+  withOptions(options) {
+    return this.copy({ timeoutMs: options.timeoutMs, fetchImpl: options.fetch });
+  }
+  withSession() {
+    return this;
+  }
+  close() {
   }
   buildRetrieveContextAql(task, brain, options = {}) {
     return buildRetrieveContextAql(task, brain, options);
@@ -294,27 +412,7 @@ class CortexDBClient {
     return this.request("POST", this.path("/v1/context", { scope }), statement);
   }
   async answerWithGroundedContext(scope, brain, question, answerer, options = {}) {
-    const requireCitations = options.requireCitations ?? true;
-    const retrieveStatement = buildRetrieveContextAql(question, brain, {
-      ...options,
-      requireCitations
-    });
-    const context = await this.retrieveContext(scope, retrieveStatement);
-    const answer = await answerer(context);
-    const verifyAnswer = options.verifyAnswer ?? true;
-    const verifyStatement = verifyAnswer && answer.trim().length > 0 ? buildVerifyFactAql(answer, brain) : null;
-    const verification = verifyStatement ? await this.verifyFact(scope, verifyStatement) : null;
-    return buildGroundedAnswerResponse({
-      question,
-      answer,
-      retrieveStatement,
-      verifyStatement,
-      context,
-      verification,
-      requireCitations,
-      minSpanSupportQ16: options.minSpanSupportQ16,
-      rejectUnsupported: options.rejectUnsupported
-    });
+    return answerWithGroundedContext(this, scope, brain, question, answerer, options);
   }
   verifyFact(scope, statement) {
     return this.request("POST", this.path("/v1/verify", { scope }), statement);
@@ -359,43 +457,17 @@ class CortexDBClient {
     return this.request("GET", "/v1/stats");
   }
   async request(method, path, body) {
-    const headers = {};
-    if (this.token) headers.authorization = `Bearer ${this.token}`;
-    const init = { method, headers };
-    if (body !== void 0) {
-      init.body = typeof body === "string" ? body : JSON.stringify(body);
-      headers["content-type"] = "application/json";
-    }
-    const url = `${this.baseUrl}${this.scoped(path)}`;
-    let attempt = 0;
-    while (true) {
-      try {
-        const response = await fetch(url, init);
-        if (!response.ok) {
-          if (this.isRetryable(response.status) && attempt < this.maxRetries) {
-            attempt += 1;
-            await this.sleep(this.retryDelayMs * attempt);
-            continue;
-          }
-          throw await CortexDBError.fromResponse(response);
-        }
-        return response.json();
-      } catch (error) {
-        if (error instanceof CortexDBError) throw error;
-        if (attempt < this.maxRetries) {
-          attempt += 1;
-          await this.sleep(this.retryDelayMs * attempt);
-          continue;
-        }
-        throw error;
-      }
-    }
-  }
-  isRetryable(status) {
-    return [500, 502, 503, 504].includes(status);
-  }
-  sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return requestJson({
+      baseUrl: this.baseUrl,
+      path: this.scoped(path),
+      method,
+      token: this.token,
+      body,
+      maxRetries: this.maxRetries,
+      retryDelayMs: this.retryDelayMs,
+      timeoutMs: this.timeoutMs,
+      fetch: this.fetchImpl
+    });
   }
   path(path, query) {
     const params = new URLSearchParams();
@@ -405,17 +477,26 @@ class CortexDBClient {
     return `${path}?${params.toString()}`;
   }
   scoped(path) {
-    if (!this.tenant || this.tenant === "default") return path;
-    const params = new URLSearchParams({ tenant: this.tenant });
-    return `${path}${path.includes("?") ? "&" : "?"}${params.toString()}`;
+    return scopedPath(path, this.tenant);
   }
-}
+  copy(overrides) {
+    return new _CortexDBClient(
+      this.baseUrl,
+      this.token,
+      overrides.tenant ?? this.tenant,
+      overrides.maxRetries ?? this.maxRetries,
+      overrides.retryDelayMs ?? this.retryDelayMs,
+      overrides.timeoutMs ?? this.timeoutMs,
+      overrides.fetchImpl ?? this.fetchImpl
+    );
+  }
+};
 export {
+  CortexDBClient,
+  CortexDBError,
   buildGroundedAnswerResponse,
   buildRememberAql,
   buildRetrieveContextAql,
   buildVerifyFactAql,
-  CortexDBClient,
-  CortexDBError,
   groundAnswer
 };

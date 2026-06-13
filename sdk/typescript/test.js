@@ -209,6 +209,51 @@ test("CortexDBClient decodes mock contract", () => {
   assert.strictEqual(response.ann_report.production_safe, false);
 });
 
+test("CortexDBClient retries database_busy and propagates timeout signal", async () => {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url: String(url), init });
+    if (calls.length === 1) {
+      return new Response(
+        JSON.stringify({ code: "database_busy", message: "busy" }),
+        { status: 503 },
+      );
+    }
+    return new Response(
+      JSON.stringify({ status: "ok", version: "test", server_version: "test" }),
+      { status: 200 },
+    );
+  };
+  const client = new CortexDBClient("http://127.0.0.1:8181")
+    .withRetries(1, 0)
+    .withTimeout(2500)
+    .withOptions({ fetch: fetchImpl });
+
+  const response = await client.health();
+
+  assert.strictEqual(response.status, "ok");
+  assert.strictEqual(calls.length, 2);
+  assert.strictEqual(calls[0].url, "http://127.0.0.1:8181/v1/health");
+  assert.ok(calls[0].init.signal instanceof AbortSignal);
+});
+
+test("CortexDBClient does not retry generic internal errors", async () => {
+  let calls = 0;
+  const fetchImpl = async () => {
+    calls += 1;
+    return new Response(
+      JSON.stringify({ code: "internal", message: "broken" }),
+      { status: 500 },
+    );
+  };
+  const client = new CortexDBClient("http://127.0.0.1:8181")
+    .withRetries(3, 0)
+    .withOptions({ fetch: fetchImpl });
+
+  await assert.rejects(() => client.health(), /broken/);
+  assert.strictEqual(calls, 1);
+});
+
 test("CortexDBError decodes full Core Alpha taxonomy", async () => {
   const codes = [
     "not_found",

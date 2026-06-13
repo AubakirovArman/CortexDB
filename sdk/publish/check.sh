@@ -56,7 +56,12 @@ cargo test -p cortex-sdk --manifest-path "$REPO_ROOT/Cargo.toml"
 cargo package -p cortex-sdk --manifest-path "$REPO_ROOT/Cargo.toml" --allow-dirty >/dev/null
 
 if command -v npm >/dev/null 2>&1; then
-  (cd "$ROOT/typescript" && node --check cortexdb-client.js && node --input-type=module <<'NODE'
+  (cd "$ROOT/typescript" &&
+  npm test >/dev/null &&
+  npm run typecheck >/dev/null &&
+  node --check cortexdb-client.js &&
+  node --check cortexdb-client.cjs &&
+  node --input-type=module <<'NODE'
 import { CortexDBClient } from "./cortexdb-client.js";
 
 let observedUrl = "";

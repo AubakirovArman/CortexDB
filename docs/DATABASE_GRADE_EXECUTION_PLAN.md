@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-D07` (`EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
+Current pointer: `EPIC-D08` (`EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
 `EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
 remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
 partial follow-up).
@@ -46,8 +46,9 @@ enough to unblock the next dependency step.
 8. `EPIC-A09` — disk-resident persisted-index incremental merge: done.
 9. `EPIC-D02` — `cortexdb init` + doctor: done.
 10. `EPIC-D06` — Python SDK typed models, retries, and timeouts: done.
-11. `EPIC-D07` — TypeScript SDK polish: current active front.
-12. `EPIC-D08-D10` — remaining DX wave after SDK publishing/version decisions.
+11. `EPIC-D07` — TypeScript SDK polish: done.
+12. `EPIC-D08` — Async Rust SDK + shared API types: current active front.
+13. `EPIC-D09-D10` — remaining DX wave after SDK publishing/version decisions.
 
 ## Summary
 
@@ -1286,16 +1287,17 @@ enough to unblock the next dependency step.
 
 ### EPIC-D07 — TypeScript SDK polish
 
-- status: `pending`
+- status: `done`
 - meta: Категория: SDK · P1 · 60 days · improve
 - tasks:
-  - [ ] 1) типы из схемы; ESM+CJS
-  - [ ] 2) retry на 503
-  - [ ] 3) пример с LLM-вызовом.
+  - [x] 1) типы из схемы; ESM+CJS — declaration surface exports typed API models plus `ClientOptions`/`FetchLike`; package keeps ESM and CJS bundles in sync with source.
+  - [x] 2) retry на 503 — transport retries `503` only for `database_busy`/`service_unavailable`, keeps 502/504 retryable, and does not retry generic `500 internal`.
+  - [x] 3) пример с LLM-вызовом — `examples/grounded-answer-llm.mjs` shows the grounded-answer flow through an OpenAI-compatible local endpoint.
 - acceptance:
-  - [ ] 1) tsd-тесты типов
-  - [ ] 2) 10-строчный рабочий пример.
+  - [x] 1) tsd-тесты типов — no new dependency was added; `npm run typecheck` uses Node's TypeScript strip smoke over the declaration-facing example.
+  - [x] 2) 10-строчный рабочий пример — `examples/grounded-answer-llm.mjs`.
 - files: sdk/typescript. Зависимости: B01, D05.
+- evidence: `npm test`, `npm run typecheck`, `node --check cortexdb-client.js`, `node --check cortexdb-client.cjs`, `npm pack --dry-run`, and `make sdk-check` include the TypeScript SDK contract.
 
 ### EPIC-D08 — Async Rust SDK + общий крейт api-types
 

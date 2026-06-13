@@ -1,5 +1,12 @@
 export type JsonObject = Record<string, unknown>;
 
+export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
+
+export interface ClientOptions {
+  timeoutMs?: number;
+  fetch?: FetchLike;
+}
+
 export class CortexDBError extends Error {
   readonly code: string | null;
   readonly status: number | null;
@@ -321,6 +328,10 @@ export class CortexDBClient {
   constructor(baseUrl?: string, token?: string, tenant?: string, maxRetries?: number, retryDelayMs?: number);
   withTenant(tenant: string): CortexDBClient;
   withRetries(maxRetries: number, retryDelayMs?: number): CortexDBClient;
+  withTimeout(timeoutMs: number): CortexDBClient;
+  withOptions(options: ClientOptions): CortexDBClient;
+  withSession(): CortexDBClient;
+  close(): void;
   buildRetrieveContextAql(task: string, brain: string, options?: RetrieveContextAqlOptions): string;
   buildVerifyFactAql(fact: string, brain: string): string;
   buildRememberAql(content: string, scope: string, memoryType: string, ttlSeconds?: number): string;

@@ -5,7 +5,7 @@ Fetch-based JavaScript/TypeScript client for the Core Alpha CortexDB HTTP API.
 ```ts
 import { CortexDBClient } from "@cortexdb/client";
 
-const client = new CortexDBClient("http://127.0.0.1:8181");
+const client = new CortexDBClient("http://127.0.0.1:8181").withRetries(2).withTimeout(10000);
 const tenantClient = client.withTenant("tenant:alpha");
 await client.putCell(1, "scope=default\nstatus=ready\nhello");
 console.log(await client.getCell(1));
@@ -34,6 +34,8 @@ console.log(grounded.citations, grounded.grounding.answer_supported);
 The npm package publishes `cortexdb-client.js` plus `cortexdb-client.d.ts`.
 `cortexdb-client.ts` is kept as a source reference. Publication is not
 automatic; run `../publish/check.sh` before cutting a package release.
+`examples/grounded-answer-llm.mjs` shows the 10-line grounded-answer flow
+against an OpenAI-compatible local model endpoint.
 Run `make sdk-contract-check` from the repository root to validate this client
 against a freshly built local `cortex-server` together with the Python and Rust
 SDKs.

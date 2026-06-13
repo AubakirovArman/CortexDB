@@ -1,6 +1,7 @@
-import { buildGroundedAnswerResponse } from "./grounding";
+import { answerWithGroundedContext } from "./answering";
 import { buildRememberAql, buildRetrieveContextAql, buildVerifyFactAql } from "./aql";
-import { CortexDBError, type JsonObject } from "./errors";
+import type { JsonObject } from "./errors";
+import { requestJson, scopedPath, type ClientOptions, type FetchLike } from "./transport";
 import type { AnnEvaluationResponse, AqlResponse, CellLookupResponse, ContextPackResponse, DeleteJobResponse, GroundedAnswerOptions, GroundedAnswerResponse, HealthResponse, IngestResponse, IngestionJobResponse, PutCellResponse, RememberResponse, SearchResponse, StatsResponse, ValidationResponse, VerificationReportResponse, VectorAlgorithm } from "./types";
 
 export class CortexDBClient {
@@ -10,14 +11,32 @@ export class CortexDBClient {
     private readonly tenant?: string,
     private readonly maxRetries = 0,
     private readonly retryDelayMs = 500,
+    private readonly timeoutMs = 10_000,
+    private readonly fetchImpl: FetchLike = globalThis.fetch.bind(globalThis),
   ) {}
 
   withTenant(tenant: string): CortexDBClient {
-    return new CortexDBClient(this.baseUrl, this.token, tenant, this.maxRetries, this.retryDelayMs);
+    return this.copy({ tenant });
   }
 
   withRetries(maxRetries: number, retryDelayMs = 500): CortexDBClient {
-    return new CortexDBClient(this.baseUrl, this.token, this.tenant, maxRetries, retryDelayMs);
+    return this.copy({ maxRetries, retryDelayMs });
+  }
+
+  withTimeout(timeoutMs: number): CortexDBClient {
+    return this.copy({ timeoutMs });
+  }
+
+  withOptions(options: ClientOptions): CortexDBClient {
+    return this.copy({ timeoutMs: options.timeoutMs, fetchImpl: options.fetch });
+  }
+
+  withSession(): CortexDBClient {
+    return this;
+  }
+
+  close(): void {
+    // Fetch keeps connection pooling inside the runtime; no explicit close hook exists.
   }
 
   buildRetrieveContextAql(
@@ -111,29 +130,7 @@ export class CortexDBClient {
     answerer: (context: ContextPackResponse) => string | Promise<string>,
     options: GroundedAnswerOptions = {},
   ): Promise<GroundedAnswerResponse> {
-    const requireCitations = options.requireCitations ?? true;
-    const retrieveStatement = buildRetrieveContextAql(question, brain, {
-      ...options,
-      requireCitations,
-    });
-    const context = await this.retrieveContext(scope, retrieveStatement);
-    const answer = await answerer(context);
-    const verifyAnswer = options.verifyAnswer ?? true;
-    const verifyStatement = verifyAnswer && answer.trim().length > 0
-      ? buildVerifyFactAql(answer, brain)
-      : null;
-    const verification = verifyStatement ? await this.verifyFact(scope, verifyStatement) : null;
-    return buildGroundedAnswerResponse({
-      question,
-      answer,
-      retrieveStatement,
-      verifyStatement,
-      context,
-      verification,
-      requireCitations,
-      minSpanSupportQ16: options.minSpanSupportQ16,
-      rejectUnsupported: options.rejectUnsupported,
-    });
+    return answerWithGroundedContext(this, scope, brain, question, answerer, options);
   }
 
   verifyFact(scope: string, statement: string): Promise<VerificationReportResponse> {
@@ -190,45 +187,17 @@ export class CortexDBClient {
   }
 
   private async request(method: string, path: string, body?: unknown): Promise<unknown> {
-    const headers: Record<string, string> = {};
-    if (this.token) headers.authorization = `Bearer ${this.token}`;
-    const init: RequestInit = { method, headers };
-    if (body !== undefined) {
-      init.body = typeof body === "string" ? body : JSON.stringify(body);
-      headers["content-type"] = "application/json";
-    }
-    const url = `${this.baseUrl}${this.scoped(path)}`;
-    let attempt = 0;
-    while (true) {
-      try {
-        const response = await fetch(url, init);
-        if (!response.ok) {
-          if (this.isRetryable(response.status) && attempt < this.maxRetries) {
-            attempt += 1;
-            await this.sleep(this.retryDelayMs * attempt);
-            continue;
-          }
-          throw await CortexDBError.fromResponse(response);
-        }
-        return response.json();
-      } catch (error) {
-        if (error instanceof CortexDBError) throw error;
-        if (attempt < this.maxRetries) {
-          attempt += 1;
-          await this.sleep(this.retryDelayMs * attempt);
-          continue;
-        }
-        throw error;
-      }
-    }
-  }
-
-  private isRetryable(status: number): boolean {
-    return [500, 502, 503, 504].includes(status);
-  }
-
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return requestJson({
+      baseUrl: this.baseUrl,
+      path: this.scoped(path),
+      method,
+      token: this.token,
+      body,
+      maxRetries: this.maxRetries,
+      retryDelayMs: this.retryDelayMs,
+      timeoutMs: this.timeoutMs,
+      fetch: this.fetchImpl,
+    });
   }
 
   private path(path: string, query: Record<string, string | number>): string {
@@ -240,8 +209,24 @@ export class CortexDBClient {
   }
 
   private scoped(path: string): string {
-    if (!this.tenant || this.tenant === "default") return path;
-    const params = new URLSearchParams({ tenant: this.tenant });
-    return `${path}${path.includes("?") ? "&" : "?"}${params.toString()}`;
+    return scopedPath(path, this.tenant);
+  }
+
+  private copy(overrides: {
+    tenant?: string;
+    maxRetries?: number;
+    retryDelayMs?: number;
+    timeoutMs?: number;
+    fetchImpl?: FetchLike;
+  }): CortexDBClient {
+    return new CortexDBClient(
+      this.baseUrl,
+      this.token,
+      overrides.tenant ?? this.tenant,
+      overrides.maxRetries ?? this.maxRetries,
+      overrides.retryDelayMs ?? this.retryDelayMs,
+      overrides.timeoutMs ?? this.timeoutMs,
+      overrides.fetchImpl ?? this.fetchImpl,
+    );
   }
 }
