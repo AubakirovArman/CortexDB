@@ -172,12 +172,10 @@ Summary:
 | 1K | yes | no | yes | yes |
 | 10K | yes | yes | no | no |
 | 100K | yes | yes | yes | yes |
-| 1M | yes | yes | no | no |
+| 1M | yes | yes | yes | yes |
 
 Open A19 items from the inventory:
 
-- 1M keyword search p50/p95.
-- 1M VerifyFact p50/p95.
 - 10M post-lazy RSS/latency report.
 - Multi-point before/after optimization trend curves.
 
@@ -223,5 +221,52 @@ Summary:
 | keyword_search p50/p95 | 1307.151 / 1307.151 ms |
 | VerifyFact p50/p95 | 4077.174 / 4077.174 ms |
 | restart_open | 1749.477 ms |
+
+Validation status: `ok=true`, no storage validation errors.
+
+## A19 1M Search/Verify Instrumentation
+
+Run date: 2026-06-13
+
+This run uses the same controlled profile as the 100K search/verify
+instrumentation run: direct prepared checkpoint, fixed 128-byte payloads, and
+one search/verify sample. It is intended to close the 1M metric-shape gap and
+surface the current bottleneck, not to claim optimized latency.
+
+Command:
+
+```bash
+cargo run --release -p cortex-engine --bin scale_benchmark_check -- \
+  --root target/scale-bench/a19-search-verify-1m \
+  --report target/scale-bench/a19-search-verify-1m/report.json \
+  --cells 1000000 \
+  --samples 0 \
+  --search-samples 1 \
+  --context-samples 0 \
+  --verify-samples 1 \
+  --batch-size 50000 \
+  --payload-bytes 128 \
+  --direct-checkpoint
+```
+
+Report:
+
+```text
+target/scale-bench/a19-search-verify-1m/report.json
+```
+
+Summary:
+
+| Phase | Result |
+| --- | ---: |
+| cells | 1000000 |
+| total duration | 276196.626 ms |
+| direct_checkpoint | 28375.848 ms |
+| open_prepared | 20446.025 ms |
+| after_open_prepared RSS | 12299739136 bytes |
+| after_open_prepared estimated total memory | 4901708052 bytes |
+| keyword_search p50/p95 | 133779.048 / 133779.048 ms |
+| VerifyFact p50/p95 | 32531.547 / 32531.547 ms |
+| restart_open | 17520.731 ms |
 
 Validation status: `ok=true`, no storage validation errors.

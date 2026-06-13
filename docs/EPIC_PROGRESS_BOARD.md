@@ -35,12 +35,13 @@ A19 progress:
 
 - 100K/1M core lifecycle baselines exist and are documented;
 - `scripts/scale_benchmark_inventory.py` writes
-  `target/scale-bench/inventory.json` and currently reports 16 scale reports
+  `target/scale-bench/inventory.json` and currently reports 17 scale reports
   with `status=partial`;
 - ContextPack p50/p95 exists for 100K and 1M;
 - keyword_search and verify_fact p50/p95 now exist for 100K through
   `target/scale-bench/a19-search-verify-100k/report.json`;
-- keyword_search and verify_fact p50/p95 are still missing at 1M;
+- keyword_search and verify_fact p50/p95 now exist for 1M through
+  `target/scale-bench/a19-search-verify-1m/report.json`;
 - 10M post-lazy RSS/latency, lazy cold outlier analysis, and larger-scale trend
   curves remain;
 - use small/medium gates while implementing; do not run 1M/10M unless this
@@ -412,8 +413,7 @@ High-signal done epics:
 Partial count in roadmap snapshot: `3`.
 
 - A19 scale benchmarks:
-  1M keyword_search/verify_fact p50/p95, 10M lazy evidence, cold outlier
-  analysis, and trend curves remain.
+  10M lazy evidence, cold outlier analysis, and trend curves remain.
 - C16 memory profiling:
   estimated-vs-real verification and gate integration remain.
 - D05 SDK publish:
@@ -431,10 +431,10 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 Work on A19 only:
 
-1. run a controlled 1M direct-checkpoint benchmark with small keyword_search
-   and verify_fact samples;
-2. keep the sample count small enough to avoid turning instrumentation work into
-   a long-running campaign;
+1. decide whether to run 10M lazy evidence now or keep it as the explicit
+   long-running A19 tail;
+2. add a lightweight trend/history report for the existing 100K/1M evidence if
+   it can close the trend-curve acceptance without a large rerun;
 3. add or fix benchmark reporting only where it directly closes A19 acceptance;
 4. update the tracker with report paths and move pointer only when A19 is done
    or explicitly split with accepted follow-up scope.
