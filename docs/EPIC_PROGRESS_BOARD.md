@@ -35,8 +35,18 @@ B04 exit steps:
 
 B04 progress:
 
-- next: start with a code inventory of server/engine read paths and identify the
-  smallest descriptor-first permission gap to close with a regression test.
+- done: added descriptor-only `Database::get_latest_cell_descriptor` for
+  pre-payload authorization;
+- done: `/get`/`/v1/cell`, tombstone/delete, batch tombstone authorization, and
+  `/v1/forget` now check durable descriptor scope before fetching payload;
+- done: regression
+  `denied_cell_routes_authorize_descriptor_before_lazy_payload_read` proves
+  denied lazy GET, DELETE, and forget routes leave segment payload loads at 0;
+- done: B04 progress gates passed: file-size ratchet, targeted server security
+  tests, `cargo fmt --check`, `cargo test --workspace --all-features`,
+  `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`;
+- remaining: inventory remaining non-AQL read surfaces and extend the structural
+  permission gate beyond the single route-family regression.
 
 ## Recently Closed
 
@@ -204,7 +214,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 Work on B04 only:
 
-1. inventory read surfaces and current permission gates;
-2. select the smallest descriptor-first pre-payload authorization gap;
-3. add a regression test for spoofed payload scope vs durable descriptor scope;
-4. update the board before moving past B04.
+1. inventory remaining read surfaces and current permission gates;
+2. extend the structural permission gate so payload-backed read surfaces cannot
+   bypass descriptor/AgentView filtering;
+3. run the E09/property/security subset plus full required gates;
+4. move pointer only after B04 is `done` or explicitly split with accepted
+   follow-up scope.

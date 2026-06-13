@@ -596,19 +596,21 @@ enough to unblock the next dependency step.
 
 ### EPIC-B04 — AgentView как индексный инвариант (permission bitmap в scan)
 
-- status: `pending`
+- status: `in_progress`
 - meta: Категория: security · Приоритет: P0 · Горизонт: 60 days · Тип: refactor
 - goal: permission-safe retrieval должен быть свойством физического доступа, не пост-фильтром.
 - problem: Проблема: binder уже пересекает agent-allowed маску в bitmap-программе (хорошо), но непайплайновые поверхности (`/get` route, search-пути, verify, graph) проверяют scope пост-фактум по payload-строке (`require_payload_read`, authz.rs:80).
 - tasks:
   - [ ] 1) permission-bitmap (scope→candidates) как поддерживаемый индекс
   - [ ] 2) все читающие поверхности проходят через candidate-фильтр ДО чтения payload
-  - [ ] 3) `/get` по cell_id: проверка по descriptor (A02), не по payload-парсингу.
+  - [x] 3) `/get` по cell_id: проверка по descriptor (A02), не по payload-парсингу.
 - acceptance:
   - [ ] 1) структурный тест A10 («нет Scan без permission-предиката») распространён на все поверхности
   - [ ] 2) E09 property-тест зелёный
   - [ ] 3) пост-фильтрация payload-скоупа удалена из router/authz.
 - files: cortex-server/src/{authz,router}.rs; cortex-engine/src/query/provider.rs.
+- evidence: Added descriptor-only `Database::get_latest_cell_descriptor` so server routes can authorize stored cells without fetching payload bytes. `/get`/`/v1/cell`, tombstone/delete, batch tombstone authorization, and `/v1/forget` now check durable descriptor scope before payload materialization. Regression `denied_cell_routes_authorize_descriptor_before_lazy_payload_read` stores a lazy segment cell whose payload spoofs an allowed scope while its descriptor is private; denied GET, DELETE, and forget routes leave `PayloadCacheStats::segment_loads == 0`. Checks passed: `python3 scripts/file_size_report.py --root . --baseline quality/file_size_baseline.json --check`, `cargo fmt --check`, `cargo test -p cortex-server denied_cell_routes_authorize_descriptor_before_lazy_payload_read --all-features`, `cargo test -p cortex-server auth_agent_view_uses_descriptor_scope_for_cell_read_over_http --all-features`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`.
+- next exit step: inventory remaining non-AQL read surfaces and extend the structural permission gate so B04 can prove no payload-backed read surface bypasses descriptor/AgentView filtering.
 - risks: нет существенных — упрощение модели. Зависимости: A02 (descriptor), A06. Эффект: инвариант безопасности становится архитектурным.
 
 ### EPIC-B05 — AgentView lifecycle API v1

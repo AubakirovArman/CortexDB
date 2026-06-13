@@ -88,6 +88,12 @@ impl Database {
             })
     }
 
+    pub fn get_latest_cell_descriptor(&self, cell_id: CellId) -> Option<CellDescriptor> {
+        self.memtable
+            .read(self.read_txn(), cell_id)
+            .map(|version| version.descriptor.clone())
+    }
+
     pub fn payload_cache_stats(&self) -> PayloadCacheStats {
         self.payload_cache
             .lock()

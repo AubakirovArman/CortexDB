@@ -1,7 +1,10 @@
 use cortex_aql::AgentId;
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
-use cortex_engine::Database;
+use cortex_engine::{Database, DatabaseOptions, PayloadResidency};
 
+use crate::auth::AuthRouteContext;
+use crate::responses::RouterError;
+use crate::router::route_database_with_auth;
 use crate::{handle_http_with_options, ServerOptions};
 
 use super::helpers::agent_view;
@@ -155,6 +158,59 @@ fn auth_agent_view_uses_descriptor_scope_for_cell_read_over_http() {
         "descriptor scope should deny spoofed payload reads: {denied}"
     );
     assert!(denied.contains("permission_denied"));
+}
+
+#[test]
+fn denied_cell_routes_authorize_descriptor_before_lazy_payload_read() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.save_agent_view(&agent_view(AgentId(7), "project:investments", true))
+            .unwrap();
+        db.put_knowledge_cell(
+            CellId(9),
+            KnowledgeCell::new(
+                KnowledgeCellMetadata {
+                    scope: "tenant:private".to_owned(),
+                    status: "ready".to_owned(),
+                    cell_type: KnowledgeCellType::Raw,
+                    ..Default::default()
+                },
+                b"scope=project:investments\nstatus=ready\n\nhidden spoof".to_vec(),
+            ),
+        )
+        .unwrap();
+        db.checkpoint().unwrap();
+    }
+
+    let mut db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            payload_residency: PayloadResidency::Lazy,
+            payload_cache_bytes: 0,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+    let auth = AuthRouteContext::for_agent(Some(7));
+
+    for (method, target) in [
+        ("GET", "/v1/cell?cell_id=9"),
+        ("DELETE", "/v1/cell?cell_id=9"),
+        ("POST", "/v1/forget?cell_id=9"),
+    ] {
+        let err = route_database_with_auth(&mut db, method, target, b"", auth.clone())
+            .expect_err("descriptor scope should deny route before payload read");
+        assert!(
+            matches!(err, RouterError::PermissionDenied(_)),
+            "expected permission denial for {method} {target}, got {err:?}"
+        );
+        assert_eq!(
+            db.payload_cache_stats().segment_loads,
+            0,
+            "{method} {target} should not read segment payload before authz"
+        );
+    }
 }
 
 #[test]

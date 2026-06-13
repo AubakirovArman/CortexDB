@@ -1893,7 +1893,7 @@
     "crates/cortex-engine/src/database/read.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 273,
+      "lines": 279,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5666,7 +5666,7 @@
     "crates/cortex-server/src/tests/security_tests/auth.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 202,
+      "lines": 258,
       "soft_limit": 600,
       "warning_limit": 1200
     },

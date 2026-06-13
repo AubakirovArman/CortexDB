@@ -34,7 +34,7 @@ pub(super) fn try_route<A: DatabaseAccess>(
                     .as_write()
                     .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
                 let cell_id = cell_id(query)?;
-                if let Some((_, descriptor)) = db.get_latest_cell_with_descriptor(cell_id) {
+                if let Some(descriptor) = db.get_latest_cell_descriptor(cell_id) {
                     authz::require_descriptor_write(authenticated_view, &descriptor)?;
                 }
                 db.forget_cell(cell_id)?;

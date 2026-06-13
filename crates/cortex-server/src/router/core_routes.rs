@@ -124,12 +124,12 @@ pub(super) fn try_route<A: DatabaseAccess>(
             }
             ("GET", "/get") | ("GET", "/v1/cell") => {
                 let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
-                let cell = db.get_latest_cell_with_descriptor(cell_id);
-                if let Some((_, descriptor)) = &cell {
-                    authz::require_descriptor_read(authenticated_view, descriptor)?;
+                if let Some(descriptor) = db.get_latest_cell_descriptor(cell_id) {
+                    authz::require_descriptor_read(authenticated_view, &descriptor)?;
                 }
+                let cell = db.get_latest_cell(cell_id);
                 let response = CellLookupResponse {
-                    cell: cell.map(|(payload, _)| CellResponse {
+                    cell: cell.map(|payload| CellResponse {
                         cell_id: cell_id.0,
                         payload: String::from_utf8_lossy(&payload).into_owned(),
                     }),
@@ -199,7 +199,7 @@ pub(super) fn try_route<A: DatabaseAccess>(
                     .as_write()
                     .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
                 let cell_id = cell_id(query).map_err(RouterError::BadRequest)?;
-                if let Some((_, descriptor)) = db.get_latest_cell_with_descriptor(cell_id) {
+                if let Some(descriptor) = db.get_latest_cell_descriptor(cell_id) {
                     authz::require_descriptor_write(authenticated_view, &descriptor)?;
                 }
                 let seq = db.tombstone_cell(cell_id)?;
@@ -286,7 +286,7 @@ fn authorize_write_batch(
                 let cell_id = CellId(*cell_id);
                 if let Some(descriptor) = staged_descriptors
                     .remove(&cell_id)
-                    .or_else(|| db.get_latest_cell_with_descriptor(cell_id).map(|(_, d)| d))
+                    .or_else(|| db.get_latest_cell_descriptor(cell_id))
                 {
                     authz::require_descriptor_write(authenticated_view, &descriptor)?;
                 }
