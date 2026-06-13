@@ -77,6 +77,7 @@ pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use checkpoint::compactor::{CompactionDecision, CompactionStats};
 pub use compatibility::{
     compatibility_summary, ApiCompatibility, CompatibilitySummary, MigrationCompatibility,
+    MigrationFormatRegistryEntry, MigrationReleaseRegistryEntry, MigrationVersionRegistry,
     SdkCompatibility, StorageFormatCompatibility,
 };
 pub use config::{EngineConfig, EngineConfigError};

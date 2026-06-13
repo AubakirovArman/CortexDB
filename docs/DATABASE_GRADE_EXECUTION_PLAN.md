@@ -1509,11 +1509,11 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-E12 — Migration framework для форматов (A02/A07/C01/C02)
 
-- status: `pending`
+- status: `in_progress`
 - meta: Категория: ops · P0 · 60 days · build
 - goal: блок A меняет форматы; без рамки миграций это серия катастроф.
 - tasks:
-  - [ ] 1) версии форматов в манифесте (частично есть — централизовать: WAL/segment/index/manifest)
+  - [ ] 1) версии форматов в манифесте (частично есть — централизовать: WAL/segment/index/manifest) — current slice adds an engine/API migration version registry over `storage_format_specs()` plus `compatibility_matrix_v1.json`.
   - [ ] 2) `cortexdb migrate` оркеструет пошаговые миграции с backup-предусловием
   - [ ] 3) матрица совместимости в STORAGE_COMPATIBILITY + fixtures на каждую версию.
 - acceptance:
@@ -1522,6 +1522,12 @@ This queue follows section 7 of the source plan and dependency notes from the ep
   - [ ] 3) CI-гейт с фикстурами старых форматов.
 - files: compatibility.rs, cli migrate, fixtures/migration.
 - expected effect: позволяет агрессивно эволюционировать форматы, не теряя пользователей.
+- next slice plan:
+  - [x] a) prove `/v1/compatibility` exposes the migration registry and OpenAPI contract.
+  - [ ] b) audit `cortexdb migrate` for dry-run/backup/precondition behavior against the E12 exit steps.
+  - [x] c) run `make migration-compatibility-check`, `make storage-format-freeze-check`, and `make storage-format-change-note-check`.
+- latest evidence: Added a first-class `MigrationVersionRegistry` to the engine compatibility surface and `/v1/compatibility`. The registry centralizes current storage format magics/versions, legacy magics, per-format gate, current release, release-to-release fixture paths, and restore-only downgrade policy from `storage_format_specs()` plus `fixtures/migration/compatibility_matrix_v1.json`. OpenAPI now declares `MigrationVersionRegistry`, `MigrationFormatRegistryEntry`, and `MigrationReleaseRegistryEntry`; server snapshot coverage asserts the registry is emitted. Fixed migration/storage policy scripts to validate the full make surface (`Makefile` + `mk/*.mk`) after Makefile modularization, updated static hot-path gates for the current module layout, and updated the storage compatibility checker to the post-D12 archive doc paths. Checks passed: `make check`, `cargo fmt --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, `make openapi-contract-check`, `make migration-policy-check`, `make migration-compatibility-check`, `make storage-format-freeze-check`, `make storage-format-change-note-check`, `make storage-compat-check`, `git diff --check`, and Python compile checks for the updated policy scripts.
+- remaining: `cortexdb migrate` still needs an E12-specific audit for dry-run behavior, backup preconditions, and explicit step orchestration before this epic can move to `done`; future A07/C01/C02 format changes still need dedicated fixture entries/change notes when those formats are introduced.
 
 ### EPIC-E13 — Secrets-гигиена
 

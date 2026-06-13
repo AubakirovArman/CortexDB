@@ -5,7 +5,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CHECKPOINT = ROOT / "crates/cortex-engine/src/checkpoint.rs"
+CHECKPOINT_DATABASE = ROOT / "crates/cortex-engine/src/checkpoint/database.rs"
+CHECKPOINT_COMPACTOR = ROOT / "crates/cortex-engine/src/checkpoint/compactor.rs"
 MEMTABLE = ROOT / "crates/cortex-core/src/memtable/mod.rs"
 SEGMENT = ROOT / "crates/cortex-storage/src/segment.rs"
 VERIFY = ROOT / "crates/cortex-engine/src/verification.rs"
@@ -24,7 +25,9 @@ def forbid(text: str, needle: str, label: str) -> None:
 
 
 def main() -> None:
-    checkpoint = CHECKPOINT.read_text()
+    checkpoint_database = CHECKPOINT_DATABASE.read_text()
+    checkpoint_compactor = CHECKPOINT_COMPACTOR.read_text()
+    checkpoint_hot_paths = checkpoint_database + "\n" + checkpoint_compactor
     memtable = MEMTABLE.read_text()
     segment = SEGMENT.read_text()
     verify = VERIFY.read_text()
@@ -41,27 +44,32 @@ def main() -> None:
     require(segment, "pub fn write_refs", "borrowed segment writer")
 
     require(
-        checkpoint,
+        checkpoint_database,
         "SegmentWriter::write_refs",
         "checkpoint borrowed segment writer call",
     )
     require(
-        checkpoint,
-        "try_from_segment_cell_refs",
-        "checkpoint borrowed AQL index builder call",
+        checkpoint_compactor,
+        "SegmentWriter::write_refs",
+        "incremental compaction borrowed segment writer call",
     )
     require(
-        checkpoint,
+        checkpoint_hot_paths,
+        "try_from_segment_cell_refs",
+        "checkpoint/compaction borrowed AQL index builder call",
+    )
+    require(
+        checkpoint_hot_paths,
         "vector_index_for_cell_refs",
-        "checkpoint borrowed vector index builder call",
+        "checkpoint/compaction borrowed vector index builder call",
     )
     forbid(
-        checkpoint,
+        checkpoint_hot_paths,
         "self.snapshot_versions()",
-        "checkpoint snapshot clone path",
+        "checkpoint/compaction snapshot clone path",
     )
     forbid(
-        checkpoint,
+        checkpoint_hot_paths,
         "SegmentWriter::write(&segment_path",
         "owned segment writer in checkpoint/compact",
     )

@@ -48,6 +48,13 @@ def read_text(repo: Path, relative: str) -> str:
     return (repo / relative).read_text(encoding="utf-8")
 
 
+def make_surface(repo: Path) -> str:
+    chunks = [read_text(repo, "Makefile")]
+    for path in sorted((repo / "mk").glob("*.mk")):
+        chunks.append(path.read_text(encoding="utf-8"))
+    return "\n".join(chunks)
+
+
 def normalized_marker(value: Any) -> str:
     return str(value or "").replace("\\0", "").replace("\0", "")
 
@@ -141,7 +148,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     notes = read_json(repo, args.notes)
     freeze = read_json(repo, args.freeze)
     matrix = read_json(repo, args.compatibility)
-    makefile = read_text(repo, "Makefile")
+    makefile = make_surface(repo)
     workflow = read_text(repo, ".github/workflows/rust.yml")
     migration_doc = read_text(repo, "docs/archive/UPGRADE_MIGRATION.md")
     storage_doc = read_text(repo, "docs/STORAGE_FORMATS.md")
@@ -197,9 +204,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         if term not in storage_doc:
             errors.append(f"docs/STORAGE_FORMATS.md missing {term!r}")
     if "storage-format-change-note-check:" not in makefile:
-        errors.append("Makefile missing storage-format-change-note-check target")
+        errors.append("make surface missing storage-format-change-note-check target")
     if "$(MAKE) storage-format-change-note-check" not in makefile:
-        errors.append("Makefile release/alpha gate must run storage-format-change-note-check")
+        errors.append("make surface release/alpha gate must run storage-format-change-note-check")
     if "make storage-format-change-note-check" not in workflow:
         errors.append(".github/workflows/rust.yml must run storage-format-change-note-check")
 

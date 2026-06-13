@@ -23,6 +23,12 @@ fn snapshot_compatibility_response_shape() {
     assert!(response.contains(r#""current_magic":"ACS2""#));
     assert!(response.contains(r#""legacy_magics":["ACS1"]"#));
     assert!(response.contains(r#""gate":"make migration-compatibility-check""#));
+    assert!(response.contains(r#""schema_version":"cortexdb.migration_registry.v1""#));
+    assert!(response.contains(r#""migration_gate":"make migration-compatibility-check""#));
+    assert!(response.contains(r#""kind":"segment""#));
+    assert!(response.contains(r#""required_gate":"make storage-format-freeze-check""#));
+    assert!(response.contains(r#""from":"v0.1.0-core-alpha.5""#));
+    assert!(response.contains(r#""to":"v0.2.0-beta.1""#));
 }
 
 #[test]

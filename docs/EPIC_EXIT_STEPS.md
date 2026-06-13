@@ -747,10 +747,27 @@ Exit steps:
 ### EPIC-E12 — Migration framework
 
 Exit steps:
-1. Define migration version registry and compatibility policy.
-2. Add migration runner and dry-run/backup behavior.
-3. Cover A02/A07/C01/C02 format migrations.
-4. Mark done when format upgrades are repeatable and reversible by backup; then move to D15.
+1. Inventory the current compatibility surfaces:
+   `cortex_storage::format::storage_format_specs`,
+   `fixtures/storage/storage_format_freeze_v1.json`,
+   `fixtures/migration/compatibility_matrix_v1.json`,
+   `cortexdb migrate`, and the migration gates.
+2. Define one migration version registry exposed by the engine/API. It must list
+   current storage formats, legacy magics, required gates, current release,
+   release-to-release upgrade fixtures, and downgrade policy.
+3. Add registry tests proving every frozen format and release path is present.
+4. Verify the existing offline migration runner has backup/drill behavior, or add
+   missing dry-run/precondition checks before changing status to done.
+5. Cover A02/A07/C01/C02 format migrations through fixtures/change notes and
+   compatibility gates.
+6. Run targeted compatibility tests, `make migration-compatibility-check`,
+   `make storage-format-freeze-check`, `make storage-format-change-note-check`,
+   and API contract checks if `/v1/compatibility` changes.
+7. Update `docs/DATABASE_GRADE_EXECUTION_PLAN.md` with evidence and remaining
+   work after each coherent slice.
+8. Mark done only when format upgrades are repeatable, fixture-gated, and
+   reversible by immutable backup; then move to A06 unless the tracker changes
+   the next pointer.
 
 ### EPIC-E13 — Secrets-гигиена
 

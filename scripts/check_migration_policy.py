@@ -49,6 +49,13 @@ def read(path: Path) -> str:
         raise AssertionError(f"missing file: {path}") from None
 
 
+def make_surface(repo: Path) -> str:
+    chunks = [read(repo / "Makefile")]
+    for path in sorted((repo / "mk").glob("*.mk")):
+        chunks.append(read(path))
+    return "\n".join(chunks)
+
+
 def require_terms(label: str, text: str, terms: tuple[str, ...]) -> list[str]:
     return [f"{label}: missing {term!r}" for term in terms if term not in text]
 
@@ -59,22 +66,22 @@ def main() -> int:
 
     policy = read(repo / "docs/archive/UPGRADE_MIGRATION.md")
     storage = read(repo / "docs/STORAGE_FORMATS.md")
-    makefile = read(repo / "Makefile")
+    makefile = make_surface(repo)
     workflow = read(repo / ".github/workflows/rust.yml")
 
     errors.extend(require_terms("docs/archive/UPGRADE_MIGRATION.md", policy, REQUIRED_POLICY_TERMS))
     errors.extend(require_terms("docs/STORAGE_FORMATS.md", storage, REQUIRED_STORAGE_LINK_TERMS))
 
     if "migration-policy-check:" not in makefile:
-        errors.append("Makefile: missing migration-policy-check target")
+        errors.append("make surface: missing migration-policy-check target")
     if "migration-compatibility-check:" not in makefile:
-        errors.append("Makefile: missing migration-compatibility-check target")
+        errors.append("make surface: missing migration-compatibility-check target")
     if "storage-format-change-note-check:" not in makefile:
-        errors.append("Makefile: missing storage-format-change-note-check target")
+        errors.append("make surface: missing storage-format-change-note-check target")
     if "$(MAKE) migration-policy-check" not in makefile:
-        errors.append("Makefile: release/alpha gates must run migration-policy-check")
+        errors.append("make surface: release/alpha gates must run migration-policy-check")
     if "$(MAKE) storage-format-change-note-check" not in makefile:
-        errors.append("Makefile: release/alpha gates must run storage-format-change-note-check")
+        errors.append("make surface: release/alpha gates must run storage-format-change-note-check")
     if "make migration-policy-check" not in workflow:
         errors.append(".github/workflows/rust.yml: CI must run migration-policy-check")
     if "make storage-format-change-note-check" not in workflow:

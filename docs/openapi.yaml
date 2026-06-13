@@ -1118,6 +1118,7 @@ components:
       - sdk
       - storage_formats
       - migration
+      - migration_registry
       properties:
         schema_version:
           type: string
@@ -1132,6 +1133,8 @@ components:
             $ref: '#/components/schemas/StorageFormatCompatibility'
         migration:
           $ref: '#/components/schemas/MigrationCompatibility'
+        migration_registry:
+          $ref: '#/components/schemas/MigrationVersionRegistry'
     ApiCompatibility:
       type: object
       required:
@@ -1200,6 +1203,86 @@ components:
           type: string
         gate:
           type: string
+    MigrationVersionRegistry:
+      type: object
+      required:
+      - schema_version
+      - current_release
+      - migration_gate
+      - downgrade_policy
+      - formats
+      - releases
+      properties:
+        schema_version:
+          type: string
+          example: cortexdb.migration_registry.v1
+        current_release:
+          type: string
+        migration_gate:
+          type: string
+        downgrade_policy:
+          type: string
+        formats:
+          type: array
+          items:
+            $ref: '#/components/schemas/MigrationFormatRegistryEntry'
+        releases:
+          type: array
+          items:
+            $ref: '#/components/schemas/MigrationReleaseRegistryEntry'
+    MigrationFormatRegistryEntry:
+      type: object
+      required:
+      - kind
+      - extension
+      - current_magic
+      - current_version
+      - legacy_magics
+      - compatibility_rule
+      - required_gate
+      properties:
+        kind:
+          type: string
+        extension:
+          type: string
+        current_magic:
+          type: string
+        current_version:
+          type: integer
+          format: uint32
+        legacy_magics:
+          type: array
+          items:
+            type: string
+        compatibility_rule:
+          type: string
+        required_gate:
+          type: string
+    MigrationReleaseRegistryEntry:
+      type: object
+      required:
+      - from
+      - to
+      - mode
+      - downgrade
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+        mode:
+          type: string
+        downgrade:
+          type: string
+        fixture:
+          type: string
+          nullable: true
+        backup_path:
+          type: string
+          nullable: true
+        database_path:
+          type: string
+          nullable: true
     Cell:
       type: object
       required:

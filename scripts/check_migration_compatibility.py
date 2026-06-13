@@ -41,6 +41,13 @@ def read(path: Path) -> str:
         raise AssertionError(f"missing file: {path}") from None
 
 
+def make_surface(repo: Path) -> str:
+    chunks = [read(repo / "Makefile")]
+    for path in sorted((repo / "mk").glob("*.mk")):
+        chunks.append(read(path))
+    return "\n".join(chunks)
+
+
 def require_file(repo: Path, relative: str, errors: list[str]) -> None:
     if not (repo / relative).exists():
         errors.append(f"missing referenced file: {relative}")
@@ -140,10 +147,10 @@ def main() -> int:
             if term not in text:
                 errors.append(f"{path}: missing {term!r}")
 
-    makefile = read(repo / "Makefile")
+    makefile = make_surface(repo)
     for term in ("migration-compatibility-check:", "binary-release-check:"):
         if term not in makefile:
-            errors.append(f"Makefile: missing {term}")
+            errors.append(f"make surface: missing {term}")
 
     if errors:
         print("MIGRATION COMPATIBILITY CHECK FAILED:")

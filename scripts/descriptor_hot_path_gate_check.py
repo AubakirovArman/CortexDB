@@ -6,14 +6,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVER_AUTHZ = ROOT / "crates/cortex-server/src/authz.rs"
-SERVER_ROUTER = ROOT / "crates/cortex-server/src/router.rs"
-SERVER_SEARCH = ROOT / "crates/cortex-server/src/search.rs"
+SERVER_ROUTER = ROOT / "crates/cortex-server/src/router/core_routes.rs"
+SERVER_SEARCH = ROOT / "crates/cortex-server/src/search/rerank.rs"
 CONTEXT_DEDUP = ROOT / "crates/cortex-engine/src/context/dedup.rs"
-CONTEXT_PACK = ROOT / "crates/cortex-engine/src/context/pack.rs"
-SEARCH_DATABASE = ROOT / "crates/cortex-engine/src/search/database.rs"
-SEARCH_RERANK = ROOT / "crates/cortex-engine/src/search/rerank.rs"
-SEARCH_SCOPE_MAPPING = ROOT / "crates/cortex-engine/src/search/scope_mapping.rs"
+CONTEXT_PACK = ROOT / "crates/cortex-engine/src/context/pack/builder.rs"
+SEARCH_DATABASE_FILES = (
+    ROOT / "crates/cortex-engine/src/search/database/diversity.rs",
+    ROOT / "crates/cortex-engine/src/search/database/ranking.rs",
+)
+SEARCH_RERANK_FILES = (
+    ROOT / "crates/cortex-engine/src/search/rerank/types.rs",
+    ROOT / "crates/cortex-engine/src/search/rerank/scoring.rs",
+)
+SEARCH_SCOPE_MAPPING = ROOT / "crates/cortex-engine/src/search/scope_mapping/scoring.rs"
 DATABASE = ROOT / "crates/cortex-engine/src/database.rs"
+RETRIEVAL_QUALITY = ROOT / "crates/cortex-engine/src/retrieval_quality.rs"
 QUERY_EXPLAIN = ROOT / "crates/cortex-engine/src/query/explain.rs"
 SESSION = ROOT / "crates/cortex-engine/src/session.rs"
 SESSION_PAYLOAD = ROOT / "crates/cortex-engine/src/session/payload.rs"
@@ -21,7 +28,7 @@ INGESTION_REPORT = ROOT / "crates/cortex-engine/src/ingestion/report.rs"
 REPLICATION_SNAPSHOT = ROOT / "crates/cortex-engine/src/replication/snapshot.rs"
 REPLICATION_INSTALL = ROOT / "crates/cortex-engine/src/replication/install.rs"
 TOOL_REGISTRY = ROOT / "crates/cortex-engine/src/tool_registry.rs"
-VERIFICATION = ROOT / "crates/cortex-engine/src/verification.rs"
+VERIFICATION = ROOT / "crates/cortex-engine/src/verification/evidence.rs"
 VERIFICATION_GRAPH = ROOT / "crates/cortex-engine/src/verification/graph.rs"
 VERIFICATION_CONFLICT_INDEX = ROOT / "crates/cortex-engine/src/verification/conflict_index.rs"
 VERIFICATION_TEMPORAL_INDEX = ROOT / "crates/cortex-engine/src/verification/temporal_index.rs"
@@ -44,10 +51,11 @@ def main() -> None:
     server_search = SERVER_SEARCH.read_text()
     context_dedup = CONTEXT_DEDUP.read_text()
     context_pack = CONTEXT_PACK.read_text()
-    search_database = SEARCH_DATABASE.read_text()
-    search_rerank = SEARCH_RERANK.read_text()
+    search_database = "\n".join(path.read_text() for path in SEARCH_DATABASE_FILES)
+    search_rerank = "\n".join(path.read_text() for path in SEARCH_RERANK_FILES)
     search_scope_mapping = SEARCH_SCOPE_MAPPING.read_text()
     database = DATABASE.read_text()
+    retrieval_quality = RETRIEVAL_QUALITY.read_text()
     query_explain = QUERY_EXPLAIN.read_text()
     session = SESSION.read_text()
     session_payload = SESSION_PAYLOAD.read_text()
@@ -73,7 +81,7 @@ def main() -> None:
     )
     require(
         server_router,
-        "authz::require_descriptor_write(authenticated_view.as_ref(), &descriptor)?;",
+        "authz::require_descriptor_write(authenticated_view, &descriptor)?;",
         "raw write descriptor authorization",
     )
     forbid(server_authz, "require_payload_write", "payload-based write authorization helper")
@@ -86,12 +94,12 @@ def main() -> None:
     )
 
     require(
-        database,
+        retrieval_quality,
         "pub(crate) fn cell_version_meets_quality_thresholds",
         "descriptor-backed quality threshold helper",
     )
     forbid(
-        database,
+        retrieval_quality,
         "pub(crate) fn cell_meets_quality_thresholds",
         "payload-only quality threshold helper",
     )
@@ -134,7 +142,7 @@ def main() -> None:
 
     require(
         search_database,
-        "payload_jaccard_q16(&candidate.metadata, &existing.metadata)",
+        "payload_q16: payload_jaccard_q16(&candidate.metadata, &existing.metadata)",
         "search diversity payload similarity from result metadata",
     )
     require(

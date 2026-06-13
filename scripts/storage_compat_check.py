@@ -13,7 +13,7 @@ from typing import Any
 
 
 DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
-    "docs/STORAGE_COMPATIBILITY.md": (
+    "docs/archive/STORAGE_COMPATIBILITY.md": (
         "make storage-format-freeze-check",
         "storage_format_freeze_v1.json",
         "current-version backup restored by next-version code",
@@ -30,12 +30,12 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "restore drill trend across releases",
         "Encrypted backup is available as a local passphrase archive MVP",
     ),
-    "docs/RPO_RTO.md": (
+    "docs/archive/RPO_RTO.md": (
         "Strict",
         "Balanced",
         "make crash-fault-check",
     ),
-    "docs/CRASH_SIMULATION.md": (
+    "docs/archive/CRASH_SIMULATION.md": (
         "make crash-fault-check",
         "make chaos-restart-check",
         "corruption of `.acs`, `.acb`, `.aci`, `.acv`, and `.ach`",
