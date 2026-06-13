@@ -51,6 +51,10 @@ evidence snapshots, benchmark experiments, and release working notes live in
   Deployment artifacts: [`docker-compose.production.yml`](../docker-compose.production.yml),
   [`auth.tokens.example`](deployment/auth.tokens.example), and
   [`cortexdb.conf`](deployment/nginx/cortexdb.conf).
+- Archived install and upgrade runbooks: [`SYSTEMD.md`](archive/SYSTEMD.md),
+  [`LAUNCHD.md`](archive/LAUNCHD.md),
+  [`UPGRADE_ROLLBACK.md`](archive/UPGRADE_ROLLBACK.md), and
+  [`BINARY_PLATFORM_MATRIX.md`](archive/BINARY_PLATFORM_MATRIX.md).
 - [`METRICS.md`](METRICS.md) - metrics endpoint and fields.
 - [`SECURITY_MODEL.md`](SECURITY_MODEL.md) - security model.
 - [`BENCHMARKS.md`](BENCHMARKS.md) - benchmark gates and reports.

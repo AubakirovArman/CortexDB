@@ -85,6 +85,12 @@ def read(path: str) -> str:
     return Path(path).read_text(encoding="utf-8")
 
 
+def read_make_surface() -> str:
+    parts = [read("Makefile")]
+    parts.extend(path.read_text(encoding="utf-8") for path in sorted(Path("mk").glob("*.mk")))
+    return "\n".join(parts)
+
+
 def require_contains(path: str, markers: list[str], failures: list[str]) -> None:
     if not Path(path).is_file():
         failures.append(f"missing {path}")
@@ -114,12 +120,18 @@ def main() -> int:
     if ".tar.gz" not in release or ".sha256" not in release:
         failures.append("release workflow does not mention tar.gz and sha256 assets")
 
-    makefile = read("Makefile")
+    makefile = read_make_surface()
     for marker in ("deployment-upgrade-check", "service-manager-smoke-check", "binary-release-check", "migration-policy-check"):
         if marker not in makefile:
-            failures.append(f"Makefile: missing {marker}")
+            failures.append(f"make surface: missing {marker}")
 
-    cli = read("crates/cortex-cli/src/cli.rs")
+    cli = "\n".join(
+        [
+            read("crates/cortex-cli/src/cli/args/commands/subcommands.rs"),
+            read("crates/cortex-cli/src/cli/args/commands.rs"),
+            read("crates/cortex-cli/src/cli/dispatch/upgrade_flow.rs"),
+        ]
+    )
     for marker in ("UpgradeCommand", "Prepare", "Validate", "Rollback"):
         if marker not in cli:
             failures.append(f"CLI upgrade flow missing {marker}")

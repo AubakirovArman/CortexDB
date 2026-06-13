@@ -99,11 +99,19 @@ Install the previous binaries and start them against `./data.rollback`.
 Release candidates should pass:
 
 ```bash
+make upgrade-rollback-cli-flow-check
 make migration-policy-check
 make migration-compatibility-check
 make binary-release-check
 make deployment-upgrade-check
 ```
+
+`make upgrade-rollback-cli-flow-check` is the executable release-candidate
+drill for this runbook. It creates a database, runs `cortexdb upgrade prepare`,
+verifies the immutable backup, validates the candidate database, restores the
+rollback target, validates that target, and checks the payload is readable from
+the rollback directory. The JSON evidence is written to
+`target/upgrade-rollback-cli-flow/report.json`.
 
 The format-level compatibility policy remains in
 [`UPGRADE_MIGRATION.md`](UPGRADE_MIGRATION.md).

@@ -6471,7 +6471,7 @@
     "mk/release.mk": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 71,
+      "lines": 72,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -7108,7 +7108,7 @@
     "scripts/deployment_upgrade_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 154,
+      "lines": 166,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -9236,7 +9236,7 @@
     "scripts/upgrade_rollback_cli_flow_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 109,
+      "lines": 217,
       "soft_limit": 300,
       "warning_limit": 600
     },

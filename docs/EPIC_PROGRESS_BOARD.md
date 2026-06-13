@@ -21,21 +21,44 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-E14` — Upgrade/rollback drill.
+`EPIC-D15` — v0.2.0-beta.1 release/tag decision.
 
-E14 exit steps:
+D15 exit steps:
 
-1. Create release-candidate backup.
-2. Restore with candidate binary.
-3. Roll back to previous binary and validate.
-4. Mark done when release candidates pass upgrade/rollback drill.
+1. Align workspace/package versions and release notes.
+2. Decide tag strategy without force-moving published tags unless approved.
+3. Run release checklist and clean clone checks.
+4. Mark done when the beta tag/artifacts are correct.
 
-E14 progress:
+D15 progress:
 
-- next: inventory current upgrade prepare/validate/rollback commands, release
-  docs, and migration tests before choosing the smallest missing drill evidence.
+- next: decide whether to create a new prerelease tag such as
+  `v0.2.0-beta.2` or explicitly refresh `v0.2.0-beta.1` with approval.
 
 ## Recently Closed
+
+### EPIC-E14 — Upgrade/rollback drill
+
+Status: `done`
+
+What closed it:
+
+- `make upgrade-rollback-cli-flow-check` now validates current modular CLI
+  paths and runs a real runtime drill.
+- The drill creates a database, writes and flushes data, runs
+  `cortexdb upgrade prepare`, verifies the immutable backup, validates the
+  candidate database, restores rollback, validates rollback, and reads the
+  payload from the rollback directory.
+- The gate writes `target/upgrade-rollback-cli-flow/report.json`.
+- `release-check` now invokes the upgrade/rollback flow gate.
+- `docs/archive/UPGRADE_ROLLBACK.md` names the executable gate and evidence
+  path.
+- `make deployment-upgrade-check` passes after its modular CLI/Makefile
+  checks were updated.
+
+Next:
+
+- Continue with D15 as directed by `EPIC_EXIT_STEPS.md`.
 
 ### EPIC-E02 — Backup UX happy path + verify
 

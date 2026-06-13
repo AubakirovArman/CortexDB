@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-E14` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, and `EPIC-E02` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-D15` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, and `EPIC-E14` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -1689,15 +1689,25 @@ enough to unblock the next dependency step.
 
 ### EPIC-E14 — Upgrade/rollback drill
 
-- status: `pending`
+- status: `done`
 - meta: Категория: ops · P2 · 90 days · test
 - tasks:
-  - [ ] 1) автотест: установка vN-1 → данные → upgrade vN → валидация → rollback по доке
-  - [ ] 2) включить в release-check
-  - [ ] 3) UPGRADE_ROLLBACK сжать до исполняемого runbook.
+  - [x] 1) автотест: установка vN-1 → данные → upgrade vN → валидация → rollback по доке
+  - [x] 2) включить в release-check
+  - [x] 3) UPGRADE_ROLLBACK сжать до исполняемого runbook.
 - acceptance:
-  - [ ] drill зелёный перед каждым тегом.
+  - [x] drill зелёный перед каждым тегом.
 - dependencies: E12, D15.
+- evidence: `make upgrade-rollback-cli-flow-check` now runs the CLI upgrade
+  tests and an executable runtime drill that creates a database, writes and
+  flushes data, runs `cortexdb upgrade prepare`, verifies the immutable backup,
+  validates the candidate database, restores rollback, validates the rollback
+  target, and confirms the payload is readable from rollback. The gate writes
+  `target/upgrade-rollback-cli-flow/report.json`, is referenced from the
+  upgrade runbook, and is now part of `release-check`.
+  `make deployment-upgrade-check` also passes after its modular CLI/Makefile
+  checks were updated.
+- next exit step: move to `EPIC-D15` — v0.2.0-beta release/tag decision.
 
 ### EPIC-E15 — Per-route таймауты + защита актора от медленных клиентов
 

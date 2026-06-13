@@ -47,6 +47,7 @@ release-check: alpha-check
 	$(MAKE) binary-release-check
 	$(MAKE) production-evidence-sweep
 	$(MAKE) backup-offsite-check
+	$(MAKE) upgrade-rollback-cli-flow-check
 	$(MAKE) crash-fault-check
 	$(MAKE) chaos-restart-check
 	$(MAKE) replication-lifecycle-check
