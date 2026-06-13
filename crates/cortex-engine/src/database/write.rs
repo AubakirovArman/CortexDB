@@ -3,6 +3,7 @@ use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use super::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::feedback::FeedbackIndex;
+use crate::graph::GraphIndexStore;
 use crate::operation::{
     wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq, DbOperation,
 };
@@ -115,6 +116,8 @@ impl Database {
                 let metadata = CellMetadata::from_payload_with_descriptor(&payload, &descriptor);
                 let corpus_synonym_record =
                     CorpusSynonymStore::record_from_payload(cell_id, &payload);
+                let graph_record =
+                    GraphIndexStore::record_from_payload(payload.clone(), &descriptor);
                 let feedback_record = FeedbackIndex::record_from_payload(&payload);
                 let session_record =
                     SessionIndex::record_from_payload(cell_id, &payload, &descriptor);
@@ -127,6 +130,7 @@ impl Database {
                 self.aql_delta_index.apply_metadata(cell_id, metadata);
                 self.corpus_synonym_store
                     .apply_record(cell_id, corpus_synonym_record);
+                self.graph_index_store.apply_record(cell_id, graph_record);
                 self.feedback_index.apply_record(cell_id, feedback_record);
                 self.session_index.apply_record(cell_id, session_record);
                 self.temporal_fact_store
@@ -140,6 +144,8 @@ impl Database {
                 let metadata = CellMetadata::from_payload_with_descriptor(&payload, &descriptor);
                 let corpus_synonym_record =
                     CorpusSynonymStore::record_from_payload(cell_id, &payload);
+                let graph_record =
+                    GraphIndexStore::record_from_payload(payload.clone(), &descriptor);
                 let feedback_record = FeedbackIndex::record_from_payload(&payload);
                 let session_record =
                     SessionIndex::record_from_payload(cell_id, &payload, &descriptor);
@@ -153,6 +159,7 @@ impl Database {
                 self.aql_delta_index.apply_metadata(cell_id, metadata);
                 self.corpus_synonym_store
                     .apply_record(cell_id, corpus_synonym_record);
+                self.graph_index_store.apply_record(cell_id, graph_record);
                 self.feedback_index.apply_record(cell_id, feedback_record);
                 self.session_index.apply_record(cell_id, session_record);
                 self.temporal_fact_store
@@ -164,6 +171,7 @@ impl Database {
                 self.memtable.record_tombstone(cell_id, seq);
                 self.aql_delta_index.apply_tombstone(cell_id);
                 self.corpus_synonym_store.apply_tombstone(cell_id);
+                self.graph_index_store.apply_tombstone(cell_id);
                 self.feedback_index.apply_tombstone(cell_id);
                 self.session_index.apply_tombstone(cell_id);
                 self.temporal_fact_store.apply_tombstone(cell_id);

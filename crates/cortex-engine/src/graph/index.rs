@@ -7,13 +7,29 @@ use super::types::{GraphEdge, GraphEdgeKind, GraphEntity, GraphSourceRef, Knowle
 
 impl KnowledgeGraphIndex {
     pub fn from_versions(versions: Vec<cortex_core::memtable::CellVersion>) -> Self {
+        let records = versions
+            .iter()
+            .map(|version| {
+                let metadata = CellMetadata::from_version(version);
+                (version.cell_id, version.payload.clone(), metadata)
+            })
+            .collect::<Vec<_>>();
+        Self::from_records(
+            records
+                .iter()
+                .map(|(cell_id, payload, metadata)| (*cell_id, payload.as_slice(), metadata)),
+        )
+    }
+
+    pub(crate) fn from_records<'a>(
+        records: impl IntoIterator<Item = (CellId, &'a [u8], &'a CellMetadata)>,
+    ) -> Self {
         let mut index = Self::default();
-        for version in versions {
-            let metadata = CellMetadata::from_version(&version);
-            index.index_source_ref(version.cell_id, &metadata);
+        for (cell_id, payload, metadata) in records {
+            index.index_source_ref(cell_id, metadata);
             match metadata.cell_type.as_str() {
-                "entity" => index.index_entity(version.cell_id, &version.payload, &metadata),
-                "relation" => index.index_relation(version.cell_id, &version.payload),
+                "entity" => index.index_entity(cell_id, payload, metadata),
+                "relation" => index.index_relation(cell_id, payload),
                 _ => {}
             }
         }

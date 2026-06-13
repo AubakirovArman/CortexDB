@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use crate::database::Database;
 use crate::error::EngineResult;
-use crate::query::metadata::CellMetadata;
 
 use super::ackg::ACKG_FILE_NAME;
 use super::types::{GraphEdge, GraphEntity, KnowledgeGraphIndex, ToolCell};
@@ -10,7 +9,7 @@ use super::types::{GraphEdge, GraphEntity, KnowledgeGraphIndex, ToolCell};
 impl Database {
     /// Build a deterministic graph index from the current snapshot.
     pub fn knowledge_graph_index(&self) -> KnowledgeGraphIndex {
-        KnowledgeGraphIndex::from_versions(self.snapshot_versions())
+        self.graph_index_store.index()
     }
 
     pub fn knowledge_graph_index_path(&self) -> PathBuf {
@@ -61,25 +60,6 @@ impl Database {
 
     /// Find all Tool cells in the database.
     pub fn tool_cells(&self) -> Vec<ToolCell> {
-        self.snapshot_versions()
-            .into_iter()
-            .filter_map(|version| {
-                let metadata = CellMetadata::from_version(&version);
-                if metadata.cell_type != "tool" {
-                    return None;
-                }
-                let body = String::from_utf8_lossy(&version.payload);
-                let name = body
-                    .lines()
-                    .find(|l| l.starts_with("name="))
-                    .and_then(|line| line.strip_prefix("name="))
-                    .map(ToOwned::to_owned);
-                Some(ToolCell {
-                    cell_id: version.cell_id,
-                    name,
-                    description: metadata.body_text,
-                })
-            })
-            .collect()
+        self.graph_index_store.tool_cells()
     }
 }

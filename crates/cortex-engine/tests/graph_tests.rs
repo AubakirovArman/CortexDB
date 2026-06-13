@@ -32,6 +32,18 @@ fn relation_cell(subject: &str, predicate: &str, object: &str) -> KnowledgeCell 
     )
 }
 
+fn tool_cell(body: &str) -> KnowledgeCell {
+    KnowledgeCell::new(
+        KnowledgeCellMetadata {
+            scope: "project:investments".to_owned(),
+            status: "ready".to_owned(),
+            cell_type: KnowledgeCellType::Tool,
+            ..KnowledgeCellMetadata::default()
+        },
+        body,
+    )
+}
+
 #[test]
 fn graph_neighbors_finds_relations_by_subject_or_object() {
     let dir = tempfile::tempdir().unwrap();
@@ -276,4 +288,50 @@ fn knowledge_graph_index_survives_checkpoint_and_reopen() {
     assert_eq!(db.graph_entities("Solar Plant").len(), 1);
     assert_eq!(db.graph_neighbors("Solar Plant").len(), 1);
     assert_eq!(db.graph_cells_for_source("ifc:solar-001"), vec![CellId(1)]);
+}
+
+#[test]
+fn knowledge_graph_store_tracks_patch_tombstone_checkpoint_and_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        db.put_knowledge_cell(
+            CellId(1),
+            entity_cell("Solar Plant", "project", "ifc:solar-001"),
+        )
+        .unwrap();
+        db.put_knowledge_cell(
+            CellId(2),
+            relation_cell("Solar Plant", "has_sector", "renewable_energy"),
+        )
+        .unwrap();
+        db.put_knowledge_cell(CellId(3), tool_cell("name=calculator\n\nold tool"))
+            .unwrap();
+
+        db.patch_cell(
+            CellId(2),
+            relation_cell("Wind Farm", "has_sector", "renewable_energy").encode_payload(),
+        )
+        .unwrap();
+        db.patch_cell(
+            CellId(3),
+            tool_cell("name=updated\n\nnew tool").encode_payload(),
+        )
+        .unwrap();
+        db.tombstone_cell(CellId(1)).unwrap();
+
+        assert!(db.graph_entities("Solar Plant").is_empty());
+        assert!(db.graph_neighbors("Solar Plant").is_empty());
+        assert_eq!(db.graph_neighbors("Wind Farm").len(), 1);
+        assert!(db.graph_cells_for_source("ifc:solar-001").is_empty());
+        assert_eq!(db.tool_cells()[0].name, Some("updated".to_owned()));
+        db.checkpoint().unwrap();
+    }
+
+    let db = Database::open(dir.path()).unwrap();
+    assert!(db.graph_entities("Solar Plant").is_empty());
+    assert!(db.graph_neighbors("Solar Plant").is_empty());
+    assert_eq!(db.graph_neighbors("Wind Farm").len(), 1);
+    assert!(db.graph_cells_for_source("ifc:solar-001").is_empty());
+    assert_eq!(db.tool_cells()[0].name, Some("updated".to_owned()));
 }

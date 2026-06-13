@@ -10,6 +10,7 @@ use cortex_storage::wal::{DurabilityMode, WalWriterHandle};
 
 use crate::checkpoint::PersistedIndexCache;
 use crate::feedback::FeedbackIndex;
+use crate::graph::GraphIndexStore;
 use crate::lock::DatabaseLock;
 use crate::options::{CompactionPolicy, EngineFeatureFlags};
 use crate::query::cache::AqlQueryCache;
@@ -43,6 +44,7 @@ pub struct Database {
     pub(crate) aql_delta_index: AqlDeltaIndex,
     pub(crate) corpus_synonym_store: CorpusSynonymStore,
     pub(crate) feedback_index: FeedbackIndex,
+    pub(crate) graph_index_store: GraphIndexStore,
     pub(crate) session_index: SessionIndex,
     pub(crate) temporal_fact_store: TemporalFactStore,
     pub(crate) tool_index: ToolIndex,

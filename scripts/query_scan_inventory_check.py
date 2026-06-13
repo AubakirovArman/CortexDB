@@ -12,8 +12,6 @@ QUERY_ADJACENT = {
     ("search/database/expansion.rs", ".snapshot_versions()"): 2,
     ("search/database/expansion.rs", "for version in self.snapshot_versions() {"): 1,
     ("search/database/snapshot.rs", ".snapshot_versions()"): 1,
-    ("graph/database.rs", "KnowledgeGraphIndex::from_versions(self.snapshot_versions())"): 1,
-    ("graph/database.rs", "self.snapshot_versions()"): 1,
 }
 
 MAINTENANCE_OR_BACKFILL = {

@@ -13,6 +13,7 @@ use crate::database_files::find_wal_files;
 use crate::database_files::truncate_wal_tail;
 use crate::error::{EngineError, EngineResult};
 use crate::feedback::FeedbackIndex;
+use crate::graph::GraphIndexStore;
 use crate::lock::DatabaseLock;
 use crate::options::{
     DatabaseOptions, EngineFeature, EngineFeatureFlags, RecoveryMode, StaleLockPolicy,
@@ -106,6 +107,8 @@ impl Database {
         );
         let feedback_index =
             FeedbackIndex::from_memtable(&current_memtable, ReadTxn::at(current_seq));
+        let graph_index_store =
+            GraphIndexStore::from_memtable(&current_memtable, ReadTxn::at(current_seq));
         let corpus_synonym_store =
             CorpusSynonymStore::from_memtable(&current_memtable, ReadTxn::at(current_seq));
         let session_index =
@@ -131,6 +134,7 @@ impl Database {
             aql_delta_index,
             corpus_synonym_store,
             feedback_index,
+            graph_index_store,
             session_index,
             temporal_fact_store,
             tool_index,

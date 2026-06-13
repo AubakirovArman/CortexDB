@@ -13,6 +13,7 @@ use crate::checkpoint::{bitmap_path, hnsw_path, lexical_path, segment_path, vect
 use crate::database::{CheckpointStats, Database};
 use crate::error::{EngineError, EngineResult};
 use crate::feedback::FeedbackIndex;
+use crate::graph::GraphIndexStore;
 use crate::options::EngineFeature;
 use crate::query::EngineAqlIndex;
 use crate::search::CorpusSynonymStore;
@@ -82,6 +83,8 @@ impl Database {
             CorpusSynonymStore::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
         self.feedback_index =
             FeedbackIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
+        self.graph_index_store =
+            GraphIndexStore::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
         self.session_index =
             SessionIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
         self.temporal_fact_store =
