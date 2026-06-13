@@ -38,6 +38,20 @@ target/scale-bench/100k/report.json
 target/scale-bench/1m/report.json
 ```
 
+To inventory already captured A19 evidence without running a new benchmark:
+
+```bash
+python3 scripts/scale_benchmark_inventory.py \
+  --root target/scale-bench \
+  --report target/scale-bench/inventory.json
+```
+
+This writes:
+
+```text
+target/scale-bench/inventory.json
+```
+
 ## Payload Profile
 
 The generated corpus uses realistic text payloads between roughly 0.5KB and
@@ -132,3 +146,39 @@ Search, ContextPack, and VerifyFact at 100K are deliberately kept outside the
 default target. A low-sample exploratory run reached those phases but did not
 finish in a practical window, so those measurements remain open work for the
 next optimization pass rather than hidden behind a passing default.
+
+## A19 Evidence Inventory
+
+Run date: 2026-06-13
+
+Command:
+
+```bash
+python3 scripts/scale_benchmark_inventory.py \
+  --root target/scale-bench \
+  --report target/scale-bench/inventory.json
+```
+
+Report:
+
+```text
+target/scale-bench/inventory.json
+```
+
+Summary:
+
+| Cells | Core lifecycle | ContextPack p50/p95 | Keyword p50/p95 | Verify p50/p95 |
+| ---: | --- | --- | --- | --- |
+| 1K | yes | no | no | no |
+| 10K | yes | yes | no | no |
+| 100K | yes | yes | no | no |
+| 1M | yes | yes | no | no |
+
+Open A19 items from the inventory:
+
+- 100K keyword search p50/p95.
+- 100K VerifyFact p50/p95.
+- 1M keyword search p50/p95.
+- 1M VerifyFact p50/p95.
+- 10M post-lazy RSS/latency report.
+- Multi-point before/after optimization trend curves.

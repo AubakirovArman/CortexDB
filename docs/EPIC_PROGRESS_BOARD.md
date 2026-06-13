@@ -34,8 +34,13 @@ A19 exit steps:
 A19 progress:
 
 - 100K/1M core lifecycle baselines exist and are documented;
-- heavy search/context/verify p95, lazy cold outlier analysis, and larger-scale
-  trend curves remain;
+- `scripts/scale_benchmark_inventory.py` writes
+  `target/scale-bench/inventory.json` and currently reports 14 scale reports
+  with `status=partial`;
+- ContextPack p50/p95 exists for 100K and 1M, but keyword_search and
+  verify_fact p50/p95 are still missing at both sizes;
+- 10M post-lazy RSS/latency, lazy cold outlier analysis, and larger-scale trend
+  curves remain;
 - use small/medium gates while implementing; do not run 1M/10M unless this
   epic explicitly needs the evidence.
 
@@ -405,8 +410,8 @@ High-signal done epics:
 Partial count in roadmap snapshot: `3`.
 
 - A19 scale benchmarks:
-  long-running load evidence, lazy cold outlier analysis, and later larger-scale
-  evidence remain.
+  keyword_search/verify_fact p50/p95, 10M lazy evidence, cold outlier analysis,
+  and trend curves remain.
 - C16 memory profiling:
   estimated-vs-real verification and gate integration remain.
 - D05 SDK publish:
@@ -424,8 +429,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 Work on A19 only:
 
-1. inventory the existing 100K/1M scale reports and identify missing metrics;
-2. keep the next run small enough to validate instrumentation before any large
+1. run a small scale benchmark with keyword_search and verify_fact samples to
+   validate instrumentation;
+2. keep that run small enough to avoid turning instrumentation work into a large
    benchmark;
 3. add or fix benchmark reporting only where it directly closes A19 acceptance;
 4. update the tracker with report paths and move pointer only when A19 is done
