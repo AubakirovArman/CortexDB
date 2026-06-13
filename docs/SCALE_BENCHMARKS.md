@@ -169,16 +169,59 @@ Summary:
 
 | Cells | Core lifecycle | ContextPack p50/p95 | Keyword p50/p95 | Verify p50/p95 |
 | ---: | --- | --- | --- | --- |
-| 1K | yes | no | no | no |
+| 1K | yes | no | yes | yes |
 | 10K | yes | yes | no | no |
-| 100K | yes | yes | no | no |
+| 100K | yes | yes | yes | yes |
 | 1M | yes | yes | no | no |
 
 Open A19 items from the inventory:
 
-- 100K keyword search p50/p95.
-- 100K VerifyFact p50/p95.
 - 1M keyword search p50/p95.
 - 1M VerifyFact p50/p95.
 - 10M post-lazy RSS/latency report.
 - Multi-point before/after optimization trend curves.
+
+## A19 100K Search/Verify Instrumentation
+
+Run date: 2026-06-13
+
+This run is a controlled instrumentation run, not the full 100K lifecycle
+baseline. It uses `--direct-checkpoint` and fixed 128-byte payloads so search
+and VerifyFact latency can be measured without rerunning the expensive WAL
+ingest path.
+
+Command:
+
+```bash
+cargo run --release -p cortex-engine --bin scale_benchmark_check -- \
+  --root target/scale-bench/a19-search-verify-100k \
+  --report target/scale-bench/a19-search-verify-100k/report.json \
+  --cells 100000 \
+  --samples 0 \
+  --search-samples 3 \
+  --context-samples 0 \
+  --verify-samples 3 \
+  --batch-size 5000 \
+  --payload-bytes 128 \
+  --direct-checkpoint
+```
+
+Report:
+
+```text
+target/scale-bench/a19-search-verify-100k/report.json
+```
+
+Summary:
+
+| Phase | Result |
+| --- | ---: |
+| cells | 100000 |
+| total duration | 26613.438 ms |
+| direct_checkpoint | 2539.002 ms |
+| open_prepared | 1984.402 ms |
+| keyword_search p50/p95 | 1307.151 / 1307.151 ms |
+| VerifyFact p50/p95 | 4077.174 / 4077.174 ms |
+| restart_open | 1749.477 ms |
+
+Validation status: `ok=true`, no storage validation errors.
