@@ -23,6 +23,7 @@ DATABASE = ROOT / "crates/cortex-engine/src/database.rs"
 RETRIEVAL_QUALITY = ROOT / "crates/cortex-engine/src/retrieval_quality.rs"
 QUERY_EXPLAIN = ROOT / "crates/cortex-engine/src/query/explain.rs"
 SESSION = ROOT / "crates/cortex-engine/src/session.rs"
+SESSION_INDEX = ROOT / "crates/cortex-engine/src/session/index.rs"
 SESSION_PAYLOAD = ROOT / "crates/cortex-engine/src/session/payload.rs"
 INGESTION_REPORT = ROOT / "crates/cortex-engine/src/ingestion/report.rs"
 REPLICATION_SNAPSHOT = ROOT / "crates/cortex-engine/src/replication/snapshot.rs"
@@ -61,6 +62,7 @@ def main() -> None:
     retrieval_quality = RETRIEVAL_QUALITY.read_text()
     query_explain = QUERY_EXPLAIN.read_text()
     session = SESSION.read_text()
+    session_index = SESSION_INDEX.read_text()
     session_payload = SESSION_PAYLOAD.read_text()
     ingestion_report = INGESTION_REPORT.read_text()
     replication_snapshot = REPLICATION_SNAPSHOT.read_text()
@@ -190,13 +192,23 @@ def main() -> None:
     )
     require(
         session,
-        "let descriptor_metadata = CellMetadata::from_version(&version);",
-        "session retrieval descriptor metadata",
+        ".session_index\n            .retrieve(session_id, view, now_unix_seconds)",
+        "session retrieval delegates to maintained index",
     )
     require(
-        session,
+        session_index,
+        "let descriptor_metadata = CellMetadata::from_payload_with_descriptor(",
+        "session index descriptor-backed metadata",
+    )
+    require(
+        session_index,
         "view.can_read_scope(scope_id(&descriptor_metadata.scope))",
-        "session retrieval descriptor scope authorization",
+        "session index descriptor scope authorization",
+    )
+    forbid(
+        session,
+        "snapshot_versions()",
+        "session retrieval full snapshot scan",
     )
     forbid(
         session,

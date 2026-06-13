@@ -83,8 +83,8 @@ pub(super) struct SessionCellMetadata {
 }
 
 impl SessionCellMetadata {
-    pub fn is_expired(&self, now_unix_seconds: u64) -> bool {
-        now_unix_seconds >= self.created_unix_seconds.saturating_add(self.ttl_seconds)
+    pub fn expires_at_unix_seconds(&self) -> u64 {
+        self.created_unix_seconds.saturating_add(self.ttl_seconds)
     }
 }
 

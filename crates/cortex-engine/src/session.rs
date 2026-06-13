@@ -3,11 +3,13 @@ use cortex_core::{CellId, CommitSeq};
 
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
-use crate::query::{scope_id, CellMetadata};
+use crate::query::scope_id;
 
+mod index;
 mod payload;
 
-use payload::{parse_session_cell, session_payload, SessionCellKind, SessionPayload};
+pub(crate) use index::SessionIndex;
+use payload::{session_payload, SessionCellKind, SessionPayload};
 
 const SESSION_CELL_NAMESPACE: u64 = 0xa000_0000_0000_0000;
 
@@ -123,25 +125,9 @@ impl Database {
         view: &AgentView,
         now_unix_seconds: u64,
     ) -> Vec<RetrievedCell> {
-        let mut cells: Vec<_> = self
-            .snapshot_versions()
-            .into_iter()
-            .filter_map(|version| {
-                let session_metadata = parse_session_cell(&version.payload)?;
-                let descriptor_metadata = CellMetadata::from_version(&version);
-                if session_metadata.session_id != session_id
-                    || session_metadata.is_expired(now_unix_seconds)
-                    || !view.can_read_scope(scope_id(&descriptor_metadata.scope))
-                {
-                    return None;
-                }
-                Some(RetrievedCell {
-                    cell_id: version.cell_id,
-                    payload: version.payload,
-                    descriptor: version.descriptor,
-                })
-            })
-            .collect();
+        let mut cells = self
+            .session_index
+            .retrieve(session_id, view, now_unix_seconds);
         cells.sort_by_key(|cell| cell.cell_id);
         cells
     }

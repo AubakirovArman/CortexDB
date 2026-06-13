@@ -15,7 +15,6 @@ QUERY_ADJACENT = {
     ("search/synonyms/database.rs", ".snapshot_versions()"): 1,
     ("graph/database.rs", "KnowledgeGraphIndex::from_versions(self.snapshot_versions())"): 1,
     ("graph/database.rs", "self.snapshot_versions()"): 1,
-    ("session.rs", ".snapshot_versions()"): 1,
     ("verification/temporal_index.rs", "for version in self.snapshot_versions() {"): 1,
 }
 

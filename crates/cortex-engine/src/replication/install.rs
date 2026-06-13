@@ -15,6 +15,7 @@ use crate::error::{EngineError, EngineResult};
 use crate::feedback::FeedbackIndex;
 use crate::options::EngineFeature;
 use crate::query::EngineAqlIndex;
+use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
 
 use super::{SnapshotCell, SnapshotSegment};
@@ -77,6 +78,8 @@ impl Database {
         self.aql_delta_index.clear();
         self.feedback_index =
             FeedbackIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
+        self.session_index =
+            SessionIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
         self.tool_index = ToolIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
         if let Ok(mut cache) = self.persisted_index_cache.lock() {
             *cache = None;

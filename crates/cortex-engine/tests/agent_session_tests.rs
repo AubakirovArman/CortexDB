@@ -120,6 +120,48 @@ fn session_memory_survives_restart() {
 }
 
 #[test]
+fn session_index_tracks_patch_tombstone_checkpoint_and_reopen() {
+    let dir = tempdir().unwrap();
+    let (session_id, memory_id) = {
+        let mut db = Database::open(dir.path()).unwrap();
+        let view = view("agent:finance");
+        let session = db
+            .start_agent_session(&view, "agent:finance", b"context", 60, 1_000)
+            .unwrap();
+        let memory = db
+            .remember_session_memory(&session, &view, b"stale note", Some(40), 1_010)
+            .unwrap();
+        let patched_payload = format!(
+            "scope=agent:finance\nstatus=ready\ntype=memory\nmemory_type=observation\nttl_seconds=40\ncreated_unix_seconds=1010\nsource=agent:7\nsession_id={}\nsession_kind=temporary_memory\n\npatched note",
+            session.session_id
+        )
+        .into_bytes();
+        db.patch_cell(memory.cell_id, patched_payload).unwrap();
+        db.tombstone_cell(session.context_cell_id).unwrap();
+
+        let live_cells = db.retrieve_session_cells(&session.session_id, &view, 1_020);
+        assert_eq!(live_cells.len(), 1);
+        assert_eq!(live_cells[0].cell_id, memory.cell_id);
+        assert!(live_cells[0]
+            .payload
+            .windows("patched note".len())
+            .any(|window| window == b"patched note"));
+
+        db.checkpoint().unwrap();
+        (session.session_id, memory.cell_id)
+    };
+
+    let db = Database::open(dir.path()).unwrap();
+    let live_cells = db.retrieve_session_cells(&session_id, &view("agent:finance"), 1_020);
+    assert_eq!(live_cells.len(), 1);
+    assert_eq!(live_cells[0].cell_id, memory_id);
+    assert!(live_cells[0]
+        .payload
+        .windows("patched note".len())
+        .any(|window| window == b"patched note"));
+}
+
+#[test]
 fn session_policy_denies_unwritable_scope() {
     let dir = tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
