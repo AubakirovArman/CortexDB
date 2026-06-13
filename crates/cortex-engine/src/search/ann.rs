@@ -1,4 +1,5 @@
 mod evaluation;
+mod outcomes;
 mod report;
 mod runtime;
 mod search;

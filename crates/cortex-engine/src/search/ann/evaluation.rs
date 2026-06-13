@@ -3,9 +3,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use cortex_storage::hnsw::HnswGraphIndex;
 
 use super::super::persisted::search_persisted_vectors;
+use super::outcomes::exact_from_results;
 use super::report::{finalize_report, recall_q16};
 use super::runtime::{hnsw_runtime_config, metric_from_graph};
-use super::search::{exact_from_results, search_hnsw};
+use super::search::search_hnsw;
 use super::types::{
     AnnEvaluationReport, AnnFallbackReason, AnnSearchOutcome, AnnSearchPath, AnnSearchPolicy,
     AnnSearchReport,

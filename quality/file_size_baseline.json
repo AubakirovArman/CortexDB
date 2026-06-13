@@ -2299,14 +2299,21 @@
     "crates/cortex-engine/src/search/ann.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 21,
+      "lines": 22,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-engine/src/search/ann/evaluation.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 147,
+      "lines": 148,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/search/ann/outcomes.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 128,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2327,7 +2334,7 @@
     "crates/cortex-engine/src/search/ann/search.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 384,
+      "lines": 266,
       "soft_limit": 300,
       "warning_limit": 600
     },
