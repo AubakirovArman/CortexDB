@@ -9,8 +9,6 @@ ROOT = Path(__file__).resolve().parents[1]
 ENGINE_SRC = ROOT / "crates/cortex-engine/src"
 
 QUERY_ADJACENT = {
-    ("search/database/expansion.rs", ".snapshot_versions()"): 2,
-    ("search/database/expansion.rs", "for version in self.snapshot_versions() {"): 1,
     ("search/database/snapshot.rs", ".snapshot_versions()"): 1,
 }
 

@@ -62,6 +62,7 @@ pub use conditions::{
     condition_payload_bonus, extract_query_conditions, NumericConditionOperator,
     QueryConditionExtraction, QueryConditionSlot, QueryNumericCondition,
 };
+pub(crate) use database::SearchContextStore;
 pub use database::{
     DatabaseSearchOutcome, DatabaseSearchResult, SearchDiversityDiagnostics, SearchLimit,
     SearchViewTrace,

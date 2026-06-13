@@ -16,7 +16,7 @@ use crate::feedback::FeedbackIndex;
 use crate::graph::GraphIndexStore;
 use crate::options::EngineFeature;
 use crate::query::EngineAqlIndex;
-use crate::search::CorpusSynonymStore;
+use crate::search::{CorpusSynonymStore, SearchContextStore};
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
 use crate::verification::TemporalFactStore;
@@ -85,6 +85,8 @@ impl Database {
             FeedbackIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
         self.graph_index_store =
             GraphIndexStore::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
+        self.search_context_store =
+            SearchContextStore::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
         self.session_index =
             SessionIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
         self.temporal_fact_store =

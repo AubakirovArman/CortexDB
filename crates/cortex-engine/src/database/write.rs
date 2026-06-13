@@ -8,7 +8,7 @@ use crate::operation::{
     wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq, DbOperation,
 };
 use crate::query::CellMetadata;
-use crate::search::CorpusSynonymStore;
+use crate::search::{CorpusSynonymStore, SearchContextStore};
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
 use crate::verification::TemporalFactStore;
@@ -118,6 +118,8 @@ impl Database {
                     CorpusSynonymStore::record_from_payload(cell_id, &payload);
                 let graph_record =
                     GraphIndexStore::record_from_payload(payload.clone(), &descriptor);
+                let search_context_record =
+                    SearchContextStore::record_from_payload(payload.clone(), &descriptor);
                 let feedback_record = FeedbackIndex::record_from_payload(&payload);
                 let session_record =
                     SessionIndex::record_from_payload(cell_id, &payload, &descriptor);
@@ -131,6 +133,8 @@ impl Database {
                 self.corpus_synonym_store
                     .apply_record(cell_id, corpus_synonym_record);
                 self.graph_index_store.apply_record(cell_id, graph_record);
+                self.search_context_store
+                    .apply_record(cell_id, search_context_record);
                 self.feedback_index.apply_record(cell_id, feedback_record);
                 self.session_index.apply_record(cell_id, session_record);
                 self.temporal_fact_store
@@ -146,6 +150,8 @@ impl Database {
                     CorpusSynonymStore::record_from_payload(cell_id, &payload);
                 let graph_record =
                     GraphIndexStore::record_from_payload(payload.clone(), &descriptor);
+                let search_context_record =
+                    SearchContextStore::record_from_payload(payload.clone(), &descriptor);
                 let feedback_record = FeedbackIndex::record_from_payload(&payload);
                 let session_record =
                     SessionIndex::record_from_payload(cell_id, &payload, &descriptor);
@@ -160,6 +166,8 @@ impl Database {
                 self.corpus_synonym_store
                     .apply_record(cell_id, corpus_synonym_record);
                 self.graph_index_store.apply_record(cell_id, graph_record);
+                self.search_context_store
+                    .apply_record(cell_id, search_context_record);
                 self.feedback_index.apply_record(cell_id, feedback_record);
                 self.session_index.apply_record(cell_id, session_record);
                 self.temporal_fact_store
@@ -172,6 +180,7 @@ impl Database {
                 self.aql_delta_index.apply_tombstone(cell_id);
                 self.corpus_synonym_store.apply_tombstone(cell_id);
                 self.graph_index_store.apply_tombstone(cell_id);
+                self.search_context_store.apply_tombstone(cell_id);
                 self.feedback_index.apply_tombstone(cell_id);
                 self.session_index.apply_tombstone(cell_id);
                 self.temporal_fact_store.apply_tombstone(cell_id);

@@ -1,18 +1,13 @@
-use std::cmp::Reverse;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 use cortex_aql::AgentView;
 use cortex_core::CellId;
 
 use crate::database::Database;
-use crate::query::scope_id;
 
 use super::super::{classify_search_query_intent, SearchQuery, SearchQueryIntent};
-use super::context::{
-    high_level_anchor_score, is_search_parent_context_metadata, project_context_score,
-    search_parent_lookup_keys,
-};
-use super::{metadata_for_version, DatabaseSearchResult};
+use super::context::search_parent_lookup_keys;
+use super::DatabaseSearchResult;
 
 impl Database {
     pub(crate) fn expand_search_parent_context(
@@ -144,85 +139,19 @@ impl Database {
         view: &AgentView,
         projects: &BTreeSet<String>,
     ) -> Vec<DatabaseSearchResult> {
-        let mut candidates = self
-            .snapshot_versions()
-            .into_iter()
-            .filter_map(|version| {
-                let metadata = metadata_for_version(&version);
-                if !view.can_read_scope(scope_id(&metadata.scope))
-                    || !metadata
-                        .project
-                        .as_ref()
-                        .is_some_and(|project| projects.contains(project))
-                {
-                    return None;
-                }
-                let score = project_context_score(&metadata);
-                Some(DatabaseSearchResult {
-                    cell_id: version.cell_id,
-                    score,
-                    lexical_score: score,
-                    vector_score: 0,
-                    metadata,
-                    payload: version.payload,
-                })
-            })
-            .collect::<Vec<_>>();
-        candidates.sort_by_key(|result| (Reverse(result.score), result.cell_id.0));
-        candidates
+        self.search_context_store
+            .project_context_candidates(view, projects)
     }
 
     fn high_level_anchor_candidates(&self, view: &AgentView) -> Vec<DatabaseSearchResult> {
-        let mut candidates = self
-            .snapshot_versions()
-            .into_iter()
-            .filter_map(|version| {
-                let metadata = metadata_for_version(&version);
-                if !view.can_read_scope(scope_id(&metadata.scope)) {
-                    return None;
-                }
-                let score = high_level_anchor_score(&metadata);
-                (score > 0).then_some(DatabaseSearchResult {
-                    cell_id: version.cell_id,
-                    score,
-                    lexical_score: score,
-                    vector_score: 0,
-                    metadata,
-                    payload: version.payload,
-                })
-            })
-            .collect::<Vec<_>>();
-        candidates.sort_by_key(|result| (Reverse(result.score), result.cell_id.0));
-        candidates
+        self.search_context_store.high_level_anchor_candidates(view)
     }
 
     fn search_parent_context_candidates(
         &self,
         view: &AgentView,
-    ) -> BTreeMap<String, DatabaseSearchResult> {
-        let mut parents = BTreeMap::new();
-        for version in self.snapshot_versions() {
-            let metadata = metadata_for_version(&version);
-            if !view.can_read_scope(scope_id(&metadata.scope))
-                || !is_search_parent_context_metadata(&metadata)
-            {
-                continue;
-            }
-            let result = DatabaseSearchResult {
-                cell_id: version.cell_id,
-                score: 0,
-                lexical_score: 0,
-                vector_score: 0,
-                metadata: metadata.clone(),
-                payload: version.payload,
-            };
-            if let Some(chunk_id) = &metadata.chunk_id {
-                parents.entry(chunk_id.clone()).or_insert(result.clone());
-            }
-            if let Some(document_id) = &metadata.document_id {
-                parents.entry(document_id.clone()).or_insert(result);
-            }
-        }
-        parents
+    ) -> std::collections::BTreeMap<String, DatabaseSearchResult> {
+        self.search_context_store
+            .search_parent_context_candidates(view)
     }
 }

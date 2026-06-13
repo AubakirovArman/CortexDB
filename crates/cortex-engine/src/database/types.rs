@@ -16,7 +16,7 @@ use crate::options::{CompactionPolicy, EngineFeatureFlags};
 use crate::query::cache::AqlQueryCache;
 use crate::query::AqlDeltaIndex;
 use crate::query::CellMetadata;
-use crate::search::{CorpusSynonymStore, HnswBuildConfig};
+use crate::search::{CorpusSynonymStore, HnswBuildConfig, SearchContextStore};
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
 use crate::verification::TemporalFactStore;
@@ -45,6 +45,7 @@ pub struct Database {
     pub(crate) corpus_synonym_store: CorpusSynonymStore,
     pub(crate) feedback_index: FeedbackIndex,
     pub(crate) graph_index_store: GraphIndexStore,
+    pub(crate) search_context_store: SearchContextStore,
     pub(crate) session_index: SessionIndex,
     pub(crate) temporal_fact_store: TemporalFactStore,
     pub(crate) tool_index: ToolIndex,
