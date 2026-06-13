@@ -90,6 +90,7 @@ fn explain_response(report: AqlExplainReport) -> AqlExplainResponse {
             universe: report.candidate_counts.universe,
             agent_allowed: report.candidate_counts.agent_allowed,
             live: report.candidate_counts.live,
+            estimated_after_bitmap: report.candidate_counts.estimated_after_bitmap,
             after_bitmap: report.candidate_counts.after_bitmap,
             after_quality: report.candidate_counts.after_quality,
             returned_limit: report.candidate_counts.returned_limit,

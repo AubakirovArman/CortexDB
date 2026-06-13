@@ -379,6 +379,7 @@ bound AQL plan; it does not return payload rows.
       "universe": 2,
       "agent_allowed": 2,
       "live": 2,
+      "estimated_after_bitmap": 1,
       "after_bitmap": 1,
       "after_quality": 1,
       "returned_limit": 1

@@ -115,6 +115,8 @@ WHERE space = project:wide AND status = "ready" LIMIT 10 CANDIDATES;"#,
         .unwrap();
     let scope_handle = index.scope_bitmap(brain, scope_id("project:wide")).unwrap();
 
+    assert_eq!(report.candidate_counts.estimated_after_bitmap, Some(1));
+    assert_eq!(report.candidate_counts.after_bitmap, 1);
     let status_op = format!("Push({status_handle:?})");
     let scope_op = format!("Push({scope_handle:?})");
     let status_position = report

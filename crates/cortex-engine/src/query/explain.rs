@@ -1,4 +1,6 @@
-use cortex_aql::{eval_bitmap_program, AgentView, BitmapProvider, BrainId, RetrievalMode};
+use cortex_aql::{
+    eval_bitmap_program, AgentView, BitmapOp, BitmapProgram, BitmapProvider, BrainId, RetrievalMode,
+};
 
 use crate::database::{cell_version_meets_quality_thresholds, CandidateResolver, Database};
 use crate::error::{EngineError, EngineResult};
@@ -36,6 +38,7 @@ pub struct AqlCandidateCounts {
     pub universe: usize,
     pub agent_allowed: usize,
     pub live: usize,
+    pub estimated_after_bitmap: Option<usize>,
     pub after_bitmap: usize,
     pub after_quality: usize,
     pub returned_limit: usize,
@@ -122,6 +125,8 @@ impl Database {
                 after_quality.min(candidate_limit),
             )
         };
+        let estimated_after_bitmap =
+            estimate_bitmap_program_rows(&plan.bitmap_program, self, &provider);
         let mut filters = vec![
             AqlExplainFilter {
                 kind: "policy".to_owned(),
@@ -156,6 +161,7 @@ impl Database {
                 universe: provider.universe().len(),
                 agent_allowed: provider.agent_allowed().len(),
                 live: provider.live().len(),
+                estimated_after_bitmap,
                 after_bitmap,
                 after_quality,
                 returned_limit,
@@ -169,6 +175,41 @@ impl Database {
             }),
         })
     }
+}
+
+fn estimate_bitmap_program_rows<P: BitmapProvider>(
+    program: &BitmapProgram,
+    database: &Database,
+    provider: &P,
+) -> Option<usize> {
+    let statistics = database.statistics();
+    let max_rows = statistics.live_segment_row_count();
+    let mut stack = Vec::<Option<u64>>::new();
+    for op in &program.ops {
+        match op {
+            BitmapOp::Push(handle) => stack.push(statistics.estimate_bitmap_cardinality(*handle)),
+            BitmapOp::PushUniverse | BitmapOp::PushLive => stack.push(Some(max_rows)),
+            BitmapOp::PushAgentAllowed => stack.push(Some(provider.agent_allowed().len() as u64)),
+            BitmapOp::And => {
+                let rhs = stack.pop()??;
+                let lhs = stack.pop()??;
+                stack.push(Some(lhs.min(rhs)));
+            }
+            BitmapOp::Or => {
+                let rhs = stack.pop()??;
+                let lhs = stack.pop()??;
+                stack.push(Some(lhs.saturating_add(rhs).min(max_rows)));
+            }
+            BitmapOp::Not => {
+                let value = stack.pop()??;
+                stack.push(Some(max_rows.saturating_sub(value)));
+            }
+        }
+    }
+    let [Some(rows)] = stack.as_slice() else {
+        return None;
+    };
+    usize::try_from(*rows).ok()
 }
 
 fn operator_output_count(operators: &[PhysicalOperatorTrace], name: &str) -> usize {

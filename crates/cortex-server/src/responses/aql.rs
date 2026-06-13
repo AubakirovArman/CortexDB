@@ -17,6 +17,8 @@ pub struct AqlCandidateCountsResponse {
     pub universe: usize,
     pub agent_allowed: usize,
     pub live: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub estimated_after_bitmap: Option<usize>,
     pub after_bitmap: usize,
     pub after_quality: usize,
     pub returned_limit: usize,

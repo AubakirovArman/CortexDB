@@ -304,7 +304,7 @@ enough to unblock the next dependency step.
   - [x] 1) собрать статистику при checkpoint/compact рядом с segment metadata.
   - [x] 2) сохранить статистику в manifest или совместимом sidecar так, чтобы restart не пересчитывал всё из payload.
   - [x] 3) добавить engine API для оценки bitmap/scope/status/type predicates и term df.
-  - [ ] 4) вывести estimated rows в EXPLAIN рядом с actual rows.
+  - [x] 4) вывести estimated rows в EXPLAIN рядом с actual rows.
   - [x] 5) добавить тест-корпус, где оценка scope cardinality отклоняется не более чем в 2x.
   - [ ] 6) после зелёных gates и evidence перевести A12 в `done` и перейти к `EPIC-A13`.
 - tasks:
@@ -314,13 +314,14 @@ enough to unblock the next dependency step.
 - acceptance:
   - [x] 1) оценка кардинальности scope-фильтра отклоняется ≤ 2x на тест-корпусе
   - [x] 2) статистика переживает рестарт (в манифесте/сайдкаре)
-  - [ ] 3) EXPLAIN показывает estimated vs actual.
+  - [x] 3) EXPLAIN показывает estimated vs actual.
 - files: cortex-storage/src/manifest.rs, indexes.rs; checkpoint.rs.
-- next exit step: add estimated rows to EXPLAIN beside actual rows, then decide whether zone maps belong in A12 or C10.
+- next exit step: implement minimal zone-map segment skipping from A12 stats, or explicitly defer it to C10 before marking A12 done.
 - risks: распухание манифеста — sketch/top-K, не полные словари. Зависимости: A07 удобно вместе. Эффект: кормит A13.
 - evidence: A12.0 stats contract added as manifest `STAT` extension with `ManifestSegmentStats`: per-segment row count, optional created_at min/max, scope/status/type counts, and bounded top term document frequencies. Helper API replaces stats by segment id, sorts stats deterministically, and retires stats with replaced segments. Tests: `manifest_segment_stats_roundtrips`, `manifest_segment_stats_helpers_replace_and_retire_by_segment_id`; `cargo test -p cortex-storage --all-features`.
 - evidence: A12.1 stats collection is wired into incremental checkpoint, full compact, and incremental compaction. The builder derives descriptor-backed scope/status/type counts, created_at min/max, and top-32 term document frequencies while skipping tombstone metadata counts. Full compact and incremental compaction retire stale stats with retired segments. Tests: `checkpoint_persists_segment_stats_in_manifest_across_restart`, `compact_replaces_segment_stats_with_full_snapshot_stats`, `incremental_compact_replaces_selected_segment_stats`, `manifest_segment_stats_are_retired_by_full_compaction`.
 - evidence: A12.3 added `DatabaseStatistics` API over live manifest segment stats: live row count, scope/status/type cardinality estimates, top-term document frequency, and bitmap-handle estimates. AQL bind cache misses now use a lightweight stats catalog for bitmap cost ordering before loading the execution index. Tests: `query::statistics::tests::{statistics_estimates_live_scope_status_type_and_rows,stats_catalog_estimates_bitmap_handles_without_materialized_bitmaps}` and `aql_uses_manifest_stats_for_bitmap_estimates_after_checkpoint`.
+- evidence: A12.4 added `estimated_after_bitmap` to AQL EXPLAIN candidate counts in engine, CLI JSON/text, server typed JSON, OpenAPI, and API docs. EXPLAIN now exposes estimated bitmap rows next to actual `after_bitmap` rows. Gates: `make openapi-contract-check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`.
 
 ### EPIC-A13 — Cost model v0 — выбор пути исполнения
 

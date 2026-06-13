@@ -61,7 +61,7 @@ fn format_aql_explain(report: &AqlExplainReport) -> String {
         .collect::<Vec<_>>()
         .join(", ");
     format!(
-        "aql_explain task={} mode={:?} brain_id={} candidate_limit={} budget_tokens={} citations_required={}\nlogical_plan_policy_complete={} policy_rewritten_plan_policy_complete={} execution_trace_operators={}\ncounts universe={} agent_allowed={} live={} after_bitmap={} after_quality={} returned_limit={}\nfilters={}\n{}",
+        "aql_explain task={} mode={:?} brain_id={} candidate_limit={} budget_tokens={} citations_required={}\nlogical_plan_policy_complete={} policy_rewritten_plan_policy_complete={} execution_trace_operators={}\ncounts universe={} agent_allowed={} live={} estimated_after_bitmap={} after_bitmap={} after_quality={} returned_limit={}\nfilters={}\n{}",
         report.task,
         report.selected_mode,
         report.brain_id.0,
@@ -78,6 +78,11 @@ fn format_aql_explain(report: &AqlExplainReport) -> String {
         report.candidate_counts.universe,
         report.candidate_counts.agent_allowed,
         report.candidate_counts.live,
+        report
+            .candidate_counts
+            .estimated_after_bitmap
+            .map(|count| count.to_string())
+            .unwrap_or_else(|| "n/a".to_owned()),
         report.candidate_counts.after_bitmap,
         report.candidate_counts.after_quality,
         report.candidate_counts.returned_limit,
