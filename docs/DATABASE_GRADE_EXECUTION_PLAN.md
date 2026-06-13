@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-D15` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, and `EPIC-E14` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-D05` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, and `EPIC-D15` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -1293,7 +1293,7 @@ enough to unblock the next dependency step.
 - files: sdk/, .github/workflows/sdk-release.yml.
 - risks: занятые имена — резерв заранее. Зависимости: D15 (версии). Эффект: quickstart перестаёт быть фикцией.
 - evidence: `make sdk-e2e-release-check` passed after SDK release/deprecation/publication gates were aligned to archived docs; `make sdk-check` passed and produced Rust `cargo package`, Python SDK tests, and npm pack dry-run evidence.
-- remaining: public registry publication and clean-machine install smoke require the beta version/tag from `EPIC-D15` plus registry credentials/trusted publishing.
+- remaining: public registry publication and clean-machine install smoke are now unblocked by `EPIC-D15` and still require registry credentials/trusted publishing. Next D05 exit step is to audit the actual registry workflow/secret state, then either publish beta.2 SDK packages or explicitly park public registry publication as external.
 
 ### EPIC-D06 — Python SDK: typed-модели, ретраи, таймауты
 
@@ -1461,19 +1461,19 @@ enough to unblock the next dependency step.
 
 ### EPIC-D15 — v0.2.0-beta.2: версии, release notes, тег
 
-- status: `partial`
+- status: `done`
 - meta: Категория: product · P0 · 30 days · productize
 - goal: workspace 0.1.0 при бета-цели 0.2.0-beta.2; гейты есть, релиза нет.
 - tasks:
   - [x] 1) bump версий — workspace/Rust/TypeScript/OpenAPI now use `0.2.0-beta.2`; Python uses the documented PEP 440 spelling `0.2.0b2`; SDK/release gates validate this mapping.
   - [x] 2) `make beta-release-check` + бинарники (binary-release-check) — passed after aligning release gates with archived documentation paths and fixing a VERIFY numeric false-positive in the RAG demo smoke.
-  - [ ] 3) тег+GitHub release; release notes сверить с реальностью (после repositioning) — release notes and local artifacts are verified; public tag/release remains.
+  - [x] 3) тег+GitHub release; release notes сверить с реальностью (после repositioning) — `v0.2.0-beta.2` tag and GitHub prerelease are published on the verified commit.
 - acceptance:
-  - [ ] 1) тег с артефактами
-  - [ ] 2) README-статус соответствует.
+  - [x] 1) тег с артефактами
+  - [x] 2) README-статус соответствует.
 - dependencies: A01, D12, D05 (желательно). Эффект: точка отсчёта «бета».
-- evidence: `make sdk-check`, `make sdk-e2e-release-check`, `make openapi-contract-check`, `make beta-release-check`, `make binary-release-check BINARY_RELEASE_VERSION=v0.2.0-beta.2 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.2-local`, `make release-artifact-manifest-check BINARY_RELEASE_VERSION=v0.2.0-beta.2 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.2-local BINARY_RELEASE_ARCHIVE=target/release-artifacts/cortexdb-v0.2.0-beta.2-local.tar.gz`, `make evidence-artifact-retention-check`, and `make versioning-policy-check` passed after the version bump. Earlier `make rag-demo-smoke` passed after VERIFY stopped cross-comparing matched year and amount values as numeric contradictions. Latest D15 gate evidence: `make beta-release-check` passes with `target/beta-release/report.json` status `passed` and evidence archive `target/beta-release/evidence.tar.gz` after release/security/retrieval checker paths were aligned with the modular `mk/*.mk`, `context/export/*`, `responses/context.rs`, `query_search/*`, `security_tests/*`, and `auth_policy_tests/*` layout.
-- remaining: public `v0.2.0-beta.1` already exists and points to old commit `46d0f3a`; do not force-move that published tag without explicit approval. The safe release path is a new `v0.2.0-beta.2` prerelease tag on the current verified commit. Public SDK registry publication remains governed by `EPIC-D05`.
+- evidence: `make sdk-check`, `make sdk-e2e-release-check`, `make openapi-contract-check`, `make beta-release-check`, `make binary-release-check BINARY_RELEASE_VERSION=v0.2.0-beta.2 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.2-local`, `make release-artifact-manifest-check BINARY_RELEASE_VERSION=v0.2.0-beta.2 BINARY_RELEASE_ID=cortexdb-v0.2.0-beta.2-local BINARY_RELEASE_ARCHIVE=target/release-artifacts/cortexdb-v0.2.0-beta.2-local.tar.gz`, `make evidence-artifact-retention-check`, and `make versioning-policy-check` passed after the version bump. Earlier `make rag-demo-smoke` passed after VERIFY stopped cross-comparing matched year and amount values as numeric contradictions. Latest D15 gate evidence: `make beta-release-check` passed on committed SHA `bbd3b6c35a77a1d9c6d3845e9dd2b2ef91b16dc8` with `target/beta-release/report.json` status `passed`, version `0.2.0-beta.2`, and evidence archive `target/beta-release/evidence.tar.gz`. The published annotated tag `v0.2.0-beta.2` peels to the same commit, and the GitHub release is a prerelease at `https://github.com/AubakirovArman/CortexDB/releases/tag/v0.2.0-beta.2` with `cortexdb-v0.2.0-beta.2-local.tar.gz`, its `.sha256`, and `evidence.tar.gz` attached.
+- remaining: none for D15. Public SDK registry publication remains governed by `EPIC-D05`.
 
 ## Block E — Reliability, security, and operations
 
@@ -1707,7 +1707,7 @@ enough to unblock the next dependency step.
   upgrade runbook, and is now part of `release-check`.
   `make deployment-upgrade-check` also passes after its modular CLI/Makefile
   checks were updated.
-- next exit step: move to `EPIC-D15` — v0.2.0-beta release/tag decision.
+- next exit step: D15 is now closed; move to `EPIC-D05` — SDK publication decision.
 
 ### EPIC-E15 — Per-route таймауты + защита актора от медленных клиентов
 

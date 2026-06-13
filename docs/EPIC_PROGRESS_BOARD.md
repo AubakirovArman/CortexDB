@@ -21,27 +21,50 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-D15` — v0.2.0-beta.2 release/tag decision.
+`EPIC-D05` — SDK publication decision.
 
-D15 exit steps:
+D05 exit steps:
 
-1. Align workspace/package versions and release notes.
-2. Decide tag strategy without force-moving published tags unless approved.
-3. Run release checklist and clean clone checks.
-4. Mark done when the beta tag/artifacts are correct.
+1. Audit the actual PyPI/npm/crates.io workflow and secret/trusted-publishing
+   state.
+2. If credentials/trusted publishing are available, publish beta.2 SDK packages
+   from the verified tag.
+3. If public registry publication is intentionally deferred, record the
+   external blocker and keep D05 partial/local-only before moving to A19.
+4. Mark done only when public install smoke passes.
 
-D15 progress:
+D05 progress:
 
-- `make beta-release-check` passes and writes
-  `target/beta-release/report.json` plus
-  `target/beta-release/evidence.tar.gz` after release/security/retrieval
-  evidence checkers were aligned with the modular `mk/*.mk`,
-  ContextPack, retrieval, and security test layout.
-- next: create and publish the new prerelease tag `v0.2.0-beta.2` after the
-  beta.2 version bump gates pass. Do not force-refresh the existing
-  `v0.2.0-beta.1` tag.
+- local SDK package and e2e release gates pass;
+- `v0.2.0-beta.2` is now published, so the previous D15 version/tag blocker is
+  gone;
+- next: decide the public registry path from actual workflow/secret state, not
+  assumptions.
 
 ## Recently Closed
+
+### EPIC-D15 — v0.2.0-beta.2 release/tag
+
+Status: `done`
+
+What closed it:
+
+- Workspace, Rust crates, SDK packages, OpenAPI docs, migration fixtures, and
+  release checker defaults target `0.2.0-beta.2` / `0.2.0b2`.
+- `make beta-release-check` passed on committed SHA
+  `bbd3b6c35a77a1d9c6d3845e9dd2b2ef91b16dc8` and wrote
+  `target/beta-release/report.json` plus
+  `target/beta-release/evidence.tar.gz`.
+- The annotated tag `v0.2.0-beta.2` peels to the same verified commit.
+- GitHub release
+  `https://github.com/AubakirovArman/CortexDB/releases/tag/v0.2.0-beta.2`
+  is a prerelease and includes the beta.2 local binary archive, checksum, and
+  evidence bundle.
+- The old published `v0.2.0-beta.1` tag was not force-moved.
+
+Next:
+
+- Continue with D05 because SDK publication was waiting on the beta tag.
 
 ### EPIC-E14 — Upgrade/rollback drill
 
@@ -64,7 +87,7 @@ What closed it:
 
 Next:
 
-- Continue with D15 as directed by `EPIC_EXIT_STEPS.md`.
+- D15 is now closed; continue with D05 as directed by `EPIC_EXIT_STEPS.md`.
 
 ### EPIC-E02 — Backup UX happy path + verify
 
@@ -313,7 +336,7 @@ Important follow-up:
 
 ## Done Snapshot
 
-Done count in roadmap snapshot: `40`.
+Done count in roadmap snapshot: `46`.
 
 High-signal done epics:
 
@@ -346,6 +369,7 @@ High-signal done epics:
 - D09 Docker quickstart;
 - D10 OpenAPI/codegen control;
 - D11 MCP adapter;
+- D15 beta.2 release/tag;
 - E01 WAL writer error surfacing;
 - E10 decode fuzzing gate;
 - E08 tenant isolation test suite;
@@ -355,7 +379,7 @@ High-signal done epics:
 
 ## Partial Snapshot
 
-Partial count in roadmap snapshot: `4`.
+Partial count in roadmap snapshot: `3`.
 
 - A19 scale benchmarks:
   long-running load evidence, lazy cold outlier analysis, and later larger-scale
@@ -364,8 +388,6 @@ Partial count in roadmap snapshot: `4`.
   estimated-vs-real verification and gate integration remain.
 - D05 SDK publish:
   local gates exist; public registry publication remains.
-- D15 beta tag:
-  release-management decision remains.
 
 ## Frozen Snapshot
 
@@ -377,12 +399,11 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on D15 only:
+Work on D05 only:
 
-1. commit the beta.2 version, release-note, migration-fixture, and checker
-   alignment changes after the release gates pass;
-2. create a new `v0.2.0-beta.2` prerelease tag on the verified commit;
-3. push the commit and tag without force-moving the published beta.1 tag;
-4. rerun `make beta-release-check` on the committed SHA;
-5. move the pointer only after D15 is `done` or explicitly split with accepted
-   follow-up scope.
+1. inspect `.github/workflows`, SDK release scripts, and registry documentation;
+2. determine whether PyPI/npm/crates.io publication can run from the beta.2 tag
+   without adding secrets to the repo;
+3. run local SDK gates again if scripts/config change;
+4. either publish and smoke-test public installs, or record a concrete external
+   blocker and move to A19 with D05 still partial.
