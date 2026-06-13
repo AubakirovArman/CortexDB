@@ -21,47 +21,54 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B04` — AgentView as an index invariant before payload reads.
+`EPIC-B05` — AgentView lifecycle API v1.
 
-B04 exit steps:
+B05 exit steps:
 
-1. Inventory read surfaces that still authorize after payload materialization.
-2. Route readable candidate filtering through AgentView/descriptor indexes before
-   payload fetch where possible.
-3. Ensure `/get` and server read paths authorize from descriptor scope, not
-   payload-parsed scope.
-4. Extend the structural permission gate so no scan/read surface silently skips
-   the permission predicate.
+1. Define the stable admin lifecycle surface for AgentView management.
+2. Add CLI/API CRUD for create, grant, revoke, list, and show.
+3. Persist AgentViews as system cells or explicitly document the chosen
+   compatibility bridge.
+4. Add an end-to-end two-agent scope isolation test for the lifecycle surface.
 
-B04 progress:
+B05 progress:
 
-- done: added descriptor-only `Database::get_latest_cell_descriptor` for
-  pre-payload authorization;
-- done: `/get`/`/v1/cell`, tombstone/delete, batch tombstone authorization, and
-  `/v1/forget` now check durable descriptor scope before fetching payload;
-- done: regression
-  `denied_cell_routes_authorize_descriptor_before_lazy_payload_read` proves
-  denied lazy GET, DELETE, and forget routes leave segment payload loads at 0;
-- done: B04 progress gates passed: file-size ratchet, targeted server security
-  tests, `cargo fmt --check`, `cargo test --workspace --all-features`,
-  `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`;
-- done: `descriptor_hot_path_gate_check.py` now requires descriptor-only lookup
-  in server core/memory routes and forbids pre-auth
-  `get_latest_cell_with_descriptor` in those auth paths;
-- done: verification source-support enrichment now checks relation descriptor
-  scope before lazy relation payload reads, with a regression proving unreadable
-  persisted source-support relation payload is not materialized;
-- done: the structural descriptor hot-path gate covers the verification
-  source-support scan and persisted graph-edge enrichment paths;
-- done: memory and session cell-id allocation use descriptor-only existence
-  checks instead of fetching payloads just to detect ID collisions;
-- done: the structural descriptor hot-path gate now covers memory/session ID
-  allocation too;
-- remaining: finish the broader non-AQL read-surface inventory and decide
-  whether B04 can close on descriptor-index authorization or needs a separate
-  permission-bitmap follow-up.
+- next: inspect current auth policy/admin route surface before editing.
 
 ## Recently Closed
+
+### EPIC-B04 — AgentView as an index invariant before payload reads
+
+Status: `done`
+
+What closed it:
+
+- AQL retrieval already builds `agent_allowed` from maintained
+  `EngineAqlIndex` scope bitmaps before bitmap evaluation.
+- Search uses bitmap-backed `allowed_candidates` before persisted search result
+  materialization.
+- Direct server cell routes now authorize durable descriptors before payload
+  reads for `/get`, `/v1/cell`, tombstone/delete, batch tombstone, and
+  `/v1/forget`.
+- Verification source-support enrichment checks relation descriptor scope before
+  lazy persisted relation payload reads.
+- Memory and session ID allocation use descriptor-only existence checks instead
+  of loading payloads to detect collisions.
+- Remaining `get_latest_cell*` surfaces are classified as public payload API,
+  post-verification response shaping, validation/reporting, tests, or benchmark
+  binaries rather than pre-auth runtime reads.
+- Structural gates cover server, verification, memory/session allocation,
+  descriptor-first indexed paths, and query scan inventory.
+- Final B04 gates passed: file-size ratchet, `cargo fmt --check`,
+  descriptor hot-path gate, targeted server/security/verification/session/memory
+  tests, `cargo test --workspace --all-features`,
+  `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`.
+
+Important follow-up:
+
+- B05 productizes AgentView lifecycle management. Any future non-AQL read
+  surface must be added to the descriptor hot-path gate before it can read
+  payload bytes.
 
 ### EPIC-B03 — Token-budget pushdown and early termination
 
