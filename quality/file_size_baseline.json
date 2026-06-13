@@ -1179,7 +1179,28 @@
     "crates/cortex-engine/src/bin/enterprise_rag_decomposition_check.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 400,
+      "lines": 78,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_decomposition_check/args.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 88,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_decomposition_check/questions.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 62,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_decomposition_check/report.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 200,
       "soft_limit": 300,
       "warning_limit": 600
     },
