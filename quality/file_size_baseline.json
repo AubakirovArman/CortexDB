@@ -1970,7 +1970,7 @@
     "crates/cortex-engine/src/query.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 364,
+      "lines": 104,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1999,6 +1999,13 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 180,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/index.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 269,
       "soft_limit": 300,
       "warning_limit": 600
     },
