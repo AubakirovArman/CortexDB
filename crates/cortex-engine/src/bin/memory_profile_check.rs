@@ -4,7 +4,7 @@ use std::process::ExitCode;
 use std::time::Instant;
 
 use cortex_core::CellId;
-use cortex_engine::Database;
+use cortex_engine::{Database, DatabaseOptions, PayloadResidency};
 use serde_json::{json, Value};
 
 #[path = "memory_profile_check/args.rs"]
@@ -37,7 +37,12 @@ fn run() -> Result<(), String> {
     samples.push(memory_sample("process_start"));
 
     let db_path = args.root.join("db");
-    let mut db = Database::open(&db_path).map_err(|error| error.to_string())?;
+    let options = DatabaseOptions {
+        payload_residency: args.payload_residency,
+        ..DatabaseOptions::default()
+    };
+    let mut db =
+        Database::open_with_options(&db_path, options).map_err(|error| error.to_string())?;
     samples.push(memory_sample("open_empty"));
 
     db.put_cells(build_cells(args.cells))
@@ -48,6 +53,12 @@ fn run() -> Result<(), String> {
     db.checkpoint().map_err(|error| error.to_string())?;
     let after_checkpoint_stats = db.storage_stats().map_err(|error| error.to_string())?;
     samples.push(memory_sample("after_checkpoint"));
+    drop(db);
+    samples.push(memory_sample("after_close"));
+
+    let db = Database::open_with_options(&db_path, options).map_err(|error| error.to_string())?;
+    let after_reopen_stats = db.storage_stats().map_err(|error| error.to_string())?;
+    samples.push(memory_sample("after_reopen"));
 
     let validation = db.validate_storage_report();
     if !validation.errors.is_empty() {
@@ -59,7 +70,7 @@ fn run() -> Result<(), String> {
 
     let final_sample = memory_sample("final");
     let mut errors = clone_gate_errors(&clone_gate);
-    if let Some(error) = estimate_ratio_error(&final_sample, &after_checkpoint_stats, &args) {
+    if let Some(error) = estimate_ratio_error(&final_sample, &after_reopen_stats, &args) {
         errors.push(error);
     }
 
@@ -67,14 +78,16 @@ fn run() -> Result<(), String> {
         "schema_version": "cortexdb.memory_profile.v1",
         "ok": errors.is_empty(),
         "cells": args.cells,
+        "payload_residency": payload_residency_name(args.payload_residency),
         "duration_ms": round_ms(started.elapsed().as_secs_f64() * 1000.0),
         "resource_samples": samples,
         "final_resource_usage": final_sample,
         "storage_estimates": {
             "after_put": storage_estimate_report(&after_put_stats),
             "after_checkpoint": storage_estimate_report(&after_checkpoint_stats),
+            "after_reopen": storage_estimate_report(&after_reopen_stats),
         },
-        "estimate_vs_rss": estimate_vs_rss_report(&final_sample, &after_checkpoint_stats),
+        "estimate_vs_rss": estimate_vs_rss_report(&final_sample, &after_reopen_stats),
         "payload_clone_gate": clone_gate,
         "allocation_observers": {
             "dhat": {
@@ -126,6 +139,13 @@ fn build_cells(cells: usize) -> Vec<(CellId, Vec<u8>)> {
             )
         })
         .collect()
+}
+
+fn payload_residency_name(payload_residency: PayloadResidency) -> &'static str {
+    match payload_residency {
+        PayloadResidency::Memory => "memory",
+        PayloadResidency::Lazy => "lazy",
+    }
 }
 
 fn memory_sample(label: &str) -> Value {

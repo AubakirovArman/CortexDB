@@ -14,6 +14,7 @@ VERIFY_PERF_MAX_P95_MS ?= 250
 MEMORY_PROFILE_ROOT ?= target/memory-profile
 MEMORY_PROFILE_REPORT ?= $(MEMORY_PROFILE_ROOT)/report.json
 MEMORY_PROFILE_CELLS ?= 10000
+MEMORY_PROFILE_PAYLOAD_RESIDENCY ?= memory
 MEMORY_PROFILE_MAX_RSS_TO_ESTIMATED_TOTAL_RATIO ?= 128
 SCALE_BENCH_ROOT ?= target/scale-bench
 SCALE_BENCH_SAMPLES ?= 5
@@ -134,4 +135,3 @@ FUTURE_EPIC_REPORT ?= target/future-epics/report.json
 FUTURE_EPIC_ROOT ?= target/future-epics
 FILE_SIZE_BASELINE ?= quality/file_size_baseline.json
 FILE_SIZE_REPORT ?= target/file-size-report/report.json
-

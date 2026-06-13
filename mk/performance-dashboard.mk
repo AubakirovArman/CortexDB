@@ -7,7 +7,7 @@ verify-performance-check:
 
 .PHONY: memory-profile
 memory-profile:
-	cargo run --release -p cortex-engine --bin memory_profile_check -- --root "$(MEMORY_PROFILE_ROOT)" --report "$(MEMORY_PROFILE_REPORT)" --cells "$(MEMORY_PROFILE_CELLS)" --max-rss-to-estimated-total-ratio "$(MEMORY_PROFILE_MAX_RSS_TO_ESTIMATED_TOTAL_RATIO)"
+	cargo run --release -p cortex-engine --bin memory_profile_check -- --root "$(MEMORY_PROFILE_ROOT)" --report "$(MEMORY_PROFILE_REPORT)" --cells "$(MEMORY_PROFILE_CELLS)" --payload-residency "$(MEMORY_PROFILE_PAYLOAD_RESIDENCY)" --max-rss-to-estimated-total-ratio "$(MEMORY_PROFILE_MAX_RSS_TO_ESTIMATED_TOTAL_RATIO)"
 
 .PHONY: scale-bench-100k scale-bench-1m
 scale-bench-100k:
@@ -149,4 +149,3 @@ dashboard-screenshots: dashboard-check
 	npm ci
 	@if [ -n "$$CI" ]; then npx playwright install --with-deps chromium; else npx playwright install chromium; fi
 	npm run dashboard:screenshots
-
