@@ -3160,9 +3160,16 @@
     "crates/cortex-engine/src/verification/graph.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 360,
+      "lines": 298,
       "soft_limit": 300,
       "warning_limit": 600
+    },
+    "crates/cortex-engine/src/verification/graph/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 61,
+      "soft_limit": 600,
+      "warning_limit": 1200
     },
     "crates/cortex-engine/src/verification/guards.rs": {
       "hard_limit": 1000,
