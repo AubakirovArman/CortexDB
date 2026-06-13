@@ -35,6 +35,7 @@ impl ExplainCollector {
 pub struct PackExecution {
     pub pack: ContextPack,
     pub trace: PhysicalOperatorTrace,
+    pub budget_filled: bool,
 }
 
 pub struct PackOp<'a> {
@@ -46,6 +47,7 @@ pub struct PackOp<'a> {
     feedback_scores: &'a BTreeMap<CellId, i32>,
     access_view: Option<&'a AgentView>,
     trace: PhysicalOperatorTrace,
+    budget_filled: bool,
 }
 
 impl<'a> PackOp<'a> {
@@ -73,6 +75,7 @@ impl<'a> PackOp<'a> {
                 output_count: 0,
                 elapsed_nanos: 0,
             },
+            budget_filled: false,
         }
     }
 
@@ -107,8 +110,13 @@ impl<'a> PackOp<'a> {
         });
         PackExecution {
             trace: op.trace(),
+            budget_filled: op.budget_filled(),
             pack,
         }
+    }
+
+    pub fn budget_filled(&self) -> bool {
+        self.budget_filled
     }
 }
 
@@ -127,6 +135,7 @@ impl PhysicalOp for PackOp<'_> {
             self.access_view,
         )
         .build_from_retrieved(cells);
+        self.budget_filled = pack_budget_filled(&pack);
         self.trace.output_count = pack.cells.len();
         self.trace.elapsed_nanos = elapsed_nanos(started);
         Some(pack)
@@ -135,4 +144,8 @@ impl PhysicalOp for PackOp<'_> {
     fn trace(&self) -> PhysicalOperatorTrace {
         self.trace.clone()
     }
+}
+
+fn pack_budget_filled(pack: &ContextPack) -> bool {
+    pack.token_budget_tokens > 0 && pack.estimated_tokens >= pack.token_budget_tokens
 }

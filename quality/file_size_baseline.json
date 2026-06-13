@@ -1998,7 +1998,7 @@
     "crates/cortex-engine/src/exec/pack.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 138,
+      "lines": 151,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2019,7 +2019,7 @@
     "crates/cortex-engine/src/exec/tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 96,
+      "lines": 133,
       "soft_limit": 600,
       "warning_limit": 1200
     },

@@ -25,7 +25,7 @@ work by accident.
 
 B03 exit steps:
 
-1. Make PackOp signal when the token budget is filled.
+1. Done: make PackOp signal when the token budget is filled.
 2. Stop upstream operators as early as safely possible.
 3. Done: clamp retrieve `LimitOp` to the budget-derived cost-model
    `recommended_candidate_limit`.
@@ -42,8 +42,10 @@ B03 progress:
   limit;
 - done: small tests cover `BUDGET 320 TOKENS LIMIT 10 CANDIDATES` producing
   2 budget-derived candidates from 5 quality-filtered candidates;
-- remaining: real budget-full signal, upstream early stop, and bounded lazy
-  payload fetch after cheap candidate/rank metadata.
+- done: `PackOp`/`PackExecution` expose a budget-filled signal covered by
+  `pack_operator_reports_budget_filled_signal`;
+- remaining: upstream early stop and bounded lazy payload fetch after cheap
+  candidate/rank metadata.
 
 ## Recently Closed
 

@@ -94,3 +94,40 @@ fn pack_operator_matches_context_pack_constructor() {
     assert_eq!(execution.pack, direct);
     assert_eq!(execution.trace.output_count, direct.cells.len());
 }
+
+#[test]
+fn pack_operator_reports_budget_filled_signal() {
+    let execution = PackOp::execute(
+        vec![RetrievedCell::from_payload(
+            CellId(1),
+            b"source=doc-a\n\nalpha evidence with enough body text to exceed a tiny budget"
+                .to_vec(),
+        )],
+        4,
+        false,
+        &ContextPackOptions::default(),
+        "alpha",
+        &std::collections::BTreeMap::new(),
+        None,
+    );
+
+    assert!(execution.budget_filled);
+}
+
+#[test]
+fn pack_operator_budget_signal_stays_false_when_room_remains() {
+    let execution = PackOp::execute(
+        vec![RetrievedCell::from_payload(
+            CellId(1),
+            b"source=doc-a\n\nalpha evidence".to_vec(),
+        )],
+        1_000,
+        false,
+        &ContextPackOptions::default(),
+        "alpha",
+        &std::collections::BTreeMap::new(),
+        None,
+    );
+
+    assert!(!execution.budget_filled);
+}

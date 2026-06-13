@@ -580,7 +580,7 @@ enough to unblock the next dependency step.
 - goal: «бюджет токенов» как параметр исполнения — уникальный database-примитив CortexDB.
 - problem: Проблема: сегодня бюджет применяется в самом конце; при lazy-payload (A08) это означало бы читать с диска лишнее.
 - tasks:
-  - [ ] 1) PackOp сигнализирует исполнителю «бюджет заполнен» → upstream-операторы останавливаются; includes B02 carry-over to avoid full upstream candidate/payload materialization.
+  - [ ] 1) PackOp сигнализирует исполнителю «бюджет заполнен» → upstream-операторы останавливаются; signal implemented, upstream stop remains; includes B02 carry-over to avoid full upstream candidate/payload materialization.
   - [x] 2) candidate-limit в плане выводится из бюджета (оценка токенов/ячейку из статистики)
   - [ ] 3) payload-чтение (A08) переносится ЗА permission+rank: читаем диск только для ячеек, которые реально пойдут в пак (+ запас).
 - acceptance:
@@ -588,8 +588,8 @@ enough to unblock the next dependency step.
   - [ ] 2) качество паков на фикстурах не меняется
   - [ ] 3) p95 context на 1M в lazy-режиме улучшается измеримо против наивного.
 - files: exec/, plan/cost.rs, context/.
-- evidence: `execute_retrieve` now clamps physical `LimitOp` to `cost_model.recommended_candidate_limit.min(plan.context_policy.candidate_limit)`, and non-analyze `EXPLAIN RETRIEVE` reports the same effective returned limit. Small B03 checks passed: `cargo test -p cortex-engine --test query_search explain_analyze_retrieve_aql_reports_operator_counts --all-features`, `cargo test -p cortex-engine --test aql_limit_budget_semantics --all-features`, and `cargo test -p cortex-engine --test context_pack --all-features`. The dedicated explain test now covers `BUDGET 320 TOKENS LIMIT 10 CANDIDATES`, proving `LimitOp` receives 5 quality-filtered candidates and emits 2 budget-derived candidates.
-- next exit step: add a real budget-full/early-stop signal and then split retrieve into cheap candidate/rank metadata before bounded lazy payload fetch. Large 1M/10M p95 proof remains deferred to A19/C17 by the scale-gate rule.
+- evidence: `execute_retrieve` now clamps physical `LimitOp` to `cost_model.recommended_candidate_limit.min(plan.context_policy.candidate_limit)`, and non-analyze `EXPLAIN RETRIEVE` reports the same effective returned limit. `PackOp` now exposes a budget-filled signal through `PackExecution::budget_filled`/`PackOp::budget_filled`, covered by unit tests for full and non-full budgets. Small B03 checks passed: `cargo test -p cortex-engine --test query_search explain_analyze_retrieve_aql_reports_operator_counts --all-features`, `cargo test -p cortex-engine --test aql_limit_budget_semantics --all-features`, `cargo test -p cortex-engine --test context_pack --all-features`, and `cargo test -p cortex-engine --lib pack_operator --all-features`. The dedicated explain test now covers `BUDGET 320 TOKENS LIMIT 10 CANDIDATES`, proving `LimitOp` receives 5 quality-filtered candidates and emits 2 budget-derived candidates.
+- next exit step: use the budget-full signal for upstream early stop, then split retrieve into cheap candidate/rank metadata before bounded lazy payload fetch. Large 1M/10M p95 proof remains deferred to A19/C17 by the scale-gate rule.
 - risks: rank до чтения payload требует rank по descriptor/индексным фичам — спроектировать двухфазный rank (cheap rank → fetch → final rank). Зависимости: A08, A11, B02. Эффект: исполнение, оптимизированное под LLM-окно — ядро категории.
 
 ### EPIC-B04 — AgentView как индексный инвариант (permission bitmap в scan)
