@@ -24,7 +24,7 @@ LIMIT 2 CANDIDATES;"#;
 }
 
 #[test]
-fn missing_limit_uses_agent_view_default_candidate_limit() {
+fn missing_limit_uses_budget_recommended_candidate_limit() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
     seed_ready_cells(&mut db, 4);
@@ -33,7 +33,7 @@ WHERE space = project:investments AND status = "ready";"#;
 
     let retrieved = db.retrieve_aql(query, &view(100, 3, 1_000, 400)).unwrap();
 
-    assert_eq!(cell_ids(&retrieved), vec![CellId(1), CellId(2), CellId(3)]);
+    assert_eq!(cell_ids(&retrieved), vec![CellId(1), CellId(2)]);
 }
 
 #[test]

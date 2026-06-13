@@ -120,6 +120,21 @@ impl Database {
         } else {
             None
         };
+        let cost_model = execution
+            .as_ref()
+            .map(|execution| execution.cost_model.clone())
+            .unwrap_or_else(|| {
+                choose_retrieve_path(
+                    &plan,
+                    self.statistics(),
+                    &provider,
+                    &CostModelOptions::default(),
+                )
+            });
+        let effective_candidate_limit = cost_model
+            .recommended_candidate_limit
+            .min(plan.context_policy.candidate_limit)
+            as usize;
         let (after_bitmap, after_quality, returned_limit) = if let Some(execution) = &execution {
             (
                 operator_output_count(&execution.operators, "BitmapIndexScan"),
@@ -138,24 +153,12 @@ impl Database {
                     cell_version_meets_quality_thresholds(version, &plan.quality_thresholds)
                 })
                 .count();
-            let candidate_limit = plan.context_policy.candidate_limit as usize;
             (
                 bitmap_candidates.len(),
                 after_quality,
-                after_quality.min(candidate_limit),
+                after_quality.min(effective_candidate_limit),
             )
         };
-        let cost_model = execution
-            .as_ref()
-            .map(|execution| execution.cost_model.clone())
-            .unwrap_or_else(|| {
-                choose_retrieve_path(
-                    &plan,
-                    self.statistics(),
-                    &provider,
-                    &CostModelOptions::default(),
-                )
-            });
         let estimated_after_bitmap = cost_model
             .estimated_after_bitmap
             .and_then(|rows| usize::try_from(rows).ok());

@@ -75,7 +75,9 @@ pub fn execute_retrieve<P: CandidateResolver>(
     let expanded = drain(&mut parent_op);
     collector.push(parent_op.trace());
 
-    let limit = plan.context_policy.candidate_limit as usize;
+    let limit = cost_model
+        .recommended_candidate_limit
+        .min(plan.context_policy.candidate_limit) as usize;
     let started = Instant::now();
     let limited = expanded.into_iter().take(limit).collect::<Vec<_>>();
     let mut limit_op = MaterializedOp::new(

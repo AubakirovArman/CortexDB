@@ -310,21 +310,19 @@ USING MODE balanced WHERE space = project:investments AND status = "ready" LIMIT
 fn explain_analyze_retrieve_aql_reports_operator_counts() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
-    db.put_cell(
-        CellId(1),
-        b"scope=project:investments\nstatus=ready\nsource=doc-a\n\nalpha budget".to_vec(),
-    )
-    .unwrap();
-    db.put_cell(
-        CellId(2),
-        b"scope=project:investments\nstatus=ready\nsource=doc-b\n\nbeta budget".to_vec(),
-    )
-    .unwrap();
+    for id in 1..=5 {
+        db.put_cell(
+            CellId(id),
+            format!("scope=project:investments\nstatus=ready\nsource=doc-{id}\n\nbudget cell {id}")
+                .into_bytes(),
+        )
+        .unwrap();
+    }
 
     let report = db
         .explain_analyze_retrieve_aql(
             r#"EXPLAIN ANALYZE RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
-USING MODE balanced WHERE space = project:investments LIMIT 1 CANDIDATES;"#,
+USING MODE balanced WHERE space = project:investments BUDGET 320 TOKENS LIMIT 10 CANDIDATES;"#,
             &view(scope_id("project:investments")),
         )
         .unwrap();
@@ -335,7 +333,9 @@ USING MODE balanced WHERE space = project:investments LIMIT 1 CANDIDATES;"#,
         .map(|operator| operator.name.as_str())
         .collect::<Vec<_>>();
 
-    assert_eq!(report.candidate_counts.returned_limit, 1);
+    assert_eq!(report.cost_model.recommended_candidate_limit, 2);
+    assert_eq!(report.candidate_counts.after_quality, 5);
+    assert_eq!(report.candidate_counts.returned_limit, 2);
     assert_eq!(
         names,
         vec![
@@ -354,16 +354,16 @@ USING MODE balanced WHERE space = project:investments LIMIT 1 CANDIDATES;"#,
             .operators
             .iter()
             .find(|operator| operator.name == "LimitOp")
-            .map(|operator| operator.output_count),
-        Some(1)
+            .map(|operator| (operator.input_count, operator.output_count)),
+        Some((5, 2))
     );
     assert_eq!(
         trace
             .operators
             .iter()
             .find(|operator| operator.name == "PackOp")
-            .map(|operator| operator.output_count),
-        Some(1)
+            .map(|operator| operator.input_count),
+        Some(2)
     );
     assert!(trace.total_elapsed_nanos > 0);
 }

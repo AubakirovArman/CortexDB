@@ -2005,7 +2005,7 @@
     "crates/cortex-engine/src/exec/retrieve.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 184,
+      "lines": 186,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2334,7 +2334,7 @@
     "crates/cortex-engine/src/query/explain.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 219,
+      "lines": 222,
       "soft_limit": 300,
       "warning_limit": 600
     },

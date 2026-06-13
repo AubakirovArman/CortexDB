@@ -575,19 +575,21 @@ enough to unblock the next dependency step.
 
 ### EPIC-B03 — Token-budget pushdown и early termination
 
-- status: `pending`
+- status: `in_progress`
 - meta: Категория: query-engine · Приоритет: P1 · Горизонт: 90 days · Тип: build
 - goal: «бюджет токенов» как параметр исполнения — уникальный database-примитив CortexDB.
 - problem: Проблема: сегодня бюджет применяется в самом конце; при lazy-payload (A08) это означало бы читать с диска лишнее.
 - tasks:
   - [ ] 1) PackOp сигнализирует исполнителю «бюджет заполнен» → upstream-операторы останавливаются; includes B02 carry-over to avoid full upstream candidate/payload materialization.
-  - [ ] 2) candidate-limit в плане выводится из бюджета (оценка токенов/ячейку из статистики)
+  - [x] 2) candidate-limit в плане выводится из бюджета (оценка токенов/ячейку из статистики)
   - [ ] 3) payload-чтение (A08) переносится ЗА permission+rank: читаем диск только для ячеек, которые реально пойдут в пак (+ запас).
 - acceptance:
   - [ ] 1) тест: при бюджете 500 токенов на 1M-корпусе читается ≤ K payload'ов с диска (счётчик)
   - [ ] 2) качество паков на фикстурах не меняется
   - [ ] 3) p95 context на 1M в lazy-режиме улучшается измеримо против наивного.
 - files: exec/, plan/cost.rs, context/.
+- evidence: `execute_retrieve` now clamps physical `LimitOp` to `cost_model.recommended_candidate_limit.min(plan.context_policy.candidate_limit)`, and non-analyze `EXPLAIN RETRIEVE` reports the same effective returned limit. Small B03 checks passed: `cargo test -p cortex-engine --test query_search explain_analyze_retrieve_aql_reports_operator_counts --all-features`, `cargo test -p cortex-engine --test aql_limit_budget_semantics --all-features`, and `cargo test -p cortex-engine --test context_pack --all-features`. The dedicated explain test now covers `BUDGET 320 TOKENS LIMIT 10 CANDIDATES`, proving `LimitOp` receives 5 quality-filtered candidates and emits 2 budget-derived candidates.
+- next exit step: add a real budget-full/early-stop signal and then split retrieve into cheap candidate/rank metadata before bounded lazy payload fetch. Large 1M/10M p95 proof remains deferred to A19/C17 by the scale-gate rule.
 - risks: rank до чтения payload требует rank по descriptor/индексным фичам — спроектировать двухфазный rank (cheap rank → fetch → final rank). Зависимости: A08, A11, B02. Эффект: исполнение, оптимизированное под LLM-окно — ядро категории.
 
 ### EPIC-B04 — AgentView как индексный инвариант (permission bitmap в scan)

@@ -27,10 +27,23 @@ B03 exit steps:
 
 1. Make PackOp signal when the token budget is filled.
 2. Stop upstream operators as early as safely possible.
-3. Move lazy payload reads behind permission/rank and bounded pack selection.
-4. Preserve ContextPack fixture quality.
-5. Publish a small/medium payload-read count or latency gate; large 1M/10M
+3. Done: clamp retrieve `LimitOp` to the budget-derived cost-model
+   `recommended_candidate_limit`.
+4. Move lazy payload reads behind permission/rank and bounded pack selection.
+5. Preserve ContextPack fixture quality.
+6. Publish a small/medium payload-read count or latency gate; large 1M/10M
    evidence remains A19/C17.
+
+B03 progress:
+
+- done: physical `LimitOp` now uses
+  `min(cost_model.recommended_candidate_limit, plan.context_policy.candidate_limit)`;
+- done: non-analyze `EXPLAIN RETRIEVE` reports the same effective returned
+  limit;
+- done: small tests cover `BUDGET 320 TOKENS LIMIT 10 CANDIDATES` producing
+  2 budget-derived candidates from 5 quality-filtered candidates;
+- remaining: real budget-full signal, upstream early stop, and bounded lazy
+  payload fetch after cheap candidate/rank metadata.
 
 ## Recently Closed
 
