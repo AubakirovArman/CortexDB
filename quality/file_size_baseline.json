@@ -1417,9 +1417,16 @@
     "crates/cortex-engine/src/concurrency.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 367,
+      "lines": 242,
       "soft_limit": 300,
       "warning_limit": 600
+    },
+    "crates/cortex-engine/src/concurrency/tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 124,
+      "soft_limit": 600,
+      "warning_limit": 1200
     },
     "crates/cortex-engine/src/config.rs": {
       "hard_limit": 1000,
