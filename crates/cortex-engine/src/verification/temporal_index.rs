@@ -1,12 +1,14 @@
-use std::collections::BTreeMap;
-
 use cortex_aql::AgentView;
 use cortex_core::CellId;
 
 use crate::database::Database;
-use crate::query::{scope_id, CellMetadata};
+use crate::query::CellMetadata;
 
 use super::{parse_temporal_date, TemporalDate};
+
+mod store;
+
+pub(crate) use store::TemporalFactStore;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TemporalFactKey {
@@ -34,52 +36,7 @@ pub struct TemporalFactIndex {
 
 impl Database {
     pub fn temporal_fact_index(&self, view: &AgentView) -> TemporalFactIndex {
-        let mut groups = BTreeMap::<TemporalFactKey, Vec<TemporalFactRecord>>::new();
-        for version in self.snapshot_versions() {
-            let metadata = CellMetadata::from_version(&version);
-            if !view.can_read_scope(scope_id(&metadata.scope)) {
-                continue;
-            }
-            let Some(key) = temporal_fact_key(&metadata) else {
-                continue;
-            };
-            groups
-                .entry(key.clone())
-                .or_default()
-                .push(TemporalFactRecord {
-                    cell_id: version.cell_id,
-                    key,
-                    value: metadata_value(&metadata.body_text, &["value"]),
-                    as_of: temporal_date_for_record(&metadata),
-                    created_unix_seconds: metadata.created_unix_seconds,
-                    superseded_by: None,
-                    explicit_supersedes: metadata.supersedes,
-                    explicit_superseded_by: metadata.superseded_by,
-                    latest: false,
-                });
-        }
-
-        let mut records = Vec::new();
-        for (_, mut group) in groups {
-            group.sort_by_key(temporal_sort_key);
-            let latest_cell_id = group.last().map(|record| record.cell_id);
-            for record in &mut group {
-                record.latest = Some(record.cell_id) == latest_cell_id;
-                if !record.latest {
-                    record.superseded_by = latest_cell_id;
-                }
-            }
-            records.extend(group);
-        }
-        records.sort_by_key(|record| {
-            (
-                record.key.clone(),
-                record.as_of,
-                record.created_unix_seconds,
-                record.cell_id,
-            )
-        });
-        TemporalFactIndex { records }
+        self.temporal_fact_store.fact_index(view)
     }
 
     pub fn latest_temporal_facts(&self, view: &AgentView) -> Vec<TemporalFactRecord> {
@@ -91,7 +48,7 @@ impl Database {
     }
 }
 
-fn temporal_fact_key(metadata: &CellMetadata) -> Option<TemporalFactKey> {
+pub(super) fn temporal_fact_key(metadata: &CellMetadata) -> Option<TemporalFactKey> {
     let subject = metadata_value(&metadata.body_text, &["subject", "project", "entity"])
         .or_else(|| metadata.project.clone())
         .or_else(|| metadata.entity.clone())?;
@@ -103,7 +60,7 @@ fn temporal_fact_key(metadata: &CellMetadata) -> Option<TemporalFactKey> {
     .filter(|key| !key.subject.is_empty() && !key.metric.is_empty())
 }
 
-fn temporal_date_for_record(metadata: &CellMetadata) -> Option<TemporalDate> {
+pub(super) fn temporal_date_for_record(metadata: &CellMetadata) -> Option<TemporalDate> {
     metadata
         .as_of
         .as_deref()
@@ -116,11 +73,13 @@ fn temporal_date_for_record(metadata: &CellMetadata) -> Option<TemporalDate> {
         })
 }
 
-fn temporal_sort_key(record: &TemporalFactRecord) -> (Option<TemporalDate>, Option<u64>, CellId) {
+pub(super) fn temporal_sort_key(
+    record: &TemporalFactRecord,
+) -> (Option<TemporalDate>, Option<u64>, CellId) {
     (record.as_of, record.created_unix_seconds, record.cell_id)
 }
 
-fn metadata_value(body: &str, keys: &[&str]) -> Option<String> {
+pub(super) fn metadata_value(body: &str, keys: &[&str]) -> Option<String> {
     body.lines().find_map(|line| {
         let (key, value) = line.split_once('=').or_else(|| line.split_once(':'))?;
         keys.iter()
@@ -136,6 +95,8 @@ mod tests {
     use std::collections::BTreeSet;
 
     use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
+
+    use crate::query::scope_id;
 
     use super::*;
 
@@ -188,6 +149,46 @@ mod tests {
 
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].cell_id, CellId(1));
+    }
+
+    #[test]
+    fn temporal_fact_store_tracks_patch_tombstone_checkpoint_and_reopen() {
+        let dir = tempfile::tempdir().unwrap();
+        {
+            let mut db = Database::open(dir.path()).unwrap();
+            db.put_cell(
+                CellId(1),
+                b"scope=project:investments\nstatus=ready\ntype=fact\nas_of=2025-01-01\n\nproject=Apollo\nmetric=budget\nvalue=12000"
+                    .to_vec(),
+            )
+            .unwrap();
+            db.put_cell(
+                CellId(2),
+                b"scope=project:investments\nstatus=ready\ntype=fact\nas_of=2025-06-01\n\nproject=Apollo\nmetric=budget\nvalue=14000"
+                    .to_vec(),
+            )
+            .unwrap();
+            db.patch_cell(
+                CellId(2),
+                b"scope=project:investments\nstatus=ready\ntype=fact\nas_of=2025-07-01\n\nproject=Apollo\nmetric=budget\nvalue=15000"
+                    .to_vec(),
+            )
+            .unwrap();
+            db.tombstone_cell(CellId(1)).unwrap();
+
+            let latest = db.latest_temporal_facts(&view("project:investments"));
+            assert_eq!(latest.len(), 1);
+            assert_eq!(latest[0].cell_id, CellId(2));
+            assert_eq!(latest[0].value.as_deref(), Some("15000"));
+
+            db.checkpoint().unwrap();
+        }
+
+        let db = Database::open(dir.path()).unwrap();
+        let latest = db.latest_temporal_facts(&view("project:investments"));
+        assert_eq!(latest.len(), 1);
+        assert_eq!(latest[0].cell_id, CellId(2));
+        assert_eq!(latest[0].value.as_deref(), Some("15000"));
     }
 
     fn view(scope: &str) -> AgentView {

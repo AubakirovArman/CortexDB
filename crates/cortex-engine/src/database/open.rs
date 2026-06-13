@@ -22,6 +22,7 @@ use crate::query::AqlDeltaIndex;
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
+use crate::verification::TemporalFactStore;
 
 impl Database {
     /// Open a database at the given path with default options.
@@ -106,6 +107,8 @@ impl Database {
             FeedbackIndex::from_memtable(&current_memtable, ReadTxn::at(current_seq));
         let session_index =
             SessionIndex::from_memtable(&current_memtable, ReadTxn::at(current_seq));
+        let temporal_fact_store =
+            TemporalFactStore::from_memtable(&current_memtable, ReadTxn::at(current_seq));
         let tool_index = ToolIndex::from_memtable(&current_memtable, ReadTxn::at(current_seq));
         let database = Self {
             root_path,
@@ -125,6 +128,7 @@ impl Database {
             aql_delta_index,
             feedback_index,
             session_index,
+            temporal_fact_store,
             tool_index,
             persisted_index_cache: Mutex::new(None),
             active_read_pins: Arc::new(Mutex::new(BTreeMap::new())),

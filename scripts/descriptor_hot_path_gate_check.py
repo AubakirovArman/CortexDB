@@ -36,6 +36,7 @@ VERIFICATION = ROOT / "crates/cortex-engine/src/verification/evidence.rs"
 VERIFICATION_GRAPH = ROOT / "crates/cortex-engine/src/verification/graph.rs"
 VERIFICATION_CONFLICT_INDEX = ROOT / "crates/cortex-engine/src/verification/conflict_index.rs"
 VERIFICATION_TEMPORAL_INDEX = ROOT / "crates/cortex-engine/src/verification/temporal_index.rs"
+VERIFICATION_TEMPORAL_STORE = ROOT / "crates/cortex-engine/src/verification/temporal_index/store.rs"
 VERIFICATION_GUARDS = ROOT / "crates/cortex-engine/src/verification/guards.rs"
 
 
@@ -72,6 +73,7 @@ def main() -> None:
     verification_graph = VERIFICATION_GRAPH.read_text()
     verification_conflict_index = VERIFICATION_CONFLICT_INDEX.read_text()
     verification_temporal_index = VERIFICATION_TEMPORAL_INDEX.read_text()
+    verification_temporal_store = VERIFICATION_TEMPORAL_STORE.read_text()
     verification_guards = VERIFICATION_GUARDS.read_text()
 
     require(
@@ -272,8 +274,18 @@ def main() -> None:
     )
     require(
         verification_temporal_index,
-        "let metadata = CellMetadata::from_version(&version);",
-        "temporal index uses CellVersion descriptor",
+        "self.temporal_fact_store.fact_index(view)",
+        "temporal index delegates to maintained store",
+    )
+    require(
+        verification_temporal_store,
+        "let metadata = CellMetadata::from_payload_with_descriptor(payload, descriptor);",
+        "temporal store uses descriptor-backed metadata",
+    )
+    forbid(
+        verification_temporal_index,
+        "snapshot_versions()",
+        "temporal index full snapshot scan",
     )
     require(
         verification_guards,

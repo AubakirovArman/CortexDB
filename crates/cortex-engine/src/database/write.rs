@@ -9,6 +9,7 @@ use crate::operation::{
 use crate::query::CellMetadata;
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
+use crate::verification::TemporalFactStore;
 
 impl Database {
     /// Store a single cell payload and return the commit sequence.
@@ -114,6 +115,8 @@ impl Database {
                 let feedback_record = FeedbackIndex::record_from_payload(&payload);
                 let session_record =
                     SessionIndex::record_from_payload(cell_id, &payload, &descriptor);
+                let temporal_record =
+                    TemporalFactStore::record_from_payload(cell_id, &payload, &descriptor);
                 let tool_record =
                     ToolIndex::record_from_payload(cell_id, seq, &payload, &descriptor);
                 self.memtable
@@ -121,6 +124,8 @@ impl Database {
                 self.aql_delta_index.apply_metadata(cell_id, metadata);
                 self.feedback_index.apply_record(cell_id, feedback_record);
                 self.session_index.apply_record(cell_id, session_record);
+                self.temporal_fact_store
+                    .apply_record(cell_id, temporal_record);
                 self.tool_index.apply_record(cell_id, tool_record);
                 Ok(())
             }
@@ -131,6 +136,8 @@ impl Database {
                 let feedback_record = FeedbackIndex::record_from_payload(&payload);
                 let session_record =
                     SessionIndex::record_from_payload(cell_id, &payload, &descriptor);
+                let temporal_record =
+                    TemporalFactStore::record_from_payload(cell_id, &payload, &descriptor);
                 let tool_record =
                     ToolIndex::record_from_payload(cell_id, seq, &payload, &descriptor);
                 self.memtable
@@ -139,6 +146,8 @@ impl Database {
                 self.aql_delta_index.apply_metadata(cell_id, metadata);
                 self.feedback_index.apply_record(cell_id, feedback_record);
                 self.session_index.apply_record(cell_id, session_record);
+                self.temporal_fact_store
+                    .apply_record(cell_id, temporal_record);
                 self.tool_index.apply_record(cell_id, tool_record);
                 Ok(())
             }
@@ -147,6 +156,7 @@ impl Database {
                 self.aql_delta_index.apply_tombstone(cell_id);
                 self.feedback_index.apply_tombstone(cell_id);
                 self.session_index.apply_tombstone(cell_id);
+                self.temporal_fact_store.apply_tombstone(cell_id);
                 self.tool_index.apply_tombstone(cell_id);
                 Ok(())
             }

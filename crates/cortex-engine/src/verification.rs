@@ -23,6 +23,7 @@ pub use temporal::{
     extract_temporal_query_range, parse_temporal_date, TemporalDate, TemporalQueryRange,
     TemporalStaleReason, TemporalValidity,
 };
+pub(crate) use temporal_index::TemporalFactStore;
 pub use temporal_index::{TemporalFactIndex, TemporalFactKey, TemporalFactRecord};
 pub use types::{
     VerificationEvidence, VerificationGuard, VerificationGuardCode, VerificationMatchKind,

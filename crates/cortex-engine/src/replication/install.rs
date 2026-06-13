@@ -17,6 +17,7 @@ use crate::options::EngineFeature;
 use crate::query::EngineAqlIndex;
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
+use crate::verification::TemporalFactStore;
 
 use super::{SnapshotCell, SnapshotSegment};
 
@@ -80,6 +81,8 @@ impl Database {
             FeedbackIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
         self.session_index =
             SessionIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
+        self.temporal_fact_store =
+            TemporalFactStore::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
         self.tool_index = ToolIndex::from_memtable(&self.memtable, ReadTxn::at(self.current_seq));
         if let Ok(mut cache) = self.persisted_index_cache.lock() {
             *cache = None;
