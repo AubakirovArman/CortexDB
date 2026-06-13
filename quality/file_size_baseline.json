@@ -206,14 +206,42 @@
     "crates/cortex-cli/src/cli/args.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 420,
+      "lines": 32,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli/args/commands.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 299,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli/args/commands/formats.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 39,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli/args/commands/inputs.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 37,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli/args/commands/subcommands.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 28,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-cli/src/cli/dispatch.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 260,
+      "lines": 226,
       "soft_limit": 300,
       "warning_limit": 600
     },
