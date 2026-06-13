@@ -148,7 +148,7 @@ fn migrate_offline_creates_backup_drill_rewrites_and_preserves_data() {
         .into_iter()
         .take(4)
         .collect::<Vec<_>>();
-    assert_eq!(segment_magic.as_slice(), b"ACS2");
+    assert_eq!(segment_magic.as_slice(), b"ACS3");
 
     let source_payload = run(vec![
         "cortexdb".to_owned(),

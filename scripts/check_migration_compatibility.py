@@ -10,6 +10,7 @@ from pathlib import Path
 
 REQUIRED_FORMATS = {
     "ACLOGv0",
+    "ACS3",
     "ACS2",
     "ACS1",
     "ACB0",

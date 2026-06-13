@@ -24,6 +24,7 @@ REQUIRED_POLICY_TERMS = (
     "storage_format_change_notes_v1.json",
     "release fixture",
     "ACLOGv0",
+    "ACS3",
     "ACS2",
     "ACS1",
     "ACB0",

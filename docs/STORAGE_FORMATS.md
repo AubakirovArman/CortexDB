@@ -41,7 +41,7 @@ make storage-format-change-note-check
 | Format | File | Magic | Version state | Compatibility rule |
 | --- | --- | --- | --- | --- |
 | ACLOG WAL | `.aclog` | `ACLOGv0\0` | `version = 0` in file header | Breaking changes require a new WAL version. |
-| Segment | `.acs` | `ACS2` | magic carries v2 | `ACS1` remains read-only compatible. |
+| Segment | `.acs` | `ACS3` | magic carries v3 | `ACS1` and `ACS2` remain read-only compatible. |
 | Bitmap index | `.acb` | `ACB0` | magic carries v0 | Breaking changes require a new magic. |
 | Lexical index | `.aci` | `ACI3` | magic carries v3 | `ACI0`, `ACI1`, and `ACI2` remain read-only compatible. |
 | Vector index | `.acv` | `ACV0` | magic carries v0 | Breaking changes require a new magic. |
@@ -53,23 +53,39 @@ All multi-byte integer fields are little-endian.
 ## Segment `.acs`
 
 ```text
-magic[4] = "ACS2"
+magic[4] = "ACS3"
 cell_count u32
-repeat cell_count:
-  cell_id u64
-  candidate_id u32
-  created_seq u64
-  deleted_seq u64, 0 means none
-  descriptor_len u32
-  descriptor bytes, may be empty
-  payload_len u32
+repeat cell_count payload blocks:
   payload bytes
+footer:
+  footer_count u32
+  repeat footer_count:
+    candidate_id u32
+    cell_id u64
+    created_seq u64
+    deleted_seq u64, 0 means none
+    payload_offset u64, absolute file offset
+    payload_len u64
+    payload_crc32c u32
+    descriptor_len u32
+    descriptor bytes, may be empty
+  footer_len u64
+  footer_crc32c u32
+  footer_magic[4] = "ASF2"
 crc32c u32 over all previous bytes
 ```
 
-Writers persist cells in ascending `candidate_id` order. `ACS1` is retained as a
-read-only legacy segment format and has the same layout without the
-`descriptor_len` and `descriptor bytes` fields.
+Writers persist cells in ascending `candidate_id` order. `ACS3` stores payload
+bytes before the footer so `SegmentReader::read_payload_at(candidate_id)` can
+seek to one payload and validate that payload block's CRC without decoding the
+whole segment. Full segment reads still validate the file CRC and each payload
+block CRC.
+
+`ACS2` is retained as a read-only legacy segment format with linear records:
+`cell_id`, `candidate_id`, `created_seq`, `deleted_seq`, descriptor length,
+descriptor bytes, payload length, and payload bytes. `ACS1` is retained as a
+read-only legacy segment format with the same linear layout as `ACS2` but
+without descriptor bytes.
 `SegmentReader::read_lookup` builds an in-memory lookup for `candidate_id` and
 full `cell_id` access without repeated segment scans.
 

@@ -1,9 +1,8 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use crate::atomic::{append_crc32c, verify_crc32c, write_atomic};
+use crate::atomic::write_atomic;
 use crate::error::{StorageError, StorageResult};
-use crate::format::{LEGACY_SEGMENT_MAGIC, SEGMENT_MAGIC};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SegmentCell {
@@ -43,6 +42,21 @@ pub struct SegmentCellRecord {
     pub descriptor: Option<Vec<u8>>,
 }
 
+/// Per-cell segment footer metadata. In ACS3 footer-backed segments this is
+/// read from the segment tail, so callers can inspect descriptors and payload
+/// locations without decoding every payload.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SegmentDescriptorEntry {
+    pub candidate_id: u32,
+    pub cell_id: u64,
+    pub created_seq: u64,
+    pub deleted_seq: Option<u64>,
+    pub descriptor: Option<Vec<u8>>,
+    pub payload_offset: u64,
+    pub payload_len: u64,
+    pub payload_crc32c: u32,
+}
+
 /// Lightweight per-cell entry that omits the payload. Index-rebuild paths only
 /// need the candidate/cell identity and liveness, so decoding this avoids
 /// copying multi-gigabyte payload bytes for large checkpointed corpora.
@@ -73,23 +87,7 @@ impl SegmentWriter {
     }
 
     pub fn write_refs(path: impl AsRef<Path>, cells: &[SegmentCellRef<'_>]) -> StorageResult<()> {
-        let mut out = Vec::new();
-        out.extend_from_slice(&SEGMENT_MAGIC);
-        put_u32(&mut out, cells.len() as u32);
-        let mut ordered = cells.to_vec();
-        ordered.sort_by_key(|cell| cell.candidate_id);
-        for cell in ordered {
-            put_u64(&mut out, cell.cell_id);
-            put_u32(&mut out, cell.candidate_id);
-            put_u64(&mut out, cell.created_seq);
-            put_u64(&mut out, cell.deleted_seq.unwrap_or(0));
-            let descriptor = cell.descriptor.as_deref().unwrap_or(&[]);
-            put_u32(&mut out, descriptor.len() as u32);
-            out.extend_from_slice(descriptor);
-            put_u32(&mut out, cell.payload.len() as u32);
-            out.extend_from_slice(cell.payload);
-        }
-        append_crc32c(&mut out);
+        let out = codec::encode_segment_refs(cells)?;
         write_atomic(path.as_ref(), &out)?;
         Ok(())
     }
@@ -103,7 +101,7 @@ impl SegmentReader {
 
     pub fn read_records(path: impl AsRef<Path>) -> StorageResult<Vec<SegmentCellRecord>> {
         let bytes = std::fs::read(path)?;
-        decode_segment_records(&bytes)
+        codec::decode_segment_records(&bytes)
     }
 
     pub fn read_lookup(path: impl AsRef<Path>) -> StorageResult<SegmentLookup> {
@@ -115,7 +113,24 @@ impl SegmentReader {
         path: impl AsRef<Path>,
     ) -> StorageResult<Vec<SegmentCandidateEntry>> {
         let bytes = std::fs::read(path)?;
-        decode_segment_candidate_entries(&bytes)
+        codec::decode_segment_candidate_entries(&bytes)
+    }
+
+    /// Read per-cell descriptor/footer entries without copying payload bytes.
+    pub fn read_descriptors(path: impl AsRef<Path>) -> StorageResult<Vec<SegmentDescriptorEntry>> {
+        codec::read_segment_descriptors(path.as_ref())
+    }
+
+    /// Read a single payload by candidate id.
+    ///
+    /// Footer-backed ACS3 segments seek directly to the requested payload and
+    /// validate that block's CRC. Legacy segments fall back to the compatible
+    /// full decode path.
+    pub fn read_payload_at(
+        path: impl AsRef<Path>,
+        candidate_id: u32,
+    ) -> StorageResult<Option<Vec<u8>>> {
+        codec::read_segment_payload_at(path.as_ref(), candidate_id)
     }
 }
 
@@ -155,7 +170,7 @@ impl SegmentLookup {
 }
 
 fn decode_segment(bytes: &[u8]) -> StorageResult<Vec<SegmentCell>> {
-    decode_segment_records(bytes).map(|records| {
+    codec::decode_segment_records(bytes).map(|records| {
         records
             .into_iter()
             .map(|record| record.cell)
@@ -163,127 +178,7 @@ fn decode_segment(bytes: &[u8]) -> StorageResult<Vec<SegmentCell>> {
     })
 }
 
-fn decode_segment_records(bytes: &[u8]) -> StorageResult<Vec<SegmentCellRecord>> {
-    let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidSegmentFile)?;
-    if bytes.len() < 8 {
-        return Err(StorageError::InvalidSegmentFile);
-    }
-    let is_v2 = if bytes[..4] == SEGMENT_MAGIC {
-        true
-    } else if bytes[..4] == LEGACY_SEGMENT_MAGIC {
-        false
-    } else {
-        return Err(StorageError::InvalidSegmentFile);
-    };
-    let mut cursor = 4;
-    let count = read_u32(bytes, &mut cursor)? as usize;
-    let mut records = Vec::with_capacity(count);
-    for _ in 0..count {
-        let cell_id = read_u64(bytes, &mut cursor)?;
-        let candidate_id = read_u32(bytes, &mut cursor)?;
-        let created_seq = read_u64(bytes, &mut cursor)?;
-        let deleted_seq = match read_u64(bytes, &mut cursor)? {
-            0 => None,
-            value => Some(value),
-        };
-        let descriptor = if is_v2 {
-            let len = read_u32(bytes, &mut cursor)? as usize;
-            let value = read_bytes(bytes, &mut cursor, len)?;
-            (!value.is_empty()).then(|| value.to_vec())
-        } else {
-            None
-        };
-        let len = read_u32(bytes, &mut cursor)? as usize;
-        let payload = read_bytes(bytes, &mut cursor, len)?.to_vec();
-        records.push(SegmentCellRecord {
-            cell: SegmentCell {
-                candidate_id,
-                cell_id,
-                created_seq,
-                deleted_seq,
-                payload,
-            },
-            descriptor,
-        });
-    }
-    if cursor != bytes.len() {
-        return Err(StorageError::InvalidSegmentFile);
-    }
-    Ok(records)
-}
-
-fn decode_segment_candidate_entries(bytes: &[u8]) -> StorageResult<Vec<SegmentCandidateEntry>> {
-    let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidSegmentFile)?;
-    if bytes.len() < 8 {
-        return Err(StorageError::InvalidSegmentFile);
-    }
-    let is_v2 = if bytes[..4] == SEGMENT_MAGIC {
-        true
-    } else if bytes[..4] == LEGACY_SEGMENT_MAGIC {
-        false
-    } else {
-        return Err(StorageError::InvalidSegmentFile);
-    };
-    let mut cursor = 4;
-    let count = read_u32(bytes, &mut cursor)? as usize;
-    let mut entries = Vec::with_capacity(count);
-    for _ in 0..count {
-        let cell_id = read_u64(bytes, &mut cursor)?;
-        let candidate_id = read_u32(bytes, &mut cursor)?;
-        let _created_seq = read_u64(bytes, &mut cursor)?;
-        let deleted = read_u64(bytes, &mut cursor)? != 0;
-        if is_v2 {
-            let descriptor_len = read_u32(bytes, &mut cursor)? as usize;
-            read_bytes(bytes, &mut cursor, descriptor_len)?;
-        }
-        let len = read_u32(bytes, &mut cursor)? as usize;
-        // Skip the payload without copying it.
-        read_bytes(bytes, &mut cursor, len)?;
-        entries.push(SegmentCandidateEntry {
-            candidate_id,
-            cell_id,
-            deleted,
-        });
-    }
-    if cursor != bytes.len() {
-        return Err(StorageError::InvalidSegmentFile);
-    }
-    Ok(entries)
-}
-
-fn put_u32(out: &mut Vec<u8>, value: u32) {
-    out.extend_from_slice(&value.to_le_bytes());
-}
-
-fn put_u64(out: &mut Vec<u8>, value: u64) {
-    out.extend_from_slice(&value.to_le_bytes());
-}
-
-fn read_u32(bytes: &[u8], cursor: &mut usize) -> StorageResult<u32> {
-    Ok(u32::from_le_bytes(read_array(bytes, cursor)?))
-}
-
-fn read_u64(bytes: &[u8], cursor: &mut usize) -> StorageResult<u64> {
-    Ok(u64::from_le_bytes(read_array(bytes, cursor)?))
-}
-
-fn read_array<const N: usize>(bytes: &[u8], cursor: &mut usize) -> StorageResult<[u8; N]> {
-    read_bytes(bytes, cursor, N)?
-        .try_into()
-        .map_err(|_| StorageError::InvalidSegmentFile)
-}
-
-fn read_bytes<'a>(bytes: &'a [u8], cursor: &mut usize, len: usize) -> StorageResult<&'a [u8]> {
-    let end = cursor
-        .checked_add(len)
-        .ok_or(StorageError::InvalidSegmentFile)?;
-    if end > bytes.len() {
-        return Err(StorageError::InvalidSegmentFile);
-    }
-    let value = &bytes[*cursor..end];
-    *cursor = end;
-    Ok(value)
-}
+mod codec;
 
 #[cfg(test)]
 mod tests;

@@ -18,10 +18,10 @@
       "kind": "segment",
       "name": "Segment",
       "extension": "acs",
-      "current_magic": "ACS2",
-      "current_version": 2,
-      "legacy_magics": ["ACS1"],
-      "breaking_change_policy": "ACS1 remains read-only compatible; breaking changes require a new segment magic and migration notes",
+      "current_magic": "ACS3",
+      "current_version": 3,
+      "legacy_magics": ["ACS1", "ACS2"],
+      "breaking_change_policy": "ACS1 and ACS2 remain read-only compatible; breaking changes require a new segment magic and migration notes",
       "docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"]
     },
     {

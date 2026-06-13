@@ -10,7 +10,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A06` (`EPIC-E12` migration framework is closed for the
+Current pointer: `EPIC-A08` (`EPIC-E12` migration framework is closed for the
 current format framework; `EPIC-A18` background incremental compaction and
 `EPIC-E11` chaos/graceful-shutdown consolidation are closed for the alpha-slice;
 long-running load evidence continues under `EPIC-A19`; `EPIC-D15` public tag
@@ -193,21 +193,23 @@ This queue follows section 7 of the source plan and dependency notes from the ep
 
 ### EPIC-A07 — Segment format v2 — payload-офсеты и блочные CRC
 
-- status: `pending`
+- status: `done`
 - meta: Категория: storage · Приоритет: P0 · Горизонт: 60 days · Тип: build
 - goal: random access к payload — предусловие disk-resident исполнения.
 - problem: Проблема: сегмент читается только целиком (`SegmentReader::read`); валидация целофайловая.
 - tasks:
-  - [ ] 1) footer-таблица (candidate_id, cell_id, descriptor, payload_offset, len, crc32c-блока)
-  - [ ] 2) `SegmentReader::read_payload_at(candidate)` + `read_descriptors()`
-  - [ ] 3) writer пишет v2, reader читает v1+v2 (dual-read)
-  - [ ] 4) migration-фикстуры.
+  - [x] 1) footer-таблица (candidate_id, cell_id, descriptor, payload_offset, len, crc32c-блока)
+  - [x] 2) `SegmentReader::read_payload_at(candidate)` + `read_descriptors()`
+  - [x] 3) writer пишет текущий footer-backed формат, reader читает legacy+current (dual-read)
+  - [x] 4) migration-фикстуры.
 - acceptance:
-  - [ ] 1) чтение одного payload без декодирования сегмента (тест)
-  - [ ] 2) поблочная детекция порчи (corruption-тест на один блок)
-  - [ ] 3) fixtures/storage и compatibility-тесты зелёные.
+  - [x] 1) чтение одного payload без декодирования сегмента (тест)
+  - [x] 2) поблочная детекция порчи (corruption-тест на один блок)
+  - [x] 3) fixtures/storage и compatibility-тесты зелёные.
 - files: cortex-storage/src/segment.rs, format.rs; cortex-engine/src/checkpoint.rs.
 - dependencies: A02 (descriptor в footer). Эффект: открывает A08.
+- evidence: Segment writing now uses a footer-backed current marker (`ACS3`) rather than silently changing the frozen `ACS2` layout. The footer stores `candidate_id`, `cell_id`, sequence metadata, optional descriptor bytes, absolute payload offsets, payload lengths, and per-payload CRC32C. `SegmentReader::read_descriptors` reads footer metadata without payload copies; `SegmentReader::read_payload_at(candidate_id)` seeks to one payload and validates only that block's CRC for footer-backed segments. Legacy `ACS1` and old linear `ACS2` remain read-only compatible. Format policy fixtures/docs were updated to make `ACS3` current and `ACS1`/`ACS2` legacy. Targeted checks passed: `cargo test -p cortex-storage --all-features`, `make storage-format-freeze-check`, `make storage-compat-check`, `make migration-policy-check`, `make migration-compatibility-check`, `cargo test -p cortex-engine compatibility --all-features`, `cargo test -p cortex-server snapshot_compatibility_response_shape --all-features`, and `cargo test -p cortex-cli migration --all-features`.
+- next exit step: begin A08 by introducing lazy payload references behind a config flag, using `SegmentReader::read_descriptors` and `read_payload_at` as the disk access boundary.
 - risks: формат-миграция — version gate, как в A02.
 
 ### EPIC-A08 — Lazy payload residency, фаза 1 (метаданные в RAM, payload на диске)

@@ -20,8 +20,8 @@ fn snapshot_compatibility_response_shape() {
     assert!(response.contains(r#""version":"v1""#));
     assert!(response.contains(r#""contract":"sdk-contract.v1""#));
     assert!(response.contains(r#""current_magic":"ACLOGv0""#));
-    assert!(response.contains(r#""current_magic":"ACS2""#));
-    assert!(response.contains(r#""legacy_magics":["ACS1"]"#));
+    assert!(response.contains(r#""current_magic":"ACS3""#));
+    assert!(response.contains(r#""legacy_magics":["ACS1","ACS2"]"#));
     assert!(response.contains(r#""gate":"make migration-compatibility-check""#));
     assert!(response.contains(r#""schema_version":"cortexdb.migration_registry.v1""#));
     assert!(response.contains(r#""migration_gate":"make migration-compatibility-check""#));

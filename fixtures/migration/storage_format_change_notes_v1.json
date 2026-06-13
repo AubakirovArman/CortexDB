@@ -19,10 +19,21 @@
     },
     {
       "kind": "segment",
-      "marker": "ACS2",
+      "marker": "ACS3",
       "extension": ".acs",
       "compatibility": "current",
-      "change_policy": "ACS2 adds optional typed descriptor bytes to segment records. Breaking segment changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence.",
+      "change_policy": "ACS3 stores payload bytes before a footer table with descriptors, payload offsets, lengths, and per-payload CRC32C. ACS1 and ACS2 remain read-only compatible. Breaking segment changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence.",
+      "release_fixture_required": true,
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
+      "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
+      "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
+    },
+    {
+      "kind": "segment",
+      "marker": "ACS2",
+      "extension": ".acs",
+      "compatibility": "read-only compatible",
+      "change_policy": "Legacy segment ACS2 compatibility must remain documented and covered by segment tests or be removed only through a breaking migration note and release fixture.",
       "release_fixture_required": true,
       "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],

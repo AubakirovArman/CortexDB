@@ -10,16 +10,22 @@
       "proof": ["crates/cortex-storage/tests/wal_tests.rs"]
     },
     {
-      "marker": "ACS2",
+      "marker": "ACS3",
       "file": ".acs",
       "compatibility": "current",
       "proof": ["crates/cortex-storage/tests/segment_index_tests.rs"]
     },
     {
+      "marker": "ACS2",
+      "file": ".acs",
+      "compatibility": "read-only compatible",
+      "proof": ["crates/cortex-storage/src/segment/tests.rs"]
+    },
+    {
       "marker": "ACS1",
       "file": ".acs",
       "compatibility": "read-only compatible",
-      "proof": ["crates/cortex-storage/tests/segment_index_tests.rs"]
+      "proof": ["crates/cortex-storage/src/segment/tests.rs"]
     },
     {
       "marker": "ACB0",
