@@ -1,18 +1,17 @@
 use serde::Deserialize;
 
-use cortex_core::CellId;
-use cortex_engine::{
-    AnswerGroundingOptions, AnswerGroundingReport, CellMetadata, ContextPack, ContextPackCell,
-};
+use cortex_engine::AnswerGroundingOptions;
 
-use crate::responses::{
-    AnswerGroundingReportResponse, AnswerGroundingSpanResponse, LlmInferenceAuditResponse,
-    LlmInferenceResponse, RouterError,
-};
+use crate::responses::{LlmInferenceAuditResponse, LlmInferenceResponse, RouterError};
 pub(crate) use audit::{LlmInferenceDecisionAudit, LlmInferenceRejection, LlmInferenceResult};
+use context::{
+    citation_count, citations, grounding_context_pack, map_answer_grounding_report,
+    request_has_api_key, summarize_from_context,
+};
 use safety::{validate_llm_runtime_safety_config, LlmRuntimeSafetyConfig};
 
 mod audit;
+mod context;
 mod safety;
 
 const REQUEST_SCHEMA_VERSION: &str = "cortexdb.llm_inference.smoke_request.v1";
@@ -221,102 +220,6 @@ pub(crate) fn handle_inference_test_double(
 
 fn rejection(error: RouterError, audit: LlmInferenceDecisionAudit) -> LlmInferenceRejection {
     LlmInferenceRejection::new(error, audit)
-}
-
-fn request_has_api_key(request: &LlmInferenceRequest) -> bool {
-    request
-        .api_key
-        .as_deref()
-        .is_some_and(|value| !value.trim().is_empty())
-}
-
-fn citations(request: &LlmInferenceRequest) -> Vec<String> {
-    request
-        .context_pack
-        .cells
-        .iter()
-        .filter_map(|cell| cell.citation.clone().or_else(|| cell.source_ref.clone()))
-        .collect()
-}
-
-fn citation_count(request: &LlmInferenceRequest) -> usize {
-    request
-        .context_pack
-        .cells
-        .iter()
-        .filter(|cell| cell.citation.is_some() || cell.source_ref.is_some())
-        .count()
-}
-
-fn summarize_from_context(text: &str) -> String {
-    let snippet = text.chars().take(180).collect::<String>();
-    format!("Test-double answer from explicit ContextPack only: {snippet}")
-}
-
-fn grounding_context_pack(request: &LlmInferenceRequest) -> ContextPack {
-    ContextPack {
-        cells: request
-            .context_pack
-            .cells
-            .iter()
-            .map(|cell| {
-                let payload = cell
-                    .text
-                    .as_deref()
-                    .or(cell.payload_text.as_deref())
-                    .unwrap_or("")
-                    .as_bytes()
-                    .to_vec();
-                ContextPackCell {
-                    cell_id: CellId(cell.cell_id),
-                    metadata: CellMetadata::from_payload(&payload),
-                    payload,
-                    estimated_tokens: 0,
-                    citation: cell.citation.clone().or_else(|| cell.source_ref.clone()),
-                    provenance: None,
-                    explain: None,
-                    access_decision: None,
-                }
-            })
-            .collect(),
-        token_budget_tokens: 0,
-        estimated_tokens: 0,
-        truncated: false,
-        citations_required: true,
-        answerability_q16: u16::MAX,
-        conflict_visibility_q16: 0,
-        visible_conflict_count: 0,
-        anomalies: Vec::new(),
-    }
-}
-
-fn map_answer_grounding_report(report: &AnswerGroundingReport) -> AnswerGroundingReportResponse {
-    AnswerGroundingReportResponse {
-        answer_supported: report.answer_supported,
-        rejected: report.rejected,
-        support_q16: report.support_q16,
-        supported_span_count: report.supported_span_count,
-        unsupported_span_count: report.unsupported_span_count,
-        spans: report
-            .spans
-            .iter()
-            .map(|span| AnswerGroundingSpanResponse {
-                text: span.text.clone(),
-                start_byte: span.start_byte,
-                end_byte: span.end_byte,
-                support_q16: span.support_q16,
-                supported: span.supported,
-                covered_terms: span.covered_terms.clone(),
-                missing_terms: span.missing_terms.clone(),
-                supported_by_cell_ids: span
-                    .supported_by_cell_ids
-                    .iter()
-                    .map(|cell_id| cell_id.0)
-                    .collect(),
-                citations: span.citations.clone(),
-            })
-            .collect(),
-    }
 }
 
 fn test_double_runtime_safety_config(enabled: bool) -> LlmRuntimeSafetyConfig {

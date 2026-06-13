@@ -4721,7 +4721,7 @@
     "crates/cortex-server/src/llm.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 339,
+      "lines": 242,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -4729,6 +4729,13 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 88,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/llm/context.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 104,
       "soft_limit": 300,
       "warning_limit": 600
     },
