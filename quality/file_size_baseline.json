@@ -2040,7 +2040,21 @@
     "crates/cortex-engine/src/query/metadata_validation.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 372,
+      "lines": 273,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/metadata_validation/checks.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 52,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/query/metadata_validation/errors.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 56,
       "soft_limit": 300,
       "warning_limit": 600
     },

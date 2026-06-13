@@ -3,62 +3,10 @@
 use crate::query::metadata::{non_empty, CellMetadata};
 use crate::source_trust::{parse_source_trust_class, SourceTrust};
 
-/// Validation error for cell metadata fields.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum MetadataValidationError {
-    EmptyScope,
-    EmptyStatus,
-    InvalidScopeCharacters(String),
-    InvalidTtlSeconds(u64),
-    InvalidCellType(String),
-}
+mod checks;
+mod errors;
 
-/// Decode error for strict payload parsing.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum MetadataDecodeError {
-    MissingBodySeparator,
-    EmptyScope,
-    EmptyStatus,
-    InvalidScopeCharacters(String),
-    InvalidCellType(String),
-    InvalidNumericField { field: String, value: String },
-}
-
-impl core::fmt::Display for MetadataDecodeError {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self {
-            Self::MissingBodySeparator => write!(
-                f,
-                "payload missing body separator (blank line after headers)"
-            ),
-            Self::EmptyScope => write!(f, "scope must not be empty"),
-            Self::EmptyStatus => write!(f, "status must not be empty"),
-            Self::InvalidScopeCharacters(s) => write!(f, "scope contains invalid characters: {s}"),
-            Self::InvalidCellType(v) => write!(f, "unknown cell type: {v}"),
-            Self::InvalidNumericField { field, value } => {
-                write!(f, "invalid numeric value for {field}: {value}")
-            }
-        }
-    }
-}
-
-impl core::fmt::Display for MetadataValidationError {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self {
-            MetadataValidationError::EmptyScope => write!(f, "scope must not be empty"),
-            MetadataValidationError::EmptyStatus => write!(f, "status must not be empty"),
-            MetadataValidationError::InvalidScopeCharacters(s) => {
-                write!(f, "scope contains invalid characters: {s}")
-            }
-            MetadataValidationError::InvalidTtlSeconds(v) => {
-                write!(f, "ttl_seconds must be > 0: {v}")
-            }
-            MetadataValidationError::InvalidCellType(v) => {
-                write!(f, "unknown cell type: {v}")
-            }
-        }
-    }
-}
+pub use errors::{MetadataDecodeError, MetadataValidationError};
 
 impl CellMetadata {
     /// Strictly decode payload, returning an error on invalid metadata.
@@ -318,53 +266,6 @@ impl CellMetadata {
             terms,
             source_ref,
         })
-    }
-
-    /// Validate metadata fields and return the first error encountered.
-    pub fn validate(&self) -> Result<(), MetadataValidationError> {
-        if self.scope.is_empty() {
-            return Err(MetadataValidationError::EmptyScope);
-        }
-        if self.scope.contains("..") || self.scope.contains('/') {
-            return Err(MetadataValidationError::InvalidScopeCharacters(
-                self.scope.clone(),
-            ));
-        }
-        if self.status.is_empty() {
-            return Err(MetadataValidationError::EmptyStatus);
-        }
-        if let Some(ttl) = self.ttl_seconds {
-            if ttl == 0 {
-                return Err(MetadataValidationError::InvalidTtlSeconds(ttl));
-            }
-        }
-        if self
-            .cell_type
-            .parse::<cortex_core::KnowledgeCellType>()
-            .is_err()
-        {
-            return Err(MetadataValidationError::InvalidCellType(
-                self.cell_type.clone(),
-            ));
-        }
-        Ok(())
-    }
-
-    /// Sanitize metadata into a guaranteed-valid form, applying safe defaults.
-    pub fn sanitized(self) -> Self {
-        let mut m = self;
-        if m.scope.is_empty() || m.scope.contains("..") || m.scope.contains('/') {
-            m.scope = "default".to_owned();
-        }
-        if m.status.is_empty() {
-            m.status = "ready".to_owned();
-        }
-        if let Some(ttl) = m.ttl_seconds {
-            if ttl == 0 {
-                m.ttl_seconds = None;
-            }
-        }
-        m
     }
 }
 
