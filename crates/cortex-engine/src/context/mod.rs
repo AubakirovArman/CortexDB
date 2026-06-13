@@ -26,6 +26,7 @@ pub use grounding::{
     DEFAULT_GROUNDING_THRESHOLD_Q16,
 };
 pub use large_cell::ContextLargeCellPolicy;
+pub(crate) use pack::ContextPackBuilder;
 pub use token_estimator::{estimate_tokens, estimate_tokens_for_profile, ContextTokenProfile};
 pub use trace::{
     ContextPipelineCellTrace, ContextPipelineStageTrace, ContextPipelineTrace,

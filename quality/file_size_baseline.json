@@ -1466,9 +1466,16 @@
     "crates/cortex-engine/src/bin/scale_benchmark_check/args.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 121,
+      "lines": 120,
       "soft_limit": 300,
       "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/scale_benchmark_check/args_tests.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 40,
+      "soft_limit": 600,
+      "warning_limit": 1200
     },
     "crates/cortex-engine/src/bin/scale_benchmark_check/metrics.rs": {
       "hard_limit": 1000,
@@ -1477,10 +1484,31 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-engine/src/bin/scale_benchmark_check/prepared.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 135,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/scale_benchmark_check/report.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 74,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/scale_benchmark_check/residency.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 11,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-engine/src/bin/scale_benchmark_check/runner.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 186,
+      "lines": 172,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1767,14 +1795,14 @@
     "crates/cortex-engine/src/context/mod.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 185,
+      "lines": 186,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-engine/src/context/pack.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 5,
+      "lines": 7,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1795,7 +1823,7 @@
     "crates/cortex-engine/src/context/pack/builder.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 246,
+      "lines": 299,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1970,7 +1998,7 @@
     "crates/cortex-engine/src/exec/pack.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 68,
+      "lines": 138,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1991,7 +2019,7 @@
     "crates/cortex-engine/src/exec/tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 58,
+      "lines": 96,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -2306,7 +2334,7 @@
     "crates/cortex-engine/src/query/explain.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 201,
+      "lines": 219,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -4088,6 +4116,13 @@
       "soft_limit": 600,
       "warning_limit": 1200
     },
+    "crates/cortex-engine/tests/lazy_payload_parity.rs": {
+      "hard_limit": 2000,
+      "kind": "test",
+      "lines": 150,
+      "soft_limit": 600,
+      "warning_limit": 1200
+    },
     "crates/cortex-engine/tests/lifecycle_tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
@@ -4140,7 +4175,7 @@
     "crates/cortex-engine/tests/query_search/aql.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 498,
+      "lines": 507,
       "soft_limit": 600,
       "warning_limit": 1200
     },

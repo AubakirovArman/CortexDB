@@ -346,6 +346,7 @@ USING MODE balanced WHERE space = project:investments LIMIT 1 CANDIDATES;"#,
             "DedupOp",
             "ParentExpandOp",
             "LimitOp",
+            "PackOp",
         ]
     );
     assert_eq!(
@@ -353,6 +354,14 @@ USING MODE balanced WHERE space = project:investments LIMIT 1 CANDIDATES;"#,
             .operators
             .iter()
             .find(|operator| operator.name == "LimitOp")
+            .map(|operator| operator.output_count),
+        Some(1)
+    );
+    assert_eq!(
+        trace
+            .operators
+            .iter()
+            .find(|operator| operator.name == "PackOp")
             .map(|operator| operator.output_count),
         Some(1)
     );

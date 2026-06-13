@@ -24,16 +24,47 @@ use crate::database::RetrievedCell;
 use crate::search::tokenize;
 use crate::source_trust::SourceTrust;
 
-impl ContextPack {
-    pub fn from_retrieved_with_feedback_options_and_view(
-        cells: Vec<RetrievedCell>,
+pub(crate) struct ContextPackBuilder<'a> {
+    token_budget_tokens: u32,
+    citations_required: bool,
+    options: &'a ContextPackOptions,
+    query: &'a str,
+    feedback_scores: &'a BTreeMap<CellId, i32>,
+    access_view: Option<&'a AgentView>,
+}
+
+impl<'a> ContextPackBuilder<'a> {
+    pub(crate) fn new(
         token_budget_tokens: u32,
         citations_required: bool,
-        options: &ContextPackOptions,
-        query: &str,
-        feedback_scores: &BTreeMap<CellId, i32>,
-        access_view: Option<&AgentView>,
+        options: &'a ContextPackOptions,
+        query: &'a str,
+        feedback_scores: &'a BTreeMap<CellId, i32>,
+        access_view: Option<&'a AgentView>,
     ) -> Self {
+        Self {
+            token_budget_tokens,
+            citations_required,
+            options,
+            query,
+            feedback_scores,
+            access_view,
+        }
+    }
+
+    pub(crate) fn build_from_retrieved(self, cells: Vec<RetrievedCell>) -> ContextPack {
+        self.build_from_cells(cells)
+    }
+
+    fn build_from_cells(self, cells: Vec<RetrievedCell>) -> ContextPack {
+        let Self {
+            token_budget_tokens,
+            citations_required,
+            options,
+            query,
+            feedback_scores,
+            access_view,
+        } = self;
         let mut pack_cells = Vec::new();
         let mut estimated_tokens = 0u32;
         let mut truncated = false;
@@ -231,7 +262,7 @@ impl ContextPack {
             anomalies.push(answerability::insufficient_context_anomaly(&answerability));
         }
 
-        Self {
+        ContextPack {
             cells: pack_cells,
             token_budget_tokens,
             estimated_tokens,
@@ -242,5 +273,27 @@ impl ContextPack {
             visible_conflict_count: conflict_visibility.visible_conflict_count,
             anomalies,
         }
+    }
+}
+
+impl ContextPack {
+    pub fn from_retrieved_with_feedback_options_and_view(
+        cells: Vec<RetrievedCell>,
+        token_budget_tokens: u32,
+        citations_required: bool,
+        options: &ContextPackOptions,
+        query: &str,
+        feedback_scores: &BTreeMap<CellId, i32>,
+        access_view: Option<&AgentView>,
+    ) -> Self {
+        ContextPackBuilder::new(
+            token_budget_tokens,
+            citations_required,
+            options,
+            query,
+            feedback_scores,
+            access_view,
+        )
+        .build_from_retrieved(cells)
     }
 }

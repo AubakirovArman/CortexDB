@@ -1,8 +1,10 @@
 use cortex_aql::{eval_bitmap_program, AgentView, BitmapProvider, BrainId, RetrievalMode};
 
+use crate::context::ContextPackOptions;
 use crate::database::{cell_version_meets_quality_thresholds, CandidateResolver, Database};
 use crate::error::{EngineError, EngineResult};
-use crate::exec::PhysicalOperatorTrace;
+use crate::exec::{PackOp, PhysicalOperatorTrace};
+use crate::feedback::current_unix_seconds;
 use crate::plan::{
     choose_retrieve_path, CostModelDecision, CostModelOptions, LogicalPlan, LogicalPlanReport,
     PolicyRewrite,
@@ -98,7 +100,23 @@ impl Database {
         let policy_rewritten_plan = PolicyRewrite::new(view).rewrite(&logical_plan);
         let provider = EngineAqlProvider::new(index, view);
         let execution = if analyze {
-            Some(self.retrieve_cells_with_execution_trace(&plan, &provider)?)
+            let mut execution = self.retrieve_cells_with_execution_trace(&plan, &provider)?;
+            let feedback_scores = self.feedback_scores_at(current_unix_seconds());
+            let budget = view.effective_budget(plan.context_policy.budget_tokens);
+            let pack_execution = PackOp::execute(
+                std::mem::take(&mut execution.cells),
+                budget,
+                plan.context_policy.require_citations,
+                &ContextPackOptions::default(),
+                &plan.task,
+                &feedback_scores,
+                Some(view),
+            );
+            execution.total_elapsed_nanos = execution
+                .total_elapsed_nanos
+                .saturating_add(pack_execution.trace.elapsed_nanos);
+            execution.operators.push(pack_execution.trace);
+            Some(execution)
         } else {
             None
         };

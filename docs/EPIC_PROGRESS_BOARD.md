@@ -21,16 +21,16 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B02` — ContextPackBuilder as a physical operator.
+`EPIC-B03` — token-budget pushdown and early termination.
 
-B02 exit steps:
+B03 exit steps:
 
-1. Inspect current ContextPack construction paths and identify the minimum
-   operator boundary.
-2. Add PackOp/ContextPackBuilder execution path behind existing semantics.
-3. Preserve existing pack output on golden fixtures.
-4. Add operator counters where available without changing public JSON.
-5. Run targeted ContextPack tests plus workspace gates, then update this board.
+1. Make PackOp signal when the token budget is filled.
+2. Stop upstream operators as early as safely possible.
+3. Move lazy payload reads behind permission/rank and bounded pack selection.
+4. Preserve ContextPack fixture quality.
+5. Publish a small/medium payload-read count or latency gate; large 1M/10M
+   evidence remains A19/C17.
 
 ## Recently Closed
 
@@ -86,9 +86,27 @@ Important follow-up:
 - the lazy cold max outlier and canceled 1M lazy ContextPack run are
   performance debt for A19/C17, not A08 blockers.
 
+### EPIC-B02 — ContextPackBuilder as a physical operator
+
+Status: `done`
+
+What closed it:
+
+- added `ContextPackBuilder` as the stateful internal boundary for pack
+  construction;
+- `PackOp` now implements `PhysicalOp<Item = ContextPack>` and remains
+  compatible through `PackOp::execute`;
+- `EXPLAIN ANALYZE RETRIEVE CONTEXT` now appends `PackOp` after `LimitOp`;
+- ContextPack output parity stayed stable on targeted golden/quality fixtures.
+
+Important follow-up:
+
+- upstream early termination and avoiding full upstream candidate/payload
+  materialization are B03 scope.
+
 ## Done Snapshot
 
-Done count in roadmap snapshot: `36`.
+Done count in roadmap snapshot: `37`.
 
 High-signal done epics:
 
@@ -112,6 +130,7 @@ High-signal done epics:
 - A18 background incremental compaction;
 - A20 property tests for MVCC/WAL/recovery;
 - B01 ContextPack JSON Schema v1;
+- B02 ContextPackBuilder physical operator;
 - D02 init/doctor;
 - D06 Python SDK;
 - D07 TypeScript SDK;
@@ -148,11 +167,11 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on B02 only:
+Work on B03 only:
 
-1. inspect ContextPack construction and executor interfaces;
-2. implement the smallest PackOp boundary without output drift;
-3. prove golden ContextPack parity;
+1. add a budget-full signal to PackOp/ContextPackBuilder;
+2. stop upstream candidate/payload work when the pack is complete;
+3. prove ContextPack fixture parity;
 4. update `docs/DATABASE_GRADE_EXECUTION_PLAN.md` and this board;
-5. move pointer only after B02 is `done` or explicitly split with accepted
+5. move pointer only after B03 is `done` or explicitly split with accepted
    follow-up scope.

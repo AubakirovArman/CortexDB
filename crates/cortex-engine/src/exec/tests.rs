@@ -38,6 +38,46 @@ fn explain_collector_tracks_operator_output_counts() {
 
 #[test]
 fn pack_operator_reports_input_and_selected_cells() {
+    let cells = vec![RetrievedCell::from_payload(
+        CellId(1),
+        b"source=doc-a\n\nalpha evidence".to_vec(),
+    )];
+    let options = ContextPackOptions::default();
+    let feedback_scores = std::collections::BTreeMap::new();
+    let mut op = PackOp::new(
+        cells,
+        1_000,
+        false,
+        &options,
+        "alpha",
+        &feedback_scores,
+        None,
+    );
+    let Some(pack) = op.next() else {
+        panic!("PackOp should emit one ContextPack");
+    };
+
+    assert!(op.next().is_none());
+    assert_eq!(op.trace().name, "PackOp");
+    assert_eq!(op.trace().input_count, 1);
+    assert_eq!(op.trace().output_count, pack.cells.len());
+    assert_eq!(pack.cells.len(), 1);
+}
+
+#[test]
+fn pack_operator_matches_context_pack_constructor() {
+    let direct = crate::context::ContextPack::from_retrieved_with_feedback_options_and_view(
+        vec![RetrievedCell::from_payload(
+            CellId(1),
+            b"source=doc-a\n\nalpha evidence".to_vec(),
+        )],
+        1_000,
+        false,
+        &ContextPackOptions::default(),
+        "alpha",
+        &std::collections::BTreeMap::new(),
+        None,
+    );
     let execution = PackOp::execute(
         vec![RetrievedCell::from_payload(
             CellId(1),
@@ -51,8 +91,6 @@ fn pack_operator_reports_input_and_selected_cells() {
         None,
     );
 
-    assert_eq!(execution.trace.name, "PackOp");
-    assert_eq!(execution.trace.input_count, 1);
-    assert_eq!(execution.trace.output_count, execution.pack.cells.len());
-    assert_eq!(execution.pack.cells.len(), 1);
+    assert_eq!(execution.pack, direct);
+    assert_eq!(execution.trace.output_count, direct.cells.len());
 }

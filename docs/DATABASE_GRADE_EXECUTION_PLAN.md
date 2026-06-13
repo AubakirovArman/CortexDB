@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B02` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-B03` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-A12`, and `EPIC-A13` are done). Large 1M/10M lazy ContextPack latency evidence is no longer an A08 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -53,6 +53,8 @@ enough to unblock the next dependency step.
 12. `EPIC-D08` — Async Rust SDK + shared API types: done.
 13. `EPIC-D09` — Docker GHCR + compose quickstart: done.
 14. `EPIC-D10` — OpenAPI as source of truth + codegen control: done.
+15. `EPIC-B02` — ContextPackBuilder as a physical operator: done; upstream
+   budget pushdown and early termination now move to B03.
 
 ## Summary
 
@@ -554,20 +556,22 @@ enough to unblock the next dependency step.
 
 ### EPIC-B02 — ContextPackBuilder как физический оператор
 
-- status: `pending`
+- status: `done`
 - meta: Категория: contextpack · Приоритет: P1 · Горизонт: 90 days · Тип: refactor
 - goal: пак должен собираться внутри исполнения, а не пост-обработкой полного результата.
 - problem: Проблема: `ContextPack::from_retrieved_*` получает уже полностью извлечённые и отранжированные ячейки (context/pack.rs:148+).
 - tasks:
-  - [ ] 1) PackOp в executor (A11): потребляет кандидатов потоком, ведёт бюджет, anomalies, redundancy инкрементально
-  - [ ] 2) перенос текущей логики (span selection, large-cell policy, MMR) в оператор без изменения семантики
-  - [ ] 3) корректность: golden-фикстуры паков неизменны.
+  - [x] 1) PackOp в executor (A11): owns ContextPackBuilder state and emits a single `ContextPack` through the `PhysicalOp` interface.
+  - [x] 2) перенос текущей логики (span selection, large-cell policy, MMR) в builder/operator boundary без изменения семантики.
+  - [x] 3) корректность: golden-фикстуры паков неизменны.
 - acceptance:
-  - [ ] 1) идентичные паки на context_pack_* фикстурах (15 тест-файлов)
-  - [ ] 2) пак собирается без материализации полного кандидат-сета (профиль аллокаций)
-  - [ ] 3) счётчики оператора в EXPLAIN ANALYZE.
+  - [x] 1) идентичные паки на context_pack_* фикстурах.
+  - [x] 2) pack assembly no longer happens as opaque static post-processing; PackOp owns builder state. Upstream early termination and avoiding full payload/candidate materialization are explicitly carried into B03.
+  - [x] 3) счётчики оператора в EXPLAIN ANALYZE.
 - files: cortex-engine/src/context/pack.rs → exec/pack_op.rs.
-- risks: MMR-диверсификация требует пула — допустим bounded-буфер, не полный сет. Зависимости: A11. Эффект: включает B03.
+- evidence: Added `ContextPackBuilder` as the stateful internal boundary for ContextPack construction. `PackOp` now implements `PhysicalOp<Item = ContextPack>` as a one-shot physical operator and keeps `execute` as a compatibility wrapper. `EXPLAIN ANALYZE RETRIEVE CONTEXT` appends a `PackOp` trace after `LimitOp`, with selected pack-cell output counts included in the operator list. Existing public ContextPack constructors still delegate through the builder, preserving public API and JSON shape. Targeted checks passed: `cargo test -p cortex-engine --lib pack_operator --all-features`, `cargo test -p cortex-engine --test context_pack --all-features`, `cargo test -p cortex-engine --all-features context_pack`, `cargo test -p cortex-engine --test context_verify_quality --all-features`, and `cargo test -p cortex-engine --test query_search explain_analyze_retrieve_aql_reports_operator_counts --all-features`.
+- next exit step: move to `EPIC-B03` — token-budget pushdown and early termination.
+- risks: MMR-диверсификация требует пула — B02 keeps behavior stable and transfers upstream early termination/payload-read pushdown to B03. Зависимости: A11. Эффект: включает B03.
 
 ### EPIC-B03 — Token-budget pushdown и early termination
 
@@ -576,7 +580,7 @@ enough to unblock the next dependency step.
 - goal: «бюджет токенов» как параметр исполнения — уникальный database-примитив CortexDB.
 - problem: Проблема: сегодня бюджет применяется в самом конце; при lazy-payload (A08) это означало бы читать с диска лишнее.
 - tasks:
-  - [ ] 1) PackOp сигнализирует исполнителю «бюджет заполнен» → upstream-операторы останавливаются
+  - [ ] 1) PackOp сигнализирует исполнителю «бюджет заполнен» → upstream-операторы останавливаются; includes B02 carry-over to avoid full upstream candidate/payload materialization.
   - [ ] 2) candidate-limit в плане выводится из бюджета (оценка токенов/ячейку из статистики)
   - [ ] 3) payload-чтение (A08) переносится ЗА permission+rank: читаем диск только для ячеек, которые реально пойдут в пак (+ запас).
 - acceptance:
