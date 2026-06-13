@@ -25,7 +25,7 @@ core-property-random-check:
 
 performance-trend-check:
 	python3 scripts/performance_trend_check.py --load-report "$(LOAD_SMOKE_REPORT)" --single-node-report "$(SINGLE_NODE_PERF_REPORT)" --history-root "$(PERFORMANCE_HISTORY_ROOT)" --report "$(PERFORMANCE_TREND_REPORT)"
-
+continuous-benchmark-gate: ; $(MAKE) performance-trend-check && $(MAKE) scale-bench-trends && $(MAKE) memory-estimate-audit && python3 scripts/continuous_benchmark_gate.py
 release-regression-dashboard-check:
 	python3 scripts/release_regression_dashboard.py --baseline "$(RELEASE_REGRESSION_BASELINE)" --backup-report "$(BACKUP_DRILL_REPORT)" --single-node-report "$(SINGLE_NODE_PERF_REPORT)" --retrieval-report "$(RETRIEVAL_QUALITY_REPORT)" --context-report "$(CONTEXT_PACK_QUALITY_REPORT)" --verify-report "$(VERIFICATION_QUALITY_REPORT)" --api-report "$(HTTP_CONTRACT_OPS_REPORT)" --sdk-report "$(SDK_E2E_RELEASE_REPORT)" --report "$(RELEASE_REGRESSION_DASHBOARD_REPORT)" --markdown "$(RELEASE_REGRESSION_DASHBOARD_MARKDOWN)"
 

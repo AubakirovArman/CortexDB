@@ -15,6 +15,7 @@ make load-smoke-check
 make load-suite-check
 make single-node-performance-check
 make performance-trend-check
+make continuous-benchmark-gate
 ```
 
 Artifacts:
@@ -24,6 +25,7 @@ target/load-smoke/report.json
 target/load-suite/report.json
 target/single-node-performance/report.json
 target/performance-trends/report.json
+target/continuous-benchmark-gate/report.json
 ```
 
 Release history fixtures live under:
@@ -33,6 +35,15 @@ fixtures/performance/history/<release>/
   load_smoke_report.json
   single_node_performance_report.json
 ```
+
+The current local regression baseline is:
+
+```text
+fixtures/performance/history/v0.2.0-beta.2/
+```
+
+This keeps the p95/p99 regression gate comparing current runs against the latest
+beta evidence instead of the older `v0.1.0-core-alpha.5` smoke profile.
 
 ## Workload Classes
 
@@ -110,6 +121,16 @@ The trend report compares current p50/p95/p99 values against the latest release
 fixture and keeps ratios in `target/performance-trends/report.json`.
 The current report must include ingest and RSS evidence even when older release
 fixtures predate those fields.
+
+`make continuous-benchmark-gate` applies the current local regression threshold:
+
+```text
+max p95/p99 ratio: 1.2
+```
+
+It also checks that A19 scale trends and C16 memory-estimate audit artifacts are
+well-formed when present. `target/scale-bench/trends.json` is allowed to remain
+`partial` while the 10M long-running evidence packet is deferred.
 
 ## Actor Pressure
 

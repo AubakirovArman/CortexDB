@@ -1160,18 +1160,19 @@ enough to unblock the next dependency step.
 
 ### EPIC-C17 — Перф-регрессии в CI (continuous benchmarking)
 
-- status: `pending`
+- status: `partial`
 - meta: Категория: benchmarks · P1 · 60 days · build
 - goal: 100 эпиков перфорации без регресс-гейта = регрессии.
 - tasks:
-  - [ ] 1) nightly perf-job: фикс-корпуса 100K, метрики p50/p95 в trend.json (performance-trend-check уже есть — подключить к новому)
-  - [ ] 2) порог регрессии (>20% p95 → красный)
-  - [ ] 3) история артефактами.
+  - [ ] 1) nightly perf-job: фикс-корпуса 100K, метрики p50/p95 в trend.json (performance-trend-check уже есть — подключить к новому) — GitHub Actions wiring is intentionally deferred while Actions work is out of focus.
+  - [x] 2) порог регрессии (>20% p95 → красный) — `continuous_benchmark_gate.py` enforces max p95/p99 ratio `1.2` and has a synthetic self-test proving a `1.25` p95 regression fails.
+  - [x] 3) история артефактами — added `fixtures/performance/history/v0.2.0-beta.2` and `make continuous-benchmark-gate` writes `target/continuous-benchmark-gate/report.json`.
 - acceptance:
-  - [ ] 1) nightly красный при искусственной регрессии (тест процесса)
-  - [ ] 2) тренд-страница генерируется.
+  - [x] 1) nightly красный при искусственной регрессии (тест процесса) — local self-test covers the threshold decision; scheduled workflow wiring remains deferred.
+  - [x] 2) тренд-страница генерируется — local Markdown reports are generated for scale trends, memory audit, and continuous benchmark gate.
 - files: CI workflows, cortex-bench.
-- risks: шум раннеров — медианы из N прогонов. Зависимости: A19. Эффект: перф-дисциплина.
+- latest evidence: Added `scripts/continuous_benchmark_gate.py`, `make continuous-benchmark-gate`, and fresh `v0.2.0-beta.2` performance history fixtures. `make continuous-benchmark-gate` runs `performance-trend-check`, `scale-bench-trends`, `memory-estimate-audit`, and then gates p95/p99 ratios at `1.2`; the current report passed with latest history `v0.2.0-beta.2`, no ratio violations, and one warning that A19 scale trends remain partial because the 10M packet is deferred. `python3 scripts/continuous_benchmark_gate.py --self-test` passed and proves an artificial `1.25` p95 ratio is detected.
+- risks: GitHub scheduled/nightly workflow wiring is not added in this slice per the current instruction to skip Actions work. Runner noise still needs medians from N scheduled runs before this can be called a hosted CI performance discipline. Зависимости: A19. Эффект: перф-дисциплина.
 
 ### EPIC-C18 — Concurrent read throughput bench
 

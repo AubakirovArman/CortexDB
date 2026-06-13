@@ -128,6 +128,7 @@ To compare the current reports with release history:
 
 ```bash
 make performance-trend-check
+make continuous-benchmark-gate
 ```
 
 This writes:
@@ -140,6 +141,11 @@ The trend gate reads checked-in history fixtures under
 `fixtures/performance/history/`, validates that current reports include p95/p99
 for write/read/search/context/verify flows, and keeps current-vs-latest ratios
 visible before release.
+
+`continuous-benchmark-gate` applies the local p95/p99 regression threshold
+against the latest checked-in performance fixture and also validates the
+available A19 scale-trend and C16 memory-estimate artifacts without running new
+large benchmarks.
 
 The ANN section also emits a stable JSON line:
 

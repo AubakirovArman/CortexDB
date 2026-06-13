@@ -1,0 +1,82 @@
+{
+  "actor": {
+    "database_busy_count": 0,
+    "queue_capacity": 1024,
+    "queue_depth": 0,
+    "queue_saturation": 0.0,
+    "request_count": 234,
+    "request_duration_ms_total": 1080
+  },
+  "cells": 100,
+  "contexts": 5,
+  "current_seq": 100,
+  "duration_ms": 1243.186,
+  "errors": [],
+  "latencies": {
+    "context": {
+      "count": 5,
+      "max_ms": 59.058,
+      "p50_ms": 58.757,
+      "p95_ms": 58.832,
+      "p99_ms": 58.832
+    },
+    "read": {
+      "count": 100,
+      "max_ms": 14.205,
+      "p50_ms": 3.555,
+      "p95_ms": 8.377,
+      "p99_ms": 11.116
+    },
+    "search": {
+      "count": 20,
+      "max_ms": 24.235,
+      "p50_ms": 23.061,
+      "p95_ms": 24.122,
+      "p99_ms": 24.122
+    },
+    "verify": {
+      "count": 5,
+      "max_ms": 73.696,
+      "p50_ms": 59.275,
+      "p95_ms": 61.502,
+      "p99_ms": 61.502
+    },
+    "write": {
+      "count": 100,
+      "max_ms": 16.832,
+      "p50_ms": 3.691,
+      "p95_ms": 10.75,
+      "p99_ms": 14.756
+    }
+  },
+  "latency_thresholds": {
+    "context": {
+      "p95_ms": 1500.0,
+      "p99_ms": 3000.0
+    },
+    "read": {
+      "p95_ms": 250.0,
+      "p99_ms": 500.0
+    },
+    "search": {
+      "p95_ms": 1000.0,
+      "p99_ms": 2000.0
+    },
+    "verify": {
+      "p95_ms": 1500.0,
+      "p99_ms": 3000.0
+    },
+    "write": {
+      "p95_ms": 500.0,
+      "p99_ms": 1000.0
+    }
+  },
+  "ok": true,
+  "reads": 100,
+  "schema_version": "cortexdb.load_smoke.v1",
+  "searches": 20,
+  "validation_ok": true,
+  "verifies": 5,
+  "workers": 8,
+  "workload_class": "local_http_smoke"
+}

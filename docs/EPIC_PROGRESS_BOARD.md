@@ -34,11 +34,14 @@ C17 exit steps:
 C17 current state:
 
 - `performance-trend-check` already exists for load/single-node history;
+- `fixtures/performance/history/v0.2.0-beta.2` is the latest local baseline;
 - `make scale-bench-trends` exists for A19 scale reports and writes
   `target/scale-bench/trends.json`;
 - `make memory-estimate-audit` exists for C16 estimator-vs-RSS evidence;
-- next work: make C17 consume these artifacts as a coherent trend/regression
-  gate without running a new heavy benchmark.
+- `make continuous-benchmark-gate` consumes all three artifacts, enforces p95/p99
+  ratio `<= 1.2`, and has a synthetic regression self-test;
+- remaining work: hosted scheduled/nightly workflow wiring is deferred while
+  GitHub Actions work is out of focus.
 
 ## Active Partial Tail
 
@@ -436,11 +439,13 @@ High-signal done epics:
 
 ## Partial Snapshot
 
-Partial count in roadmap snapshot: `2`.
+Partial count in roadmap snapshot: `3`.
 
 - A19 scale benchmarks:
   10M lazy evidence, cold outlier analysis, and historical before/after
   optimization labels remain.
+- C17 perf-regressions:
+  local gate exists; hosted scheduled/nightly CI wiring remains deferred.
 - D05 SDK publish:
   local gates exist; public registry publication remains externally blocked.
 
@@ -456,9 +461,8 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 Work on C17 only:
 
-1. inspect `performance-trend-check`, `scale-bench-trends`, and
-   `memory-estimate-audit` outputs;
-2. add a lightweight C17 regression/trend gate over existing artifacts;
-3. document threshold policy and where nightly/long-running artifacts will live;
-4. move pointer only when the trend gate is reproducible and does not run heavy
-   benchmarks by default.
+1. if Actions work remains deferred, explicitly split the hosted nightly tail and
+   move to the next ordered epic;
+2. if Actions work is re-opened, add a scheduled workflow that uploads
+   `target/continuous-benchmark-gate/report.json`;
+3. do not add more local C17 scripts unless they close the hosted/nightly tail.
