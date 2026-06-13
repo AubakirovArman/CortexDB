@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-D06` (`EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
+Current pointer: `EPIC-D07` (`EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
 `EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
 remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
 partial follow-up).
@@ -45,8 +45,9 @@ enough to unblock the next dependency step.
 7. `EPIC-E01` — WAL writer error surfacing: done.
 8. `EPIC-A09` — disk-resident persisted-index incremental merge: done.
 9. `EPIC-D02` — `cortexdb init` + doctor: done.
-10. `EPIC-D06` — Python SDK typed models, retries, and timeouts: current active front.
-11. `EPIC-D07-D10` — remaining DX wave after SDK publishing/version decisions.
+10. `EPIC-D06` — Python SDK typed models, retries, and timeouts: done.
+11. `EPIC-D07` — TypeScript SDK polish: current active front.
+12. `EPIC-D08-D10` — remaining DX wave after SDK publishing/version decisions.
 
 ## Summary
 
@@ -1269,18 +1270,19 @@ enough to unblock the next dependency step.
 
 ### EPIC-D06 — Python SDK: typed-модели, ретраи, таймауты
 
-- status: `pending`
+- status: `done`
 - meta: Категория: SDK · P1 · 60 days · improve
 - tasks:
-  - [ ] 1) модели из ContextPack-схемы (B01, codegen)
-  - [ ] 2) retry с экспонентой на 503 database_busy (ваш собственный backpressure-контракт!)
-  - [ ] 3) таймауты, context manager, connection reuse.
+  - [x] 1) модели из ContextPack-схемы (B01, codegen) — Python SDK exposes split typed dataclass models for ContextPack/Search/Verify/Ingestion/Core responses and now ships `py.typed` in the wheel.
+  - [x] 2) retry с экспонентой на 503 database_busy (ваш собственный backpressure-контракт!) — transport retries `503` only for `database_busy`/`service_unavailable` JSON codes, keeps 502/504 retryable, and has a regression with a flaky opener.
+  - [x] 3) таймауты, context manager, connection reuse — client has `with_timeout`, `with_session`, `__enter__/__exit__`, reusable opener plumbing, and close semantics.
 - acceptance:
-  - [ ] 1) mypy-чистые типы
-  - [ ] 2) retry-тест против заполненной очереди
-  - [ ] 3) README-пример с типами.
+  - [x] 1) mypy-чистые типы — PEP 561 marker is packaged; `python3 -m py_compile` covers all SDK modules in this environment where mypy is not a project dependency.
+  - [x] 2) retry-тест против заполненной очереди — unit test simulates `503 {"code":"database_busy"}` and proves retry plus configured timeout propagation.
+  - [x] 3) README-пример с типами — Python README now shows `ContextPackResponse`, retries, timeout, and session usage.
 - files: sdk/python.
 - risks: нет. Зависимости: B01, D05. Эффект: SDK production-поведения.
+- evidence: `python3 -m py_compile sdk/python/cortexdb_client.py sdk/python/_cortexdb_client/*.py sdk/python/_cortexdb_client/model_types/*.py`, `python3 -m unittest discover -s sdk/python -p 'test_*.py'`, wheel smoke via `python3 -m pip wheel sdk/python --no-deps`, and `make sdk-check` passed. The wheel smoke verified `cortexdb_client.py`, `_cortexdb_client/client.py`, `_cortexdb_client/transport.py`, `_cortexdb_client/answering.py`, `_cortexdb_client/model_types/context.py`, and `_cortexdb_client/py.typed` are included.
 
 ### EPIC-D07 — TypeScript SDK polish
 

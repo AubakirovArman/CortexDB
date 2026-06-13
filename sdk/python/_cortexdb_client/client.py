@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-import json
-import time
 import urllib.parse
-import urllib.request
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Any, Callable
 
 from .aql import build_remember_aql, build_retrieve_context_aql, build_verify_fact_aql
-from .errors import CortexDBError
-from .grounding import _grounded_answer_response
+from .answering import answer_with_grounded_context as _answer_with_grounded_context
 from .models import (
     AnnEvaluationResponse,
     AqlResponse,
@@ -27,6 +23,7 @@ from .models import (
     ValidationResponse,
     VerificationReportResponse,
 )
+from .transport import build_opener, close_opener, request_json, scoped_path
 
 
 @dataclass(frozen=True)
@@ -36,12 +33,34 @@ class CortexDBClient:
     tenant: str | None = None
     max_retries: int = 0
     retry_delay_seconds: float = 0.5
+    timeout_seconds: float = 10.0
+    _opener: Any | None = field(default=None, repr=False, compare=False)
 
     def with_tenant(self, tenant: str) -> "CortexDBClient":
         return replace(self, tenant=tenant)
 
     def with_retries(self, max_retries: int, retry_delay_seconds: float = 0.5) -> "CortexDBClient":
         return replace(self, max_retries=max_retries, retry_delay_seconds=retry_delay_seconds)
+
+    def with_timeout(self, timeout_seconds: float) -> "CortexDBClient":
+        return replace(self, timeout_seconds=timeout_seconds)
+
+    def with_session(self) -> "CortexDBClient":
+        if self._opener is not None:
+            return self
+        return replace(self, _opener=build_opener())
+
+    def __enter__(self) -> "CortexDBClient":
+        if self._opener is None:
+            object.__setattr__(self, "_opener", build_opener())
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+        self.close()
+
+    def close(self) -> None:
+        close_opener(self._opener)
+        object.__setattr__(self, "_opener", None)
 
     build_retrieve_context_aql = staticmethod(build_retrieve_context_aql)
     build_verify_fact_aql = staticmethod(build_verify_fact_aql)
@@ -158,36 +177,19 @@ class CortexDBClient:
         reject_unsupported: bool = False,
         verify_answer: bool = True,
     ) -> GroundedAnswerResponse:
-        retrieve_statement = build_retrieve_context_aql(
-            question,
+        return _answer_with_grounded_context(
+            self,
+            scope,
             brain,
+            question,
+            answerer,
             mode=mode,
             budget_tokens=budget_tokens,
             limit_candidates=limit_candidates,
             where_clause=where_clause,
             require_citations=require_citations,
-        )
-        context = self.context_response(scope, retrieve_statement)
-        answer = answerer(context)
-        verify_statement = (
-            build_verify_fact_aql(answer, brain)
-            if verify_answer and answer.strip()
-            else None
-        )
-        verification = (
-            self.verify_response(scope, verify_statement)
-            if verify_statement is not None
-            else None
-        )
-        return _grounded_answer_response(
-            question=question,
-            answer=answer,
-            retrieve_statement=retrieve_statement,
-            verify_statement=verify_statement,
-            context=context,
-            verification=verification,
-            require_citations=require_citations,
             reject_unsupported=reject_unsupported,
+            verify_answer=verify_answer,
         )
 
     def verify(self, scope: str, statement: str) -> dict[str, Any]:
@@ -267,40 +269,21 @@ class CortexDBClient:
         return StatsResponse.from_json(self.stats())
 
     def _request(self, method: str, path: str, body: bytes) -> dict[str, Any]:
-        headers = {"content-type": "application/json"}
-        if self.token:
-            headers["authorization"] = f"Bearer {self.token}"
-        url = f"{self.base_url}{self._scoped(path)}"
-        attempt = 0
-        while True:
-            request = urllib.request.Request(url, data=body or None, headers=headers, method=method)
-            try:
-                with urllib.request.urlopen(request, timeout=10) as response:
-                    return json.loads(response.read().decode())
-            except urllib.error.HTTPError as e:
-                body_text = e.read().decode()
-                if attempt < self.max_retries and self._is_retryable(e.code):
-                    attempt += 1
-                    time.sleep(self.retry_delay_seconds * attempt)
-                    continue
-                raise CortexDBError.from_response(e.code, body_text) from None
-            except urllib.error.URLError as e:
-                if attempt < self.max_retries:
-                    attempt += 1
-                    time.sleep(self.retry_delay_seconds * attempt)
-                    continue
-                raise CortexDBError(str(e.reason), code=None, status=None, body=str(e.reason)) from None
-
-    @staticmethod
-    def _is_retryable(status: int) -> bool:
-        return status in (500, 502, 503, 504)
+        return request_json(
+            base_url=self.base_url,
+            tenant=self.tenant,
+            token=self.token,
+            timeout_seconds=self.timeout_seconds,
+            max_retries=self.max_retries,
+            retry_delay_seconds=self.retry_delay_seconds,
+            opener=self._opener,
+            method=method,
+            path=path,
+            body=body,
+        )
 
     def _scoped(self, path: str) -> str:
-        if not self.tenant or self.tenant == "default":
-            return path
-        separator = "&" if "?" in path else "?"
-        encoded = urllib.parse.urlencode({"tenant": self.tenant})
-        return f"{path}{separator}{encoded}"
+        return scoped_path(path, self.tenant)
 
     @staticmethod
     def _path(path: str, **query: object) -> str:

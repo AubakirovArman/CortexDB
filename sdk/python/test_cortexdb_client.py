@@ -1,4 +1,6 @@
+import io
 import unittest
+import urllib.error
 
 from cortexdb_client import (
     AnnEvaluationResponse,
@@ -101,6 +103,53 @@ class CortexDBClientPathTests(unittest.TestCase):
             client._scoped("/v1/search?scope=project%3Ainvestments"),
             "/v1/search?scope=project%3Ainvestments&tenant=tenant%3Aalpha",
         )
+
+    def test_client_retries_database_busy_and_uses_configured_timeout(self) -> None:
+        class FakeResponse:
+            def __enter__(self) -> "FakeResponse":
+                return self
+
+            def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return b'{"ok":true}'
+
+        class FlakyOpener:
+            calls = 0
+            timeouts: list[float] = []
+
+            def open(self, request: object, timeout: float) -> FakeResponse:
+                self.calls += 1
+                self.timeouts.append(timeout)
+                if self.calls == 1:
+                    raise urllib.error.HTTPError(
+                        "http://127.0.0.1:8181/v1/health",
+                        503,
+                        "busy",
+                        {},
+                        io.BytesIO(b'{"code":"database_busy","message":"busy"}'),
+                    )
+                return FakeResponse()
+
+        opener = FlakyOpener()
+        client = CortexDBClient(
+            max_retries=1,
+            retry_delay_seconds=0,
+            timeout_seconds=2.5,
+            _opener=opener,
+        )
+
+        self.assertEqual(client.health(), {"ok": True})
+        self.assertEqual(opener.calls, 2)
+        self.assertEqual(opener.timeouts, [2.5, 2.5])
+
+    def test_client_context_manager_reuses_and_closes_opener(self) -> None:
+        client = CortexDBClient()
+        with client as session:
+            self.assertIs(session, client)
+            self.assertIsNotNone(session._opener)
+        self.assertIsNone(client._opener)
 
     def test_typed_search_response_decodes_ann_report_contract(self) -> None:
         response = SearchResponse.from_json(

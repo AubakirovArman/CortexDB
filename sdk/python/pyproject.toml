@@ -22,6 +22,10 @@ Issues = "https://github.com/AubakirovArman/CortexDB/issues"
 
 [tool.setuptools]
 py-modules = ["cortexdb_client"]
+packages = ["_cortexdb_client", "_cortexdb_client.model_types"]
+
+[tool.setuptools.package-data]
+_cortexdb_client = ["py.typed"]
 
 [build-system]
 requires = ["setuptools>=77"]
