@@ -1386,10 +1386,17 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-engine/src/bin/single_node_performance/profile.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 296,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-engine/src/bin/single_node_performance_check.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 374,
+      "lines": 88,
       "soft_limit": 300,
       "warning_limit": 600
     },
