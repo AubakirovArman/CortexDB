@@ -7017,7 +7017,7 @@
     "scripts/descriptor_hot_path_gate_check.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 340,
+      "lines": 372,
       "soft_limit": 300,
       "warning_limit": 600
     },

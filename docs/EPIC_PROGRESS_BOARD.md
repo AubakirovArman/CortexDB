@@ -45,8 +45,12 @@ B04 progress:
 - done: B04 progress gates passed: file-size ratchet, targeted server security
   tests, `cargo fmt --check`, `cargo test --workspace --all-features`,
   `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`;
-- remaining: inventory remaining non-AQL read surfaces and extend the structural
-  permission gate beyond the single route-family regression.
+- done: `descriptor_hot_path_gate_check.py` now requires descriptor-only lookup
+  in server core/memory routes and forbids pre-auth
+  `get_latest_cell_with_descriptor` in those auth paths;
+- remaining: finish the broader non-AQL read-surface inventory and decide
+  whether B04 can close on descriptor-index authorization or needs a separate
+  permission-bitmap follow-up.
 
 ## Recently Closed
 
@@ -215,8 +219,8 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 Work on B04 only:
 
 1. inventory remaining read surfaces and current permission gates;
-2. extend the structural permission gate so payload-backed read surfaces cannot
-   bypass descriptor/AgentView filtering;
-3. run the E09/property/security subset plus full required gates;
+2. decide whether remaining engine/search/verification reads are already
+   covered by descriptor indexes or need new B04 work;
+3. run the E09/property/security subset plus full required gates when closing;
 4. move pointer only after B04 is `done` or explicitly split with accepted
    follow-up scope.

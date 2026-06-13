@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SERVER_AUTHZ = ROOT / "crates/cortex-server/src/authz.rs"
 SERVER_ROUTER = ROOT / "crates/cortex-server/src/router/core_routes.rs"
+SERVER_MEMORY_ROUTES = ROOT / "crates/cortex-server/src/router/memory_routes.rs"
 SERVER_SEARCH = ROOT / "crates/cortex-server/src/search/rerank.rs"
 CONTEXT_DEDUP = ROOT / "crates/cortex-engine/src/context/dedup.rs"
 CONTEXT_PACK = ROOT / "crates/cortex-engine/src/context/pack/builder.rs"
@@ -53,6 +54,7 @@ def forbid(text: str, needle: str, label: str) -> None:
 def main() -> None:
     server_authz = SERVER_AUTHZ.read_text()
     server_router = SERVER_ROUTER.read_text()
+    server_memory_routes = SERVER_MEMORY_ROUTES.read_text()
     server_search = SERVER_SEARCH.read_text()
     context_dedup = CONTEXT_DEDUP.read_text()
     context_pack = CONTEXT_PACK.read_text()
@@ -94,6 +96,36 @@ def main() -> None:
     forbid(server_authz, "require_payload_write", "payload-based write authorization helper")
     forbid(server_authz, "CellMetadata::from_payload", "payload parsing in server authz")
     forbid(server_router, "require_payload_write", "payload-based route authorization")
+    require(
+        server_router,
+        "db.get_latest_cell_descriptor(cell_id)",
+        "server cell routes authorize from descriptor-only lookup before payload fetch",
+    )
+    require(
+        server_router,
+        "let cell = db.get_latest_cell(cell_id);",
+        "server cell route fetches payload only after descriptor authorization",
+    )
+    require(
+        server_router,
+        ".or_else(|| db.get_latest_cell_descriptor(cell_id))",
+        "server batch tombstone authorization uses descriptor-only lookup",
+    )
+    forbid(
+        server_router,
+        "get_latest_cell_with_descriptor",
+        "server core routes pre-auth payload+descriptor lookup",
+    )
+    require(
+        server_memory_routes,
+        "db.get_latest_cell_descriptor(cell_id)",
+        "server forget route uses descriptor-only lookup",
+    )
+    forbid(
+        server_memory_routes,
+        "get_latest_cell_with_descriptor",
+        "server memory routes pre-auth payload+descriptor lookup",
+    )
     require(
         server_search,
         "metadata: Some(&result.metadata)",
