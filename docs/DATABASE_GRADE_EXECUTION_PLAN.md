@@ -11,11 +11,10 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-E01` (`EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
+Current pointer: `EPIC-A09` (`EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-A12`, and `EPIC-A13` are done, `EPIC-A07` is done, and
 `EPIC-A08` phase-1 lazy payload residency has accepted 1M RSS evidence; the
 remaining A08 crash-parity and full AQL/ContextPack p95 work stays tracked as
-partial follow-up. `EPIC-A09` is intentionally later in the roadmap queue,
-after `EPIC-E01`).
+partial follow-up).
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
 mandatory after every change. Run `make enterprise-rag-bench-impact-gemini-50`
@@ -43,8 +42,8 @@ enough to unblock the next dependency step.
 4. `EPIC-B01` — ContextPack JSON Schema v1: done.
 5. `EPIC-A15` — transactional WriteBatch API: done.
 6. `EPIC-D11` — MCP adapter: done.
-7. `EPIC-E01` — WAL writer error surfacing: current active front.
-8. `EPIC-A09` — disk-resident persisted-index incremental merge.
+7. `EPIC-E01` — WAL writer error surfacing: done.
+8. `EPIC-A09` — disk-resident persisted-index incremental merge: current active front.
 9. `EPIC-D02 / EPIC-D06-D10` — DX wave after SDK publishing.
 
 ## Summary
@@ -1418,17 +1417,31 @@ enough to unblock the next dependency step.
 
 ### EPIC-E01 — WAL writer: ошибки не глотаются
 
-- status: `pending`
+- status: `done`
 - meta: Категория: storage · P0 · 30 days · improve
 - goal: `run_writer` молча умирает при ошибке открытия (wal/writer.rs:166-168) — все appends получают WalWriterClosed без причины.
 - tasks:
-  - [ ] 1) канал готовности: start ждёт подтверждения открытия
-  - [ ] 2) последняя ошибка потока в shared state → в текст WalWriterClosed
-  - [ ] 3) тест: read-only dir → осмысленная ошибка из Database::open.
+  - [x] 1) канал готовности: start ждёт подтверждения открытия
+  - [x] 2) последняя ошибка потока в shared state → в текст WalWriterClosed
+  - [x] 3) тест: read-only dir / invalid WAL path → осмысленная ошибка из Database::open.
 - acceptance:
-  - [ ] 1) ошибка видна сразу
-  - [ ] 2) тест зелёный.
+  - [x] 1) ошибка видна сразу
+  - [x] 2) тест зелёный.
 - files: cortex-storage/src/wal/writer.rs.
+- evidence: `WalWriter::start_with_options` now waits for a background writer
+  readiness acknowledgement before returning a handle. `WalWriterHandle` keeps a
+  shared last-error state and failed sends/receives now return
+  `StorageError::WalWriterClosed(reason)`, including shutdown and background
+  failure reasons. WAL startup/reader IO errors include the concrete WAL path.
+  Rotation/open/write failures close the writer state instead of allowing later
+  appends to continue unsafely with a generic closed error. The runtime loop was
+  split into `wal/writer_runtime.rs` so `writer.rs` stays under the file-size
+  limit. Regression coverage: `writer_start_surfaces_open_error_immediately`,
+  `append_after_shutdown_reports_closed_reason`,
+  `closed_error_uses_last_recorded_reason`, and
+  `database_open_reports_invalid_wal_path`. Checks passed:
+  `cargo fmt --check`, `cargo test -p cortex-storage --all-features`, and
+  `cargo test -p cortex-engine --test lifecycle_tests --all-features`.
 
 ### EPIC-E02 — Backup UX: один happy path + verify
 

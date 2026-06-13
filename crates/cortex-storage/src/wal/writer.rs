@@ -1,5 +1,5 @@
 use std::fs::OpenOptions;
-use std::io::{Seek, SeekFrom, Write};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::thread;
 
@@ -9,8 +9,8 @@ use crate::error::{StorageError, StorageResult};
 
 use super::codec::WalCodec;
 use super::record::WalRecord;
-use super::writer_append::{append_balanced_batch, append_record_batch, append_strict_record};
-use super::writer_rotation::{rotate_if_needed, rotate_now};
+use super::writer_runtime::{run_writer, wal_path_error};
+use super::writer_state::WalWriterState;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DurabilityMode {
@@ -38,6 +38,7 @@ impl Default for WalWriterOptions {
 #[derive(Clone, Debug)]
 pub struct WalWriterHandle {
     tx: Sender<WalWriterCommand>,
+    state: WalWriterState,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -100,8 +101,14 @@ impl WalWriter {
         let path = path.as_ref().to_owned();
         ensure_file_header(&path)?;
         let (tx, rx) = writer_channel(options.queue_capacity);
-        thread::spawn(move || run_writer(path, options, rx));
-        Ok(WalWriterHandle { tx })
+        let state = WalWriterState::new();
+        let thread_state = state.clone();
+        let (ready_tx, ready_rx) = bounded(1);
+        thread::spawn(move || run_writer(path, options, rx, thread_state, ready_tx));
+        ready_rx
+            .recv()
+            .map_err(|_| StorageError::wal_writer_closed("writer exited before startup"))??;
+        Ok(WalWriterHandle { tx, state })
     }
 }
 
@@ -110,8 +117,8 @@ impl WalWriterHandle {
         let (reply, rx) = bounded(1);
         self.tx
             .send(WalWriterCommand::Append { record, reply })
-            .map_err(|_| StorageError::WalWriterClosed)?;
-        rx.recv().map_err(|_| StorageError::WalWriterClosed)?
+            .map_err(|_| self.state.closed_error())?;
+        rx.recv().map_err(|_| self.state.closed_error())?
     }
 
     pub fn append_batch(&self, records: Vec<WalRecord>) -> StorageResult<CommitAck> {
@@ -121,24 +128,24 @@ impl WalWriterHandle {
         let (reply, rx) = bounded(1);
         self.tx
             .send(WalWriterCommand::AppendBatch { records, reply })
-            .map_err(|_| StorageError::WalWriterClosed)?;
-        rx.recv().map_err(|_| StorageError::WalWriterClosed)?
+            .map_err(|_| self.state.closed_error())?;
+        rx.recv().map_err(|_| self.state.closed_error())?
     }
 
     pub fn shutdown(&self) -> StorageResult<()> {
         let (reply, rx) = bounded(1);
         self.tx
             .send(WalWriterCommand::Shutdown { reply })
-            .map_err(|_| StorageError::WalWriterClosed)?;
-        rx.recv().map_err(|_| StorageError::WalWriterClosed)?
+            .map_err(|_| self.state.closed_error())?;
+        rx.recv().map_err(|_| self.state.closed_error())?
     }
 
     pub fn metrics(&self) -> StorageResult<WalWriterMetrics> {
         let (reply, rx) = bounded(1);
         self.tx
             .send(WalWriterCommand::Metrics { reply })
-            .map_err(|_| StorageError::WalWriterClosed)?;
-        rx.recv().map_err(|_| StorageError::WalWriterClosed)?
+            .map_err(|_| self.state.closed_error())?;
+        rx.recv().map_err(|_| self.state.closed_error())?
     }
 
     /// Rotate the active WAL to a timestamped archive and open a fresh active
@@ -147,9 +154,9 @@ impl WalWriterHandle {
         let (reply, rx) = bounded(1);
         self.tx
             .send(WalWriterCommand::Rotate { reply })
-            .map_err(|_| StorageError::WalWriterClosed)?;
+            .map_err(|_| self.state.closed_error())?;
         rx.recv()
-            .map_err(|_| StorageError::WalWriterClosed)?
+            .map_err(|_| self.state.closed_error())?
             .and_then(|path| {
                 if path.as_os_str().is_empty() {
                     Err(StorageError::Io(std::io::Error::other(
@@ -176,70 +183,16 @@ fn ensure_file_header(path: &Path) -> StorageResult<()> {
         .create(true)
         .read(true)
         .append(true)
-        .open(path)?;
-    if file.metadata()?.len() == 0 {
+        .open(path)
+        .map_err(|error| wal_path_error(path, "failed to open WAL file", error))?;
+    if file
+        .metadata()
+        .map_err(|error| wal_path_error(path, "failed to stat WAL file", error))?
+        .len()
+        == 0
+    {
         file.write_all(&WalCodec::file_header())?;
         file.sync_data()?;
     }
     Ok(())
-}
-
-fn run_writer(path: PathBuf, options: WalWriterOptions, rx: Receiver<WalWriterCommand>) {
-    let mode = options.durability_mode;
-    let Ok(mut file) = OpenOptions::new().create(true).append(true).open(&path) else {
-        return;
-    };
-    let mut next_lsn = file.seek(SeekFrom::End(0)).unwrap_or(0);
-    let mut file_opt = Some(file);
-    let mut metrics = WalWriterMetrics::default();
-    while let Ok(command) = rx.recv() {
-        match command {
-            WalWriterCommand::Append { record, reply } => {
-                rotate_if_needed(&path, options.max_wal_size, &mut file_opt, &mut next_lsn);
-
-                let Some(file) = file_opt.as_mut() else {
-                    let _ = reply.send(Err(StorageError::WalWriterClosed));
-                    continue;
-                };
-
-                if mode == DurabilityMode::Balanced {
-                    if append_balanced_batch(file, record, reply, &rx, &mut next_lsn, &mut metrics)
-                    {
-                        break;
-                    }
-                } else {
-                    let result = append_strict_record(file, record, &mut next_lsn, &mut metrics);
-                    let _ = reply.send(result);
-                }
-            }
-            WalWriterCommand::AppendBatch { records, reply } => {
-                rotate_if_needed(&path, options.max_wal_size, &mut file_opt, &mut next_lsn);
-
-                let Some(file) = file_opt.as_mut() else {
-                    let _ = reply.send(Err(StorageError::WalWriterClosed));
-                    continue;
-                };
-
-                let result = append_record_batch(file, records, mode, &mut next_lsn, &mut metrics);
-                let _ = reply.send(result);
-            }
-            WalWriterCommand::Shutdown { reply } => {
-                let result = if let Some(ref mut f) = file_opt {
-                    f.sync_data().map_err(StorageError::from)
-                } else {
-                    Ok(())
-                };
-                let _ = reply.send(result);
-                break;
-            }
-            WalWriterCommand::Metrics { reply } => {
-                let _ = reply.send(Ok(metrics));
-            }
-            WalWriterCommand::Rotate { reply } => {
-                let result = rotate_now(&path, &mut file_opt, &mut next_lsn)
-                    .ok_or_else(|| StorageError::Io(std::io::Error::other("failed to rotate WAL")));
-                let _ = reply.send(result);
-            }
-        }
-    }
 }

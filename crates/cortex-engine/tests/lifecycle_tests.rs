@@ -86,6 +86,20 @@ fn orphan_unique_tmp_files_do_not_break_database_open() {
 }
 
 #[test]
+fn database_open_reports_invalid_wal_path() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::create_dir(dir.path().join("db.aclog")).unwrap();
+
+    let error = Database::open(dir.path()).unwrap_err();
+    let message = error.to_string();
+    assert!(message.contains("db.aclog"), "unexpected error: {message}");
+    assert!(
+        message.contains("WAL") || message.contains("wal"),
+        "unexpected error: {message}"
+    );
+}
+
+#[test]
 fn break_stale_lock_policy_recovers_manual_lock_file() {
     let dir = tempfile::tempdir().unwrap();
     std::fs::write(dir.path().join("db.lock"), b"stale").unwrap();

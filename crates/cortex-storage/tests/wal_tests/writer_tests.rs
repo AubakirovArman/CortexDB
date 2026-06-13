@@ -1,4 +1,5 @@
 use cortex_storage::wal::{DurabilityMode, WalCodec, WalReader, WalWriter, WalWriterOptions};
+use cortex_storage::StorageError;
 
 use super::{record, record_with_payload};
 
@@ -112,4 +113,34 @@ fn writer_metrics_report_records_bytes_fsyncs_and_batches() {
     assert!(metrics.bytes_written > 0);
     assert_eq!(metrics.fsync_count, 2);
     assert_eq!(metrics.batches_committed, 2);
+}
+
+#[test]
+fn writer_start_surfaces_open_error_immediately() {
+    let dir = tempfile::tempdir().unwrap();
+    let error = WalWriter::start(dir.path(), DurabilityMode::Strict).unwrap_err();
+    let message = error.to_string();
+    assert!(message.contains("io error:"));
+    assert!(
+        message.contains("directory") || message.contains("Directory"),
+        "unexpected error message: {message}"
+    );
+}
+
+#[test]
+fn append_after_shutdown_reports_closed_reason() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("closed-reason.aclog");
+    let writer = WalWriter::create(&path).unwrap();
+    writer.shutdown().unwrap();
+
+    let error = writer.append(record()).unwrap_err();
+    assert!(matches!(
+        error,
+        StorageError::WalWriterClosed(ref reason) if reason.contains("shutdown requested")
+    ));
+    assert_eq!(
+        error.to_string(),
+        "WAL writer is closed: shutdown requested"
+    );
 }

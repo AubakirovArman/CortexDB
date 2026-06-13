@@ -24,10 +24,16 @@ pub enum StorageError {
     InvalidHnswGraphFile,
     #[error("invalid manifest file")]
     InvalidManifestFile,
-    #[error("WAL writer is closed")]
-    WalWriterClosed,
+    #[error("WAL writer is closed: {0}")]
+    WalWriterClosed(String),
     #[error("operation is not implemented yet: {0}")]
     NotImplemented(&'static str),
 }
 
 pub type StorageResult<T> = Result<T, StorageError>;
+
+impl StorageError {
+    pub fn wal_writer_closed(reason: impl Into<String>) -> Self {
+        Self::WalWriterClosed(reason.into())
+    }
+}

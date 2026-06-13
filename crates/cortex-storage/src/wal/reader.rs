@@ -21,7 +21,8 @@ pub struct WalScan {
 impl WalReader {
     pub fn open(path: impl AsRef<Path>) -> StorageResult<Self> {
         let path = path.as_ref().to_owned();
-        File::open(&path)?;
+        File::open(&path)
+            .map_err(|error| wal_path_error(&path, "failed to open WAL file", error))?;
         Ok(Self { path })
     }
 
@@ -34,18 +35,29 @@ impl WalReader {
     }
 
     pub fn scan(&self) -> StorageResult<WalScan> {
-        let mut file = File::open(&self.path)?;
+        let mut file = File::open(&self.path)
+            .map_err(|error| wal_path_error(&self.path, "failed to open WAL file", error))?;
         let mut bytes = Vec::new();
-        file.read_to_end(&mut bytes)?;
+        file.read_to_end(&mut bytes)
+            .map_err(|error| wal_path_error(&self.path, "failed to read WAL file", error))?;
         scan_bytes(&bytes, true)
     }
 
     pub fn scan_best_effort(&self) -> StorageResult<WalScan> {
-        let mut file = File::open(&self.path)?;
+        let mut file = File::open(&self.path)
+            .map_err(|error| wal_path_error(&self.path, "failed to open WAL file", error))?;
         let mut bytes = Vec::new();
-        file.read_to_end(&mut bytes)?;
+        file.read_to_end(&mut bytes)
+            .map_err(|error| wal_path_error(&self.path, "failed to read WAL file", error))?;
         scan_bytes(&bytes, false)
     }
+}
+
+fn wal_path_error(path: &Path, action: &str, error: std::io::Error) -> StorageError {
+    StorageError::Io(std::io::Error::new(
+        error.kind(),
+        format!("{action} {}: {error}", path.display()),
+    ))
 }
 
 fn scan_bytes(bytes: &[u8], strict_checksums: bool) -> StorageResult<WalScan> {

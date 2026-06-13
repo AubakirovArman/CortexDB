@@ -10,6 +10,12 @@ use super::writer::{CommitAck, DurabilityMode, WalWriterCommand, WalWriterMetric
 
 pub(super) const BALANCED_BATCH_MAX: usize = 32;
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(super) struct BalancedBatchOutcome {
+    pub shutdown: bool,
+    pub error_message: Option<String>,
+}
+
 pub(super) fn append_strict_record(
     file: &mut std::fs::File,
     record: WalRecord,
@@ -52,7 +58,7 @@ pub(super) fn append_balanced_batch(
     rx: &Receiver<WalWriterCommand>,
     next_lsn: &mut u64,
     metrics: &mut WalWriterMetrics,
-) -> bool {
+) -> BalancedBatchOutcome {
     let mut batch = vec![(record, reply)];
     let mut shutdown = None;
     while batch.len() < BALANCED_BATCH_MAX {
@@ -80,7 +86,7 @@ fn send_balanced_replies(
     shutdown: Option<Sender<StorageResult<()>>>,
     next_lsn: &mut u64,
     metrics: &mut WalWriterMetrics,
-) -> bool {
+) -> BalancedBatchOutcome {
     let mut replies = Vec::new();
     for (record, reply) in batch {
         replies.push((
@@ -90,18 +96,28 @@ fn send_balanced_replies(
     }
     if let Some(message) = first_error_message(&replies) {
         send_all_errors(replies, &message);
-        return shutdown.is_some();
+        return BalancedBatchOutcome {
+            shutdown: shutdown.is_some(),
+            error_message: Some(message),
+        };
     }
     if let Err(error) = file.sync_data() {
-        send_all_errors(replies, &error.to_string());
-        return shutdown.is_some();
+        let message = error.to_string();
+        send_all_errors(replies, &message);
+        return BalancedBatchOutcome {
+            shutdown: shutdown.is_some(),
+            error_message: Some(message),
+        };
     }
     metrics.fsync_count += 1;
     metrics.batches_committed += 1;
     for (reply, result) in replies {
         let _ = reply.send(result);
     }
-    send_shutdown_if_needed(file, shutdown)
+    BalancedBatchOutcome {
+        shutdown: send_shutdown_if_needed(file, shutdown),
+        error_message: None,
+    }
 }
 
 fn append_record_without_sync(

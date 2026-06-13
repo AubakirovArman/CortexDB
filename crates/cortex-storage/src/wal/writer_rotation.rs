@@ -2,6 +2,8 @@ use std::fs::{File, OpenOptions};
 use std::io::{Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
+use crate::StorageResult;
+
 use super::codec::WalCodec;
 
 pub(super) fn rotate_if_needed(
@@ -9,14 +11,14 @@ pub(super) fn rotate_if_needed(
     max_size: Option<u64>,
     file_opt: &mut Option<File>,
     next_lsn: &mut u64,
-) {
+) -> StorageResult<()> {
     let Some(max_size) = max_size else {
-        return;
+        return Ok(());
     };
     if !needs_rotation(file_opt.as_ref(), max_size) {
-        return;
+        return Ok(());
     }
-    let _ = rotate_now(path, file_opt, next_lsn);
+    rotate_now(path, file_opt, next_lsn).map(|_| ())
 }
 
 /// Rotate the active WAL to a timestamped archive and open a fresh active file.
@@ -25,25 +27,20 @@ pub(super) fn rotate_now(
     path: &Path,
     file_opt: &mut Option<File>,
     next_lsn: &mut u64,
-) -> Option<PathBuf> {
+) -> StorageResult<PathBuf> {
     if let Some(file) = file_opt.take() {
-        let _ = file.sync_data();
+        file.sync_data()?;
     }
     let rotated_path = path.with_file_name(format!("db.{}.aclog", timestamp_micros()));
-    if std::fs::rename(path, &rotated_path).is_err() {
-        return None;
+    std::fs::rename(path, &rotated_path)?;
+    let mut new_file = OpenOptions::new().create(true).append(true).open(path)?;
+    if new_file.metadata().map_or(true, |m| m.len() == 0) {
+        new_file.write_all(&WalCodec::file_header())?;
+        new_file.sync_data()?;
     }
-    if let Ok(mut new_file) = OpenOptions::new().create(true).append(true).open(path) {
-        if new_file.metadata().map_or(true, |m| m.len() == 0) {
-            let _ = new_file.write_all(&WalCodec::file_header());
-            let _ = new_file.sync_data();
-        }
-        *next_lsn = new_file.seek(SeekFrom::End(0)).unwrap_or(0);
-        *file_opt = Some(new_file);
-        Some(rotated_path)
-    } else {
-        None
-    }
+    *next_lsn = new_file.seek(SeekFrom::End(0))?;
+    *file_opt = Some(new_file);
+    Ok(rotated_path)
 }
 
 fn needs_rotation(file: Option<&File>, max_size: u64) -> bool {
