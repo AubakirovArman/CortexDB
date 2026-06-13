@@ -77,6 +77,11 @@ type=<cell_type>
 [source_url=<url>]
 [document_id=<document_id>]
 [chunk_id=<chunk_or_range>]
+[cell_range=<chunk_or_range>]
+[json_path=<path>]
+[page=<page_number>]
+[row=<row_number>]
+[confidence_q16=<0..65535>]
 [content_hash=<hash>]
 
 payload body bytes
@@ -112,7 +117,11 @@ materialized in `CellVersion` on replay/open.
 | `citation` | string | No | Human-readable citation. |
 | `source_url` | string | No | Optional URL. |
 | `document_id` | string | No | Source document identity. |
-| `chunk_id` | string | No | Stable chunk/range identity. |
+| `cell_range` | string | No | Stable chunk/range identity. |
+| `json_path` | string | No | JSON source path for structured ingestion. |
+| `page` | `Option<u32>` | No | Page number for document/PDF sources. |
+| `row` | `Option<u32>` | No | Row number for table/CSV sources. |
+| `confidence_q16` | `Option<u16>` | No | Fixed-point provenance confidence. |
 | `content_hash` | string | No | Deduplication and audit identity. |
 | `parent_id` | string | No | Parent chunk/document relation. |
 | `embedding_ref` | string/id | No | Reference to vector storage. |
@@ -205,15 +214,18 @@ Provenance fields allow ContextPack and VERIFY outputs to be audited:
 - `content_hash`
 
 ContextPack citations should be built from typed provenance fields when
-available. Payload-header provenance remains valid during Core Alpha
-compatibility.
+available. New WAL descriptor sections carry `source_id`, `source_url`,
+`document_id`, `cell_range`, `json_path`, `page`, `row`, `confidence_q16`,
+`citation`, and `content_hash` when those values are present at write time.
+Payload-header provenance remains valid during Core Alpha compatibility.
 
 ## Compatibility And Migration
 
 The migration path is dual-read, not big-bang:
 
 1. Existing payload headers remain readable.
-2. New writes include both payload headers and structured WAL metadata.
+2. New writes include payload headers for compatibility and a structured WAL
+   `CellDescriptor` carrying descriptor-backed provenance fields.
 3. Replay/open materializes a descriptor from structured metadata when present,
    or from payload headers when reading legacy data.
 4. Segment format v2 stores descriptors and payload offsets separately.
@@ -232,10 +244,11 @@ Stable for Core Alpha:
 - WAL before MemTable mutation;
 - basic cell types listed above;
 - AQL/ContextPack scope filtering through current metadata paths.
+- descriptor-backed provenance for WAL replay/open and ContextPack exports.
 
 Experimental:
 
-- descriptor as durable source of truth;
+- removing payload-header compatibility;
 - typed temporal validity columns;
 - fact/numeric indexes;
 - lazy payload residency;

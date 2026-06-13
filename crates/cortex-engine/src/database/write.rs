@@ -11,6 +11,7 @@ use crate::operation::{
     wal_record_from_write_batch_begin, wal_record_from_write_batch_commit, DbOperation, WriteBatch,
     WriteBatchOperation,
 };
+use crate::operation_descriptor::descriptor_from_operation_with_metadata;
 use crate::query::CellMetadata;
 use crate::search::{CorpusSynonymStore, LiveSearchStore, SearchContextStore};
 use crate::session::SessionIndex;
@@ -135,8 +136,7 @@ impl Database {
         metadata: Vec<u8>,
     ) -> EngineResult<CommitSeq> {
         let next_seq = CommitSeq(self.current_seq.0 + 1);
-        let descriptor =
-            (!metadata.is_empty()).then(|| CellDescriptor::from_metadata_section_lossy(&metadata));
+        let descriptor = descriptor_from_operation_with_metadata(&operation, &metadata);
         let record = wal_record_from_operation_with_metadata(next_seq, &operation, metadata);
         self.writer.append(record)?;
         self.apply_operation_with_descriptor(next_seq, operation, descriptor)?;

@@ -24,7 +24,6 @@
 //!     Ok(())
 //! }
 //! ```
-
 pub mod agent_views;
 pub mod backup;
 pub mod bundle;
@@ -50,6 +49,7 @@ pub mod memory;
 mod memory_accounting;
 pub use memory::{ExpiredMemoryCell, MemoryDecayScore};
 pub mod operation;
+mod operation_descriptor;
 mod options;
 pub mod plan;
 pub mod query;

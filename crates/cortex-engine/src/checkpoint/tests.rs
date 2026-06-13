@@ -158,11 +158,7 @@ fn load_checkpoint_prefers_segment_descriptor_over_payload_headers() {
         created_unix_seconds: Some(123),
         source_trust_q16: Some(60_000),
         source: Some("segment-descriptor".to_owned()),
-        citation: None,
-        content_hash: None,
-        parent_id: None,
-        valid_from: None,
-        valid_to: None,
+        ..CellDescriptor::default()
     };
     let cells = [SegmentCellRef {
         candidate_id: 1,

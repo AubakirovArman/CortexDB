@@ -52,7 +52,6 @@ fn descriptor_decodes_cell_metadata_section() {
         source_trust_q16: Some(61_000),
         source: Some("source-b".to_owned()),
     };
-
     let descriptor = CellDescriptor::from_metadata_section_lossy(&metadata.encode_wal_section());
 
     assert_eq!(descriptor, CellDescriptor::from_metadata(&metadata));
@@ -74,6 +73,7 @@ fn descriptor_binary_section_roundtrips_and_skips_unknown_fields() {
         parent_id: Some("parent".to_owned()),
         valid_from: Some("2024-01-01".to_owned()),
         valid_to: Some("2024-12-31".to_owned()),
+        ..CellDescriptor::default()
     };
     let mut encoded = descriptor.encode_section_v1();
     encoded.push(250);

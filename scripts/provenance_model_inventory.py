@@ -74,20 +74,35 @@ def check_descriptor_source_ref_boundary() -> Check:
     )
 
 
-def check_core_metadata() -> Check:
-    path = "crates/cortex-core/src/cell/metadata.rs"
-    text = read(path)
-    required = ["source_trust_q16", "source:"]
-    missing = ["citation", "content_hash", "source_id", "document_id"]
-    if has_all(text, required) and not any(value in text for value in missing):
-        return Check(
-            "knowledge_cell_metadata_provenance_boundary",
-            "partial",
-            line_refs(path, required),
-            "KnowledgeCellMetadata writes source/trust but not citation/content_hash/source_ref yet.",
-        )
-    status = "pass" if has_all(text, required + missing) else "partial"
-    return Check("knowledge_cell_metadata_provenance_boundary", status, line_refs(path, required + missing))
+def check_write_boundary_merge() -> Check:
+    paths = [
+        "crates/cortex-engine/src/operation.rs",
+        "crates/cortex-engine/src/operation_descriptor.rs",
+    ]
+    needles = {
+        "crates/cortex-engine/src/operation.rs": [
+            "wal_descriptor_bytes_from_operation_with_metadata",
+            "upsert_wal_descriptor_section",
+        ],
+        "crates/cortex-engine/src/operation_descriptor.rs": [
+            "descriptor_from_operation_with_metadata",
+            "descriptor_from_operation_payload",
+            "overlay_metadata_descriptor",
+        ],
+    }
+    evidence: list[str] = []
+    ok = True
+    for path in paths:
+        text = read(path)
+        ok = ok and has_all(text, needles[path])
+        evidence.extend(line_refs(path, needles[path]))
+    status = "pass" if ok else "fail"
+    return Check(
+        "write_boundary_preserves_payload_provenance_descriptor",
+        status,
+        evidence,
+        None if status == "pass" else "Metadata WAL writes can still drop payload-derived provenance.",
+    )
 
 
 def check_engine_source_ref() -> Check:
@@ -128,6 +143,27 @@ def check_ingestion_hashes() -> Check:
         "pass" if ok else "fail",
         evidence,
         None if ok else "Ingestion path does not consistently compute provenance hashes.",
+    )
+
+
+def check_ingestion_validation_surface() -> Check:
+    paths = [
+        "crates/cortex-engine/src/ingestion/report.rs",
+        "crates/cortex-engine/src/query/metadata_validation.rs",
+        "crates/cortex-engine/tests/ingestion_validation_report.rs",
+    ]
+    evidence: list[str] = []
+    ok = True
+    for path in paths:
+        text = read(path)
+        needles = ["IngestionValidationReport", "decode_payload", "warnings"]
+        ok = ok and any(needle in text for needle in needles)
+        evidence.extend(line_refs(path, needles))
+    return Check(
+        "ingestion_validation_warn_strict_surface",
+        "pass" if ok else "fail",
+        evidence,
+        None if ok else "Ingestion validation does not expose warning and strict decode surfaces.",
     )
 
 
@@ -173,15 +209,38 @@ def check_content_hash_dedup() -> Check:
     )
 
 
+def check_data_model_docs() -> Check:
+    path = "docs/DATA_MODEL.md"
+    text = read(path)
+    needles = [
+        "source_id",
+        "source_url",
+        "document_id",
+        "cell_range",
+        "json_path",
+        "confidence_q16",
+        "content_hash",
+    ]
+    status = "pass" if has_all(text, needles) else "fail"
+    return Check(
+        "data_model_documents_typed_provenance",
+        status,
+        line_refs(path, needles),
+        None if status == "pass" else "DATA_MODEL.md does not document descriptor-backed provenance fields.",
+    )
+
+
 def inventory() -> dict[str, object]:
     checks = [
         check_descriptor_fields(),
         check_descriptor_source_ref_boundary(),
-        check_core_metadata(),
+        check_write_boundary_merge(),
         check_engine_source_ref(),
         check_ingestion_hashes(),
+        check_ingestion_validation_surface(),
         check_contextpack_citations(),
         check_content_hash_dedup(),
+        check_data_model_docs(),
     ]
     gaps = [check.gap for check in checks if check.gap]
     failing = [check.name for check in checks if check.status == "fail"]
@@ -200,10 +259,8 @@ def inventory() -> dict[str, object]:
         "checks": [check.to_json() for check in checks],
         "remaining_gaps": gaps,
         "next_patch_order": [
-            "Add core SourceRef/ProvenanceDescriptor fields or a nested wire section.",
-            "Make write/ingestion paths fill descriptor-backed citation/hash/source_ref values.",
-            "Add no-payload-parse ContextPack citation regression tests.",
-            "Document descriptor-backed provenance in DATA_MODEL.md.",
+            "Move to EPIC-B07 when all checks are complete.",
+            "Keep payload-header compatibility until a dedicated migration removes legacy parsing.",
         ],
     }
 

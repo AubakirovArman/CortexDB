@@ -2,6 +2,9 @@ use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::wal::{DecodedWalRecord, SectionTag, WalRecord, WalRecordType, WalSection};
 
 use crate::error::{EngineError, EngineResult};
+use crate::operation_descriptor::{
+    upsert_wal_descriptor_section, wal_descriptor_bytes_from_operation_with_metadata,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DbOperationKind {
@@ -160,19 +163,9 @@ pub fn wal_record_from_operation_with_metadata(
 ) -> WalRecord {
     let mut record = wal_record_from_operation_inner(seq, operation);
     if !metadata.is_empty() {
-        let descriptor = CellDescriptor::from_metadata_section_lossy(&metadata);
-        if let Some(section) = record
-            .sections
-            .iter_mut()
-            .find(|section| section.tag == SectionTag::CellDescriptor)
-        {
-            section.data = descriptor.encode_section_v1();
-        } else {
-            record.sections.push(WalSection::new(
-                SectionTag::CellDescriptor,
-                descriptor.encode_section_v1(),
-            ));
-        }
+        let descriptor_bytes =
+            wal_descriptor_bytes_from_operation_with_metadata(operation, &metadata);
+        upsert_wal_descriptor_section(&mut record, descriptor_bytes);
         record
             .sections
             .push(WalSection::new(SectionTag::CellMetadata, metadata));

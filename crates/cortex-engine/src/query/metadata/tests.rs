@@ -71,8 +71,8 @@ fn descriptor_metadata_profile_avoids_legacy_payload_metadata_parser() {
         parent_id: Some("descriptor-parent".to_owned()),
         valid_from: Some("2026-01-01".to_owned()),
         valid_to: Some("2026-12-31".to_owned()),
+        ..cortex_core::CellDescriptor::default()
     };
-
     let metadata = CellMetadata::from_payload_with_descriptor(payload, &descriptor);
 
     assert_eq!(CellMetadata::legacy_payload_metadata_parse_profile(), 0);

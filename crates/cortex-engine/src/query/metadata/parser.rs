@@ -46,7 +46,7 @@ impl CellMetadata {
         let mut title = None;
         let mut content_hash = descriptor.and_then(|value| value.content_hash.clone());
         let mut source_hash = None;
-        let mut document_id_field = None;
+        let mut document_id_field = descriptor.and_then(|value| value.document_id.clone());
         let mut chunk_id = None;
         let mut parent_id = descriptor.and_then(|value| value.parent_id.clone());
         let mut chunk_role = None;
@@ -69,15 +69,14 @@ impl CellMetadata {
         let mut row_label = None;
         let mut body_lines = Vec::new();
         let mut in_header = true;
-
-        let mut source_id_val = None;
-        let mut source_url = None;
-        let mut document_id = None;
-        let mut page = None;
-        let mut row = None;
-        let mut cell_range = None;
-        let mut json_path = None;
-        let mut confidence_q16 = None;
+        let mut source_id_val = descriptor.and_then(|value| value.source_id.clone());
+        let mut source_url = descriptor.and_then(|value| value.source_url.clone());
+        let mut document_id = descriptor.and_then(|value| value.document_id.clone());
+        let mut page = descriptor.and_then(|value| value.page);
+        let mut row = descriptor.and_then(|value| value.row);
+        let mut cell_range = descriptor.and_then(|value| value.cell_range.clone());
+        let mut json_path = descriptor.and_then(|value| value.json_path.clone());
+        let mut confidence_q16 = descriptor.and_then(|value| value.confidence_q16);
 
         for line in text.lines() {
             if in_header {
@@ -145,16 +144,18 @@ impl CellMetadata {
                     source_hash = non_empty(value);
                     continue;
                 } else if let Some(value) = line.strip_prefix("document_id=") {
-                    document_id_field = non_empty(value);
-                    document_id = document_id_field.clone();
+                    let parsed = non_empty(value);
+                    document_id_field = document_id_field.or_else(|| parsed.clone());
+                    document_id = document_id.or(parsed);
                     continue;
                 } else if let Some(value) = line.strip_prefix("doc_id=") {
-                    document_id_field = non_empty(value);
-                    document_id = document_id_field.clone();
+                    let parsed = non_empty(value);
+                    document_id_field = document_id_field.or_else(|| parsed.clone());
+                    document_id = document_id.or(parsed);
                     continue;
                 } else if let Some(value) = line.strip_prefix("chunk_id=") {
                     chunk_id = non_empty(value);
-                    cell_range = chunk_id.clone();
+                    cell_range = cell_range.or_else(|| chunk_id.clone());
                     continue;
                 } else if let Some(value) = line.strip_prefix("parent_id=") {
                     if !descriptor_backed {
@@ -237,31 +238,33 @@ impl CellMetadata {
                 {
                     continue;
                 } else if let Some(value) = line.strip_prefix("source_id=") {
-                    source_id_val = non_empty(value);
+                    if !descriptor_backed || source.is_none() {
+                        source_id_val = source_id_val.or_else(|| non_empty(value));
+                    }
                     continue;
                 } else if let Some(value) = line.strip_prefix("source_url=") {
-                    source_url = non_empty(value);
+                    source_url = source_url.or_else(|| non_empty(value));
                     continue;
                 } else if let Some(value) = line.strip_prefix("url=") {
-                    source_url = non_empty(value);
+                    source_url = source_url.or_else(|| non_empty(value));
                     continue;
                 } else if let Some(value) = line.strip_prefix("page=") {
-                    page = value.trim().parse().ok();
+                    page = page.or_else(|| value.trim().parse().ok());
                     continue;
                 } else if let Some(value) = line.strip_prefix("row=") {
-                    row = value.trim().parse().ok();
+                    row = row.or_else(|| value.trim().parse().ok());
                     continue;
                 } else if let Some(value) = line.strip_prefix("row_number=") {
-                    row = value.trim().parse().ok();
+                    row = row.or_else(|| value.trim().parse().ok());
                     continue;
                 } else if let Some(value) = line.strip_prefix("cell_range=") {
-                    cell_range = non_empty(value);
+                    cell_range = cell_range.or_else(|| non_empty(value));
                     continue;
                 } else if let Some(value) = line.strip_prefix("json_path=") {
-                    json_path = non_empty(value);
+                    json_path = json_path.or_else(|| non_empty(value));
                     continue;
                 } else if let Some(value) = line.strip_prefix("confidence_q16=") {
-                    confidence_q16 = value.trim().parse().ok();
+                    confidence_q16 = confidence_q16.or_else(|| value.trim().parse().ok());
                     continue;
                 }
                 in_header = false;
@@ -271,16 +274,9 @@ impl CellMetadata {
         let body_text = body_lines.join("\n");
         let terms = tokenize(&body_text);
 
-        let final_source_id = if descriptor_backed {
-            source
-                .clone()
-                .or(source_id_val)
-                .or_else(|| citation.clone())
-        } else {
-            source_id_val
-                .or_else(|| source.clone())
-                .or_else(|| citation.clone())
-        };
+        let final_source_id = source_id_val
+            .or_else(|| source.clone())
+            .or_else(|| citation.clone());
         let source_ref = final_source_id.map(|id| SourceRef {
             source_id: id,
             source_url,
@@ -350,7 +346,7 @@ impl CellMetadata {
             .or_else(|| {
                 self.source_ref
                     .as_ref()
-                    .map(|source_ref| source_ref.source_id.as_str())
+                    .map(|value| value.source_id.as_str())
             })
     }
 

@@ -21,30 +21,22 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B06` — typed provenance model.
+`EPIC-B07` — Fact/claim store with typed numeric values.
 
-B06 exit steps:
+B07 exit steps:
 
-1. Add typed provenance fields to the descriptor/storage boundary without
-   relying on payload header parsing.
-2. Make ingestion/write paths populate content hash and source/trust fields.
-3. Make ContextPack citations use typed provenance when available.
-4. Document the model in DATA_MODEL without changing public JSON unexpectedly.
+1. Audit current numeric extraction and VERIFY FACT scan paths.
+2. Add a typed fact/claim record shape for conservative numeric facts.
+3. Populate the fact store from write/ingestion paths without using LLMs.
+4. Make VERIFY numeric conflicts consult the typed fact store where possible.
+5. Add fixture tests proving verdict parity with the existing parser path.
 
-B06 current state:
+B07 current state:
 
-- partial; `make provenance-model-inventory` writes
-  `target/provenance-model/inventory.json` and reports `status=partial` with
-  5 passing checks, 1 partial check, and 1 failing check.
-- confirmed ready pieces: descriptor-backed `source_trust_q16`, `source`,
-  `citation`, and `content_hash`; engine `SourceRef`; ingestion
-  `content_hash`; ContextPack citation/source_ref export; content-hash
-  dedup/diversity.
-- remaining B06 blockers: `SourceRef` is not first-class descriptor/WAL data,
-  and `KnowledgeCellMetadata` still cannot write citation/content_hash/source_ref
-  without payload header conventions.
-- next work is the smallest descriptor/storage-compatible provenance patch,
-  then no-payload-parse ContextPack citation tests.
+- pending; start with a code audit of `verification/numeric.rs`,
+  `typed_body.rs`, ingestion metadata, and current VERIFY FACT conflict paths.
+- do not add an LLM extraction step in core; B07 must use conservative parser
+  rules and typed storage/index structures.
 
 ## Active Partial Tail
 
@@ -89,6 +81,29 @@ C17 split state:
   is out of focus.
 
 ## Recently Closed
+
+### EPIC-B06 — Typed provenance model
+
+Status: `done`
+
+What closed it:
+
+- `make provenance-model-inventory` writes
+  `target/provenance-model/inventory.json` and reports `status=complete` with
+  9 passing checks.
+- `CellDescriptor` carries descriptor-backed `source_id`, `source_url`,
+  `document_id`, `page`, `row`, `cell_range`, `json_path`, `confidence_q16`,
+  `citation`, `content_hash`, source/trust, and temporal fields through the
+  existing WAL descriptor section.
+- Metadata WAL writes preserve payload-derived provenance by merging metadata
+  overlay fields with the payload descriptor instead of replacing it.
+- ContextPack source_ref/citation export is covered by no-payload-header
+  regression tests, and `DATA_MODEL.md` documents the model.
+
+Next:
+
+- Continue with B07. Do not reopen B06 unless provenance inventory regresses or
+  a migration-specific issue appears.
 
 ### EPIC-D05 — SDK publication audit follow-up
 
@@ -434,6 +449,7 @@ High-signal done epics:
 - B01 ContextPack JSON Schema v1;
 - B02 ContextPackBuilder physical operator;
 - B03 token-budget pushdown and early termination;
+- B06 typed provenance model;
 - D02 init/doctor;
 - D06 Python SDK;
 - D07 TypeScript SDK;
@@ -452,15 +468,11 @@ High-signal done epics:
 
 ## Partial Snapshot
 
-Partial count in roadmap snapshot: `4`.
+Partial count in roadmap snapshot: `3`.
 
 - A19 scale benchmarks:
   10M lazy evidence, cold outlier analysis, and historical before/after
   optimization labels remain.
-- B06 typed provenance:
-  inventory exists; descriptor-backed citation/hash/trust is partial, but
-  first-class SourceRef descriptor/WAL data and no-payload-parse citation tests
-  remain.
 - C17 perf-regressions:
   local gate exists; hosted scheduled/nightly CI wiring remains deferred.
 - D05 SDK publish:
@@ -476,11 +488,10 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on B06 only:
+Work on B07 only:
 
-1. audit existing provenance-related fields and payload conventions;
-2. identify the smallest descriptor/storage change that does not break current
-   fixtures;
-3. add tests before changing ContextPack citation behavior;
-4. keep the change storage/API-compatible unless a migration is explicitly
-   required.
+1. audit current numeric fact extraction and scan-based VERIFY conflict paths;
+2. identify the smallest typed fact record/index that preserves current
+   verdicts;
+3. add fixture tests before replacing any VERIFY path;
+4. keep extraction conservative and deterministic.

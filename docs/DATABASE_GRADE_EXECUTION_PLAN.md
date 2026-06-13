@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B06` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-B07` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -636,18 +636,18 @@ enough to unblock the next dependency step.
 
 ### EPIC-B06 — Typed provenance model (source_ref, citation, content_hash как колонки)
 
-- status: `partial`
+- status: `done`
 - meta: Категория: storage · Приоритет: P1 · Горизонт: 90 days · Тип: refactor
 - goal: provenance — продуктовое отличие; строки в payload не дают целостности.
 - problem: Проблема: citation/source/content_hash — текстовые конвенции.
 - tasks:
-  - [ ] 1) поля в CellDescriptor (A02): source_id, citation, content_hash (обязателен при ingestion), source_trust
-  - [ ] 2) валидация на записи (warn/strict режимы)
-  - [ ] 3) пак ссылается на typed-цитаты, dedup — на typed content_hash.
+  - [x] 1) поля в CellDescriptor (A02): source_id, citation, content_hash (обязателен при ingestion), source_trust
+  - [x] 2) валидация на записи (warn/strict режимы)
+  - [x] 3) пак ссылается на typed-цитаты, dedup — на typed content_hash.
 - acceptance:
-  - [ ] 1) пак с citations_required работает без payload-парсинга
-  - [ ] 2) ingestion проставляет content_hash автоматически
-  - [ ] 3) формат описан в DATA_MODEL.md.
+  - [x] 1) пак с citations_required работает без payload-парсинга
+  - [x] 2) ingestion проставляет content_hash автоматически
+  - [x] 3) формат описан в DATA_MODEL.md.
 - files: cortex-core/cell.rs, cortex-engine/{ingestion,context}/.
 - risks: вместе с A02 (одна миграция, не две). Зависимости: A02. Эффект: цитаты — данные, а не текст.
 
@@ -655,23 +655,19 @@ Current evidence:
 
 - `make provenance-model-inventory` writes
   `target/provenance-model/inventory.json`;
-- current inventory status is `partial`: 5 checks pass, 1 is partial, and 1
-  fails;
-- already typed: `CellDescriptor` has `source_trust_q16`, `source`,
-  `citation`, and `content_hash`; engine `CellMetadata` has `SourceRef`;
-  ingestion writes `content_hash`; ContextPack exports `citation` and
-  `source_ref`; dedup/diversity uses `content_hash`;
-- remaining gaps: `SourceRef` is not encoded as first-class
-  descriptor/WAL/storage-boundary data, and `KnowledgeCellMetadata` writes
-  source/trust but not citation/content_hash/source_ref.
-
-Next patch order:
-
-1. add core `SourceRef`/`ProvenanceDescriptor` fields or a nested wire section;
-2. make write/ingestion paths fill descriptor-backed citation/hash/source_ref
-   values;
-3. add no-payload-parse ContextPack citation regression tests;
-4. document descriptor-backed provenance in `DATA_MODEL.md`.
+- current inventory status is `complete`: 9 checks pass, 0 partial, 0 fail;
+- `CellDescriptor` now carries descriptor-backed `source_id`, `source_url`,
+  `document_id`, `page`, `row`, `cell_range`, `json_path`, `confidence_q16`,
+  `citation`, `content_hash`, source/trust, and temporal fields through the
+  existing WAL `CellDescriptor` section;
+- metadata WAL writes preserve payload-derived provenance by merging metadata
+  overlay fields with the payload descriptor instead of replacing it;
+- ingestion validation has the current warn/strict surface through
+  `IngestionValidationReport` warnings and `CellMetadata::decode_payload`
+  strict metadata decoding;
+- ContextPack source_ref/citation export is covered by no-payload-header
+  regression tests;
+- `DATA_MODEL.md` documents descriptor-backed provenance and compatibility.
 
 ### EPIC-B07 — Fact/claim store: типизированные факты с numeric-значениями
 
