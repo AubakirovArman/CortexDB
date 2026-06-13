@@ -430,7 +430,14 @@
     "crates/cortex-cli/src/cli_json.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 336,
+      "lines": 248,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-cli/src/cli_json/context.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 89,
       "soft_limit": 300,
       "warning_limit": 600
     },
