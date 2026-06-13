@@ -5197,7 +5197,14 @@
     "crates/cortex-storage/src/indexes.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 348,
+      "lines": 257,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-storage/src/indexes/codec.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 108,
       "soft_limit": 300,
       "warning_limit": 600
     },
