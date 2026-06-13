@@ -33,6 +33,30 @@ pub struct ManifestVectorProfile {
     pub metric: u32,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ManifestCount {
+    pub key: String,
+    pub count: u64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ManifestTermDocumentFrequency {
+    pub term: String,
+    pub document_frequency: u64,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ManifestSegmentStats {
+    pub segment_id: u64,
+    pub row_count: u64,
+    pub min_created_unix_seconds: Option<u64>,
+    pub max_created_unix_seconds: Option<u64>,
+    pub scope_counts: Vec<ManifestCount>,
+    pub status_counts: Vec<ManifestCount>,
+    pub type_counts: Vec<ManifestCount>,
+    pub top_terms: Vec<ManifestTermDocumentFrequency>,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ManifestHnswNoFallbackProfile {
     pub rollout_enabled: bool,
@@ -57,6 +81,7 @@ pub struct StorageManifest {
     pub retired_segments: Vec<ManifestSegment>,
     pub hnsw_profile: Option<ManifestHnswProfile>,
     pub vector_profile: Option<ManifestVectorProfile>,
+    pub segment_stats: Vec<ManifestSegmentStats>,
     pub hnsw_no_fallback_profile: Option<ManifestHnswNoFallbackProfile>,
     pub compaction_metadata: CompactionMetadata,
 }
@@ -106,5 +131,20 @@ impl StorageManifest {
         }
         self.live_segments = new_live;
         self.retired_segments.extend(selected);
+        self.segment_stats
+            .retain(|stats| !selected_ids.contains(&stats.segment_id));
+    }
+
+    pub fn stats_for_segment(&self, segment_id: u64) -> Option<&ManifestSegmentStats> {
+        self.segment_stats
+            .iter()
+            .find(|stats| stats.segment_id == segment_id)
+    }
+
+    pub fn set_segment_stats(&mut self, stats: ManifestSegmentStats) {
+        self.segment_stats
+            .retain(|existing| existing.segment_id != stats.segment_id);
+        self.segment_stats.push(stats);
+        self.segment_stats.sort_by_key(|stats| stats.segment_id);
     }
 }

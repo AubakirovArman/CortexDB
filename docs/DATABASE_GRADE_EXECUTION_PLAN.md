@@ -300,7 +300,7 @@ enough to unblock the next dependency step.
 - goal: cost model без статистики — гадание.
 - problem: Проблема: `bitmap_estimated_cardinality` возвращает None (binder.rs:63) — хук есть, данных нет.
 - execution steps:
-  - [ ] 0) зафиксировать компактный stats-contract: per-segment row count, scope/status/type cardinality, created_at min/max, top-K term df; не писать полные словари в manifest.
+  - [x] 0) зафиксировать компактный stats-contract: per-segment row count, scope/status/type cardinality, created_at min/max, top-K term df; не писать полные словари в manifest.
   - [ ] 1) собрать статистику при checkpoint/compact рядом с segment metadata.
   - [ ] 2) сохранить статистику в manifest или совместимом sidecar так, чтобы restart не пересчитывал всё из payload.
   - [ ] 3) добавить engine API для оценки bitmap/scope/status/type predicates и term df.
@@ -316,8 +316,9 @@ enough to unblock the next dependency step.
   - [ ] 2) статистика переживает рестарт (в манифесте/сайдкаре)
   - [ ] 3) EXPLAIN показывает estimated vs actual.
 - files: cortex-storage/src/manifest.rs, indexes.rs; checkpoint.rs.
-- next exit step: implement the stats contract and persistence shape first, then wire the binder/explain estimate API.
+- next exit step: collect and attach segment stats during checkpoint/compact, then expose the estimate API.
 - risks: распухание манифеста — sketch/top-K, не полные словари. Зависимости: A07 удобно вместе. Эффект: кормит A13.
+- evidence: A12.0 stats contract added as manifest `STAT` extension with `ManifestSegmentStats`: per-segment row count, optional created_at min/max, scope/status/type counts, and bounded top term document frequencies. Helper API replaces stats by segment id, sorts stats deterministically, and retires stats with replaced segments. Tests: `manifest_segment_stats_roundtrips`, `manifest_segment_stats_helpers_replace_and_retire_by_segment_id`; `cargo test -p cortex-storage --all-features`.
 
 ### EPIC-A13 — Cost model v0 — выбор пути исполнения
 

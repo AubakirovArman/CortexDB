@@ -249,10 +249,7 @@ fn write_manifest(
         checkpoint_seq,
         live_segments,
         retired_segments,
-        hnsw_profile: None,
-        vector_profile: None,
-        hnsw_no_fallback_profile: None,
-        compaction_metadata: Default::default(),
+        ..StorageManifest::default()
     }
     .store(root.join("manifest.acm"))
     .unwrap();

@@ -2,8 +2,9 @@ use crate::atomic::{append_crc32c, verify_crc32c};
 use crate::error::{StorageError, StorageResult};
 use crate::format::MANIFEST_MAGIC;
 use crate::manifest::{
-    CompactionMetadata, ManifestHnswNoFallbackProfile, ManifestHnswProfile, ManifestSegment,
-    ManifestVectorProfile, StorageManifest,
+    CompactionMetadata, ManifestCount, ManifestHnswNoFallbackProfile, ManifestHnswProfile,
+    ManifestSegment, ManifestSegmentStats, ManifestTermDocumentFrequency, ManifestVectorProfile,
+    StorageManifest,
 };
 
 pub(super) fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
@@ -25,6 +26,10 @@ pub(super) fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
         out.extend_from_slice(b"VECM");
         put_u32(&mut out, profile.dimension);
         put_u32(&mut out, profile.metric);
+    }
+    if !manifest.segment_stats.is_empty() {
+        out.extend_from_slice(b"STAT");
+        put_segment_stats(&mut out, &manifest.segment_stats);
     }
     if let Some(profile) = manifest.hnsw_no_fallback_profile {
         out.extend_from_slice(b"NOFB");
@@ -57,6 +62,7 @@ pub(super) fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
     let retired_segments = read_segments(bytes, &mut cursor)?;
     let hnsw_profile = read_hnsw_profile(bytes, &mut cursor)?;
     let vector_profile = read_vector_profile(bytes, &mut cursor)?;
+    let segment_stats = read_segment_stats_section(bytes, &mut cursor)?;
     let hnsw_no_fallback_profile = read_hnsw_no_fallback_profile(bytes, &mut cursor)?;
     let compaction_metadata = read_compaction_metadata(bytes, &mut cursor)?;
     if cursor > bytes.len() {
@@ -69,6 +75,7 @@ pub(super) fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
         retired_segments,
         hnsw_profile,
         vector_profile,
+        segment_stats,
         hnsw_no_fallback_profile,
         compaction_metadata,
     })
@@ -150,6 +157,88 @@ fn read_vector_profile(
     Ok(Some(profile))
 }
 
+fn put_segment_stats(out: &mut Vec<u8>, stats: &[ManifestSegmentStats]) {
+    put_u32(out, stats.len() as u32);
+    for stat in stats {
+        put_u64(out, stat.segment_id);
+        put_u64(out, stat.row_count);
+        put_optional_u64(out, stat.min_created_unix_seconds);
+        put_optional_u64(out, stat.max_created_unix_seconds);
+        put_counts(out, &stat.scope_counts);
+        put_counts(out, &stat.status_counts);
+        put_counts(out, &stat.type_counts);
+        put_term_document_frequencies(out, &stat.top_terms);
+    }
+}
+
+fn read_segment_stats_section(
+    bytes: &[u8],
+    cursor: &mut usize,
+) -> StorageResult<Vec<ManifestSegmentStats>> {
+    if bytes.len().saturating_sub(*cursor) < 4 || &bytes[*cursor..*cursor + 4] != b"STAT" {
+        return Ok(Vec::new());
+    }
+    *cursor += 4;
+    let count = read_u32(bytes, cursor)? as usize;
+    let mut stats = Vec::with_capacity(count);
+    for _ in 0..count {
+        stats.push(ManifestSegmentStats {
+            segment_id: read_u64(bytes, cursor)?,
+            row_count: read_u64(bytes, cursor)?,
+            min_created_unix_seconds: read_optional_u64(bytes, cursor)?,
+            max_created_unix_seconds: read_optional_u64(bytes, cursor)?,
+            scope_counts: read_counts(bytes, cursor)?,
+            status_counts: read_counts(bytes, cursor)?,
+            type_counts: read_counts(bytes, cursor)?,
+            top_terms: read_term_document_frequencies(bytes, cursor)?,
+        });
+    }
+    Ok(stats)
+}
+
+fn put_counts(out: &mut Vec<u8>, counts: &[ManifestCount]) {
+    put_u32(out, counts.len() as u32);
+    for count in counts {
+        put_string(out, &count.key);
+        put_u64(out, count.count);
+    }
+}
+
+fn read_counts(bytes: &[u8], cursor: &mut usize) -> StorageResult<Vec<ManifestCount>> {
+    let count = read_u32(bytes, cursor)? as usize;
+    let mut counts = Vec::with_capacity(count);
+    for _ in 0..count {
+        counts.push(ManifestCount {
+            key: read_string(bytes, cursor)?,
+            count: read_u64(bytes, cursor)?,
+        });
+    }
+    Ok(counts)
+}
+
+fn put_term_document_frequencies(out: &mut Vec<u8>, frequencies: &[ManifestTermDocumentFrequency]) {
+    put_u32(out, frequencies.len() as u32);
+    for frequency in frequencies {
+        put_string(out, &frequency.term);
+        put_u64(out, frequency.document_frequency);
+    }
+}
+
+fn read_term_document_frequencies(
+    bytes: &[u8],
+    cursor: &mut usize,
+) -> StorageResult<Vec<ManifestTermDocumentFrequency>> {
+    let count = read_u32(bytes, cursor)? as usize;
+    let mut frequencies = Vec::with_capacity(count);
+    for _ in 0..count {
+        frequencies.push(ManifestTermDocumentFrequency {
+            term: read_string(bytes, cursor)?,
+            document_frequency: read_u64(bytes, cursor)?,
+        });
+    }
+    Ok(frequencies)
+}
+
 fn read_hnsw_no_fallback_profile(
     bytes: &[u8],
     cursor: &mut usize,
@@ -190,6 +279,29 @@ fn bool_to_u32(value: bool) -> u32 {
     } else {
         0
     }
+}
+
+fn put_optional_u64(out: &mut Vec<u8>, value: Option<u64>) {
+    put_u32(out, bool_to_u32(value.is_some()));
+    put_u64(out, value.unwrap_or(0));
+}
+
+fn read_optional_u64(bytes: &[u8], cursor: &mut usize) -> StorageResult<Option<u64>> {
+    let is_some = read_bool(bytes, cursor)?;
+    let value = read_u64(bytes, cursor)?;
+    Ok(is_some.then_some(value))
+}
+
+fn put_string(out: &mut Vec<u8>, value: &str) {
+    put_u32(out, value.len() as u32);
+    out.extend_from_slice(value.as_bytes());
+}
+
+fn read_string(bytes: &[u8], cursor: &mut usize) -> StorageResult<String> {
+    let len = read_u32(bytes, cursor)? as usize;
+    std::str::from_utf8(read_bytes(bytes, cursor, len)?)
+        .map(str::to_owned)
+        .map_err(|_| StorageError::InvalidManifestFile)
 }
 
 fn read_bool(bytes: &[u8], cursor: &mut usize) -> StorageResult<bool> {
