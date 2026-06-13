@@ -1242,7 +1242,28 @@
     "crates/cortex-engine/src/bin/enterprise_rag_synonym_dictionary_check.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 393,
+      "lines": 64,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_synonym_dictionary_check/args.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 139,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_synonym_dictionary_check/corpus.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 174,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_synonym_dictionary_check/report.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 50,
       "soft_limit": 300,
       "warning_limit": 600
     },
