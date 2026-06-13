@@ -829,7 +829,7 @@
     "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/main.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 463,
+      "lines": 65,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -837,6 +837,41 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 159,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/pipeline.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 40,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/pipeline/ingest_stage.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 93,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/pipeline/output.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 58,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/pipeline/retrieve_stage.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 206,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/pipeline/startup.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 157,
       "soft_limit": 300,
       "warning_limit": 600
     },
