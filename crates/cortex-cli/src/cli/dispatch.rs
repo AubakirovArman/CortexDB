@@ -206,6 +206,9 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         Command::Context { input, format } => {
             knowledge::context(ctx, input.path, input.scope, input.aql, format)
         }
+        Command::Explain { input, cell_id } => {
+            knowledge::explain_cell(ctx, input.path, input.scope, input.aql, cell_id)
+        }
         Command::Remember { input } => knowledge::remember(ctx, input.path, input.scope, input.aql),
         Command::Forget { path, cell_id } => knowledge::forget(ctx, path, cell_id),
         Command::Verify { input, format } => {

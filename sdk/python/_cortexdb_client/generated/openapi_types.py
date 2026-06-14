@@ -738,7 +738,7 @@ OpenApiContextPackAnomalyResponse = TypedDict(
     'OpenApiContextPackAnomalyResponse',
     {
         'cell_id': 'int | Any',
-        'code': "Literal['redundant_cell', 'missing_citation', 'token_overload', 'scope_mismatch', 'insufficient_context']",
+        'code': "Literal['redundant_cell', 'missing_citation', 'token_overload', 'scope_mismatch', 'insufficient_context', 'visible_conflict']",
         'message': 'str',
         'why_excluded': 'str | Any',
     },

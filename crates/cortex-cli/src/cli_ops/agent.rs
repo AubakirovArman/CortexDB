@@ -9,8 +9,8 @@ use cortex_engine::{ContextPackExportFormat, ContextPackOptions, VerificationRep
 
 use crate::cli_json::{context_pack_to_json, verification_report_to_json};
 use crate::context::{
-    format_context_pack, format_verification_report, remember_view_for_scope,
-    verify_view_for_scope, view_for_scope,
+    format_context_cell_explain, format_context_pack, format_verification_report,
+    remember_view_for_scope, verify_view_for_scope, view_for_scope,
 };
 
 use super::common::{fmt_engine_error, open_database, parse_cell_id};
@@ -34,6 +34,26 @@ pub fn context(
         value => Err(format!(
             "unsupported context format '{value}' (expected summary, json, prompt, or markdown)"
         )),
+    }
+}
+
+pub fn explain_cell(
+    path: &str,
+    scope: &str,
+    aql: &str,
+    cell_id: &str,
+    json: bool,
+) -> Result<String, String> {
+    let cell_id = parse_cell_id(cell_id)?;
+    let db = open_database(path, false)?;
+    let pack = db
+        .context_pack_from_aql(aql, &view_for_scope(scope), ContextPackOptions::default())
+        .map_err(fmt_engine_error)?;
+    let explain = pack.explain_cell(cell_id);
+    if json {
+        Ok(crate::cli_json::context_cell_explain_to_json(&explain))
+    } else {
+        Ok(format_context_cell_explain(&explain))
     }
 }
 

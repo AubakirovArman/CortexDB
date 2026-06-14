@@ -19,6 +19,22 @@ pub(super) fn context(
     )
 }
 
+pub(super) fn explain_cell(
+    ctx: DispatchContext<'_>,
+    path: String,
+    scope: String,
+    aql: String,
+    cell_id: String,
+) -> Result<String, String> {
+    ops::explain_cell(
+        ctx.resolve(&path).to_str().unwrap(),
+        &scope,
+        &aql,
+        &cell_id,
+        ctx.json,
+    )
+}
+
 pub(super) fn remember(
     ctx: DispatchContext<'_>,
     path: String,

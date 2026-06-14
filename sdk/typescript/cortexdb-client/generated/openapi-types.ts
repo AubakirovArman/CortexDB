@@ -513,7 +513,7 @@ export interface OpenApiSourceRefResponse {
 
 export interface OpenApiContextPackAnomalyResponse {
   cell_id: number | unknown;
-  code: "redundant_cell" | "missing_citation" | "token_overload" | "scope_mismatch" | "insufficient_context";
+  code: "redundant_cell" | "missing_citation" | "token_overload" | "scope_mismatch" | "insufficient_context" | "visible_conflict";
   message: string;
   why_excluded: string | unknown;
 }

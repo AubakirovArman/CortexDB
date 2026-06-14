@@ -82,13 +82,13 @@ pub use compatibility::{
 pub use config::{EngineConfig, EngineConfigError};
 pub use context::{
     estimate_tokens, estimate_tokens_for_profile, AnswerGroundingOptions, AnswerGroundingReport,
-    AnswerGroundingSpan, ContextAccessDecision, ContextAccessDecisionOutcome, ContextExplain,
-    ContextLargeCellPolicy, ContextPack, ContextPackAnomaly, ContextPackAnomalyCode,
-    ContextPackCell, ContextPackExportFormat, ContextPackOptions, ContextPackWithTools,
-    ContextPipelineCellTrace, ContextPipelineStageTrace, ContextPipelineTrace,
-    ContextPipelineVerificationTrace, ContextScoreComponent, ContextScoreComponentTrace,
-    ContextSpanProvenance, ContextTokenProfile, SourceFreshnessCategory,
-    DEFAULT_CITATION_OVERHEAD_TOKENS, DEFAULT_GROUNDING_THRESHOLD_Q16,
+    AnswerGroundingSpan, ContextAccessDecision, ContextAccessDecisionOutcome, ContextCellExplain,
+    ContextCellExplainOutcome, ContextExplain, ContextLargeCellPolicy, ContextPack,
+    ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell, ContextPackExportFormat,
+    ContextPackOptions, ContextPackWithTools, ContextPipelineCellTrace, ContextPipelineStageTrace,
+    ContextPipelineTrace, ContextPipelineVerificationTrace, ContextScoreComponent,
+    ContextScoreComponentTrace, ContextSpanProvenance, ContextTokenProfile,
+    SourceFreshnessCategory, DEFAULT_CITATION_OVERHEAD_TOKENS, DEFAULT_GROUNDING_THRESHOLD_Q16,
 };
 pub use database::{
     CandidateResolver, CheckpointStats, Database, PayloadCacheStats, RetrievedCell,

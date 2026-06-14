@@ -1,8 +1,38 @@
 use crate::cli_json_types::{
-    ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackExplainResponse,
-    ContextPackResponse, ContextPackScoreComponentResponse, ContextSpanProvenanceResponse,
-    SourceRefResponse,
+    ContextAccessDecisionResponse, ContextCellExplainResponse, ContextPackAnomalyResponse,
+    ContextPackCellResponse, ContextPackExplainResponse, ContextPackResponse,
+    ContextPackScoreComponentResponse, ContextSpanProvenanceResponse, SourceRefResponse,
 };
+
+pub(super) fn context_cell_explain_response(
+    explain: &cortex_engine::ContextCellExplain,
+) -> ContextCellExplainResponse {
+    ContextCellExplainResponse {
+        schema_version: "context_cell_explain.v1",
+        cell_id: explain.cell_id.0,
+        outcome: explain.outcome.as_str().to_owned(),
+        first_excluding_stage: explain.first_excluding_stage.clone(),
+        why_selected: explain.why_selected.clone(),
+        why_excluded: explain.why_excluded.clone(),
+        score: explain.score,
+        matched_terms: explain.matched_terms.clone(),
+        score_components: explain
+            .score_components
+            .iter()
+            .map(score_component_response)
+            .collect(),
+        access_decision: explain.access_decision.as_ref().map(|decision| {
+            ContextAccessDecisionResponse {
+                decision: decision.decision.as_str().to_owned(),
+                policy: decision.policy.clone(),
+                reason: decision.reason.clone(),
+                scope: decision.scope.clone(),
+                scope_id: decision.scope_id,
+                agent_id: decision.agent_id,
+            }
+        }),
+    }
+}
 
 pub(super) fn context_pack_response(pack: &cortex_engine::ContextPack) -> ContextPackResponse {
     ContextPackResponse {
@@ -36,12 +66,7 @@ fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> ContextPackCellRe
         score_components: exp
             .score_components
             .iter()
-            .map(|component| ContextPackScoreComponentResponse {
-                name: component.name.clone(),
-                value: component.value,
-                contribution: component.contribution,
-                reason: component.reason.clone(),
-            })
+            .map(score_component_response)
             .collect(),
         base_bm25: exp.base_bm25,
         source_trust_q16: exp.source_trust_q16,
@@ -73,6 +98,17 @@ fn context_cell_json(cell: &cortex_engine::ContextPackCell) -> ContextPackCellRe
         explain,
         source_ref,
         provenance,
+    }
+}
+
+fn score_component_response(
+    component: &cortex_engine::ContextScoreComponent,
+) -> ContextPackScoreComponentResponse {
+    ContextPackScoreComponentResponse {
+        name: component.name.clone(),
+        value: component.value,
+        contribution: component.contribution,
+        reason: component.reason.clone(),
     }
 }
 

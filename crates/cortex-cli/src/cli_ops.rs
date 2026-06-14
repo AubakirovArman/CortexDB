@@ -5,7 +5,7 @@ mod core;
 mod maintenance;
 mod search;
 
-pub use agent::{context, forget, remember, verify};
+pub use agent::{context, explain_cell, forget, remember, verify};
 pub(crate) use agent::{
     create_agent, grant_agent_scope, list_agents, revoke_agent_scope, show_agent, AgentCreateInput,
     AgentScopeAccess, AgentScopeInput,

@@ -1,7 +1,7 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_engine::{
-    scope_id, ContextPack, DatabaseSearchResult, RetrievedCell, VerificationReport,
-    VerificationStatus,
+    scope_id, ContextCellExplain, ContextPack, DatabaseSearchResult, RetrievedCell,
+    VerificationReport, VerificationStatus,
 };
 
 pub(crate) fn view_for_scope(scope: &str) -> AgentView {
@@ -66,6 +66,41 @@ pub(crate) fn format_context_pack(pack: &ContextPack) -> String {
             String::from_utf8_lossy(&cell.payload)
         )
     }));
+    lines.join("\n")
+}
+
+pub(crate) fn format_context_cell_explain(explain: &ContextCellExplain) -> String {
+    let mut lines = vec![format!(
+        "cell_id={} outcome={} first_excluding_stage={} score={} why_selected={} why_excluded={}",
+        explain.cell_id.0,
+        explain.outcome.as_str(),
+        explain.first_excluding_stage.as_deref().unwrap_or("null"),
+        explain
+            .score
+            .map(|score| score.to_string())
+            .unwrap_or_else(|| "null".to_owned()),
+        explain.why_selected.as_deref().unwrap_or("null"),
+        explain.why_excluded.as_deref().unwrap_or("null")
+    )];
+    if !explain.matched_terms.is_empty() {
+        lines.push(format!("matched_terms={}", explain.matched_terms.join(",")));
+    }
+    lines.extend(explain.score_components.iter().map(|component| {
+        format!(
+            "score_component={} value={} contribution={} reason={}",
+            component.name, component.value, component.contribution, component.reason
+        )
+    }));
+    if let Some(decision) = &explain.access_decision {
+        lines.push(format!(
+            "access_decision={} policy={} scope={} scope_id={} reason={}",
+            decision.decision.as_str(),
+            decision.policy,
+            decision.scope,
+            decision.scope_id,
+            decision.reason
+        ));
+    }
     lines.join("\n")
 }
 

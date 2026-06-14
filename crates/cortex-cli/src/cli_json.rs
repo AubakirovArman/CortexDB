@@ -5,16 +5,16 @@ use crate::cli_json_types::{
     SearchRoutingDecisionResponse, VerificationEvidenceResponse, VerificationResponse,
 };
 use cortex_engine::{
-    ContextPack, Database, DatabaseSearchResult, RememberedCell, SearchRouteDecision, StorageStats,
-    StorageValidationReport, VectorRebuildReport, VerificationEvidence, VerificationReport,
-    VerificationStatus,
+    ContextCellExplain, ContextPack, Database, DatabaseSearchResult, RememberedCell,
+    SearchRouteDecision, StorageStats, StorageValidationReport, VectorRebuildReport,
+    VerificationEvidence, VerificationReport, VerificationStatus,
 };
 use serde_json::to_string;
 use std::path::Path;
 
 mod context;
 
-use context::context_pack_response;
+use context::{context_cell_explain_response, context_pack_response};
 
 fn serialize_or_error<T: serde::Serialize>(value: &T) -> String {
     to_string(value).unwrap_or_else(|e| {
@@ -31,6 +31,10 @@ fn serialize_or_error<T: serde::Serialize>(value: &T) -> String {
 
 pub(crate) fn context_pack_to_json(pack: &ContextPack) -> String {
     serialize_or_error(&context_pack_response(pack))
+}
+
+pub(crate) fn context_cell_explain_to_json(explain: &ContextCellExplain) -> String {
+    serialize_or_error(&context_cell_explain_response(explain))
 }
 
 pub(crate) fn verification_report_to_json(report: &VerificationReport, db: &Database) -> String {

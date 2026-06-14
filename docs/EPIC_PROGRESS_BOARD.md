@@ -20,18 +20,18 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B14` — Explainability contract.
+`EPIC-B15` — EXPLAIN ANALYZE for AQL.
 
-B14 exit steps:
+B15 exit steps:
 
-1. Inventory existing explain-v2 surfaces.
-2. Freeze the formal explainability contract in docs/schema/golden tests.
-3. Add missing cell-specific/golden-test coverage without rewriting accepted explain code.
-4. Publish focused evidence, then move to B15.
+1. Add runtime counters per operator/stage.
+2. Expose elapsed time, candidates, filtered counts, payload reads, and token budget.
+3. Add CLI/server tests.
+4. Mark done when AQL can report actual execution metrics; then move to B17.
 
-B14 current state:
+B15 current state:
 
-- next; formal-tail only, not greenfield.
+- next.
 - Do not reopen C14 unless temporal interval index, AQL `valid at`, or VERIFY
   stale-guard contracts regress.
 
@@ -47,6 +47,18 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-B14 — Explainability contract
+
+Status: `done`
+
+What closed it:
+
+- Added typed `ContextPack::explain_cell(CellId)` for selected, excluded, and not-considered cells.
+- Added CLI `cortexdb explain <db> <scope> <aql> --cell-id N` with summary and `context_cell_explain.v1` JSON output.
+- Documented selected/excluded explain fields and first exclusion stages in `docs/EXPLAIN.md`.
+- Added golden/regression coverage for stable selected fields and excluded `first_excluding_stage`.
+- Aligned ContextPack schema/OpenAPI/generated SDK types with the existing `visible_conflict` anomaly code.
 
 ### EPIC-C14 — Temporal index
 
@@ -138,8 +150,7 @@ DeepSeek 50-question smoke:
 
 Remaining follow-up:
 
-- B14 owns stable explain contracts. Long-running benchmark evidence remains
-  A19/C17 scope.
+- B14 is closed. Long-running benchmark evidence remains A19/C17 scope.
 
 ### EPIC-B12 — Session/episodic memory contract
 
@@ -741,10 +752,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on B14 only:
+Work on B15 only:
 
-1. inventory current selected-result and excluded-result explain fields;
-2. define the smallest stable explain schema that preserves existing output;
-3. thread the schema through retrieve/search/context/verify without changing
-   ranking behavior;
-4. add snapshot/golden tests before moving to B15.
+1. inventory current AQL EXPLAIN and EXPLAIN ANALYZE counters;
+2. expose missing actual operator metrics without changing query semantics;
+3. add focused CLI/server tests;
+4. move to B17 after B15 acceptance is closed.

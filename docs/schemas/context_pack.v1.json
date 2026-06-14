@@ -410,7 +410,8 @@
             "missing_citation",
             "token_overload",
             "insufficient_context",
-            "scope_mismatch"
+            "scope_mismatch",
+            "visible_conflict"
           ]
         },
         "message": {

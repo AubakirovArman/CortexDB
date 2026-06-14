@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B14` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-C14`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B16`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is closed with interval temporal validity index evidence. `EPIC-B14` is next and remains pending/formal-tail for the explainability stage. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
+Current pointer: `EPIC-B15` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-C14`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B14`, `EPIC-B16`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is closed with interval temporal validity index evidence. `EPIC-B14` is closed with a stable ContextPack cell explain contract, CLI `explain --cell-id`, `docs/EXPLAIN.md`, schema/OpenAPI alignment, and golden coverage. `EPIC-B15` is next. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -78,7 +78,8 @@ enough to unblock the next dependency step.
 28. `EPIC-C17` — performance regressions in CI: done.
 29. `EPIC-C13` — Fact/numeric index: done.
 30. `EPIC-C14` — Temporal index: done.
-31. `EPIC-B14` — Explainability contract: next.
+31. `EPIC-B14` — Explainability contract: done.
+32. `EPIC-B15` — EXPLAIN ANALYZE for AQL: next.
 
 ## Summary
 
@@ -947,7 +948,8 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   scripts/descriptor_hot_path_gate_check.py`; `make file-size-check`; `make
   openapi-contract-check`; `cargo test --workspace --all-features`; `cargo
   clippy --workspace --all-targets -- -D warnings`; `make check`.
-- next exit step: move to `EPIC-B14` — Explainability contract.
+- next exit step: `EPIC-B14` is now closed; current next step is
+  `EPIC-B15` — EXPLAIN ANALYZE for AQL.
 
 ### EPIC-B14 — Explainability contract: explain для каждого результата
 
@@ -956,19 +958,23 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - goal: проверяемость — категория-свойство; explain должен быть стабильной частью result type.
 - problem: Проблема: explain-поля богатые (score_components, why_selected), но не контрактные; «почему ячейка НЕ попала» отвечается лишь частично anomalies.
 - tasks:
-  - [ ] 1) explain-схему в ContextPack v1 (B01) зафиксировать
-  - [ ] 2) `cortexdb explain --cell-id N <aql>`: трассировка конкретной ячейки по стадиям (allowed? live? where? thresholds? budget? redundancy?) на базе операторных счётчиков (A11)
-  - [ ] 3) doc EXPLAIN.md с примерами.
+  - [x] 1) explain-схему в ContextPack v1 (B01) зафиксировать
+  - [x] 2) `cortexdb explain --cell-id N <aql>`: трассировка конкретной ячейки по стадиям (allowed? live? where? thresholds? budget? redundancy?) на базе операторных счётчиков (A11)
+  - [x] 3) doc EXPLAIN.md с примерами.
 - acceptance:
-  - [ ] 1) для исключённой ячейки называется первая отсёкшая стадия
-  - [ ] 2) explain стабилен под golden-тестами
-  - [ ] 3) поля документированы.
-- files: context/explain.rs, exec/, cli.
-- risks: нет. Зависимости: A11 (полная версия), частично можно раньше. Эффект: главный debugging-инструмент пользователя.
+  - [x] 1) для исключённой ячейки называется первая отсёкшая стадия
+  - [x] 2) explain стабилен под golden-тестами
+  - [x] 3) поля документированы.
+- files: `crates/cortex-engine/src/context/explain.rs`, CLI explain command, `docs/EXPLAIN.md`, ContextPack schema/OpenAPI generated artifacts.
+- evidence: `ContextPack::explain_cell(CellId)` now returns a typed `ContextCellExplain` contract for selected, excluded, and not-considered cells. Selected cells expose `why_selected`, score, matched terms, score components, and access decision. Excluded cells map anomaly codes to stable `first_excluding_stage` names and preserve `why_excluded`. CLI `cortexdb explain <db> <scope> <aql> --cell-id N` emits summary or `context_cell_explain.v1` JSON. `docs/EXPLAIN.md` documents selected/excluded fields and stage names. ContextPack schema/OpenAPI now include the existing `visible_conflict` anomaly code and regenerated Python/TypeScript OpenAPI SDK types.
+- gates: `cargo fmt --check`; `cargo test -p cortex-engine --test context_pack_explain_v2`; `cargo test -p cortex-cli explain_command_returns_cell_contract_json`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `cargo test -p cortex-cli`; `make openapi-contract-check`; `make check`.
+- remaining: none for B14 acceptance; deeper operator timing/counter explain belongs to B15.
+- risks: CLI cell explain reports the first recorded ContextPack anomaly for excluded cells; full physical per-operator timing remains B15 scope.
+- next exit step: move to `EPIC-B15` — EXPLAIN ANALYZE for AQL.
 
 ### EPIC-B15 — EXPLAIN ANALYZE для AQL
 
-- status: `done`
+- status: `next`
 - meta: Категория: query-engine · Приоритет: P1 · Горизонт: 90 days · Тип: build
 - goal: у настоящей БД можно спросить, как исполнился запрос.
 - problem: Проблема: AqlExplainReport есть, но не отражает физическое исполнение (его пока нет).
@@ -1295,7 +1301,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - files: новый index-модуль, verification/numeric.rs.
 - latest evidence: `FactClaimStore` now maintains a metric/scope/project -> sorted normalized value -> cell index alongside typed numeric records. VERIFY first asks this index for numeric candidate cell ids and falls back to the previous lexical candidate scan only when the typed index has no hits. `ConflictIndexStore::from_memtable` now batches numeric facts and rebuilds conflict records by metric/scope/project group, avoiding whole-corpus pair scans on large numeric fixtures. Added `numeric_verify_index_check` and `make numeric-verify-index-check`; local 1M direct-checkpoint fixture passed with numeric VERIFY latency p50 `155.498ms`, p95 `157.387ms`, p99 `159.038ms`, max `159.407ms`, report `target/numeric-verify-index/report.json`.
 - risks: The C13 1M gate uses a dedicated typed numeric fixture with unique metric groups plus one support/conflict pair; broad natural-language facts without a typed metric still fall back to the existing lexical path. Зависимости: B07. Эффект: verification-масштаб.
-- next exit step: `EPIC-C14` is now closed; move to `EPIC-B14` — Explainability contract.
+- next exit step: `EPIC-B14` is now closed; move to `EPIC-B15` — EXPLAIN ANALYZE for AQL.
 
 ### EPIC-C14 — Temporal индекс
 
@@ -1312,7 +1318,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - files: `retrieval_quality/validity_index.rs`, `retrieval_quality/validity_index/interval.rs`, `exec/retrieve/temporal_filter.rs`, `verification/operator.rs`, `verification/guards.rs`, `verification/temporal.rs`.
 - latest evidence: `TemporalValidityStore` now maintains incremental valid_from/valid_to BTree indexes and a lazy sorted valid_from zone cache. AQL `REQUIRE valid at` builds the valid CellId set once from the interval index and filters candidates before lazy payload reads. VERIFY emits a `VerificationTemporalIndexLookup` trace and uses indexed stale reasons for stale/future evidence guards while preserving lexical overlap semantics. `make temporal-validity-index-check` passed on a 10K lazy fixture with `query_elapsed_ms=152`, `returned_cells=10`, `segment_loads_after_query=10`, report `target/temporal-validity-index/report.json`.
 - risks: The default temporal gate is bounded at 10K for interactive reliability; larger 100K+ temporal runs remain override/benchmark-packet work if needed. Зависимости: A02, B10. Эффект: temporal — индексная фича.
-- next exit step: move to `EPIC-B14` — Explainability contract.
+- next exit step: `EPIC-B14` is now closed; move to `EPIC-B15` — EXPLAIN ANALYZE for AQL.
 
 ### EPIC-C15 — Инкрементальный graph-индекс производительность
 

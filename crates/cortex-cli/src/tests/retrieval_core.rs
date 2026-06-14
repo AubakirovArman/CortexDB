@@ -1,4 +1,5 @@
 use super::helpers::*;
+use serde_json::Value;
 
 #[test]
 fn vector_rebuild_command_repairs_corrupt_ann_files() {
@@ -155,6 +156,52 @@ fn context_command_returns_pack_summary() {
     .unwrap();
     assert!(markdown.contains("# CortexDB ContextPack"));
     assert!(markdown.contains("### Cell 1"));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
+fn explain_command_returns_cell_contract_json() {
+    let path = unique_path("cortexdb-cli-explain-cell");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nsource_trust_q16=60000\nsource=doc-a\nsolar budget official disclosure".to_owned(),
+    ])
+    .unwrap();
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "--json".to_owned(),
+        "explain".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        r#"RETRIEVE CONTEXT FOR TASK "solar budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#.to_owned(),
+        "--cell-id".to_owned(),
+        "1".to_owned(),
+    ])
+    .unwrap();
+    let output: Value = serde_json::from_str(&output).unwrap();
+    assert_eq!(output["schema_version"], "context_cell_explain.v1");
+    assert_eq!(output["cell_id"], 1);
+    assert_eq!(output["outcome"], "selected");
+    assert!(output["first_excluding_stage"].is_null());
+    assert!(output["why_selected"]
+        .as_str()
+        .unwrap()
+        .contains("high provenance source trust"));
+    assert_eq!(
+        output["matched_terms"],
+        serde_json::json!(["solar", "budget"])
+    );
+    assert_eq!(
+        output["score_components"][0]["name"],
+        serde_json::json!("base_bm25")
+    );
+    assert_eq!(output["access_decision"]["decision"], "allowed");
 
     let _ = std::fs::remove_dir_all(path);
 }

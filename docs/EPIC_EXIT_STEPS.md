@@ -332,7 +332,7 @@ Exit steps:
 1. Add runtime counters per operator/stage.
 2. Expose elapsed time, candidates, filtered counts, payload reads, and token budget.
 3. Add CLI/server tests.
-4. Mark done when AQL can report actual execution metrics; then move to A13/C17.
+4. Mark done when AQL can report actual execution metrics; then move to B17.
 
 ### EPIC-B16 — Policy Rewrite proof
 

@@ -204,6 +204,16 @@ pub(in crate::cli) enum Command {
         #[arg(long, value_enum, default_value_t = ContextOutputFormat::Summary)]
         format: ContextOutputFormat,
     },
+    #[command(
+        about = "Explain why one ContextPack cell was selected or excluded",
+        long_about = "Explain the selected/excluded contract for one ContextPack cell built from an AQL RETRIEVE query.\n\nExample:\n  cortexdb explain ./db project:investments 'RETRIEVE CONTEXT FOR TASK \"Solar Plant budget\" IN BRAIN default LIMIT 10 CANDIDATES;' --cell-id 42"
+    )]
+    Explain {
+        #[command(flatten)]
+        input: ScopedAqlArgs,
+        #[arg(long = "cell-id")]
+        cell_id: String,
+    },
     #[command(about = "Persist an AQL REMEMBER memory cell")]
     Remember {
         #[command(flatten)]

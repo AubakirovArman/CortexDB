@@ -3016,6 +3016,7 @@ components:
           - token_overload
           - scope_mismatch
           - insufficient_context
+          - visible_conflict
         message:
           type: string
         why_excluded:

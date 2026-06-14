@@ -19,6 +19,7 @@ mod token_estimator;
 mod trace;
 
 pub use answerability::DEFAULT_ANSWERABILITY_THRESHOLD_Q16;
+pub use explain::{ContextCellExplain, ContextCellExplainOutcome};
 pub use export::ContextPackExportFormat;
 pub use freshness::SourceFreshnessCategory;
 pub use grounding::{

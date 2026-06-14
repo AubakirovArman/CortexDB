@@ -15,6 +15,30 @@ pub struct ContextPackResponse {
 }
 
 #[derive(Serialize)]
+pub struct ContextCellExplainResponse {
+    pub schema_version: &'static str,
+    pub cell_id: u64,
+    pub outcome: String,
+    pub first_excluding_stage: Option<String>,
+    pub why_selected: Option<String>,
+    pub why_excluded: Option<String>,
+    pub score: Option<u32>,
+    pub matched_terms: Vec<String>,
+    pub score_components: Vec<ContextPackScoreComponentResponse>,
+    pub access_decision: Option<ContextAccessDecisionResponse>,
+}
+
+#[derive(Serialize)]
+pub struct ContextAccessDecisionResponse {
+    pub decision: String,
+    pub policy: String,
+    pub reason: String,
+    pub scope: String,
+    pub scope_id: u64,
+    pub agent_id: Option<u64>,
+}
+
+#[derive(Serialize)]
 pub struct ContextPackCellResponse {
     pub cell_id: u64,
     pub estimated_tokens: u32,
