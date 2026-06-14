@@ -42,7 +42,19 @@ impl Database {
         let txn = pin.read_txn();
 
         let started = Instant::now();
-        let mut candidate_versions = self.verification_candidate_versions(&plan.fact, txn)?;
+        let indexed_numeric_cell_ids = self
+            .fact_claim_store
+            .indexed_cell_ids_for_fact(&plan.fact, view);
+        let mut candidate_versions = if indexed_numeric_cell_ids.is_empty() {
+            self.verification_candidate_versions(&plan.fact, txn)?
+        } else {
+            indexed_numeric_cell_ids
+                .into_iter()
+                .filter_map(|cell_id| self.memtable.read(txn, cell_id))
+                .collect::<Vec<_>>()
+        };
+        candidate_versions.sort_by_key(|version| version.cell_id);
+        candidate_versions.dedup_by_key(|version| version.cell_id);
         candidate_versions.truncate(plan.max_candidates as usize);
         let candidate_count = candidate_versions.len();
         operators.push(trace(

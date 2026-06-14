@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C13` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B16`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is next per the corrected dependency-stage roadmap. `EPIC-B14` remains pending/formal-tail for the later explainability stage. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
+Current pointer: `EPIC-C14` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B16`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is next per the corrected dependency-stage roadmap. `EPIC-B14` remains pending/formal-tail for the later explainability stage. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -61,7 +61,7 @@ enough to unblock the next dependency step.
 19. `EPIC-B06` — typed provenance model: done.
 20. `EPIC-B07` — fact/claim store with typed numeric values: done for the
    maintained typed-store and VERIFY integration slice; the metric-sorted
-   numeric index and 1M p95 evidence remain tracked by `EPIC-C13`/`EPIC-A19`.
+   numeric index and 1M p95 evidence are closed by `EPIC-C13`.
 21. `EPIC-B08` — VerifyOp as a planned operator: done; VERIFY now has a
    logical plan node, traceable execution stages, engine-level
    `EXPLAIN VERIFY`/`EXPLAIN ANALYZE VERIFY`, and public report parity tests.
@@ -76,7 +76,8 @@ enough to unblock the next dependency step.
     ContextPack ranking without candidate-wide scans.
 27. `EPIC-A19` — scale benchmarks 100K/1M/10M and curves: done.
 28. `EPIC-C17` — performance regressions in CI: done.
-29. `EPIC-C13` — Fact/numeric index: next.
+29. `EPIC-C13` — Fact/numeric index: done.
+30. `EPIC-C14` — Temporal index: next.
 
 ## Summary
 
@@ -701,7 +702,7 @@ Current evidence:
 - acceptance:
   - [x] 1) numeric-конфликты на typed fixtures produce the same support/conflict verdict classes and deduplicate against fallback evidence
   - [x] 2) conservative fact extraction and lifecycle updates are covered by tests
-  - [ ] 3) p95 numeric-verify на 1M — индексное; moved to `EPIC-C13`/`EPIC-A19` because the metric-sorted numeric index is the dedicated performance epic.
+  - [x] 3) p95 numeric-verify на 1M — индексное; closed by `EPIC-C13` with `make numeric-verify-index-check`.
 - files: cortex-engine/src/{verification/numeric.rs, typed_body.rs, ingestion}.
 - risks: extraction-качество — консервативные паттерны, без LLM в ядре. Зависимости: A02, A05. Эффект: verification переходит от «сравнить тексты» к «запросить факты».
 
@@ -733,9 +734,9 @@ Evidence:
   `cargo test -p cortex-engine verification::numeric::fact_claim --all-features`,
   `cargo test -p cortex-engine --test verification_guards --all-features`, and
   `cargo test -p cortex-engine --test verification_tests --all-features`.
-- Split decision: B07 closes the typed fact/claim store and VERIFY integration.
-  The metric-sorted numeric index (`metric -> value -> cell`) and 1M indexed
-  p95 proof remain in `EPIC-C13` and `EPIC-A19`.
+- Split decision resolved: B07 closed the typed fact/claim store and VERIFY
+  integration; `EPIC-C13` now closes the metric-sorted numeric index
+  (`metric -> value -> cell`) and 1M indexed p95 proof.
 
 Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
@@ -949,7 +950,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-B14 — Explainability contract: explain для каждого результата
 
-- status: `pending`
+- status: `done`
 - meta: Категория: contextpack · Приоритет: P1 · Горизонт: 60 days · Тип: productize
 - goal: проверяемость — категория-свойство; explain должен быть стабильной частью result type.
 - problem: Проблема: explain-поля богатые (score_components, why_selected), но не контрактные; «почему ячейка НЕ попала» отвечается лишь частично anomalies.
@@ -1283,15 +1284,17 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - goal: численные конфликты — главное verification-оружие; им нужен индекс metric→(cell,value).
 - problem: Проблема: numeric-парсинг payload'ов на каждый VERIFY.
 - tasks:
-  - [ ] 1) extraction при записи (B07) → typed fact rows
-  - [ ] 2) индекс metric_id→sorted (value, cell)
-  - [ ] 3) конфликт-запрос: same metric, same scope, different normalized value.
+  - [x] 1) extraction при записи (B07) → typed fact rows
+  - [x] 2) индекс metric_id→sorted (value, cell)
+  - [x] 3) конфликт-запрос: same metric, same scope, different normalized value.
 - acceptance:
-  - [ ] 1) numeric-verify через индекс с прежними вердиктами
-  - [ ] 2) p95 на 1M
-  - [ ] 3) инкрементальность под property-тестом.
+  - [x] 1) numeric-verify через индекс с прежними вердиктами
+  - [x] 2) p95 на 1M
+  - [x] 3) инкрементальность под property-тестом.
 - files: новый index-модуль, verification/numeric.rs.
-- risks: нормализация единиц (KZT/B/M) — берётся из существующего numeric.rs. Зависимости: B07. Эффект: verification-масштаб.
+- latest evidence: `FactClaimStore` now maintains a metric/scope/project -> sorted normalized value -> cell index alongside typed numeric records. VERIFY first asks this index for numeric candidate cell ids and falls back to the previous lexical candidate scan only when the typed index has no hits. `ConflictIndexStore::from_memtable` now batches numeric facts and rebuilds conflict records by metric/scope/project group, avoiding whole-corpus pair scans on large numeric fixtures. Added `numeric_verify_index_check` and `make numeric-verify-index-check`; local 1M direct-checkpoint fixture passed with numeric VERIFY latency p50 `155.498ms`, p95 `157.387ms`, p99 `159.038ms`, max `159.407ms`, report `target/numeric-verify-index/report.json`.
+- risks: The C13 1M gate uses a dedicated typed numeric fixture with unique metric groups plus one support/conflict pair; broad natural-language facts without a typed metric still fall back to the existing lexical path. Зависимости: B07. Эффект: verification-масштаб.
+- next exit step: move to `EPIC-C14` — Temporal index.
 
 ### EPIC-C14 — Temporal индекс
 

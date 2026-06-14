@@ -52,8 +52,14 @@ impl ConflictIndexStore {
     pub(crate) fn from_memtable(memtable: &MemTable, txn: ReadTxn) -> Self {
         let mut store = Self::default();
         for version in memtable.visible_iter(txn) {
-            store.apply_record(version.cell_id, &version.payload, &version.descriptor);
+            store.apply_record_inner(
+                version.cell_id,
+                &version.payload,
+                &version.descriptor,
+                false,
+            );
         }
+        store.rebuild_numeric_records();
         store
     }
 
@@ -62,6 +68,16 @@ impl ConflictIndexStore {
         cell_id: CellId,
         payload: &[u8],
         descriptor: &CellDescriptor,
+    ) {
+        self.apply_record_inner(cell_id, payload, descriptor, true);
+    }
+
+    fn apply_record_inner(
+        &mut self,
+        cell_id: CellId,
+        payload: &[u8],
+        descriptor: &CellDescriptor,
+        rebuild_numeric: bool,
     ) {
         self.apply_tombstone(cell_id);
         let metadata = CellMetadata::from_payload_with_descriptor(payload, descriptor);
@@ -112,7 +128,9 @@ impl ConflictIndexStore {
         if let Some(record) = FactClaimStore::record_from_payload(cell_id, payload, descriptor) {
             self.numeric_facts.insert(cell_id, record);
         }
-        self.rebuild_numeric_records();
+        if rebuild_numeric {
+            self.rebuild_numeric_records();
+        }
     }
 
     pub(crate) fn apply_tombstone(&mut self, cell_id: CellId) {
@@ -171,18 +189,25 @@ impl ConflictIndexStore {
     fn rebuild_numeric_records(&mut self) {
         let mut records = Vec::new();
         let mut seen_pairs = BTreeSet::new();
-        let facts = self.numeric_facts.values().collect::<Vec<_>>();
-        for (left_index, left) in facts.iter().enumerate() {
-            for right in facts.iter().skip(left_index + 1) {
-                if !same_numeric_conflict_group(left, right)
-                    || normalized_numeric_equal(&left.value, &right.value)
-                    || !left.value.conflicts_with(&right.value)
-                {
-                    continue;
-                }
-                let pair = ordered_pair(left.cell_id, right.cell_id);
-                if seen_pairs.insert(pair) {
-                    records.push(numeric_conflict_record(left, right));
+        let mut groups = BTreeMap::<NumericConflictGroupKey, Vec<&NumericFactRecord>>::new();
+        for fact in self.numeric_facts.values() {
+            groups
+                .entry(NumericConflictGroupKey::from_record(fact))
+                .or_default()
+                .push(fact);
+        }
+        for facts in groups.values() {
+            for (left_index, left) in facts.iter().enumerate() {
+                for right in facts.iter().skip(left_index + 1) {
+                    if normalized_numeric_equal(&left.value, &right.value)
+                        || !left.value.conflicts_with(&right.value)
+                    {
+                        continue;
+                    }
+                    let pair = ordered_pair(left.cell_id, right.cell_id);
+                    if seen_pairs.insert(pair) {
+                        records.push(numeric_conflict_record(left, right));
+                    }
                 }
             }
         }
@@ -194,6 +219,23 @@ impl ConflictIndexStore {
             )
         });
         self.numeric_records = records;
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct NumericConflictGroupKey {
+    scope: String,
+    metric: String,
+    project: Option<String>,
+}
+
+impl NumericConflictGroupKey {
+    fn from_record(record: &NumericFactRecord) -> Self {
+        Self {
+            scope: record.scope.trim().to_owned(),
+            metric: record.metric.trim().to_ascii_lowercase(),
+            project: normalized_opt(&record.project),
+        }
     }
 }
 
@@ -218,12 +260,6 @@ fn relation_record(
             source_trust_q16,
             source_trust_category,
         })
-}
-
-fn same_numeric_conflict_group(left: &NumericFactRecord, right: &NumericFactRecord) -> bool {
-    left.scope == right.scope
-        && normalized_opt(&left.project) == normalized_opt(&right.project)
-        && left.metric.trim().eq_ignore_ascii_case(right.metric.trim())
 }
 
 fn numeric_conflict_record(

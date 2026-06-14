@@ -100,6 +100,104 @@ fn add_verify_matches_emits_typed_numeric_support_and_conflict() {
 }
 
 #[test]
+fn indexed_records_match_same_metric_scope_project_and_value_context() {
+    let store = FactClaimStore::from_records([
+        solar_budget_record(CellId(1), "12 KZT"),
+        solar_budget_record(CellId(2), "14 KZT"),
+        NumericFactRecord {
+            project: Some("Lunar".to_owned()),
+            ..numeric_record(CellId(3), "public", "16 KZT")
+        },
+        NumericFactRecord {
+            metric: "headcount".to_owned(),
+            project: Some("Solar".to_owned()),
+            ..numeric_record(CellId(4), "public", "18 KZT")
+        },
+        solar_budget_record(CellId(5), "12 USD"),
+    ]);
+    let fact_values = extract_numeric_values("Solar budget is 12 KZT");
+    let records = store.indexed_records_for_fact("Solar budget is 12 KZT", &view(), &fact_values);
+    let cell_ids = records
+        .iter()
+        .map(|record| record.cell_id)
+        .collect::<Vec<_>>();
+
+    assert_eq!(cell_ids, vec![CellId(1), CellId(2), CellId(5)]);
+}
+
+#[test]
+fn metric_value_index_tracks_incremental_apply_and_tombstone() {
+    let mut store = FactClaimStore::default();
+    let fact = "Solar budget is 12 KZT";
+    let fact_values = extract_numeric_values(fact);
+
+    store.apply_record(CellId(1), Some(solar_budget_record(CellId(1), "12 KZT")));
+    store.apply_record(CellId(2), Some(solar_budget_record(CellId(2), "14 KZT")));
+    assert_eq!(
+        indexed_cell_ids(&store, fact, &fact_values),
+        vec![CellId(1), CellId(2)]
+    );
+
+    store.apply_record(CellId(2), Some(solar_budget_record(CellId(2), "12 KZT")));
+    assert_eq!(
+        indexed_cell_ids(&store, fact, &fact_values),
+        vec![CellId(1), CellId(2)]
+    );
+
+    store.apply_tombstone(CellId(1));
+    assert_eq!(
+        indexed_cell_ids(&store, fact, &fact_values),
+        vec![CellId(2)]
+    );
+
+    store.apply_tombstone(CellId(2));
+    assert!(indexed_cell_ids(&store, fact, &fact_values).is_empty());
+    assert!(store.index.by_metric.is_empty());
+    assert!(store.index.metric_terms.is_empty());
+}
+
+#[test]
+fn metric_value_index_matches_incremental_property_sequence() {
+    let mut store = FactClaimStore::default();
+    let fact = "Solar budget is 12 KZT";
+    let fact_values = extract_numeric_values(fact);
+    for step in 0..48 {
+        let cell_id = CellId((step % 6 + 1) as u64);
+        if step % 5 == 0 {
+            store.apply_tombstone(cell_id);
+        } else {
+            let value = if step % 3 == 0 { "12 KZT" } else { "14 KZT" };
+            let project = if step % 2 == 0 { "Solar" } else { "Lunar" };
+            store.apply_record(
+                cell_id,
+                Some(NumericFactRecord {
+                    project: Some(project.to_owned()),
+                    ..numeric_record(cell_id, "public", value)
+                }),
+            );
+        }
+
+        let indexed = indexed_cell_ids(&store, fact, &fact_values);
+        let mut expected = store
+            .records
+            .values()
+            .filter(|record| {
+                record.scope == "public"
+                    && record.metric == "budget"
+                    && record.project.as_deref() == Some("Solar")
+                    && fact_values.iter().any(|fact_value| {
+                        fact_value.compare_normalized(&record.value)
+                            != crate::verification::numeric::NumericComparison::Incomparable
+                    })
+            })
+            .map(|record| record.cell_id)
+            .collect::<Vec<_>>();
+        expected.sort();
+        assert_eq!(indexed, expected);
+    }
+}
+
+#[test]
 fn database_fact_claim_store_tracks_write_patch_tombstone_and_reopen() {
     let dir = tempfile::tempdir().unwrap();
     {
@@ -159,6 +257,18 @@ fn solar_budget_record(cell_id: CellId, value: &str) -> NumericFactRecord {
         source_trust_q16: 60_000,
         ..numeric_record(cell_id, "public", value)
     }
+}
+
+fn indexed_cell_ids(
+    store: &FactClaimStore,
+    fact: &str,
+    fact_values: &[NumericValue],
+) -> Vec<CellId> {
+    store
+        .indexed_records_for_fact(fact, &view(), fact_values)
+        .into_iter()
+        .map(|record| record.cell_id)
+        .collect()
 }
 
 fn view() -> AgentView {

@@ -20,21 +20,21 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C13` — Fact/numeric index.
+`EPIC-C14` — Temporal index.
 
-C13 exit steps:
+C14 exit steps:
 
-1. Inventory existing typed claim store and numeric extraction paths.
-2. Add metric-sorted numeric index maintenance.
-3. Route numeric verification/comparison through the index.
-4. Publish focused tests and benchmark evidence, then move to C14.
+1. Inventory existing `TemporalFactStore` and `TemporalValidityStore` paths.
+2. Add interval/validity index maintenance suitable for planner predicates.
+3. Route temporal VERIFY/AQL filtering through the index.
+4. Publish focused tests and benchmark evidence, then move to B14.
 
-C13 current state:
+C14 current state:
 
-- next; start with `verification::numeric`, claim-store maintenance, and
-  query/VERIFY numeric comparison call sites.
-- Do not reopen C17 unless the hosted benchmark workflow or artifact contract
-  regresses.
+- next; start with `verification::temporal`, `TemporalValidityStore`, and
+  AQL `REQUIRE valid at` call sites.
+- Do not reopen C13 unless metric-sorted numeric index or numeric VERIFY
+  artifact contracts regress.
 
 ## Active Partial Tail
 
@@ -48,6 +48,17 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C13 — Fact/numeric index
+
+Status: `done`
+
+What closed it:
+
+- Added metric/scope/project -> sorted normalized value -> cell maintenance to `FactClaimStore`.
+- Routed numeric VERIFY candidate selection through the typed numeric index, with lexical fallback when the index has no typed hits.
+- Batched conflict-index numeric rebuild by metric/scope/project groups.
+- Added `make numeric-verify-index-check`; local 1M report passed with p95 `157.387ms`.
 
 ### EPIC-C17 — Performance regressions in CI
 

@@ -18,6 +18,7 @@ use super::{extract_numeric_values, normalized_numeric_equal, numeric_conflict, 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct FactClaimStore {
     records: BTreeMap<CellId, NumericFactRecord>,
+    index: NumericFactIndex,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -41,12 +42,11 @@ impl FactClaimStore {
     }
 
     pub fn from_records(records: impl IntoIterator<Item = NumericFactRecord>) -> Self {
-        Self {
-            records: records
-                .into_iter()
-                .map(|record| (record.cell_id, record))
-                .collect(),
+        let mut store = Self::default();
+        for record in records {
+            store.insert_record(record);
         }
+        store
     }
 
     pub fn record_from_payload(
@@ -80,17 +80,19 @@ impl FactClaimStore {
     }
 
     pub fn apply_record(&mut self, cell_id: CellId, record: Option<NumericFactRecord>) {
+        self.apply_tombstone(cell_id);
         if let Some(record) = record {
-            self.records.insert(cell_id, record);
-        } else {
-            self.records.remove(&cell_id);
+            self.insert_record(record);
         }
     }
 
     pub fn apply_tombstone(&mut self, cell_id: CellId) {
-        self.records.remove(&cell_id);
+        if let Some(record) = self.records.remove(&cell_id) {
+            self.index.remove(&record);
+        }
     }
 
+    #[cfg(test)]
     pub fn visible_records(&self, view: &AgentView) -> Vec<NumericFactRecord> {
         self.records
             .values()
@@ -127,7 +129,7 @@ impl FactClaimStore {
             .map(|item| item.cell_id)
             .collect::<BTreeSet<_>>();
 
-        for record in self.visible_records(view) {
+        for record in self.indexed_records_for_fact(fact, view, &fact_values) {
             let Some(matched_terms) = typed_claim_matched_terms(fact, &record) else {
                 continue;
             };
@@ -164,6 +166,223 @@ impl FactClaimStore {
                     evidence_value: record.value.clone(),
                 });
             }
+        }
+    }
+
+    pub(crate) fn indexed_cell_ids_for_fact(&self, fact: &str, view: &AgentView) -> Vec<CellId> {
+        if extract_temporal_query_range(fact).is_some() {
+            return Vec::new();
+        }
+        let fact_values = extract_numeric_values(fact);
+        if fact_values.is_empty() {
+            return Vec::new();
+        }
+        self.indexed_records_for_fact(fact, view, &fact_values)
+            .into_iter()
+            .map(|record| record.cell_id)
+            .collect()
+    }
+
+    fn insert_record(&mut self, record: NumericFactRecord) {
+        self.index.insert(&record);
+        self.records.insert(record.cell_id, record);
+    }
+
+    fn indexed_records_for_fact(
+        &self,
+        fact: &str,
+        view: &AgentView,
+        fact_values: &[NumericValue],
+    ) -> Vec<NumericFactRecord> {
+        let query = NumericFactQuery::from_fact(fact);
+        let mut cell_ids = BTreeSet::new();
+        for metric_key in self.index.matching_metric_keys(&query, view) {
+            let Some(value_buckets) = self.index.by_metric.get(&metric_key) else {
+                continue;
+            };
+            for (value_key, ids) in value_buckets {
+                if fact_values
+                    .iter()
+                    .any(|fact_value| value_key.is_comparable_with(fact_value))
+                {
+                    cell_ids.extend(ids.iter().copied());
+                }
+            }
+        }
+        cell_ids
+            .into_iter()
+            .filter_map(|cell_id| self.records.get(&cell_id).cloned())
+            .collect()
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct NumericFactIndex {
+    by_metric: BTreeMap<MetricIndexKey, BTreeMap<NumericValueKey, BTreeSet<CellId>>>,
+    metric_terms: BTreeMap<String, BTreeSet<MetricIndexKey>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct MetricIndexKey {
+    scope: String,
+    metric: String,
+    project: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct NumericValueKey {
+    scaled_value: u64,
+    currency: Option<String>,
+    unit: Option<String>,
+}
+
+#[derive(Clone, Debug, Default)]
+struct NumericFactQuery {
+    metric: Option<String>,
+    project: Option<String>,
+    terms: BTreeSet<String>,
+}
+
+impl NumericFactIndex {
+    fn insert(&mut self, record: &NumericFactRecord) {
+        let metric_key = MetricIndexKey::from_record(record);
+        let value_key = NumericValueKey::from_value(&record.value);
+        self.by_metric
+            .entry(metric_key.clone())
+            .or_default()
+            .entry(value_key)
+            .or_default()
+            .insert(record.cell_id);
+        for term in tokenize(&metric_key.metric) {
+            self.metric_terms
+                .entry(term)
+                .or_default()
+                .insert(metric_key.clone());
+        }
+    }
+
+    fn remove(&mut self, record: &NumericFactRecord) {
+        let metric_key = MetricIndexKey::from_record(record);
+        let value_key = NumericValueKey::from_value(&record.value);
+        if let Some(value_buckets) = self.by_metric.get_mut(&metric_key) {
+            let remove_bucket = if let Some(ids) = value_buckets.get_mut(&value_key) {
+                ids.remove(&record.cell_id);
+                ids.is_empty()
+            } else {
+                false
+            };
+            if remove_bucket {
+                value_buckets.remove(&value_key);
+            }
+            if value_buckets.is_empty() {
+                self.by_metric.remove(&metric_key);
+            }
+        }
+        if !self.by_metric.contains_key(&metric_key) {
+            for term in tokenize(&metric_key.metric) {
+                let remove_term = if let Some(keys) = self.metric_terms.get_mut(&term) {
+                    keys.remove(&metric_key);
+                    keys.is_empty()
+                } else {
+                    false
+                };
+                if remove_term {
+                    self.metric_terms.remove(&term);
+                }
+            }
+        }
+    }
+
+    fn matching_metric_keys(
+        &self,
+        query: &NumericFactQuery,
+        view: &AgentView,
+    ) -> Vec<MetricIndexKey> {
+        let mut candidates = BTreeSet::new();
+        if let Some(metric) = &query.metric {
+            for term in tokenize(metric) {
+                if let Some(keys) = self.metric_terms.get(&term) {
+                    candidates.extend(keys.iter().filter(|key| &key.metric == metric).cloned());
+                }
+            }
+        } else {
+            for term in &query.terms {
+                if let Some(keys) = self.metric_terms.get(term) {
+                    candidates.extend(keys.iter().cloned());
+                }
+            }
+        }
+
+        candidates.retain(|key| PolicyRewrite::allows_scope(view, scope_id(&key.scope)));
+        if let Some(project) = &query.project {
+            candidates.retain(|key| key.project.as_ref() == Some(project));
+        } else {
+            let project_matches = candidates
+                .iter()
+                .filter(|key| {
+                    key.project
+                        .as_ref()
+                        .map(|project| text_terms_intersect(project, &query.terms))
+                        .unwrap_or(false)
+                })
+                .cloned()
+                .collect::<BTreeSet<_>>();
+            if !project_matches.is_empty() {
+                candidates = project_matches;
+            } else {
+                candidates.retain(|key| key.project.is_none());
+            }
+        }
+        candidates.into_iter().collect()
+    }
+}
+
+impl MetricIndexKey {
+    fn from_record(record: &NumericFactRecord) -> Self {
+        Self {
+            scope: record.scope.trim().to_owned(),
+            metric: normalized_text(&record.metric).unwrap_or_default(),
+            project: record.project.as_deref().and_then(normalized_text),
+        }
+    }
+}
+
+impl NumericValueKey {
+    fn from_value(value: &NumericValue) -> Self {
+        Self {
+            scaled_value: value.scaled_value,
+            currency: value.currency.as_deref().and_then(normalized_text),
+            unit: value.unit.as_deref().and_then(normalized_text),
+        }
+    }
+
+    fn is_comparable_with(&self, value: &NumericValue) -> bool {
+        match (
+            &self.currency,
+            value.currency.as_deref().and_then(normalized_text),
+        ) {
+            (Some(_), Some(_)) => return true,
+            (Some(_), None) | (None, Some(_)) => return false,
+            (None, None) => {}
+        }
+        match (&self.unit, value.unit.as_deref().and_then(normalized_text)) {
+            (Some(left), Some(right)) => left == &right,
+            (Some(_), None) | (None, Some(_)) => false,
+            (None, None) => true,
+        }
+    }
+}
+
+impl NumericFactQuery {
+    fn from_fact(fact: &str) -> Self {
+        let body = FactBody::parse(fact.as_bytes());
+        Self {
+            metric: body.metric.as_deref().and_then(normalized_text),
+            project: body.project.as_deref().and_then(normalized_text),
+            terms: tokenize(fact)
+                .into_iter()
+                .filter(|term| extract_numeric_values(term).is_empty())
+                .collect(),
         }
     }
 }
@@ -206,6 +425,15 @@ fn typed_claim_matched_terms(fact: &str, record: &NumericFactRecord) -> Option<u
         .filter(|term| record_terms.contains(term))
         .count();
     (matched > 0).then_some(matched as u32)
+}
+
+fn normalized_text(value: &str) -> Option<String> {
+    let value = value.trim();
+    (!value.is_empty()).then(|| value.to_ascii_lowercase())
+}
+
+fn text_terms_intersect(value: &str, terms: &BTreeSet<String>) -> bool {
+    tokenize(value).iter().any(|term| terms.contains(term))
 }
 
 fn numeric_display(value: &NumericValue) -> String {

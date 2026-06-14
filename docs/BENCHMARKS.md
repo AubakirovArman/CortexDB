@@ -107,6 +107,22 @@ artifact that proves the local single-node engine path still has a complete
 machine-readable performance matrix before consensus or distributed rollout work
 expands the runtime.
 
+For the C13 metric-sorted numeric VERIFY index gate:
+
+```bash
+make numeric-verify-index-check
+```
+
+This builds a direct-checkpoint 1M typed numeric fact fixture and writes:
+
+```text
+target/numeric-verify-index/report.json
+```
+
+The report records direct checkpoint time, open/index-build time, and repeated
+numeric `VERIFY FACT` p50/p95/p99 latency. The default threshold is
+`NUMERIC_VERIFY_INDEX_MAX_P95_MS=250`.
+
 For larger database-scale baselines:
 
 ```bash
