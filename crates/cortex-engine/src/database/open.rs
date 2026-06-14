@@ -135,6 +135,7 @@ impl Database {
             live_search_store: stores.live_search_store,
             search_context_store: stores.search_context_store,
             session_index: stores.session_index,
+            memory_lifecycle_store: stores.memory_lifecycle_store,
             fact_claim_store: stores.fact_claim_store,
             conflict_index_store: stores.conflict_index_store,
             temporal_fact_store: stores.temporal_fact_store,

@@ -184,6 +184,7 @@ fn operator_executor_matches_direct_retrieve_pipeline_and_reports_trace() {
         vec![
             "BitmapIndexScan",
             "PermissionFilter",
+            "MemoryLifecycleFilter",
             "QualityFilter",
             "RankOp",
             "DedupOp",

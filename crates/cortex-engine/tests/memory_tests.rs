@@ -54,7 +54,7 @@ fn expire_memory_cells_excludes_expired_memory_from_aql_retrieve() {
     let mut db = Database::open(dir.path()).unwrap();
     db.put_knowledge_cell(CellId(1), memory_cell(100, Some(10)))
         .unwrap();
-    db.put_knowledge_cell(CellId(2), memory_cell(100, Some(200)))
+    db.put_knowledge_cell(CellId(2), memory_cell(100, None))
         .unwrap();
 
     db.expire_memory_cells(111).unwrap();

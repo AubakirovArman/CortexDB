@@ -37,16 +37,20 @@ source=agent:1
 body bytes...
 ```
 
-TTL enforcement is available through:
+TTL is storage policy, not a payload-scan helper. Memory descriptors are indexed
+by `cell_id` and `expires_at_unix_seconds`; AQL retrieve applies the lifecycle
+filter before payload materialization, and maintenance can tombstone expired
+memory through:
 
 ```rust
 let expired = db.expired_memory_cells(now_unix_seconds);
 let tombstoned = db.expire_memory_cells(now_unix_seconds)?;
 ```
 
-`expire_memory_cells` writes tombstones through the normal WAL path.
-After the expiry scan, tombstoned memory is excluded from AQL retrieve and
-survives restart through WAL replay.
+`expire_memory_cells` reads the maintained lifecycle index and writes tombstones
+through the normal WAL path. Expired memory is excluded from AQL retrieve even
+before the background maintenance pass tombstones it, and tombstones survive
+restart through WAL replay.
 
 Decay scoring is also deterministic and fixed-point:
 
@@ -54,8 +58,19 @@ Decay scoring is also deterministic and fixed-point:
 let scores = db.memory_decay_scores(now_unix_seconds);
 ```
 
-`freshness_q16` is `Q16_ONE` for permanent memory, decreases linearly over the
-TTL window, and becomes `Q16_ZERO` after expiry.
+`freshness_q16` is `Q16_ONE` for permanent memory or memory without enough
+timing metadata, decreases linearly over the TTL window, and becomes
+`Q16_ZERO` after expiry:
+
+```text
+expires_at = created_unix_seconds + ttl_seconds
+expired    = now_unix_seconds >= expires_at
+freshness  = remaining_ttl / ttl_seconds, encoded as Q16
+```
+
+`RankOp` applies the same freshness as a decay multiplier for memory cells, so
+two equally relevant temporary memories are ordered by remaining TTL while
+permanent memory and non-memory cells keep their normal ranking score.
 
 Feedback is stored as durable `type=feedback` cells and is used as a
 deterministic pre-pack ordering signal for ContextPack selection. The current
@@ -69,7 +84,7 @@ decay, stats, and explainable `feedback_bonus` ContextPack score components.
 | Add long-term memory | Permanent memory is represented by `type=memory` cells without a TTL, written through `REMEMBER` and persisted through WAL/checkpoint/replay. | Long-term memory is durable local storage, not a learned profile or autonomous memory manager. |
 | Add working memory | Working memory is represented by scoped short-TTL memory cells that can be retrieved into ContextPacks during active tasks. | Working memory is explicit and policy checked; CortexDB does not infer hidden session memory. |
 | Add private/shared memory | Private and shared memory are modeled through scopes such as `agent:<id>`, `project:<name>`, and `tenant:<name>`, then enforced by `AgentView` read/write scope policy. | The current boundary is local AgentView enforcement, not enterprise RBAC. |
-| Add TTL/decay | TTL expiry uses `expired_memory_cells` / `expire_memory_cells`, and decay uses fixed-point `memory_decay_scores`. | Expiry is deterministic; semantic decay and learned importance are future ranking work. |
+| Add TTL/decay | TTL expiry uses a descriptor-backed lifecycle index, `expired_memory_cells` / `expire_memory_cells`, query-time lifecycle filtering, rank decay, and fixed-point `memory_decay_scores`. | Expiry is deterministic; semantic decay and learned importance are future ranking work. |
 | Add feedback | Feedback is stored as durable `type=feedback` cells, influences ContextPack pre-pack ordering, decays deterministically, and appears as `feedback_bonus` in ContextPack explain output. | Feedback is a deterministic signal, not a reinforcement-learning loop. |
 
 ## Memory Classes
@@ -148,7 +163,9 @@ memory outside the caller's allowed boundary.
 ### TTL, Decay, And Feedback
 
 TTL and decay keep stale memory visible as an explicit policy outcome instead
-of a hidden ranking heuristic:
+of a hidden ranking heuristic. The lifecycle index is maintained from typed
+descriptors during open/replay, put/patch, and tombstone; lazy payload residency
+does not need to load payloads to decide expiry or decay:
 
 ```rust
 let expired = db.expired_memory_cells(now_unix_seconds);
@@ -180,11 +197,13 @@ examples/demo/agent_memory/run.sh
 - **Private/shared memory** — scope names and `AgentView` policy enforce
   private agent, shared project, and tenant memory boundaries.
 - **Automatic background TTL scheduling** — A background task runs every 60s on each
-  active tenant database, scans for expired memory cells, and tombstones them via WAL.
-  See `cortex-server/src/lib.rs` (background interval loop) and
-  `cortex-engine/src/memory.rs` (`expire_memory_cells`).
+  active tenant database, asks the lifecycle index for expired memory cells, and
+  tombstones them via WAL. See `cortex-server/src/lifecycle.rs`
+  (background interval loop) and `cortex-engine/src/memory.rs`
+  (`expire_memory_cells`).
 - **Deterministic decay scoring** — `memory_decay_scores` reports q16 freshness
-  without floating-point scoring.
+  without floating-point scoring or payload scans, and `RankOp` applies that
+  freshness as a deterministic multiplier for temporary memory cells.
 - **Feedback ordering** — ContextPack candidate ordering uses durable feedback
   scores before packing.
 - **Agent sessions** — explicit `session_id` memory cells provide bounded

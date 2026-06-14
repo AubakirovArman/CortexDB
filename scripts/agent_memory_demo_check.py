@@ -148,16 +148,14 @@ def main() -> int:
     args = parse_args()
     failures: list[str] = []
     validate_docs(failures)
-    tests = [
-        "cargo test -p cortex-engine --test memory_tests --test feedback_tests",
-    ]
+    test_cmd = "cargo test -p cortex-engine --test memory_tests --test memory_lifecycle_tests --test feedback_tests".split()
     if not failures:
-        run_cmd(["cargo", "test", "-p", "cortex-engine", "--test", "memory_tests", "--test", "feedback_tests"])
+        run_cmd(test_cmd)
     demo = run_demo(failures) if not failures else {}
     report = {
         "schema_version": "cortexdb.agent_memory_demo.report.v2",
         "status": "failed" if failures else "passed",
-        "tests": tests,
+        "tests": [" ".join(test_cmd)],
         "demo": demo,
         "failures": failures,
     }

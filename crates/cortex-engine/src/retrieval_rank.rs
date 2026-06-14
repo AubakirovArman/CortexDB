@@ -5,9 +5,16 @@ use cortex_aql::RetrievalWeights;
 use cortex_core::CellId;
 
 use crate::database::RetrievedCell;
+use crate::feedback::current_unix_seconds;
 use crate::query::CellMetadata;
 use crate::search::analyze_search_query;
 use crate::source_trust::SourceTrust;
+
+mod memory_decay;
+mod semantic;
+
+use memory_decay::memory_decay_q16;
+use semantic::{query_vector_from_task, semantic_dot_score};
 
 pub(crate) fn rank_retrieved_cells(
     mut cells: Vec<RetrievedCell>,
@@ -25,6 +32,7 @@ pub(crate) fn rank_retrieved_cells(
     let lexical_scores = lexical_bm25_scores_from_metadata(&metadata, task);
     let query_vector = query_vector_from_task(task);
     let recency_scores = recency_scores_q16_from_metadata(&metadata);
+    let now = current_unix_seconds();
     let rank_keys = cells
         .iter()
         .enumerate()
@@ -40,7 +48,9 @@ pub(crate) fn rank_retrieved_cells(
                 SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class)
                     .q16,
             );
-            let score = weighted_retrieval_score(lexical, semantic, recency, trust, weights);
+            let score = weighted_retrieval_score(lexical, semantic, recency, trust, weights)
+                .saturating_mul(memory_decay_q16(metadata, now))
+                / u64::from(u16::MAX);
             (score, index)
         })
         .collect::<Vec<_>>();
@@ -211,32 +221,6 @@ fn recency_scores_q16_from_metadata(metadata: &[CellMetadata]) -> Vec<u64> {
                 .unwrap_or(0)
         })
         .collect()
-}
-
-fn query_vector_from_task(task: &str) -> Option<Vec<i16>> {
-    task.lines().find_map(|line| {
-        let value = line
-            .trim()
-            .strip_prefix("query_vector=")
-            .or_else(|| line.trim().strip_prefix("vector="))?;
-        crate::search::parse_vector_literal(value).ok()
-    })
-}
-
-fn semantic_dot_score(payload: &[u8], query: &[i16]) -> u64 {
-    crate::search::vector::vectors_from_payload(payload)
-        .into_iter()
-        .filter(|view| view.vector.len() == query.len())
-        .map(|view| {
-            view.vector
-                .iter()
-                .zip(query)
-                .map(|(left, right)| i64::from(*left) * i64::from(*right))
-                .sum::<i64>()
-                .max(0) as u64
-        })
-        .max()
-        .unwrap_or(0)
 }
 
 fn weighted_retrieval_score(

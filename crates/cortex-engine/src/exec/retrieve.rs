@@ -3,9 +3,11 @@ use std::time::Instant;
 use cortex_aql::BoundRetrievePlan;
 
 mod budget;
+mod memory_lifecycle_filter;
 mod temporal_filter;
 
 use budget::apply_candidate_budget;
+use memory_lifecycle_filter::apply_memory_lifecycle_filter;
 use temporal_filter::apply_temporal_validity_filter;
 
 use super::pack::ExplainCollector;
@@ -49,6 +51,7 @@ pub fn execute_retrieve<P: CandidateResolver>(
 
     let candidates =
         apply_temporal_validity_filter(database, plan, provider, candidates, &mut collector);
+    let candidates = apply_memory_lifecycle_filter(database, provider, candidates, &mut collector);
 
     let limit = cost_model
         .recommended_candidate_limit

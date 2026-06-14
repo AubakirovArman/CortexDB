@@ -21,21 +21,22 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B11` — Memory lifecycle: TTL/decay as storage policy.
+`EPIC-B12` — Session/episodic memory contract.
 
-B11 exit steps:
+B12 exit steps:
 
-1. Define TTL, decay, and retention policy as storage behavior.
-2. Apply lifecycle during query and maintenance.
-3. Add expiration and decay tests.
-4. Mark done when memory lifecycle is deterministic and documented; then move to B12/B13.
+1. Define session/episodic memory as a public contract, not a private harness.
+2. Make session retrieval index-backed by descriptor/session metadata.
+3. Add append/retrieve session API examples and tests.
+4. Mark done when session paths are indexed and documented; then move to B13.
 
-B11 current state:
+B12 current state:
 
-- next; start by inventorying current TTL/decay paths in `memory.rs`,
-  `memory_accounting.rs`, session memory, and AgentView policy limits.
-- Do not reopen B10 temporal filtering unless a lifecycle test fails because of
-  temporal validity metadata.
+- next; start by inventorying `session.rs`, `session/index.rs`, session payload
+  descriptor fields, public examples, and any `snapshot_versions`/payload-scan
+  path used by session retrieval.
+- Do not reopen B11 memory lifecycle unless a session test proves the shared
+  lifecycle index is wrong.
 
 ## Active Partial Tail
 
@@ -80,6 +81,38 @@ C17 split state:
   is out of focus.
 
 ## Recently Closed
+
+### EPIC-B11 — Memory lifecycle as storage policy
+
+Status: `done`
+
+What closed it:
+
+- Added descriptor-backed `MemoryLifecycleStore` with `expiry -> cells` and
+  `cell_id -> lifecycle record` maps.
+- Replaced `expired_memory_cells` and `memory_decay_scores` snapshot/payload
+  scans with maintained lifecycle-index reads.
+- Wired lifecycle updates into open/replay, put/patch, and tombstone through
+  `DerivedStores` and `Database`.
+- Added physical `MemoryLifecycleFilter` before candidate budget and payload
+  materialization, so expired memory is excluded from AQL retrieve even before
+  the background TTL job tombstones it.
+- Added deterministic memory decay into `RankOp`: temporary memory scores are
+  multiplied by remaining TTL freshness while permanent memory keeps normal
+  ranking.
+- Updated `AGENT_MEMORY.md` and `INGESTION.md`.
+- Gates passed: `cargo test -p cortex-engine --test memory_tests`, `cargo test
+  -p cortex-engine --test memory_lifecycle_tests`, `cargo test -p
+  cortex-engine memory::lifecycle`, `cargo test -p cortex-server
+  v1_remember_ttl_expiry_disappears_from_context --all-features`,
+  `python3 scripts/agent_memory_demo_check.py`, and `cargo check -p
+  cortex-engine`; final gates: `cargo test --workspace --all-features`,
+  `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`.
+
+Remaining follow-up:
+
+- B12 owns session-specific indexing/API contract and any session retrieval
+  payload-scan debt.
 
 ### EPIC-B10 — Temporal validity columns and temporal queries
 

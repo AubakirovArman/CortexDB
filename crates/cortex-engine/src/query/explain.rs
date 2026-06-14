@@ -13,6 +13,10 @@ use crate::retrieval_quality::cell_version_meets_quality_thresholds;
 
 use super::{cache::AqlStatementKind, EngineAqlProvider};
 
+mod trace;
+
+use trace::operator_output_count;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AqlExplainReport {
     pub task: String,
@@ -145,9 +149,11 @@ impl Database {
             let bitmap_candidates = eval_bitmap_program(&plan.bitmap_program, &provider)?;
             let pin = self.pin_read_txn();
             let txn = pin.read_txn();
+            let now = current_unix_seconds();
             let after_quality = bitmap_candidates
                 .iter()
                 .filter_map(|candidate| provider.cell_id_for_candidate(*candidate))
+                .filter(|cell_id| self.memory_lifecycle_store.is_active_at(*cell_id, now))
                 .filter_map(|cell_id| self.memtable.read(txn, cell_id))
                 .filter(|version| {
                     cell_version_meets_quality_thresholds(version, &plan.quality_thresholds)
@@ -211,12 +217,4 @@ impl Database {
             }),
         })
     }
-}
-
-fn operator_output_count(operators: &[PhysicalOperatorTrace], name: &str) -> usize {
-    operators
-        .iter()
-        .find(|operator| operator.name == name)
-        .map(|operator| operator.output_count)
-        .unwrap_or_default()
 }

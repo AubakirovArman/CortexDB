@@ -233,10 +233,11 @@ derived from durable cells rather than request-local assumptions.
 
 ## Implemented
 
-- **TTL expiry/decay scanning** — `Database::expired_memory_cells` and
-  `Database::expire_memory_cells` scan snapshots for TTL-elapsed memory cells and
-  tombstone them through WAL. `Database::memory_decay_scores` returns fixed-point
-  freshness scores per cell. See `cortex-engine/src/memory.rs`.
+- **TTL expiry/decay indexing** — `Database::expired_memory_cells` and
+  `Database::expire_memory_cells` use the maintained memory lifecycle index to
+  find TTL-elapsed memory cells and tombstone them through WAL.
+  `Database::memory_decay_scores` returns fixed-point freshness scores per cell
+  without payload scans. See `cortex-engine/src/memory.rs`.
 
 ## Not Yet
 

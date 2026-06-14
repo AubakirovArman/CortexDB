@@ -13,6 +13,8 @@ use super::{CandidateResolver, Database, PinnedReadTxn, RetrievedCell};
 use crate::error::EngineResult;
 use crate::exec::{execute_retrieve, RetrieveExecutionReport};
 #[cfg(test)]
+use crate::feedback::current_unix_seconds;
+#[cfg(test)]
 use crate::retrieval_quality::cell_version_meets_quality_thresholds;
 use crate::retrieval_rank::rank_retrieved_cells;
 #[cfg(test)]
@@ -124,9 +126,11 @@ impl Database {
     ) -> EngineResult<Vec<RetrievedCell>> {
         let candidates = eval_bitmap_program(&plan.bitmap_program, provider)?;
         let txn = self.read_txn();
+        let now = current_unix_seconds();
         let cells = candidates
             .into_iter()
             .filter_map(|candidate| provider.cell_id_for_candidate(candidate))
+            .filter(|cell_id| self.memory_lifecycle_store.is_active_at(*cell_id, now))
             .filter_map(|cell_id| {
                 self.memtable
                     .read(txn, cell_id)

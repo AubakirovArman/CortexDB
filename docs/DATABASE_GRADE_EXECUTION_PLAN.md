@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B11` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-B11` is next. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-B12` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-B12` is next. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -70,7 +70,8 @@ enough to unblock the next dependency step.
    maintained on put/patch/tombstone/reopen, exposed through `/v1/conflicts`,
    and surfaced as ContextPack conflict anomalies without query-time full scan.
 23. `EPIC-B10` — temporal validity columns and temporal queries: done; descriptor-backed `TemporalValidityStore` feeds a physical `TemporalValidityFilter`, AQL supports `REQUIRE valid at`, and stale/future candidates are filtered before payload materialization.
-24. `EPIC-B11` — Memory lifecycle: TTL/decay as storage policy: next.
+24. `EPIC-B11` — Memory lifecycle: TTL/decay as storage policy: done; descriptor-backed lifecycle index, query-time TTL filter, WAL tombstone maintenance, and Q16 rank decay are in place.
+25. `EPIC-B12` — Session/episodic memory contract: next.
 
 ## Summary
 
@@ -833,20 +834,39 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-B11 — Memory lifecycle: TTL/decay как политика хранилища
 
-- status: `pending`
+- status: `done`
 - meta: Категория: storage · Приоритет: P1 · Горизонт: 90 days · Тип: productize
 - goal: «память агента с lifecycle» — категория-фича; должна иметь контракт и engine-исполнение.
 - problem: Проблема: memory.rs делает TTL/decay через full scan; expire — команда актора без планировщика; семантика не зафиксирована.
 - tasks:
-  - [ ] 1) TTL-индекс (expiry→cells), expire — фоновое задание writer-runtime (батчевые tombstone через WAL)
-  - [ ] 2) decay — формула в rank по created_at/last_access из descriptor
-  - [ ] 3) AGENT_MEMORY.md как контракт с формулами; golden-тесты «память через N дней ранжируется ниже/исчезает».
+  - [x] 1) TTL-индекс (expiry→cells), expire — фоновое задание writer-runtime (батчевые tombstone через WAL)
+  - [x] 2) decay — формула в rank по created_at/last_access из descriptor
+  - [x] 3) AGENT_MEMORY.md как контракт с формулами; golden-тесты «память через N дней ранжируется ниже/исчезает».
 - acceptance:
-  - [ ] 1) expire не сканирует базу (индекс, тест)
-  - [ ] 2) golden-тесты формулы decay
-  - [ ] 3) REMEMBER+TTL e2e через HTTP/SDK.
+  - [x] 1) expire не сканирует базу (индекс, тест)
+  - [x] 2) golden-тесты формулы decay
+  - [x] 3) REMEMBER+TTL e2e через HTTP/SDK.
 - files: memory.rs, memory_accounting.rs, session.rs; actor.rs (планировщик).
 - risks: фоновые tombstone vs читатели — через обычный WAL-путь, ничего специального. Зависимости: A02, A14. Эффект: agent memory — продукт с гарантиями.
+- evidence: Added descriptor-backed `MemoryLifecycleStore` with `expiry -> cells` and
+  `cell_id -> lifecycle record` maps. `Database::expired_memory_cells` and
+  `memory_decay_scores` now use the maintained store instead of
+  `snapshot_versions()`. The store is rebuilt from descriptors on open/replay,
+  maintained on put/patch/tombstone, and works with lazy payload residency
+  without materializing payloads. Added physical `MemoryLifecycleFilter` before
+  candidate budget and payload materialization, so expired memory is excluded
+  from AQL retrieve even before the background server TTL job tombstones it via
+  WAL. `RankOp` now applies the same Q16 freshness formula as a deterministic
+  decay multiplier for temporary memory cells. Docs updated in `AGENT_MEMORY.md`
+  and `INGESTION.md`.
+- gates: `cargo test -p cortex-engine --test memory_tests`; `cargo test -p
+  cortex-engine --test memory_lifecycle_tests`; `cargo test -p cortex-engine
+  memory::lifecycle`; `cargo test -p cortex-server
+  v1_remember_ttl_expiry_disappears_from_context --all-features`;
+  `python3 scripts/agent_memory_demo_check.py`; `cargo check -p
+  cortex-engine`; `cargo test --workspace --all-features`; `cargo clippy
+  --workspace --all-targets -- -D warnings`; `make check`.
+- follow-up: B12 owns the remaining session-specific scan/index contract.
 
 ### EPIC-B12 — Session/episodic memory contract
 

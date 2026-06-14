@@ -13,6 +13,7 @@ use crate::checkpoint::PersistedIndexCache;
 use crate::feedback::FeedbackIndex;
 use crate::graph::GraphIndexStore;
 use crate::lock::DatabaseLock;
+use crate::memory::MemoryLifecycleStore;
 use crate::options::{CompactionPolicy, EngineFeatureFlags, PayloadResidency};
 use crate::query::{cache::AqlQueryCache, AqlDeltaIndex, CellMetadata};
 use crate::retrieval_quality::TemporalValidityStore;
@@ -48,6 +49,7 @@ pub struct Database {
     pub(crate) live_search_store: LiveSearchStore,
     pub(crate) search_context_store: SearchContextStore,
     pub(crate) session_index: SessionIndex,
+    pub(crate) memory_lifecycle_store: MemoryLifecycleStore,
     pub(crate) fact_claim_store: FactClaimStore,
     pub(crate) conflict_index_store: ConflictIndexStore,
     pub(crate) temporal_fact_store: TemporalFactStore,

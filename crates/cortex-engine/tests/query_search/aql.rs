@@ -372,7 +372,6 @@ USING MODE balanced WHERE space = project:investments BUDGET 320 TOKENS LIMIT 10
         .iter()
         .map(|operator| operator.name.as_str())
         .collect::<Vec<_>>();
-
     assert_eq!(report.cost_model.recommended_candidate_limit, 2);
     assert_eq!(report.candidate_counts.after_quality, 4);
     assert_eq!(report.candidate_counts.returned_limit, 2);
@@ -381,6 +380,7 @@ USING MODE balanced WHERE space = project:investments BUDGET 320 TOKENS LIMIT 10
         vec![
             "BitmapIndexScan",
             "PermissionFilter",
+            "MemoryLifecycleFilter",
             "CheapRankBudgetOp",
             "QualityFilter",
             "RankOp",

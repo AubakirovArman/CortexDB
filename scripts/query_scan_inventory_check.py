@@ -14,7 +14,6 @@ QUERY_ADJACENT = {
 MAINTENANCE_OR_BACKFILL = {
     ("ingestion/dedup.rs", "self.snapshot_versions().into_iter().find_map(|version| {"): 1,
     ("ingestion/dedup.rs", "for version in self.snapshot_versions() {"): 1,
-    ("memory.rs", "self.snapshot_versions()"): 2,
     ("embedding_pipeline/backfill.rs", "embedding_expected_items_from_versions(&self.snapshot_versions())"): 1,
     ("embedding_pipeline/backfill.rs", "embedding_debt_report_from_versions(&self.snapshot_versions(), config)"): 1,
     ("embedding_pipeline/backfill.rs", "let versions = self.snapshot_versions();"): 1,
