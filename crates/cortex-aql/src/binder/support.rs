@@ -1,11 +1,14 @@
 use crate::agent_view::AgentView;
-use crate::ast::{DecimalLiteral, Requirement, TtlValue};
+use crate::ast::DecimalLiteral;
 use crate::policy::EffectiveRetrievePolicy;
 use crate::types::{RetrievalMode, Q16, Q16_ONE};
 
 use super::{
     BindError, BitmapOp, BitmapProgram, ContextPolicy, QualityThresholds, RetrievalWeights,
 };
+
+mod date;
+mod requirements;
 
 pub fn decimal_to_q16(literal: &DecimalLiteral<'_>) -> Result<Q16, BindError> {
     let Some((whole, fraction)) = literal.raw.split_once('.') else {
@@ -120,24 +123,7 @@ pub fn context_policy_for_mode(
     }
 }
 
-pub(super) fn apply_requirement(
-    thresholds: &mut QualityThresholds,
-    context: &mut ContextPolicy,
-    requirement: &Requirement<'_>,
-) -> Result<(), BindError> {
-    match requirement {
-        Requirement::RequireCitations => context.require_citations = true,
-        Requirement::MinConfidence(value) => {
-            thresholds.min_confidence_q16 =
-                thresholds.min_confidence_q16.max(decimal_to_q16(value)?);
-        }
-        Requirement::SourceTrust(value) => thresholds.min_source_trust_q16 = decimal_to_q16(value)?,
-        Requirement::Freshness(TtlValue::Seconds(seconds)) => {
-            thresholds.max_freshness_seconds = Some(*seconds);
-        }
-    }
-    Ok(())
-}
+pub(super) use requirements::apply_requirement;
 
 fn weights_from_parts(parts: [u32; 4]) -> RetrievalWeights {
     let total: u32 = parts.iter().sum();

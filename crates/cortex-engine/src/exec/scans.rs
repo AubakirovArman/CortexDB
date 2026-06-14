@@ -4,11 +4,9 @@ use cortex_aql::{eval_bitmap_program, BoundRetrievePlan};
 use cortex_core::memtable::ReadTxn;
 
 use super::trace::{elapsed_nanos, MaterializedOp, PhysicalOp, PhysicalOperatorTrace};
-use crate::database::{
-    cell_version_meets_quality_thresholds, CandidateResolver, Database, PinnedReadTxn,
-    RetrievedCell,
-};
+use crate::database::{CandidateResolver, Database, PinnedReadTxn, RetrievedCell};
 use crate::error::EngineResult;
+use crate::retrieval_quality::cell_version_meets_quality_thresholds;
 
 pub struct BitmapIndexScan {
     candidates: Vec<u32>,

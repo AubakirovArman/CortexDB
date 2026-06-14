@@ -1,8 +1,7 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use cortex_aql::BitmapProvider;
 use cortex_core::memtable::{MemTable, ReadTxn};
 use cortex_core::{CellDescriptor, CellId, CommitSeq};
 use cortex_storage::manifest::StorageManifest;
@@ -16,24 +15,13 @@ use crate::graph::GraphIndexStore;
 use crate::lock::DatabaseLock;
 use crate::options::{CompactionPolicy, EngineFeatureFlags, PayloadResidency};
 use crate::query::{cache::AqlQueryCache, AqlDeltaIndex, CellMetadata};
+use crate::retrieval_quality::TemporalValidityStore;
 use crate::search::{CorpusSynonymStore, HnswBuildConfig, LiveSearchStore, SearchContextStore};
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
 use crate::verification::{
     numeric::fact_claim::FactClaimStore, ConflictIndexStore, TemporalFactStore,
 };
-
-pub trait CandidateResolver: BitmapProvider {
-    fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId>;
-
-    fn lexical_candidates_for_terms(&self, _terms: &[String]) -> Option<BTreeSet<u32>> {
-        None
-    }
-
-    fn ranked_candidates_for_task(&self, _task: &str, _candidates: &[u32]) -> Option<Vec<u32>> {
-        None
-    }
-}
 
 #[derive(Debug)]
 pub struct Database {
@@ -63,6 +51,7 @@ pub struct Database {
     pub(crate) fact_claim_store: FactClaimStore,
     pub(crate) conflict_index_store: ConflictIndexStore,
     pub(crate) temporal_fact_store: TemporalFactStore,
+    pub(crate) temporal_validity_store: TemporalValidityStore,
     pub(crate) tool_index: ToolIndex,
     pub(crate) persisted_index_cache: Mutex<Option<PersistedIndexCache>>,
     pub(crate) active_read_pins: Arc<Mutex<BTreeMap<CommitSeq, usize>>>,

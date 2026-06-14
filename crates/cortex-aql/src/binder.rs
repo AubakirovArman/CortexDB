@@ -1,18 +1,19 @@
 use crate::agent_view::AgentView;
 use crate::ast::{AqlStatement, RawRemember, RawRetrieveContext, RawVerifyFact, TtlValue};
-use crate::policy::{PolicyError, PolicyValidator};
+use crate::policy::PolicyValidator;
 use crate::types::{
     BrainId, CellTypeId, MemoryType, RetrievalMode, ScopeId, StatusId, Q16, Q16_ZERO,
 };
-use thiserror::Error;
 mod catalog;
 mod diagnostics;
+mod errors;
 mod plan;
 mod support;
 mod where_bitmap;
 
 pub use catalog::{BrainCatalog, CellTypeCatalog, MemoryTypeCatalog, ScopeCatalog, StatusCatalog};
 pub use diagnostics::{BindDiagnostic, BindDiagnosticExport};
+pub use errors::BindError;
 pub use plan::{
     BoundPlan, BoundRememberPlan, BoundRetrievePlan, BoundVerifyFactPlan, ContextPolicy,
     QualityThresholds,
@@ -68,66 +69,6 @@ pub struct RetrievalWeights {
     pub semantic_q16: Q16,
     pub recency_q16: Q16,
     pub trust_q16: Q16,
-}
-
-#[derive(Debug, Error, PartialEq, Eq)]
-pub enum BindError {
-    #[error("unknown brain")]
-    UnknownBrain,
-    #[error("unknown scope")]
-    UnknownScope,
-    #[error("unknown bitmap")]
-    UnknownBitmap,
-    #[error("field is not filterable: {0}")]
-    FieldNotFilterable(String),
-    #[error("unsupported comparator")]
-    UnsupportedComparator,
-    #[error("unsupported literal")]
-    UnsupportedLiteral,
-    #[error("invalid memory type")]
-    InvalidMemoryType,
-    #[error("invalid decimal literal")]
-    InvalidDecimal,
-    #[error("invalid bitmap program")]
-    InvalidBitmapProgram,
-    #[error("statement is not supported by binder")]
-    UnsupportedStatement,
-    #[error("policy denied: {0:?}")]
-    PolicyDenied(PolicyError),
-}
-
-impl BindError {
-    pub fn code(&self) -> &'static str {
-        match self {
-            Self::UnknownBrain => "UnknownBrain",
-            Self::UnknownScope => "UnknownScope",
-            Self::UnknownBitmap => "UnknownBitmap",
-            Self::FieldNotFilterable(_) => "FieldNotFilterable",
-            Self::UnsupportedComparator => "UnsupportedComparator",
-            Self::UnsupportedLiteral => "UnsupportedLiteral",
-            Self::InvalidMemoryType => "InvalidMemoryType",
-            Self::InvalidDecimal => "InvalidDecimal",
-            Self::InvalidBitmapProgram => "InvalidBitmapProgram",
-            Self::UnsupportedStatement => "UnsupportedStatement",
-            Self::PolicyDenied(_) => "PolicyDenied",
-        }
-    }
-
-    pub fn safe_message(&self) -> &'static str {
-        match self {
-            Self::UnknownBrain => "requested brain is unavailable",
-            Self::UnknownScope => "requested scope is unavailable",
-            Self::UnknownBitmap => "required bitmap is unavailable",
-            Self::FieldNotFilterable(_) => "field is not filterable",
-            Self::UnsupportedComparator => "comparator is not supported for this field",
-            Self::UnsupportedLiteral => "literal is not supported for this field",
-            Self::InvalidMemoryType => "memory type is invalid",
-            Self::InvalidDecimal => "decimal literal is invalid",
-            Self::InvalidBitmapProgram => "bitmap program is invalid",
-            Self::UnsupportedStatement => "statement is not supported by binder",
-            Self::PolicyDenied(error) => error.safe_message(),
-        }
-    }
 }
 
 pub struct Binder<'a, C> {
@@ -186,6 +127,7 @@ impl<'a, C: AqlCatalog> Binder<'a, C> {
             min_confidence_q16: effective.min_required_confidence_q16,
             min_source_trust_q16: Q16_ZERO,
             max_freshness_seconds: None,
+            valid_at: None,
         };
         let mut context_policy = context_policy_for_mode(mode, self.view, &effective);
         for requirement in &raw.requirements {

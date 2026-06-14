@@ -9,6 +9,7 @@ use cortex_core::{CellId, CommitSeq};
 
 use super::*;
 use crate::query::{scope_id, EngineAqlProvider};
+use crate::retrieval_quality::cell_version_meets_quality_thresholds;
 
 fn test_view(modes: impl IntoIterator<Item = RetrievalMode>) -> AgentView {
     AgentView {
@@ -69,11 +70,9 @@ fn quality_threshold_fast_path_uses_materialized_descriptor() {
     );
     version.payload = b"scope=default\nstatus=ready\nsource_trust_q16=1000\n\nbody".to_vec();
     let thresholds = QualityThresholds {
-        min_confidence_q16: 0,
         min_source_trust_q16: 50_000,
-        max_freshness_seconds: None,
+        ..QualityThresholds::default()
     };
-
     assert!(cell_version_meets_quality_thresholds(&version, &thresholds));
 }
 

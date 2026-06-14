@@ -68,11 +68,7 @@ fn bound_retrieve_plan_has_inspectable_logical_nodes_before_and_after_policy() {
             candidate_limit: 25,
             require_citations: true,
         },
-        quality_thresholds: QualityThresholds {
-            min_confidence_q16: Q16_ZERO,
-            min_source_trust_q16: Q16_ZERO,
-            max_freshness_seconds: None,
-        },
+        quality_thresholds: QualityThresholds::default(),
         weights: cortex_aql::default_weights(RetrievalMode::Balanced),
     }));
 

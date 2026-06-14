@@ -1,7 +1,5 @@
 use std::borrow::Cow;
 
-use crate::types::RetrievalMode;
-
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct SourceSpan {
     pub offset: usize,
@@ -26,7 +24,6 @@ impl<T> Spanned<T> {
 pub struct AqlString<'a> {
     pub value: Cow<'a, str>,
 }
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Identifier<'a> {
     pub value: Cow<'a, str>,
@@ -76,6 +73,7 @@ pub enum Requirement<'a> {
     MinConfidence(DecimalLiteral<'a>),
     SourceTrust(DecimalLiteral<'a>),
     Freshness(TtlValue),
+    ValidAt(AqlString<'a>),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -94,7 +92,7 @@ pub enum TtlValue {
 pub struct RawRetrieveContext<'a> {
     pub task: Spanned<AqlString<'a>>,
     pub brain: Spanned<Identifier<'a>>,
-    pub mode: Option<Spanned<RetrievalMode>>,
+    pub mode: Option<Spanned<crate::types::RetrievalMode>>,
     pub budget_tokens: Option<Spanned<u64>>,
     pub candidate_limit: Option<Spanned<u32>>,
     pub where_clause: Option<Spanned<Condition<'a>>>,

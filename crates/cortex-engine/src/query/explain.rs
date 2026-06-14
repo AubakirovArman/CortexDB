@@ -1,7 +1,7 @@
 use cortex_aql::{eval_bitmap_program, AgentView, BitmapProvider, BrainId, RetrievalMode};
 
 use crate::context::ContextPackOptions;
-use crate::database::{cell_version_meets_quality_thresholds, CandidateResolver, Database};
+use crate::database::{CandidateResolver, Database};
 use crate::error::{EngineError, EngineResult};
 use crate::exec::{PackOp, PhysicalOperatorTrace};
 use crate::feedback::current_unix_seconds;
@@ -9,9 +9,9 @@ use crate::plan::{
     choose_retrieve_path, CostModelDecision, CostModelOptions, LogicalPlan, LogicalPlanReport,
     PolicyRewrite,
 };
+use crate::retrieval_quality::cell_version_meets_quality_thresholds;
 
-use super::cache::AqlStatementKind;
-use super::EngineAqlProvider;
+use super::{cache::AqlStatementKind, EngineAqlProvider};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AqlExplainReport {

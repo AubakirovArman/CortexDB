@@ -1,13 +1,12 @@
-use super::{BitmapProgram, RetrievalWeights};
 use crate::types::{BrainId, MemoryType, RetrievalMode, ScopeId, Q16};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct QualityThresholds {
     pub min_confidence_q16: Q16,
     pub min_source_trust_q16: Q16,
     pub max_freshness_seconds: Option<u64>,
+    pub valid_at: Option<String>,
 }
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ContextPolicy {
     pub budget_tokens: u32,
@@ -20,10 +19,10 @@ pub struct BoundRetrievePlan {
     pub brain_id: BrainId,
     pub task: String,
     pub mode: RetrievalMode,
-    pub bitmap_program: BitmapProgram,
+    pub bitmap_program: super::BitmapProgram,
     pub context_policy: ContextPolicy,
     pub quality_thresholds: QualityThresholds,
-    pub weights: RetrievalWeights,
+    pub weights: super::RetrievalWeights,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

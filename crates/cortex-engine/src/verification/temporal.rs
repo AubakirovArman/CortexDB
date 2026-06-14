@@ -128,7 +128,7 @@ pub(super) fn temporal_validity_from_payload(payload: &[u8]) -> TemporalValidity
     }
 }
 
-pub(super) fn temporal_validity_from_metadata(metadata: &CellMetadata) -> TemporalValidity {
+pub(crate) fn temporal_validity_from_metadata(metadata: &CellMetadata) -> TemporalValidity {
     TemporalValidity {
         valid_from: metadata
             .valid_from

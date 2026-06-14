@@ -1,11 +1,11 @@
 use cortex_core::memtable::{MemTable, ReadTxn};
 use cortex_core::{CellDescriptor, CellId, CommitSeq};
 
-use super::Database;
 use crate::feedback::FeedbackIndex;
 use crate::graph::GraphIndexStore;
 use crate::options::PayloadResidency;
 use crate::query::CellMetadata;
+use crate::retrieval_quality::TemporalValidityStore;
 use crate::search::{CorpusSynonymStore, LiveSearchStore, SearchContextStore};
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
@@ -23,6 +23,7 @@ pub(super) struct DerivedStores {
     pub(super) fact_claim_store: FactClaimStore,
     pub(super) conflict_index_store: ConflictIndexStore,
     pub(super) temporal_fact_store: TemporalFactStore,
+    pub(super) temporal_validity_store: TemporalValidityStore,
     pub(super) tool_index: ToolIndex,
 }
 
@@ -49,12 +50,16 @@ impl DerivedStores {
             fact_claim_store: FactClaimStore::from_memtable(memtable, txn),
             conflict_index_store: ConflictIndexStore::from_memtable(memtable, txn),
             temporal_fact_store: TemporalFactStore::from_memtable(memtable, txn),
+            temporal_validity_store: TemporalValidityStore::from_memtable(memtable, txn),
             tool_index: ToolIndex::from_memtable(memtable, txn),
         }
     }
 
     fn from_resident_payloads(memtable: &MemTable, txn: ReadTxn) -> Self {
-        let mut stores = Self::default();
+        let mut stores = Self {
+            temporal_validity_store: TemporalValidityStore::from_memtable(memtable, txn),
+            ..Self::default()
+        };
         for version in memtable
             .visible_iter(txn)
             .filter(|version| version.is_payload_resident())
@@ -108,6 +113,8 @@ impl DerivedStores {
             cell_id,
             TemporalFactStore::record_from_payload(cell_id, payload, descriptor),
         );
+        self.temporal_validity_store
+            .apply_descriptor(cell_id, descriptor);
         self.tool_index.apply_record(
             cell_id,
             ToolIndex::record_from_payload(cell_id, seq, payload, descriptor),
@@ -115,7 +122,7 @@ impl DerivedStores {
     }
 }
 
-impl Database {
+impl super::Database {
     pub(super) fn apply_derived_cell_record(
         &mut self,
         cell_id: CellId,
@@ -157,6 +164,8 @@ impl Database {
             cell_id,
             TemporalFactStore::record_from_payload(cell_id, payload, descriptor),
         );
+        self.temporal_validity_store
+            .apply_descriptor(cell_id, descriptor);
         self.tool_index.apply_record(
             cell_id,
             ToolIndex::record_from_payload(cell_id, seq, payload, descriptor),
@@ -174,6 +183,7 @@ impl Database {
         self.fact_claim_store.apply_tombstone(cell_id);
         self.conflict_index_store.apply_tombstone(cell_id);
         self.temporal_fact_store.apply_tombstone(cell_id);
+        self.temporal_validity_store.apply_tombstone(cell_id);
         self.tool_index.apply_tombstone(cell_id);
     }
 
@@ -188,18 +198,7 @@ impl Database {
         self.fact_claim_store = stores.fact_claim_store;
         self.conflict_index_store = stores.conflict_index_store;
         self.temporal_fact_store = stores.temporal_fact_store;
+        self.temporal_validity_store = stores.temporal_validity_store;
         self.tool_index = stores.tool_index;
-    }
-
-    pub(crate) fn rebuild_conflict_index_store_from_visible_payloads(&mut self) {
-        let pin = self.pin_read_txn();
-        let txn = pin.read_txn();
-        let mut store = ConflictIndexStore::default();
-        for version in self.memtable.visible_iter(txn) {
-            if let Ok(payload) = self.payload_for_version_uncached(version) {
-                store.apply_record(version.cell_id, &payload, &version.descriptor);
-            }
-        }
-        self.conflict_index_store = store;
     }
 }

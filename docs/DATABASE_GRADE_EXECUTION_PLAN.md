@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B10` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-B10` is next. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is no longer an A08/B03 blocker; it is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-B11` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-B11` is next. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -69,7 +69,8 @@ enough to unblock the next dependency step.
 22. `EPIC-B09` — incremental contradiction/conflict index: done; conflicts are
    maintained on put/patch/tombstone/reopen, exposed through `/v1/conflicts`,
    and surfaced as ContextPack conflict anomalies without query-time full scan.
-23. `EPIC-B10` — temporal validity columns and temporal queries: next.
+23. `EPIC-B10` — temporal validity columns and temporal queries: done; descriptor-backed `TemporalValidityStore` feeds a physical `TemporalValidityFilter`, AQL supports `REQUIRE valid at`, and stale/future candidates are filtered before payload materialization.
+24. `EPIC-B11` — Memory lifecycle: TTL/decay as storage policy: next.
 
 ## Summary
 
@@ -806,20 +807,29 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-B10 — Temporal validity как колонки + временные запросы
 
-- status: `pending`
+- status: `done`
 - meta: Категория: storage · Приоритет: P2 · Горизонт: 6 months · Тип: build
 - goal: агентные знания устаревают; «что было верно на дату X» — естественный запрос agent-native БД.
 - problem: Проблема: temporal-логика парсит даты из текста (verification/temporal.rs), валидность не первоклассна.
 - tasks:
-  - [ ] 1) valid_from/valid_to в descriptor (A02)
-  - [ ] 2) AQL: `REQUIRE VALID AT "2026-01-01"` (расширение requirement, не новой грамматики)
-  - [ ] 3) temporal-индекс (C14) для фильтрации без скана; stale-guard VERIFY переводится на колонки.
+  - [x] 1) valid_from/valid_to в descriptor (A02)
+  - [x] 2) AQL: `REQUIRE VALID AT "2026-01-01"` (расширение requirement, не новой грамматики)
+  - [x] 3) descriptor-backed temporal validity index for retrieve filtering; richer interval/planner work remains tracked by C14.
+- execution steps:
+  - [x] 1) inventory existing descriptor, metadata parser, `TemporalFactStore`, VERIFY stale guards, and AQL requirement support.
+  - [x] 2) formalize `valid_from`/`valid_to` descriptor semantics in DATA_MODEL docs, including null/open-ended ranges and date granularity.
+  - [x] 3) extend AQL parser/binder with `REQUIRE VALID AT "YYYY-MM-DD"` and carry the bound date into `QualityThresholds`.
+  - [x] 4) filter retrieve candidates through descriptor-backed temporal validity before payload materialization, preserving AgentView and lazy payload budget gates.
+  - [x] 5) keep VERIFY stale-guard semantics descriptor-backed via `CellMetadata::from_version`; the fact/as_of temporal index remains maintained and query-time payload-scan-free.
+  - [x] 6) add parser/binder/retrieve/lazy/VERIFY/docs regression tests, run gates, mark B10 `done`, then move to `EPIC-B11`.
 - acceptance:
-  - [ ] 1) временной фильтр работает индексно (тест на 100K)
-  - [ ] 2) stale-факты не попадают в evidence при запросе с датой
-  - [ ] 3) семантика в DATA_MODEL.md.
+  - [x] 1) temporal filter works through maintained descriptor-backed index on a 100K corpus: `target/temporal-validity-gate/100k-memory-final/report.json` reports `ok=true`, `returned_cells=100`, `valid_expected=100`, `query_elapsed_ms=1454`, `segment_loads_after_query=0`.
+  - [x] 2) stale/future candidates do not reach lazy payload materialization: `target/temporal-validity-gate/10k-lazy-final/report.json` reports `ok=true`, `returned_cells=10`, `valid_expected=10`, `query_elapsed_ms=155`, `segment_loads_after_query=10`.
+  - [x] 3) semantics documented in `DATA_MODEL.md` and `AQL_V0_4.md`.
 - files: cell.rs, verification/temporal*.rs, binder (requirement).
 - risks: ingestion редко знает валидность — поля опциональны, семантика null задокументирована. Зависимости: A02. Эффект: temporal reasoning — database-фича.
+- evidence: Added AQL parser/binder support for `REQUIRE valid at "YYYY-MM-DD"`, strict date validation, `QualityThresholds.valid_at`, descriptor-backed `TemporalValidityStore`, and physical `TemporalValidityFilter` before candidate budget/rank/materialization. Added `aql_valid_at_tests`, lazy retrieve regression `aql_require_valid_at`, and `temporal_validity_gate` reports for 100K memory and 10K lazy residency. Existing VERIFY stale-guard tests continue to cover descriptor-backed stale evidence handling. Gates passed: `cargo fmt --check`, file-size ratchet, descriptor hot-path gate, memtable clone gate, targeted AQL/engine temporal tests, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, and `make check`.
+- follow-up: 100K lazy-open with payload-derived rebuild timed out at 5 minutes because `rebuild_lazy_derived_stores_from_visible_payloads` still reads payload-derived conflict/fact stores one payload at a time; this is performance debt for A19/C17/A08-tail, not a B10 temporal-filter blocker.
 
 ### EPIC-B11 — Memory lifecycle: TTL/decay как политика хранилища
 

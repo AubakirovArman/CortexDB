@@ -21,23 +21,21 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B10` — Temporal validity as columns and temporal queries.
+`EPIC-B11` — Memory lifecycle: TTL/decay as storage policy.
 
-B10 exit steps:
+B11 exit steps:
 
-1. Inventory current temporal parsing paths and `TemporalFactStore` behavior.
-2. Define `valid_from`/`valid_to` descriptor semantics and migration behavior.
-3. Add AQL `REQUIRE VALID AT "<date>"` bind/execution semantics.
-4. Route stale-guard VERIFY/evidence filtering through temporal columns/indexes.
-5. Add DATA_MODEL docs plus restart/lazy/index regression tests.
-6. Mark done when temporal filtering is column/index-backed; then move to B11.
+1. Define TTL, decay, and retention policy as storage behavior.
+2. Apply lifecycle during query and maintenance.
+3. Add expiration and decay tests.
+4. Mark done when memory lifecycle is deterministic and documented; then move to B12/B13.
 
-B10 current state:
+B11 current state:
 
-- next; start by inventorying temporal payload parsing and existing maintained
-  temporal index hooks.
-- B10 should not reopen B09 conflict indexing unless a temporal/conflict
-  regression points directly at the maintained conflict store.
+- next; start by inventorying current TTL/decay paths in `memory.rs`,
+  `memory_accounting.rs`, session memory, and AgentView policy limits.
+- Do not reopen B10 temporal filtering unless a lifecycle test fails because of
+  temporal validity metadata.
 
 ## Active Partial Tail
 
@@ -82,6 +80,40 @@ C17 split state:
   is out of focus.
 
 ## Recently Closed
+
+### EPIC-B10 — Temporal validity columns and temporal queries
+
+Status: `done`
+
+What closed it:
+
+- Added AQL parser/binder support for `REQUIRE valid at "YYYY-MM-DD"` and
+  carried it into `QualityThresholds.valid_at`.
+- Added strict date validation and documented `valid_from`/`valid_to`
+  descriptor semantics in `DATA_MODEL.md` and `AQL_V0_4.md`.
+- Added maintained descriptor-backed `TemporalValidityStore`.
+- Added physical `TemporalValidityFilter` before candidate budget/rank/payload
+  materialization, so stale/future candidates are removed before payload reads.
+- Preserved VERIFY stale-guard semantics through descriptor-backed metadata and
+  kept the maintained `TemporalFactStore` query-time payload-scan-free.
+- Evidence:
+  `target/temporal-validity-gate/100k-memory-final/report.json` reports
+  `ok=true`, `returned_cells=100`, `valid_expected=100`,
+  `query_elapsed_ms=1454`, `segment_loads_after_query=0`.
+- Lazy payload evidence:
+  `target/temporal-validity-gate/10k-lazy-final/report.json` reports
+  `ok=true`, `returned_cells=10`, `valid_expected=10`,
+  `query_elapsed_ms=155`, `segment_loads_after_query=10`.
+- Gates passed: `cargo fmt --check`, file-size ratchet, descriptor hot-path
+  gate, memtable clone gate, targeted AQL/engine temporal tests,
+  `cargo test --workspace --all-features`, clippy with `-D warnings`, and
+  `make check`.
+
+Remaining follow-up:
+
+- 100K lazy-open still times out through the older payload-derived rebuild of
+  conflict/fact stores. Track that as A19/C17/A08-tail performance work, not as
+  a B10 correctness blocker.
 
 ### EPIC-B09 — Incremental contradiction/conflict index
 

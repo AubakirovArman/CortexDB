@@ -138,6 +138,7 @@ impl Database {
             fact_claim_store: stores.fact_claim_store,
             conflict_index_store: stores.conflict_index_store,
             temporal_fact_store: stores.temporal_fact_store,
+            temporal_validity_store: stores.temporal_validity_store,
             tool_index: stores.tool_index,
             persisted_index_cache: Mutex::new(None),
             active_read_pins: Arc::new(Mutex::new(BTreeMap::new())),
@@ -145,9 +146,7 @@ impl Database {
             _lock: lock,
             closed: false,
         };
-        if options.payload_residency == PayloadResidency::Lazy {
-            database.rebuild_conflict_index_store_from_visible_payloads();
-        }
+        database.rebuild_lazy_derived_stores_for_residency(options.payload_residency);
         database.resume_interrupted_ingestion_jobs()?;
         Ok(database)
     }

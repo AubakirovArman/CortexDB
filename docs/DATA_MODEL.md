@@ -109,8 +109,8 @@ materialized in `CellVersion` on replay/open.
 | `memory_type` | enum/string | No | Agent memory subtype. |
 | `ttl_seconds` | `Option<u64>` | No | Expiration policy for memory/lifecycle. |
 | `created_unix_seconds` | `Option<u64>` | No | Recency and freshness ranking. |
-| `valid_from` | `Option<String>` | No | Temporal validity start. |
-| `valid_to` | `Option<String>` | No | Temporal validity end. |
+| `valid_from` | `Option<String>` | No | Temporal validity start (`YYYY-MM-DD`, inclusive). |
+| `valid_to` | `Option<String>` | No | Temporal validity end (`YYYY-MM-DD`, inclusive). |
 | `source_trust_q16` | `Option<u16>` | No | Fixed-point trust score. |
 | `source_trust_class` | enum/string | No | Calibrated trust class. |
 | `source_id` | string | No | Structured provenance id. |
@@ -198,6 +198,29 @@ Lifecycle fields describe whether and when a cell should participate in reads:
 
 Expiration may write a tombstone. Temporal invalidity should normally filter a
 cell from evidence for a time-scoped query but does not delete it.
+
+Temporal validity is inclusive and open-ended:
+
+- missing `valid_from` means the cell is valid from the beginning of the
+  timeline;
+- missing `valid_to` means the cell remains valid until superseded or deleted;
+- both missing means the cell has no explicit temporal validity window and is
+  eligible for all `REQUIRE VALID AT` dates;
+- date strings use `YYYY-MM-DD`; shorter legacy year/month forms may still be
+  parsed by verification helpers, but AQL `REQUIRE VALID AT` requires a full
+  ISO date.
+
+AQL retrieval can request a temporal evidence slice:
+
+```aql
+RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
+WHERE space = project:investments
+REQUIRE valid at "2025-06-01";
+```
+
+The engine applies this filter from descriptor-backed metadata before payload
+materialization, so expired or not-yet-valid cells do not spend lazy payload
+reads.
 
 ## Provenance
 

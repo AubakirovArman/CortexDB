@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use cortex_aql::{
     default_weights, BitmapOp, BitmapProgram, BoundRetrievePlan, ContextPolicy, QualityThresholds,
-    RetrievalMode, Q16_ZERO,
+    RetrievalMode,
 };
 use cortex_storage::manifest::{
     ManifestCount, ManifestSegment, ManifestSegmentStats, ManifestTermDocumentFrequency,
@@ -198,11 +198,7 @@ fn plan(
             candidate_limit,
             require_citations: false,
         },
-        quality_thresholds: QualityThresholds {
-            min_confidence_q16: Q16_ZERO,
-            min_source_trust_q16: Q16_ZERO,
-            max_freshness_seconds: None,
-        },
+        quality_thresholds: QualityThresholds::default(),
         weights: default_weights(mode),
     }
 }

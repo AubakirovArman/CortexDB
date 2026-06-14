@@ -2,7 +2,6 @@ use cortex_aql::AgentView;
 use cortex_core::CellId;
 
 use crate::database::Database;
-use crate::options::PayloadResidency;
 use crate::query::CellMetadata;
 
 use super::{parse_temporal_date, TemporalDate};
@@ -37,20 +36,6 @@ pub struct TemporalFactIndex {
 
 impl Database {
     pub fn temporal_fact_index(&self, view: &AgentView) -> TemporalFactIndex {
-        if self.payload_residency == PayloadResidency::Lazy {
-            let records = self
-                .memtable
-                .visible_iter(self.read_txn())
-                .filter_map(|version| {
-                    let payload = self.payload_for_version(version).ok()?;
-                    TemporalFactStore::record_from_payload(
-                        version.cell_id,
-                        &payload,
-                        &version.descriptor,
-                    )
-                });
-            return TemporalFactStore::from_records(records).fact_index(view);
-        }
         self.temporal_fact_store.fact_index(view)
     }
 
@@ -235,6 +220,11 @@ mod tests {
         assert_eq!(latest.len(), 1);
         assert_eq!(latest[0].cell_id, CellId(1));
         assert_eq!(latest[0].value.as_deref(), Some("15000"));
+        assert_eq!(
+            db.payload_cache_stats().segment_loads,
+            0,
+            "maintained temporal index must not scan lazy payloads at query time"
+        );
     }
 
     fn view(scope: &str) -> AgentView {

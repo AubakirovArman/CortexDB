@@ -124,6 +124,7 @@ REQUIRE citations = true
 REQUIRE confidence >= 0.80
 REQUIRE source_trust >= 0.90
 REQUIRE freshness <= 86400 SECONDS
+REQUIRE valid at "2025-06-01"
 ```
 
 Decimal thresholds are deterministic decimal literals. They are converted to
@@ -132,7 +133,10 @@ Q16 during binding. Values greater than `1.0` are bind errors, not silent clamps
 Runtime semantics are frozen in
 [`AQL_REQUIRE_SEMANTICS.md`](archive/AQL_REQUIRE_SEMANTICS.md): citation requirements
 flow into `ContextPack`, while confidence, source-trust, and freshness are hard
-candidate filters.
+candidate filters. `valid at` is also a hard candidate filter: the date must be
+an ISO `YYYY-MM-DD` literal, and candidates with descriptor-backed
+`valid_from`/`valid_to` ranges outside that inclusive date are excluded before
+lazy payload materialization.
 
 ## VERIFY FACT
 

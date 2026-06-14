@@ -2,6 +2,12 @@ use std::time::Instant;
 
 use cortex_aql::BoundRetrievePlan;
 
+mod budget;
+mod temporal_filter;
+
+use budget::apply_candidate_budget;
+use temporal_filter::apply_temporal_validity_filter;
+
 use super::pack::ExplainCollector;
 use super::scans::{BitmapIndexScan, PermissionFilter, QualityFilter};
 use super::trace::{drain, elapsed_nanos, MaterializedOp, PhysicalOp, PhysicalOperatorTrace};
@@ -40,6 +46,9 @@ pub fn execute_retrieve<P: CandidateResolver>(
     let mut permission_filter = PermissionFilter::new(provider, candidates);
     let candidates = drain(&mut permission_filter);
     collector.push(permission_filter.trace());
+
+    let candidates =
+        apply_temporal_validity_filter(database, plan, provider, candidates, &mut collector);
 
     let limit = cost_model
         .recommended_candidate_limit
@@ -111,40 +120,6 @@ fn candidate_source<P: CandidateResolver>(
         }
     }
     bitmap_first_candidates(plan, provider, collector)
-}
-
-fn apply_candidate_budget<P: CandidateResolver>(
-    plan: &BoundRetrievePlan,
-    provider: &P,
-    candidates: Vec<u32>,
-    limit: usize,
-    collector: &mut ExplainCollector,
-) -> Vec<u32> {
-    if candidates.len() <= limit || limit == 0 {
-        return candidates;
-    }
-    let started = Instant::now();
-    let Some(mut ranked) = provider.ranked_candidates_for_task(&plan.task, &candidates) else {
-        return candidates;
-    };
-    let input_count = ranked.len();
-    ranked.truncate(payload_fetch_limit(limit, input_count));
-    let mut op = MaterializedOp::new(
-        "CheapRankBudgetOp",
-        input_count,
-        ranked,
-        elapsed_nanos(started),
-    );
-    let candidates = drain(&mut op);
-    collector.push(op.trace());
-    candidates
-}
-
-fn payload_fetch_limit(limit: usize, available: usize) -> usize {
-    limit
-        .saturating_mul(2)
-        .max(limit.saturating_add(2))
-        .min(available)
 }
 
 fn bitmap_first_candidates<P: CandidateResolver>(
