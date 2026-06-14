@@ -184,8 +184,11 @@ Core Alpha enforces this mainly through AQL binder policy and metadata-derived
 scope filters. The target model enforces it by intersecting permission bitmaps
 inside physical scans before payload reads.
 
-`brain_id` is the logical namespace for future multi-brain operation. Until
-multi-brain semantics are implemented, `default` is the stable namespace.
+`brain_id` is not an isolation namespace in the current storage model.
+`default = BrainId(1)` is the only real brain. Non-default AQL brain names are
+deprecated aliases for `BrainId(1)` and must not be presented as separate
+storage, permission, statistics, or index namespaces. Use scopes and tenants for
+isolation; see [`BRAIN_SEMANTICS.md`](BRAIN_SEMANTICS.md).
 
 ## Lifecycle
 
@@ -275,12 +278,14 @@ Experimental:
 - typed temporal validity columns;
 - fact/numeric indexes;
 - lazy payload residency;
-- multi-brain semantics beyond `default`.
+- real multi-brain semantics beyond deprecated aliases.
 
 ## Related Documents
 
 - [`CELL_METADATA_MODEL.md`](CELL_METADATA_MODEL.md) — current payload metadata
   serialization.
+- [`BRAIN_SEMANTICS.md`](BRAIN_SEMANTICS.md) — current single-brain contract and
+  migration plan for deprecated aliases.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — storage and query architecture.
 - [`CONTEXT_PACK.md`](CONTEXT_PACK.md) — ContextPack behavior.
 - [`AQL_V0_5.md`](AQL_V0_5.md) — current REMEMBER write contract.

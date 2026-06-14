@@ -4,6 +4,13 @@ AQL v0.5 keeps the v0.4 grammar and freezes the runtime contract for
 `REMEMBER`. Parser, binder, and diagnostics from [`AQL_V0_4.md`](AQL_V0_4.md)
 remain valid unless this document states a stricter write-path rule.
 
+## Brain Target
+
+The current data model is single-brain. `default = BrainId(1)` is the only real
+brain namespace. Non-default AQL brain identifiers are deprecated aliases for
+`BrainId(1)` and do not provide isolation. Migration guidance is in
+[`BRAIN_SEMANTICS.md`](BRAIN_SEMANTICS.md).
+
 ## REMEMBER
 
 ```sql

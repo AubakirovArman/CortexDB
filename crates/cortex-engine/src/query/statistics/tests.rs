@@ -4,6 +4,7 @@ use cortex_storage::manifest::{
     StorageManifest,
 };
 
+use super::super::brain::DEFAULT_BRAIN;
 use super::*;
 
 #[test]

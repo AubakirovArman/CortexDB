@@ -30,6 +30,8 @@ evidence snapshots, benchmark experiments, and release working notes live in
 
 - [`AQL_V0_5.md`](AQL_V0_5.md) - current AQL REMEMBER write contract.
 - [`AQL_V0_4.md`](AQL_V0_4.md) - frozen AQL grammar.
+- [`BRAIN_SEMANTICS.md`](BRAIN_SEMANTICS.md) - single-brain contract and
+  deprecated alias migration plan.
 - [`CONTEXT_PACK.md`](CONTEXT_PACK.md) - ContextPack contract.
 - [`VERIFY_FACT.md`](VERIFY_FACT.md) - deterministic verification.
 - [`AGENT_MEMORY.md`](AGENT_MEMORY.md) - agent memory behavior.

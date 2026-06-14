@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B20` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-C14`, `EPIC-C15`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B14`, `EPIC-B15`, `EPIC-B16`, `EPIC-B17`, `EPIC-B18`, `EPIC-B19`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is closed with interval temporal validity index evidence. `EPIC-C15` is closed with compact graph adjacency, bounded visit-budget traversal, and 100K graph p95 evidence. `EPIC-B14` is closed with a stable ContextPack cell explain contract, CLI `explain --cell-id`, `docs/EXPLAIN.md`, schema/OpenAPI alignment, and golden coverage. `EPIC-B15` is closed with CLI/API `EXPLAIN ANALYZE` flags, actual/estimated operator trace fields, OpenAPI/SDK alignment, and docs. `EPIC-B17` is closed with typed tool catalog records, maintained list and term indexes, lazy open-time rebuild, `docs/TOOL_REGISTRY.md`, and a `make check` gate. `EPIC-B18` is closed with incremental graph/provenance indexing, indexed VERIFY source-support, lazy graph-query no-scan behavior, `docs/KNOWLEDGE_GRAPH.md`, and a `make check` gate. `EPIC-B19` is closed with the `AQL_V0_5` REMEMBER write contract, manifest-backed ID allocation, and remember-retrieve-verify regression coverage. `EPIC-B20` is next. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
+Current pointer: `EPIC-C01` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-C14`, `EPIC-C15`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B14`, `EPIC-B15`, `EPIC-B16`, `EPIC-B17`, `EPIC-B18`, `EPIC-B19`, `EPIC-B20`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is closed with interval temporal validity index evidence. `EPIC-C15` is closed with compact graph adjacency, bounded visit-budget traversal, and 100K graph p95 evidence. `EPIC-B14` is closed with a stable ContextPack cell explain contract, CLI `explain --cell-id`, `docs/EXPLAIN.md`, schema/OpenAPI alignment, and golden coverage. `EPIC-B15` is closed with CLI/API `EXPLAIN ANALYZE` flags, actual/estimated operator trace fields, OpenAPI/SDK alignment, and docs. `EPIC-B17` is closed with typed tool catalog records, maintained list and term indexes, lazy open-time rebuild, `docs/TOOL_REGISTRY.md`, and a `make check` gate. `EPIC-B18` is closed with incremental graph/provenance indexing, indexed VERIFY source-support, lazy graph-query no-scan behavior, `docs/KNOWLEDGE_GRAPH.md`, and a `make check` gate. `EPIC-B19` is closed with the `AQL_V0_5` REMEMBER write contract, manifest-backed ID allocation, and remember-retrieve-verify regression coverage. `EPIC-B20` is closed with the single-brain/deprecated-alias decision, `docs/BRAIN_SEMANTICS.md`, and AQL catalog tests/gate. `EPIC-C01` is next. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -84,7 +84,8 @@ enough to unblock the next dependency step.
 34. `EPIC-B18` — Incremental knowledge graph/provenance index: done.
 35. `EPIC-C15` — Incremental graph index performance: done.
 36. `EPIC-B19` — REMEMBER write-path policy formalization: done.
-37. `EPIC-B20` — Multi-brain semantics or removal: next.
+37. `EPIC-B20` — Multi-brain semantics or removal: done.
+38. `EPIC-C01` — Term interning + compact postings: next.
 
 ## Summary
 
@@ -997,7 +998,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - gates: `cargo fmt --check`; `cargo test -p cortex-cli aql_command_explain_analyze_flag_reports_actual_operator_counts`; `cargo test -p cortex-server v1_aql_explain_analyze_query_flag_reports_execution_trace`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `cargo test -p cortex-cli`; `make openapi-contract-check`; `make check`.
 - remaining: none for B15 acceptance; deeper tool-catalog semantics are closed by B17.
 - risks: `estimated_output_count` is nullable where no planner estimate exists; actual counts are always present for analyzed operators.
-- next exit step: `EPIC-B19` is now closed; move to `EPIC-B20` — Multi-brain semantics or removal.
+- next exit step: `EPIC-B20` is now closed; current pointer is `EPIC-C01`.
 
 ### EPIC-B16 — Формализованный Policy Rewrite + доказательство инварианта
 
@@ -1081,23 +1082,27 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - gates: `cargo fmt --check`; `cargo test -p cortex-storage manifest_id_allocators_roundtrip_and_reserve`; `cargo test -p cortex-engine --test remember_write_contract_tests`; `cargo test -p cortex-server ingest`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `make openapi-contract-check`; `make check`.
 - remaining: none for B19.
 - risks: manifest allocation can leave intentional ID gaps if a write fails after cursor persistence; IDs are not reused. Зависимости: A15. Эффект: полный агентный read-write цикл формализован.
-- next exit step: move to `EPIC-B20` — Multi-brain semantics or removal.
+- next exit step: `EPIC-B20` is now closed; current pointer is `EPIC-C01`.
 
 ### EPIC-B20 — Multi-brain: реальная семантика или удаление
 
-- status: `pending`
+- status: `done`
 - meta: Категория: AQL · Приоритет: P2 · Горизонт: 6 months · Тип: refactor
 - goal: грамматика обещает БРЕЙНЫ, движок живёт с DEFAULT_BRAIN=1 — «синтаксис без семантики» хуже обоих вариантов.
 - problem: Проблема: query.rs:32 `const DEFAULT_BRAIN: BrainId = BrainId(1)`.
 - tasks:
-  - [ ] 1) решение (opinionated: brains = изолированные неймспейсы индексов внутри тенанта — полезно для разделения «знания/память/инструменты»)
-  - [ ] 2) если да: каталог брейнов, scope-уникальность внутри брейна, статистика per brain
-  - [ ] 3) если нет: депрекация в грамматике к v1.0.
+  - [x] 1) решение: current product scope is single-brain; non-default brain names are deprecated aliases for `BrainId(1)`.
+  - [x] 2) если да: не делаем real multi-brain без storage-format epic; каталог/персистентность не добавляются.
+  - [x] 3) если нет: депрекация в грамматике к v1.0 documented in `BRAIN_SEMANTICS.md`.
 - acceptance:
-  - [ ] 1) решение задокументировано в DATA_MODEL.md
-  - [ ] 2) либо работающие брейны с тестами, либо migration-план удаления.
-- files: query/catalog.rs, binder.
-- risks: расширение модели — не делать до A-блока. Зависимости: A02, A12. Эффект: грамматика перестаёт врать.
+  - [x] 1) решение задокументировано в DATA_MODEL.md
+  - [x] 2) migration-план удаления/упрощения есть; current alias behavior covered by tests/gate.
+- files: `crates/cortex-engine/src/query/brain.rs`, `crates/cortex-engine/src/query/catalog.rs`, `crates/cortex-engine/src/query/statistics.rs`, `crates/cortex-engine/tests/brain_semantics.rs`, `docs/BRAIN_SEMANTICS.md`, `docs/DATA_MODEL.md`, `scripts/multi_brain_contract_check.py`, `mk/core.mk`.
+- evidence: CortexDB now documents `default = BrainId(1)` as the only real brain. Runtime AQL and statistics catalogs share `resolve_single_brain_name`, preserving compatibility by mapping non-empty legacy aliases to `BrainId(1)` while documenting them as deprecated, not isolated namespaces. `brain_semantics` tests prove default and legacy aliases return the same cells and still require `AgentView.readable_brains` to contain `BrainId(1)`. `make check` includes `multi-brain-contract-check`.
+- gates: `cargo fmt --check`; `cargo test -p cortex-engine --test brain_semantics`; `cargo test -p cortex-engine query::brain`; `python3 scripts/multi_brain_contract_check.py`.
+- remaining: none for B20.
+- risks: non-default brain aliases remain accepted for compatibility until v1.0; they are explicitly not isolation boundaries. Зависимости: A02, A12. Эффект: грамматика перестаёт обещать fake multi-brain semantics.
+- next exit step: move to `EPIC-C01` — Term interning + compact postings.
 
 ## Block C — Indexing, retrieval, and performance
 

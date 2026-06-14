@@ -3,11 +3,11 @@ use std::collections::BTreeSet;
 use cortex_aql::{AqlCatalog, BitmapHandle, BrainId, CellTypeId, MemoryType, ScopeId, StatusId};
 use cortex_storage::manifest::{ManifestCount, ManifestSegmentStats, StorageManifest};
 
+use super::brain::resolve_single_brain_name;
 use super::metadata::{
     cell_type_handle, cell_type_id, memory_type_handle, scope_handle, scope_id, status_handle,
     status_id,
 };
-use super::DEFAULT_BRAIN;
 use crate::database::Database;
 
 mod zone_maps;
@@ -165,8 +165,8 @@ impl<'a> EngineAqlStatsCatalog<'a> {
 }
 
 impl AqlCatalog for EngineAqlStatsCatalog<'_> {
-    fn resolve_brain(&self, _name: &str) -> Option<BrainId> {
-        Some(DEFAULT_BRAIN)
+    fn resolve_brain(&self, name: &str) -> Option<BrainId> {
+        resolve_single_brain_name(name)
     }
 
     fn resolve_scope(&self, _brain: BrainId, name: &str) -> Option<ScopeId> {

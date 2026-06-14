@@ -6,16 +6,17 @@ use cortex_aql::{
 };
 use cortex_core::CellId;
 
+use super::brain::resolve_single_brain_name;
 use super::metadata::{
     cell_type_handle, cell_type_id, memory_type_handle, scope_handle, scope_id, status_handle,
     status_id,
 };
-use super::{EngineAqlIndex, DEFAULT_BRAIN};
+use super::EngineAqlIndex;
 use crate::database::CandidateResolver;
 
 impl AqlCatalog for EngineAqlIndex {
-    fn resolve_brain(&self, _name: &str) -> Option<BrainId> {
-        Some(DEFAULT_BRAIN)
+    fn resolve_brain(&self, name: &str) -> Option<BrainId> {
+        resolve_single_brain_name(name)
     }
 
     fn resolve_scope(&self, _brain: BrainId, name: &str) -> Option<ScopeId> {

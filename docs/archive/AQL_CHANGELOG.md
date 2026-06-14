@@ -19,6 +19,8 @@ Frozen behavior:
 - REMEMBER cell IDs use manifest-backed `memory_cell_cursors`.
 - Generic ingest IDs use manifest-backed `next_cell_id` outside the high-bit
   memory namespace.
+- `default = BrainId(1)` is the only real brain; non-default brain names are
+  deprecated aliases.
 - The AQL grammar remains the v0.4 grammar.
 
 Evidence:

@@ -373,9 +373,10 @@ Exit steps:
 
 Exit steps:
 1. Decide whether BrainId is real product scope or removed/simplified.
-2. If kept, define persistence, permission, and query semantics.
-3. Add tests for cross-brain isolation.
-4. Mark done when the semantics are explicit; then move to E08/F08.
+2. If removed/simplified, document `default = BrainId(1)` and deprecated alias
+   migration.
+3. Add tests/gates proving current AQL catalog behavior matches the decision.
+4. Mark done when the semantics are explicit; then move to C01.
 
 ## Block C — Indexing, retrieval, and performance
 

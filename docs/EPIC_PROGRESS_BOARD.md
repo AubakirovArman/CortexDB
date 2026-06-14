@@ -20,18 +20,19 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B20` — Multi-brain semantics or removal.
+`EPIC-C01` — Term interning + compact postings.
 
-B20 exit steps:
+C01 exit steps:
 
-1. Decide whether brains are real isolated namespaces or deprecated syntax.
-2. If kept, define brain catalog/scope uniqueness/statistics semantics.
-3. If removed, document the migration/deprecation path.
-4. Mark done when `DATA_MODEL.md` and tests/migration plan reflect the decision.
+1. Inventory lexical index term/posting structures and memory costs.
+2. Add term dictionary/interning for lexical postings.
+3. Preserve query semantics with regression tests.
+4. Mark done when postings use compact term ids and C01 gates pass.
 
-B20 current state:
+C01 current state:
 
 - next.
+- Do not reopen B20 unless `BRAIN_SEMANTICS.md` or alias tests regress.
 - Do not reopen B19 unless REMEMBER write contract or allocation tests regress.
 - Do not reopen C15 unless graph traversal budget accounting or 100K p95
   evidence regresses.
@@ -48,6 +49,17 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-B20 — Multi-brain semantics or removal
+
+Status: `done`
+
+What closed it:
+
+- Added `docs/BRAIN_SEMANTICS.md`: `default = BrainId(1)` is the only real brain.
+- Documented non-default brain names as deprecated aliases, not isolation namespaces.
+- Routed runtime/statistics AQL catalogs through `resolve_single_brain_name`.
+- Added `brain_semantics` tests and `multi-brain-contract-check` in `make check`.
 
 ### EPIC-B19 — REMEMBER write-path policy formalization
 
@@ -811,9 +823,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on B20 only:
+Work on C01 only:
 
-1. decide whether multi-brain is real namespace semantics or deprecated syntax;
-2. document the choice in `DATA_MODEL.md`;
-3. add tests or a migration/removal plan for the chosen path;
-4. move to the next ordered epic after B20 acceptance is closed.
+1. inventory lexical term/posting memory layout;
+2. implement compact term ids/interning;
+3. keep lexical/AQL retrieval semantics unchanged under tests;
+4. move to the next ordered epic after C01 acceptance is closed.

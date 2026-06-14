@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+mod brain;
 pub(crate) mod cache;
 mod candidates;
 mod catalog;
@@ -13,7 +14,7 @@ mod provider;
 mod render;
 mod statistics;
 mod verify_explain;
-use cortex_aql::{AgentView, BitmapHandle, BoundPlan, BrainId};
+use cortex_aql::{AgentView, BitmapHandle, BoundPlan};
 use cortex_core::CellId;
 
 use crate::database::{Database, RetrievedCell};
@@ -27,7 +28,6 @@ pub use metadata::{scope_id, CellMetadata, SourceRef};
 pub use provider::EngineAqlProvider;
 pub use statistics::DatabaseStatistics;
 pub use verify_explain::AqlVerifyExplainReport;
-const DEFAULT_BRAIN: BrainId = BrainId(1);
 
 #[derive(Clone, Debug, Default)]
 pub struct EngineAqlIndex {
