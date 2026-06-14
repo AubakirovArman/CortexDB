@@ -5,6 +5,10 @@ use cortex_core::CellId;
 use crate::query::metadata::CellMetadata;
 use crate::typed_body::{EntityBody, RelationBody};
 
+use super::index_helpers::{
+    canonicalize_index, fact_cell_endpoint, insert_cell_id_sorted, insert_entity_sorted,
+    remove_empty_values, sort_edges,
+};
 use super::types::{GraphEdge, GraphEdgeKind, GraphEntity, GraphSourceRef, KnowledgeGraphIndex};
 
 impl KnowledgeGraphIndex {
@@ -28,7 +32,7 @@ impl KnowledgeGraphIndex {
     ) -> Self {
         let mut index = Self::default();
         for (cell_id, payload, metadata) in records {
-            index.index_record(cell_id, payload, metadata);
+            index.add_record(cell_id, payload, metadata);
         }
         index.sort();
         index
@@ -41,13 +45,16 @@ impl KnowledgeGraphIndex {
         metadata: &CellMetadata,
     ) {
         self.remove_cell(cell_id);
+        self.add_record(cell_id, payload, metadata);
+    }
+
+    pub(super) fn add_record(&mut self, cell_id: CellId, payload: &[u8], metadata: &CellMetadata) {
         self.index_source_ref(cell_id, metadata);
         match metadata.cell_type.as_str() {
             "entity" => self.index_entity(cell_id, payload, metadata),
             "relation" => self.index_relation(cell_id, payload),
             _ => {}
         }
-        self.sort();
     }
 
     pub(crate) fn remove_cell(&mut self, cell_id: CellId) {
@@ -55,10 +62,12 @@ impl KnowledgeGraphIndex {
             entities.retain(|entity| entity.entity_cell_id != cell_id);
             entities.is_empty()
         });
-        remove_empty_values(&mut self.edges_by_entity, |edges| {
-            edges.retain(|edge| edge.relation_cell_id != cell_id);
-            edges.is_empty()
-        });
+        if let Some(edge) = self.edges_by_id.remove(&cell_id) {
+            self.remove_edge_id_for_entity(&edge.subject, cell_id);
+            if edge.object != edge.subject {
+                self.remove_edge_id_for_entity(&edge.object, cell_id);
+            }
+        }
         for edges in self.edges_by_kind.values_mut() {
             edges.remove(&cell_id);
         }
@@ -82,10 +91,22 @@ impl KnowledgeGraphIndex {
     }
 
     pub fn neighbors(&self, entity_name: &str) -> Vec<GraphEdge> {
-        self.edges_by_entity
+        self.neighbor_edge_ids(entity_name)
+            .into_iter()
+            .filter_map(|edge_id| self.edges_by_id.get(&edge_id).cloned())
+            .collect()
+    }
+
+    pub(crate) fn neighbor_edge_ids(&self, entity_name: &str) -> Vec<CellId> {
+        self.entity_name_to_node
             .get(entity_name)
+            .and_then(|node_id| self.edge_ids_by_entity.get(node_id))
             .cloned()
             .unwrap_or_default()
+    }
+
+    pub(crate) fn edge_by_id(&self, edge_id: CellId) -> Option<&GraphEdge> {
+        self.edges_by_id.get(&edge_id)
     }
 
     pub fn cells_for_source(&self, source_id: &str) -> Vec<CellId> {
@@ -132,25 +153,25 @@ impl KnowledgeGraphIndex {
         let Some(name) = entity.name.filter(|name| !name.trim().is_empty()) else {
             return;
         };
-        self.entities_by_name
-            .entry(name.clone())
-            .or_default()
-            .push(GraphEntity {
-                entity_cell_id: cell_id,
-                name,
-                kind: entity.kind,
-                source_id: metadata
-                    .source_ref
-                    .as_ref()
-                    .map(|source_ref| source_ref.source_id.clone()),
-            });
+        self.push_entity(GraphEntity {
+            entity_cell_id: cell_id,
+            name,
+            kind: entity.kind,
+            source_id: metadata
+                .source_ref
+                .as_ref()
+                .map(|source_ref| source_ref.source_id.clone()),
+        });
     }
 
     pub(super) fn push_entity(&mut self, entity: GraphEntity) {
-        self.entities_by_name
-            .entry(entity.name.clone())
-            .or_default()
-            .push(entity);
+        self.intern_entity_name(&entity.name);
+        insert_entity_sorted(
+            self.entities_by_name
+                .entry(entity.name.clone())
+                .or_default(),
+            entity,
+        );
     }
 
     fn index_relation(&mut self, cell_id: CellId, payload: &[u8]) {
@@ -172,14 +193,12 @@ impl KnowledgeGraphIndex {
     }
 
     pub(super) fn push_edge(&mut self, edge: GraphEdge) {
-        self.edges_by_entity
-            .entry(edge.subject.clone())
-            .or_default()
-            .push(edge.clone());
-        self.edges_by_entity
-            .entry(edge.object.clone())
-            .or_default()
-            .push(edge.clone());
+        let relation_cell_id = edge.relation_cell_id;
+        self.edges_by_id.insert(relation_cell_id, edge.clone());
+        self.push_edge_id_for_entity(&edge.subject, relation_cell_id);
+        if edge.object != edge.subject {
+            self.push_edge_id_for_entity(&edge.object, relation_cell_id);
+        }
         self.edges_by_kind
             .entry(edge.kind)
             .or_default()
@@ -205,19 +224,7 @@ impl KnowledgeGraphIndex {
     }
 
     pub(super) fn sort(&mut self) {
-        for entities in self.entities_by_name.values_mut() {
-            entities.sort_by_key(|entity| entity.entity_cell_id);
-        }
-        for edges in self.edges_by_entity.values_mut() {
-            edges.sort_by_key(|edge| {
-                (
-                    edge.relation_cell_id,
-                    edge.subject.clone(),
-                    edge.predicate.clone(),
-                    edge.object.clone(),
-                )
-            });
-        }
+        canonicalize_index(self);
     }
 
     fn edges_by_kind(&self, kind: GraphEdgeKind) -> Vec<GraphEdge> {
@@ -249,44 +256,36 @@ impl KnowledgeGraphIndex {
     }
 
     pub(super) fn all_edges(&self) -> Vec<GraphEdge> {
-        let mut edges = self
-            .edges_by_entity
-            .values()
-            .flat_map(|edges| edges.iter())
-            .cloned()
-            .collect::<Vec<_>>();
+        let mut edges = self.edges_by_id.values().cloned().collect::<Vec<_>>();
         sort_edges(&mut edges);
-        edges.dedup_by_key(|edge| edge.relation_cell_id);
         edges
     }
-}
 
-fn remove_empty_values<K: Ord, V>(
-    values: &mut std::collections::BTreeMap<K, V>,
-    mut should_remove: impl FnMut(&mut V) -> bool,
-) {
-    values.retain(|_, value| !should_remove(value));
-}
+    fn push_edge_id_for_entity(&mut self, entity_name: &str, edge_id: CellId) {
+        let node_id = self.intern_entity_name(entity_name);
+        insert_cell_id_sorted(self.edge_ids_by_entity.entry(node_id).or_default(), edge_id);
+    }
 
-fn fact_cell_endpoint(edge: &GraphEdge) -> Option<CellId> {
-    cell_endpoint(&edge.object).or_else(|| cell_endpoint(&edge.subject))
-}
+    fn remove_edge_id_for_entity(&mut self, entity_name: &str, edge_id: CellId) {
+        let Some(node_id) = self.entity_name_to_node.get(entity_name) else {
+            return;
+        };
+        if let Some(edge_ids) = self.edge_ids_by_entity.get_mut(node_id) {
+            edge_ids.retain(|candidate| *candidate != edge_id);
+            if edge_ids.is_empty() {
+                self.edge_ids_by_entity.remove(node_id);
+            }
+        }
+    }
 
-fn cell_endpoint(value: &str) -> Option<CellId> {
-    value
-        .trim()
-        .strip_prefix("cell:")
-        .and_then(|id| id.parse::<u64>().ok())
-        .map(CellId)
-}
-
-fn sort_edges(edges: &mut [GraphEdge]) {
-    edges.sort_by_key(|edge| {
-        (
-            edge.relation_cell_id,
-            edge.subject.clone(),
-            edge.predicate.clone(),
-            edge.object.clone(),
-        )
-    });
+    fn intern_entity_name(&mut self, entity_name: &str) -> super::types::GraphNodeId {
+        if let Some(node_id) = self.entity_name_to_node.get(entity_name) {
+            return *node_id;
+        }
+        let node_id = self.entity_names_by_node.len() as super::types::GraphNodeId;
+        self.entity_names_by_node.push(entity_name.to_owned());
+        self.entity_name_to_node
+            .insert(entity_name.to_owned(), node_id);
+        node_id
+    }
 }

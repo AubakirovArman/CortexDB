@@ -141,3 +141,60 @@ fn graph_retrieve_related_respects_max_hops() {
     let hit_ids = hits.iter().map(|hit| hit.cell_id).collect::<Vec<_>>();
     assert_eq!(hit_ids, vec![CellId(1), CellId(2), CellId(10)]);
 }
+
+#[test]
+fn graph_retrieve_related_reports_visit_budget_exceeded() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(CellId(1), entity_cell("Hub", "project"))
+        .unwrap();
+    db.put_knowledge_cell(CellId(2), entity_cell("A", "project"))
+        .unwrap();
+    db.put_knowledge_cell(CellId(3), entity_cell("B", "project"))
+        .unwrap();
+    db.put_knowledge_cell(CellId(4), entity_cell("C", "project"))
+        .unwrap();
+    db.put_knowledge_cell(CellId(10), relation_cell("Hub", "links", "A"))
+        .unwrap();
+    db.put_knowledge_cell(CellId(11), relation_cell("Hub", "links", "B"))
+        .unwrap();
+    db.put_knowledge_cell(CellId(12), relation_cell("Hub", "links", "C"))
+        .unwrap();
+
+    let report = db.graph_retrieve_related_with_budget("Hub", 1, 2);
+    let hit_ids = report
+        .hits
+        .iter()
+        .map(|hit| hit.cell_id)
+        .collect::<Vec<_>>();
+
+    assert!(report.budget_exceeded);
+    assert_eq!(report.visited_edges, 2);
+    assert_eq!(
+        hit_ids,
+        vec![CellId(1), CellId(2), CellId(3), CellId(10), CellId(11)]
+    );
+}
+
+#[test]
+fn graph_retrieve_related_zero_budget_returns_seed_only() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_knowledge_cell(CellId(1), entity_cell("Hub", "project"))
+        .unwrap();
+    db.put_knowledge_cell(CellId(2), entity_cell("A", "project"))
+        .unwrap();
+    db.put_knowledge_cell(CellId(10), relation_cell("Hub", "links", "A"))
+        .unwrap();
+
+    let report = db.graph_retrieve_related_with_budget("Hub", 1, 0);
+    let hit_ids = report
+        .hits
+        .iter()
+        .map(|hit| hit.cell_id)
+        .collect::<Vec<_>>();
+
+    assert!(report.budget_exceeded);
+    assert_eq!(report.visited_edges, 0);
+    assert_eq!(hit_ids, vec![CellId(1)]);
+}

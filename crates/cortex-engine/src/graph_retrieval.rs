@@ -7,6 +7,8 @@ use cortex_core::CellId;
 use crate::database::Database;
 use crate::graph::{GraphEdge, KnowledgeGraphIndex};
 
+pub const DEFAULT_GRAPH_RETRIEVAL_VISIT_BUDGET: usize = 10_000;
+
 /// A cell reached through graph traversal.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GraphRetrievalHit {
@@ -17,6 +19,16 @@ pub struct GraphRetrievalHit {
     pub explaining_edges: Vec<GraphEdge>,
 }
 
+/// Deterministic graph traversal result plus bounded-visit accounting.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GraphRetrievalReport {
+    pub hits: Vec<GraphRetrievalHit>,
+    pub visited_entities: usize,
+    pub visited_edges: usize,
+    pub visit_budget: usize,
+    pub budget_exceeded: bool,
+}
+
 impl Database {
     /// Retrieve visible cells related to an entity through graph edges.
     pub fn graph_retrieve_related(
@@ -24,8 +36,23 @@ impl Database {
         seed_entity: &str,
         max_hops: u32,
     ) -> Vec<GraphRetrievalHit> {
-        self.knowledge_graph_index()
-            .retrieve_related_cells(seed_entity, max_hops)
+        self.graph_retrieve_related_with_budget(
+            seed_entity,
+            max_hops,
+            DEFAULT_GRAPH_RETRIEVAL_VISIT_BUDGET,
+        )
+        .hits
+    }
+
+    pub fn graph_retrieve_related_with_budget(
+        &self,
+        seed_entity: &str,
+        max_hops: u32,
+        visit_budget: usize,
+    ) -> GraphRetrievalReport {
+        self.graph_index_store
+            .index_ref()
+            .retrieve_related_cells_with_budget(seed_entity, max_hops, visit_budget)
     }
 }
 
@@ -36,9 +63,30 @@ impl KnowledgeGraphIndex {
         seed_entity: &str,
         max_hops: u32,
     ) -> Vec<GraphRetrievalHit> {
+        self.retrieve_related_cells_with_budget(
+            seed_entity,
+            max_hops,
+            DEFAULT_GRAPH_RETRIEVAL_VISIT_BUDGET,
+        )
+        .hits
+    }
+
+    pub fn retrieve_related_cells_with_budget(
+        &self,
+        seed_entity: &str,
+        max_hops: u32,
+        visit_budget: usize,
+    ) -> GraphRetrievalReport {
         let seed_entity = seed_entity.trim();
+        let mut report = GraphRetrievalReport {
+            hits: Vec::new(),
+            visited_entities: 0,
+            visited_edges: 0,
+            visit_budget,
+            budget_exceeded: false,
+        };
         if seed_entity.is_empty() {
-            return Vec::new();
+            return report;
         }
 
         let mut hits = BTreeMap::new();
@@ -56,19 +104,29 @@ impl KnowledgeGraphIndex {
         }
 
         let mut visited_entities = BTreeSet::from([seed_entity.to_owned()]);
-        let mut queue = VecDeque::from([(seed_entity.to_owned(), 0_u32, Vec::<GraphEdge>::new())]);
+        let mut queue = VecDeque::from([(seed_entity.to_owned(), 0_u32, Vec::<CellId>::new())]);
 
-        while let Some((entity_name, depth, path)) = queue.pop_front() {
+        'traversal: while let Some((entity_name, depth, path)) = queue.pop_front() {
+            report.visited_entities = report.visited_entities.saturating_add(1);
             if depth >= max_hops {
                 continue;
             }
             let next_depth = depth.saturating_add(1);
-            for edge in self.neighbors(&entity_name) {
-                let Some(next_entity) = other_endpoint(&edge, &entity_name) else {
+            for edge_id in self.neighbor_edge_ids(&entity_name) {
+                if report.visited_edges >= visit_budget {
+                    report.budget_exceeded = true;
+                    break 'traversal;
+                }
+                report.visited_edges = report.visited_edges.saturating_add(1);
+                let Some(edge) = self.edge_by_id(edge_id) else {
+                    continue;
+                };
+                let Some(next_entity) = other_endpoint(edge, &entity_name) else {
                     continue;
                 };
                 let mut next_path = path.clone();
-                next_path.push(edge.clone());
+                next_path.push(edge.relation_cell_id);
+                let explaining_edges = materialize_path(self, &next_path);
 
                 insert_hit(
                     &mut hits,
@@ -77,7 +135,7 @@ impl KnowledgeGraphIndex {
                         matched_entity: next_entity.clone(),
                         depth: next_depth,
                         proximity_score_q16: proximity_score_q16(next_depth),
-                        explaining_edges: next_path.clone(),
+                        explaining_edges: explaining_edges.clone(),
                     },
                 );
 
@@ -89,7 +147,7 @@ impl KnowledgeGraphIndex {
                             matched_entity: next_entity.clone(),
                             depth: next_depth,
                             proximity_score_q16: proximity_score_q16(next_depth),
-                            explaining_edges: next_path.clone(),
+                            explaining_edges: explaining_edges.clone(),
                         },
                     );
                 }
@@ -108,7 +166,8 @@ impl KnowledgeGraphIndex {
                 hit.cell_id,
             )
         });
-        hits
+        report.hits = hits;
+        report
     }
 }
 
@@ -147,4 +206,11 @@ fn proximity_score_q16(depth: u32) -> u16 {
     }
     let divisor = depth.saturating_add(1);
     (u32::from(u16::MAX) / divisor).try_into().unwrap_or(0)
+}
+
+fn materialize_path(index: &KnowledgeGraphIndex, edge_ids: &[CellId]) -> Vec<GraphEdge> {
+    edge_ids
+        .iter()
+        .filter_map(|edge_id| index.edge_by_id(*edge_id).cloned())
+        .collect()
 }

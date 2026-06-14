@@ -20,20 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C15` — Incremental graph index performance.
+`EPIC-B19` — REMEMBER write-path policy formalization.
 
-C15 exit steps:
+B19 exit steps:
 
-1. Compact graph adjacency and traversal representation where needed.
-2. Add bounded BFS/DFS visit-budget behavior.
-3. Publish 100K graph traversal p95 evidence.
-4. Mark done when graph traversal is bounded and measured; then move to B19.
+1. Inventory REMEMBER/write-path policy checks and ID allocation semantics.
+2. Route write authorization through the formal PolicyRewrite invariant.
+3. Add regression tests for denied writes and ID allocation behavior.
+4. Mark done when REMEMBER/write-path policy is formalized; then move to B20.
 
-C15 current state:
+B19 current state:
 
 - next.
-- Do not reopen B18 unless graph lookup no-scan behavior, source-support index
-  enrichment, or incremental graph-store equivalence regresses.
+- Do not reopen C15 unless graph traversal budget accounting or 100K p95
+  evidence regresses.
 
 ## Active Partial Tail
 
@@ -47,6 +47,17 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C15 — Incremental graph index performance
+
+Status: `done`
+
+What closed it:
+
+- `KnowledgeGraphIndex` now stores compact adjacency as interned entity ids plus edge ids.
+- Bulk graph-index build uses an add-only path instead of per-record remove scans.
+- Graph retrieval has `GraphRetrievalReport` with visited edge/entity counts and `budget_exceeded`.
+- `make graph-index-performance-check` passed on a 100K-node graph with p95 `0.550493ms`.
 
 ### EPIC-B18 — Incremental knowledge graph/provenance index
 
@@ -788,9 +799,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on C15 only:
+Work on B19 only:
 
-1. inventory graph traversal hot paths and current adjacency representation;
-2. add bounded traversal visit-budget behavior;
-3. publish 100K graph traversal p95 evidence;
-4. move to B19 after C15 acceptance is closed.
+1. inventory REMEMBER/write-path policy checks and ID allocation behavior;
+2. route write authorization through the formal PolicyRewrite invariant;
+3. add denied-write and ID-allocation regression tests;
+4. move to B20 after B19 acceptance is closed.

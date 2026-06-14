@@ -109,7 +109,9 @@ pub use exec::{PhysicalOp, PhysicalOperatorTrace, RetrieveExecutionReport};
 pub use graph::{
     GraphEdge, GraphEdgeKind, GraphEntity, GraphSourceRef, KnowledgeGraphIndex, ToolCell,
 };
-pub use graph_retrieval::GraphRetrievalHit;
+pub use graph_retrieval::{
+    GraphRetrievalHit, GraphRetrievalReport, DEFAULT_GRAPH_RETRIEVAL_VISIT_BUDGET,
+};
 pub use ingestion::{
     extract_pdf_text, split_text_chunks, stable_chunk_id, stable_ingestion_hash_hex,
     validate_external_ocr_output, validate_external_ocr_request, CsvIngestOptions,

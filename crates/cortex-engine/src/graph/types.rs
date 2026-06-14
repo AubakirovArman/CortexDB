@@ -2,6 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_core::CellId;
 
+pub(super) type GraphNodeId = u32;
+
 /// A typed entity discovered through Entity cells.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GraphEntity {
@@ -37,13 +39,41 @@ pub struct GraphSourceRef {
 }
 
 /// Snapshot graph indexes built from currently visible cells.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default)]
 pub struct KnowledgeGraphIndex {
     pub(super) entities_by_name: BTreeMap<String, Vec<GraphEntity>>,
-    pub(super) edges_by_entity: BTreeMap<String, Vec<GraphEdge>>,
+    pub(super) entity_name_to_node: BTreeMap<String, GraphNodeId>,
+    pub(super) entity_names_by_node: Vec<String>,
+    pub(super) edge_ids_by_entity: BTreeMap<GraphNodeId, Vec<CellId>>,
+    pub(super) edges_by_id: BTreeMap<CellId, GraphEdge>,
     pub(super) edges_by_kind: BTreeMap<GraphEdgeKind, BTreeMap<CellId, GraphEdge>>,
     pub(super) source_support_edges_by_fact: BTreeMap<CellId, BTreeMap<CellId, GraphEdge>>,
     pub(super) cells_by_source: BTreeMap<String, BTreeSet<CellId>>,
+}
+
+impl PartialEq for KnowledgeGraphIndex {
+    fn eq(&self, other: &Self) -> bool {
+        self.entities_by_name == other.entities_by_name
+            && self.adjacency_by_name() == other.adjacency_by_name()
+            && self.edges_by_id == other.edges_by_id
+            && self.edges_by_kind == other.edges_by_kind
+            && self.source_support_edges_by_fact == other.source_support_edges_by_fact
+            && self.cells_by_source == other.cells_by_source
+    }
+}
+
+impl Eq for KnowledgeGraphIndex {}
+
+impl KnowledgeGraphIndex {
+    fn adjacency_by_name(&self) -> BTreeMap<String, Vec<CellId>> {
+        self.entity_name_to_node
+            .iter()
+            .filter_map(|(entity_name, node_id)| {
+                let edge_ids = self.edge_ids_by_entity.get(node_id)?;
+                (!edge_ids.is_empty()).then(|| (entity_name.clone(), edge_ids.clone()))
+            })
+            .collect()
+    }
 }
 
 /// A tool cell with its metadata.

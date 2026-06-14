@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C15` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-C14`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B14`, `EPIC-B15`, `EPIC-B16`, `EPIC-B17`, `EPIC-B18`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is closed with interval temporal validity index evidence. `EPIC-B14` is closed with a stable ContextPack cell explain contract, CLI `explain --cell-id`, `docs/EXPLAIN.md`, schema/OpenAPI alignment, and golden coverage. `EPIC-B15` is closed with CLI/API `EXPLAIN ANALYZE` flags, actual/estimated operator trace fields, OpenAPI/SDK alignment, and docs. `EPIC-B17` is closed with typed tool catalog records, maintained list and term indexes, lazy open-time rebuild, `docs/TOOL_REGISTRY.md`, and a `make check` gate. `EPIC-B18` is closed with incremental graph/provenance indexing, indexed VERIFY source-support, lazy graph-query no-scan behavior, `docs/KNOWLEDGE_GRAPH.md`, and a `make check` gate. `EPIC-C15` is next. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
+Current pointer: `EPIC-B19` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-C14`, `EPIC-C15`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B14`, `EPIC-B15`, `EPIC-B16`, `EPIC-B17`, `EPIC-B18`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is closed with interval temporal validity index evidence. `EPIC-C15` is closed with compact graph adjacency, bounded visit-budget traversal, and 100K graph p95 evidence. `EPIC-B14` is closed with a stable ContextPack cell explain contract, CLI `explain --cell-id`, `docs/EXPLAIN.md`, schema/OpenAPI alignment, and golden coverage. `EPIC-B15` is closed with CLI/API `EXPLAIN ANALYZE` flags, actual/estimated operator trace fields, OpenAPI/SDK alignment, and docs. `EPIC-B17` is closed with typed tool catalog records, maintained list and term indexes, lazy open-time rebuild, `docs/TOOL_REGISTRY.md`, and a `make check` gate. `EPIC-B18` is closed with incremental graph/provenance indexing, indexed VERIFY source-support, lazy graph-query no-scan behavior, `docs/KNOWLEDGE_GRAPH.md`, and a `make check` gate. `EPIC-B19` is next. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -82,7 +82,8 @@ enough to unblock the next dependency step.
 32. `EPIC-B15` — EXPLAIN ANALYZE for AQL: done.
 33. `EPIC-B17` — Typed tool registry: done.
 34. `EPIC-B18` — Incremental knowledge graph/provenance index: done.
-35. `EPIC-C15` — Incremental graph index performance: next.
+35. `EPIC-C15` — Incremental graph index performance: done.
+36. `EPIC-B19` — REMEMBER write-path policy formalization: next.
 
 ## Summary
 
@@ -995,7 +996,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - gates: `cargo fmt --check`; `cargo test -p cortex-cli aql_command_explain_analyze_flag_reports_actual_operator_counts`; `cargo test -p cortex-server v1_aql_explain_analyze_query_flag_reports_execution_trace`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `cargo test -p cortex-cli`; `make openapi-contract-check`; `make check`.
 - remaining: none for B15 acceptance; deeper tool-catalog semantics are closed by B17.
 - risks: `estimated_output_count` is nullable where no planner estimate exists; actual counts are always present for analyzed operators.
-- next exit step: `EPIC-B18` is now closed; move to `EPIC-C15` — Incremental graph index performance.
+- next exit step: `EPIC-C15` is now closed; move to `EPIC-B19` — REMEMBER write-path policy formalization.
 
 ### EPIC-B16 — Формализованный Policy Rewrite + доказательство инварианта
 
@@ -1037,7 +1038,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - gates: `cargo fmt --check`; `cargo test -p cortex-engine --test tool_registry_tests --test tool_registry_index_tests`; `python3 scripts/tool_registry_check.py --report target/tool-registry/report.json`.
 - remaining: none for B17 acceptance.
 - risks: lazy databases opened with `rebuild_lazy_payload_indexes_on_open=false` intentionally skip open-time payload-derived index rebuilds; default options keep the typed tool catalog populated.
-- next exit step: `EPIC-B18` is now closed; move to `EPIC-C15` — Incremental graph index performance.
+- next exit step: `EPIC-C15` is now closed; move to `EPIC-B19` — REMEMBER write-path policy formalization.
 
 ### EPIC-B18 — Инкрементальный knowledge-graph/provenance индекс
 
@@ -1056,9 +1057,9 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - files: `crates/cortex-engine/src/graph/*.rs`, `crates/cortex-engine/src/database/rebuild.rs`, `crates/cortex-engine/src/verification/graph.rs`, `crates/cortex-engine/src/verification/operator.rs`, `docs/KNOWLEDGE_GRAPH.md`, `scripts/knowledge_graph_check.py`.
 - evidence: `GraphIndexStore` now updates incrementally through `insert_record`/`remove_record` instead of rebuilding the full graph on every put/patch/tombstone. `KnowledgeGraphIndex` now maintains adjacency, edge-kind, source-reference, and `source_support_edges_by_fact` maps; graph APIs read the maintained store, and lazy graph queries no longer rebuild from visible payloads. Lazy open-time derived-store rebuild now repopulates the graph index from visible payloads. VERIFY source-support enrichment reads `source_support_edges_by_fact` for current evidence cell ids and materializes only matching readable relation payloads. `docs/KNOWLEDGE_GRAPH.md` defines the B18 typed graph/provenance index contract. `make check` now includes `knowledge-graph-check`.
 - gates: `cargo fmt --check`; `cargo test -p cortex-engine --test graph_tests --test graph_index_incremental_tests --test graph_retrieval_tests --test verification_graph_tests`; `python3 scripts/knowledge_graph_check.py --report target/knowledge-graph/report.json`.
-- remaining: none for B18 no-scan/index/equivalence acceptance; 100K graph traversal p95 remains `EPIC-C15`.
-- risks: lazy DBs opened with `rebuild_lazy_payload_indexes_on_open=false` intentionally skip open-time payload-derived graph-index rebuilds; large graph traversal budgets/100K p95 are C15 scope.
-- next exit step: move to `EPIC-C15` — Incremental graph index performance.
+- remaining: none for B18 no-scan/index/equivalence acceptance; the 100K graph traversal p95 follow-up is closed by `EPIC-C15`.
+- risks: lazy DBs opened with `rebuild_lazy_payload_indexes_on_open=false` intentionally skip open-time payload-derived graph-index rebuilds.
+- next exit step: `EPIC-C15` is now closed; move to `EPIC-B19` — REMEMBER write-path policy formalization.
 
 ### EPIC-B19 — REMEMBER write-path policy formalization
 
@@ -1317,7 +1318,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - files: новый index-модуль, verification/numeric.rs.
 - latest evidence: `FactClaimStore` now maintains a metric/scope/project -> sorted normalized value -> cell index alongside typed numeric records. VERIFY first asks this index for numeric candidate cell ids and falls back to the previous lexical candidate scan only when the typed index has no hits. `ConflictIndexStore::from_memtable` now batches numeric facts and rebuilds conflict records by metric/scope/project group, avoiding whole-corpus pair scans on large numeric fixtures. Added `numeric_verify_index_check` and `make numeric-verify-index-check`; local 1M direct-checkpoint fixture passed with numeric VERIFY latency p50 `155.498ms`, p95 `157.387ms`, p99 `159.038ms`, max `159.407ms`, report `target/numeric-verify-index/report.json`.
 - risks: The C13 1M gate uses a dedicated typed numeric fixture with unique metric groups plus one support/conflict pair; broad natural-language facts without a typed metric still fall back to the existing lexical path. Зависимости: B07. Эффект: verification-масштаб.
-- next exit step: `EPIC-B18` is now closed; move to `EPIC-C15` — Incremental graph index performance.
+- next exit step: `EPIC-C15` is now closed; move to `EPIC-B19` — REMEMBER write-path policy formalization.
 
 ### EPIC-C14 — Temporal индекс
 
@@ -1334,7 +1335,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - files: `retrieval_quality/validity_index.rs`, `retrieval_quality/validity_index/interval.rs`, `exec/retrieve/temporal_filter.rs`, `verification/operator.rs`, `verification/guards.rs`, `verification/temporal.rs`.
 - latest evidence: `TemporalValidityStore` now maintains incremental valid_from/valid_to BTree indexes and a lazy sorted valid_from zone cache. AQL `REQUIRE valid at` builds the valid CellId set once from the interval index and filters candidates before lazy payload reads. VERIFY emits a `VerificationTemporalIndexLookup` trace and uses indexed stale reasons for stale/future evidence guards while preserving lexical overlap semantics. `make temporal-validity-index-check` passed on a 10K lazy fixture with `query_elapsed_ms=152`, `returned_cells=10`, `segment_loads_after_query=10`, report `target/temporal-validity-index/report.json`.
 - risks: The default temporal gate is bounded at 10K for interactive reliability; larger 100K+ temporal runs remain override/benchmark-packet work if needed. Зависимости: A02, B10. Эффект: temporal — индексная фича.
-- next exit step: `EPIC-B18` is now closed; move to `EPIC-C15` — Incremental graph index performance.
+- next exit step: `EPIC-C15` is now closed; move to `EPIC-B19` — REMEMBER write-path policy formalization.
 
 ### EPIC-C15 — Инкрементальный graph-индекс производительность
 
@@ -1342,14 +1343,18 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - meta: Категория: indexing · P2 · 6 months · build
 - goal: завершение B18 производительной частью: adjacency-структуры, обходы с лимитами.
 - tasks:
-  - [ ] 1) компактная adjacency (interned entity ids)
-  - [ ] 2) bounded BFS/DFS с visit-budget (как в HNSW-гардах)
-  - [ ] 3) бенч 100K-узлового графа.
+  - [x] 1) компактная adjacency (interned entity ids)
+  - [x] 2) bounded BFS/DFS с visit-budget (как в HNSW-гардах)
+  - [x] 3) бенч 100K-узлового графа.
 - acceptance:
-  - [ ] 1) обходы с budget-гарантией
-  - [ ] 2) p95 зафиксирован.
-- files: graph.rs.
-- risks: нет. Зависимости: B18. Эффект: graph-retrieval пригоден на масштабе.
+  - [x] 1) обходы с budget-гарантией
+  - [x] 2) p95 зафиксирован.
+- files: `crates/cortex-engine/src/graph/*.rs`, `crates/cortex-engine/src/graph_retrieval.rs`, `crates/cortex-engine/src/bin/graph_index_performance_check.rs`, `mk/performance-dashboard.mk`.
+- evidence: `KnowledgeGraphIndex` now stores compact adjacency as interned entity ids plus edge ids instead of duplicated edge vectors. Bulk graph-index builds use an add-only path instead of per-record remove scans. `graph_retrieve_related_with_budget` returns `GraphRetrievalReport` with visited edge/entity counts and `budget_exceeded`, while the existing `graph_retrieve_related` API keeps returning hits. `make graph-index-performance-check` passed on a 100K-node / 99,999-edge graph: p50 `0.497235ms`, p95 `0.550493ms`, max `97.626455ms`, visited_edges p95 `62`, budget_exceeded_samples `0`, report `target/graph-index-performance/report.json`.
+- gates: `cargo fmt --check`; `cargo test -p cortex-engine --test graph_retrieval_tests --test graph_tests --test graph_index_incremental_tests`; `make graph-index-performance-check`.
+- remaining: none for C15 acceptance.
+- risks: the default 100K gate measures bounded graph traversal over an in-memory typed graph fixture, not persisted DB ingest latency; max latency can include local scheduler noise, while p95 is the acceptance metric.
+- next exit step: move to `EPIC-B19` — REMEMBER write-path policy formalization.
 
 ### EPIC-C16 — Memory profiling harness (dhat/jemalloc)
 

@@ -53,6 +53,10 @@ impl GraphIndexStore {
         self.index.clone()
     }
 
+    pub(crate) fn index_ref(&self) -> &KnowledgeGraphIndex {
+        &self.index
+    }
+
     pub(crate) fn tool_cells(&self) -> Vec<ToolCell> {
         self.tools.values().cloned().collect()
     }
@@ -62,14 +66,24 @@ impl GraphIndexStore {
     ) -> Self {
         let mut store = Self::default();
         for (cell_id, record) in records {
-            store.insert_record(cell_id, record);
+            store.insert_record_unchecked(cell_id, record);
         }
+        store.index.sort();
         store
     }
 
     fn insert_record(&mut self, cell_id: CellId, record: GraphIndexRecord) {
         self.index
             .index_record(cell_id, record.payload.as_slice(), &record.metadata);
+        if let Some((_, tool)) = tool_cell_from_record(cell_id, &record) {
+            self.tools.insert(cell_id, tool);
+        }
+        self.records.insert(cell_id, record);
+    }
+
+    fn insert_record_unchecked(&mut self, cell_id: CellId, record: GraphIndexRecord) {
+        self.index
+            .add_record(cell_id, record.payload.as_slice(), &record.metadata);
         if let Some((_, tool)) = tool_cell_from_record(cell_id, &record) {
             self.tools.insert(cell_id, tool);
         }

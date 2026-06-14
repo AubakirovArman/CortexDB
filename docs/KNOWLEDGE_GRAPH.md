@@ -1,6 +1,6 @@
-# B18 Knowledge Graph/Provenance Index Contract
+# Knowledge Graph/Provenance Index Contract
 
-Status: `EPIC-B18` contract.
+Status: `EPIC-B18` + `EPIC-C15` contract.
 
 CortexDB keeps graph/provenance records as typed cells and maintains an
 incremental in-memory graph index. The graph is a lookup structure for
@@ -49,11 +49,16 @@ open-time rebuild.
 The maintained `KnowledgeGraphIndex` contains:
 
 - entity name -> entity cells
-- entity name -> adjacent relation edges
+- interned entity ids plus edge ids for compact adjacency traversal
+- relation cell id -> relation edge
 - edge kind -> relation edges
 - `source_support_edges_by_fact` for VERIFY source-support lookup
 - source id -> cell ids
 - tool cells for legacy graph tooling
+
+Bulk graph-index builds use an add-only path and canonicalize the index once at
+the end. Incremental put/patch/tombstone updates still remove the previous cell
+projection before inserting the new one.
 
 Graph APIs do not rebuild from visible payloads at query time:
 
@@ -66,13 +71,24 @@ Graph APIs do not rebuild from visible payloads at query time:
 ## Graph Retrieval
 
 `Database::graph_retrieve_related` returns `GraphRetrievalHit` rows by walking
-the maintained adjacency index. Each hit includes:
+the maintained adjacency index with the default visit budget. Each hit includes:
 
 - matched cell id
 - matched entity
 - hop depth
 - `proximity_score_q16`
 - `explaining_edges`
+
+`Database::graph_retrieve_related_with_budget` returns `GraphRetrievalReport`
+with the same hits plus:
+
+- `visited_entities`
+- `visited_edges`
+- `visit_budget`
+- `budget_exceeded`
+
+The C15 performance gate is `make graph-index-performance-check`; it records
+100K-node graph traversal p95 in `target/graph-index-performance/report.json`.
 
 ## VERIFY Source-Support
 
@@ -86,6 +102,7 @@ Run:
 
 ```bash
 make knowledge-graph-check
+make graph-index-performance-check
 ```
 
 The gate checks this contract, incremental graph store markers, graph retrieval

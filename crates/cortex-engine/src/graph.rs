@@ -4,6 +4,7 @@ mod ackg;
 mod database;
 mod edge_kind;
 mod index;
+mod index_helpers;
 mod store;
 #[cfg(test)]
 mod tests;

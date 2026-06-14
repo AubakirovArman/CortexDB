@@ -66,9 +66,11 @@ def main() -> int:
         "crates/cortex-engine/src/graph.rs",
         "crates/cortex-engine/src/graph/types.rs",
         "crates/cortex-engine/src/graph/index.rs",
+        "crates/cortex-engine/src/graph/index_helpers.rs",
         "crates/cortex-engine/src/graph/database.rs",
         "crates/cortex-engine/src/graph/store.rs",
         "crates/cortex-engine/src/graph_retrieval.rs",
+        "crates/cortex-engine/src/bin/graph_index_performance_check.rs",
         "crates/cortex-engine/src/verification/graph.rs",
         "crates/cortex-engine/tests/graph_tests.rs",
         "crates/cortex-engine/tests/graph_index_incremental_tests.rs",
@@ -80,7 +82,8 @@ def main() -> int:
         require_markers(
             ROOT / "docs" / "KNOWLEDGE_GRAPH.md",
             [
-                "B18 Knowledge Graph/Provenance Index Contract",
+                "Knowledge Graph/Provenance Index Contract",
+                "EPIC-C15",
                 "GraphEdgeKind",
                 "type=entity",
                 "type=relation",
@@ -92,12 +95,15 @@ def main() -> int:
                 "source_support_edges_by_fact",
                 "Graph Retrieval",
                 "GraphRetrievalHit",
+                "GraphRetrievalReport",
+                "visit_budget",
                 "proximity_score_q16",
                 "explaining_edges",
                 "VERIFY source-support",
                 "graph_source_supports_fact_edges",
                 "graph_fact_contradicts_fact_edges",
                 "make knowledge-graph-check",
+                "make graph-index-performance-check",
             ],
         )
     )
@@ -119,6 +125,9 @@ def main() -> int:
             [
                 "pub enum GraphEdgeKind",
                 "pub struct KnowledgeGraphIndex",
+                "GraphNodeId",
+                "edge_ids_by_entity",
+                "edges_by_id",
                 "source_support_edges_by_fact",
             ],
         )
@@ -139,6 +148,7 @@ def main() -> int:
             [
                 "source_supports_fact_edges_for_cells",
                 "index_record",
+                "add_record",
                 "remove_cell",
             ],
         )
@@ -148,6 +158,7 @@ def main() -> int:
             ROOT / "crates" / "cortex-engine" / "src" / "graph" / "store.rs",
             [
                 "fn insert_record",
+                "fn insert_record_unchecked",
                 "fn remove_record",
                 "self.index.remove_cell(cell_id)",
             ],
@@ -170,10 +181,30 @@ def main() -> int:
             ROOT / "crates" / "cortex-engine" / "src" / "graph_retrieval.rs",
             [
                 "pub struct GraphRetrievalHit",
+                "pub struct GraphRetrievalReport",
                 "pub fn graph_retrieve_related",
+                "pub fn graph_retrieve_related_with_budget",
                 "pub fn retrieve_related_cells",
+                "retrieve_related_cells_with_budget",
+                "budget_exceeded",
                 "proximity_score_q16",
                 "explaining_edges",
+            ],
+        )
+    )
+    errors.extend(
+        require_markers(
+            ROOT
+            / "crates"
+            / "cortex-engine"
+            / "src"
+            / "bin"
+            / "graph_index_performance_check.rs",
+            [
+                "cortexdb.graph_index_performance.v1",
+                "100_000",
+                "max_p95_ms",
+                "budget_exceeded_samples",
             ],
         )
     )
@@ -233,6 +264,8 @@ def main() -> int:
                 "graph_retrieve_related_walks_multiple_hops",
                 "graph_retrieve_related_scores_by_proximity",
                 "graph_retrieve_related_explains_edges_for_hits",
+                "graph_retrieve_related_reports_visit_budget_exceeded",
+                "graph_retrieve_related_zero_budget_returns_seed_only",
             ],
         )
     )
