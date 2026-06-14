@@ -37,12 +37,15 @@ GEMINI_THINKING_BUDGET="${GEMINI_THINKING_BUDGET:-0}"
 INCLUDE_EVIDENCE_PLAN="${INCLUDE_EVIDENCE_PLAN:-0}"
 INCLUDE_EVIDENCE_TABLE="${INCLUDE_EVIDENCE_TABLE:-0}"
 UNSUPPORTED_CLAIM_GUARD="${UNSUPPORTED_CLAIM_GUARD:-off}"
+SELF_CONSISTENCY_REPAIR="${SELF_CONSISTENCY_REPAIR:-0}"
+COMPANY_SCOPE_ROUTE="${COMPANY_SCOPE_ROUTE:-0}"
 
 BASE="target/enterprise-rag-bench/official-clean/${SIZE}/${RUN_LABEL}"
 ANSWER_FLAGS=(--prompt-style "$PROMPT_STYLE" --context-mode "$CONTEXT_MODE" --gemini-thinking-budget "$GEMINI_THINKING_BUDGET")
 [ "$INCLUDE_EVIDENCE_PLAN" = 1 ] && ANSWER_FLAGS+=(--include-evidence-plan)
 [ "$INCLUDE_EVIDENCE_TABLE" = 1 ] && ANSWER_FLAGS+=(--include-evidence-table)
 [ "$UNSUPPORTED_CLAIM_GUARD" != off ] && ANSWER_FLAGS+=(--unsupported-claim-guard "$UNSUPPORTED_CLAIM_GUARD")
+[ "$SELF_CONSISTENCY_REPAIR" = 1 ] && ANSWER_FLAGS+=(--self-consistency-repair)
 COMMON=(--size "$SIZE" --questions-file "$QUESTIONS_FILE" --split-name clean
         --run-label "$RUN_LABEL" --answer-provider "$ANSWER_PROVIDER"
         --judge-provider "$JUDGE_PROVIDER" --db-root "$DB" --reuse-db)
@@ -63,7 +66,19 @@ python3 scripts/enterprise_rag_bench/dense_candidates.py \
   --dense-weight "$DENSE_WEIGHT" --lexical-weight "$LEX_WEIGHT" \
   --report "$BASE/dense_report.json"
 
-echo "### STAGE 3/4: ${ANSWER_PROVIDER} answers (prompt=${PROMPT_STYLE} context=${CONTEXT_MODE} plan=${INCLUDE_EVIDENCE_PLAN} table=${INCLUDE_EVIDENCE_TABLE} guard=${UNSUPPORTED_CLAIM_GUARD})"
+if [ "$COMPANY_SCOPE_ROUTE" = 1 ]; then
+  echo "### STAGE 2b/4: company-scope dense fallback for high-level zero-doc questions"
+  python3 scripts/enterprise_rag_bench/company_scope_route.py \
+    --questions-file "$BASE/questions.clean.jsonl" \
+    --retrieval-file "$BASE/retrieval.clean.jsonl" \
+    --output "$BASE/retrieval.clean.jsonl" \
+    --corpus-vectors "$CORPUS" --env-file .env \
+    --query-cache "$BASE/company_scope_query_vectors.jsonl" \
+    --top-k "$TOP_K_CONTEXT" \
+    --report "$BASE/company_scope_report.json"
+fi
+
+echo "### STAGE 3/4: ${ANSWER_PROVIDER} answers (prompt=${PROMPT_STYLE} context=${CONTEXT_MODE} plan=${INCLUDE_EVIDENCE_PLAN} table=${INCLUDE_EVIDENCE_TABLE} guard=${UNSUPPORTED_CLAIM_GUARD} repair=${SELF_CONSISTENCY_REPAIR})"
 python3 scripts/enterprise_rag_bench/run_official_clean_benchmark.py "${COMMON[@]}" \
   --stage answer --top-k-context "$TOP_K_CONTEXT" --max-chars-per-doc 2200 \
   --max-tokens 420 --answer-workers "$ANSWER_WORKERS" \

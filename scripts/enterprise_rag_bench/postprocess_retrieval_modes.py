@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from oracle_free_abstain import abstain_decision
+
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
@@ -45,20 +47,34 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     output_rows: list[dict[str, Any]] = []
     changed_rows = 0
     removed_docs = 0
+    abstain_reasons: dict[str, int] = {}
 
     for qid, question in questions.items():
         row = dict(retrieval[qid])
         qtype = str(question.get("question_type") or "")
+        qtext = str(question.get("question") or "")
         docs = [str(item) for item in row.get("document_ids", []) if str(item)]
-        if qtype in abstain_types:
+        should_abstain = False
+        reason = ""
+        if args.oracle_free_abstain:
+            should_abstain, reason = abstain_decision(
+                question=qtext,
+                document_ids=docs,
+            )
+        elif qtype in abstain_types:
+            should_abstain = True
+            reason = f"question_type:{qtype}"
+
+        if should_abstain:
             removed_docs += len(docs)
             row["document_ids"] = []
             row["route"] = {
                 "policy": args.policy_name,
                 "source": "abstain",
-                "question_type": qtype,
+                "reason": reason,
             }
             changed_rows += 1
+            abstain_reasons[reason] = abstain_reasons.get(reason, 0) + 1
         output_rows.append(row)
 
     report = {
@@ -67,9 +83,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "retrieval_file": str(args.retrieval_file),
         "output": str(args.output),
         "abstain_question_types": sorted(abstain_types),
+        "oracle_free_abstain": args.oracle_free_abstain,
         "questions": len(output_rows),
         "changed_rows": changed_rows,
         "removed_docs": removed_docs,
+        "abstain_reasons": abstain_reasons,
         "note": "Local deterministic postprocess; no LLM/API calls.",
     }
     write_jsonl(args.output, output_rows)
@@ -78,7 +96,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     return report
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--questions-file", type=Path, required=True)
     parser.add_argument("--retrieval-file", type=Path, required=True)
@@ -86,7 +104,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--policy-name", default="v18_not_found_abstain")
     parser.add_argument("--abstain-question-types", default="info_not_found")
-    return parser.parse_args()
+    parser.add_argument(
+        "--oracle-free-abstain",
+        action="store_true",
+        help="Use the oracle-free abstain classifier instead of --abstain-question-types.",
+    )
+    return parser.parse_args(argv)
 
 
 if __name__ == "__main__":
