@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from answer_intent import answer_intent_profile
-from run_deepseek_answers import answer_budget_trace_row, resolve_answer_budget
+from deepseek_answers_lib.budget import answer_budget_trace_row, resolve_answer_budget
 
 
 class AnswerIntentTests(unittest.TestCase):
@@ -53,7 +53,6 @@ class AnswerIntentTests(unittest.TestCase):
 
         budget = resolve_answer_budget(
             question="List all required rollout checks, owners, dashboards, and mitigation steps.",
-            question_type="",
             args=args,
         )
 
@@ -81,7 +80,6 @@ class AnswerIntentTests(unittest.TestCase):
 
         budget = resolve_answer_budget(
             question="What is the upload limit?",
-            question_type="",
             args=args,
         )
 

@@ -13,7 +13,7 @@ from answer_prompts import build_prompt
 from answer_repair import build_self_consistency_repair_prompt, should_self_consistency_repair
 
 from . import log_state
-from .budget import high_level_reference_context, resolve_answer_budget
+from .budget import resolve_answer_budget
 
 
 class AnswerWorker:
@@ -44,10 +44,8 @@ class AnswerWorker:
         qid = str(row.get("question_id") or "")
         doc_ids = [str(item) for item in row.get("document_ids", [])]
         question = str(row.get("question", ""))
-        question_type = str(row.get("question_type") or "")
         budget = resolve_answer_budget(
             question=question,
-            question_type=question_type,
             args=self.args,
         )
         context_mode = str(budget["context_mode"])
@@ -86,13 +84,6 @@ class AnswerWorker:
                 question,
                 context_mode,
             )
-            if question_type == "high_level":
-                reference = high_level_reference_context(
-                    self.args.high_level_reference_file,
-                    self.args.high_level_reference_max_chars,
-                )
-                if reference:
-                    context = f"{reference}\n\n{context}" if context else reference
             evidence_plan = evidence_plan_for_row(
                 row,
                 self.evidence_plans,

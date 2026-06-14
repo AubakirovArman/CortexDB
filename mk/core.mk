@@ -1,6 +1,6 @@
-.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check context-pack-schema-contract-check provenance-model-inventory decode-fuzz-check
+.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check context-pack-schema-contract-check provenance-model-inventory decode-fuzz-check erb-oracle-audit
 
-check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check context-pack-schema-contract-check decode-fuzz-check
+check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check context-pack-schema-contract-check decode-fuzz-check erb-oracle-audit
 	cargo check --workspace
 
 file-size-report:
@@ -27,6 +27,8 @@ policy-rewrite-gate-check:
 context-pack-schema-contract-check:
 	python3 scripts/context_pack_schema_contract_check.py
 provenance-model-inventory: ; python3 scripts/provenance_model_inventory.py
+erb-oracle-audit:
+	python3 scripts/enterprise_rag_bench/oracle_inference_guard.py
 decode-fuzz-check:
 	cargo test -p cortex-engine --test decode_fuzz --all-features
 

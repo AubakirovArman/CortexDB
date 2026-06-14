@@ -1571,21 +1571,21 @@
     "crates/cortex-engine/src/bin/scale_benchmark_check/args.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 120,
+      "lines": 126,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-engine/src/bin/scale_benchmark_check/args_tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 40,
+      "lines": 47,
       "soft_limit": 600,
       "warning_limit": 1200
     },
     "crates/cortex-engine/src/bin/scale_benchmark_check/metrics.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 156,
+      "lines": 167,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1599,7 +1599,7 @@
     "crates/cortex-engine/src/bin/scale_benchmark_check/report.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 74,
+      "lines": 77,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1613,7 +1613,7 @@
     "crates/cortex-engine/src/bin/scale_benchmark_check/runner.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 172,
+      "lines": 188,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1816,7 +1816,7 @@
     "crates/cortex-engine/src/config.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 289,
+      "lines": 290,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1998,7 +1998,7 @@
     "crates/cortex-engine/src/database/open.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 154,
+      "lines": 156,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2439,7 +2439,7 @@
     "crates/cortex-engine/src/options.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 156,
+      "lines": 158,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -6667,7 +6667,7 @@
     "mk/core.mk": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 39,
+      "lines": 41,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -6849,7 +6849,7 @@
     "mk/performance-dashboard.mk": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 151,
+      "lines": 154,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -6898,7 +6898,7 @@
     "mk/vars-ops-release.mk": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 142,
+      "lines": 146,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -7990,7 +7990,7 @@
     "scripts/enterprise_rag_bench/deepseek_answers_lib/budget.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 148,
+      "lines": 136,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -8032,7 +8032,7 @@
     "scripts/enterprise_rag_bench/deepseek_answers_lib/worker.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 237,
+      "lines": 228,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -8575,6 +8575,13 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "scripts/enterprise_rag_bench/oracle_inference_guard.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 109,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "scripts/enterprise_rag_bench/oracle_usage_audit.py": {
       "hard_limit": 1000,
       "kind": "source",
@@ -8781,7 +8788,7 @@
     "scripts/enterprise_rag_bench/test_answer_intent.py": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 127,
+      "lines": 125,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -9467,14 +9474,14 @@
     "scripts/scale_benchmark_inventory.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 152,
+      "lines": 195,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "scripts/scale_benchmark_trends.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 217,
+      "lines": 286,
       "soft_limit": 300,
       "warning_limit": 600
     },

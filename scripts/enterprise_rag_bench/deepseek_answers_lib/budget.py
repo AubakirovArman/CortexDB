@@ -7,19 +7,10 @@ from typing import Any
 
 from answer_intent import answer_intent_profile
 
-def high_level_reference_context(path: Path | None, max_chars: int) -> str:
-    if path is None or max_chars <= 0 or not path.exists():
-        return ""
-    text = path.read_text(encoding="utf-8")[:max_chars].strip()
-    if not text:
-        return ""
-    return f"--- High-level reference: {path.name} ---\n{text}"
-
 
 def resolve_answer_budget(
     *,
     question: str,
-    question_type: str,
     args: argparse.Namespace,
 ) -> dict[str, Any]:
     context_mode = args.context_mode
@@ -58,12 +49,10 @@ def resolve_answer_budget(
             if args.complex_max_tokens > max_tokens:
                 max_tokens = args.complex_max_tokens
                 adaptive_budget_applied = True
-    high_level_override_applied = question_type == "high_level"
-    if high_level_override_applied:
-        context_mode = args.high_level_context_mode
-        top_k_context = args.high_level_top_k_context
-        max_chars_per_doc = args.high_level_max_chars_per_doc
-        max_tokens = args.high_level_max_tokens
+    # Oracle-free: the benchmark `question_type` is gold metadata and must never
+    # drive inference. High-level questions are handled oracle-free via retrieval
+    # routing (P0-5 company-scope route), not by reading the question type.
+    high_level_override_applied = False
     return {
         "context_mode": context_mode,
         "top_k_context": top_k_context,
@@ -107,7 +96,6 @@ def answer_budget_trace_row(
         }
     budget = resolve_answer_budget(
         question=str(row.get("question", "")),
-        question_type=str(row.get("question_type") or ""),
         args=args,
     )
     top_k_context = int(budget["top_k_context"])
