@@ -1,6 +1,6 @@
 use crate::{cli_aql as aql_cmd, cli_ops as ops};
 
-use super::super::args::{ContextOutputFormat, VerificationOutputFormat};
+use super::super::args::{AqlExplainModeArg, ContextOutputFormat, VerificationOutputFormat};
 use super::DispatchContext;
 
 pub(super) fn context(
@@ -73,6 +73,13 @@ pub(super) fn aql(
     path: String,
     scope: String,
     aql: String,
+    explain: Option<AqlExplainModeArg>,
 ) -> Result<String, String> {
-    aql_cmd::aql(ctx.resolve(&path).to_str().unwrap(), &scope, &aql, ctx.json)
+    aql_cmd::aql(
+        ctx.resolve(&path).to_str().unwrap(),
+        &scope,
+        &aql,
+        ctx.json,
+        explain.map(AqlExplainModeArg::as_str),
+    )
 }

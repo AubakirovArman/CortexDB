@@ -1,5 +1,5 @@
 use cortex_aql::RetrievalMode;
-use cortex_engine::{AqlExplainReport, RetrievedCell};
+use cortex_engine::{AqlExplainReport, PhysicalOperatorTrace, RetrievedCell};
 use serde_json::to_string;
 
 use crate::cli_json_types::{
@@ -23,6 +23,17 @@ pub(crate) fn aql_to_json(cells: &[RetrievedCell]) -> String {
 }
 
 pub(crate) fn aql_explain_to_json(report: AqlExplainReport) -> String {
+    let execution_trace = report
+        .execution_trace
+        .as_ref()
+        .map(|trace| AqlExecutionTraceResponse {
+            operators: trace
+                .operators
+                .iter()
+                .map(|operator| execution_operator_response(operator, &report))
+                .collect(),
+            total_elapsed_nanos: trace.total_elapsed_nanos,
+        });
     serialize_or_error(&AqlResponse {
         cells: Vec::new(),
         explain: Some(AqlExplainResponse {
@@ -54,23 +65,38 @@ pub(crate) fn aql_explain_to_json(report: AqlExplainReport) -> String {
             candidate_limit: report.candidate_limit,
             budget_tokens: report.budget_tokens,
             citations_required: report.citations_required,
-            execution_trace: report
-                .execution_trace
-                .map(|trace| AqlExecutionTraceResponse {
-                    operators: trace
-                        .operators
-                        .into_iter()
-                        .map(|operator| AqlExecutionOperatorResponse {
-                            name: operator.name,
-                            input_count: operator.input_count,
-                            output_count: operator.output_count,
-                            elapsed_nanos: operator.elapsed_nanos,
-                        })
-                        .collect(),
-                    total_elapsed_nanos: trace.total_elapsed_nanos,
-                }),
+            execution_trace,
         }),
     })
+}
+
+fn execution_operator_response(
+    operator: &PhysicalOperatorTrace,
+    report: &AqlExplainReport,
+) -> AqlExecutionOperatorResponse {
+    AqlExecutionOperatorResponse {
+        name: operator.name.clone(),
+        input_count: operator.input_count,
+        output_count: operator.output_count,
+        actual_input_count: operator.input_count,
+        actual_output_count: operator.output_count,
+        estimated_output_count: estimated_operator_output_count(operator, report),
+        elapsed_nanos: operator.elapsed_nanos,
+    }
+}
+
+fn estimated_operator_output_count(
+    operator: &PhysicalOperatorTrace,
+    report: &AqlExplainReport,
+) -> Option<usize> {
+    match operator.name.as_str() {
+        "BitmapIndexScan" => report.candidate_counts.estimated_after_bitmap,
+        "PermissionFilter" => Some(report.candidate_counts.agent_allowed),
+        "MemoryLifecycleFilter" => Some(report.candidate_counts.live),
+        "QualityFilter" => Some(report.candidate_counts.after_quality),
+        "LimitOp" | "PackOp" => Some(report.candidate_counts.returned_limit),
+        _ => None,
+    }
 }
 
 fn cost_model_response(decision: cortex_engine::CostModelDecision) -> AqlCostModelResponse {

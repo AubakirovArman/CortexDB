@@ -28,6 +28,6 @@ pub(super) struct Cli {
 mod commands;
 
 pub(super) use commands::{
-    AgentCommand, AgentScopeAccessArg, Command, ContextOutputFormat, UpgradeCommand, VectorCommand,
-    VerificationOutputFormat,
+    AgentCommand, AgentScopeAccessArg, AqlExplainModeArg, Command, ContextOutputFormat,
+    UpgradeCommand, VectorCommand, VerificationOutputFormat,
 };

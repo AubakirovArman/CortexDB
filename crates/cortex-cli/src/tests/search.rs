@@ -1,4 +1,5 @@
 use super::helpers::*;
+use serde_json::Value;
 
 #[test]
 fn aql_command_returns_retrieved_cells() {
@@ -70,6 +71,59 @@ fn aql_command_explain_reports_plan_filters_counts_and_mode() {
     assert!(json.contains(r#""selected_mode":"balanced""#));
     assert!(json.contains(r#""cost_model":{"selected_path":"bitmap-first""#));
     assert!(json.contains(r#""after_bitmap":1"#));
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
+fn aql_command_explain_analyze_flag_reports_actual_operator_counts() {
+    let path = unique_path("cortexdb-cli-aql-explain-analyze");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nalpha budget".to_owned(),
+    ])
+    .unwrap();
+
+    let statement = r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#;
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "aql".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        statement.to_owned(),
+        "--explain".to_owned(),
+        "analyze".to_owned(),
+    ])
+    .unwrap();
+    assert!(output.contains("execution_trace total_elapsed_nanos="));
+    assert!(output.contains("operator name=BitmapIndexScan"));
+    assert!(output.contains("actual_output_count=1"));
+
+    let json = run(vec![
+        "cortexdb".to_owned(),
+        "--json".to_owned(),
+        "aql".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        statement.to_owned(),
+        "--explain".to_owned(),
+        "analyze".to_owned(),
+    ])
+    .unwrap();
+    let json: Value = serde_json::from_str(&json).unwrap();
+    let first_operator = &json["explain"]["execution_trace"]["operators"][0];
+    assert_eq!(first_operator["name"], "BitmapIndexScan");
+    assert_eq!(first_operator["actual_output_count"], 1);
+    assert!(first_operator.get("estimated_output_count").is_some());
+    assert!(json["explain"]["execution_trace"]["operators"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|operator| operator["estimated_output_count"].is_number()));
 
     let _ = std::fs::remove_dir_all(path);
 }

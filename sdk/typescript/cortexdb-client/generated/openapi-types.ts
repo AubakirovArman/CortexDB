@@ -364,6 +364,33 @@ export interface OpenApiAqlCostModel {
   selected_path: "bitmap-first" | "lexical-first" | "vector-first" | "hybrid";
 }
 
+export interface OpenApiAqlLogicalPlanNode {
+  detail: string;
+  id: number;
+  kind: string;
+  permission_predicate?: string | unknown;
+}
+
+export interface OpenApiAqlLogicalPlan {
+  nodes: OpenApiAqlLogicalPlanNode[];
+  policy_complete: boolean;
+}
+
+export interface OpenApiAqlExecutionOperator {
+  actual_input_count: number;
+  actual_output_count: number;
+  elapsed_nanos: number;
+  estimated_output_count: number | unknown;
+  input_count: number;
+  name: string;
+  output_count: number;
+}
+
+export interface OpenApiAqlExecutionTrace {
+  operators: OpenApiAqlExecutionOperator[];
+  total_elapsed_nanos: number;
+}
+
 export interface OpenApiAqlExplainResponse {
   bitmap_ops: string[];
   bitmap_plan: string;
@@ -373,7 +400,10 @@ export interface OpenApiAqlExplainResponse {
   candidate_limit: number;
   citations_required: boolean;
   cost_model: OpenApiAqlCostModel;
+  execution_trace?: OpenApiAqlExecutionTrace;
   filters: OpenApiAqlExplainFilter[];
+  logical_plan: OpenApiAqlLogicalPlan;
+  policy_rewritten_plan: OpenApiAqlLogicalPlan;
   selected_mode: "fast" | "balanced" | "semantic" | "audit";
   task: string;
 }

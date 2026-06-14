@@ -7,7 +7,7 @@ use crate::responses::{
     AqlExecutionTraceResponse, AqlExplainFilterResponse, AqlExplainResponse,
     AqlLogicalPlanNodeResponse, AqlLogicalPlanResponse, AqlResponse, RouterError,
 };
-use crate::router::query_param_decoded;
+use crate::router::{query_param_decoded, query_param_opt_decoded};
 
 pub fn handle_aql_shared(
     db: &Database,
@@ -18,11 +18,14 @@ pub fn handle_aql_shared(
     let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
     let aql = String::from_utf8_lossy(body);
     let view = authz::read_view_for_scope(&scope, authenticated_view)?;
-    if starts_with_explain(&aql) {
-        let explain = if starts_with_explain_analyze(&aql) {
-            db.explain_analyze_retrieve_aql(&aql, &view)?
+    let query_explain_mode = query_explain_mode(query)?;
+    let body_explain_mode = explain_mode_from_statement(&aql);
+    if let Some(mode) = query_explain_mode.or(body_explain_mode) {
+        let statement = explain_statement(&aql, mode);
+        let explain = if mode == AqlExplainMode::Analyze {
+            db.explain_analyze_retrieve_aql(&statement, &view)?
         } else {
-            db.explain_retrieve_aql(&aql, &view)?
+            db.explain_retrieve_aql(&statement, &view)?
         };
         let response = AqlResponse {
             cells: Vec::new(),
@@ -42,6 +45,55 @@ pub fn handle_aql_shared(
         explain: None,
     };
     Ok(serde_json::to_string(&response)?)
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum AqlExplainMode {
+    Plan,
+    Analyze,
+}
+
+fn query_explain_mode(query: &str) -> Result<Option<AqlExplainMode>, RouterError> {
+    let Some(value) = query_param_opt_decoded(query, "explain") else {
+        return Ok(None);
+    };
+    match value.to_ascii_lowercase().as_str() {
+        "plan" | "true" | "1" => Ok(Some(AqlExplainMode::Plan)),
+        "analyze" => Ok(Some(AqlExplainMode::Analyze)),
+        "false" | "0" => Ok(None),
+        other => Err(RouterError::BadRequest(format!(
+            "unsupported explain mode '{other}' (expected plan or analyze)"
+        ))),
+    }
+}
+
+fn explain_mode_from_statement(aql: &str) -> Option<AqlExplainMode> {
+    if starts_with_explain_analyze(aql) {
+        Some(AqlExplainMode::Analyze)
+    } else if starts_with_explain(aql) {
+        Some(AqlExplainMode::Plan)
+    } else {
+        None
+    }
+}
+
+fn explain_statement(aql: &str, mode: AqlExplainMode) -> String {
+    let statement = statement_without_explain_prefix(aql);
+    match mode {
+        AqlExplainMode::Plan => format!("EXPLAIN {statement}"),
+        AqlExplainMode::Analyze => format!("EXPLAIN ANALYZE {statement}"),
+    }
+}
+
+fn statement_without_explain_prefix(aql: &str) -> &str {
+    let trimmed = aql.trim_start();
+    if starts_with_explain_analyze(trimmed) {
+        trimmed[15..].trim_start()
+    } else if starts_with_explain(trimmed) {
+        trimmed[7..].trim_start()
+    } else {
+        trimmed
+    }
 }
 
 fn starts_with_explain_analyze(aql: &str) -> bool {
@@ -70,6 +122,25 @@ fn starts_with_explain(aql: &str) -> bool {
 }
 
 fn explain_response(report: AqlExplainReport) -> AqlExplainResponse {
+    let execution_trace = report
+        .execution_trace
+        .as_ref()
+        .map(|trace| AqlExecutionTraceResponse {
+            operators: trace
+                .operators
+                .iter()
+                .map(|operator| AqlExecutionOperatorResponse {
+                    name: operator.name.clone(),
+                    input_count: operator.input_count,
+                    output_count: operator.output_count,
+                    actual_input_count: operator.input_count,
+                    actual_output_count: operator.output_count,
+                    estimated_output_count: estimated_operator_output_count(operator, &report),
+                    elapsed_nanos: operator.elapsed_nanos,
+                })
+                .collect(),
+            total_elapsed_nanos: trace.total_elapsed_nanos,
+        });
     AqlExplainResponse {
         task: report.task,
         brain_id: report.brain_id.0,
@@ -99,21 +170,21 @@ fn explain_response(report: AqlExplainReport) -> AqlExplainResponse {
         candidate_limit: report.candidate_limit,
         budget_tokens: report.budget_tokens,
         citations_required: report.citations_required,
-        execution_trace: report
-            .execution_trace
-            .map(|trace| AqlExecutionTraceResponse {
-                operators: trace
-                    .operators
-                    .into_iter()
-                    .map(|operator| AqlExecutionOperatorResponse {
-                        name: operator.name,
-                        input_count: operator.input_count,
-                        output_count: operator.output_count,
-                        elapsed_nanos: operator.elapsed_nanos,
-                    })
-                    .collect(),
-                total_elapsed_nanos: trace.total_elapsed_nanos,
-            }),
+        execution_trace,
+    }
+}
+
+fn estimated_operator_output_count(
+    operator: &cortex_engine::PhysicalOperatorTrace,
+    report: &AqlExplainReport,
+) -> Option<usize> {
+    match operator.name.as_str() {
+        "BitmapIndexScan" => report.candidate_counts.estimated_after_bitmap,
+        "PermissionFilter" => Some(report.candidate_counts.agent_allowed),
+        "MemoryLifecycleFilter" => Some(report.candidate_counts.live),
+        "QualityFilter" => Some(report.candidate_counts.after_quality),
+        "LimitOp" | "PackOp" => Some(report.candidate_counts.returned_limit),
+        _ => None,
     }
 }
 

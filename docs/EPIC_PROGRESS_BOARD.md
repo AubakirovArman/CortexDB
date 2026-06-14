@@ -20,16 +20,16 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B15` — EXPLAIN ANALYZE for AQL.
+`EPIC-B17` — Typed tool registry.
 
-B15 exit steps:
+B17 exit steps:
 
-1. Add runtime counters per operator/stage.
-2. Expose elapsed time, candidates, filtered counts, payload reads, and token budget.
-3. Add CLI/server tests.
-4. Mark done when AQL can report actual execution metrics; then move to B17.
+1. Define typed tool records and schema.
+2. Build maintained tool registry/index instead of scan-based convention.
+3. Add retrieval/tool recommendation tests.
+4. Mark done when tool lookup is typed and indexed; then move to B18.
 
-B15 current state:
+B17 current state:
 
 - next.
 - Do not reopen C14 unless temporal interval index, AQL `valid at`, or VERIFY
@@ -47,6 +47,18 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-B15 — EXPLAIN ANALYZE for AQL
+
+Status: `done`
+
+What closed it:
+
+- Added CLI flag form `cortexdb aql ... --explain analyze` and `--explain plan`.
+- Added HTTP query param `POST /v1/aql?scope=...&explain=analyze` for normal `RETRIEVE` bodies.
+- Added explicit `actual_input_count`, `actual_output_count`, and nullable `estimated_output_count` to AQL execution trace operator responses.
+- Documented examples and trace fields in `docs/EXPLAIN_ANALYZE.md`.
+- Aligned OpenAPI and generated Python/TypeScript OpenAPI SDK types.
 
 ### EPIC-B14 — Explainability contract
 
@@ -752,9 +764,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on B15 only:
+Work on B17 only:
 
-1. inventory current AQL EXPLAIN and EXPLAIN ANALYZE counters;
-2. expose missing actual operator metrics without changing query semantics;
-3. add focused CLI/server tests;
-4. move to B17 after B15 acceptance is closed.
+1. inventory current tool metadata and recommendation code;
+2. define the smallest typed tool record contract;
+3. replace scan-based tool lookup with a maintained registry/index;
+4. move to B18 after B17 acceptance is closed.

@@ -214,7 +214,9 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
         Command::Verify { input, format } => {
             knowledge::verify(ctx, input.path, input.scope, input.aql, format)
         }
-        Command::Aql { input } => knowledge::aql(ctx, input.path, input.scope, input.aql),
+        Command::Aql { input, explain } => {
+            knowledge::aql(ctx, input.path, input.scope, input.aql, explain)
+        }
         Command::Search {
             path,
             scope,

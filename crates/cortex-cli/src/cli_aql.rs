@@ -4,13 +4,20 @@ use crate::cli_aql_json::{aql_explain_to_json, aql_to_json};
 use crate::cli_ops::{fmt_engine_error, open_database};
 use crate::context::{format_retrieved_cells, view_for_scope};
 
-pub fn aql(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, String> {
+pub fn aql(
+    path: &str,
+    scope: &str,
+    aql: &str,
+    json: bool,
+    explain: Option<&str>,
+) -> Result<String, String> {
     let db = open_database(path, false)?;
-    if starts_with_explain(aql) {
-        let report = if starts_with_explain_analyze(aql) {
-            db.explain_analyze_retrieve_aql(aql, &view_for_scope(scope))
+    if let Some(mode) = explain_mode(aql, explain)? {
+        let statement = explain_statement(aql, mode);
+        let report = if mode == AqlExplainMode::Analyze {
+            db.explain_analyze_retrieve_aql(&statement, &view_for_scope(scope))
         } else {
-            db.explain_retrieve_aql(aql, &view_for_scope(scope))
+            db.explain_retrieve_aql(&statement, &view_for_scope(scope))
         }
         .map_err(fmt_engine_error)?;
         if json {
@@ -25,6 +32,50 @@ pub fn aql(path: &str, scope: &str, aql: &str, json: bool) -> Result<String, Str
         Ok(aql_to_json(&cells))
     } else {
         Ok(format_retrieved_cells(&cells))
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum AqlExplainMode {
+    Plan,
+    Analyze,
+}
+
+fn explain_mode(aql: &str, explain: Option<&str>) -> Result<Option<AqlExplainMode>, String> {
+    if let Some(mode) = explain {
+        return match mode {
+            "plan" => Ok(Some(AqlExplainMode::Plan)),
+            "analyze" => Ok(Some(AqlExplainMode::Analyze)),
+            other => Err(format!(
+                "unsupported explain mode '{other}' (expected plan or analyze)"
+            )),
+        };
+    }
+    if starts_with_explain_analyze(aql) {
+        Ok(Some(AqlExplainMode::Analyze))
+    } else if starts_with_explain(aql) {
+        Ok(Some(AqlExplainMode::Plan))
+    } else {
+        Ok(None)
+    }
+}
+
+fn explain_statement(aql: &str, mode: AqlExplainMode) -> String {
+    let statement = statement_without_explain_prefix(aql);
+    match mode {
+        AqlExplainMode::Plan => format!("EXPLAIN {statement}"),
+        AqlExplainMode::Analyze => format!("EXPLAIN ANALYZE {statement}"),
+    }
+}
+
+fn statement_without_explain_prefix(aql: &str) -> &str {
+    let trimmed = aql.trim_start();
+    if starts_with_explain_analyze(trimmed) {
+        trimmed[15..].trim_start()
+    } else if starts_with_explain(trimmed) {
+        trimmed[7..].trim_start()
+    } else {
+        trimmed
     }
 }
 
@@ -60,7 +111,7 @@ fn format_aql_explain(report: &AqlExplainReport) -> String {
         .map(|filter| format!("{}={}", filter.kind, filter.expression))
         .collect::<Vec<_>>()
         .join(", ");
-    format!(
+    let mut output = format!(
         "aql_explain task={} mode={:?} brain_id={} candidate_limit={} budget_tokens={} citations_required={}\nlogical_plan_policy_complete={} policy_rewritten_plan_policy_complete={} execution_trace_operators={}\ncost_model selected_path={} reason={} recommended_candidate_limit={} has_query_vector={}\ncounts universe={} agent_allowed={} live={} estimated_after_bitmap={} after_bitmap={} after_quality={} returned_limit={}\nfilters={}\n{}",
         report.task,
         report.selected_mode,
@@ -92,5 +143,38 @@ fn format_aql_explain(report: &AqlExplainReport) -> String {
         report.candidate_counts.returned_limit,
         filters,
         report.bitmap_plan
-    )
+    );
+    if let Some(trace) = &report.execution_trace {
+        output.push_str(&format!(
+            "\nexecution_trace total_elapsed_nanos={}",
+            trace.total_elapsed_nanos
+        ));
+        for operator in &trace.operators {
+            output.push_str(&format!(
+                "\noperator name={} actual_input_count={} actual_output_count={} estimated_output_count={} elapsed_nanos={}",
+                operator.name,
+                operator.input_count,
+                operator.output_count,
+                estimated_operator_output_count(operator, report)
+                    .map(|count| count.to_string())
+                    .unwrap_or_else(|| "null".to_owned()),
+                operator.elapsed_nanos
+            ));
+        }
+    }
+    output
+}
+
+fn estimated_operator_output_count(
+    operator: &cortex_engine::PhysicalOperatorTrace,
+    report: &AqlExplainReport,
+) -> Option<usize> {
+    match operator.name.as_str() {
+        "BitmapIndexScan" => report.candidate_counts.estimated_after_bitmap,
+        "PermissionFilter" => Some(report.candidate_counts.agent_allowed),
+        "MemoryLifecycleFilter" => Some(report.candidate_counts.live),
+        "QualityFilter" => Some(report.candidate_counts.after_quality),
+        "LimitOp" | "PackOp" => Some(report.candidate_counts.returned_limit),
+        _ => None,
+    }
 }

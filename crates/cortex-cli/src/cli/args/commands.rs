@@ -2,7 +2,9 @@ use clap::Subcommand;
 mod formats;
 mod inputs;
 mod subcommands;
-pub(in crate::cli) use formats::{ContextOutputFormat, VerificationOutputFormat};
+pub(in crate::cli) use formats::{
+    AqlExplainModeArg, ContextOutputFormat, VerificationOutputFormat,
+};
 pub(in crate::cli) use inputs::{ScopedAqlArgs, ScopedVectorArgs, VectorSearchPolicyArgs};
 pub(in crate::cli) use subcommands::{
     AgentCommand, AgentScopeAccessArg, UpgradeCommand, VectorCommand,
@@ -233,11 +235,13 @@ pub(in crate::cli) enum Command {
     },
     #[command(
         about = "Execute an AQL statement",
-        long_about = "Execute an AQL statement against a scoped AgentView. Use this for raw RETRIEVE, VERIFY, REMEMBER, and EXPLAIN flows.\n\nExample:\n  cortexdb aql ./db project:investments 'EXPLAIN RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN default LIMIT 5 CANDIDATES;'"
+        long_about = "Execute an AQL statement against a scoped AgentView. Use this for raw RETRIEVE, VERIFY, REMEMBER, and EXPLAIN flows.\n\nExample:\n  cortexdb aql ./db project:investments 'RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN default LIMIT 5 CANDIDATES;' --explain analyze"
     )]
     Aql {
         #[command(flatten)]
         input: ScopedAqlArgs,
+        #[arg(long, value_enum)]
+        explain: Option<AqlExplainModeArg>,
     },
     #[command(about = "Run keyword, vector, or hybrid search")]
     Search {

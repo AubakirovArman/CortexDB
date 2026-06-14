@@ -1,6 +1,21 @@
 use clap::ValueEnum;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+pub(in crate::cli) enum AqlExplainModeArg {
+    Plan,
+    Analyze,
+}
+
+impl AqlExplainModeArg {
+    pub(in crate::cli) fn as_str(self) -> &'static str {
+        match self {
+            Self::Plan => "plan",
+            Self::Analyze => "analyze",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub(in crate::cli) enum ContextOutputFormat {
     Summary,
     Json,

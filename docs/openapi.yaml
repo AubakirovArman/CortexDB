@@ -487,6 +487,15 @@ paths:
         description: Generate a query vector from the task text using the server embedding config.
         schema:
           type: boolean
+      - name: explain
+        in: query
+        required: false
+        description: Run the submitted RETRIEVE statement as EXPLAIN or EXPLAIN ANALYZE.
+        schema:
+          type: string
+          enum:
+          - plan
+          - analyze
       requestBody:
         required: true
         content:
@@ -2414,12 +2423,90 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AqlCostModelEstimate'
+    AqlLogicalPlanNode:
+      type: object
+      required:
+      - id
+      - kind
+      - detail
+      properties:
+        id:
+          type: integer
+          minimum: 0
+        kind:
+          type: string
+        detail:
+          type: string
+        permission_predicate:
+          anyOf:
+          - type: string
+          - type: 'null'
+    AqlLogicalPlan:
+      type: object
+      required:
+      - nodes
+      - policy_complete
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AqlLogicalPlanNode'
+        policy_complete:
+          type: boolean
+    AqlExecutionOperator:
+      type: object
+      required:
+      - name
+      - input_count
+      - output_count
+      - actual_input_count
+      - actual_output_count
+      - estimated_output_count
+      - elapsed_nanos
+      properties:
+        name:
+          type: string
+        input_count:
+          type: integer
+          minimum: 0
+        output_count:
+          type: integer
+          minimum: 0
+        actual_input_count:
+          type: integer
+          minimum: 0
+        actual_output_count:
+          type: integer
+          minimum: 0
+        estimated_output_count:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+        elapsed_nanos:
+          type: integer
+          minimum: 0
+    AqlExecutionTrace:
+      type: object
+      required:
+      - operators
+      - total_elapsed_nanos
+      properties:
+        operators:
+          type: array
+          items:
+            $ref: '#/components/schemas/AqlExecutionOperator'
+        total_elapsed_nanos:
+          type: integer
+          minimum: 0
     AqlExplainResponse:
       type: object
       required:
       - task
       - brain_id
       - selected_mode
+      - logical_plan
+      - policy_rewritten_plan
       - bitmap_plan
       - bitmap_ops
       - filters
@@ -2441,6 +2528,10 @@ components:
           - balanced
           - semantic
           - audit
+        logical_plan:
+          $ref: '#/components/schemas/AqlLogicalPlan'
+        policy_rewritten_plan:
+          $ref: '#/components/schemas/AqlLogicalPlan'
         bitmap_plan:
           type: string
         bitmap_ops:
@@ -2463,6 +2554,8 @@ components:
           minimum: 0
         citations_required:
           type: boolean
+        execution_trace:
+          $ref: '#/components/schemas/AqlExecutionTrace'
     SearchRoutingDecision:
       type: object
       required:

@@ -535,6 +535,49 @@ OpenApiAqlCostModel = TypedDict(
     total=False,
 )
 
+OpenApiAqlLogicalPlanNode = TypedDict(
+    'OpenApiAqlLogicalPlanNode',
+    {
+        'detail': 'str',
+        'id': 'int',
+        'kind': 'str',
+        'permission_predicate': 'str | Any',
+    },
+    total=False,
+)
+
+OpenApiAqlLogicalPlan = TypedDict(
+    'OpenApiAqlLogicalPlan',
+    {
+        'nodes': 'list[OpenApiAqlLogicalPlanNode]',
+        'policy_complete': 'bool',
+    },
+    total=False,
+)
+
+OpenApiAqlExecutionOperator = TypedDict(
+    'OpenApiAqlExecutionOperator',
+    {
+        'actual_input_count': 'int',
+        'actual_output_count': 'int',
+        'elapsed_nanos': 'int',
+        'estimated_output_count': 'int | Any',
+        'input_count': 'int',
+        'name': 'str',
+        'output_count': 'int',
+    },
+    total=False,
+)
+
+OpenApiAqlExecutionTrace = TypedDict(
+    'OpenApiAqlExecutionTrace',
+    {
+        'operators': 'list[OpenApiAqlExecutionOperator]',
+        'total_elapsed_nanos': 'int',
+    },
+    total=False,
+)
+
 OpenApiAqlExplainResponse = TypedDict(
     'OpenApiAqlExplainResponse',
     {
@@ -546,7 +589,10 @@ OpenApiAqlExplainResponse = TypedDict(
         'candidate_limit': 'int',
         'citations_required': 'bool',
         'cost_model': 'OpenApiAqlCostModel',
+        'execution_trace': 'OpenApiAqlExecutionTrace',
         'filters': 'list[OpenApiAqlExplainFilter]',
+        'logical_plan': 'OpenApiAqlLogicalPlan',
+        'policy_rewritten_plan': 'OpenApiAqlLogicalPlan',
         'selected_mode': "Literal['fast', 'balanced', 'semantic', 'audit']",
         'task': 'str',
     },

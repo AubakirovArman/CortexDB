@@ -83,6 +83,12 @@ pub struct AqlExecutionOperatorResponse {
     pub name: String,
     pub input_count: usize,
     pub output_count: usize,
+    #[serde(default)]
+    pub actual_input_count: usize,
+    #[serde(default)]
+    pub actual_output_count: usize,
+    #[serde(default)]
+    pub estimated_output_count: Option<usize>,
     pub elapsed_nanos: u64,
 }
 

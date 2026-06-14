@@ -145,6 +145,29 @@ fn v1_aql_explain_returns_plan_filters_counts_and_mode() {
 }
 
 #[test]
+fn v1_aql_explain_analyze_query_flag_reports_execution_trace() {
+    let dir = tempfile::tempdir().unwrap();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\nalpha budget"
+    );
+    assert!(handle_http(dir.path(), put).contains(r#""seq":1"#));
+
+    let request = concat!(
+        "POST /v1/aql?scope=project:investments&explain=analyze HTTP/1.1\r\n\r\n",
+        "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects ",
+        "USING MODE balanced WHERE space = project:investments AND status = \"ready\" LIMIT 10 CANDIDATES;"
+    );
+    let response = handle_http(dir.path(), request);
+    assert!(response.contains(r#""cells":[]"#));
+    assert!(response.contains(r#""execution_trace":"#));
+    assert!(response.contains(r#""name":"BitmapIndexScan""#));
+    assert!(response.contains(r#""actual_output_count":1"#));
+    assert!(response.contains(r#""estimated_output_count":1"#));
+    assert!(response.contains(r#""total_elapsed_nanos":"#));
+}
+
+#[test]
 fn v1_verify_returns_markdown_and_audit_exports() {
     let dir = tempfile::tempdir().unwrap();
     let put = concat!(
