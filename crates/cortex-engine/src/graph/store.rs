@@ -37,17 +37,16 @@ impl GraphIndexStore {
     }
 
     pub(crate) fn apply_record(&mut self, cell_id: CellId, record: Option<GraphIndexRecord>) {
+        self.remove_record(cell_id);
         if let Some(record) = record {
-            self.records.insert(cell_id, record);
+            self.insert_record(cell_id, record);
         } else {
             self.records.remove(&cell_id);
         }
-        self.rebuild();
     }
 
     pub(crate) fn apply_tombstone(&mut self, cell_id: CellId) {
-        self.records.remove(&cell_id);
-        self.rebuild();
+        self.remove_record(cell_id);
     }
 
     pub(crate) fn index(&self) -> KnowledgeGraphIndex {
@@ -61,27 +60,26 @@ impl GraphIndexStore {
     pub(crate) fn from_records(
         records: impl IntoIterator<Item = (CellId, GraphIndexRecord)>,
     ) -> Self {
-        let records = records.into_iter().collect();
-        let mut store = Self {
-            records,
-            index: KnowledgeGraphIndex::default(),
-            tools: BTreeMap::new(),
-        };
-        store.rebuild();
+        let mut store = Self::default();
+        for (cell_id, record) in records {
+            store.insert_record(cell_id, record);
+        }
         store
     }
 
-    fn rebuild(&mut self) {
-        self.index = KnowledgeGraphIndex::from_records(
-            self.records
-                .iter()
-                .map(|(cell_id, record)| (*cell_id, record.payload.as_slice(), &record.metadata)),
-        );
-        self.tools = self
-            .records
-            .iter()
-            .filter_map(|(cell_id, record)| tool_cell_from_record(*cell_id, record))
-            .collect();
+    fn insert_record(&mut self, cell_id: CellId, record: GraphIndexRecord) {
+        self.index
+            .index_record(cell_id, record.payload.as_slice(), &record.metadata);
+        if let Some((_, tool)) = tool_cell_from_record(cell_id, &record) {
+            self.tools.insert(cell_id, tool);
+        }
+        self.records.insert(cell_id, record);
+    }
+
+    fn remove_record(&mut self, cell_id: CellId) {
+        self.records.remove(&cell_id);
+        self.index.remove_cell(cell_id);
+        self.tools.remove(&cell_id);
     }
 }
 

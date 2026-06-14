@@ -22,7 +22,7 @@ pub struct GraphEdge {
 }
 
 /// Stable graph edge categories used by higher-level retrieval and verification.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum GraphEdgeKind {
     SourceSupportsFact,
     FactContradictsFact,
@@ -41,6 +41,8 @@ pub struct GraphSourceRef {
 pub struct KnowledgeGraphIndex {
     pub(super) entities_by_name: BTreeMap<String, Vec<GraphEntity>>,
     pub(super) edges_by_entity: BTreeMap<String, Vec<GraphEdge>>,
+    pub(super) edges_by_kind: BTreeMap<GraphEdgeKind, BTreeMap<CellId, GraphEdge>>,
+    pub(super) source_support_edges_by_fact: BTreeMap<CellId, BTreeMap<CellId, GraphEdge>>,
     pub(super) cells_by_source: BTreeMap<String, BTreeSet<CellId>>,
 }
 

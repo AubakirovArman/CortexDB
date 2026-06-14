@@ -20,20 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B18` — Incremental knowledge graph/provenance index.
+`EPIC-C15` — Incremental graph index performance.
 
-B18 exit steps:
+C15 exit steps:
 
-1. Define graph edge keys and update rules.
-2. Maintain the graph/provenance index incrementally.
-3. Add equivalence tests against rebuild and existing graph fixtures.
-4. Mark done when graph/provenance lookup avoids full scans; then move to C15.
+1. Compact graph adjacency and traversal representation where needed.
+2. Add bounded BFS/DFS visit-budget behavior.
+3. Publish 100K graph traversal p95 evidence.
+4. Mark done when graph traversal is bounded and measured; then move to B19.
 
-B18 current state:
+C15 current state:
 
 - next.
-- Do not reopen B17 unless typed tool catalog lookup, term index maintenance, or
-  lazy tool-index rebuild regresses.
+- Do not reopen B18 unless graph lookup no-scan behavior, source-support index
+  enrichment, or incremental graph-store equivalence regresses.
 
 ## Active Partial Tail
 
@@ -47,6 +47,18 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-B18 — Incremental knowledge graph/provenance index
+
+Status: `done`
+
+What closed it:
+
+- `GraphIndexStore` updates incrementally with `insert_record`/`remove_record`.
+- `KnowledgeGraphIndex` now maintains adjacency, edge-kind, source-reference, and `source_support_edges_by_fact` maps.
+- Graph APIs read the maintained store; lazy graph queries no longer rebuild from visible payloads.
+- VERIFY source-support enrichment reads indexed source-support edges for current evidence cell ids.
+- Added `docs/KNOWLEDGE_GRAPH.md`, `graph_index_incremental_tests`, and `knowledge-graph-check` in `make check`.
 
 ### EPIC-B17 — Typed tool registry
 
@@ -776,9 +788,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on B18 only:
+Work on C15 only:
 
-1. inventory current graph/provenance scans and derived graph stores;
-2. define the smallest incremental edge/update contract;
-3. add equivalence tests against rebuild and existing graph fixtures;
-4. move to C15 after B18 acceptance is closed.
+1. inventory graph traversal hot paths and current adjacency representation;
+2. add bounded traversal visit-budget behavior;
+3. publish 100K graph traversal p95 evidence;
+4. move to B19 after C15 acceptance is closed.

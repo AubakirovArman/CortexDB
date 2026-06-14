@@ -17,6 +17,15 @@ def require_markers(path: Path, markers: list[str]) -> list[str]:
     ]
 
 
+def reject_markers(path: Path, markers: list[str]) -> list[str]:
+    text = path.read_text(encoding="utf-8")
+    return [
+        f"{path.relative_to(ROOT)} contains forbidden marker: {marker}"
+        for marker in markers
+        if marker in text
+    ]
+
+
 def run_test_command(command: list[str]) -> dict:
     completed = subprocess.run(
         command,
@@ -37,7 +46,12 @@ def run_test_command(command: list[str]) -> dict:
 def run_graph_tests() -> list[dict]:
     return [
         run_test_command(["cargo", "test", "-p", "cortex-engine", "--test", test_name])
-        for test_name in ["graph_tests", "graph_retrieval_tests"]
+        for test_name in [
+            "graph_tests",
+            "graph_index_incremental_tests",
+            "graph_retrieval_tests",
+            "verification_graph_tests",
+        ]
     ]
 
 
@@ -50,26 +64,37 @@ def main() -> int:
         "docs/KNOWLEDGE_GRAPH.md",
         "docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md",
         "crates/cortex-engine/src/graph.rs",
+        "crates/cortex-engine/src/graph/types.rs",
+        "crates/cortex-engine/src/graph/index.rs",
+        "crates/cortex-engine/src/graph/database.rs",
+        "crates/cortex-engine/src/graph/store.rs",
         "crates/cortex-engine/src/graph_retrieval.rs",
+        "crates/cortex-engine/src/verification/graph.rs",
         "crates/cortex-engine/tests/graph_tests.rs",
+        "crates/cortex-engine/tests/graph_index_incremental_tests.rs",
         "crates/cortex-engine/tests/graph_retrieval_tests.rs",
+        "crates/cortex-engine/tests/verification_graph_tests.rs",
     ]
     errors = []
     errors.extend(
         require_markers(
             ROOT / "docs" / "KNOWLEDGE_GRAPH.md",
             [
-                "Epic 145 Knowledge Graph Layer v1 Contract",
+                "B18 Knowledge Graph/Provenance Index Contract",
                 "GraphEdgeKind",
                 "type=entity",
                 "type=relation",
                 "source_supports_fact",
                 "fact_contradicts_fact",
                 "source references",
-                "Graph Retrieval v1",
+                "GraphIndexStore",
+                "incremental",
+                "source_support_edges_by_fact",
+                "Graph Retrieval",
                 "GraphRetrievalHit",
                 "proximity_score_q16",
                 "explaining_edges",
+                "VERIFY source-support",
                 "graph_source_supports_fact_edges",
                 "graph_fact_contradicts_fact_edges",
                 "make knowledge-graph-check",
@@ -78,7 +103,7 @@ def main() -> int:
     )
     errors.extend(
         require_markers(
-            ROOT / "docs" / "PRODUCTION_EPIC_EXECUTION_PLAN.md",
+            ROOT / "docs" / "archive" / "PRODUCTION_EPIC_EXECUTION_PLAN.md",
             [
                 "### Epic 145. Knowledge Graph Layer v1",
                 "Status: done",
@@ -90,15 +115,54 @@ def main() -> int:
     )
     errors.extend(
         require_markers(
-            ROOT / "crates" / "cortex-engine" / "src" / "graph.rs",
+            ROOT / "crates" / "cortex-engine" / "src" / "graph" / "types.rs",
             [
                 "pub enum GraphEdgeKind",
                 "pub struct KnowledgeGraphIndex",
+                "source_support_edges_by_fact",
+            ],
+        )
+    )
+    errors.extend(
+        require_markers(
+            ROOT / "crates" / "cortex-engine" / "src" / "graph" / "database.rs",
+            [
                 "pub fn knowledge_graph_index",
-                "pub fn cells_for_source",
                 "pub fn graph_source_supports_fact_edges",
                 "pub fn graph_fact_contradicts_fact_edges",
             ],
+        )
+    )
+    errors.extend(
+        require_markers(
+            ROOT / "crates" / "cortex-engine" / "src" / "graph" / "index.rs",
+            [
+                "source_supports_fact_edges_for_cells",
+                "index_record",
+                "remove_cell",
+            ],
+        )
+    )
+    errors.extend(
+        require_markers(
+            ROOT / "crates" / "cortex-engine" / "src" / "graph" / "store.rs",
+            [
+                "fn insert_record",
+                "fn remove_record",
+                "self.index.remove_cell(cell_id)",
+            ],
+        )
+    )
+    errors.extend(
+        reject_markers(
+            ROOT / "crates" / "cortex-engine" / "src" / "graph" / "store.rs",
+            ["fn rebuild"],
+        )
+    )
+    errors.extend(
+        reject_markers(
+            ROOT / "crates" / "cortex-engine" / "src" / "graph" / "database.rs",
+            ["visible_iter", "payload_for_version"],
         )
     )
     errors.extend(
@@ -115,11 +179,51 @@ def main() -> int:
     )
     errors.extend(
         require_markers(
+            ROOT / "crates" / "cortex-engine" / "src" / "verification" / "graph.rs",
+            [
+                "source_supports_fact_edges_for_cells(&target_cells)",
+                "merge_source_supports_from_edges",
+            ],
+        )
+    )
+    errors.extend(
+        reject_markers(
+            ROOT
+            / "crates"
+            / "cortex-engine"
+            / "src"
+            / "verification"
+            / "operator"
+            / "candidates.rs",
+            ["verification_source_support_versions"],
+        )
+    )
+    errors.extend(
+        require_markers(
             ROOT / "crates" / "cortex-engine" / "tests" / "graph_tests.rs",
             [
                 "knowledge_graph_indexes_source_supports_fact_edges",
                 "knowledge_graph_indexes_fact_contradicts_fact_edges",
             ],
+        )
+    )
+    errors.extend(
+        require_markers(
+            ROOT
+            / "crates"
+            / "cortex-engine"
+            / "tests"
+            / "graph_index_incremental_tests.rs",
+            [
+                "knowledge_graph_incremental_store_matches_rebuild_after_mutations",
+                "lazy_knowledge_graph_queries_do_not_materialize_payloads",
+            ],
+        )
+    )
+    errors.extend(
+        require_markers(
+            ROOT / "crates" / "cortex-engine" / "tests" / "verification_graph_tests.rs",
+            ["VERIFY should read the fact and matching source-support relation only"],
         )
     )
     errors.extend(

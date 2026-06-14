@@ -4,10 +4,8 @@ use cortex_aql::AgentView;
 use cortex_core::memtable::{CellVersion, ReadTxn};
 
 use super::super::evidence::{version_contains_any_term, MaterializedVersion};
-use super::super::VerificationEvidence;
 use crate::database::Database;
 use crate::error::EngineResult;
-use crate::options::PayloadResidency;
 use crate::plan::PolicyRewrite;
 use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
@@ -105,51 +103,5 @@ impl Database {
                     .map(|payload| MaterializedVersion { version, payload })
             })
             .collect()
-    }
-
-    pub(super) fn verification_source_support_versions<'a>(
-        &'a self,
-        evidence: &[VerificationEvidence],
-        view: &AgentView,
-        txn: ReadTxn,
-    ) -> EngineResult<Vec<MaterializedVersion<'a>>> {
-        if evidence.is_empty() {
-            return Ok(Vec::new());
-        }
-        let evidence_ids = evidence
-            .iter()
-            .map(|item| item.cell_id)
-            .map(|cell_id| format!("cell:{}", cell_id.0))
-            .collect::<Vec<_>>();
-        let checkpoint_seq = cortex_core::CommitSeq(self.manifest().checkpoint_seq);
-        let scan_all_live = self.manifest().live_segments.is_empty()
-            || self.payload_residency == PayloadResidency::Lazy;
-        let visible = if scan_all_live {
-            self.memtable.visible_iter(txn).collect::<Vec<_>>()
-        } else {
-            self.memtable
-                .visible_created_after_iter(txn, checkpoint_seq)
-                .collect::<Vec<_>>()
-        };
-        let mut support_versions = Vec::new();
-        for version in visible {
-            let metadata = CellMetadata::from_version(version);
-            if metadata.cell_type != "relation" {
-                continue;
-            }
-            if !PolicyRewrite::allows_scope(view, scope_id(&metadata.scope)) {
-                continue;
-            }
-            let payload = self.payload_for_version(version)?;
-            let is_source_support = evidence_ids.iter().any(|id| {
-                std::str::from_utf8(&payload)
-                    .map(|payload| payload.contains(id))
-                    .unwrap_or(false)
-            });
-            if is_source_support {
-                support_versions.push(MaterializedVersion { version, payload });
-            }
-        }
-        Ok(support_versions)
     }
 }

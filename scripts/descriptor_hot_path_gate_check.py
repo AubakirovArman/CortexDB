@@ -280,13 +280,18 @@ def main() -> None:
     )
     require(
         verification_operator,
-        "if !PolicyRewrite::allows_scope(view, scope_id(&metadata.scope))",
-        "verification source-support scan checks descriptor scope before payload",
+        "enrich_evidence_from_source_support_edges(self, view, &mut evidence)",
+        "verification source-support enrichment delegates to graph index",
+    )
+    forbid(
+        verification_operator,
+        "verification_source_support_versions",
+        "verification source-support snapshot scan helper",
     )
     require(
-        verification_operator,
-        "let payload = self.payload_for_version(version)?;",
-        "verification source-support scan materializes payload after descriptor checks",
+        verification_graph,
+        "source_supports_fact_edges_for_cells(&target_cells)",
+        "verification source-support enrichment reads indexed graph edges",
     )
     require(
         verification_graph,

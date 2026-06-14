@@ -154,9 +154,8 @@ impl Database {
 
         let started = Instant::now();
         let support_input_count = evidence.len();
-        let support_versions = self.verification_source_support_versions(&evidence, view, txn)?;
-        let support_output_count = support_versions.len();
-        enrich_evidence_from_source_support_edges(self, &support_versions, view, &mut evidence);
+        let support_output_count =
+            enrich_evidence_from_source_support_edges(self, view, &mut evidence);
         operators.push(trace(
             "SourceSupportExpandOp",
             support_input_count,

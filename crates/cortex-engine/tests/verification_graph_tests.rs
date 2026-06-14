@@ -109,12 +109,18 @@ fn verify_fact_aql_enriches_evidence_from_source_support_edge_lazy_checkpoint_re
             source_support_relation("project:investments", CellId(1), Some(60_000)),
         )
         .unwrap();
+        db.put_knowledge_cell(
+            CellId(11),
+            source_support_relation("project:investments", CellId(99), Some(65_000)),
+        )
+        .unwrap();
         db.checkpoint().unwrap();
     }
     let db = Database::open_with_options(
         dir.path(),
         DatabaseOptions {
             payload_residency: PayloadResidency::Lazy,
+            payload_cache_bytes: 0,
             ..DatabaseOptions::default()
         },
     )
@@ -135,6 +141,11 @@ fn verify_fact_aql_enriches_evidence_from_source_support_edge_lazy_checkpoint_re
         Some("ifc:disclosure-001".to_owned())
     );
     assert_eq!(report.evidence[0].source_trust_q16, 60_000);
+    assert_eq!(
+        db.payload_cache_stats().segment_loads,
+        2,
+        "VERIFY should read the fact and matching source-support relation only"
+    );
 }
 
 #[test]

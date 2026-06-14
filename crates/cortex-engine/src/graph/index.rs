@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use cortex_core::CellId;
 
 use crate::query::metadata::CellMetadata;
@@ -26,15 +28,50 @@ impl KnowledgeGraphIndex {
     ) -> Self {
         let mut index = Self::default();
         for (cell_id, payload, metadata) in records {
-            index.index_source_ref(cell_id, metadata);
-            match metadata.cell_type.as_str() {
-                "entity" => index.index_entity(cell_id, payload, metadata),
-                "relation" => index.index_relation(cell_id, payload),
-                _ => {}
-            }
+            index.index_record(cell_id, payload, metadata);
         }
         index.sort();
         index
+    }
+
+    pub(crate) fn index_record(
+        &mut self,
+        cell_id: CellId,
+        payload: &[u8],
+        metadata: &CellMetadata,
+    ) {
+        self.remove_cell(cell_id);
+        self.index_source_ref(cell_id, metadata);
+        match metadata.cell_type.as_str() {
+            "entity" => self.index_entity(cell_id, payload, metadata),
+            "relation" => self.index_relation(cell_id, payload),
+            _ => {}
+        }
+        self.sort();
+    }
+
+    pub(crate) fn remove_cell(&mut self, cell_id: CellId) {
+        remove_empty_values(&mut self.entities_by_name, |entities| {
+            entities.retain(|entity| entity.entity_cell_id != cell_id);
+            entities.is_empty()
+        });
+        remove_empty_values(&mut self.edges_by_entity, |edges| {
+            edges.retain(|edge| edge.relation_cell_id != cell_id);
+            edges.is_empty()
+        });
+        for edges in self.edges_by_kind.values_mut() {
+            edges.remove(&cell_id);
+        }
+        self.edges_by_kind.retain(|_, edges| !edges.is_empty());
+        for edges in self.source_support_edges_by_fact.values_mut() {
+            edges.remove(&cell_id);
+        }
+        self.source_support_edges_by_fact
+            .retain(|_, edges| !edges.is_empty());
+        for cells in self.cells_by_source.values_mut() {
+            cells.remove(&cell_id);
+        }
+        self.cells_by_source.retain(|_, cells| !cells.is_empty());
     }
 
     pub fn entities_named(&self, entity_name: &str) -> Vec<GraphEntity> {
@@ -70,6 +107,20 @@ impl KnowledgeGraphIndex {
 
     pub fn source_supports_fact_edges(&self) -> Vec<GraphEdge> {
         self.edges_by_kind(GraphEdgeKind::SourceSupportsFact)
+    }
+
+    pub fn source_supports_fact_edges_for_cells(
+        &self,
+        fact_cell_ids: &BTreeSet<CellId>,
+    ) -> Vec<GraphEdge> {
+        let mut edges = fact_cell_ids
+            .iter()
+            .filter_map(|fact_cell_id| self.source_support_edges_by_fact.get(fact_cell_id))
+            .flat_map(|edges| edges.values().cloned())
+            .collect::<Vec<_>>();
+        sort_edges(&mut edges);
+        edges.dedup_by_key(|edge| edge.relation_cell_id);
+        edges
     }
 
     pub fn fact_contradicts_fact_edges(&self) -> Vec<GraphEdge> {
@@ -128,7 +179,19 @@ impl KnowledgeGraphIndex {
         self.edges_by_entity
             .entry(edge.object.clone())
             .or_default()
-            .push(edge);
+            .push(edge.clone());
+        self.edges_by_kind
+            .entry(edge.kind)
+            .or_default()
+            .insert(edge.relation_cell_id, edge.clone());
+        if edge.kind == GraphEdgeKind::SourceSupportsFact {
+            if let Some(fact_cell_id) = fact_cell_endpoint(&edge) {
+                self.source_support_edges_by_fact
+                    .entry(fact_cell_id)
+                    .or_default()
+                    .insert(edge.relation_cell_id, edge);
+            }
+        }
     }
 
     fn index_source_ref(&mut self, cell_id: CellId, metadata: &CellMetadata) {
@@ -159,14 +222,11 @@ impl KnowledgeGraphIndex {
 
     fn edges_by_kind(&self, kind: GraphEdgeKind) -> Vec<GraphEdge> {
         let mut edges = self
-            .edges_by_entity
-            .values()
-            .flat_map(|edges| edges.iter())
-            .filter(|edge| edge.kind == kind)
-            .cloned()
-            .collect::<Vec<_>>();
+            .edges_by_kind
+            .get(&kind)
+            .map(|edges| edges.values().cloned().collect::<Vec<_>>())
+            .unwrap_or_default();
         sort_edges(&mut edges);
-        edges.dedup_by_key(|edge| edge.relation_cell_id);
         edges
     }
 
@@ -199,6 +259,25 @@ impl KnowledgeGraphIndex {
         edges.dedup_by_key(|edge| edge.relation_cell_id);
         edges
     }
+}
+
+fn remove_empty_values<K: Ord, V>(
+    values: &mut std::collections::BTreeMap<K, V>,
+    mut should_remove: impl FnMut(&mut V) -> bool,
+) {
+    values.retain(|_, value| !should_remove(value));
+}
+
+fn fact_cell_endpoint(edge: &GraphEdge) -> Option<CellId> {
+    cell_endpoint(&edge.object).or_else(|| cell_endpoint(&edge.subject))
+}
+
+fn cell_endpoint(value: &str) -> Option<CellId> {
+    value
+        .trim()
+        .strip_prefix("cell:")
+        .and_then(|id| id.parse::<u64>().ok())
+        .map(CellId)
 }
 
 fn sort_edges(edges: &mut [GraphEdge]) {

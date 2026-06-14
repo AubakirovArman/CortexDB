@@ -112,27 +112,28 @@ pub(super) fn is_graph_contradiction_payload(payload: &[u8]) -> bool {
 
 pub(super) fn enrich_evidence_from_source_support_edges(
     db: &Database,
-    versions: &[MaterializedVersion<'_>],
     view: &AgentView,
     evidence: &mut [VerificationEvidence],
-) {
+) -> usize {
     let target_cells = evidence
         .iter()
         .map(|item| item.cell_id)
         .collect::<BTreeSet<_>>();
     if target_cells.is_empty() {
-        return;
+        return 0;
     }
-    let mut supports = source_supports_by_fact_cell_from_versions(versions, view, &target_cells);
-    if let Ok(Some(index)) = db.read_persisted_knowledge_graph_index() {
-        merge_source_supports_from_edges(
-            &mut supports,
-            db,
-            view,
-            index.source_supports_fact_edges().into_iter(),
-            &target_cells,
-        );
-    }
+    let graph_edges = db
+        .knowledge_graph_index()
+        .source_supports_fact_edges_for_cells(&target_cells);
+    let edge_count = graph_edges.len();
+    let mut supports = BTreeMap::new();
+    merge_source_supports_from_edges(
+        &mut supports,
+        db,
+        view,
+        graph_edges.into_iter(),
+        &target_cells,
+    );
     for item in evidence {
         let Some(support) = supports.get(&item.cell_id) else {
             continue;
@@ -145,23 +146,7 @@ pub(super) fn enrich_evidence_from_source_support_edges(
             item.source_trust_category = support.source_trust_category;
         }
     }
-}
-
-fn source_supports_by_fact_cell_from_versions(
-    versions: &[MaterializedVersion<'_>],
-    view: &AgentView,
-    target_cells: &BTreeSet<CellId>,
-) -> BTreeMap<CellId, SourceSupport> {
-    let mut supports = BTreeMap::new();
-    for version in versions {
-        let Some((fact_cell_id, support)) =
-            source_support_from_version(version, view, target_cells)
-        else {
-            continue;
-        };
-        insert_source_support(&mut supports, fact_cell_id, support);
-    }
-    supports
+    edge_count
 }
 
 fn merge_source_supports_from_edges(
@@ -206,49 +191,6 @@ fn source_support_from_edge(
             .map(str::to_owned)
             .or_else(|| source_endpoint(edge)),
     })
-}
-
-fn source_support_from_version(
-    candidate: &MaterializedVersion<'_>,
-    view: &AgentView,
-    target_cells: &BTreeSet<CellId>,
-) -> Option<(CellId, SourceSupport)> {
-    let version = candidate.version;
-    let payload = candidate.payload.as_slice();
-    let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
-    if !PolicyRewrite::allows_scope(view, scope_id(&metadata.scope)) {
-        return None;
-    }
-    let relation = RelationBody::parse(payload);
-    let kind = relation
-        .predicate
-        .as_deref()
-        .map(GraphEdgeKind::from_predicate)?;
-    if kind != GraphEdgeKind::SourceSupportsFact {
-        return None;
-    }
-    let fact_cell_id = relation
-        .object
-        .as_deref()
-        .and_then(cell_endpoint)
-        .or_else(|| relation.subject.as_deref().and_then(cell_endpoint))?;
-    if !target_cells.contains(&fact_cell_id) {
-        return None;
-    }
-    let trust = SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class);
-    Some((
-        fact_cell_id,
-        SourceSupport {
-            relation_cell_id: version.cell_id,
-            source_trust_q16: trust.q16,
-            source_trust_category: trust.category,
-            citation: metadata
-                .citation()
-                .map(str::to_owned)
-                .or_else(|| relation.subject.as_deref().and_then(source_endpoint_value))
-                .or_else(|| relation.object.as_deref().and_then(source_endpoint_value)),
-        },
-    ))
 }
 
 fn insert_source_support(
