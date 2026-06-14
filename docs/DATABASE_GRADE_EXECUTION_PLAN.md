@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B19` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-C14`, `EPIC-C15`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B14`, `EPIC-B15`, `EPIC-B16`, `EPIC-B17`, `EPIC-B18`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is closed with interval temporal validity index evidence. `EPIC-C15` is closed with compact graph adjacency, bounded visit-budget traversal, and 100K graph p95 evidence. `EPIC-B14` is closed with a stable ContextPack cell explain contract, CLI `explain --cell-id`, `docs/EXPLAIN.md`, schema/OpenAPI alignment, and golden coverage. `EPIC-B15` is closed with CLI/API `EXPLAIN ANALYZE` flags, actual/estimated operator trace fields, OpenAPI/SDK alignment, and docs. `EPIC-B17` is closed with typed tool catalog records, maintained list and term indexes, lazy open-time rebuild, `docs/TOOL_REGISTRY.md`, and a `make check` gate. `EPIC-B18` is closed with incremental graph/provenance indexing, indexed VERIFY source-support, lazy graph-query no-scan behavior, `docs/KNOWLEDGE_GRAPH.md`, and a `make check` gate. `EPIC-B19` is next. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
+Current pointer: `EPIC-B20` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-C14`, `EPIC-C15`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B14`, `EPIC-B15`, `EPIC-B16`, `EPIC-B17`, `EPIC-B18`, `EPIC-B19`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is closed with interval temporal validity index evidence. `EPIC-C15` is closed with compact graph adjacency, bounded visit-budget traversal, and 100K graph p95 evidence. `EPIC-B14` is closed with a stable ContextPack cell explain contract, CLI `explain --cell-id`, `docs/EXPLAIN.md`, schema/OpenAPI alignment, and golden coverage. `EPIC-B15` is closed with CLI/API `EXPLAIN ANALYZE` flags, actual/estimated operator trace fields, OpenAPI/SDK alignment, and docs. `EPIC-B17` is closed with typed tool catalog records, maintained list and term indexes, lazy open-time rebuild, `docs/TOOL_REGISTRY.md`, and a `make check` gate. `EPIC-B18` is closed with incremental graph/provenance indexing, indexed VERIFY source-support, lazy graph-query no-scan behavior, `docs/KNOWLEDGE_GRAPH.md`, and a `make check` gate. `EPIC-B19` is closed with the `AQL_V0_5` REMEMBER write contract, manifest-backed ID allocation, and remember-retrieve-verify regression coverage. `EPIC-B20` is next. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -83,7 +83,8 @@ enough to unblock the next dependency step.
 33. `EPIC-B17` — Typed tool registry: done.
 34. `EPIC-B18` — Incremental knowledge graph/provenance index: done.
 35. `EPIC-C15` — Incremental graph index performance: done.
-36. `EPIC-B19` — REMEMBER write-path policy formalization: next.
+36. `EPIC-B19` — REMEMBER write-path policy formalization: done.
+37. `EPIC-B20` — Multi-brain semantics or removal: next.
 
 ## Summary
 
@@ -996,7 +997,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - gates: `cargo fmt --check`; `cargo test -p cortex-cli aql_command_explain_analyze_flag_reports_actual_operator_counts`; `cargo test -p cortex-server v1_aql_explain_analyze_query_flag_reports_execution_trace`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `cargo test -p cortex-cli`; `make openapi-contract-check`; `make check`.
 - remaining: none for B15 acceptance; deeper tool-catalog semantics are closed by B17.
 - risks: `estimated_output_count` is nullable where no planner estimate exists; actual counts are always present for analyzed operators.
-- next exit step: `EPIC-C15` is now closed; move to `EPIC-B19` — REMEMBER write-path policy formalization.
+- next exit step: `EPIC-B19` is now closed; move to `EPIC-B20` — Multi-brain semantics or removal.
 
 ### EPIC-B16 — Формализованный Policy Rewrite + доказательство инварианта
 
@@ -1063,20 +1064,24 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-B19 — REMEMBER write-path policy formalization
 
-- status: `pending`
+- status: `done`
 - meta: Категория: AQL · Приоритет: P2 · Горизонт: 90 days · Тип: productize
 - goal: запись через AQL — половина агентного цикла; политика записи должна быть так же формальна, как чтения.
 - problem: Проблема: REMEMBER реализован (binder enforce_remember: scope/memory_type/TTL-клампы), но семантика (id-аллокация, descriptor-поля, дефолты) не контрактна.
 - tasks:
-  - [ ] 1) спецификация REMEMBER в AQL_V0_5: что создаётся, какие поля, какие клампы
-  - [ ] 2) аллокация cell_id — атомарный счётчик в манифесте (вместо max+1 эвристик allocate_cell_id)
-  - [ ] 3) e2e: remember→retrieve→verify цикл.
+  - [x] 1) спецификация REMEMBER в AQL_V0_5: что создаётся, какие поля, какие клампы
+  - [x] 2) аллокация cell_id — атомарный счётчик в манифесте (вместо max+1 эвристик allocate_cell_id)
+  - [x] 3) e2e: remember→retrieve→verify цикл.
 - acceptance:
-  - [ ] 1) контракт в доке
-  - [ ] 2) id-аллокация безопасна при конкуренции (тест)
-  - [ ] 3) e2e-тест цикла.
-- files: binder.rs, engine remember-путь, manifest.
-- risks: нет. Зависимости: A15. Эффект: полный агентный read-write цикл формализован.
+  - [x] 1) контракт в доке
+  - [x] 2) id-аллокация безопасна при конкуренции (тест)
+  - [x] 3) e2e-тест цикла.
+- files: `docs/AQL_V0_5.md`, `crates/cortex-engine/src/ingestion.rs`, `crates/cortex-engine/src/cell_ids.rs`, `crates/cortex-engine/src/database/write.rs`, `crates/cortex-storage/src/manifest.rs`, `crates/cortex-storage/src/manifest/codec.rs`, `crates/cortex-engine/tests/remember_write_contract_tests.rs`, `scripts/descriptor_hot_path_gate_check.py`.
+- evidence: `REMEMBER` now has a v0.5 write contract covering policy, metadata fields, defaults, read/verify behavior, and ID namespace semantics. REMEMBER IDs use manifest-backed `memory_cell_cursors` keyed by agent slot and persist the cursor before WAL write; generic ingest IDs use manifest-backed `next_cell_id` outside the high-bit memory namespace. Regression coverage includes concurrent REMEMBER allocation and remember→retrieve→verify.
+- gates: `cargo fmt --check`; `cargo test -p cortex-storage manifest_id_allocators_roundtrip_and_reserve`; `cargo test -p cortex-engine --test remember_write_contract_tests`; `cargo test -p cortex-server ingest`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `make openapi-contract-check`; `make check`.
+- remaining: none for B19.
+- risks: manifest allocation can leave intentional ID gaps if a write fails after cursor persistence; IDs are not reused. Зависимости: A15. Эффект: полный агентный read-write цикл формализован.
+- next exit step: move to `EPIC-B20` — Multi-brain semantics or removal.
 
 ### EPIC-B20 — Multi-brain: реальная семантика или удаление
 

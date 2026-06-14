@@ -5,6 +5,14 @@ pub(crate) fn flat_json_fields(json: &str) -> EngineResult<Vec<(String, String)>
     flat_json_fields_with_policy(json, JsonChunkPolicy::default())
 }
 
+pub fn count_json_ingest_cells(json: &str) -> EngineResult<usize> {
+    flat_json_fields(json).map(|fields| fields.len())
+}
+
+pub fn count_csv_ingest_cells(csv: &str) -> EngineResult<usize> {
+    csv_rows(csv).map(|rows| rows.len().saturating_sub(1))
+}
+
 pub(crate) fn flat_json_fields_with_policy(
     json: &str,
     policy: JsonChunkPolicy,

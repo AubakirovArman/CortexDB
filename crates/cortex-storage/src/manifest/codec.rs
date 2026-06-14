@@ -3,8 +3,8 @@ use crate::error::{StorageError, StorageResult};
 use crate::format::MANIFEST_MAGIC;
 use crate::manifest::{
     CompactionMetadata, ManifestCount, ManifestHnswNoFallbackProfile, ManifestHnswProfile,
-    ManifestSegment, ManifestSegmentStats, ManifestTermDocumentFrequency, ManifestVectorProfile,
-    StorageManifest,
+    ManifestMemoryCellCursor, ManifestSegment, ManifestSegmentStats, ManifestTermDocumentFrequency,
+    ManifestVectorProfile, StorageManifest,
 };
 
 pub(super) fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
@@ -46,6 +46,15 @@ pub(super) fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
         put_u64(&mut out, meta.cells_compacted);
         put_u64(&mut out, meta.input_bytes);
     }
+    if manifest.next_cell_id != 0 || !manifest.memory_cell_cursors.is_empty() {
+        out.extend_from_slice(b"IDAL");
+        put_u64(&mut out, manifest.next_cell_id);
+        put_u32(&mut out, manifest.memory_cell_cursors.len() as u32);
+        for cursor in &manifest.memory_cell_cursors {
+            put_u64(&mut out, cursor.agent_slot);
+            put_u64(&mut out, cursor.next_sequence);
+        }
+    }
     append_crc32c(&mut out);
     out
 }
@@ -65,12 +74,15 @@ pub(super) fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
     let segment_stats = read_segment_stats_section(bytes, &mut cursor)?;
     let hnsw_no_fallback_profile = read_hnsw_no_fallback_profile(bytes, &mut cursor)?;
     let compaction_metadata = read_compaction_metadata(bytes, &mut cursor)?;
+    let (next_cell_id, memory_cell_cursors) = read_cell_id_allocator(bytes, &mut cursor)?;
     if cursor > bytes.len() {
         return Err(StorageError::InvalidManifestFile);
     }
     Ok(StorageManifest {
         generation,
         checkpoint_seq,
+        next_cell_id,
+        memory_cell_cursors,
         live_segments,
         retired_segments,
         hnsw_profile,
@@ -271,6 +283,35 @@ fn read_compaction_metadata(bytes: &[u8], cursor: &mut usize) -> StorageResult<C
         cells_compacted: read_u64(bytes, cursor)?,
         input_bytes: read_u64(bytes, cursor)?,
     })
+}
+
+fn read_cell_id_allocator(
+    bytes: &[u8],
+    cursor: &mut usize,
+) -> StorageResult<(u64, Vec<ManifestMemoryCellCursor>)> {
+    if bytes.len().saturating_sub(*cursor) < 4 || &bytes[*cursor..*cursor + 4] != b"IDAL" {
+        return Ok((0, Vec::new()));
+    }
+    *cursor += 4;
+    let next_cell_id = read_u64(bytes, cursor)?;
+    let count = read_u32(bytes, cursor)? as usize;
+    let mut cursors = Vec::with_capacity(count);
+    for _ in 0..count {
+        let cursor_record = ManifestMemoryCellCursor {
+            agent_slot: read_u64(bytes, cursor)?,
+            next_sequence: read_u64(bytes, cursor)?,
+        };
+        if cursors
+            .last()
+            .is_some_and(|previous: &ManifestMemoryCellCursor| {
+                previous.agent_slot >= cursor_record.agent_slot
+            })
+        {
+            return Err(StorageError::InvalidManifestFile);
+        }
+        cursors.push(cursor_record);
+    }
+    Ok((next_cell_id, cursors))
 }
 
 fn bool_to_u32(value: bool) -> u32 {

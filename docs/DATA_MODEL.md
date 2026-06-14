@@ -283,5 +283,6 @@ Experimental:
   serialization.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — storage and query architecture.
 - [`CONTEXT_PACK.md`](CONTEXT_PACK.md) — ContextPack behavior.
-- [`AQL_V0_4.md`](AQL_V0_4.md) — current query language contract.
+- [`AQL_V0_5.md`](AQL_V0_5.md) — current REMEMBER write contract.
+- [`AQL_V0_4.md`](AQL_V0_4.md) — frozen query language grammar.
 - [`AUTH.md`](AUTH.md) — HTTP auth and AgentView token binding.

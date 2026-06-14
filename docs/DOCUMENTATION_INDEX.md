@@ -28,7 +28,8 @@ evidence snapshots, benchmark experiments, and release working notes live in
 
 ## Agent-Native Surface
 
-- [`AQL_V0_4.md`](AQL_V0_4.md) - current AQL grammar.
+- [`AQL_V0_5.md`](AQL_V0_5.md) - current AQL REMEMBER write contract.
+- [`AQL_V0_4.md`](AQL_V0_4.md) - frozen AQL grammar.
 - [`CONTEXT_PACK.md`](CONTEXT_PACK.md) - ContextPack contract.
 - [`VERIFY_FACT.md`](VERIFY_FACT.md) - deterministic verification.
 - [`AGENT_MEMORY.md`](AGENT_MEMORY.md) - agent memory behavior.

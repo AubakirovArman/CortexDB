@@ -231,7 +231,8 @@ def main() -> None:
         (session_index, "SessionMetadata::from_descriptor(descriptor)", "session index descriptor-backed metadata"),
         (session_index, "PolicyRewrite::allows_scope(view, scope_id(&self.descriptor.scope))", "session index descriptor scope authorization"),
         (session, "self.get_latest_cell_descriptor(cell_id).is_none()", "session id allocation uses descriptor-only existence check"),
-        (ingestion, "self.get_latest_cell_descriptor(cell_id).is_none()", "memory id allocation uses descriptor-only existence check"),
+        (ingestion, ".reserve_memory_cell_sequence(agent_slot, observed_next)", "memory id allocation uses manifest cursor"),
+        (ingestion, "self.manifest.store(&self.manifest_path)?;", "memory id allocation persists manifest cursor"),
     ):
         require(text, needle, label)
     for text, needle, label in (
@@ -240,6 +241,7 @@ def main() -> None:
         (session_index, "CellMetadata::from_payload_with_descriptor(", "session index payload metadata parsing"),
         (session_payload, "pub scope: String", "session payload scope permission metadata"),
         (session, "self.get_latest_cell(cell_id).is_none()", "session id allocation payload existence check"),
+        (ingestion, "self.get_latest_cell_descriptor(cell_id).is_none()", "memory id allocation descriptor scan"),
         (ingestion, "self.get_latest_cell(cell_id).is_none()", "memory id allocation payload existence check"),
     ):
         forbid(text, needle, label)

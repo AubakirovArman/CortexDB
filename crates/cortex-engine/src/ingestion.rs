@@ -26,10 +26,11 @@ pub use adapters::{
 pub(crate) use backpressure::{default_ingestion_rate_state, IngestionRateState};
 pub use backpressure::{IngestionBackpressurePolicy, IngestionBackpressureRequest};
 pub use chunking::{
-    split_text_chunks, stable_chunk_id, JsonChunkPolicy, TableChunkPolicy, TextChunk,
-    TextChunkPolicy, TextOverlapPolicy,
+    count_text_chunks, split_text_chunks, stable_chunk_id, JsonChunkPolicy, TableChunkPolicy,
+    TextChunk, TextChunkPolicy, TextOverlapPolicy,
 };
 pub use dedup::{stable_ingestion_hash_hex, DuplicateContentGroup, IngestionUpdatePolicy};
+pub use formats::{count_csv_ingest_cells, count_json_ingest_cells};
 pub use pdf::{extract_pdf_text, PdfExtractedPageText, PdfExtractionStats};
 pub use pdf_contracts::{
     validate_external_ocr_output, validate_external_ocr_request, DigitalPdfTextExtractor,
@@ -45,8 +46,6 @@ pub use report::{
     IngestionSkippedItem, IngestionSourceRefReport, IngestionValidationIssue,
     IngestionValidationReport,
 };
-
-const MEMORY_CELL_NAMESPACE: u64 = 0x8000_0000_0000_0000;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RememberedCell {
@@ -140,25 +139,43 @@ impl Database {
         })
     }
 
-    fn next_memory_cell_id(&self, agent_id: AgentId) -> EngineResult<CellId> {
-        let agent_bits = (agent_id.0 & 0x7fff_ffff) << 32;
-        let mut sequence = self
-            .current_seq
-            .0
-            .checked_add(1)
+    fn next_memory_cell_id(&mut self, agent_id: AgentId) -> EngineResult<CellId> {
+        let agent_slot = crate::cell_ids::memory_agent_slot(agent_id);
+        let observed_next = self.observed_next_memory_sequence(agent_slot)?;
+        let sequence = self
+            .manifest
+            .reserve_memory_cell_sequence(agent_slot, observed_next)
             .ok_or_else(memory_id_overflow)?;
-        let mut attempts = 0u64;
-        loop {
-            let cell_id = CellId(MEMORY_CELL_NAMESPACE | agent_bits | (sequence & 0xffff_ffff));
-            if self.get_latest_cell_descriptor(cell_id).is_none() {
-                return Ok(cell_id);
-            }
-            attempts = attempts.checked_add(1).ok_or_else(memory_id_overflow)?;
-            if attempts > u64::from(u32::MAX) {
-                return Err(memory_id_overflow());
-            }
-            sequence = sequence.checked_add(1).ok_or_else(memory_id_overflow)?;
+        let cell_id =
+            crate::cell_ids::memory_cell_id(agent_slot, sequence).ok_or_else(memory_id_overflow)?;
+        self.manifest.store(&self.manifest_path)?;
+        Ok(cell_id)
+    }
+
+    fn observed_next_memory_sequence(&self, agent_slot: u64) -> EngineResult<u64> {
+        let max_live = self
+            .memtable
+            .live_cell_ids(self.read_txn())
+            .into_iter()
+            .filter_map(|cell_id| crate::cell_ids::memory_sequence(cell_id, agent_slot))
+            .max();
+        let max_deleted = self
+            .memtable
+            .deleted_cell_ids()
+            .into_iter()
+            .filter_map(|cell_id| crate::cell_ids::memory_sequence(cell_id, agent_slot))
+            .max();
+        let next = max_live
+            .into_iter()
+            .chain(max_deleted)
+            .max()
+            .map_or(Ok(0), |sequence| {
+                sequence.checked_add(1).ok_or_else(memory_id_overflow)
+            })?;
+        if next > crate::cell_ids::MEMORY_SEQUENCE_MASK {
+            return Err(memory_id_overflow());
         }
+        Ok(next)
     }
 }
 

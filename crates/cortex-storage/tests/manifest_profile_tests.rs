@@ -1,6 +1,7 @@
 use cortex_storage::manifest::{
-    ManifestCount, ManifestHnswNoFallbackProfile, ManifestHnswProfile, ManifestSegment,
-    ManifestSegmentStats, ManifestTermDocumentFrequency, ManifestVectorProfile, StorageManifest,
+    ManifestCount, ManifestHnswNoFallbackProfile, ManifestHnswProfile, ManifestMemoryCellCursor,
+    ManifestSegment, ManifestSegmentStats, ManifestTermDocumentFrequency, ManifestVectorProfile,
+    StorageManifest,
 };
 
 #[test]
@@ -88,6 +89,28 @@ fn manifest_segment_stats_roundtrips() {
         ..StorageManifest::default()
     };
 
+    manifest.store(&path).unwrap();
+
+    assert_eq!(StorageManifest::load(&path).unwrap(), manifest);
+}
+
+#[test]
+fn manifest_id_allocators_roundtrip_and_reserve() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("manifest.acm");
+    let mut manifest = StorageManifest {
+        next_cell_id: 1200,
+        memory_cell_cursors: vec![ManifestMemoryCellCursor {
+            agent_slot: 7,
+            next_sequence: 3,
+        }],
+        ..StorageManifest::default()
+    };
+
+    assert_eq!(manifest.reserve_cell_id_range(1000, 1100, 4), Some(1200));
+    assert_eq!(manifest.next_cell_id, 1204);
+    assert_eq!(manifest.reserve_memory_cell_sequence(7, 2), Some(3));
+    assert_eq!(manifest.reserve_memory_cell_sequence(8, 0), Some(0));
     manifest.store(&path).unwrap();
 
     assert_eq!(StorageManifest::load(&path).unwrap(), manifest);

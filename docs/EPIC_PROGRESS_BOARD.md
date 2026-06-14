@@ -20,18 +20,19 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B19` — REMEMBER write-path policy formalization.
+`EPIC-B20` — Multi-brain semantics or removal.
 
-B19 exit steps:
+B20 exit steps:
 
-1. Inventory REMEMBER/write-path policy checks and ID allocation semantics.
-2. Route write authorization through the formal PolicyRewrite invariant.
-3. Add regression tests for denied writes and ID allocation behavior.
-4. Mark done when REMEMBER/write-path policy is formalized; then move to B20.
+1. Decide whether brains are real isolated namespaces or deprecated syntax.
+2. If kept, define brain catalog/scope uniqueness/statistics semantics.
+3. If removed, document the migration/deprecation path.
+4. Mark done when `DATA_MODEL.md` and tests/migration plan reflect the decision.
 
-B19 current state:
+B20 current state:
 
 - next.
+- Do not reopen B19 unless REMEMBER write contract or allocation tests regress.
 - Do not reopen C15 unless graph traversal budget accounting or 100K p95
   evidence regresses.
 
@@ -47,6 +48,17 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-B19 — REMEMBER write-path policy formalization
+
+Status: `done`
+
+What closed it:
+
+- Added `docs/AQL_V0_5.md` as the REMEMBER write contract over the v0.4 grammar.
+- REMEMBER IDs now use manifest-backed `memory_cell_cursors`; generic ingest IDs use manifest-backed `next_cell_id` outside the memory namespace.
+- Added concurrent REMEMBER allocation and remember→retrieve→verify regression tests.
+- Updated the descriptor hot-path gate to require the manifest cursor invariant.
 
 ### EPIC-C15 — Incremental graph index performance
 
@@ -799,9 +811,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on B19 only:
+Work on B20 only:
 
-1. inventory REMEMBER/write-path policy checks and ID allocation behavior;
-2. route write authorization through the formal PolicyRewrite invariant;
-3. add denied-write and ID-allocation regression tests;
-4. move to B20 after B19 acceptance is closed.
+1. decide whether multi-brain is real namespace semantics or deprecated syntax;
+2. document the choice in `DATA_MODEL.md`;
+3. add tests or a migration/removal plan for the chosen path;
+4. move to the next ordered epic after B20 acceptance is closed.

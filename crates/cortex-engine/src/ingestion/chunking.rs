@@ -175,6 +175,14 @@ pub fn split_text_chunks(
         .collect()
 }
 
+pub fn count_text_chunks(
+    document_id: &str,
+    text: &str,
+    policy: TextChunkPolicy,
+) -> EngineResult<usize> {
+    split_text_chunks(document_id, text, policy).map(|chunks| chunks.len())
+}
+
 pub fn stable_chunk_id(document_id: &str, index: u32) -> String {
     format!("{}#chunk-{index:04}", sanitize_chunk_component(document_id))
 }

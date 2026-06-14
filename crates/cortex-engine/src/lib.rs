@@ -27,6 +27,7 @@
 pub mod agent_views;
 pub mod backup;
 pub mod bundle;
+mod cell_ids;
 pub mod checkpoint;
 mod cleanup;
 pub mod compatibility;
@@ -113,14 +114,15 @@ pub use graph_retrieval::{
     GraphRetrievalHit, GraphRetrievalReport, DEFAULT_GRAPH_RETRIEVAL_VISIT_BUDGET,
 };
 pub use ingestion::{
-    extract_pdf_text, split_text_chunks, stable_chunk_id, stable_ingestion_hash_hex,
-    validate_external_ocr_output, validate_external_ocr_request, CsvIngestOptions,
-    DigitalPdfTextExtractor, DisabledExternalOcrAdapter, DisabledExternalPdfParserAdapter,
-    DuplicateContentGroup, EntityIngestOptions, ExternalOcrAdapter, ExternalOcrBoundingBox,
-    ExternalOcrOutput, ExternalOcrPageImage, ExternalOcrPageText, ExternalOcrRequest,
-    ExternalOcrTextBlock, ExternalPdfParserAdapter, ExternalPdfParserRequest, IngestedCell,
-    IngestionBackpressurePolicy, IngestionBackpressureRequest, IngestionJobId, IngestionJobStatus,
-    IngestionProgress, IngestionProgressTracker, IngestionSkippedItem, IngestionSourceRefReport,
+    count_csv_ingest_cells, count_json_ingest_cells, count_text_chunks, extract_pdf_text,
+    split_text_chunks, stable_chunk_id, stable_ingestion_hash_hex, validate_external_ocr_output,
+    validate_external_ocr_request, CsvIngestOptions, DigitalPdfTextExtractor,
+    DisabledExternalOcrAdapter, DisabledExternalPdfParserAdapter, DuplicateContentGroup,
+    EntityIngestOptions, ExternalOcrAdapter, ExternalOcrBoundingBox, ExternalOcrOutput,
+    ExternalOcrPageImage, ExternalOcrPageText, ExternalOcrRequest, ExternalOcrTextBlock,
+    ExternalPdfParserAdapter, ExternalPdfParserRequest, IngestedCell, IngestionBackpressurePolicy,
+    IngestionBackpressureRequest, IngestionJobId, IngestionJobStatus, IngestionProgress,
+    IngestionProgressTracker, IngestionSkippedItem, IngestionSourceRefReport,
     IngestionUpdatePolicy, IngestionValidationIssue, IngestionValidationReport, JsonChunkPolicy,
     JsonIngestOptions, NativeDigitalPdfTextExtractor, PdfExtractedPageText, PdfExtractionStats,
     PdfIngestOptions, PdfTextExtractionBoundary, RelationIngestOptions, RememberedCell,

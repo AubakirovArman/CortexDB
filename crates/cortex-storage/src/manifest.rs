@@ -45,6 +45,12 @@ pub struct ManifestTermDocumentFrequency {
     pub document_frequency: u64,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ManifestMemoryCellCursor {
+    pub agent_slot: u64,
+    pub next_sequence: u64,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ManifestSegmentStats {
     pub segment_id: u64,
@@ -77,6 +83,8 @@ pub struct CompactionMetadata {
 pub struct StorageManifest {
     pub generation: u64,
     pub checkpoint_seq: u64,
+    pub next_cell_id: u64,
+    pub memory_cell_cursors: Vec<ManifestMemoryCellCursor>,
     pub live_segments: Vec<ManifestSegment>,
     pub retired_segments: Vec<ManifestSegment>,
     pub hnsw_profile: Option<ManifestHnswProfile>,
@@ -153,5 +161,54 @@ impl StorageManifest {
             .retain(|existing| existing.segment_id != stats.segment_id);
         self.segment_stats.push(stats);
         self.segment_stats.sort_by_key(|stats| stats.segment_id);
+    }
+
+    pub fn reserve_cell_id_range(
+        &mut self,
+        floor: u64,
+        observed_next_cell_id: u64,
+        count: u64,
+    ) -> Option<u64> {
+        let count = count.max(1);
+        let first = self
+            .next_cell_id
+            .max(observed_next_cell_id)
+            .max(floor.saturating_add(1));
+        let next = first.checked_add(count)?;
+        self.next_cell_id = next;
+        self.generation = self.generation.checked_add(1)?;
+        Some(first)
+    }
+
+    pub fn reserve_memory_cell_sequence(
+        &mut self,
+        agent_slot: u64,
+        observed_next_sequence: u64,
+    ) -> Option<u64> {
+        let position = self
+            .memory_cell_cursors
+            .binary_search_by_key(&agent_slot, |cursor| cursor.agent_slot);
+        match position {
+            Ok(index) => {
+                let sequence = self.memory_cell_cursors[index]
+                    .next_sequence
+                    .max(observed_next_sequence);
+                self.memory_cell_cursors[index].next_sequence = sequence.checked_add(1)?;
+                self.generation = self.generation.checked_add(1)?;
+                Some(sequence)
+            }
+            Err(index) => {
+                let sequence = observed_next_sequence;
+                self.memory_cell_cursors.insert(
+                    index,
+                    ManifestMemoryCellCursor {
+                        agent_slot,
+                        next_sequence: sequence.checked_add(1)?,
+                    },
+                );
+                self.generation = self.generation.checked_add(1)?;
+                Some(sequence)
+            }
+        }
     }
 }

@@ -40,7 +40,12 @@ pub(super) fn try_route<A: DatabaseAccess>(
                 let source = query_param_opt_decoded(query, "source")
                     .unwrap_or_else(|| "http_post".to_owned());
                 let text = String::from_utf8_lossy(body);
-                let start_id = db.allocate_cell_id_range(0);
+                let expected_cells = cortex_engine::count_text_chunks(
+                    &source,
+                    &text,
+                    cortex_engine::TextChunkPolicy::default(),
+                )?;
+                let start_id = db.allocate_cell_id_range(expected_cells)?;
                 let (job_id, results) = track_ingest(db, "ingest_text", None, body.len(), |db| {
                     db.ingest_text_chunks(
                         start_id,
@@ -71,7 +76,8 @@ pub(super) fn try_route<A: DatabaseAccess>(
                 let source = query_param_opt_decoded(query, "source")
                     .unwrap_or_else(|| "http_post".to_owned());
                 let json = String::from_utf8_lossy(body);
-                let start_id = db.allocate_cell_id_range(0);
+                let expected_cells = cortex_engine::count_json_ingest_cells(&json)?;
+                let start_id = db.allocate_cell_id_range(expected_cells)?;
                 let (job_id, results) = track_ingest(db, "ingest_json", None, body.len(), |db| {
                     db.ingest_json(
                         start_id,
@@ -103,7 +109,8 @@ pub(super) fn try_route<A: DatabaseAccess>(
                     .unwrap_or_else(|| "http_post".to_owned());
                 let csv = String::from_utf8_lossy(body);
                 let total = csv.lines().count().saturating_sub(1) as u64;
-                let start_id = db.allocate_cell_id_range(0);
+                let expected_cells = cortex_engine::count_csv_ingest_cells(&csv)?;
+                let start_id = db.allocate_cell_id_range(expected_cells)?;
                 let (job_id, results) =
                     track_ingest(db, "ingest_csv", Some(total), body.len(), |db| {
                         db.ingest_csv(

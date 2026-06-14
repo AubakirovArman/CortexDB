@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 use cortex_core::{CellDescriptor, CellId, CommitSeq};
 
 use super::Database;
+use crate::cell_ids::GENERIC_CELL_ID_FLOOR;
 use crate::error::{EngineError, EngineResult};
 use crate::operation::{
     wal_record_from_operation_with_metadata, wal_record_from_operation_with_seq,
@@ -56,14 +57,45 @@ impl Database {
         self.append_then_apply(DbOperation::TombstoneCell { cell_id })
     }
 
-    pub fn allocate_cell_id(&self) -> CellId {
-        let max_id = self.memtable.max_cell_id().map(|id| id.0).unwrap_or(0);
-        CellId(max_id.max(1000) + 1)
+    pub fn allocate_cell_id(&mut self) -> EngineResult<CellId> {
+        self.allocate_cell_id_range(1)
     }
 
-    pub fn allocate_cell_id_range(&self, _count: usize) -> CellId {
-        let max_id = self.memtable.max_cell_id().map(|id| id.0).unwrap_or(0);
-        CellId(max_id.max(10000) + 1)
+    pub fn allocate_cell_id_range(&mut self, count: usize) -> EngineResult<CellId> {
+        let count = u64::try_from(count)
+            .map_err(|_| EngineError::StorageInvariant("cell id range is too large".to_owned()))?;
+        let observed_next = self.observed_next_generic_cell_id();
+        let first = self
+            .manifest
+            .reserve_cell_id_range(GENERIC_CELL_ID_FLOOR, observed_next, count)
+            .ok_or_else(|| {
+                EngineError::StorageInvariant("cell id space is exhausted".to_owned())
+            })?;
+        self.manifest.store(&self.manifest_path)?;
+        Ok(CellId(first))
+    }
+
+    fn observed_next_generic_cell_id(&self) -> u64 {
+        let max_live = self
+            .memtable
+            .live_cell_ids(self.read_txn())
+            .into_iter()
+            .map(|cell_id| cell_id.0)
+            .filter(|cell_id| *cell_id < crate::cell_ids::MEMORY_CELL_NAMESPACE)
+            .max();
+        let max_deleted = self
+            .memtable
+            .deleted_cell_ids()
+            .into_iter()
+            .map(|cell_id| cell_id.0)
+            .filter(|cell_id| *cell_id < crate::cell_ids::MEMORY_CELL_NAMESPACE)
+            .max();
+        max_live
+            .into_iter()
+            .chain(max_deleted)
+            .max()
+            .and_then(|max_id| max_id.checked_add(1))
+            .unwrap_or(GENERIC_CELL_ID_FLOOR + 1)
     }
 
     fn append_then_apply(&mut self, operation: DbOperation) -> EngineResult<CommitSeq> {

@@ -8,9 +8,28 @@ This changelog tracks AQL grammar and binder compatibility. It is separate from
 the HTTP API changelog because query syntax can remain stable even when response
 fields evolve.
 
+## AQL v0.5
+
+Status: current REMEMBER write contract.
+
+Frozen behavior:
+
+- `REMEMBER` writes one `type=memory` cell with the metadata fields documented in
+  [`AQL_V0_5.md`](../AQL_V0_5.md).
+- REMEMBER cell IDs use manifest-backed `memory_cell_cursors`.
+- Generic ingest IDs use manifest-backed `next_cell_id` outside the high-bit
+  memory namespace.
+- The AQL grammar remains the v0.4 grammar.
+
+Evidence:
+
+```bash
+cargo test -p cortex-engine --test remember_write_contract_tests
+```
+
 ## AQL v0.4
 
-Status: current Core Alpha contract.
+Status: frozen Core Alpha grammar contract.
 
 Frozen behavior:
 
