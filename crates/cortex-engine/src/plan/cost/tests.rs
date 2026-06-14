@@ -43,6 +43,40 @@ fn cost_model_prefers_bitmap_first_for_narrow_scope() {
 }
 
 #[test]
+fn cost_model_uses_agent_allowed_cardinality_for_permission_pruning() {
+    let manifest = manifest_with_stats(vec![segment_stats(
+        1,
+        1_000,
+        &[("project:a", 10), ("project:b", 990)],
+        &[("budget", 900)],
+    )]);
+    let statistics = DatabaseStatistics::new(&manifest);
+    let plan = plan(
+        RetrievalMode::Balanced,
+        "budget",
+        BitmapProgram {
+            ops: vec![
+                BitmapOp::PushAgentAllowed,
+                BitmapOp::PushLive,
+                BitmapOp::And,
+            ],
+            max_stack_depth: 2,
+        },
+        50,
+        8_000,
+    );
+    let provider = Provider {
+        allowed: (0..10).collect(),
+    };
+
+    let decision = choose_retrieve_path(&plan, statistics, &provider, &CostModelOptions::default());
+
+    assert_eq!(decision.selected_path, ExecutionPath::BitmapFirst);
+    assert_eq!(decision.estimated_after_bitmap, Some(10));
+    assert!(decision.reason.contains("bitmap"));
+}
+
+#[test]
 fn cost_model_prefers_lexical_first_for_rare_term_on_broad_bitmap() {
     let manifest = manifest_with_stats(vec![segment_stats(
         1,

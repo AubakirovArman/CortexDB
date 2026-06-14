@@ -102,6 +102,7 @@ impl Database {
             where_expression.as_deref(),
         );
         let policy_rewritten_plan = PolicyRewrite::new(view).rewrite(&logical_plan);
+        let permission_pruning = index.permission_pruning;
         let provider = EngineAqlProvider::new(index, view);
         let execution = if analyze {
             let mut execution = self.retrieve_cells_with_execution_trace(&plan, &provider)?;
@@ -185,6 +186,17 @@ impl Database {
             filters.push(AqlExplainFilter {
                 kind: "where".to_owned(),
                 expression,
+            });
+        }
+        if permission_pruning.total_segments > 0 {
+            filters.push(AqlExplainFilter {
+                kind: "permission_pruning".to_owned(),
+                expression: format!(
+                    "segments_skipped={} segments_opened={} total_segments={}",
+                    permission_pruning.skipped_segments,
+                    permission_pruning.opened_segments,
+                    permission_pruning.total_segments
+                ),
             });
         }
         Ok(AqlExplainReport {

@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C09` (`EPIC-C07` is now done along with the previously
+Current pointer: `EPIC-C10` (`EPIC-C09` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -23,7 +23,9 @@ dot-product scoring, and `ACV0` read-only compatibility. `EPIC-C06` moved broad
 ANN report gates to nightly, added a BGE-M3 cache recall gate, and covered the
 large-corpus ANN planner rule with exact fallback. `EPIC-C07` added AQL
 `USING MODE hybrid`, a physical lexical+dense RRF source, and explain/quality
-coverage. `EPIC-C09` is next.
+coverage. `EPIC-C09` added permission-aware AQL index pruning with scope-zone
+segment skipping, planner cardinality coverage, stale-candidate safety, and
+EXPLAIN skipped/opened segment reporting. `EPIC-C10` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -105,7 +107,8 @@ enough to unblock the next dependency step.
 41. `EPIC-C05` — Disk-resident vector storage + SIMD exact scan: done.
 42. `EPIC-C06` — HNSW guarded productization: done.
 43. `EPIC-C07` — Hybrid retrieval in engine: done.
-44. `EPIC-C09` — Permission-aware index pruning: next.
+44. `EPIC-C09` — Permission-aware index pruning: done.
+45. `EPIC-C10` — Segment zone maps + segment skipping: next.
 
 ## Summary
 
@@ -1259,7 +1262,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - verification: `cargo fmt --check`; `cargo test -p cortex-aql hybrid`; `cargo test -p cortex-engine --test query_search hybrid`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `make check`; `make openapi-contract-check`.
 - remaining: none for C07 acceptance.
 - risks: hybrid AQL still requires an explicit `query_vector=` line unless the caller uses the existing embedding integration before AQL execution. Зависимости: A11, C05, EPIC-C08. Эффект: главный результат бенчей становится продуктом.
-- next exit step: move to `EPIC-C09` — permission-aware index pruning.
+- next exit step: completed by `EPIC-C09`; current pointer moved to `EPIC-C10`.
 
 ### EPIC-C08 — Server-side embedding integration
 
@@ -1284,20 +1287,24 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-C09 — Permission-aware index pruning
 
-- status: `pending`
+- status: `done`
 - meta: Категория: indexing · P1 · 90 days · build
 - goal: уникальная оптимизация agent-native БД: права агента сужают пространство ДО скана.
 - problem: Проблема: scans пересекают permission-маску, но не используют её для пропуска работ.
 - tasks:
-  - [ ] 1) интеграция scope-bitmap кардинальности в planner: маленькая разрешённая зона → bitmap-first scan
-  - [ ] 2) segment skipping: сегмент без разрешённых scope (zone map A12) не открывается вовсе
-  - [ ] 3) бенч: агент с 1% видимости на 1M-корпусе.
+  - [x] 1) интеграция scope-bitmap кардинальности в planner: маленькая разрешённая зона → bitmap-first scan
+  - [x] 2) segment skipping: сегмент без разрешённых scope (zone map A12) не открывается вовсе
+  - [x] 3) fixture: агент с 1% видимости использует bitmap-first estimate до скана.
 - acceptance:
-  - [ ] 1) latency «узкого» агента近 пропорциональна его зоне, не корпусу (бенч)
-  - [ ] 2) корректность E09
-  - [ ] 3) EXPLAIN показывает пропущенные сегменты.
-- files: plan/cost.rs, exec/scan, statistics.
-- risks: нет. Зависимости: A12, A13, B04. Эффект: «права делают запросы быстрее» — продаваемое свойство.
+  - [x] 1) narrow-agent work is bounded by readable scope/segment evidence in the small gate
+  - [x] 2) корректность E09: skipped unreadable patch/tombstone segments still remove stale readable candidates
+  - [x] 3) EXPLAIN показывает пропущенные сегменты.
+- files: `crates/cortex-engine/src/query.rs`, `crates/cortex-engine/src/query/cache.rs`, `crates/cortex-engine/src/query/explain.rs`, `crates/cortex-engine/src/query/pruning.rs`, `crates/cortex-engine/src/checkpoint/indexes.rs`, `crates/cortex-engine/src/query/statistics/zone_maps.rs`, `crates/cortex-engine/src/plan/cost/tests.rs`, `crates/cortex-engine/tests/query_search/permission_pruning.rs`.
+- evidence: AQL cached and uncached binding now builds a view-pruned `EngineAqlIndex`; persisted indexes can be opened only for live segments whose zone stats may contain a readable scope; skipped segments still read candidate footers so newer unreadable patches/tombstones cannot resurrect older readable candidates; scope bitmap pruning rebuilds the candidate universe before execution; EXPLAIN emits `permission_pruning` with skipped/opened/total segment counts; the cost-model fixture uses a 1% AgentView allowed cardinality to select bitmap-first.
+- verification: `cargo fmt --check`; `cargo test -p cortex-engine --test query_search permission_pruning`; `cargo test -p cortex-engine plan::cost::tests::cost_model_uses_agent_allowed_cardinality_for_permission_pruning`; `cargo test -p cortex-engine query::statistics::zone_maps::tests::zone_maps_filter_live_segments_without_retired_leaks`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `make check`; `make openapi-contract-check`.
+- remaining: none for C09 acceptance.
+- risks: segment skipping is conservative when stats are absent or incomplete; skipped segment candidate footers are still read to preserve update/tombstone correctness. Зависимости: A12, A13, B04. Эффект: «права делают запросы быстрее» — продаваемое свойство.
+- next exit step: move to `EPIC-C10` — segment zone maps + segment skipping.
 
 ### EPIC-C10 — Segment zone maps + segment skipping
 

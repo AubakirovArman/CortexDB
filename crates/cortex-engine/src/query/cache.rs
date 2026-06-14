@@ -215,13 +215,13 @@ impl Database {
             cache.prepare_catalog(catalog_fingerprint);
             cache.get(&key)
         } {
-            return Ok((cached, self.try_aql_index()?));
+            return Ok((cached, self.try_aql_index_for_view(view)?));
         }
 
         let statement = parse_aql(aql).map_err(|error| EngineError::AqlParse(error.to_string()))?;
         let catalog = self.aql_statistics_catalog();
         let bound = Binder::new(&catalog, view).bind_statement(&statement)?;
-        let index = self.try_aql_index()?;
+        let index = self.try_aql_index_for_view(view)?;
         let cached = CachedAqlPlan::from_statement(&statement, bound);
         self.aql_query_cache
             .lock()

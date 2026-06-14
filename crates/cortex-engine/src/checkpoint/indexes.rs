@@ -2,12 +2,14 @@ use std::collections::BTreeSet;
 use std::path::Path;
 use std::sync::Arc;
 
+use cortex_aql::ScopeId;
 use cortex_core::CellId;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::segment::SegmentReader;
 
 use crate::database::Database;
 use crate::error::EngineResult;
+use crate::query::AqlPermissionPruning;
 
 use super::index_state::{merge_bitmap_index, merge_lexical_index, remove_candidates};
 use super::paths::{bitmap_path, lexical_path, segment_path};
@@ -55,6 +57,49 @@ impl Database {
         }
         remove_candidates(&mut state, &tombstoned);
         Ok(state)
+    }
+
+    pub(crate) fn persisted_index_state_for_readable_scopes(
+        &self,
+        readable_scopes: &BTreeSet<ScopeId>,
+    ) -> EngineResult<(PersistedIndexState, AqlPermissionPruning)> {
+        let total_segments = self.manifest.live_segments.len();
+        let Some(open_segment_ids) = self
+            .statistics()
+            .segments_matching_any_scope_id(readable_scopes)
+        else {
+            let state = (*self.persisted_index_state_cached()?).clone();
+            return Ok((
+                state,
+                AqlPermissionPruning {
+                    total_segments,
+                    opened_segments: total_segments,
+                    skipped_segments: 0,
+                },
+            ));
+        };
+        let open_segment_ids = open_segment_ids.into_iter().collect::<BTreeSet<_>>();
+        if open_segment_ids.len() == total_segments {
+            let state = (*self.persisted_index_state_cached()?).clone();
+            return Ok((
+                state,
+                AqlPermissionPruning {
+                    total_segments,
+                    opened_segments: total_segments,
+                    skipped_segments: 0,
+                },
+            ));
+        }
+
+        let state = self.persisted_index_state_for_segments(&open_segment_ids)?;
+        Ok((
+            state,
+            AqlPermissionPruning {
+                total_segments,
+                opened_segments: open_segment_ids.len(),
+                skipped_segments: total_segments.saturating_sub(open_segment_ids.len()),
+            },
+        ))
     }
 
     /// Return the persisted index, reusing a cached copy when the live-segment
@@ -141,6 +186,42 @@ impl Database {
         merge_lexical_index(state, segment_lexical);
         remove_candidates(state, &tombstoned);
         Ok(())
+    }
+
+    fn persisted_index_state_for_segments(
+        &self,
+        open_segment_ids: &BTreeSet<u64>,
+    ) -> EngineResult<PersistedIndexState> {
+        let mut state = PersistedIndexState::default();
+        for segment in &self.manifest.live_segments {
+            let entries = SegmentReader::read_candidate_entries(segment_path(
+                &self.segments_path,
+                segment.id,
+            ))?;
+            let segment_candidates = entries
+                .iter()
+                .map(|entry| entry.candidate_id)
+                .collect::<BTreeSet<_>>();
+            remove_candidates(&mut state, &segment_candidates);
+
+            if !open_segment_ids.contains(&segment.id) {
+                continue;
+            }
+
+            for entry in entries {
+                if !entry.deleted {
+                    state
+                        .candidate_to_cell
+                        .insert(entry.candidate_id, CellId(entry.cell_id));
+                }
+            }
+            let segment_bitmap = BitmapIndex::read(bitmap_path(&self.segments_path, segment.id))?;
+            let segment_lexical =
+                read_persisted_lexical_index(&lexical_path(&self.segments_path, segment.id))?;
+            merge_bitmap_index(&mut state, segment_bitmap);
+            merge_lexical_index(&mut state, segment_lexical);
+        }
+        Ok(state)
     }
 
     #[cfg(test)]

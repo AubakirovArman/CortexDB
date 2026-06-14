@@ -20,19 +20,21 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C09` — Permission-aware index pruning.
+`EPIC-C10` — Segment zone maps + segment skipping.
 
-C09 exit steps:
+C10 exit steps:
 
-1. Integrate scope-bitmap cardinality into planner decisions for narrow
-   AgentView zones.
-2. Skip segment/index work when a segment cannot contain readable scopes.
-3. Add a narrow-agent benchmark/fixture with 1% visibility.
-4. Show skipped segments or permission pruning in EXPLAIN.
+1. Persist per-segment zone maps for created-at, scope-set, and type-set.
+2. Teach planner/execution to skip segments by temporal/scope/type predicates.
+3. Add a 10-segment fixture showing only matching segment subsets are opened.
+4. Report skipped/opened segments through the existing explain counters.
 
-C09 current state:
+C10 current state:
 
 - next.
+- C09 is closed with view-pruned AQL index construction, conservative
+  scope-zone segment skipping, stale-candidate safety, planner cardinality
+  coverage, and EXPLAIN permission pruning counters.
 - C07 is closed with AQL `USING MODE hybrid`, physical lexical+dense RRF,
   quality fixture coverage, and EXPLAIN/ANALYZE path reporting.
 - C06 is closed with nightly/manual ANN reports, optional BGE-M3 cache recall
@@ -60,6 +62,25 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C09 — Permission-aware index pruning
+
+Status: `done`
+
+What closed it:
+
+- AQL cached and uncached binding now builds an AgentView-pruned index.
+- Persisted checkpoint indexes open only segments whose stats may contain a
+  readable scope.
+- Skipped segments still contribute candidate footer removals, so unreadable
+  patch/tombstone segments cannot resurrect stale readable candidates.
+- The cost model has a 1% allowed-cardinality fixture selecting bitmap-first.
+- EXPLAIN emits `permission_pruning` with skipped/opened/total segments.
+
+Important follow-up:
+
+- C10 generalizes segment skipping beyond permission scopes to temporal/type
+  zone-map predicates.
 
 ### EPIC-C07 — Hybrid retrieval in engine
 

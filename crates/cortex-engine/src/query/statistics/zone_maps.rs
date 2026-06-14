@@ -1,10 +1,39 @@
+use std::collections::BTreeSet;
+
+use cortex_aql::ScopeId;
 use cortex_storage::manifest::{ManifestCount, ManifestSegmentStats};
 
 use super::{count_for, DatabaseStatistics};
+use crate::query::metadata::scope_id;
 
 impl DatabaseStatistics<'_> {
     pub fn segments_matching_scope(&self, scope: &str) -> Option<Vec<u64>> {
         self.segments_matching_count(|stats| &stats.scope_counts, scope)
+    }
+
+    pub(crate) fn segments_matching_any_scope_id(
+        &self,
+        scopes: &BTreeSet<ScopeId>,
+    ) -> Option<Vec<u64>> {
+        if self.manifest.live_segments.is_empty() {
+            return Some(Vec::new());
+        }
+        if !self.has_live_segment_stats() {
+            return None;
+        }
+
+        Some(
+            self.manifest
+                .live_segments
+                .iter()
+                .filter_map(|segment| {
+                    let Some(stats) = self.manifest.stats_for_segment(segment.id) else {
+                        return Some(segment.id);
+                    };
+                    segment_may_contain_scope_id(stats, scopes).then_some(segment.id)
+                })
+                .collect(),
+        )
     }
 
     pub fn segments_matching_status(&self, status: &str) -> Option<Vec<u64>> {
@@ -82,6 +111,17 @@ impl DatabaseStatistics<'_> {
     }
 }
 
+fn segment_may_contain_scope_id(stats: &ManifestSegmentStats, scopes: &BTreeSet<ScopeId>) -> bool {
+    let mut scoped_rows = 0u64;
+    for count in &stats.scope_counts {
+        scoped_rows = scoped_rows.saturating_add(count.count);
+        if count.count > 0 && scopes.contains(&scope_id(&count.key)) {
+            return true;
+        }
+    }
+    scoped_rows < stats.row_count
+}
+
 fn created_range_overlaps(
     segment_min: Option<u64>,
     segment_max: Option<u64>,
@@ -154,6 +194,15 @@ mod tests {
         assert_eq!(
             statistics.segments_matching_scope("project:a"),
             Some(vec![1, 3])
+        );
+        assert_eq!(
+            statistics.segments_matching_any_scope_id(&BTreeSet::from([scope_id("project:a")])),
+            Some(vec![1, 3])
+        );
+        assert_eq!(
+            statistics
+                .segments_matching_any_scope_id(&BTreeSet::from([scope_id("project:missing")])),
+            Some(vec![3])
         );
         assert_eq!(
             statistics.segments_matching_status("ready"),
