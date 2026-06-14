@@ -27,6 +27,7 @@ TOP_K="${TOP_K:-50}"
 DENSE_WEIGHT="${DENSE_WEIGHT:-1.0}"
 LEX_WEIGHT="${LEX_WEIGHT:-1.0}"
 TOP_K_CONTEXT="${TOP_K_CONTEXT:-8}"
+MAX_TOKENS="${MAX_TOKENS:-420}"
 ANSWER_WORKERS="${ANSWER_WORKERS:-4}"
 JUDGE_WORKERS="${JUDGE_WORKERS:-4}"
 
@@ -81,7 +82,7 @@ fi
 echo "### STAGE 3/4: ${ANSWER_PROVIDER} answers (prompt=${PROMPT_STYLE} context=${CONTEXT_MODE} plan=${INCLUDE_EVIDENCE_PLAN} table=${INCLUDE_EVIDENCE_TABLE} guard=${UNSUPPORTED_CLAIM_GUARD} repair=${SELF_CONSISTENCY_REPAIR})"
 python3 scripts/enterprise_rag_bench/run_official_clean_benchmark.py "${COMMON[@]}" \
   --stage answer --top-k-context "$TOP_K_CONTEXT" --max-chars-per-doc 2200 \
-  --max-tokens 420 --answer-workers "$ANSWER_WORKERS" \
+  --max-tokens "$MAX_TOKENS" --answer-workers "$ANSWER_WORKERS" \
   "${ANSWER_FLAGS[@]}"
 
 echo "### STAGE 4/4: ${JUDGE_PROVIDER} judge"
