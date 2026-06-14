@@ -1073,8 +1073,8 @@ make retrieval-quality-history-check
 
 The report separates the search modes that matter for beta review:
 
-- `lexical`: BM25-like golden query behavior from the checked-in search quality
-  fixture;
+- `lexical`: canonical BM25 golden query behavior from the checked-in search
+  quality fixture;
 - `vector`: exact vector behavior that remains the correctness fallback;
 - `hybrid`: RRF fusion behavior across lexical and vector results;
 - `guarded ANN`: HNSW/ANN behavior with exact-parity, recall, MRR, nDCG,

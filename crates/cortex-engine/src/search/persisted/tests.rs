@@ -1,4 +1,5 @@
 use super::*;
+use crate::search::Bm25Index;
 
 #[test]
 fn persisted_lexical_search_filters_allowed_candidates() {
@@ -82,6 +83,82 @@ fn persisted_lexical_search_uses_field_weights_when_available() {
     );
 
     assert_eq!(results[0].cell_id, 1);
+}
+
+#[test]
+fn persisted_lexical_scores_match_live_field_bm25() {
+    let field_docs = BTreeMap::from([
+        (
+            1,
+            BTreeMap::from([
+                (
+                    "title".to_owned(),
+                    BTreeMap::from([("apollo".to_owned(), 1)]),
+                ),
+                (
+                    "body".to_owned(),
+                    BTreeMap::from([("budget".to_owned(), 1), ("status".to_owned(), 2)]),
+                ),
+            ]),
+        ),
+        (
+            2,
+            BTreeMap::from([(
+                "body".to_owned(),
+                BTreeMap::from([("apollo".to_owned(), 3), ("budget".to_owned(), 1)]),
+            )]),
+        ),
+    ]);
+    let mut live = Bm25Index::default();
+    for (candidate, fields) in &field_docs {
+        live.add_field_terms(*candidate, fields.clone());
+    }
+
+    let terms = BTreeMap::from([
+        ("apollo".to_owned(), BTreeSet::from([1, 2])),
+        ("budget".to_owned(), BTreeSet::from([1, 2])),
+        ("status".to_owned(), BTreeSet::from([1])),
+    ]);
+    let doc_lengths = BTreeMap::from([(1, 12), (2, 4)]);
+    let term_frequencies = BTreeMap::from([
+        ("apollo".to_owned(), BTreeMap::from([(1, 8), (2, 3)])),
+        ("budget".to_owned(), BTreeMap::from([(1, 1), (2, 1)])),
+        ("status".to_owned(), BTreeMap::from([(1, 2)])),
+    ]);
+    let field_doc_lengths = BTreeMap::from([
+        ("title".to_owned(), BTreeMap::from([(1, 1)])),
+        ("body".to_owned(), BTreeMap::from([(1, 3), (2, 4)])),
+    ]);
+    let field_term_frequencies = BTreeMap::from([
+        (
+            "title".to_owned(),
+            BTreeMap::from([("apollo".to_owned(), BTreeMap::from([(1, 1)]))]),
+        ),
+        (
+            "body".to_owned(),
+            BTreeMap::from([
+                ("apollo".to_owned(), BTreeMap::from([(2, 3)])),
+                ("budget".to_owned(), BTreeMap::from([(1, 1), (2, 1)])),
+                ("status".to_owned(), BTreeMap::from([(1, 2)])),
+            ]),
+        ),
+    ]);
+
+    let persisted = search_persisted_lexical(
+        PersistedLexicalSearchIndex {
+            terms: &terms,
+            doc_lengths: &doc_lengths,
+            term_frequencies: &term_frequencies,
+            field_doc_lengths: &field_doc_lengths,
+            field_term_frequencies: &field_term_frequencies,
+        },
+        "apollo budget",
+        &BTreeSet::from([1, 2]),
+        2,
+    );
+    let live = live.search("apollo budget", 2);
+
+    assert_eq!(persisted, live);
 }
 
 #[test]

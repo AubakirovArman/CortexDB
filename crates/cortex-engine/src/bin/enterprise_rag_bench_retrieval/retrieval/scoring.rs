@@ -63,7 +63,7 @@ fn source_type(path: &str) -> String {
     path.split('/').next().unwrap_or("unknown").to_owned()
 }
 
-pub(super) fn average_len_q10(doc_lengths: &BTreeMap<u32, u32>, allowed: &BTreeSet<u32>) -> u64 {
+pub(super) fn average_len_q16(doc_lengths: &BTreeMap<u32, u32>, allowed: &BTreeSet<u32>) -> u64 {
     let mut count = 0u64;
     let mut total = 0u64;
     for candidate in allowed {
@@ -73,24 +73,31 @@ pub(super) fn average_len_q10(doc_lengths: &BTreeMap<u32, u32>, allowed: &BTreeS
         }
     }
     total
-        .saturating_mul(1024)
+        .saturating_mul(65_536)
         .checked_div(count)
-        .unwrap_or(1024)
+        .unwrap_or(65_536)
 }
 
-pub(super) fn average_field_len_q10(
+pub(super) fn average_field_len_q16(
     field_doc_lengths: &BTreeMap<String, BTreeMap<u32, u32>>,
     field: &str,
+    allowed: &BTreeSet<u32>,
 ) -> u64 {
     let Some(lengths) = field_doc_lengths.get(field) else {
-        return 1024;
+        return 65_536;
     };
-    let total = lengths.values().copied().map(u64::from).sum::<u64>();
-    if lengths.is_empty() {
-        1024
-    } else {
-        total * 1024 / lengths.len() as u64
+    let mut count = 0u64;
+    let mut total = 0u64;
+    for (candidate, length) in lengths {
+        if allowed.contains(candidate) {
+            count += 1;
+            total = total.saturating_add(u64::from((*length).max(1)));
+        }
     }
+    total
+        .saturating_mul(65_536)
+        .checked_div(count)
+        .unwrap_or(65_536)
 }
 
 pub(super) fn lexical_field_weight(field: &str) -> u32 {

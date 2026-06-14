@@ -29,10 +29,13 @@ directly and vector search reads persisted `.acv` vectors plus `.ach` graph
 links. If a WAL tail has newer put/patch/tombstone records, the engine falls
 back to the visible MemTable snapshot so fresh writes are not missed.
 
-Keyword scoring uses deterministic integer statistics. Body text has weight 1;
-an optional `title=` payload header has weight 6. Persisted `.aci` files store
-the same weighted term frequencies so checkpointed search keeps the same ranking
-signals as snapshot search.
+Keyword scoring uses canonical BM25 with deterministic Q16 fixed-point
+statistics. Defaults are `k1=1.2` and `b=0.75`; field weights are applied to
+per-field BM25 contributions when `.aci` field term frequencies are available.
+`title` has weight 8, `path` has weight 5, and body text has weight 1.
+Persisted `.aci` files store the same term, field, and length statistics so
+checkpointed search keeps the same ranking signals as snapshot search. The full
+formula and defaults are documented in [`SCORING.md`](SCORING.md).
 
 `TextAnalyzer` supports field weights, stopwords, weighted terms, deterministic
 MRR checks, and built-in English/Russian/Kazakh analyzer packs. The language

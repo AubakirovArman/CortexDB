@@ -38,6 +38,7 @@ evidence snapshots, benchmark experiments, and release working notes live in
 - [`VERIFY_FACT.md`](VERIFY_FACT.md) - deterministic verification.
 - [`AGENT_MEMORY.md`](AGENT_MEMORY.md) - agent memory behavior.
 - [`SEARCH.md`](SEARCH.md) - lexical/vector/hybrid search.
+- [`SCORING.md`](SCORING.md) - BM25, field weights, and query scoring.
 - [`INGESTION.md`](INGESTION.md) - ingestion behavior.
 
 ## API, CLI, SDK

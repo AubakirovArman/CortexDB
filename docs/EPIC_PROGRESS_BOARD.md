@@ -20,18 +20,19 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C03` — Real BM25 with field weights.
+`EPIC-C04` — Unicode tokenizer + optional stemming.
 
-C03 exit steps:
+C04 exit steps:
 
-1. Add canonical BM25(k1,b) fixed-point scoring with float-reference tests.
-2. Wire field weights into persisted/live lexical scoring.
-3. Preserve or improve retrieval-quality fixtures.
-4. Mark done when C03 gates pass and scoring docs are updated.
+1. Define tokenizer contract for Unicode and optional stemming.
+2. Add analyzer-version or migration policy for changed token streams.
+3. Add Russian/Kazakh quality fixtures and preserve English fixtures.
+4. Mark done when tokenizer changes are backward-compatible or migrated.
 
-C03 current state:
+C04 current state:
 
 - next.
+- C03 is closed with canonical BM25 and field weights.
 - Do not reopen C01 unless `ACI4` compact lexical format or dual-read tests regress.
 - Do not reopen B20 unless `BRAIN_SEMANTICS.md` or alias tests regress.
 - Do not reopen B19 unless REMEMBER write contract or allocation tests regress.
@@ -50,6 +51,17 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C03 — Real BM25 with field weights
+
+Status: `done`
+
+What closed it:
+
+- Added shared fixed-point BM25 helpers with `k1=1.2`, `b=0.75`, Q16 scoring, and float-reference tests.
+- Wired canonical BM25 into live lexical search, persisted `.aci` search, AQL candidate ranking, retrieved-cell ranking, ContextPack `base_bm25`, and the enterprise retrieval benchmark scorer.
+- Kept field weights through field term frequencies (`title=8`, `path=5`, `body=1`) and added persisted-vs-live field BM25 parity coverage.
+- Added `docs/SCORING.md` and refreshed search/architecture/benchmark docs.
 
 ### EPIC-C01 — Term interning + compact postings
 
@@ -836,9 +848,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on C03 only:
+Work on C04 only:
 
-1. inventory current BM25-like scoring and field-weight paths;
-2. implement canonical BM25(k1,b) with fixed-point/float-reference tests;
-3. keep retrieval-quality fixtures stable or improved;
-4. move to the next ordered epic after C03 acceptance is closed.
+1. inventory current tokenizer/analyzer paths and stored index compatibility;
+2. define unicode/stemming contract and migration/version policy;
+3. add ru/kz quality fixtures while keeping English fixtures stable;
+4. move to the next ordered epic after C04 acceptance is closed.

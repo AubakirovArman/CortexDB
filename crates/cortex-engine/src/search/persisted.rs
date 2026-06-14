@@ -3,7 +3,13 @@ use std::time::Instant;
 
 use crate::query::metadata::lexical_field_weight;
 
-use super::{hnsw::DistanceMetric, ranked, tokenize, ScoredCandidate};
+mod scoring;
+
+use super::{
+    bm25_idf_q16, bm25_term_score_with_idf_q16, hnsw::DistanceMetric, query_understanding, ranked,
+    Bm25TermInput, ScoredCandidate,
+};
+use scoring::{average_field_len_q16, average_len_q16};
 
 const MAX_PERSISTED_LEXICAL_QUERY_TERMS: usize = 8;
 
@@ -25,7 +31,7 @@ pub(super) fn search_persisted_lexical(
     if doc_count == 0 {
         return Vec::new();
     }
-    let avg_len_q10 = average_len_q10(index.doc_lengths, allowed);
+    let avg_len_q16 = average_len_q16(index.doc_lengths, allowed);
     let mut scores = BTreeMap::<u32, u64>::new();
     let all_allowed = !index.doc_lengths.is_empty() && allowed.len() == index.doc_lengths.len();
     let selected_terms = selected_query_terms(index.terms, query, allowed, all_allowed);
@@ -41,8 +47,8 @@ pub(super) fn search_persisted_lexical(
         all_allowed
     ));
     for term_stats in selected_terms {
-        let term = term_stats.term;
-        let Some(posting) = index.terms.get(&term) else {
+        let term = term_stats.term.as_str();
+        let Some(posting) = index.terms.get(term) else {
             continue;
         };
         let term_started = Instant::now();
@@ -50,14 +56,34 @@ pub(super) fn search_persisted_lexical(
             "score term={} visible_count={}",
             term, term_stats.visible_count
         ));
-        let idf_q10 = ((doc_count as u64 + 1) * 1024) / (term_stats.visible_count as u64 + 1);
+        let idf_q16 = bm25_idf_q16(doc_count, term_stats.visible_count);
+        let filter = AllowedFilter {
+            candidates: allowed,
+            all_allowed,
+        };
         if all_allowed {
             for candidate in posting {
-                add_lexical_score(&mut scores, &index, &term, *candidate, idf_q10, avg_len_q10);
+                add_lexical_score(
+                    &mut scores,
+                    &index,
+                    &term_stats,
+                    *candidate,
+                    idf_q16,
+                    avg_len_q16,
+                    filter,
+                );
             }
         } else {
             for candidate in posting.iter().filter(|id| allowed.contains(id)) {
-                add_lexical_score(&mut scores, &index, &term, *candidate, idf_q10, avg_len_q10);
+                add_lexical_score(
+                    &mut scores,
+                    &index,
+                    &term_stats,
+                    *candidate,
+                    idf_q16,
+                    avg_len_q16,
+                    filter,
+                );
             }
         }
         trace_persisted_lexical(&format!(
@@ -73,6 +99,13 @@ pub(super) fn search_persisted_lexical(
 struct QueryTermStats {
     term: String,
     visible_count: usize,
+    query_weight: u32,
+}
+
+#[derive(Clone, Copy)]
+struct AllowedFilter<'a> {
+    candidates: &'a BTreeSet<u32>,
+    all_allowed: bool,
 }
 
 fn selected_query_terms(
@@ -82,15 +115,17 @@ fn selected_query_terms(
     all_allowed: bool,
 ) -> Vec<QueryTermStats> {
     let mut seen = BTreeSet::new();
-    let mut selected = tokenize(query)
+    let mut selected = query_understanding::analyze_search_query(query)
+        .weighted_terms
         .into_iter()
-        .filter(|term| seen.insert(term.clone()))
-        .filter_map(|term| {
+        .filter(|(term, _)| seen.insert(term.clone()))
+        .filter_map(|(term, query_weight)| {
             let posting = terms.get(&term)?;
             let visible_count = visible_posting_count(posting, allowed, all_allowed);
             (visible_count > 0).then_some(QueryTermStats {
                 term,
                 visible_count,
+                query_weight,
             })
         })
         .collect::<Vec<_>>();
@@ -119,27 +154,36 @@ fn visible_posting_count(
 fn add_lexical_score(
     scores: &mut BTreeMap<u32, u64>,
     index: &PersistedLexicalSearchIndex<'_>,
-    term: &str,
+    term_stats: &QueryTermStats,
     candidate: u32,
-    idf_q10: u64,
-    avg_len_q10: u64,
+    idf_q16: u64,
+    avg_len_q16: u64,
+    filter: AllowedFilter<'_>,
 ) {
-    let field_score = field_score_q10(
+    let term = term_stats.term.as_str();
+    let field_score = field_score_q16(
         index.field_doc_lengths,
         index.field_term_frequencies,
         term,
         candidate,
-        idf_q10,
+        idf_q16,
+        term_stats.query_weight,
+        filter,
     );
     let score = if field_score > 0 {
         field_score
     } else {
-        let tf = u64::from(term_frequency(index.term_frequencies, term, candidate));
-        let len_q10 = u64::from(*index.doc_lengths.get(&candidate).unwrap_or(&1)) * 1024;
-        let norm_q10 = 256 + (768 * len_q10 / avg_len_q10.max(1));
-        let denom_q10 = (tf * 1024) + norm_q10;
-        let tf_norm_q10 = (tf * 2048 * 1024) / denom_q10.max(1);
-        idf_q10 * tf_norm_q10
+        bm25_term_score_with_idf_q16(
+            Bm25TermInput {
+                tf: term_frequency(index.term_frequencies, term, candidate),
+                doc_len: *index.doc_lengths.get(&candidate).unwrap_or(&1),
+                avg_len_q16,
+                query_weight: term_stats.query_weight,
+                field_weight: 1,
+            },
+            idf_q16,
+            Default::default(),
+        )
     };
     *scores.entry(candidate).or_default() += score;
 }
@@ -150,12 +194,14 @@ fn trace_persisted_lexical(message: &str) {
     }
 }
 
-fn field_score_q10(
+fn field_score_q16(
     field_doc_lengths: &BTreeMap<String, BTreeMap<u32, u32>>,
     field_term_frequencies: &BTreeMap<String, BTreeMap<String, BTreeMap<u32, u32>>>,
     term: &str,
     candidate: u32,
-    idf_q10: u64,
+    idf_q16: u64,
+    query_weight: u32,
+    filter: AllowedFilter<'_>,
 ) -> u64 {
     field_term_frequencies
         .iter()
@@ -167,21 +213,28 @@ fn field_score_q10(
             Some((field, tf))
         })
         .map(|(field, tf)| {
-            let tf = u64::from(tf);
-            let len_q10 = field_doc_lengths
+            let length = field_doc_lengths
                 .get(field)
                 .and_then(|lengths| lengths.get(&candidate))
                 .copied()
-                .map(u64::from)
-                .unwrap_or(1)
-                * 1024;
-            let avg_len_q10 = average_field_len_q10(field_doc_lengths, field);
-            let norm_q10 = 256 + (768 * len_q10 / avg_len_q10.max(1));
-            let denom_q10 = (tf * 1024) + norm_q10;
-            let tf_norm_q10 = (tf * 2048 * 1024) / denom_q10.max(1);
-            idf_q10
-                .saturating_mul(tf_norm_q10)
-                .saturating_mul(u64::from(lexical_field_weight(field)))
+                .unwrap_or(1);
+            let avg_len_q16 = average_field_len_q16(
+                field_doc_lengths,
+                field,
+                filter.candidates,
+                filter.all_allowed,
+            );
+            bm25_term_score_with_idf_q16(
+                Bm25TermInput {
+                    tf,
+                    doc_len: length,
+                    avg_len_q16,
+                    query_weight,
+                    field_weight: lexical_field_weight(field),
+                },
+                idf_q16,
+                Default::default(),
+            )
         })
         .sum()
 }
@@ -223,36 +276,6 @@ fn doc_count(doc_lengths: &BTreeMap<u32, u32>, allowed: &BTreeSet<u32>) -> usize
         count
     } else {
         allowed.len()
-    }
-}
-
-fn average_len_q10(doc_lengths: &BTreeMap<u32, u32>, allowed: &BTreeSet<u32>) -> u64 {
-    let mut count = 0u64;
-    let mut total = 0u64;
-    for candidate in allowed {
-        if let Some(length) = doc_lengths.get(candidate) {
-            count += 1;
-            total += u64::from(*length);
-        }
-    }
-    total
-        .saturating_mul(1024)
-        .checked_div(count)
-        .unwrap_or(1024)
-}
-
-fn average_field_len_q10(
-    field_doc_lengths: &BTreeMap<String, BTreeMap<u32, u32>>,
-    field: &str,
-) -> u64 {
-    let Some(lengths) = field_doc_lengths.get(field) else {
-        return 1024;
-    };
-    let total = lengths.values().copied().map(u64::from).sum::<u64>();
-    if lengths.is_empty() {
-        1024
-    } else {
-        total * 1024 / lengths.len() as u64
     }
 }
 

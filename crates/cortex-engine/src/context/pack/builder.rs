@@ -14,7 +14,7 @@ use crate::context::large_cell::{
     apply_large_cell_policy, estimate_cell_tokens, ContextLargeCellPolicy, LargeCellDecision,
     LargeCellRequest,
 };
-use crate::context::scoring::{apply_feedback_bonus, score_components};
+use crate::context::scoring::{apply_feedback_bonus, context_base_bm25_scores, score_components};
 use crate::context::span::{select_relevant_span, ContextSpanRequest};
 use crate::context::{
     answerability, conflicts, ContextExplain, ContextPack, ContextPackAnomaly,
@@ -70,6 +70,7 @@ impl<'a> ContextPackBuilder<'a> {
         let mut truncated = false;
         let mut anomalies = Vec::new();
         let query_terms = extract_query_terms(query);
+        let base_bm25_scores = context_base_bm25_scores(&cells, query);
         let source_freshness_range = SourceFreshnessRange::from_cells(&cells);
         let cells = if options.reduce_redundancy {
             diversity_aware_order(cells, &query_terms)
@@ -175,7 +176,6 @@ impl<'a> ContextPackBuilder<'a> {
             if pack_cells.is_empty() && selected_tokens > token_budget_tokens {
                 truncated = true;
             }
-
             if citations_required && citation.is_none() {
                 anomalies.push(ContextPackAnomaly {
                     cell_id: Some(cell.cell_id),
@@ -190,8 +190,7 @@ impl<'a> ContextPackBuilder<'a> {
                 .filter(|term| cell_body_terms.contains(*term))
                 .cloned()
                 .collect();
-
-            let base_bm25 = (matched.len() as u32) * 10_000;
+            let base_bm25 = *base_bm25_scores.get(&cell.cell_id).unwrap_or(&0);
             let source_trust =
                 SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class);
             let source_trust_bonus = source_trust.score_bonus();

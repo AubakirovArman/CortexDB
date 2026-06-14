@@ -402,7 +402,7 @@ Exit steps:
 1. Implement field-aware BM25 with IDF, TF, and length normalization.
 2. Replace fake term-count ranking in retrieval paths.
 3. Add golden ranking tests.
-4. Mark done when lexical rank is BM25-backed and explainable; then move to C07.
+4. Mark done when lexical rank is BM25-backed and explainable; then move to C04.
 
 ### EPIC-C04 — Токенизация
 

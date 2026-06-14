@@ -7,7 +7,7 @@ use cortex_core::CellId;
 use crate::database::RetrievedCell;
 use crate::feedback::current_unix_seconds;
 use crate::query::CellMetadata;
-use crate::search::analyze_search_query;
+use crate::search::{analyze_search_query, bm25_term_score_q16, Bm25CorpusStats, Bm25TermInput};
 use crate::source_trust::SourceTrust;
 
 mod memory_decay;
@@ -148,50 +148,51 @@ fn lexical_bm25_scores_from_metadata(metadata: &[CellMetadata], query: &str) -> 
         .iter()
         .map(|terms| terms.values().copied().sum::<u32>().max(1))
         .collect::<Vec<_>>();
-    let avg_len_q10 = average_len_q10(&doc_lengths);
-    let doc_count = docs.len() as u64;
-    let mut doc_frequency = BTreeMap::<String, u64>::new();
+    let avg_len_q16 = average_len_q16(&doc_lengths);
+    let doc_count = docs.len();
+    let mut doc_frequency = BTreeMap::<String, usize>::new();
     for term in query_terms.keys() {
-        let count = docs
-            .iter()
-            .filter(|doc| doc.contains_key(term))
-            .count()
-            .try_into()
-            .unwrap_or(u64::MAX);
+        let count = docs.iter().filter(|doc| doc.contains_key(term)).count();
         doc_frequency.insert(term.clone(), count);
     }
 
     docs.iter()
         .enumerate()
         .map(|(index, doc)| {
-            let len_q10 = u64::from(doc_lengths[index]) * 1024;
-            let norm_q10 = 256 + (768 * len_q10 / avg_len_q10.max(1));
             query_terms
                 .iter()
                 .map(|(term, query_weight)| {
-                    let tf = u64::from(*doc.get(term).unwrap_or(&0));
+                    let tf = *doc.get(term).unwrap_or(&0);
                     if tf == 0 {
                         return 0;
                     }
                     let df = *doc_frequency.get(term).unwrap_or(&0);
-                    let idf_q10 = ((doc_count + 1) * 1024) / (df + 1);
-                    let denom_q10 = (tf * 1024) + norm_q10;
-                    let tf_norm_q10 = (tf * 2048 * 1024) / denom_q10.max(1);
-                    idf_q10
-                        .saturating_mul(tf_norm_q10)
-                        .saturating_mul(u64::from(*query_weight))
+                    bm25_term_score_q16(
+                        Bm25TermInput {
+                            tf,
+                            doc_len: doc_lengths[index],
+                            avg_len_q16,
+                            query_weight: *query_weight,
+                            field_weight: 1,
+                        },
+                        Bm25CorpusStats {
+                            doc_count,
+                            doc_freq: df,
+                        },
+                        Default::default(),
+                    )
                 })
                 .sum()
         })
         .collect()
 }
 
-fn average_len_q10(doc_lengths: &[u32]) -> u64 {
+fn average_len_q16(doc_lengths: &[u32]) -> u64 {
     if doc_lengths.is_empty() {
-        return 1024;
+        return 65_536;
     }
     let total = doc_lengths.iter().copied().map(u64::from).sum::<u64>();
-    total * 1024 / doc_lengths.len() as u64
+    total * 65_536 / doc_lengths.len() as u64
 }
 
 fn recency_scores_q16_from_metadata(metadata: &[CellMetadata]) -> Vec<u64> {

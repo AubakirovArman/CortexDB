@@ -7,7 +7,7 @@ use super::metadata::scope_handle;
 use super::EngineAqlIndex;
 use crate::database::CandidateResolver;
 use crate::plan::PolicyRewrite;
-use crate::search::analyze_search_query;
+use crate::search::{analyze_search_query, bm25_term_score_q16, Bm25CorpusStats, Bm25TermInput};
 
 #[derive(Clone, Debug)]
 pub struct EngineAqlProvider {
@@ -92,8 +92,8 @@ impl CandidateResolver for EngineAqlProvider {
         }
 
         let candidate_set = candidates.iter().copied().collect::<BTreeSet<_>>();
-        let avg_len_q10 = average_doc_len_q10(&self.index, candidates);
-        let doc_count = candidates.len() as u64;
+        let avg_len_q16 = average_doc_len_q16(&self.index, candidates);
+        let doc_count = candidates.len();
         let mut any_score = false;
         let mut ranked = candidates
             .iter()
@@ -107,7 +107,7 @@ impl CandidateResolver for EngineAqlProvider {
                             &self.index,
                             &candidate_set,
                             doc_count,
-                            avg_len_q10,
+                            avg_len_q16,
                             candidate,
                             term,
                             *query_weight,
@@ -132,7 +132,7 @@ impl CandidateResolver for EngineAqlProvider {
     }
 }
 
-fn average_doc_len_q10(index: &EngineAqlIndex, candidates: &[u32]) -> u64 {
+fn average_doc_len_q16(index: &EngineAqlIndex, candidates: &[u32]) -> u64 {
     let mut total = 0u64;
     let mut count = 0u64;
     for candidate in candidates {
@@ -142,16 +142,16 @@ fn average_doc_len_q10(index: &EngineAqlIndex, candidates: &[u32]) -> u64 {
         }
     }
     total
-        .saturating_mul(1024)
+        .saturating_mul(65_536)
         .checked_div(count)
-        .unwrap_or(1024)
+        .unwrap_or(65_536)
 }
 
 fn candidate_term_score(
     index: &EngineAqlIndex,
     candidate_set: &BTreeSet<u32>,
-    doc_count: u64,
-    avg_len_q10: u64,
+    doc_count: usize,
+    avg_len_q16: u64,
     candidate: u32,
     term: &str,
     query_weight: u32,
@@ -159,29 +159,32 @@ fn candidate_term_score(
     let Some(frequencies) = index.lexical_term_frequencies.get(term) else {
         return 0;
     };
-    let tf = u64::from(frequencies.get(&candidate).copied().unwrap_or_default());
+    let tf = frequencies.get(&candidate).copied().unwrap_or_default();
     if tf == 0 {
         return 0;
     }
     let df = frequencies
         .keys()
         .filter(|candidate| candidate_set.contains(candidate))
-        .count() as u64;
-    let doc_len_q10 = u64::from(
-        index
-            .lexical_doc_lengths
-            .get(&candidate)
-            .copied()
-            .unwrap_or(1)
-            .max(1),
+        .count();
+    bm25_term_score_q16(
+        Bm25TermInput {
+            tf,
+            doc_len: index
+                .lexical_doc_lengths
+                .get(&candidate)
+                .copied()
+                .unwrap_or(1),
+            avg_len_q16,
+            query_weight,
+            field_weight: 1,
+        },
+        Bm25CorpusStats {
+            doc_count,
+            doc_freq: df,
+        },
+        Default::default(),
     )
-    .saturating_mul(1024);
-    let norm_q10 = 256 + (768 * doc_len_q10 / avg_len_q10.max(1));
-    let idf_q10 = ((doc_count + 1) * 1024) / (df + 1);
-    let tf_norm_q10 = (tf * 2048 * 1024) / (tf * 1024 + norm_q10).max(1);
-    idf_q10
-        .saturating_mul(tf_norm_q10)
-        .saturating_mul(u64::from(query_weight))
 }
 
 fn set_to_bitmap(values: &BTreeSet<u32>) -> RoaringBitmap {

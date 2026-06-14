@@ -3,9 +3,11 @@ use std::collections::BTreeMap;
 
 use cortex_core::CellId;
 
+use super::explain::extract_query_terms;
 use super::freshness::SourceFreshness;
 use super::ContextScoreComponent;
 use crate::database::RetrievedCell;
+use crate::search::{analyze_search_query, bm25_term_score_q16, Bm25CorpusStats, Bm25TermInput};
 use crate::source_trust::SourceTrust;
 
 pub(crate) fn score_components(
@@ -22,7 +24,7 @@ pub(crate) fn score_components(
             name: "base_bm25".to_owned(),
             value: base_bm25,
             contribution: i32::try_from(base_bm25).unwrap_or(i32::MAX),
-            reason: "keyword overlap between query terms and cell body".to_owned(),
+            reason: "canonical BM25 score from query terms and cell metadata".to_owned(),
         },
         ContextScoreComponent {
             name: "source_trust_bonus".to_owned(),
@@ -74,4 +76,63 @@ pub(crate) fn apply_feedback_bonus(score: u32, feedback_bonus: i32) -> u32 {
     } else {
         score.saturating_sub(feedback_bonus.unsigned_abs())
     }
+}
+
+pub(crate) fn context_base_bm25_scores(
+    cells: &[RetrievedCell],
+    query: &str,
+) -> BTreeMap<CellId, u32> {
+    let query_text = extract_query_terms(query).join(" ");
+    let query_terms = analyze_search_query(&query_text).weighted_terms;
+    if query_terms.is_empty() || cells.is_empty() {
+        return BTreeMap::new();
+    }
+    let docs = cells
+        .iter()
+        .map(|cell| (cell.cell_id, cell.metadata().weighted_lexical_terms()))
+        .collect::<Vec<_>>();
+    let doc_lengths = docs
+        .iter()
+        .map(|(_, terms)| terms.values().copied().sum::<u32>().max(1))
+        .collect::<Vec<_>>();
+    let avg_len_q16 = average_len_q16(&doc_lengths);
+    let doc_count = docs.len();
+    let mut scores = BTreeMap::new();
+    for (index, (cell_id, doc)) in docs.iter().enumerate() {
+        let score = query_terms
+            .iter()
+            .map(|(term, query_weight)| {
+                let tf = *doc.get(term).unwrap_or(&0);
+                let df = docs
+                    .iter()
+                    .filter(|(_, candidate)| candidate.contains_key(term))
+                    .count();
+                bm25_term_score_q16(
+                    Bm25TermInput {
+                        tf,
+                        doc_len: doc_lengths[index],
+                        avg_len_q16,
+                        query_weight: *query_weight,
+                        field_weight: 1,
+                    },
+                    Bm25CorpusStats {
+                        doc_count,
+                        doc_freq: df,
+                    },
+                    Default::default(),
+                )
+            })
+            .sum::<u64>()
+            .min(u64::from(u32::MAX)) as u32;
+        scores.insert(*cell_id, score);
+    }
+    scores
+}
+
+fn average_len_q16(doc_lengths: &[u32]) -> u64 {
+    if doc_lengths.is_empty() {
+        return 65_536;
+    }
+    let total = doc_lengths.iter().copied().map(u64::from).sum::<u64>();
+    total.saturating_mul(65_536) / doc_lengths.len() as u64
 }

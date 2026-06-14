@@ -185,7 +185,7 @@ mechanism.
 
 Search currently includes:
 
-- keyword/BM25-like lexical scoring;
+- keyword BM25 lexical scoring with field weights;
 - exact vector search;
 - guarded ANN/HNSW search with exact fallback;
 - hybrid/RRF foundations;

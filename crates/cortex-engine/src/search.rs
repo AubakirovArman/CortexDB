@@ -8,6 +8,7 @@ mod ann_fixture;
 mod ann_metric_matrix;
 mod ann_recall_tests;
 mod ann_report;
+pub mod bm25;
 mod conditions;
 mod database;
 mod decomposition;
@@ -57,6 +58,10 @@ pub use ann_metric_matrix::{
 };
 pub use ann_report::{
     synthetic_ann_recall_latency_report, AnnRecallLatencyReport, SYNTHETIC_ANN_CORPUS_V1,
+};
+pub use bm25::{
+    bm25_idf_q16, bm25_term_score_q16, bm25_term_score_with_idf_q16, Bm25Config, Bm25CorpusStats,
+    Bm25TermInput, DEFAULT_BM25_B_Q16, DEFAULT_BM25_K1_Q16,
 };
 pub use conditions::{
     condition_payload_bonus, extract_query_conditions, NumericConditionOperator,

@@ -61,7 +61,7 @@ fn test_context_pack_scoring_and_explain() {
     let cell = &pack.cells[0];
     let exp = cell.explain.as_ref().unwrap();
     assert_eq!(exp.matched_terms, vec!["budget"]);
-    assert_eq!(exp.base_bm25, 10_000);
+    assert_eq!(exp.base_bm25, 103_688);
     assert!(exp.score > 0);
     assert!(!exp.why_selected.is_empty());
     assert_eq!(exp.score_components.len(), 4);

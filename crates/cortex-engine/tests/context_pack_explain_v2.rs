@@ -152,7 +152,7 @@ fn context_pack_explain_cell_reports_selected_contract() {
     assert_eq!(explain.outcome, ContextCellExplainOutcome::Selected);
     assert_eq!(explain.first_excluding_stage, None);
     assert_eq!(explain.matched_terms, vec!["solar", "budget"]);
-    assert_eq!(explain.score, Some(80_000));
+    assert_eq!(explain.score, Some(210_824));
     assert_eq!(
         explain.why_selected.as_deref(),
         Some("Selected due to high provenance source trust and relevant query terms")

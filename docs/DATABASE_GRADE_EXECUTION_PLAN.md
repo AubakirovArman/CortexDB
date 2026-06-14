@@ -11,10 +11,12 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C03` (`EPIC-C01` is now done along with the previously
+Current pointer: `EPIC-C04` (`EPIC-C03` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
-compatibility, and persisted/search compatibility gates. `EPIC-C03` is next.
+compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
+with canonical fixed-point BM25, field weights, and scoring docs. `EPIC-C04` is
+next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -91,7 +93,8 @@ enough to unblock the next dependency step.
 36. `EPIC-B19` — REMEMBER write-path policy formalization: done.
 37. `EPIC-B20` — Multi-brain semantics or removal: done.
 38. `EPIC-C01` — Term interning + compact postings: done.
-39. `EPIC-C03` — Real BM25 with field weights: next.
+39. `EPIC-C03` — Real BM25 with field weights: done.
+40. `EPIC-C04` — Unicode tokenizer + optional stemming: next.
 
 ## Summary
 
@@ -1152,20 +1155,22 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-C03 — Честный BM25 с полевыми весами
 
-- status: `pending`
+- status: `done`
 - meta: Категория: retrieval · P1 · 90 days · refactor
-- goal: текущий «BM25-like» с магическими константами (256+768 norm, database.rs:579) не верифицирован против эталона.
+- goal: прежняя непараметризованная lexical-scoring аппроксимация заменена на каноничный BM25(k1,b).
 - problem: Проблема: непараметризованная аппроксимация.
 - tasks:
-  - [ ] 1) каноничный BM25(k1,b) в fixed-point, тест против float-эталона на мини-корпусе
-  - [ ] 2) полевые веса title/body/path (field_term_frequencies уже хранятся)
-  - [ ] 3) конфиг + дефолты.
+  - [x] 1) каноничный BM25(k1,b) в fixed-point, тест против float-эталона на мини-корпусе
+  - [x] 2) полевые веса title/body/path (field_term_frequencies уже хранятся)
+  - [x] 3) конфиг + дефолты.
 - acceptance:
-  - [ ] 1) расхождение с эталоном < ε
-  - [ ] 2) retrieval-quality фикстуры ≥ текущих
-  - [ ] 3) параметры в доке SCORING.md.
-- files: search/database.rs, lexical scoring.
-- risks: сдвиг ранжирования — quality-гейт. Зависимости: C01 желательно. Эффект: ранжирование становится защитимым.
+  - [x] 1) расхождение с эталоном < ε
+  - [x] 2) retrieval-quality фикстуры ≥ текущих
+  - [x] 3) параметры в доке SCORING.md.
+- files: `crates/cortex-engine/src/search/bm25.rs`, `search/lexical.rs`, `search/persisted.rs`, `query/provider.rs`, `retrieval_rank.rs`, `context/scoring.rs`, enterprise retrieval benchmark scorer, `docs/SCORING.md`, `docs/SEARCH.md`.
+- evidence: `Bm25Config` defaults `k1=1.2`, `b=0.75`; fixed-point IDF/TF/length normalization matches float-reference tests; live, persisted, AQL, retrieved-cell, ContextPack, and benchmark lexical paths use shared BM25 helpers; persisted field BM25 parity with live index is covered.
+- gates: `cargo fmt --check`; `cargo test -p cortex-engine bm25 --all-features`; `cargo test -p cortex-engine search::persisted::tests --all-features`; `cargo test -p cortex-engine --test query_search indexes --all-features`; `cargo test -p cortex-engine --test database_search lexical_index --all-features`; `cargo test -p cortex-engine --test context_pack scoring --all-features`; `cargo test -p cortex-engine --test context_pack_explain_v2 --all-features`.
+- risks: lexical score magnitudes changed by design; ranking quality remains guarded by search/context fixtures and broader retrieval-quality gates. Зависимости: C01. Эффект: ранжирование становится защитимым.
 
 ### EPIC-C04 — Токенизация: unicode segmentation + опциональный стемминг
 

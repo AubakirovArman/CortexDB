@@ -2,7 +2,10 @@ use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 
-use cortex_engine::Database;
+use cortex_engine::{
+    bm25_idf_q16, bm25_term_score_with_idf_q16, search::analyze_search_query, Bm25TermInput,
+    Database,
+};
 use cortex_storage::indexes::LexicalIndex;
 
 use super::cache::{
@@ -13,12 +16,12 @@ use super::overview::{
     expand_overview_query, is_overview_query, overview_path_score, OverviewQueryProfile,
 };
 use super::scoring::{
-    average_field_len_q10, average_len_q10, candidate_doc_maps, lexical_field_weight,
+    average_field_len_q16, average_len_q16, candidate_doc_maps, lexical_field_weight,
     source_allowed_map,
 };
 
-const MAX_QUERY_TERMS_FOR_SEARCH: usize = 8;
-const MAX_POSTING_SCAN: usize = 25_000;
+const MAX_QUERY_TERMS_FOR_SEARCH: usize = 16;
+const MAX_POSTING_SCAN: usize = 100_000;
 
 pub struct BenchmarkRetrievalIndex {
     lexical: LexicalIndex,
@@ -26,8 +29,8 @@ pub struct BenchmarkRetrievalIndex {
     candidate_to_rel_path: BTreeMap<u32, String>,
     source_allowed: BTreeMap<String, BTreeSet<u32>>,
     allowed: BTreeSet<u32>,
-    all_avg_len_q10: u64,
-    field_avg_len_q10: BTreeMap<String, u64>,
+    all_avg_len_q16: u64,
+    field_avg_len_q16: BTreeMap<String, u64>,
 }
 
 impl BenchmarkRetrievalIndex {
@@ -61,14 +64,14 @@ impl BenchmarkRetrievalIndex {
             candidate_doc_maps(uuid_index, &lexical.doc_lengths);
         let allowed = candidate_to_doc_id.keys().copied().collect::<BTreeSet<_>>();
         let source_allowed = source_allowed_map(&candidate_to_source_type);
-        let all_avg_len_q10 = average_len_q10(&lexical.doc_lengths, &allowed);
-        let field_avg_len_q10 = lexical
+        let all_avg_len_q16 = average_len_q16(&lexical.doc_lengths, &allowed);
+        let field_avg_len_q16 = lexical
             .field_doc_lengths
             .keys()
             .map(|field| {
                 (
                     field.clone(),
-                    average_field_len_q10(&lexical.field_doc_lengths, field),
+                    average_field_len_q16(&lexical.field_doc_lengths, field, &allowed),
                 )
             })
             .collect();
@@ -78,8 +81,8 @@ impl BenchmarkRetrievalIndex {
             candidate_to_rel_path,
             source_allowed,
             allowed,
-            all_avg_len_q10,
-            field_avg_len_q10,
+            all_avg_len_q16,
+            field_avg_len_q16,
         }
     }
 
@@ -146,14 +149,14 @@ impl BenchmarkRetrievalIndex {
             return Vec::new();
         }
         let all_allowed = allowed.len() == self.allowed.len();
-        let doc_count = allowed.len().max(1) as u64;
-        let avg_len_q10 = if all_allowed {
-            self.all_avg_len_q10
+        let doc_count = allowed.len().max(1);
+        let avg_len_q16 = if all_allowed {
+            self.all_avg_len_q16
         } else {
-            average_len_q10(&self.lexical.doc_lengths, allowed)
+            average_len_q16(&self.lexical.doc_lengths, allowed)
         };
         let mut scores = BTreeMap::<u32, u64>::new();
-        for term in self.search_terms(query) {
+        for (term, query_weight) in self.search_terms(query) {
             let Some(posting) = self.lexical.terms.get(&term) else {
                 continue;
             };
@@ -165,26 +168,31 @@ impl BenchmarkRetrievalIndex {
                     .filter(|id| allowed.contains(id))
                     .take(MAX_POSTING_SCAN)
                     .count()
-            } as u64;
+            };
             if visible_count == 0 {
                 continue;
             }
-            let idf_q10 = ((doc_count + 1) * 1024) / (visible_count + 1);
+            let idf_q16 = bm25_idf_q16(doc_count, visible_count);
             let candidates = posting
                 .iter()
                 .filter(|id| all_allowed || allowed.contains(id));
             for candidate in candidates.take(MAX_POSTING_SCAN) {
-                let field_score = self.field_score_q10(&term, *candidate, idf_q10);
+                let field_score =
+                    self.field_score_q16(&term, *candidate, idf_q16, query_weight, allowed);
                 let score = if field_score > 0 {
                     field_score
                 } else {
-                    let tf = u64::from(self.term_frequency(&term, *candidate));
-                    let len_q10 =
-                        u64::from(*self.lexical.doc_lengths.get(candidate).unwrap_or(&1)) * 1024;
-                    let norm_q10 = 256 + (768 * len_q10 / avg_len_q10.max(1));
-                    let denom_q10 = (tf * 1024) + norm_q10;
-                    let tf_norm_q10 = (tf * 2048 * 1024) / denom_q10.max(1);
-                    idf_q10 * tf_norm_q10
+                    bm25_term_score_with_idf_q16(
+                        Bm25TermInput {
+                            tf: self.term_frequency(&term, *candidate),
+                            doc_len: *self.lexical.doc_lengths.get(candidate).unwrap_or(&1),
+                            avg_len_q16,
+                            query_weight,
+                            field_weight: 1,
+                        },
+                        idf_q16,
+                        Default::default(),
+                    )
                 };
                 *scores.entry(*candidate).or_default() += score;
             }
@@ -198,21 +206,25 @@ impl BenchmarkRetrievalIndex {
             .collect()
     }
 
-    fn search_terms(&self, query: &str) -> Vec<String> {
-        let mut terms = BTreeMap::<String, usize>::new();
-        for term in cortex_engine::search::tokenize(query) {
+    fn search_terms(&self, query: &str) -> Vec<(String, u32)> {
+        let query_terms = analyze_search_query(query).weighted_terms;
+        let mut terms = BTreeMap::<String, (usize, u32)>::new();
+        for (term, weight) in query_terms {
             if let Some(posting) = self.lexical.terms.get(&term) {
                 terms
                     .entry(term)
-                    .and_modify(|size| *size = (*size).min(posting.len()))
-                    .or_insert(posting.len());
+                    .and_modify(|(size, stored_weight)| {
+                        *size = (*size).min(posting.len());
+                        *stored_weight = (*stored_weight).max(weight);
+                    })
+                    .or_insert((posting.len(), weight));
             }
         }
         let mut terms = terms.into_iter().collect::<Vec<_>>();
-        terms.sort_by_key(|(term, posting_size)| (*posting_size, term.clone()));
+        terms.sort_by_key(|(term, (posting_size, _))| (*posting_size, term.clone()));
         terms
             .into_iter()
-            .map(|(term, _)| term)
+            .map(|(term, (_, weight))| (term, weight))
             .take(MAX_QUERY_TERMS_FOR_SEARCH)
             .collect()
     }
@@ -239,7 +251,14 @@ impl BenchmarkRetrievalIndex {
             .unwrap_or(1)
     }
 
-    fn field_score_q10(&self, term: &str, candidate: u32, idf_q10: u64) -> u64 {
+    fn field_score_q16(
+        &self,
+        term: &str,
+        candidate: u32,
+        idf_q16: u64,
+        query_weight: u32,
+        allowed: &BTreeSet<u32>,
+    ) -> u64 {
         self.lexical
             .field_term_frequencies
             .iter()
@@ -251,23 +270,29 @@ impl BenchmarkRetrievalIndex {
                 Some((field, tf))
             })
             .map(|(field, tf)| {
-                let tf = u64::from(tf);
-                let len_q10 = self
+                let length = self
                     .lexical
                     .field_doc_lengths
                     .get(field)
                     .and_then(|lengths| lengths.get(&candidate))
                     .copied()
-                    .map(u64::from)
-                    .unwrap_or(1)
-                    * 1024;
-                let avg_len_q10 = self.field_avg_len_q10.get(field).copied().unwrap_or(1024);
-                let norm_q10 = 256 + (768 * len_q10 / avg_len_q10.max(1));
-                let denom_q10 = (tf * 1024) + norm_q10;
-                let tf_norm_q10 = (tf * 2048 * 1024) / denom_q10.max(1);
-                idf_q10
-                    .saturating_mul(tf_norm_q10)
-                    .saturating_mul(u64::from(lexical_field_weight(field)))
+                    .unwrap_or(1);
+                let avg_len_q16 = if allowed.len() == self.allowed.len() {
+                    self.field_avg_len_q16.get(field).copied().unwrap_or(65_536)
+                } else {
+                    average_field_len_q16(&self.lexical.field_doc_lengths, field, allowed)
+                };
+                bm25_term_score_with_idf_q16(
+                    Bm25TermInput {
+                        tf,
+                        doc_len: length,
+                        avg_len_q16,
+                        query_weight,
+                        field_weight: lexical_field_weight(field),
+                    },
+                    idf_q16,
+                    Default::default(),
+                )
             })
             .sum()
     }
