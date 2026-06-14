@@ -27,7 +27,7 @@ production Raft migration support.
 | Segment `.acs` | `ACS3` | `ACS1` and `ACS2` remain read-only compatible; breaking changes require a new segment magic and migration note. |
 | Bitmap index `.acb` | `ACB1` | `ACB0` remains read-only compatible; breaking changes require a new bitmap magic and migration note. |
 | Lexical index `.aci` | `ACI4` | `ACI0`, `ACI1`, `ACI2`, and `ACI3` remain read-only compatible. |
-| Vector index `.acv` | `ACV0` | Breaking changes require a new vector magic and migration note. |
+| Vector index `.acv` | `ACV1` | `ACV0` remains read-only compatible; breaking changes require a new vector magic and migration note. |
 | HNSW graph `.ach` | `ACH0` | Breaking changes require a new graph magic and migration note. |
 | Manifest `.acm` | `ACM0` | Breaking changes require a new manifest magic and migration note. |
 

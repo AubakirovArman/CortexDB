@@ -48,10 +48,12 @@
       "kind": "vector_index",
       "name": "Vector index",
       "extension": "acv",
-      "current_magic": "ACV0",
-      "current_version": 0,
-      "legacy_magics": [],
-      "breaking_change_policy": "breaking changes require a new vector magic and migration notes",
+      "current_magic": "ACV1",
+      "current_version": 1,
+      "legacy_magics": [
+        "ACV0"
+      ],
+      "breaking_change_policy": "ACV0 remains read-only compatible; breaking changes require a new vector magic and migration notes",
       "docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"]
     },
     {

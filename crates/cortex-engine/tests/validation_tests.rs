@@ -2,11 +2,13 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_core::CellId;
 use cortex_engine::Database;
+use cortex_storage::format::LEGACY_VECTOR_INDEX_MAGIC;
 use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::{ManifestSegment, StorageManifest};
 use cortex_storage::segment::{SegmentCell, SegmentWriter};
 use cortex_storage::vectors::VectorIndex;
+use cortex_storage::wal::checksum::crc32c;
 
 #[test]
 fn duplicate_live_segment_id_fails_validation() {
@@ -147,11 +149,10 @@ fn consistent_hnsw_build_profiles_pass_validation() {
 fn vector_index_dimension_mismatch_fails_validation() {
     let dir = tempfile::tempdir().unwrap();
     write_bundle(dir.path(), 1, 1, 1, CellId(1));
-    VectorIndex {
-        vectors: BTreeMap::from([(1, vec![10, 0]), (2, vec![10])]),
-    }
-    .write(dir.path().join("segments").join("segment-1.acv"))
-    .unwrap();
+    write_legacy_vector_index(
+        &dir.path().join("segments").join("segment-1.acv"),
+        &[(1, &[10, 0][..]), (2, &[10][..])],
+    );
     write_manifest(dir.path(), 1, vec![manifest_segment(1, 1, 1)], Vec::new());
 
     let db = Database::open(dir.path()).unwrap();
@@ -262,4 +263,19 @@ fn manifest_segment(id: u64, checkpoint_seq: u64, cell_count: u32) -> ManifestSe
         checkpoint_seq,
         cell_count,
     }
+}
+
+fn write_legacy_vector_index(path: &std::path::Path, rows: &[(u32, &[i16])]) {
+    let mut bytes = Vec::from(LEGACY_VECTOR_INDEX_MAGIC);
+    bytes.extend_from_slice(&(rows.len() as u32).to_le_bytes());
+    for (candidate, vector) in rows {
+        bytes.extend_from_slice(&candidate.to_le_bytes());
+        bytes.extend_from_slice(&(vector.len() as u32).to_le_bytes());
+        for value in *vector {
+            bytes.extend_from_slice(&value.to_le_bytes());
+        }
+    }
+    let checksum = crc32c(&bytes);
+    bytes.extend_from_slice(&checksum.to_le_bytes());
+    std::fs::write(path, bytes).unwrap();
 }

@@ -78,20 +78,14 @@ impl Database {
                         diversity_diagnostics: None,
                     }));
                 };
-                let index = self.persisted_vector_index()?;
                 if !self.feature_flags.experimental_hnsw {
                     let metric = self
                         .manifest()
                         .vector_profile
                         .map(|profile| distance_metric_from_manifest(profile.metric))
                         .unwrap_or_default();
-                    let ranked = search_persisted_vectors(
-                        &index.vectors,
-                        vector,
-                        &allowed,
-                        query.limit,
-                        &metric,
-                    );
+                    let ranked =
+                        self.search_disk_resident_vectors(vector, &allowed, query.limit, &metric)?;
                     ann_report = Some(persisted_exact_fallback_report(
                         query.limit,
                         allowed.len(),
@@ -100,6 +94,7 @@ impl Database {
                     ));
                     ranked
                 } else {
+                    let index = self.persisted_vector_index()?;
                     let outcome = match self.persisted_hnsw_graph() {
                         Ok(graph) => {
                             let effective_policy = policy.unwrap_or_default();
@@ -189,13 +184,12 @@ impl Database {
                         diversity_diagnostics: None,
                     }));
                 };
-                let index = self.persisted_vector_index()?;
                 let metric = self
                     .manifest()
                     .vector_profile
                     .map(|profile| distance_metric_from_manifest(profile.metric))
                     .unwrap_or_default();
-                search_persisted_vectors(&index.vectors, vector, &allowed, query.limit, &metric)
+                self.search_disk_resident_vectors(vector, &allowed, query.limit, &metric)?
                     .into_iter()
                     .map(PersistedSearchCandidate::from_vector)
                     .collect()
@@ -207,7 +201,6 @@ impl Database {
                     query.limit
                 };
                 if let Some(vector) = query.vector {
-                    let index = self.persisted_vector_index()?;
                     let metric = self
                         .manifest()
                         .vector_profile
@@ -227,7 +220,7 @@ impl Database {
                         &analyzer,
                     );
                     let vector =
-                        search_persisted_vectors(&index.vectors, vector, &allowed, depth, &metric);
+                        self.search_disk_resident_vectors(vector, &allowed, depth, &metric)?;
                     fuse_persisted_rrf(lexical, vector, depth, HybridRrfWeights::balanced())
                 } else {
                     search_persisted_lexical(

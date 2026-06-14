@@ -8,6 +8,9 @@
 - `.aci` lexical files persist term postings, per-candidate document lengths,
   and weighted term-frequency statistics.
 - `.acv` vector files persist per-candidate integer vectors for exact dot scan.
+  The current `ACV1` layout stores one candidate table plus contiguous
+  fixed-dimension i16 rows so exact search can scan disk rows without building
+  a resident vector map.
 - `.ach` HNSW graph files persist the current graph links for persisted
   vector search.
 
@@ -112,8 +115,11 @@ rewrites `.ach` graph files from the same cells. The command finishes by running
 storage validation, so checksum corruption, vector dimension mismatch, or
 stale graph/vector mismatches are repaired before the command reports success.
 
-`algorithm=exact` forces the `.acv` exact scan path. `algorithm=ann` requests
-the persisted `.ach` HNSW graph and now applies a correctness guard: empty
+`algorithm=exact` forces the disk-resident `.acv` exact scan path. Dense
+allowed sets are read sequentially through a buffered row scan; sparse sets seek
+only to matching rows. Dot-product scoring uses a stable chunked i16 loop so it
+stays deterministic on stable Rust. `algorithm=ann` requests the persisted
+`.ach` HNSW graph and now applies a correctness guard: empty
 graphs, invalid graph links, and graph traversals that return fewer candidates
 than the requested visible set fall back to exact vector scan. Search responses
 include `search_mode` so clients can record whether keyword, exact vector, or

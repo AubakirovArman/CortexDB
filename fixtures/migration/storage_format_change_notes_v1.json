@@ -129,10 +129,21 @@
     },
     {
       "kind": "vector_index",
-      "marker": "ACV0",
+      "marker": "ACV1",
       "extension": ".acv",
       "compatibility": "current",
-      "change_policy": "Breaking vector-index changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence.",
+      "change_policy": "ACV1 stores a contiguous fixed-dimension candidate table plus i16 vector block for disk-resident exact scan. ACV0 remains read-only compatible. Breaking vector-index changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence.",
+      "release_fixture_required": true,
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
+      "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
+      "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
+    },
+    {
+      "kind": "vector_index",
+      "marker": "ACV0",
+      "extension": ".acv",
+      "compatibility": "read-only compatible",
+      "change_policy": "Legacy vector-index ACV0 compatibility must remain documented and covered by vector index tests or be removed only through a breaking migration note and release fixture.",
       "release_fixture_required": true,
       "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],

@@ -4,12 +4,14 @@ use std::time::Instant;
 use crate::query::metadata::lexical_field_weight;
 
 mod scoring;
+mod vector;
 
 use super::{
-    bm25_idf_q16, bm25_term_score_with_idf_q16, hnsw::DistanceMetric, query_understanding, ranked,
-    Bm25TermInput, ScoredCandidate, TextAnalyzer,
+    bm25_idf_q16, bm25_term_score_with_idf_q16, query_understanding, ranked, Bm25TermInput,
+    ScoredCandidate, TextAnalyzer,
 };
 use scoring::{average_field_len_q16, average_len_q16};
+pub(in crate::search) use vector::{search_persisted_vector_reader, search_persisted_vectors};
 
 const MAX_PERSISTED_LEXICAL_QUERY_TERMS: usize = 8;
 
@@ -251,25 +253,6 @@ fn term_frequency(
         .and_then(|values| values.get(&candidate))
         .copied()
         .unwrap_or(1)
-}
-
-pub(super) fn search_persisted_vectors(
-    vectors: &BTreeMap<u32, Vec<i16>>,
-    query: &[i16],
-    allowed: &BTreeSet<u32>,
-    limit: usize,
-    metric: &DistanceMetric,
-) -> Vec<ScoredCandidate> {
-    let scores = vectors
-        .iter()
-        .filter(|(candidate, _)| allowed.contains(candidate))
-        .filter_map(|(candidate, vector)| {
-            metric
-                .distance(query, vector)
-                .map(|score| (*candidate, score))
-        })
-        .collect();
-    ranked(scores, limit)
 }
 
 fn doc_count(doc_lengths: &BTreeMap<u32, u32>, allowed: &BTreeSet<u32>) -> usize {

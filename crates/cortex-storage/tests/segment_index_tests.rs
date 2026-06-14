@@ -1,10 +1,12 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use cortex_storage::format::{BITMAP_INDEX_MAGIC, LEGACY_BITMAP_INDEX_MAGIC};
+use cortex_storage::format::{
+    BITMAP_INDEX_MAGIC, LEGACY_BITMAP_INDEX_MAGIC, LEGACY_VECTOR_INDEX_MAGIC, VECTOR_INDEX_MAGIC,
+};
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::{ManifestSegment, StorageManifest};
 use cortex_storage::segment::{SegmentCell, SegmentCellRef, SegmentReader, SegmentWriter};
-use cortex_storage::vectors::VectorIndex;
+use cortex_storage::vectors::{VectorIndex, VectorIndexReader};
 use cortex_storage::StorageError;
 use roaring::RoaringBitmap;
 
@@ -164,11 +166,56 @@ fn acv_vector_index_roundtrips_vectors() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("0001.acv");
     let index = VectorIndex {
-        vectors: BTreeMap::from([(1, vec![3, -1, 9]), (2, vec![0, 4])]),
+        vectors: BTreeMap::from([(1, vec![3, -1, 9]), (2, vec![0, 4, 8])]),
     };
     index.write(&path).unwrap();
+    let bytes = std::fs::read(&path).unwrap();
+    assert_eq!(&bytes[..4], &VECTOR_INDEX_MAGIC);
     assert_eq!(VectorIndex::read(&path).unwrap(), index);
+    let mut reader = VectorIndexReader::open(&path).unwrap();
+    assert_eq!(reader.dimension(), Some(3));
+    assert_eq!(reader.vector_count(), 2);
+    assert_eq!(
+        reader
+            .scan_scores(&BTreeSet::from([1, 2]), 1, |vector| {
+                Some(u64::from(vector[1].max(0) as u16) + u64::from(vector[2].max(0) as u16))
+            })
+            .unwrap(),
+        vec![(2, 12)]
+    );
     assert!(!dir.path().join("0001.acv.tmp").exists());
+}
+
+#[test]
+fn acv_legacy_vector_index_remains_readable() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("legacy.acv");
+    let expected = VectorIndex {
+        vectors: BTreeMap::from([(1, vec![3, -1, 9]), (2, vec![0, 4])]),
+    };
+    let mut bytes = Vec::from(&LEGACY_VECTOR_INDEX_MAGIC[..]);
+    bytes.extend_from_slice(&2_u32.to_le_bytes());
+    for (candidate, vector) in &expected.vectors {
+        bytes.extend_from_slice(&candidate.to_le_bytes());
+        bytes.extend_from_slice(&(vector.len() as u32).to_le_bytes());
+        for value in vector {
+            bytes.extend_from_slice(&value.to_le_bytes());
+        }
+    }
+    let checksum = crc32c::crc32c(&bytes);
+    bytes.extend_from_slice(&checksum.to_le_bytes());
+    std::fs::write(&path, bytes).unwrap();
+
+    assert_eq!(VectorIndex::read(&path).unwrap(), expected);
+    let mut reader = VectorIndexReader::open(&path).unwrap();
+    assert_eq!(
+        reader
+            .scan_scores(&BTreeSet::from([1, 2]), 2, |vector| Some(
+                vector.len() as u64
+            ))
+            .unwrap(),
+        vec![(1, 3), (2, 2)]
+    );
 }
 
 #[test]

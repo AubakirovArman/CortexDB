@@ -595,7 +595,7 @@ Tasks:
 - Freeze ACB v1. Done: `.acb` is frozen at `ACB0`.
 - Freeze ACI v1. Done: `.aci` is frozen at `ACI2` with read-only compatibility
   for `ACI0` and `ACI1`.
-- Freeze ACV v1. Done: `.acv` is frozen at `ACV0`.
+- Freeze ACV v1. Done: `.acv` current marker is `ACV1`; `ACV0` remains read-only compatible.
 - Freeze ACH v1. Done: `.ach` is frozen at `ACH0`.
 - Freeze manifest v1. Done: `.acm` is frozen at `ACM0`.
 - Add compatibility docs. Done: `STORAGE_FORMATS.md`,

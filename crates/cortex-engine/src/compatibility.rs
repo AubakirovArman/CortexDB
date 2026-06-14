@@ -248,7 +248,7 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(
             markers,
-            vec!["ACLOGv0", "ACS3", "ACB1", "ACI4", "ACV0", "ACH0", "ACM0"]
+            vec!["ACLOGv0", "ACS3", "ACB1", "ACI4", "ACV1", "ACH0", "ACM0"]
         );
 
         let segment = summary

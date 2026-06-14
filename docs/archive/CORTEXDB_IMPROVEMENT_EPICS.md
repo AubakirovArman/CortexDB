@@ -550,7 +550,7 @@ golden-fixture набор. **Крейты:** storage, cli. **Exit.** Стары�
 
 **Текущий evidence.** Storage format inventory is machine-readable through
 `storage_format_specs()` and public `/v1/compatibility`: ACLOGv0, ACS1, ACB0,
-ACI2, ACV0, ACH0, ACM0 are listed as current markers; ACI0/ACI1 are exposed as
+ACI2, ACV1, ACH0, ACM0 are listed as current markers; ACV0 and ACI0/ACI1 are exposed as
 read-only compatible legacy lexical formats. Format tests prove written files
 match the inventory, legacy ACI0/ACI1 readers remain compatible, manifests
 ignore forward-compatible trailing fields with a valid CRC, and invalid storage
@@ -565,7 +565,7 @@ Storage format change-note enforcement now has a machine-readable registry
 `fixtures/migration/storage_format_change_notes_v1.json`, checked by
 `make storage-format-change-note-check` and wired into stable CI plus
 `alpha-check`. The checker requires every current and legacy frozen marker
-(`ACLOGv0`, `ACS1`, `ACB0`, `ACI2`, `ACI0`, `ACI1`, `ACV0`, `ACH0`, `ACM0`) to
+(`ACLOGv0`, `ACS1`, `ACB0`, `ACI2`, `ACI0`, `ACI1`, `ACV1`, `ACV0`, `ACH0`, `ACM0`) to
 declare migration-note policy, required docs, required gates and a release
 fixture path before format changes can merge.
 Tests: `storage_format_inventory_lists_current_core_formats`,

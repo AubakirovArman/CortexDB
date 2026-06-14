@@ -44,7 +44,7 @@ make storage-format-change-note-check
 | Segment | `.acs` | `ACS3` | magic carries v3 | `ACS1` and `ACS2` remain read-only compatible. |
 | Bitmap index | `.acb` | `ACB1` | magic carries v1 | `ACB0` remains read-only compatible. |
 | Lexical index | `.aci` | `ACI4` | magic carries v4 | `ACI0`, `ACI1`, `ACI2`, and `ACI3` remain read-only compatible. |
-| Vector index | `.acv` | `ACV0` | magic carries v0 | Breaking changes require a new magic. |
+| Vector index | `.acv` | `ACV1` | magic carries v1 | `ACV0` remains read-only compatible. |
 | HNSW graph | `.ach` | `ACH0` | magic carries v0 | Breaking changes require a new magic. |
 | Manifest | `.acm` | `ACM0` | magic carries v0 | Breaking changes require a new magic. |
 
@@ -162,20 +162,28 @@ term ids plus delta-varint candidate/frequency streams for compact postings.
 ## Vector Index `.acv`
 
 ```text
-magic[4] = "ACV0"
+magic[4] = "ACV1"
 vector_count u32
+dimension u32
 repeat vector_count:
   candidate_id u32
-  dimension u32
-  repeat dimension:
-    value i16
+vector block:
+  repeat vector_count:
+    repeat dimension:
+      value i16
 crc32c u32 over all previous bytes
 ```
 
-The current vector path is exact integer dot-product scan, not ANN.
-All vectors in one `.acv` file must be non-empty and have the same dimension.
-Storage validation reports mixed dimensions before query execution; search
-paths ignore vectors whose dimension does not match the query vector.
+The current vector path is exact integer dot-product scan, not ANN. `ACV1`
+stores candidate ids separately from one contiguous fixed-dimension `i16` vector
+block so exact scan can read rows directly from the file without materializing
+all vectors as `Vec<Vec<i16>>`. All vectors in one `.acv` file must be
+non-empty and have the same dimension. Storage validation reports mixed
+dimensions before query execution; search paths ignore vectors whose dimension
+does not match the query vector.
+
+Legacy `ACV0` files store `candidate_id`, per-vector dimension, and vector
+values together for each vector. They remain read-only compatible.
 
 ## HNSW Graph `.ach`
 

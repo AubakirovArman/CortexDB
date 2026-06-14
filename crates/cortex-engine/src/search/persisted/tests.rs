@@ -1,5 +1,5 @@
 use super::*;
-use crate::search::{Bm25Index, TextAnalyzer};
+use crate::search::{hnsw::DistanceMetric, Bm25Index, TextAnalyzer};
 
 #[test]
 fn persisted_lexical_search_filters_allowed_candidates() {

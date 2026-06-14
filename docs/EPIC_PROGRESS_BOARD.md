@@ -20,18 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C05` — Disk-resident vector storage + SIMD exact scan.
+`EPIC-C06` — HNSW guarded productization.
 
-C05 exit steps:
+C06 exit steps:
 
-1. Define `.acv` contiguous vector layout and mmap/read path.
-2. Add exact scan parity with current vector results.
-3. Add SIMD or fixed deterministic acceleration path within stable Rust constraints.
-4. Mark done when disk-resident exact scan is correct and RSS behavior is documented.
+1. Define recall/latency gates and fallback policy.
+2. Move broad ANN gates to nightly/manual benchmark paths.
+3. Add planner coverage for ANN vs exact fallback.
+4. Mark done when HNSW promotion is evidence-gated.
 
-C05 current state:
+C06 current state:
 
 - next.
+- C05 is closed with `ACV1` contiguous disk vector rows, disk-resident exact
+  scan, stable chunked dot-product scoring, and `ACV0` read-only compatibility.
 - C04 is closed with configured Unicode analyzer/tokenizer, optional stemming,
   and manifest analyzer-profile protection.
 - C03 is closed with canonical BM25 and field weights.
@@ -53,6 +55,27 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C05 — Disk-resident vector storage + SIMD exact scan
+
+Status: `done`
+
+What closed it:
+
+- Added `ACV1` with a header, candidate table, contiguous fixed-dimension i16
+  vector rows, and CRC.
+- Kept `ACV0` read-only compatible.
+- Routed persisted exact vector and hybrid vector legs through
+  `VectorIndexReader` so exact search scans disk rows instead of materializing
+  all vectors.
+- Hid stale older segment vector rows by scanning live segments newest-to-oldest.
+- Added stable chunk-8 deterministic dot-product scoring.
+
+Important follow-up:
+
+- Full 1M×768d p95 remains a C17 benchmark-packet run under the scale-gate rule.
+- HNSW graph search still uses RAM-oriented vector maps; C06 owns that
+  productization follow-up.
 
 ### EPIC-C04 — Unicode tokenizer + optional stemming
 
@@ -788,7 +811,7 @@ Important follow-up:
 
 ## Done Snapshot
 
-Done count in roadmap snapshot: `55`.
+Done count in roadmap snapshot: `73`.
 
 High-signal done epics:
 
@@ -801,6 +824,7 @@ High-signal done epics:
 - A07 segment footer/random payload access;
 - A08 lazy payload residency small/medium functional gate;
 - A09 disk-resident persisted-index incremental merge;
+- C05 disk-resident vector storage and exact scan;
 - A10 logical plan;
 - A11 operator executor;
 - A12 storage statistics;
@@ -842,13 +866,8 @@ High-signal done epics:
 
 ## Partial Snapshot
 
-Partial count in roadmap snapshot: `3`.
+Partial count in roadmap snapshot: `1`.
 
-- A19 scale benchmarks:
-  10M lazy evidence, cold outlier analysis, and historical before/after
-  optimization labels remain.
-- C17 perf-regressions:
-  local gate exists; hosted scheduled/nightly CI wiring remains deferred.
 - D05 SDK publish:
   local gates exist; public registry publication remains externally blocked.
 
@@ -862,9 +881,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on C05 only:
+Work on C06 only:
 
-1. inventory current vector payload/index storage and exact scan path;
-2. define `.acv` disk-resident layout and mmap/load policy;
-3. add parity/RSS fixtures for exact scan;
-4. move to the next ordered epic after C05 acceptance is closed.
+1. inventory existing ANN/HNSW make gates and CI cost;
+2. move broad recall gates to nightly/manual paths;
+3. add planner/fallback coverage against exact scan;
+4. move to the next ordered epic after C06 acceptance is closed.

@@ -14,6 +14,7 @@ mod snapshot;
 mod tests;
 mod trace;
 mod types;
+mod vector_disk;
 
 pub(crate) use self::types::PersistedSearchCandidate;
 pub use self::types::{

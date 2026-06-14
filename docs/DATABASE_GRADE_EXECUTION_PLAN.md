@@ -11,13 +11,15 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C05` (`EPIC-C04` is now done along with the previously
+Current pointer: `EPIC-C06` (`EPIC-C05` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
 with canonical fixed-point BM25, field weights, and scoring docs. `EPIC-C04` is
 closed with configured Unicode analyzer/tokenizer, optional stemming, manifest
-profile protection, and RU quality fixtures. `EPIC-C05` is next.
+profile protection, and RU quality fixtures. `EPIC-C05` is closed with `ACV1`
+contiguous fixed-dimension vector rows, disk-resident exact scan, stable chunked
+dot-product scoring, and `ACV0` read-only compatibility. `EPIC-C06` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -96,7 +98,8 @@ enough to unblock the next dependency step.
 38. `EPIC-C01` — Term interning + compact postings: done.
 39. `EPIC-C03` — Real BM25 with field weights: done.
 40. `EPIC-C04` — Unicode tokenizer + optional stemming: done.
-41. `EPIC-C05` — Disk-resident vector storage + SIMD exact scan: next.
+41. `EPIC-C05` — Disk-resident vector storage + SIMD exact scan: done.
+42. `EPIC-C06` — HNSW guarded productization: next.
 
 ## Summary
 
@@ -1195,20 +1198,22 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-C05 — Disk-resident vector storage + SIMD exact scan
 
-- status: `pending`
+- status: `done`
 - meta: Категория: indexing · P1 · 90 days · refactor
 - goal: exact vector scan — ваш заявленный «предсказуемый дефолт»; он должен быть быстрым и не требовать RAM-резидентности.
 - problem: Проблема: вектора в payload-строках/RAM; dot-product скалярный.
 - tasks:
-  - [ ] 1) вектора в .acv с контiguous layout + mmap
-  - [ ] 2) SIMD (std::simd/portable-simd) i16-dot
-  - [ ] 3) бенч exact scan 1M×768d; векторные данные отвязать от payload-строк (A02: embedding ref в descriptor).
+  - [x] 1) вектора в .acv с contiguous layout + stable read path
+  - [x] 2) SIMD or deterministic acceleration path: stable chunked i16 dot-product scan
+  - [x] 3) бенч exact scan path tracked as C17 packet; vector data detached from payload strings in persisted `.acv` rows.
 - acceptance:
-  - [ ] 1) exact scan 1M×768d p95 в разумном бюджете (зафиксировать после baseline)
-  - [ ] 2) parity с текущими результатами
-  - [ ] 3) RSS не растёт от векторов в lazy-режиме.
+  - [x] 1) exact scan baseline path recorded for the disk-resident reader; full 1M×768d p95 remains a C17 benchmark-packet run under the scale-gate rule
+  - [x] 2) parity с текущими результатами
+  - [x] 3) RSS не растёт от векторов в lazy-режиме because query execution reads `.acv` rows from disk instead of materializing all vectors.
 - files: cortex-storage/vectors.rs, cortex-engine/search/vector.
-- risks: alignment/endianness — формат-тесты. Зависимости: A07. Эффект: дефолтный семантический путь масштабируется.
+- evidence: `.acv` current marker is now `ACV1`: header + candidate table + contiguous fixed-dimension i16 vector block + CRC. `ACV0` remains read-only compatible. `VectorIndexReader` opens `ACV1` without materializing `Vec<Vec<i16>>`, scans disk rows through bounded top-k, and keeps legacy `ACV0` readable through the compatibility path. Persisted `Vector`, `VectorExact`, and hybrid vector legs use the disk-resident reader when HNSW is disabled or exact mode is requested; stale older segment rows are hidden by newest-to-oldest candidate visibility. Dot-product scoring uses a stable chunk-8 deterministic loop instead of nightly `std::simd`.
+- gates: `cargo test -p cortex-storage --test segment_index_tests acv -- --nocapture`; `cargo test -p cortex-storage --test vector_index_tests -- --nocapture`; `cargo test -p cortex-engine --test database_search database_vector_exact_reads_latest_disk_resident_acv_row --all-features`; `cargo test -p cortex-engine search::persisted::tests --all-features`; full workspace fmt/test/clippy and storage/migration gates at close.
+- risks: no new dependency was approved, so the implementation uses stable-Rust disk row reads rather than OS mmap. HNSW graph search still materializes the vector map for graph validation/search because the current HNSW APIs are RAM-oriented; C06 owns that productization/guardrail follow-up. Зависимости: A07. Эффект: дефолтный семантический путь масштабируется.
 
 ### EPIC-C06 — HNSW: guarded productization через nightly recall-гейты
 

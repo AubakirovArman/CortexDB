@@ -10,7 +10,8 @@ pub const LEGACY_LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI0";
 pub const LEGACY_LEXICAL_INDEX_V1_MAGIC: [u8; 4] = *b"ACI1";
 pub const LEGACY_LEXICAL_INDEX_V2_MAGIC: [u8; 4] = *b"ACI2";
 pub const LEGACY_LEXICAL_INDEX_V3_MAGIC: [u8; 4] = *b"ACI3";
-pub const VECTOR_INDEX_MAGIC: [u8; 4] = *b"ACV0";
+pub const LEGACY_VECTOR_INDEX_MAGIC: [u8; 4] = *b"ACV0";
+pub const VECTOR_INDEX_MAGIC: [u8; 4] = *b"ACV1";
 pub const HNSW_GRAPH_MAGIC: [u8; 4] = *b"ACH0";
 pub const MANIFEST_MAGIC: [u8; 4] = *b"ACM0";
 
@@ -85,9 +86,9 @@ pub fn storage_format_specs() -> [StorageFormatSpec; 7] {
             name: "Vector index",
             extension: "acv",
             current_magic: &VECTOR_INDEX_MAGIC,
-            current_version: 0,
-            legacy_magics: &[],
-            compatibility_rule: "breaking changes require a new vector magic",
+            current_version: 1,
+            legacy_magics: &[&LEGACY_VECTOR_INDEX_MAGIC],
+            compatibility_rule: "ACV0 remains read-only compatible",
         },
         StorageFormatSpec {
             kind: StorageFormatKind::HnswGraph,

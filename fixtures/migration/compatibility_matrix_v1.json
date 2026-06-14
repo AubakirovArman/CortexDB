@@ -70,10 +70,16 @@
       "proof": ["crates/cortex-storage/tests/lexical_index_tests.rs"]
     },
     {
-      "marker": "ACV0",
+      "marker": "ACV1",
       "file": ".acv",
       "compatibility": "current",
       "proof": ["crates/cortex-storage/tests/vector_index_tests.rs"]
+    },
+    {
+      "marker": "ACV0",
+      "file": ".acv",
+      "compatibility": "read-only compatible",
+      "proof": ["crates/cortex-storage/tests/segment_index_tests.rs"]
     },
     {
       "marker": "ACH0",

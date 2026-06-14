@@ -95,6 +95,37 @@ fn database_vector_search_reads_persisted_acv_without_wal_tail_changes() {
 }
 
 #[test]
+fn database_vector_exact_reads_latest_disk_resident_acv_row() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nvector=100,0\n\nold".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+    db.patch_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nvector=0,100\n\nfresh".to_vec(),
+    )
+    .unwrap();
+    db.checkpoint().unwrap();
+
+    let old_axis = db
+        .search_vector_exact(&[100, 0], &view("project:investments"), SearchLimit(1))
+        .unwrap();
+    let fresh_axis = db
+        .search_vector_exact(&[0, 100], &view("project:investments"), SearchLimit(1))
+        .unwrap();
+
+    assert_eq!(old_axis[0].cell_id, CellId(1));
+    assert_eq!(old_axis[0].vector_score, 0);
+    assert_eq!(fresh_axis[0].cell_id, CellId(1));
+    assert!(fresh_axis[0].vector_score > 0);
+    assert!(String::from_utf8_lossy(&fresh_axis[0].payload).contains("fresh"));
+}
+
+#[test]
 fn database_hybrid_search_reads_persisted_aci_and_acv_without_snapshot_rebuild() {
     let dir = tempfile::tempdir().unwrap();
     {
