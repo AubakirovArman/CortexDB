@@ -210,3 +210,48 @@ result in §1. Use `gpt-5.4` for the fully-official number.
 - `results.json` from the official evaluator (gpt-5.2 run).
 - All pipeline scripts are in this repo under `scripts/enterprise_rag_bench/`
   and `crates/cortex-engine/src/bin/enterprise_rag_bench_retrieval/`.
+
+## 9. Improvement knobs (post-submission)
+
+The official run above uses the most conservative configuration. The following
+knobs are wired through `make` variables and the orchestrator, letting you run
+ablations without code changes:
+
+| Knob | Make variable / flag | Default | Effect |
+| --- | --- | --- | --- |
+| Prompt style | `ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROMPT_STYLE` | `official-clean-v1` | Set to `evidence-first-v18` for a two-phase evidence-first prompt. |
+| Evidence slot plan | `ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_PLAN=1` | off | Injects deterministic slot/completeness plans. |
+| Evidence table | `ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_TABLE=1` | off | Injects deterministic fact rows extracted from retrieved docs. |
+| Thinking budget | `ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_GEMINI_THINKING_BUDGET` | `0` | Gemini `thinkingBudget` (e.g. `1024`); only affects Gemini-native provider. |
+| Context mode | `ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_CONTEXT_MODE` | `question-window-digest-ranked` | `full-doc` or `single-doc-full` for single-document reasoning experiments. |
+| Unsupported-claim guard | `ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_UNSUPPORTED_CLAIM_GUARD` | `off` | `repair`/`suppress` to backstop hallucinated literals. |
+
+Example (evidence-first prompt with slot plan, table, and thinking budget):
+
+```bash
+make enterprise-rag-bench-official-clean-500 \
+  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROMPT_STYLE=evidence-first-v18 \
+  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_PLAN=1 \
+  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_TABLE=1 \
+  ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_GEMINI_THINKING_BUDGET=1024
+```
+
+Labeled error fixtures derived from the official run are committed under
+`fixtures/enterprise_rag_bench/error_fixtures/`:
+`false_abstain.jsonl` (47), `high_level_abstain.jsonl` (10),
+`info_not_found_abstain.jsonl` (20), `project_related.jsonl` (40),
+plus `intra_document.jsonl`, `completeness.jsonl`, and `constrained.jsonl`.
+These are for local regression testing and must not be fed as inference input.
+
+## 10. No-oracle / fairness audit
+
+In addition to the field-presence checks in §3, a behavioral oracle guard scans
+the inference Python path for reads of forbidden fields
+(`scripts/enterprise_rag_bench/oracle_inference_guard.py`). Run it with:
+
+```bash
+make erb-oracle-audit
+```
+
+This complements `oracle_usage_audit.py` by catching `row.get("question_type")`
+style access that field-presence checks alone would miss.

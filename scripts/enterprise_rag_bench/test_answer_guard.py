@@ -87,6 +87,60 @@ class AnswerGuardTests(unittest.TestCase):
         self.assertNotIn("45 seconds", guarded)
         self.assertEqual(1, report["repaired_count"])
 
+    def test_mib_mb_equivalence(self) -> None:
+        guarded, report = guard_unsupported_claims(
+            "The limit is 10 MB per file.",
+            "The runbook states the limit is 10 MiB per file.",
+            mode="suppress",
+        )
+        self.assertEqual("The limit is 10 MB per file.", guarded)
+        self.assertEqual(0, report["removed_count"])
+
+    def test_1_5k_to_1500_equivalence(self) -> None:
+        guarded, report = guard_unsupported_claims(
+            "The batch size is 1.5k.",
+            "The config says the batch size is 1500.",
+            mode="suppress",
+        )
+        self.assertEqual("The batch size is 1.5k.", guarded)
+        self.assertEqual(0, report["removed_count"])
+
+    def test_thousands_separator_equivalence(self) -> None:
+        guarded, report = guard_unsupported_claims(
+            "There are 1,500 users.",
+            "The total is 1500 users.",
+            mode="suppress",
+        )
+        self.assertEqual("There are 1,500 users.", guarded)
+        self.assertEqual(0, report["removed_count"])
+
+    def test_percent_symbol_equivalence(self) -> None:
+        guarded, report = guard_unsupported_claims(
+            "The pass rate is 95 percent.",
+            "The dashboard shows 95%.",
+            mode="suppress",
+        )
+        self.assertEqual("The pass rate is 95 percent.", guarded)
+        self.assertEqual(0, report["removed_count"])
+
+    def test_time_unit_variant_equivalence(self) -> None:
+        guarded, report = guard_unsupported_claims(
+            "The timeout is 30 seconds.",
+            "The timeout is 30 secs.",
+            mode="suppress",
+        )
+        self.assertEqual("The timeout is 30 seconds.", guarded)
+        self.assertEqual(0, report["removed_count"])
+
+    def test_suppress_still_catches_truly_unsupported_value(self) -> None:
+        guarded, report = guard_unsupported_claims(
+            "The limit is 20 MB.",
+            "The runbook states the limit is 10 MiB.",
+            mode="suppress",
+        )
+        self.assertEqual("Insufficient information.", guarded)
+        self.assertEqual(1, report["removed_count"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,9 @@
+{
+  "completeness": 20,
+  "constrained": 30,
+  "false_abstain": 47,
+  "high_level_abstain": 10,
+  "info_not_found_abstain": 20,
+  "intra_document": 40,
+  "project_related": 40
+}

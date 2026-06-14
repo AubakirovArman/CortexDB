@@ -58,7 +58,39 @@ def main() -> int:
         help="Run one evidence-only repair call when the draft answer contains unsupported exact markers.",
     )
     parser.add_argument("--self-consistency-retries", type=int, default=1)
-    parser.add_argument("--context-mode", default="question-window-digest-ranked")
+    parser.add_argument(
+        "--context-mode",
+        choices=[
+            "leading",
+            "evidence-spans",
+            "span-plus-fallback",
+            "evidence-first",
+            "brain-digest",
+            "question-window",
+            "question-window-digest",
+            "question-window-digest-ranked",
+            "full-doc",
+            "single-doc-full",
+        ],
+        default="question-window-digest-ranked",
+    )
+    parser.add_argument(
+        "--prompt-style",
+        choices=[
+            "baseline",
+            "official-clean-v1",
+            "fact-focused-v2",
+            "evidence-selection-v5",
+            "type-aware-v9",
+            "type-aware-v13",
+            "type-aware-v15",
+            "type-aware-v17",
+            "evidence-first-v18",
+            "evidence-audit-v11",
+        ],
+        default="official-clean-v1",
+        help="Answer prompt style; evidence-first-v18 enables the two-phase evidence-first prompt.",
+    )
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--retries", type=int, default=3)
     parser.add_argument("--limit", type=int)
@@ -77,6 +109,7 @@ def main() -> int:
         action="store_true",
         help="Inject deterministic evidence fact rows into the official-clean prompt.",
     )
+    parser.add_argument("--gemini-thinking-budget", type=int, default=0)
     parser.add_argument("--log-file", type=Path)
     parser.add_argument("--status-file", type=Path)
     args = parser.parse_args()
@@ -148,7 +181,7 @@ def main() -> int:
                 high_level_reference_max_chars=0,
                 high_level_max_tokens=args.max_tokens,
                 high_level_context_mode=args.context_mode,
-                prompt_style="official-clean-v1",
+                prompt_style=args.prompt_style,
                 context_mode=args.context_mode,
                 workers=args.workers,
                 retries=args.retries,
@@ -162,7 +195,7 @@ def main() -> int:
                 include_evidence_table=args.include_evidence_table,
                 omit_thinking_field=bool(profile["omit_thinking_field"]),
                 gemini_native=bool(profile["gemini_native"]),
-                gemini_thinking_budget=0,
+                gemini_thinking_budget=args.gemini_thinking_budget,
                 openai_reasoning=bool(profile.get("openai_reasoning", False)),
                 strict_clean_input=True,
                 log_file=args.log_file,

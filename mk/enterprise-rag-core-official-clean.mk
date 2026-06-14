@@ -8,7 +8,10 @@ enterprise-rag-bench-official-clean-50: enterprise-rag-bench-official-repo
 	  --judge-provider "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER)" \
 	  --top-k-context "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_TOPK_CONTEXT)" \
 	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_CHARS_PER_DOC)" \
+	  --context-mode "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_CONTEXT_MODE)" \
 	  --max-tokens "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_TOKENS)" \
+	  --prompt-style "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROMPT_STYLE)" \
+	  --gemini-thinking-budget "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_GEMINI_THINKING_BUDGET)" \
 	  --unsupported-claim-guard "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_UNSUPPORTED_CLAIM_GUARD)" \
 	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ENABLE_TEXT_INTENT_BUDGET)),--enable-text-intent-budget,) \
 	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_REPAIR)),--self-consistency-repair --self-consistency-retries "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_RETRIES)",) \
@@ -18,6 +21,7 @@ enterprise-rag-bench-official-clean-50: enterprise-rag-bench-official-repo
 	  --progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROGRESS_EVERY)" \
 	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_PLAN)),--include-evidence-plan,) \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_EVIDENCE_PLAN_FILE),--evidence-plan-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_EVIDENCE_PLAN_FILE)",) \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_TABLE)),--include-evidence-table,) \
 	  --retrieval-progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_PROGRESS_EVERY)" \
 	  --retrieval-mode "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE)" \
 	  --rerank "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK)" \
@@ -39,7 +43,10 @@ enterprise-rag-bench-official-clean-500: enterprise-rag-bench-official-repo
 	  --judge-provider "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER)" \
 	  --top-k-context "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_TOPK_CONTEXT)" \
 	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_CHARS_PER_DOC)" \
+	  --context-mode "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_CONTEXT_MODE)" \
 	  --max-tokens "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_TOKENS)" \
+	  --prompt-style "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROMPT_STYLE)" \
+	  --gemini-thinking-budget "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_GEMINI_THINKING_BUDGET)" \
 	  --unsupported-claim-guard "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_UNSUPPORTED_CLAIM_GUARD)" \
 	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ENABLE_TEXT_INTENT_BUDGET)),--enable-text-intent-budget,) \
 	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_REPAIR)),--self-consistency-repair --self-consistency-retries "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_RETRIES)",) \
@@ -49,6 +56,7 @@ enterprise-rag-bench-official-clean-500: enterprise-rag-bench-official-repo
 	  --progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROGRESS_EVERY)" \
 	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_PLAN)),--include-evidence-plan,) \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_EVIDENCE_PLAN_FILE),--evidence-plan-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_EVIDENCE_PLAN_FILE)",) \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_TABLE)),--include-evidence-table,) \
 	  --retrieval-progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_PROGRESS_EVERY)" \
 	  --retrieval-mode "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE)" \
 	  --rerank "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK)" \
@@ -71,7 +79,10 @@ enterprise-rag-bench-official-clean-heldout: enterprise-rag-bench-official-repo
 	  --judge-provider "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_JUDGE_PROVIDER)" \
 	  --top-k-context "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_TOPK_CONTEXT)" \
 	  --max-chars-per-doc "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_CHARS_PER_DOC)" \
+	  --context-mode "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_CONTEXT_MODE)" \
 	  --max-tokens "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_MAX_TOKENS)" \
+	  --prompt-style "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROMPT_STYLE)" \
+	  --gemini-thinking-budget "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_GEMINI_THINKING_BUDGET)" \
 	  --unsupported-claim-guard "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_UNSUPPORTED_CLAIM_GUARD)" \
 	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_ENABLE_TEXT_INTENT_BUDGET)),--enable-text-intent-budget,) \
 	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_REPAIR)),--self-consistency-repair --self-consistency-retries "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_SELF_CONSISTENCY_RETRIES)",) \
@@ -81,6 +92,7 @@ enterprise-rag-bench-official-clean-heldout: enterprise-rag-bench-official-repo
 	  --progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_PROGRESS_EVERY)" \
 	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_PLAN)),--include-evidence-plan,) \
 	  $(if $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_EVIDENCE_PLAN_FILE),--evidence-plan-file "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_EVIDENCE_PLAN_FILE)",) \
+	  $(if $(filter 1 true yes,$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_INCLUDE_EVIDENCE_TABLE)),--include-evidence-table,) \
 	  --retrieval-progress-every "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_PROGRESS_EVERY)" \
 	  --retrieval-mode "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RETRIEVAL_MODE)" \
 	  --rerank "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_RERANK)" \

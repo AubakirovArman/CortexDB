@@ -192,6 +192,8 @@ def brain_digest_context(content: str, title: str, question: str, max_chars: int
 
 
 def document_snippet(content: str, title: str, question: str, max_chars_per_doc: int, context_mode: str) -> str:
+    if context_mode == "full-doc":
+        return content[:max_chars_per_doc]
     if context_mode == "question-window":
         return question_aware_snippet(content, question, max_chars_per_doc)
     if context_mode == "evidence-spans":
@@ -226,7 +228,13 @@ def load_context(
         if not rel_path:
             continue
         title, content = extract_document_content(read_json(sources_dir / rel_path))
-        snippet = document_snippet(content, title, question, max_chars_per_doc, context_mode)
+        if context_mode == "single-doc-full":
+            if rank == 1:
+                snippet = content[:max_chars_per_doc]
+            else:
+                snippet = evidence_first_snippet(content, title, question, max_chars_per_doc)
+        else:
+            snippet = document_snippet(content, title, question, max_chars_per_doc, context_mode)
         if context_mode == "brain-digest":
             score = brain_digest_score(content, question)
         else:

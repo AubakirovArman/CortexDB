@@ -96,7 +96,41 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--top-k-context", type=int, default=8)
     parser.add_argument("--max-chars-per-doc", type=int, default=2200)
     parser.add_argument("--max-tokens", type=int, default=420)
-    parser.add_argument("--context-mode", default="question-window-digest-ranked")
+    parser.add_argument(
+        "--context-mode",
+        choices=[
+            "leading",
+            "evidence-spans",
+            "span-plus-fallback",
+            "evidence-first",
+            "brain-digest",
+            "question-window",
+            "question-window-digest",
+            "question-window-digest-ranked",
+            "full-doc",
+            "single-doc-full",
+        ],
+        default="question-window-digest-ranked",
+        help="How to build context from each retrieved document.",
+    )
+    parser.add_argument(
+        "--prompt-style",
+        choices=[
+            "baseline",
+            "official-clean-v1",
+            "fact-focused-v2",
+            "evidence-selection-v5",
+            "type-aware-v9",
+            "type-aware-v13",
+            "type-aware-v15",
+            "type-aware-v17",
+            "evidence-first-v18",
+            "evidence-audit-v11",
+        ],
+        default="official-clean-v1",
+        help="Answer prompt style; evidence-first-v18 enables the two-phase evidence-first prompt.",
+    )
+    parser.add_argument("--gemini-thinking-budget", type=int, default=0)
     parser.add_argument(
         "--unsupported-claim-guard",
         choices=["off", "report", "suppress", "repair"],

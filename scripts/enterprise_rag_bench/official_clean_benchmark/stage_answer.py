@@ -12,10 +12,12 @@ def answer(args: argparse.Namespace, p: dict[str, Path]) -> None:
     log(
         "answer config "
         f"provider={args.answer_provider} context_mode={args.context_mode} "
-        f"top_k_context={args.top_k_context} max_chars_per_doc={args.max_chars_per_doc} "
-        f"max_tokens={args.max_tokens} workers={args.answer_workers} "
-        f"progress_every={args.progress_every} "
-        f"include_evidence_plan={args.include_evidence_plan}"
+        f"prompt_style={args.prompt_style} top_k_context={args.top_k_context} "
+        f"max_chars_per_doc={args.max_chars_per_doc} max_tokens={args.max_tokens} "
+        f"workers={args.answer_workers} progress_every={args.progress_every} "
+        f"include_evidence_plan={args.include_evidence_plan} "
+        f"include_evidence_table={args.include_evidence_table} "
+        f"gemini_thinking_budget={args.gemini_thinking_budget}"
     )
     cmd = [
         "python3",
@@ -36,6 +38,10 @@ def answer(args: argparse.Namespace, p: dict[str, Path]) -> None:
         str(args.max_chars_per_doc),
         "--max-tokens",
         str(args.max_tokens),
+        "--prompt-style",
+        args.prompt_style,
+        "--gemini-thinking-budget",
+        str(args.gemini_thinking_budget),
         "--unsupported-claim-guard",
         args.unsupported_claim_guard,
         "--context-mode",

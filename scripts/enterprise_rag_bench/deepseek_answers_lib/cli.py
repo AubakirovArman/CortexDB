@@ -57,6 +57,8 @@ def parse_args() -> argparse.Namespace:
             "question-window",
             "question-window-digest",
             "question-window-digest-ranked",
+            "full-doc",
+            "single-doc-full",
         ],
         default="leading",
     )
@@ -87,6 +89,8 @@ def parse_args() -> argparse.Namespace:
             "question-window",
             "question-window-digest",
             "question-window-digest-ranked",
+            "full-doc",
+            "single-doc-full",
         ],
         default="leading",
     )

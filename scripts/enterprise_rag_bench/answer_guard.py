@@ -20,7 +20,7 @@ _DECIMAL_RE = re.compile(r"(?<![\w.])\d+\.\d+(?![\w.])")
 _NUMBER_WITH_UNIT_RE = re.compile(
     r"(?<![\w.])\$?\d+(?:,\d{3})*(?:\.\d+)?\s*"
     r"(?:%|percent|ms|msec|seconds?|secs?|minutes?|mins?|hours?|hrs?|days?|"
-    r"weeks?|months?|years?|kb|mb|gb|tb|kib|mib|gib|tib|usd|kzt|eur|gbp|"
+    r"weeks?|months?|years?|kb|mb|gb|tb|kib|mib|gib|tib|k|usd|kzt|eur|gbp|"
     r"qps|rps|req/s|requests?|tokens?|users?|seats?|regions?|nodes?|"
     r"replicas?|shards?|pods?|workers?)\b",
     re.IGNORECASE,
@@ -34,6 +34,61 @@ _CODE_RE = re.compile(r"`([^`]{2,120})`")
 
 def _normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text.casefold())
+
+
+def _expand_k_suffix(match: re.Match) -> str:
+    num = match.group(1)
+    try:
+        value = float(num)
+    except ValueError:
+        return match.group(0)
+    rounded = int(value * 1000)
+    return str(rounded)
+
+
+def _canonicalize(text: str) -> str:
+    """Return a normalised form where common numeric/unit variants collide.
+
+    This is intentionally conservative: it only collapses variants that a human
+    reader would treat as the same value (MiB/MB, 1.5k/1500, 30 secs/30 sec,
+    50 percent/50%). It does not rewrite semantic meaning.
+    """
+
+    normalized = _normalize(text)
+    # 1.5k / 2k -> 1500 / 2000, but do not touch kb/kib.
+    normalized = re.sub(r"(\d+(?:\.\d+)?)\s*k(?!b|ib)", _expand_k_suffix, normalized)
+    # Remove thousands separators so 1,500 matches 1500.
+    normalized = re.sub(r"(\d),(?=\d{3}\b)", r"\1", normalized)
+    # Binary and decimal storage units are treated as equivalent for guarding.
+    normalized = re.sub(r"\bmib\b", "mb", normalized)
+    normalized = re.sub(r"\bkib\b", "kb", normalized)
+    normalized = re.sub(r"\bgib\b", "gb", normalized)
+    normalized = re.sub(r"\btib\b", "tb", normalized)
+    # Time unit variants -> canonical short form.
+    normalized = re.sub(r"\b(seconds?|secs?)\b", "sec", normalized)
+    normalized = re.sub(r"\b(minutes?|mins?)\b", "min", normalized)
+    normalized = re.sub(r"\b(hours?|hrs?)\b", "hr", normalized)
+    normalized = re.sub(r"\b(days?)\b", "day", normalized)
+    normalized = re.sub(r"\b(weeks?)\b", "week", normalized)
+    normalized = re.sub(r"\b(months?)\b", "month", normalized)
+    normalized = re.sub(r"\b(years?)\b", "year", normalized)
+    # Percent forms.
+    normalized = re.sub(r"\bpercent\b", "%", normalized)
+    # Rate/request synonyms.
+    normalized = re.sub(r"\brequests?\b", "req", normalized)
+    normalized = re.sub(r"\breq/s\b", "rps", normalized)
+    normalized = re.sub(r"\bqps\b", "rps", normalized)
+    # Collapse spaces between a number and its unit/rate so "10 mb" == "10mb".
+    normalized = re.sub(
+        r"(\d)\s+(%|ms|msec|sec|min|hr|day|week|month|year|"
+        r"kb|mb|gb|tb|rps|req|usd|eur|gbp|kzt|"
+        r"tokens?|users?|seats?|regions?|nodes?|replicas?|shards?|pods?|workers?)",
+        r"\1\2",
+        normalized,
+    )
+    # Drop trailing .0 so 10.0 matches 10.
+    normalized = re.sub(r"(\d)\.0+\b", r"\1", normalized)
+    return normalized
 
 
 def concrete_markers(text: str) -> list[str]:
@@ -61,12 +116,17 @@ def concrete_markers(text: str) -> list[str]:
 
 
 def _unsupported_markers(markers: list[str], evidence_text: str) -> list[str]:
-    haystack = _normalize(evidence_text)
+    normalized_haystack = _normalize(evidence_text)
+    canonical_haystack = _canonicalize(evidence_text)
     missing: list[str] = []
     for marker in markers:
         normalized = _normalize(marker)
-        if normalized and normalized not in haystack:
-            missing.append(marker)
+        if normalized and normalized in normalized_haystack:
+            continue
+        canonical = _canonicalize(marker)
+        if canonical and canonical in canonical_haystack:
+            continue
+        missing.append(marker)
     return missing
 
 
