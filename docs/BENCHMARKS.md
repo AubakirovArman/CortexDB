@@ -132,6 +132,7 @@ To compare the current reports with release history:
 ```bash
 make performance-trend-check
 make continuous-benchmark-gate
+make continuous-benchmark-hosted-gate
 ```
 
 This writes:
@@ -145,10 +146,20 @@ The trend gate reads checked-in history fixtures under
 for write/read/search/context/verify flows, and keeps current-vs-latest ratios
 visible before release.
 
-`continuous-benchmark-gate` applies the local p95/p99 regression threshold
-against the latest checked-in performance fixture and also validates the
-available A19 scale-trend and C16 memory-estimate artifacts without running new
-large benchmarks.
+`continuous-benchmark-gate` applies the p95/p99 regression threshold against
+the latest checked-in performance fixture and also validates the available A19
+scale-trend and C16 memory-estimate artifacts without running new large
+benchmarks. The default gate keeps the `1.2` p95/p99 ratio threshold with
+`CONTINUOUS_BENCHMARK_MIN_REGRESSION_DELTA_MS=25`, so sub-25ms runner jitter is
+recorded in the gate artifact instead of failing the run.
+
+The scheduled GitHub Actions workflow at
+`.github/workflows/continuous-benchmark.yml` runs
+`make continuous-benchmark-hosted-gate` nightly and on manual dispatch. That
+hosted target regenerates load-smoke, single-node performance, and CI-safe
+fixed-payload 10K/100K scale reports, then uploads the benchmark report bundle
+as `continuous-benchmark-reports`. Hosted runs use the same ratio and delta
+policy through `HOSTED_BENCHMARK_MIN_REGRESSION_DELTA_MS`.
 
 The ANN section also emits a stable JSON line:
 

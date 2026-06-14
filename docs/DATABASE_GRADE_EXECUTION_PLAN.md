@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C17` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B16`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is next per the corrected dependency-stage roadmap. `EPIC-B14` remains pending/formal-tail for the later explainability stage. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
+Current pointer: `EPIC-C13` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B16`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is next per the corrected dependency-stage roadmap. `EPIC-B14` remains pending/formal-tail for the later explainability stage. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -75,7 +75,8 @@ enough to unblock the next dependency step.
     feedback is maintained in an indexed target->records map and influences
     ContextPack ranking without candidate-wide scans.
 27. `EPIC-A19` — scale benchmarks 100K/1M/10M and curves: done.
-28. `EPIC-C17` — performance regressions in CI: next.
+28. `EPIC-C17` — performance regressions in CI: done.
+29. `EPIC-C13` — Fact/numeric index: next.
 
 ## Summary
 
@@ -1344,20 +1345,20 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-C17 — Перф-регрессии в CI (continuous benchmarking)
 
-- status: `partial`
+- status: `done`
 - meta: Категория: benchmarks · P1 · 60 days · build
 - goal: 100 эпиков перфорации без регресс-гейта = регрессии.
 - tasks:
-  - [ ] 1) nightly perf-job: фикс-корпуса 100K, метрики p50/p95 в trend.json (performance-trend-check уже есть — подключить к новому) — GitHub Actions wiring is intentionally deferred while Actions work is out of focus.
-  - [x] 2) порог регрессии (>20% p95 → красный) — `continuous_benchmark_gate.py` enforces max p95/p99 ratio `1.2` and has a synthetic self-test proving a `1.25` p95 regression fails.
+  - [x] 1) nightly perf-job: фикс-корпуса 100K, метрики p50/p95 в trend.json (performance-trend-check уже есть — подключить к новому) — `.github/workflows/continuous-benchmark.yml` runs the hosted gate on schedule and manual dispatch.
+  - [x] 2) порог регрессии (>20% p95 → красный) — `continuous_benchmark_gate.py` enforces max p95/p99 ratio `1.2`, the Make targets pass a 25ms minimum absolute-delta floor for runner jitter, and the synthetic self-test proves a `1.25` p95 regression still fails.
   - [x] 3) история артефактами — added `fixtures/performance/history/v0.2.0-beta.2` and `make continuous-benchmark-gate` writes `target/continuous-benchmark-gate/report.json`.
 - acceptance:
-  - [x] 1) nightly красный при искусственной регрессии (тест процесса) — local self-test covers the threshold decision; scheduled workflow wiring remains deferred.
-  - [x] 2) тренд-страница генерируется — local Markdown reports are generated for scale trends, memory audit, and continuous benchmark gate.
+  - [x] 1) nightly красный при искусственной регрессии (тест процесса) — local self-test covers the threshold decision and the hosted workflow runs the same `continuous_benchmark_gate.py` policy.
+  - [x] 2) тренд-страница генерируется — Markdown reports are generated for scale trends, memory audit, and continuous benchmark gate; hosted CI uploads them as artifacts.
 - files: CI workflows, cortex-bench.
-- latest evidence: Added `scripts/continuous_benchmark_gate.py`, `make continuous-benchmark-gate`, and fresh `v0.2.0-beta.2` performance history fixtures. `make continuous-benchmark-gate` runs `performance-trend-check`, `scale-bench-trends`, `memory-estimate-audit`, and then gates p95/p99 ratios at `1.2`; the current report passed with latest history `v0.2.0-beta.2`, no ratio violations, and one warning that A19 scale trends remain partial because the 10M packet is deferred. `python3 scripts/continuous_benchmark_gate.py --self-test` passed and proves an artificial `1.25` p95 ratio is detected.
-- split decision: C17 is local-ready and intentionally not marked done because the hosted scheduled/nightly workflow is deferred while GitHub Actions work is out of focus. Return only to wire the scheduled workflow or upload hosted artifacts.
-- risks: GitHub scheduled/nightly workflow wiring is not added in this slice per the current instruction to skip Actions work. Runner noise still needs medians from N scheduled runs before this can be called a hosted CI performance discipline. Зависимости: A19. Эффект: перф-дисциплина.
+- latest evidence: Added `.github/workflows/continuous-benchmark.yml` with nightly cron plus manual dispatch, stable Rust setup, `make continuous-benchmark-hosted-gate`, and `continuous-benchmark-reports` artifact upload. Added `fixtures/performance/hosted-history/v0.2.0-beta.2-ci` so hosted runs compare against same-profile CI fixtures instead of local release-machine history. Added `scale-bench-ci` and `continuous-benchmark-hosted-gate`: the hosted path regenerates load-smoke, single-node performance, CI-safe fixed-payload 10K/100K direct scale reports, performance trends, scale trends, memory estimate audit, the continuous benchmark gate with `--min-regression-delta-ms 25`, and the synthetic regression self-test. `make continuous-benchmark-gate` and `make continuous-benchmark-hosted-gate` passed locally with `status=passed`, `errors=0`, `warnings=0`. `python3 scripts/continuous_benchmark_gate.py --self-test` passed and proves an artificial `1.25` p95 regression is detected.
+- risks: Hosted CI uses bounded 10K/100K fixed-payload scale curves, not the full A19 1M/10M packet. The 25ms delta floor suppresses tiny runner jitter only after the ratio artifact includes current/previous/delta details; larger absolute p95/p99 regressions still fail. Accumulated scheduled runs are still needed before hosted trend ratios become strong release evidence. Зависимости: A19. Эффект: перф-дисциплина.
+- next exit step: move to `EPIC-C13` — Fact/numeric index.
 
 ### EPIC-C18 — Concurrent read throughput bench
 

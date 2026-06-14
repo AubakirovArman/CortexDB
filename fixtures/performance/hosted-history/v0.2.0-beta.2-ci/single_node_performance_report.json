@@ -1,0 +1,337 @@
+{
+  "cells": 500,
+  "duration_ms": 930.64,
+  "errors": [],
+  "ok": true,
+  "profiles": [
+    {
+      "durability_mode": "strict",
+      "ingest": {
+        "cells": 500,
+        "min_throughput_per_sec": 1.0,
+        "throughput_per_sec": 8980.884
+      },
+      "latency_thresholds": {
+        "context_pack": {
+          "p95_ms": 1500.0,
+          "p99_ms": 3000.0
+        },
+        "get_latest": {
+          "p95_ms": 100.0,
+          "p99_ms": 250.0
+        },
+        "keyword_search": {
+          "p95_ms": 1500.0,
+          "p99_ms": 3000.0
+        },
+        "put_single": {
+          "p95_ms": 1000.0,
+          "p99_ms": 2000.0
+        },
+        "verify_fact": {
+          "p95_ms": 1500.0,
+          "p99_ms": 3000.0
+        }
+      },
+      "name": "strict",
+      "phases": [
+        {
+          "elapsed_ms": 1.974,
+          "name": "open_empty",
+          "throughput_per_sec": 506.617,
+          "units": 1
+        },
+        {
+          "elapsed_ms": 55.674,
+          "name": "put_batch",
+          "throughput_per_sec": 8980.884,
+          "units": 500
+        },
+        {
+          "elapsed_ms": 9.429,
+          "latency": {
+            "count": 10,
+            "max_ms": 1.551,
+            "p50_ms": 0.797,
+            "p95_ms": 1.338,
+            "p99_ms": 1.338
+          },
+          "name": "put_single",
+          "throughput_per_sec": 1060.513,
+          "units": 10
+        },
+        {
+          "elapsed_ms": 0.203,
+          "latency": {
+            "count": 500,
+            "max_ms": 0.001,
+            "p50_ms": 0.0,
+            "p95_ms": 0.001,
+            "p99_ms": 0.001
+          },
+          "name": "get_latest",
+          "throughput_per_sec": 2457545.895,
+          "units": 500
+        },
+        {
+          "elapsed_ms": 137.778,
+          "latency": {
+            "count": 25,
+            "max_ms": 7.202,
+            "p50_ms": 5.416,
+            "p95_ms": 5.547,
+            "p99_ms": 5.791
+          },
+          "name": "keyword_search",
+          "throughput_per_sec": 181.451,
+          "units": 25
+        },
+        {
+          "elapsed_ms": 172.814,
+          "latency": {
+            "count": 10,
+            "max_ms": 17.759,
+            "p50_ms": 17.165,
+            "p95_ms": 17.415,
+            "p99_ms": 17.415
+          },
+          "name": "context_pack",
+          "throughput_per_sec": 57.866,
+          "units": 10
+        },
+        {
+          "elapsed_ms": 32.559,
+          "latency": {
+            "count": 10,
+            "max_ms": 3.457,
+            "p50_ms": 3.221,
+            "p95_ms": 3.356,
+            "p99_ms": 3.356
+          },
+          "name": "verify_fact",
+          "throughput_per_sec": 307.134,
+          "units": 10
+        },
+        {
+          "elapsed_ms": 17.406,
+          "name": "checkpoint",
+          "throughput_per_sec": 29299.736,
+          "units": 510
+        },
+        {
+          "elapsed_ms": 16.413,
+          "name": "compact",
+          "throughput_per_sec": 31072.394,
+          "units": 510
+        },
+        {
+          "elapsed_ms": 0.892,
+          "name": "close",
+          "throughput_per_sec": 1121.584,
+          "units": 1
+        },
+        {
+          "elapsed_ms": 11.499,
+          "name": "restart_open",
+          "throughput_per_sec": 44352.319,
+          "units": 510
+        }
+      ],
+      "resource_usage": {
+        "peak_rss_bytes": 12582912,
+        "rss_bytes": 12582912
+      },
+      "slo": {
+        "errors": [],
+        "passed": true
+      },
+      "slo_thresholds": {
+        "max_rss_bytes": 1073741824,
+        "min_ingest_cells_per_sec": 1.0
+      },
+      "stats": {
+        "checkpoint_seq": 510,
+        "current_seq": 510,
+        "durable_storage_bytes": 448160,
+        "live_segment_bytes": 224072,
+        "live_segments": 1,
+        "total_segment_bytes": 448144,
+        "wal_size_bytes": 16
+      },
+      "validation": {
+        "cells_checked": 510,
+        "live_segments_checked": 1,
+        "manifest_ok": true,
+        "wal_ok": true
+      }
+    },
+    {
+      "durability_mode": "balanced",
+      "ingest": {
+        "cells": 500,
+        "min_throughput_per_sec": 1.0,
+        "throughput_per_sec": 9381.931
+      },
+      "latency_thresholds": {
+        "context_pack": {
+          "p95_ms": 1500.0,
+          "p99_ms": 3000.0
+        },
+        "get_latest": {
+          "p95_ms": 100.0,
+          "p99_ms": 250.0
+        },
+        "keyword_search": {
+          "p95_ms": 1500.0,
+          "p99_ms": 3000.0
+        },
+        "put_single": {
+          "p95_ms": 1000.0,
+          "p99_ms": 2000.0
+        },
+        "verify_fact": {
+          "p95_ms": 1500.0,
+          "p99_ms": 3000.0
+        }
+      },
+      "name": "balanced",
+      "phases": [
+        {
+          "elapsed_ms": 1.685,
+          "name": "open_empty",
+          "throughput_per_sec": 593.38,
+          "units": 1
+        },
+        {
+          "elapsed_ms": 53.294,
+          "name": "put_batch",
+          "throughput_per_sec": 9381.931,
+          "units": 500
+        },
+        {
+          "elapsed_ms": 12.953,
+          "latency": {
+            "count": 10,
+            "max_ms": 1.557,
+            "p50_ms": 1.234,
+            "p95_ms": 1.433,
+            "p99_ms": 1.433
+          },
+          "name": "put_single",
+          "throughput_per_sec": 772.014,
+          "units": 10
+        },
+        {
+          "elapsed_ms": 0.134,
+          "latency": {
+            "count": 500,
+            "max_ms": 0.001,
+            "p50_ms": 0.0,
+            "p95_ms": 0.0,
+            "p99_ms": 0.0
+          },
+          "name": "get_latest",
+          "throughput_per_sec": 3726254.444,
+          "units": 500
+        },
+        {
+          "elapsed_ms": 136.144,
+          "latency": {
+            "count": 25,
+            "max_ms": 5.756,
+            "p50_ms": 5.401,
+            "p95_ms": 5.635,
+            "p99_ms": 5.721
+          },
+          "name": "keyword_search",
+          "throughput_per_sec": 183.629,
+          "units": 25
+        },
+        {
+          "elapsed_ms": 171.535,
+          "latency": {
+            "count": 10,
+            "max_ms": 17.47,
+            "p50_ms": 17.141,
+            "p95_ms": 17.242,
+            "p99_ms": 17.242
+          },
+          "name": "context_pack",
+          "throughput_per_sec": 58.297,
+          "units": 10
+        },
+        {
+          "elapsed_ms": 32.232,
+          "latency": {
+            "count": 10,
+            "max_ms": 3.278,
+            "p50_ms": 3.224,
+            "p95_ms": 3.248,
+            "p99_ms": 3.248
+          },
+          "name": "verify_fact",
+          "throughput_per_sec": 310.251,
+          "units": 10
+        },
+        {
+          "elapsed_ms": 16.934,
+          "name": "checkpoint",
+          "throughput_per_sec": 30117.447,
+          "units": 510
+        },
+        {
+          "elapsed_ms": 17.088,
+          "name": "compact",
+          "throughput_per_sec": 29845.362,
+          "units": 510
+        },
+        {
+          "elapsed_ms": 1.239,
+          "name": "close",
+          "throughput_per_sec": 806.789,
+          "units": 1
+        },
+        {
+          "elapsed_ms": 11.475,
+          "name": "restart_open",
+          "throughput_per_sec": 44445.231,
+          "units": 510
+        }
+      ],
+      "resource_usage": {
+        "peak_rss_bytes": 12582912,
+        "rss_bytes": 12582912
+      },
+      "slo": {
+        "errors": [],
+        "passed": true
+      },
+      "slo_thresholds": {
+        "max_rss_bytes": 1073741824,
+        "min_ingest_cells_per_sec": 1.0
+      },
+      "stats": {
+        "checkpoint_seq": 510,
+        "current_seq": 510,
+        "durable_storage_bytes": 448160,
+        "live_segment_bytes": 224072,
+        "live_segments": 1,
+        "total_segment_bytes": 448144,
+        "wal_size_bytes": 16
+      },
+      "validation": {
+        "cells_checked": 510,
+        "live_segments_checked": 1,
+        "manifest_ok": true,
+        "wal_ok": true
+      }
+    }
+  ],
+  "schema_version": "cortexdb.single_node_performance.v1",
+  "slo_thresholds": {
+    "max_rss_bytes": 1073741824,
+    "max_total_ms": 30000.0,
+    "min_ingest_cells_per_sec": 1.0
+  },
+  "workload_class": "local_single_node_lifecycle"
+}

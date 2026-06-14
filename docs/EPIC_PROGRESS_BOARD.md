@@ -13,42 +13,53 @@ work by accident.
 - A `partial` epic can be revisited only for its listed remaining exit steps.
 - Do not redo accepted work unless a new failing test or explicit user request
   changes the scope.
-- Use small/medium gates inside implementation epics. Large 1M/10M runs now
-  belong to C17 regression packets unless the current epic explicitly needs
-  them for safety.
+- Use small/medium gates inside implementation epics. Large 1M/10M runs remain
+  explicit benchmark packets unless the current epic needs them for safety.
 - Update this file whenever an epic moves between `current`, `done`,
   `partial`, or `next`.
 
 ## Current Pointer
 
-`EPIC-C17` — Performance regressions in CI.
+`EPIC-C13` — Fact/numeric index.
 
-C17 exit steps:
+C13 exit steps:
 
-1. Keep the local continuous benchmark gate green.
-2. Wire the scheduled/nightly hosted CI path.
-3. Publish the regression reports as CI artifacts.
-4. Mark done when the local and hosted gates are both reproducible.
+1. Inventory existing typed claim store and numeric extraction paths.
+2. Add metric-sorted numeric index maintenance.
+3. Route numeric verification/comparison through the index.
+4. Publish focused tests and benchmark evidence, then move to C14.
 
-C17 current state:
+C13 current state:
 
-- partial/local-ready; start by checking the existing
-  `make continuous-benchmark-gate` path and the missing hosted Actions wiring.
-- Do not reopen A19 unless a new benchmark report/schema regression appears.
+- next; start with `verification::numeric`, claim-store maintenance, and
+  query/VERIFY numeric comparison call sites.
+- Do not reopen C17 unless the hosted benchmark workflow or artifact contract
+  regresses.
 
 ## Active Partial Tail
 
-`EPIC-C17` — perf-regressions in CI and continuous benchmarking.
+`EPIC-D05` — SDK publish.
 
-C17 split state:
+D05 split state:
 
-- local `make continuous-benchmark-gate` exists and passed;
-- p95/p99 threshold is `1.2` against latest history fixture
-  `v0.2.0-beta.2`;
-- hosted scheduled/nightly GitHub Actions wiring is deferred while Actions work
-  is out of focus.
+- local package gates exist;
+- publication remains externally blocked on public registry credentials/trusted
+  publishing;
+- do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C17 — Performance regressions in CI
+
+Status: `done`
+
+What closed it:
+
+- Added `.github/workflows/continuous-benchmark.yml` with nightly cron and manual dispatch.
+- Added `make continuous-benchmark-hosted-gate`, which regenerates load-smoke, single-node performance, CI-safe 10K/100K scale reports, trend reports, memory audit, and the continuous benchmark gate.
+- Gate keeps the `1.2` p95/p99 threshold and uses a 25ms minimum absolute-delta floor for runner jitter.
+- The workflow uploads `continuous-benchmark-reports` with JSON/Markdown evidence.
+- Local `make continuous-benchmark-hosted-gate` passed.
 
 ### EPIC-A19 — Scale benchmarks 100K/1M/10M and curves
 

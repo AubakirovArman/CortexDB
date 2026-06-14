@@ -1,0 +1,46 @@
+name: Continuous Benchmark
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  continuous-benchmark:
+    name: Continuous benchmark gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - name: Run continuous benchmark gate
+        run: make continuous-benchmark-hosted-gate
+
+      - name: Upload continuous benchmark reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: continuous-benchmark-reports
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            target/load-smoke/report.json
+            target/single-node-performance/report.json
+            target/performance-trends/report.json
+            target/scale-bench/**/report.json
+            target/scale-bench/trends.json
+            target/scale-bench/trends.md
+            target/memory-profile/estimate-audit.json
+            target/memory-profile/estimate-audit.md
+            target/continuous-benchmark-gate/report.json
+            target/continuous-benchmark-gate/report.md

@@ -16,6 +16,7 @@ make load-suite-check
 make single-node-performance-check
 make performance-trend-check
 make continuous-benchmark-gate
+make continuous-benchmark-hosted-gate
 ```
 
 Artifacts:
@@ -27,6 +28,27 @@ target/single-node-performance/report.json
 target/performance-trends/report.json
 target/continuous-benchmark-gate/report.json
 ```
+
+The hosted/nightly CI path is `.github/workflows/continuous-benchmark.yml`. It
+runs `make continuous-benchmark-hosted-gate`, which generates fresh
+`load-smoke`, `single-node-performance`, and CI-safe fixed-payload 10K/100K
+scale reports before applying the same `continuous-benchmark-gate` ratio policy.
+The workflow uploads the benchmark JSON and Markdown reports as the
+`continuous-benchmark-reports` artifact.
+
+The continuous benchmark gate preserves the 1.2 p95/p99 ratio threshold and
+uses `CONTINUOUS_BENCHMARK_MIN_REGRESSION_DELTA_MS=25` by default. That keeps
+small absolute jitter from sub-25ms measurements visible in the artifact without
+failing the run; larger p95/p99 deltas still fail the gate.
+
+Hosted runs compare against same-profile fixtures under:
+
+```text
+fixtures/performance/hosted-history/
+```
+
+This keeps GitHub-runner trend gating separate from the older local release
+history while preserving the same ratio and delta policy.
 
 Release history fixtures live under:
 
@@ -129,8 +151,9 @@ max p95/p99 ratio: 1.2
 ```
 
 It also checks that A19 scale trends and C16 memory-estimate audit artifacts are
-well-formed when present. `target/scale-bench/trends.json` is allowed to remain
-`partial` while the 10M long-running evidence packet is deferred.
+well-formed when present. Local A19 trend reports are expected to be `complete`;
+the hosted gate may use the smaller `scale-bench-ci` 10K/100K fixed-payload
+profile to keep nightly runtime and memory bounded.
 
 ## Actor Pressure
 

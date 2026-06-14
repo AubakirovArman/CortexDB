@@ -20,13 +20,33 @@ def read_json(path: Path) -> dict[str, Any]:
     return value
 
 
-def ratio_violations(report: dict[str, Any], max_ratio: float) -> list[dict[str, Any]]:
+def metric_detail(
+    comparisons: dict[str, Any], group: str, flow: str, metric: str
+) -> dict[str, Any]:
+    if not group.endswith("_ratio"):
+        return {}
+    details_group = comparisons.get(f"{group.removesuffix('_ratio')}_details", {})
+    if not isinstance(details_group, dict):
+        return {}
+    flow_details = details_group.get(flow, {})
+    if not isinstance(flow_details, dict):
+        return {}
+    detail = flow_details.get(metric, {})
+    return detail if isinstance(detail, dict) else {}
+
+
+def ratio_violations(
+    report: dict[str, Any], max_ratio: float, min_regression_delta_ms: float
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     comparisons = report.get("comparisons_to_latest_history", {})
     if not isinstance(comparisons, dict):
-        return [{"kind": "missing_comparisons", "message": "missing comparisons_to_latest_history"}]
+        return [
+            {"kind": "missing_comparisons", "message": "missing comparisons_to_latest_history"}
+        ], []
     violations: list[dict[str, Any]] = []
+    suppressed: list[dict[str, Any]] = []
     for group, flows in comparisons.items():
-        if group == "release" or not isinstance(flows, dict):
+        if group == "release" or not group.endswith("_ratio") or not isinstance(flows, dict):
             continue
         for flow, metrics in flows.items():
             if not isinstance(metrics, dict):
@@ -34,20 +54,37 @@ def ratio_violations(report: dict[str, Any], max_ratio: float) -> list[dict[str,
             for metric in RATIO_METRICS:
                 value = metrics.get(metric)
                 if isinstance(value, (int, float)) and float(value) > max_ratio:
-                    violations.append(
-                        {
-                            "kind": "ratio_exceeded",
-                            "group": group,
-                            "flow": flow,
-                            "metric": metric,
-                            "ratio": float(value),
-                            "max_ratio": max_ratio,
-                        }
-                    )
-    return violations
+                    detail = metric_detail(comparisons, group, str(flow), metric)
+                    violation = {
+                        "kind": "ratio_exceeded",
+                        "group": group,
+                        "flow": flow,
+                        "metric": metric,
+                        "ratio": float(value),
+                        "max_ratio": max_ratio,
+                    }
+                    delta = detail.get("delta_ms")
+                    if isinstance(delta, (int, float)):
+                        violation["delta_ms"] = float(delta)
+                    for field in ("current_ms", "previous_ms"):
+                        detail_value = detail.get(field)
+                        if isinstance(detail_value, (int, float)):
+                            violation[field] = float(detail_value)
+                    if (
+                        min_regression_delta_ms > 0
+                        and isinstance(delta, (int, float))
+                        and float(delta) < min_regression_delta_ms
+                    ):
+                        violation["min_regression_delta_ms"] = min_regression_delta_ms
+                        suppressed.append(violation)
+                    else:
+                        violations.append(violation)
+    return violations, suppressed
 
 
-def validate_performance_trend(path: Path, max_ratio: float) -> tuple[dict[str, Any], list[str]]:
+def validate_performance_trend(
+    path: Path, max_ratio: float, min_regression_delta_ms: float
+) -> tuple[dict[str, Any], list[str]]:
     errors: list[str] = []
     report = read_json(path)
     if report.get("status") != "passed":
@@ -55,7 +92,7 @@ def validate_performance_trend(path: Path, max_ratio: float) -> tuple[dict[str, 
     history_runs = report.get("history_runs")
     if not isinstance(history_runs, list) or not history_runs:
         errors.append(f"{path}: missing history runs")
-    violations = ratio_violations(report, max_ratio)
+    violations, suppressed = ratio_violations(report, max_ratio, min_regression_delta_ms)
     if violations:
         errors.append(f"{path}: {len(violations)} p95/p99 ratio violations")
     return {
@@ -64,6 +101,7 @@ def validate_performance_trend(path: Path, max_ratio: float) -> tuple[dict[str, 
         "history_runs": history_runs,
         "latest_history": report.get("comparisons_to_latest_history", {}).get("release"),
         "violations": violations,
+        "suppressed_violations": suppressed,
     }, errors
 
 
@@ -110,10 +148,10 @@ def write_markdown(path: Path, report: dict[str, Any]) -> None:
         "",
         f"Status: `{report['status']}`",
         f"Max p95/p99 ratio: `{report['max_ratio']}`",
-        "",
-        "## Inputs",
-        "",
     ]
+    if report.get("min_regression_delta_ms", 0.0):
+        lines.append(f"Min regression delta ms: `{report['min_regression_delta_ms']}`")
+    lines.extend(["", "## Inputs", ""])
     for name, value in report["inputs"].items():
         lines.append(f"- {name}: `{value.get('path')}` status=`{value.get('status')}`")
     lines.extend(["", "## Errors", ""])
@@ -128,7 +166,7 @@ def run_gate(args: argparse.Namespace) -> int:
     errors: list[str] = []
     warnings: list[str] = []
     performance, performance_errors = validate_performance_trend(
-        Path(args.performance_trend_report), args.max_p95_ratio
+        Path(args.performance_trend_report), args.max_p95_ratio, args.min_regression_delta_ms
     )
     scale, scale_errors, scale_warnings = validate_scale_trends(Path(args.scale_trend_report))
     memory, memory_errors, memory_warnings = validate_memory_audit(Path(args.memory_audit_report))
@@ -139,6 +177,7 @@ def run_gate(args: argparse.Namespace) -> int:
         "schema_version": "cortexdb.continuous_benchmark_gate.v1",
         "status": status,
         "max_ratio": args.max_p95_ratio,
+        "min_regression_delta_ms": args.min_regression_delta_ms,
         "inputs": {
             "performance_trend": performance,
             "scale_trends": scale,
@@ -171,7 +210,7 @@ def self_test() -> int:
     with tempfile.TemporaryDirectory() as temp:
         path = Path(temp) / "trend.json"
         path.write_text(json.dumps(report), encoding="utf-8")
-        _, errors = validate_performance_trend(path, 1.2)
+        _, errors = validate_performance_trend(path, 1.2, 25.0)
     if not errors:
         print("continuous benchmark gate self-test failed: synthetic regression was not detected")
         return 1
@@ -187,6 +226,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--report", default="target/continuous-benchmark-gate/report.json")
     parser.add_argument("--markdown", default="target/continuous-benchmark-gate/report.md")
     parser.add_argument("--max-p95-ratio", type=float, default=1.2)
+    parser.add_argument("--min-regression-delta-ms", type=float, default=0.0)
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args()
 

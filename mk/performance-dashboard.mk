@@ -8,7 +8,7 @@ verify-performance-check:
 memory-profile:
 	cargo run --release -p cortex-engine --bin memory_profile_check -- --root "$(MEMORY_PROFILE_ROOT)" --report "$(MEMORY_PROFILE_REPORT)" --cells "$(MEMORY_PROFILE_CELLS)" --batch-size "$(MEMORY_PROFILE_BATCH_SIZE)" $(MEMORY_PROFILE_DIRECT_CHECKPOINT) --payload-bytes "$(MEMORY_PROFILE_PAYLOAD_BYTES)" $(MEMORY_PROFILE_REOPEN_ONLY) --read-samples "$(MEMORY_PROFILE_READ_SAMPLES)" --payload-residency "$(MEMORY_PROFILE_PAYLOAD_RESIDENCY)" --max-rss-to-estimated-total-ratio "$(MEMORY_PROFILE_MAX_RSS_TO_ESTIMATED_TOTAL_RATIO)"
 memory-estimate-audit: ; python3 scripts/memory_estimate_audit.py
-.PHONY: scale-bench-100k scale-bench-1m scale-bench-10m-lazy scale-bench-trends
+.PHONY: scale-bench-100k scale-bench-1m scale-bench-10m-lazy scale-bench-ci scale-bench-trends continuous-benchmark-hosted-gate
 scale-bench-100k:
 	cargo run --release -p cortex-engine --bin scale_benchmark_check -- --root "$(SCALE_BENCH_ROOT)/100k" --report "$(SCALE_BENCH_100K_REPORT)" --cells 100000 --samples "$(SCALE_BENCH_SAMPLES)" --search-samples "$(SCALE_BENCH_SEARCH_SAMPLES)" --context-samples "$(SCALE_BENCH_CONTEXT_SAMPLES)" --verify-samples "$(SCALE_BENCH_VERIFY_SAMPLES)" --batch-size "$(SCALE_BENCH_BATCH_SIZE)"
 
@@ -17,6 +17,10 @@ scale-bench-1m:
 
 scale-bench-10m-lazy:
 	cargo run --release -p cortex-engine --bin scale_benchmark_check -- --root "$(SCALE_BENCH_ROOT)/10m-lazy" --report "$(SCALE_BENCH_10M_LAZY_REPORT)" --cells 10000000 --samples "$(SCALE_BENCH_10M_SAMPLES)" --search-samples 0 --context-samples 0 --verify-samples 0 --batch-size "$(SCALE_BENCH_10M_BATCH_SIZE)" --payload-bytes "$(SCALE_BENCH_10M_PAYLOAD_BYTES)" --direct-checkpoint --payload-residency lazy --skip-storage-estimates --skip-validation
+
+scale-bench-ci:
+	cargo run --release -p cortex-engine --bin scale_benchmark_check -- --root "$(SCALE_BENCH_ROOT)/ci-10k" --report "$(SCALE_BENCH_CI_10K_REPORT)" --cells 10000 --samples "$(SCALE_BENCH_CI_SAMPLES)" --search-samples 0 --context-samples 0 --verify-samples 0 --batch-size "$(SCALE_BENCH_CI_BATCH_SIZE)" --payload-bytes "$(SCALE_BENCH_CI_PAYLOAD_BYTES)" --direct-checkpoint
+	cargo run --release -p cortex-engine --bin scale_benchmark_check -- --root "$(SCALE_BENCH_ROOT)/ci-100k" --report "$(SCALE_BENCH_CI_100K_REPORT)" --cells 100000 --samples "$(SCALE_BENCH_CI_SAMPLES)" --search-samples 0 --context-samples 0 --verify-samples 0 --batch-size "$(SCALE_BENCH_CI_BATCH_SIZE)" --payload-bytes "$(SCALE_BENCH_CI_PAYLOAD_BYTES)" --direct-checkpoint
 
 scale-bench-trends: ; python3 scripts/scale_benchmark_trends.py --root "$(SCALE_BENCH_ROOT)" --report "$(SCALE_BENCH_ROOT)/trends.json" --markdown "$(SCALE_BENCH_ROOT)/trends.md"
 .PHONY: core-property-check core-property-random-check
@@ -28,7 +32,8 @@ core-property-random-check:
 
 performance-trend-check:
 	python3 scripts/performance_trend_check.py --load-report "$(LOAD_SMOKE_REPORT)" --single-node-report "$(SINGLE_NODE_PERF_REPORT)" --history-root "$(PERFORMANCE_HISTORY_ROOT)" --report "$(PERFORMANCE_TREND_REPORT)"
-continuous-benchmark-gate: ; $(MAKE) performance-trend-check && $(MAKE) scale-bench-trends && $(MAKE) memory-estimate-audit && python3 scripts/continuous_benchmark_gate.py
+continuous-benchmark-gate: ; $(MAKE) performance-trend-check && $(MAKE) scale-bench-trends && $(MAKE) memory-estimate-audit && python3 scripts/continuous_benchmark_gate.py --min-regression-delta-ms "$(CONTINUOUS_BENCHMARK_MIN_REGRESSION_DELTA_MS)"
+continuous-benchmark-hosted-gate: ; $(MAKE) load-smoke-check && $(MAKE) single-node-performance-check && $(MAKE) scale-bench-ci && $(MAKE) performance-trend-check PERFORMANCE_HISTORY_ROOT="$(HOSTED_PERFORMANCE_HISTORY_ROOT)" && $(MAKE) scale-bench-trends && $(MAKE) memory-estimate-audit && python3 scripts/continuous_benchmark_gate.py --min-regression-delta-ms "$(HOSTED_BENCHMARK_MIN_REGRESSION_DELTA_MS)" && python3 scripts/continuous_benchmark_gate.py --self-test
 release-regression-dashboard-check:
 	python3 scripts/release_regression_dashboard.py --baseline "$(RELEASE_REGRESSION_BASELINE)" --backup-report "$(BACKUP_DRILL_REPORT)" --single-node-report "$(SINGLE_NODE_PERF_REPORT)" --retrieval-report "$(RETRIEVAL_QUALITY_REPORT)" --context-report "$(CONTEXT_PACK_QUALITY_REPORT)" --verify-report "$(VERIFICATION_QUALITY_REPORT)" --api-report "$(HTTP_CONTRACT_OPS_REPORT)" --sdk-report "$(SDK_E2E_RELEASE_REPORT)" --report "$(RELEASE_REGRESSION_DASHBOARD_REPORT)" --markdown "$(RELEASE_REGRESSION_DASHBOARD_MARKDOWN)"
 

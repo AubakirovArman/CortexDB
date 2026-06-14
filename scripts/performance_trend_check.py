@@ -181,26 +181,47 @@ def ratio(current: float, previous: float) -> float:
     return round(current / previous, 6)
 
 
-def compare_load(current: dict[str, Any], previous: dict[str, Any]) -> dict[str, Any]:
+def comparison_detail(current: float, previous: float) -> dict[str, float]:
+    return {
+        "current_ms": round(current, 6),
+        "previous_ms": round(previous, 6),
+        "delta_ms": round(current - previous, 6),
+        "ratio": ratio(current, previous),
+    }
+
+
+def compare_load(
+    current: dict[str, Any], previous: dict[str, Any], *, detailed: bool = False
+) -> dict[str, Any]:
     comparisons: dict[str, Any] = {}
     for flow in LOAD_FLOWS:
         current_flow = current.get("latencies", {}).get(flow, {})
         previous_flow = previous.get("latencies", {}).get(flow, {})
         comparisons[flow] = {
-            metric: ratio(float(current_flow.get(metric, 0.0)), float(previous_flow.get(metric, 0.0)))
+            metric: comparison_detail(
+                float(current_flow.get(metric, 0.0)), float(previous_flow.get(metric, 0.0))
+            )
+            if detailed
+            else ratio(float(current_flow.get(metric, 0.0)), float(previous_flow.get(metric, 0.0)))
             for metric in PERCENTILES
         }
     return comparisons
 
 
-def compare_engine(current: dict[str, Any], previous: dict[str, Any]) -> dict[str, Any]:
+def compare_engine(
+    current: dict[str, Any], previous: dict[str, Any], *, detailed: bool = False
+) -> dict[str, Any]:
     current_flows = engine_phase_latencies(current)
     previous_flows = engine_phase_latencies(previous)
     comparisons: dict[str, Any] = {}
     for flow, current_latency in current_flows.items():
         previous_latency = previous_flows.get(flow, {})
         comparisons[flow] = {
-            metric: ratio(float(current_latency.get(metric, 0.0)), float(previous_latency.get(metric, 0.0)))
+            metric: comparison_detail(
+                float(current_latency.get(metric, 0.0)), float(previous_latency.get(metric, 0.0))
+            )
+            if detailed
+            else ratio(float(current_latency.get(metric, 0.0)), float(previous_latency.get(metric, 0.0)))
             for metric in PERCENTILES
         }
     return comparisons
@@ -251,8 +272,16 @@ def main() -> int:
         "comparisons_to_latest_history": {
             "release": latest["release"] if latest else None,
             "load_p50_p95_p99_ratio": compare_load(load_report, latest["load"]) if latest else {},
+            "load_p50_p95_p99_details": compare_load(load_report, latest["load"], detailed=True)
+            if latest
+            else {},
             "single_node_p50_p95_p99_ratio": compare_engine(
                 single_node_report, latest["single_node"]
+            )
+            if latest
+            else {},
+            "single_node_p50_p95_p99_details": compare_engine(
+                single_node_report, latest["single_node"], detailed=True
             )
             if latest
             else {},
