@@ -1,12 +1,15 @@
+use std::collections::BTreeSet;
 use std::time::Instant;
 
-use cortex_aql::BoundRetrievePlan;
+use cortex_aql::{BoundRetrievePlan, RetrievalMode};
 
 mod budget;
+mod hybrid;
 mod memory_lifecycle_filter;
 mod temporal_filter;
 
 use budget::apply_candidate_budget;
+use hybrid::hybrid_candidates;
 use memory_lifecycle_filter::apply_memory_lifecycle_filter;
 use temporal_filter::apply_temporal_validity_filter;
 
@@ -43,11 +46,16 @@ pub fn execute_retrieve<P: CandidateResolver>(
     );
     let mut collector = ExplainCollector::default();
 
-    let candidates = candidate_source(plan, provider, &cost_model, &mut collector)?;
+    let source = candidate_source(database, plan, provider, &cost_model, &mut collector)?;
 
-    let mut permission_filter = PermissionFilter::new(provider, candidates);
-    let candidates = drain(&mut permission_filter);
-    collector.push(permission_filter.trace());
+    let candidates = if source.permission_applied {
+        source.candidates
+    } else {
+        let mut permission_filter = PermissionFilter::new(provider, source.candidates);
+        let candidates = drain(&mut permission_filter);
+        collector.push(permission_filter.trace());
+        candidates
+    };
 
     let candidates =
         apply_temporal_validity_filter(database, plan, provider, candidates, &mut collector);
@@ -111,18 +119,33 @@ pub fn execute_retrieve<P: CandidateResolver>(
     })
 }
 
+struct CandidateSource {
+    candidates: Vec<u32>,
+    permission_applied: bool,
+}
+
 fn candidate_source<P: CandidateResolver>(
+    database: &Database,
     plan: &BoundRetrievePlan,
     provider: &P,
     decision: &CostModelDecision,
     collector: &mut ExplainCollector,
-) -> EngineResult<Vec<u32>> {
+) -> EngineResult<CandidateSource> {
+    if plan.mode == RetrievalMode::Hybrid {
+        return hybrid_candidates(database, plan, provider, collector);
+    }
     if decision.selected_path == ExecutionPath::LexicalFirst {
         if let Some(candidates) = lexical_first_candidates(plan, provider, decision, collector)? {
-            return Ok(candidates);
+            return Ok(CandidateSource {
+                candidates,
+                permission_applied: false,
+            });
         }
     }
-    bitmap_first_candidates(plan, provider, collector)
+    Ok(CandidateSource {
+        candidates: bitmap_first_candidates(plan, provider, collector)?,
+        permission_applied: false,
+    })
 }
 
 fn bitmap_first_candidates<P: CandidateResolver>(
@@ -173,9 +196,7 @@ fn lexical_first_candidates<P: CandidateResolver>(
     let bitmap_candidates = drain(&mut bitmap_scan);
     source_traces.push(bitmap_scan.trace());
 
-    let lexical_set = lexical_candidates
-        .into_iter()
-        .collect::<std::collections::BTreeSet<_>>();
+    let lexical_set = lexical_candidates.into_iter().collect::<BTreeSet<_>>();
     let started = Instant::now();
     let intersected = bitmap_candidates
         .iter()

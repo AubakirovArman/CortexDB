@@ -146,13 +146,23 @@ impl LogicalPlanNode {
             LogicalPlanNode::Rank { mode, weights } => LogicalPlanNodeReport {
                 id,
                 kind: "rank".to_owned(),
-                detail: format!(
-                    "mode={mode:?} weights=lexical:{} semantic:{} recency:{} trust:{}",
-                    weights.lexical_q16,
-                    weights.semantic_q16,
-                    weights.recency_q16,
-                    weights.trust_q16
-                ),
+                detail: if *mode == RetrievalMode::Hybrid {
+                    format!(
+                        "mode={mode:?} paths=lexical,vector fusion=rrf weights=lexical:{} semantic:{} recency:{} trust:{}",
+                        weights.lexical_q16,
+                        weights.semantic_q16,
+                        weights.recency_q16,
+                        weights.trust_q16
+                    )
+                } else {
+                    format!(
+                        "mode={mode:?} weights=lexical:{} semantic:{} recency:{} trust:{}",
+                        weights.lexical_q16,
+                        weights.semantic_q16,
+                        weights.recency_q16,
+                        weights.trust_q16
+                    )
+                },
                 permission_predicate: None,
             },
             LogicalPlanNode::Limit { candidate_limit } => LogicalPlanNodeReport {

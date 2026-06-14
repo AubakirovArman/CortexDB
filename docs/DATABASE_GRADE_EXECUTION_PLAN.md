@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C07` (`EPIC-C06` is now done along with the previously
+Current pointer: `EPIC-C09` (`EPIC-C07` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -21,7 +21,9 @@ profile protection, and RU quality fixtures. `EPIC-C05` is closed with `ACV1`
 contiguous fixed-dimension vector rows, disk-resident exact scan, stable chunked
 dot-product scoring, and `ACV0` read-only compatibility. `EPIC-C06` moved broad
 ANN report gates to nightly, added a BGE-M3 cache recall gate, and covered the
-large-corpus ANN planner rule with exact fallback. `EPIC-C07` is next.
+large-corpus ANN planner rule with exact fallback. `EPIC-C07` added AQL
+`USING MODE hybrid`, a physical lexical+dense RRF source, and explain/quality
+coverage. `EPIC-C09` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -102,7 +104,8 @@ enough to unblock the next dependency step.
 40. `EPIC-C04` — Unicode tokenizer + optional stemming: done.
 41. `EPIC-C05` — Disk-resident vector storage + SIMD exact scan: done.
 42. `EPIC-C06` — HNSW guarded productization: done.
-43. `EPIC-C07` — Hybrid retrieval in engine: next.
+43. `EPIC-C07` — Hybrid retrieval in engine: done.
+44. `EPIC-C09` — Permission-aware index pruning: next.
 
 ## Summary
 
@@ -1239,20 +1242,24 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-C07 — Гибридный retrieval (lexical+dense RRF) в движке
 
-- status: `pending`
+- status: `done`
 - meta: Категория: retrieval · P1 · 90 days · build
 - goal: гибрид дал doc recall 85.8% на EnterpriseRAG, но живёт во внешних python-скриптах — это должна быть фича БД.
 - problem: Проблема: RRF-фьюжн вне движка (scripts/enterprise_rag_bench).
 - tasks:
-  - [ ] 1) `RetrievalMode::Hybrid`: два scan-потока → RRF-оператор (A11)
-  - [ ] 2) generic-реализация без bench-эвристик (после Kill-решения)
-  - [ ] 3) quality-фикстура: hybrid ≥ lexical.
+  - [x] 1) `RetrievalMode::Hybrid`: два scan-потока → RRF-оператор (A11)
+  - [x] 2) generic-реализация без bench-эвристик (после Kill-решения)
+  - [x] 3) quality-фикстура: hybrid ≥ lexical.
 - acceptance:
-  - [ ] 1) `USING MODE hybrid` из AQL
-  - [ ] 2) фикстурный гейт
-  - [ ] 3) EXPLAIN показывает оба пути и фьюжн.
-- files: exec/, search/, binder (mode).
-- risks: нет. Зависимости: A11, C05, EPIC-C08. Эффект: главный результат бенчей становится продуктом.
+  - [x] 1) `USING MODE hybrid` из AQL
+  - [x] 2) фикстурный гейт
+  - [x] 3) EXPLAIN показывает оба пути и фьюжн.
+- files: `crates/cortex-aql/src/types.rs`, `crates/cortex-aql/src/binder/support.rs`, `crates/cortex-engine/src/exec/retrieve.rs`, `crates/cortex-engine/src/exec/retrieve/hybrid.rs`, `crates/cortex-engine/src/plan/cost/model.rs`, `crates/cortex-engine/src/plan/mod.rs`, `crates/cortex-engine/src/retrieval_rank*`, mode label surfaces, AQL/query_search tests.
+- evidence: AQL now parses and binds `USING MODE hybrid`; the retrieve executor routes hybrid mode through bitmap + permission filtering, `LexicalScan`, `VectorScan`, and `HybridRrfOp` before the existing lifecycle/quality/rank/dedupe/pack stages; vector scoring reuses payload vector parsing and semantic dot scoring; logical EXPLAIN reports `paths=lexical,vector fusion=rrf`; EXPLAIN ANALYZE exposes both scan paths and the fusion operator. The fixture `retrieve_aql_hybrid_mode_fuses_lexical_and_vector_quality_fixture` promotes the candidate with both lexical and dense evidence above single-signal candidates.
+- verification: `cargo fmt --check`; `cargo test -p cortex-aql hybrid`; `cargo test -p cortex-engine --test query_search hybrid`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `make check`; `make openapi-contract-check`.
+- remaining: none for C07 acceptance.
+- risks: hybrid AQL still requires an explicit `query_vector=` line unless the caller uses the existing embedding integration before AQL execution. Зависимости: A11, C05, EPIC-C08. Эффект: главный результат бенчей становится продуктом.
+- next exit step: move to `EPIC-C09` — permission-aware index pruning.
 
 ### EPIC-C08 — Server-side embedding integration
 

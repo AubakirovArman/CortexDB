@@ -250,6 +250,12 @@ fn retrieve_ids(db: &Database, query: &str) -> Vec<CellId> {
     ids
 }
 
+fn hybrid_view(scope: ScopeId) -> AgentView {
+    let mut access = view(scope);
+    access.allowed_modes.insert(RetrievalMode::Hybrid);
+    access
+}
+
 #[test]
 fn retrieve_aql_uses_descriptor_scope_for_persisted_bitmap_acl() {
     let dir = tempfile::tempdir().unwrap();
@@ -286,6 +292,41 @@ WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#,
         cells.iter().map(|cell| cell.cell_id).collect::<Vec<_>>(),
         vec![CellId(2)]
     );
+}
+
+#[test]
+fn retrieve_aql_hybrid_mode_fuses_lexical_and_vector_quality_fixture() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nsource=doc-a\nvector=0,100\n\nbudget launch budget"
+            .to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\nsource=doc-b\nvector=100,0\n\nsemantic launch"
+            .to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(3),
+        b"scope=project:investments\nstatus=ready\nsource=doc-c\nvector=32767,0\n\nbudget launch budget"
+            .to_vec(),
+    )
+    .unwrap();
+
+    let cells = db
+        .retrieve_aql(
+            r#"RETRIEVE CONTEXT FOR TASK "query_vector=100,0
+budget" IN BRAIN investment_projects
+USING MODE hybrid WHERE space = project:investments LIMIT 10 CANDIDATES;"#,
+            &hybrid_view(scope_id("project:investments")),
+        )
+        .unwrap();
+
+    assert_eq!(cells.first().map(|cell| cell.cell_id), Some(CellId(3)));
 }
 
 #[test]
@@ -344,6 +385,34 @@ USING MODE balanced WHERE space = project:investments AND status = "ready" LIMIT
         .filters
         .iter()
         .any(|filter| filter.expression.contains("status = \"ready\"")));
+}
+
+#[test]
+fn explain_retrieve_aql_hybrid_reports_paths_and_fusion() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nvector=100,0\n\nbudget".to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .explain_retrieve_aql(
+            r#"EXPLAIN RETRIEVE CONTEXT FOR TASK "query_vector=100,0
+budget" IN BRAIN investment_projects
+USING MODE hybrid WHERE space = project:investments LIMIT 10 CANDIDATES;"#,
+            &hybrid_view(scope_id("project:investments")),
+        )
+        .unwrap();
+
+    assert_eq!(report.selected_mode, RetrievalMode::Hybrid);
+    assert_eq!(report.cost_model.selected_path, ExecutionPath::Hybrid);
+    assert!(report.logical_plan.nodes.iter().any(|node| {
+        node.kind == "rank"
+            && node.detail.contains("paths=lexical,vector")
+            && node.detail.contains("fusion=rrf")
+    }));
 }
 
 #[test]
@@ -415,6 +484,63 @@ USING MODE balanced WHERE space = project:investments BUDGET 320 TOKENS LIMIT 10
         Some(2)
     );
     assert!(trace.total_elapsed_nanos > 0);
+}
+
+#[test]
+fn explain_analyze_retrieve_aql_hybrid_reports_rrf_paths() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nvector=0,100\n\nbudget".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=project:investments\nstatus=ready\nvector=100,0\n\nsemantic".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(3),
+        b"scope=project:investments\nstatus=ready\nvector=100,0\n\nbudget".to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .explain_analyze_retrieve_aql(
+            r#"EXPLAIN ANALYZE RETRIEVE CONTEXT FOR TASK "query_vector=100,0
+budget" IN BRAIN investment_projects
+USING MODE hybrid WHERE space = project:investments LIMIT 10 CANDIDATES;"#,
+            &hybrid_view(scope_id("project:investments")),
+        )
+        .unwrap();
+    let trace = report.execution_trace.expect("analyze trace");
+    let names = trace
+        .operators
+        .iter()
+        .map(|operator| operator.name.as_str())
+        .collect::<Vec<_>>();
+
+    assert_eq!(report.cost_model.selected_path, ExecutionPath::Hybrid);
+    assert!(names.contains(&"LexicalScan"));
+    assert!(names.contains(&"VectorScan"));
+    assert!(names.contains(&"HybridRrfOp"));
+    assert_eq!(
+        trace
+            .operators
+            .iter()
+            .find(|operator| operator.name == "VectorScan")
+            .map(|operator| operator.output_count),
+        Some(2)
+    );
+    assert_eq!(
+        trace
+            .operators
+            .iter()
+            .find(|operator| operator.name == "HybridRrfOp")
+            .map(|operator| operator.output_count),
+        Some(3)
+    );
 }
 
 #[test]

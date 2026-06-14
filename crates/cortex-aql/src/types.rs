@@ -27,6 +27,7 @@ pub struct CellTypeId(pub u64);
 pub enum RetrievalMode {
     Fast,
     Balanced,
+    Hybrid,
     Semantic,
     Audit,
 }
@@ -62,6 +63,7 @@ impl FromStr for RetrievalMode {
         match value.to_ascii_lowercase().as_str() {
             "fast" => Ok(Self::Fast),
             "balanced" => Ok(Self::Balanced),
+            "hybrid" => Ok(Self::Hybrid),
             "semantic" => Ok(Self::Semantic),
             "audit" => Ok(Self::Audit),
             _ => Err(()),

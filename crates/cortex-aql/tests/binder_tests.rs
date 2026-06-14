@@ -129,6 +129,7 @@ fn default_weights_sum_equals_q16_one() {
     for mode in [
         RetrievalMode::Fast,
         RetrievalMode::Balanced,
+        RetrievalMode::Hybrid,
         RetrievalMode::Semantic,
         RetrievalMode::Audit,
     ] {

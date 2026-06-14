@@ -20,18 +20,21 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C07` — Hybrid retrieval in engine.
+`EPIC-C09` — Permission-aware index pruning.
 
-C07 exit steps:
+C09 exit steps:
 
-1. Wire `RetrievalMode::Hybrid` through engine scan streams.
-2. Implement generic lexical+dense RRF without benchmark-specific heuristics.
-3. Add a quality fixture proving hybrid is at least lexical.
-4. Expose both paths and fusion in explain output.
+1. Integrate scope-bitmap cardinality into planner decisions for narrow
+   AgentView zones.
+2. Skip segment/index work when a segment cannot contain readable scopes.
+3. Add a narrow-agent benchmark/fixture with 1% visibility.
+4. Show skipped segments or permission pruning in EXPLAIN.
 
-C07 current state:
+C09 current state:
 
 - next.
+- C07 is closed with AQL `USING MODE hybrid`, physical lexical+dense RRF,
+  quality fixture coverage, and EXPLAIN/ANALYZE path reporting.
 - C06 is closed with nightly/manual ANN reports, optional BGE-M3 cache recall
   gate, and planner coverage for large-corpus ANN with exact fallback.
 - C05 is closed with `ACV1` contiguous disk vector rows, disk-resident exact
@@ -57,6 +60,26 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C07 — Hybrid retrieval in engine
+
+Status: `done`
+
+What closed it:
+
+- Added `RetrievalMode::Hybrid` parsing/binding and mode labels.
+- Routed AQL hybrid retrieval through `BitmapIndexScan`, `PermissionFilter`,
+  `LexicalScan`, `VectorScan`, and `HybridRrfOp`.
+- Kept the implementation generic: no EnterpriseRAG-specific heuristics.
+- Added a quality fixture where the hybrid candidate with both lexical and
+  dense evidence ranks above single-signal candidates.
+- Added EXPLAIN/EXPLAIN ANALYZE coverage for lexical/vector paths and RRF
+  fusion.
+
+Important follow-up:
+
+- AQL hybrid needs an explicit `query_vector=` task line unless callers use the
+  existing server-side embedding integration before execution.
 
 ### EPIC-C06 — HNSW guarded productization
 

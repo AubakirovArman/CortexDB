@@ -106,6 +106,7 @@ pub fn default_weights(mode: RetrievalMode) -> RetrievalWeights {
     match mode {
         RetrievalMode::Fast => weights_from_parts([55, 10, 25, 10]),
         RetrievalMode::Balanced => weights_from_parts([30, 35, 20, 15]),
+        RetrievalMode::Hybrid => weights_from_parts([35, 35, 15, 15]),
         RetrievalMode::Semantic => weights_from_parts([15, 55, 15, 15]),
         RetrievalMode::Audit => weights_from_parts([20, 20, 20, 40]),
     }

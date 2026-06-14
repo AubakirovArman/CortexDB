@@ -14,7 +14,7 @@ mod memory_decay;
 mod semantic;
 
 use memory_decay::memory_decay_q16;
-use semantic::{query_vector_from_task, semantic_dot_score};
+pub(crate) use semantic::{query_vector_from_task, semantic_dot_score};
 
 pub(crate) fn rank_retrieved_cells(
     mut cells: Vec<RetrievedCell>,

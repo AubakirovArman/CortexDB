@@ -1,4 +1,4 @@
-pub(super) fn query_vector_from_task(task: &str) -> Option<Vec<i16>> {
+pub(crate) fn query_vector_from_task(task: &str) -> Option<Vec<i16>> {
     task.lines().find_map(|line| {
         let value = line
             .trim()
@@ -8,7 +8,7 @@ pub(super) fn query_vector_from_task(task: &str) -> Option<Vec<i16>> {
     })
 }
 
-pub(super) fn semantic_dot_score(payload: &[u8], query: &[i16]) -> u64 {
+pub(crate) fn semantic_dot_score(payload: &[u8], query: &[i16]) -> u64 {
     crate::search::vector::vectors_from_payload(payload)
         .into_iter()
         .filter(|view| view.vector.len() == query.len())

@@ -142,6 +142,7 @@ fn retrieval_mode_name(mode: RetrievalMode) -> &'static str {
     match mode {
         RetrievalMode::Fast => "fast",
         RetrievalMode::Balanced => "balanced",
+        RetrievalMode::Hybrid => "hybrid",
         RetrievalMode::Semantic => "semantic",
         RetrievalMode::Audit => "audit",
     }

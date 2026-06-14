@@ -35,6 +35,15 @@ WHERE space = "project:investments" AND status = "ready";"#,
 }
 
 #[test]
+fn parse_hybrid_retrieve_mode() {
+    let raw = retrieve(
+        r#"RETRIEVE CONTEXT FOR TASK "compare" IN BRAIN investment_projects
+USING MODE hybrid BUDGET 12000 TOKENS;"#,
+    );
+    assert_eq!(raw.mode.unwrap().node, RetrievalMode::Hybrid);
+}
+
+#[test]
 fn parse_escaped_string_as_owned_cow() {
     let statement = parse_aql(
         "RETRIEVE CONTEXT FOR TASK \"a \\\"b\\\"\\n\" IN BRAIN b USING MODE fast BUDGET 1 TOKENS;",

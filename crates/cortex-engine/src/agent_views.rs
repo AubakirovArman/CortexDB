@@ -222,6 +222,7 @@ fn join_modes(values: &BTreeSet<RetrievalMode>) -> String {
         .map(|mode| match mode {
             RetrievalMode::Fast => "fast",
             RetrievalMode::Balanced => "balanced",
+            RetrievalMode::Hybrid => "hybrid",
             RetrievalMode::Semantic => "semantic",
             RetrievalMode::Audit => "audit",
         })

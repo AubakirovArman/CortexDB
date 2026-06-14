@@ -47,6 +47,21 @@ pub fn choose_retrieve_path<P: BitmapProvider>(
     }
 
     let candidate_rows = estimated_after_bitmap.unwrap_or(live_rows);
+    if plan.mode == RetrievalMode::Hybrid {
+        return decision(
+            ExecutionPath::Hybrid,
+            "hybrid mode fuses lexical and vector evidence",
+            DecisionContext {
+                live_rows,
+                estimated_after_bitmap,
+                recommended_candidate_limit,
+                has_query_vector,
+                rarest_term,
+                estimates,
+            },
+        );
+    }
+
     if is_narrow_bitmap(candidate_rows, live_rows) {
         return decision(
             ExecutionPath::BitmapFirst,
