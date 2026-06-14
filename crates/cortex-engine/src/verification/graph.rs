@@ -7,6 +7,7 @@ use cortex_core::CellId;
 
 use crate::database::Database;
 use crate::graph::{GraphEdge, GraphEdgeKind};
+use crate::plan::PolicyRewrite;
 use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
 use crate::source_trust::{SourceTrust, SourceTrustCategory};
@@ -38,7 +39,7 @@ pub(super) fn graph_contradiction_for_version(
     }
     let payload = candidate.payload.as_slice();
     let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
-    if !view.can_read_scope(scope_id(&metadata.scope)) {
+    if !PolicyRewrite::allows_scope(view, scope_id(&metadata.scope)) {
         return None;
     }
     let relation = RelationBody::parse(payload);
@@ -190,7 +191,7 @@ fn source_support_from_edge(
     edge: &GraphEdge,
 ) -> Option<SourceSupport> {
     let descriptor = db.get_latest_cell_descriptor(edge.relation_cell_id)?;
-    if !view.can_read_scope(scope_id(&descriptor.scope)) {
+    if !PolicyRewrite::allows_scope(view, scope_id(&descriptor.scope)) {
         return None;
     }
     let payload = db.get_latest_cell(edge.relation_cell_id)?;
@@ -215,7 +216,7 @@ fn source_support_from_version(
     let version = candidate.version;
     let payload = candidate.payload.as_slice();
     let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
-    if !view.can_read_scope(scope_id(&metadata.scope)) {
+    if !PolicyRewrite::allows_scope(view, scope_id(&metadata.scope)) {
         return None;
     }
     let relation = RelationBody::parse(payload);

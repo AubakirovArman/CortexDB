@@ -1,6 +1,6 @@
-.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check context-pack-schema-contract-check provenance-model-inventory decode-fuzz-check
+.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check context-pack-schema-contract-check provenance-model-inventory decode-fuzz-check
 
-check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check context-pack-schema-contract-check decode-fuzz-check
+check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check context-pack-schema-contract-check decode-fuzz-check
 	cargo check --workspace
 
 file-size-report:
@@ -20,6 +20,9 @@ indexed-retrieve-gate-check:
 
 query-scan-inventory-check:
 	python3 scripts/query_scan_inventory_check.py
+
+policy-rewrite-gate-check:
+	python3 scripts/policy_rewrite_gate_check.py
 
 context-pack-schema-contract-check:
 	python3 scripts/context_pack_schema_contract_check.py

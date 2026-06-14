@@ -5,6 +5,7 @@ use cortex_aql::AgentView;
 use cortex_core::memtable::{MemTable, ReadTxn};
 use cortex_core::{CellDescriptor, CellId};
 
+use crate::plan::PolicyRewrite;
 use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
 use crate::source_trust::{SourceTrust, SourceTrustCategory};
@@ -93,7 +94,7 @@ impl FactClaimStore {
     pub fn visible_records(&self, view: &AgentView) -> Vec<NumericFactRecord> {
         self.records
             .values()
-            .filter(|record| view.can_read_scope(scope_id(&record.scope)))
+            .filter(|record| PolicyRewrite::allows_scope(view, scope_id(&record.scope)))
             .cloned()
             .collect()
     }

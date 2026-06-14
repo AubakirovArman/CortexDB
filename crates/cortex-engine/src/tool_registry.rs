@@ -10,6 +10,7 @@ use cortex_core::{
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::options::PayloadResidency;
+use crate::plan::PolicyRewrite;
 use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
 
@@ -185,7 +186,7 @@ impl Database {
                         &payload,
                         &version.descriptor,
                     )?;
-                    view.can_read_scope(scope_id(&tool.descriptor.scope))
+                    PolicyRewrite::allows_scope(view, scope_id(&tool.descriptor.scope))
                         .then_some(tool)
                 })
                 .collect()

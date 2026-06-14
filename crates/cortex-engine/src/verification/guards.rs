@@ -4,6 +4,7 @@ use cortex_aql::AgentView;
 use cortex_core::memtable::CellVersion;
 use cortex_core::CellId;
 
+use crate::plan::PolicyRewrite;
 use crate::verification::numeric::{extract_numeric_values, numeric_conflict};
 use crate::verification::temporal::{temporal_stale_reason_with_metadata, TemporalStaleReason};
 
@@ -57,7 +58,7 @@ pub(super) fn stale_fact_guard(
     view: &AgentView,
 ) -> Option<VerificationGuard> {
     let metadata = CellMetadata::from_version(version);
-    if !view.can_read_scope(crate::query::scope_id(&metadata.scope)) {
+    if !PolicyRewrite::allows_scope(view, crate::query::scope_id(&metadata.scope)) {
         return None;
     }
     let reason = temporal_stale_from_metadata(fact, &metadata)?;

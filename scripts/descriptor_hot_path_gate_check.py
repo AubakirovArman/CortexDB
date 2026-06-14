@@ -229,7 +229,7 @@ def main() -> None:
     for text, needle, label in (
         (session, "let mut cells = self.session_index.retrieve(", "session retrieval delegates to maintained index"),
         (session_index, "SessionMetadata::from_descriptor(descriptor)", "session index descriptor-backed metadata"),
-        (session_index, "view.can_read_scope(scope_id(&self.descriptor.scope))", "session index descriptor scope authorization"),
+        (session_index, "PolicyRewrite::allows_scope(view, scope_id(&self.descriptor.scope))", "session index descriptor scope authorization"),
         (session, "self.get_latest_cell_descriptor(cell_id).is_none()", "session id allocation uses descriptor-only existence check"),
         (ingestion, "self.get_latest_cell_descriptor(cell_id).is_none()", "memory id allocation uses descriptor-only existence check"),
     ):
@@ -265,7 +265,7 @@ def main() -> None:
     )
     require(
         tool_registry,
-        "view.can_read_scope(scope_id(&tool.descriptor.scope))",
+        "PolicyRewrite::allows_scope(view, scope_id(&tool.descriptor.scope))",
         "tool registry permission check uses descriptor scope",
     )
     require(
@@ -275,12 +275,12 @@ def main() -> None:
     )
     require(
         verification,
-        "if !view.can_read_scope(scope_id(&metadata.scope))",
+        "if !PolicyRewrite::allows_scope(view, scope_id(&metadata.scope))",
         "verification permission check uses descriptor metadata",
     )
     require(
         verification_operator,
-        "if !view.can_read_scope(scope_id(&metadata.scope))",
+        "if !PolicyRewrite::allows_scope(view, scope_id(&metadata.scope))",
         "verification source-support scan checks descriptor scope before payload",
     )
     require(

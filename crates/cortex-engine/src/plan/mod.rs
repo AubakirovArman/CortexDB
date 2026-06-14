@@ -1,11 +1,13 @@
 pub mod cost;
+mod policy;
 
-use cortex_aql::{AgentView, BoundPlan, BrainId, RetrievalMode, RetrievalWeights};
+use cortex_aql::{BoundPlan, BrainId, RetrievalMode, RetrievalWeights};
 
 pub use cost::{
     choose_retrieve_path, estimate_bitmap_program_rows, CostModelDecision, CostModelEstimate,
     CostModelOptions, ExecutionPath, TermDfEstimate,
 };
+pub use policy::{PolicyRewrite, ReadSurface, READ_SURFACES};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LogicalPlan {
@@ -52,10 +54,6 @@ pub struct LogicalPlanNodeReport {
     pub kind: String,
     pub detail: String,
     pub permission_predicate: Option<String>,
-}
-
-pub struct PolicyRewrite<'a> {
-    view: &'a AgentView,
 }
 
 impl LogicalPlan {
@@ -121,45 +119,6 @@ impl LogicalPlan {
                 .map(|(id, node)| node.to_report(id))
                 .collect(),
             policy_complete: self.all_scans_have_permission_predicate(),
-        }
-    }
-}
-
-impl<'a> PolicyRewrite<'a> {
-    pub fn new(view: &'a AgentView) -> Self {
-        Self { view }
-    }
-
-    pub fn rewrite(&self, plan: &LogicalPlan) -> LogicalPlan {
-        LogicalPlan {
-            nodes: plan
-                .nodes
-                .iter()
-                .cloned()
-                .map(|node| self.rewrite_node(node))
-                .collect(),
-        }
-    }
-
-    fn rewrite_node(&self, node: LogicalPlanNode) -> LogicalPlanNode {
-        match node {
-            LogicalPlanNode::Scan {
-                brain_id,
-                predicate,
-                permission_predicate,
-            } => LogicalPlanNode::Scan {
-                brain_id,
-                predicate,
-                permission_predicate: permission_predicate
-                    .or_else(|| Some("agent_allowed".to_owned())),
-            },
-            LogicalPlanNode::Limit { candidate_limit } => LogicalPlanNode::Limit {
-                candidate_limit: self.view.effective_candidate_limit(candidate_limit),
-            },
-            LogicalPlanNode::Budget { budget_tokens } => LogicalPlanNode::Budget {
-                budget_tokens: self.view.effective_budget(budget_tokens),
-            },
-            other => other,
         }
     }
 }

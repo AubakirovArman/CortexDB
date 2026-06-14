@@ -5,6 +5,7 @@ use cortex_aql::AgentView;
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 use crate::options::PayloadResidency;
+use crate::plan::PolicyRewrite;
 
 use super::super::ann::AnnSearchPolicy;
 use super::super::{SearchIndexes, SearchMode, SearchQuery, WeightedScoreReranker};
@@ -134,7 +135,7 @@ impl Database {
                 &version.descriptor,
                 query.vector,
             );
-            if view.can_read_scope(crate::query::scope_id(&record.metadata.scope)) {
+            if PolicyRewrite::allows_scope(view, crate::query::scope_id(&record.metadata.scope)) {
                 records.push(record);
             }
         }

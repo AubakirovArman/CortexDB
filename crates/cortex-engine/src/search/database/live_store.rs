@@ -4,6 +4,7 @@ use cortex_aql::AgentView;
 use cortex_core::memtable::{MemTable, ReadTxn};
 use cortex_core::{CellDescriptor, CellId};
 
+use crate::plan::PolicyRewrite;
 use crate::query::{scope_id, CellMetadata};
 
 use super::ranking::best_payload_vector_for_query;
@@ -72,7 +73,9 @@ impl LiveSearchStore {
     ) -> Vec<LiveSearchCandidate> {
         self.records
             .iter()
-            .filter(|(_, record)| view.can_read_scope(scope_id(&record.metadata.scope)))
+            .filter(|(_, record)| {
+                PolicyRewrite::allows_scope(view, scope_id(&record.metadata.scope))
+            })
             .map(|(cell_id, record)| LiveSearchCandidate {
                 cell_id: *cell_id,
                 payload: record.payload.clone(),

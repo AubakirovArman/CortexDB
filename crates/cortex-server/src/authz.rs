@@ -1,6 +1,6 @@
 use cortex_aql::{AgentId, AgentView};
 use cortex_core::CellDescriptor;
-use cortex_engine::{scope_id, Database};
+use cortex_engine::{scope_id, Database, PolicyRewrite};
 
 use crate::context::view_for_scope;
 use crate::responses::RouterError;
@@ -83,7 +83,9 @@ pub(crate) fn require_descriptor_read(
     descriptor: &CellDescriptor,
 ) -> Result<(), RouterError> {
     if let Some(view) = authenticated {
-        require_read_scope(view, &descriptor.scope)?;
+        if !PolicyRewrite::allows_descriptor(view, descriptor) {
+            return Err(RouterError::PermissionDenied(READ_DENIED.to_owned()));
+        }
     }
     Ok(())
 }
@@ -99,7 +101,7 @@ pub(crate) fn require_descriptor_write(
 }
 
 pub(crate) fn require_read_scope(view: &AgentView, scope: &str) -> Result<(), RouterError> {
-    if view.can_read_scope(scope_id(scope)) {
+    if PolicyRewrite::allows_scope(view, scope_id(scope)) {
         Ok(())
     } else {
         Err(RouterError::PermissionDenied(READ_DENIED.to_owned()))

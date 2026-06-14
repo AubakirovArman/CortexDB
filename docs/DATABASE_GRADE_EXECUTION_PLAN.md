@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B14` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-B14` is next. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-C02` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B16`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-C02` is next per the corrected dependency-stage roadmap; `EPIC-B14` remains pending/formal-tail for the later explainability stage. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -983,20 +983,24 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-B16 — Формализованный Policy Rewrite + доказательство инварианта
 
-- status: `pending`
+- status: `done`
 - meta: Категория: security · Приоритет: P0 · Горизонт: 60 days · Тип: build
 - goal: permission-safe retrieval как database-level invariant требует структурного и тестового доказательства.
 - problem: Проблема: гарантия сейчас распределена между binder, authz.rs пост-фильтрами и дисциплиной кода.
 - tasks:
-  - [ ] 1) единственная точка: PolicyRewrite-проход над LogicalPlan (A10), все поверхности (search/get/verify/graph/memory/export) строят планы через него
-  - [ ] 2) негативные тесты на каждую поверхность (запрос чужого scope → пустота/ошибка, никогда payload)
-  - [ ] 3) структурный тест: пост-rewrite план не содержит непокрытого Scan.
+  - [x] 1) единственная точка: PolicyRewrite-проход над LogicalPlan (A10), все поверхности (search/get/verify/graph/memory/export) строят планы через него
+  - [x] 2) негативные тесты на каждую поверхность (запрос чужого scope → пустота/ошибка, никогда payload)
+  - [x] 3) структурный тест: пост-rewrite план не содержит непокрытого Scan.
 - acceptance:
-  - [ ] 1) одна функция-источник гарантии
-  - [ ] 2) E09 property-suite зелёный
-  - [ ] 3) SECURITY_MODEL.md описывает инвариант одной страницей.
-- files: plan/policy.rs (новый), authz.rs (сжимается), все query-поверхности.
-- risks: миграция поверхностей по одной, не разом. Зависимости: A10, B04. Эффект: продаваемый и проверяемый security-инвариант.
+  - [x] 1) одна функция-источник гарантии
+  - [x] 2) E09 property-suite зелёный
+  - [x] 3) SECURITY_MODEL.md описывает инвариант одной страницей.
+- files: `crates/cortex-engine/src/plan/policy.rs`, `crates/cortex-engine/src/plan/mod.rs`, `crates/cortex-engine/src/plan/tests.rs`, `crates/cortex-server/src/authz.rs`, read-surface permission call sites, `scripts/policy_rewrite_gate_check.py`, `mk/core.mk`, `docs/SECURITY_MODEL.md`.
+- evidence: `PolicyRewrite` now lives in `plan/policy.rs` with the `ReadSurface` registry and `rewrite_read_surface` helper for AQL retrieve/explain, search/explain, ContextPack/trace, cell get, verify, graph, memory, feedback, and export. All registered read-surface plans structurally start with an uncovered scan and rewrite to `policy_complete=true` with `agent_allowed`; descriptor read authorization is tested against durable descriptor scope. Server read authz delegates descriptor/scope decisions to `PolicyRewrite`, AQL/search candidate bitmap builders consume readable scopes through `PolicyRewrite`, and production engine read filters now call `PolicyRewrite::allows_scope` instead of directly calling `AgentView::can_read_scope`. Added `policy-rewrite-gate-check` to `make check`; it verifies the read-surface registry/tests/server authz hooks and rejects production direct `can_read_scope` calls outside `PolicyRewrite`. Existing `descriptor_hot_path_gate_check.py` was updated to expect the new helper while preserving descriptor-before-payload gates. `SECURITY_MODEL.md` now documents the permission-safe read invariant, source of truth, E09 property evidence, and gate boundary.
+- gates: `python3 scripts/policy_rewrite_gate_check.py`; `python3 scripts/descriptor_hot_path_gate_check.py`; `cargo test -p cortex-engine plan --all-features`; `cargo test -p cortex-server agent_view_property --all-features`; `cargo fmt --check`; `make check`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`.
+- remaining: none for B16 acceptance; future C02/C09 can improve bitmap representation and pre-pruning performance without changing the policy invariant.
+- risks: `policy-rewrite-gate-check` is a static production-path guard, not a formal verifier for future generated code; new read surfaces must be added to `ReadSurface` plus E09/property coverage.
+- next exit step: move to `EPIC-C02` — Roaring bitmaps in bitmap index and VM per corrected dependency-stage order.
 
 ### EPIC-B17 — Tool registry как типизированный каталог
 

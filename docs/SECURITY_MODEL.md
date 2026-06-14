@@ -38,11 +38,29 @@ anchored around:
      into the pack. HTTP responses attach the authenticated `principal_id` and
      `auth_role` when bearer-token policy store auth is configured.
 
-4. **Error hardening**
+4. **Permission-safe read invariant**
+   - The source of truth for read authorization is
+     `cortex_engine::plan::PolicyRewrite`.
+   - Logical read plans are rewritten before execution so every `Scan` node
+     carries the `agent_allowed` permission predicate; structural tests cover
+     AQL retrieve/explain, search/explain, ContextPack/trace, cell get, verify,
+     graph, memory, feedback, and export surfaces.
+   - Direct descriptor-backed server surfaces such as `/v1/cell`, feedback,
+     and memory routes delegate read decisions to `PolicyRewrite` before payload
+     materialization. Stored-cell authorization uses durable `CellDescriptor`
+     scope, not spoofable payload headers.
+   - `make check` runs `policy-rewrite-gate-check`, which rejects direct
+     production `AgentView::can_read_scope` calls outside `PolicyRewrite` and
+     verifies the read-surface registry and structural tests remain present.
+   - `cargo test -p cortex-server agent_view_property --all-features` exercises
+     the E09 property suite across HTTP read surfaces before and after flush:
+     no unreadable-scope payload marker may appear in success or error bodies.
+
+5. **Error hardening**
    - Public API errors use stable machine-readable codes.
    - Policy errors avoid internal names like brain/scope identifiers.
 
-5. **Operational safety**
+6. **Operational safety**
    - Database lock prevents concurrent local writers.
    - Validation and repair tools run before recovery-critical operations.
 

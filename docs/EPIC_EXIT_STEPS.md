@@ -339,8 +339,11 @@ Exit steps:
 Exit steps:
 1. Formalize policy rewrite invariants.
 2. Add tests/property tests over generated plans.
-3. Verify all physical scans carry policy constraints.
-4. Mark done when policy safety is proven at plan level; then move to E09.
+3. Verify all physical scans carry policy constraints and direct read surfaces
+   delegate descriptor/scope reads to `PolicyRewrite`.
+4. Add/update the static gate that rejects production read-policy bypasses.
+5. Mark done when policy safety is proven at plan level and E09 property tests
+   pass; then move to C02 per the corrected dependency-stage roadmap.
 
 ### EPIC-B17 — Tool registry
 

@@ -4,6 +4,7 @@ use cortex_aql::AgentView;
 use cortex_core::memtable::{MemTable, ReadTxn};
 use cortex_core::{CellDescriptor, CellId, CommitSeq};
 
+use crate::plan::PolicyRewrite;
 use crate::query::scope_id;
 
 use super::{RegisteredTool, ToolDescriptor};
@@ -61,7 +62,7 @@ impl ToolIndex {
     pub(crate) fn list_tools(&self, view: &AgentView) -> Vec<RegisteredTool> {
         self.tools
             .values()
-            .filter(|tool| view.can_read_scope(scope_id(&tool.descriptor.scope)))
+            .filter(|tool| PolicyRewrite::allows_scope(view, scope_id(&tool.descriptor.scope)))
             .cloned()
             .collect()
     }

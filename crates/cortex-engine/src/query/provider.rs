@@ -6,6 +6,7 @@ use cortex_core::CellId;
 use super::metadata::scope_handle;
 use super::EngineAqlIndex;
 use crate::database::CandidateResolver;
+use crate::plan::PolicyRewrite;
 use crate::search::analyze_search_query;
 
 #[derive(Clone, Debug)]
@@ -17,8 +18,9 @@ pub struct EngineAqlProvider {
 impl EngineAqlProvider {
     pub fn new(index: EngineAqlIndex, view: &AgentView) -> Self {
         let mut agent_allowed = BTreeSet::new();
-        for scope in &view.readable_scopes {
-            if let Some(candidates) = index.bitmaps.get(&scope_handle(*scope)) {
+        let policy = PolicyRewrite::new(view);
+        for scope in policy.readable_scopes() {
+            if let Some(candidates) = index.bitmaps.get(&scope_handle(scope)) {
                 agent_allowed.extend(candidates.iter().copied());
             }
         }

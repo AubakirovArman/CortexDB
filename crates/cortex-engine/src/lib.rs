@@ -145,7 +145,7 @@ pub use options::{
 };
 pub use plan::{
     CostModelDecision, CostModelEstimate, CostModelOptions, ExecutionPath, LogicalPlan,
-    LogicalPlanNode, LogicalPlanReport, PolicyRewrite, TermDfEstimate,
+    LogicalPlanNode, LogicalPlanReport, PolicyRewrite, ReadSurface, TermDfEstimate, READ_SURFACES,
 };
 pub use query::{
     scope_id, AqlCandidateCounts, AqlExecutionTraceReport, AqlExplainFilter, AqlExplainReport,

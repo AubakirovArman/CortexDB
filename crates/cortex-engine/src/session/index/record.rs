@@ -1,6 +1,7 @@
 use cortex_aql::AgentView;
 use cortex_core::{CellDescriptor, CellId, KnowledgeCellType};
 
+use crate::plan::PolicyRewrite;
 use crate::query::scope_id;
 
 use super::super::payload::parse_session_cell;
@@ -44,7 +45,7 @@ impl SessionIndexCell {
 
     pub(super) fn is_visible_to(&self, view: &AgentView, now_unix_seconds: u64) -> bool {
         now_unix_seconds < self.expires_at_unix_seconds
-            && view.can_read_scope(scope_id(&self.descriptor.scope))
+            && PolicyRewrite::allows_scope(view, scope_id(&self.descriptor.scope))
     }
 }
 

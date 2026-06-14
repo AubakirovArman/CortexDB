@@ -8,6 +8,7 @@ use super::super::VerificationEvidence;
 use crate::database::Database;
 use crate::error::EngineResult;
 use crate::options::PayloadResidency;
+use crate::plan::PolicyRewrite;
 use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
 
@@ -88,7 +89,7 @@ impl Database {
             .into_iter()
             .filter(|version| {
                 let metadata = CellMetadata::from_version(version);
-                view.can_read_scope(scope_id(&metadata.scope))
+                PolicyRewrite::allows_scope(view, scope_id(&metadata.scope))
             })
             .collect()
     }
@@ -136,7 +137,7 @@ impl Database {
             if metadata.cell_type != "relation" {
                 continue;
             }
-            if !view.can_read_scope(scope_id(&metadata.scope)) {
+            if !PolicyRewrite::allows_scope(view, scope_id(&metadata.scope)) {
                 continue;
             }
             let payload = self.payload_for_version(version)?;

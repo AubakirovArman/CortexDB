@@ -8,6 +8,7 @@ use super::graph::is_graph_contradiction_payload;
 use super::guards::{numeric_mismatch, temporal_stale_from_metadata};
 use super::support::{support_match, term_coverage_q16};
 use super::{VerificationEvidence, VerificationMatchKind, VerificationStatus};
+use crate::plan::PolicyRewrite;
 use crate::query::{scope_id, CellMetadata};
 use crate::search::tokenize;
 use crate::source_trust::SourceTrust;
@@ -73,7 +74,7 @@ pub(super) fn evidence_for_version(
     let payload = candidate.payload.as_slice();
     let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
     let fact_terms = tokenize(fact);
-    if !view.can_read_scope(scope_id(&metadata.scope)) {
+    if !PolicyRewrite::allows_scope(view, scope_id(&metadata.scope)) {
         return None;
     }
     if is_graph_contradiction_payload(payload) {
@@ -107,7 +108,7 @@ pub(super) fn contradiction_for_version(
     let payload = candidate.payload.as_slice();
     let metadata = CellMetadata::from_payload_with_descriptor(payload, &version.descriptor);
     let fact_terms = tokenize(fact);
-    if !view.can_read_scope(scope_id(&metadata.scope)) || fact_terms.is_empty() {
+    if !PolicyRewrite::allows_scope(view, scope_id(&metadata.scope)) || fact_terms.is_empty() {
         return None;
     }
     if temporal_stale_from_metadata(fact, &metadata).is_some() {

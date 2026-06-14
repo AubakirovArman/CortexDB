@@ -5,6 +5,7 @@ use cortex_aql::AgentView;
 use cortex_core::memtable::{MemTable, ReadTxn};
 use cortex_core::{CellDescriptor, CellId};
 
+use crate::plan::PolicyRewrite;
 use crate::query::{scope_id, CellMetadata};
 
 use super::context::{
@@ -67,7 +68,7 @@ impl SearchContextStore {
             .records
             .iter()
             .filter_map(|(cell_id, record)| {
-                if !view.can_read_scope(scope_id(&record.metadata.scope))
+                if !PolicyRewrite::allows_scope(view, scope_id(&record.metadata.scope))
                     || !record
                         .metadata
                         .project
@@ -97,7 +98,7 @@ impl SearchContextStore {
             .records
             .iter()
             .filter_map(|(cell_id, record)| {
-                if !view.can_read_scope(scope_id(&record.metadata.scope)) {
+                if !PolicyRewrite::allows_scope(view, scope_id(&record.metadata.scope)) {
                     return None;
                 }
                 let score = high_level_anchor_score(&record.metadata);
@@ -121,7 +122,7 @@ impl SearchContextStore {
     ) -> BTreeMap<String, DatabaseSearchResult> {
         let mut parents = BTreeMap::new();
         for (cell_id, record) in &self.records {
-            if !view.can_read_scope(scope_id(&record.metadata.scope))
+            if !PolicyRewrite::allows_scope(view, scope_id(&record.metadata.scope))
                 || !is_search_parent_context_metadata(&record.metadata)
             {
                 continue;

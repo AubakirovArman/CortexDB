@@ -4,6 +4,7 @@ use cortex_aql::{AgentView, ScopeId};
 use cortex_core::memtable::{MemTable, ReadTxn};
 use cortex_core::{CellDescriptor, CellId};
 
+use crate::plan::PolicyRewrite;
 use crate::query::{scope_id, CellMetadata};
 use crate::source_trust::SourceTrust;
 use crate::verification::numeric::fact_claim::{FactClaimStore, NumericFactRecord};
@@ -130,7 +131,7 @@ impl ConflictIndexStore {
         records.extend(self.visible_stored_records(self.inline_records.values().flatten(), view));
         records.extend(self.visible_stored_records(self.numeric_records.iter(), view));
         for relation in self.relation_records.values() {
-            if !view.can_read_scope(relation.scope_id) {
+            if !PolicyRewrite::allows_scope(view, relation.scope_id) {
                 continue;
             }
             if let Some(record) = contradiction_relation_record(
@@ -154,7 +155,7 @@ impl ConflictIndexStore {
         view: &AgentView,
     ) -> Vec<ConflictRecord> {
         records
-            .filter(|record| view.can_read_scope(record.scope_id))
+            .filter(|record| PolicyRewrite::allows_scope(view, record.scope_id))
             .map(|record| record.record.clone())
             .collect()
     }
@@ -162,7 +163,7 @@ impl ConflictIndexStore {
     fn visible_facets(&self, view: &AgentView) -> BTreeMap<CellId, ConflictFacets> {
         self.facets_by_cell
             .iter()
-            .filter(|(_, facets)| view.can_read_scope(facets.scope_id))
+            .filter(|(_, facets)| PolicyRewrite::allows_scope(view, facets.scope_id))
             .map(|(cell_id, facets)| (*cell_id, facets.facets.clone()))
             .collect()
     }

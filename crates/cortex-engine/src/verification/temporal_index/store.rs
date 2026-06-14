@@ -4,6 +4,7 @@ use cortex_aql::AgentView;
 use cortex_core::memtable::{MemTable, ReadTxn};
 use cortex_core::{CellDescriptor, CellId};
 
+use crate::plan::PolicyRewrite;
 use crate::query::{scope_id, CellMetadata};
 
 use super::{
@@ -81,7 +82,7 @@ impl TemporalFactStore {
     pub(crate) fn fact_index(&self, view: &AgentView) -> TemporalFactIndex {
         let mut groups = BTreeMap::<TemporalFactKey, Vec<TemporalFactRecord>>::new();
         for entry in self.records.values() {
-            if !view.can_read_scope(scope_id(&entry.scope)) {
+            if !PolicyRewrite::allows_scope(view, scope_id(&entry.scope)) {
                 continue;
             }
             groups

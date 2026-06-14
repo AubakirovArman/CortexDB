@@ -2,6 +2,7 @@ use cortex_aql::AgentView;
 use cortex_core::CellId;
 
 use crate::context::{ContextAccessDecision, ContextAccessDecisionOutcome};
+use crate::plan::PolicyRewrite;
 use crate::query::{scope_id, CellMetadata};
 
 pub(super) fn context_access_decision(
@@ -11,7 +12,7 @@ pub(super) fn context_access_decision(
 ) -> ContextAccessDecision {
     let scope_id = scope_id(&metadata.scope);
     match view {
-        Some(view) if view.can_read_scope(scope_id) => ContextAccessDecision {
+        Some(view) if PolicyRewrite::allows_scope(view, scope_id) => ContextAccessDecision {
             cell_id,
             decision: ContextAccessDecisionOutcome::Allowed,
             policy: "agent_view_readable_scope".to_owned(),
