@@ -1,6 +1,6 @@
 .PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check context-pack-schema-contract-check provenance-model-inventory decode-fuzz-check erb-oracle-audit
 
-check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check context-pack-schema-contract-check decode-fuzz-check erb-oracle-audit erb-category-regression-check
+check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check tool-registry-check context-pack-schema-contract-check decode-fuzz-check erb-oracle-audit erb-category-regression-check
 	cargo check --workspace
 
 file-size-report:

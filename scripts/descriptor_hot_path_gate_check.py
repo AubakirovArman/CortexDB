@@ -260,7 +260,7 @@ def main() -> None:
     )
     require(
         tool_registry,
-        "let descriptor = ToolDescriptor::from_version(version).ok()?;",
+        "ToolDescriptor::from_version(version)",
         "tool registry list uses CellVersion descriptor",
     )
     require(

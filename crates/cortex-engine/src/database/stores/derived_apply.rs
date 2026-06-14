@@ -79,7 +79,11 @@ impl super::super::Database {
     }
 
     pub(crate) fn rebuild_derived_stores_from_memtable(&mut self) {
-        let stores = DerivedStores::from_memtable(&self.memtable, self.read_txn());
+        let stores = DerivedStores::from_memtable_for_residency(
+            &self.memtable,
+            self.read_txn(),
+            self.payload_residency,
+        );
         self.corpus_synonym_store = stores.corpus_synonym_store;
         self.feedback_index = stores.feedback_index;
         self.graph_index_store = stores.graph_index_store;
@@ -92,5 +96,6 @@ impl super::super::Database {
         self.temporal_fact_store = stores.temporal_fact_store;
         self.temporal_validity_store = stores.temporal_validity_store;
         self.tool_index = stores.tool_index;
+        self.rebuild_lazy_derived_stores_for_residency(self.payload_residency);
     }
 }

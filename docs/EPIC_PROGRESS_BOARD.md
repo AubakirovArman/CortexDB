@@ -20,20 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B17` — Typed tool registry.
+`EPIC-B18` — Incremental knowledge graph/provenance index.
 
-B17 exit steps:
+B18 exit steps:
 
-1. Define typed tool records and schema.
-2. Build maintained tool registry/index instead of scan-based convention.
-3. Add retrieval/tool recommendation tests.
-4. Mark done when tool lookup is typed and indexed; then move to B18.
+1. Define graph edge keys and update rules.
+2. Maintain the graph/provenance index incrementally.
+3. Add equivalence tests against rebuild and existing graph fixtures.
+4. Mark done when graph/provenance lookup avoids full scans; then move to C15.
 
-B17 current state:
+B18 current state:
 
 - next.
-- Do not reopen C14 unless temporal interval index, AQL `valid at`, or VERIFY
-  stale-guard contracts regress.
+- Do not reopen B17 unless typed tool catalog lookup, term index maintenance, or
+  lazy tool-index rebuild regresses.
 
 ## Active Partial Tail
 
@@ -47,6 +47,18 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-B17 — Typed tool registry
+
+Status: `done`
+
+What closed it:
+
+- `Database::list_tools` and `recommend_tools_for_task` now read `ToolIndex`, not query-time visible-cell scans.
+- `ToolIndex` maintains typed tool records plus `term_to_tools`/`tool_terms` maps for recommendation.
+- Lazy payload open-time derived-store rebuild repopulates the tool index from visible payloads.
+- Added `docs/TOOL_REGISTRY.md` as the short B17 contract and agent context+tools example.
+- Added `tool_registry_index_tests` and wired `tool-registry-check` into `make check`.
 
 ### EPIC-B15 — EXPLAIN ANALYZE for AQL
 
@@ -764,9 +776,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on B17 only:
+Work on B18 only:
 
-1. inventory current tool metadata and recommendation code;
-2. define the smallest typed tool record contract;
-3. replace scan-based tool lookup with a maintained registry/index;
-4. move to B18 after B17 acceptance is closed.
+1. inventory current graph/provenance scans and derived graph stores;
+2. define the smallest incremental edge/update contract;
+3. add equivalence tests against rebuild and existing graph fixtures;
+4. move to C15 after B18 acceptance is closed.

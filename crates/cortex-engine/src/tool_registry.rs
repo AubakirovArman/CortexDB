@@ -1,4 +1,3 @@
-use std::cmp::Reverse;
 use std::collections::BTreeSet;
 
 use cortex_aql::AgentView;
@@ -9,10 +8,7 @@ use cortex_core::{
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
-use crate::options::PayloadResidency;
-use crate::plan::PolicyRewrite;
-use crate::query::{scope_id, CellMetadata};
-use crate::search::tokenize;
+use crate::query::CellMetadata;
 
 mod index;
 
@@ -175,24 +171,7 @@ impl Database {
     }
 
     pub fn list_tools(&self, view: &AgentView) -> Vec<RegisteredTool> {
-        let mut tools = if self.payload_residency == PayloadResidency::Lazy {
-            self.memtable
-                .visible_iter(self.read_txn())
-                .filter_map(|version| {
-                    let payload = self.payload_for_version(version).ok()?;
-                    let tool = ToolIndex::record_from_payload(
-                        version.cell_id,
-                        version.created_seq,
-                        &payload,
-                        &version.descriptor,
-                    )?;
-                    PolicyRewrite::allows_scope(view, scope_id(&tool.descriptor.scope))
-                        .then_some(tool)
-                })
-                .collect()
-        } else {
-            self.tool_index.list_tools(view)
-        };
+        let mut tools = self.tool_index.list_tools(view);
         tools.sort_by_key(|tool| tool.cell_id);
         tools
     }
@@ -206,51 +185,7 @@ impl Database {
         if limit == 0 {
             return Vec::new();
         }
-        let task_terms = tokenize(task).into_iter().collect::<BTreeSet<_>>();
-        let mut recommendations = self
-            .list_tools(view)
-            .into_iter()
-            .filter_map(|tool| {
-                let descriptor_text = format!(
-                    "{} {} {} {}",
-                    tool.descriptor.name,
-                    tool.descriptor.description,
-                    tool.descriptor.input_schema.as_deref().unwrap_or(""),
-                    tool.descriptor.output_schema.as_deref().unwrap_or("")
-                );
-                let descriptor_terms = tokenize(&descriptor_text)
-                    .into_iter()
-                    .collect::<BTreeSet<_>>();
-                let matched_terms = task_terms
-                    .iter()
-                    .filter(|term| descriptor_terms.contains(*term))
-                    .cloned()
-                    .collect::<Vec<_>>();
-                if matched_terms.is_empty() {
-                    return None;
-                }
-                let score = u32::try_from(matched_terms.len()).unwrap_or(u32::MAX);
-                let why_selected = format!(
-                    "selected because task terms matched tool metadata: {}",
-                    matched_terms.join(", ")
-                );
-                Some(ToolRecommendation {
-                    tool,
-                    matched_terms,
-                    score,
-                    why_selected,
-                })
-            })
-            .collect::<Vec<_>>();
-        recommendations.sort_by_key(|recommendation| {
-            (
-                Reverse(recommendation.score),
-                recommendation.tool.cell_id,
-                recommendation.tool.descriptor.name.clone(),
-            )
-        });
-        recommendations.truncate(limit);
-        recommendations
+        self.tool_index.recommend_tools_for_task(view, task, limit)
     }
 }
 

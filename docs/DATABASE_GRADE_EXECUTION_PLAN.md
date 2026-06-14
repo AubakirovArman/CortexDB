@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B17` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-C14`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B14`, `EPIC-B15`, `EPIC-B16`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is closed with interval temporal validity index evidence. `EPIC-B14` is closed with a stable ContextPack cell explain contract, CLI `explain --cell-id`, `docs/EXPLAIN.md`, schema/OpenAPI alignment, and golden coverage. `EPIC-B15` is closed with CLI/API `EXPLAIN ANALYZE` flags, actual/estimated operator trace fields, OpenAPI/SDK alignment, and docs. `EPIC-B17` is next. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
+Current pointer: `EPIC-B18` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-C14`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B14`, `EPIC-B15`, `EPIC-B16`, `EPIC-B17`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is closed with interval temporal validity index evidence. `EPIC-B14` is closed with a stable ContextPack cell explain contract, CLI `explain --cell-id`, `docs/EXPLAIN.md`, schema/OpenAPI alignment, and golden coverage. `EPIC-B15` is closed with CLI/API `EXPLAIN ANALYZE` flags, actual/estimated operator trace fields, OpenAPI/SDK alignment, and docs. `EPIC-B17` is closed with typed tool catalog records, maintained list and term indexes, lazy open-time rebuild, `docs/TOOL_REGISTRY.md`, and a `make check` gate. `EPIC-B18` is next. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -80,7 +80,8 @@ enough to unblock the next dependency step.
 30. `EPIC-C14` — Temporal index: done.
 31. `EPIC-B14` — Explainability contract: done.
 32. `EPIC-B15` — EXPLAIN ANALYZE for AQL: done.
-33. `EPIC-B17` — Typed tool registry: next.
+33. `EPIC-B17` — Typed tool registry: done.
+34. `EPIC-B18` — Incremental knowledge graph/provenance index: next.
 
 ## Summary
 
@@ -971,8 +972,8 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - gates: `cargo fmt --check`; `cargo test -p cortex-engine --test context_pack_explain_v2`; `cargo test -p cortex-cli explain_command_returns_cell_contract_json`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `cargo test -p cortex-cli`; `make openapi-contract-check`; `make check`.
 - remaining: none for B14 acceptance; deeper operator timing/counter explain belongs to B15.
 - risks: CLI cell explain reports the first recorded ContextPack anomaly for excluded cells; full physical per-operator timing remains B15 scope.
-- next exit step: `EPIC-B15` is now closed; current next step is
-  `EPIC-B17` — Typed tool registry.
+- next exit step: `EPIC-B17` is now closed; current next step is
+  `EPIC-B18` — Incremental knowledge graph/provenance index.
 
 ### EPIC-B15 — EXPLAIN ANALYZE для AQL
 
@@ -991,9 +992,9 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - files: `crates/cortex-cli/src/cli_aql.rs`, `crates/cortex-server/src/aql.rs`, shared AQL response types, OpenAPI generated SDK artifacts, `docs/EXPLAIN_ANALYZE.md`.
 - evidence: Existing engine `EXPLAIN ANALYZE RETRIEVE` physical trace is now exposed through CLI flag form `cortexdb aql ... --explain analyze` and HTTP `POST /v1/aql?scope=...&explain=analyze` for normal `RETRIEVE` bodies. AQL operator response fields now include backward-compatible `input_count`/`output_count` plus explicit `actual_input_count`, `actual_output_count`, and nullable `estimated_output_count`; text CLI output prints the ordered operator trace and total elapsed nanos. OpenAPI documents `explain=plan|analyze`, logical/policy plans, and execution trace fields, with regenerated Python/TypeScript OpenAPI SDK types. `docs/EXPLAIN_ANALYZE.md` documents CLI/API examples and trace stability rules.
 - gates: `cargo fmt --check`; `cargo test -p cortex-cli aql_command_explain_analyze_flag_reports_actual_operator_counts`; `cargo test -p cortex-server v1_aql_explain_analyze_query_flag_reports_execution_trace`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `cargo test -p cortex-cli`; `make openapi-contract-check`; `make check`.
-- remaining: none for B15 acceptance; deeper tool-catalog semantics move to B17.
+- remaining: none for B15 acceptance; deeper tool-catalog semantics are closed by B17.
 - risks: `estimated_output_count` is nullable where no planner estimate exists; actual counts are always present for analyzed operators.
-- next exit step: move to `EPIC-B17` — Typed tool registry.
+- next exit step: `EPIC-B17` is now closed; move to `EPIC-B18` — Incremental knowledge graph/provenance index.
 
 ### EPIC-B16 — Формализованный Policy Rewrite + доказательство инварианта
 
@@ -1018,20 +1019,24 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-B17 — Tool registry как типизированный каталог
 
-- status: `pending`
+- status: `done`
 - meta: Категория: product · Приоритет: P3 · Горизонт: 6 months · Тип: productize
 - goal: рекомендация инструментов в паке — полезный агентный примитив, но сейчас это scan по type=tool ячейкам.
 - problem: Проблема: tool_registry.rs — snapshot_versions-скан; формат tool-ячеек конвенционный.
 - tasks:
-  - [ ] 1) typed tool-записи (descriptor type=tool + structured body)
-  - [ ] 2) каталог в памяти, инкрементально поддерживаемый
-  - [ ] 3) recommend_tools через индекс задач→термов.
+  - [x] 1) typed tool-записи (descriptor type=tool + structured body)
+  - [x] 2) каталог в памяти, инкрементально поддерживаемый
+  - [x] 3) recommend_tools через индекс задач→термов.
 - acceptance:
-  - [ ] 1) без сканов
-  - [ ] 2) doc TOOL_REGISTRY.md сокращён до контракта
-  - [ ] 3) пример «агент получает пак+инструменты».
-- files: tool_registry.rs.
-- risks: низкие. Зависимости: A02. Эффект: пак отвечает «что знать И чем действовать».
+  - [x] 1) без сканов
+  - [x] 2) doc TOOL_REGISTRY.md сокращён до контракта
+  - [x] 3) пример «агент получает пак+инструменты».
+- files: `crates/cortex-engine/src/tool_registry.rs`, `crates/cortex-engine/src/tool_registry/index.rs`, `crates/cortex-engine/src/database/rebuild.rs`, `docs/TOOL_REGISTRY.md`, `scripts/tool_registry_check.py`.
+- evidence: Tool lookup now goes through `ToolIndex` for `list_tools` and `recommend_tools_for_task`; query-time lazy payload scans were removed from `tool_registry.rs`. `ToolIndex` maintains registered tools plus `term_to_tools`/`tool_terms` maps and updates both maps on put, patch, tombstone, memtable rebuild, checkpoint/lazy reopen, and replication snapshot rebuild. Lazy open-time derived-store rebuild now repopulates the tool index from visible payloads, while queries read the maintained index. `docs/TOOL_REGISTRY.md` is a short B17 contract covering typed tool record fields, permissions, index semantics, and the agent context+tools example. `make check` now includes `tool-registry-check`.
+- gates: `cargo fmt --check`; `cargo test -p cortex-engine --test tool_registry_tests --test tool_registry_index_tests`; `python3 scripts/tool_registry_check.py --report target/tool-registry/report.json`.
+- remaining: none for B17 acceptance.
+- risks: lazy databases opened with `rebuild_lazy_payload_indexes_on_open=false` intentionally skip open-time payload-derived index rebuilds; default options keep the typed tool catalog populated.
+- next exit step: move to `EPIC-B18` — Incremental knowledge graph/provenance index.
 
 ### EPIC-B18 — Инкрементальный knowledge-graph/provenance индекс
 
@@ -1307,7 +1312,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - files: новый index-модуль, verification/numeric.rs.
 - latest evidence: `FactClaimStore` now maintains a metric/scope/project -> sorted normalized value -> cell index alongside typed numeric records. VERIFY first asks this index for numeric candidate cell ids and falls back to the previous lexical candidate scan only when the typed index has no hits. `ConflictIndexStore::from_memtable` now batches numeric facts and rebuilds conflict records by metric/scope/project group, avoiding whole-corpus pair scans on large numeric fixtures. Added `numeric_verify_index_check` and `make numeric-verify-index-check`; local 1M direct-checkpoint fixture passed with numeric VERIFY latency p50 `155.498ms`, p95 `157.387ms`, p99 `159.038ms`, max `159.407ms`, report `target/numeric-verify-index/report.json`.
 - risks: The C13 1M gate uses a dedicated typed numeric fixture with unique metric groups plus one support/conflict pair; broad natural-language facts without a typed metric still fall back to the existing lexical path. Зависимости: B07. Эффект: verification-масштаб.
-- next exit step: `EPIC-B15` is now closed; move to `EPIC-B17` — Typed tool registry.
+- next exit step: `EPIC-B17` is now closed; move to `EPIC-B18` — Incremental knowledge graph/provenance index.
 
 ### EPIC-C14 — Temporal индекс
 
@@ -1324,7 +1329,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - files: `retrieval_quality/validity_index.rs`, `retrieval_quality/validity_index/interval.rs`, `exec/retrieve/temporal_filter.rs`, `verification/operator.rs`, `verification/guards.rs`, `verification/temporal.rs`.
 - latest evidence: `TemporalValidityStore` now maintains incremental valid_from/valid_to BTree indexes and a lazy sorted valid_from zone cache. AQL `REQUIRE valid at` builds the valid CellId set once from the interval index and filters candidates before lazy payload reads. VERIFY emits a `VerificationTemporalIndexLookup` trace and uses indexed stale reasons for stale/future evidence guards while preserving lexical overlap semantics. `make temporal-validity-index-check` passed on a 10K lazy fixture with `query_elapsed_ms=152`, `returned_cells=10`, `segment_loads_after_query=10`, report `target/temporal-validity-index/report.json`.
 - risks: The default temporal gate is bounded at 10K for interactive reliability; larger 100K+ temporal runs remain override/benchmark-packet work if needed. Зависимости: A02, B10. Эффект: temporal — индексная фича.
-- next exit step: `EPIC-B15` is now closed; move to `EPIC-B17` — Typed tool registry.
+- next exit step: `EPIC-B17` is now closed; move to `EPIC-B18` — Incremental knowledge graph/provenance index.
 
 ### EPIC-C15 — Инкрементальный graph-индекс производительность
 

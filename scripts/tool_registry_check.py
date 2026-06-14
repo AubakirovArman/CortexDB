@@ -14,6 +14,12 @@ def require_text(path: Path, markers: list[str]) -> list[str]:
     return [f"{path.relative_to(ROOT)} missing marker: {marker}" for marker in missing]
 
 
+def reject_text(path: Path, markers: list[str]) -> list[str]:
+    text = path.read_text(encoding="utf-8")
+    found = [marker for marker in markers if marker in text]
+    return [f"{path.relative_to(ROOT)} contains forbidden marker: {marker}" for marker in found]
+
+
 def run_tests() -> dict:
     command = [
         "cargo",
@@ -22,6 +28,8 @@ def run_tests() -> dict:
         "cortex-engine",
         "--test",
         "tool_registry_tests",
+        "--test",
+        "tool_registry_index_tests",
     ]
     completed = subprocess.run(
         command,
@@ -49,16 +57,14 @@ def main() -> int:
         require_text(
             ROOT / "docs" / "TOOL_REGISTRY.md",
             [
-                "Epic 143 Tool Registry v1 Contract",
+                "B17 Tool Registry Contract",
                 "ToolDescriptor",
                 "KnowledgeCellType::Tool",
                 "permissions=read,execute,approval_required",
-                "Add tool cells",
-                "Add permissions",
-                "Add input/output schema",
-                "Add tool retrieval by task",
+                "typed catalog",
+                "ToolIndex",
+                "term index",
                 "Database::list_tools(view)",
-                "Tool Retrieval By Task",
                 "Database::recommend_tools_for_task(view, task, limit)",
                 "make tool-registry-check",
             ],
@@ -66,7 +72,7 @@ def main() -> int:
     )
     checks.extend(
         require_text(
-            ROOT / "docs" / "PRODUCTION_EPIC_EXECUTION_PLAN.md",
+            ROOT / "docs" / "archive" / "PRODUCTION_EPIC_EXECUTION_PLAN.md",
             ["### Epic 143. Tool Registry v1", "Status: done", "make tool-registry-check"],
         )
     )
@@ -79,13 +85,41 @@ def main() -> int:
                 "pub struct ToolRecommendation",
                 "pub fn register_tool",
                 "pub fn recommend_tools_for_task",
+                "self.tool_index.recommend_tools_for_task",
             ],
+        )
+    )
+    checks.extend(
+        require_text(
+            ROOT / "crates" / "cortex-engine" / "src" / "tool_registry" / "index.rs",
+            [
+                "term_to_tools",
+                "tool_terms",
+                "pub(crate) fn recommend_tools_for_task",
+                "terms_for_descriptor",
+                "PolicyRewrite::allows_scope",
+            ],
+        )
+    )
+    checks.extend(
+        reject_text(
+            ROOT / "crates" / "cortex-engine" / "src" / "tool_registry.rs",
+            ["visible_iter", "payload_for_version"],
         )
     )
     checks.extend(
         require_text(
             ROOT / "crates" / "cortex-engine" / "tests" / "tool_registry_tests.rs",
             ["tool_retrieval_by_task_returns_relevant_tool_cell"],
+        )
+    )
+    checks.extend(
+        require_text(
+            ROOT / "crates" / "cortex-engine" / "tests" / "tool_registry_index_tests.rs",
+            [
+                "tool_recommendation_term_index_tracks_patch_and_tombstone",
+                "lazy_tool_catalog_rebuilds_index_on_open",
+            ],
         )
     )
 
@@ -98,7 +132,9 @@ def main() -> int:
             "docs/TOOL_REGISTRY.md",
             "docs/archive/PRODUCTION_EPIC_EXECUTION_PLAN.md",
             "crates/cortex-engine/src/tool_registry.rs",
+            "crates/cortex-engine/src/tool_registry/index.rs",
             "crates/cortex-engine/tests/tool_registry_tests.rs",
+            "crates/cortex-engine/tests/tool_registry_index_tests.rs",
         ],
         "tool_registry_docs_ok": not checks,
         "test_result": test_result,
