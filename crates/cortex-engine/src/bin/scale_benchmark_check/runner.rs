@@ -27,6 +27,8 @@ pub(crate) fn run() -> Result<(), String> {
     let view = scale_view();
     let options = DatabaseOptions {
         payload_residency: args.payload_residency,
+        rebuild_lazy_payload_indexes_on_open: args.payload_residency
+            != cortex_engine::PayloadResidency::Lazy,
         ..DatabaseOptions::default()
     };
 
@@ -59,12 +61,16 @@ pub(crate) fn run() -> Result<(), String> {
     phases.push(phase);
     if args.direct_checkpoint || args.reopen_only {
         eprintln!("[scale-bench] memory after_open_prepared");
-        phases.push(memory_phase("after_open_prepared", &db)?);
+        phases.push(memory_phase(
+            "after_open_prepared",
+            &db,
+            args.skip_storage_estimates,
+        )?);
     } else {
         eprintln!("[scale-bench] put_batches cells={}", args.cells);
         phases.push(ingest_batches(&mut db, &args)?);
         eprintln!("[scale-bench] memory after_put");
-        phases.push(memory_phase("after_put", &db)?);
+        phases.push(memory_phase("after_put", &db, args.skip_storage_estimates)?);
         eprintln!("[scale-bench] checkpoint");
         phases.push(
             measure_once("checkpoint", args.cells, || {
@@ -75,7 +81,11 @@ pub(crate) fn run() -> Result<(), String> {
             .1,
         );
         eprintln!("[scale-bench] memory after_checkpoint");
-        phases.push(memory_phase("after_checkpoint", &db)?);
+        phases.push(memory_phase(
+            "after_checkpoint",
+            &db,
+            args.skip_storage_estimates,
+        )?);
     }
 
     if args.samples > 0 {
@@ -149,7 +159,11 @@ pub(crate) fn run() -> Result<(), String> {
         )?);
     }
 
-    let validation = db.validate_storage_report();
+    let validation = if args.skip_validation {
+        cortex_engine::validation::StorageValidationReport::default()
+    } else {
+        db.validate_storage_report()
+    };
     let mut errors = validation.errors.clone();
     eprintln!("[scale-bench] close");
     phases.push(measure_once("close", 1, || db.close())?.1);
@@ -158,13 +172,15 @@ pub(crate) fn run() -> Result<(), String> {
         Database::open_with_options(&db_path, options)
     })?;
     phases.push(phase);
-    let restart_validation = reopened.validate_storage_report();
-    errors.extend(
-        restart_validation
-            .errors
-            .iter()
-            .map(|error| format!("restart: {error}")),
-    );
+    if !args.skip_validation {
+        let restart_validation = reopened.validate_storage_report();
+        errors.extend(
+            restart_validation
+                .errors
+                .iter()
+                .map(|error| format!("restart: {error}")),
+        );
+    }
     reopened
         .close()
         .map_err(|error| format!("restart close failed: {error}"))?;

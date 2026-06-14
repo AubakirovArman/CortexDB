@@ -13,62 +13,30 @@ work by accident.
 - A `partial` epic can be revisited only for its listed remaining exit steps.
 - Do not redo accepted work unless a new failing test or explicit user request
   changes the scope.
-- Use small/medium gates inside implementation epics. Large 1M/10M runs are
-  accumulated in A19/C17 benchmark packets unless the current epic explicitly
-  needs them for safety.
+- Use small/medium gates inside implementation epics. Large 1M/10M runs now
+  belong to C17 regression packets unless the current epic explicitly needs
+  them for safety.
 - Update this file whenever an epic moves between `current`, `done`,
   `partial`, or `next`.
 
 ## Current Pointer
 
-`EPIC-B14` — Explainability contract: explain for each result.
+`EPIC-C17` — Performance regressions in CI.
 
-B14 exit steps:
+C17 exit steps:
 
-1. Define stable explain fields for selected and excluded results.
-2. Thread explain through retrieve/search/context/verify result paths.
-3. Add snapshot/golden tests for stable explain output.
-4. Mark done when each result can say why it was selected or excluded; then
-   move to B15.
+1. Keep the local continuous benchmark gate green.
+2. Wire the scheduled/nightly hosted CI path.
+3. Publish the regression reports as CI artifacts.
+4. Mark done when the local and hosted gates are both reproducible.
 
-B14 current state:
+C17 current state:
 
-- next; start by inventorying current `score_components`, `why_selected`,
-  anomalies, EXPLAIN output, and result structs before changing public shape.
-- Do not reopen B13 unless a feedback regression proves indexed ranking or
-  permissions are wrong.
+- partial/local-ready; start by checking the existing
+  `make continuous-benchmark-gate` path and the missing hosted Actions wiring.
+- Do not reopen A19 unless a new benchmark report/schema regression appears.
 
 ## Active Partial Tail
-
-`EPIC-A19` — scale benchmarks and RAM/latency curves.
-
-A19 split state:
-
-1. Keep reproducible commands for 100K/1M/10M scale targets.
-2. Record RAM, open time, put/get/retrieve/verify/checkpoint latency.
-3. Store reports in stable target/docs paths.
-4. Compare each storage/indexing change against the baseline.
-5. Keep 10M lazy evidence and historical optimization labels as the final
-   long-running benchmark packet.
-
-A19 progress:
-
-- 100K/1M core lifecycle baselines exist and are documented;
-- `scripts/scale_benchmark_inventory.py` writes
-  `target/scale-bench/inventory.json` and currently reports 17 scale reports
-  with `status=partial`;
-- ContextPack p50/p95 exists for 100K and 1M;
-- keyword_search and verify_fact p50/p95 now exist for 100K through
-  `target/scale-bench/a19-search-verify-100k/report.json`;
-- keyword_search and verify_fact p50/p95 now exist for 1M through
-  `target/scale-bench/a19-search-verify-1m/report.json`;
-- `make scale-bench-trends` writes `target/scale-bench/trends.json` and
-  `target/scale-bench/trends.md`; current status is `partial` with 17
-  multi-point current scale curves;
-- 10M post-lazy RSS/latency, lazy cold outlier analysis, and historical
-  before/after A05/A06/A08/A09 optimization curve labels remain;
-- use small/medium gates while implementing; do not run 1M/10M unless this
-  epic explicitly needs the evidence.
 
 `EPIC-C17` — perf-regressions in CI and continuous benchmarking.
 
@@ -81,6 +49,17 @@ C17 split state:
   is out of focus.
 
 ## Recently Closed
+
+### EPIC-A19 — Scale benchmarks 100K/1M/10M and curves
+
+Status: `done`
+
+What closed it:
+
+- `make scale-bench-10m-lazy` now captures the controlled 10M lazy RSS/read/restart packet.
+- `target/scale-bench/inventory.json` is `complete` with 19 reports and no missing acceptance items.
+- `target/scale-bench/trends.json` is `complete` with 38 curves and A05/A06/A08/A09 optimization labels.
+- `docs/SCALE_BENCHMARKS.md` publishes the 10M lazy packet and clearly scopes skipped storage estimates/validation.
 
 ### EPIC-B13 — Feedback as an indexed ranking signal
 

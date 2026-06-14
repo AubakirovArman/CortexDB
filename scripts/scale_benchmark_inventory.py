@@ -13,6 +13,8 @@ CORE_PHASES = ("put_batches", "checkpoint", "get_latest", "restart_open")
 DIRECT_CORE_PHASES = ("direct_checkpoint", "open_prepared", "restart_open")
 HEAVY_PHASES = ("keyword_search", "context_pack", "verify_fact")
 PERCENTILES = ("p50_ms", "p95_ms")
+OPTIMIZATION_HISTORY_EPICS = ("A05", "A06", "A08", "A09")
+DEFAULT_OPTIMIZATION_HISTORY = Path("fixtures/scale_bench/optimization_history.json")
 
 
 def read_report(path: Path) -> dict[str, Any]:
@@ -80,21 +82,55 @@ def coverage_by_size(reports: list[dict[str, Any]]) -> dict[str, Any]:
     return coverage
 
 
-def trend_missing_item(root: Path) -> str:
+def read_optional_optimization_history(path: Path) -> tuple[dict[str, Any] | None, list[str]]:
+    if not path.exists():
+        return None, []
+    try:
+        history = read_report(path)
+    except Exception as error:  # noqa: BLE001 - inventory should surface unreadable labels.
+        return None, [f"{path}: {error}"]
+    return history, []
+
+
+def optimization_history_missing_item(history: dict[str, Any] | None) -> str | None:
+    if not isinstance(history, dict):
+        return "optimization history: missing before/after A05/A06/A08/A09 curve labels"
+    entries = history.get("entries")
+    if not isinstance(entries, list):
+        return "optimization history: missing before/after A05/A06/A08/A09 curve labels"
+    by_epic = {
+        entry.get("epic"): entry
+        for entry in entries
+        if isinstance(entry, dict) and isinstance(entry.get("epic"), str)
+    }
+    for epic in OPTIMIZATION_HISTORY_EPICS:
+        entry = by_epic.get(epic)
+        if not isinstance(entry, dict):
+            return "optimization history: missing before/after A05/A06/A08/A09 curve labels"
+        before = entry.get("before")
+        after = entry.get("after")
+        if not isinstance(before, dict) or not isinstance(after, dict):
+            return "optimization history: missing before/after A05/A06/A08/A09 curve labels"
+        if not before.get("label") or not after.get("label"):
+            return "optimization history: missing before/after A05/A06/A08/A09 curve labels"
+    return None
+
+
+def trend_missing_items(root: Path) -> list[str]:
     trend_path = root / "trends.json"
     if not trend_path.exists():
-        return "trend curves: missing multi-point scale trend report"
+        return ["trend curves: missing multi-point scale trend report"]
     try:
         trend = read_report(trend_path)
     except Exception as error:  # noqa: BLE001 - inventory should surface unreadable reports.
-        return f"trend curves: unreadable trend report: {error}"
+        return [f"trend curves: unreadable trend report: {error}"]
     curve_count = trend.get("curve_count")
     if isinstance(curve_count, int) and curve_count > 0:
-        return "optimization history: missing before/after A05/A06/A08/A09 curve labels"
-    return "trend curves: trend report has no multi-point curves"
+        return []
+    return ["trend curves: trend report has no multi-point curves"]
 
 
-def missing_items(root: Path, coverage: dict[str, Any]) -> list[str]:
+def missing_items(root: Path, coverage: dict[str, Any], optimization_history: dict[str, Any] | None) -> list[str]:
     missing: list[str] = []
     for cells in ("100000", "1000000"):
         entry = coverage.get(cells)
@@ -109,7 +145,10 @@ def missing_items(root: Path, coverage: dict[str, Any]) -> list[str]:
                 missing.append(f"{cells}: missing {phase} p50/p95")
     if "10000000" not in coverage:
         missing.append("10000000: missing post-lazy RSS/latency report")
-    missing.append(trend_missing_item(root))
+    missing.extend(trend_missing_items(root))
+    history_missing = optimization_history_missing_item(optimization_history)
+    if history_missing:
+        missing.append(history_missing)
     return missing
 
 
@@ -117,6 +156,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default="target/scale-bench")
     parser.add_argument("--report", default="target/scale-bench/inventory.json")
+    parser.add_argument("--optimization-history", default=str(DEFAULT_OPTIMIZATION_HISTORY))
     args = parser.parse_args()
 
     root = Path(args.root)
@@ -128,8 +168,10 @@ def main() -> int:
         except Exception as error:  # noqa: BLE001 - inventory should report all unreadable files.
             errors.append(f"{path}: {error}")
 
+    optimization_history, history_errors = read_optional_optimization_history(Path(args.optimization_history))
+    errors.extend(history_errors)
     coverage = coverage_by_size(summaries)
-    missing = missing_items(root, coverage)
+    missing = missing_items(root, coverage, optimization_history)
     status = "blocked" if errors else ("complete" if not missing else "partial")
     output = {
         "schema_version": "cortexdb.scale_benchmark_inventory.v1",
@@ -137,6 +179,7 @@ def main() -> int:
         "reports_found": len(summaries),
         "reports": summaries,
         "coverage_by_cells": coverage,
+        "optimization_history": optimization_history,
         "missing_acceptance_items": missing,
         "errors": errors,
     }

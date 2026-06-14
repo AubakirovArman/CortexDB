@@ -13,6 +13,8 @@ pub(crate) struct Args {
     pub(crate) direct_checkpoint: bool,
     pub(crate) reopen_only: bool,
     pub(crate) payload_residency: cortex_engine::PayloadResidency,
+    pub(crate) skip_storage_estimates: bool,
+    pub(crate) skip_validation: bool,
 }
 
 impl Args {
@@ -30,6 +32,8 @@ impl Args {
             direct_checkpoint: false,
             reopen_only: false,
             payload_residency: cortex_engine::PayloadResidency::Memory,
+            skip_storage_estimates: false,
+            skip_validation: false,
         };
         let mut values = values.peekable();
         while let Some(arg) = values.next() {
@@ -72,6 +76,8 @@ impl Args {
                 }
                 "--direct-checkpoint" => args.direct_checkpoint = true,
                 "--reopen-only" => args.reopen_only = true,
+                "--skip-storage-estimates" => args.skip_storage_estimates = true,
+                "--skip-validation" => args.skip_validation = true,
                 "--payload-residency" => {
                     args.payload_residency =
                         residency::parse(next_value(&mut values, "--payload-residency")?)?
@@ -109,7 +115,7 @@ fn parse_usize(value: String, flag: &str) -> Result<usize, String> {
 }
 
 fn help_text() -> String {
-    "usage: scale_benchmark_check [--root PATH] [--report PATH] [--cells N] [--samples N] [--search-samples N] [--context-samples N] [--verify-samples N] [--batch-size N] [--payload-bytes N] [--direct-checkpoint] [--reopen-only] [--payload-residency memory|lazy]".to_owned()
+    "usage: scale_benchmark_check [--root PATH] [--report PATH] [--cells N] [--samples N] [--search-samples N] [--context-samples N] [--verify-samples N] [--batch-size N] [--payload-bytes N] [--direct-checkpoint] [--reopen-only] [--skip-storage-estimates] [--skip-validation] [--payload-residency memory|lazy]".to_owned()
 }
 
 #[path = "residency.rs"]

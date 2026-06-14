@@ -49,6 +49,7 @@ impl EngineConfig {
                 "CORTEXDB_PAYLOAD_CACHE_BYTES",
                 DEFAULT_PAYLOAD_CACHE_BYTES,
             )?,
+            rebuild_lazy_payload_indexes_on_open: true,
             hnsw_build_config: parse_hnsw_build_config(&vars)?,
             feature_flags,
             ingestion_backpressure: Default::default(),

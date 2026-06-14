@@ -5,16 +5,19 @@ use cortex_core::CellId;
 use cortex_engine::Database;
 use serde_json::{json, Value};
 
-pub(crate) fn memory_phase(name: &str, db: &Database) -> Result<Value, String> {
-    let stats = db.storage_stats().map_err(|error| error.to_string())?;
+pub(crate) fn memory_phase(
+    name: &str,
+    db: &Database,
+    skip_storage_estimates: bool,
+) -> Result<Value, String> {
     let (rss_bytes, peak_rss_bytes) = linux_proc_status_memory_bytes().unwrap_or((0, 0));
-    Ok(json!({
-        "name": name,
-        "resource_usage": {
-            "rss_bytes": rss_bytes,
-            "peak_rss_bytes": peak_rss_bytes,
-        },
-        "storage_estimates": {
+    let storage_estimates = if skip_storage_estimates {
+        json!({
+            "skipped": true,
+        })
+    } else {
+        let stats = db.storage_stats().map_err(|error| error.to_string())?;
+        json!({
             "memtable_payload_bytes": stats.memtable_payload_bytes,
             "estimated_memtable_bytes": stats.estimated_memtable_bytes,
             "estimated_index_bytes": stats.estimated_index_bytes,
@@ -22,7 +25,15 @@ pub(crate) fn memory_phase(name: &str, db: &Database) -> Result<Value, String> {
             "estimated_total_memory_bytes": stats.estimated_total_memory_bytes,
             "live_segment_bytes": stats.live_segment_bytes,
             "logical_payload_bytes": stats.logical_payload_bytes,
-        }
+        })
+    };
+    Ok(json!({
+        "name": name,
+        "resource_usage": {
+            "rss_bytes": rss_bytes,
+            "peak_rss_bytes": peak_rss_bytes,
+        },
+        "storage_estimates": storage_estimates,
     }))
 }
 

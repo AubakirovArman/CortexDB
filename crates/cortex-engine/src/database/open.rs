@@ -147,7 +147,9 @@ impl Database {
             _lock: lock,
             closed: false,
         };
-        database.rebuild_lazy_derived_stores_for_residency(options.payload_residency);
+        if options.rebuild_lazy_payload_indexes_on_open {
+            database.rebuild_lazy_derived_stores_for_residency(options.payload_residency);
+        }
         database.resume_interrupted_ingestion_jobs()?;
         Ok(database)
     }

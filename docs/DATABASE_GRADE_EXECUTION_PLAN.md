@@ -11,13 +11,12 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-A19` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B16`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is next per the corrected dependency-stage roadmap; `EPIC-B14` remains pending/formal-tail for the later explainability stage. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-C17` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B16`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is next per the corrected dependency-stage roadmap. `EPIC-B14` remains pending/formal-tail for the later explainability stage. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
 validation runs are accumulated and executed as benchmark packets under
-`EPIC-A19`/`EPIC-C17`, unless the active epic explicitly requires them for
-safety.
+`EPIC-C17`, unless the active epic explicitly requires them for safety.
 
 Impact measurement rule: the 50-question EnterpriseRAG impact gate is no longer
 mandatory after every change. Run `make enterprise-rag-bench-impact-gemini-50`
@@ -75,7 +74,8 @@ enough to unblock the next dependency step.
 26. `EPIC-B13` — Feedback as an indexed ranking signal: done; source-cell
     feedback is maintained in an indexed target->records map and influences
     ContextPack ranking without candidate-wide scans.
-27. `EPIC-B14` — Explainability contract: explain for each result: next.
+27. `EPIC-A19` — scale benchmarks 100K/1M/10M and curves: done.
+28. `EPIC-C17` — performance regressions in CI: next.
 
 ## Summary
 
@@ -491,25 +491,24 @@ enough to unblock the next dependency step.
 
 ### EPIC-A19 — Scale-бенчмарки 100K/1M/10M + кривые RAM/латентности
 
-- status: `partial`
+- status: `done`
 - meta: Категория: benchmarks · Приоритет: P0 · Горизонт: 30 days (100K/1M baseline) / 90 days (10M) · Тип: benchmark
 - goal: слово database требует чисел на масштабе, а не 10K из BENCHMARKS.md.
 - problem: Проблема: перф-матрица заканчивается на 10K; линейный рост уже виден.
 - tasks:
   - [x] 1) генератор корпуса (0.5-4KB payload, реалистичное распределение scope/термов) в cortex-bench — implemented as `scale_benchmark_check` with realistic 0.5KB-4KB payloads, mixed scopes, and operational terms.
   - [x] 2) матрица: open time, RSS, put/get/search/context/verify p50/p95, checkpoint time — на 100K/1M (10M — после A08) — 100K/1M core lifecycle matrix is reproducible; 100K/1M search/verify p50/p95 are captured through controlled direct-checkpoint runs.
-  - [ ] 3) baseline ДО оптимизаций и кривая ПОСЛЕ каждой (A05, A06, A08, A09) — first 100K/1M core baselines and current multi-point scale curves are captured; historical before/after optimization curve labels remain open.
+  - [x] 3) baseline ДО оптимизаций и кривая ПОСЛЕ каждой (A05, A06, A08, A09) — before/after labels are captured in `fixtures/scale_bench/optimization_history.json` and published by `scale_benchmark_trends.py`.
   - [x] 4) публикация в BENCHMARKS.md, включая некрасивые цифры — `docs/SCALE_BENCHMARKS.md` and `docs/BENCHMARKS.md`.
 - acceptance:
   - [x] 1) `make scale-bench-{100k,1m}` воспроизводимы — both safe core targets pass locally.
-  - [ ] 2) кривые в доках с датой и коммитом — 100K/1M baselines and current scale curves are documented with date/source state; historical before/after optimization curves remain open.
-  - [ ] 3) 10M-прогон после A08 (lazy) с RSS-сравнением.
+  - [x] 2) кривые в доках с датой и коммитом — `docs/SCALE_BENCHMARKS.md`, `target/scale-bench/trends.json`, and `target/scale-bench/trends.md`.
+  - [x] 3) 10M-прогон после A08 (lazy) с RSS-сравнением — controlled 10M lazy RSS/read/restart packet captured.
 - files: crates/cortex-engine/src/bin/scale_benchmark_check.rs, Makefile, docs/SCALE_BENCHMARKS.md, docs/BENCHMARKS.md.
 - risks: страшные baseline-цифры — публиковать: это и есть claims-policy. Зависимости: A01, C16. Эффект: фундамент честности всего «database»-нарратива.
 - evidence: Added `scale_benchmark_check`, `make scale-bench-100k`, and `make scale-bench-1m`. Local 100K core report `target/scale-bench/100k/report.json`: `ok=true`, cells `100000`, duration `71185.262ms`, put batches `960.891ms`, checkpoint `38416.460ms`, get_latest p95 `0.003ms`, restart open `219.172ms`, after-checkpoint RSS `890494976`, peak RSS `1123278848`, estimated total memory `894553484`, no validation errors. Local 1M core report `target/scale-bench/1m/report.json`: `ok=true`, cells `1000000`, duration `704416.326ms`, put batches `10892.097ms`, checkpoint `378042.066ms`, get_latest p95 `1.165ms`, restart open `2879.535ms`, after-checkpoint RSS `8748335104`, peak RSS `11147628544`, estimated total memory `8946879838`, no validation errors.
-- latest evidence: Added `scripts/scale_benchmark_inventory.py` to inventory existing A19 reports without running a new heavy benchmark. The current inventory report `target/scale-bench/inventory.json` is `partial` with 17 reports found. It proves core lifecycle coverage for 100K and 1M, ContextPack p50/p95 coverage for 100K and 1M, and keyword/VerifyFact p50/p95 coverage for 100K and 1M. The controlled 100K direct-checkpoint run at `target/scale-bench/a19-search-verify-100k/report.json` passed with fixed 128-byte payloads, `keyword_search.p50_ms=1307.151`, `keyword_search.p95_ms=1307.151`, `verify_fact.p50_ms=4077.174`, and `verify_fact.p95_ms=4077.174`. The controlled 1M direct-checkpoint run at `target/scale-bench/a19-search-verify-1m/report.json` passed with fixed 128-byte payloads, after-open RSS `12299739136`, `keyword_search.p50_ms=133779.048`, `keyword_search.p95_ms=133779.048`, `verify_fact.p50_ms=32531.547`, and `verify_fact.p95_ms=32531.547`. Added `scripts/scale_benchmark_trends.py` and `make scale-bench-trends`; `target/scale-bench/trends.json` is `partial` with 17 multi-point current scale curves. Remaining A19 gaps: 10M post-lazy RSS/latency and historical before/after A05/A06/A08/A09 optimization curve labels.
-- split decision: A19 small/medium evidence is complete enough to unblock C16/C17. A19 is not marked done; the accepted final tail is the 10M post-lazy RSS/latency packet plus any reconstructable or rerun historical before/after optimization labels.
-- risks: Heavy broad search/context/verify at 100K are not hidden behind the default pass. An exploratory low-sample run reached those phases but did not complete in a practical window; this remains an A19/A06/A11 optimization target.
+- latest evidence: Added `fixtures/scale_bench/optimization_history.json` and taught `scripts/scale_benchmark_inventory.py` / `scripts/scale_benchmark_trends.py` to require A05/A06/A08/A09 before/after labels. Added `make scale-bench-10m-lazy`, which runs a controlled post-A08 lazy packet with direct checkpoint, fixed 128-byte payloads, 20 prepared segments, skipped storage estimates, skipped full validation, and `lazy_payload_index_rebuild=false` so the packet measures lazy-open RSS/read/restart instead of forcing a full index/stat rebuild. Local 10M report `target/scale-bench/10m-lazy/report.json`: `ok=true`, cells `10000000`, duration `372088.640ms`, direct checkpoint `317386.510ms`, open prepared `26570.692ms`, after-open RSS `24504950784`, peak RSS `24742612992`, get_latest p50/p95 `117.489/120.598ms`, close `3218.116ms`, restart open `19500.937ms`, `validation_skipped=true`, `storage_estimates_skipped=true`. `target/scale-bench/inventory.json` is `complete` with 19 reports found and no missing acceptance items. `target/scale-bench/trends.json` is `complete` with 38 curves and no missing acceptance items.
+- risks: Heavy broad search/context/verify at 10M are not claimed. The 10M packet is explicitly a lazy RSS/read/restart packet; full 10M storage estimates and validation would intentionally rebuild/read large indexes and remain unsuitable for the regular local target.
 
 ### EPIC-A20 — Property-based тесты ядра (MVCC, WAL, recovery, индексы)
 

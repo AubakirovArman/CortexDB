@@ -19,13 +19,20 @@ fn parse_rejects_zero_payload_bytes() {
 #[test]
 fn parse_direct_checkpoint_and_reopen_only() {
     let args = Args::parse(
-        ["--direct-checkpoint", "--reopen-only"]
-            .into_iter()
-            .map(str::to_owned),
+        [
+            "--direct-checkpoint",
+            "--reopen-only",
+            "--skip-storage-estimates",
+            "--skip-validation",
+        ]
+        .into_iter()
+        .map(str::to_owned),
     )
     .unwrap();
     assert!(args.direct_checkpoint);
     assert!(args.reopen_only);
+    assert!(args.skip_storage_estimates);
+    assert!(args.skip_validation);
 }
 
 #[test]

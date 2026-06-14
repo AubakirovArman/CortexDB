@@ -1,0 +1,61 @@
+{
+  "schema_version": "cortexdb.scale_benchmark_optimization_history.v1",
+  "entries": [
+    {
+      "epic": "A05",
+      "title": "Indexed VERIFY FACT",
+      "before": {
+        "label": "pre-A05 query-time full scan and payload clone candidate path"
+      },
+      "after": {
+        "label": "post-A05 indexed candidate path; 1M fixed-payload direct run verify_fact.p95_ms=32531.547"
+      },
+      "evidence": [
+        "target/scale-bench/a19-search-verify-1m/report.json",
+        "docs/DATABASE_GRADE_EXECUTION_PLAN.md#EPIC-A05"
+      ]
+    },
+    {
+      "epic": "A06",
+      "title": "Indexed-only retrieve and ContextPack",
+      "before": {
+        "label": "pre-A06 query-adjacent snapshot scans and query-time index rebuild path"
+      },
+      "after": {
+        "label": "post-A06 query-adjacent scans=0; 1M direct indexed ContextPack p95_ms=11633.309"
+      },
+      "evidence": [
+        "target/scale-bench/a06-direct-1m-context/report.json",
+        "docs/DATABASE_GRADE_EXECUTION_PLAN.md#EPIC-A06"
+      ]
+    },
+    {
+      "epic": "A08",
+      "title": "Lazy payload residency",
+      "before": {
+        "label": "pre-A08 memory residency loads payloads eagerly at open"
+      },
+      "after": {
+        "label": "post-A08 lazy residency; 100K after-open RSS 818954240 bytes and ContextPack p95_ms=1113.399"
+      },
+      "evidence": [
+        "target/scale-bench/a08-residency-100k-context/reopen-lazy.json",
+        "docs/DATABASE_GRADE_EXECUTION_PLAN.md#EPIC-A08"
+      ]
+    },
+    {
+      "epic": "A09",
+      "title": "Disk-resident persisted-index incremental merge",
+      "before": {
+        "label": "pre-A09 persisted index rebuilds merged state from all live segments"
+      },
+      "after": {
+        "label": "post-A09 cached persisted-index append delta merge with structural no-full-remerge proof"
+      },
+      "evidence": [
+        "docs/DATABASE_GRADE_EXECUTION_PLAN.md#EPIC-A09",
+        "target/scale-bench/1m/report.json"
+      ]
+    }
+  ]
+}

@@ -112,6 +112,7 @@ For larger database-scale baselines:
 ```bash
 make scale-bench-100k
 make scale-bench-1m
+make scale-bench-10m-lazy
 ```
 
 These targets create isolated test databases under `target/scale-bench/` and
@@ -121,8 +122,10 @@ The default profile measures the core single-node lifecycle with realistic
 checkpoint, sampled latest reads, close, and restart open. Expensive broad
 search, ContextPack, and VerifyFact phases are opt-in via
 `SCALE_BENCH_SEARCH_SAMPLES`, `SCALE_BENCH_CONTEXT_SAMPLES`, and
-`SCALE_BENCH_VERIFY_SAMPLES`. See `docs/SCALE_BENCHMARKS.md` for the current
-100K/1M baseline and known heavy-phase bottlenecks.
+`SCALE_BENCH_VERIFY_SAMPLES`. The 10M lazy target is a controlled post-A08
+RSS/read/restart packet that skips full validation and storage estimates to avoid
+turning the benchmark into a full index rebuild. See `docs/SCALE_BENCHMARKS.md`
+for the current 100K/1M/10M baseline and known heavy-phase bottlenecks.
 
 To compare the current reports with release history:
 

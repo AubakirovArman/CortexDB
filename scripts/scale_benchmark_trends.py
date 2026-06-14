@@ -23,6 +23,15 @@ PHASE_METRICS = {
 }
 RESOURCE_PHASES = ("after_checkpoint", "after_open_prepared", "after_put")
 RESOURCE_METRICS = ("rss_bytes", "peak_rss_bytes", "estimated_total_memory_bytes")
+LIFECYCLE_PHASES = (
+    "checkpoint",
+    "direct_checkpoint",
+    "open_empty",
+    "open_prepared",
+    "restart_open",
+)
+OPTIMIZATION_HISTORY_EPICS = ("A05", "A06", "A08", "A09")
+DEFAULT_OPTIMIZATION_HISTORY = Path("fixtures/scale_bench/optimization_history.json")
 
 
 def read_report(path: Path) -> dict[str, Any]:
@@ -61,7 +70,7 @@ def samples_signature(samples: dict[str, Any]) -> str:
     return ",".join(parts) if parts else "no-samples"
 
 
-def report_profile(report: dict[str, Any], path: Path) -> str:
+def report_profile(report: dict[str, Any], path: Path, phase: str) -> str:
     samples = report.get("samples", {})
     if not isinstance(samples, dict):
         samples = {}
@@ -69,8 +78,9 @@ def report_profile(report: dict[str, Any], path: Path) -> str:
         str(report.get("fixture_mode", "standard")),
         str(report.get("payload_profile", "unknown-payload")),
         str(report.get("payload_residency", "default-residency")),
-        samples_signature(samples),
     ]
+    if phase not in RESOURCE_PHASES and phase not in LIFECYCLE_PHASES:
+        profile_parts.append(samples_signature(samples))
     return "|".join(profile_parts)
 
 
@@ -118,11 +128,11 @@ def collect_series(root: Path) -> tuple[list[dict[str, Any]], list[str]]:
         matrix = report.get("matrix", {})
         if not isinstance(matrix, dict):
             continue
-        profile = report_profile(report, path)
         for phase, metrics in PHASE_METRICS.items():
             phase_value = matrix.get(phase)
             if not isinstance(phase_value, dict):
                 continue
+            profile = report_profile(report, path, phase)
             for metric in metrics:
                 value = phase_value.get(metric)
                 if isinstance(value, (int, float)):
@@ -131,6 +141,7 @@ def collect_series(root: Path) -> tuple[list[dict[str, Any]], list[str]]:
             phase_value = matrix.get(phase)
             if not isinstance(phase_value, dict):
                 continue
+            profile = report_profile(report, path, phase)
             for metric in RESOURCE_METRICS:
                 value = phase_value.get(metric)
                 if isinstance(value, (int, float)):
@@ -150,6 +161,40 @@ def collect_series(root: Path) -> tuple[list[dict[str, Any]], list[str]]:
     return curves, errors
 
 
+def read_optional_optimization_history(path: Path) -> tuple[dict[str, Any] | None, list[str]]:
+    if not path.exists():
+        return None, []
+    try:
+        history = read_report(path)
+    except Exception as error:  # noqa: BLE001 - trends should surface unreadable labels.
+        return None, [f"{path}: {error}"]
+    return history, []
+
+
+def optimization_history_missing_item(history: dict[str, Any] | None) -> str | None:
+    if not isinstance(history, dict):
+        return "optimization history: missing before/after A05/A06/A08/A09 curve labels"
+    entries = history.get("entries")
+    if not isinstance(entries, list):
+        return "optimization history: missing before/after A05/A06/A08/A09 curve labels"
+    by_epic = {
+        entry.get("epic"): entry
+        for entry in entries
+        if isinstance(entry, dict) and isinstance(entry.get("epic"), str)
+    }
+    for epic in OPTIMIZATION_HISTORY_EPICS:
+        entry = by_epic.get(epic)
+        if not isinstance(entry, dict):
+            return "optimization history: missing before/after A05/A06/A08/A09 curve labels"
+        before = entry.get("before")
+        after = entry.get("after")
+        if not isinstance(before, dict) or not isinstance(after, dict):
+            return "optimization history: missing before/after A05/A06/A08/A09 curve labels"
+        if not before.get("label") or not after.get("label"):
+            return "optimization history: missing before/after A05/A06/A08/A09 curve labels"
+    return None
+
+
 def write_markdown(path: Path, report: dict[str, Any]) -> None:
     lines = [
         "# Scale Benchmark Trends",
@@ -163,6 +208,24 @@ def write_markdown(path: Path, report: dict[str, Any]) -> None:
     ]
     for item in report["missing_acceptance_items"]:
         lines.append(f"- {item}")
+    history = report.get("optimization_history")
+    if isinstance(history, dict) and isinstance(history.get("entries"), list):
+        lines.extend(["", "## Optimization History Labels", ""])
+        lines.extend(["| Epic | Before | After | Evidence |", "| --- | --- | --- | --- |"])
+        for entry in history["entries"]:
+            if not isinstance(entry, dict):
+                continue
+            before = entry.get("before", {})
+            after = entry.get("after", {})
+            if not isinstance(before, dict) or not isinstance(after, dict):
+                continue
+            evidence = entry.get("evidence", [])
+            if not isinstance(evidence, list):
+                evidence = []
+            lines.append(
+                f"| {entry.get('epic', '')} | {before.get('label', '')} | "
+                f"{after.get('label', '')} | {', '.join(str(item) for item in evidence)} |"
+            )
     lines.extend(["", "## Curves", ""])
     for curve in report["curves"]:
         lines.append(
@@ -182,17 +245,22 @@ def main() -> int:
     parser.add_argument("--root", default="target/scale-bench")
     parser.add_argument("--report", default="target/scale-bench/trends.json")
     parser.add_argument("--markdown", default="target/scale-bench/trends.md")
+    parser.add_argument("--optimization-history", default=str(DEFAULT_OPTIMIZATION_HISTORY))
     args = parser.parse_args()
 
     root = Path(args.root)
     curves, errors = collect_series(root)
+    optimization_history, history_errors = read_optional_optimization_history(Path(args.optimization_history))
+    errors.extend(history_errors)
     has_10m = any(point["cells"] >= 10_000_000 for curve in curves for point in curve["points"])
     missing = []
     if not curves:
         missing.append("no multi-point scale curves found")
     if not has_10m:
         missing.append("10000000: missing post-lazy RSS/latency curve point")
-    missing.append("optimization history: missing before/after A05/A06/A08/A09 curve labels")
+    history_missing = optimization_history_missing_item(optimization_history)
+    if history_missing:
+        missing.append(history_missing)
     status = "blocked" if errors else ("partial" if missing else "complete")
     report = {
         "schema_version": "cortexdb.scale_benchmark_trends.v1",
@@ -200,6 +268,7 @@ def main() -> int:
         "git_revision": git_revision(),
         "curve_count": len(curves),
         "curves": curves,
+        "optimization_history": optimization_history,
         "missing_acceptance_items": missing,
         "errors": errors,
     }

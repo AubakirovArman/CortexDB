@@ -22,6 +22,9 @@ pub(crate) fn write_report(
             .unwrap_or_else(|| "realistic_0_5kb_to_4kb".to_owned()),
         "fixture_mode": fixture_mode(args),
         "payload_residency": payload_residency_name(args.payload_residency),
+        "lazy_payload_index_rebuild": args.payload_residency != cortex_engine::PayloadResidency::Lazy,
+        "storage_estimates_skipped": args.skip_storage_estimates,
+        "validation_skipped": args.skip_validation,
         "samples": {
             "read": args.samples,
             "search": args.search_samples,
