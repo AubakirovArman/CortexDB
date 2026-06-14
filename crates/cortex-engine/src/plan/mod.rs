@@ -5,7 +5,8 @@ use cortex_aql::{BoundPlan, BrainId, RetrievalMode, RetrievalWeights};
 
 pub use cost::{
     choose_retrieve_path, estimate_bitmap_program_rows, CostModelDecision, CostModelEstimate,
-    CostModelOptions, ExecutionPath, TermDfEstimate,
+    CostModelOptions, ExecutionPath, TermDfEstimate, VectorSearchDecision, VectorSearchExecution,
+    ANN_VECTOR_MIN_LIVE_ROWS,
 };
 pub use policy::{PolicyRewrite, ReadSurface, READ_SURFACES};
 

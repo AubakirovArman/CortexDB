@@ -1,6 +1,9 @@
 mod model;
 
-pub use model::{choose_retrieve_path, estimate_bitmap_program_rows};
+pub use model::{
+    choose_retrieve_path, choose_vector_search_execution, estimate_bitmap_program_rows,
+    ANN_VECTOR_MIN_LIVE_ROWS,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ExecutionPath {
@@ -50,6 +53,30 @@ pub struct TermDfEstimate {
 pub struct CostModelEstimate {
     pub path: ExecutionPath,
     pub cost_units: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VectorSearchExecution {
+    Exact,
+    AnnWithExactFallback,
+}
+
+impl VectorSearchExecution {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Exact => "exact",
+            Self::AnnWithExactFallback => "ann-with-exact-fallback",
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VectorSearchDecision {
+    pub execution: VectorSearchExecution,
+    pub reason: String,
+    pub estimated_live_rows: u64,
+    pub estimated_candidate_rows: u64,
+    pub hnsw_enabled: bool,
 }
 
 #[cfg(test)]

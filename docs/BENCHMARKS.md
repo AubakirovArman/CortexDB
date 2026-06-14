@@ -221,16 +221,16 @@ The gate enforces:
 - `production_safe=true`.
 
 `make ann-fixture-report` runs the same gate and writes the JSON report to
-`target/ann/ann_fixture_report.json`. The Rust CI workflow uploads that file as
-the `ann-fixture-report` artifact on the stable toolchain so recall/latency drift
-can be compared between commits.
+`target/ann/ann_fixture_report.json`. The nightly ANN Regression workflow
+uploads the checked-in ANN report bundle as `ann-nightly-reports` so
+recall/latency drift can be compared without slowing PR CI.
 
 `make ann-drift-check` compares the current synthetic report against
 `crates/cortex-engine/fixtures/ann_drift_baseline_v1.json`. This is stricter
 than the fixture gate: recall must not drop, multi-layer graph shape must not
 lose edges, and release-mode latency must stay within the configured regression
-budget. `make ann-drift-report` writes `target/ann/ann_drift_report.json`; CI
-uploads it together with the fixture report as `ann-regression-reports`.
+budget. `make ann-drift-report` writes `target/ann/ann_drift_report.json`; the
+nightly ANN Regression workflow uploads it together with the fixture report.
 
 `make ann-external-check` evaluates a checked-in JSONL corpus at
 `crates/cortex-engine/fixtures/ann_external_fixture_v1.jsonl`. This is the first
@@ -238,14 +238,15 @@ non-generated ANN fixture gate: it builds the multi-layer graph from explicit
 vectors, evaluates named queries against exact top-k, and enforces recall,
 graph-shape, and latency thresholds from `ann_external_baseline_v1.json`.
 `make ann-external-report` writes `target/ann/ann_external_fixture_report.json`,
-which CI includes in `ann-regression-reports`.
+which the nightly ANN Regression workflow includes in `ann-nightly-reports`.
 
 `make ann-metric-matrix-check` reuses the checked-in JSONL fixture and evaluates
 `dot_product`, `cosine`, and `l2` independently. Each row builds a graph with
 that metric, compares ANN results against exact top-k for the same metric, and
 enforces per-metric recall, graph-shape, and latency thresholds from
 `ann_metric_matrix_baseline_v1.json`. `make ann-metric-matrix-report` writes
-`target/ann/ann_metric_matrix_report.json`, also uploaded by CI.
+`target/ann/ann_metric_matrix_report.json`, also uploaded by the nightly
+workflow.
 
 `ann_corpus_check` is the external-corpus harness for larger datasets that
 should not be checked into this repository. It accepts separate JSONL files for
@@ -1027,6 +1028,19 @@ p95_latency_nanos: 5,271,976
 max_latency_nanos: 5,476,919
 production_safe: true
 ```
+
+For the EnterpriseRAG BGE-M3 cache, the nightly workflow runs a real-embedding
+recall gate when the local cache files are present:
+
+```bash
+make ann-bge-m3-cache-recall-report
+```
+
+The target samples `target/enterprise-rag-bench/embeddings/corpus_bge_m3.jsonl`
+plus `target/enterprise-rag-bench/retrieval/embedding_cache.jsonl`, generates
+exact ground truth, and writes reports under `target/ann/bge-m3-cache/`. If the
+cache is absent in hosted CI, the workflow uploads a real-embedding readiness
+report instead of blocking PRs.
 
 The local repeated-run history is checked with:
 

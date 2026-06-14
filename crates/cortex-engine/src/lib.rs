@@ -150,7 +150,8 @@ pub use options::{
 };
 pub use plan::{
     CostModelDecision, CostModelEstimate, CostModelOptions, ExecutionPath, LogicalPlan,
-    LogicalPlanNode, LogicalPlanReport, PolicyRewrite, ReadSurface, TermDfEstimate, READ_SURFACES,
+    LogicalPlanNode, LogicalPlanReport, PolicyRewrite, ReadSurface, TermDfEstimate,
+    VectorSearchDecision, VectorSearchExecution, ANN_VECTOR_MIN_LIVE_ROWS, READ_SURFACES,
 };
 pub use query::{
     scope_id, AqlCandidateCounts, AqlExecutionTraceReport, AqlExplainFilter, AqlExplainReport,

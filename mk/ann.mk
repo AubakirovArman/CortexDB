@@ -183,10 +183,17 @@ ann-real-embedding-release-check: ann-real-embedding-benchmark
 	$(MAKE) ann-real-embedding-package-baseline
 	$(MAKE) ann-real-embedding-validate-baseline-package
 
+ann-bge-m3-cache-corpus-build:
+	python3 scripts/ann/build_bge_m3_cached_corpus.py --corpus-vectors $(ANN_BGE_M3_CORPUS_VECTORS) --query-cache $(ANN_BGE_M3_QUERY_CACHE) --output-dir $(ANN_BGE_M3_OUTPUT_DIR) --model $(ANN_BGE_M3_MODEL) --max-documents $(ANN_BGE_M3_MAX_DOCUMENTS) --max-queries $(ANN_BGE_M3_MAX_QUERIES) --limit $(ANN_BGE_M3_LIMIT) --scale $(ANN_BGE_M3_SCALE) --normalization $(ANN_BGE_M3_NORMALIZATION)
+
+ann-bge-m3-cache-recall-report: ann-bge-m3-cache-corpus-build
+	scripts/ann/run_external_corpus.sh --vectors $(ANN_BGE_M3_OUTPUT_DIR)/vectors.jsonl --queries $(ANN_BGE_M3_OUTPUT_DIR)/queries.jsonl --metric $(ANN_BGE_M3_METRIC) --output-root $(ANN_BGE_M3_RUN_ROOT) --run-id $(ANN_BGE_M3_RUN_ID) --min-recall-q16 65535 --min-mean-recall-q16 65535 --max-neighbors $(ANN_DEMO_DOMAIN_MAX_NEIGHBORS) --ef-search $(ANN_DEMO_DOMAIN_EF_SEARCH) --ef-construction $(ANN_DEMO_DOMAIN_EF_CONSTRUCTION) --layer-count $(ANN_DEMO_DOMAIN_LAYER_COUNT)
+
 ann-slo-profile:
 	python3 scripts/ann/slo_profile.py --profile $(ANN_REAL_EMBEDDING_SLO_PROFILE) --format json
 
 ann-scripts-check:
+	python3 scripts/ann/build_bge_m3_cached_corpus.py --self-test
 	python3 scripts/ann/build_demo_domain_corpus.py --self-test
 	python3 scripts/ann/build_embedded_domain_corpus.py --self-test
 	python3 scripts/ann/embedding_provider_selftest.py
@@ -269,6 +276,22 @@ ann-validate-baseline-package:
 ann-compare-baseline-bundle:
 	python3 scripts/ann/compare_reports.py --baseline $(ANN_BASELINE_BUNDLE_REPORT) --candidate $(ANN_HISTORY_ROOT)/$(ANN_CANDIDATE_RUN_ID)/report.json --output $(ANN_BASELINE_BUNDLE_COMPARISON) --max-p95-regression-nanos $(ANN_MAX_P95_REGRESSION_NANOS) --max-p99-regression-nanos $(ANN_MAX_P99_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_MAX_MAX_REGRESSION_NANOS)
 
+ann-nightly-regression-report:
+	$(MAKE) ann-fixture-report
+	$(MAKE) ann-drift-report
+	$(MAKE) ann-external-report
+	$(MAKE) ann-metric-matrix-report
+	$(MAKE) ann-corpus-smoke-report
+	$(MAKE) ann-domain-corpus-report
+	$(MAKE) ann-corpus-run-smoke
+	$(MAKE) ann-demo-domain-corpus-run
+	$(MAKE) ann-demo-domain-package-baseline
+	$(MAKE) ann-demo-domain-validate-baseline-package
+	$(MAKE) ann-publish-baseline
+	$(MAKE) ann-package-baseline
+	$(MAKE) ann-validate-baseline-package
+	$(MAKE) ann-compare-baseline-bundle
+
 ann-release-evidence-check:
 	rm -rf $(ANN_RELEASE_EVIDENCE_ROOT)
 	$(MAKE) ann-corpus-run-smoke ANN_CORPUS_RUN_ROOT=$(ANN_RELEASE_EVIDENCE_RUN_ROOT) ANN_CORPUS_RUN_ID=$(ANN_RELEASE_EVIDENCE_RUN_ID)
@@ -279,4 +302,3 @@ ann-release-evidence-check:
 	$(MAKE) ann-demo-domain-package-baseline
 	$(MAKE) ann-demo-domain-validate-baseline-package
 	@echo "=== ANN release evidence check passed ==="
-

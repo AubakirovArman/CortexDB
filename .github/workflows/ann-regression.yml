@@ -1,0 +1,55 @@
+name: ANN Regression
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  nightly:
+    name: Nightly ANN recall gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - name: Generate checked-in ANN regression reports
+        run: make ann-nightly-regression-report
+
+      - name: Run BGE-M3 cached recall gate when cache is available
+        run: |
+          set -euo pipefail
+          corpus_vectors="${ANN_BGE_M3_CORPUS_VECTORS:-target/enterprise-rag-bench/embeddings/corpus_bge_m3.jsonl}"
+          query_cache="${ANN_BGE_M3_QUERY_CACHE:-target/enterprise-rag-bench/retrieval/embedding_cache.jsonl}"
+          if [ -f "$corpus_vectors" ] && [ -f "$query_cache" ]; then
+            make ann-bge-m3-cache-recall-report
+          else
+            echo "::warning::BGE-M3 cache not present; writing readiness report instead"
+            make ann-real-embedding-readiness \
+              ANN_REAL_EMBEDDING_PROVIDER=file \
+              ANN_REAL_EMBEDDING_SOURCE_ROOT=examples/real_domains/investment_projects/corpus \
+              ANN_REAL_EMBEDDING_QUERIES=examples/real_domains/investment_projects/queries/queries.jsonl \
+              ANN_REAL_EMBEDDING_FILE="$corpus_vectors" \
+              ANN_REAL_EMBEDDING_MODEL=BAAI/bge-m3
+          fi
+
+      - name: Upload nightly ANN reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ann-nightly-reports
+          if-no-files-found: error
+          path: |
+            target/ann/**/*.json
+            target/ann/**/*.jsonl
+            target/ann/**/*.tar.gz

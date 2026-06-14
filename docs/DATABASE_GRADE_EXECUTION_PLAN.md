@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C06` (`EPIC-C05` is now done along with the previously
+Current pointer: `EPIC-C07` (`EPIC-C06` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -19,7 +19,9 @@ with canonical fixed-point BM25, field weights, and scoring docs. `EPIC-C04` is
 closed with configured Unicode analyzer/tokenizer, optional stemming, manifest
 profile protection, and RU quality fixtures. `EPIC-C05` is closed with `ACV1`
 contiguous fixed-dimension vector rows, disk-resident exact scan, stable chunked
-dot-product scoring, and `ACV0` read-only compatibility. `EPIC-C06` is next.
+dot-product scoring, and `ACV0` read-only compatibility. `EPIC-C06` moved broad
+ANN report gates to nightly, added a BGE-M3 cache recall gate, and covered the
+large-corpus ANN planner rule with exact fallback. `EPIC-C07` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -99,7 +101,8 @@ enough to unblock the next dependency step.
 39. `EPIC-C03` — Real BM25 with field weights: done.
 40. `EPIC-C04` — Unicode tokenizer + optional stemming: done.
 41. `EPIC-C05` — Disk-resident vector storage + SIMD exact scan: done.
-42. `EPIC-C06` — HNSW guarded productization: next.
+42. `EPIC-C06` — HNSW guarded productization: done.
+43. `EPIC-C07` — Hybrid retrieval in engine: next.
 
 ## Summary
 
@@ -1213,24 +1216,26 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - files: cortex-storage/vectors.rs, cortex-engine/search/vector.
 - evidence: `.acv` current marker is now `ACV1`: header + candidate table + contiguous fixed-dimension i16 vector block + CRC. `ACV0` remains read-only compatible. `VectorIndexReader` opens `ACV1` without materializing `Vec<Vec<i16>>`, scans disk rows through bounded top-k, and keeps legacy `ACV0` readable through the compatibility path. Persisted `Vector`, `VectorExact`, and hybrid vector legs use the disk-resident reader when HNSW is disabled or exact mode is requested; stale older segment rows are hidden by newest-to-oldest candidate visibility. Dot-product scoring uses a stable chunk-8 deterministic loop instead of nightly `std::simd`.
 - gates: `cargo test -p cortex-storage --test segment_index_tests acv -- --nocapture`; `cargo test -p cortex-storage --test vector_index_tests -- --nocapture`; `cargo test -p cortex-engine --test database_search database_vector_exact_reads_latest_disk_resident_acv_row --all-features`; `cargo test -p cortex-engine search::persisted::tests --all-features`; full workspace fmt/test/clippy and storage/migration gates at close.
-- risks: no new dependency was approved, so the implementation uses stable-Rust disk row reads rather than OS mmap. HNSW graph search still materializes the vector map for graph validation/search because the current HNSW APIs are RAM-oriented; C06 owns that productization/guardrail follow-up. Зависимости: A07. Эффект: дефолтный семантический путь масштабируется.
+- risks: no new dependency was approved, so the implementation uses stable-Rust disk row reads rather than OS mmap. HNSW graph search still materializes the vector map for graph validation/search because the current HNSW APIs are RAM-oriented; no-fallback and larger cache-backed promotion remain future benchmark work. Зависимости: A07. Эффект: дефолтный семантический путь масштабируется.
 
 ### EPIC-C06 — HNSW: guarded productization через nightly recall-гейты
 
-- status: `pending`
+- status: `done`
 - meta: Категория: indexing · P2 · 6 months · improve
 - goal: ANN нужен после 1M+; текущая guarded-позиция правильная — нужно сузить стоимость поддержки.
 - problem: Проблема: 5 ann-make-гейтов в широких прогонах тормозят разработку.
 - tasks:
-  - [ ] 1) ann-гейты → nightly
-  - [ ] 2) один real-embedding recall-gate (bge-m3 кэш из бенчей)
-  - [ ] 3) интеграция в cost-планировщик A13: ANN выбирается при больших корпусах, exact — fallback (существующая логика сохраняется).
+  - [x] 1) ann-гейты → nightly
+  - [x] 2) один real-embedding recall-gate (bge-m3 кэш из бенчей)
+  - [x] 3) интеграция в cost-планировщик A13: ANN выбирается при больших корпусах, exact — fallback (существующая логика сохраняется).
 - acceptance:
-  - [ ] 1) PR CI без ANN-матрицы
-  - [ ] 2) nightly recall-отчёт артефактом
-  - [ ] 3) planner-правило покрыто тестом.
-- files: search/ann*, Makefile, CI.
-- risks: нет. Зависимости: A13. Эффект: ANN остаётся честным и дешёвым в поддержке.
+  - [x] 1) PR CI без ANN-матрицы
+  - [x] 2) nightly recall-отчёт артефактом
+  - [x] 3) planner-правило покрыто тестом.
+- files: `crates/cortex-engine/src/plan/cost*`, `scripts/ann/build_bge_m3_cached_corpus.py`, `mk/ann.mk`, `mk/vars-core.mk`, `mk/phony.mk`, `.github/workflows/rust.yml`, `.github/workflows/ann-regression.yml`.
+- evidence: Rust PR workflow no longer runs the ANN report bundle. `.github/workflows/ann-regression.yml` runs nightly/manual `make ann-nightly-regression-report`, uploads `ann-nightly-reports`, and runs `make ann-bge-m3-cache-recall-report` when the BGE-M3 cache exists. `choose_vector_search_execution` selects `ann-with-exact-fallback` only for HNSW-enabled broad corpora at 1M+ rows and keeps exact for disabled HNSW or selective candidates.
+- gates: `cargo test -p cortex-engine plan::cost::tests --all-features`; full workspace fmt/test/clippy and `make check` at close.
+- risks: hosted CI cannot manufacture the external 11GB BGE-M3 cache; when absent, the nightly workflow uploads readiness instead of blocking PRs. Зависимости: A13. Эффект: ANN остаётся честным и дешёвым в поддержке.
 
 ### EPIC-C07 — Гибридный retrieval (lexical+dense RRF) в движке
 

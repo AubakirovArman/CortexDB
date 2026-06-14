@@ -20,18 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C06` — HNSW guarded productization.
+`EPIC-C07` — Hybrid retrieval in engine.
 
-C06 exit steps:
+C07 exit steps:
 
-1. Define recall/latency gates and fallback policy.
-2. Move broad ANN gates to nightly/manual benchmark paths.
-3. Add planner coverage for ANN vs exact fallback.
-4. Mark done when HNSW promotion is evidence-gated.
+1. Wire `RetrievalMode::Hybrid` through engine scan streams.
+2. Implement generic lexical+dense RRF without benchmark-specific heuristics.
+3. Add a quality fixture proving hybrid is at least lexical.
+4. Expose both paths and fusion in explain output.
 
-C06 current state:
+C07 current state:
 
 - next.
+- C06 is closed with nightly/manual ANN reports, optional BGE-M3 cache recall
+  gate, and planner coverage for large-corpus ANN with exact fallback.
 - C05 is closed with `ACV1` contiguous disk vector rows, disk-resident exact
   scan, stable chunked dot-product scoring, and `ACV0` read-only compatibility.
 - C04 is closed with configured Unicode analyzer/tokenizer, optional stemming,
@@ -56,6 +58,27 @@ D05 split state:
 
 ## Recently Closed
 
+### EPIC-C06 — HNSW guarded productization
+
+Status: `done`
+
+What closed it:
+
+- Moved the broad ANN report bundle out of Rust PR CI into the nightly/manual
+  ANN Regression workflow.
+- Added `ann-nightly-regression-report` and `ann-nightly-reports` artifact
+  upload.
+- Added `ann-bge-m3-cache-recall-report` for the EnterpriseRAG BGE-M3 cache,
+  with hosted-CI readiness fallback when the external cache is absent.
+- Added cost-planner coverage for 1M+ broad corpora selecting ANN guarded by
+  exact fallback while preserving exact for disabled HNSW and selective
+  candidate sets.
+
+Important follow-up:
+
+- Hosted CI needs an external cache/artifact to execute the BGE-M3 recall gate;
+  otherwise it publishes readiness only.
+
 ### EPIC-C05 — Disk-resident vector storage + SIMD exact scan
 
 Status: `done`
@@ -74,8 +97,8 @@ What closed it:
 Important follow-up:
 
 - Full 1M×768d p95 remains a C17 benchmark-packet run under the scale-gate rule.
-- HNSW graph search still uses RAM-oriented vector maps; C06 owns that
-  productization follow-up.
+- HNSW graph search still uses RAM-oriented vector maps; no-fallback and larger
+  cache-backed promotion remain future benchmark work.
 
 ### EPIC-C04 — Unicode tokenizer + optional stemming
 
@@ -881,9 +904,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on C06 only:
+Work on C07 only:
 
-1. inventory existing ANN/HNSW make gates and CI cost;
-2. move broad recall gates to nightly/manual paths;
-3. add planner/fallback coverage against exact scan;
-4. move to the next ordered epic after C06 acceptance is closed.
+1. inspect current hybrid search and AQL retrieval mode boundaries;
+2. wire lexical+dense streams through a generic RRF operator;
+3. add a quality fixture proving hybrid is at least lexical;
+4. move to the next ordered epic after C07 acceptance is closed.

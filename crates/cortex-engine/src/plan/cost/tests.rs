@@ -103,6 +103,59 @@ fn cost_model_prefers_vector_first_for_wide_semantic_query_vector() {
 }
 
 #[test]
+fn vector_search_planner_chooses_ann_with_exact_fallback_for_large_corpus() {
+    let manifest = manifest_with_stats(vec![segment_stats(
+        1,
+        ANN_VECTOR_MIN_LIVE_ROWS,
+        &[("project:a", ANN_VECTOR_MIN_LIVE_ROWS)],
+        &[("shared", ANN_VECTOR_MIN_LIVE_ROWS)],
+    )]);
+    let statistics = DatabaseStatistics::new(&manifest);
+
+    let decision = choose_vector_search_execution(statistics, None, true);
+
+    assert_eq!(
+        decision.execution,
+        VectorSearchExecution::AnnWithExactFallback
+    );
+    assert_eq!(decision.estimated_live_rows, ANN_VECTOR_MIN_LIVE_ROWS);
+    assert!(decision.reason.contains("fallback"));
+}
+
+#[test]
+fn vector_search_planner_preserves_exact_when_hnsw_is_disabled() {
+    let manifest = manifest_with_stats(vec![segment_stats(
+        1,
+        ANN_VECTOR_MIN_LIVE_ROWS * 2,
+        &[("project:a", ANN_VECTOR_MIN_LIVE_ROWS * 2)],
+        &[("shared", ANN_VECTOR_MIN_LIVE_ROWS * 2)],
+    )]);
+    let statistics = DatabaseStatistics::new(&manifest);
+
+    let decision = choose_vector_search_execution(statistics, None, false);
+
+    assert_eq!(decision.execution, VectorSearchExecution::Exact);
+    assert!(decision.reason.contains("disabled"));
+}
+
+#[test]
+fn vector_search_planner_keeps_exact_for_selective_candidates() {
+    let manifest = manifest_with_stats(vec![segment_stats(
+        1,
+        ANN_VECTOR_MIN_LIVE_ROWS * 2,
+        &[("project:a", ANN_VECTOR_MIN_LIVE_ROWS * 2)],
+        &[("shared", ANN_VECTOR_MIN_LIVE_ROWS * 2)],
+    )]);
+    let statistics = DatabaseStatistics::new(&manifest);
+
+    let decision = choose_vector_search_execution(statistics, Some(10), true);
+
+    assert_eq!(decision.execution, VectorSearchExecution::Exact);
+    assert_eq!(decision.estimated_candidate_rows, 10);
+    assert!(decision.reason.contains("selective"));
+}
+
+#[test]
 fn cost_model_applies_budget_candidate_limit_heuristic() {
     let manifest = manifest_with_stats(vec![segment_stats(
         1,

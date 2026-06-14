@@ -2,9 +2,12 @@ use cortex_aql::{BitmapOp, BitmapProgram, BitmapProvider, BoundRetrievePlan, Ret
 
 use super::{
     CostModelDecision, CostModelEstimate, CostModelOptions, ExecutionPath, TermDfEstimate,
+    VectorSearchDecision, VectorSearchExecution,
 };
 use crate::query::DatabaseStatistics;
 use crate::search::analyze_search_query;
+
+pub const ANN_VECTOR_MIN_LIVE_ROWS: u64 = 1_000_000;
 
 pub fn choose_retrieve_path<P: BitmapProvider>(
     plan: &BoundRetrievePlan,
@@ -120,6 +123,49 @@ pub fn choose_retrieve_path<P: BitmapProvider>(
     )
 }
 
+pub fn choose_vector_search_execution(
+    statistics: DatabaseStatistics<'_>,
+    estimated_candidate_rows: Option<u64>,
+    hnsw_enabled: bool,
+) -> VectorSearchDecision {
+    let live_rows = statistics.live_segment_row_count();
+    let candidate_rows = estimated_candidate_rows.unwrap_or(live_rows);
+    if !hnsw_enabled {
+        return vector_search_decision(
+            VectorSearchExecution::Exact,
+            "hnsw is disabled",
+            live_rows,
+            candidate_rows,
+            hnsw_enabled,
+        );
+    }
+    if live_rows < ANN_VECTOR_MIN_LIVE_ROWS {
+        return vector_search_decision(
+            VectorSearchExecution::Exact,
+            "corpus is below ann threshold",
+            live_rows,
+            candidate_rows,
+            hnsw_enabled,
+        );
+    }
+    if is_narrow_bitmap(candidate_rows, live_rows) {
+        return vector_search_decision(
+            VectorSearchExecution::Exact,
+            "candidate predicate is selective",
+            live_rows,
+            candidate_rows,
+            hnsw_enabled,
+        );
+    }
+    vector_search_decision(
+        VectorSearchExecution::AnnWithExactFallback,
+        "large corpus uses ann guarded by exact fallback",
+        live_rows,
+        candidate_rows,
+        hnsw_enabled,
+    )
+}
+
 pub fn estimate_bitmap_program_rows<P: BitmapProvider>(
     program: &BitmapProgram,
     statistics: DatabaseStatistics<'_>,
@@ -152,6 +198,22 @@ pub fn estimate_bitmap_program_rows<P: BitmapProvider>(
         return None;
     };
     Some(*rows)
+}
+
+fn vector_search_decision(
+    execution: VectorSearchExecution,
+    reason: &str,
+    live_rows: u64,
+    candidate_rows: u64,
+    hnsw_enabled: bool,
+) -> VectorSearchDecision {
+    VectorSearchDecision {
+        execution,
+        reason: reason.to_owned(),
+        estimated_live_rows: live_rows,
+        estimated_candidate_rows: candidate_rows,
+        hnsw_enabled,
+    }
 }
 
 struct DecisionContext {
