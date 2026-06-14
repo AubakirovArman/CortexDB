@@ -30,7 +30,19 @@ TOP_K_CONTEXT="${TOP_K_CONTEXT:-8}"
 ANSWER_WORKERS="${ANSWER_WORKERS:-4}"
 JUDGE_WORKERS="${JUDGE_WORKERS:-4}"
 
+# Answer-layer knobs (new: evidence-first prompt, slot plan, evidence table, guard mode).
+PROMPT_STYLE="${PROMPT_STYLE:-official-clean-v1}"
+CONTEXT_MODE="${CONTEXT_MODE:-question-window-digest-ranked}"
+GEMINI_THINKING_BUDGET="${GEMINI_THINKING_BUDGET:-0}"
+INCLUDE_EVIDENCE_PLAN="${INCLUDE_EVIDENCE_PLAN:-0}"
+INCLUDE_EVIDENCE_TABLE="${INCLUDE_EVIDENCE_TABLE:-0}"
+UNSUPPORTED_CLAIM_GUARD="${UNSUPPORTED_CLAIM_GUARD:-off}"
+
 BASE="target/enterprise-rag-bench/official-clean/${SIZE}/${RUN_LABEL}"
+ANSWER_FLAGS=(--prompt-style "$PROMPT_STYLE" --context-mode "$CONTEXT_MODE" --gemini-thinking-budget "$GEMINI_THINKING_BUDGET")
+[ "$INCLUDE_EVIDENCE_PLAN" = 1 ] && ANSWER_FLAGS+=(--include-evidence-plan)
+[ "$INCLUDE_EVIDENCE_TABLE" = 1 ] && ANSWER_FLAGS+=(--include-evidence-table)
+[ "$UNSUPPORTED_CLAIM_GUARD" != off ] && ANSWER_FLAGS+=(--unsupported-claim-guard "$UNSUPPORTED_CLAIM_GUARD")
 COMMON=(--size "$SIZE" --questions-file "$QUESTIONS_FILE" --split-name clean
         --run-label "$RUN_LABEL" --answer-provider "$ANSWER_PROVIDER"
         --judge-provider "$JUDGE_PROVIDER" --db-root "$DB" --reuse-db)
@@ -51,10 +63,11 @@ python3 scripts/enterprise_rag_bench/dense_candidates.py \
   --dense-weight "$DENSE_WEIGHT" --lexical-weight "$LEX_WEIGHT" \
   --report "$BASE/dense_report.json"
 
-echo "### STAGE 3/4: ${ANSWER_PROVIDER} answers"
+echo "### STAGE 3/4: ${ANSWER_PROVIDER} answers (prompt=${PROMPT_STYLE} context=${CONTEXT_MODE} plan=${INCLUDE_EVIDENCE_PLAN} table=${INCLUDE_EVIDENCE_TABLE} guard=${UNSUPPORTED_CLAIM_GUARD})"
 python3 scripts/enterprise_rag_bench/run_official_clean_benchmark.py "${COMMON[@]}" \
   --stage answer --top-k-context "$TOP_K_CONTEXT" --max-chars-per-doc 2200 \
-  --max-tokens 420 --answer-workers "$ANSWER_WORKERS"
+  --max-tokens 420 --answer-workers "$ANSWER_WORKERS" \
+  "${ANSWER_FLAGS[@]}"
 
 echo "### STAGE 4/4: ${JUDGE_PROVIDER} judge"
 python3 scripts/enterprise_rag_bench/run_official_clean_benchmark.py "${COMMON[@]}" \
