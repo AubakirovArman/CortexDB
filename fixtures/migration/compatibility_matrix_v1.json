@@ -40,9 +40,15 @@
       "proof": ["crates/cortex-storage/tests/segment_index_tests.rs"]
     },
     {
-      "marker": "ACI3",
+      "marker": "ACI4",
       "file": ".aci",
       "compatibility": "current",
+      "proof": ["crates/cortex-storage/tests/lexical_index_tests.rs"]
+    },
+    {
+      "marker": "ACI3",
+      "file": ".aci",
+      "compatibility": "read-only compatible",
       "proof": ["crates/cortex-storage/tests/lexical_index_tests.rs"]
     },
     {

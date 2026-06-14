@@ -248,7 +248,7 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(
             markers,
-            vec!["ACLOGv0", "ACS3", "ACB1", "ACI3", "ACV0", "ACH0", "ACM0"]
+            vec!["ACLOGv0", "ACS3", "ACB1", "ACI4", "ACV0", "ACH0", "ACM0"]
         );
 
         let segment = summary
@@ -280,11 +280,11 @@ mod tests {
             .iter()
             .find(|format| format.extension == "aci")
             .expect("lexical index compatibility should be public");
-        assert_eq!(lexical.current_version, 3);
-        assert_eq!(lexical.legacy_magics, vec!["ACI0", "ACI1", "ACI2"]);
+        assert_eq!(lexical.current_version, 4);
+        assert_eq!(lexical.legacy_magics, vec!["ACI0", "ACI1", "ACI2", "ACI3"]);
         assert_eq!(
             lexical.compatibility_rule,
-            "ACI0, ACI1 and ACI2 remain read-only compatible"
+            "ACI0, ACI1, ACI2 and ACI3 remain read-only compatible"
         );
     }
 

@@ -43,7 +43,7 @@ make storage-format-change-note-check
 | ACLOG WAL | `.aclog` | `ACLOGv0\0` | `version = 0` in file header | Breaking changes require a new WAL version. |
 | Segment | `.acs` | `ACS3` | magic carries v3 | `ACS1` and `ACS2` remain read-only compatible. |
 | Bitmap index | `.acb` | `ACB1` | magic carries v1 | `ACB0` remains read-only compatible. |
-| Lexical index | `.aci` | `ACI3` | magic carries v3 | `ACI0`, `ACI1`, and `ACI2` remain read-only compatible. |
+| Lexical index | `.aci` | `ACI4` | magic carries v4 | `ACI0`, `ACI1`, `ACI2`, and `ACI3` remain read-only compatible. |
 | Vector index | `.acv` | `ACV0` | magic carries v0 | Breaking changes require a new magic. |
 | HNSW graph | `.ach` | `ACH0` | magic carries v0 | Breaking changes require a new magic. |
 | Manifest | `.acm` | `ACM0` | magic carries v0 | Breaking changes require a new magic. |
@@ -107,32 +107,57 @@ crc32c u32 over all previous bytes
 ## Lexical Index `.aci`
 
 ```text
-magic[4] = "ACI3"
+magic[4] = "ACI4"
+term_dictionary_count u32
+repeat term_dictionary_count:
+  term_len u16
+  term utf8 bytes
 term_count u32
 repeat term_count:
-  term_len u16
-  term utf8 bytes
-  value_count u32
-  repeat value_count:
-    candidate_id u32
+  term_id u32, indexes term dictionary
+  compact candidate set:
+    candidate_count u32
+    repeat candidate_count:
+      delta_from_previous_candidate var_u32
 doc_length_count u32
 repeat doc_length_count:
-  candidate_id u32
-  document_length u32
+  delta_from_previous_candidate var_u32
+  document_length var_u32
 term_frequency_term_count u32
 repeat term_frequency_term_count:
-  term_len u16
-  term utf8 bytes
+  term_id u32
   frequency_count u32
   repeat frequency_count:
-    candidate_id u32
-    weighted_term_frequency u32
+    delta_from_previous_candidate var_u32
+    weighted_term_frequency var_u32
+field_doc_length_count u32
+repeat field_doc_length_count:
+  field_len u16
+  field utf8 bytes
+  frequency_count u32
+  repeat frequency_count:
+    delta_from_previous_candidate var_u32
+    field_document_length var_u32
+field_term_frequency_field_count u32
+repeat field_term_frequency_field_count:
+  field_len u16
+  field utf8 bytes
+  field_term_count u32
+  repeat field_term_count:
+    term_id u32
+    frequency_count u32
+    repeat frequency_count:
+      delta_from_previous_candidate var_u32
+      field_weighted_term_frequency var_u32
 crc32c u32 over all previous bytes
 ```
 
 Legacy `ACI0` files omit the doc length and term-frequency tables. Legacy
-`ACI1` files include doc lengths but omit term frequencies. Both remain
-readable.
+`ACI1` files include doc lengths but omit term frequencies. Legacy `ACI2`
+files add term frequencies. Legacy `ACI3` files add field doc lengths and
+field term frequencies but repeat term strings in multiple sections. All remain
+read-only compatible. `ACI4` interns every term once in the dictionary and uses
+term ids plus delta-varint candidate/frequency streams for compact postings.
 
 ## Vector Index `.acv`
 

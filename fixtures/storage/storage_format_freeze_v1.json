@@ -38,10 +38,10 @@
       "kind": "lexical_index",
       "name": "Lexical index",
       "extension": "aci",
-      "current_magic": "ACI3",
-      "current_version": 3,
-      "legacy_magics": ["ACI0", "ACI1", "ACI2"],
-      "breaking_change_policy": "ACI0, ACI1 and ACI2 remain read-only compatible; breaking changes require a new lexical magic",
+      "current_magic": "ACI4",
+      "current_version": 4,
+      "legacy_magics": ["ACI0", "ACI1", "ACI2", "ACI3"],
+      "breaking_change_policy": "ACI0, ACI1, ACI2 and ACI3 remain read-only compatible; breaking changes require a new lexical magic",
       "docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"]
     },
     {

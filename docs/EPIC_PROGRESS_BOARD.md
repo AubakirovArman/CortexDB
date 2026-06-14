@@ -20,18 +20,19 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C01` — Term interning + compact postings.
+`EPIC-C03` — Real BM25 with field weights.
 
-C01 exit steps:
+C03 exit steps:
 
-1. Inventory lexical index term/posting structures and memory costs.
-2. Add term dictionary/interning for lexical postings.
-3. Preserve query semantics with regression tests.
-4. Mark done when postings use compact term ids and C01 gates pass.
+1. Add canonical BM25(k1,b) fixed-point scoring with float-reference tests.
+2. Wire field weights into persisted/live lexical scoring.
+3. Preserve or improve retrieval-quality fixtures.
+4. Mark done when C03 gates pass and scoring docs are updated.
 
-C01 current state:
+C03 current state:
 
 - next.
+- Do not reopen C01 unless `ACI4` compact lexical format or dual-read tests regress.
 - Do not reopen B20 unless `BRAIN_SEMANTICS.md` or alias tests regress.
 - Do not reopen B19 unless REMEMBER write contract or allocation tests regress.
 - Do not reopen C15 unless graph traversal budget accounting or 100K p95
@@ -49,6 +50,18 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C01 — Term interning + compact postings
+
+Status: `done`
+
+What closed it:
+
+- Added `ACI4` lexical index format with a sorted term dictionary and term-id postings.
+- Added delta-varint candidate/frequency streams for compact postings.
+- Kept `ACI0`, `ACI1`, `ACI2`, and `ACI3` read-only compatible.
+- Added `docs/LEXICAL_INDEX.md`, storage format docs, compatibility fixtures, and `lexical-index-contract-check`.
+- Proved legacy `ACI3` dual-read/rewrite and >3x compact persisted fixture reduction under `lexical_index_tests`.
 
 ### EPIC-B20 — Multi-brain semantics or removal
 
@@ -823,9 +836,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on C01 only:
+Work on C03 only:
 
-1. inventory lexical term/posting memory layout;
-2. implement compact term ids/interning;
-3. keep lexical/AQL retrieval semantics unchanged under tests;
-4. move to the next ordered epic after C01 acceptance is closed.
+1. inventory current BM25-like scoring and field-weight paths;
+2. implement canonical BM25(k1,b) with fixed-point/float-reference tests;
+3. keep retrieval-quality fixtures stable or improved;
+4. move to the next ordered epic after C03 acceptance is closed.

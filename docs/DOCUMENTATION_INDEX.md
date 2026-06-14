@@ -22,6 +22,8 @@ evidence snapshots, benchmark experiments, and release working notes live in
 - [`DATA_MODEL.md`](DATA_MODEL.md) - cell and metadata model overview.
 - [`CELL_METADATA_MODEL.md`](CELL_METADATA_MODEL.md) - metadata source of truth.
 - [`STORAGE_FORMATS.md`](STORAGE_FORMATS.md) - WAL/segment/index/manifest formats.
+- [`LEXICAL_INDEX.md`](LEXICAL_INDEX.md) - compact lexical term dictionary and
+  postings contract.
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) - backup and restore operations.
 - [`CORRUPTION_HANDLING.md`](CORRUPTION_HANDLING.md) - validation issues and recovery actions.
 - [`ENGINE_API.md`](ENGINE_API.md) - embedded Rust engine API.

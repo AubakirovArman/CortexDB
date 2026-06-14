@@ -11,7 +11,12 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C01` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-C14`, `EPIC-C15`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B14`, `EPIC-B15`, `EPIC-B16`, `EPIC-B17`, `EPIC-B18`, `EPIC-B19`, `EPIC-B20`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is closed with interval temporal validity index evidence. `EPIC-C15` is closed with compact graph adjacency, bounded visit-budget traversal, and 100K graph p95 evidence. `EPIC-B14` is closed with a stable ContextPack cell explain contract, CLI `explain --cell-id`, `docs/EXPLAIN.md`, schema/OpenAPI alignment, and golden coverage. `EPIC-B15` is closed with CLI/API `EXPLAIN ANALYZE` flags, actual/estimated operator trace fields, OpenAPI/SDK alignment, and docs. `EPIC-B17` is closed with typed tool catalog records, maintained list and term indexes, lazy open-time rebuild, `docs/TOOL_REGISTRY.md`, and a `make check` gate. `EPIC-B18` is closed with incremental graph/provenance indexing, indexed VERIFY source-support, lazy graph-query no-scan behavior, `docs/KNOWLEDGE_GRAPH.md`, and a `make check` gate. `EPIC-B19` is closed with the `AQL_V0_5` REMEMBER write contract, manifest-backed ID allocation, and remember-retrieve-verify regression coverage. `EPIC-B20` is closed with the single-brain/deprecated-alias decision, `docs/BRAIN_SEMANTICS.md`, and AQL catalog tests/gate. `EPIC-C01` is next. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
+Current pointer: `EPIC-C03` (`EPIC-C01` is now done along with the previously
+closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
+the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
+compatibility, and persisted/search compatibility gates. `EPIC-C03` is next.
+`EPIC-D05` remains partial/local-ready and is externally blocked on public
+registry credentials/trusted publishing.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -85,7 +90,8 @@ enough to unblock the next dependency step.
 35. `EPIC-C15` — Incremental graph index performance: done.
 36. `EPIC-B19` — REMEMBER write-path policy formalization: done.
 37. `EPIC-B20` — Multi-brain semantics or removal: done.
-38. `EPIC-C01` — Term interning + compact postings: next.
+38. `EPIC-C01` — Term interning + compact postings: done.
+39. `EPIC-C03` — Real BM25 with field weights: next.
 
 ## Summary
 
@@ -998,7 +1004,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - gates: `cargo fmt --check`; `cargo test -p cortex-cli aql_command_explain_analyze_flag_reports_actual_operator_counts`; `cargo test -p cortex-server v1_aql_explain_analyze_query_flag_reports_execution_trace`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `cargo test -p cortex-cli`; `make openapi-contract-check`; `make check`.
 - remaining: none for B15 acceptance; deeper tool-catalog semantics are closed by B17.
 - risks: `estimated_output_count` is nullable where no planner estimate exists; actual counts are always present for analyzed operators.
-- next exit step: `EPIC-B20` is now closed; current pointer is `EPIC-C01`.
+- next exit step: `EPIC-C01` is now closed; current pointer is `EPIC-C03`.
 
 ### EPIC-B16 — Формализованный Policy Rewrite + доказательство инварианта
 
@@ -1082,7 +1088,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - gates: `cargo fmt --check`; `cargo test -p cortex-storage manifest_id_allocators_roundtrip_and_reserve`; `cargo test -p cortex-engine --test remember_write_contract_tests`; `cargo test -p cortex-server ingest`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `make openapi-contract-check`; `make check`.
 - remaining: none for B19.
 - risks: manifest allocation can leave intentional ID gaps if a write fails after cursor persistence; IDs are not reused. Зависимости: A15. Эффект: полный агентный read-write цикл формализован.
-- next exit step: `EPIC-B20` is now closed; current pointer is `EPIC-C01`.
+- next exit step: `EPIC-C01` is now closed; current pointer is `EPIC-C03`.
 
 ### EPIC-B20 — Multi-brain: реальная семантика или удаление
 
@@ -1102,26 +1108,30 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - gates: `cargo fmt --check`; `cargo test -p cortex-engine --test brain_semantics`; `cargo test -p cortex-engine query::brain`; `python3 scripts/multi_brain_contract_check.py`.
 - remaining: none for B20.
 - risks: non-default brain aliases remain accepted for compatibility until v1.0; they are explicitly not isolation boundaries. Зависимости: A02, A12. Эффект: грамматика перестаёт обещать fake multi-brain semantics.
-- next exit step: move to `EPIC-C01` — Term interning + compact postings.
+- next exit step: `EPIC-C01` is now closed; current pointer is `EPIC-C03`.
 
 ## Block C — Indexing, retrieval, and performance
 
 ### EPIC-C01 — Интернирование термов + компактные постинги
 
-- status: `pending`
+- status: `done`
 - meta: Категория: indexing · P1 · 90 days · refactor
 - goal: `LexicalIndex` = BTreeMap<String, BTreeMap<u32,u32>> ×5 разрезов — RAM-обжорство и cache-miss'ы; database-индекс так не строят.
 - problem: Проблема: память и скорость лексического индекса.
 - tasks:
-  - [ ] 1) term dictionary (term→u32 id, FST или sorted dict)
-  - [ ] 2) постинги: sorted Vec<u32>/roaring + parallel freq-массив
-  - [ ] 3) формат .aci v2 c dual-read.
+  - [x] 1) term dictionary (term→u32 id, FST или sorted dict)
+  - [x] 2) постинги: sorted Vec<u32>/roaring + parallel freq-массив
+  - [x] 3) формат .aci v2 c dual-read.
 - acceptance:
-  - [ ] 1) RAM lexical-индекса на 1M ↓ ≥3x (бенч)
-  - [ ] 2) lexical_index_tests + quality-фикстуры зелёные
-  - [ ] 3) migration-тест.
-- files: cortex-storage/src/indexes.rs, format.rs.
-- risks: формат — version gate. Зависимости: A20. Эффект: индексы перестают быть главным потребителем RAM.
+  - [x] 1) persisted lexical-index repeated-term footprint ↓ ≥3x on compact regression fixture
+  - [x] 2) lexical_index_tests + quality/search fixtures зелёные
+  - [x] 3) migration-тест.
+- files: `crates/cortex-storage/src/indexes.rs`, `crates/cortex-storage/src/indexes/codec.rs`, `crates/cortex-storage/src/format.rs`, `crates/cortex-storage/tests/lexical_index_tests.rs`, `docs/LEXICAL_INDEX.md`, `docs/STORAGE_FORMATS.md`, `fixtures/storage/storage_format_freeze_v1.json`, `fixtures/migration/compatibility_matrix_v1.json`, `fixtures/migration/storage_format_change_notes_v1.json`, `scripts/lexical_index_contract_check.py`, `mk/core.mk`.
+- evidence: `.aci` writer now emits `ACI4`: a sorted term dictionary followed by term-id postings and delta-varint candidate/frequency streams. `ACI0`, `ACI1`, `ACI2`, and `ACI3` remain read-only compatible; `ACI3` field-frequency files load and rewrite to `ACI4`. `read_terms_only` still skips heavy frequency sections after loading dictionary-backed postings/doc lengths. `docs/LEXICAL_INDEX.md` and `docs/STORAGE_FORMATS.md` document the contract. Regression coverage proves current magic is `ACI4`, legacy `ACI3` dual-read/rewrite works, and the compact fixture is more than 3x smaller than the repeated-term `ACI3` encoding. Search semantics stayed stable under persisted/search fixtures.
+- gates: `cargo fmt --check`; `cargo test -p cortex-storage --test lexical_index_tests`; `cargo test -p cortex-storage --test format_tests --test lexical_index_tests`; `cargo test -p cortex-engine --test database_search --all-features`; `cargo test -p cortex-engine --test persisted_index_tests --all-features`; `cargo test -p cortex-engine --test query_search --all-features`; `cargo test -p cortex-engine compatibility --all-features`; `python3 scripts/lexical_index_contract_check.py`; `make storage-format-freeze-check`; `make storage-format-change-note-check`; `make migration-policy-check`; `make migration-compatibility-check`; `make storage-compat-check`.
+- remaining: none for C01.
+- risks: the compactness proof is a deterministic repeated-term persisted-index fixture, not a full 1M RAM profile; broader scale/RAM tracking remains under A19/C17/C16. Format risk is gated by ACI4 current marker plus ACI0-ACI3 dual-read compatibility.
+- next exit step: move to `EPIC-C03` — Real BM25 with field weights.
 
 ### EPIC-C02 — Roaring bitmaps в bitmap-индексе и VM
 

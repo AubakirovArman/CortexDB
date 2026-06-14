@@ -63,6 +63,14 @@ pub(super) fn put_u64(out: &mut Vec<u8>, value: u64) {
     out.extend_from_slice(&value.to_le_bytes());
 }
 
+pub(super) fn put_var_u32(out: &mut Vec<u8>, mut value: u32) {
+    while value >= 0x80 {
+        out.push((value as u8) | 0x80);
+        value >>= 7;
+    }
+    out.push(value as u8);
+}
+
 pub(super) fn read_u16(bytes: &[u8], cursor: &mut usize, kind: IndexKind) -> StorageResult<u16> {
     Ok(u16::from_le_bytes(read_array(bytes, cursor, kind)?))
 }
@@ -73,6 +81,27 @@ pub(super) fn read_u32(bytes: &[u8], cursor: &mut usize, kind: IndexKind) -> Sto
 
 pub(super) fn read_u64(bytes: &[u8], cursor: &mut usize, kind: IndexKind) -> StorageResult<u64> {
     Ok(u64::from_le_bytes(read_array(bytes, cursor, kind)?))
+}
+
+pub(super) fn read_var_u32(
+    bytes: &[u8],
+    cursor: &mut usize,
+    kind: IndexKind,
+) -> StorageResult<u32> {
+    let mut value = 0u32;
+    for shift in (0..=28).step_by(7) {
+        let byte = *read_bytes(bytes, cursor, 1, kind)?
+            .first()
+            .ok_or_else(|| invalid(kind))?;
+        if shift == 28 && byte & 0xf0 != 0 {
+            return Err(invalid(kind));
+        }
+        value |= u32::from(byte & 0x7f) << shift;
+        if byte & 0x80 == 0 {
+            return Ok(value);
+        }
+    }
+    Err(invalid(kind))
 }
 
 fn read_array<const N: usize>(

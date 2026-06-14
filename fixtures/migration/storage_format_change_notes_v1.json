@@ -74,10 +74,21 @@
     },
     {
       "kind": "lexical_index",
-      "marker": "ACI3",
+      "marker": "ACI4",
       "extension": ".aci",
       "compatibility": "current",
-      "change_policy": "ACI3 is the current lexical index marker. Breaking lexical-index changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence while preserving documented ACI0/ACI1/ACI2 read-only compatibility.",
+      "change_policy": "ACI4 is the current lexical index marker with a compact term dictionary plus term-id postings. Breaking lexical-index changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence while preserving documented ACI0/ACI1/ACI2/ACI3 read-only compatibility.",
+      "release_fixture_required": true,
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
+      "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
+      "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
+    },
+    {
+      "kind": "lexical_index",
+      "marker": "ACI3",
+      "extension": ".aci",
+      "compatibility": "read-only compatible",
+      "change_policy": "Legacy lexical ACI3 compatibility must remain documented and covered by lexical index tests or be removed only through a breaking migration note and release fixture.",
       "release_fixture_required": true,
       "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],

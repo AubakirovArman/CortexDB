@@ -1,6 +1,6 @@
-.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check multi-brain-contract-check context-pack-schema-contract-check provenance-model-inventory decode-fuzz-check erb-oracle-audit
+.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check multi-brain-contract-check lexical-index-contract-check context-pack-schema-contract-check provenance-model-inventory decode-fuzz-check erb-oracle-audit
 
-check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check multi-brain-contract-check tool-registry-check knowledge-graph-check context-pack-schema-contract-check decode-fuzz-check erb-oracle-audit erb-category-regression-check
+check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check multi-brain-contract-check lexical-index-contract-check tool-registry-check knowledge-graph-check context-pack-schema-contract-check decode-fuzz-check erb-oracle-audit erb-category-regression-check
 	cargo check --workspace
 
 file-size-report:
@@ -26,6 +26,9 @@ policy-rewrite-gate-check:
 
 multi-brain-contract-check:
 	python3 scripts/multi_brain_contract_check.py
+
+lexical-index-contract-check:
+	python3 scripts/lexical_index_contract_check.py
 
 context-pack-schema-contract-check:
 	python3 scripts/context_pack_schema_contract_check.py

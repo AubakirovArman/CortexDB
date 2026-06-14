@@ -386,7 +386,7 @@ Exit steps:
 1. Add term dictionary/interning design.
 2. Migrate lexical index postings to compact term IDs.
 3. Add compatibility and memory tests.
-4. Mark done when term memory drops and search output is stable; then move to C02.
+4. Mark done when term memory drops and search output is stable; then move to C03.
 
 ### EPIC-C02 — Roaring bitmaps
 

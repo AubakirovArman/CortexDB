@@ -5,10 +5,11 @@ pub const LEGACY_SEGMENT_V2_MAGIC: [u8; 4] = *b"ACS2";
 pub const SEGMENT_MAGIC: [u8; 4] = *b"ACS3";
 pub const LEGACY_BITMAP_INDEX_MAGIC: [u8; 4] = *b"ACB0";
 pub const BITMAP_INDEX_MAGIC: [u8; 4] = *b"ACB1";
-pub const LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI3";
+pub const LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI4";
 pub const LEGACY_LEXICAL_INDEX_MAGIC: [u8; 4] = *b"ACI0";
 pub const LEGACY_LEXICAL_INDEX_V1_MAGIC: [u8; 4] = *b"ACI1";
 pub const LEGACY_LEXICAL_INDEX_V2_MAGIC: [u8; 4] = *b"ACI2";
+pub const LEGACY_LEXICAL_INDEX_V3_MAGIC: [u8; 4] = *b"ACI3";
 pub const VECTOR_INDEX_MAGIC: [u8; 4] = *b"ACV0";
 pub const HNSW_GRAPH_MAGIC: [u8; 4] = *b"ACH0";
 pub const MANIFEST_MAGIC: [u8; 4] = *b"ACM0";
@@ -70,13 +71,14 @@ pub fn storage_format_specs() -> [StorageFormatSpec; 7] {
             name: "Lexical index",
             extension: "aci",
             current_magic: &LEXICAL_INDEX_MAGIC,
-            current_version: 3,
+            current_version: 4,
             legacy_magics: &[
                 &LEGACY_LEXICAL_INDEX_MAGIC,
                 &LEGACY_LEXICAL_INDEX_V1_MAGIC,
                 &LEGACY_LEXICAL_INDEX_V2_MAGIC,
+                &LEGACY_LEXICAL_INDEX_V3_MAGIC,
             ],
-            compatibility_rule: "ACI0, ACI1 and ACI2 remain read-only compatible",
+            compatibility_rule: "ACI0, ACI1, ACI2 and ACI3 remain read-only compatible",
         },
         StorageFormatSpec {
             kind: StorageFormatKind::VectorIndex,
