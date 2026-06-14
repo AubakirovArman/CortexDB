@@ -179,11 +179,23 @@ def read_baseline(path: Path) -> dict[str, Any]:
 
 
 def ratchet(entries: list[dict[str, Any]], data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Threshold-aware ratchet.
+
+    The gate fails only on meaningful size problems, not on every byte of growth:
+    - a new file created already over its warning limit;
+    - an existing file that grows *while over* its warning limit (oversized files
+      must not get worse).
+
+    Files under the warning limit may grow freely. This keeps the architectural
+    signal (catch large / worsening files) without failing CI on a +1-line change
+    to a small file, which previously forced a baseline refresh every few commits.
+    """
     violations = []
     baseline_files = data["files"]
     for item in entries:
         old = baseline_files.get(item["path"])
-        if old is None and item["lines"] > item["warning_limit"]:
+        over_warning = item["lines"] > item["warning_limit"]
+        if old is None and over_warning:
             violations.append(
                 {
                     "path": item["path"],
@@ -192,14 +204,15 @@ def ratchet(entries: list[dict[str, Any]], data: dict[str, Any]) -> list[dict[st
                     "limit": item["warning_limit"],
                 }
             )
-        elif old is not None and item["lines"] > int(old["lines"]):
+        elif old is not None and over_warning and item["lines"] > int(old["lines"]):
             violations.append(
                 {
                     "path": item["path"],
-                    "reason": "baseline_growth",
+                    "reason": "baseline_growth_over_warning",
                     "lines": item["lines"],
                     "baseline_lines": int(old["lines"]),
                     "delta": item["lines"] - int(old["lines"]),
+                    "limit": item["warning_limit"],
                 }
             )
     return violations
@@ -222,13 +235,14 @@ def print_report(data: dict[str, Any]) -> None:
         f"over_hard={stats['over_hard']} max={stats['max_lines']}:{stats['max_path']}"
     )
     for item in data["violations"]:
-        if item["reason"] == "baseline_growth":
+        if "baseline_lines" in item:
             print(
                 f"violation: {item['path']} grew "
-                f"{item['baseline_lines']} -> {item['lines']} (+{item['delta']})"
+                f"{item['baseline_lines']} -> {item['lines']} (+{item['delta']}) "
+                f"while over warning limit {item['limit']}"
             )
         else:
-            print(f"violation: {item['path']} has {item['lines']} lines > {item['limit']}")
+            print(f"violation: {item['path']} is a new file with {item['lines']} lines > {item['limit']}")
 
 
 def main() -> int:
