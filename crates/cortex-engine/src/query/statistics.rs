@@ -10,6 +10,7 @@ use super::metadata::{
 };
 use crate::database::Database;
 
+mod segment_pruning;
 mod zone_maps;
 
 #[derive(Clone, Copy, Debug)]

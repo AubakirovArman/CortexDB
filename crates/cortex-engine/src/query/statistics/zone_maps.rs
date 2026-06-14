@@ -103,7 +103,7 @@ impl DatabaseStatistics<'_> {
         )
     }
 
-    fn has_live_segment_stats(&self) -> bool {
+    pub(super) fn has_live_segment_stats(&self) -> bool {
         self.manifest
             .live_segments
             .iter()

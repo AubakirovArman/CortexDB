@@ -103,6 +103,7 @@ impl Database {
         );
         let policy_rewritten_plan = PolicyRewrite::new(view).rewrite(&logical_plan);
         let permission_pruning = index.permission_pruning;
+        let segment_pruning = index.segment_pruning;
         let provider = EngineAqlProvider::new(index, view);
         let execution = if analyze {
             let mut execution = self.retrieve_cells_with_execution_trace(&plan, &provider)?;
@@ -196,6 +197,20 @@ impl Database {
                     permission_pruning.skipped_segments,
                     permission_pruning.opened_segments,
                     permission_pruning.total_segments
+                ),
+            });
+        }
+        if segment_pruning.total_segments > 0
+            && (segment_pruning.opened_segments != permission_pruning.opened_segments
+                || segment_pruning.skipped_segments != permission_pruning.skipped_segments)
+        {
+            filters.push(AqlExplainFilter {
+                kind: "segment_pruning".to_owned(),
+                expression: format!(
+                    "segments_skipped={} segments_opened={} total_segments={}",
+                    segment_pruning.skipped_segments,
+                    segment_pruning.opened_segments,
+                    segment_pruning.total_segments
                 ),
             });
         }

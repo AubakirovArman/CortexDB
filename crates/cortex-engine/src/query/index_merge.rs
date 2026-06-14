@@ -149,6 +149,7 @@ fn index_from_persisted(
         candidate_to_cell,
         cell_to_candidate,
         permission_pruning: Default::default(),
+        segment_pruning: Default::default(),
     }
 }
 

@@ -20,18 +20,21 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C10` — Segment zone maps + segment skipping.
+`EPIC-C11` — AQL query cache: metrics and policy.
 
-C10 exit steps:
+C11 exit steps:
 
-1. Persist per-segment zone maps for created-at, scope-set, and type-set.
-2. Teach planner/execution to skip segments by temporal/scope/type predicates.
-3. Add a 10-segment fixture showing only matching segment subsets are opened.
-4. Report skipped/opened segments through the existing explain counters.
+1. Expose AQL query cache hit/miss/eviction/capacity metrics in stats or
+   metrics surfaces.
+2. Document and test catalog/seq invalidation policy.
+3. Add configured size/policy coverage without changing default behavior.
 
-C10 current state:
+C11 current state:
 
 - next.
+- C10 is closed with plan-aware segment pruning from existing manifest zone
+  maps, freshness created-at range pruning, conservative unknown/NOT behavior,
+  10-segment fixture coverage, and EXPLAIN `segment_pruning` counters.
 - C09 is closed with view-pruned AQL index construction, conservative
   scope-zone segment skipping, stale-candidate safety, planner cardinality
   coverage, and EXPLAIN permission pruning counters.
@@ -62,6 +65,27 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C10 — Segment zone maps + segment skipping
+
+Status: `done`
+
+What closed it:
+
+- Reused existing manifest zone maps for created-at min/max and
+  scope/status/type counts.
+- AQL cache binding now builds the persisted index with the bound retrieve
+  bitmap program.
+- Segment-level bitmap evaluation prunes scope/status/type predicate segments
+  while treating `NOT`, memory-type, and unknown handles conservatively.
+- Freshness requirements prune by created-at range before persisted indexes are
+  opened.
+- EXPLAIN emits `segment_pruning` skipped/opened/total counters.
+- Added 10-segment type pruning and freshness pruning regression fixtures.
+
+Important follow-up:
+
+- C11 should make AQL query cache behavior visible through metrics/policy.
 
 ### EPIC-C09 — Permission-aware index pruning
 

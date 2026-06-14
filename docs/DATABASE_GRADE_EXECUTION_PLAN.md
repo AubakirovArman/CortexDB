@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C10` (`EPIC-C09` is now done along with the previously
+Current pointer: `EPIC-C11` (`EPIC-C10` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -25,7 +25,9 @@ large-corpus ANN planner rule with exact fallback. `EPIC-C07` added AQL
 `USING MODE hybrid`, a physical lexical+dense RRF source, and explain/quality
 coverage. `EPIC-C09` added permission-aware AQL index pruning with scope-zone
 segment skipping, planner cardinality coverage, stale-candidate safety, and
-EXPLAIN skipped/opened segment reporting. `EPIC-C10` is next.
+EXPLAIN skipped/opened segment reporting. `EPIC-C10` added plan-aware
+segment-zone pruning for AQL bitmap predicates plus freshness created-at
+ranges, with EXPLAIN `segment_pruning` counters. `EPIC-C11` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -108,7 +110,8 @@ enough to unblock the next dependency step.
 42. `EPIC-C06` — HNSW guarded productization: done.
 43. `EPIC-C07` — Hybrid retrieval in engine: done.
 44. `EPIC-C09` — Permission-aware index pruning: done.
-45. `EPIC-C10` — Segment zone maps + segment skipping: next.
+45. `EPIC-C10` — Segment zone maps + segment skipping: done.
+46. `EPIC-C11` — AQL query cache: metrics and policy: next.
 
 ## Summary
 
@@ -1308,19 +1311,23 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-C10 — Segment zone maps + segment skipping
 
-- status: `pending`
+- status: `done`
 - meta: Категория: indexing · P2 · 6 months · build
 - goal: классическая database-техника, нужная lazy/temporal/scope фильтрам.
 - problem: Проблема: каждый сегмент участвует во всех запросах.
 - tasks:
-  - [ ] 1) zone map per segment: min/max created_at, scope-set, type-set (в манифест при checkpoint)
-  - [ ] 2) planner отбрасывает сегменты по предикатам
-  - [ ] 3) тест на 10-сегментном корпусе.
+  - [x] 1) zone map per segment: min/max created_at, scope-set, type-set (в манифест при checkpoint)
+  - [x] 2) planner отбрасывает сегменты по предикатам
+  - [x] 3) тест на 10-сегментном корпусе.
 - acceptance:
-  - [ ] 1) временной/scope-запрос открывает подмножество сегментов (счётчик)
-  - [ ] 2) корректность фикстур.
-- files: manifest.rs, plan/, exec/scan.
-- risks: нет. Зависимости: A12. Эффект: I/O-составляющая запросов падает.
+  - [x] 1) temporal/scope/type queries open a segment subset and expose a counter
+  - [x] 2) корректность фикстур.
+- files: `crates/cortex-engine/src/query.rs`, `crates/cortex-engine/src/query/cache.rs`, `crates/cortex-engine/src/query/explain.rs`, `crates/cortex-engine/src/query/statistics/segment_pruning.rs`, `crates/cortex-engine/src/query/statistics/zone_maps.rs`, `crates/cortex-engine/src/query/metadata/ids.rs`, `crates/cortex-engine/src/checkpoint/indexes.rs`, `crates/cortex-engine/tests/query_search/segment_pruning.rs`.
+- evidence: checkpoint/compact already persist `ManifestSegmentStats` zone maps for created-at min/max plus scope/status/type counts; AQL cached and uncached binding now passes the bound retrieve plan into persisted index construction; `DatabaseStatistics::segments_matching_bitmap_program` evaluates scope/status/type bitmap predicates at segment granularity and treats `NOT`/unknown handles conservatively; `REQUIRE freshness <= ...` intersects segment selection with the created-at range zone map; skipped segments still read candidate footers for update/tombstone correctness; EXPLAIN emits `segment_pruning` skipped/opened/total counters when query predicates prune beyond permission scope. Regression fixtures cover a 10-segment type query opening 2/10 segments and a freshness query opening 1/2 segments.
+- verification: `cargo fmt --check`; `cargo test -p cortex-engine --test query_search segment_pruning`; `cargo test -p cortex-engine --test query_search permission_pruning`; `cargo test -p cortex-engine --test query_search`; `cargo test -p cortex-engine query::statistics::zone_maps::tests::zone_maps_filter_live_segments_without_retired_leaks`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `make check`; `make openapi-contract-check`.
+- remaining: none for C10 acceptance.
+- risks: `NOT`, memory-type, and unknown bitmap handles are intentionally conservative and may fall back to opening more segments. Зависимости: A12. Эффект: I/O-составляющая запросов падает.
+- next exit step: move to `EPIC-C11` — AQL query cache metrics and policy.
 
 ### EPIC-C11 — AQL query cache: метрики и политика
 

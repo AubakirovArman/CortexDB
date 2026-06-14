@@ -15,11 +15,12 @@ mod pruning;
 mod render;
 mod statistics;
 mod verify_explain;
-use cortex_aql::{AgentView, BitmapHandle, BoundPlan};
+use cortex_aql::{AgentView, BitmapHandle, BoundPlan, BoundRetrievePlan};
 use cortex_core::CellId;
 
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
+use crate::feedback::current_unix_seconds;
 pub use cache::AqlQueryCacheStats;
 pub(crate) use delta::AqlDeltaIndex;
 pub use explain::{
@@ -42,6 +43,7 @@ pub struct EngineAqlIndex {
     pub candidate_to_cell: BTreeMap<u32, CellId>,
     pub cell_to_candidate: BTreeMap<CellId, u32>,
     pub permission_pruning: AqlPermissionPruning,
+    pub segment_pruning: AqlSegmentPruning,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -49,6 +51,13 @@ pub struct CandidateId(pub u32);
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct AqlPermissionPruning {
+    pub total_segments: usize,
+    pub opened_segments: usize,
+    pub skipped_segments: usize,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AqlSegmentPruning {
     pub total_segments: usize,
     pub opened_segments: usize,
     pub skipped_segments: usize,
@@ -74,7 +83,23 @@ impl Database {
         )
     }
 
-    pub(crate) fn try_aql_index_for_view(&self, view: &AgentView) -> EngineResult<EngineAqlIndex> {
+    pub(crate) fn try_aql_index_for_bound_plan(
+        &self,
+        view: &AgentView,
+        bound_plan: &BoundPlan,
+    ) -> EngineResult<EngineAqlIndex> {
+        let retrieve_plan = match bound_plan {
+            BoundPlan::Retrieve(plan) => Some(plan.as_ref()),
+            _ => None,
+        };
+        self.try_aql_index_for_retrieve_plan(view, retrieve_plan)
+    }
+
+    fn try_aql_index_for_retrieve_plan(
+        &self,
+        view: &AgentView,
+        retrieve_plan: Option<&BoundRetrievePlan>,
+    ) -> EngineResult<EngineAqlIndex> {
         let analyzer = self.text_analyzer();
         let readable_scopes = crate::plan::PolicyRewrite::new(view)
             .readable_scopes()
@@ -82,8 +107,31 @@ impl Database {
         let mut index = if self.manifest().live_segments.is_empty() {
             EngineAqlIndex::try_from_delta_with_analyzer(&self.aql_delta_index, &analyzer)?
         } else {
-            let (persisted, pruning) =
-                self.persisted_index_state_for_readable_scopes(&readable_scopes)?;
+            let total_segments = self.manifest().live_segments.len();
+            let permission_segments = self
+                .statistics()
+                .segments_matching_any_scope_id(&readable_scopes);
+            let segment_ids = retrieve_plan
+                .map(|plan| &plan.bitmap_program)
+                .and_then(|program| {
+                    self.statistics()
+                        .segments_matching_bitmap_program(program, &readable_scopes)
+                })
+                .or_else(|| permission_segments.clone());
+            let segment_ids = intersect_segment_selection(
+                segment_ids,
+                retrieve_plan.and_then(|plan| self.freshness_segment_selection(plan)),
+            );
+            let permission_pruning =
+                permission_pruning_report(total_segments, &permission_segments);
+            let segment_pruning = segment_pruning_report(total_segments, &segment_ids);
+            let persisted = match &segment_ids {
+                Some(segment_ids) if segment_ids.len() < total_segments => {
+                    let segment_ids = segment_ids.iter().copied().collect::<BTreeSet<_>>();
+                    self.persisted_index_state_for_segments(&segment_ids)?
+                }
+                _ => (*self.persisted_index_state_cached()?).clone(),
+            };
             let mut index = EngineAqlIndex::from_persisted_delta_with_analyzer(
                 persisted.bitmap,
                 persisted.lexical,
@@ -91,7 +139,8 @@ impl Database {
                 &self.aql_delta_index,
                 &analyzer,
             )?;
-            index.permission_pruning = pruning;
+            index.permission_pruning = permission_pruning;
+            index.segment_pruning = segment_pruning;
             index
         };
         index.prune_to_readable_scopes(&readable_scopes);
@@ -137,5 +186,53 @@ impl Database {
             }
             _ => Err(EngineError::InvalidOperation),
         }
+    }
+}
+
+fn permission_pruning_report(
+    total_segments: usize,
+    segment_ids: &Option<Vec<u64>>,
+) -> AqlPermissionPruning {
+    let opened_segments = segment_ids
+        .as_ref()
+        .map_or(total_segments, std::vec::Vec::len);
+    AqlPermissionPruning {
+        total_segments,
+        opened_segments,
+        skipped_segments: total_segments.saturating_sub(opened_segments),
+    }
+}
+
+fn segment_pruning_report(
+    total_segments: usize,
+    segment_ids: &Option<Vec<u64>>,
+) -> AqlSegmentPruning {
+    let opened_segments = segment_ids
+        .as_ref()
+        .map_or(total_segments, std::vec::Vec::len);
+    AqlSegmentPruning {
+        total_segments,
+        opened_segments,
+        skipped_segments: total_segments.saturating_sub(opened_segments),
+    }
+}
+
+fn intersect_segment_selection(lhs: Option<Vec<u64>>, rhs: Option<Vec<u64>>) -> Option<Vec<u64>> {
+    match (lhs, rhs) {
+        (Some(lhs), Some(rhs)) => {
+            let lhs = lhs.into_iter().collect::<BTreeSet<_>>();
+            Some(rhs.into_iter().filter(|id| lhs.contains(id)).collect())
+        }
+        (Some(ids), None) | (None, Some(ids)) => Some(ids),
+        (None, None) => None,
+    }
+}
+
+impl Database {
+    fn freshness_segment_selection(&self, plan: &BoundRetrievePlan) -> Option<Vec<u64>> {
+        let max_freshness_seconds = plan.quality_thresholds.max_freshness_seconds?;
+        let min_created = current_unix_seconds().saturating_sub(max_freshness_seconds);
+        self.statistics()
+            .segments_overlapping_created_range(Some(min_created), None)
     }
 }

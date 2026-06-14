@@ -4,6 +4,16 @@ const SCOPE_NS: u64 = 0x1000_0000_0000_0000;
 const STATUS_NS: u64 = 0x2000_0000_0000_0000;
 const TYPE_NS: u64 = 0x3000_0000_0000_0000;
 const MEMORY_NS: u64 = 0x4000_0000_0000_0000;
+const HANDLE_NS_MASK: u64 = 0xf000_0000_0000_0000;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum BitmapHandleKind {
+    Scope,
+    Status,
+    CellType,
+    MemoryType,
+    Unknown,
+}
 
 pub fn scope_id(name: &str) -> ScopeId {
     ScopeId(stable_hash(name))
@@ -31,6 +41,16 @@ pub(crate) fn cell_type_handle(cell_type: CellTypeId) -> BitmapHandle {
 
 pub(crate) fn memory_type_handle(memory_type: MemoryType) -> BitmapHandle {
     BitmapHandle(MEMORY_NS | memory_type as u64)
+}
+
+pub(crate) fn bitmap_handle_kind(handle: BitmapHandle) -> BitmapHandleKind {
+    match handle.0 & HANDLE_NS_MASK {
+        SCOPE_NS => BitmapHandleKind::Scope,
+        STATUS_NS => BitmapHandleKind::Status,
+        TYPE_NS => BitmapHandleKind::CellType,
+        MEMORY_NS => BitmapHandleKind::MemoryType,
+        _ => BitmapHandleKind::Unknown,
+    }
 }
 
 fn stable_hash(value: &str) -> u64 {

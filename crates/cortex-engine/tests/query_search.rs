@@ -12,3 +12,5 @@ mod permission_pruning;
 mod replication;
 #[path = "query_search/reranker.rs"]
 mod reranker;
+#[path = "query_search/segment_pruning.rs"]
+mod segment_pruning;
