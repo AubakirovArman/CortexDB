@@ -141,6 +141,7 @@ fn write_route_classifier_covers_mutating_routes() {
         ("PUT", "/v1/admin/search/hnsw/no-fallback-profile"),
         ("DELETE", "/v1/admin/search/hnsw/no-fallback-profile"),
         ("POST", "/v1/remember"),
+        ("POST", "/v1/feedback"),
         ("POST", "/v1/forget"),
         ("POST", "/v1/ingest/text"),
         ("POST", "/v1/ingest/json"),

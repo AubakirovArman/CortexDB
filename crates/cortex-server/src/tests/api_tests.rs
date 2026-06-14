@@ -1,6 +1,7 @@
 use crate::handle_http;
 
 include!("api_tests/memory.rs");
+include!("api_tests/feedback.rs");
 
 #[test]
 fn v1_context_returns_context_pack() {

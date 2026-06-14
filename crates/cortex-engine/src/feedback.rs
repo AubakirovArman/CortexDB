@@ -99,6 +99,23 @@ impl Database {
         self.feedback_index.scores_at(now_unix_seconds)
     }
 
+    pub fn feedback_scores_for_cells_at<I>(
+        &self,
+        cell_ids: I,
+        now_unix_seconds: u64,
+    ) -> BTreeMap<CellId, i32>
+    where
+        I: IntoIterator<Item = CellId>,
+    {
+        self.feedback_index
+            .scores_for_cells_at(cell_ids, now_unix_seconds)
+    }
+
+    pub fn feedback_score_for_cell_at(&self, cell_id: CellId, now_unix_seconds: u64) -> i32 {
+        self.feedback_index
+            .score_for_cell_at(cell_id, now_unix_seconds)
+    }
+
     pub fn feedback_score_report_at(&self, now_unix_seconds: u64) -> Vec<FeedbackScoreReport> {
         self.feedback_index.score_report_at(now_unix_seconds)
     }

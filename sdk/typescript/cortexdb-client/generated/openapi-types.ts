@@ -88,6 +88,27 @@ export interface OpenApiPutCellResponse {
   seq: number;
 }
 
+export interface OpenApiFeedbackRecordResponse {
+  cell_id: number;
+  seq: number;
+  source_cell_id: number;
+  useful: boolean;
+}
+
+export interface OpenApiFeedbackCellStatsResponse {
+  not_useful: number;
+  score: number;
+  source_cell_id: number;
+  useful: number;
+}
+
+export interface OpenApiFeedbackStatsResponse {
+  by_source_cell: OpenApiFeedbackCellStatsResponse[];
+  not_useful: number;
+  total: number;
+  useful: number;
+}
+
 export interface OpenApiWriteBatchRequest {
   operations: OpenApiWriteBatchOperationRequest[];
 }

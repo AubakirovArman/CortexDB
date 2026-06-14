@@ -64,7 +64,9 @@ pub(crate) fn classify(method: &str, path: &str) -> AuditAction {
         "/v1/inference" => AuditAction::Inference,
         "/v1/verify" => AuditAction::Verify,
         "/v1/search" | "/v1/search/explain" | "/v1/search/ann-evaluate" => AuditAction::Search,
-        "/v1/remember" | "/v1/forget" => AuditAction::Memory,
+        "/v1/remember" | "/v1/forget" | "/v1/feedback" | "/v1/feedback/stats" => {
+            AuditAction::Memory
+        }
         _ if path.starts_with("/v1/ingest/") => AuditAction::Ingest,
         "/v1/cell" => match method {
             "GET" => AuditAction::Read,

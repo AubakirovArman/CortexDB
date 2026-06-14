@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B13` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-B13` is next. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-B14` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-B14` is next. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -72,7 +72,10 @@ enough to unblock the next dependency step.
 23. `EPIC-B10` — temporal validity columns and temporal queries: done; descriptor-backed `TemporalValidityStore` feeds a physical `TemporalValidityFilter`, AQL supports `REQUIRE valid at`, and stale/future candidates are filtered before payload materialization.
 24. `EPIC-B11` — Memory lifecycle: TTL/decay as storage policy: done; descriptor-backed lifecycle index, query-time TTL filter, WAL tombstone maintenance, and Q16 rank decay are in place.
 25. `EPIC-B12` — Session/episodic memory contract: done; session metadata is descriptor-backed, session retrieval uses a maintained index, and lazy reopen only materializes matching session payloads.
-26. `EPIC-B13` — Feedback as an indexed ranking signal: next.
+26. `EPIC-B13` — Feedback as an indexed ranking signal: done; source-cell
+    feedback is maintained in an indexed target->records map and influences
+    ContextPack ranking without candidate-wide scans.
+27. `EPIC-B14` — Explainability contract: explain for each result: next.
 
 ## Summary
 
@@ -901,24 +904,48 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   `python3 scripts/query_scan_inventory_check.py`; `make file-size-check`;
   `cargo test --workspace --all-features`; `cargo clippy --workspace
   --all-targets -- -D warnings`; `make check`.
-- next exit step: move to `EPIC-B13` — Feedback as an indexed ranking signal.
+- next exit step: moved to `EPIC-B13` and closed; current next step is
+  `EPIC-B14` — Explainability contract.
 
 ### EPIC-B13 — Feedback как индексированный ranking-сигнал
 
-- status: `pending`
+- status: `done`
 - meta: Категория: retrieval · Приоритет: P2 · Горизонт: 6 months · Тип: refactor
 - goal: feedback-loop (агент сообщает полезность контекста) — редкая и правильная фича, но сейчас она full-scan и полудокументирована.
 - problem: Проблема: feedback.rs — 4 вызова snapshot_versions на расчёт.
 - tasks:
-  - [ ] 1) feedback-записи → инкрементальный map cell→score (поддерживается на write)
-  - [ ] 2) RankOp читает map O(1)
-  - [ ] 3) HTTP/SDK API + doc; решение зафиксировать (продуктизируем, не выпиливаем — opinionated recommendation).
+  - [x] 1) feedback-записи → инкрементальный map cell→score (поддерживается на write)
+  - [x] 2) RankOp читает map O(1)
+  - [x] 3) HTTP/SDK API + doc; решение зафиксировать (продуктизируем, не выпиливаем — opinionated recommendation).
 - acceptance:
-  - [ ] 1) feedback-путь без сканов
-  - [ ] 2) API задокументирован с примером агентного цикла
-  - [ ] 3) ranking-эффект покрыт golden-тестом.
+  - [x] 1) feedback-путь без сканов
+  - [x] 2) API задокументирован с примером агентного цикла
+  - [x] 3) ranking-эффект покрыт golden-тестом.
 - files: feedback.rs, exec/rank_op.rs, server/router.rs.
 - risks: нет. Зависимости: A06. Эффект: «база, которая учится у агента» — без ML-пафоса, инженерно.
+- latest evidence: `FeedbackIndex` now stores feedback records by feedback
+  cell and source cell, keeps maintained raw scores, and exposes candidate-scoped
+  score lookups through `Database::feedback_scores_for_cells_at`. AQL
+  ContextPack and EXPLAIN ANALYZE use those candidate-scoped scores instead of
+  scanning all feedback records. Public HTTP routes `POST /v1/feedback` and
+  `GET /v1/feedback/stats` are typed, permission-aware, documented in OpenAPI
+  and generated SDK types, and covered by server API tests. DeepSeek
+  official-clean 50-question smoke result for the current runner:
+  `overall=30.6`, `correctness=32.0`, `completeness=36.4`,
+  `document_recall=56.0`, `invalid_extra_docs=9.44`,
+  `answer_tokens=286831`, `judge_tokens=24684`, clean gate and oracle audit
+  passed.
+- gates: `cargo fmt --check`; `cargo test -p cortex-engine --test
+  feedback_tests --test feedback_index_tests --all-features`; `cargo test -p
+  cortex-server feedback --all-features`; `python3 -m py_compile
+  scripts/enterprise_rag_bench/run_deepseek_answers.py
+  scripts/enterprise_rag_bench/oracle_usage_audit.py
+  scripts/check_openapi_contract.py`; `python3
+  scripts/query_scan_inventory_check.py`; `python3
+  scripts/descriptor_hot_path_gate_check.py`; `make file-size-check`; `make
+  openapi-contract-check`; `cargo test --workspace --all-features`; `cargo
+  clippy --workspace --all-targets -- -D warnings`; `make check`.
+- next exit step: move to `EPIC-B14` — Explainability contract.
 
 ### EPIC-B14 — Explainability contract: explain для каждого результата
 

@@ -139,6 +139,39 @@ OpenApiPutCellResponse = TypedDict(
     total=False,
 )
 
+OpenApiFeedbackRecordResponse = TypedDict(
+    'OpenApiFeedbackRecordResponse',
+    {
+        'cell_id': 'int',
+        'seq': 'int',
+        'source_cell_id': 'int',
+        'useful': 'bool',
+    },
+    total=False,
+)
+
+OpenApiFeedbackCellStatsResponse = TypedDict(
+    'OpenApiFeedbackCellStatsResponse',
+    {
+        'not_useful': 'int',
+        'score': 'int',
+        'source_cell_id': 'int',
+        'useful': 'int',
+    },
+    total=False,
+)
+
+OpenApiFeedbackStatsResponse = TypedDict(
+    'OpenApiFeedbackStatsResponse',
+    {
+        'by_source_cell': 'list[OpenApiFeedbackCellStatsResponse]',
+        'not_useful': 'int',
+        'total': 'int',
+        'useful': 'int',
+    },
+    total=False,
+)
+
 OpenApiWriteBatchRequest = TypedDict(
     'OpenApiWriteBatchRequest',
     {

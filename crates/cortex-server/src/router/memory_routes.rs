@@ -20,6 +20,8 @@ pub(super) fn try_route<A: DatabaseAccess>(
         ("POST", "/v1/remember")
             | ("POST", "/v1/forget")
             | ("POST", "/v1/verify")
+            | ("POST", "/v1/feedback")
+            | ("GET", "/v1/feedback/stats")
             | ("GET", "/v1/conflicts")
     ) {
         return None;
@@ -49,6 +51,16 @@ pub(super) fn try_route<A: DatabaseAccess>(
             ("POST", "/v1/verify") => {
                 let db = db.as_read();
                 memory::handle_verify_shared(db, query, body, authenticated_view)
+            }
+            ("POST", "/v1/feedback") => {
+                let db = db
+                    .as_write()
+                    .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
+                memory::handle_feedback_shared(db, query, body, authenticated_view)
+            }
+            ("GET", "/v1/feedback/stats") => {
+                let db = db.as_read();
+                memory::handle_feedback_stats_shared(db, authenticated_view)
             }
             ("GET", "/v1/conflicts") => {
                 let db = db.as_read();

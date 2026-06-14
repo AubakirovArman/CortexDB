@@ -5,10 +5,12 @@
 
 pub mod aql;
 pub mod core;
+pub mod feedback;
 pub mod search;
 pub mod verification;
 
 pub use aql::*;
 pub use core::*;
+pub use feedback::*;
 pub use search::*;
 pub use verification::*;

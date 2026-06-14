@@ -105,7 +105,10 @@ impl Database {
         let provider = EngineAqlProvider::new(index, view);
         let execution = if analyze {
             let mut execution = self.retrieve_cells_with_execution_trace(&plan, &provider)?;
-            let feedback_scores = self.feedback_scores_at(current_unix_seconds());
+            let feedback_scores = self.feedback_scores_for_cells_at(
+                execution.cells.iter().map(|cell| cell.cell_id),
+                current_unix_seconds(),
+            );
             let budget = view.effective_budget(plan.context_policy.budget_tokens);
             let pack_execution = PackOp::execute(
                 std::mem::take(&mut execution.cells),

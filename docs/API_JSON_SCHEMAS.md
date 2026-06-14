@@ -874,6 +874,41 @@ retrieves context internally, and must not receive provider API keys.
 }
 ```
 
+## Feedback
+
+`POST /v1/feedback?source_cell_id=<cell_id>&useful=<bool>` stores a durable
+feedback cell for a retrieved context cell. The optional request body is a
+plain-text note. Feedback is indexed by `source_cell_id`, so future
+ContextPacks can read the ranking score for candidate cells without scanning
+all feedback records.
+
+```json
+{
+  "seq": 9,
+  "cell_id": 10376293541461622793,
+  "source_cell_id": 42,
+  "useful": true
+}
+```
+
+`GET /v1/feedback/stats` reports the indexed aggregate signal.
+
+```json
+{
+  "total": 2,
+  "useful": 1,
+  "not_useful": 1,
+  "by_source_cell": [
+    {
+      "source_cell_id": 42,
+      "useful": 1,
+      "not_useful": 1,
+      "score": 0
+    }
+  ]
+}
+```
+
 ## Verify
 
 `POST /v1/verify?scope=<scope>` with a `VERIFY FACT` AQL body.

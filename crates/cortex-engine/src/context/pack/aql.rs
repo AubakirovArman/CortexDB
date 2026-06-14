@@ -33,11 +33,12 @@ impl Database {
         };
         let budget = view.effective_budget(requested_budget);
         let citations_required = options.require_citations || plan.context_policy.require_citations;
-        let feedback_scores = self.feedback_scores_at(current_unix_seconds());
-        let cells = crate::context::scoring::order_by_feedback(
-            self.retrieve_cells(&plan, &provider)?,
-            &feedback_scores,
+        let cells = self.retrieve_cells(&plan, &provider)?;
+        let feedback_scores = self.feedback_scores_for_cells_at(
+            cells.iter().map(|cell| cell.cell_id),
+            current_unix_seconds(),
         );
+        let cells = crate::context::scoring::order_by_feedback(cells, &feedback_scores);
         Ok(PackOp::execute(
             cells,
             budget,

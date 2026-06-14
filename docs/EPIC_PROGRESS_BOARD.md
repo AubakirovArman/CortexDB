@@ -21,23 +21,22 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B13` — Feedback as an indexed ranking signal.
+`EPIC-B14` — Explainability contract: explain for each result.
 
-B13 exit steps:
+B14 exit steps:
 
-1. Define feedback records and ranking impact.
-2. Index feedback by target cell/query context.
-3. Add tests proving feedback affects rank without bypassing relevance or
-   permissions.
-4. Mark done when feedback is an indexed ranking signal; then move to B14.
+1. Define stable explain fields for selected and excluded results.
+2. Thread explain through retrieve/search/context/verify result paths.
+3. Add snapshot/golden tests for stable explain output.
+4. Mark done when each result can say why it was selected or excluded; then
+   move to B15.
 
-B13 current state:
+B14 current state:
 
-- next; start by inventorying `feedback.rs`, `feedback/index.rs`, `RankOp`,
-  ContextPack ordering, public HTTP/SDK surfaces, and any remaining
-  feedback-related `snapshot_versions`/payload-scan paths.
-- Do not reopen B12 unless a session regression proves descriptor-backed
-  session indexing is wrong.
+- next; start by inventorying current `score_components`, `why_selected`,
+  anomalies, EXPLAIN output, and result structs before changing public shape.
+- Do not reopen B13 unless a feedback regression proves indexed ranking or
+  permissions are wrong.
 
 ## Active Partial Tail
 
@@ -83,6 +82,54 @@ C17 split state:
 
 ## Recently Closed
 
+### EPIC-B13 — Feedback as an indexed ranking signal
+
+Status: `done`
+
+What closed it:
+
+- Reworked `FeedbackIndex` into maintained feedback records keyed by feedback
+  cell plus indexed `source_cell_id -> feedback_record_ids` lookups.
+- Added candidate-scoped feedback score APIs so ContextPack and EXPLAIN
+  ANALYZE request only scores for the cells already in the candidate set.
+- Added typed HTTP routes for `POST /v1/feedback` and
+  `GET /v1/feedback/stats`, including source-cell existence checks,
+  boolean validation, and AgentView read-permission filtering.
+- Added shared API response structs, OpenAPI contract entries, generated
+  Python/TypeScript OpenAPI types, API schema docs, and agent-memory docs.
+- Restored the official-clean DeepSeek answer runner import path and adjusted
+  the oracle audit so analysis scripts do not block clean artifacts.
+
+Gates passed:
+
+- `cargo fmt --check`
+- `cargo test -p cortex-engine --test feedback_tests --test
+  feedback_index_tests --all-features`
+- `cargo test -p cortex-server feedback --all-features`
+- `python3 -m py_compile scripts/enterprise_rag_bench/run_deepseek_answers.py
+  scripts/enterprise_rag_bench/oracle_usage_audit.py
+  scripts/check_openapi_contract.py`
+- `python3 scripts/descriptor_hot_path_gate_check.py`
+- `python3 scripts/query_scan_inventory_check.py`
+- `make file-size-check`
+- `make openapi-contract-check`
+- `cargo test --workspace --all-features`
+- `cargo clippy --workspace --all-targets -- -D warnings`
+- `make check`
+
+DeepSeek 50-question smoke:
+
+- run label: `deepseek50-20260614-b13`
+- clean gate: passed; oracle audit: 0 violations
+- metrics: `overall=30.6`, `correctness=32.0`, `completeness=36.4`,
+  `document_recall=56.0`, `invalid_extra_docs=9.44`
+- token accounting: `answer_tokens=286831`, `judge_tokens=24684`
+
+Remaining follow-up:
+
+- B14 owns stable explain contracts. Long-running benchmark evidence remains
+  A19/C17 scope.
+
 ### EPIC-B12 — Session/episodic memory contract
 
 Status: `done`
@@ -118,8 +165,8 @@ Gates passed:
 
 Remaining follow-up:
 
-- B13 owns feedback ranking/indexing. Long-running benchmark evidence stays in
-  A19/C17; no B12-specific large run is required.
+- B13 is closed. Long-running benchmark evidence stays in A19/C17; no
+  B12-specific large run is required.
 
 ### EPIC-B11 — Memory lifecycle as storage policy
 
@@ -609,7 +656,7 @@ Important follow-up:
 
 ## Done Snapshot
 
-Done count in roadmap snapshot: `54`.
+Done count in roadmap snapshot: `55`.
 
 High-signal done epics:
 
@@ -644,6 +691,7 @@ High-signal done epics:
 - B10 temporal validity columns and temporal queries;
 - B11 memory lifecycle as storage policy;
 - B12 session/episodic memory contract;
+- B13 feedback as an indexed ranking signal;
 - D02 init/doctor;
 - D06 Python SDK;
 - D07 TypeScript SDK;
@@ -682,10 +730,10 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on B07 only:
+Work on B14 only:
 
-1. audit current numeric fact extraction and scan-based VERIFY conflict paths;
-2. identify the smallest typed fact record/index that preserves current
-   verdicts;
-3. add fixture tests before replacing any VERIFY path;
-4. keep extraction conservative and deterministic.
+1. inventory current selected-result and excluded-result explain fields;
+2. define the smallest stable explain schema that preserves existing output;
+3. thread the schema through retrieve/search/context/verify without changing
+   ranking behavior;
+4. add snapshot/golden tests before moving to B15.

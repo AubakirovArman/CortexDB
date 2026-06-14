@@ -831,6 +831,58 @@ paths:
                 $ref: '#/components/schemas/RememberResponse'
         '400': *id001
         '500': *id002
+  /v1/feedback:
+    post:
+      summary: Record deterministic ContextPack feedback
+      description: |
+        Stores a durable `type=feedback` cell for a retrieved context cell.
+        Feedback is indexed by `source_cell_id` and contributes a deterministic
+        `feedback_bonus` ranking signal to future ContextPacks.
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      - name: source_cell_id
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: uint64
+      - name: useful
+        in: query
+        required: true
+        schema:
+          type: boolean
+      requestBody:
+        required: false
+        content:
+          text/plain:
+            schema:
+              type: string
+              description: Optional one-line feedback note.
+      responses:
+        '200':
+          description: Stored feedback record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackRecordResponse'
+        '400': *id001
+        '403': *id005
+        '404': *id001
+        '500': *id002
+  /v1/feedback/stats:
+    get:
+      summary: Report indexed ContextPack feedback statistics
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      responses:
+        '200':
+          description: Feedback totals and per-source-cell scores
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackStatsResponse'
+        '403': *id005
+        '500': *id002
   /v1/forget:
     post:
       summary: Forget (tombstone) a cell
@@ -1420,6 +1472,66 @@ components:
         cell_id:
           type: integer
           format: uint64
+    FeedbackRecordResponse:
+      type: object
+      required:
+      - seq
+      - cell_id
+      - source_cell_id
+      - useful
+      properties:
+        seq:
+          type: integer
+          format: uint64
+        cell_id:
+          type: integer
+          format: uint64
+        source_cell_id:
+          type: integer
+          format: uint64
+        useful:
+          type: boolean
+    FeedbackCellStatsResponse:
+      type: object
+      required:
+      - source_cell_id
+      - useful
+      - not_useful
+      - score
+      properties:
+        source_cell_id:
+          type: integer
+          format: uint64
+        useful:
+          type: integer
+          format: uint32
+        not_useful:
+          type: integer
+          format: uint32
+        score:
+          type: integer
+          format: int32
+    FeedbackStatsResponse:
+      type: object
+      required:
+      - total
+      - useful
+      - not_useful
+      - by_source_cell
+      properties:
+        total:
+          type: integer
+          format: uint32
+        useful:
+          type: integer
+          format: uint32
+        not_useful:
+          type: integer
+          format: uint32
+        by_source_cell:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeedbackCellStatsResponse'
     WriteBatchRequest:
       type: object
       additionalProperties: false

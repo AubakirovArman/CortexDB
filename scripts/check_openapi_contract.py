@@ -281,6 +281,17 @@ def main() -> int:
         )
         check("/v1/remember", "POST", remember_resp)
 
+        # Feedback
+        feedback_resp = request(
+            "POST",
+            f"{base}/v1/feedback?source_cell_id=1&useful=true",
+            b"contract feedback",
+        )
+        check("/v1/feedback", "POST", feedback_resp)
+
+        feedback_stats_resp = request("GET", f"{base}/v1/feedback/stats")
+        check("/v1/feedback/stats", "GET", feedback_stats_resp)
+
         # Ingest
         ingest_resp = request(
             "POST",

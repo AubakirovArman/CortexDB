@@ -77,6 +77,21 @@ deterministic pre-pack ordering signal for ContextPack selection. The current
 model supports useful/not-useful votes, per-source-cell scores, fixed-window
 decay, stats, and explainable `feedback_bonus` ContextPack score components.
 
+HTTP agent loop:
+
+```text
+POST /v1/context?scope=project:investments
+-> agent receives ContextPack cells
+POST /v1/feedback?source_cell_id=<cell_id>&useful=true
+-> CortexDB stores durable feedback and updates the feedback index
+GET /v1/feedback/stats
+-> operators can inspect aggregate useful/not-useful scores
+```
+
+The feedback index is maintained on writes and maps each source cell to its
+feedback records. ContextPack ranking asks the index only for the current
+candidate cells, so feedback affects ordering without a full feedback scan.
+
 ## Epic 141 Agent Memory v2 Contract
 
 | Plan task | Current implementation | Boundary |
@@ -210,7 +225,9 @@ examples/demo/agent_memory/run.sh
   without floating-point scoring or payload scans, and `RankOp` applies that
   freshness as a deterministic multiplier for temporary memory cells.
 - **Feedback ordering** — ContextPack candidate ordering uses durable feedback
-  scores before packing.
+  scores before packing. The server exposes `POST /v1/feedback` for agent
+  useful/not-useful votes and `GET /v1/feedback/stats` for aggregate indexed
+  scores.
 - **Agent sessions** — explicit descriptor-backed `session_id` memory cells
   provide bounded task-local context, temporary memory, TTL filtering, and
   session-scoped retrieval through the normal WAL/replay/checkpoint path.

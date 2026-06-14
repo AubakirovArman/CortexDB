@@ -316,7 +316,7 @@ Exit steps:
 1. Define feedback records and ranking impact.
 2. Index feedback by target cell/query context.
 3. Add tests proving feedback affects rank without bypassing relevance/permissions.
-4. Mark done when feedback is an indexed ranking signal; then move to C07.
+4. Mark done when feedback is an indexed ranking signal; then move to B14.
 
 ### EPIC-B14 — Explainability contract
 
